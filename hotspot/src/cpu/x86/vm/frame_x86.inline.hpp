@@ -25,6 +25,8 @@
 #ifndef CPU_X86_VM_FRAME_X86_INLINE_HPP
 #define CPU_X86_VM_FRAME_X86_INLINE_HPP
 
+#include "code/codeCache.hpp"
+
 // Inline functions for Intel frames:
 
 // Constructors:

@@ -37,6 +37,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.EmptyBorder;
+import javax.swing.JSpinner.DefaultEditor;
 
 final class ColorPanel extends JPanel implements ActionListener {
 
@@ -119,17 +120,26 @@ final class ColorPanel extends JPanel implements ActionListener {
         int count = this.model.getCount();
         this.spinners[4].setVisible(count > 4);
         for (int i = 0; i < count; i++) {
+            String text = this.model.getLabel(this, i);
             Object object = this.spinners[i].getLabel();
             if (object instanceof JRadioButton) {
                 JRadioButton button = (JRadioButton) object;
-                button.setText(this.model.getLabel(this, i));
+                button.setText(text);
+                button.getAccessibleContext().setAccessibleDescription(text);
             }
             else if (object instanceof JLabel) {
                 JLabel label = (JLabel) object;
-                label.setText(this.model.getLabel(this, i));
+                label.setText(text);
             }
             this.spinners[i].setRange(this.model.getMinimum(i), this.model.getMaximum(i));
             this.spinners[i].setValue(this.values[i]);
+            this.spinners[i].getSlider().getAccessibleContext().setAccessibleName(text);
+            this.spinners[i].getSpinner().getAccessibleContext().setAccessibleName(text);
+            DefaultEditor editor = (DefaultEditor) this.spinners[i].getSpinner().getEditor();
+            editor.getTextField().getAccessibleContext().setAccessibleName(text);
+            this.spinners[i].getSlider().getAccessibleContext().setAccessibleDescription(text);
+            this.spinners[i].getSpinner().getAccessibleContext().setAccessibleDescription(text);
+            editor.getTextField().getAccessibleContext().setAccessibleDescription(text);
         }
     }
 

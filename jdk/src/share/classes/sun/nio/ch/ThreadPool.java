@@ -102,11 +102,7 @@ public class ThreadPool {
         if (threadFactory == null)
             threadFactory = defaultThreadFactory;
         // create thread pool
-        ExecutorService executor =
-            new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-                                   Long.MAX_VALUE, TimeUnit.MILLISECONDS,
-                                   new SynchronousQueue<Runnable>(),
-                                   threadFactory);
+        ExecutorService executor = Executors.newCachedThreadPool(threadFactory);
         return new ThreadPool(executor, false, initialSize);
     }
 

@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_x86.inline.hpp"
+#include "asm/macroAssembler.hpp"
+#include "asm/codeBuffer.hpp"
 #include "memory/metaspaceShared.hpp"
 
 // Generate the self-patching vtable method:

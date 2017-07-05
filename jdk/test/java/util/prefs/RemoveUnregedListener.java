@@ -23,9 +23,10 @@
 
 
 /* @test
- * @bug 4705094
+ * @bug 4705094 7197662
  * @summary Checks if correct exception gets thrown when removing an
  *          unregistered NodeChangeListener .
+ * @run main/othervm -Djava.util.prefs.userRoot=. RemoveUnregedListener
  */
 
 import java.util.prefs.*;

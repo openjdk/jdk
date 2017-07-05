@@ -48,7 +48,7 @@ void Parse::array_load(BasicType elem_type) {
   const Type* elem = Type::TOP;
   Node* adr = array_addressing(elem_type, 0, &elem);
   if (stopped())  return;     // guaranteed null or range check
-  _sp -= 2;                   // Pop array and index
+  dec_sp(2);                  // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
   Node* ld = make_load(control(), adr, elem, elem_type, adr_type);
   push(ld);
@@ -60,7 +60,7 @@ void Parse::array_store(BasicType elem_type) {
   Node* adr = array_addressing(elem_type, 1);
   if (stopped())  return;     // guaranteed null or range check
   Node* val = pop();
-  _sp -= 2;                   // Pop array and index
+  dec_sp(2);                  // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
   store_to_memory(control(), adr, val, elem_type, adr_type);
 }
@@ -73,7 +73,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
   Node *ary   = peek(1+vals);   // in case of exception
 
   // Null check the array base, with correct stack contents
-  ary = do_null_check(ary, T_ARRAY);
+  ary = null_check(ary, T_ARRAY);
   // Compile-time detect of null-exception?
   if (stopped())  return top();
 
@@ -681,7 +681,7 @@ void Parse::l2f() {
 
 void Parse::do_irem() {
   // Must keep both values on the expression-stack during null-check
-  do_null_check(peek(), T_INT);
+  zero_check_int(peek());
   // Compile-time detect of null-exception?
   if (stopped())  return;
 
@@ -958,7 +958,7 @@ inline int Parse::repush_if_args() {
   DEBUG_ONLY(sync_jvms());   // argument(n) requires a synced jvms
   assert(argument(0) != NULL, "must exist");
   assert(bc_depth == 1 || argument(1) != NULL, "two must exist");
-  _sp += bc_depth;
+  inc_sp(bc_depth);
   return bc_depth;
 }
 
@@ -1581,8 +1581,8 @@ void Parse::do_one_bytecode() {
     set_pair_local( iter().get_index(), dstore_rounding(pop_pair()) );
     break;
 
-  case Bytecodes::_pop:  _sp -= 1;   break;
-  case Bytecodes::_pop2: _sp -= 2;   break;
+  case Bytecodes::_pop:  dec_sp(1);   break;
+  case Bytecodes::_pop2: dec_sp(2);   break;
   case Bytecodes::_swap:
     a = pop();
     b = pop();
@@ -1650,7 +1650,7 @@ void Parse::do_one_bytecode() {
 
   case Bytecodes::_arraylength: {
     // Must do null-check with value on expression stack
-    Node *ary = do_null_check(peek(), T_ARRAY);
+    Node *ary = null_check(peek(), T_ARRAY);
     // Compile-time detect of null-exception?
     if (stopped())  return;
     a = pop();
@@ -1667,15 +1667,15 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_laload: {
     a = array_addressing(T_LONG, 0);
     if (stopped())  return;     // guaranteed null or range check
-    _sp -= 2;                   // Pop array and index
-    push_pair( make_load(control(), a, TypeLong::LONG, T_LONG, TypeAryPtr::LONGS));
+    dec_sp(2);                  // Pop array and index
+    push_pair(make_load(control(), a, TypeLong::LONG, T_LONG, TypeAryPtr::LONGS));
     break;
   }
   case Bytecodes::_daload: {
     a = array_addressing(T_DOUBLE, 0);
     if (stopped())  return;     // guaranteed null or range check
-    _sp -= 2;                   // Pop array and index
-    push_pair( make_load(control(), a, Type::DOUBLE, T_DOUBLE, TypeAryPtr::DOUBLES));
+    dec_sp(2);                  // Pop array and index
+    push_pair(make_load(control(), a, Type::DOUBLE, T_DOUBLE, TypeAryPtr::DOUBLES));
     break;
   }
   case Bytecodes::_bastore: array_store(T_BYTE);  break;
@@ -1699,7 +1699,7 @@ void Parse::do_one_bytecode() {
     a = array_addressing(T_LONG, 2);
     if (stopped())  return;     // guaranteed null or range check
     c = pop_pair();
-    _sp -= 2;                   // Pop array and index
+    dec_sp(2);                  // Pop array and index
     store_to_memory(control(), a, c, T_LONG, TypeAryPtr::LONGS);
     break;
   }
@@ -1707,7 +1707,7 @@ void Parse::do_one_bytecode() {
     a = array_addressing(T_DOUBLE, 2);
     if (stopped())  return;     // guaranteed null or range check
     c = pop_pair();
-    _sp -= 2;                   // Pop array and index
+    dec_sp(2);                  // Pop array and index
     c = dstore_rounding(c);
     store_to_memory(control(), a, c, T_DOUBLE, TypeAryPtr::DOUBLES);
     break;
@@ -1733,7 +1733,7 @@ void Parse::do_one_bytecode() {
     break;
   case Bytecodes::_idiv:
     // Must keep both values on the expression-stack during null-check
-    do_null_check(peek(), T_INT);
+    zero_check_int(peek());
     // Compile-time detect of null-exception?
     if (stopped())  return;
     b = pop();
@@ -2041,7 +2041,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_lrem:
     // Must keep both values on the expression-stack during null-check
     assert(peek(0) == top(), "long word order");
-    do_null_check(peek(1), T_LONG);
+    zero_check_long(peek(1));
     // Compile-time detect of null-exception?
     if (stopped())  return;
     b = pop_pair();
@@ -2053,7 +2053,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ldiv:
     // Must keep both values on the expression-stack during null-check
     assert(peek(0) == top(), "long word order");
-    do_null_check(peek(1), T_LONG);
+    zero_check_long(peek(1));
     // Compile-time detect of null-exception?
     if (stopped())  return;
     b = pop_pair();
@@ -2175,7 +2175,7 @@ void Parse::do_one_bytecode() {
 
   case Bytecodes::_athrow:
     // null exception oop throws NULL pointer exception
-    do_null_check(peek(), T_OBJECT);
+    null_check(peek());
     if (stopped())  return;
     // Hook the thrown exception directly to subsequent handlers.
     if (BailoutToInterpreterForThrows) {

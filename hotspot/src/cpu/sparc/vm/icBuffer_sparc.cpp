@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/bytecodes.hpp"

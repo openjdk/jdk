@@ -68,6 +68,7 @@ class SessionId
     }
 
     /** Returns the ID as a string */
+    @Override
     public String toString ()
     {
         int             len = sessionId.length;
@@ -85,6 +86,7 @@ class SessionId
 
 
     /** Returns a value which is the same for session IDs which are equal */
+    @Override
     public int hashCode ()
     {
         int     retval = 0;
@@ -95,6 +97,7 @@ class SessionId
     }
 
     /** Returns true if the parameter is the same session ID */
+    @Override
     public boolean equals (Object obj)
     {
         if (!(obj instanceof SessionId))

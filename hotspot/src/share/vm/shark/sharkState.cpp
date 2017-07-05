@@ -131,7 +131,7 @@ void SharkState::merge(SharkState* other,
   Value *this_method = this->method();
   Value *other_method = other->method();
   if (this_method != other_method) {
-    PHINode *phi = builder()->CreatePHI(SharkType::Method*_type(), "method");
+    PHINode *phi = builder()->CreatePHI(SharkType::Method_type(), 0, "method");
     phi->addIncoming(this_method, this_block);
     phi->addIncoming(other_method, other_block);
     set_method(phi);
@@ -142,7 +142,7 @@ void SharkState::merge(SharkState* other,
   Value *other_oop_tmp = other->oop_tmp();
   if (this_oop_tmp != other_oop_tmp) {
     assert(this_oop_tmp && other_oop_tmp, "can't merge NULL with non-NULL");
-    PHINode *phi = builder()->CreatePHI(SharkType::oop_type(), "oop_tmp");
+    PHINode *phi = builder()->CreatePHI(SharkType::oop_type(), 0, "oop_tmp");
     phi->addIncoming(this_oop_tmp, this_block);
     phi->addIncoming(other_oop_tmp, other_block);
     set_oop_tmp(phi);
@@ -243,7 +243,7 @@ SharkOSREntryState::SharkOSREntryState(SharkTopLevelBlock* block,
                                        Value*              method,
                                        Value*              osr_buf)
   : SharkState(block) {
-  assert(!block->stack_depth_at_entry(), "entry block shouldn't have stack");
+  assert(block->stack_depth_at_entry() == 0, "entry block shouldn't have stack");
   set_num_monitors(block->ciblock()->monitor_count());
 
   // Local variables
@@ -287,7 +287,7 @@ SharkPHIState::SharkPHIState(SharkTopLevelBlock* block)
   char name[18];
 
   // Method
-  set_method(builder()->CreatePHI(SharkType::Method*_type(), "method"));
+  set_method(builder()->CreatePHI(SharkType::Method_type(), 0, "method"));
 
   // Local variables
   for (int i = 0; i < max_locals(); i++) {
@@ -307,7 +307,7 @@ SharkPHIState::SharkPHIState(SharkTopLevelBlock* block)
     case T_ARRAY:
       snprintf(name, sizeof(name), "local_%d_", i);
       value = SharkValue::create_phi(
-        type, builder()->CreatePHI(SharkType::to_stackType(type), name));
+        type, builder()->CreatePHI(SharkType::to_stackType(type), 0, name));
       break;
 
     case T_ADDRESS:
@@ -345,7 +345,7 @@ SharkPHIState::SharkPHIState(SharkTopLevelBlock* block)
     case T_ARRAY:
       snprintf(name, sizeof(name), "stack_%d_", i);
       value = SharkValue::create_phi(
-        type, builder()->CreatePHI(SharkType::to_stackType(type), name));
+        type, builder()->CreatePHI(SharkType::to_stackType(type), 0, name));
       break;
 
     case T_ADDRESS:

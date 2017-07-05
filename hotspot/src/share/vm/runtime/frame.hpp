@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_RUNTIME_FRAME_HPP
 #define SHARE_VM_RUNTIME_FRAME_HPP
 
-#include "asm/assembler.hpp"
 #include "oops/method.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"

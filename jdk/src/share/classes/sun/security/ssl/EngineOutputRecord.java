@@ -29,9 +29,6 @@ package sun.security.ssl;
 import java.io.*;
 import java.nio.*;
 
-import javax.net.ssl.SSLException;
-import sun.misc.HexDumpEncoder;
-
 
 /**
  * A OutputRecord class extension which uses external ByteBuffers
@@ -95,6 +92,7 @@ final class EngineOutputRecord extends OutputRecord {
         finishedMsg = true;
     }
 
+    @Override
     public void flush() throws IOException {
         finishedMsg = false;
     }

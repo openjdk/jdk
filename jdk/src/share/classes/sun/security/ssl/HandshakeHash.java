@@ -28,11 +28,7 @@ package sun.security.ssl;
 
 import java.io.ByteArrayOutputStream;
 import java.security.*;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 /**
  * Abstraction for the SSL/TLS hash of all handshake messages that is
@@ -52,28 +48,23 @@ import java.util.Set;
  * 1. protocolDetermined(version) should be called when the negotiated
  * protocol version is determined.
  *
- * 2. Before protocolDetermined() is called, only update(), reset(),
- * restrictCertificateVerifyAlgs(), setFinishedAlg(), and
- * setCertificateVerifyAlg() can be called.
+ * 2. Before protocolDetermined() is called, only update(), and reset()
+ * and setFinishedAlg() can be called.
  *
  * 3. After protocolDetermined() is called, reset() cannot be called.
  *
  * 4. After protocolDetermined() is called, if the version is pre-TLS 1.2,
- * getFinishedHash() and getCertificateVerifyHash() cannot be called. Otherwise,
+ * getFinishedHash() cannot be called. Otherwise,
  * getMD5Clone() and getSHAClone() cannot be called.
  *
  * 5. getMD5Clone() and getSHAClone() can only be called after
  * protocolDetermined() is called and version is pre-TLS 1.2.
  *
- * 6. getFinishedHash() and getCertificateVerifyHash() can only be called after
- * all protocolDetermined(), setCertificateVerifyAlg() and setFinishedAlg()
- * have been called and the version is TLS 1.2. If a CertificateVerify message
- * is to be used, call setCertificateVerifyAlg() with the hash algorithm as the
- * argument. Otherwise, you still must call setCertificateVerifyAlg(null) before
- * calculating any hash value.
+ * 6. getFinishedHash() can only be called after protocolDetermined()
+ * and setFinishedAlg() have been called and the version is TLS 1.2.
  *
- * Suggestions: Call protocolDetermined(), restrictCertificateVerifyAlgs(),
- * setFinishedAlg(), and setCertificateVerifyAlg() as early as possible.
+ * Suggestion: Call protocolDetermined() and setFinishedAlg()
+ * as early as possible.
  *
  * Example:
  * <pre>
@@ -83,21 +74,13 @@ import java.util.Set;
  * hh.setFinishedAlg("SHA-256");
  * hh.update(serverHelloBytes);
  * ...
- * hh.setCertificateVerifyAlg("SHA-384");
  * hh.update(CertificateVerifyBytes);
- * byte[] cvDigest = hh.getCertificateVerifyHash();
  * ...
  * hh.update(finished1);
  * byte[] finDigest1 = hh.getFinishedHash();
  * hh.update(finished2);
  * byte[] finDigest2 = hh.getFinishedHash();
  * </pre>
- * If no CertificateVerify message is to be used, call
- * <pre>
- * hh.setCertificateVerifyAlg(null);
- * </pre>
- * This call can be made once you are certain that this message
- * will never be used.
  */
 final class HandshakeHash {
 
@@ -108,28 +91,19 @@ final class HandshakeHash {
     //  2:  TLS 1.2
     private int version = -1;
     private ByteArrayOutputStream data = new ByteArrayOutputStream();
-    private final boolean isServer;
 
     // For TLS 1.1
     private MessageDigest md5, sha;
     private final int clonesNeeded;    // needs to be saved for later use
 
     // For TLS 1.2
-    // cvAlgDetermined == true means setCertificateVerifyAlg() is called
-    private boolean cvAlgDetermined = false;
-    private String cvAlg;
     private MessageDigest finMD;
 
     /**
      * Create a new HandshakeHash. needCertificateVerify indicates whether
-     * a hash for the certificate verify message is required. The argument
-     * algs is a set of all possible hash algorithms that might be used in
-     * TLS 1.2. If the caller is sure that TLS 1.2 won't be used or no
-     * CertificateVerify message will be used, leave it null or empty.
+     * a hash for the certificate verify message is required.
      */
-    HandshakeHash(boolean isServer, boolean needCertificateVerify,
-            Set<String> algs) {
-        this.isServer = isServer;
+    HandshakeHash(boolean needCertificateVerify) {
         clonesNeeded = needCertificateVerify ? 3 : 2;
     }
 
@@ -259,45 +233,9 @@ final class HandshakeHash {
         finMD.update(data.toByteArray());
     }
 
-    /**
-     * Restricts the possible algorithms for the CertificateVerify. Called by
-     * the server based on info in CertRequest. The argument must be a subset
-     * of the argument with the same name in the constructor. The method can be
-     * called multiple times. If the caller is sure that no CertificateVerify
-     * message will be used, leave this argument null or empty.
-     */
-    void restrictCertificateVerifyAlgs(Set<String> algs) {
-        if (version == 1) {
-            throw new RuntimeException(
-                    "setCertificateVerifyAlg() cannot be called for TLS 1.1");
-        }
-        // Not used yet
-    }
-
-    /**
-     * Specifies the hash algorithm used in CertificateVerify.
-     * Can be called multiple times.
-     */
-    void setCertificateVerifyAlg(String s) {
-
-        // Can be called multiple times, but only set once
-        if (cvAlgDetermined) return;
-
-        cvAlg = s == null ? null : normalizeAlgName(s);
-        cvAlgDetermined = true;
-    }
-
     byte[] getAllHandshakeMessages() {
         return data.toByteArray();
     }
-
-    /**
-     * Calculates the hash in the CertificateVerify. Must be called right
-     * after setCertificateVerifyAlg()
-     */
-    /*byte[] getCertificateVerifyHash() {
-        throw new Error("Do not call getCertificateVerifyHash()");
-    }*/
 
     /**
      * Calculates the hash in Finished. Must be called after setFinishedAlg().
@@ -391,11 +329,13 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         // }
     }
 
+    @Override
     protected int engineGetDigestLength() {
         checkState();
         return digests[0].getDigestLength();
     }
 
+    @Override
     protected void engineUpdate(byte b) {
         checkState();
         for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
@@ -403,6 +343,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     protected void engineUpdate(byte[] b, int offset, int len) {
         checkState();
         for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
@@ -410,6 +351,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     protected byte[] engineDigest() {
         checkState();
         byte[] digest = digests[0].digest();
@@ -417,6 +359,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         return digest;
     }
 
+    @Override
     protected int engineDigest(byte[] buf, int offset, int len)
             throws DigestException {
         checkState();
@@ -436,6 +379,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     protected void engineReset() {
         checkState();
         for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
@@ -443,6 +387,7 @@ final class CloneableDigest extends MessageDigest implements Cloneable {
         }
     }
 
+    @Override
     public Object clone() {
         checkState();
         for (int i = digests.length - 1; i >= 0; i--) {
