@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@
 package java.lang.module;
 
 /**
- * Thrown by module finders when finding a module fails.
+ * Thrown by a {@link ModuleFinder ModuleFinder} when an error occurs finding
+ * a module. Also thrown by {@link
+ * Configuration#resolve(ModuleFinder,java.util.List,ModuleFinder,java.util.Collection)
+ * Configuration.resolve} when resolution fails for observability-related
+ * reasons.
  *
- * @see ModuleFinder
  * @since 9
+ * @spec JPMS
  */
 
 public class FindException extends RuntimeException {

@@ -359,13 +359,6 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     // ---- NON-COMPONENT PEERS ---- //
 
     @Override
-    public final ColorModel getColorModel() throws HeadlessException {
-        return GraphicsEnvironment.getLocalGraphicsEnvironment()
-                                  .getDefaultScreenDevice()
-                                  .getDefaultConfiguration().getColorModel();
-    }
-
-    @Override
     public final boolean isDesktopSupported() {
         return true;
     }

@@ -25,6 +25,8 @@
 
 /**
  * Java Debug Wire Protocol.
+ *
+ * @since 9
  */
 module jdk.jdwp.agent {
 }

@@ -2456,22 +2456,24 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
 void InstanceKlass::check_prohibited_package(Symbol* class_name,
                                              Handle class_loader,
                                              TRAPS) {
-  ResourceMark rm(THREAD);
   if (!class_loader.is_null() &&
       !SystemDictionary::is_platform_class_loader(class_loader) &&
-      class_name != NULL &&
-      strncmp(class_name->as_C_string(), JAVAPKG, JAVAPKG_LEN) == 0) {
-    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
-    assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
-    char* name = pkg_name->as_C_string();
-    const char* class_loader_name = SystemDictionary::loader_name(class_loader());
-    StringUtils::replace_no_expand(name, "/", ".");
-    const char* msg_text1 = "Class loader (instance of): ";
-    const char* msg_text2 = " tried to load prohibited package name: ";
-    size_t len = strlen(msg_text1) + strlen(class_loader_name) + strlen(msg_text2) + strlen(name) + 1;
-    char* message = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, len);
-    jio_snprintf(message, len, "%s%s%s%s", msg_text1, class_loader_name, msg_text2, name);
-    THROW_MSG(vmSymbols::java_lang_SecurityException(), message);
+      class_name != NULL) {
+    ResourceMark rm(THREAD);
+    char* name = class_name->as_C_string();
+    if (strncmp(name, JAVAPKG, JAVAPKG_LEN) == 0 && name[JAVAPKG_LEN] == '/') {
+      TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
+      assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
+      name = pkg_name->as_C_string();
+      const char* class_loader_name = SystemDictionary::loader_name(class_loader());
+      StringUtils::replace_no_expand(name, "/", ".");
+      const char* msg_text1 = "Class loader (instance of): ";
+      const char* msg_text2 = " tried to load prohibited package name: ";
+      size_t len = strlen(msg_text1) + strlen(class_loader_name) + strlen(msg_text2) + strlen(name) + 1;
+      char* message = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, len);
+      jio_snprintf(message, len, "%s%s%s%s", msg_text1, class_loader_name, msg_text2, name);
+      THROW_MSG(vmSymbols::java_lang_SecurityException(), message);
+    }
   }
   return;
 }
@@ -2806,7 +2808,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
   return NULL;
 }
 
-bool InstanceKlass::add_member_name(Handle mem_name) {
+oop InstanceKlass::add_member_name(Handle mem_name, bool intern) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
   DEBUG_ONLY(NoSafepointVerifier nsv);
@@ -2816,7 +2818,7 @@ bool InstanceKlass::add_member_name(Handle mem_name) {
   // is called!
   Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name());
   if (method->is_obsolete()) {
-    return false;
+    return NULL;
   } else if (method->is_old()) {
     // Replace method with redefined version
     java_lang_invoke_MemberName::set_vmtarget(mem_name(), method_with_idnum(method->method_idnum()));
@@ -2825,8 +2827,11 @@ bool InstanceKlass::add_member_name(Handle mem_name) {
   if (_member_names == NULL) {
     _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable(idnum_allocated_count());
   }
-  _member_names->add_member_name(mem_name_wref);
-  return true;
+  if (intern) {
+    return _member_names->find_or_add_member_name(mem_name_wref);
+  } else {
+    return _member_names->add_member_name(mem_name_wref);
+  }
 }
 
 // -----------------------------------------------------------------------------------------------------

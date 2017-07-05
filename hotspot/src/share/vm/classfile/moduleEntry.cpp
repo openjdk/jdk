@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,11 +87,11 @@ Handle ModuleEntry::shared_protection_domain() {
 // Set the shared ProtectionDomain atomically
 void ModuleEntry::set_shared_protection_domain(ClassLoaderData *loader_data,
                                                Handle pd_h) {
-  // Create a JNI handle for the shared ProtectionDomain and save it atomically.
-  // If someone beats us setting the _pd cache, the created JNI handle is destroyed.
+  // Create a handle for the shared ProtectionDomain and save it atomically.
+  // If someone beats us setting the _pd cache, the created handle is destroyed.
   jobject obj = loader_data->add_handle(pd_h);
   if (Atomic::cmpxchg_ptr(obj, &_pd, NULL) != NULL) {
-    loader_data->remove_handle(obj);
+    loader_data->remove_handle_unsafe(obj);
   }
 }
 

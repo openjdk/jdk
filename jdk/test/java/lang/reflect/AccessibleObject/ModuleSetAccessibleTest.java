@@ -30,7 +30,6 @@
  * @summary Test java.lang.reflect.AccessibleObject with modules
  */
 
-import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

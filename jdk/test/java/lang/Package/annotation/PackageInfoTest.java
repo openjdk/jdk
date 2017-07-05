@@ -25,8 +25,7 @@
  * @test
  * @summary Basic test of package-info in named module and duplicate
  *          package-info in unnamed module
- * @modules java.compiler
- *          java.desktop
+ * @modules java.desktop
  *          jdk.compiler
  *          jdk.xml.dom
  * @build jdk.xml.dom/org.w3c.dom.css.Fake
