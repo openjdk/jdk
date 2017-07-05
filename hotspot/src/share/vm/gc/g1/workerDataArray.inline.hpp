@@ -22,20 +22,18 @@
  *
  */
 
+#ifndef SHARE_VM_GC_G1_WORKERDATAARRAY_INLINE_HPP
+#define SHARE_VM_GC_G1_WORKERDATAARRAY_INLINE_HPP
+
 #include "gc/g1/workerDataArray.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/ostream.hpp"
 
 template <typename T>
-WorkerDataArray<T>::WorkerDataArray(uint length,
-                                    const char* title,
-                                    bool print_sum,
-                                    uint indent_level) :
+WorkerDataArray<T>::WorkerDataArray(uint length, const char* title) :
  _title(title),
  _length(0),
- _print_sum(print_sum),
- _indent_level(indent_level),
- _thread_work_items(NULL),
- _enabled(true) {
+ _thread_work_items(NULL) {
   assert(length > 0, "Must have some workers to store data for");
   _length = length;
   _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
@@ -94,29 +92,6 @@ T WorkerDataArray<T>::sum(uint active_threads) const {
 }
 
 template <typename T>
-T WorkerDataArray<T>::minimum(uint active_threads) const {
-  T min = get(0);
-  for (uint i = 1; i < active_threads; ++i) {
-    min = MIN2(min, get(i));
-  }
-  return min;
-}
-
-template <typename T>
-T WorkerDataArray<T>::maximum(uint active_threads) const {
-  T max = get(0);
-  for (uint i = 1; i < active_threads; ++i) {
-    max = MAX2(max, get(i));
-  }
-  return max;
-}
-
-template <typename T>
-T WorkerDataArray<T>::diff(uint active_threads) const {
-  return maximum(active_threads) - minimum(active_threads);
-}
-
-template <typename T>
 void WorkerDataArray<T>::clear() {
   set_all(0);
 }
@@ -126,6 +101,27 @@ void WorkerDataArray<T>::set_all(T value) {
   for (uint i = 0; i < _length; i++) {
     _data[i] = value;
   }
+}
+
+template <class T>
+void WorkerDataArray<T>::print_summary_on(outputStream* out, uint active_threads, bool print_sum) const {
+  T max = get(0);
+  T min = max;
+  T sum = 0;
+  for (uint i = 1; i < active_threads; ++i) {
+    T value = get(i);
+    max = MAX2(max, value);
+    min = MIN2(min, value);
+    sum += value;
+  }
+  T diff = max - min;
+  double avg = sum / (double) active_threads;
+  WDAPrinter::summary(out, title(), min, avg, max, diff, sum, print_sum);
+}
+
+template <class T>
+void WorkerDataArray<T>::print_details_on(outputStream* out, uint active_threads) const {
+  WDAPrinter::details(this, out, active_threads);
 }
 
 #ifndef PRODUCT
@@ -139,10 +135,6 @@ void WorkerDataArray<T>::reset() {
 
 template <typename T>
 void WorkerDataArray<T>::verify(uint active_threads) const {
-  if (!_enabled) {
-    return;
-  }
-
   assert(active_threads <= _length, "Wrong number of active threads");
   for (uint i = 0; i < active_threads; i++) {
     assert(_data[i] != uninitialized(),
@@ -163,3 +155,5 @@ inline double WorkerDataArray<double>::uninitialized() const {
   return -1.0;
 }
 #endif
+
+#endif // SHARE_VM_GC_G1_WORKERDATAARRAY_INLINE_HPP

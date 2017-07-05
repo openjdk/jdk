@@ -76,6 +76,11 @@ public:
   static address ucontext_get_pc(const ucontext_t* ctx);
   // Set PC into context. Needed for continuation after signal.
   static void ucontext_set_pc(ucontext_t* ctx, address pc);
+
+  // Helper function; describes pthread attributes as short string. String is written
+  // to buf with len buflen; buf is returned.
+  static char* describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr);
+
 };
 
 /*

@@ -69,24 +69,12 @@ public class TextClipErrorTest {
             @Override
             public void publish(LogRecord record) {
                 Throwable th = record.getThrown();
-                // detect potential Throwable thrown by XxxArrayCache.check():
-                if (th != null && th.getClass() == Throwable.class) {
-                    StackTraceElement[] stackElements = th.getStackTrace();
+                // detect any Throwable:
+                if (th != null) {
+                    System.out.println("Test failed:\n" + record.getMessage());
+                    th.printStackTrace(System.out);
 
-                    for (int i = 0; i < stackElements.length; i++) {
-                        StackTraceElement e = stackElements[i];
-
-                        if (e.getClassName().startsWith("sun.java2d.marlin")
-                            && e.getClassName().contains("ArrayCache")
-                            && "check".equals(e.getMethodName()))
-                        {
-                            System.out.println("Test failed:\n"
-                                + record.getMessage());
-                            th.printStackTrace(System.out);
-
-                            throw new RuntimeException("Test failed: ", th);
-                        }
-                    }
+                    throw new RuntimeException("Test failed: ", th);
                 }
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,51 +29,69 @@
  * @summary Testing compiler.jvmci.CompilerToVM.resolveTypeInPool method
  * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
- * @build compiler.jvmci.common.testcases.MultipleImplementersInterface
- *        compiler.jvmci.common.testcases.MultipleImplementer2
- *        compiler.jvmci.compilerToVM.ConstantPoolTestsHelper
- *        compiler.jvmci.compilerToVM.ConstantPoolTestCase
+ * @build sun.hotspot.WhiteBox
  *        compiler.jvmci.compilerToVM.ResolveTypeInPoolTest
- * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockExperimentalVMOptions
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                              jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions
  *                   -XX:+EnableJVMCI compiler.jvmci.compilerToVM.ResolveTypeInPoolTest
  */
 
 package compiler.jvmci.compilerToVM;
 
+import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
+import compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes;
+import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.*;
+import compiler.jvmci.compilerToVM.ConstantPoolTestCase.TestedCPEntry;
+import compiler.jvmci.compilerToVM.ConstantPoolTestCase.Validator;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import sun.reflect.ConstantPool;
+import jdk.vm.ci.meta.ConstantPool;
 
 /**
- * Test for {@code compiler.jvmci.CompilerToVM.resolveTypeInPool} method
+ * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.resolveTypeInPool} method
  */
 public class ResolveTypeInPoolTest {
 
     public static void main(String[] args) throws Exception {
-        Map<ConstantPoolTestsHelper.ConstantTypes,
-                ConstantPoolTestCase.Validator> typeTests = new HashMap<>(1);
-        typeTests.put(ConstantPoolTestsHelper.ConstantTypes.CONSTANT_CLASS,
-                ResolveTypeInPoolTest::validate);
+        Map<ConstantTypes, Validator> typeTests = new HashMap<>();
+        typeTests.put(CONSTANT_CLASS, ResolveTypeInPoolTest::validate);
         ConstantPoolTestCase testCase = new ConstantPoolTestCase(typeTests);
+        testCase.test();
+        // The next "Class.forName" and repeating "testCase.test()"
+        // are here for the following reason.
+        // The first test run is without dummy class initialization,
+        // which means no constant pool cache exists.
+        // The second run is with initialized class (with constant pool cache available).
+        // Some CompilerToVM methods require different input
+        // depending on whether CP cache exists or not.
+        for (DummyClasses dummy : DummyClasses.values()) {
+            Class.forName(dummy.klass.getName());
+        }
         testCase.test();
     }
 
-    public static void validate(
-            jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
-            ConstantPool constantPoolSS,
-            ConstantPoolTestsHelper.DummyClasses dummyClass, int i) {
-        HotSpotResolvedObjectType typeToVerify = CompilerToVMHelper
-                .resolveTypeInPool(constantPoolCTVM, i);
-        int classNameIndex = (int) dummyClass.cp.get(i).value;
-        String classNameToRefer = constantPoolSS.getUTF8At(classNameIndex);
+    public static void validate(ConstantPool constantPoolCTVM,
+                                ConstantTypes cpType,
+                                DummyClasses dummyClass,
+                                int i) {
+        TestedCPEntry entry = cpType.getTestedCPEntry(dummyClass, i);
+        if (entry == null) {
+            return;
+        }
+        HotSpotResolvedObjectType typeToVerify = CompilerToVMHelper.resolveTypeInPool(constantPoolCTVM, i);
+        String classNameToRefer = entry.klass;
         String outputToVerify = typeToVerify.toString();
         if (!outputToVerify.contains(classNameToRefer)) {
             String msg = String.format("Wrong class accessed by constant"
-                    + " pool index %d: %s, but should be %s",
-                    i, outputToVerify, classNameToRefer);
+                                               + " pool index %d: %s, but should be %s",
+                                       i,
+                                       outputToVerify,
+                                       classNameToRefer);
             throw new AssertionError(msg);
         }
     }

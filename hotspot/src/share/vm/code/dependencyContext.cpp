@@ -73,7 +73,7 @@ int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
         nm->print();
         nm->print_dependencies();
       }
-      nm->mark_for_deoptimization();
+      changes.mark_for_deoptimization(nm);
       found++;
     }
   }

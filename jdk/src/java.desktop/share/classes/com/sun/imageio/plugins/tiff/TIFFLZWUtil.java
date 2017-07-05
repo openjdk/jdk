@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ class TIFFLZWUtil {
     }
 
     /**
-     * Append <code>newString</code> to the end of <code>oldString</code>.
+     * Append {@code newString} to the end of {@code oldString}.
      */
     public byte[] composeString(byte oldString[], byte newString) {
         int length = oldString.length;

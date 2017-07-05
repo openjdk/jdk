@@ -26,7 +26,7 @@
 package sun.nio.ch;
 
 import java.nio.ByteBuffer;
-import jdk.internal.ref.Cleaner;
+import jdk.internal.ref.CleanerFactory;
 
 
 /**
@@ -101,7 +101,7 @@ class IOVecWrapper {
         }
         if (wrapper == null) {
             wrapper = new IOVecWrapper(size);
-            Cleaner.create(wrapper, new Deallocator(wrapper.vecArray));
+            CleanerFactory.cleaner().register(wrapper, new Deallocator(wrapper.vecArray));
             cached.set(wrapper);
         }
         return wrapper;

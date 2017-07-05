@@ -68,9 +68,7 @@ private:
   NonPermObject* _non_perm_bucket[NON_PERM_BUCKETS];
   int _non_perm_count;
 
-  int find(Metadata* key, GrowableArray<ciMetadata*>* objects);
-  bool is_found_at(int index, Metadata* key, GrowableArray<ciMetadata*>* objects);
-  void insert(int index, ciMetadata* obj, GrowableArray<ciMetadata*>* objects);
+  static int metadata_compare(Metadata* const& key, ciMetadata* const& elt);
 
   ciObject* create_new_object(oop o);
   ciMetadata* create_new_metadata(Metadata* o);

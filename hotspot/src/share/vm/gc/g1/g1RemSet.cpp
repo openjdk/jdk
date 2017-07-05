@@ -238,7 +238,7 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i) {
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
 
   G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
-  {
+  if (ConcurrentG1Refine::hot_card_cache_enabled()) {
     // Apply the closure to the entries of the hot card cache.
     G1GCParPhaseTimesTracker y(_g1p->phase_times(), G1GCPhaseTimes::ScanHCC, worker_i);
     _g1->iterate_hcc_closure(&into_cset_update_rs_cl, worker_i);
@@ -291,7 +291,6 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   _g1->cleanUpCardTable();
 
   DirtyCardQueueSet& into_cset_dcqs = _into_cset_dirty_card_queue_set;
-  int into_cset_n_buffers = into_cset_dcqs.completed_buffers_num();
 
   if (_g1->evacuation_failed()) {
     double restore_remembered_set_start = os::elapsedTime();

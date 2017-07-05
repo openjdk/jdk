@@ -207,22 +207,24 @@ bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
 }
 
 
-BufferNode* DirtyCardQueueSet::get_completed_buffer(int stop_at) {
+BufferNode* DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
   BufferNode* nd = NULL;
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
 
-  if ((int)_n_completed_buffers <= stop_at) {
+  if (_n_completed_buffers <= stop_at) {
     _process_completed = false;
     return NULL;
   }
 
   if (_completed_buffers_head != NULL) {
     nd = _completed_buffers_head;
+    assert(_n_completed_buffers > 0, "Invariant");
     _completed_buffers_head = nd->next();
-    if (_completed_buffers_head == NULL)
-      _completed_buffers_tail = NULL;
     _n_completed_buffers--;
-    assert(_n_completed_buffers >= 0, "Invariant");
+    if (_completed_buffers_head == NULL) {
+      assert(_n_completed_buffers == 0, "Invariant");
+      _completed_buffers_tail = NULL;
+    }
   }
   DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
   return nd;
@@ -230,7 +232,7 @@ BufferNode* DirtyCardQueueSet::get_completed_buffer(int stop_at) {
 
 bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
                                                           uint worker_i,
-                                                          int stop_at,
+                                                          size_t stop_at,
                                                           bool during_pause) {
   assert(!during_pause || stop_at == 0, "Should not leave any completed buffers during a pause");
   BufferNode* nd = get_completed_buffer(stop_at);
