@@ -115,9 +115,12 @@ JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
 # Use this file inside the image as target for make rule
 JIMAGE_TARGET_FILE := bin/java$(EXE_SUFFIX)
 
-JLINK_ORDER_RESOURCES := \
-    *module-info.class* \
-    @$(SUPPORT_OUTPUTDIR)/classlist/classlist,/java.base/java/* \
+JLINK_ORDER_RESOURCES := *module-info.class*
+ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
+  JLINK_ORDER_RESOURCES += @$(SUPPORT_OUTPUTDIR)/classlist/classlist
+endif
+JLINK_ORDER_RESOURCES += \
+    /java.base/java/* \
     /java.base/jdk/* \
     /java.base/sun/* \
     /java.base/com/* \
@@ -125,9 +128,10 @@ JLINK_ORDER_RESOURCES := \
     #
 
 JLINK_TOOL := $(JLINK) --modulepath $(IMAGES_OUTPUTDIR)/jmods \
-              --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
-              --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
-              --release-info $(BASE_RELEASE_FILE)
+    --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
+    --release-info $(BASE_RELEASE_FILE) \
+    --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
+    #
 
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
   JLINK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
@@ -369,19 +373,21 @@ JDK_TARGETS += $(JDK_IMAGE_DIR)/src.zip
 ################################################################################
 # classlist
 
-$(eval $(call SetupCopyFiles, JDK_COPY_CLASSLIST, \
-    FILES := $(SUPPORT_OUTPUTDIR)/classlist/classlist, \
-    DEST := $(JDK_IMAGE_DIR)/lib, \
-))
+ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
+  $(eval $(call SetupCopyFiles, JDK_COPY_CLASSLIST, \
+      FILES := $(SUPPORT_OUTPUTDIR)/classlist/classlist, \
+      DEST := $(JDK_IMAGE_DIR)/lib, \
+  ))
 
-JDK_TARGETS += $(JDK_COPY_CLASSLIST)
+  JDK_TARGETS += $(JDK_COPY_CLASSLIST)
 
-$(eval $(call SetupCopyFiles, JRE_COPY_CLASSLIST, \
-    FILES := $(SUPPORT_OUTPUTDIR)/classlist/classlist, \
-    DEST := $(JRE_IMAGE_DIR)/lib, \
-))
+  $(eval $(call SetupCopyFiles, JRE_COPY_CLASSLIST, \
+      FILES := $(SUPPORT_OUTPUTDIR)/classlist/classlist, \
+      DEST := $(JRE_IMAGE_DIR)/lib, \
+  ))
 
-JRE_TARGETS += $(JRE_COPY_CLASSLIST)
+  JRE_TARGETS += $(JRE_COPY_CLASSLIST)
+endif
 
 ################################################################################
 # /demo dir
