@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.loader.BootLoader;
 import jdk.internal.vm.annotation.Stable;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
@@ -36,6 +37,7 @@ import java.lang.invoke.LambdaForm.NamedFunction;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -463,6 +465,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         static final String SPECIES_PREFIX_NAME = "Species_";
         static final String SPECIES_PREFIX_PATH = BMH + "$" + SPECIES_PREFIX_NAME;
+        static final String SPECIES_CLASS_PREFIX = SPECIES_PREFIX_PATH.replace('/', '.');
 
         static final String BMHSPECIES_DATA_EWI_SIG = "(B)" + SPECIES_DATA_SIG;
         static final String BMHSPECIES_DATA_GFC_SIG = "(" + JLS_SIG + JLC_SIG + ")" + SPECIES_DATA_SIG;
@@ -489,7 +492,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 types, new Function<String, Class<? extends BoundMethodHandle>>() {
                     @Override
                     public Class<? extends BoundMethodHandle> apply(String types) {
-                        return generateConcreteBMHClass(types);
+                        String shortTypes = LambdaForm.shortenSignature(types);
+                        String className = SPECIES_CLASS_PREFIX + shortTypes;
+                        Class<?> c = BootLoader.loadClassOrNull(className);
+                        if (c != null) {
+                            return c.asSubclass(BoundMethodHandle.class);
+                        } else {
+                            // Not pregenerated, generate the class
+                            return generateConcreteBMHClass(shortTypes, types);
+                        }
                     }
                 });
         }
@@ -558,12 +569,49 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
          * @param types the type signature, wherein reference types are erased to 'L'
          * @return the generated concrete BMH class
          */
-        static Class<? extends BoundMethodHandle> generateConcreteBMHClass(String types) {
-            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
+        static Class<? extends BoundMethodHandle> generateConcreteBMHClass(String shortTypes,
+                String types) {
+            final String className  = speciesInternalClassName(shortTypes);
+            byte[] classFile = generateConcreteBMHClassBytes(shortTypes, types, className);
 
+            // load class
+            InvokerBytecodeGenerator.maybeDump(className, classFile);
+            Class<? extends BoundMethodHandle> bmhClass =
+                UNSAFE.defineClass(className, classFile, 0, classFile.length,
+                                   BoundMethodHandle.class.getClassLoader(), null)
+                    .asSubclass(BoundMethodHandle.class);
+
+            return bmhClass;
+        }
+
+        /**
+         * @implNote this method is used by GenerateBMHClassesPlugin to enable
+         * ahead-of-time generation of BMH classes at link time. It does
+         * added validation since this string may be user provided.
+         */
+        static Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
+                final String types) {
+            for (char c : types.toCharArray()) {
+                if ("LIJFD".indexOf(c) < 0) {
+                    throw new IllegalArgumentException("All characters must "
+                            + "correspond to a basic field type: LIJFD");
+                }
+            }
             String shortTypes = LambdaForm.shortenSignature(types);
-            final String className  = SPECIES_PREFIX_PATH + shortTypes;
+            final String className  = speciesInternalClassName(shortTypes);
+            return Map.entry(className,
+                    generateConcreteBMHClassBytes(shortTypes, types, className));
+        }
+
+        private static String speciesInternalClassName(String shortTypes) {
+            return SPECIES_PREFIX_PATH + shortTypes;
+        }
+
+        static byte[] generateConcreteBMHClassBytes(final String shortTypes,
+                final String types, final String className) {
             final String sourceFile = SPECIES_PREFIX_NAME + shortTypes;
+
+            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
             cw.visit(V1_6, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, BMH, null);
             cw.visitSource(sourceFile, null);
@@ -699,16 +747,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
             cw.visitEnd();
 
-            // load class
-            final byte[] classFile = cw.toByteArray();
-            InvokerBytecodeGenerator.maybeDump(className, classFile);
-            Class<? extends BoundMethodHandle> bmhClass =
-                //UNSAFE.defineAnonymousClass(BoundMethodHandle.class, classFile, null).asSubclass(BoundMethodHandle.class);
-                UNSAFE.defineClass(className, classFile, 0, classFile.length,
-                                   BoundMethodHandle.class.getClassLoader(), null)
-                    .asSubclass(BoundMethodHandle.class);
-
-            return bmhClass;
+            return cw.toByteArray();
         }
 
         private static int typeLoadOp(char t) {

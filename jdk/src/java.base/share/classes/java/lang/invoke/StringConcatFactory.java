@@ -255,7 +255,6 @@ public final class StringConcatFactory {
      */
     private static final class Recipe {
         private final List<RecipeElement> elements;
-        private final List<RecipeElement> elementsRev;
 
         public Recipe(String src, Object[] constants) {
             List<RecipeElement> el = new ArrayList<>();
@@ -294,17 +293,11 @@ public final class StringConcatFactory {
                 el.add(new RecipeElement(acc.toString()));
             }
 
-            elements = new ArrayList<>(el);
-            Collections.reverse(el);
-            elementsRev = el;
+            elements = el;
         }
 
-        public Collection<RecipeElement> getElements() {
+        public List<RecipeElement> getElements() {
             return elements;
-        }
-
-        public Collection<RecipeElement> getElementsReversed() {
-            return elementsRev;
         }
 
         @Override
@@ -1310,7 +1303,9 @@ public final class StringConcatFactory {
 
             // Compose append calls. This is done in reverse because the application order is
             // reverse as well.
-            for (RecipeElement el : recipe.getElementsReversed()) {
+            List<RecipeElement> elements = recipe.getElements();
+            for (int i = elements.size() - 1; i >= 0; i--) {
+                RecipeElement el = elements.get(i);
                 MethodHandle appender;
                 switch (el.getTag()) {
                     case CONST: {

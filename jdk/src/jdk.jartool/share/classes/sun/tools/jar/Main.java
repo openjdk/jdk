@@ -51,8 +51,8 @@ import java.text.MessageFormat;
 
 import jdk.internal.module.Hasher;
 import jdk.internal.module.ModuleInfoExtender;
-import sun.misc.JarIndex;
-import static sun.misc.JarIndex.INDEX_NAME;
+import jdk.internal.util.jar.JarIndex;
+import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
