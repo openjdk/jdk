@@ -33,7 +33,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Vector;
+import java.util.List;
+import java.util.ArrayList;
 import java.lang.ref.WeakReference;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
@@ -173,22 +174,27 @@ public abstract class FileSystemView {
      * @since 1.4
      */
     public String getSystemDisplayName(File f) {
-        String name = null;
-        if (f != null) {
-            name = f.getName();
-            if (!name.equals("..") && !name.equals(".") &&
-                (useSystemExtensionHiding ||
-                 !isFileSystem(f) ||
-                 isFileSystemRoot(f)) &&
-                ((f instanceof ShellFolder) ||
-                 f.exists())) {
+        if (f == null) {
+            return null;
+        }
 
+        String name = f.getName();
+
+        if (!name.equals("..") && !name.equals(".") &&
+                (useSystemExtensionHiding || !isFileSystem(f) || isFileSystemRoot(f)) &&
+                (f instanceof ShellFolder || f.exists())) {
+
+            try {
                 name = getShellFolder(f).getDisplayName();
-                if (name == null || name.length() == 0) {
-                    name = f.getPath(); // e.g. "/"
-                }
+            } catch (FileNotFoundException e) {
+                return null;
+            }
+
+            if (name == null || name.length() == 0) {
+                name = f.getPath(); // e.g. "/"
             }
         }
+
         return name;
     }
 
@@ -222,16 +228,24 @@ public abstract class FileSystemView {
      * @since 1.4
      */
     public Icon getSystemIcon(File f) {
-        if (f != null) {
-            ShellFolder sf = getShellFolder(f);
-            Image img = sf.getIcon(false);
-            if (img != null) {
-                return new ImageIcon(img, sf.getFolderType());
-            } else {
-                return UIManager.getIcon(f.isDirectory() ? "FileView.directoryIcon" : "FileView.fileIcon");
-            }
-        } else {
+        if (f == null) {
             return null;
+        }
+
+        ShellFolder sf;
+
+        try {
+            sf = getShellFolder(f);
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+
+        Image img = sf.getIcon(false);
+
+        if (img != null) {
+            return new ImageIcon(img, sf.getFolderType());
+        } else {
+            return UIManager.getIcon(f.isDirectory() ? "FileView.directoryIcon" : "FileView.fileIcon");
         }
     }
 
@@ -446,24 +460,28 @@ public abstract class FileSystemView {
      * Gets the list of shown (i.e. not hidden) files.
      */
     public File[] getFiles(File dir, boolean useFileHiding) {
-        Vector<File> files = new Vector<File>();
-
+        List<File> files = new ArrayList<File>();
 
         // add all files in dir
-        File[] names;
-            if (!(dir instanceof ShellFolder)) {
+        if (!(dir instanceof ShellFolder)) {
+            try {
                 dir = getShellFolder(dir);
+            } catch (FileNotFoundException e) {
+                return new File[0];
             }
+        }
 
-            names = ((ShellFolder)dir).listFiles(!useFileHiding);
-        File f;
+        File[] names = ((ShellFolder) dir).listFiles(!useFileHiding);
 
-        int nameCount = (names == null) ? 0 : names.length;
-        for (int i = 0; i < nameCount; i++) {
+        if (names == null) {
+            return new File[0];
+        }
+
+        for (File f : names) {
             if (Thread.currentThread().isInterrupted()) {
                 break;
             }
-            f = names[i];
+
             if (!(f instanceof ShellFolder)) {
                 if (isFileSystemRoot(f)) {
                     f = createFileSystemRoot(f);
@@ -481,7 +499,7 @@ public abstract class FileSystemView {
                 }
             }
             if (!useFileHiding || !isHiddenFile(f)) {
-                files.addElement(f);
+                files.add(f);
             }
         }
 
@@ -497,42 +515,50 @@ public abstract class FileSystemView {
      *   <code>null</code> if <code>dir</code> is <code>null</code>
      */
     public File getParentDirectory(File dir) {
-        if (dir != null && dir.exists()) {
-            ShellFolder sf = getShellFolder(dir);
-            File psf = sf.getParentFile();
-            if (psf != null) {
-                if (isFileSystem(psf)) {
-                    File f = psf;
-                    if (f != null && !f.exists()) {
-                        // This could be a node under "Network Neighborhood".
-                        File ppsf = psf.getParentFile();
-                        if (ppsf == null || !isFileSystem(ppsf)) {
-                            // We're mostly after the exists() override for windows below.
-                            f = createFileSystemRoot(f);
-                        }
-                    }
-                    return f;
-                } else {
-                    return psf;
+        if (dir == null || !dir.exists()) {
+            return null;
+        }
+
+        ShellFolder sf;
+
+        try {
+            sf = getShellFolder(dir);
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+
+        File psf = sf.getParentFile();
+
+        if (psf == null) {
+            return null;
+        }
+
+        if (isFileSystem(psf)) {
+            File f = psf;
+            if (!f.exists()) {
+                // This could be a node under "Network Neighborhood".
+                File ppsf = psf.getParentFile();
+                if (ppsf == null || !isFileSystem(ppsf)) {
+                    // We're mostly after the exists() override for windows below.
+                    f = createFileSystemRoot(f);
                 }
             }
+            return f;
+        } else {
+            return psf;
         }
-        return null;
     }
 
-    ShellFolder getShellFolder(File f) {
-        if (!(f instanceof ShellFolder)
-            && !(f instanceof FileSystemRoot)
-            && isFileSystemRoot(f)) {
-
+    /**
+     * Throws {@code FileNotFoundException} if file not found or current thread was interrupted
+     */
+    ShellFolder getShellFolder(File f) throws FileNotFoundException {
+        if (!(f instanceof ShellFolder) && !(f instanceof FileSystemRoot) && isFileSystemRoot(f)) {
             f = createFileSystemRoot(f);
         }
+
         try {
             return ShellFolder.getShellFolder(f);
-        } catch (FileNotFoundException e) {
-            System.err.println("FileSystemView.getShellFolder: f="+f);
-            e.printStackTrace();
-            return null;
         } catch (InternalError e) {
             System.err.println("FileSystemView.getShellFolder: f="+f);
             e.printStackTrace();
@@ -596,9 +622,9 @@ class UnixFileSystemView extends FileSystemView {
         // Unix - using OpenWindows' default folder name. Can't find one for Motif/CDE.
         newFolder = createFileObject(containingDir, newFolderString);
         int i = 1;
-        while (newFolder.exists() && (i < 100)) {
+        while (newFolder.exists() && i < 100) {
             newFolder = createFileObject(containingDir, MessageFormat.format(
-                    newFolderNextString, new Object[] { new Integer(i) }));
+                    newFolderNextString, new Integer(i)));
             i++;
         }
 
@@ -612,7 +638,7 @@ class UnixFileSystemView extends FileSystemView {
     }
 
     public boolean isFileSystemRoot(File dir) {
-        return (dir != null && dir.getAbsolutePath().equals("/"));
+        return dir != null && dir.getAbsolutePath().equals("/");
     }
 
     public boolean isDrive(File dir) {
@@ -654,7 +680,7 @@ class WindowsFileSystemView extends FileSystemView {
 
     public File getChild(File parent, String fileName) {
         if (fileName.startsWith("\\")
-            && !(fileName.startsWith("\\\\"))
+            && !fileName.startsWith("\\\\")
             && isFileSystem(parent)) {
 
             //Path is relative to the root of parent's drive
@@ -677,9 +703,13 @@ class WindowsFileSystemView extends FileSystemView {
      * The Windows implementation gets information from the ShellFolder class.
      */
     public String getSystemTypeDescription(File f) {
-        if (f != null) {
+        if (f == null) {
+            return null;
+        }
+
+        try {
             return getShellFolder(f).getFolderType();
-        } else {
+        } catch (FileNotFoundException e) {
             return null;
         }
     }
@@ -701,9 +731,9 @@ class WindowsFileSystemView extends FileSystemView {
         // Using NT's default folder name
         File newFolder = createFileObject(containingDir, newFolderString);
         int i = 2;
-        while (newFolder.exists() && (i < 100)) {
+        while (newFolder.exists() && i < 100) {
             newFolder = createFileObject(containingDir, MessageFormat.format(
-                newFolderNextString, new Object[] { new Integer(i) }));
+                newFolderNextString, new Integer(i)));
             i++;
         }
 
@@ -727,7 +757,7 @@ class WindowsFileSystemView extends FileSystemView {
             }
         });
 
-        return (path != null && (path.equals("A:\\") || path.equals("B:\\")));
+        return path != null && (path.equals("A:\\") || path.equals("B:\\"));
     }
 
     /**

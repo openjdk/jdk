@@ -26,6 +26,8 @@
 package javax.swing.plaf.metal;
 
 import sun.swing.SwingUtilities2;
+import sun.awt.AppContext;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.ref.*;
@@ -55,7 +57,7 @@ import java.io.Serializable;
  */
 public class MetalToggleButtonUI extends BasicToggleButtonUI {
 
-    private static final MetalToggleButtonUI metalToggleButtonUI = new MetalToggleButtonUI();
+    private static final Object METAL_TOGGLE_BUTTON_UI_KEY = new Object();
 
     protected Color focusColor;
     protected Color selectColor;
@@ -67,6 +69,13 @@ public class MetalToggleButtonUI extends BasicToggleButtonUI {
     //        Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent b) {
+        AppContext appContext = AppContext.getAppContext();
+        MetalToggleButtonUI metalToggleButtonUI =
+                (MetalToggleButtonUI) appContext.get(METAL_TOGGLE_BUTTON_UI_KEY);
+        if (metalToggleButtonUI == null) {
+            metalToggleButtonUI = new MetalToggleButtonUI();
+            appContext.put(METAL_TOGGLE_BUTTON_UI_KEY, metalToggleButtonUI);
+        }
         return metalToggleButtonUI;
     }
 

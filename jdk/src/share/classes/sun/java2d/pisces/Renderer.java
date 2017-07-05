@@ -775,10 +775,12 @@ public class Renderer extends LineSink {
 
     // Free sorting arrays if larger than maximum size
     private void crossingListFinished() {
-        if (crossings.length > DEFAULT_CROSSINGS_SIZE) {
+        if (crossings != null && crossings.length > DEFAULT_CROSSINGS_SIZE) {
             crossings = new int[DEFAULT_CROSSINGS_SIZE];
         }
-        if (crossingIndices.length > DEFAULT_INDICES_SIZE) {
+        if (crossingIndices != null &&
+            crossingIndices.length > DEFAULT_INDICES_SIZE)
+        {
             crossingIndices = new int[DEFAULT_INDICES_SIZE];
         }
     }

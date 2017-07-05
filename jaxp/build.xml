@@ -113,7 +113,10 @@
     <!-- Build (compilation) of sources to class files. -->
     <target name="build"
 	    depends="init, -init-src-dirs, -build-prep">
-        <javac fork="true"
+        <javac 
+	     includeAntRuntime="false"
+	     classpath="${build.classes.dir}"
+	     fork="true"
              destdir="${build.classes.dir}"
              memoryInitialSize="${javac.memoryInitialSize}"
              memoryMaximumSize="${javac.memoryMaximumSize}"

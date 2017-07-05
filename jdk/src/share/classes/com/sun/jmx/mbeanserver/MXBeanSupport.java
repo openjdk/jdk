@@ -35,7 +35,6 @@ import javax.management.JMX;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
  * Base class for MXBeans.
@@ -62,16 +61,14 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
        if it does not implement the class {@code mxbeanInterface} or if
        that class is not a valid MXBean interface.
     */
-    public <T> MXBeanSupport(T resource, Class<T> mxbeanInterface,
-                             MXBeanMappingFactory mappingFactory)
+    public <T> MXBeanSupport(T resource, Class<T> mxbeanInterface)
             throws NotCompliantMBeanException {
-        super(resource, mxbeanInterface, mappingFactory);
+        super(resource, mxbeanInterface);
     }
 
     @Override
-    MBeanIntrospector<ConvertingMethod>
-            getMBeanIntrospector(MXBeanMappingFactory mappingFactory) {
-        return MXBeanIntrospector.getInstance(mappingFactory);
+    MBeanIntrospector<ConvertingMethod> getMBeanIntrospector() {
+        return MXBeanIntrospector.getInstance();
     }
 
     @Override
@@ -159,8 +156,8 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
         // eventually we could have some logic to supply a default name
 
         synchronized (lock) {
-            this.mxbeanLookup = MXBeanLookup.Plain.lookupFor(server);
-            this.mxbeanLookup.addReference(name, getWrappedObject());
+            this.mxbeanLookup = MXBeanLookup.lookupFor(server);
+            this.mxbeanLookup.addReference(name, getResource());
             this.objectName = name;
         }
     }
@@ -169,19 +166,13 @@ public class MXBeanSupport extends MBeanSupport<ConvertingMethod> {
     public void unregister() {
         synchronized (lock) {
             if (mxbeanLookup != null) {
-                if (mxbeanLookup.removeReference(objectName, getWrappedObject()))
+                if (mxbeanLookup.removeReference(objectName, getResource()))
                     objectName = null;
             }
-            // XXX: need to revisit the whole register/unregister logic in
-            // the face of wrapping.  The mxbeanLookup!=null test is a hack.
-            // If you wrap an MXBean in a MyWrapperMBean and register it,
-            // the lookup table should contain the wrapped object.  But that
-            // implies that MyWrapperMBean calls register, which today it
-            // can't within the public API.
         }
     }
     private final Object lock = new Object(); // for mxbeanLookup and objectName
 
-    private MXBeanLookup.Plain mxbeanLookup;
+    private MXBeanLookup mxbeanLookup;
     private ObjectName objectName;
 }

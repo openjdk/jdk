@@ -28,6 +28,7 @@ package sun.nio.ch;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  * Manipulates a native array of epoll_event structs on Linux:
@@ -200,12 +201,9 @@ class EPollArrayWrapper {
     void release(SelChImpl channel) {
         synchronized (updateList) {
             // flush any pending updates
-            int i = 0;
-            while (i < updateList.size()) {
-                if (updateList.get(i).channel == channel) {
-                    updateList.remove(i);
-                } else {
-                    i++;
+            for (Iterator<Updator> it = updateList.iterator(); it.hasNext();) {
+                if (it.next().channel == channel) {
+                    it.remove();
                 }
             }
 

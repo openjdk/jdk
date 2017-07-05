@@ -945,7 +945,8 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
      */
     private Descriptor validDescriptor(final Descriptor in) throws RuntimeOperationsException {
         Descriptor clone;
-        if (in == null) {
+        boolean defaulted = (in == null);
+        if (defaulted) {
             clone = new DescriptorSupport();
             MODELMBEAN_LOGGER.finer("Null Descriptor, creating new.");
         } else {
@@ -953,11 +954,11 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
         }
 
         //Setting defaults.
-        if (clone.getFieldValue("name")==null) {
+        if (defaulted && clone.getFieldValue("name")==null) {
             clone.setField("name", this.getClassName());
             MODELMBEAN_LOGGER.finer("Defaulting Descriptor name to " + this.getClassName());
         }
-        if (clone.getFieldValue("descriptorType")==null) {
+        if (defaulted && clone.getFieldValue("descriptorType")==null) {
             clone.setField("descriptorType", MMB);
             MODELMBEAN_LOGGER.finer("Defaulting descriptorType to \"" + MMB + "\"");
         }

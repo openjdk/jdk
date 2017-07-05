@@ -466,7 +466,17 @@ public class KDC {
             // the krb5.conf config file would be loaded.
             Method stringToKey = EncryptionKey.class.getDeclaredMethod("stringToKey", char[].class, String.class, byte[].class, Integer.TYPE);
             stringToKey.setAccessible(true);
-            return new EncryptionKey((byte[]) stringToKey.invoke(null, getPassword(p), getSalt(p), null, etype), etype, null);
+            Integer kvno = null;
+            // For service whose password ending with a number, use it as kvno
+            if (p.toString().indexOf('/') >= 0) {
+                char[] pass = getPassword(p);
+                if (Character.isDigit(pass[pass.length-1])) {
+                    kvno = pass[pass.length-1] - '0';
+                }
+            }
+            return new EncryptionKey((byte[]) stringToKey.invoke(
+                    null, getPassword(p), getSalt(p), null, etype),
+                    etype, kvno);
         } catch (InvocationTargetException ex) {
             KrbException ke = (KrbException)ex.getCause();
             throw ke;

@@ -336,10 +336,6 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
     public native void setICMpixels(int x, int y, int w, int h, int[] lut,
                                     byte[] pix, int off, int scansize,
                                     IntegerComponentRaster ict);
-
-    public native void setBytePixels(int x, int y, int w, int h, byte[] pix,
-                                     int off, int scansize,
-                                     ByteComponentRaster bct, int chanOff);
     public native int setDiffICM(int x, int y, int w, int h, int[] lut,
                                  int transPix, int numLut, IndexColorModel icm,
                                  byte[] pix, int off, int scansize,
@@ -450,27 +446,17 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                      (biRaster instanceof ByteComponentRaster) &&
                      (biRaster.getNumDataElements() == 1)){
                 ByteComponentRaster bt = (ByteComponentRaster) biRaster;
-                if (w*h > 200) {
-                    if (off == 0 && scansize == w) {
-                        bt.putByteData(x, y, w, h, pix);
-                    }
-                    else {
-                        byte[] bpix = new byte[w];
-                        poff = off;
-                        for (int yoff=y; yoff < y+h; yoff++) {
-                            System.arraycopy(pix, poff, bpix, 0, w);
-                            bt.putByteData(x, yoff, w, 1, bpix);
-                            poff += scansize;
-                        }
-                    }
+                if (off == 0 && scansize == w) {
+                    bt.putByteData(x, y, w, h, pix);
                 }
                 else {
-                    // Only is faster if #pixels
-                    // Note that setBytePixels modifies the raster directly
-                    // so we must mark it as changed afterwards
-                    setBytePixels(x, y, w, h, pix, off, scansize, bt,
-                                  bt.getDataOffset(0));
-                    bt.markDirty();
+                    byte[] bpix = new byte[w];
+                    poff = off;
+                    for (int yoff=y; yoff < y+h; yoff++) {
+                        System.arraycopy(pix, poff, bpix, 0, w);
+                        bt.putByteData(x, yoff, w, 1, bpix);
+                        poff += scansize;
+                    }
                 }
             }
             else {

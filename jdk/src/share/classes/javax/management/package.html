@@ -128,42 +128,6 @@ have any questions.
         class.</p>
 
 
-        <h3 id="stdannot">Defining Standard MBeans with annotations</h3>
-
-        <p>As an alternative to creating an interface such as
-            <code>ConfigurationMBean</code> and a class that implements it,
-            you can write just the class, and use annotations to pick out the
-            public methods that will make up the management interface. For
-            example, the following class has the same management interface
-            as a <code>Configuration</code> class that implements the
-        <code>ConfigurationMBean</code> interface above.</p>
-
-        <pre>
-    {@link javax.management.MBean @MBean}
-    public class Configuration {
-        {@link javax.management.ManagedAttribute @ManagedAttribute}
-        public int getCacheSize() {...}
-        &#64;ManagedAttribute
-        public void setCacheSize(int size) {...}
-
-        &#64;ManagedAttribute
-        public long getLastChangedTime() {...}
-
-        {@link javax.management.ManagedOperation @ManagedOperation}
-        public void save() {...}
-        ...
-    }
-        </pre>
-
-        <p>This approach simplifies development, but it does have two
-            potential drawbacks.  First, if you run the Javadoc tool on
-            this class, the documentation of the management interface may
-            be mixed in with the documentation of non-management methods
-            in the class.  Second, you cannot make a proxy
-            as described <a href="#proxy">below</a> if you do not have an
-        interface like <code>ConfigurationMBean</code>.</p>
-
-
         <h3>MXBeans</h3>
 
         <p>An <em>MXBean</em> is a variant of Standard MBean where complex
@@ -172,11 +136,6 @@ have any questions.
             if you would otherwise need to reference application-specific
             classes in your MBean interface.  They are described in detail
         in the specification for {@link javax.management.MXBean MXBean}.</p>
-
-        <p>You can define MXBeans using annotations as described
-            in the <a href="#stdannot">previous section</a>, but
-            using the <code>&#64;MXBean</code> annotation instead of
-        <code>&#64;MBean</code>.</p>
 
 
         <h3>Dynamic MBeans</h3>
@@ -305,7 +264,7 @@ have any questions.
         perform the query.</p>
 
 
-        <h3>MBean lifecycle and resource injection</h3>
+        <h3>MBean lifecycle</h3>
 
         <p>An MBean can implement the {@link javax.management.MBeanRegistration
             MBeanRegistration} interface in order to be told when it is registered
@@ -314,11 +273,6 @@ have any questions.
             allows the MBean to get a reference to the <code>MBeanServer</code>
             object and to get its <code>ObjectName</code> within the MBean
         Server.</p>
-
-        <p>If the only reason to implement <code>MBeanRegistration</code> is to
-            discover the <code>MBeanServer</code> and <code>ObjectName</code>, <a
-                href="MBeanRegistration.html#injection">resource injection</a> may be
-        more convenient.</p>
 
 
         <h2>Notifications</h2>
@@ -329,26 +283,16 @@ have any questions.
             <em>type</em> string that can distinguish it from other
         notifications of the same class.</p>
 
-        <p>If an MBean is to emit notifications, it must do one of two things.</p>
-
-        <ul>
-            <li>It can implement the interface {@link
-                javax.management.NotificationEmitter NotificationEmitter} (or
-                its parent {@link javax.management.NotificationBroadcaster
-                NotificationBroadcaster}), usually by subclassing
-                {@link javax.management.NotificationBroadcasterSupport
-                NotificationBroadcasterSupport} or delegating to an instance of
-            that class.</li>
-            <li>It can use <a href="MBeanRegistration.html#injection">resource
-                injection</a> to obtain a {@link javax.management.SendNotification
-                SendNotification} object that it can use to send
-            notifications.</li>
-        </ul>
-
-        <p>The two classes below illustrate these two techniques:</p>
+        <p>An MBean that will emit notifications must implement the
+            {@link javax.management.NotificationBroadcaster
+            NotificationBroadcaster} or {@link
+            javax.management.NotificationEmitter NotificationEmitter}
+            interface.  Usually, it does this by subclassing
+            {@link javax.management.NotificationBroadcasterSupport
+            NotificationBroadcasterSupport} or delegating to an instance of
+        that class. Here is an example:</p>
 
         <pre>
-    // Implementing NotificationEmitter (via NotificationBroadcasterSupport)
     public class Configuration <b>extends NotificationBroadcasterSupport</b>
             implements ConfigurationMBean {
         ...
@@ -356,17 +300,6 @@ have any questions.
             Notification n = new Notification(...);
             <b>{@link javax.management.NotificationBroadcasterSupport#sendNotification
             sendNotification}(n)</b>;
-        }
-    }
-
-    // Getting a SendNotification through resource injection
-    public class Configuration implements ConfigurationMBean {
-        <b>&#64;Resource</b>
-        private volatile SendNotification sender;
-        ...
-        private void updated() {
-            Notification n = new Notification(...);
-            <b>sender.sendNotification(n)</b>;
         }
     }
         </pre>
@@ -410,88 +343,51 @@ have any questions.
 	<h3 id="interop">Interoperability between versions of the JMX
 	  specification</h3>
 
-	<p>When a client connects to a server using the JMX Remote
-	  API, it is possible that they do not have the same version
-	  of the JMX specification.  The version of the JMX
-	  specification described here is version 2.0.  Previous
-	  versions were 1.0, 1.1, 1.2, and 1.4.  (There was no 1.3.)
-	  The standard JMX Remote API is defined to work with version
-	  1.2 onwards, so in standards-based deployment the only
-	  interoperability questions that arise concern version 1.2
-	  onwards.</p>
+        <p>When a client connects to a server using the JMX Remote
+            API, it is possible that they do not have the same version
+            of the JMX specification.  The version of the JMX
+            specification described here is version 1.4.  Previous
+            versions were 1.0, 1.1, and 1.2.  (There was no 1.3.)
+            The standard JMX Remote API is defined to work with version
+            1.2 onwards, so in standards-based deployment the only
+            interoperability questions that arise concern version 1.2
+        onwards.</p>
 
-	<p>Every version of the JMX specification continues to
-	  implement the features of previous versions.  So when the
-	  client is running an earlier version than the server, there
-	  should not be any interoperability concerns.  The only
-	  exception is the unlikely one where a pre-2.0 client used
-	  the string {@code //} in the domain part of an {@link
-	  javax.management.ObjectName ObjectName}.</p>
+        <p>Every version of the JMX specification continues to
+            implement the features of previous versions.  So when the
+            client is running an earlier version than the server, there
+            should not be any interoperability concerns.</p>
 
-	<p>When the client is running a later version than the server,
-	  certain newer features may not be available, as detailed in
-	  the next sections.  The method {@link
-	  javax.management.JMX#getSpecificationVersion
-	  JMX.getSpecificationVersion} can be used to determine the
-	  server version to check if required features are
-	  available.</p>
+        <p>When the client is running a later version than the server,
+            certain newer features may not be available, as detailed in
+            the next sections.  The client can determine the server's
+            version by examining the {@link
+            javax.management.MBeanServerDelegateMBean#getSpecificationVersion
+            SpecificationVersion} attribute of the {@code
+        MBeanServerDelegate}.</p>
 
-	<h4 id="interop-1.4">If the remote MBean Server is 1.4</h4>
+        <h4 id="interop-1.2">If the remote MBean Server is 1.2</h4>
 
 	<ul>
 
-	  <li><p>You cannot use {@link
-	      javax.management.QueryNotificationFilter
-	      QueryNotificationFilter} in {@link
-	      javax.management.MBeanServerConnection#addNotificationListener
-	      addNotificationListener} since this class did not exist
-	      in 1.4.</p>
+            <li><p>You cannot use wildcards in a key property of an
+                {@link javax.management.ObjectName ObjectName}, for
+                example {@code domain:type=Foo,name=*}. Wildcards that
+                match whole properties are still allowed, for example
+            {@code *:*} or {@code *:type=Foo,*}.</p>
 
-	  <li><p>In an attribute in a query, you cannot access values
-	      inside complex types using dot syntax, for example
-	      {@link javax.management.Query#attr Query.attr}{@code
-	      ("HeapMemoryUsage.used")}.</p>
+            <li><p>You cannot use {@link
+                javax.management.Query#isInstanceOf Query.isInstanceOf}
+            in a query.</p>
 
-	  <li><p>The packages {@link javax.management.event} and
-	      {@link javax.management.namespace} did not exist in 1.4,
-	      so you cannot remotely create instances of the MBeans
-	      they define.</p>
+            <li><p>You cannot use dot syntax such as {@code
+                HeapMemoryUsage.used} in the {@linkplain
+                javax.management.monitor.Monitor#setObservedAttribute
+                observed attribute} of a monitor, as described in the
+                documentation for the {@link javax.management.monitor}
+            package.</p>
 
-	  <li><p>Even if the remote MBean Server is 2.0, you cannot in
-	      general suppose that {@link
-	      javax.management.event.EventClient EventClient} or
-	      {@link javax.management.ClientContext ClientContext}
-	      will work there without first checking. If the remote
-	      MBean Server is 1.4 then those checks will return false.
-	      An attempt to use these features without checking will
-	      fail in the same way as for a remote 2.0 that is not
-	      configured to support them.</p>
-	</ul>
-
-	<h4 id="interop-1.2">If the remote MBean Server is 1.2</h4>
-
-	<p><b>In addition to the above</b>,</p>
-
-	<ul>
-
-	  <li><p>You cannot use wildcards in a key property of an
-	      {@link javax.management.ObjectName ObjectName}, for
-	      example {@code domain:type=Foo,name=*}. Wildcards that
-	      match whole properties are still allowed, for example
-	      {@code *:*} or {@code *:type=Foo,*}.</p>
-
-	  <li><p>You cannot use {@link
-	      javax.management.Query#isInstanceOf Query.isInstanceOf}
-	      in a query.</p>
-
-	  <li><p>You cannot use dot syntax such as {@code
-	      HeapMemoryUsage.used} in the {@linkplain
-	      javax.management.monitor.Monitor#setObservedAttribute
-	      observed attribute} of a monitor, as described in the
-	      documentation for the {@link javax.management.monitor}
-	      package.</p>
-
-	</ul>
+        </ul>
 
         <p id="spec">
         @see <a href="{@docRoot}/../technotes/guides/jmx/index.html">

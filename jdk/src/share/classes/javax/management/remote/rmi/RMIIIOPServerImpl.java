@@ -33,8 +33,9 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 import java.util.Collections;
-import javax.rmi.PortableRemoteObject;
 import javax.security.auth.Subject;
+
+import com.sun.jmx.remote.internal.IIOPHelper;
 
 /**
  * <p>An {@link RMIServerImpl} that is exported through IIOP and that
@@ -65,7 +66,7 @@ public class RMIIIOPServerImpl extends RMIServerImpl {
     }
 
     protected void export() throws IOException {
-        PortableRemoteObject.exportObject(this);
+        IIOPHelper.exportObject(this);
     }
 
     protected String getProtocol() {
@@ -83,7 +84,7 @@ public class RMIIIOPServerImpl extends RMIServerImpl {
     public Remote toStub() throws IOException {
         // javax.rmi.CORBA.Stub stub =
         //    (javax.rmi.CORBA.Stub) PortableRemoteObject.toStub(this);
-        final Remote stub = PortableRemoteObject.toStub(this);
+        final Remote stub = IIOPHelper.toStub(this);
         // java.lang.System.out.println("NON CONNECTED STUB " + stub);
         // org.omg.CORBA.ORB orb =
         //    org.omg.CORBA.ORB.init((String[])null, (Properties)null);
@@ -117,12 +118,12 @@ public class RMIIIOPServerImpl extends RMIServerImpl {
         RMIConnection client =
             new RMIConnectionImpl(this, connectionId, getDefaultClassLoader(),
                                   subject, env);
-        PortableRemoteObject.exportObject(client);
+        IIOPHelper.exportObject(client);
         return client;
     }
 
     protected void closeClient(RMIConnection client) throws IOException {
-        PortableRemoteObject.unexportObject(client);
+        IIOPHelper.unexportObject(client);
     }
 
     /**
@@ -134,7 +135,7 @@ public class RMIIIOPServerImpl extends RMIServerImpl {
      * server failed.
      */
     protected void closeServer() throws IOException {
-        PortableRemoteObject.unexportObject(this);
+        IIOPHelper.unexportObject(this);
     }
 
     @Override

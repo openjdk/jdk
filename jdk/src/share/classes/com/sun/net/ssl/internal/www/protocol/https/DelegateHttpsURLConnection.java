@@ -36,7 +36,6 @@ import java.security.Principal;
 import java.security.cert.*;
 
 import javax.security.auth.x500.X500Principal;
-import javax.security.auth.kerberos.KerberosPrincipal;
 
 import sun.security.util.HostnameChecker;
 import sun.security.util.DerValue;
@@ -109,20 +108,18 @@ class VerifierWrapper implements javax.net.ssl.HostnameVerifier {
     /*
      * In com.sun.net.ssl.HostnameVerifier the method is defined
      * as verify(String urlHostname, String certHostname).
-     * This means we need to extract the hostname from the certificate
-     * in this wrapper
+     * This means we need to extract the hostname from the X.509 certificate
+     * or from the Kerberos principal name, in this wrapper.
      */
     public boolean verify(String hostname, javax.net.ssl.SSLSession session) {
         try {
             String serverName;
-            Principal principal = getPeerPrincipal(session);
-            // X.500 principal or Kerberos principal.
-            // (Use ciphersuite check to determine whether Kerberos is present.)
-            if (session.getCipherSuite().startsWith("TLS_KRB5") &&
-                    principal instanceof KerberosPrincipal) {
+            // Use ciphersuite to determine whether Kerberos is active.
+            if (session.getCipherSuite().startsWith("TLS_KRB5")) {
                 serverName =
-                    HostnameChecker.getServerName((KerberosPrincipal)principal);
-            } else {
+                    HostnameChecker.getServerName(getPeerPrincipal(session));
+
+            } else { // X.509
                 Certificate[] serverChain = session.getPeerCertificates();
                 if ((serverChain == null) || (serverChain.length == 0)) {
                     return false;

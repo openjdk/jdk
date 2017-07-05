@@ -48,28 +48,24 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
     /**
      * Indicates that the operation is read-like:
      * it returns information but does not change any state.
-     * @see Impact#INFO
      */
     public static final int INFO = 0;
 
     /**
      * Indicates that the operation is write-like: it has an effect but does
      * not return any information from the MBean.
-     * @see Impact#ACTION
      */
     public static final int ACTION = 1;
 
     /**
      * Indicates that the operation is both read-like and write-like:
      * it has an effect, and it also returns information from the MBean.
-     * @see Impact#ACTION_INFO
      */
     public static final int ACTION_INFO = 2;
 
     /**
      * Indicates that the impact of the operation is unknown or cannot be
      * expressed using one of the other values.
-     * @see Impact#UNKNOWN
      */
     public static final int UNKNOWN = 3;
 
@@ -113,7 +109,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
              methodSignature(method),
              method.getReturnType().getName(),
              UNKNOWN,
-             Introspector.descriptorForElement(method, false));
+             Introspector.descriptorForElement(method));
     }
 
     /**
@@ -185,6 +181,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
      * <p>Since this class is immutable, cloning is chiefly of interest
      * to subclasses.</p>
      */
+     @Override
      public Object clone () {
          try {
              return super.clone() ;
@@ -257,6 +254,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
         return impact;
     }
 
+    @Override
     public String toString() {
         String impactString;
         switch (getImpact()) {
@@ -288,6 +286,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
      * to those of this MBeanConstructorInfo.  Two signature arrays
      * are equal if their elements are pairwise equal.
      */
+    @Override
     public boolean equals(Object o) {
         if (o == this)
             return true;
@@ -327,14 +326,9 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
 
         for (int i = 0; i < classes.length; i++) {
             Descriptor d = Introspector.descriptorForAnnotations(annots[i]);
-            String description = Introspector.descriptionForParameter(annots[i]);
-            if (description == null)
-                description = "";
-            String name = Introspector.nameForParameter(annots[i]);
-            if (name == null)
-                name = "p" + (i + 1);
-            params[i] = new MBeanParameterInfo(
-                    name, classes[i].getName(), description, d);
+            final String pn = "p" + (i + 1);
+            params[i] =
+                new MBeanParameterInfo(pn, classes[i].getName(), "", d);
         }
 
         return params;

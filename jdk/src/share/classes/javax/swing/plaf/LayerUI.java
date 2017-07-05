@@ -71,33 +71,410 @@ public class LayerUI<V extends Component>
      * Subclasses should override this method and use
      * the specified {@code Graphics} object to
      * render the content of the component.
+     * <p/>
+     * If {@code g} is not an instance of {@code Graphics2D},
+     * this method is no-op.
      *
      * @param g the {@code Graphics} context in which to paint;
      * @param c the component being painted;
-     * it can be safely cast to the {@code JLayer<V>}
+     * it can be safely cast to {@code JLayer<? extends V>}
+     *
+     * @see #configureGraphics(Graphics2D, JLayer)
+     * @see #paintLayer(Graphics2D, JLayer)
      */
-    @Override
     public void paint(Graphics g, JComponent c) {
-        c.paint(g);
+        if (g instanceof Graphics2D) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            JLayer<? extends V> l = (JLayer<? extends V>) c;
+            configureGraphics(g2, l);
+            paintLayer(g2, l);
+            g2.dispose();
+        }
+    }
+
+    /**
+     * This method is called by the {@link #paint} method prior to
+     * {@link #paintLayer} to configure the {@code Graphics2D} object.
+     * The default implementation is empty.
+     *
+     * @param g2 the {@code Graphics2D} object to configure
+     * @param l the {@code JLayer} being painted
+     *
+     * @see #paintLayer(Graphics2D, JLayer)
+     */
+    protected void configureGraphics(Graphics2D g2, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Called by the {@link #paint} method,
+     * subclasses should override this method
+     * to perform any custom painting operations.
+     * <p/>
+     * The default implementation paints the passed {@code JLayer} as is.
+     *
+     * @param g2 the {@code Graphics2D} context in which to paint
+     * @param l the {@code JLayer} being painted
+     *
+     * @see #configureGraphics(Graphics2D, JLayer)
+     */
+    protected void paintLayer(Graphics2D g2, JLayer<? extends V> l) {
+        l.paint(g2);
     }
 
     /**
      * Dispatches {@code AWTEvent}s for {@code JLayer}
-     * and <b>all it subcomponents</b> to this {@code LayerUI} instance.
-     * <p>
-     * To enable the {@code AWTEvent} of the particular type,
-     * you call {@link javax.swing.JLayer#setLayerEventMask}
+     * and <b>all its subcomponents</b> to this {@code LayerUI} instance.
+     * <p/>
+     * To enable the {@code AWTEvent}s of a particular type,
+     * you call {@link JLayer#setLayerEventMask}
      * in {@link #installUI(javax.swing.JComponent)}
      * and set the layer event mask to {@code 0}
-     * in {@link #uninstallUI(javax.swing.JComponent)} after that
+     * in {@link #uninstallUI(javax.swing.JComponent)} after that.
+     * By default this  method calls the appropriate
+     * {@code process&lt;event&nbsp;type&gt;Event}
+     * method for the given class of event.
      *
      * @param e the event to be dispatched
      * @param l the layer this LayerUI is set to
      *
      * @see JLayer#setLayerEventMask(long)
-     * @see javax.swing.JLayer#getLayerEventMask()
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     * @see #processComponentEvent
+     * @see #processFocusEvent
+     * @see #processKeyEvent
+     * @see #processMouseEvent
+     * @see #processMouseMotionEvent
+     * @see #processInputMethodEvent
+     * @see #processHierarchyEvent
+     * @see #processMouseWheelEvent
      */
     public void eventDispatched(AWTEvent e, JLayer<? extends V> l){
+        if (e instanceof FocusEvent) {
+            processFocusEvent((FocusEvent)e, l);
+
+        } else if (e instanceof MouseEvent) {
+            switch(e.getID()) {
+              case MouseEvent.MOUSE_PRESSED:
+              case MouseEvent.MOUSE_RELEASED:
+              case MouseEvent.MOUSE_CLICKED:
+              case MouseEvent.MOUSE_ENTERED:
+              case MouseEvent.MOUSE_EXITED:
+                  processMouseEvent((MouseEvent)e, l);
+                  break;
+              case MouseEvent.MOUSE_MOVED:
+              case MouseEvent.MOUSE_DRAGGED:
+                  processMouseMotionEvent((MouseEvent)e, l);
+                  break;
+              case MouseEvent.MOUSE_WHEEL:
+                  processMouseWheelEvent((MouseWheelEvent)e, l);
+                  break;
+            }
+        } else if (e instanceof KeyEvent) {
+            processKeyEvent((KeyEvent)e, l);
+        } else if (e instanceof ComponentEvent) {
+            processComponentEvent((ComponentEvent)e, l);
+        } else if (e instanceof InputMethodEvent) {
+            processInputMethodEvent((InputMethodEvent)e, l);
+        } else if (e instanceof HierarchyEvent) {
+            switch (e.getID()) {
+              case HierarchyEvent.HIERARCHY_CHANGED:
+                  processHierarchyEvent((HierarchyEvent)e, l);
+                  break;
+              case HierarchyEvent.ANCESTOR_MOVED:
+              case HierarchyEvent.ANCESTOR_RESIZED:
+                  processHierarchyBoundsEvent((HierarchyEvent)e, l);
+                  break;
+            }
+        }
+    }
+
+    /**
+     * Processes component events occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless component events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Component events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.COMPONENT_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code ComponentEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processComponentEvent(ComponentEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes focus events occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless focus events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Focus events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.FOCUS_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code FocusEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processFocusEvent(FocusEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes key events occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless key events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Key events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.KEY_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code KeyEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processKeyEvent(KeyEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes mouse events occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless mouse events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Mouse events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.MOUSE_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code MouseEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processMouseEvent(MouseEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes mouse motion event occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless mouse motion events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Mouse motion events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.MOUSE_MOTION_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code MouseEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processMouseMotionEvent(MouseEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes mouse wheel event occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless mouse wheel events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Mouse wheel events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.MOUSE_WHEEL_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code MouseEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processMouseWheelEvent(MouseWheelEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes input event occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless input events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Input events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.INPUT_METHOD_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code InputMethodEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processInputMethodEvent(InputMethodEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes hierarchy event occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless hierarchy events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Hierarchy events are enabled in the overridden {@link #installUI} method
+     * and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.HIERARCHY_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code HierarchyEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processHierarchyEvent(HierarchyEvent e, JLayer<? extends V> l) {
+    }
+
+    /**
+     * Processes hierarchy bounds event occurring on the {@link JLayer}
+     * or any of its subcomponents.
+     * <p/>
+     * This method is not called unless hierarchy bounds events are
+     * enabled for the {@code JLayer} objects, this {@code LayerUI} is set to.
+     * Hierarchy bounds events are enabled in the overridden {@link #installUI}
+     * method and should be disabled in the {@link #uninstallUI} method after that.
+     * <pre>
+     * public void installUI(JComponent c) {
+     *    super.installUI(c);
+     *    JLayer l = (JLayer) c;
+     *    l.setLayerEventMask(AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK);
+     * }
+     *
+     * public void unistallUI(JComponent c) {
+     *     super.uninstallUI(c);
+     *     JLayer l = (JLayer) c;
+     *     l.setLayerEventMask(0);
+     * }
+     * </pre>
+     *
+     * @param e the {@code HierarchyEvent} to be processed
+     * @param l the layer this {@code LayerUI} instance is set to
+     *
+     * @see JLayer#setLayerEventMask(long)
+     * @see #installUI(javax.swing.JComponent)
+     * @see #uninstallUI(javax.swing.JComponent)
+     */
+    protected void processHierarchyBoundsEvent(HierarchyEvent e, JLayer<? extends V> l) {
     }
 
     /**
@@ -251,13 +628,28 @@ public class LayerUI<V extends Component>
     }
 
     /**
+     * Repaints all {@code JLayer} instances this {@code LayerUI} is set to.
+     * Call this method when the state of this {@code LayerUI} is changed
+     * and the visual appearance of its {@code JLayer} objects needs to be updated.
+     *
+     * @see Component#repaint()
+     */
+    protected void repaintLayer() {
+        firePropertyChange("dirty", null, null);
+    }
+
+    /**
      * Notifies the {@code LayerUI} when any of its property are changed
-     * and enables updating every {@code JLayer} this {@code LayerUI} instance is set to.
+     * and enables updating every {@code JLayer}
+     * this {@code LayerUI} instance is set to.
      *
      * @param evt the PropertyChangeEvent generated by this {@code LayerUI}
      * @param l the {@code JLayer} this LayerUI is set to
      */
     public void applyPropertyChange(PropertyChangeEvent evt, JLayer<? extends V> l) {
+        if ("dirty".equals(evt.getPropertyName())) {
+            l.repaint();
+        }
     }
 
     /**

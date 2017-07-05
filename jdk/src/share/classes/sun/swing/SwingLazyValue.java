@@ -26,6 +26,9 @@ package sun.swing;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.AccessibleObject;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.swing.UIDefaults;
 
 /**
@@ -65,13 +68,15 @@ public class SwingLazyValue implements UIDefaults.LazyValue {
             if (methodName != null) {
                 Class[] types = getClassArray(args);
                 Method m = c.getMethod(methodName, types);
+                makeAccessible(m);
                 return m.invoke(c, args);
             } else {
                 Class[] types = getClassArray(args);
                 Constructor constructor = c.getConstructor(types);
+                makeAccessible(constructor);
                 return constructor.newInstance(args);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             // Ideally we would throw an exception, unfortunately
             // often times there are errors as an initial look and
             // feel is loaded before one can be switched. Perhaps a
@@ -79,6 +84,15 @@ public class SwingLazyValue implements UIDefaults.LazyValue {
             // the exception would be thrown.
         }
         return null;
+    }
+
+    private void makeAccessible(final AccessibleObject object) {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                object.setAccessible(true);
+                return null;
+            }
+        });
     }
 
     private Class[] getClassArray(Object[] args) {

@@ -102,15 +102,38 @@ Rule	ChileAQ	2000	max	-	Mar	Sun>=9	3:00u	0	-
 # Davis, Vestfold Hills, -6835+07759, since 1957-01-13
 #	(except 1964-11 - 1969-02)
 # Mawson, Holme Bay, -6736+06253, since 1954-02-13
+
+# From Steffen Thorsen (2009-03-11):
+# Three Australian stations in Antarctica have changed their time zone:
+# Casey moved from UTC+8 to UTC+11
+# Davis moved from UTC+7 to UTC+5
+# Mawson moved from UTC+6 to UTC+5
+# The changes occurred on 2009-10-18 at 02:00 (local times).
+#
+# Government source: (Australian Antarctic Division)
+# <a href="http://www.aad.gov.au/default.asp?casid=37079">
+# http://www.aad.gov.au/default.asp?casid=37079
+# </a>
+#
+# We have more background information here:
+# <a href="http://www.timeanddate.com/news/time/antarctica-new-times.html">
+# http://www.timeanddate.com/news/time/antarctica-new-times.html
+# </a>
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Casey	0	-	zzz	1969
-			8:00	-	WST	# Western (Aus) Standard Time
+			8:00	-	WST	2009 Oct 18 2:00
+						# Western (Aus) Standard Time
+			11:00	-	CAST	# Casey Time
 Zone Antarctica/Davis	0	-	zzz	1957 Jan 13
 			7:00	-	DAVT	1964 Nov # Davis Time
 			0	-	zzz	1969 Feb
-			7:00	-	DAVT
+			7:00	-	DAVT	2009 Oct 18 2:0
+			5:00	-	DAVT
 Zone Antarctica/Mawson	0	-	zzz	1954 Feb 13
-			6:00	-	MAWT	# Mawson Time
+			6:00	-	MAWT	2009 Oct 18 2:00
+						# Mawson Time
+			5:00	-	MAWT
 # References:
 # <a href="http://www.antdiv.gov.au/aad/exop/sfo/casey/casey_aws.html">
 # Casey Weather (1998-02-26)
