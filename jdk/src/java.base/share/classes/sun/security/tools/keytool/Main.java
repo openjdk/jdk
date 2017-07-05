@@ -3631,8 +3631,8 @@ public final class Main {
                 if (time != null) {
                     if (time.matches("\\d\\d:\\d\\d:\\d\\d")) {
                         c.set(Calendar.HOUR_OF_DAY, Integer.valueOf(time.substring(0, 2)));
-                        c.set(Calendar.MINUTE, Integer.valueOf(time.substring(0, 2)));
-                        c.set(Calendar.SECOND, Integer.valueOf(time.substring(0, 2)));
+                        c.set(Calendar.MINUTE, Integer.valueOf(time.substring(3, 5)));
+                        c.set(Calendar.SECOND, Integer.valueOf(time.substring(6, 8)));
                         c.set(Calendar.MILLISECOND, 0);
                     } else {
                         throw ioe;

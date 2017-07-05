@@ -21,15 +21,8 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8152115
- * @summary functional and concurrency test for ClassLoaderValue
- * @build java.base/java.lang.reflect.ClassLoaderValueTest
- * @run main Driver
- */
-public class Driver {
-    public static void main(String[] args) throws Exception {
-        java.lang.reflect.ClassLoaderValueTest.main(args);
-    }
+package compiler.jvmci.common.testcases;
+
+public interface DuplicateSimpleSingleImplementerInterface {
+    void interfaceMethod();
 }

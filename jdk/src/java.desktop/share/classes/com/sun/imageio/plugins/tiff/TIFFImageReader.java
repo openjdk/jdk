@@ -35,6 +35,7 @@ import java.awt.image.ComponentColorModel;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -189,8 +190,8 @@ public class TIFFImageReader extends ImageReader {
 
             // Seek to start of first IFD
             long offset = stream.readUnsignedInt();
-            imageStartPosition.add(Long.valueOf(offset));
             stream.seek(offset);
+            imageStartPosition.add(Long.valueOf(offset));
         } catch (IOException e) {
             throw new IIOException("I/O error reading header!", e);
         }
@@ -201,10 +202,10 @@ public class TIFFImageReader extends ImageReader {
     private int locateImage(int imageIndex) throws IIOException {
         readHeader();
 
-        try {
-            // Find closest known index
-            int index = Math.min(imageIndex, imageStartPosition.size() - 1);
+        // Find closest known index
+        int index = Math.min(imageIndex, imageStartPosition.size() - 1);
 
+        try {
             // Seek to that position
             Long l = imageStartPosition.get(index);
             stream.seek(l.longValue());
@@ -212,6 +213,11 @@ public class TIFFImageReader extends ImageReader {
             // Skip IFDs until at desired index or last image found
             while (index < imageIndex) {
                 int count = stream.readUnsignedShort();
+                // If zero-entry IFD, decrement the index and exit the loop
+                if (count == 0) {
+                    imageIndex = index > 0 ? index - 1 : 0;
+                    break;
+                }
                 stream.skipBytes(12 * count);
 
                 long offset = stream.readUnsignedInt();
@@ -219,12 +225,17 @@ public class TIFFImageReader extends ImageReader {
                     return index;
                 }
 
-                imageStartPosition.add(Long.valueOf(offset));
                 stream.seek(offset);
+                imageStartPosition.add(Long.valueOf(offset));
                 ++index;
             }
-        } catch (IOException e) {
-            throw new IIOException("Couldn't seek!", e);
+        } catch (EOFException eofe) {
+            forwardWarningMessage("Ignored " + eofe);
+
+            // Ran off the end of stream: decrement index
+            imageIndex = index > 0 ? index - 1 : 0;
+        } catch (IOException ioe) {
+            throw new IIOException("Couldn't seek!", ioe);
         }
 
         if (currIndex != imageIndex) {

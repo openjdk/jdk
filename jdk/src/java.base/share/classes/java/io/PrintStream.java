@@ -568,7 +568,7 @@ public class PrintStream extends FilterOutputStream
      * @param      b   The {@code boolean} to be printed
      */
     public void print(boolean b) {
-        write(b ? "true" : "false");
+        write(String.valueOf(b));
     }
 
     /**
@@ -663,10 +663,7 @@ public class PrintStream extends FilterOutputStream
      * @param      s   The {@code String} to be printed
      */
     public void print(String s) {
-        if (s == null) {
-            s = "null";
-        }
-        write(s);
+        write(String.valueOf(s));
     }
 
     /**
@@ -1068,10 +1065,7 @@ public class PrintStream extends FilterOutputStream
      * @since  1.5
      */
     public PrintStream append(CharSequence csq) {
-        if (csq == null)
-            print("null");
-        else
-            print(csq.toString());
+        print(String.valueOf(csq));
         return this;
     }
 
@@ -1111,9 +1105,8 @@ public class PrintStream extends FilterOutputStream
      * @since  1.5
      */
     public PrintStream append(CharSequence csq, int start, int end) {
-        CharSequence cs = (csq == null ? "null" : csq);
-        write(cs.subSequence(start, end).toString());
-        return this;
+        if (csq == null) csq = "null";
+        return append(csq.subSequence(start, end));
     }
 
     /**

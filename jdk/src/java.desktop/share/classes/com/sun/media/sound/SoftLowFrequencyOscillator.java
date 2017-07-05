@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -52,6 +53,7 @@ public final class SoftLowFrequencyOscillator implements SoftProcess {
         }
     }
 
+    @Override
     public void reset() {
         for (int i = 0; i < used_count; i++) {
             out[i][0] = 0;
@@ -67,6 +69,7 @@ public final class SoftLowFrequencyOscillator implements SoftProcess {
         used_count = 0;
     }
 
+    @Override
     public void init(SoftSynthesizer synth) {
         control_time = 1.0 / synth.getControlRate();
         sin_factor = control_time * 2 * Math.PI;
@@ -78,6 +81,7 @@ public final class SoftLowFrequencyOscillator implements SoftProcess {
         processControlLogic();
     }
 
+    @Override
     public void processControlLogic() {
         for (int i = 0; i < used_count; i++) {
             if (delay_counter[i] > 0) {
@@ -114,6 +118,7 @@ public final class SoftLowFrequencyOscillator implements SoftProcess {
         }
     }
 
+    @Override
     public double[] get(int instance, String name) {
         if (instance >= used_count)
             used_count = instance + 1;

@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "ucdn.h"
 
 typedef struct {
@@ -24,13 +25,18 @@ typedef struct {
     unsigned char bidi_class;
     unsigned char mirrored;
     unsigned char east_asian_width;
-    unsigned char normalization_check;
     unsigned char script;
+    unsigned char linebreak_class;
 } UCDRecord;
 
 typedef struct {
     unsigned short from, to;
 } MirrorPair;
+
+typedef struct {
+  unsigned short from, to;
+  unsigned char type;
+} BracketPair;
 
 typedef struct {
     unsigned int start;
@@ -106,6 +112,24 @@ static int compare_mp(const void *a, const void *b)
     MirrorPair *mpa = (MirrorPair *)a;
     MirrorPair *mpb = (MirrorPair *)b;
     return mpa->from - mpb->from;
+}
+
+static int compare_bp(const void *a, const void *b)
+{
+    BracketPair *bpa = (BracketPair *)a;
+    BracketPair *bpb = (BracketPair *)b;
+    return bpa->from - bpb->from;
+}
+
+static BracketPair *search_bp(uint32_t code)
+{
+    BracketPair bp = {0,0,2};
+    BracketPair *res;
+
+    bp.from = code;
+    res = bsearch(&bp, bracket_pairs, BIDI_BRACKET_LEN, sizeof(BracketPair),
+            compare_bp);
+    return res;
 }
 
 static int hangul_pair_decompose(uint32_t code, uint32_t *a, uint32_t *b)
@@ -199,6 +223,42 @@ int ucdn_get_script(uint32_t code)
     return get_ucd_record(code)->script;
 }
 
+int ucdn_get_linebreak_class(uint32_t code)
+{
+    return get_ucd_record(code)->linebreak_class;
+}
+
+int ucdn_get_resolved_linebreak_class(uint32_t code)
+{
+    const UCDRecord *record = get_ucd_record(code);
+
+    switch (record->linebreak_class)
+    {
+    case UCDN_LINEBREAK_CLASS_AI:
+    case UCDN_LINEBREAK_CLASS_SG:
+    case UCDN_LINEBREAK_CLASS_XX:
+        return UCDN_LINEBREAK_CLASS_AL;
+
+    case UCDN_LINEBREAK_CLASS_SA:
+        if (record->category == UCDN_GENERAL_CATEGORY_MC ||
+                record->category == UCDN_GENERAL_CATEGORY_MN)
+            return UCDN_LINEBREAK_CLASS_CM;
+        return UCDN_LINEBREAK_CLASS_AL;
+
+    case UCDN_LINEBREAK_CLASS_CJ:
+        return UCDN_LINEBREAK_CLASS_NS;
+
+    case UCDN_LINEBREAK_CLASS_CB:
+        return UCDN_LINEBREAK_CLASS_B2;
+
+    case UCDN_LINEBREAK_CLASS_NL:
+        return UCDN_LINEBREAK_CLASS_BK;
+
+    default:
+        return record->linebreak_class;
+    }
+}
+
 uint32_t ucdn_mirror(uint32_t code)
 {
     MirrorPair mp = {0};
@@ -215,6 +275,24 @@ uint32_t ucdn_mirror(uint32_t code)
         return code;
     else
         return res->to;
+}
+
+uint32_t ucdn_paired_bracket(uint32_t code)
+{
+    BracketPair *res = search_bp(code);
+    if (res == NULL)
+        return code;
+    else
+        return res->to;
+}
+
+int ucdn_paired_bracket_type(uint32_t code)
+{
+    BracketPair *res = search_bp(code);
+    if (res == NULL)
+        return UCDN_BIDI_PAIRED_BRACKET_TYPE_NONE;
+    else
+        return res->type;
 }
 
 int ucdn_decompose(uint32_t code, uint32_t *a, uint32_t *b)

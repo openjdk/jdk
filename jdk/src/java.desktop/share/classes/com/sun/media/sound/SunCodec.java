@@ -55,16 +55,14 @@ abstract class SunCodec extends FormatConversionProvider {
         this.outputEncodings = outputEncodings;
     }
 
-
-    /**
-     */
+    @Override
     public final AudioFormat.Encoding[] getSourceEncodings() {
         AudioFormat.Encoding[] encodings = new AudioFormat.Encoding[inputEncodings.length];
         System.arraycopy(inputEncodings, 0, encodings, 0, inputEncodings.length);
         return encodings;
     }
-    /**
-     */
+
+    @Override
     public final AudioFormat.Encoding[] getTargetEncodings() {
         AudioFormat.Encoding[] encodings = new AudioFormat.Encoding[outputEncodings.length];
         System.arraycopy(outputEncodings, 0, encodings, 0, outputEncodings.length);

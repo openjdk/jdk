@@ -1509,11 +1509,9 @@ public class ObjectStreamClass implements Serializable {
     private static String getPackageName(Class<?> cl) {
         String s = cl.getName();
         int i = s.lastIndexOf('[');
-        if (i >= 0) {
-            s = s.substring(i + 2);
-        }
-        i = s.lastIndexOf('.');
-        return (i >= 0) ? s.substring(0, i) : "";
+        i = (i < 0) ? 0 : i + 2;
+        int j = s.lastIndexOf('.');
+        return (i < j) ? s.substring(i, j) : "";
     }
 
     /**
@@ -1535,14 +1533,14 @@ public class ObjectStreamClass implements Serializable {
     private static String getMethodSignature(Class<?>[] paramTypes,
                                              Class<?> retType)
     {
-        StringBuilder sbuf = new StringBuilder();
-        sbuf.append('(');
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
         for (int i = 0; i < paramTypes.length; i++) {
-            appendClassSignature(sbuf, paramTypes[i]);
+            appendClassSignature(sb, paramTypes[i]);
         }
-        sbuf.append(')');
-        appendClassSignature(sbuf, retType);
-        return sbuf.toString();
+        sb.append(')');
+        appendClassSignature(sb, retType);
+        return sb.toString();
     }
 
     /**

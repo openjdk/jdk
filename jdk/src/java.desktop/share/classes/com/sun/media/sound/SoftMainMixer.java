@@ -22,15 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Patch;
@@ -74,26 +75,26 @@ public final class SoftMainMixer {
     private long sample_pos = 0;
     boolean readfully = true;
     private final Object control_mutex;
-    private SoftSynthesizer synth;
+    private final SoftSynthesizer synth;
     private float samplerate = 44100;
     private int nrofchannels = 2;
     private SoftVoice[] voicestatus = null;
-    private SoftAudioBuffer[] buffers;
-    private SoftReverb reverb;
-    private SoftAudioProcessor chorus;
-    private SoftAudioProcessor agc;
+    private final SoftAudioBuffer[] buffers;
+    private final SoftReverb reverb;
+    private final SoftAudioProcessor chorus;
+    private final SoftAudioProcessor agc;
     private long msec_buffer_len = 0;
     private int buffer_len = 0;
-    TreeMap<Long, Object> midimessages = new TreeMap<Long, Object>();
+    TreeMap<Long, Object> midimessages = new TreeMap<>();
     private int delay_midievent = 0;
     private int max_delay_midievent = 0;
     double last_volume_left = 1.0;
     double last_volume_right = 1.0;
-    private double[] co_master_balance = new double[1];
-    private double[] co_master_volume = new double[1];
-    private double[] co_master_coarse_tuning = new double[1];
-    private double[] co_master_fine_tuning = new double[1];
-    private AudioInputStream ais;
+    private final double[] co_master_balance = new double[1];
+    private final double[] co_master_volume = new double[1];
+    private final double[] co_master_coarse_tuning = new double[1];
+    private final double[] co_master_fine_tuning = new double[1];
+    private final AudioInputStream ais;
     private Set<SoftChannelMixerContainer> registeredMixers = null;
     private Set<ModelChannelMixer> stoppedMixers = null;
     private SoftChannelMixerContainer[] cur_registeredMixers = null;
@@ -104,6 +105,7 @@ public final class SoftMainMixer {
         double[] coarse_tuning = co_master_coarse_tuning;
         double[] fine_tuning = co_master_fine_tuning;
 
+        @Override
         public double[] get(int instance, String name) {
             if (name == null)
                 return null;
@@ -777,13 +779,13 @@ public final class SoftMainMixer {
 
     public void stopMixer(ModelChannelMixer mixer) {
         if (stoppedMixers == null)
-            stoppedMixers = new HashSet<ModelChannelMixer>();
+            stoppedMixers = new HashSet<>();
         stoppedMixers.add(mixer);
     }
 
     public void registerMixer(ModelChannelMixer mixer) {
         if (registeredMixers == null)
-            registeredMixers = new HashSet<SoftChannelMixerContainer>();
+            registeredMixers = new HashSet<>();
         SoftChannelMixerContainer mixercontainer = new SoftChannelMixerContainer();
         mixercontainer.buffers = new SoftAudioBuffer[6];
         for (int i = 0; i < mixercontainer.buffers.length; i++) {
@@ -883,6 +885,7 @@ public final class SoftMainMixer {
                 bbuffer_pos = 0;
             }
 
+            @Override
             public int read(byte[] b, int off, int len) {
                 int bbuffer_len = bbuffer.length;
                 int offlen = off + len;
@@ -903,6 +906,7 @@ public final class SoftMainMixer {
                 return len;
             }
 
+            @Override
             public int read() throws IOException {
                 int ret = read(single);
                 if (ret == -1)
@@ -910,10 +914,12 @@ public final class SoftMainMixer {
                 return single[0] & 0xFF;
             }
 
+            @Override
             public int available() {
                 return bbuffer.length - bbuffer_pos;
             }
 
+            @Override
             public void close() {
                 SoftMainMixer.this.synth.close();
             }

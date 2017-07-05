@@ -63,7 +63,7 @@ public final class SoftMidiAudioFileReader extends SunFileReader {
 
     private AudioInputStream getAudioInputStream(final Sequence seq)
             throws InvalidMidiDataException {
-        AudioSynthesizer synth = (AudioSynthesizer) new SoftSynthesizer();
+        AudioSynthesizer synth = new SoftSynthesizer();
         AudioInputStream stream;
         Receiver recv;
         try {

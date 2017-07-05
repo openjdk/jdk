@@ -65,12 +65,7 @@ class SequenceInputStream extends InputStream {
      */
     public SequenceInputStream(Enumeration<? extends InputStream> e) {
         this.e = e;
-        try {
-            nextStream();
-        } catch (IOException ex) {
-            // This should never happen
-            throw new Error("panic");
-        }
+        peekNextStream();
     }
 
     /**
@@ -86,16 +81,10 @@ class SequenceInputStream extends InputStream {
      */
     public SequenceInputStream(InputStream s1, InputStream s2) {
         Vector<InputStream> v = new Vector<>(2);
-
         v.addElement(s1);
         v.addElement(s2);
         e = v.elements();
-        try {
-            nextStream();
-        } catch (IOException ex) {
-            // This should never happen
-            throw new Error("panic");
-        }
+        peekNextStream();
     }
 
     /**
@@ -105,14 +94,17 @@ class SequenceInputStream extends InputStream {
         if (in != null) {
             in.close();
         }
+        peekNextStream();
+    }
 
+    private void peekNextStream() {
         if (e.hasMoreElements()) {
             in = (InputStream) e.nextElement();
             if (in == null)
                 throw new NullPointerException();
+        } else {
+            in = null;
         }
-        else in = null;
-
     }
 
     /**

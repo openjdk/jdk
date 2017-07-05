@@ -106,7 +106,7 @@ _hb_fallback_shape (hb_shape_plan_t    *shape_plan HB_UNUSED,
    */
 
   hb_codepoint_t space;
-  bool has_space = font->get_glyph (' ', 0, &space);
+  bool has_space = (bool) font->get_nominal_glyph (' ', &space);
 
   buffer->clear_positions ();
 
@@ -123,7 +123,7 @@ _hb_fallback_shape (hb_shape_plan_t    *shape_plan HB_UNUSED,
       pos[i].y_advance = 0;
       continue;
     }
-    font->get_glyph (info[i].codepoint, 0, &info[i].codepoint);
+    font->get_nominal_glyph (info[i].codepoint, &info[i].codepoint);
     font->get_glyph_advance_for_direction (info[i].codepoint,
                                            direction,
                                            &pos[i].x_advance,

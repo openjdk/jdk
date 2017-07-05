@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the JDBC API.
+ */
 module java.sql {
     requires public java.logging;
     requires public java.xml;

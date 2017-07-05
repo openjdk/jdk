@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.security.Provider;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidParameterException;
 import java.security.ProviderException;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
+
 
 /**
  * The JdkSASL provider class -
@@ -73,7 +75,7 @@ public final class JdkSASL extends Provider {
     }
 
     public JdkSASL() {
-        super("JdkSASL", 9.0d, info);
+        super("JdkSASL", PROVIDER_VER, info);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

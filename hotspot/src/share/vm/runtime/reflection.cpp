@@ -660,11 +660,13 @@ bool Reflection::verify_field_access(const Klass* current_class,
   }
 
   const Klass* host_class = current_class;
-  while (host_class->is_instance_klass() &&
-         InstanceKlass::cast(host_class)->is_anonymous()) {
-    const Klass* next_host_class = InstanceKlass::cast(host_class)->host_klass();
-    if (next_host_class == NULL)  break;
-    host_class = next_host_class;
+  if (host_class->is_instance_klass() &&
+      InstanceKlass::cast(host_class)->is_anonymous()) {
+    host_class = InstanceKlass::cast(host_class)->host_klass();
+    assert(host_class != NULL, "Anonymous class has null host class");
+    assert(!(host_class->is_instance_klass() &&
+           InstanceKlass::cast(host_class)->is_anonymous()),
+           "host_class should not be anonymous");
   }
   if (host_class == field_class) {
     return true;

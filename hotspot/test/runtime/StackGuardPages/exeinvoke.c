@@ -242,7 +242,7 @@ int main (int argc, const char** argv) {
       CLASS_PATH_OPT, javaclasspath);
 
   options[0].optionString = "-Xint";
-  options[1].optionString = "-Xss328k";
+  options[1].optionString = "-Xss1M";
   options[2].optionString = javaclasspathopt;
 
   vm_args.version = JNI_VERSION_1_2;

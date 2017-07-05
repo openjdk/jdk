@@ -47,7 +47,7 @@ public abstract class TIFFColorConverter {
      * @throws NullPointerException if {@code result} is
      * {@code null}.
      * @throws ArrayIndexOutOfBoundsException if
-     * {@code result.length&nbsp;&lt;&nbsp;3}.
+     * {@code result.length < 3}.
      */
     public abstract void fromRGB(float r, float g, float b, float[] result);
 
@@ -63,7 +63,7 @@ public abstract class TIFFColorConverter {
      * @throws NullPointerException if {@code rgb} is
      * {@code null}.
      * @throws ArrayIndexOutOfBoundsException if
-     * {@code rgb.length&nbsp;&lt;&nbsp;3}.
+     * {@code rgb.length < 3}.
      */
     public abstract void toRGB(float x0, float x1, float x2, float[] rgb);
 }
