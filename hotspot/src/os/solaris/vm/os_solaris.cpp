@@ -2826,7 +2826,9 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   assert((intptr_t)addr % alignment_hint == 0, "Address should be aligned.");
   assert((intptr_t)(addr + bytes) % alignment_hint == 0, "End should be aligned.");
-  Solaris::set_mpss_range(addr, bytes, alignment_hint);
+  if (UseLargePages && UseMPSS) {
+    Solaris::set_mpss_range(addr, bytes, alignment_hint);
+  }
 }
 
 // Tell the OS to make the range local to the first-touching LWP
@@ -5041,6 +5043,20 @@ jint os::init_2(void) {
       FREE_C_HEAP_ARRAY(int, lgrp_ids);
       if (lgrp_num < 2) {
         // There's only one locality group, disable NUMA.
+        UseNUMA = false;
+      }
+    }
+    // ISM is not compatible with the NUMA allocator - it always allocates
+    // pages round-robin across the lgroups.
+    if (UseNUMA && UseLargePages && UseISM) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseISM)) {
+          UseLargePages = false;
+        } else {
+          warning("UseNUMA is not compatible with ISM large pages, disabling NUMA allocator");
+          UseNUMA = false;
+        }
+      } else {
         UseNUMA = false;
       }
     }
