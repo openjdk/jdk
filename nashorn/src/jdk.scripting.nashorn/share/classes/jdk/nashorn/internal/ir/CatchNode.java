@@ -33,6 +33,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class CatchNode extends Statement {
+    private static final long serialVersionUID = 1L;
+
     /** Exception identifier. */
     private final IdentNode exception;
 

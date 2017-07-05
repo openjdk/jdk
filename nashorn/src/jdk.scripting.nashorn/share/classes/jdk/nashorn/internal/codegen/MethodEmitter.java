@@ -71,6 +71,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.PRIMITIVE_FIELD_TYPE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
+
 import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -88,11 +89,9 @@ import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.BitwiseType;
 import jdk.nashorn.internal.codegen.types.NumericType;
 import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.ir.BreakableNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.JoinPredecessor;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.RuntimeNode;
@@ -1660,19 +1659,6 @@ public class MethodEmitter implements Emitter {
         assert stack.isEmpty() : stack;
         method.visitInsn(RETURN);
         doesNotContinueSequentially();
-    }
-
-    /**
-     * Goto, possibly when splitting is taking place. If
-     * a splitNode exists, we need to handle the case that the
-     * jump target is another method
-     *
-     * @param label destination label
-     * @param targetNode the node to which the destination label belongs (the label is normally a break or continue
-     * label)
-     */
-    void splitAwareGoto(final LexicalContext lc, final Label label, final BreakableNode targetNode) {
-        _goto(label);
     }
 
     /**

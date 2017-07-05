@@ -46,6 +46,8 @@ import jdk.nashorn.internal.parser.TokenType;
  */
 @Immutable
 public final class UnaryNode extends Expression implements Assignment<Expression>, Optimistic {
+    private static final long serialVersionUID = 1L;
+
     /** Right hand side argument. */
     private final Expression expression;
 

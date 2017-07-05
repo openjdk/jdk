@@ -291,7 +291,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
                 value = lhs.getNumber() - rhs.getNumber();
                 break;
             case SHR:
-                return LiteralNode.newInstance(token, finish, (lhs.getInt32() >>> rhs.getInt32()) & JSType.MAX_UINT);
+                return LiteralNode.newInstance(token, finish, JSType.toUint32(lhs.getInt32() >>> rhs.getInt32()));
             case SAR:
                 return LiteralNode.newInstance(token, finish, lhs.getInt32() >> rhs.getInt32());
             case SHL:

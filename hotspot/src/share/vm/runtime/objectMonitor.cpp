@@ -257,7 +257,6 @@ bool ObjectMonitor::try_enter(Thread* THREAD) {
       assert(_recursions == 0, "internal state error");
       _owner = THREAD;
       _recursions = 1;
-      OwnerIsThread = 1;
       return true;
     }
     if (Atomic::cmpxchg_ptr (THREAD, &_owner, NULL) != NULL) {
@@ -280,7 +279,6 @@ void NOINLINE ObjectMonitor::enter(TRAPS) {
     // Either ASSERT _recursions == 0 or explicitly set _recursions = 0.
     assert(_recursions == 0, "invariant");
     assert(_owner == Self, "invariant");
-    // CONSIDER: set or assert OwnerIsThread == 1
     return;
   }
 
@@ -296,7 +294,6 @@ void NOINLINE ObjectMonitor::enter(TRAPS) {
     // Commute owner from a thread-specific on-stack BasicLockObject address to
     // a full-fledged "Thread *".
     _owner = Self;
-    OwnerIsThread = 1;
     return;
   }
 
@@ -328,7 +325,7 @@ void NOINLINE ObjectMonitor::enter(TRAPS) {
 
   // Prevent deflation at STW-time.  See deflate_idle_monitors() and is_busy().
   // Ensure the object-monitor relationship remains stable while there's contention.
-  Atomic::inc_ptr(&_count);
+  Atomic::inc(&_count);
 
   EventJavaMonitorEnter event;
 
@@ -384,7 +381,7 @@ void NOINLINE ObjectMonitor::enter(TRAPS) {
     // acquire it.
   }
 
-  Atomic::dec_ptr(&_count);
+  Atomic::dec(&_count);
   assert(_count >= 0, "invariant");
   Self->_Stalled = 0;
 
@@ -440,7 +437,6 @@ int ObjectMonitor::TryLock(Thread * Self) {
     // Either guarantee _recursions == 0 or set _recursions = 0.
     assert(_recursions == 0, "invariant");
     assert(_owner == Self, "invariant");
-    // CONSIDER: set or assert that OwnerIsThread == 1
     return 1;
   }
   // The lock had been free momentarily, but we lost the race to the lock.
@@ -922,7 +918,6 @@ void NOINLINE ObjectMonitor::exit(bool not_suspended, TRAPS) {
       assert(_recursions == 0, "invariant");
       _owner = THREAD;
       _recursions = 0;
-      OwnerIsThread = 1;
     } else {
       // Apparent unbalanced locking ...
       // Naively we'd like to throw IllegalMonitorStateException.
@@ -1346,7 +1341,6 @@ intptr_t ObjectMonitor::complete_exit(TRAPS) {
       assert(_recursions == 0, "internal state error");
       _owner = THREAD;   // Convert from basiclock addr to Thread addr
       _recursions = 0;
-      OwnerIsThread = 1;
     }
   }
 
@@ -1385,7 +1379,6 @@ void ObjectMonitor::reenter(intptr_t recursions, TRAPS) {
       if (THREAD->is_lock_owned((address) _owner)) {                        \
         _owner = THREAD;  /* Convert from basiclock addr to Thread addr */  \
         _recursions = 0;                                                    \
-        OwnerIsThread = 1;                                                  \
       } else {                                                              \
         TEVENT(Throw IMSX);                                                 \
         THROW(vmSymbols::java_lang_IllegalMonitorStateException());         \
@@ -1906,8 +1899,8 @@ void ObjectMonitor::notifyAll(TRAPS) {
 // a contending thread could enqueue itself on the cxq and then spin locally
 // on a thread-specific variable such as its ParkEvent._Event flag.
 // That's left as an exercise for the reader.  Note that global spinning is
-// not problematic on Niagara, as the L2$ serves the interconnect and has both
-// low latency and massive bandwidth.
+// not problematic on Niagara, as the L2 cache serves the interconnect and
+// has both low latency and massive bandwidth.
 //
 // Broadly, we can fix the spin frequency -- that is, the % of contended lock
 // acquisition attempts where we opt to spin --  at 100% and vary the spin count
@@ -2208,7 +2201,7 @@ int ObjectMonitor::TrySpin_VaryDuration(Thread * Self) {
 // as advisory.
 //
 // Beware too, that _owner is sometimes a BasicLock address and sometimes
-// a thread pointer.  We differentiate the two cases with OwnerIsThread.
+// a thread pointer.
 // Alternately, we might tag the type (thread pointer vs basiclock pointer)
 // with the LSB of _owner.  Another option would be to probablistically probe
 // the putative _owner->TypeTag value.
@@ -2230,9 +2223,7 @@ int ObjectMonitor::TrySpin_VaryDuration(Thread * Self) {
 
 
 int ObjectMonitor::NotRunnable(Thread * Self, Thread * ox) {
-  // Check either OwnerIsThread or ox->TypeTag == 2BAD.
-  if (!OwnerIsThread) return 0;
-
+  // Check ox->TypeTag == 2BAD.
   if (ox == NULL) return 0;
 
   // Avoid transitive spinning ...
@@ -2399,20 +2390,6 @@ void ObjectMonitor::Initialize() {
   }
 }
 
-
-// Compile-time asserts
-// When possible, it's better to catch errors deterministically at
-// compile-time than at runtime.  The down-side to using compile-time
-// asserts is that error message -- often something about negative array
-// indices -- is opaque.
-
-#define CTASSERT(x) { int tag[1-(2*!(x))]; printf ("Tag @" INTPTR_FORMAT "\n", (intptr_t)tag); }
-
-void ObjectMonitor::ctAsserts() {
-  CTASSERT(offset_of (ObjectMonitor, _header) == 0);
-}
-
-
 static char * kvGet(char * kvList, const char * Key) {
   if (kvList == NULL) return NULL;
   size_t n = strlen(Key);
@@ -2526,6 +2503,8 @@ void ObjectMonitor::sanity_checks() {
   if (verbose) {
     tty->print_cr("INFO: sizeof(ObjectMonitor)=" SIZE_FORMAT,
                   sizeof(ObjectMonitor));
+    tty->print_cr("INFO: sizeof(PaddedEnd<ObjectMonitor>)=" SIZE_FORMAT,
+                  sizeof(PaddedEnd<ObjectMonitor>));
   }
 
   uint cache_line_size = VM_Version::L1_data_cache_line_size();
@@ -2559,9 +2538,9 @@ void ObjectMonitor::sanity_checks() {
       warning_cnt++;
     }
 
-    if ((sizeof(ObjectMonitor) % cache_line_size) != 0) {
-      tty->print_cr("WARNING: ObjectMonitor size is not a multiple of "
-                    "a cache line which permits false sharing.");
+    if ((sizeof(PaddedEnd<ObjectMonitor>) % cache_line_size) != 0) {
+      tty->print_cr("WARNING: PaddedEnd<ObjectMonitor> size is not a "
+                    "multiple of a cache line which permits false sharing.");
       warning_cnt++;
     }
   }

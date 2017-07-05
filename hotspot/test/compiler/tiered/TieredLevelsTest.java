@@ -24,7 +24,6 @@
 /**
  * @test TieredLevelsTest
  * @library /testlibrary /testlibrary/whitebox /compiler/whitebox
- * @ignore 8046268
  * @build TieredLevelsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

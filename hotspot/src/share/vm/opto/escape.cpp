@@ -882,9 +882,14 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       assert(false, "should be done already");
       break;
 #endif
+    case Op_ArrayCopy:
     case Op_CallLeafNoFP:
-      is_arraycopy = (call->as_CallLeaf()->_name != NULL &&
-                      strstr(call->as_CallLeaf()->_name, "arraycopy") != 0);
+      // Most array copies are ArrayCopy nodes at this point but there
+      // are still a few direct calls to the copy subroutines (See
+      // PhaseStringOpts::copy_string())
+      is_arraycopy = (call->Opcode() == Op_ArrayCopy) ||
+        (call->as_CallLeaf()->_name != NULL &&
+         strstr(call->as_CallLeaf()->_name, "arraycopy") != 0);
       // fall through
     case Op_CallLeaf: {
       // Stub calls, objects do not escape but they are not scale replaceable.
@@ -894,6 +899,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
         const Type* at = d->field_at(i);
         Node *arg = call->in(i);
+        if (arg == NULL) {
+          continue;
+        }
         const Type *aat = _igvn->type(arg);
         if (arg->is_top() || !at->isa_ptr() || !aat->isa_ptr())
           continue;

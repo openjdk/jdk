@@ -33,6 +33,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class ForNode extends LoopNode {
+    private static final long serialVersionUID = 1L;
+
     /** Initialize expression for an ordinary for statement, or the LHS expression receiving iterated-over values in a
      * for-in statement. */
     private final Expression init;

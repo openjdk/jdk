@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,8 +410,6 @@ class CompilerInterfaceVC10 extends CompilerInterface {
                 "/export:jio_fprintf /export:jio_vfprintf "+
                 "/export:jio_vsnprintf "+
                 "/export:JVM_GetVersionInfo "+
-                "/export:JVM_GetThreadStateNames "+
-                "/export:JVM_GetThreadStateValues "+
                 "/export:JVM_InitAgentProperties");
         addAttr(rv, "AdditionalDependencies", "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;Wsock32.lib;winmm.lib;psapi.lib");
         addAttr(rv, "OutputFile", outDll);

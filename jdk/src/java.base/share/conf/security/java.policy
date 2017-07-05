@@ -25,6 +25,18 @@ grant codeBase "file:${java.home}/lib/ext/nashorn.jar" {
         permission java.security.AllPermission;
 };
 
+grant codeBase "file:${java.home}/lib/ext/ucrypto.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
+        permission java.lang.RuntimePermission "loadLibrary.j2ucrypto";
+        // need "com.oracle.security.ucrypto.debug" for debugging
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.OracleUcrypto";
+        permission java.security.SecurityPermission "clearProviderProperties.OracleUcrypto";
+        permission java.security.SecurityPermission "removeProviderProperty.OracleUcrypto";
+        permission java.io.FilePermission "${java.home}/lib/security/ucrypto-solaris.cfg", "read";
+};
+
 grant codeBase "file:${java.home}/lib/ext/sunec.jar" {
         permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
         permission java.lang.RuntimePermission "loadLibrary.sunec";

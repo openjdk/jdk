@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,18 +222,6 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
         free(utfName);
 
     return result;
-}
-
-JNIEXPORT void JNICALL
-Java_java_lang_ClassLoader_resolveClass0(JNIEnv *env, jobject this,
-                                         jclass cls)
-{
-    if (cls == NULL) {
-        JNU_ThrowNullPointerException(env, 0);
-        return;
-    }
-
-    JVM_ResolveClass(env, cls);
 }
 
 /*

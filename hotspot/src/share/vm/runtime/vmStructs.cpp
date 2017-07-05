@@ -1070,8 +1070,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   volatile_nonstatic_field(ObjectMonitor,      _header,                                       markOop)                               \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
-  volatile_nonstatic_field(ObjectMonitor,      _count,                                        intptr_t)                              \
-  volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      intptr_t)                              \
+  volatile_nonstatic_field(ObjectMonitor,      _count,                                        jint)                                  \
+  volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
   nonstatic_field(ObjectMonitor,               FreeNext,                                      ObjectMonitor*)                        \
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markOop)                               \
@@ -2506,6 +2506,12 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(Deoptimization::Action_make_not_entrant)               \
   declare_constant(Deoptimization::Action_make_not_compilable)            \
   declare_constant(Deoptimization::Action_LIMIT)                          \
+                                                                          \
+  /***************************************************/                   \
+  /* DEFAULT_CACHE_LINE_SIZE (globalDefinitions.hpp) */                   \
+  /***************************************************/                   \
+                                                                          \
+  declare_constant(DEFAULT_CACHE_LINE_SIZE)                               \
                                                                           \
   /*********************/                                                 \
   /* Matcher (C2 only) */                                                 \
