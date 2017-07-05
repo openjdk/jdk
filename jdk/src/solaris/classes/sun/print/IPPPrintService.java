@@ -1023,6 +1023,13 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
             // this is already supported in UnixPrintJob
             catList.add(Destination.class);
+
+            // It is unfortunate that CUPS doesn't provide a way to query
+            // if printer supports collation but since most printers
+            // now supports collation and that most OS has a way
+            // of setting it, it is a safe assumption to just always
+            // include SheetCollate as supported attribute.
+            catList.add(SheetCollate.class);
         }
 
         // With the assumption that  Chromaticity is equivalent to

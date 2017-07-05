@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,8 +536,12 @@ AWT_ASSERT_APPKIT_THREAD;
 - (void) windowDidBecomeKey: (NSNotification *) notification {
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
-    [CMenuBar activate:self.javaMenuBar modallyDisabled:NO];
     AWTWindow *opposite = [AWTWindow lastKeyWindow];
+    if (!IS(self.styleBits, IS_DIALOG)) {
+        [CMenuBar activate:self.javaMenuBar modallyDisabled:NO];
+    } else if (IS(self.styleBits, IS_MODAL)) {
+        [CMenuBar activate:opposite->javaMenuBar modallyDisabled:YES];        
+    }
     [AWTWindow setLastKeyWindow:nil];
 
     [self _deliverWindowFocusEvent:YES oppositeWindow: opposite];

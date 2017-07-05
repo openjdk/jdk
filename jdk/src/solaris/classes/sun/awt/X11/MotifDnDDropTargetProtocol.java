@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,16 +162,16 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                 unsafe.putInt(data + 12, dataSize);
             }
 
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), embedder,
                                         MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                         MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                         8, XConstants.PropModeReplace,
                                         data, dataSize);
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XConstants.Success) {
+            if ((XErrorHandlerUtil.saved_error != null) &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                 throw new XException("Cannot write Motif receiver info property");
             }
         } finally {
@@ -236,16 +236,16 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
 
                     unsafe.putInt(data + 4, tproxy);
 
-                    XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+                    XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                     XlibWrapper.XChangeProperty(XToolkit.getDisplay(), embedder,
                                                 MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                                 MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                                 8, XConstants.PropModeReplace,
                                                 data, dataSize);
-                    XToolkit.RESTORE_XERROR_HANDLER();
+                    XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                    if (XToolkit.saved_error != null &&
-                        XToolkit.saved_error.get_error_code() != XConstants.Success) {
+                    if ((XErrorHandlerUtil.saved_error != null) &&
+                        (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                         throw new XException("Cannot write Motif receiver info property");
                     }
                 }
@@ -412,15 +412,15 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
          */
         XWindowAttributes wattr = new XWindowAttributes();
         try {
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
             int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                           source_win, wattr.pData);
 
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (status == 0 ||
-                (XToolkit.saved_error != null &&
-                 XToolkit.saved_error.get_error_code() != XConstants.Success)) {
+            if ((status == 0) ||
+                ((XErrorHandlerUtil.saved_error != null) &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success))) {
                 throw new XException("XGetWindowAttributes failed");
             }
 
@@ -429,15 +429,15 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             wattr.dispose();
         }
 
-        XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+        XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
         XlibWrapper.XSelectInput(XToolkit.getDisplay(), source_win,
                                  source_win_mask |
                                  XConstants.StructureNotifyMask);
 
-        XToolkit.RESTORE_XERROR_HANDLER();
+        XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-        if (XToolkit.saved_error != null &&
-            XToolkit.saved_error.get_error_code() != XConstants.Success) {
+        if ((XErrorHandlerUtil.saved_error != null) &&
+            (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
             throw new XException("XSelectInput failed");
         }
 
@@ -1024,10 +1024,10 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         if (sourceWindow != 0) {
             XToolkit.awtLock();
             try {
-                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+                XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), sourceWindow,
                                          sourceWindowMask);
-                XToolkit.RESTORE_XERROR_HANDLER();
+                XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
             } finally {
                 XToolkit.awtUnlock();
             }

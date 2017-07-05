@@ -39,5 +39,5 @@ public interface IntSupplier {
      *
      * @return an {@code int} value
      */
-    public int getAsInt();
+    int getAsInt();
 }

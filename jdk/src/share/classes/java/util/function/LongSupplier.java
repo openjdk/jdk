@@ -39,5 +39,5 @@ public interface LongSupplier {
      *
      * @return a {@code long} value
      */
-    public long getAsLong();
+    long getAsLong();
 }

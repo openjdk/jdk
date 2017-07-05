@@ -46,5 +46,5 @@ public interface ToLongBiFunction<T, U> {
      * @param u an input object
      * @return the function result value
      */
-    public long applyAsLong(T t, U u);
+    long applyAsLong(T t, U u);
 }

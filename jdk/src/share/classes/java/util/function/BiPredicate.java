@@ -30,8 +30,8 @@ import java.util.Objects;
  * Determines if the input objects match some criteria. This is the two-arity
  * specialization of {@link Predicate}.
  *
- * @param <T> the type of the first argument to {@code test}.
- * @param <U> the type of the second argument to {@code test}.
+ * @param <T> the type of the first argument to {@code test}
+ * @param <U> the type of the second argument to {@code test}
  *
  * @see Predicate
  * @since 1.8
@@ -42,9 +42,9 @@ public interface BiPredicate<T, U> {
     /**
      * Return {@code true} if the inputs match some criteria.
      *
-     * @param t an input object.
-     * @param u an input object.
-     * @return {@code true} if the inputs match some criteria.
+     * @param t an input object
+     * @param u an input object
+     * @return {@code true} if the inputs match some criteria
      */
     boolean test(T t, U u);
 
@@ -54,11 +54,12 @@ public interface BiPredicate<T, U> {
      * this predicate returns {@code false} then the remaining predicate is not
      * evaluated.
      *
-     * @param p a predicate which will be logically-ANDed with this predicate.
+     * @param p a predicate which will be logically-ANDed with this predicate
      * @return a new predicate which returns {@code true} only if both
-     * predicates return {@code true}.
+     * predicates return {@code true}
+     * @throws NullPointerException if p is null
      */
-    public default BiPredicate<T, U> and(BiPredicate<? super T, ? super U> p) {
+    default BiPredicate<T, U> and(BiPredicate<? super T, ? super U> p) {
         Objects.requireNonNull(p);
         return (T t, U u) -> test(t, u) && p.test(t, u);
     }
@@ -67,9 +68,9 @@ public interface BiPredicate<T, U> {
      * Returns a predicate which negates the result of this predicate.
      *
      * @return a new predicate who's result is always the opposite of this
-     * predicate.
+     * predicate
      */
-    public default BiPredicate<T, U> negate() {
+    default BiPredicate<T, U> negate() {
         return (T t, U u) -> !test(t, u);
     }
 
@@ -79,25 +80,13 @@ public interface BiPredicate<T, U> {
      * predicate returns {@code true} then the remaining predicate is not
      * evaluated.
      *
-     * @param p a predicate which will be logically-ORed with this predicate.
+     * @param p a predicate which will be logically-ORed with this predicate
      * @return a new predicate which returns {@code true} if either predicate
-     * returns {@code true}.
+     * returns {@code true}
+     * @throws NullPointerException if p is null
      */
-    public default BiPredicate<T, U> or(BiPredicate<? super T, ? super U> p) {
+    default BiPredicate<T, U> or(BiPredicate<? super T, ? super U> p) {
         Objects.requireNonNull(p);
         return (T t, U u) -> test(t, u) || p.test(t, u);
-    }
-
-    /**
-     * Returns a predicate that evaluates to {@code true} if both or neither of
-     * the component predicates evaluate to {@code true}.
-     *
-     * @param p a predicate which will be logically-XORed with this predicate.
-     * @return a predicate that evaluates to {@code true} if both or neither of
-     * the component predicates evaluate to {@code true}.
-     */
-    public default BiPredicate<T, U> xor(BiPredicate<? super T, ? super U> p) {
-        Objects.requireNonNull(p);
-        return (T t, U u) -> test(t, u) ^ p.test(t, u);
     }
 }
