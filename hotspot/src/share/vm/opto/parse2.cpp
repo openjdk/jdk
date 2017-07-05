@@ -886,7 +886,7 @@ float Parse::branch_prediction(float& cnt,
 // some branches (e.g., _213_javac.Assembler.eliminate) validly produce
 // very small but nonzero probabilities, which if confused with zero
 // counts would keep the program recompiling indefinitely.
-bool Parse::seems_never_taken(float prob) {
+bool Parse::seems_never_taken(float prob) const {
   return prob < PROB_MIN;
 }
 
@@ -898,7 +898,7 @@ bool Parse::seems_never_taken(float prob) {
 // already acting in a stable fashion.  If the comparison
 // seems stable, we will put an expensive uncommon trap
 // on the untaken path.
-bool Parse::seems_stable_comparison(BoolTest::mask btest, Node* cmp) {
+bool Parse::seems_stable_comparison() const {
   if (C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if)) {
     return false;
   }
@@ -1127,6 +1127,14 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   }
 }
 
+bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
+  // Don't want to speculate on uncommon traps when running with -Xcomp
+  if (!UseInterpreter) {
+    return false;
+  }
+  return (seems_never_taken(prob) && seems_stable_comparison());
+}
+
 //----------------------------adjust_map_after_if------------------------------
 // Adjust the JVM state to reflect the result of taking this path.
 // Basically, it means inspecting the CmpNode controlling this
@@ -1140,7 +1148,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
-  if (seems_never_taken(prob) && seems_stable_comparison(btest, c)) {
+  if (path_is_suitable_for_uncommon_trap(prob)) {
     repush_if_args();
     uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,

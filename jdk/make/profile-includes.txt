@@ -71,6 +71,7 @@ PROFILE_1_JRE_LIB_FILES := \
     rt.jar \
     security/US_export_policy.jar \
     security/blacklist \
+    security/blacklisted.certs \
     security/cacerts \
     security/java.policy \
     security/java.security \

@@ -34,6 +34,8 @@
   static_field(HeapRegion, GrainBytes,        size_t)                         \
   static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
                                                                               \
+  nonstatic_field(G1OffsetTableContigSpace, _top,       HeapWord*)            \
+                                                                              \
   nonstatic_field(G1HeapRegionTable, _base,             address)              \
   nonstatic_field(G1HeapRegionTable, _length,           size_t)               \
   nonstatic_field(G1HeapRegionTable, _biased_base,      address)              \
@@ -69,7 +71,8 @@
                                                                               \
   declare_type(G1CollectedHeap, SharedHeap)                                   \
                                                                               \
-  declare_type(HeapRegion, ContiguousSpace)                                   \
+  declare_type(G1OffsetTableContigSpace, CompactibleSpace)                    \
+  declare_type(HeapRegion, G1OffsetTableContigSpace)                          \
   declare_toplevel_type(HeapRegionSeq)                                        \
   declare_toplevel_type(HeapRegionSetBase)                                    \
   declare_toplevel_type(HeapRegionSetCount)                                   \

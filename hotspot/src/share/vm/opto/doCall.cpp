@@ -468,8 +468,14 @@ void Parse::do_call() {
     Node* receiver_node             = stack(sp() - nargs);
     const TypeOopPtr* receiver_type = _gvn.type(receiver_node)->isa_oopptr();
     // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
-    callee = C->optimize_virtual_call(method(), bci(), klass, orig_callee, receiver_type,
-                                      is_virtual,
+    // For arrays, klass below is Object. When vtable calls are used,
+    // resolving the call with Object would allow an illegal call to
+    // finalize() on an array. We use holder instead: illegal calls to
+    // finalize() won't be compiled as vtable calls (IC call
+    // resolution will catch the illegal call) and the few legal calls
+    // on array types won't be either.
+    callee = C->optimize_virtual_call(method(), bci(), klass, holder, orig_callee,
+                                      receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
     speculative_receiver_type = receiver_type != NULL ? receiver_type->speculative_type() : NULL;
   }
@@ -940,8 +946,8 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
 
 
 ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
-                                         ciMethod* callee, const TypeOopPtr* receiver_type,
-                                         bool is_virtual,
+                                         ciKlass* holder, ciMethod* callee,
+                                         const TypeOopPtr* receiver_type, bool is_virtual,
                                          bool& call_does_dispatch, int& vtable_index) {
   // Set default values for out-parameters.
   call_does_dispatch = true;
@@ -956,7 +962,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKl
     call_does_dispatch = false;
   } else if (!UseInlineCaches && is_virtual && callee->is_loaded()) {
     // We can make a vtable call at this site
-    vtable_index = callee->resolve_vtable_index(caller->holder(), klass);
+    vtable_index = callee->resolve_vtable_index(caller->holder(), holder);
   }
   return callee;
 }
@@ -979,8 +985,10 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
   ciInstanceKlass* actual_receiver = klass;
   if (receiver_type != NULL) {
     // Array methods are all inherited from Object, and are monomorphic.
+    // finalize() call on array is not allowed.
     if (receiver_type->isa_aryptr() &&
-        callee->holder() == env()->Object_klass()) {
+        callee->holder() == env()->Object_klass() &&
+        callee->name() != ciSymbol::finalize_method_name()) {
       return callee;
     }
 

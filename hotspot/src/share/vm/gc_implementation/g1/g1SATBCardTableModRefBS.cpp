@@ -66,6 +66,17 @@ G1SATBCardTableModRefBS::write_ref_array_pre_work(T* dst, int count) {
   }
 }
 
+void G1SATBCardTableModRefBS::write_ref_array_pre(oop* dst, int count, bool dest_uninitialized) {
+  if (!dest_uninitialized) {
+    write_ref_array_pre_work(dst, count);
+  }
+}
+void G1SATBCardTableModRefBS::write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized) {
+  if (!dest_uninitialized) {
+    write_ref_array_pre_work(dst, count);
+  }
+}
+
 bool G1SATBCardTableModRefBS::mark_card_deferred(size_t card_index) {
   jbyte val = _byte_map[card_index];
   // It's already processed

@@ -127,13 +127,7 @@ CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))
 
 # optimization control flags (Used by fastdebug and release variants)
 OPT_CFLAGS/NOOPT=-O0
-ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
-  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
-  OPT_CFLAGS/DEBUG=-Og
-+else
-  # Allow no optimizations.
-  OPT_CFLAGS/DEBUG=-O0
-endif
+OPT_CFLAGS/DEBUG=-O0
 OPT_CFLAGS/SIZE=-Os
 OPT_CFLAGS/SPEED=-O3
 
@@ -229,14 +223,8 @@ SHARED_FLAG = -shared
 #------------------------------------------------------------------------
 # Debug flags
 
-ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
-  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
-  DEBUG_CFLAGS=-Og
-else
-  # Allow no optimizations.
-  DEBUG_CFLAGS=-O0
-endif
-
+# Allow no optimizations.
+DEBUG_CFLAGS=-O0
 
 # Use the stabs format for debugging information (this is the default
 # on gcc-2.91). It's good enough, has all the information about line

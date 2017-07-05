@@ -287,8 +287,8 @@ class FinallyStatement extends Statement {
             // allocate space for the exception and return address
             f1 = new LocalMember(where, thisClass, 0, Type.tObject, null);
             f2 = new LocalMember(where, thisClass, 0, Type.tInt, null);
-            num1 = new Integer(ctx.declare(env, f1));
-            num2 = new Integer(ctx.declare(env, f2));
+            num1 = ctx.declare(env, f1);
+            num2 = ctx.declare(env, f2);
         }
 
         TryData td = new TryData();
