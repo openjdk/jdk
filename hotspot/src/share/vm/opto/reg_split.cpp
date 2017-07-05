@@ -51,6 +51,15 @@
 
 static const char out_of_nodes[] = "out of nodes during split";
 
+static bool contains_no_live_range_input(const Node* def) {
+  for (uint i = 1; i < def->req(); ++i) {
+    if (def->in(i) != NULL && def->in_RegMask(i).is_NotEmpty()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 //------------------------------get_spillcopy_wide-----------------------------
 // Get a SpillCopy node with wide-enough masks.  Use the 'wide-mask', the
 // wide ideal-register spill-mask if possible.  If the 'wide-mask' does
@@ -1312,7 +1321,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       Node *def = Reaches[pidx][slidx];
       assert( def, "must have reaching def" );
       // If input up/down sense and reg-pressure DISagree
-      if( def->rematerialize() ) {
+      if (def->rematerialize() && contains_no_live_range_input(def)) {
         // Place the rematerialized node above any MSCs created during
         // phi node splitting.  end_idx points at the insertion point
         // so look at the node before it.

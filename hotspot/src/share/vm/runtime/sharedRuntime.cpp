@@ -2726,7 +2726,7 @@ VMReg SharedRuntime::name_for_receiver() {
   return regs.first();
 }
 
-VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, int* arg_size) {
+VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, bool has_appendix, int* arg_size) {
   // This method is returning a data structure allocating as a
   // ResourceObject, so do not put any ResourceMarks in here.
   char *s = sig->as_C_string();
@@ -2770,6 +2770,11 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
     default : ShouldNotReachHere();
     }
   }
+
+  if (has_appendix) {
+    sig_bt[cnt++] = T_OBJECT;
+  }
+
   assert( cnt < 256, "grow table size" );
 
   int comp_args_on_stack;

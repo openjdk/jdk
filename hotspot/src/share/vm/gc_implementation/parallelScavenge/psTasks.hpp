@@ -59,9 +59,10 @@ class ScavengeRootsTask : public GCTask {
     object_synchronizer   = 4,
     flat_profiler         = 5,
     system_dictionary     = 6,
-    management            = 7,
-    jvmti                 = 8,
-    code_cache            = 9
+    class_loader_data     = 7,
+    management            = 8,
+    jvmti                 = 9,
+    code_cache            = 10
   };
  private:
   RootType _root_type;

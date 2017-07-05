@@ -47,8 +47,6 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
    private static final int FIELD_IS_SYNTHETIC       = 13;
    private static final int FIELD_IS_INTERFACE       = 14;
    private static final int FIELD_CLASS_LOADER       = 15;
-   private static final int FIELD_PROTECTION_DOMAIN  = 16;
-   private static final int FIELD_SIGNERS            = 17;
    private static final int FIELD_STATICS            = 18;
    private static final int FIELD_UNDEFINED          = -1;
 
@@ -100,10 +98,6 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
          return Boolean.valueOf(ik.isInterface());
       case FIELD_CLASS_LOADER:
          return factory.newJSJavaObject(ik.getClassLoader());
-      case FIELD_PROTECTION_DOMAIN:
-         return factory.newJSJavaObject(ik.getProtectionDomain());
-      case FIELD_SIGNERS:
-         return factory.newJSJavaObject(ik.getSigners());
       case FIELD_STATICS:
          return getStatics();
       case FIELD_UNDEFINED:
@@ -246,8 +240,6 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
       addField("isSynthetic", FIELD_IS_SYNTHETIC);
       addField("isInterface", FIELD_IS_INTERFACE);
       addField("classLoader", FIELD_CLASS_LOADER);
-      addField("protectionDomain", FIELD_PROTECTION_DOMAIN);
-      addField("signers", FIELD_SIGNERS);
       addField("statics", FIELD_STATICS);
    }
 

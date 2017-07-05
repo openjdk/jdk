@@ -34,6 +34,7 @@
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/intHisto.hpp"
@@ -73,7 +74,8 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
     _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
     _cg1r(g1->concurrent_g1_refine()),
     _cset_rs_update_cl(NULL),
-    _cards_scanned(NULL), _total_cards_scanned(0)
+    _cards_scanned(NULL), _total_cards_scanned(0),
+    _prev_period_summary()
 {
   _seq_task = new SubTasksDone(NumSeqTasks);
   guarantee(n_workers() > 0, "There should be some workers");
@@ -81,6 +83,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   for (uint i = 0; i < n_workers(); i++) {
     _cset_rs_update_cl[i] = NULL;
   }
+  _prev_period_summary.initialize(this, n_workers());
 }
 
 G1RemSet::~G1RemSet() {
@@ -697,47 +700,29 @@ bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
   return has_refs_into_cset;
 }
 
-class HRRSStatsIter: public HeapRegionClosure {
-  size_t _occupied;
-  size_t _total_mem_sz;
-  size_t _max_mem_sz;
-  HeapRegion* _max_mem_sz_region;
-public:
-  HRRSStatsIter() :
-    _occupied(0),
-    _total_mem_sz(0),
-    _max_mem_sz(0),
-    _max_mem_sz_region(NULL)
-  {}
+void G1RemSet::print_periodic_summary_info() {
+  G1RemSetSummary current;
+  current.initialize(this, n_workers());
 
-  bool doHeapRegion(HeapRegion* r) {
-    if (r->continuesHumongous()) return false;
-    size_t mem_sz = r->rem_set()->mem_size();
-    if (mem_sz > _max_mem_sz) {
-      _max_mem_sz = mem_sz;
-      _max_mem_sz_region = r;
-    }
-    _total_mem_sz += mem_sz;
-    size_t occ = r->rem_set()->occupied();
-    _occupied += occ;
-    return false;
-  }
-  size_t total_mem_sz() { return _total_mem_sz; }
-  size_t max_mem_sz() { return _max_mem_sz; }
-  size_t occupied() { return _occupied; }
-  HeapRegion* max_mem_sz_region() { return _max_mem_sz_region; }
-};
+  _prev_period_summary.subtract_from(&current);
+  print_summary_info(&_prev_period_summary);
 
-class PrintRSThreadVTimeClosure : public ThreadClosure {
-public:
-  virtual void do_thread(Thread *t) {
-    ConcurrentG1RefineThread* crt = (ConcurrentG1RefineThread*) t;
-    gclog_or_tty->print("    %5.2f", crt->vtime_accum());
-  }
-};
+  _prev_period_summary.set(&current);
+}
 
 void G1RemSet::print_summary_info() {
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  G1RemSetSummary current;
+  current.initialize(this, n_workers());
+
+  print_summary_info(&current, " Cumulative RS summary");
+}
+
+void G1RemSet::print_summary_info(G1RemSetSummary * summary, const char * header) {
+  assert(summary != NULL, "just checking");
+
+  if (header != NULL) {
+    gclog_or_tty->print_cr("%s", header);
+  }
 
 #if CARD_REPEAT_HISTO
   gclog_or_tty->print_cr("\nG1 card_repeat count histogram: ");
@@ -745,52 +730,13 @@ void G1RemSet::print_summary_info() {
   card_repeat_count.print_on(gclog_or_tty);
 #endif
 
-  gclog_or_tty->print_cr("\n Concurrent RS processed %d cards",
-                         _conc_refine_cards);
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  jint tot_processed_buffers =
-    dcqs.processed_buffers_mut() + dcqs.processed_buffers_rs_thread();
-  gclog_or_tty->print_cr("  Of %d completed buffers:", tot_processed_buffers);
-  gclog_or_tty->print_cr("     %8d (%5.1f%%) by conc RS threads.",
-                dcqs.processed_buffers_rs_thread(),
-                100.0*(float)dcqs.processed_buffers_rs_thread()/
-                (float)tot_processed_buffers);
-  gclog_or_tty->print_cr("     %8d (%5.1f%%) by mutator threads.",
-                dcqs.processed_buffers_mut(),
-                100.0*(float)dcqs.processed_buffers_mut()/
-                (float)tot_processed_buffers);
-  gclog_or_tty->print_cr("  Conc RS threads times(s)");
-  PrintRSThreadVTimeClosure p;
-  gclog_or_tty->print("     ");
-  g1->concurrent_g1_refine()->threads_do(&p);
-  gclog_or_tty->print_cr("");
-
-  HRRSStatsIter blk;
-  g1->heap_region_iterate(&blk);
-  gclog_or_tty->print_cr("  Total heap region rem set sizes = "SIZE_FORMAT"K."
-                         "  Max = "SIZE_FORMAT"K.",
-                         blk.total_mem_sz()/K, blk.max_mem_sz()/K);
-  gclog_or_tty->print_cr("  Static structures = "SIZE_FORMAT"K,"
-                         " free_lists = "SIZE_FORMAT"K.",
-                         HeapRegionRemSet::static_mem_size() / K,
-                         HeapRegionRemSet::fl_mem_size() / K);
-  gclog_or_tty->print_cr("    "SIZE_FORMAT" occupied cards represented.",
-                         blk.occupied());
-  HeapRegion* max_mem_sz_region = blk.max_mem_sz_region();
-  HeapRegionRemSet* rem_set = max_mem_sz_region->rem_set();
-  gclog_or_tty->print_cr("    Max size region = "HR_FORMAT", "
-                         "size = "SIZE_FORMAT "K, occupied = "SIZE_FORMAT"K.",
-                         HR_FORMAT_PARAMS(max_mem_sz_region),
-                         (rem_set->mem_size() + K - 1)/K,
-                         (rem_set->occupied() + K - 1)/K);
-  gclog_or_tty->print_cr("    Did %d coarsenings.",
-                         HeapRegionRemSet::n_coarsenings());
+  summary->print_on(gclog_or_tty);
 }
 
 void G1RemSet::prepare_for_verify() {
   if (G1HRRSFlushLogBuffersOnVerify &&
       (VerifyBeforeGC || VerifyAfterGC)
-      &&  !_g1->full_collection()) {
+      &&  (!_g1->full_collection() || G1VerifyRSetsDuringFullGC)) {
     cleanupHRRS();
     _g1->set_refine_cte_cl_concurrency(false);
     if (SafepointSynchronize::is_at_safepoint()) {

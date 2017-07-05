@@ -813,15 +813,21 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-// For now, we say that Windows does not support vtime.  I have no idea
-// whether it can actually be made to (DLD, 9/13/05).
-
-bool os::supports_vtime() { return false; }
+bool os::supports_vtime() { return true; }
 bool os::enable_vtime() { return false; }
 bool os::vtime_enabled() { return false; }
+
 double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
+  FILETIME created;
+  FILETIME exited;
+  FILETIME kernel;
+  FILETIME user;
+  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
+    // the resolution of windows_to_java_time() should be sufficient (ms)
+    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
+  } else {
+    return elapsedTime();
+  }
 }
 
 jlong os::javaTimeMillis() {
@@ -944,6 +950,8 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   MINIDUMP_TYPE dumpType;
   static const char* cwd;
 
+// Default is to always create dump for debug builds, on product builds only dump on server versions of Windows.
+#ifndef ASSERT
   // If running on a client version of Windows and user has not explicitly enabled dumping
   if (!os::win32::is_windows_server() && !CreateMinidumpOnCrash) {
     VMError::report_coredump_status("Minidumps are not enabled by default on client versions of Windows", false);
@@ -953,6 +961,12 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     VMError::report_coredump_status("Minidump has been disabled from the command line", false);
     return;
   }
+#else
+  if (!FLAG_IS_DEFAULT(CreateMinidumpOnCrash) && !CreateMinidumpOnCrash) {
+    VMError::report_coredump_status("Minidump has been disabled from the command line", false);
+    return;
+  }
+#endif
 
   dbghelp = os::win32::load_Windows_dll("DBGHELP.DLL", NULL, 0);
 
@@ -1004,7 +1018,21 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
   if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) == false &&
       _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL) == false) {
-    VMError::report_coredump_status("Call to MiniDumpWriteDump() failed", false);
+        DWORD error = GetLastError();
+        LPTSTR msgbuf = NULL;
+
+        if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                      FORMAT_MESSAGE_FROM_SYSTEM |
+                      FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, error, 0, (LPTSTR)&msgbuf, 0, NULL) != 0) {
+
+          jio_snprintf(buffer, bufferSize, "Call to MiniDumpWriteDump() failed (Error 0x%x: %s)", error, msgbuf);
+          LocalFree(msgbuf);
+        } else {
+          // Call to FormatMessage failed, just include the result from GetLastError
+          jio_snprintf(buffer, bufferSize, "Call to MiniDumpWriteDump() failed (Error 0x%x)", error);
+        }
+        VMError::report_coredump_status(buffer, false);
   } else {
     VMError::report_coredump_status(buffer, true);
   }
