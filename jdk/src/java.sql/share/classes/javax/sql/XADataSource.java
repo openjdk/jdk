@@ -81,7 +81,35 @@ public interface XADataSource extends CommonDataSource {
   XAConnection getXAConnection(String user, String password)
     throws SQLException;
 
-  // JDBC 4.3
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  java.io.PrintWriter getLogWriter() throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  void setLogWriter(java.io.PrintWriter out) throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  void setLoginTimeout(int seconds) throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  int getLoginTimeout() throws SQLException;
+
+   // JDBC 4.3
 
   /**
    * Creates a new {@code XAConnectionBuilder} instance

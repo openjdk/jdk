@@ -36,6 +36,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.LambdaForm.Kind.*;
 
 /**
  * Construction and caching of often-used invokers.
@@ -254,7 +255,7 @@ class Invokers {
      * @param which bit-encoded 0x01 whether it is a CP adapter ("linker") or MHs.invoker value ("invoker");
      *                          0x02 whether it is for invokeExact or generic invoke
      */
-    private static LambdaForm invokeHandleForm(MethodType mtype, boolean customized, int which) {
+    static LambdaForm invokeHandleForm(MethodType mtype, boolean customized, int which) {
         boolean isCached;
         if (!customized) {
             mtype = mtype.basicType();  // normalize Z to I, String to Object, etc.
@@ -263,12 +264,12 @@ class Invokers {
             isCached = false;  // maybe cache if mtype == mtype.basicType()
         }
         boolean isLinker, isGeneric;
-        String debugName;
+        Kind kind;
         switch (which) {
-        case MethodTypeForm.LF_EX_LINKER:   isLinker = true;  isGeneric = false; debugName = "invokeExact_MT"; break;
-        case MethodTypeForm.LF_EX_INVOKER:  isLinker = false; isGeneric = false; debugName = "exactInvoker"; break;
-        case MethodTypeForm.LF_GEN_LINKER:  isLinker = true;  isGeneric = true;  debugName = "invoke_MT"; break;
-        case MethodTypeForm.LF_GEN_INVOKER: isLinker = false; isGeneric = true;  debugName = "invoker"; break;
+        case MethodTypeForm.LF_EX_LINKER:   isLinker = true;  isGeneric = false; kind = EXACT_LINKER; break;
+        case MethodTypeForm.LF_EX_INVOKER:  isLinker = false; isGeneric = false; kind = EXACT_INVOKER; break;
+        case MethodTypeForm.LF_GEN_LINKER:  isLinker = true;  isGeneric = true;  kind = GENERIC_LINKER; break;
+        case MethodTypeForm.LF_GEN_INVOKER: isLinker = false; isGeneric = true;  kind = GENERIC_INVOKER; break;
         default: throw new InternalError();
         }
         LambdaForm lform;
@@ -323,7 +324,11 @@ class Invokers {
             names[CHECK_CUSTOM] = new Name(NF_checkCustomized, outArgs[0]);
         }
         names[LINKER_CALL] = new Name(outCallType, outArgs);
-        lform = new LambdaForm(debugName, INARG_LIMIT, names);
+        if (customized) {
+            lform = new LambdaForm(kind.defaultLambdaName, INARG_LIMIT, names);
+        } else {
+            lform = new LambdaForm(kind.defaultLambdaName, INARG_LIMIT, names, kind);
+        }
         if (isLinker)
             lform.compileToBytecode();  // JVM needs a real methodOop
         if (isCached)
@@ -614,4 +619,15 @@ class Invokers {
             }
         }
     }
+
+    static {
+        // The Holder class will contain pre-generated Invokers resolved
+        // speculatively using MemberName.getFactory().resolveOrNull. However, that
+        // doesn't initialize the class, which subtly breaks inlining etc. By forcing
+        // initialization of the Holder class we avoid these issues.
+        UNSAFE.ensureClassInitialized(Holder.class);
+    }
+
+    /* Placeholder class for Invokers generated ahead of time */
+    final class Holder {}
 }

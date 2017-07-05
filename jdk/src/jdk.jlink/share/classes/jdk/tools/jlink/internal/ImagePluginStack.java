@@ -172,7 +172,7 @@ public final class ImagePluginStack {
     private final Plugin lastSorter;
     private final List<Plugin> plugins = new ArrayList<>();
     private final List<ResourcePrevisitor> resourcePrevisitors = new ArrayList<>();
-
+    private final boolean validate;
 
     public ImagePluginStack() {
         this(null, Collections.emptyList(), null);
@@ -181,6 +181,13 @@ public final class ImagePluginStack {
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<Plugin> plugins,
             Plugin lastSorter) {
+        this(imageBuilder, plugins, lastSorter, true);
+    }
+
+    public ImagePluginStack(ImageBuilder imageBuilder,
+            List<Plugin> plugins,
+            Plugin lastSorter,
+            boolean validate) {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
         this.plugins.addAll(Objects.requireNonNull(plugins));
@@ -190,6 +197,7 @@ public final class ImagePluginStack {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
             }
         });
+        this.validate = validate;
     }
 
     public void operate(ImageProvider provider) throws Exception {
@@ -268,6 +276,7 @@ public final class ImagePluginStack {
                 frozenOrder = ((OrderedResourcePoolManager.OrderedResourcePool)resPool).getOrderedList();
             }
         }
+
         return resPool;
     }
 
@@ -458,7 +467,11 @@ public final class ImagePluginStack {
             throws Exception {
         Objects.requireNonNull(original);
         Objects.requireNonNull(transformed);
-        imageBuilder.storeFiles(new LastPoolManager(transformed).resourcePool());
+        ResourcePool lastPool = new LastPoolManager(transformed).resourcePool();
+        if (validate) {
+            ResourcePoolConfiguration.validate(lastPool);
+        }
+        imageBuilder.storeFiles(lastPool);
     }
 
     public ExecutableImage getExecutableImage() throws IOException {

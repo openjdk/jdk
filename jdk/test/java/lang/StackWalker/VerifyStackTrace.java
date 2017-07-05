@@ -205,12 +205,13 @@ public class VerifyStackTrace {
                     .replaceAll("java.base@(\\d+\\.){0,3}(\\d+)/", "java.base/")
                     .replaceAll("/[0-9]+\\.run", "/xxxxxxxx.run")
                     .replaceAll("/[0-9]+\\.invoke", "/xxxxxxxx.invoke")
-                    // DMHs may or may not be pre-generated, making frames differ
+                    // LFs may or may not be pre-generated, making frames differ
                     .replaceAll("DirectMethodHandle\\$Holder", "LambdaForm\\$DMH")
-                    .replaceAll("DMH\\.invoke", "DMH/xxxxxxxx.invoke")
+                    .replaceAll("Invokers\\$Holder", "LambdaForm\\$MH")
+                    .replaceAll("MH\\.invoke", "MH/xxxxxxxx.invoke")
                     // invoke frames may or may not have basic method type
                     // information encoded for diagnostic purposes
-                    .replaceAll("xx\\.invoke([A-Za-z]*)_[A-Z]+_[A-Z]", "xx.invoke$1")
+                    .replaceAll("xx\\.invoke([A-Za-z]*)_[A-Z_]+", "xx.invoke$1")
                     .replaceAll("\\$[0-9]+", "\\$??");
         } else {
             return produced;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @bug 4429043 4493595 6332756 6709457
- * @summary The FileChannel file locking
+ * @bug 4429043 4493595 6332756 6709457 7146506
+ * @summary Test FileChannel file locking
  */
 
 import java.io.*;
@@ -33,17 +33,14 @@ import static java.nio.file.StandardOpenOption.*;
 /**
  * Testing FileChannel's lock method.
  */
-
 public class Lock {
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 0) {
-            if(args[0].equals("1")) {
-                MadWriter mw = new MadWriter(args[1], false);
-            } else {
-                MadWriter mw = new MadWriter(args[1], true);
-            }
+        if (args.length == 2) {
+            attemptLock(args[1], args[0].equals("2"));
             return;
+        } else if (args.length != 0) {
+            throw new RuntimeException("Wrong number of parameters.");
         }
         File blah = File.createTempFile("blah", null);
         blah.deleteOnExit();
@@ -56,120 +53,128 @@ public class Lock {
         test2(blah, false);
         test3(blah);
         test4(blah);
-        blah.delete();
     }
 
-    private static void test2(File blah, boolean b) throws Exception {
-        RandomAccessFile raf = new RandomAccessFile(blah, "rw");
-        FileChannel channel = raf.getChannel();
-        FileLock lock;
-        if (b)
-            lock = channel.lock();
-        else
-            lock = channel.tryLock();
-        lock.release();
-        channel.close();
-    }
-
+    /**
+     * Test mutual locking with other process
+     */
     static void test1(File blah, String str) throws Exception {
+        try (RandomAccessFile fis = new RandomAccessFile(blah, "rw")) {
+            FileChannel fc = fis.getChannel();
+            FileLock lock = null;
 
-        // Grab the lock
-        RandomAccessFile fis = new RandomAccessFile(blah, "rw");
-        FileChannel fc = fis.getChannel();
-        FileLock lock = null;
-
-        if (str.equals("1")) {
-            lock = fc.lock(0, 10, false);
-            if (lock == null)
-                throw new RuntimeException("Lock should not return null");
-            try {
-                FileLock lock2 = fc.lock(5, 10, false);
-                throw new RuntimeException("Overlapping locks allowed");
-            } catch (OverlappingFileLockException e) {
-                // Correct result
+            // grab the lock
+            if (str.equals("1")) {
+                lock = fc.lock(0, 10, false);
+                if (lock == null)
+                    throw new RuntimeException("Lock should not return null");
+                try {
+                    fc.lock(5, 10, false);
+                    throw new RuntimeException("Overlapping locks allowed");
+                } catch (OverlappingFileLockException e) {} // correct result
             }
-        }
 
-        // Exec the tamperer
-        String command = System.getProperty("java.home") +
-            File.separator + "bin" + File.separator + "java";
-        String testClasses = System.getProperty("test.classes");
-        if (testClasses != null)
-            command += " -cp " + testClasses;
-        command += " Lock " + str + " " + blah;
-        Process p = Runtime.getRuntime().exec(command);
+            // execute the tamperer
+            String command = System.getProperty("java.home") +
+                File.separator + "bin" + File.separator + "java";
+            String testClasses = System.getProperty("test.classes");
+            if (testClasses != null)
+                command += " -cp " + testClasses;
+            command += " Lock " + str + " " + blah;
+            Process p = Runtime.getRuntime().exec(command);
 
-        BufferedReader in = new BufferedReader
-            (new InputStreamReader(p.getInputStream()));
-
-        String s;
-        int count = 0;
-        while ((s = in.readLine()) != null) {
-            if (!s.equals("good")) {
-                if (File.separatorChar == '/') {
-                    // Fails on windows over NFS...
-                    throw new RuntimeException("Failed: "+s);
+            // evaluate System.out of child process
+            String s;
+            boolean hasOutput = false;
+            InputStreamReader isr;
+            isr = new InputStreamReader(p.getInputStream());
+            BufferedReader br = new BufferedReader(isr);
+            while ((s = br.readLine()) != null) {
+                // only throw on Unix as windows over NFS fails...
+                if ((File.separatorChar == '/') && !s.equals("good")) {
+                    throw new RuntimeException("Failed: " + s);
                 }
+                hasOutput = true;
             }
-            count++;
-        }
 
-        if (count == 0) {
-            in = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            while ((s = in.readLine()) != null) {
-                System.err.println("Error output: " + s);
+            // evaluate System.err in case of System.out of child process
+            // was empty
+            if (!hasOutput) {
+                isr = new InputStreamReader(p.getErrorStream());
+                br = new BufferedReader(isr);
+                if ((s = br.readLine()) != null) {
+                    System.err.println("Error output:");
+                    System.err.println(s);
+                    while ((s = br.readLine()) != null) {
+                        System.err.println(s);
+                    }
+                }
+                throw new RuntimeException("Failed, no output");
             }
-            throw new RuntimeException("Failed, no output");
-        }
 
-        // Clean up
-        if (lock != null) {
-            /* Check multiple releases */
-            lock.release();
-            lock.release();
+            // clean up, check multiple releases
+            if (lock != null) {
+                lock.release();
+                lock.release();
+            }
         }
-        fc.close();
-        fis.close();
     }
 
-    // The overlap check for file locks should be JVM-wide
-    private static void test3(File blah) throws Exception {
-        FileChannel fc1 = new RandomAccessFile(blah, "rw").getChannel();
-        FileChannel fc2 = new RandomAccessFile(blah, "rw").getChannel();
-
-        // lock via one channel, and then attempt to lock the same file
-        // using a second channel
-        FileLock fl1 = fc1.lock();
-        try {
-            fc2.tryLock();
-            throw new RuntimeException("Overlapping locks allowed");
-        } catch (OverlappingFileLockException x) {
+    /**
+     * Basic test for FileChannel.lock() and FileChannel.tryLock()
+     */
+    static void test2(File blah, boolean b) throws Exception {
+        try (RandomAccessFile raf = new RandomAccessFile(blah, "rw")) {
+            FileChannel channel = raf.getChannel();
+            FileLock lock;
+            if (b)
+                lock = channel.lock();
+            else
+                lock = channel.tryLock();
+            lock.release();
         }
-        try {
+    }
+
+    /**
+     * Test that overlapping file locking is not possible when using different
+     * FileChannel objects to the same file path
+     */
+    static void test3(File blah) throws Exception {
+        try (RandomAccessFile raf1 = new RandomAccessFile(blah, "rw");
+             RandomAccessFile raf2 = new RandomAccessFile(blah, "rw"))
+        {
+            FileChannel fc1 = raf1.getChannel();
+            FileChannel fc2 = raf2.getChannel();
+
+            // lock via one channel, and then attempt to lock the same file
+            // using a second channel
+            FileLock fl1 = fc1.lock();
+            try {
+                fc2.tryLock();
+                throw new RuntimeException("Overlapping locks allowed");
+            } catch (OverlappingFileLockException x) {}
+            try {
+                fc2.lock();
+                throw new RuntimeException("Overlapping locks allowed");
+            } catch (OverlappingFileLockException x) {}
+
+            // release lock and the attempt to lock with the second channel
+            // should succeed.
+            fl1.release();
             fc2.lock();
-            throw new RuntimeException("Overlapping locks allowed");
-        } catch (OverlappingFileLockException x) {
+            try {
+                fc1.lock();
+                throw new RuntimeException("Overlapping locks allowed");
+            } catch (OverlappingFileLockException x) {}
         }
-
-        // release lock and the attempt to lock with the second channel
-        // should succeed.
-        fl1.release();
-        FileLock fl2 = fc2.lock();
-        try {
-            fc1.lock();
-            throw new RuntimeException("Overlapping locks allowed");
-        } catch (OverlappingFileLockException x) {
-        }
-
-        fc1.close();
-        fc2.close();
     }
 
     /**
      * Test file locking when file is opened for append
      */
     static void test4(File blah) throws Exception {
-        try (FileChannel fc = new FileOutputStream(blah, true).getChannel()) {
+        try (FileOutputStream fos = new FileOutputStream(blah, true)) {
+            FileChannel fc = fos.getChannel();
             fc.tryLock().release();
             fc.tryLock(0L, 1L, false).release();
             fc.lock().release();
@@ -182,30 +187,31 @@ public class Lock {
             fc.lock(0L, 1L, false).release();
         }
     }
-}
 
-class MadWriter {
-    public MadWriter(String s, boolean b) throws Exception {
-        File f = new File(s);
-        RandomAccessFile fos = new RandomAccessFile(f, "rw");
-        FileChannel fc = fos.getChannel();
-        if (fc.tryLock(10, 10, false) == null) {
-            System.out.println("bad: Failed to grab adjacent lock");
+    /**
+     * Utility method to be run in secondary process which tries to acquire a
+     * lock on a FileChannel
+     */
+    static void attemptLock(String fileName,
+                            boolean expectsLock) throws Exception
+    {
+        File f = new File(fileName);
+        try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
+            FileChannel fc = raf.getChannel();
+            if (fc.tryLock(10, 10, false) == null) {
+                System.out.println("bad: Failed to grab adjacent lock");
+            }
+            if (fc.tryLock(0, 10, false) == null) {
+                if (expectsLock)
+                    System.out.println("bad");
+                else
+                    System.out.println("good");
+            } else {
+                if (expectsLock)
+                    System.out.println("good");
+                else
+                    System.out.println("bad");
+            }
         }
-        FileLock lock = fc.tryLock(0, 10, false);
-        if (lock == null) {
-            if (b)
-                System.out.println("bad");
-            else
-                System.out.println("good");
-        } else {
-            if (b)
-                System.out.println("good");
-            else
-                System.out.println("bad");
-        }
-        fc.close();
-        fos.close();
     }
-
 }

@@ -31,6 +31,9 @@
 
 #include "j2secmod.h"
 
+extern void throwNullPointerException(JNIEnv *env, const char *message);
+extern void throwIOException(JNIEnv *env, const char *message);
+
 void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     HINSTANCE hModule = (HINSTANCE)jHandle;
     void *fAddress = GetProcAddress(hModule, functionName);
