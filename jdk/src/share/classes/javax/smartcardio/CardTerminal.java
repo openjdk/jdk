@@ -28,7 +28,7 @@ package javax.smartcardio;
 import java.util.*;
 
 /**
- * A Smart Card terminal, sometimes refered to as a Smart Card Reader.
+ * A Smart Card terminal, sometimes referred to as a Smart Card Reader.
  * A CardTerminal object can be obtained by calling
  * {@linkplain CardTerminals#list}
  * or {@linkplain CardTerminals#getTerminal CardTerminals.getTerminal()}.

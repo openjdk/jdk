@@ -26,10 +26,12 @@ package java.lang;
 
 import java.io.*;
 import java.lang.reflect.Executable;
+import java.lang.annotation.Annotation;
 import java.security.AccessControlContext;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.StringTokenizer;
+import java.util.Map;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.AllPermission;
@@ -1226,6 +1228,9 @@ public final class System {
             }
             public AnnotationType getAnnotationType(Class<?> klass) {
                 return klass.getAnnotationType();
+            }
+            public Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap(Class<?> klass) {
+                return klass.getDeclaredAnnotationMap();
             }
             public byte[] getRawClassAnnotations(Class<?> klass) {
                 return klass.getRawAnnotations();

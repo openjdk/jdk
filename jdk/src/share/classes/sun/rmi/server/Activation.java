@@ -684,7 +684,7 @@ public class Activation implements Serializable {
                  * Now exit... A System.exit should only be done if
                  * the RMI activation system daemon was started up
                  * by the main method below (in which should always
-                 * be the case since the Activation contructor is private).
+                 * be the case since the Activation constructor is private).
                  */
                 System.err.println(getTextResource("rmid.daemon.shutdown"));
                 System.exit(0);
@@ -784,7 +784,7 @@ public class Activation implements Serializable {
     /**
      * Container for group information: group's descriptor, group's
      * instantiator, flag to indicate pending group creation, and
-     * table of the group's actived objects.
+     * table of the objects that are activated in the group.
      *
      * WARNING: GroupEntry objects should not be written into log file
      * updates.  GroupEntrys are inner classes of Activation and they

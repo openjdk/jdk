@@ -115,6 +115,8 @@ public class TestTypeResolver {
         // by private implementations of the various Type interfaces
         if (expect.equals(t) && t.equals(expect))
             System.out.println(", as expected");
+        else if ((expect.equals(t) || t.equals(expect)) && expect.toString().equals(t.toString()))
+            System.out.println(", as workaround of the 8023301 bug");
         else {
             System.out.println(" BUT SHOULD BE " + expect);
             failedCases.add(c);

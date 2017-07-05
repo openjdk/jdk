@@ -46,7 +46,7 @@ import java.io.Serializable;
  * <p>
  * The appropriate <code>DragGestureRecognizer</code>
  * subclass instance is obtained from the
- * {@link DragSource} asssociated with
+ * {@link DragSource} associated with
  * a particular <code>Component</code>, or from the <code>Toolkit</code> object via its
  * {@link java.awt.Toolkit#createDragGestureRecognizer createDragGestureRecognizer()}
  * method.

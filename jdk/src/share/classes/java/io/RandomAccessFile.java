@@ -784,7 +784,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * </pre></blockquote>
      * <p>
      * then the result is equal to:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      *     ((long)b1 &lt;&lt; 56) + ((long)b2 &lt;&lt; 48)
      *     + ((long)b3 &lt;&lt; 40) + ((long)b4 &lt;&lt; 32)
      *     + ((long)b5 &lt;&lt; 24) + ((long)b6 &lt;&lt; 16)

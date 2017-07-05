@@ -23,7 +23,11 @@
  questions.
 -->
 
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
+<head>
+<title></title>
+</head>
 <body bgcolor=white>
 
 <h1 align=center>AWT Desktop Properties</h1>
@@ -51,8 +55,8 @@ unavailable for any reason, the implementation will return
 <p>
 The following table summarizes the desktop properties documented
 here, and their value types.
-<p>
-<table align="center" border="0" cellspacing="0" cellpadding="2" width="%95
+<br><br>
+<table align="center" border="0" cellspacing="0" cellpadding="2"
   summary="Standard AWT Desktop Properties">
 <tr bgcolor="#ccccff">
 <th valign="TOP" align="LEFT">Property Name</th>
@@ -60,17 +64,17 @@ here, and their value types.
 <th valign="TOP" align="LEFT">Summary Description</th>
 </tr>
 <tr>
-<td valign="TOP"><A href=#awt.font.desktophints>awt.font.desktophints</A</td>
-<td valign="TOP"><a href="../../util/Map.html">java.util.Map<a/></td>
-<td valign="TOP">Font smoothing (text antialiasing) settings.<a/></td>
+<td valign="TOP"><A href="#awt.font.desktophints">awt.font.desktophints</A></td>
+<td valign="TOP"><a href="../../util/Map.html">java.util.Map</a></td>
+<td valign="TOP">Font smoothing (text antialiasing) settings.</td>
 </tr>
 <tr>
-<td valign="TOP"><A href=#"sun.awt.enableExtraMouseButtons">sun.awt.enableExtraMouseButtons</A</td>
-<td valign="TOP"><a href="../../lang/Boolean.html">java.lang.Boolean<a/></td>
-<td valign="TOP">Controls if mouse events from extra buttons are to be generated or not<a/></td>
+<td valign="TOP"><A href="#sun.awt.enableExtraMouseButtons">sun.awt.enableExtraMouseButtons</A></td>
+<td valign="TOP"><a href="../../lang/Boolean.html">java.lang.Boolean</a></td>
+<td valign="TOP">Controls if mouse events from extra buttons are to be generated or not</td>
 </tr>
 </table>
-<p>
+
 <h2>Desktop Font Rendering Hints</h2>
 <b>Desktop Property: <A name="awt.font.desktophints">"awt.font.desktophints"</A></b>
 <p>
@@ -84,14 +88,14 @@ This is particularly important when creating
 <a href="../../../javax/swing/JComponent.html"> Swing components</a> which
 are required to appear consistent with native desktop components or other
 Swing components.
-<p>
+
 <h3>Basic Usage</h3>
 The standard desktop property named
 <b>"awt.font.desktophints"</b>
 can be used to obtain the rendering hints that best match the desktop settings.
 
 The return value is a
-<a href="../../util/Map.html"> Map<a/> of
+<a href="../../util/Map.html"> Map</a> of
 <a href="../RenderingHints.html"> <code>RenderingHints</code></a> which
 can be directly applied to a <code>Graphics2D</code>.
 <p>
@@ -105,7 +109,7 @@ if (map != null) {
 }
 </code></pre>
 <h3>Advanced Usage Tips</h3>
-<p>
+
 <h4>Listening for changes</h4>
 <p>
 An application can listen for changes in the property
@@ -161,7 +165,7 @@ RenderingHints getRenderingHints(Graphics2D g2d,
      if (hintsToSave.size() == 0) {
          return savedHints;
      }
-     /* RenderingHints.keySet() returns Set<Object> */
+     /* RenderingHints.keySet() returns Set&lt;Object&gt; */
      for (Object o : hintsToSave.keySet()) {
          RenderingHints.Key key = (RenderingHints.Key)o;
          Object value = g2d.getRenderingHint(key);
@@ -185,17 +189,17 @@ if (map != null) {
 <h3>Details</h3>
 <ul>
 <li>The return value will always be null or a <code>Map</code>
-<p>
+<br><br>
 <li>If the return value is null, then no desktop properties are available,
 and dynamic updates will not be available. This is a typical behaviour if
 the JDK does not recognise the desktop environment, or it is one which
 has no such settings. The <b>Headless</b> toolkit is one such example.
 Therefore it is important to test against null before using the map. 
-<p>
+<br><br>
 <li>If non-null the value will be a <code>Map</code> of
 <code>RenderingHints</code> such that every key is an instance of
 <code>RenderingHints.Key</code> and the value is a legal value for that key.
-<p>
+<br><br>
 <li>The map may contain the default value for a hint. This is
 needed in the event there is a previously a non-default value for the hint
 set on the <code>Graphics2D</code>. If the map did not contain
@@ -204,7 +208,7 @@ the previous hint which may not correspond to the desktop setting.
 <p>
 An application can use <code>setRenderingHints(Map)</code> to reinitialise
 all hints, but this would affect unrelated hints too.
-<p>
+<br><br>
 <li>A multi-screen desktop may support per-screen device settings in which
 case the returned value is for the default screen of the desktop.
 An application may want to use the settings for the screen on

@@ -191,7 +191,7 @@ final class Filter {
 
     /**
      * convert character 'c' that represents a hexadecimal digit to an integer.
-     * if 'c' is not a hexidecimal digit [0-9A-Fa-f], -1 is returned.
+     * if 'c' is not a hexadecimal digit [0-9A-Fa-f], -1 is returned.
      * otherwise the converted value is returned.
      */
     private static int hexchar2int( byte c ) {

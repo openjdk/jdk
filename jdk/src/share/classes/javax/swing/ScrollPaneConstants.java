@@ -40,7 +40,7 @@ public interface ScrollPaneConstants
     String VIEWPORT = "VIEWPORT";
     /** Identifies a vertical scrollbar. */
     String VERTICAL_SCROLLBAR = "VERTICAL_SCROLLBAR";
-    /** Identifies a horizonal scrollbar. */
+    /** Identifies a horizontal scrollbar. */
     String HORIZONTAL_SCROLLBAR = "HORIZONTAL_SCROLLBAR";
     /**
      * Identifies the area along the left side of the viewport between the

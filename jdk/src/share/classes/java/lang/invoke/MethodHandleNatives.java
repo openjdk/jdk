@@ -441,8 +441,13 @@ class MethodHandleNatives {
             assert(refKindIsValid(refKind));
             return lookup.linkMethodHandleConstant((byte) refKind, defc, name, type);
         } catch (IllegalAccessException ex) {
-            Error err = new IllegalAccessError(ex.getMessage());
-            throw initCauseFrom(err, ex);
+            Throwable cause = ex.getCause();
+            if (cause instanceof AbstractMethodError) {
+                throw (AbstractMethodError) cause;
+            } else {
+                Error err = new IllegalAccessError(ex.getMessage());
+                throw initCauseFrom(err, ex);
+            }
         } catch (NoSuchMethodException ex) {
             Error err = new NoSuchMethodError(ex.getMessage());
             throw initCauseFrom(err, ex);

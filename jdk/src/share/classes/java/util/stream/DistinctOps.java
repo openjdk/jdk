@@ -54,6 +54,16 @@ final class DistinctOps {
     static <T> ReferencePipeline<T, T> makeRef(AbstractPipeline<?, T, ?> upstream) {
         return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE,
                                                       StreamOpFlag.IS_DISTINCT | StreamOpFlag.NOT_SIZED) {
+
+            <P_IN> Node<T> reduce(PipelineHelper<T> helper, Spliterator<P_IN> spliterator) {
+                // If the stream is SORTED then it should also be ORDERED so the following will also
+                // preserve the sort order
+                TerminalOp<T, LinkedHashSet<T>> reduceOp
+                        = ReduceOps.<T, LinkedHashSet<T>>makeRef(LinkedHashSet::new, LinkedHashSet::add,
+                                                                 LinkedHashSet::addAll);
+                return Nodes.node(reduceOp.evaluateParallel(helper, spliterator));
+            }
+
             @Override
             <P_IN> Node<T> opEvaluateParallel(PipelineHelper<T> helper,
                                               Spliterator<P_IN> spliterator,
@@ -63,12 +73,7 @@ final class DistinctOps {
                     return helper.evaluate(spliterator, false, generator);
                 }
                 else if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
-                    // If the stream is SORTED then it should also be ORDERED so the following will also
-                    // preserve the sort order
-                    TerminalOp<T, LinkedHashSet<T>> reduceOp
-                            = ReduceOps.<T, LinkedHashSet<T>>makeRef(LinkedHashSet::new, LinkedHashSet::add,
-                                                                     LinkedHashSet::addAll);
-                    return Nodes.node(reduceOp.evaluateParallel(helper, spliterator));
+                    return reduce(helper, spliterator);
                 }
                 else {
                     // Holder of null state since ConcurrentHashMap does not support null values
@@ -91,6 +96,22 @@ final class DistinctOps {
                         keys.add(null);
                     }
                     return Nodes.node(keys);
+                }
+            }
+
+            @Override
+            <P_IN> Spliterator<T> opEvaluateParallelLazy(PipelineHelper<T> helper, Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.DISTINCT.isKnown(helper.getStreamAndOpFlags())) {
+                    // No-op
+                    return helper.wrapSpliterator(spliterator);
+                }
+                else if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    // Not lazy, barrier required to preserve order
+                    return reduce(helper, spliterator).spliterator();
+                }
+                else {
+                    // Lazy
+                    return new StreamSpliterators.DistinctSpliterator<>(helper.wrapSpliterator(spliterator));
                 }
             }
 

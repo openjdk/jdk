@@ -117,7 +117,7 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
     // generate the keypair. See JCA doc
     public KeyPair generateKeyPair() {
-        // accomodate odd key sizes in case anybody wants to use them
+        // accommodate odd key sizes in case anybody wants to use them
         int lp = (keySize + 1) >> 1;
         int lq = keySize - lp;
         if (random == null) {

@@ -57,7 +57,6 @@ import java.io.IOException;
  * Subclasses may implement actions on top of BasicPermission,
  * if desired.
  * <p>
- * <P>
  * @see java.security.Permission
  * @see java.security.Permissions
  * @see java.security.PermissionCollection
@@ -153,9 +152,9 @@ public abstract class BasicPermission extends Permission
      * Checks if the specified permission is "implied" by
      * this object.
      * <P>
-     * More specifically, this method returns true if:<p>
+     * More specifically, this method returns true if:
      * <ul>
-     * <li> <i>p</i>'s class is the same as this object's class, and<p>
+     * <li> <i>p</i>'s class is the same as this object's class, and
      * <li> <i>p</i>'s name equals or (in the case of wildcards)
      *      is implied by this object's
      *      name. For example, "a.b.*" implies "a.b.c".

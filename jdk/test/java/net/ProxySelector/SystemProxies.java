@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,29 +33,39 @@ import java.util.List;
 
 public class SystemProxies {
 
-    static final String uriAuthority = "myMachine/";
+    static final String[] uriAuthority = { "myMachine/", "local", "localhost",
+                                           "127.0.0.1", "127.0.0.123",
+                                           "127.0.2.2", "127.3.3.3",
+                                           "128.0.0.1" };
     static final ProxySelector proxySel = ProxySelector.getDefault();
 
     public static void main(String[] args) {
         if (! "true".equals(System.getProperty("java.net.useSystemProxies"))) {
-            System.out.println("Usage: java -Djava.net.useSystemProxies SystemProxies");
+            System.out.println("Usage: java -Djava.net.useSystemProxies=true SystemProxies");
             return;
         }
 
         printProxies("http://");
         printProxies("https://");
         printProxies("ftp://");
+        printProxies("none://");
+        printProxies("gopher://");
+        printProxies("rtsp://");
+        printProxies("socket://");
     }
 
     static void printProxies(String proto) {
-        String uriStr =  proto + uriAuthority;
-        try {
-            List<Proxy> proxies = proxySel.select(new URI(uriStr));
-            System.out.println("Proxies returned for " + uriStr);
-            for (Proxy proxy : proxies)
-                System.out.println("\t" + proxy);
-        } catch (URISyntaxException e) {
-            System.err.println(e);
+        System.out.println("Protocol:" + proto);
+        for (String uri : uriAuthority) {
+            String uriStr =  proto + uri;
+            try {
+                List<Proxy> proxies = proxySel.select(new URI(uriStr));
+                System.out.println("\tProxies returned for " + uriStr);
+                for (Proxy proxy : proxies)
+                    System.out.println("\t\t" + proxy);
+            } catch (URISyntaxException e) {
+                System.err.println(e);
+            }
         }
     }
 }

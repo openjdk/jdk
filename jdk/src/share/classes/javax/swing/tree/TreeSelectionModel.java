@@ -47,7 +47,7 @@ import java.beans.PropertyChangeListener;
   *
   * A TreeSelectionModel can be configured to allow only one
   * path (<code>SINGLE_TREE_SELECTION</code>) a number of
-  * continguous paths (<code>CONTIGUOUS_TREE_SELECTION</code>) or a number of
+  * contiguous paths (<code>CONTIGUOUS_TREE_SELECTION</code>) or a number of
   * discontiguous paths (<code>DISCONTIGUOUS_TREE_SELECTION</code>).
   * A <code>RowMapper</code> is used to determine if TreePaths are
   * contiguous.

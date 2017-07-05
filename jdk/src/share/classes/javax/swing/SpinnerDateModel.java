@@ -67,7 +67,7 @@ import java.io.Serializable;
  *   <li><code>Calendar.SECOND</code>
  *   <li><code>Calendar.MILLISECOND</code>
  * </ul>
- * However some UIs may set the calendarField before commiting the edit
+ * However some UIs may set the calendarField before committing the edit
  * to spin the field under the cursor. If you only want one field to
  * spin you can subclass and ignore the setCalendarField calls.
  * <p>
@@ -133,7 +133,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * upper or lower bound.  If <code>value</code> or
      * <code>calendarField</code> is <code>null</code>, or if both
      * <code>start</code> and <code>end</code> are specified and
-     * <code>mininum &gt; maximum</code> then an
+     * <code>minimum &gt; maximum</code> then an
      * <code>IllegalArgumentException</code> is thrown.
      * Similarly if <code>(minimum &lt;= value &lt;= maximum)</code> is false,
      * an IllegalArgumentException is thrown.
@@ -310,7 +310,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * simply move the specified <code>Calendar</code> field forward or backward
      * by one unit with the <code>Calendar.add</code> method.
      * You should use this method with care as some UIs may set the
-     * calendarField before commiting the edit to spin the field under
+     * calendarField before committing the edit to spin the field under
      * the cursor. If you only want one field to spin you can subclass
      * and ignore the setCalendarField calls.
      *

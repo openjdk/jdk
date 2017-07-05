@@ -70,12 +70,12 @@ public class GnomeFileTypeDetector
                 // GIO may access file so need permission check
                 path.checkRead();
                 byte[] type = probeUsingGio(buffer.address());
-                return (type == null) ? null : new String(type);
+                return (type == null) ? null : Util.toString(type);
             } else {
                 byte[] type = probeUsingGnomeVfs(buffer.address());
                 if (type == null)
                     return null;
-                String s = new String(type);
+                String s = Util.toString(type);
                 return s.equals(GNOME_VFS_MIME_TYPE_UNKNOWN) ? null : s;
             }
         } finally {

@@ -247,7 +247,7 @@ public class HttpClient extends NetworkClient {
     }
 
     /* This class has no public constructor for HTTP.  This method is used to
-     * get an HttpClient to the specifed URL.  If there's currently an
+     * get an HttpClient to the specified URL.  If there's currently an
      * active HttpClient to that server/port, you'll get that one.
      */
     public static HttpClient New(URL url)

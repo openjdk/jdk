@@ -255,7 +255,7 @@ public abstract class AbstractScriptEngine  implements ScriptEngine {
      *
      * @param script A <code>String</code> containing the source of the script.
      * @return The return value from <code>eval(String, ScriptContext)</code>
-     * @throws ScriptException if an error occurrs in script.
+     * @throws ScriptException if an error occurs in script.
      * @throws NullPointerException if any of the parameters is null.
      */
     public Object eval(String script) throws ScriptException {

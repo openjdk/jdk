@@ -303,7 +303,7 @@ public class PrintStream extends FilterOutputStream
      *          creating the file
      *
      * @throws  SecurityException
-     *          If a security manager is presentand {@link
+     *          If a security manager is present and {@link
      *          SecurityManager#checkWrite checkWrite(file.getPath())}
      *          denies write access to the file
      *

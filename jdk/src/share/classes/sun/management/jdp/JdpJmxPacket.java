@@ -64,11 +64,27 @@ public final class JdpJmxPacket
      * Name of Java instance
      */
     public final static String INSTANCE_NAME_KEY = "INSTANCE_NAME";
+    /**
+     * PID of java process, optional presented if it could be obtained
+     */
+    public final static String PROCESS_ID_KEY = "PROCESS_ID";
+    /**
+     * Hostname of rmi server, optional presented if user overrides rmi server
+     * hostname by java.rmi.server.hostname property
+     */
+    public final static String RMI_HOSTNAME_KEY = "RMI_HOSTNAME";
+    /**
+     * Configured broadcast interval, optional
+     */
+    public final static String BROADCAST_INTERVAL_KEY = "BROADCAST_INTERVAL";
 
     private UUID id;
     private String mainClass;
     private String jmxServiceUrl;
     private String instanceName;
+    private String processId;
+    private String rmiHostname;
+    private String broadcastInterval;
 
     /**
      * Create new instance from user provided data. Set mandatory fields
@@ -99,6 +115,9 @@ public final class JdpJmxPacket
         this.jmxServiceUrl = p.get(JMX_SERVICE_URL_KEY);
         this.mainClass = p.get(MAIN_CLASS_KEY);
         this.instanceName = p.get(INSTANCE_NAME_KEY);
+        this.processId = p.get(PROCESS_ID_KEY);
+        this.rmiHostname = p.get(RMI_HOSTNAME_KEY);
+        this.broadcastInterval = p.get(BROADCAST_INTERVAL_KEY);
     }
 
     /**
@@ -150,6 +169,30 @@ public final class JdpJmxPacket
         return instanceName;
     }
 
+    public String getProcessId() {
+        return processId;
+    }
+
+    public void setProcessId(String processId) {
+        this.processId = processId;
+    }
+
+    public String getRmiHostname() {
+        return rmiHostname;
+    }
+
+    public void setRmiHostname(String rmiHostname) {
+        this.rmiHostname = rmiHostname;
+    }
+
+    public String getBroadcastInterval() {
+        return broadcastInterval;
+    }
+
+    public void setBroadcastInterval(String broadcastInterval) {
+        this.broadcastInterval = broadcastInterval;
+    }
+
     /**
      *
      * @return assembled packet ready to be sent across a Net
@@ -164,6 +207,10 @@ public final class JdpJmxPacket
         writer.addEntry(MAIN_CLASS_KEY, mainClass);
         writer.addEntry(JMX_SERVICE_URL_KEY, jmxServiceUrl);
         writer.addEntry(INSTANCE_NAME_KEY, instanceName);
+        writer.addEntry(PROCESS_ID_KEY, processId);
+        writer.addEntry(RMI_HOSTNAME_KEY, rmiHostname);
+        writer.addEntry(BROADCAST_INTERVAL_KEY, broadcastInterval);
+
         return writer.getPacketBytes();
     }
 

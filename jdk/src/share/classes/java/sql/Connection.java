@@ -242,7 +242,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *
      * @exception SQLException if a database access error occurs,
      * this method is called while participating in a distributed transaction,
-     * if this method is called on a closed conection or this
+     * if this method is called on a closed connection or this
      *            <code>Connection</code> object is in auto-commit mode
      * @see #setAutoCommit
      */

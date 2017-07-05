@@ -1006,7 +1006,7 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState istate,
   istate->set_stack_limit(stack_base - method->max_stack() - 1);
 }
 
-address CppInterpreter::return_entry(TosState state, int length) {
+address CppInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   ShouldNotCallThis();
   return NULL;
 }

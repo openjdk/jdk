@@ -100,7 +100,7 @@ class UnixNativeDispatcher {
      */
     static long fopen(UnixPath filename, String mode) throws UnixException {
         NativeBuffer pathBuffer = copyToNativeBuffer(filename);
-        NativeBuffer modeBuffer = NativeBuffers.asNativeBuffer(mode.getBytes());
+        NativeBuffer modeBuffer = NativeBuffers.asNativeBuffer(Util.toBytes(mode));
         try {
             return fopen0(pathBuffer.address(), modeBuffer.address());
         } finally {
@@ -473,7 +473,7 @@ class UnixNativeDispatcher {
      * @return  passwd->pw_uid
      */
     static int getpwnam(String name) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(name.getBytes());
+        NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name));
         try {
             return getpwnam0(buffer.address());
         } finally {
@@ -488,7 +488,7 @@ class UnixNativeDispatcher {
      * @return  group->gr_name
      */
     static int getgrnam(String name) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.asNativeBuffer(name.getBytes());
+        NativeBuffer buffer = NativeBuffers.asNativeBuffer(Util.toBytes(name));
         try {
             return getgrnam0(buffer.address());
         } finally {

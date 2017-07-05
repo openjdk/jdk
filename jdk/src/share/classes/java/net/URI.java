@@ -389,20 +389,20 @@ import java.lang.NullPointerException;  // for javadoc
  * colon following a host name but no port (as in
  * {@code http://java.sun.com:}&nbsp;), and that does not encode characters
  * except those that must be quoted, the following identities also hold:
- * <p><pre>
+ * <pre>
  *     new URI(<i>u</i>.getScheme(),
  *             <i>u</i>.getSchemeSpecificPart(),
  *             <i>u</i>.getFragment())
  *     .equals(<i>u</i>)</pre>
  * in all cases,
- * <p><pre>
+ * <pre>
  *     new URI(<i>u</i>.getScheme(),
  *             <i>u</i>.getUserInfo(), <i>u</i>.getAuthority(),
  *             <i>u</i>.getPath(), <i>u</i>.getQuery(),
  *             <i>u</i>.getFragment())
  *     .equals(<i>u</i>)</pre>
  * if <i>u</i> is hierarchical, and
- * <p><pre>
+ * <pre>
  *     new URI(<i>u</i>.getScheme(),
  *             <i>u</i>.getUserInfo(), <i>u</i>.getHost(), <i>u</i>.getPort(),
  *             <i>u</i>.getPath(), <i>u</i>.getQuery(),

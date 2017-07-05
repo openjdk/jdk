@@ -31,7 +31,7 @@ import java.util.EventListener;
 interface ThreadListener extends EventListener {
     boolean threadResumable(ThreadAction action);
     /*
-     * Not needed for current implemenation, and hard to implement
+     * Not needed for current implementation, and hard to implement
      * correctly. (See TargetVM.handleEventCmdSet)
      *   void threadSuspended(ThreadAction action);
      */

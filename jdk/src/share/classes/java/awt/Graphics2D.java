@@ -305,7 +305,7 @@ import java.util.Map;
  * aliasing or antialiasing is being used.
  * <ul>
  * <li> Device coordinates are defined to be between device pixels which
- * avoids any inconsistent results between aliased and antaliased
+ * avoids any inconsistent results between aliased and antialiased
  * rendering.  If coordinates were defined to be at a pixel's center, some
  * of the pixels covered by a shape, such as a rectangle, would only be
  * half covered.
@@ -806,7 +806,7 @@ public abstract class Graphics2D extends Graphics {
      * @param s the <code>Shape</code> to check for a hit
      * @param onStroke flag used to choose between testing the
      * stroked or the filled shape.  If the flag is <code>true</code>, the
-     * <code>Stroke</code> oultine is tested.  If the flag is
+     * <code>Stroke</code> outline is tested.  If the flag is
      * <code>false</code>, the filled <code>Shape</code> is tested.
      * @return <code>true</code> if there is a hit; <code>false</code>
      * otherwise.
@@ -1162,7 +1162,7 @@ public abstract class Graphics2D extends Graphics {
      * <code>Component</code>.  To change the background
      * of the <code>Component</code>, use appropriate methods of
      * the <code>Component</code>.
-     * @param color the background color that isused in
+     * @param color the background color that is used in
      * subsequent calls to <code>clearRect</code>
      * @see #getBackground
      * @see java.awt.Graphics#clearRect

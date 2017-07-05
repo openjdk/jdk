@@ -127,9 +127,9 @@
  *    resources, then convert it into a {@link java.net.URL} when it is time to
  *    access the resource. From that URL, you can either get the
  *    {@link java.net.URLConnection} for fine control, or get directly the
- *    InputStream.<p>
+ *    InputStream.
  * <p>Here is an example:</p>
- * <p><pre>
+ * <pre>
  * URI uri = new URI("http://java.sun.com/");
  * URL url = uri.toURL();
  * InputStream in = url.openStream();
@@ -147,7 +147,7 @@
  *    the {@code java.protocol.handler.pkgs} system property. For instance if
  *    it is set to {@code myapp.protocols}, then the URL code will try, in the
  *    case of http, first to load {@code myapp.protocols.http.Handler}, then,
- *    if this fails, {@code http.Handler} from the default location.<p>
+ *    if this fails, {@code http.Handler} from the default location.
  * <p>Note that the Handler class <b>has to</b> be a subclass of the abstract
  *    class {@link java.net.URLStreamHandler}.</p>
  * <h2>Additional Specification</h2>

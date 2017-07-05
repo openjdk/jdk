@@ -317,8 +317,8 @@ extern SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci,
 #endif
 
 /*
- * Enhanced messaging has been added to accomodate newer devices which have
- * more advanced capabilites, such as dedicated secure co-processors which
+ * Enhanced messaging has been added to accommodate newer devices which have
+ * more advanced capabilities, such as dedicated secure co-processors which
  * can stream and encrypt data over USB. In order to used enhanced messaging
  * you must define PCSCLITE_ENHANCED_MESSAGING in the framework(library),
  * the daemon, and your application
@@ -332,7 +332,7 @@ extern SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci,
 /*
  * The message and buffer sizes must be multiples of 16.
  * The max message size must be at least large enough
- * to accomodate the transmit_struct
+ * to accommodate the transmit_struct
  */
 #define PCSCLITE_MAX_MESSAGE_SIZE       (1<<17) /* enhanced (128K) msg len */
 #define MAX_BUFFER_SIZE                 (1<<15) /* enhanced (32K) Tx/Rx Buffer */

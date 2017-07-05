@@ -120,8 +120,9 @@ class TemplateInterpreter: public AbstractInterpreter {
   static EntryPoint _continuation_entry;
   static EntryPoint _safept_entry;
 
-  static address    _return_3_addrs_by_index[number_of_return_addrs];     // for invokevirtual   return entries
-  static address    _return_5_addrs_by_index[number_of_return_addrs];     // for invokeinterface return entries
+  static address _invoke_return_entry[number_of_return_addrs];           // for invokestatic, invokespecial, invokevirtual return entries
+  static address _invokeinterface_return_entry[number_of_return_addrs];  // for invokeinterface return entries
+  static address _invokedynamic_return_entry[number_of_return_addrs];    // for invokedynamic return entries
 
   static DispatchTable _active_table;                           // the active    dispatch table (used by the interpreter for dispatch)
   static DispatchTable _normal_table;                           // the normal    dispatch table (used to set the active table in normal mode)
@@ -161,12 +162,15 @@ class TemplateInterpreter: public AbstractInterpreter {
   static address*   normal_table()                              { return _normal_table.table_for(); }
 
   // Support for invokes
-  static address*   return_3_addrs_by_index_table()             { return _return_3_addrs_by_index; }
-  static address*   return_5_addrs_by_index_table()             { return _return_5_addrs_by_index; }
-  static int        TosState_as_index(TosState state);          // computes index into return_3_entry_by_index table
+  static address*   invoke_return_entry_table()                 { return _invoke_return_entry; }
+  static address*   invokeinterface_return_entry_table()        { return _invokeinterface_return_entry; }
+  static address*   invokedynamic_return_entry_table()          { return _invokedynamic_return_entry; }
+  static int        TosState_as_index(TosState state);
 
-  static address    return_entry  (TosState state, int length);
-  static address    deopt_entry   (TosState state, int length);
+  static address* invoke_return_entry_table_for(Bytecodes::Code code);
+
+  static address deopt_entry(TosState state, int length);
+  static address return_entry(TosState state, int length, Bytecodes::Code code);
 
   // Safepoint support
   static void       notice_safepoints();                        // stops the thread when reaching a safepoint

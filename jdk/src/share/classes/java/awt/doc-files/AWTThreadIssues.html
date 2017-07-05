@@ -23,7 +23,11 @@
  questions.
 -->
 
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
+<head>
+<title></title>
+</head>
 <body bgcolor=white>
 
 <h1 align=center>AWT Threading Issues</h1>
@@ -81,13 +85,13 @@ this machinery are as follows:
        dispatched:
        <ul>
            <li> Sequentially.
-           <dd> That is, it is not permitted that several events from
-	        this queue are dispatched simultaneously. 
+           <dl><dd> That is, it is not permitted that several events from
+	        this queue are dispatched simultaneously. </dd></dl>
            <li> In the same order as they are enqueued.
-           <dd> That is, if <code>AWTEvent</code>&nbsp;A is enqueued
+           <dl><dd> That is, if <code>AWTEvent</code>&nbsp;A is enqueued
 	        to the <code>EventQueue</code> before
 		<code>AWTEvent</code>&nbsp;B then event B will not be 
-                dispatched before event A.
+                dispatched before event A.</dd></dl>
        </ul>
   <li> There is at least one alive non-daemon thread while there is at
        least one displayable AWT or Swing component within the

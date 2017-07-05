@@ -73,7 +73,7 @@ import java.sql.SQLException;
  * if a fatal error has made the connection unusable.
  *
  * <p>
- * A connection pool manager is often also a statement pool manager, maintining
+ * A connection pool manager is often also a statement pool manager, maintaining
  *  a pool of <code>PreparedStatement</code> objects.
  *  When an application closes a prepared statement, it calls the
  *  <code>PreparedStatement</code>
