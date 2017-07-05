@@ -29,20 +29,6 @@
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-template <class T> inline void G1ParScanThreadState::immediate_rs_update(HeapRegion* from, T* p, int tid) {
-  if (!from->is_survivor()) {
-    _g1_rem->par_write_ref(from, p, tid);
-  }
-}
-
-template <class T> void G1ParScanThreadState::update_rs(HeapRegion* from, T* p, int tid) {
-  if (G1DeferredRSUpdate) {
-    deferred_rs_update(from, p, tid);
-  } else {
-    immediate_rs_update(from, p, tid);
-  }
-}
-
 template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from) {
   assert(!oopDesc::is_null(oopDesc::load_decode_heap_oop(p)),
          "Reference should not be NULL here as such are never pushed to the task queue.");

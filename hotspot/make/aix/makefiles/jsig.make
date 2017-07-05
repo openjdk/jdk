@@ -55,7 +55,7 @@ ifeq ($(DEBUG_BINARIES), true)
 endif
 
 $(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
-	@echo Making signal interposition lib...
+	@echo $(LOG_INFO) Making signal interposition lib...
 	$(QUIETLY) $(CXX) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
                          $(LFLAGS_JSIG) $(JSIG_DEBUG_CFLAGS) -o $@ $< -ldl
 
