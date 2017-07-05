@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3052,7 +3052,13 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
                          "Class is both outer and inner class in class file %s", CHECK_0);
     }
     // Access flags
-    jint flags = cfs->get_u2_fast() & RECOGNIZED_INNER_CLASS_MODIFIERS;
+    jint flags;
+    // JVM_ACC_MODULE is defined in JDK-9 and later.
+    if (_major_version >= JAVA_9_VERSION) {
+      flags = cfs->get_u2_fast() & (RECOGNIZED_INNER_CLASS_MODIFIERS | JVM_ACC_MODULE);
+    } else {
+      flags = cfs->get_u2_fast() & RECOGNIZED_INNER_CLASS_MODIFIERS;
+    }
     if ((flags & JVM_ACC_INTERFACE) && _major_version < JAVA_6_VERSION) {
       // Set abstract bit for old class files for backward compatibility
       flags |= JVM_ACC_ABSTRACT;
@@ -4524,6 +4530,18 @@ static void check_illegal_static_method(const InstanceKlass* this_klass, TRAPS) 
 // utility methods for format checking
 
 void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
+  const bool is_module = (flags & JVM_ACC_MODULE) != 0;
+  assert(_major_version >= JAVA_9_VERSION || !is_module, "JVM_ACC_MODULE should not be set");
+  if (is_module) {
+    ResourceMark rm(THREAD);
+    Exceptions::fthrow(
+      THREAD_AND_LOCATION,
+      vmSymbols::java_lang_NoClassDefFoundError(),
+      "%s is not a class because access_flag ACC_MODULE is set",
+      _class_name->as_C_string());
+    return;
+  }
+
   if (!_need_verify) { return; }
 
   const bool is_interface  = (flags & JVM_ACC_INTERFACE)  != 0;
@@ -4532,14 +4550,12 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   const bool is_super      = (flags & JVM_ACC_SUPER)      != 0;
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
-  const bool is_module_info= (flags & JVM_ACC_MODULE)     != 0;
   const bool major_gte_15  = _major_version >= JAVA_1_5_VERSION;
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
       (is_interface && major_gte_15 && (is_super || is_enum)) ||
-      (!is_interface && major_gte_15 && is_annotation) ||
-      is_module_info) {
+      (!is_interface && major_gte_15 && is_annotation)) {
     ResourceMark rm(THREAD);
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
@@ -5734,16 +5750,23 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len
 
   // Access flags
-  jint flags = stream->get_u2_fast() & JVM_RECOGNIZED_CLASS_MODIFIERS;
+  jint flags;
+  // JVM_ACC_MODULE is defined in JDK-9 and later.
+  if (_major_version >= JAVA_9_VERSION) {
+    flags = stream->get_u2_fast() & (JVM_RECOGNIZED_CLASS_MODIFIERS | JVM_ACC_MODULE);
+  } else {
+    flags = stream->get_u2_fast() & JVM_RECOGNIZED_CLASS_MODIFIERS;
+  }
 
   if ((flags & JVM_ACC_INTERFACE) && _major_version < JAVA_6_VERSION) {
     // Set abstract bit for old class files for backward compatibility
     flags |= JVM_ACC_ABSTRACT;
   }
 
+  verify_legal_class_modifiers(flags, CHECK);
+
   _access_flags.set_flags(flags);
 
-  verify_legal_class_modifiers((jint)_access_flags.as_int(), CHECK);
 
   // This class and superclass
   _this_class_index = stream->get_u2_fast();

@@ -30,6 +30,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.image.ImageObserver;
@@ -560,10 +561,17 @@ public abstract class SunToolkit extends Toolkit
 
     @Override
     public Dimension getScreenSize() {
-        return new Dimension(getScreenWidth(), getScreenHeight());
+        return GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration()
+                .getBounds().getSize();
     }
-    protected abstract int getScreenWidth();
-    protected abstract int getScreenHeight();
+
+    @Override
+    public ColorModel getColorModel() throws HeadlessException {
+        return GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration()
+                .getColorModel();
+    }
 
     @Override
     @SuppressWarnings("deprecation")
