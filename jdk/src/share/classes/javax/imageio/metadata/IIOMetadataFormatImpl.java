@@ -729,6 +729,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      * @param required <code>true</code> if an object value must be present.
      * @param defaultValue the default value for the
      * <code>Object</code> reference, or <code>null</code>.
+     * @param <T> the type of the object.
      *
      * @exception IllegalArgumentException if <code>elementName</code>
      * is <code>null</code>, or is not a legal element name for this format.
@@ -765,6 +766,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      * @param enumeratedValues a <code>List</code> of
      * <code>Object</code>s containing the legal values for the
      * object reference.
+     * @param <T> the type of the object.
      *
      * @exception IllegalArgumentException if <code>elementName</code>
      * is <code>null</code>, or is not a legal element name for this format.
@@ -836,6 +838,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      * is inclusive.
      * @param maxInclusive <code>true</code> if <code>maxValue</code>
      * is inclusive.
+     * @param <T> the type of the object.
      *
      * @exception IllegalArgumentException if <code>elementName</code>
      * is <code>null</code>, or is not a legal element name for this

@@ -702,6 +702,20 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     }
 
     /**
+     * Returns the bounds of the specified tab index.  The bounds are
+     * with respect to the JTabbedPane's coordinate space.  If the tab at this
+     * index is not currently visible in the UI, then returns null.
+     */
+    @Override
+    public Rectangle getTabBounds(final JTabbedPane pane, final int i) {
+        if (visibleTabState.needsScrollTabs()
+                && (visibleTabState.isBefore(i) || visibleTabState.isAfter(i))) {
+            return null;
+        }
+        return super.getTabBounds(pane, i);
+    }
+
+    /**
      * Returns the tab index which intersects the specified point
      * in the JTabbedPane's coordinate space.
      */

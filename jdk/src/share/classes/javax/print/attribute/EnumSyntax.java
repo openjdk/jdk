@@ -81,15 +81,15 @@ import java.io.Serializable;
  * for identical objects (<CODE>==</CODE>).
  * <P>
  * You can convert an enumeration value to a string by calling {@link
- * #toString() <CODE>toString()</CODE>}. The string is obtained from a table
+ * #toString() toString()}. The string is obtained from a table
  * supplied by the enumeration class.
  * <P>
  * Under the hood, an enumeration value is just an integer, a different integer
  * for each enumeration value within an enumeration class. You can get an
  * enumeration value's integer value by calling {@link #getValue()
- * <CODE>getValue()</CODE>}. An enumeration value's integer value is established
+ * getValue()}. An enumeration value's integer value is established
  * when it is constructed (see {@link #EnumSyntax(int)
- * <CODE>EnumSyntax(int)</CODE>}). Since the constructor is protected, the only
+ * EnumSyntax(int)}). Since the constructor is protected, the only
  * possible enumeration values are the singleton objects declared in the
  * enumeration class; additional enumeration values cannot be created at run
  * time.
@@ -170,10 +170,10 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      *
      * @return  The enumeration singleton value stored at index
      *          <I>i</I>-<I>L</I> in the enumeration value table returned by
-     *          {@link #getEnumValueTable() <CODE>getEnumValueTable()</CODE>},
+     *          {@link #getEnumValueTable() getEnumValueTable()},
      *          where <I>i</I> is this enumeration value's integer value and
      *          <I>L</I> is the value returned by {@link #getOffset()
-     *          <CODE>getOffset()</CODE>}.
+     *          getOffset()}.
      *
      * @throws ObjectStreamException if the stream can't be deserialised
      * @throws  InvalidObjectException
@@ -220,18 +220,18 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      * Returns the string table for this enumeration value's enumeration class.
      * The enumeration class's integer values are assumed to lie in the range
      * <I>L</I>..<I>L</I>+<I>N</I>-1, where <I>L</I> is the value returned by
-     * {@link #getOffset() <CODE>getOffset()</CODE>} and <I>N</I> is the length
+     * {@link #getOffset() getOffset()} and <I>N</I> is the length
      * of the string table. The element in the string table at index
      * <I>i</I>-<I>L</I> is the value returned by {@link #toString()
-     * <CODE>toString()</CODE>} for the enumeration value whose integer value
+     * toString()} for the enumeration value whose integer value
      * is <I>i</I>. If an integer within the above range is not used by any
      * enumeration value, leave the corresponding table element null.
      * <P>
      * The default implementation returns null. If the enumeration class (a
      * subclass of class EnumSyntax) does not override this method to return a
      * non-null string table, and the subclass does not override the {@link
-     * #toString() <CODE>toString()</CODE>} method, the base class {@link
-     * #toString() <CODE>toString()</CODE>} method will return just a string
+     * #toString() toString()} method, the base class {@link
+     * #toString() toString()} method will return just a string
      * representation of this enumeration value's integer value.
      * @return the string table
      */
@@ -243,11 +243,11 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      * Returns the enumeration value table for this enumeration value's
      * enumeration class. The enumeration class's integer values are assumed to
      * lie in the range <I>L</I>..<I>L</I>+<I>N</I>-1, where <I>L</I> is the
-     * value returned by {@link #getOffset() <CODE>getOffset()</CODE>} and
+     * value returned by {@link #getOffset() getOffset()} and
      * <I>N</I> is the length of the enumeration value table. The element in the
      * enumeration value table at index <I>i</I>-<I>L</I> is the enumeration
      * value object whose integer value is <I>i</I>; the {@link #readResolve()
-     * <CODE>readResolve()</CODE>} method needs this to preserve singleton
+     * readResolve()} method needs this to preserve singleton
      * semantics during deserialization of an enumeration instance. If an
      * integer within the above range is not used by any enumeration value,
      * leave the corresponding table element null.
@@ -255,8 +255,8 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      * The default implementation returns null. If the enumeration class (a
      * subclass of class EnumSyntax) does not override this method to return
      * a non-null enumeration value table, and the subclass does not override
-     * the {@link #readResolve() <CODE>readResolve()</CODE>} method, the base
-     * class {@link #readResolve() <CODE>readResolve()</CODE>} method will throw
+     * the {@link #readResolve() readResolve()} method, the base
+     * class {@link #readResolve() readResolve()} method will throw
      * an exception whenever an enumeration instance is deserialized from an
      * object input stream.
      * @return the value table

@@ -98,6 +98,7 @@ import java.math.BigInteger;
  * Index values greater than or equal to the map size, but less than
  * 2<sup><em>n</em></sup>, are undefined and return 0 for all color and
  * alpha components.
+ * </a>
  * <p>
  * For those methods that use a primitive array pixel representation of
  * type <code>transferType</code>, the array length is always one.

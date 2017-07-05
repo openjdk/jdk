@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public interface AppletContext {
 
     /**
      * Returns an <code>Image</code> object that can then be painted on
-     * the screen. The <code>url</code> argument<code> </code>that is
+     * the screen. The <code>url</code> argument that is
      * passed as an argument must specify an absolute URL.
      * <p>
      * This method always returns immediately, whether or not the image
@@ -157,7 +157,7 @@ public interface AppletContext {
      * @param stream stream to be associated with the specified key. If this
      *               parameter is <code>null</code>, the specified key is removed
      *               in this applet context.
-     * @throws <code>IOException</code> if the stream size exceeds a certain
+     * @throws IOException if the stream size exceeds a certain
      *         size limit. Size limit is decided by the implementor of this
      *         interface.
      * @since 1.4

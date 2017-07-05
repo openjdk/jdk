@@ -46,16 +46,15 @@ import javax.imageio.ImageReadParam;
  * This class allows the tables to be specified directly from client
  * code.  If no tables are specified either in the stream or in a
  * <code>JPEGImageReadParam</code>, then the stream is presumed to use
- * the "standard" visually lossless tables.  See {@link JPEGQTable
- * <code>JPEGQTable</code>} and {@link JPEGHuffmanTable
- * <code>JPEGHuffmanTable</code>} for more information on the default
- * tables.
+ * the "standard" visually lossless tables.  See {@link JPEGQTable JPEGQTable}
+ * and {@link JPEGHuffmanTable JPEGHuffmanTable} for more information
+ *  on the default tables.
  *
  * <p> The default <code>JPEGImageReadParam</code> returned by the
  * <code>getDefaultReadParam</code> method of the builtin JPEG reader
  * contains no tables.  Default tables may be obtained from the table
- * classes {@link JPEGQTable <code>JPEGQTable</code>} and {@link
- * JPEGHuffmanTable <code>JPEGHuffmanTable</code>}.
+ * classes {@link JPEGQTable JPEGQTable} and
+ * {@link JPEGHuffmanTable JPEGHuffmanTable}.
  *
  * <p> If a stream does contain tables, the tables given in a
  * <code>JPEGImageReadParam</code> are ignored.  Furthermore, if the
@@ -64,13 +63,12 @@ import javax.imageio.ImageReadParam;
  * abbreviated images.  Once tables have been read from a stream, they
  * can be overridden only by tables subsequently read from the same
  * stream.  In order to specify new tables, the {@link
- * javax.imageio.ImageReader#setInput <code>setInput</code>} method of
+ * javax.imageio.ImageReader#setInput setInput} method of
  * the reader must be called to change the stream.
  *
  * <p> Note that this class does not provide a means for obtaining the
  * tables found in a stream.  These may be extracted from a stream by
- * consulting the <code>IIOMetadata</code> object returned by the
- * reader.
+ * consulting the IIOMetadata object returned by the reader.
  *
  * <p>
  * For more information about the operation of the built-in JPEG plug-ins,

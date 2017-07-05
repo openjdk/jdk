@@ -340,6 +340,10 @@ public class Win32PrintJob implements CancelablePrintJob {
             throw new PrintException("can't get print data: " + e.toString());
         }
 
+        if (data == null) {
+            throw new PrintException("Null print data.");
+        }
+
         if (flavor == null || (!service.isDocFlavorSupported(flavor))) {
             notifyEvent(PrintJobEvent.JOB_FAILED);
             throw new PrintJobFlavorException("invalid flavor", flavor);

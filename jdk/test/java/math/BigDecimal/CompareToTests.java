@@ -53,12 +53,29 @@ public class CompareToTests {
             {valueOf(5,-1),     valueOf(2),     ONE},
 
             // Boundary and near boundary values
-            {valueOf(Long.MAX_VALUE),   valueOf(Long.MAX_VALUE),        ZERO},
-            {valueOf(Long.MAX_VALUE-1), valueOf(Long.MAX_VALUE),        MINUS_ONE},
-            {valueOf(Long.MIN_VALUE),   valueOf(Long.MAX_VALUE),        MINUS_ONE},
-            {valueOf(Long.MIN_VALUE+1), valueOf(Long.MAX_VALUE),        MINUS_ONE},
-            {valueOf(Long.MIN_VALUE),   valueOf(Long.MIN_VALUE),        ZERO},
-            {valueOf(Long.MIN_VALUE+1), valueOf(Long.MAX_VALUE),        ONE},
+            {valueOf(Long.MAX_VALUE),            valueOf(Long.MAX_VALUE), ZERO},
+            {valueOf(Long.MAX_VALUE).negate(),   valueOf(Long.MAX_VALUE), MINUS_ONE},
+
+            {valueOf(Long.MAX_VALUE-1),          valueOf(Long.MAX_VALUE), MINUS_ONE},
+            {valueOf(Long.MAX_VALUE-1).negate(), valueOf(Long.MAX_VALUE), MINUS_ONE},
+
+            {valueOf(Long.MIN_VALUE),            valueOf(Long.MAX_VALUE), MINUS_ONE},
+            {valueOf(Long.MIN_VALUE).negate(),   valueOf(Long.MAX_VALUE), ONE},
+
+            {valueOf(Long.MIN_VALUE+1),          valueOf(Long.MAX_VALUE), MINUS_ONE},
+            {valueOf(Long.MIN_VALUE+1).negate(), valueOf(Long.MAX_VALUE), ZERO},
+
+            {valueOf(Long.MAX_VALUE),            valueOf(Long.MIN_VALUE), ONE},
+            {valueOf(Long.MAX_VALUE).negate(),   valueOf(Long.MIN_VALUE), ONE},
+
+            {valueOf(Long.MAX_VALUE-1),          valueOf(Long.MIN_VALUE), ONE},
+            {valueOf(Long.MAX_VALUE-1).negate(), valueOf(Long.MIN_VALUE), ONE},
+
+            {valueOf(Long.MIN_VALUE),            valueOf(Long.MIN_VALUE), ZERO},
+            {valueOf(Long.MIN_VALUE).negate(),   valueOf(Long.MIN_VALUE), ONE},
+
+            {valueOf(Long.MIN_VALUE+1),          valueOf(Long.MIN_VALUE), ONE},
+            {valueOf(Long.MIN_VALUE+1).negate(), valueOf(Long.MIN_VALUE), ONE},
         };
 
         for (BigDecimal[] testCase : testCases) {
@@ -69,8 +86,6 @@ public class CompareToTests {
             int expected = testCase[2].intValue();
 
             failures += compareToTest(a,        b,         expected);
-            failures += compareToTest(a_negate, b,        -1);
-            failures += compareToTest(a,        b_negate,  1);
             failures += compareToTest(a_negate, b_negate, -expected);
         }
 
@@ -81,11 +96,11 @@ public class CompareToTests {
     private static int compareToTest(BigDecimal a, BigDecimal b, int expected) {
         int result = a.compareTo(b);
         int failed = (result==expected) ? 0 : 1;
-        if (result == 1) {
+        if (failed == 1) {
             System.err.println("(" + a + ").compareTo(" + b + ") => " + result +
                                "\n\tExpected " + expected);
         }
-        return result;
+        return failed;
     }
 
     public static void main(String argv[]) {

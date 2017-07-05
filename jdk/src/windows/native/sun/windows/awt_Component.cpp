@@ -3528,8 +3528,12 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     if (ops == SAVE) {
         transTable.put(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)),
                        reinterpret_cast<void*>(static_cast<INT_PTR>(translation)));
-        deadKeyFlagTable.put(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)),
-                       reinterpret_cast<void*>(static_cast<INT_PTR>(deadKeyFlag)));
+        if (deadKeyFlag) {
+            deadKeyFlagTable.put(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)),
+                         reinterpret_cast<void*>(static_cast<INT_PTR>(deadKeyFlag)));
+        } else {
+            deadKeyFlagTable.remove(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)));
+        }
     }
 
     isDeadKey = deadKeyFlag;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ public interface AccessibleTableModelChange {
     public static final int DELETE = -1;
 
     /**
-     *  Returns the type of event
-     *
+     *  Returns the type of event.
+     *  @return the type of event
      *  @see #INSERT
      *  @see #UPDATE
      *  @see #DELETE
@@ -81,21 +81,25 @@ public interface AccessibleTableModelChange {
 
     /**
      * Returns the first row that changed.
+     * @return the first row that changed
      */
     public int getFirstRow();
 
     /**
      * Returns the last row that changed.
+     * @return the last row that changed
      */
     public int getLastRow();
 
     /**
      * Returns the first column that changed.
+     * @return the first column that changed
      */
     public int getFirstColumn();
 
     /**
      * Returns the last column that changed.
+     * @return the last column that changed
      */
     public int getLastColumn();
 }

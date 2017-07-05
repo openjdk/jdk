@@ -39,7 +39,7 @@ import java.io.Serializable;
  * resolution attribute's values, indicating the units in which the values are
  * to be returned. The two most common resolution units are dots per inch (dpi)
  * and dots per centimeter (dpcm), and exported constants {@link #DPI
- * <CODE>DPI</CODE>} and {@link #DPCM <CODE>DPCM</CODE>} are provided for
+ * DPI} and {@link #DPCM DPCM} are provided for
  * indicating those units.
  * <P>
  * Once constructed, a resolution attribute's value is immutable.
@@ -68,9 +68,9 @@ import java.io.Serializable;
  * done, which would not be guaranteed if a floating point representation were
  * used.
  * <P>
- * The exported constant {@link #DPI <CODE>DPI</CODE>} is actually the
+ * The exported constant {@link #DPI DPI} is actually the
  * conversion factor by which to multiply a value in dpi to get the value in
- * dphi. Likewise, the exported constant {@link #DPCM <CODE>DPCM</CODE>} is the
+ * dphi. Likewise, the exported constant {@link #DPCM DPCM} is the
  * conversion factor by which to multiply a value in dpcm to get the value in
  * dphi. A client can specify a resolution value in units other than dpi or dpcm
  * by supplying its own conversion factor. However, since the internal units of
@@ -120,12 +120,12 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * @param  feedResolution
      *     Feed direction resolution.
      * @param units
-     *     Unit conversion factor, e.g. {@link #DPI <CODE>DPI</CODE>} or
-     * {@link    #DPCM <CODE>DPCM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #DPI DPI} or
+     * {@link    #DPCM DPCM}.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>crossFeedResolution</CODE> <
-     *     1 or <CODE>feedResolution</CODE> < 1 or <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code crossFeedResolution < 1}
+     *     or {@code feedResolution < 1} or {@code units < 1}.
      */
     public ResolutionSyntax(int crossFeedResolution, int feedResolution,
                             int units) {
@@ -172,14 +172,14 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * The values are rounded to the nearest integer.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #DPI <CODE>DPI</CODE>} or
-     * {@link   #DPCM <CODE>DPCM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #DPI DPI} or
+     * {@link   #DPCM DPCM}.
      *
      * @return  A two-element array with the cross feed direction resolution
      *          at index 0 and the feed direction resolution at index 1.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public int[] getResolution(int units) {
         return new int[] { getCrossFeedResolution(units),
@@ -192,13 +192,13 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * the given units. The value is rounded to the nearest integer.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #DPI <CODE>DPI</CODE>} or
-     * {@link  #DPCM <CODE>DPCM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #DPI DPI} or
+     * {@link  #DPCM DPCM}.
      *
      * @return  Cross feed direction resolution.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public int getCrossFeedResolution(int units) {
         return convertFromDphi (crossFeedResolution, units);
@@ -209,13 +209,13 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * given units. The value is rounded to the nearest integer.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #DPI <CODE>DPI</CODE>} or {@link
-     *     #DPCM <CODE>DPCM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #DPI DPI} or {@link
+     *     #DPCM DPCM}.
      *
      * @return  Feed direction resolution.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public int getFeedResolution(int units) {
         return convertFromDphi (feedResolution, units);
@@ -229,8 +229,8 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * rounded to the nearest integer.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #DPI <CODE>DPI</CODE>} or {@link
-     *     #DPCM <CODE>DPCM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #DPI CODE>DPI} or {@link
+     *     #DPCM DPCM}.
      * @param  unitsName
      *     Units name string, e.g. <CODE>"dpi"</CODE> or <CODE>"dpcm"</CODE>. If
      *     null, no units name is appended to the result.
@@ -238,7 +238,7 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * @return  String version of this resolution attribute.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public String toString(int units, String unitsName) {
         StringBuffer result = new StringBuffer();

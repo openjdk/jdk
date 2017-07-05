@@ -41,14 +41,15 @@ package java.util;
  * queues provide additional insertion, extraction, and inspection
  * operations.  Each of these methods exists in two forms: one throws
  * an exception if the operation fails, the other returns a special
- * value (either <tt>null</tt> or <tt>false</tt>, depending on the
+ * value (either {@code null} or {@code false}, depending on the
  * operation).  The latter form of the insert operation is designed
- * specifically for use with capacity-restricted <tt>Queue</tt>
+ * specifically for use with capacity-restricted {@code Queue}
  * implementations; in most implementations, insert operations cannot
  * fail.
  *
  * <p>
  * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <caption>Summary of Queue methods</caption>
  *  <tr>
  *    <td></td>
  *    <td ALIGN=CENTER><em>Throws exception</em></td>
@@ -56,18 +57,18 @@ package java.util;
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
- *    <td>{@link #add add(e)}</td>
- *    <td>{@link #offer offer(e)}</td>
+ *    <td>{@link Queue#add add(e)}</td>
+ *    <td>{@link Queue#offer offer(e)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Remove</b></td>
- *    <td>{@link #remove remove()}</td>
- *    <td>{@link #poll poll()}</td>
+ *    <td>{@link Queue#remove remove()}</td>
+ *    <td>{@link Queue#poll poll()}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Examine</b></td>
- *    <td>{@link #element element()}</td>
- *    <td>{@link #peek peek()}</td>
+ *    <td>{@link Queue#element element()}</td>
+ *    <td>{@link Queue#peek peek()}</td>
  *  </tr>
  * </table>
  *
@@ -79,15 +80,15 @@ package java.util;
  * Whatever the ordering used, the <em>head</em> of the queue is that
  * element which would be removed by a call to {@link #remove() } or
  * {@link #poll()}.  In a FIFO queue, all new elements are inserted at
- * the <em> tail</em> of the queue. Other kinds of queues may use
- * different placement rules.  Every <tt>Queue</tt> implementation
+ * the <em>tail</em> of the queue. Other kinds of queues may use
+ * different placement rules.  Every {@code Queue} implementation
  * must specify its ordering properties.
  *
  * <p>The {@link #offer offer} method inserts an element if possible,
- * otherwise returning <tt>false</tt>.  This differs from the {@link
+ * otherwise returning {@code false}.  This differs from the {@link
  * java.util.Collection#add Collection.add} method, which can fail to
  * add an element only by throwing an unchecked exception.  The
- * <tt>offer</tt> method is designed for use when failure is a normal,
+ * {@code offer} method is designed for use when failure is a normal,
  * rather than exceptional occurrence, for example, in fixed-capacity
  * (or &quot;bounded&quot;) queues.
  *
@@ -95,32 +96,32 @@ package java.util;
  * return the head of the queue.
  * Exactly which element is removed from the queue is a
  * function of the queue's ordering policy, which differs from
- * implementation to implementation. The <tt>remove()</tt> and
- * <tt>poll()</tt> methods differ only in their behavior when the
- * queue is empty: the <tt>remove()</tt> method throws an exception,
- * while the <tt>poll()</tt> method returns <tt>null</tt>.
+ * implementation to implementation. The {@code remove()} and
+ * {@code poll()} methods differ only in their behavior when the
+ * queue is empty: the {@code remove()} method throws an exception,
+ * while the {@code poll()} method returns {@code null}.
  *
  * <p>The {@link #element()} and {@link #peek()} methods return, but do
  * not remove, the head of the queue.
  *
- * <p>The <tt>Queue</tt> interface does not define the <i>blocking queue
+ * <p>The {@code Queue} interface does not define the <i>blocking queue
  * methods</i>, which are common in concurrent programming.  These methods,
  * which wait for elements to appear or for space to become available, are
  * defined in the {@link java.util.concurrent.BlockingQueue} interface, which
  * extends this interface.
  *
- * <p><tt>Queue</tt> implementations generally do not allow insertion
- * of <tt>null</tt> elements, although some implementations, such as
- * {@link LinkedList}, do not prohibit insertion of <tt>null</tt>.
- * Even in the implementations that permit it, <tt>null</tt> should
- * not be inserted into a <tt>Queue</tt>, as <tt>null</tt> is also
- * used as a special return value by the <tt>poll</tt> method to
+ * <p>{@code Queue} implementations generally do not allow insertion
+ * of {@code null} elements, although some implementations, such as
+ * {@link LinkedList}, do not prohibit insertion of {@code null}.
+ * Even in the implementations that permit it, {@code null} should
+ * not be inserted into a {@code Queue}, as {@code null} is also
+ * used as a special return value by the {@code poll} method to
  * indicate that the queue contains no elements.
  *
- * <p><tt>Queue</tt> implementations generally do not define
- * element-based versions of methods <tt>equals</tt> and
- * <tt>hashCode</tt> but instead inherit the identity based versions
- * from class <tt>Object</tt>, because element-based equality is not
+ * <p>{@code Queue} implementations generally do not define
+ * element-based versions of methods {@code equals} and
+ * {@code hashCode} but instead inherit the identity based versions
+ * from class {@code Object}, because element-based equality is not
  * always well-defined for queues with the same elements but different
  * ordering properties.
  *
@@ -145,11 +146,11 @@ public interface Queue<E> extends Collection<E> {
     /**
      * Inserts the specified element into this queue if it is possible to do so
      * immediately without violating capacity restrictions, returning
-     * <tt>true</tt> upon success and throwing an <tt>IllegalStateException</tt>
+     * {@code true} upon success and throwing an {@code IllegalStateException}
      * if no space is currently available.
      *
      * @param e the element to add
-     * @return <tt>true</tt> (as specified by {@link Collection#add})
+     * @return {@code true} (as specified by {@link Collection#add})
      * @throws IllegalStateException if the element cannot be added at this
      *         time due to capacity restrictions
      * @throws ClassCastException if the class of the specified element
@@ -169,8 +170,8 @@ public interface Queue<E> extends Collection<E> {
      * by throwing an exception.
      *
      * @param e the element to add
-     * @return <tt>true</tt> if the element was added to this queue, else
-     *         <tt>false</tt>
+     * @return {@code true} if the element was added to this queue, else
+     *         {@code false}
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this queue
      * @throws NullPointerException if the specified element is null and
@@ -192,9 +193,9 @@ public interface Queue<E> extends Collection<E> {
 
     /**
      * Retrieves and removes the head of this queue,
-     * or returns <tt>null</tt> if this queue is empty.
+     * or returns {@code null} if this queue is empty.
      *
-     * @return the head of this queue, or <tt>null</tt> if this queue is empty
+     * @return the head of this queue, or {@code null} if this queue is empty
      */
     E poll();
 
@@ -210,9 +211,9 @@ public interface Queue<E> extends Collection<E> {
 
     /**
      * Retrieves, but does not remove, the head of this queue,
-     * or returns <tt>null</tt> if this queue is empty.
+     * or returns {@code null} if this queue is empty.
      *
-     * @return the head of this queue, or <tt>null</tt> if this queue is empty
+     * @return the head of this queue, or {@code null} if this queue is empty
      */
     E peek();
 }

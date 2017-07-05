@@ -43,7 +43,7 @@ import java.util.function.ObjLongConsumer;
 import java.util.function.Supplier;
 
 /**
- * Factory for the creating instances of {@code TerminalOp) that implement
+ * Factory for creating instances of {@code TerminalOp} that implement
  * reductions.
  *
  * @since 1.8
@@ -148,17 +148,17 @@ final class ReduceOps {
      * reference values.
      *
      * @param <T> the type of the input elements
-     * @param <R> the type of the result
+     * @param <I> the type of the intermediate reduction result
      * @param collector a {@code Collector} defining the reduction
      * @return a {@code ReduceOp} implementing the reduction
      */
-    public static <T,R> TerminalOp<T, R>
-    makeRef(Collector<? super T,R> collector) {
-        Supplier<R> supplier = Objects.requireNonNull(collector).resultSupplier();
-        BiFunction<R, ? super T, R> accumulator = collector.accumulator();
-        BinaryOperator<R> combiner = collector.combiner();
-        class ReducingSink extends Box<R>
-                implements AccumulatingSink<T, R, ReducingSink> {
+    public static <T, I> TerminalOp<T, I>
+    makeRef(Collector<? super T, I, ?> collector) {
+        Supplier<I> supplier = Objects.requireNonNull(collector).supplier();
+        BiConsumer<I, ? super T> accumulator = collector.accumulator();
+        BinaryOperator<I> combiner = collector.combiner();
+        class ReducingSink extends Box<I>
+                implements AccumulatingSink<T, I, ReducingSink> {
             @Override
             public void begin(long size) {
                 state = supplier.get();
@@ -166,9 +166,7 @@ final class ReduceOps {
 
             @Override
             public void accept(T t) {
-                R newResult = accumulator.apply(state, t);
-                if (state != newResult)
-                    state = newResult;
+                accumulator.accept(state, t);
             }
 
             @Override
@@ -176,7 +174,7 @@ final class ReduceOps {
                 state = combiner.apply(state, other.state);
             }
         }
-        return new ReduceOp<T, R, ReducingSink>(StreamShape.REFERENCE) {
+        return new ReduceOp<T, I, ReducingSink>(StreamShape.REFERENCE) {
             @Override
             public ReducingSink makeSink() {
                 return new ReducingSink();
@@ -720,6 +718,7 @@ final class ReduceOps {
     /**
      * A {@code ForkJoinTask} for performing a parallel reduce operation.
      */
+    @SuppressWarnings("serial")
     private static final class ReduceTask<P_IN, P_OUT, R,
                                           S extends AccumulatingSink<P_OUT, R, S>>
             extends AbstractTask<P_IN, P_OUT, S, ReduceTask<P_IN, P_OUT, R, S>> {
@@ -749,7 +748,7 @@ final class ReduceOps {
         }
 
         @Override
-        public void onCompletion(CountedCompleter caller) {
+        public void onCompletion(CountedCompleter<?> caller) {
             if (!isLeaf()) {
                 S leftResult = leftChild.getLocalResult();
                 leftResult.combine(rightChild.getLocalResult());
