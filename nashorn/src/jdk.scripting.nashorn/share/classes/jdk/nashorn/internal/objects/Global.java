@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
+import static jdk.nashorn.internal.runtime.JSType.isString;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.io.IOException;
@@ -55,7 +56,6 @@ import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
-import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.GlobalConstants;
@@ -577,7 +577,7 @@ public final class Global extends ScriptObject implements Scope {
             return new NativeBoolean((Boolean)obj, this);
         } else if (obj instanceof Number) {
             return new NativeNumber(((Number)obj).doubleValue(), this);
-        } else if (obj instanceof String || obj instanceof ConsString) {
+        } else if (isString(obj)) {
             return new NativeString((CharSequence)obj, this);
         } else if (obj instanceof Object[]) { // extension
             return new NativeArray(ArrayData.allocate((Object[])obj), this);
@@ -604,7 +604,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return guarded invocation
      */
     public static GuardedInvocation primitiveLookup(final LinkRequest request, final Object self) {
-        if (self instanceof String || self instanceof ConsString) {
+        if (isString(self)) {
             return NativeString.lookupPrimitive(request, self);
         } else if (self instanceof Number) {
             return NativeNumber.lookupPrimitive(request, self);
@@ -621,7 +621,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return method handle to create wrapper objects for primitive receiver
      */
     public static MethodHandle getPrimitiveWrapFilter(final Object self) {
-        if (self instanceof String || self instanceof ConsString) {
+        if (isString(self)) {
             return NativeString.WRAPFILTER;
         } else if (self instanceof Number) {
             return NativeNumber.WRAPFILTER;
@@ -947,11 +947,11 @@ public final class Global extends ScriptObject implements Scope {
      * This is directly invoked from generated when eval(code) is called in user code
      */
     public static Object directEval(final Object self, final Object str, final Object callThis, final Object location, final boolean strict) {
-        if (!(str instanceof String || str instanceof ConsString)) {
+        if (!isString(str)) {
             return str;
         }
         final Global global = Global.instanceFrom(self);
-        final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
+        final ScriptObject scope = self instanceof ScriptObject && ((ScriptObject)self).isScope() ? (ScriptObject)self : global;
 
         return global.getContext().eval(scope, str.toString(), callThis, location, strict, true);
     }

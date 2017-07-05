@@ -98,7 +98,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     }
 
     /**
-     * Returns true if the node is a comparison operation.
+     * Returns true if the node is a comparison operation (either equality, inequality, or relational).
      * @return true if the node is a comparison operation.
      */
     public boolean isComparison() {
@@ -111,6 +111,22 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         case LT:
         case GE:
         case GT:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    /**
+     * Returns true if the node is a relational operation (less than (or equals), greater than (or equals)).
+     * @return true if the node is a relational operation.
+     */
+    public boolean isRelational() {
+        switch (tokenType()) {
+        case LT:
+        case GT:
+        case LE:
+        case GE:
             return true;
         default:
             return false;

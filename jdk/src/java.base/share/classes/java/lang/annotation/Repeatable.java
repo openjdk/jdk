@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ package java.lang.annotation;
  * type</em> for the repeatable annotation type.
  *
  * @since 1.8
- * @jls 9.6 Annotation Types
- * @jls 9.7 Annotations
+ * @jls 9.6.3 Repeatable Annotation Types
+ * @jls 9.7.5 Multiple Annotations of the Same Type
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
