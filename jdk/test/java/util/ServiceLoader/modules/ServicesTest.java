@@ -105,13 +105,13 @@ public class ServicesTest {
 
 
     /**
-     * Run test with -modulepath.
+     * Run test with --module-path.
      *
      * BananaScriptEngine should be found.
      */
     public void runWithModulePath() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
+            = executeTestJava("--module-path", MODS_DIR.toString(),
                               "-m", "test/test.Main",
                               "BananaScriptEngine")
                 .outputTo(System.out)
@@ -123,13 +123,13 @@ public class ServicesTest {
 
 
     /**
-     * Run test with -modulepath and -classpath.
+     * Run test with --module-path and -classpath.
      *
      * Both BananaScriptEngine and PearScriptEngine should be found
      */
     public void runWithModulePathAndClassPath() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
+            = executeTestJava("--module-path", MODS_DIR.toString(),
                               "-cp", CLASSES_DIR.toString(),
                               "-m", "test/test.Main",
                               "BananaScriptEngine", "PearScriptEngine")

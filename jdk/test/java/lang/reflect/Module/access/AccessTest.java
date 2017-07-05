@@ -72,8 +72,8 @@ public class AccessTest {
      */
     public void runTest() throws Exception {
         int exitValue
-            = executeTestJava("-mp", MODS_DIR.toString(),
-                              "-addmods", "target",
+            = executeTestJava("--module-path", MODS_DIR.toString(),
+                              "--add-modules", "target",
                               "-m", "test/test.Main")
                 .outputTo(System.out)
                 .errorTo(System.out)

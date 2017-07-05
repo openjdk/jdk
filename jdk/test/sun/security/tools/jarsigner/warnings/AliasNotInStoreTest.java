@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -51,7 +50,7 @@ public class AliasNotInStoreTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // create first key pair for signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", FIRST_KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -63,7 +62,7 @@ public class AliasNotInStoreTest extends Test {
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
         // create second key pair for signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", SECOND_KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -75,7 +74,7 @@ public class AliasNotInStoreTest extends Test {
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
         // sign jar with first key
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-keystore", BOTH_KEYS_KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
@@ -92,7 +91,7 @@ public class AliasNotInStoreTest extends Test {
         JarUtils.updateJar(SIGNED_JARFILE, UPDATED_SIGNED_JARFILE, SECOND_FILE);
 
         // sign jar with second key
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-keystore", BOTH_KEYS_KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
@@ -102,7 +101,7 @@ public class AliasNotInStoreTest extends Test {
         checkSigning(analyzer);
 
         // create keystore that contains only first key
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-importkeystore",
                 "-srckeystore", BOTH_KEYS_KEYSTORE,
                 "-srcalias", FIRST_KEY_ALIAS,
@@ -116,7 +115,7 @@ public class AliasNotInStoreTest extends Test {
         // verify jar with keystore that contains only first key in strict mode,
         // so there is signed entry (FirstClass.class) that is not signed
         // by any alias in the keystore
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-keystore", FIRST_KEY_KEYSTORE,
@@ -128,7 +127,7 @@ public class AliasNotInStoreTest extends Test {
                 ALIAS_NOT_IN_STORE_VERIFYING_WARNING);
 
         // verify jar with keystore that contains only first key in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-strict",

@@ -24,7 +24,7 @@
 package test;
 
 /**
- * Invoked by tests for the {@code java -addmods} option to check that types
+ * Invoked by tests for the {@code java --add-modules} option to check that types
  * are visible.
  */
 public class Main {

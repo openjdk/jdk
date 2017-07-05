@@ -53,6 +53,7 @@ import java.util.Properties;
     static final boolean PROFILE_GWT;
     static final int CUSTOMIZE_THRESHOLD;
     static final boolean VAR_HANDLE_GUARDS;
+    static final int MAX_ARITY;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -78,6 +79,10 @@ import java.util.Properties;
                 props.getProperty("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", "127"));
         VAR_HANDLE_GUARDS = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
+
+        // Do not adjust this except for special platforms:
+        MAX_ARITY = Integer.parseInt(
+                props.getProperty("java.lang.invoke.MethodHandleImpl.MAX_ARITY", "255"));
 
         if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
             throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");

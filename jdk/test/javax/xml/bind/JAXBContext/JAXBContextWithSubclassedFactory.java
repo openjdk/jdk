@@ -36,8 +36,8 @@ import javax.xml.bind.Validator;
  * @bug 8150173
  * @summary Verifies that a factory which inherit its createContext method
  *          from a concrete subclass of JAXBContextFactory is be instantiated.
- * @compile -addmods java.xml.bind JAXBContextWithSubclassedFactory.java
- * @run main/othervm -addmods java.xml.bind JAXBContextWithSubclassedFactory
+ * @modules java.xml.bind
+ * @run main/othervm JAXBContextWithSubclassedFactory
  */
 public class JAXBContextWithSubclassedFactory {
     static JAXBContext tmp;

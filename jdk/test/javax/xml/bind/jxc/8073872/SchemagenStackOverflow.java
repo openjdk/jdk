@@ -26,9 +26,8 @@
  * @bug 8073872
  * @summary test that stackoverflow is not observable when element
  *          references containing class
- * @modules java.xml
  * @modules java.xml.bind
- * @compile Foo.java
+ * @compile SchemagenStackOverflow.java Foo.java
  * @run testng/othervm SchemagenStackOverflow
  */
 

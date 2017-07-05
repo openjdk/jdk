@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
 /*
  * I/O abstraction used to implement WebSocket.
  */
-public interface RawChannel {
+interface RawChannel {
 
     interface RawEvent {
 
