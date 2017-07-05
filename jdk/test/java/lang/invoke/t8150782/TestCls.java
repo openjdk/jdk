@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package test.java.lang.invoke.t8150782;
 
-module jdk.deploy.osx {
-    requires java.desktop;
-    requires java.scripting;
+import static java.lang.invoke.MethodHandles.*;
+
+public class TestCls {
+
+    public static final Lookup LOOKUP = lookup();
+
+    private static class PrivateSIC {}
+    public static Class getPrivateSIC() { return PrivateSIC.class; }
+    public static Lookup getLookupForPrivateSIC() { return lookup(); }
+
 }
 

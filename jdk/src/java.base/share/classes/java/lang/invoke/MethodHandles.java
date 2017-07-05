@@ -108,11 +108,14 @@ public class MethodHandles {
      * <p>
      * For now, the {@linkplain Lookup#lookupClass lookup class} of this lookup
      * object is in an unnamed module.
+     * Consequently, the lookup context of this lookup object will be the bootstrap
+     * class loader, which means it cannot find user classes.
      *
      * <p style="font-size:smaller;">
      * <em>Discussion:</em>
      * The lookup class can be changed to any other class {@code C} using an expression of the form
      * {@link Lookup#in publicLookup().in(C.class)}.
+     * but may change the lookup context by virtue of changing the class loader.
      * A public lookup object is always subject to
      * <a href="MethodHandles.Lookup.html#secmgr">security manager checks</a>.
      * Also, it cannot access
@@ -677,6 +680,11 @@ public class MethodHandles {
          * then no members, not even public members, will be accessible.
          * (In all other cases, public members will continue to be accessible.)
          * </ul>
+         * <p>
+         * The resulting lookup's capabilities for loading classes
+         * (used during {@link #findClass} invocations)
+         * are determined by the lookup class' loader,
+         * which may change due to this operation.
          *
          * @param requestedLookupClass the desired lookup class for the new lookup object
          * @return a lookup object which reports the desired lookup class
@@ -983,13 +991,17 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Looks up a class by name from the lookup context defined by this {@code Lookup} object. The static
          * initializer of the class is not run.
+         * <p>
+         * The lookup context here is determined by the {@linkplain #lookupClass() lookup class}, its class
+         * loader, and the {@linkplain #lookupModes() lookup modes}. In particular, the method first attempts to
+         * load the requested class, and then determines whether the class is accessible to this lookup object.
          *
          * @param targetName the fully qualified name of the class to be looked up.
          * @return the requested class.
          * @exception SecurityException if a security manager is present and it
          *            <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws LinkageError if the linkage fails
-         * @throws ClassNotFoundException if the class does not exist.
+         * @throws ClassNotFoundException if the class cannot be loaded by the lookup class' loader.
          * @throws IllegalAccessException if the class is not accessible, using the allowed access
          * modes.
          * @exception SecurityException if a security manager is present and it
@@ -1004,6 +1016,9 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Determines if a class can be accessed from the lookup context defined by this {@code Lookup} object. The
          * static initializer of the class is not run.
+         * <p>
+         * The lookup context here is determined by the {@linkplain #lookupClass() lookup class} and the
+         * {@linkplain #lookupModes() lookup modes}.
          *
          * @param targetClass the class to be access-checked
          *

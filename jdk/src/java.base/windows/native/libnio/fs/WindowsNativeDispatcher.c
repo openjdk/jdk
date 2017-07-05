@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,21 +73,6 @@ static jfieldID backupResult_bytesTransferred;
 static jfieldID backupResult_context;
 
 
-/**
- * Win32 APIs not available in Windows XP
- */
-typedef HANDLE (WINAPI* FindFirstStream_Proc)(LPCWSTR, STREAM_INFO_LEVELS, LPVOID, DWORD);
-typedef BOOL (WINAPI* FindNextStream_Proc)(HANDLE, LPVOID);
-
-typedef BOOLEAN (WINAPI* CreateSymbolicLinkProc) (LPCWSTR, LPCWSTR, DWORD);
-typedef BOOL (WINAPI* GetFinalPathNameByHandleProc) (HANDLE, LPWSTR, DWORD, DWORD);
-
-static FindFirstStream_Proc FindFirstStream_func;
-static FindNextStream_Proc FindNextStream_func;
-
-static CreateSymbolicLinkProc CreateSymbolicLink_func;
-static GetFinalPathNameByHandleProc GetFinalPathNameByHandle_func;
-
 static void throwWindowsException(JNIEnv* env, DWORD lastError) {
     jobject x = JNU_NewObjectByName(env, "sun/nio/fs/WindowsException",
         "(I)V", lastError);
@@ -108,7 +89,6 @@ JNIEXPORT void JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
 {
     jclass clazz;
-    HMODULE h;
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$FirstFile");
     CHECK_NULL(clazz);
@@ -175,24 +155,6 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     CHECK_NULL(backupResult_bytesTransferred);
     backupResult_context = (*env)->GetFieldID(env, clazz, "context", "J");
     CHECK_NULL(backupResult_context);
-
-    // get handle to kernel32
-    if (GetModuleHandleExW((GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT),
-                           (LPCWSTR)&CreateFileW, &h) != 0)
-    {
-        // requires Windows Server 2003 or newer
-        FindFirstStream_func =
-            (FindFirstStream_Proc)GetProcAddress(h, "FindFirstStreamW");
-        FindNextStream_func =
-            (FindNextStream_Proc)GetProcAddress(h, "FindNextStreamW");
-
-        // requires Windows Vista or newer
-        CreateSymbolicLink_func =
-            (CreateSymbolicLinkProc)GetProcAddress(h, "CreateSymbolicLinkW");
-        GetFinalPathNameByHandle_func =
-            (GetFinalPathNameByHandleProc)GetProcAddress(h, "GetFinalPathNameByHandleW");
-    }
 }
 
 JNIEXPORT jlong JNICALL
@@ -404,12 +366,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstStream0(JNIEnv* env, jclass thi
     LPCWSTR lpFileName = jlong_to_ptr(address);
     HANDLE handle;
 
-    if (FindFirstStream_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return;
-    }
-
-    handle = (*FindFirstStream_func)(lpFileName, FindStreamInfoStandard, &data, 0);
+    handle = FindFirstStreamW(lpFileName, FindStreamInfoStandard, &data, 0);
     if (handle != INVALID_HANDLE_VALUE) {
         jstring name = (*env)->NewString(env, data.cStreamName, (jsize)wcslen(data.cStreamName));
         if (name == NULL)
@@ -433,12 +390,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindNextStream(JNIEnv* env, jclass this,
     WIN32_FIND_STREAM_DATA data;
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
 
-    if (FindNextStream_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return NULL;
-    }
-
-    if ((*FindNextStream_func)(h, &data) != 0) {
+    if (FindNextStreamW(h, &data) != 0) {
         return (*env)->NewString(env, data.cStreamName, (jsize)wcslen(data.cStreamName));
     } else {
         if (GetLastError() != ERROR_HANDLE_EOF)
@@ -1087,13 +1039,8 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CreateSymbolicLink0(JNIEnv* env,
     LPCWSTR link = jlong_to_ptr(linkAddress);
     LPCWSTR target = jlong_to_ptr(targetAddress);
 
-    if (CreateSymbolicLink_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return;
-    }
-
     /* On Windows 64-bit this appears to succeed even when there is insufficient privileges */
-    if ((*CreateSymbolicLink_func)(link, target, (DWORD)flags) == 0)
+    if (CreateSymbolicLinkW(link, target, (DWORD)flags) == 0)
         throwWindowsException(env, GetLastError());
 }
 
@@ -1155,12 +1102,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFinalPathNameByHandle(JNIEnv* env,
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
     DWORD len;
 
-    if (GetFinalPathNameByHandle_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return NULL;
-    }
-
-    len = (*GetFinalPathNameByHandle_func)(h, path, MAX_PATH, 0);
+    len = GetFinalPathNameByHandleW(h, path, MAX_PATH, 0);
     if (len > 0) {
         if (len < MAX_PATH) {
             rv = (*env)->NewString(env, (const jchar *)path, (jsize)len);
@@ -1168,7 +1110,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFinalPathNameByHandle(JNIEnv* env,
             len += 1;  /* return length does not include terminator */
             lpBuf = (WCHAR*)malloc(len * sizeof(WCHAR));
             if (lpBuf != NULL) {
-                len = (*GetFinalPathNameByHandle_func)(h, lpBuf, len, 0);
+                len = GetFinalPathNameByHandleW(h, lpBuf, len, 0);
                 if (len > 0)  {
                     rv = (*env)->NewString(env, (const jchar *)lpBuf, (jsize)len);
                 } else {

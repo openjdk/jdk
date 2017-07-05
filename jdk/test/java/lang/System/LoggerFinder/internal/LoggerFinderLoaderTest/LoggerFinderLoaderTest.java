@@ -181,7 +181,7 @@ public class LoggerFinderLoaderTest {
         }
 
         System.Logger createSimpleLogger(String name) {
-            PrivilegedAction<System.Logger> pa = () -> SimpleConsoleLogger.makeSimpleLogger(name, false);
+            PrivilegedAction<System.Logger> pa = () -> SimpleConsoleLogger.makeSimpleLogger(name);
             return AccessController.doPrivileged(pa);
         }
 

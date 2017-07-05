@@ -46,6 +46,17 @@
   static address _ghash_long_swap_mask_addr;
   static address _ghash_byte_swap_mask_addr;
 
+  // upper word mask for sha1
+  static address _upper_word_mask_addr;
+  // byte flip mask for sha1
+  static address _shuffle_byte_flip_mask_addr;
+
+  //k256 table for sha256
+  static juint _k256[];
+  static address _k256_adr;
+  // byte flip mask for sha256
+  static address _pshuffle_byte_flip_mask_addr;
+
  public:
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
@@ -53,5 +64,9 @@
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
   static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }
   static address ghash_byte_swap_mask_addr() { return _ghash_byte_swap_mask_addr; }
+  static address upper_word_mask_addr() { return _upper_word_mask_addr; }
+  static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
+  static address k256_addr()      { return _k256_adr; }
+  static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
 #endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP

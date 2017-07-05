@@ -96,12 +96,9 @@ public class KeepAliveCache
             java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<>() {
                 public Void run() {
-                    keepAliveTimer = new InnocuousThread(cache, "Keep-Alive-Timer");
+                    keepAliveTimer = InnocuousThread.newSystemThread("Keep-Alive-Timer", cache);
                     keepAliveTimer.setDaemon(true);
                     keepAliveTimer.setPriority(Thread.MAX_PRIORITY - 2);
-                    // Set the context class loader to null in order to avoid
-                    // keeping a strong reference to an application classloader.
-                    keepAliveTimer.setContextClassLoader(null);
                     keepAliveTimer.start();
                     return null;
                 }
