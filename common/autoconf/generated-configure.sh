@@ -1013,6 +1013,7 @@ with_freetype
 with_alsa
 with_alsa_include
 with_alsa_lib
+with_giflib
 with_zlib
 with_stdc__lib
 with_num_cores
@@ -1771,6 +1772,8 @@ Optional Packages:
                           headers under PATH/include)
   --with-alsa-include     specify directory for the alsa include files
   --with-alsa-lib         specify directory for the alsa library
+  --with-giflib           use giflib from build system or OpenJDK source
+                          (system, bundled) [bundled]
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-stdc++lib=<static>,<dynamic>,<default>
@@ -3753,7 +3756,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1363706268
+DATE_WHEN_GENERATED=1364922883
 
 ###############################################################################
 #
@@ -28903,14 +28906,15 @@ $as_echo "$ENABLE_DEBUG_SYMBOLS" >&6; }
 #
 # ZIP_DEBUGINFO_FILES
 #
-# Check whether --enable-zip-debug-info was given.
-if test "${enable_zip_debug_info+set}" = set; then :
-  enableval=$enable_zip_debug_info;
-fi
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should zip debug-info files" >&5
 $as_echo_n "checking if we should zip debug-info files... " >&6; }
+# Check whether --enable-zip-debug-info was given.
+if test "${enable_zip_debug_info+set}" = set; then :
+  enableval=$enable_zip_debug_info; enable_zip_debug_info="${enableval}"
+else
+  enable_zip_debug_info="yes"
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${enable_zip_debug_info}" >&5
 $as_echo "${enable_zip_debug_info}" >&6; }
 
@@ -31178,10 +31182,44 @@ fi
 # Check for the gif library
 #
 
-USE_EXTERNAL_LIBJPEG=true
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lgif" >&5
-$as_echo_n "checking for main in -lgif... " >&6; }
-if ${ac_cv_lib_gif_main+:} false; then :
+
+# Check whether --with-giflib was given.
+if test "${with_giflib+set}" = set; then :
+  withval=$with_giflib;
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for which giflib to use" >&5
+$as_echo_n "checking for which giflib to use... " >&6; }
+
+# default is bundled
+DEFAULT_GIFLIB=bundled
+
+#
+# if user didn't specify, use DEFAULT_GIFLIB
+#
+if test "x${with_giflib}" = "x"; then
+    with_giflib=${DEFAULT_GIFLIB}
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${with_giflib}" >&5
+$as_echo "${with_giflib}" >&6; }
+
+if test "x${with_giflib}" = "xbundled"; then
+    USE_EXTERNAL_LIBGIF=false
+elif test "x${with_giflib}" = "xsystem"; then
+    ac_fn_cxx_check_header_mongrel "$LINENO" "gif_lib.h" "ac_cv_header_gif_lib_h" "$ac_includes_default"
+if test "x$ac_cv_header_gif_lib_h" = xyes; then :
+
+else
+   as_fn_error $? "--with-giflib=system specified, but gif_lib.h not found!" "$LINENO" 5
+fi
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DGifGetCode in -lgif" >&5
+$as_echo_n "checking for DGifGetCode in -lgif... " >&6; }
+if ${ac_cv_lib_gif_DGifGetCode+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -31189,27 +31227,33 @@ LIBS="-lgif  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char DGifGetCode ();
 int
 main ()
 {
-return main ();
+return DGifGetCode ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_gif_main=yes
+  ac_cv_lib_gif_DGifGetCode=yes
 else
-  ac_cv_lib_gif_main=no
+  ac_cv_lib_gif_DGifGetCode=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gif_main" >&5
-$as_echo "$ac_cv_lib_gif_main" >&6; }
-if test "x$ac_cv_lib_gif_main" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gif_DGifGetCode" >&5
+$as_echo "$ac_cv_lib_gif_DGifGetCode" >&6; }
+if test "x$ac_cv_lib_gif_DGifGetCode" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBGIF 1
 _ACEOF
@@ -31217,12 +31261,14 @@ _ACEOF
   LIBS="-lgif $LIBS"
 
 else
-   USE_EXTERNAL_LIBGIF=false
-               { $as_echo "$as_me:${as_lineno-$LINENO}: Will use gif decoder bundled with the OpenJDK source" >&5
-$as_echo "$as_me: Will use gif decoder bundled with the OpenJDK source" >&6;}
-
+   as_fn_error $? "--with-giflib=system specified, but no giflib found!" "$LINENO" 5
 fi
 
+
+    USE_EXTERNAL_LIBGIF=true
+else
+    as_fn_error $? "Invalid value of --with-giflib: ${with_giflib}, use 'system' or 'bundled'" "$LINENO" 5
+fi
 
 
 ###############################################################################
