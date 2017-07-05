@@ -62,7 +62,7 @@ void VM_Version::initialize() {
   if (is_niagara1()) {
     // Indirect branch is the same cost as direct
     if (FLAG_IS_DEFAULT(UseInlineCaches)) {
-      UseInlineCaches         = false;
+      FLAG_SET_DEFAULT(UseInlineCaches, false);
     }
 #ifdef _LP64
     // Single issue niagara1 is slower for CompressedOops
@@ -79,15 +79,19 @@ void VM_Version::initialize() {
 #ifdef COMPILER2
     // Indirect branch is the same cost as direct
     if (FLAG_IS_DEFAULT(UseJumpTables)) {
-      UseJumpTables           = true;
+      FLAG_SET_DEFAULT(UseJumpTables, true);
     }
     // Single-issue, so entry and loop tops are
     // aligned on a single instruction boundary
     if (FLAG_IS_DEFAULT(InteriorEntryAlignment)) {
-      InteriorEntryAlignment  = 4;
+      FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
     if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
-      OptoLoopAlignment       = 4;
+      FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
+    }
+    if (is_niagara1_plus() && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+      // Use smaller prefetch distance on N2
+      FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
     }
 #endif
   }
@@ -95,7 +99,7 @@ void VM_Version::initialize() {
   // Use hardware population count instruction if available.
   if (has_hardware_popc()) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      UsePopCountInstruction = true;
+      FLAG_SET_DEFAULT(UsePopCountInstruction, true);
     }
   }
 

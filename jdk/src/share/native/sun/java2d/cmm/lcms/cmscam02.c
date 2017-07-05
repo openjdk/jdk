@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -51,7 +51,7 @@
 
 
 
-// CIECAM 02 appearance model
+// CIECAM 02 appearance model. Many thanks to Jordi Vilar for the debugging.
 
 #include "lcms.h"
 
@@ -196,6 +196,10 @@ CAM02COLOR NonlinearCompression(CAM02COLOR clr, LPcmsCIECAM02 pMod)
             clr.RGBpa[i] = (400.0 * temp) / (temp + 27.13) + 0.1;
         }
     }
+
+    clr.A = (((2.0 * clr.RGBpa[0]) + clr.RGBpa[1] +
+        (clr.RGBpa[2] / 20.0)) - 0.305) * pMod->Nbb;
+
     return clr;
 }
 
@@ -248,9 +252,6 @@ CAM02COLOR ComputeCorrelates(CAM02COLOR clr, LPcmsCIECAM02 pMod)
         temp = ((clr.h - 237.53)/1.2) + ((360 - clr.h + 20.14)/0.8);
         clr.H = 300 + ((100*((clr.h - 237.53)/1.2)) / temp);
     }
-
-    clr.A = (((2.0 * clr.RGBpa[0]) + clr.RGBpa[1] +
-        (clr.RGBpa[2] / 20.0)) - 0.305) * pMod->Nbb;
 
     clr.J = 100.0 * pow((clr.A / pMod->adoptedWhite.A),
         (pMod->c * pMod->z));
@@ -395,7 +396,7 @@ LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC)
     LPcmsCIECAM02 lpMod;
 
 
-   if((lpMod = (LPcmsCIECAM02) malloc(sizeof(cmsCIECAM02))) == NULL) {
+   if((lpMod = (LPcmsCIECAM02) _cmsMalloc(sizeof(cmsCIECAM02))) == NULL) {
         return (LCMSHANDLE) NULL;
     }
 
@@ -449,14 +450,19 @@ LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC)
     lpMod -> z   = compute_z(lpMod);
     lpMod -> Nbb = computeNbb(lpMod);
     lpMod -> FL  = computeFL(lpMod);
+
+    if (lpMod -> D == D_CALCULATE ||
+        lpMod -> D == D_CALCULATE_DISCOUNT) {
+
     lpMod -> D   = computeD(lpMod);
+    }
+
     lpMod -> Ncb = lpMod -> Nbb;
 
     lpMod -> adoptedWhite = XYZtoCAT02(lpMod -> adoptedWhite);
     lpMod -> adoptedWhite = ChromaticAdaptation(lpMod -> adoptedWhite, lpMod);
     lpMod -> adoptedWhite = CAT02toHPE(lpMod -> adoptedWhite);
     lpMod -> adoptedWhite = NonlinearCompression(lpMod -> adoptedWhite, lpMod);
-    lpMod -> adoptedWhite = ComputeCorrelates(lpMod -> adoptedWhite, lpMod);
 
     return (LCMSHANDLE) lpMod;
 
@@ -465,7 +471,7 @@ LCMSHANDLE LCMSEXPORT cmsCIECAM02Init(LPcmsViewingConditions pVC)
 void LCMSEXPORT cmsCIECAM02Done(LCMSHANDLE hModel)
 {
     LPcmsCIECAM02 lpMod = (LPcmsCIECAM02) (LPSTR) hModel;
-    if (lpMod) free(lpMod);
+    if (lpMod) _cmsFree(lpMod);
 }
 
 
@@ -510,3 +516,4 @@ void LCMSEXPORT cmsCIECAM02Reverse(LCMSHANDLE hModel, LPcmsJCh pIn, LPcmsCIEXYZ 
     pOut ->Z = clr.XYZ[2];
 
 }
+

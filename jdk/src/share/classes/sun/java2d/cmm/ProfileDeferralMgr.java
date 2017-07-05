@@ -25,6 +25,7 @@
 
 package sun.java2d.cmm;
 
+import java.awt.color.ProfileDataException;
 import java.util.Vector;
 
 
@@ -39,7 +40,7 @@ import java.util.Vector;
 public class ProfileDeferralMgr {
 
     public static boolean deferring = true;
-    private static Vector aVector;
+    private static Vector<ProfileActivator> aVector;
 
     /**
      * Records a ProfileActivator object whose activate method will
@@ -51,7 +52,7 @@ public class ProfileDeferralMgr {
             return;
         }
         if (aVector == null) {
-            aVector = new Vector(3, 3);
+            aVector = new Vector<ProfileActivator>(3, 3);
         }
         aVector.addElement(pa);
         return;
@@ -89,8 +90,26 @@ public class ProfileDeferralMgr {
             return;
         }
         n = aVector.size();
-        for (i = 0; i < n; i++) {
-            ((ProfileActivator) aVector.get(i)).activate();
+        for (ProfileActivator pa : aVector) {
+            try {
+                pa.activate();
+            } catch (ProfileDataException e) {
+                /*
+                 * Ignore profile activation error for now:
+                 * such exception is pssible due to absence
+                 * or corruption of standard color profile.
+                 * As for now we expect all profiles should
+                 * be shiped with jre and presence of this
+                 * exception is indication of some configuration
+                 * problem in jre installation.
+                 *
+                 * NB: we still are greedy loading deferred profiles
+                 * and load them all if any of them is needed.
+                 * Therefore broken profile (if any) might be never used.
+                 * If there will be attempt to use broken profile then
+                 * it will result in CMMException.
+                 */
+            }
         }
         aVector.removeAllElements();
         aVector = null;
