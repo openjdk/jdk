@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public interface FieldDoc extends MemberDoc {
     /**
      * Return the serialField tags in this FieldDoc item.
      *
-     * @return an array of <tt>SerialFieldTag</tt> objects containing
+     * @return an array of {@code SerialFieldTag} objects containing
      *         all {@code @serialField} tags.
      */
     SerialFieldTag[] serialFieldTags();

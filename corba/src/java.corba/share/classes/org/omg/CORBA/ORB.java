@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,13 +85,17 @@ import java.security.PrivilegedAction;
  * three {@code init} methods.  Two of the three methods use the properties
  * (associations of a name with a value) shown in the
  * table below.<BR>
- * <TABLE BORDER=1 SUMMARY="Standard Java CORBA Properties">
- * <TR><TH>Property Name</TH>   <TH>Property Value</TH></TR>
+ * <TABLE class="plain">
  * <CAPTION>Standard Java CORBA Properties:</CAPTION>
+ * <thead>
+ * <TR><TH>Property Name</TH>   <TH>Property Value</TH></TR>
+ * </thead>
+ * <tbody>
  *     <TR><TD>org.omg.CORBA.ORBClass</TD>
  *     <TD>class name of an ORB implementation</TD></TR>
  *     <TR><TD>org.omg.CORBA.ORBSingletonClass</TD>
  *     <TD>class name of the ORB returned by {@code init()}</TD></TR>
+ * </tbody>
  * </TABLE>
  * <P>
  * These properties allow a different vendor's {@code ORB}
@@ -106,13 +110,13 @@ import java.security.PrivilegedAction;
  *
  *     <LI>check in properties parameter, if any
  *
- *     <LI>check in the System properties
+ *     <LI>check in the System properties, if any
  *
  *     <LI>check in the orb.properties file located in the user.home
- *         directory (if any)
+ *         directory, if any
  *
- *     <LI>check in the orb.properties file located in the java.home/lib
- *         directory (if any)
+ *     <LI>check in the orb.properties file located in the run-time image,
+ *         if any
  *
  *     <LI>fall back on a hardcoded default behavior (use the Java&nbsp;IDL
  *         implementation)
@@ -170,9 +174,15 @@ import java.security.PrivilegedAction;
  * Thus, where appropriate, it is necessary that
  * the classes for this alternative ORBSingleton are available on the application's class path.
  * It should be noted that the singleton ORB is system wide.
- *
+ * <P>
  * When a per-application ORB is created via the 2-arg init methods,
  * then it will be located using the thread context class loader.
+ * <P>
+ * The IDL to Java Language OMG specification documents the ${java.home}/lib directory as the location,
+ * in the Java run-time image, to search for orb.properties.
+ * This location is not intended for user editable configuration files.
+ * Therefore, the implementation first checks the ${java.home}/conf directory for orb.properties,
+ * and thereafter the ${java.home}/lib directory.
  *
  * @since   JDK1.2
  */
@@ -271,14 +281,25 @@ abstract public class ORB {
                     }
 
                     String javaHome = System.getProperty("java.home");
-                    fileName = javaHome + File.separator
-                        + "lib" + File.separator + "orb.properties";
-                    props = getFileProperties( fileName ) ;
+
+                    fileName = javaHome + File.separator + "conf"
+                            + File.separator + "orb.properties";
+                    props = getFileProperties(fileName);
+
+                    if (props != null) {
+                        String value = props.getProperty(name);
+                        if (value != null)
+                            return value;
+                    }
+
+                    fileName = javaHome + File.separator + "lib"
+                            + File.separator + "orb.properties";
+                    props = getFileProperties(fileName);
 
                     if (props == null)
-                        return null ;
+                        return null;
                     else
-                        return props.getProperty( name ) ;
+                        return props.getProperty(name);
                 }
             }
         );

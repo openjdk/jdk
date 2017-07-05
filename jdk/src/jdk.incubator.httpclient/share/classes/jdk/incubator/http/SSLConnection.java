@@ -50,18 +50,11 @@ class SSLConnection extends HttpConnection {
     @Override
     public CompletableFuture<Void> connectAsync() {
         return delegate.connectAsync()
-                .thenCompose((Void v) -> {
-                    CompletableFuture<Void> cf = new MinimalFuture<>();
-                    try {
-                        this.sslDelegate = new SSLDelegate(delegate.channel(),
-                                                           client,
-                                                           alpn);
-                        cf.complete(null);
-                    } catch (IOException e) {
-                        cf.completeExceptionally(e);
-                    }
-                    return cf;
-                });
+                .thenCompose((Void v) ->
+                                MinimalFuture.supply( () -> {
+                                    this.sslDelegate = new SSLDelegate(delegate.channel(), client, alpn);
+                                    return null;
+                                }));
     }
 
     @Override
@@ -74,6 +67,18 @@ class SSLConnection extends HttpConnection {
         super(addr, client);
         this.alpn = ap;
         delegate = new PlainHttpConnection(addr, client);
+    }
+
+    /**
+     * Create an SSLConnection from an existing connected AsyncSSLConnection.
+     * Used when downgrading from HTTP/2 to HTTP/1.1
+     */
+    SSLConnection(AsyncSSLConnection c) {
+        super(c.address, c.client);
+        this.delegate = c.plainConnection;
+        AsyncSSLDelegate adel = c.sslDelegate;
+        this.sslDelegate = new SSLDelegate(adel.engine, delegate.channel(), client);
+        this.alpn = adel.alpn;
     }
 
     @Override
