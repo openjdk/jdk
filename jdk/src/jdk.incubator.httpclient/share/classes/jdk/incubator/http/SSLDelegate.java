@@ -449,9 +449,11 @@ class SSLDelegate {
         for (String cipher : p.getCipherSuites()) {
                 System.out.printf("cipher: %s\n", cipher);
         }
+        // JDK 8 EXCL START
         for (String approto : p.getApplicationProtocols()) {
                 System.out.printf("application protocol: %s\n", approto);
         }
+        // JDK 8 EXCL END
         for (String protocol : p.getProtocols()) {
                 System.out.printf("protocol: %s\n", protocol);
         }

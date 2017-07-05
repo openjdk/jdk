@@ -335,7 +335,7 @@ public class Desktop {
      * most of the platforms support the {@link Desktop.Action#OPEN}
      * action.  But for a specific file, there may not be an
      * application registered to open it.  In this case, {@link
-     * #isSupported} may return {@code true}, but the corresponding
+     * #isSupported(Action)} may return {@code true}, but the corresponding
      * action method will throw an {@link IOException}.
      *
      * @param action the specified {@link Action}
@@ -720,7 +720,7 @@ public class Desktop {
      * default behavior.
      *
      * @param aboutHandler the handler to respond to the
-     * {@link java.awt.desktop.AboutHandler#handleAbout} )} message
+     * {@link java.awt.desktop.AboutHandler#handleAbout(AboutEvent)} message
      *
      * @throws SecurityException if a security manager exists and it
      * denies the
@@ -828,7 +828,7 @@ public class Desktop {
      * open a URL.
      *
      * Setting the handler to {@code null} causes all
-     * {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be
+     * {@link OpenURIHandler#openURI(OpenURIEvent)} requests to be
      * enqueued until another handler is set.
      *
      * @implNote Please note that for Mac OS, notifications

@@ -30,6 +30,6 @@ import java.util.function.BooleanSupplier;
 public class SupportedVM implements BooleanSupplier {
     @Override
     public boolean getAsBoolean() {
-        return Platform.isServer();
+        return Platform.isServer() && !Platform.isEmulatedClient();
     }
 }
