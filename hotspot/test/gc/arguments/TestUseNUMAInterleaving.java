@@ -32,8 +32,8 @@
  *          java.management
  * @run driver TestUseNUMAInterleaving
  */
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
 
 public class TestUseNUMAInterleaving {
 

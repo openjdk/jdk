@@ -31,7 +31,7 @@
  * @run main CDSCompressedKPtrs
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class CDSCompressedKPtrs {
   public static void main(String[] args) throws Exception {

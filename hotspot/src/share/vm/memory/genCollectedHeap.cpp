@@ -640,7 +640,7 @@ void GenCollectedHeap::process_roots(bool activate_scope,
   // All threads execute the following. A specific chunk of buckets
   // from the StringTable are the individual tasks.
   if (weak_roots != NULL) {
-    if (CollectedHeap::use_parallel_gc_threads()) {
+    if (is_par) {
       StringTable::possibly_parallel_oops_do(weak_roots);
     } else {
       StringTable::oops_do(weak_roots);

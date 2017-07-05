@@ -137,8 +137,10 @@ class StubGenerator: public StubCodeGenerator {
   //     [ return_from_Java     ] <--- rsp
   //     [ argument word n      ]
   //      ...
-  // -28 [ argument word 1      ]
-  // -27 [ saved xmm15          ] <--- rsp_after_call
+  // -60 [ argument word 1      ]
+  // -59 [ saved xmm31          ] <--- rsp after_call
+  //     [ saved xmm16-xmm30    ] (EVEX enabled, else the space is blank)
+  // -27 [ saved xmm15          ]
   //     [ saved xmm7-xmm14     ]
   //  -9 [ saved xmm6           ] (each xmm register takes 2 slots)
   //  -7 [ saved r15            ]
@@ -166,7 +168,7 @@ class StubGenerator: public StubCodeGenerator {
   enum call_stub_layout {
 #ifdef _WIN64
     xmm_save_first     = 6,  // save from xmm6
-    xmm_save_last      = 15, // to xmm15
+    xmm_save_last      = 31, // to xmm31
     xmm_save_base      = -9,
     rsp_after_call_off = xmm_save_base - 2 * (xmm_save_last - xmm_save_first), // -27
     r15_off            = -7,
@@ -262,9 +264,19 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(r13_save, r13);
     __ movptr(r14_save, r14);
     __ movptr(r15_save, r15);
+    if (UseAVX > 2) {
+      __ movl(rbx, 0xffff);
+      __ kmovql(k1, rbx);
+    }
 #ifdef _WIN64
-    for (int i = 6; i <= 15; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
+    if (UseAVX > 2) {
+      for (int i = 6; i <= 31; i++) {
+        __ movdqu(xmm_save(i), as_XMMRegister(i));
+      }
+    } else {
+      for (int i = 6; i <= 15; i++) {
+        __ movdqu(xmm_save(i), as_XMMRegister(i));
+      }
     }
 
     const Address rdi_save(rbp, rdi_off * wordSize);
@@ -1318,7 +1330,10 @@ class StubGenerator: public StubCodeGenerator {
       Label L_end;
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
-      if (UseAVX >= 2) {
+      if (UseAVX > 2) {
+        __ evmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56), Assembler::AVX_512bit);
+        __ evmovdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0, Assembler::AVX_512bit);
+      } else if (UseAVX == 2) {
         __ vmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56));
         __ vmovdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0);
         __ vmovdqu(xmm1, Address(end_from, qword_count, Address::times_8, -24));
@@ -1395,7 +1410,10 @@ class StubGenerator: public StubCodeGenerator {
       Label L_end;
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
-      if (UseAVX >= 2) {
+      if (UseAVX > 2) {
+        __ evmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32), Assembler::AVX_512bit);
+        __ evmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0, Assembler::AVX_512bit);
+      } else if (UseAVX == 2) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32));
         __ vmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0);
         __ vmovdqu(xmm1, Address(from, qword_count, Address::times_8,  0));

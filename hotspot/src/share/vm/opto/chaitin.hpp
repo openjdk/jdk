@@ -141,7 +141,7 @@ public:
 
   // Number of registers this live range uses when it colors
 private:
-  uint8_t _num_regs;            // 2 for Longs and Doubles, 1 for all else
+  uint16_t _num_regs;           // 2 for Longs and Doubles, 1 for all else
                                 // except _num_regs is kill count for fat_proj
 public:
   int num_regs() const { return _num_regs; }
@@ -150,7 +150,7 @@ public:
 private:
   // Number of physical registers this live range uses when it colors
   // Architecture and register-set dependent
-  uint8_t _reg_pressure;
+  uint16_t _reg_pressure;
 public:
   void set_reg_pressure(int i)  { _reg_pressure = i; }
   int      reg_pressure() const { return _reg_pressure; }

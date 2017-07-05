@@ -30,7 +30,7 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class TestHumongousAllocInitialMark {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to

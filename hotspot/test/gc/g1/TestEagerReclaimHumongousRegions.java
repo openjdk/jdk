@@ -36,9 +36,9 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.LinkedList;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.Asserts;
 
 class ReclaimRegionFast {
     public static final int M = 1024*1024;

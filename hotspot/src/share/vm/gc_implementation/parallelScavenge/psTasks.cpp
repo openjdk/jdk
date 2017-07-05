@@ -39,8 +39,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
-#include "utilities/stack.inline.hpp"
-#include "utilities/taskqueue.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 //
 // ScavengeRootsTask

@@ -21,12 +21,12 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.dcmd.CommandExecutor;
-import com.oracle.java.testlibrary.dcmd.PidJcmdExecutor;
-import com.oracle.java.testlibrary.dcmd.MainClassJcmdExecutor;
-import com.oracle.java.testlibrary.dcmd.FileJcmdExecutor;
-import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
+import jdk.test.lib.dcmd.MainClassJcmdExecutor;
+import jdk.test.lib.dcmd.FileJcmdExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
 import org.testng.annotations.Test;
 
 /*
@@ -38,8 +38,8 @@ import org.testng.annotations.Test;
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @ignore 8072440
- * @build com.oracle.java.testlibrary.*
- * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.*
+ * @build jdk.test.lib.dcmd.*
  * @run testng/othervm -XX:+UsePerfData InvalidCommandTest
  */
 public class InvalidCommandTest {
