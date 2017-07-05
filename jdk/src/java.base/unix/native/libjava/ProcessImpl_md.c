@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ effectivePathv(JNIEnv *env)
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_UNIXProcess_init(JNIEnv *env, jclass clazz)
+Java_java_lang_ProcessImpl_init(JNIEnv *env, jclass clazz)
 {
     parentPathv = effectivePathv(env);
     CHECK_NULL(parentPathv);
@@ -230,7 +230,7 @@ Java_java_lang_UNIXProcess_init(JNIEnv *env, jclass clazz)
 /* Block until a child process exits and return its exit code.
    Note, can only be called once for any given pid. */
 JNIEXPORT jint JNICALL
-Java_java_lang_UNIXProcess_waitForProcessExit(JNIEnv* env,
+Java_java_lang_ProcessImpl_waitForProcessExit(JNIEnv* env,
                                               jobject junk,
                                               jint pid)
 {
@@ -562,7 +562,7 @@ startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 }
 
 JNIEXPORT jint JNICALL
-Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
+Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                                        jobject process,
                                        jint mode,
                                        jbyteArray helperpath,
@@ -714,7 +714,7 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_UNIXProcess_destroyProcess(JNIEnv *env,
+Java_java_lang_ProcessImpl_destroyProcess(JNIEnv *env,
                                           jobject junk,
                                           jint pid,
                                           jboolean force)

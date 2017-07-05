@@ -987,3 +987,26 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
     IS_RECONFIGURE=no
   fi
 ])
+
+# Check for support for specific options in bash
+AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
+[
+  # Test if bash supports pipefail.
+  AC_MSG_CHECKING([if bash supports pipefail])
+  if ${BASH} -c 'set -o pipefail'; then
+    BASH_ARGS="$BASH_ARGS -o pipefail"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_MSG_CHECKING([if bash supports errexit (-e)])
+  if ${BASH} -e -c 'true'; then
+    BASH_ARGS="$BASH_ARGS -e"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_SUBST(BASH_ARGS)
+])
