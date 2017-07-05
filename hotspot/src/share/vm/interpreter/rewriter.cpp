@@ -70,12 +70,14 @@ void Rewriter::compute_index_maps() {
 }
 
 // Unrewrite the bytecodes if an error occurs.
-void Rewriter::restore_bytecodes(TRAPS) {
+void Rewriter::restore_bytecodes() {
   int len = _methods->length();
+  bool invokespecial_error = false;
 
   for (int i = len-1; i >= 0; i--) {
     Method* method = _methods->at(i);
-    scan_method(method, true, CHECK);
+    scan_method(method, true, &invokespecial_error);
+    assert(!invokespecial_error, "reversing should not get an invokespecial error");
   }
 }
 
@@ -160,22 +162,21 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
 // These cannot share cpCache entries.  It's unclear if all invokespecial to
 // InterfaceMethodrefs would resolve to the same thing so a new cpCache entry
 // is created for each one.  This was added with lambda.
-void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, TRAPS) {
-  static int count = 0;
+void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool* invokespecial_error) {
   address p = bcp + offset;
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
+    if (_pool->tag_at(cp_index).is_interface_method()) {
     int cache_index = add_invokespecial_cp_cache_entry(cp_index);
     if (cache_index != (int)(jushort) cache_index) {
-      THROW_MSG(vmSymbols::java_lang_InternalError(),
-                "This classfile overflows invokespecial for interfaces "
-                "and cannot be loaded");
+      *invokespecial_error = true;
     }
     Bytes::put_native_u2(p, cache_index);
   } else {
-    int cache_index = Bytes::get_native_u2(p);
-    int cp_index = cp_cache_entry_pool_index(cache_index);
-    Bytes::put_Java_u2(p, cp_index);
+      rewrite_member_reference(bcp, offset, reverse);
+    }
+  } else {
+    rewrite_member_reference(bcp, offset, reverse);
   }
 }
 
@@ -329,7 +330,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
 
 
 // Rewrites a method given the index_map information
-void Rewriter::scan_method(Method* method, bool reverse, TRAPS) {
+void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_error) {
 
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
@@ -391,15 +392,7 @@ void Rewriter::scan_method(Method* method, bool reverse, TRAPS) {
         }
 
         case Bytecodes::_invokespecial  : {
-          int offset = prefix_length + 1;
-          address p = bcp + offset;
-          int cp_index = Bytes::get_Java_u2(p);
-          // InterfaceMethodref
-          if (_pool->tag_at(cp_index).is_interface_method()) {
-            rewrite_invokespecial(bcp, offset, reverse, CHECK);
-          } else {
-            rewrite_member_reference(bcp, offset, reverse);
-          }
+          rewrite_invokespecial(bcp, prefix_length+1, reverse, invokespecial_error);
           break;
         }
 
@@ -496,11 +489,20 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
 
   // rewrite methods, in two passes
   int len = _methods->length();
+  bool invokespecial_error = false;
 
   for (int i = len-1; i >= 0; i--) {
     Method* method = _methods->at(i);
-    scan_method(method, false, CHECK);  // If you get an error here,
-                                        // there is no reversing bytecodes
+    scan_method(method, false, &invokespecial_error);
+    if (invokespecial_error) {
+      // If you get an error here, there is no reversing bytecodes
+      // This exception is stored for this class and no further attempt is
+      // made at verifying or rewriting.
+      THROW_MSG(vmSymbols::java_lang_InternalError(),
+                "This classfile overflows invokespecial for interfaces "
+                "and cannot be loaded");
+      return;
+     }
   }
 
   // May have to fix invokedynamic bytecodes if invokestatic/InterfaceMethodref
@@ -513,7 +515,7 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
   // Restore bytecodes to their unrewritten state if there are exceptions
   // rewriting bytecodes or allocating the cpCache
   if (HAS_PENDING_EXCEPTION) {
-    restore_bytecodes(CATCH);
+    restore_bytecodes();
     return;
   }
 
@@ -530,7 +532,7 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
       // relocating bytecodes.  If some are relocated, that is ok because that
       // doesn't affect constant pool to cpCache rewriting.
       if (HAS_PENDING_EXCEPTION) {
-        restore_bytecodes(CATCH);
+        restore_bytecodes();
         return;
       }
       // Method might have gotten rewritten.
