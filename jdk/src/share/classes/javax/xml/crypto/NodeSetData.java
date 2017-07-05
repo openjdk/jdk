@@ -52,5 +52,6 @@ public interface NodeSetData extends Data {
      * @return an <code>Iterator</code> over the nodes in this
      *    <code>NodeSetData</code> in document order
      */
+    @SuppressWarnings("rawtypes")
     Iterator iterator();
 }

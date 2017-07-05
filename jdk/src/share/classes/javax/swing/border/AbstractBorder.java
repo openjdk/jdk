@@ -46,6 +46,7 @@ import java.io.Serializable;
  *
  * @author David Kloba
  */
+@SuppressWarnings("serial")
 public abstract class AbstractBorder implements Border, Serializable
 {
     /**

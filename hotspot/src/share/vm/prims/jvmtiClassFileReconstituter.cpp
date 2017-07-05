@@ -43,7 +43,7 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
-// FIXME: add Deprecated, LVT, LVTT attributes
+// FIXME: add Deprecated, LVTT attributes
 // FIXME: fix Synthetic attribute
 // FIXME: per Serguei, add error return handling for constantPoolOopDesc::copy_cpool_bytes()
 
@@ -136,8 +136,9 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   constMethodHandle const_method(thread(), method->constMethod());
   u2 line_num_cnt = 0;
   int stackmap_len = 0;
+  int local_variable_table_length = 0;
 
-  // compute number and length of attributes -- FIXME: for now no LVT
+  // compute number and length of attributes
   int attr_count = 0;
   int attr_size = 0;
   if (const_method->has_linenumber_table()) {
@@ -168,6 +169,25 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
       //        stack_map_frame_entries[number_of_entries];
       //      }
       attr_size += 2 + 4 + stackmap_len;
+    }
+  }
+  if (method->has_localvariable_table()) {
+    local_variable_table_length = method->localvariable_table_length();
+    ++attr_count;
+    if (local_variable_table_length != 0) {
+      // Compute the size of the local variable table attribute (VM stores raw):
+      // LocalVariableTable_attribute {
+      //   u2 attribute_name_index;
+      //   u4 attribute_length;
+      //   u2 local_variable_table_length;
+      //   {
+      //     u2 start_pc;
+      //     u2 length;
+      //     u2 name_index;
+      //     u2 descriptor_index;
+      //     u2 index;
+      //   }
+      attr_size += 2 + 4 + 2 + local_variable_table_length * (2 + 2 + 2 + 2 + 2);
     }
   }
 
@@ -203,8 +223,9 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   if (stackmap_len != 0) {
     write_stackmap_table_attribute(method, stackmap_len);
   }
-
-  // FIXME: write LVT attribute
+  if (local_variable_table_length != 0) {
+    write_local_variable_table_attribute(method, local_variable_table_length);
+  }
 }
 
 // Write Exceptions attribute
@@ -369,6 +390,36 @@ void JvmtiClassFileReconstituter::write_line_number_table_attribute(methodHandle
     write_u2(stream.bci());
     write_u2(stream.line());
   }
+}
+
+// Write LineNumberTable attribute
+// JVMSpec|   LocalVariableTable_attribute {
+// JVMSpec|     u2 attribute_name_index;
+// JVMSpec|     u4 attribute_length;
+// JVMSpec|     u2 local_variable_table_length;
+// JVMSpec|     {  u2 start_pc;
+// JVMSpec|       u2 length;
+// JVMSpec|       u2 name_index;
+// JVMSpec|       u2 descriptor_index;
+// JVMSpec|       u2 index;
+// JVMSpec|     } local_variable_table[local_variable_table_length];
+// JVMSpec|   }
+void JvmtiClassFileReconstituter::write_local_variable_table_attribute(methodHandle method, u2 num_entries) {
+    write_attribute_name_index("LocalVariableTable");
+    write_u4(2 + num_entries * (2 + 2 + 2 + 2 + 2));
+    write_u2(num_entries);
+
+    assert(method->localvariable_table_length() == num_entries, "just checking");
+
+    LocalVariableTableElement *elem = method->localvariable_table_start();
+    for (int j=0; j<method->localvariable_table_length(); j++) {
+      write_u2(elem->start_bci);
+      write_u2(elem->length);
+      write_u2(elem->name_cp_index);
+      write_u2(elem->descriptor_cp_index);
+      write_u2(elem->slot);
+      elem++;
+    }
 }
 
 // Write stack map table attribute

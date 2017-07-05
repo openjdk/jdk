@@ -66,6 +66,7 @@ import java.io.IOException;
  * @author Dave Moore
  * @author Rich Shiavi
  */
+@SuppressWarnings("serial")
 public class JToolTip extends JComponent implements Accessible {
     /**
      * @see #getUIClassID
@@ -251,6 +252,7 @@ public class JToolTip extends JComponent implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJToolTip extends AccessibleJComponent {
 
         /**

@@ -220,7 +220,7 @@ class Generation: public CHeapObj {
   MemRegion prev_used_region() const { return _prev_used_region; }
   virtual void  save_used_region()   { _prev_used_region = used_region(); }
 
-  // Returns "TRUE" iff "p" points into an allocated object in the generation.
+  // Returns "TRUE" iff "p" points into the committed areas in the generation.
   // For some kinds of generations, this may be an expensive operation.
   // To avoid performance problems stemming from its inadvertent use in
   // product jvm's, we restrict its use to assertion checking or
@@ -413,10 +413,13 @@ class Generation: public CHeapObj {
   // Time (in ms) when we were last collected or now if a collection is
   // in progress.
   virtual jlong time_of_last_gc(jlong now) {
-    // XXX See note in genCollectedHeap::millis_since_last_gc()
+    // Both _time_of_last_gc and now are set using a time source
+    // that guarantees monotonically non-decreasing values provided
+    // the underlying platform provides such a source. So we still
+    // have to guard against non-monotonicity.
     NOT_PRODUCT(
       if (now < _time_of_last_gc) {
-        warning("time warp: %d to %d", _time_of_last_gc, now);
+        warning("time warp: "INT64_FORMAT" to "INT64_FORMAT, _time_of_last_gc, now);
       }
     )
     return _time_of_last_gc;

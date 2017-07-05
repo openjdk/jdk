@@ -32,7 +32,7 @@
  * 4872664 4803179 4892980 4900747 4945394 4938995 4979006 4994840 4997476
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
- * 6350801 6676425 6878475 6919132 6931676 6948903 7014645 7039066
+ * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  */
 
 import java.util.regex.*;
@@ -50,6 +50,7 @@ public class RegExTest {
     private static Random generator = new Random();
     private static boolean failure = false;
     private static int failCount = 0;
+    private static String firstFailure = null;
 
     /**
      * Main to interpret arguments and run several tests.
@@ -133,15 +134,19 @@ public class RegExTest {
         hitEndTest();
         toMatchResultTest();
         surrogatesInClassTest();
+        removeQEQuotingTest();
         namedGroupCaptureTest();
         nonBmpClassComplementTest();
         unicodePropertiesTest();
         unicodeHexNotationTest();
         unicodeClassesTest();
-        if (failure)
-            throw new RuntimeException("Failure in the RE handling.");
-        else
+        if (failure) {
+            throw new
+                RuntimeException("RegExTest failed, 1st failure: " +
+                                 firstFailure);
+        } else {
             System.err.println("OKAY: All tests passed.");
+        }
     }
 
     // Utility functions
@@ -215,8 +220,14 @@ public class RegExTest {
         String paddedName = paddedNameBuffer.toString();
         System.err.println(paddedName + ": " +
                            (failCount==0 ? "Passed":"Failed("+failCount+")"));
-        if (failCount > 0)
+        if (failCount > 0) {
             failure = true;
+
+            if (firstFailure == null) {
+                firstFailure = testName;
+            }
+        }
+
         failCount = 0;
     }
 
@@ -295,6 +306,22 @@ public class RegExTest {
         Matcher matcher = pattern.matcher("\ud834\udd22");
         if (!matcher.find())
             failCount++;
+
+        report("Surrogate pair in Unicode escape");
+    }
+
+    // This is for bug6990617
+    // Test if Pattern.RemoveQEQuoting works correctly if the octal unicode
+    // char encoding is only 2 or 3 digits instead of 4 and the first quoted
+    // char is an octal digit.
+    private static void removeQEQuotingTest() throws Exception {
+        Pattern pattern =
+            Pattern.compile("\\011\\Q1sometext\\E\\011\\Q2sometext\\E");
+        Matcher matcher = pattern.matcher("\t1sometext\t2sometext");
+        if (!matcher.find())
+            failCount++;
+
+        report("Remove Q/E Quoting");
     }
 
     // This is for bug 4988891

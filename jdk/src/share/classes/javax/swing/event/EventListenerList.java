@@ -96,6 +96,7 @@ import java.lang.reflect.Array;
  * @author Hans Muller
  * @author James Gosling
  */
+@SuppressWarnings("serial")
 public class EventListenerList implements Serializable {
     /* A null array to be shared by all empty listener lists*/
     private final static Object[] NULL_ARRAY = new Object[0];
@@ -250,7 +251,7 @@ public class EventListenerList implements Serializable {
 
         // Save the non-null event listeners:
         for (int i = 0; i < lList.length; i+=2) {
-            Class t = (Class)lList[i];
+            Class<?> t = (Class)lList[i];
             EventListener l = (EventListener)lList[i+1];
             if ((l!=null) && (l instanceof Serializable)) {
                 s.writeObject(t.getName());

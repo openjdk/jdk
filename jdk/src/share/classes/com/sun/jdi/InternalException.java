@@ -33,6 +33,7 @@ package com.sun.jdi;
  * @since  1.3
  */
 public class InternalException extends RuntimeException {
+     private static final long serialVersionUID = -9171606393104480607L;
      private int errorCode;
 
      public InternalException() {

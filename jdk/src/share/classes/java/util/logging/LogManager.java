@@ -179,10 +179,10 @@ public class LogManager {
                         cname = System.getProperty("java.util.logging.manager");
                         if (cname != null) {
                             try {
-                                Class clz = ClassLoader.getSystemClassLoader().loadClass(cname);
+                                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(cname);
                                 manager = (LogManager) clz.newInstance();
                             } catch (ClassNotFoundException ex) {
-                                Class clz = Thread.currentThread().getContextClassLoader().loadClass(cname);
+                                Class<?> clz = Thread.currentThread().getContextClassLoader().loadClass(cname);
                                 manager = (LogManager) clz.newInstance();
                             }
                         }
@@ -200,8 +200,8 @@ public class LogManager {
 
                     // Adding the global Logger. Doing so in the Logger.<clinit>
                     // would deadlock with the LogManager.<clinit>.
-                    Logger.global.setLogManager(manager);
-                    manager.addLogger(Logger.global);
+                    Logger.getGlobal().setLogManager(manager);
+                    manager.addLogger(Logger.getGlobal());
 
                     // We don't call readConfiguration() here, as we may be running
                     // very early in the JVM startup sequence.  Instead readConfiguration
@@ -415,8 +415,8 @@ public class LogManager {
                 for (int i = 0; i < names.length; i++) {
                     String word = names[i];
                     try {
-                        Class   clz = ClassLoader.getSystemClassLoader().loadClass(word);
-                        Handler hdl = (Handler) clz.newInstance();
+                        Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
+                        Handler  hdl = (Handler) clz.newInstance();
                         try {
                             // Check if there is a property defining the
                             // this handler's level.
@@ -782,11 +782,11 @@ public class LogManager {
                 // responsibility to initialize the logging configuration, by
                 // calling readConfiguration(InputStream) with a suitable stream.
                 try {
-                    Class clz = ClassLoader.getSystemClassLoader().loadClass(cname);
+                    Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(cname);
                     clz.newInstance();
                     return;
                 } catch (ClassNotFoundException ex) {
-                    Class clz = Thread.currentThread().getContextClassLoader().loadClass(cname);
+                    Class<?> clz = Thread.currentThread().getContextClassLoader().loadClass(cname);
                     clz.newInstance();
                     return;
                 }
@@ -837,9 +837,9 @@ public class LogManager {
             // the global handlers, if they haven't been initialized yet.
             initializedGlobalHandlers = true;
         }
-        Enumeration enum_ = getLoggerNames();
+        Enumeration<String> enum_ = getLoggerNames();
         while (enum_.hasMoreElements()) {
-            String name = (String)enum_.nextElement();
+            String name = enum_.nextElement();
             resetLogger(name);
         }
     }
@@ -926,7 +926,7 @@ public class LogManager {
         for (int i = 0; i < names.length; i++) {
             String word = names[i];
             try {
-                Class clz = ClassLoader.getSystemClassLoader().loadClass(word);
+                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
                 clz.newInstance();
             } catch (Exception ex) {
                 System.err.println("Can't load config class \"" + word + "\"");
@@ -1024,7 +1024,7 @@ public class LogManager {
         String val = getProperty(name);
         try {
             if (val != null) {
-                Class clz = ClassLoader.getSystemClassLoader().loadClass(val);
+                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(val);
                 return (Filter) clz.newInstance();
             }
         } catch (Exception ex) {
@@ -1045,7 +1045,7 @@ public class LogManager {
         String val = getProperty(name);
         try {
             if (val != null) {
-                Class clz = ClassLoader.getSystemClassLoader().loadClass(val);
+                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(val);
                 return (Formatter) clz.newInstance();
             }
         } catch (Exception ex) {
@@ -1163,7 +1163,7 @@ public class LogManager {
     // Private method to be called when the configuration has
     // changed to apply any level settings to any pre-existing loggers.
     synchronized private void setLevelsOnExistingLoggers() {
-        Enumeration enum_ = props.propertyNames();
+        Enumeration<?> enum_ = props.propertyNames();
         while (enum_.hasMoreElements()) {
             String key = (String)enum_.nextElement();
             if (!key.endsWith(".level")) {

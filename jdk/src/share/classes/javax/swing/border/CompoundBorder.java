@@ -54,6 +54,7 @@ import java.beans.ConstructorProperties;
  *
  * @author David Kloba
  */
+@SuppressWarnings("serial")
 public class CompoundBorder extends AbstractBorder {
     protected Border outsideBorder;
     protected Border insideBorder;

@@ -93,8 +93,7 @@ bool QuickSort::sort_and_compare(int* arrayToSort, int* expectedResult, int leng
   return compare_arrays(arrayToSort, expectedResult, length);
 }
 
-bool QuickSort::test_quick_sort() {
-  tty->print_cr("test_quick_sort");
+void QuickSort::test_quick_sort() {
   {
     int* test_array = NULL;
     int* expected_array = NULL;
@@ -214,7 +213,6 @@ bool QuickSort::test_quick_sort() {
     delete[] test_array;
     delete[] expected_array;
   }
-  return true;
 }
 
 #endif

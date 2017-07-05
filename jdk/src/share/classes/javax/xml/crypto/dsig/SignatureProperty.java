@@ -91,5 +91,6 @@ public interface SignatureProperty extends XMLStructure {
      *
      * @return an unmodifiable list of one or more <code>XMLStructure</code>s
      */
+    @SuppressWarnings("rawtypes")
     List getContent();
 }

@@ -86,5 +86,6 @@ public interface Manifest extends XMLStructure {
      *
      * @return an unmodifiable list of one or more <code>Reference</code>s
      */
+    @SuppressWarnings("rawtypes")
     List getReferences();
 }

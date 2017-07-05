@@ -35,6 +35,7 @@ package com.sun.jdi;
  * @since  1.3
  */
 public class InconsistentDebugInfoException extends RuntimeException {
+    private static final long serialVersionUID = 7964236415376861808L;
     public InconsistentDebugInfoException() {
         super();
     }

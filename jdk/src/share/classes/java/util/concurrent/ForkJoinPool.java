@@ -2150,7 +2150,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         int s;
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class k = ForkJoinPool.class;
+            Class<?> k = ForkJoinPool.class;
             ctlOffset = UNSAFE.objectFieldOffset
                 (k.getDeclaredField("ctl"));
             stealCountOffset = UNSAFE.objectFieldOffset
@@ -2163,7 +2163,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 (k.getDeclaredField("scanGuard"));
             nextWorkerNumberOffset = UNSAFE.objectFieldOffset
                 (k.getDeclaredField("nextWorkerNumber"));
-            Class a = ForkJoinTask[].class;
+            Class<?> a = ForkJoinTask[].class;
             ABASE = UNSAFE.arrayBaseOffset(a);
             s = UNSAFE.arrayIndexScale(a);
         } catch (Exception e) {

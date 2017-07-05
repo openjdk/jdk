@@ -69,7 +69,7 @@ typedef enum {
   ErgoHeapSizing = 0,
   ErgoCSetConstruction,
   ErgoConcCycles,
-  ErgoPartiallyYoungGCs,
+  ErgoMixedGCs,
 
   ErgoHeuristicNum
 } ErgoHeuristic;
