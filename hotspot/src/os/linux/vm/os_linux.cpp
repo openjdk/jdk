@@ -2272,7 +2272,9 @@ void os::free_memory(char *addr, size_t bytes) {
   uncommit_memory(addr, bytes);
 }
 
-void os::numa_make_global(char *addr, size_t bytes)    { }
+void os::numa_make_global(char *addr, size_t bytes) {
+  Linux::numa_interleave_memory(addr, bytes);
+}
 
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
   Linux::numa_tonode_memory(addr, bytes, lgrp_hint);
@@ -2314,7 +2316,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 extern "C" void numa_warn(int number, char *where, ...) { }
 extern "C" void numa_error(char *where) { }
 
-void os::Linux::libnuma_init() {
+bool os::Linux::libnuma_init() {
   // sched_getcpu() should be in libc.
   set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
                                   dlsym(RTLD_DEFAULT, "sched_getcpu")));
@@ -2330,31 +2332,51 @@ void os::Linux::libnuma_init() {
                                         dlsym(handle, "numa_available")));
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
                                             dlsym(handle, "numa_tonode_memory")));
+      set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
+                                            dlsym(handle, "numa_interleave_memory")));
+
+
       if (numa_available() != -1) {
+        set_numa_all_nodes((unsigned long*)dlsym(handle, "numa_all_nodes"));
         // Create a cpu -> node mapping
         _cpu_to_node = new (ResourceObj::C_HEAP) GrowableArray<int>(0, true);
         rebuild_cpu_to_node_map();
+        return true;
       }
     }
   }
+  return false;
 }
 
 // rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
 // The table is later used in get_node_by_cpu().
 void os::Linux::rebuild_cpu_to_node_map() {
-  int cpu_num = os::active_processor_count();
+  const size_t NCPUS = 32768; // Since the buffer size computation is very obscure
+                              // in libnuma (possible values are starting from 16,
+                              // and continuing up with every other power of 2, but less
+                              // than the maximum number of CPUs supported by kernel), and
+                              // is a subject to change (in libnuma version 2 the requirements
+                              // are more reasonable) we'll just hardcode the number they use
+                              // in the library.
+  const size_t BitsPerCLong = sizeof(long) * CHAR_BIT;
+
+  size_t cpu_num = os::active_processor_count();
+  size_t cpu_map_size = NCPUS / BitsPerCLong;
+  size_t cpu_map_valid_size =
+    MIN2((cpu_num + BitsPerCLong - 1) / BitsPerCLong, cpu_map_size);
+
   cpu_to_node()->clear();
   cpu_to_node()->at_grow(cpu_num - 1);
-  int node_num = numa_get_groups_num();
-  int cpu_map_size = (cpu_num + BitsPerLong - 1) / BitsPerLong;
+  size_t node_num = numa_get_groups_num();
+
   unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size);
-  for (int i = 0; i < node_num; i++) {
+  for (size_t i = 0; i < node_num; i++) {
     if (numa_node_to_cpus(i, cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
-      for (int j = 0; j < cpu_map_size; j++) {
+      for (size_t j = 0; j < cpu_map_valid_size; j++) {
         if (cpu_map[j] != 0) {
-          for (int k = 0; k < BitsPerLong; k++) {
+          for (size_t k = 0; k < BitsPerCLong; k++) {
             if (cpu_map[j] & (1UL << k)) {
-              cpu_to_node()->at_put(j * BitsPerLong + k, i);
+              cpu_to_node()->at_put(j * BitsPerCLong + k, i);
             }
           }
         }
@@ -2377,7 +2399,8 @@ os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
-
+os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
+unsigned long* os::Linux::_numa_all_nodes;
 
 bool os::uncommit_memory(char* addr, size_t size) {
   return ::mmap(addr, size,
@@ -3695,7 +3718,17 @@ jint os::init_2(void)
   }
 
   if (UseNUMA) {
-    Linux::libnuma_init();
+    if (!Linux::libnuma_init()) {
+      UseNUMA = false;
+    } else {
+      if ((Linux::numa_max_node() < 1)) {
+        // There's only one node(they start from 0), disable NUMA.
+        UseNUMA = false;
+      }
+    }
+    if (!UseNUMA && ForceNUMA) {
+      UseNUMA = true;
+    }
   }
 
   if (MaxFDLimit) {

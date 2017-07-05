@@ -36,7 +36,7 @@ public:
   virtual const RegMask &in_RegMask(uint) const;
   virtual const RegMask &out_RegMask() const;
   virtual uint size_of() const;
-  virtual uint hash() const { return Node::hash() + _slot; }
+  virtual uint hash() const;
   virtual uint cmp( const Node &n ) const;
   virtual const class Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
   virtual uint ideal_reg() const { return Op_RegP; }

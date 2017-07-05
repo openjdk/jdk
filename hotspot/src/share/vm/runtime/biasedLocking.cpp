@@ -582,13 +582,19 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
   if (heuristics == HR_NOT_BIASED) {
     return NOT_BIASED;
   } else if (heuristics == HR_SINGLE_REVOKE) {
-    if (mark->biased_locker() == THREAD) {
+    Klass *k = Klass::cast(obj->klass());
+    markOop prototype_header = k->prototype_header();
+    if (mark->biased_locker() == THREAD &&
+        prototype_header->bias_epoch() == mark->bias_epoch()) {
       // A thread is trying to revoke the bias of an object biased
       // toward it, again likely due to an identity hash code
       // computation. We can again avoid a safepoint in this case
       // since we are only going to walk our own stack. There are no
       // races with revocations occurring in other threads because we
       // reach no safepoints in the revocation path.
+      // Also check the epoch because even if threads match, another thread
+      // can come in with a CAS to steal the bias of an object that has a
+      // stale epoch.
       ResourceMark rm;
       if (TraceBiasedLocking) {
         tty->print_cr("Revoking bias by walking my own stack:");
