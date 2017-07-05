@@ -120,8 +120,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             new Long(threadInfo.getLockOwnerId()),
             threadInfo.getLockOwnerName(),
             stackTraceData,
-            new Boolean(threadInfo.isSuspended()),
-            new Boolean(threadInfo.isInNative()),
+                threadInfo.isSuspended(),
+                threadInfo.isInNative(),
             lockedMonitorsData,
             lockedSyncsData,
         };

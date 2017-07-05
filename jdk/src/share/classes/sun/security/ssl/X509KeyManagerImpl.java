@@ -302,7 +302,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         final String sigKeyAlgorithm;
 
         KeyType(String algorithm) {
-            int k = algorithm.indexOf("_");
+            int k = algorithm.indexOf('_');
             if (k == -1) {
                 keyAlgorithm = algorithm;
                 sigKeyAlgorithm = null;

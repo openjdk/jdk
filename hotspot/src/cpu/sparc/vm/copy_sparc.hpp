@@ -184,7 +184,7 @@ static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) 
   assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
 
   if (value == 0 && UseBlockZeroing &&
-      (count > (BlockZeroingLowLimit >> LogHeapWordSize))) {
+      (count > (size_t)(BlockZeroingLowLimit >> LogHeapWordSize))) {
    // Call it only when block zeroing is used
    ((_zero_Fn)StubRoutines::zero_aligned_words())(tohw, count);
   } else {

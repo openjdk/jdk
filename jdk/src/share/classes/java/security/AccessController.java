@@ -592,12 +592,22 @@ public final class AccessController {
             System.getSecurityManager() != null &&
             !callerPD.impliesCreateAccessControlContext())
         {
-            ProtectionDomain nullPD = new ProtectionDomain(null, null);
-            return new AccessControlContext(new ProtectionDomain[] { nullPD });
+            return getInnocuousAcc();
         } else {
             return new AccessControlContext(callerPD, combiner, parent,
                                             context, perms);
         }
+    }
+
+    private static class AccHolder {
+        // An AccessControlContext with no granted permissions.
+        // Only initialized on demand when getInnocuousAcc() is called.
+        static final AccessControlContext innocuousAcc =
+            new AccessControlContext(new ProtectionDomain[] {
+                                     new ProtectionDomain(null, null) });
+    }
+    private static AccessControlContext getInnocuousAcc() {
+        return AccHolder.innocuousAcc;
     }
 
     private static ProtectionDomain getCallerPD(final Class <?> caller) {

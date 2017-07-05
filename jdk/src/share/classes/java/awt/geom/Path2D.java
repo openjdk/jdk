@@ -1926,9 +1926,9 @@ public abstract class Path2D implements Shape, Cloneable {
      * maintains, but it may contain no more precision either.
      * If the tradeoff of precision vs. storage size in the result is
      * important then the convenience constructors in the
-     * {@link Path2D.Float#Path2D.Float(Shape, AffineTransform) Path2D.Float}
+     * {@link Path2D.Float#Float(Shape, AffineTransform) Path2D.Float}
      * and
-     * {@link Path2D.Double#Path2D.Double(Shape, AffineTransform) Path2D.Double}
+     * {@link Path2D.Double#Double(Shape, AffineTransform) Path2D.Double}
      * subclasses should be used to make the choice explicit.
      *
      * @param at the {@code AffineTransform} used to transform a

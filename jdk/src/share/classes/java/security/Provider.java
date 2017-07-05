@@ -931,7 +931,7 @@ public abstract class Provider extends Properties {
     }
 
     private String[] getTypeAndAlgorithm(String key) {
-        int i = key.indexOf(".");
+        int i = key.indexOf('.');
         if (i < 1) {
             if (debug != null) {
                 debug.println("Ignoring invalid entry in provider "

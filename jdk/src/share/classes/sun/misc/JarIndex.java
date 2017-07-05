@@ -172,7 +172,7 @@ public class JarIndex {
         if ((jarFiles = indexMap.get(fileName)) == null) {
             /* try the package name again */
             int pos;
-            if((pos = fileName.lastIndexOf("/")) != -1) {
+            if((pos = fileName.lastIndexOf('/')) != -1) {
                 jarFiles = indexMap.get(fileName.substring(0, pos));
             }
         }
@@ -195,7 +195,7 @@ public class JarIndex {
     public void add(String fileName, String jarName) {
         String packageName;
         int pos;
-        if((pos = fileName.lastIndexOf("/")) != -1) {
+        if((pos = fileName.lastIndexOf('/')) != -1) {
             packageName = fileName.substring(0, pos);
         } else {
             packageName = fileName;
