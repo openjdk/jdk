@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ class Driver {
                 } else {
                     if (!packfile.toLowerCase().endsWith(".pack") &&
                             !packfile.toLowerCase().endsWith(".pac")) {
-                        System.err.println(MessageFormat.format(RESOURCE.getString(DriverResource.WIRTE_PACKGZ_FILE),packfile));
+                        System.err.println(MessageFormat.format(RESOURCE.getString(DriverResource.WRITE_PACKGZ_FILE),packfile));
                         printUsage(doPack, false, System.err);
                         System.exit(2);
                     }

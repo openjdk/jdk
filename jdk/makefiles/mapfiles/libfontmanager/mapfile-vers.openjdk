@@ -30,7 +30,7 @@
 SUNWprivate_1.1 {
 	global:
                 getSunFontIDs;
-                newLayoutTableCache; 
+                newLayoutTableCache;
                 freeLayoutTableCache;
                 isNullScalerContext;
                 Java_sun_font_NullFontScaler_getNullScalerContext;

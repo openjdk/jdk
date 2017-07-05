@@ -472,6 +472,11 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls);
 JNIEXPORT jbyteArray JNICALL
 JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls);
 
+JNIEXPORT jbyteArray JNICALL
+JVM_GetFieldTypeAnnotations(JNIEnv *env, jobject field);
+
+JNIEXPORT jbyteArray JNICALL
+JVM_GetMethodTypeAnnotations(JNIEnv *env, jobject method);
 
 /*
  * New (JDK 1.4) reflection implementation

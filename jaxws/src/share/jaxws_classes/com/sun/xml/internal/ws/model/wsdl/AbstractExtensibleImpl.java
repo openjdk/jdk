@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,9 @@ import com.sun.xml.internal.ws.api.model.wsdl.WSDLExtensible;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLExtension;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLObject;
 import com.sun.xml.internal.ws.resources.UtilMessages;
-import com.sun.xml.internal.ws.wsdl.parser.WSDLConstants;
 import com.sun.istack.internal.NotNull;
 
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.Location;
 import javax.xml.namespace.QName;
 import javax.xml.ws.WebServiceException;
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.xml.sax.Locator;
-import org.xml.sax.helpers.LocatorImpl;
 
 /**
  * All the WSDL 1.1 elements that are extensible should subclass from this abstract implementation of
@@ -93,6 +90,10 @@ abstract class AbstractExtensibleImpl extends AbstractObjectImpl implements WSDL
             // I don't trust plugins. So let's always check it, instead of making this an assertion
             throw new IllegalArgumentException();
         extensions.add(ex);
+    }
+
+    public List<? extends UnknownWSDLExtension> getNotUnderstoodExtensions() {
+        return notUnderstoodExtensions;
     }
 
     /**

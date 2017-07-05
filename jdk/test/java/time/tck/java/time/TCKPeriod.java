@@ -60,6 +60,7 @@
 package tck.java.time;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 
@@ -67,6 +68,7 @@ import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
@@ -85,14 +87,6 @@ import org.testng.annotations.Test;
  */
 @Test
 public class TCKPeriod extends AbstractTCKTest {
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Period.ZERO);
-        assertSerializable(Period.ofDays(1));
-        assertSerializable(Period.of(1, 2, 3));
-    }
 
     //-----------------------------------------------------------------------
     // ofYears(int)
@@ -218,6 +212,41 @@ public class TCKPeriod extends AbstractTCKTest {
             }
         };
         Period.from(amount);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void factory_from_TemporalAmount_DaysHours() {
+        TemporalAmount amount = new TemporalAmount() {
+            @Override
+            public long get(TemporalUnit unit) {
+                if (unit == DAYS) {
+                    return 1;
+                } else {
+                    return 2;
+                }
+            }
+            @Override
+            public List<TemporalUnit> getUnits() {
+                List<TemporalUnit> list = new ArrayList<>();
+                list.add(DAYS);
+                list.add(HOURS);
+                return list;
+            }
+            @Override
+            public Temporal addTo(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public Temporal subtractFrom(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        Period.from(amount);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void factory_from_TemporalAmount_NonISO() {
+        Period.from(ThaiBuddhistChronology.INSTANCE.period(1, 1, 1));
     }
 
     @Test(expectedExceptions = DateTimeException.class)
@@ -602,8 +631,43 @@ public class TCKPeriod extends AbstractTCKTest {
     }
 
     @Test(dataProvider="plus")
-    public void test_plus(Period base, Period add, Period expected) {
+    public void test_plus_TemporalAmount(Period base, Period add, Period expected) {
         assertEquals(base.plus(add), expected);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_plus_TemporalAmount_nonISO() {
+        pymd(4, 5, 6).plus(ThaiBuddhistChronology.INSTANCE.period(1, 0, 0));
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_plus_TemporalAmount_DaysHours() {
+        TemporalAmount amount = new TemporalAmount() {
+            @Override
+            public long get(TemporalUnit unit) {
+                if (unit == DAYS) {
+                    return 1;
+                } else {
+                    return 2;
+                }
+            }
+            @Override
+            public List<TemporalUnit> getUnits() {
+                List<TemporalUnit> list = new ArrayList<>();
+                list.add(DAYS);
+                list.add(HOURS);
+                return list;
+            }
+            @Override
+            public Temporal addTo(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public Temporal subtractFrom(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        pymd(4, 5, 6).plus(amount);
     }
 
     //-----------------------------------------------------------------------
@@ -712,8 +776,43 @@ public class TCKPeriod extends AbstractTCKTest {
     }
 
     @Test(dataProvider="minus")
-    public void test_minus(Period base, Period subtract, Period expected) {
+    public void test_minus_TemporalAmount(Period base, Period subtract, Period expected) {
         assertEquals(base.minus(subtract), expected);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_minus_TemporalAmount_nonISO() {
+        pymd(4, 5, 6).minus(ThaiBuddhistChronology.INSTANCE.period(1, 0, 0));
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_minus_TemporalAmount_DaysHours() {
+        TemporalAmount amount = new TemporalAmount() {
+            @Override
+            public long get(TemporalUnit unit) {
+                if (unit == DAYS) {
+                    return 1;
+                } else {
+                    return 2;
+                }
+            }
+            @Override
+            public List<TemporalUnit> getUnits() {
+                List<TemporalUnit> list = new ArrayList<>();
+                list.add(DAYS);
+                list.add(HOURS);
+                return list;
+            }
+            @Override
+            public Temporal addTo(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public Temporal subtractFrom(Temporal temporal) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        pymd(4, 5, 6).minus(amount);
     }
 
     //-----------------------------------------------------------------------

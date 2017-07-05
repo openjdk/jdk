@@ -25,11 +25,8 @@
 
 package com.sun.imageio.plugins.gif;
 
-import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOInvalidTreeException;
-import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
 import org.w3c.dom.Node;
 
@@ -41,7 +38,7 @@ public class GIFStreamMetadata extends GIFMetadata {
     static final String
         nativeMetadataFormatName = "javax_imageio_gif_stream_1.0";
 
-    public static final String[] versionStrings = { "87a", "89a" };
+    static final String[] versionStrings = { "87a", "89a" };
 
     public String version; // 87a or 89a
     public int logicalScreenWidth;
@@ -52,7 +49,7 @@ public class GIFStreamMetadata extends GIFMetadata {
     public int backgroundColorIndex; // Valid if globalColorTable != null
     public boolean sortFlag; // Valid if globalColorTable != null
 
-    public static final String[] colorTableSizes = {
+    static final String[] colorTableSizes = {
         "2", "4", "8", "16", "32", "64", "128", "256"
     };
 

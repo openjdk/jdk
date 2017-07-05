@@ -227,7 +227,7 @@ static void AWT_NSUncaughtExceptionHandler(NSException *exception) {
     id jrsAppKitAWTClass = objc_getClass("JRSAppKitAWT");
     SEL markAppSel = @selector(markAppIsDaemon);
     if (![jrsAppKitAWTClass respondsToSelector:markAppSel]) return NO;
-    return (BOOL)[jrsAppKitAWTClass performSelector:markAppSel];
+    return [jrsAppKitAWTClass performSelector:markAppSel] ? YES : NO;
 }
 
 + (void)appKitIsRunning:(id)arg {
@@ -337,6 +337,8 @@ AWT_ASSERT_APPKIT_THREAD;
 
     // Headless mode trumps either ordinary AWT or SWT-in-AWT mode.  Declare us a daemon and return.
     if (headless) {
+        // Note that we don't install run loop observers in headless mode
+        // because we don't need them (see 7174704)
         if (!forceEmbeddedMode) {
             setUpAppKitThreadName();
         }

@@ -75,13 +75,13 @@ public class ExternalMetadataReader extends ReflectAnnotationReader {
     private Map<String, JavaWsdlMappingType> readers = new HashMap<String, JavaWsdlMappingType>();
 
     public ExternalMetadataReader(Collection<File> files, Collection<String> resourcePaths, ClassLoader classLoader,
-                                  boolean xsdValidation, boolean disableSecureXmlProcessing) {
+                                  boolean xsdValidation, boolean disableXmlSecurity) {
 
         if (files != null) {
             for (File file : files) {
                 try {
-                    String namespace = Util.documentRootNamespace(newSource(file), disableSecureXmlProcessing);
-                    JavaWsdlMappingType externalMapping = parseMetadata(xsdValidation, newSource(file), namespace, disableSecureXmlProcessing);
+                    String namespace = Util.documentRootNamespace(newSource(file), disableXmlSecurity);
+                    JavaWsdlMappingType externalMapping = parseMetadata(xsdValidation, newSource(file), namespace, disableXmlSecurity);
                     readers.put(externalMapping.getJavaTypeName(), externalMapping);
                 } catch (Exception e) {
                     throw new RuntimeModelerException("runtime.modeler.external.metadata.unable.to.read", file.getAbsolutePath());
@@ -92,8 +92,8 @@ public class ExternalMetadataReader extends ReflectAnnotationReader {
         if (resourcePaths != null) {
             for (String resourcePath : resourcePaths) {
                 try {
-                    String namespace = Util.documentRootNamespace(newSource(resourcePath, classLoader), disableSecureXmlProcessing);
-                    JavaWsdlMappingType externalMapping = parseMetadata(xsdValidation, newSource(resourcePath, classLoader), namespace, disableSecureXmlProcessing);
+                    String namespace = Util.documentRootNamespace(newSource(resourcePath, classLoader), disableXmlSecurity);
+                    JavaWsdlMappingType externalMapping = parseMetadata(xsdValidation, newSource(resourcePath, classLoader), namespace, disableXmlSecurity);
                     readers.put(externalMapping.getJavaTypeName(), externalMapping);
                 } catch (Exception e) {
                     throw new RuntimeModelerException("runtime.modeler.external.metadata.unable.to.read", resourcePath);
@@ -107,11 +107,11 @@ public class ExternalMetadataReader extends ReflectAnnotationReader {
         return new StreamSource(is);
     }
 
-    private JavaWsdlMappingType parseMetadata(boolean xsdValidation, StreamSource source, String namespace, boolean disableSecureXmlProcessing) throws JAXBException, IOException, TransformerException {
+    private JavaWsdlMappingType parseMetadata(boolean xsdValidation, StreamSource source, String namespace, boolean disableXmlSecurity) throws JAXBException, IOException, TransformerException {
         if (NAMESPACE_WEBLOGIC_WSEE_DATABINDING.equals(namespace)) {
-            return Util.transformAndRead(source, disableSecureXmlProcessing);
+            return Util.transformAndRead(source, disableXmlSecurity);
         } if (NAMESPACE_JAXWS_RI_EXTERNAL_METADATA.equals(namespace)) {
-            return Util.read(source, xsdValidation, disableSecureXmlProcessing);
+            return Util.read(source, xsdValidation, disableXmlSecurity);
         } else {
             throw new RuntimeModelerException("runtime.modeler.external.metadata.unsupported.schema", namespace, Arrays.asList(NAMESPACE_WEBLOGIC_WSEE_DATABINDING, NAMESPACE_JAXWS_RI_EXTERNAL_METADATA).toString());
         }
@@ -425,8 +425,8 @@ public class ExternalMetadataReader extends ReflectAnnotationReader {
         }
 
         @SuppressWarnings("unchecked")
-        public static JavaWsdlMappingType read(Source src, boolean xsdValidation, boolean disableSecureXmlProcessing) throws IOException, JAXBException {
-            JAXBContext ctx = jaxbContext(disableSecureXmlProcessing);
+        public static JavaWsdlMappingType read(Source src, boolean xsdValidation, boolean disableXmlSecurity) throws IOException, JAXBException {
+            JAXBContext ctx = jaxbContext(disableXmlSecurity);
             try {
                 Unmarshaller um = ctx.createUnmarshaller();
                 if (xsdValidation) {
@@ -455,16 +455,16 @@ public class ExternalMetadataReader extends ReflectAnnotationReader {
             }
         }
 
-        private static JAXBContext jaxbContext(boolean disableSecureXmlProcessing) {
+        private static JAXBContext jaxbContext(boolean disableXmlSecurity) {
             // as it is supposed to have security enabled in most cases, we create and don't cache
             // "insecure" JAXBContext - these should be corner cases
-            return disableSecureXmlProcessing ? createJaxbContext(true) : jaxbContext;
+            return disableXmlSecurity ? createJaxbContext(true) : jaxbContext;
         }
 
-        public static JavaWsdlMappingType transformAndRead(Source src, boolean disableSecureXmlProcessing) throws TransformerException, JAXBException {
+        public static JavaWsdlMappingType transformAndRead(Source src, boolean disableXmlSecurity) throws TransformerException, JAXBException {
             Source xsl = new StreamSource(Util.class.getResourceAsStream(TRANSLATE_NAMESPACES_XSL));
-            JAXBResult result = new JAXBResult(jaxbContext(disableSecureXmlProcessing));
-            TransformerFactory tf = XmlUtil.newTransformerFactory(!disableSecureXmlProcessing);
+            JAXBResult result = new JAXBResult(jaxbContext(disableXmlSecurity));
+            TransformerFactory tf = XmlUtil.newTransformerFactory(!disableXmlSecurity);
             Transformer transformer = tf.newTemplates(xsl).newTransformer();
             transformer.transform(src, result);
             return getJavaWsdlMapping(result.getResult());
@@ -534,9 +534,9 @@ public class ExternalMetadataReader extends ReflectAnnotationReader {
             return elems.toArray(new Element[elems.size()]);
         }
 
-        static String documentRootNamespace(Source src, boolean disableSecureXmlProcessing) throws XMLStreamException {
+        static String documentRootNamespace(Source src, boolean disableXmlSecurity) throws XMLStreamException {
             XMLInputFactory factory;
-            factory = XmlUtil.newXMLInputFactory(!disableSecureXmlProcessing);
+            factory = XmlUtil.newXMLInputFactory(!disableXmlSecurity);
             XMLStreamReader streamReader = factory.createXMLStreamReader(src);
             XMLStreamReaderUtil.nextElementContent(streamReader);
             String namespaceURI = streamReader.getName().getNamespaceURI();

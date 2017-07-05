@@ -53,7 +53,7 @@ ifndef CONFIGURE_BUILD
   
   # The VS2010 compiler is the same one used on both 32bit and 64bit
   ifeq ($(CC_MAJORVER), 16)
-    COMPILER_NAME=Microsoft Visual Studio 10 (16.00.30319.01)
+    COMPILER_NAME=Microsoft Visual Studio 10 (16.00.40219.01)
     COMPILER_VERSION=VS2010
     ifeq ($(WINDOWSSDKDIR),)
       WINDOWSSDKDIR := $(error WINDOWSSDKDIR cannot be empty here)

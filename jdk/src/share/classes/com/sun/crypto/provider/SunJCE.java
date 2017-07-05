@@ -104,7 +104,7 @@ public final class SunJCE extends Provider {
 
     public SunJCE() {
         /* We are the "SunJCE" provider */
-        super("SunJCE", 1.7d, info);
+        super("SunJCE", 1.8d, info);
 
         final String BLOCK_MODES = "ECB|CBC|PCBC|CTR|CTS|CFB|OFB" +
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +

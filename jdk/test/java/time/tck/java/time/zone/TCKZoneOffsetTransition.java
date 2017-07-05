@@ -127,7 +127,6 @@ public class TCKZoneOffsetTransition extends AbstractTCKTest {
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
         assertEquals(test.getDuration(), Duration.of(1, HOURS));
-        assertSerializable(test);
     }
 
     @Test
@@ -143,23 +142,8 @@ public class TCKZoneOffsetTransition extends AbstractTCKTest {
         assertEquals(test.getOffsetBefore(), OFFSET_0300);
         assertEquals(test.getOffsetAfter(), OFFSET_0200);
         assertEquals(test.getDuration(), Duration.of(-1, HOURS));
-        assertSerializable(test);
     }
 
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization_unusual1() throws Exception {
-        LocalDateTime ldt = LocalDateTime.of(Year.MAX_VALUE, 12, 31, 1, 31, 53);
-        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, ZoneOffset.of("+02:04:56"), ZoneOffset.of("-10:02:34"));
-        assertSerializable(test);
-    }
-
-    @Test
-    public void test_serialization_unusual2() throws Exception {
-        LocalDateTime ldt = LocalDateTime.of(Year.MIN_VALUE, 1, 1, 12, 1, 3);
-        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, ZoneOffset.of("+02:04:56"), ZoneOffset.of("+10:02:34"));
-        assertSerializable(test);
-    }
 
     //-----------------------------------------------------------------------
     // isValidOffset()

@@ -219,7 +219,7 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
 
         // CompressionTypeName
         IIOMetadataNode subNode = new IIOMetadataNode("CompressionTypeName");
-        subNode.setAttribute("value", compressionTypeNames[compression]);
+        subNode.setAttribute("value", BMPCompressionTypes.getName(compression));
         node.appendChild(subNode);
         return node;
     }

@@ -3389,13 +3389,18 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   const Register card_addr = tmp;
   lea(card_addr, as_Address(ArrayAddress(cardtable, index)));
 #endif
-  cmpb(Address(card_addr, 0), 0);
+  cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
   jcc(Assembler::equal, done);
+
+  membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+  cmpb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
+  jcc(Assembler::equal, done);
+
 
   // storing a region crossing, non-NULL oop, card is clean.
   // dirty card and log.
 
-  movb(Address(card_addr, 0), 0);
+  movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
 
   cmpl(queue_index, 0);
   jcc(Assembler::equal, runtime);

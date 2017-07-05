@@ -70,7 +70,7 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
         // We intercept "new" on StaticClass instances to provide additional capabilities
         if ("new".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
             // make sure new is on accessible Class
-            Context.checkPackageAccess(receiverClass.getName());
+            Context.checkPackageAccess(receiverClass);
 
             // Is the class abstract? (This includes interfaces.)
             if (NashornLinker.isAbstractClass(receiverClass)) {

@@ -96,14 +96,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         return value == null;
     }
 
-    /**
-     * Check if the literal value is boolean true
-     * @return true if literal value is boolean true
-     */
-    public boolean isTrue() {
-        return JSType.toBoolean(value);
-    }
-
     @Override
     public Type getType() {
         return Type.typeFor(value.getClass());
@@ -259,8 +251,31 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         return new NullLiteralNode(parent.getToken(), parent.getFinish());
     }
 
+    /**
+     * Super class for primitive (side-effect free) literals.
+     *
+     * @param <T> the literal type
+     */
+    public static class PrimitiveLiteralNode<T> extends LiteralNode<T> {
+        private PrimitiveLiteralNode(final long token, final int finish, final T value) {
+            super(token, finish, value);
+        }
+
+        private PrimitiveLiteralNode(final PrimitiveLiteralNode<T> literalNode) {
+            super(literalNode);
+        }
+
+        /**
+         * Check if the literal value is boolean true
+         * @return true if literal value is boolean true
+         */
+        public boolean isTrue() {
+            return JSType.toBoolean(value);
+        }
+    }
+
     @Immutable
-    private static final class BooleanLiteralNode extends LiteralNode<Boolean> {
+    private static final class BooleanLiteralNode extends PrimitiveLiteralNode<Boolean> {
 
         private BooleanLiteralNode(final long token, final int finish, final boolean value) {
             super(Token.recast(token, value ? TokenType.TRUE : TokenType.FALSE), finish, value);
@@ -312,7 +327,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     }
 
     @Immutable
-    private static final class NumberLiteralNode extends LiteralNode<Number> {
+    private static final class NumberLiteralNode extends PrimitiveLiteralNode<Number> {
 
         private final Type type = numberGetType(value);
 
@@ -374,7 +389,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         return new NumberLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
-    private static class UndefinedLiteralNode extends LiteralNode<Undefined> {
+    private static class UndefinedLiteralNode extends PrimitiveLiteralNode<Undefined> {
         private UndefinedLiteralNode(final long token, final int finish) {
             super(Token.recast(token, TokenType.OBJECT), finish, ScriptRuntime.UNDEFINED);
         }
@@ -410,7 +425,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
     }
 
     @Immutable
-    private static class StringLiteralNode extends LiteralNode<String> {
+    private static class StringLiteralNode extends PrimitiveLiteralNode<String> {
         private StringLiteralNode(final long token, final int finish, final String value) {
             super(Token.recast(token, TokenType.STRING), finish, value);
         }
@@ -522,7 +537,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         return POSTSET_MARKER;
     }
 
-    private static final class NullLiteralNode extends LiteralNode<Object> {
+    private static final class NullLiteralNode extends PrimitiveLiteralNode<Object> {
 
         private NullLiteralNode(final long token, final int finish) {
             super(Token.recast(token, TokenType.OBJECT), finish, null);

@@ -170,7 +170,8 @@ public interface Temporal extends TemporalAccessor {
      * </pre>
      *
      * @implSpec
-     * Implementations must not alter either this object.
+     * <p>
+     * Implementations must not alter either this object or the specified temporal object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>
@@ -209,7 +210,7 @@ public interface Temporal extends TemporalAccessor {
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
      * passing {@code this} as the first argument.
      * <p>
-     * Implementations must not alter either this object or the specified temporal object.
+     * Implementations must not alter this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      *
@@ -232,16 +233,17 @@ public interface Temporal extends TemporalAccessor {
      * <p>
      * Some example code indicating how and why this method is used:
      * <pre>
-     *  date = date.plus(period);                      // add a Period instance
-     *  date = date.plus(duration);                    // add a Duration instance
-     *  date = date.plus(workingDays(6));              // example user-written workingDays method
+     *  date = date.plus(period);                // add a Period instance
+     *  date = date.plus(duration);              // add a Duration instance
+     *  date = date.plus(workingDays(6));        // example user-written workingDays method
      * </pre>
      * <p>
      * Note that calling {@code plus} followed by {@code minus} is not guaranteed to
      * return the same date-time.
      *
      * @implSpec
-     * Implementations must not alter either this object.
+     * <p>
+     * Implementations must not alter either this object or the specified temporal object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>
@@ -280,7 +282,7 @@ public interface Temporal extends TemporalAccessor {
      * is obtained by invoking {@code TemporalUnit.addTo(Temporal, long)}
      * passing {@code this} as the first argument.
      * <p>
-     * Implementations must not alter either this object or the specified temporal object.
+     * Implementations must not alter this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      *
@@ -303,16 +305,17 @@ public interface Temporal extends TemporalAccessor {
      * <p>
      * Some example code indicating how and why this method is used:
      * <pre>
-     *  date = date.minus(period);                      // subtract a Period instance
-     *  date = date.minus(duration);                    // subtract a Duration instance
-     *  date = date.minus(workingDays(6));              // example user-written workingDays method
+     *  date = date.minus(period);               // subtract a Period instance
+     *  date = date.minus(duration);             // subtract a Duration instance
+     *  date = date.minus(workingDays(6));       // example user-written workingDays method
      * </pre>
      * <p>
      * Note that calling {@code plus} followed by {@code minus} is not guaranteed to
      * return the same date-time.
      *
      * @implSpec
-     * Implementations must not alter either this object.
+     * <p>
+     * Implementations must not alter either this object or the specified temporal object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>
@@ -345,7 +348,7 @@ public interface Temporal extends TemporalAccessor {
      * @implSpec
      * Implementations must behave in a manor equivalent to the default method behavior.
      * <p>
-     * Implementations must not alter either this object or the specified temporal object.
+     * Implementations must not alter this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>
@@ -371,8 +374,9 @@ public interface Temporal extends TemporalAccessor {
      * Calculates the amount of time until another temporal in terms of the specified unit.
      * <p>
      * This calculates the amount of time between two temporal objects
-     * of the same type in terms of a single {@code TemporalUnit}.
+     * in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified temporal.
+     * The end point is converted to be of the same type as the start point if different.
      * The result will be negative if the end is before the start.
      * For example, the period in hours between two temporal objects can be
      * calculated using {@code startTime.until(endTime, HOURS)}.
@@ -409,31 +413,36 @@ public interface Temporal extends TemporalAccessor {
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
+     * passing {@code this} as the first argument and the converted input temporal as
      * the second argument.
      * <p>
-     * In summary, implementations must behave in a manner equivalent to this code:
+     * In summary, implementations must behave in a manner equivalent to this pseudo-code:
      * <pre>
-     *  // check input temporal is the same type as this class
+     *  // convert the end temporal to the same type as this class
      *  if (unit instanceof ChronoUnit) {
      *    // if unit is supported, then calculate and return result
      *    // else throw UnsupportedTemporalTypeException for unsupported units
      *  }
-     *  return unit.between(this, endTemporal);
+     *  return unit.between(this, convertedEndTemporal);
      * </pre>
+     * <p>
+     * Note that the unit's {@code between} method must only be invoked if the
+     * two temporal objects have exactly the same type evaluated by {@code getClass()}.
      * <p>
      * Implementations must ensure that no observable state is altered when this
      * read-only method is invoked.
      *
-     * @param endTemporal  the end temporal, of the same type as this object, not null
+     * @param endExclusive  the end temporal, exclusive, converted to be of the
+     *  same type as this object, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this temporal object and the specified one
      *  in terms of the unit; positive if the specified object is later than this one,
      *  negative if it is earlier than this one
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to the same type as this temporal
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
-    long until(Temporal endTemporal, TemporalUnit unit);
+    long until(Temporal endExclusive, TemporalUnit unit);
 
 }

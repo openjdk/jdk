@@ -315,7 +315,7 @@ public interface Path
      * and parent directory. In such file systems all occurrences of "{@code .}"
      * are considered redundant. If a "{@code ..}" is preceded by a
      * non-"{@code ..}" name then both names are considered redundant (the
-     * process to identify such names is repeated until is it no longer
+     * process to identify such names is repeated until it is no longer
      * applicable).
      *
      * <p> This method does not access the file system; the path may not locate
