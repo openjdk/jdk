@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@ class SignatureIterator: public ResourceObj {
   // Fingerprinter.
   enum {
     static_feature_size    = 1,
+    is_static_bit          = 1,
+
     result_feature_size    = 4,
     result_feature_mask    = 0xF,
     parameter_feature_size = 4,
@@ -114,6 +116,15 @@ class SignatureIterator: public ResourceObj {
   // Object types (begin indexes the first character of the entry, end indexes the first character after the entry)
   virtual void do_object(int begin, int end) = 0;
   virtual void do_array (int begin, int end) = 0;
+
+  static bool is_static(uint64_t fingerprint) {
+    assert(fingerprint != (uint64_t)CONST64(-1), "invalid fingerprint");
+    return fingerprint & is_static_bit;
+  }
+  static BasicType return_type(uint64_t fingerprint) {
+    assert(fingerprint != (uint64_t)CONST64(-1), "invalid fingerprint");
+    return (BasicType) ((fingerprint >> static_feature_size) & result_feature_mask);
+  }
 };
 
 

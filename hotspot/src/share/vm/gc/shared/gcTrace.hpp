@@ -44,6 +44,7 @@ class GCHeapSummary;
 class MetaspaceChunkFreeListSummary;
 class MetaspaceSummary;
 class PSHeapSummary;
+class G1HeapSummary;
 class ReferenceProcessorStats;
 class TimePartitions;
 class BoolObjectClosure;

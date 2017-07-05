@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,11 +266,7 @@ class DebugInfoReadStream : public CompressedReadStream {
 
   } ;
 
-  oop read_oop() {
-    oop o = code()->oop_at(read_int());
-    assert(o == NULL || o->is_oop(), "oop only");
-    return o;
-  }
+  oop read_oop();
   Method* read_method() {
     Method* o = (Method*)(code()->metadata_at(read_int()));
     // is_metadata() is a faster check than is_metaspace_object()
