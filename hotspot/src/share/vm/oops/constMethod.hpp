@@ -441,6 +441,9 @@ public:
     return has_default_annotations() ? default_annotations()->length() : 0;
   }
 
+  // Copy annotations from other ConstMethod
+  void copy_annotations_from(ConstMethod* cm);
+
   // byte codes
   void    set_code(address code) {
     if (code_size() > 0) {

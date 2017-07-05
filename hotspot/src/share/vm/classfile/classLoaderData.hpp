@@ -191,6 +191,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool is_the_null_class_loader_data() const {
     return this == _the_null_class_loader_data;
   }
+  bool is_ext_class_loader_data() const;
 
   // The Metaspace is created lazily so may be NULL.  This
   // method will allocate a Metaspace if needed.

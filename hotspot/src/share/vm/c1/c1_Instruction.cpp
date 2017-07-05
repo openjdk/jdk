@@ -34,6 +34,15 @@
 // Implementation of Instruction
 
 
+int Instruction::dominator_depth() {
+  int result = -1;
+  if (block()) {
+    result = block()->dominator_depth();
+  }
+  assert(result != -1 || this->as_Local(), "Only locals have dominator depth -1");
+  return result;
+}
+
 Instruction::Condition Instruction::mirror(Condition cond) {
   switch (cond) {
     case eql: return eql;
@@ -42,6 +51,8 @@ Instruction::Condition Instruction::mirror(Condition cond) {
     case leq: return geq;
     case gtr: return lss;
     case geq: return leq;
+    case aeq: return beq;
+    case beq: return aeq;
   }
   ShouldNotReachHere();
   return eql;
@@ -56,6 +67,8 @@ Instruction::Condition Instruction::negate(Condition cond) {
     case leq: return gtr;
     case gtr: return leq;
     case geq: return lss;
+    case aeq: assert(false, "Above equal cannot be negated");
+    case beq: assert(false, "Below equal cannot be negated");
   }
   ShouldNotReachHere();
   return eql;
@@ -70,10 +83,10 @@ void Instruction::update_exception_state(ValueStack* state) {
   }
 }
 
-
-Instruction* Instruction::prev(BlockBegin* block) {
+// Prev without need to have BlockBegin
+Instruction* Instruction::prev() {
   Instruction* p = NULL;
-  Instruction* q = block;
+  Instruction* q = block();
   while (q != this) {
     assert(q != NULL, "this is not in the block's instruction list");
     p = q; q = q->next();
@@ -122,15 +135,24 @@ void Instruction::print(InstructionPrinter& ip) {
 
 // perform constant and interval tests on index value
 bool AccessIndexed::compute_needs_range_check() {
-  Constant* clength = length()->as_Constant();
-  Constant* cindex = index()->as_Constant();
-  if (clength && cindex) {
-    IntConstant* l = clength->type()->as_IntConstant();
-    IntConstant* i = cindex->type()->as_IntConstant();
-    if (l && i && i->value() < l->value() && i->value() >= 0) {
-      return false;
+
+  if (length()) {
+
+    Constant* clength = length()->as_Constant();
+    Constant* cindex = index()->as_Constant();
+    if (clength && cindex) {
+      IntConstant* l = clength->type()->as_IntConstant();
+      IntConstant* i = cindex->type()->as_IntConstant();
+      if (l && i && i->value() < l->value() && i->value() >= 0) {
+        return false;
+      }
     }
   }
+
+  if (!this->check_flag(NeedsRangeCheckFlag)) {
+    return false;
+  }
+
   return true;
 }
 
@@ -631,19 +653,25 @@ void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
 // of the inserted block, without recomputing the values of the other blocks
 // in the CFG. Therefore the value of "depth_first_number" in BlockBegin becomes meaningless.
 BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
-  BlockBegin* new_sux = new BlockBegin(end()->state()->bci());
+  int bci = sux->bci();
+  // critical edge splitting may introduce a goto after a if and array
+  // bound check elimination may insert a predicate between the if and
+  // goto. The bci of the goto can't be the one of the if otherwise
+  // the state and bci are inconsistent and a deoptimization triggered
+  // by the predicate would lead to incorrect execution/a crash.
+  BlockBegin* new_sux = new BlockBegin(bci);
 
   // mark this block (special treatment when block order is computed)
   new_sux->set(critical_edge_split_flag);
 
   // This goto is not a safepoint.
   Goto* e = new Goto(sux, false);
-  new_sux->set_next(e, end()->state()->bci());
+  new_sux->set_next(e, bci);
   new_sux->set_end(e);
   // setup states
   ValueStack* s = end()->state();
-  new_sux->set_state(s->copy());
-  e->set_state(s->copy());
+  new_sux->set_state(s->copy(s->kind(), bci));
+  e->set_state(s->copy(s->kind(), bci));
   assert(new_sux->state()->locals_size() == s->locals_size(), "local size mismatch!");
   assert(new_sux->state()->stack_size() == s->stack_size(), "stack size mismatch!");
   assert(new_sux->state()->locks_size() == s->locks_size(), "locks size mismatch!");
@@ -960,15 +988,14 @@ void BlockEnd::set_begin(BlockBegin* begin) {
   BlockList* sux = NULL;
   if (begin != NULL) {
     sux = begin->successors();
-  } else if (_begin != NULL) {
+  } else if (this->begin() != NULL) {
     // copy our sux list
-    BlockList* sux = new BlockList(_begin->number_of_sux());
-    for (int i = 0; i < _begin->number_of_sux(); i++) {
-      sux->append(_begin->sux_at(i));
+    BlockList* sux = new BlockList(this->begin()->number_of_sux());
+    for (int i = 0; i < this->begin()->number_of_sux(); i++) {
+      sux->append(this->begin()->sux_at(i));
     }
   }
   _sux = sux;
-  _begin = begin;
 }
 
 
@@ -1008,7 +1035,38 @@ int Phi::operand_count() const {
   }
 }
 
+#ifdef ASSERT
+// Constructor of Assert
+Assert::Assert(Value x, Condition cond, bool unordered_is_true, Value y) : Instruction(illegalType)
+  , _x(x)
+  , _cond(cond)
+  , _y(y)
+{
+  set_flag(UnorderedIsTrueFlag, unordered_is_true);
+  assert(x->type()->tag() == y->type()->tag(), "types must match");
+  pin();
 
+  stringStream strStream;
+  Compilation::current()->method()->print_name(&strStream);
+
+  stringStream strStream1;
+  InstructionPrinter ip1(1, &strStream1);
+  ip1.print_instr(x);
+
+  stringStream strStream2;
+  InstructionPrinter ip2(1, &strStream2);
+  ip2.print_instr(y);
+
+  stringStream ss;
+  ss.print("Assertion %s %s %s in method %s", strStream1.as_string(), ip2.cond_name(cond), strStream2.as_string(), strStream.as_string());
+
+  _message = ss.as_string();
+}
+#endif
+
+void RangeCheckPredicate::check_state() {
+  assert(state()->kind() != ValueStack::EmptyExceptionState && state()->kind() != ValueStack::ExceptionState, "will deopt with empty state");
+}
 
 void ProfileInvoke::state_values_do(ValueVisitor* f) {
   if (state() != NULL) state()->values_do(f);
