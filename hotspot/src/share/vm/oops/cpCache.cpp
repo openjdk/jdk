@@ -244,21 +244,23 @@ void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) 
 
 
 void ConstantPoolCacheEntry::set_method_handle(constantPoolHandle cpool,
-                                               methodHandle adapter, Handle appendix,
+                                               methodHandle adapter,
+                                               Handle appendix, Handle method_type,
                                                objArrayHandle resolved_references) {
-  set_method_handle_common(cpool, Bytecodes::_invokehandle, adapter, appendix, resolved_references);
+  set_method_handle_common(cpool, Bytecodes::_invokehandle, adapter, appendix, method_type, resolved_references);
 }
 
 void ConstantPoolCacheEntry::set_dynamic_call(constantPoolHandle cpool,
-                                              methodHandle adapter, Handle appendix,
+                                              methodHandle adapter,
+                                              Handle appendix, Handle method_type,
                                               objArrayHandle resolved_references) {
-  set_method_handle_common(cpool, Bytecodes::_invokedynamic, adapter, appendix, resolved_references);
+  set_method_handle_common(cpool, Bytecodes::_invokedynamic, adapter, appendix, method_type, resolved_references);
 }
 
 void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
                                                       Bytecodes::Code invoke_code,
                                                       methodHandle adapter,
-                                                      Handle appendix,
+                                                      Handle appendix, Handle method_type,
                                                       objArrayHandle resolved_references) {
   // NOTE: This CPCE can be the subject of data races.
   // There are three words to update: flags, refs[f2], f1 (in that order).
@@ -274,18 +276,21 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
     return;
   }
 
-  bool has_appendix = appendix.not_null();
+  const bool has_appendix    = appendix.not_null();
+  const bool has_method_type = method_type.not_null();
 
   // Write the flags.
   set_method_flags(as_TosState(adapter->result_type()),
-                   ((has_appendix ?  1 : 0) << has_appendix_shift) |
-                   (                 1      << is_final_shift),
+                   ((has_appendix    ? 1 : 0) << has_appendix_shift   ) |
+                   ((has_method_type ? 1 : 0) << has_method_type_shift) |
+                   (                   1      << is_final_shift       ),
                    adapter->size_of_parameters());
 
   if (TraceInvokeDynamic) {
-    tty->print_cr("set_method_handle bc=%d appendix="PTR_FORMAT"%s method="PTR_FORMAT" ",
+    tty->print_cr("set_method_handle bc=%d appendix="PTR_FORMAT"%s method_type="PTR_FORMAT"%s method="PTR_FORMAT" ",
                   invoke_code,
-                  (intptr_t)appendix(), (has_appendix ? "" : " (unused)"),
+                  (intptr_t)appendix(),    (has_appendix    ? "" : " (unused)"),
+                  (intptr_t)method_type(), (has_method_type ? "" : " (unused)"),
                   (intptr_t)adapter());
     adapter->print();
     if (has_appendix)  appendix()->print();
@@ -310,17 +315,26 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // This allows us to create fewer method oops, while keeping type safety.
   //
 
+  // Store appendix, if any.
   if (has_appendix) {
-    int ref_index = f2_as_index();
-    assert(ref_index >= 0 && ref_index < resolved_references->length(), "oob");
-    assert(resolved_references->obj_at(ref_index) == NULL, "init just once");
-    resolved_references->obj_at_put(ref_index, appendix());
+    const int appendix_index = f2_as_index() + _indy_resolved_references_appendix_offset;
+    assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
+    assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
+    resolved_references->obj_at_put(appendix_index, appendix());
+  }
+
+  // Store MethodType, if any.
+  if (has_method_type) {
+    const int method_type_index = f2_as_index() + _indy_resolved_references_method_type_offset;
+    assert(method_type_index >= 0 && method_type_index < resolved_references->length(), "oob");
+    assert(resolved_references->obj_at(method_type_index) == NULL, "init just once");
+    resolved_references->obj_at_put(method_type_index, method_type());
   }
 
   release_set_f1(adapter());  // This must be the last one to set (see NOTE above)!
 
-    // The interpreter assembly code does not check byte_2,
-    // but it is used by is_resolved, method_if_resolved, etc.
+  // The interpreter assembly code does not check byte_2,
+  // but it is used by is_resolved, method_if_resolved, etc.
   set_bytecode_1(invoke_code);
   NOT_PRODUCT(verify(tty));
   if (TraceInvokeDynamic) {
@@ -376,7 +390,16 @@ Method* ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
 oop ConstantPoolCacheEntry::appendix_if_resolved(constantPoolHandle cpool) {
   if (is_f1_null() || !has_appendix())
     return NULL;
-  int ref_index = f2_as_index();
+  const int ref_index = f2_as_index() + _indy_resolved_references_appendix_offset;
+  objArrayOop resolved_references = cpool->resolved_references();
+  return resolved_references->obj_at(ref_index);
+}
+
+
+oop ConstantPoolCacheEntry::method_type_if_resolved(constantPoolHandle cpool) {
+  if (is_f1_null() || !has_method_type())
+    return NULL;
+  const int ref_index = f2_as_index() + _indy_resolved_references_method_type_offset;
   objArrayOop resolved_references = cpool->resolved_references();
   return resolved_references->obj_at(ref_index);
 }
@@ -513,13 +536,23 @@ void ConstantPoolCache::initialize(intArray& inverse_index_map, intArray& invoke
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* e = entry_at(i);
     int original_index = inverse_index_map[i];
-      e->initialize_entry(original_index);
+    e->initialize_entry(original_index);
     assert(entry_at(i) == e, "sanity");
-    }
+  }
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
-    int cpci = invokedynamic_references_map[ref];
-    if (cpci >= 0)
+    const int cpci = invokedynamic_references_map[ref];
+    if (cpci >= 0) {
+#ifdef ASSERT
+      // invokedynamic and invokehandle have more entries; check if they
+      // all point to the same constant pool cache entry.
+      for (int entry = 1; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
+        const int cpci_next = invokedynamic_references_map[ref + entry];
+        assert(cpci == cpci_next, err_msg_res("%d == %d", cpci, cpci_next));
+      }
+#endif
       entry_at(cpci)->initialize_resolved_reference_index(ref);
+      ref += ConstantPoolCacheEntry::_indy_resolved_references_entries - 1;  // skip extra entries
+    }
   }
 }
 
