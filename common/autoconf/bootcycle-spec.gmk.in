@@ -23,14 +23,21 @@
 # questions.
 #
 
-CAT="@CAT@"
-CD=cd
-CP="@CP@"
-DIFF="@DIFF@"
-ECHO="@ECHO@"
-FIND="@FIND@"
-GREP="@GREP@"
-RM="@RM@"
-SED="@SED@"
+# Support for building boot cycle builds
 
-POST_STRIP_CMD="@POST_STRIP_CMD@"
+# First include the real base spec.gmk file
+include @SPEC@
+
+# Check that the user did not try to specify a different java to use for compiling.
+ifneq ($(firstword $(SJAVAC_SERVER_JAVA)),$(firstword $(JAVA)))
+  $(error Bootcycle builds are not possible if --with-sjavac-server-java is specified)
+endif
+
+# Override specific values to do a boot cycle build
+
+# The bootcycle build has a different output directory
+BUILD_OUTPUT:=@BUILD_OUTPUT@/bootcycle-build
+
+# Use a different Boot JDK
+BOOT_JDK:=@BUILD_OUTPUT@/images/j2sdk-image
+BOOT_RTJAR:=@BUILD_OUTPUT@/images/j2sdk-image/jre/lib/rt.jar
