@@ -596,7 +596,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * not, be invoked for each completer in a computation.
      */
     public final void propagateCompletion() {
-        CountedCompleter<?> a = this, s = a;
+        CountedCompleter<?> a = this, s;
         for (int c;;) {
             if ((c = a.pending) == 0) {
                 if ((a = (s = a).completer) == null) {

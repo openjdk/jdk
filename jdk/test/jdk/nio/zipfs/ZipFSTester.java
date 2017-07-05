@@ -74,6 +74,7 @@ import static java.nio.file.StandardCopyOption.*;
  * @summary Test Zip filesystem provider
  * @run main ZipFSTester
  * @run main/othervm/java.security.policy=test.policy ZipFSTester
+ * @modules jdk.zipfs
  */
 
 public class ZipFSTester {
