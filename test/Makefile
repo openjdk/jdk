@@ -33,6 +33,7 @@ TOPDIR=..
 # This makefile depends on the availability of sibling directories.
 LANGTOOLS_DIR=$(TOPDIR)/langtools
 JDK_DIR=$(TOPDIR)/jdk
+HOTSPOT_DIR=$(TOPDIR)/hotspot
 
 # Macro to run a test target in a subdir
 define SUBDIR_TEST # subdirectory target
@@ -61,6 +62,9 @@ langtools_% :
 
 jdk_% core_%s svc_%:
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), TEST="$@" $@)
+
+hotspot_%:
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), TEST="$@" $@)
 
 ################################################################
 
