@@ -26,19 +26,27 @@
 package java.lang;
 
 /**
- * The class <code>Exception</code> and its subclasses are a form of
- * <code>Throwable</code> that indicates conditions that a reasonable
+ * The class {@code Exception} and its subclasses are a form of
+ * {@code Throwable} that indicates conditions that a reasonable
  * application might want to catch.
+ *
+ * <p>The class {@code Exception} and any subclasses that are not also
+ * subclasses of {@link RuntimeException} are <em>checked
+ * exceptions</em>.  Checked exceptions need to be declared in a
+ * method or constructor's {@code throws} clause if they can be thrown
+ * by the execution of the method or constructor and propagate outside
+ * the method or constructor boundary.
  *
  * @author  Frank Yellin
  * @see     java.lang.Error
+ * @jls3 11.2 Compile-Time Checking of Exceptions
  * @since   JDK1.0
  */
 public class Exception extends Throwable {
     static final long serialVersionUID = -3387516993124229948L;
 
     /**
-     * Constructs a new exception with <code>null</code> as its detail message.
+     * Constructs a new exception with {@code null} as its detail message.
      * The cause is not initialized, and may subsequently be initialized by a
      * call to {@link #initCause}.
      */
@@ -61,7 +69,7 @@ public class Exception extends Throwable {
     /**
      * Constructs a new exception with the specified detail message and
      * cause.  <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
+     * {@code cause} is <i>not</i> automatically incorporated in
      * this exception's detail message.
      *
      * @param  message the detail message (which is saved for later retrieval

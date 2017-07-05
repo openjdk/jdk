@@ -24,6 +24,8 @@
 #
 
 BUILDDIR = ../..
+MODULE   = base
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #
@@ -36,15 +38,29 @@ FILES_h = $(INCLUDEDIR)/jni.h 			\
 	  $(INCLUDEDIR)/classfile_constants.h
 
 $(INCLUDEDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h
-	$(install-file)
+	$(install-non-module-file)
 
 $(PLATFORM_INCLUDE)/%.h: $(PLATFORM_SRC)/javavm/export/%.h
+	$(install-non-module-file)
+
+JVMCFG = $(LIBDIR)/$(LIBARCH)/jvm.cfg
+
+#
+# How to install jvm.cfg.
+#
+ifeq ($(ZERO_BUILD), true)
+JVMCFG_ARCH = zero
+else
+JVMCFG_ARCH = $(ARCH)
+endif
+
+$(JVMCFG): $(PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg
 	$(install-file)
 
 all: build
 
-build: $(FILES_h)
+build: $(FILES_h) $(JVMCFG)
 
 clean clobber:: 
-	$(RM) $(FILES_h)
+	$(RM) $(FILES_h) $(JVMCFG)
 

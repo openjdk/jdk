@@ -28,6 +28,8 @@
 #
 
 BUILDDIR = ../..
+MODULE   = management
+
 include $(BUILDDIR)/common/Defs.gmk
 
 MGMT_LIBDIR = $(LIBDIR)/management
@@ -56,17 +58,17 @@ jmxremotefiles: $(MGMT_LIBDIR)/jmxremote.password.template $(MGMT_LIBDIR)/jmxrem
 
 $(MGMT_LIBDIR)/management.properties: $(MGMT_LIB_SRC)/management.properties
 	$(install-file)
-	$(CHMOD) 644 $@
+	$(call chmod-file, 644)
 
 $(MGMT_LIBDIR)/snmp.acl.template: $(MGMT_LIB_SRC)/snmp.acl.template
 	$(install-file)
-	$(CHMOD) 444 $@
+	$(call chmod-file, 444)
 
 $(MGMT_LIBDIR)/jmxremote.password.template: $(MGMT_LIB_SRC)/jmxremote.password.template
 	$(install-file)
-	$(CHMOD) 444 $@
+	$(call chmod-file, 444)
 
 $(MGMT_LIBDIR)/jmxremote.access: $(MGMT_LIB_SRC)/jmxremote.access 
 	$(install-file)
-	$(CHMOD) 644 $@
+	$(call chmod-file, 644)
 

@@ -39,7 +39,7 @@ fi
 
 OS=`uname -s`
 case "$OS" in
-    Windows_* )
+    Windows_* | CYGWIN* )
         echo "This test does not run on Windows" 
         exit 0
         ;;

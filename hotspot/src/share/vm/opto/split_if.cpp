@@ -219,6 +219,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 
 //------------------------------register_new_node------------------------------
 void PhaseIdealLoop::register_new_node( Node *n, Node *blk ) {
+  assert(!n->is_CFG(), "must be data node");
   _igvn.register_new_node_with_optimizer(n);
   set_ctrl(n, blk);
   IdealLoopTree *loop = get_loop(blk);

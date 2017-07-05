@@ -1383,6 +1383,10 @@ void Parse::do_one_block() {
     set_parse_bci(iter().cur_bci());
 
     if (bci() == block()->limit()) {
+      // insert a predicate if it falls through to a loop head block
+      if (should_add_predicate(bci())){
+        add_predicate();
+      }
       // Do not walk into the next block until directed by do_all_blocks.
       merge(bci());
       break;
@@ -2081,6 +2085,37 @@ void Parse::add_safepoint() {
     assert(C->root() != NULL, "Expect parse is still valid");
     C->root()->add_prec(transformed_sfpnt);
   }
+}
+
+//------------------------------should_add_predicate--------------------------
+bool Parse::should_add_predicate(int target_bci) {
+  if (!UseLoopPredicate) return false;
+  Block* target = successor_for_bci(target_bci);
+  if (target != NULL          &&
+      target->is_loop_head()  &&
+      block()->rpo() < target->rpo()) {
+    return true;
+  }
+  return false;
+}
+
+//------------------------------add_predicate---------------------------------
+void Parse::add_predicate() {
+  assert(UseLoopPredicate,"use only for loop predicate");
+  Node *cont    = _gvn.intcon(1);
+  Node* opq     = _gvn.transform(new (C, 2) Opaque1Node(C, cont));
+  Node *bol     = _gvn.transform(new (C, 2) Conv2BNode(opq));
+  IfNode* iff   = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
+  Node* iffalse = _gvn.transform(new (C, 1) IfFalseNode(iff));
+  C->add_predicate_opaq(opq);
+  {
+    PreserveJVMState pjvms(this);
+    set_control(iffalse);
+    uncommon_trap(Deoptimization::Reason_predicate,
+                  Deoptimization::Action_maybe_recompile);
+  }
+  Node* iftrue = _gvn.transform(new (C, 1) IfTrueNode(iff));
+  set_control(iftrue);
 }
 
 #ifndef PRODUCT
