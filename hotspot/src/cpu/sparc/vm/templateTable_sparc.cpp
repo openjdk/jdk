@@ -2936,6 +2936,7 @@ void TemplateTable::prepare_invoke(int byte_no,
     // Push the appendix as a trailing parameter.
     // This must be done before we get the receiver,
     // since the parameter_size includes it.
+    assert(ConstantPoolCacheEntry::_indy_resolved_references_appendix_offset == 0, "appendix expected at index+0");
     __ load_resolved_reference_at_index(temp, index);
     __ verify_oop(temp);
     __ push_ptr(temp);  // push appendix (MethodType, CallSite, etc.)
@@ -3235,15 +3236,15 @@ void TemplateTable::invokehandle(int byte_no) {
   }
 
   const Register Rret       = Lscratch;
-  const Register G4_mtype   = G4_scratch;  // f1
+  const Register G4_mtype   = G4_scratch;
   const Register O0_recv    = O0;
   const Register Rscratch   = G3_scratch;
 
   prepare_invoke(byte_no, G5_method, Rret, G4_mtype, O0_recv);
   __ null_check(O0_recv);
 
-  // G4: MethodType object (from cpool->resolved_references[])
-  // G5: MH.linkToCallSite method (from f2)
+  // G4: MethodType object (from cpool->resolved_references[f1], if necessary)
+  // G5: MH.invokeExact_MT method (from f2)
 
   // Note:  G4_mtype is already pushed (if necessary) by prepare_invoke
 
@@ -3275,8 +3276,8 @@ void TemplateTable::invokedynamic(int byte_no) {
 
   prepare_invoke(byte_no, G5_method, Rret, G4_callsite);
 
-  // G4: CallSite object (from cpool->resolved_references[])
-  // G5: MH.linkToCallSite method (from f1)
+  // G4: CallSite object (from cpool->resolved_references[f1])
+  // G5: MH.linkToCallSite method (from f2)
 
   // Note:  G4_callsite is already pushed by prepare_invoke
 

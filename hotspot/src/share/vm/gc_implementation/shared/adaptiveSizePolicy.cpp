@@ -642,7 +642,7 @@ bool AdaptiveSizePolicy::print_adaptive_size_policy_on(outputStream* st) const {
 
 bool AdaptiveSizePolicy::print_adaptive_size_policy_on(
                                             outputStream* st,
-                                            int tenuring_threshold_arg) const {
+                                            uint tenuring_threshold_arg) const {
   if (!AdaptiveSizePolicy::print_adaptive_size_policy_on(st)) {
     return false;
   }
@@ -663,7 +663,7 @@ bool AdaptiveSizePolicy::print_adaptive_size_policy_on(
     assert(!tenuring_threshold_change(), "(no change was attempted)");
   }
   if (tenuring_threshold_changed) {
-    st->print_cr("%d", tenuring_threshold_arg);
+    st->print_cr("%u", tenuring_threshold_arg);
   }
   return true;
 }

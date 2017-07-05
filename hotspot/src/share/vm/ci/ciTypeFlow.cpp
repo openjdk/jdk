@@ -2194,6 +2194,10 @@ bool ciTypeFlow::clone_loop_heads(Loop* lp, StateVector* temp_vector, JsrSet* te
     if (head->backedge_copy_count() != 0)
       continue;
 
+    // Don't clone head of OSR loop to get correct types in start block.
+    if (is_osr_flow() && head->start() == start_bci())
+      continue;
+
     // check _no_ shared head below us
     Loop* ch;
     for (ch = lp->child(); ch != NULL && ch->head() != head; ch = ch->sibling());
