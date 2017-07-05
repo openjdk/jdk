@@ -537,7 +537,7 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_getIntOption0
     int result;
     struct linger linger;
     void *arg;
-    unsigned int arglen;
+    int arglen;
 
     if (mapSocketOption(opt, &klevel, &kopt) < 0) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",

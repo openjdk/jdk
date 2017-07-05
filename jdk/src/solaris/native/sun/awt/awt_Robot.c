@@ -165,41 +165,34 @@ static XImage *getWindowImage(Display * display, Window window,
 
 // this should be called from XRobotPeer constructor
 JNIEXPORT void JNICALL
-Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls, jint numberOfButtons) {
+Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls, jint numberOfButtons, jintArray buttonDownMasks)
+{
     int32_t xtestAvailable;
+    jint *tmp;
+    int i;
 
     DTRACE_PRINTLN("RobotPeer: setup()");
 
     num_buttons = numberOfButtons;
-
-    jclass inputEventClazz = (*env)->FindClass(env, "java/awt/event/InputEvent");
-    jmethodID getButtonDownMasksID = (*env)->GetStaticMethodID(env, inputEventClazz, "getButtonDownMasks", "()[I");
-    jintArray obj = (jintArray)(*env)->CallStaticObjectMethod(env, inputEventClazz, getButtonDownMasksID);
-    jint * tmp = (*env)->GetIntArrayElements(env, obj, JNI_FALSE);
-
-    masks  = (jint *)malloc(sizeof(jint) * num_buttons);
+    tmp = (*env)->GetIntArrayElements(env, buttonDownMasks, JNI_FALSE);
+    masks = (jint *)malloc(sizeof(jint) * num_buttons);
     if (masks == (jint *) NULL) {
         JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL);
-        goto finally;
+        (*env)->ReleaseIntArrayElements(env, buttonDownMasks, tmp, 0);
+        return;
     }
-
-    int i;
     for (i = 0; i < num_buttons; i++) {
         masks[i] = tmp[i];
     }
-    (*env)->ReleaseIntArrayElements(env, obj, tmp, 0);
-    (*env)->DeleteLocalRef(env, obj);
+    (*env)->ReleaseIntArrayElements(env, buttonDownMasks, tmp, 0);
 
     AWT_LOCK();
     xtestAvailable = isXTestAvailable();
     DTRACE_PRINTLN1("RobotPeer: XTest available = %d", xtestAvailable);
     if (!xtestAvailable) {
         JNU_ThrowByName(env, "java/awt/AWTException", "java.awt.Robot requires your X server support the XTEST extension version 2.2");
-        AWT_UNLOCK();
-        return;
     }
 
-    finally:
     AWT_UNLOCK();
 }
 

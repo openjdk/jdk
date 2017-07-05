@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ final class Alerts {
     static final byte           alert_insufficient_security = 71;
     static final byte           alert_internal_error = 80;
     static final byte           alert_user_canceled = 90;
-    static final byte           alert_no_negotiation = 100;
+    static final byte           alert_no_renegotiation = 100;
 
     // from RFC 3546 (TLS Extensions)
     static final byte           alert_unsupported_extension = 110;
@@ -132,8 +132,8 @@ final class Alerts {
             return "internal_error";
         case alert_user_canceled:
             return "user_canceled";
-        case alert_no_negotiation:
-            return "no_negotiation";
+        case alert_no_renegotiation:
+            return "no_renegotiation";
         case alert_unsupported_extension:
             return "unsupported_extension";
         case alert_certificate_unobtainable:
@@ -203,7 +203,7 @@ final class Alerts {
         case alert_protocol_version:
         case alert_internal_error:
         case alert_user_canceled:
-        case alert_no_negotiation:
+        case alert_no_renegotiation:
         default:
             e = new SSLException(reason);
             break;

@@ -22,11 +22,12 @@
  */
 
 /* @test
-   @bug 4167472 5097703 6216563 6284003
+   @bug 4167472 5097703 6216563 6284003 6728842 6464744
    @summary Basic test for setWritable/Readable/Executable methods
  */
 
 import java.io.*;
+import java.nio.file.attribute.*;
 
 public class SetAccess {
     public static void main(String[] args) throws Exception {
@@ -49,8 +50,9 @@ public class SetAccess {
     }
 
     public static void doTest(File f) throws Exception {
-        f.setReadOnly();
         if (!System.getProperty("os.name").startsWith("Windows")) {
+            if (!f.setReadOnly())
+                 throw new Exception(f + ": setReadOnly Failed");
             if (!f.setWritable(true, true) ||
                 !f.canWrite() ||
                 permission(f).charAt(2) != 'w')
@@ -119,40 +121,44 @@ public class SetAccess {
                 throw new Exception(f + ": setReadable(false, true) Failed");
         } else {
             //Windows platform
-            if (!f.setWritable(true, true) || !f.canWrite())
-                throw new Exception(f + ": setWritable(true, ture) Failed");
-            if (!f.setWritable(true, false) || !f.canWrite())
-                throw new Exception(f + ": setWritable(true, false) Failed");
-            if (!f.setWritable(true) || !f.canWrite())
-                throw new Exception(f + ": setWritable(true, ture) Failed");
-            if (!f.setExecutable(true, true) || !f.canExecute())
-                throw new Exception(f + ": setExecutable(true, true) Failed");
-            if (!f.setExecutable(true, false) || !f.canExecute())
-                throw new Exception(f + ": setExecutable(true, false) Failed");
-            if (!f.setExecutable(true) || !f.canExecute())
-                throw new Exception(f + ": setExecutable(true, true) Failed");
-            if (!f.setReadable(true, true) || !f.canRead())
-                throw new Exception(f + ": setReadable(true, true) Failed");
-            if (!f.setReadable(true, false) || !f.canRead())
-                throw new Exception(f + ": setReadable(true, false) Failed");
-            if (!f.setReadable(true) || !f.canRead())
-                throw new Exception(f + ": setReadable(true, true) Failed");
+            if (f.isFile()) {
+                if (!f.setReadOnly())
+                    throw new Exception(f + ": setReadOnly Failed");
+                if (!f.setWritable(true, true) || !f.canWrite())
+                    throw new Exception(f + ": setWritable(true, ture) Failed");
+                if (!f.setWritable(true, false) || !f.canWrite())
+                    throw new Exception(f + ": setWritable(true, false) Failed");
+                if (!f.setWritable(true) || !f.canWrite())
+                    throw new Exception(f + ": setWritable(true, ture) Failed");
+                if (!f.setExecutable(true, true) || !f.canExecute())
+                    throw new Exception(f + ": setExecutable(true, true) Failed");
+                if (!f.setExecutable(true, false) || !f.canExecute())
+                    throw new Exception(f + ": setExecutable(true, false) Failed");
+                if (!f.setExecutable(true) || !f.canExecute())
+                    throw new Exception(f + ": setExecutable(true, true) Failed");
+                if (!f.setReadable(true, true) || !f.canRead())
+                    throw new Exception(f + ": setReadable(true, true) Failed");
+                if (!f.setReadable(true, false) || !f.canRead())
+                    throw new Exception(f + ": setReadable(true, false) Failed");
+                if (!f.setReadable(true) || !f.canRead())
+                    throw new Exception(f + ": setReadable(true, true) Failed");
+            }
             if (f.isDirectory()) {
-                //All directories on Windows always have read&write access perm,
-                //setting a directory to "unwritable" actually means "not deletable"
-                if (!f.setWritable(false, true) || !f.canWrite())
-                    throw new Exception(f + ": setWritable(false, true) Failed");
-                if (!f.setWritable(false, false) || !f.canWrite())
-                    throw new Exception(f + ": setWritable(false, true) Failed");
-                if (!f.setWritable(false) || !f.canWrite())
-                    throw new Exception(f + ": setWritable(false, true) Failed");
+                // setWritable should fail on directories because the DOS readonly
+                // attribute prevents a directory from being deleted.
+                if (f.setWritable(false, true))
+                    throw new Exception(f + ": setWritable(false, true) Succeeded");
+                if (f.setWritable(false, false))
+                    throw new Exception(f + ": setWritable(false, false) Succeeded");
+                if (f.setWritable(false))
+                    throw new Exception(f + ": setWritable(false) Succeeded");
             } else {
                 if (!f.setWritable(false, true) || f.canWrite())
                     throw new Exception(f + ": setWritable(false, true) Failed");
                 if (!f.setWritable(false, false) || f.canWrite())
-                    throw new Exception(f + ": setWritable(false, true) Failed");
+                    throw new Exception(f + ": setWritable(false, false) Failed");
                 if (!f.setWritable(false) || f.canWrite())
-                    throw new Exception(f + ": setWritable(false, true) Failed");
+                    throw new Exception(f + ": setWritable(false) Failed");
             }
             if (f.setExecutable(false, true))
                 throw new Exception(f + ": setExecutable(false, true) Failed");
@@ -172,14 +178,8 @@ public class SetAccess {
     }
 
     private static String permission(File f) throws Exception {
-        byte[] bb = new byte[1024];
-        String command = f.isDirectory()?"ls -dl ":"ls -l ";
-        int len = Runtime.getRuntime()
-                         .exec(command + f.getPath())
-                         .getInputStream()
-                         .read(bb, 0, 1024);
-        if (len > 0)
-            return new String(bb, 0, len).substring(0, 10);
-        return "";
+        PosixFileAttributes attrs = Attributes.readPosixFileAttributes(f.toPath());
+        String type = attrs.isDirectory() ? "d" : " ";
+        return type + PosixFilePermissions.toString(attrs.permissions());
     }
 }

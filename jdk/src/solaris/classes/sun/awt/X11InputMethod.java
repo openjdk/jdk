@@ -96,6 +96,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
     private Component awtFocussedComponent = null;
     private Component lastXICFocussedComponent = null;
     private boolean   isLastXICActive = false;
+    private boolean   isLastTemporary = false;
     private boolean   isActive = false;
     private boolean   isActiveClient = false;
     private static Map[] highlightStyles;
@@ -349,7 +350,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
            current focussed component, change the XIC focus to the newly
            focussed component.
         */
-        if (lastXICFocussedComponentPeer != awtFocussedComponentPeer ||
+        if (isLastTemporary || lastXICFocussedComponentPeer != awtFocussedComponentPeer ||
             isLastXICActive != haveActiveClient()) {
             if (lastXICFocussedComponentPeer != null) {
                 setXICFocus(lastXICFocussedComponentPeer, false, isLastXICActive);
@@ -401,6 +402,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
         */
         lastXICFocussedComponent = awtFocussedComponent;
         isLastXICActive = isAc;
+        isLastTemporary = isTemporary;
         isActive = false;
     }
 

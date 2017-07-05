@@ -654,8 +654,8 @@ class Attribute implements Comparable, Constants {
         String layout;
         public FormatException(String message,
                                int ctype, String name, String layout) {
-            super(ATTR_CONTEXT_NAME[ctype]+"."+name
-                  +(message == null? "": (": "+message)));
+            super(ATTR_CONTEXT_NAME[ctype]+ " attribute \"" + name + "\"" +
+                  (message == null? "" : (": " + message)));
             this.ctype = ctype;
             this.name = name;
             this.layout = layout;

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 6712743
+ * @bug 6712743 6991164
  * @summary verify package versions
  * @compile -XDignore.symbol.file Utils.java PackageVersionTest.java
  * @run main PackageVersionTest
@@ -40,6 +40,7 @@ import java.io.PrintStream;
 import java.util.jar.JarFile;
 import java.util.jar.Pack200;
 import java.util.jar.Pack200.Packer;
+import java.util.jar.Pack200.Unpacker;
 
 public class PackageVersionTest {
     private static final File  javaHome = new File(System.getProperty("java.home"));
@@ -60,6 +61,7 @@ public class PackageVersionTest {
         createClassFile("Test6");
         createClassFile("Test7");
 
+        verify6991164();
         verifyPack("Test5.class", JAVA5_PACKAGE_MAJOR_VERSION,
                 JAVA5_PACKAGE_MINOR_VERSION);
 
@@ -75,6 +77,18 @@ public class PackageVersionTest {
                 JAVA5_PACKAGE_MINOR_VERSION);
     }
 
+    static void verify6991164() {
+        Unpacker unpacker = Pack200.newUnpacker();
+        String versionStr = unpacker.toString();
+        String expected = "Pack200, Vendor: " +
+                System.getProperty("java.vendor") + ", Version: " +
+                JAVA6_PACKAGE_MAJOR_VERSION + "." + JAVA6_PACKAGE_MINOR_VERSION;
+        if (!versionStr.equals(expected)) {
+            System.out.println("Expected: " + expected);
+            System.out.println("Obtained: " + versionStr);
+            throw new RuntimeException("did not get expected string " + expected);
+        }
+    }
 
     static void createClassFile(String name) {
         createJavaFile(name);
