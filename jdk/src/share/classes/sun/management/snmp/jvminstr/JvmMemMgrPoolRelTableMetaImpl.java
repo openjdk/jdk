@@ -64,13 +64,17 @@ import sun.management.snmp.util.JvmContextFactory;
 public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
     implements Serializable {
 
+    static final long serialVersionUID = 1896509775012355443L;
+
     /**
      * A concrete implementation of {@link SnmpTableCache}, for the
      * jvmMemMgrPoolRelTable.
      **/
+
     private static class JvmMemMgrPoolRelTableCache
         extends SnmpTableCache {
 
+        static final long serialVersionUID = 6059937161990659184L;
         final private JvmMemMgrPoolRelTableMetaImpl meta;
 
         /**
@@ -87,7 +91,7 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
          * Call <code>getTableDatas(JvmContextFactory.getUserData())</code>.
          **/
         public SnmpTableHandler getTableHandler() {
-            final Map userData = JvmContextFactory.getUserData();
+            final Map<Object,Object> userData = JvmContextFactory.getUserData();
             return getTableDatas(userData);
         }
 
@@ -101,7 +105,7 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
                 return buildPoolIndexMap((SnmpCachedData)handler);
 
             // not optimizable... too bad.
-            final Map<String, SnmpOid> m = new HashMap<String, SnmpOid>();
+            final Map<String, SnmpOid> m = new HashMap<>();
             SnmpOid index=null;
             while ((index = handler.getNext(index))!=null) {
                 final MemoryPoolMXBean mpm =
@@ -124,7 +128,7 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
             final SnmpOid[] indexes = cached.indexes;
             final Object[]  datas   = cached.datas;
             final int len = indexes.length;
-            final Map<String, SnmpOid> m = new HashMap<String, SnmpOid>(len);
+            final Map<String, SnmpOid> m = new HashMap<>(len);
             for (int i=0; i<len; i++) {
                 final SnmpOid index = indexes[i];
                 if (index == null) continue;
@@ -165,13 +169,13 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
             final long time = System.currentTimeMillis();
 
             //     Build a Map poolname -> index
-            final Map poolIndexMap = buildPoolIndexMap(mpHandler);
+            final Map<String,SnmpOid> poolIndexMap = buildPoolIndexMap(mpHandler);
 
             // For each memory manager, get the list of memory pools
             // For each memory pool, find its index in the memory pool table
             // Create a row in the relation table.
             final TreeMap<SnmpOid, Object> table =
-                    new TreeMap<SnmpOid, Object>(SnmpCachedData.oidComparator);
+                    new TreeMap<>(SnmpCachedData.oidComparator);
             updateTreeMap(table,userData,mmHandler,mpHandler,poolIndexMap);
 
             return new SnmpCachedData(time,table);
@@ -207,7 +211,7 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
         protected void updateTreeMap(TreeMap<SnmpOid, Object> table, Object userData,
                                      MemoryManagerMXBean mmm,
                                      SnmpOid mmIndex,
-                                     Map poolIndexMap) {
+                                     Map<String, SnmpOid> poolIndexMap) {
 
             // The MemoryManager index is an int, so it's the first
             // and only subidentifier.
@@ -230,7 +234,7 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
             for (int i = 0; i < mpList.length; i++) {
                 final String mpmName = mpList[i];
                 if (mpmName == null) continue;
-                final SnmpOid mpIndex = (SnmpOid)poolIndexMap.get(mpmName);
+                final SnmpOid mpIndex = poolIndexMap.get(mpmName);
                 if (mpIndex == null) continue;
 
                 // The MemoryPool index is an int, so it's the first
@@ -261,7 +265,7 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
         protected void updateTreeMap(TreeMap<SnmpOid, Object> table, Object userData,
                                      SnmpTableHandler mmHandler,
                                      SnmpTableHandler mpHandler,
-                                     Map poolIndexMap) {
+                                     Map<String, SnmpOid> poolIndexMap) {
             if (mmHandler instanceof SnmpCachedData) {
                 updateTreeMap(table,userData,(SnmpCachedData)mmHandler,
                               mpHandler,poolIndexMap);
@@ -280,7 +284,7 @@ public class JvmMemMgrPoolRelTableMetaImpl extends JvmMemMgrPoolRelTableMeta
         protected void updateTreeMap(TreeMap<SnmpOid, Object> table, Object userData,
                                      SnmpCachedData mmHandler,
                                      SnmpTableHandler mpHandler,
-                                     Map poolIndexMap) {
+                                     Map<String, SnmpOid> poolIndexMap) {
 
             final SnmpOid[] indexes = mmHandler.indexes;
             final Object[]  datas   = mmHandler.datas;

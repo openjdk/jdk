@@ -48,7 +48,7 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
 
     public List<VMOption> getDiagnosticOptions() {
         List<Flag> allFlags = Flag.getAllFlags();
-        List<VMOption> result = new ArrayList<VMOption>();
+        List<VMOption> result = new ArrayList<>();
         for (Flag flag : allFlags) {
             if (flag.isWriteable() && flag.isExternal()) {
                 result.add(flag.getVMOption());

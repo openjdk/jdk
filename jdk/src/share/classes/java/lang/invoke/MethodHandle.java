@@ -275,7 +275,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * generates a single invokevirtual instruction with
  * the symbolic type descriptor indicated in the following comment.
  * In these examples, the helper method {@code assertEquals} is assumed to
- * be a method which calls {@link Objects.equals java.util.Objects#equals}
+ * be a method which calls {@link java.util.Objects#equals(Object,Object) Objects.equals }
  * on its arguments, and asserts that the result is true.
  *
  * <h3>Exceptions</h3>

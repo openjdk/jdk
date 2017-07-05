@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,12 +235,12 @@ public final class RSACipher extends CipherSpi {
             mode = encrypt ? MODE_ENCRYPT : MODE_VERIFY;
             publicKey = (sun.security.mscapi.Key)key;
             privateKey = null;
-            outputSize = publicKey.bitLength() / 8;
+            outputSize = publicKey.length() / 8;
         } else if (key instanceof PrivateKey) {
             mode = encrypt ? MODE_SIGN : MODE_DECRYPT;
             privateKey = (sun.security.mscapi.Key)key;
             publicKey = null;
-            outputSize = privateKey.bitLength() / 8;
+            outputSize = privateKey.length() / 8;
         } else {
             throw new InvalidKeyException("Unknown key type: " + key);
         }
@@ -395,7 +395,7 @@ public final class RSACipher extends CipherSpi {
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
 
         if (key instanceof sun.security.mscapi.Key) {
-            return ((sun.security.mscapi.Key) key).bitLength();
+            return ((sun.security.mscapi.Key) key).length();
 
         } else if (key instanceof RSAKey) {
             return ((RSAKey) key).getModulus().bitLength();

@@ -90,14 +90,14 @@ public class JVM_MANAGEMENT_MIB_IMPL extends JVM_MANAGEMENT_MIB {
         SnmpOidTable table = null;
         if(tableRef == null) {
             table =  new JVM_MANAGEMENT_MIBOidTable();
-            tableRef = new WeakReference<SnmpOidTable>(table);
+            tableRef = new WeakReference<>(table);
             return table;
         }
 
         table = tableRef.get();
         if(table == null) {
             table = new JVM_MANAGEMENT_MIBOidTable();
-            tableRef = new WeakReference<SnmpOidTable>(table);
+            tableRef = new WeakReference<>(table);
         }
 
         return table;
@@ -198,7 +198,7 @@ public class JVM_MANAGEMENT_MIB_IMPL extends JVM_MANAGEMENT_MIB {
      * List of notification targets.
      */
     private ArrayList<NotificationTarget> notificationTargets =
-            new ArrayList<NotificationTarget>();
+            new ArrayList<>();
     private final NotificationEmitter emitter;
     private final NotificationHandler handler;
 
@@ -215,7 +215,7 @@ public class JVM_MANAGEMENT_MIB_IMPL extends JVM_MANAGEMENT_MIB {
     }
 
     private synchronized void sendTrap(SnmpOid trap, SnmpVarBindList list) {
-        final Iterator iterator = notificationTargets.iterator();
+        final Iterator<NotificationTarget> iterator = notificationTargets.iterator();
         final SnmpAdaptorServer adaptor =
             (SnmpAdaptorServer) getSnmpAdaptor();
 
@@ -232,7 +232,7 @@ public class JVM_MANAGEMENT_MIB_IMPL extends JVM_MANAGEMENT_MIB {
         while(iterator.hasNext()) {
             NotificationTarget target = null;
             try {
-                target = (NotificationTarget) iterator.next();
+                target = iterator.next();
                 SnmpPeer peer =
                     new SnmpPeer(target.getAddress(), target.getPort());
                 SnmpParameters p = new SnmpParameters();

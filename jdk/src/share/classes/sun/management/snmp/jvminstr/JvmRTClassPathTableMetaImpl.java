@@ -70,6 +70,8 @@ import sun.management.snmp.util.JvmContextFactory;
   */
 public class JvmRTClassPathTableMetaImpl extends JvmRTClassPathTableMeta {
 
+    static final long serialVersionUID = -6914494148818455166L;
+
     private SnmpTableCache cache;
 
      /**
@@ -77,6 +79,7 @@ public class JvmRTClassPathTableMetaImpl extends JvmRTClassPathTableMeta {
      * JvmRTClassPathTable.
      **/
     private static class JvmRTClassPathTableCache extends SnmpTableCache {
+        static final long serialVersionUID = 3805032372592117315L;
         private JvmRTClassPathTableMetaImpl meta;
 
         JvmRTClassPathTableCache(JvmRTClassPathTableMetaImpl meta,
@@ -89,7 +92,7 @@ public class JvmRTClassPathTableMetaImpl extends JvmRTClassPathTableMeta {
          * Call <code>getTableDatas(JvmContextFactory.getUserData())</code>.
          **/
         public SnmpTableHandler getTableHandler() {
-            final Map userData = JvmContextFactory.getUserData();
+            final Map<Object, Object> userData = JvmContextFactory.getUserData();
             return getTableDatas(userData);
         }
 

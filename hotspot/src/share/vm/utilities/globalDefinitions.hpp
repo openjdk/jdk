@@ -298,6 +298,11 @@ const jushort max_jushort = (jushort)-1; // 0xFFFF     largest jushort
 const juint   max_juint   = (juint)-1;   // 0xFFFFFFFF largest juint
 const julong  max_julong  = (julong)-1;  // 0xFF....FF largest julong
 
+typedef jbyte  s1;
+typedef jshort s2;
+typedef jint   s4;
+typedef jlong  s8;
+
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
 

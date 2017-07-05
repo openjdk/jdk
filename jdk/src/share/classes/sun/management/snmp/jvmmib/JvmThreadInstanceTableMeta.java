@@ -68,6 +68,7 @@ import com.sun.jmx.snmp.agent.SnmpStandardObjectServer;
  */
 public class JvmThreadInstanceTableMeta extends SnmpMibTable implements Serializable {
 
+    static final long serialVersionUID = 2519514732589115954L;
     /**
      * Constructor for the table. Initialize metadata for "JvmThreadInstanceTableMeta".
      * The reference on the MBean server is updated so the entries created through an SNMP SET will be AUTOMATICALLY REGISTERED in Java DMK.

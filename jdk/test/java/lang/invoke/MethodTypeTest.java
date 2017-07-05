@@ -29,6 +29,7 @@
 
 package test.java.lang.invoke;
 
+import java.io.IOException;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
@@ -378,7 +379,7 @@ public class MethodTypeTest {
     public void testHashCode() {
         System.out.println("hashCode");
         MethodType instance = mt_viS;
-        ArrayList<Class<?>> types = new ArrayList<Class<?>>();
+        ArrayList<Class<?>> types = new ArrayList<>();
         types.add(instance.returnType());
         types.addAll(instance.parameterList());
         int expResult = types.hashCode();
@@ -556,7 +557,7 @@ public class MethodTypeTest {
             Object decode;
             try {
                 decode = readSerial(wire);
-            } catch (Exception ex) {
+            } catch (IOException | ClassNotFoundException ex) {
                 decode = ex;  // oops!
             }
             assertEquals(mt, decode);

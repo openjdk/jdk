@@ -150,7 +150,7 @@ public class MethodHandleProxies {
         }
         return intfc.cast(Proxy.newProxyInstance(
                 intfc.getClassLoader(),
-                new Class[]{ intfc, WrapperInstance.class },
+                new Class<?>[]{ intfc, WrapperInstance.class },
                 new InvocationHandler() {
                     private Object getArg(String name) {
                         if ((Object)name == "getWrapperInstanceTarget")  return target;
