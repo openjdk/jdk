@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,18 +52,18 @@ import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.scripts.JO;
 
 /**
- * This class is the implementation of the Nashorn-specific global object named {@code JSAdapter}. It can be
- * thought of as the {@link java.lang.reflect.Proxy} equivalent for JavaScript. NativeJSAdapter calls specially named
+ * This class is the implementation of the Nashorn-specific global object named {@code JSAdapter}. It can be thought of
+ * as the {@link java.lang.reflect.Proxy} equivalent for JavaScript. A {@code NativeJSAdapter} calls specially named
  * JavaScript methods on an adaptee object when property access/update/call/new/delete is attempted on it. Example:
  *<pre>
  *    var y = {
- *                __get__    : function (name) { ... }
- *                __has__    : function (name) { ... }
- *                __put__    : function (name, value) {...}
- *                __call__   : function (name, arg1, arg2) {...}
- *                __new__    : function (arg1, arg2) {...}
- *                __delete__ : function (name) { ... }
- *                __getIds__ : function () { ... }
+ *                __get__     : function (name) { ... }
+ *                __has__     : function (name) { ... }
+ *                __put__     : function (name, value) {...}
+ *                __call__    : function (name, arg1, arg2) {...}
+ *                __new__     : function (arg1, arg2) {...}
+ *                __delete__  : function (name) { ... }
+ *                __getKeys__ : function () { ... }
  *            };
  *
  *    var x = new JSAdapter(y);
@@ -74,17 +74,21 @@ import jdk.nashorn.internal.scripts.JO;
  *    i in x;                     // calls y.__has__
  *    x.p = 10;                   // calls y.__put__
  *    delete x.p;                 // calls y.__delete__
- *    for (i in x) { print(i); }  // calls y.__getIds__
+ *    for (i in x) { print(i); }  // calls y.__getKeys__
  * </pre>
  * <p>
- * JavaScript caller of adapter object is isolated from the fact that the property access/mutation/deletion are really
- * calls to JavaScript methods on adaptee.
+ * The {@code __getKeys__} and {@code __getIds__} properties are mapped to the same operation. Concrete
+ * {@code JSAdapter} implementations are expected to use only one of these. As {@code __getIds__} exists for
+ * compatibility reasons only, use of {@code __getKeys__} is recommended.
  * </p>
  * <p>
- * JSAdapter constructor can optionally receive an "overrides" object. Properties of overrides object is copied to
- * JSAdapter instance. When user accessed property is one of these, then adaptee's methods like {@code __get__},
- * {@code __put__} etc. are not called for those. This can be used to make certain "preferred" properties that can be
- * accessed in the usual/faster way avoiding proxy mechanism. Example:
+ * The JavaScript caller of an adapter object is oblivious of the property access/mutation/deletion's being adapted.
+ * </p>
+ * <p>
+ * The {@code JSAdapter} constructor can optionally receive an "overrides" object. The properties of overrides object
+ * are copied to the {@code JSAdapter} instance. In case user-accessed properties are among these, the adaptee's methods
+ * like {@code __get__}, {@code __put__} etc. are not called for them. This can be used to make certain "preferred"
+ * properties that can be accessed in the usual/faster way avoiding the proxy mechanism. Example:
  * </p>
  * <pre>
  *     var x = new JSAdapter({ foo: 444, bar: 6546 }) {
@@ -95,13 +99,13 @@ import jdk.nashorn.internal.scripts.JO;
  *     x.bar = 'hello'; // "bar" directly set without __put__ call
  *     x.prop           // calls __get__("prop") as 'prop' is not overridden
  * </pre>
- * It is possible to pass a specific prototype for JSAdapter instance by passing three arguments to JSAdapter
- * constructor. So exact signature of JSAdapter constructor is as follows:
+ * It is possible to pass a specific prototype for the {@code JSAdapter} instance by passing three arguments to the
+ * {@code JSAdapter} constructor. The exact signature of the {@code JSAdapter} constructor is as follows:
  * <pre>
  *     JSAdapter([proto], [overrides], adaptee);
  * </pre>
- * Both proto and overrides are optional - but adaptee is not. When proto is not passed {@code JSAdapter.prototype} is
- * used.
+ * Both the {@code proto} and {@code overrides} arguments are optional - but {@code adaptee} is not. When {@code proto}
+ * is not passed, {@code JSAdapter.prototype} is used.
  */
 @ScriptClass("JSAdapter")
 public final class NativeJSAdapter extends ScriptObject {
@@ -113,7 +117,7 @@ public final class NativeJSAdapter extends ScriptObject {
     public static final String __call__      = "__call__";
     /** object new operation */
     public static final String __new__       = "__new__";
-    /** object getIds operation */
+    /** object getIds operation (provided for compatibility reasons; use of getKeys is preferred) */
     public static final String __getIds__    = "__getIds__";
     /** object getKeys operation */
     public static final String __getKeys__   = "__getKeys__";
@@ -142,7 +146,7 @@ public final class NativeJSAdapter extends ScriptObject {
     private final ScriptObject adaptee;
     private final boolean overrides;
 
-    private static final MethodHandle IS_JSADAPTOR = findOwnMH("isJSAdaptor", boolean.class, Object.class, Object.class, MethodHandle.class, Object.class, ScriptFunction.class);
+    private static final MethodHandle IS_JSADAPTER = findOwnMH("isJSAdapter", boolean.class, Object.class, Object.class, MethodHandle.class, Object.class, ScriptFunction.class);
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
@@ -626,7 +630,7 @@ public final class NativeJSAdapter extends ScriptObject {
                     // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
                     return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
                             func.createBound(this, new Object[] { name })), 0, Object.class),
-                            testJSAdaptor(adaptee, null, null, null),
+                            testJSAdapter(adaptee, null, null, null),
                             adaptee.getProtoSwitchPoints(__call__, find.getOwner()), null);
                 }
             }
@@ -697,7 +701,7 @@ public final class NativeJSAdapter extends ScriptObject {
                 if (methodHandle != null) {
                     return new GuardedInvocation(
                             methodHandle,
-                            testJSAdaptor(adaptee, findData.getGetter(Object.class, INVALID_PROGRAM_POINT, null), findData.getOwner(), func),
+                            testJSAdapter(adaptee, findData.getGetter(Object.class, INVALID_PROGRAM_POINT, null), findData.getOwner(), func),
                             adaptee.getProtoSwitchPoints(hook, findData.getOwner()), null);
                 }
              }
@@ -710,16 +714,16 @@ public final class NativeJSAdapter extends ScriptObject {
             final MethodHandle methodHandle = hook.equals(__put__) ?
             MH.asType(Lookup.EMPTY_SETTER, type) :
             Lookup.emptyGetter(type.returnType());
-            return new GuardedInvocation(methodHandle, testJSAdaptor(adaptee, null, null, null), adaptee.getProtoSwitchPoints(hook, null), null);
+            return new GuardedInvocation(methodHandle, testJSAdapter(adaptee, null, null, null), adaptee.getProtoSwitchPoints(hook, null), null);
         }
     }
 
-    private static MethodHandle testJSAdaptor(final Object adaptee, final MethodHandle getter, final Object where, final ScriptFunction func) {
-        return MH.insertArguments(IS_JSADAPTOR, 1, adaptee, getter, where, func);
+    private static MethodHandle testJSAdapter(final Object adaptee, final MethodHandle getter, final Object where, final ScriptFunction func) {
+        return MH.insertArguments(IS_JSADAPTER, 1, adaptee, getter, where, func);
     }
 
     @SuppressWarnings("unused")
-    private static boolean isJSAdaptor(final Object self, final Object adaptee, final MethodHandle getter, final Object where, final ScriptFunction func) {
+    private static boolean isJSAdapter(final Object self, final Object adaptee, final MethodHandle getter, final Object where, final ScriptFunction func) {
         final boolean res = self instanceof NativeJSAdapter && ((NativeJSAdapter)self).getAdaptee() == adaptee;
         if (res && getter != null) {
             try {
