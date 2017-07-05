@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,49 @@
 
 package sun.security.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.CodeSigner;
+import java.security.CryptoPrimitive;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.*;
-import java.io.*;
-import java.util.*;
-import java.util.jar.*;
-
-import sun.security.pkcs.*;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarException;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import sun.security.jca.Providers;
+import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.SignerInfo;
 
 public class SignatureFileVerifier {
 
     /* Are we debugging ? */
     private static final Debug debug = Debug.getInstance("jar");
 
-    /* cache of CodeSigner objects */
+    private static final Set<CryptoPrimitive> DIGEST_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.MESSAGE_DIGEST));
+
+    private static final DisabledAlgorithmConstraints JAR_DISABLED_CHECK =
+            new DisabledAlgorithmConstraints(
+                    DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS);
+
     private ArrayList<CodeSigner[]> signerCache;
 
     private static final String ATTR_DIGEST =
@@ -199,8 +222,15 @@ public class SignatureFileVerifier {
 
     /** get digest from cache */
 
-    private MessageDigest getDigest(String algorithm)
-    {
+    private MessageDigest getDigest(String algorithm) throws SignatureException {
+        // check that algorithm is not restricted
+        if (!JAR_DISABLED_CHECK.permits(DIGEST_PRIMITIVE_SET, algorithm, null)) {
+            SignatureException e =
+                    new SignatureException("SignatureFile check failed. " +
+                            "Disabled algorithm used: " + algorithm);
+            throw e;
+        }
+
         if (createdDigests == null)
             createdDigests = new HashMap<>();
 
@@ -320,7 +350,7 @@ public class SignatureFileVerifier {
     private boolean verifyManifestHash(Manifest sf,
                                        ManifestDigester md,
                                        List<Object> manifestDigests)
-         throws IOException
+         throws IOException, SignatureException
     {
         Attributes mattr = sf.getMainAttributes();
         boolean manifestSigned = false;
@@ -364,7 +394,7 @@ public class SignatureFileVerifier {
 
     private boolean verifyManifestMainAttrs(Manifest sf,
                                         ManifestDigester md)
-         throws IOException
+         throws IOException, SignatureException
     {
         Attributes mattr = sf.getMainAttributes();
         boolean attrsVerified = true;
@@ -430,14 +460,14 @@ public class SignatureFileVerifier {
     private boolean verifySection(Attributes sfAttr,
                                   String name,
                                   ManifestDigester md)
-         throws IOException
+         throws IOException, SignatureException
     {
         boolean oneDigestVerified = false;
         ManifestDigester.Entry mde = md.get(name,block.isOldStyle());
 
         if (mde == null) {
             throw new SecurityException(
-                  "no manifiest section for signature file entry "+name);
+                  "no manifest section for signature file entry "+name);
         }
 
         if (sfAttr != null) {

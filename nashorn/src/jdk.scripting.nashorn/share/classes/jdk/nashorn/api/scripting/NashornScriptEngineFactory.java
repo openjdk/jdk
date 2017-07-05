@@ -129,10 +129,11 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
 
     @Override
     public String getProgram(final String... statements) {
+        Objects.requireNonNull(statements);
         final StringBuilder sb = new StringBuilder();
 
         for (final String statement : statements) {
-            sb.append(statement).append(';');
+            sb.append(Objects.requireNonNull(statement)).append(';');
         }
 
         return sb.toString();
