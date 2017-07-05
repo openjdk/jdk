@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,7 +388,8 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     if (!d_pos) {
       q = new (phase->C, 3) SubLNode(phase->longcon(0), phase->transform(q));
     }
-  } else {
+  } else if ( !Matcher::use_asm_for_ldiv_by_con(d) ) { // Use hardware DIV instruction when
+                                                       // it is faster than code generated below.
     // Attempt the jlong constant divide -> multiply transform found in
     //   "Division by Invariant Integers using Multiplication"
     //     by Granlund and Montgomery
@@ -558,7 +559,7 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 
   set_req(0,NULL);              // Dividing by a not-zero constant; no faulting
 
-  // Dividing by MININT does not optimize as a power-of-2 shift.
+  // Dividing by MINLONG does not optimize as a power-of-2 shift.
   if( l == min_jlong ) return NULL;
 
   return transform_long_divide( phase, in(1), l );
@@ -1062,7 +1063,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Fell thru, the unroll case is not appropriate. Transform the modulo
   // into a long multiply/int multiply/subtract case
 
-  // Cannot handle mod 0, and min_jint isn't handled by the transform
+  // Cannot handle mod 0, and min_jlong isn't handled by the transform
   if( con == 0 || con == min_jlong ) return NULL;
 
   // Get the absolute value of the constant; at this point, we can use this
@@ -1075,7 +1076,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If this is a power of two, then maybe we can mask it
   if( is_power_of_2_long(pos_con) ) {
-    log2_con = log2_long(pos_con);
+    log2_con = exact_log2_long(pos_con);
 
     const Type *dt = phase->type(in(1));
     const TypeLong *dtl = dt->isa_long();
@@ -1088,7 +1089,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Save in(1) so that it cannot be changed or deleted
   hook->init_req(0, in(1));
 
-  // Divide using the transform from DivI to MulL
+  // Divide using the transform from DivL to MulL
   Node *result = transform_long_divide( phase, in(1), pos_con );
   if (result != NULL) {
     Node *divide = phase->transform(result);
