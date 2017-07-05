@@ -369,7 +369,7 @@ public class NativeFont extends PhysicalFont {
          */
 //      sb.replace(hPos[6]+1, hPos[7], "0");
 
-        /* comment out this block to the the 1.4.2 behaviour */
+        /* comment out this block to the 1.4.2 behaviour */
         if (hPos[0] == 0 && hPos[1] == 1) {
             /* null foundry name : some linux font configuration files have
              * symbol font entries like this and its just plain wrong.

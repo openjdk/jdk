@@ -2,5 +2,7 @@
 # It also contains test-suite configuration information.
 
 # Tests that must run in othervm mode
-othervm.dirs=javax/xml/jaxp/unittest
+othervm.dirs=javax/xml/jaxp
 
+# Group definitions
+groups=TEST.groups 

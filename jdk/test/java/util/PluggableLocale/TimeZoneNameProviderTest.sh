@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 4052440 8003267
+# @bug 4052440 8003267 8062588
 # @summary TimeZoneNameProvider tests
-# @run shell ExecTest.sh bar TimeZoneNameProviderTest true
+# @run shell ExecTest.sh bar TimeZoneNameProviderTest

@@ -399,7 +399,7 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
          * and therefore we have to continue looping through data
          * but skip internal output loop.
          *
-         * In particular this is is possible when
+         * In particular this is possible when
          * width of the frame is set to zero. If
          * global width (i.e. width of the logical screen)
          * is zero too then zero-length scanline buffer

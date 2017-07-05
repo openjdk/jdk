@@ -879,7 +879,7 @@ static cmsHPROFILE _writeCookedTag(const cmsHPROFILE pfTarget,
         cmsCloseProfile(p);
         p =  NULL;
     } else {
-        // do final check whether we can read and handle the the target tag.
+        // do final check whether we can read and handle the target tag.
         const void* pTag = cmsReadTag(pfSanity, sig);
         if (pTag == NULL) {
             // the tag can not be cooked

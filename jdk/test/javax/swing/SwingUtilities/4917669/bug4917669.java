@@ -34,7 +34,6 @@
 import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
-import sun.awt.SunToolkit;
 
 public class bug4917669 {
 
@@ -42,7 +41,6 @@ public class bug4917669 {
     private static JFrame mainFrame;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(500);
 
@@ -54,7 +52,7 @@ public class bug4917669 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -64,10 +62,10 @@ public class bug4917669 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_O);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!passed) {
             throw new RuntimeException("Action did not received by menu item.");

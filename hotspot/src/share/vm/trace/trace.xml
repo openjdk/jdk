@@ -314,6 +314,28 @@ Declares a structure type that can be used in other events.
       <value type="BYTES64" field="totalSize" label="Total Size" />
     </event>
 
+    <!-- Promotion events, Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. -->
+    <event id="PromoteObjectInNewPLAB" path="vm/gc/detailed/object_promotion_in_new_PLAB" label="Promotion in new PLAB"
+        description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects." 
+           has_thread="true" has_stacktrace="false" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID" description="ID of GC during which the object was promoted"/>
+      <value type="CLASS" field="class" label="Class" description="Class of promoted object"/>
+      <value type="BYTES64" field="objectSize" label="Object Size" description="Size of promoted object"/>
+      <value type="UINT" field="tenuringAge" label="Object Tenuring Age" description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavange the object survives. Newly allocated objects have tenuring age 0."/>
+      <value type="BOOLEAN" field="tenured" label="Tenured" description="True if object was promoted to Old space, otherwise the object was aged and copied to a Survivor space"/>
+      <value type="BYTES64" field="plabSize" label="PLAB Size" description="Size of the allocated PLAB to which the object was copied"/>
+    </event>
+    
+    <event id="PromoteObjectOutsidePLAB" path="vm/gc/detailed/object_promotion_outside_PLAB" label="Promotion outside PLAB"
+        description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects." 
+           has_thread="true" has_stacktrace="false" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID" description="ID of GC during which the object was promoted"/>
+      <value type="CLASS" field="class" label="Class" description="Class of promoted object"/>
+      <value type="BYTES64" field="objectSize" label="Object Size" description="Size of promoted object"/>
+      <value type="UINT" field="tenuringAge" label="Object Tenuring Age" description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavange the object survives. Newly allocated objects have tenuring age 0."/>
+      <value type="BOOLEAN" field="tenured" label="Tenured" description="True if object was promoted to Old space, otherwise the object was aged and copied to a Survivor space"/>
+    </event>
+
     <event id="PromotionFailed" path="vm/gc/detailed/promotion_failed" label="Promotion Failed" is_instant="true"
            description="Promotion of an object failed">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>

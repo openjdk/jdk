@@ -898,7 +898,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
                              y > innerR)) {
                 return false;
             }
-            // Rotate to origin and and verify x is valid.
+            // Rotate to origin and verify x is valid.
             int triangleSize = innerR * 3 / 2;
             double x1 = Math.cos(angle) * x - Math.sin(angle) * y;
             double y1 = Math.sin(angle) * x + Math.cos(angle) * y;

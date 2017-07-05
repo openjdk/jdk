@@ -429,7 +429,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
 
                 /*
                  * replace the real counters with pseudo counters that are
-                 * initialized to to the correct values. The maximum size of
+                 * initialized to the correct values. The maximum size of
                  * the eden and survivor spaces are supposed to be:
                  *    max_eden_size = new_size - (2*alignment).
                  *    max_survivor_size = new_size - (2*alignment).

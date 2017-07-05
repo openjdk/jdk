@@ -162,32 +162,36 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
   // to hold _m, and the fine-grain table to be full.
   PerRegionTable* delete_region_table();
 
-  // If a PRT for "hr" is in the bucket list indicated by "ind" (which must
-  // be the correct index for "hr"), delete it and return true; else return
-  // false.
-  bool del_single_region_table(size_t ind, HeapRegion* hr);
-
   // link/add the given fine grain remembered set into the "all" list
   void link_to_all(PerRegionTable * prt);
   // unlink/remove the given fine grain remembered set into the "all" list
   void unlink_from_all(PerRegionTable * prt);
 
-public:
-  OtherRegionsTable(HeapRegion* hr, Mutex* m);
+  bool contains_reference_locked(OopOrNarrowOopStar from) const;
 
-  HeapRegion* hr() const { return _hr; }
+  // Clear the from_card_cache entries for this region.
+  void clear_fcc();
+public:
+  // Create a new remembered set for the given heap region. The given mutex should
+  // be used to ensure consistency.
+  OtherRegionsTable(HeapRegion* hr, Mutex* m);
 
   // For now.  Could "expand" some tables in the future, so that this made
   // sense.
   void add_reference(OopOrNarrowOopStar from, uint tid);
 
+  // Returns whether the remembered set contains the given reference.
+  bool contains_reference(OopOrNarrowOopStar from) const;
+
   // Removes any entries shown by the given bitmaps to contain only dead
-  // objects.
+  // objects. Not thread safe.
+  // Set bits in the bitmaps indicate that the given region or card is live.
   void scrub(CardTableModRefBS* ctbs, BitMap* region_bm, BitMap* card_bm);
 
-  // Returns whether this remembered set (and all sub-sets) contain no entries.
+  // Returns whether this remembered set (and all sub-sets) does not contain any entry.
   bool is_empty() const;
 
+  // Returns the number of cards contained in this remembered set.
   size_t occupied() const;
   size_t occ_fine() const;
   size_t occ_coarse() const;
@@ -195,31 +199,17 @@ public:
 
   static jint n_coarsenings() { return _n_coarsenings; }
 
-  // Returns size in bytes.
-  // Not const because it takes a lock.
+  // Returns size of the actual remembered set containers in bytes.
   size_t mem_size() const;
+  // Returns the size of static data in bytes.
   static size_t static_mem_size();
+  // Returns the size of the free list content in bytes.
   static size_t fl_mem_size();
 
-  bool contains_reference(OopOrNarrowOopStar from) const;
-  bool contains_reference_locked(OopOrNarrowOopStar from) const;
-
+  // Clear the entire contents of this remembered set.
   void clear();
 
-  // Specifically clear the from_card_cache.
-  void clear_fcc();
-
   void do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task);
-
-  // Declare the heap size (in # of regions) to the OtherRegionsTable.
-  // (Uses it to initialize from_card_cache).
-  static void initialize(uint max_regions);
-
-  // Declares that regions between start_idx <= i < start_idx + num_regions are
-  // not in use. Make sure that any entries for these regions are invalid.
-  static void invalidate(uint start_idx, size_t num_regions);
-
-  static void print_from_card_cache();
 };
 
 class HeapRegionRemSet : public CHeapObj<mtGC> {
@@ -233,7 +223,6 @@ public:
 
 private:
   G1BlockOffsetSharedArray* _bosa;
-  G1BlockOffsetSharedArray* bosa() const { return _bosa; }
 
   // A set of code blobs (nmethods) whose code contains pointers into
   // the region that owns this RSet.
@@ -268,10 +257,6 @@ public:
   static uint num_par_rem_sets();
   static void setup_remset_size();
 
-  HeapRegion* hr() const {
-    return _other_regions.hr();
-  }
-
   bool is_empty() const {
     return (strong_code_roots_list_length() == 0) && _other_regions.is_empty();
   }
@@ -305,8 +290,9 @@ public:
     _other_regions.add_reference(from, tid);
   }
 
-  // Removes any entries shown by the given bitmaps to contain only dead
-  // objects.
+  // Removes any entries in the remembered set shown by the given bitmaps to
+  // contain only dead objects. Not thread safe.
+  // One bits in the bitmaps indicate that the given region or card is live.
   void scrub(CardTableModRefBS* ctbs, BitMap* region_bm, BitMap* card_bm);
 
   // The region is being reclaimed; clear its remset, and any mention of
@@ -397,16 +383,16 @@ public:
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
-    OtherRegionsTable::initialize(max_regions);
+    FromCardCache::initialize(num_par_rem_sets(), max_regions);
   }
 
-  static void invalidate(uint start_idx, uint num_regions) {
-    OtherRegionsTable::invalidate(start_idx, num_regions);
+  static void invalidate_from_card_cache(uint start_idx, size_t num_regions) {
+    FromCardCache::invalidate(start_idx, num_regions);
   }
 
 #ifndef PRODUCT
   static void print_from_card_cache() {
-    OtherRegionsTable::print_from_card_cache();
+    FromCardCache::print();
   }
 #endif
 

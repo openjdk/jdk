@@ -34,7 +34,6 @@
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetAdapter;
@@ -49,7 +48,6 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class MissingDragExitEventTest {
@@ -108,7 +106,7 @@ public class MissingDragExitEventTest {
             } finally {
                 r.mouseRelease(InputEvent.BUTTON1_MASK);
             }
-            sleep();
+            sleep(r);
 
             if (FAILED || !MOUSE_ENTERED || !MOUSE_ENTERED_DT || !MOUSE_EXIT
                     || !MOUSE_EXIT_TD) {
@@ -121,12 +119,12 @@ public class MissingDragExitEventTest {
         }
     }
 
-    private static void sleep() {
+    private static void sleep(Robot robot) {
         try {
             Thread.sleep(10000);
         } catch (InterruptedException ignored) {
         }
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
     }
 
     static class TestdropTargetListener extends DropTargetAdapter {

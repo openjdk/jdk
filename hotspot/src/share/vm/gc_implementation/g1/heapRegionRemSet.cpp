@@ -407,20 +407,8 @@ void FromCardCache::clear(uint region_idx) {
   }
 }
 
-void OtherRegionsTable::initialize(uint max_regions) {
-  FromCardCache::initialize(HeapRegionRemSet::num_par_rem_sets(), max_regions);
-}
-
-void OtherRegionsTable::invalidate(uint start_idx, size_t num_regions) {
-  FromCardCache::invalidate(start_idx, num_regions);
-}
-
-void OtherRegionsTable::print_from_card_cache() {
-  FromCardCache::print();
-}
-
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
-  uint cur_hrm_ind = hr()->hrm_index();
+  uint cur_hrm_ind = _hr->hrm_index();
 
   if (G1TraceHeapRegionRememberedSet) {
     gclog_or_tty->print_cr("ORT::add_reference_work(" PTR_FORMAT "->" PTR_FORMAT ").",
@@ -434,7 +422,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
   if (G1TraceHeapRegionRememberedSet) {
     gclog_or_tty->print_cr("Table for [" PTR_FORMAT "...): card %d (cache = %d)",
-                  hr()->bottom(), from_card,
+                  _hr->bottom(), from_card,
                   FromCardCache::at(tid, cur_hrm_ind));
   }
 
@@ -477,13 +465,13 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
       if (G1HRRSUseSparseTable &&
           _sparse_table.add_card(from_hrm_ind, card_index)) {
         if (G1RecordHRRSOops) {
-          HeapRegionRemSet::record(hr(), from);
+          HeapRegionRemSet::record(_hr, from);
           if (G1TraceHeapRegionRememberedSet) {
             gclog_or_tty->print("   Added card " PTR_FORMAT " to region "
                                 "[" PTR_FORMAT "...) for ref " PTR_FORMAT ".\n",
                                 align_size_down(uintptr_t(from),
                                                 CardTableModRefBS::card_size),
-                                hr()->bottom(), from);
+                                _hr->bottom(), from);
           }
         }
         if (G1TraceHeapRegionRememberedSet) {
@@ -539,13 +527,13 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   prt->add_reference(from);
 
   if (G1RecordHRRSOops) {
-    HeapRegionRemSet::record(hr(), from);
+    HeapRegionRemSet::record(_hr, from);
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print("Added card " PTR_FORMAT " to region "
                           "[" PTR_FORMAT "...) for ref " PTR_FORMAT ".\n",
                           align_size_down(uintptr_t(from),
                                           CardTableModRefBS::card_size),
-                          hr()->bottom(), from);
+                          _hr->bottom(), from);
     }
   }
   assert(contains_reference(from), "We just added it!");
@@ -614,7 +602,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print("Coarsened entry in region [" PTR_FORMAT "...] "
                  "for region [" PTR_FORMAT "...] (" SIZE_FORMAT " coarse entries).\n",
-                 hr()->bottom(),
+                 _hr->bottom(),
                  max->hr()->bottom(),
                  _n_coarse_entries);
     }
@@ -627,13 +615,11 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
   return max;
 }
 
-
-// At present, this must be called stop-world single-threaded.
 void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
                               BitMap* region_bm, BitMap* card_bm) {
   // First eliminated garbage regions from the coarse map.
   if (G1RSScrubVerbose) {
-    gclog_or_tty->print_cr("Scrubbing region %u:", hr()->hrm_index());
+    gclog_or_tty->print_cr("Scrubbing region %u:", _hr->hrm_index());
   }
 
   assert(_coarse_map.size() == region_bm->size(), "Precondition");
@@ -752,7 +738,7 @@ size_t OtherRegionsTable::fl_mem_size() {
 }
 
 void OtherRegionsTable::clear_fcc() {
-  FromCardCache::clear(hr()->hrm_index());
+  FromCardCache::clear(_hr->hrm_index());
 }
 
 void OtherRegionsTable::clear() {
@@ -772,27 +758,6 @@ void OtherRegionsTable::clear() {
   _n_coarse_entries = 0;
 
   clear_fcc();
-}
-
-bool OtherRegionsTable::del_single_region_table(size_t ind,
-                                                HeapRegion* hr) {
-  assert(0 <= ind && ind < _max_fine_entries, "Preconditions.");
-  PerRegionTable** prev_addr = &_fine_grain_regions[ind];
-  PerRegionTable* prt = *prev_addr;
-  while (prt != NULL && prt->hr() != hr) {
-    prev_addr = prt->collision_list_next_addr();
-    prt = prt->collision_list_next();
-  }
-  if (prt != NULL) {
-    assert(prt->hr() == hr, "Loop postcondition.");
-    *prev_addr = prt->collision_list_next();
-    unlink_from_all(prt);
-    PerRegionTable::free(prt);
-    _n_fine_entries--;
-    return true;
-  } else {
-    return false;
-  }
 }
 
 bool OtherRegionsTable::contains_reference(OopOrNarrowOopStar from) const {
@@ -975,7 +940,7 @@ HeapRegionRemSetIterator:: HeapRegionRemSetIterator(HeapRegionRemSet* hrrs) :
   _hrrs(hrrs),
   _g1h(G1CollectedHeap::heap()),
   _coarse_map(&hrrs->_other_regions._coarse_map),
-  _bosa(hrrs->bosa()),
+  _bosa(hrrs->_bosa),
   _is(Sparse),
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index(-1),

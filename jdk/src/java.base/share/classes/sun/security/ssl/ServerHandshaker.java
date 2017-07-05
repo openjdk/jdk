@@ -1467,7 +1467,7 @@ final class ServerHandshaker extends Handshaker {
                 if (serverPrincipal != null) {
                     // When service is bound, we check ASAP. Otherwise,
                     // will check after client request is received
-                    // in in Kerberos ClientKeyExchange
+                    // in Kerberos ClientKeyExchange
                     SecurityManager sm = System.getSecurityManager();
                     try {
                         if (sm != null) {
