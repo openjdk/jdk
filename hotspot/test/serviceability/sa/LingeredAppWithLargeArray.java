@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,11 @@
  * questions.
  */
 
-// key: compiler.err.module-info.with.xmodule.classpath
-// options: -Xmodule:java.compiler
+import jdk.test.lib.apps.LingeredApp;
 
-package javax.lang.model.element;
-
-public interface ModuleInfoWithXModuleClasspath {}
+public class LingeredAppWithLargeArray extends LingeredApp {
+    public static void main(String args[]) {
+        int[] hugeArray = new int[Integer.MAX_VALUE/2];
+        LingeredApp.main(args);
+    }
+ }

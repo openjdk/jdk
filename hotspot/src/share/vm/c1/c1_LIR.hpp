@@ -2113,7 +2113,7 @@ class LIR_List: public CompilationResourceObj {
   void   pack64(LIR_Opr src, LIR_Opr dst) { append(new LIR_Op1(lir_pack64,   src, dst, T_LONG, lir_patch_none, NULL)); }
   void unpack64(LIR_Opr src, LIR_Opr dst) { append(new LIR_Op1(lir_unpack64, src, dst, T_LONG, lir_patch_none, NULL)); }
 
-  void null_check(LIR_Opr opr, CodeEmitInfo* info)         { append(new LIR_Op1(lir_null_check, opr, info)); }
+  void null_check(LIR_Opr opr, CodeEmitInfo* info, bool deoptimize_on_null = false);
   void throw_exception(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info) {
     append(new LIR_Op2(lir_throw, exceptionPC, exceptionOop, LIR_OprFact::illegalOpr, info));
   }
