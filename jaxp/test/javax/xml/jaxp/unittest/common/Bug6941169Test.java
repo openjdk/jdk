@@ -486,4 +486,3 @@ public class Bug6941169Test {
         return document;
     }
 }
-

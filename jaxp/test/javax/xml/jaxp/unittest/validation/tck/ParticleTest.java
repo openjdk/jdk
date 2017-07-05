@@ -63,4 +63,3 @@ public class ParticleTest {
         validator.validate(new StreamSource(ParticleTest.class.getResourceAsStream("upa01.xml")));
     }
 }
-

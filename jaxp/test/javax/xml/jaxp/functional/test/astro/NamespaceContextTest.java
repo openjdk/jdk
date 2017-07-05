@@ -89,4 +89,3 @@ public class NamespaceContextTest {
         assertEquals(QName.valueOf(qname.toString()), qname);
     }
 }
-

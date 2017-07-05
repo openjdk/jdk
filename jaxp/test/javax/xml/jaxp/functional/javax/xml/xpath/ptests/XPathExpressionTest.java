@@ -491,5 +491,3 @@ public class XPathExpressionTest {
         }
     }
 }
-
-

@@ -366,5 +366,3 @@ public class AuctionController {
         assertTrue(roletypeInfo.getTypeNamespace().equals(PORTAL_ACCOUNT_NS));
     }
 }
-
-

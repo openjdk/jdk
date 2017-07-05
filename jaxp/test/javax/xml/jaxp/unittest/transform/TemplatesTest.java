@@ -83,4 +83,3 @@ public class TemplatesTest {
             + "      contains($validAffectsRelClasses, @Class)]/@OBID)\"/>"
             + "</xsl:stylesheet>";
 }
-

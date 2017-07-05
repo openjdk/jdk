@@ -111,4 +111,3 @@ public class Bug4969042 {
         Assert.assertTrue(invoked[1], "Method characters() was not invoked.");
     }
 }
-

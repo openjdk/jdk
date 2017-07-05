@@ -90,4 +90,3 @@ class ErrorHandler extends DefaultHandler {
         errorCounter++;
     }
 }
-

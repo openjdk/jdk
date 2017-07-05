@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 /*
  * @test
  * @bug 4804273
+ * @modules jdk.localedata
  * @summary updating collation tables for swedish
  */
 
-import java.text.*;
-import java.util.*;
+import java.text.Collator;
+import java.util.Arrays;
+import java.util.Locale;
 
 public class Bug4804273 {
 

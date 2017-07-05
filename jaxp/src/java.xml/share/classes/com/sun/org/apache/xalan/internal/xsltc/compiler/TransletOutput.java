@@ -1,13 +1,14 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
+
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -16,9 +17,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: TransletOutput.java,v 1.2.4.1 2005/09/05 09:19:44 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
@@ -35,6 +33,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import jdk.xml.internal.JdkXmlFeatures;
 
 /**
  * @author Morten Jorgensen
@@ -103,8 +102,10 @@ final class TransletOutput extends Instruction {
         final InstructionList il = methodGen.getInstructionList();
         final boolean isSecureProcessing = classGen.getParser().getXSLTC()
                                            .isSecureProcessing();
+        final boolean isExtensionFunctionEnabled = classGen.getParser().getXSLTC()
+                .getFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION);
 
-        if (isSecureProcessing) {
+        if (isSecureProcessing && !isExtensionFunctionEnabled) {
             int index = cpg.addMethodref(BASIS_LIBRARY_CLASS,
                                          "unallowed_extension_elementF",
                                          "(Ljava/lang/String;)V");

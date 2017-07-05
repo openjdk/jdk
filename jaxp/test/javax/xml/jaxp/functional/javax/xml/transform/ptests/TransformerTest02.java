@@ -85,5 +85,3 @@ public class TransformerTest02 {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

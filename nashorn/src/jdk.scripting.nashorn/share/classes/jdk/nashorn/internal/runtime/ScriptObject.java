@@ -2172,6 +2172,21 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         return switchPoints.toArray(new SwitchPoint[0]);
     }
 
+    // Similar to getProtoSwitchPoints method above, but used for additional prototype switchpoints of
+    // properties that are known not to exist, e.g. the original property name in a __noSuchProperty__ invocation.
+    private SwitchPoint getProtoSwitchPoint(final String name) {
+        if (getProto() == null) {
+            return null;
+        }
+
+        for (ScriptObject obj = this; obj.getProto() != null; obj = obj.getProto()) {
+            final ScriptObject parent = obj.getProto();
+            parent.getMap().addListener(name, obj.getMap());
+        }
+
+        return getMap().getSwitchPoint(name);
+    }
+
     private void checkSharedProtoMap() {
         // Check if our map has an expected shared prototype property map. If it has, make sure that
         // the prototype map has not been invalidated, and that it does match the actual map of the prototype.
@@ -2343,7 +2358,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final boolean      scopeCall = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find == null) {
-            return noSuchProperty(desc, request);
+            return noSuchProperty(desc, request)
+                    // Add proto switchpoint to switch from no-such-property to no-such-method if it is ever defined.
+                    .addSwitchPoint(getProtoSwitchPoint(NO_SUCH_METHOD_NAME));
         }
 
         final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
@@ -2366,7 +2383,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                         Object.class),
                 NashornGuards.combineGuards(
                         NashornGuards.getIdentityGuard(this),
-                        NashornGuards.getMapGuard(getMap(), true)));
+                        NashornGuards.getMapGuard(getMap(), true)))
+                // Add a protoype switchpoint for the original name so this gets invalidated if it is ever defined.
+                .addSwitchPoint(getProtoSwitchPoint(name));
     }
 
     /**
@@ -2412,7 +2431,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                                 func),
                         getProtoSwitchPoints(NO_SUCH_PROPERTY_NAME, find.getOwner()),
                         //TODO this doesn't need a ClassCastException as guard always checks script object
-                        null);
+                        null)
+                        // Add a protoype switchpoint for the original name so this gets invalidated if it is ever defined.
+                        .addSwitchPoint(getProtoSwitchPoint(name));
             }
         }
 

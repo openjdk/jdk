@@ -358,4 +358,3 @@ public class XMLGregorianCalendarTest {
     private final int undef = DatatypeConstants.FIELD_UNDEFINED;
 
 }
-

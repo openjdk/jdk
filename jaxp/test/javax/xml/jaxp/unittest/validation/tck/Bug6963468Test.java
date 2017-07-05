@@ -148,4 +148,3 @@ public class Bug6963468Test {
     }
 
 }
-

@@ -371,5 +371,3 @@ public class AuctionItemRepository {
         assertTrue(compareDocumentWithGold(goldFile, resultFile));
     }
 }
-
-

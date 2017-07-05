@@ -94,4 +94,3 @@ public class StreamUtil extends TransformerUtil {
         Assert.assertTrue(dh.getEncoding().equals(encoding), "Expected version is " + encoding + " actual version " + dh.getEncoding());
     }
 }
-

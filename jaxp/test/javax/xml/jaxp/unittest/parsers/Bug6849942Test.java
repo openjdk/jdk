@@ -81,4 +81,3 @@ public class Bug6849942Test {
         }
     }
 }
-

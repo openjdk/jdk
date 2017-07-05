@@ -92,4 +92,3 @@ module java.xml {
     uses javax.xml.xpath.XPathFactory;
     uses org.xml.sax.XMLReader;
 }
-

@@ -168,5 +168,3 @@ public class NSTableTest {
         assertFalse(spf.getFeature(NAMESPACE_PREFIXES));
     }
 }
-
-

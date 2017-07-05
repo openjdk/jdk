@@ -135,5 +135,3 @@ class MyErrorHandler extends XMLFilterImpl implements AutoCloseable {
         bWriter.close();
     }
 }
-
-

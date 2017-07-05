@@ -77,4 +77,3 @@ public class Bug6521260 {
         Assert.assertEquals(systemId, systemId2);
     }
 }
-
