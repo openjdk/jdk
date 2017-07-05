@@ -26,7 +26,7 @@ import java.security.Permission;
 /**
  * @test
  * @summary String concatenation fails with a custom SecurityManager that uses concatenation
- * @bug 8155090
+ * @bug 8155090 8158851
  *
  * @compile WithSecurityManager.java
  *
@@ -37,17 +37,43 @@ import java.security.Permission;
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      WithSecurityManager
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      WithSecurityManager
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  WithSecurityManager
+ *
+ * @run main/othervm -Xverify:all -limitmods java.base WithSecurityManager
+ * @run main/othervm -Xverify:all -limitmods java.base -Djava.lang.invoke.stringConcat=BC_SB                  WithSecurityManager
+ * @run main/othervm -Xverify:all -limitmods java.base -Djava.lang.invoke.stringConcat=BC_SB_SIZED            WithSecurityManager
+ * @run main/othervm -Xverify:all -limitmods java.base -Djava.lang.invoke.stringConcat=MH_SB_SIZED            WithSecurityManager
+ * @run main/othervm -Xverify:all -limitmods java.base -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      WithSecurityManager
+ * @run main/othervm -Xverify:all -limitmods java.base -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      WithSecurityManager
+ * @run main/othervm -Xverify:all -limitmods java.base -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  WithSecurityManager
 */
 public class WithSecurityManager {
     public static void main(String[] args) throws Throwable {
-        SecurityManager sm = new SecurityManager() {
-            @Override
-            public void checkPermission(Permission perm) {
-                String abc = "abc";
-                String full = abc + "def";
-            }
-        };
-        System.setSecurityManager(sm);
-        ClassLoader cl = new ClassLoader() {};
+        // First time should succeed to bootstrap everything
+        {
+            SecurityManager sm = new SecurityManager() {
+                @Override
+                public void checkPermission(Permission perm) {
+                    String abc = "abc";
+                    String full = abc + "def";
+                }
+            };
+            System.setSecurityManager(sm);
+            ClassLoader cl = new ClassLoader() {
+            };
+        }
+
+        // Second time should succeed to run after bootstrapping
+        {
+            SecurityManager sm = new SecurityManager() {
+                @Override
+                public void checkPermission(Permission perm) {
+                    String abc = "abc";
+                    String full = abc + "def";
+                }
+            };
+            System.setSecurityManager(sm);
+            ClassLoader cl = new ClassLoader() {
+            };
+        }
     }
 }

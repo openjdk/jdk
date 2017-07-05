@@ -33,12 +33,13 @@ import java.util.Objects;
 import static java.security.DrbgParameters.Capability.*;
 
 /**
- * The abstract base class for all DRBGs.
+ * The abstract base class for all DRBGs. It is used as {@link DRBG#impl}.
  * <p>
- * This class creates 5 new abstract methods. 3 are defined by the SP800-90A:
+ * This class has 5 abstract methods. 3 are defined by SP800-90A:
  * <ol>
  *  <li>{@link #generateAlgorithm(byte[], byte[])}
- *  <li>{@link #reseedAlgorithm(byte[], byte[])} (might not be supported)
+ *  <li>{@link #reseedAlgorithm(byte[], byte[])} (In fact this is not an
+ *      abstract method, but any DRBG supporting reseeding must override it.)
  *  <li>{@link #instantiateAlgorithm(byte[])}
  * </ol>
  * and 2 for implementation purpose:
@@ -46,18 +47,19 @@ import static java.security.DrbgParameters.Capability.*;
  *  <li>{@link #initEngine()}
  *  <li>{@link #chooseAlgorithmAndStrength}
  * </ol>
- * All existing {@link SecureRandomSpi} methods are implemented based on the
- * methods above as final. The initialization process is divided into 2 phases:
- * configuration is eagerly called to set up parameters, and instantiation
- * is lazily called only when nextBytes or reseed is called.
+ * Although this class is not a child class of {@link SecureRandomSpi}, it
+ * implements all abstract methods there as final.
+ * <p>
+ * The initialization process of a DRBG is divided into 2 phases:
+ * {@link #configure configuration} is eagerly called to set up parameters,
+ * and {@link #instantiateIfNecessary instantiation} is lazily called only
+ * when nextBytes or reseed is called.
  * <p>
  * SecureRandom methods like reseed and nextBytes are not thread-safe.
  * An implementation is required to protect shared access to instantiate states
- * (instantiated, nonce) and DRBG states (v, c, key, reseedCounter).
+ * (instantiated, nonce) and DRBG states (v, c, key, reseedCounter, etc).
  */
-public abstract class AbstractDrbg extends SecureRandomSpi {
-
-    private static final long serialVersionUID = 9L;
+public abstract class AbstractDrbg {
 
     /**
      * This field is not null if {@code -Djava.security.debug=securerandom} is
@@ -69,7 +71,7 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
 
     // Common working status
 
-    private transient boolean instantiated = false;
+    private boolean instantiated = false;
 
     /**
      * Reseed counter of a DRBG instance. A mechanism should increment it
@@ -78,7 +80,7 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      *
      * Volatile, will be used in a double checked locking.
      */
-    protected transient volatile int reseedCounter = 0;
+    protected volatile int reseedCounter = 0;
 
     // Mech features. If not same as below, must be redefined in constructor.
 
@@ -170,7 +172,7 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
     /**
      * Algorithm used by this instance (SHA-512 or AES-256). Must be assigned
      * in {@link #chooseAlgorithmAndStrength}. This field is used in
-     * {@link #toString()} and {@link DRBG#algorithmName}.
+     * {@link #toString()}.
      */
     protected String algorithm;
 
@@ -217,7 +219,7 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      * After instantiation, this field is not null. Do not modify it
      * in a mechanism.
      */
-    protected transient byte[] nonce;
+    protected byte[] nonce;
 
     /**
      * Requested nonce in {@link MoreDrbgParameters}. If set to null,
@@ -237,7 +239,7 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      * {@link #configure(SecureRandomParameters)}. This field
      * can be null. {@link #getEntropyInput} will take care of null check.
      */
-    private transient EntropySource es;
+    private EntropySource es;
 
     // Five abstract methods for SP 800-90A DRBG
 
@@ -286,10 +288,7 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
 
     /**
      * Initiates security engines ({@code MessageDigest}, {@code Mac},
-     * or {@code Cipher}). Must be called in deserialization. Please note
-     * that before instantiation the algorithm might not be available yet.
-     * In this case, just return and this method will be called
-     * automatically at instantiation.
+     * or {@code Cipher}). This method is called during instantiation.
      */
     protected abstract void initEngine();
 
@@ -331,13 +330,11 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
 
     // SecureRandomSpi methods taken care of here. All final.
 
-    @Override
     protected final void engineNextBytes(byte[] result) {
         engineNextBytes(result, DrbgParameters.nextBytes(
                 -1, predictionResistanceFlag, null));
     }
 
-    @Override
     protected final void engineNextBytes(
             byte[] result, SecureRandomParameters params) {
 
@@ -402,7 +399,6 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
         }
     }
 
-    @Override
     public final void engineReseed(SecureRandomParameters params) {
         if (debug != null) {
             debug.println(this, "reseed with params");
@@ -454,7 +450,6 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      * @param numBytes the number of seed bytes to generate.
      * @return the seed bytes.
      */
-    @Override
     public final byte[] engineGenerateSeed(int numBytes) {
         byte[] b = new byte[numBytes];
         SeedGenerator.generateSeed(b);
@@ -469,7 +464,6 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      *
      * @param input the seed
      */
-    @Override
     public final synchronized void engineSetSeed(byte[] input) {
         if (debug != null) {
             debug.println(this, "setSeed");
@@ -598,7 +592,6 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
      *
      * @return the curent configuration
      */
-    @Override
     protected SecureRandomParameters engineGetParameters() {
         // Or read from variable.
         return DrbgParameters.instantiation(
@@ -631,7 +624,8 @@ public abstract class AbstractDrbg extends SecureRandomSpi {
             this.es = m.es;
             this.requestedAlgorithm = m.algorithm;
             this.usedf = m.usedf;
-            params = m.config;
+            params = DrbgParameters.instantiation(m.strength,
+                    m.capability, m.personalizationString);
         }
         if (params != null) {
             if (params instanceof DrbgParameters.Instantiation) {
