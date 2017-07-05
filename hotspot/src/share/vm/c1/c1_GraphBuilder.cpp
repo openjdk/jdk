@@ -3491,8 +3491,16 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
-  // does not accesses critical VM-internal data.
-  if (!_compilation->compiler()->is_intrinsic_available(callee->get_Method(), NULL)) {
+  // accesses critical VM-internal data.
+  bool is_available = false;
+  {
+    VM_ENTRY_MARK;
+    methodHandle mh(THREAD, callee->get_Method());
+    methodHandle ct(THREAD, method()->get_Method());
+    is_available = _compilation->compiler()->is_intrinsic_available(mh, ct);
+  }
+
+  if (!is_available) {
     if (!InlineNatives) {
       // Return false and also set message that the inlining of
       // intrinsics has been disabled in general.

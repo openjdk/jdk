@@ -480,7 +480,8 @@ public interface Path
      * <p> For any two {@link #normalize normalized} paths <i>p</i> and
      * <i>q</i>, where <i>q</i> does not have a root component,
      * <blockquote>
-     *   <i>p</i><tt>.relativize(</tt><i>p</i><tt>.resolve(</tt><i>q</i><tt>)).equals(</tt><i>q</i><tt>)</tt>
+     *   <i>p</i>{@code .relativize(}<i>p</i>
+     *   {@code .resolve(}<i>q</i>{@code )).equals(}<i>q</i>{@code )}
      * </blockquote>
      *
      * <p> When symbolic links are supported, then whether the resulting path,
@@ -525,9 +526,9 @@ public interface Path
      * <p> The default provider provides a similar <em>round-trip</em> guarantee
      * to the {@link java.io.File} class. For a given {@code Path} <i>p</i> it
      * is guaranteed that
-     * <blockquote><tt>
-     * {@link Paths#get(URI) Paths.get}(</tt><i>p</i><tt>.toUri()).equals(</tt><i>p</i>
-     * <tt>.{@link #toAbsolutePath() toAbsolutePath}())</tt>
+     * <blockquote>
+     * {@link Paths#get(URI) Paths.get}{@code (}<i>p</i>{@code .toUri()).equals(}<i>p</i>
+     * {@code .}{@link #toAbsolutePath() toAbsolutePath}{@code ())}
      * </blockquote>
      * so long as the original {@code Path}, the {@code URI}, and the new {@code
      * Path} are all created in (possibly different invocations of) the same

@@ -366,7 +366,7 @@ LRESULT
 WinAccessBridge::rendezvousWithNewJavaDLL(HWND JavaBridgeDLLwindow, long vmID) {
     LRESULT returnVal;
 
-    PrintDebugString("in JavaAccessBridge::rendezvousWithNewJavaDLL(%p, %X)",
+    PrintDebugString("in WinAccessBridge::rendezvousWithNewJavaDLL(%p, %X)",
                      JavaBridgeDLLwindow, vmID);
 
     isVMInstanceChainInUse = true;
@@ -880,7 +880,7 @@ WinAccessBridge::isJavaWindow(HWND window) {
         return FALSE;
     }
 
-    PrintDebugString("  in WinAccessBridge::isJavaWindow");
+    PrintDebugString("In WinAccessBridge::isJavaWindow");
 
 
 

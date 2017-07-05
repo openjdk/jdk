@@ -326,7 +326,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         return res;
     }
 
-    public void setActiveWindow(XWindow window) {
+    public void setActiveWindow(long window) {
         if (!active() || !checkProtocol(XA_NET_SUPPORTED, XA_NET_ACTIVE_WINDOW)) {
             return;
         }
@@ -336,7 +336,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         msg.set_type(XConstants.ClientMessage);
         msg.set_message_type(XA_NET_ACTIVE_WINDOW.getAtom());
         msg.set_display(XToolkit.getDisplay());
-        msg.set_window(window.getWindow());
+        msg.set_window(window);
         msg.set_format(32);
         msg.set_data(0, 1);
         msg.set_data(1, XToolkit.getCurrentServerTime());

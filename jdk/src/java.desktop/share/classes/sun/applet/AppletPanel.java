@@ -687,12 +687,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
         if (toFocus != null) {
             if (parent instanceof EmbeddedFrame) {
-                // JDK-8056915: Try to request focus to the embedder first and
-                // activate the embedded frame through it
-                if (!((EmbeddedFrame) parent).requestFocusToEmbedder()) {
-                    // Otherwise activate the embedded frame directly
-                    ((EmbeddedFrame) parent).synthesizeWindowActivation(true);
-                }
+                ((EmbeddedFrame) parent).synthesizeWindowActivation(true);
             }
             // EmbeddedFrame might have focus before the applet was added.
             // Thus after its activation the most recent focus owner will be

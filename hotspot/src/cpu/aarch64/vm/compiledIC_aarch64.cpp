@@ -51,7 +51,7 @@ bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
 // ----------------------------------------------------------------------------
 
 #define __ _masm.
-void CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
+address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
   // mov rmethod, 0
@@ -63,10 +63,11 @@ void CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
   // That's why we must use the macroassembler to generate a stub.
   MacroAssembler _masm(&cbuf);
 
-  address base = __ start_a_stub(to_interp_stub_size()*2);
-
+  address base = __ start_a_stub(to_interp_stub_size());
   int offset = __ offset();
-  if (base == NULL)  return;  // CodeBuffer::expand failed
+  if (base == NULL) {
+    return NULL;  // CodeBuffer::expand failed
+  }
   // static stub relocation stores the instruction address of the call
   __ relocate(static_stub_Relocation::spec(mark));
   // static stub relocation also tags the Method* in the code-stream.
@@ -76,6 +77,7 @@ void CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
 
   assert((__ offset() - offset) <= (int)to_interp_stub_size(), "stub too big");
   __ end_a_stub();
+  return base;
 }
 #undef __
 

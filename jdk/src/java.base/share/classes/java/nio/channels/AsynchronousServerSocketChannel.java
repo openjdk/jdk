@@ -41,7 +41,7 @@ import java.io.IOException;
  * by invoking the {@link #bind(SocketAddress,int) bind} method. Once bound,
  * the {@link #accept(Object,CompletionHandler) accept} method
  * is used to initiate the accepting of connections to the channel's socket.
- * An attempt to invoke the <tt>accept</tt> method on an unbound channel will
+ * An attempt to invoke the {@code accept} method on an unbound channel will
  * cause a {@link NotYetBoundException} to be thrown.
  *
  * <p> Channels of this type are safe for use by multiple concurrent threads
@@ -122,13 +122,13 @@ public abstract class AsynchronousServerSocketChannel
      * java.nio.channels.spi.AsynchronousChannelProvider#openAsynchronousServerSocketChannel
      * openAsynchronousServerSocketChannel} method on the {@link
      * java.nio.channels.spi.AsynchronousChannelProvider} object that created
-     * the given group. If the group parameter is <tt>null</tt> then the
+     * the given group. If the group parameter is {@code null} then the
      * resulting channel is created by the system-wide default provider, and
      * bound to the <em>default group</em>.
      *
      * @param   group
      *          The group to which the newly constructed channel should be bound,
-     *          or <tt>null</tt> for the default group
+     *          or {@code null} for the default group
      *
      * @return  A new asynchronous server socket channel
      *
@@ -176,7 +176,7 @@ public abstract class AsynchronousServerSocketChannel
      * </pre></blockquote>
      *
      * @param   local
-     *          The local address to bind the socket, or <tt>null</tt> to bind
+     *          The local address to bind the socket, or {@code null} to bind
      *          to an automatically assigned socket address
      *
      * @return  This channel

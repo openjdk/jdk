@@ -94,6 +94,9 @@ class TimerQueue implements Runnable
     void startIfNeeded() {
         if (! running) {
             runningLock.lock();
+            if (running) {
+                return;
+            }
             try {
                 final ThreadGroup threadGroup = AppContext.getAppContext().getThreadGroup();
                 AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
@@ -166,15 +169,17 @@ class TimerQueue implements Runnable
         try {
             while (running) {
                 try {
-                    Timer timer = queue.take().getTimer();
+                    DelayedTimer runningTimer = queue.take();
+                    Timer timer = runningTimer.getTimer();
                     timer.getLock().lock();
                     try {
                         DelayedTimer delayedTimer = timer.delayedTimer;
-                        if (delayedTimer != null) {
+                        if (delayedTimer == runningTimer) {
                             /*
-                             * Timer is not removed after we get it from
-                             * the queue and before the lock on the timer is
-                             * acquired
+                             * Timer is not removed (delayedTimer != null)
+                             * or not removed and added (runningTimer == delayedTimer)
+                             * after we get it from the queue and before the
+                             * lock on the timer is acquired
                              */
                             timer.post(); // have timer post an event
                             timer.delayedTimer = null;
