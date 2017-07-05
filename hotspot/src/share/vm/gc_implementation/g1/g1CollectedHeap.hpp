@@ -849,6 +849,12 @@ protected:
   void print_gc_alloc_regions();
 #endif // !PRODUCT
 
+  // Instance of the concurrent mark is_alive closure for embedding
+  // into the reference processor as the is_alive_non_header. This
+  // prevents unnecessary additions to the discovered lists during
+  // concurrent discovery.
+  G1CMIsAliveClosure _is_alive_closure;
+
   // ("Weak") Reference processing support
   ReferenceProcessor* _ref_processor;
 
@@ -893,7 +899,7 @@ public:
   // specified by the policy object.
   jint initialize();
 
-  void ref_processing_init();
+  virtual void ref_processing_init();
 
   void set_par_threads(int t) {
     SharedHeap::set_par_threads(t);
