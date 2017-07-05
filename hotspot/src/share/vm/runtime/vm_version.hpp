@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ class Abstract_VM_Version: AllStatic {
   static bool         _supports_atomic_getadd4;
   static bool         _supports_atomic_getadd8;
   static unsigned int _logical_processors_per_package;
+  static unsigned int _L1_data_cache_line_size;
   static int          _vm_major_version;
   static int          _vm_minor_version;
   static int          _vm_micro_version;
@@ -96,6 +97,10 @@ class Abstract_VM_Version: AllStatic {
 
   static unsigned int logical_processors_per_package() {
     return _logical_processors_per_package;
+  }
+
+  static unsigned int L1_data_cache_line_size() {
+    return _L1_data_cache_line_size;
   }
 
   // Need a space at the end of TLAB for prefetch instructions
