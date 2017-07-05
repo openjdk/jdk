@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.*;
 import java.util.*;
 
 import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECParameterSpec;
 
 import java.security.cert.X509Certificate;
@@ -147,8 +148,33 @@ final class ClientHandshaker extends Handshaker {
         case HandshakeMessage.ht_server_key_exchange:
             serverKeyExchangeReceived = true;
             switch (keyExchange) {
-            case K_RSA:
             case K_RSA_EXPORT:
+                /**
+                 * The server key exchange message is sent by the server only
+                 * when the server certificate message does not contain the
+                 * proper amount of data to allow the client to exchange a
+                 * premaster secret, such as when RSA_EXPORT is used and the
+                 * public key in the server certificate is longer than 512 bits.
+                 */
+                if (serverKey == null) {
+                    throw new SSLProtocolException
+                        ("Server did not send certificate message");
+                }
+
+                if (!(serverKey instanceof RSAPublicKey)) {
+                    throw new SSLProtocolException("Protocol violation:" +
+                        " the certificate type must be appropriate for the" +
+                        " selected cipher suite's key exchange algorithm");
+                }
+
+                if (JsseJce.getRSAKeyLength(serverKey) <= 512) {
+                    throw new SSLProtocolException("Protocol violation:" +
+                        " server sent a server key exchange message for" +
+                        " key exchange " + keyExchange +
+                        " when the public key in the server certificate" +
+                        " is less than or equal to 512 bits in length");
+                }
+
                 try {
                     this.serverKeyExchange(new RSA_ServerKeyExchange(input));
                 } catch (GeneralSecurityException e) {
@@ -180,6 +206,9 @@ final class ClientHandshaker extends Handshaker {
                     throwSSLException("Server key", e);
                 }
                 break;
+            case K_RSA:
+            case K_DH_RSA:
+            case K_DH_DSS:
             case K_ECDH_ECDSA:
             case K_ECDH_RSA:
                 throw new SSLProtocolException("Protocol violation: server sent"
@@ -580,6 +609,16 @@ final class ClientHandshaker extends Handshaker {
 
         case K_RSA:
         case K_RSA_EXPORT:
+            if (serverKey == null) {
+                throw new SSLProtocolException
+                        ("Server did not send certificate message");
+            }
+
+            if (!(serverKey instanceof RSAPublicKey)) {
+                throw new SSLProtocolException
+                        ("Server certificate does not include an RSA key");
+            }
+
             /*
              * For RSA key exchange, we randomly generate a new
              * pre-master secret and encrypt it with the server's
@@ -588,8 +627,29 @@ final class ClientHandshaker extends Handshaker {
              * it's a performance speedup not to do that until
              * the client's waiting for the server response, but
              * more of a speedup for the D-H case.
+             *
+             * If the RSA_EXPORT scheme is active, when the public
+             * key in the server certificate is less than or equal
+             * to 512 bits in length, use the cert's public key,
+             * otherwise, the ephemeral one.
              */
-            PublicKey key = (keyExchange == K_RSA) ? serverKey : ephemeralServerKey;
+            PublicKey key;
+            if (keyExchange == K_RSA) {
+                key = serverKey;
+            } else {    // K_RSA_EXPORT
+                if (JsseJce.getRSAKeyLength(serverKey) <= 512) {
+                    // extraneous ephemeralServerKey check done
+                    // above in processMessage()
+                    key = serverKey;
+                } else {
+                    if (ephemeralServerKey == null) {
+                        throw new SSLProtocolException("Server did not send" +
+                            " a RSA_EXPORT Server Key Exchange message");
+                    }
+                    key = ephemeralServerKey;
+                }
+            }
+
             m2 = new RSAClientKeyExchange(protocolVersion, maxProtocolVersion,
                                 sslContext.getSecureRandom(), key);
             break;

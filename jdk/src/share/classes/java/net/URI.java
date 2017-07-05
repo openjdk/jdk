@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.lang.NullPointerException;  // for javadoc
  *
  * <p> Aside from some minor deviations noted below, an instance of this
  * class represents a URI reference as defined by
- * <a href="http://www.ietf.org/rfc/rfc2396.txt""><i>RFC&nbsp;2396: Uniform
+ * <a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
  * Resource Identifiers (URI): Generic Syntax</i></a>, amended by <a
  * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
  * Literal IPv6 Addresses in URLs</i></a>. The Literal IPv6 address format
@@ -461,7 +461,7 @@ import java.lang.NullPointerException;  // for javadoc
  * transformation format of ISO 10646</i></a>, <br><a
  * href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
  * Architecture</i></a>, <br><a
- * href="http://www.ietf.org/rfc/rfc2396.txt""><i>RFC&nbsp;2396: Uniform
+ * href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
  * Resource Identifiers (URI): Generic Syntax</i></a>, <br><a
  * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
  * Literal IPv6 Addresses in URLs</i></a>, <br><a

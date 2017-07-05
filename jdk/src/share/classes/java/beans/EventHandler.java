@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,7 +636,7 @@ public class EventHandler implements InvocationHandler {
      * time a mouse button is pressed, one would write:
      *<blockquote>
      *<pre>
-     *EventHandler.create(MouseListener.class, "mousePressed", target, "origin", "point");
+     *EventHandler.create(MouseListener.class, target, "origin", "point", "mousePressed");
      *</pre>
      *</blockquote>
      *
