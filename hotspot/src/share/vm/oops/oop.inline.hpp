@@ -173,7 +173,7 @@ inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
   address base = Universe::narrow_oop_base();
   int    shift = Universe::narrow_oop_shift();
   oop result = (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
-  assert(check_obj_alignment(result), "Address not aligned");
+  assert(check_obj_alignment(result), err_msg("address not aligned: " PTR_FORMAT, (void*) result));
   return result;
 }
 

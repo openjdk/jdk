@@ -101,22 +101,6 @@ void G1MarkSweep::allocate_stacks() {
   GenMarkSweep::_preserved_count_max = 0;
   GenMarkSweep::_preserved_marks = NULL;
   GenMarkSweep::_preserved_count = 0;
-  GenMarkSweep::_preserved_mark_stack = NULL;
-  GenMarkSweep::_preserved_oop_stack = NULL;
-
-  GenMarkSweep::_marking_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<oop>(4000, true);
-  GenMarkSweep::_objarray_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<ObjArrayTask>(50, true);
-
-  int size = SystemDictionary::number_of_classes() * 2;
-  GenMarkSweep::_revisit_klass_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<Klass*>(size, true);
-  // (#klass/k)^2 for k ~ 10 appears a better fit, but this will have to do
-  // for now until we have a chance to work out a more optimal setting.
-  GenMarkSweep::_revisit_mdo_stack =
-    new (ResourceObj::C_HEAP) GrowableArray<DataLayout*>(size*2, true);
-
 }
 
 void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
@@ -145,7 +129,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   // Follow system dictionary roots and unload classes
   bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);
-  assert(GenMarkSweep::_marking_stack->is_empty(),
+  assert(GenMarkSweep::_marking_stack.is_empty(),
          "stack should be empty by now");
 
   // Follow code cache roots (has to be done after system dictionary,
@@ -157,19 +141,19 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   // Update subklass/sibling/implementor links of live klasses
   GenMarkSweep::follow_weak_klass_links();
-  assert(GenMarkSweep::_marking_stack->is_empty(),
+  assert(GenMarkSweep::_marking_stack.is_empty(),
          "stack should be empty by now");
 
   // Visit memoized MDO's and clear any unmarked weak refs
   GenMarkSweep::follow_mdo_weak_refs();
-  assert(GenMarkSweep::_marking_stack->is_empty(), "just drained");
+  assert(GenMarkSweep::_marking_stack.is_empty(), "just drained");
 
 
   // Visit symbol and interned string tables and delete unmarked oops
   SymbolTable::unlink(&GenMarkSweep::is_alive);
   StringTable::unlink(&GenMarkSweep::is_alive);
 
-  assert(GenMarkSweep::_marking_stack->is_empty(),
+  assert(GenMarkSweep::_marking_stack.is_empty(),
          "stack should be empty by now");
 }
 

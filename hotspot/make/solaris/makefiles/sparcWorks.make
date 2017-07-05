@@ -51,9 +51,9 @@ ifeq ($(JRE_RELEASE_VER),1.6.0)
   VALIDATED_COMPILER_REVS   := 5.8
   VALIDATED_C_COMPILER_REVS := 5.8
 else
-  # Validated compilers for JDK7 are SS12 (5.9) or SS12 update 1 (5.10)
-  VALIDATED_COMPILER_REVS   := 5.9 5.10
-  VALIDATED_C_COMPILER_REVS := 5.9 5.10
+  # Validated compiler for JDK7 is SS12 update 1 + patches (5.10)
+  VALIDATED_COMPILER_REVS   := 5.10
+  VALIDATED_C_COMPILER_REVS := 5.10
 endif
 
 # Warning messages about not using the above validated versions
