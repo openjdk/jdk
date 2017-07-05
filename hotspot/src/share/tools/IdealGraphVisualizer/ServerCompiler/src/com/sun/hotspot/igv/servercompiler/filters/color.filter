@@ -1,0 +1,5 @@
+colorize("name", ".*", yellow);
+colorize("name", "Catch.*", blue);
+
+colorize("name", "Region|Loop|CountedLoop|Root", red);
+colorize("name", "CProj|IfFalse|IfTrue|JProj|CatchProj", magenta);

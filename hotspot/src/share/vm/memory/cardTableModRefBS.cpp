@@ -196,6 +196,8 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
   assert(_whole_heap.contains(new_region),
            "attempt to cover area not in reserved area");
   debug_only(verify_guard();)
+  // collided is true if the expansion would push into another committed region
+  debug_only(bool collided = false;)
   int const ind = find_covering_region_by_base(new_region.start());
   MemRegion const old_region = _covered[ind];
   assert(old_region.start() == new_region.start(), "just checking");
@@ -211,12 +213,36 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
     // Align the end up to a page size (starts are already aligned).
     jbyte* const new_end = byte_after(new_region.last());
-    HeapWord* const new_end_aligned =
+    HeapWord* new_end_aligned =
       (HeapWord*) align_size_up((uintptr_t)new_end, _page_size);
     assert(new_end_aligned >= (HeapWord*) new_end,
            "align up, but less");
+    int ri = 0;
+    for (ri = 0; ri < _cur_covered_regions; ri++) {
+      if (ri != ind) {
+        if (_committed[ri].contains(new_end_aligned)) {
+          assert((new_end_aligned >= _committed[ri].start()) &&
+                 (_committed[ri].start() > _committed[ind].start()),
+                 "New end of committed region is inconsistent");
+          new_end_aligned = _committed[ri].start();
+          assert(new_end_aligned > _committed[ind].start(),
+            "New end of committed region is before start");
+          debug_only(collided = true;)
+          // Should only collide with 1 region
+          break;
+        }
+      }
+    }
+#ifdef ASSERT
+    for (++ri; ri < _cur_covered_regions; ri++) {
+      assert(!_committed[ri].contains(new_end_aligned),
+        "New end of committed region is in a second committed region");
+    }
+#endif
     // The guard page is always committed and should not be committed over.
-    HeapWord* const new_end_for_commit = MIN2(new_end_aligned, _guard_region.start());
+    HeapWord* const new_end_for_commit = MIN2(new_end_aligned,
+                                              _guard_region.start());
+
     if (new_end_for_commit > cur_committed.end()) {
       // Must commit new pages.
       MemRegion const new_committed =
@@ -239,9 +265,11 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
       if (!uncommit_region.is_empty()) {
         if (!os::uncommit_memory((char*)uncommit_region.start(),
                                  uncommit_region.byte_size())) {
-          // Do better than this for Merlin
-          vm_exit_out_of_memory(uncommit_region.byte_size(),
-            "card table contraction");
+          assert(false, "Card table contraction failed");
+          // The call failed so don't change the end of the
+          // committed region.  This is better than taking the
+          // VM down.
+          new_end_aligned = _committed[ind].end();
         }
       }
     }
@@ -257,8 +285,25 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
     assert(index_for(new_region.last()) < (int) _guard_index,
       "The guard card will be overwritten");
-    jbyte* const end = byte_after(new_region.last());
+    // This line commented out cleans the newly expanded region and
+    // not the aligned up expanded region.
+    // jbyte* const end = byte_after(new_region.last());
+    jbyte* const end = (jbyte*) new_end_for_commit;
+    assert((end >= byte_after(new_region.last())) || collided,
+      "Expect to be beyond new region unless impacting another region");
     // do nothing if we resized downward.
+#ifdef ASSERT
+    for (int ri = 0; ri < _cur_covered_regions; ri++) {
+      if (ri != ind) {
+        // The end of the new committed region should not
+        // be in any existing region unless it matches
+        // the start of the next region.
+        assert(!_committed[ri].contains(end) ||
+               (_committed[ri].start() == (HeapWord*) end),
+               "Overlapping committed regions");
+      }
+    }
+#endif
     if (entry < end) {
       memset(entry, clean_card, pointer_delta(end, entry, sizeof(jbyte)));
     }
