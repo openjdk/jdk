@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ LogFileOutput::~LogFileOutput() {
     }
     if (fclose(_stream) != 0) {
       jio_fprintf(defaultStream::error_stream(), "Could not close log file '%s' (%s).\n",
-                  _file_name, strerror(errno));
+                  _file_name, os::strerror(errno));
     }
   }
   os::free(_archive_name);
@@ -139,7 +139,7 @@ bool LogFileOutput::initialize(const char* options) {
   }
   _stream = fopen(_file_name, FileOpenMode);
   if (_stream == NULL) {
-    log_error(logging)("Could not open log file '%s' (%s).\n", _file_name, strerror(errno));
+    log_error(logging)("Could not open log file '%s' (%s).\n", _file_name, os::strerror(errno));
     return false;
   }
   return true;
@@ -176,7 +176,7 @@ void LogFileOutput::archive() {
   // Rename the file from ex hotspot.log to hotspot.log.2
   if (rename(_file_name, _archive_name) == -1) {
     jio_fprintf(defaultStream::error_stream(), "Could not rename log file '%s' to '%s' (%s).\n",
-                _file_name, _archive_name, strerror(errno));
+                _file_name, _archive_name, os::strerror(errno));
   }
 }
 
@@ -194,7 +194,7 @@ void LogFileOutput::rotate() {
 
   if (fclose(_stream)) {
     jio_fprintf(defaultStream::error_stream(), "Error closing file '%s' during log rotation (%s).\n",
-                _file_name, strerror(errno));
+                _file_name, os::strerror(errno));
   }
 
   // Archive the current log file
@@ -204,7 +204,7 @@ void LogFileOutput::rotate() {
   _stream = fopen(_file_name, FileOpenMode);
   if (_stream == NULL) {
     jio_fprintf(defaultStream::error_stream(), "Could not reopen file '%s' during log rotation (%s).\n",
-                _file_name, strerror(errno));
+                _file_name, os::strerror(errno));
     return;
   }
 

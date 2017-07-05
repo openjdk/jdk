@@ -121,30 +121,30 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
     static void testInstanceField(VarHandleTestMethodHandleAccessByte recv, Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact(recv, (byte)1);
-            byte x = (byte) hs.get(TestAccessMode.get).invokeExact(recv);
+            hs.get(TestAccessMode.SET).invokeExact(recv, (byte)1);
+            byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(x, (byte)1, "set byte value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact(recv, (byte)2);
-            byte x = (byte) hs.get(TestAccessMode.getVolatile).invokeExact(recv);
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, (byte)2);
+            byte x = (byte) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(recv);
             assertEquals(x, (byte)2, "setVolatile byte value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact(recv, (byte)1);
-            byte x = (byte) hs.get(TestAccessMode.getAcquire).invokeExact(recv);
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, (byte)1);
+            byte x = (byte) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(recv);
             assertEquals(x, (byte)1, "setRelease byte value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact(recv, (byte)2);
-            byte x = (byte) hs.get(TestAccessMode.getOpaque).invokeExact(recv);
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, (byte)2);
+            byte x = (byte) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(recv);
             assertEquals(x, (byte)2, "setOpaque byte value");
         }
 
@@ -152,25 +152,25 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestMethodHandleAccessByte recv, Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact(recv, (byte)1, (byte)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact(recv, (byte)1, (byte)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact(recv, (byte)1);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact(recv, (byte)1);
             });
@@ -181,30 +181,30 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
     static void testStaticField(Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.set).invokeExact((byte)1);
-            byte x = (byte) hs.get(TestAccessMode.get).invokeExact();
+            hs.get(TestAccessMode.SET).invokeExact((byte)1);
+            byte x = (byte) hs.get(TestAccessMode.GET).invokeExact();
             assertEquals(x, (byte)1, "set byte value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.setVolatile).invokeExact((byte)2);
-            byte x = (byte) hs.get(TestAccessMode.getVolatile).invokeExact();
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact((byte)2);
+            byte x = (byte) hs.get(TestAccessMode.GET_VOLATILE).invokeExact();
             assertEquals(x, (byte)2, "setVolatile byte value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.setRelease).invokeExact((byte)1);
-            byte x = (byte) hs.get(TestAccessMode.getAcquire).invokeExact();
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact((byte)1);
+            byte x = (byte) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact();
             assertEquals(x, (byte)1, "setRelease byte value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.setOpaque).invokeExact((byte)2);
-            byte x = (byte) hs.get(TestAccessMode.getOpaque).invokeExact();
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact((byte)2);
+            byte x = (byte) hs.get(TestAccessMode.GET_OPAQUE).invokeExact();
             assertEquals(x, (byte)2, "setOpaque byte value");
         }
 
@@ -212,25 +212,25 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
     }
 
     static void testStaticFieldUnsupported(Handles hs) throws Throwable {
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact((byte)1, (byte)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact((byte)1, (byte)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact((byte)1);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact((byte)1);
             });
@@ -244,30 +244,30 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
         for (int i = 0; i < array.length; i++) {
             // Plain
             {
-                hs.get(TestAccessMode.set).invokeExact(array, i, (byte)1);
-                byte x = (byte) hs.get(TestAccessMode.get).invokeExact(array, i);
+                hs.get(TestAccessMode.SET).invokeExact(array, i, (byte)1);
+                byte x = (byte) hs.get(TestAccessMode.GET).invokeExact(array, i);
                 assertEquals(x, (byte)1, "get byte value");
             }
 
 
             // Volatile
             {
-                hs.get(TestAccessMode.setVolatile).invokeExact(array, i, (byte)2);
-                byte x = (byte) hs.get(TestAccessMode.getVolatile).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, (byte)2);
+                byte x = (byte) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(array, i);
                 assertEquals(x, (byte)2, "setVolatile byte value");
             }
 
             // Lazy
             {
-                hs.get(TestAccessMode.setRelease).invokeExact(array, i, (byte)1);
-                byte x = (byte) hs.get(TestAccessMode.getAcquire).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, (byte)1);
+                byte x = (byte) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(array, i);
                 assertEquals(x, (byte)1, "setRelease byte value");
             }
 
             // Opaque
             {
-                hs.get(TestAccessMode.setOpaque).invokeExact(array, i, (byte)2);
-                byte x = (byte) hs.get(TestAccessMode.getOpaque).invokeExact(array, i);
+                hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, (byte)2);
+                byte x = (byte) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(array, i);
                 assertEquals(x, (byte)2, "setOpaque byte value");
             }
 
@@ -279,25 +279,25 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
         byte[] array = new byte[10];
 
         final int i = 0;
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             checkUOE(am, () -> {
                 boolean r = (boolean) hs.get(am).invokeExact(array, i, (byte)1, (byte)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.compareAndExchange)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact(array, i, (byte)1, (byte)2);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndSet)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             checkUOE(am, () -> {
                 byte r = (byte) hs.get(am).invokeExact(array, i, (byte)1);
             });
         }
 
-        for (TestAccessMode am : testAccessModesOfType(TestAccessType.getAndAdd)) {
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             checkUOE(am, () -> {
                 byte o = (byte) hs.get(am).invokeExact(array, i, (byte)1);
             });
@@ -310,13 +310,13 @@ public class VarHandleTestMethodHandleAccessByte extends VarHandleBaseTest {
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.get)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
                 checkIOOBE(am, () -> {
                     byte x = (byte) hs.get(am).invokeExact(array, ci);
                 });
             }
 
-            for (TestAccessMode am : testAccessModesOfType(TestAccessType.set)) {
+            for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
                 checkIOOBE(am, () -> {
                     hs.get(am).invokeExact(array, ci, (byte)1);
                 });

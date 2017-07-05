@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,7 @@
 // initialization of the workers and report such to the
 // caller.
 bool AbstractWorkGang::initialize_workers() {
-
-  if (TraceWorkGang) {
-    tty->print_cr("Constructing work gang %s with %d threads",
-                  name(),
-                  total_workers());
-  }
+  log_develop_trace(gc, workgang)("Constructing work gang %s with %u threads", name(), total_workers());
   _workers = NEW_C_HEAP_ARRAY(AbstractGangWorker*, total_workers(), mtInternal);
   if (_workers == NULL) {
     vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create GangWorker array.");
@@ -279,10 +274,7 @@ void AbstractGangWorker::initialize() {
   this->initialize_named_thread();
   assert(_gang != NULL, "No gang to run in");
   os::set_priority(this, NearMaxPriority);
-  if (TraceWorkGang) {
-    tty->print_cr("Running gang worker for gang %s id %u",
-                  gang()->name(), id());
-  }
+  log_develop_trace(gc, workgang)("Running gang worker for gang %s id %u", gang()->name(), id());
   // The VM thread should not execute here because MutexLocker's are used
   // as (opposed to MutexLockerEx's).
   assert(!Thread::current()->is_VM_thread(), "VM thread should not be part"
@@ -311,27 +303,14 @@ void GangWorker::signal_task_done() {
   gang()->dispatcher()->worker_done_with_task();
 }
 
-void GangWorker::print_task_started(WorkData data) {
-  if (TraceWorkGang) {
-    tty->print_cr("Running work gang %s task %s worker %u", name(), data._task->name(), data._worker_id);
-  }
-}
-
-void GangWorker::print_task_done(WorkData data) {
-  if (TraceWorkGang) {
-    tty->print_cr("\nFinished work gang %s task %s worker %u", name(), data._task->name(), data._worker_id);
-    Thread* me = Thread::current();
-    tty->print_cr("  T: " PTR_FORMAT "  VM_thread: %d", p2i(me), me->is_VM_thread());
-  }
-}
-
 void GangWorker::run_task(WorkData data) {
-  print_task_started(data);
-
   GCIdMark gc_id_mark(data._task->gc_id());
+  log_develop_trace(gc, workgang)("Running work gang: %s task: %s worker: %u", name(), data._task->name(), data._worker_id);
+
   data._task->work(data._worker_id);
 
-  print_task_done(data);
+  log_develop_trace(gc, workgang)("Finished work gang: %s task: %s worker: %u thread: " PTR_FORMAT,
+                                  name(), data._task->name(), data._worker_id, p2i(Thread::current()));
 }
 
 void GangWorker::loop() {

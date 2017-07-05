@@ -780,8 +780,8 @@ public class VirtualMachineImpl extends MirrorImpl implements PathSearchingVirtu
         return getPath("java.class.path");
     }
 
-    public List bootClassPath() {
-        return getPath("sun.boot.class.path");
+    public List<String> bootClassPath() {
+        return Collections.emptyList();
     }
 
     public String baseDirectory() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary test ensures the proper sequencing of bands, dump bands as well.
  * @compile -XDignore.symbol.file Utils.java BandIntegrity.java
  * @run main BandIntegrity
+ * @key intermittent
  * @author ksrini
  */
 import java.io.File;

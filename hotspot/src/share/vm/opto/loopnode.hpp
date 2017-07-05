@@ -69,9 +69,13 @@ protected:
          PassedSlpAnalysis=512,
          DoUnrollOnly=1024,
          VectorizedLoop=2048,
-         HasAtomicPostLoop=4096 };
+         HasAtomicPostLoop=4096,
+         HasRangeChecks=8192,
+         IsMultiversioned=16384};
   char _unswitch_count;
   enum { _unswitch_max=3 };
+  char _postloop_flags;
+  enum { LoopNotRCEChecked = 0, LoopRCEChecked = 1, RCEPostLoop = 2 };
 
 public:
   // Names for edge indices
@@ -80,9 +84,13 @@ public:
   int is_inner_loop() const { return _loop_flags & InnerLoop; }
   void set_inner_loop() { _loop_flags |= InnerLoop; }
 
+  int range_checks_present() const { return _loop_flags & HasRangeChecks; }
+  int is_multiversioned() const { return _loop_flags & IsMultiversioned; }
+  int is_vectorized_loop() const { return _loop_flags & VectorizedLoop; }
   int is_partial_peel_loop() const { return _loop_flags & PartialPeelLoop; }
   void set_partial_peel_loop() { _loop_flags |= PartialPeelLoop; }
   int partial_peel_has_failed() const { return _loop_flags & PartialPeelFailed; }
+
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
   void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
@@ -90,15 +98,23 @@ public:
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
   void mark_loop_vectorized() { _loop_flags |= VectorizedLoop; }
   void mark_has_atomic_post_loop() { _loop_flags |= HasAtomicPostLoop; }
+  void mark_has_range_checks() { _loop_flags |=  HasRangeChecks; }
+  void mark_is_multiversioned() { _loop_flags |= IsMultiversioned; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
+
+  int has_been_range_checked() const { return _postloop_flags & LoopRCEChecked; }
+  void set_has_been_range_checked() { _postloop_flags |= LoopRCEChecked; }
+  int is_rce_post_loop() const { return _postloop_flags & RCEPostLoop; }
+  void set_is_rce_post_loop() { _postloop_flags |= RCEPostLoop; }
+
   void set_unswitch_count(int val) {
     assert (val <= unswitch_max(), "too many unswitches");
     _unswitch_count = val;
   }
 
-  LoopNode( Node *entry, Node *backedge ) : RegionNode(3), _loop_flags(0), _unswitch_count(0) {
+  LoopNode(Node *entry, Node *backedge) : RegionNode(3), _loop_flags(0), _unswitch_count(0), _postloop_flags(0) {
     init_class_id(Class_Loop);
     init_req(EntryControl, entry);
     init_req(LoopBackControl, backedge);
@@ -225,7 +241,6 @@ public:
   int has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
   int do_unroll_only      () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
   int is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
-  int is_vectorized_loop    () const { return (_loop_flags & VectorizedLoop) == VectorizedLoop; }
   int has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
@@ -657,7 +672,7 @@ class PhaseIdealLoop : public PhaseTransform {
 
 public:
 
-  static bool is_canonical_main_loop_entry(CountedLoopNode* cl);
+  static bool is_canonical_loop_entry(CountedLoopNode* cl);
 
   bool has_node( Node* n ) const {
     guarantee(n != NULL, "No Node.");
@@ -911,6 +926,15 @@ public:
   // Add pre and post loops around the given loop.  These loops are used
   // during RCE, unrolling and aligning loops.
   void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
+
+  // Add post loop after the given loop.
+  Node *insert_post_loop(IdealLoopTree *loop, Node_List &old_new,
+                         CountedLoopNode *main_head, CountedLoopEndNode *main_end,
+                         Node *incr, Node *limit, CountedLoopNode *&post_head);
+
+  // Add an RCE'd post loop which we will multi-version adapt for run time test path usage
+  void insert_scalar_rced_post_loop( IdealLoopTree *loop, Node_List &old_new );
+
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
   // If Node n lives in the back_ctrl block, we clone a private version of n
@@ -983,7 +1007,17 @@ public:
   }
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-  void do_range_check( IdealLoopTree *loop, Node_List &old_new );
+  int do_range_check( IdealLoopTree *loop, Node_List &old_new );
+
+  // Check to see if do_range_check(...) cleaned the main loop of range-checks
+  void has_range_checks(IdealLoopTree *loop);
+
+  // Process post loops which have range checks and try to build a multi-version
+  // guard to safely determine if we can execute the post loop which was RCE'd.
+  bool multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoopTree *legacy_loop);
+
+  // Cause the rce'd post loop to optimized away, this happens if we cannot complete multiverioning
+  void poison_rce_post_loop(IdealLoopTree *rce_loop);
 
   // Create a slow version of the loop by cloning the loop
   // and inserting an if to select fast-slow versions.

@@ -26,8 +26,8 @@
 package java.io;
 
 import java.lang.reflect.Field;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 
 /**

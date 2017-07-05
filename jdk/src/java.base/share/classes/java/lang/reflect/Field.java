@@ -26,9 +26,9 @@
 package java.lang.reflect;
 
 import jdk.internal.misc.SharedSecrets;
-import sun.reflect.CallerSensitive;
-import sun.reflect.FieldAccessor;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.FieldAccessor;
+import jdk.internal.reflect.Reflection;
 import sun.reflect.generics.repository.FieldRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;

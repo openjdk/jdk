@@ -142,13 +142,13 @@ class SymbolPropertyTable;
                                                                                                                          \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                              \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
-  do_klass(reflect_MagicAccessorImpl_klass,             sun_reflect_MagicAccessorImpl,             Opt                 ) \
-  do_klass(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Pre                 ) \
-  do_klass(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Pre                 ) \
-  do_klass(reflect_DelegatingClassLoader_klass,         sun_reflect_DelegatingClassLoader,         Opt                 ) \
-  do_klass(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt                 ) \
-  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt                 ) \
-  do_klass(reflect_CallerSensitive_klass,               sun_reflect_CallerSensitive,               Opt                 ) \
+  do_klass(reflect_MagicAccessorImpl_klass,             reflect_MagicAccessorImpl,                 Opt                 ) \
+  do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl,                Pre                 ) \
+  do_klass(reflect_ConstructorAccessorImpl_klass,       reflect_ConstructorAccessorImpl,           Pre                 ) \
+  do_klass(reflect_DelegatingClassLoader_klass,         reflect_DelegatingClassLoader,             Opt                 ) \
+  do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool,                      Opt                 ) \
+  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, reflect_UnsafeStaticFieldAccessorImpl,     Opt                 ) \
+  do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive,                   Opt                 ) \
                                                                                                                          \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                            \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle,       Opt                 ) \
@@ -241,7 +241,7 @@ class SystemDictionary : AllStatic {
 
     Opt,                        // preload tried; NULL if not present
 #if INCLUDE_JVMCI
-    Jvmci,                      // preload tried; error if not present, use only with JVMCI
+    Jvmci,                      // preload tried; error if not present if JVMCI enabled
 #endif
     OPTION_LIMIT,
     CEIL_LG_OPTION_LIMIT = 2    // OPTION_LIMIT <= (1<<CEIL_LG_OPTION_LIMIT)

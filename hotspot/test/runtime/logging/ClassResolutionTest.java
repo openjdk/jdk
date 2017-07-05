@@ -58,13 +58,13 @@ public class ClassResolutionTest {
     public static void main(String... args) throws Exception {
 
         // (1) classresolve should turn on.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=debug",
                                                                   ClassResolutionTestMain.class.getName());
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldContain("[classresolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
 
         // (2) classresolve should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=debug",
                                                    "-Xlog:classresolve=off",
                                                    ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
@@ -77,12 +77,12 @@ public class ClassResolutionTest {
         o.shouldContain("[classresolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
 
         // (4) TraceClassResolution should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=debug",
                                                    "-XX:-TraceClassResolution",
                                                    ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
         o.shouldNotContain("[classresolve]");
 
-
     };
+
 }

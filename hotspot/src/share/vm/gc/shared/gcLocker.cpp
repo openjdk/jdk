@@ -51,10 +51,10 @@ void GCLocker::verify_critical_count() {
       }
     }
     if (_jni_lock_count != count) {
-      tty->print_cr("critical counts don't match: %d != %d", _jni_lock_count, count);
+      log_error(gc, verify)("critical counts don't match: %d != %d", _jni_lock_count, count);
       for (JavaThread* thr = Threads::first(); thr; thr = thr->next()) {
         if (thr->in_critical()) {
-          tty->print_cr(INTPTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
+          log_error(gc, verify)(INTPTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
         }
       }
     }
@@ -75,7 +75,7 @@ void GCLocker::decrement_debug_jni_lock_count() {
 #endif
 
 void GCLocker::log_debug_jni(const char* msg) {
-  LogHandle(gc, jni) log;
+  Log(gc, jni) log;
   if (log.is_debug()) {
     ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
     log.debug("%s Thread \"%s\" %d locked.", msg, Thread::current()->name(), _jni_lock_count);

@@ -136,7 +136,7 @@ public class ImageReader extends BasicImageReader {
         private final BasicFileAttributes fileAttrs;
         private boolean completed;
 
-        Node(String name, BasicFileAttributes fileAttrs) {
+        protected Node(String name, BasicFileAttributes fileAttrs) {
             this.name = Objects.requireNonNull(name);
             this.fileAttrs = Objects.requireNonNull(fileAttrs);
         }

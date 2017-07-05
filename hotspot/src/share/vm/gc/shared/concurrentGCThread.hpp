@@ -31,12 +31,8 @@
 class ConcurrentGCThread: public NamedThread {
   friend class VMStructs;
 
-protected:
   bool volatile _should_terminate;
   bool _has_terminated;
-
-  // Create and start the thread (setting it's priority high.)
-  void create_and_start();
 
   // Do initialization steps in the thread: record stack base and size,
   // init thread local storage, set JNI handle block.
@@ -49,44 +45,29 @@ protected:
   // concurrent work.
   void terminate();
 
+protected:
+  // Create and start the thread (setting it's priority.)
+  void create_and_start(ThreadPriority prio = NearMaxPriority);
+
+  // Do the specific GC work. Called by run() after initialization complete.
+  virtual void run_service() = 0;
+
+  // Shut down the specific GC work. Called by stop() as part of termination protocol.
+  virtual void stop_service()  = 0;
+
 public:
   ConcurrentGCThread();
 
   // Tester
   bool is_ConcurrentGC_thread() const { return true; }
-};
 
-// The SurrogateLockerThread is used by concurrent GC threads for
-// manipulating Java monitors, in particular, currently for
-// manipulating the pending_list_lock. XXX
-class SurrogateLockerThread: public JavaThread {
-  friend class VMStructs;
- public:
-  enum SLT_msg_type {
-    empty = 0,           // no message
-    acquirePLL,          // acquire pending list lock
-    releaseAndNotifyPLL  // notify and release pending list lock
-  };
- private:
-  // the following are shared with the CMSThread
-  SLT_msg_type  _buffer;  // communication buffer
-  Monitor       _monitor; // monitor controlling buffer
-  BasicLock     _basicLock; // used for PLL locking
+  virtual void run();
 
- public:
-  static SurrogateLockerThread* make(TRAPS);
+  // shutdown following termination protocol
+  virtual void stop();
 
-  // Terminate VM with error message that SLT needed but not yet created.
-  static void report_missing_slt();
-
-  SurrogateLockerThread();
-
-  bool is_hidden_from_external_view() const     { return true; }
-
-  void loop(); // main method
-
-  void manipulatePLL(SLT_msg_type msg);
-
+  bool should_terminate() { return _should_terminate; }
+  bool has_terminated()   { return _has_terminated; }
 };
 
 #endif // SHARE_VM_GC_SHARED_CONCURRENTGCTHREAD_HPP

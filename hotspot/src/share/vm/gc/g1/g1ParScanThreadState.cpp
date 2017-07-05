@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -80,7 +81,7 @@ void G1ParScanThreadState::flush(size_t* surviving_young_words) {
   _plab_allocator->flush_and_retire_stats();
   _g1h->g1_policy()->record_age_table(&_age_table);
 
-  uint length = _g1h->g1_policy()->young_cset_region_length();
+  uint length = _g1h->collection_set()->young_region_length();
   for (uint region_index = 0; region_index < length; region_index++) {
     surviving_young_words[region_index] += _surviving_young_words[region_index];
   }

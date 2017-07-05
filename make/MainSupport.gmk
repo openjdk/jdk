@@ -104,6 +104,7 @@ define Clean-docs
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/docs
 	$(RM) -r $(IMAGES_OUTPUTDIR)/docs
+	$(RM) $(OUTPUT_ROOT)/bundles/jdk-*-docs.zip
 	@$(PRINTF) " done\n"
 endef
 
