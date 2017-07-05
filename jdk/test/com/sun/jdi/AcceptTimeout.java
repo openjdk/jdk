@@ -24,8 +24,7 @@
 /* @test
  * @bug 6198277
  * @summary Test that each ListeningConnector that supports a "timeout" argument will
- *     timeout with TransportTimeoutException
- * @modules jdk.jdi
+ * timeout with TransportTimeoutException
  */
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.connect.Connector;

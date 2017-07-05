@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101
+ * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -64,7 +64,7 @@ public class TestInterface extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Interface.html", true,
-                "<pre>int&nbsp;method()</pre>",
+                "<pre>int&nbsp;method&#8203;()</pre>",
                 "<pre>static final&nbsp;int field</pre>",
                 // Make sure known implementing class list is correct and omits type parameters.
                 "<dl>\n"
@@ -119,7 +119,7 @@ public class TestInterface extends JavadocTester {
                 + "</dl>");
 
         checkOutput("pkg/Interface.html", false,
-                "public int&nbsp;method()",
+                "public int&nbsp;method&#8203;()",
                 "public static final&nbsp;int field");
 
         checkOutput("pkg/ClassWithStaticMethod.html", false,

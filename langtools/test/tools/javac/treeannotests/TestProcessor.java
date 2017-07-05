@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.io.*;
 import java.util.*;
 import javax.annotation.processing.*;
