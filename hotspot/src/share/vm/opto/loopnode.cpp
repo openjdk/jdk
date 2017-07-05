@@ -3682,7 +3682,6 @@ void PhaseIdealLoop::dump( ) const {
 }
 
 void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) const {
-  CloneMap& cm = C->clone_map();
   loop->dump_head();
 
   // Now scan for CFG nodes in the same loop
@@ -3714,7 +3713,6 @@ void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) 
         cached_idom = find_non_split_ctrl(cached_idom);
       }
       tty->print(" ID:%d",computed_idom->_idx);
-      cm.dump(n->_idx);
       n->dump();
       if( cached_idom != computed_idom ) {
         tty->print_cr("*** BROKEN IDOM!  Computed as: %d, cached as: %d",
@@ -3734,7 +3732,6 @@ void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) 
           for( uint j = 0; j < loop->_nest; j++ )
             tty->print("  ");
           tty->print(" ");
-          cm.dump(m->_idx);
           m->dump();
         }
       }

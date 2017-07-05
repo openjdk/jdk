@@ -971,7 +971,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             ((AbstractDocument)doc).readLock();
         }
         try {
-            d.width = (int) rootView.getMinimumSpan(View.X_AXIS) + i.left + i.right;
+            d.width = (int) rootView.getMinimumSpan(View.X_AXIS) + i.left + i.right + caretMargin;
             d.height = (int)  rootView.getMinimumSpan(View.Y_AXIS) + i.top + i.bottom;
         } finally {
             if (doc instanceof AbstractDocument) {
@@ -996,7 +996,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         }
         try {
             d.width = (int) Math.min((long) rootView.getMaximumSpan(View.X_AXIS) +
-                                     (long) i.left + (long) i.right, Integer.MAX_VALUE);
+                                     (long) i.left + (long) i.right + caretMargin, Integer.MAX_VALUE);
             d.height = (int) Math.min((long) rootView.getMaximumSpan(View.Y_AXIS) +
                                       (long) i.top + (long) i.bottom, Integer.MAX_VALUE);
         } finally {
@@ -1027,7 +1027,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             Insets insets = editor.getInsets();
             alloc.x += insets.left;
             alloc.y += insets.top;
-            alloc.width -= insets.left + insets.right;
+            alloc.width -= insets.left + insets.right + caretMargin;
             alloc.height -= insets.top + insets.bottom;
             return alloc;
         }

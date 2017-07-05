@@ -681,8 +681,11 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     private boolean equals(EnumMap<?,?> em) {
+        if (em.size != size)
+            return false;
+
         if (em.keyType != keyType)
-            return size == 0 && em.size == 0;
+            return size == 0;
 
         // Key types match, compare each value
         for (int i = 0; i < keyUniverse.length; i++) {

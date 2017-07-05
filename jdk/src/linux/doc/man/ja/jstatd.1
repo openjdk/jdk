@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: jstatd
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: モニタリング・ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "jstatd" "1" "2013年11月21日" "JDK 8" "モニタリング・ツール"
+.\" Title: jstatd
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: ��˥���󥰡��ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "jstatd" "1" "2013ǯ11��21��" "JDK 8" "��˥���󥰡��ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-jstatd \- Java仮想マシン(JVM)をモニターし、リモート・モニタリング・ツールがJVMに接続できるようにします。このコマンドは試験的なもので、サポートされていません。
-.SH "概要"
+.SH "̾��"
+jstatd \- Java���ۥޥ���(JVM)���˥���������⡼�ȡ���˥���󥰡��ġ��뤬JVM����³�Ǥ���褦�ˤ��ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjstatd\fR [ \fIoptions\fR ]
+\fBjstatd\fR [ \fIoptions\fR ]
 .fi
 .if n \{\
 .RE
@@ -64,161 +66,169 @@ jstatd \- Java仮想マシン(JVM)をモニターし、リモート・モニタ�
 .PP
 \fIoptions\fR
 .RS 4
-コマンドライン・オプション。オプションを参照してください。
+���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjstatd\fRコマンドは、計測されたJava HotSpot VMの作成と終了をモニターし、ローカル・システム上で実行されているJVMに、リモート・モニタリング・ツールが接続できるようにするためのインタフェースを提供するRMIサーバー・アプリケーションです。
+\fBjstatd\fR���ޥ�ɤϡ���¬���줿Java HotSpot VM�κ����Ƚ�λ���˥��������������롦�����ƥ��Ǽ¹Ԥ���Ƥ���JVM�ˡ���⡼�ȡ���˥���󥰡��ġ��뤬��³�Ǥ���褦�ˤ��뤿��Υ��󥿥ե��������󶡤���RMI�����С������ץꥱ�������Ǥ���
 .PP
-\fIjstatd\fRサーバーでは、ローカル・ホストにRMIレジストリが必要になります。\fIjstatd\fRサーバーはデフォルト・ポートで、または\fI\-p\fR
-\fIport\fRオプションで指定したポートで、RMIレジストリに接続しようとします。RMIレジストリが見つからない場合、\fI\-p\fR
-\fIport\fRオプションで指定されたポート、または\fI\-p\fR
-\fIport\fRオプションが省略されている場合は、デフォルトRMIレジストリにバインドされた\fIjstatd\fRアプリケーション内に、1つのRMIレジストリが作成されます。内部RMIレジストリの作成は、\fI\-nr\fRオプションを指定することによって中止できます。
-.SH "オプション"
+\fBjstatd\fR�����С��Ǥϡ��������롦�ۥ��Ȥ�RMI�쥸���ȥ꤬ɬ�פˤʤ�ޤ���\fBjstatd\fR�����С��ϥǥե���ȡ��ݡ��Ȥǡ��ޤ���\fB\-p\fR
+\fBport\fR���ץ����ǻ��ꤷ���ݡ��Ȥǡ�RMI�쥸���ȥ����³���褦�Ȥ��ޤ���RMI�쥸���ȥ꤬���Ĥ���ʤ���硢\fB\-p\fR
+\fBport\fR���ץ����ǻ��ꤵ�줿�ݡ��ȡ��ޤ���\fB\-p\fR
+\fBport\fR���ץ���󤬾�ά����Ƥ�����ϡ��ǥե����RMI�쥸���ȥ�˥Х���ɤ��줿\fBjstatd\fR���ץꥱ���������ˡ�1�Ĥ�RMI�쥸���ȥ꤬��������ޤ�������RMI�쥸���ȥ�κ����ϡ�\fB\-nr\fR���ץ�������ꤹ�뤳�Ȥˤ�ä���ߤǤ��ޤ���
+.SH "���ץ����"
 .PP
 \-nr
 .RS 4
-既存のRMIレジストリが見つからない場合、\fIjstatd\fRプロセス内に内部RMIレジストリを作成しないようにします。
+��¸��RMI�쥸���ȥ꤬���Ĥ���ʤ���硢\fBjstatd\fR�ץ������������RMI�쥸���ȥ��������ʤ��褦�ˤ��ޤ���
 .RE
 .PP
 \-p \fIport\fR
 .RS 4
-RMIレジストリがあると予想されるポート番号です。見つからない場合は、\fI\-nr\fRオプションが指定されていなければ作成されます。
+RMI�쥸���ȥ꤬�����ͽ�ۤ����ݡ����ֹ�Ǥ������Ĥ���ʤ����ϡ�\fB\-nr\fR���ץ���󤬻��ꤵ��Ƥ��ʤ���к�������ޤ���
 .RE
 .PP
 \-n \fIrminame\fR
 .RS 4
-RMIレジストリにおいて、リモートRMIオブジェクトがバインドされる名前です。デフォルト名は\fIJStatRemoteHost\fRです。複数の\fIjstatd\fRサーバーが同じホスト上で起動している場合、各サーバーのエクスポートしたRMIオブジェクトの名前は、このオプションを指定することによって、一意の名前にすることができます。ただし、このオプションを使用する場合、モニタリング・クライアントの\fIhostid\fRおよび\fIvmid\fR文字列に、その一意のサーバー名を含める必要があります。
+RMI�쥸���ȥ�ˤ����ơ���⡼��RMI���֥������Ȥ��Х���ɤ����̾���Ǥ����ǥե����̾��\fBJStatRemoteHost\fR�Ǥ���ʣ����\fBjstatd\fR�����С���Ʊ���ۥ��Ⱦ�ǵ�ư���Ƥ����硢�ƥ����С��Υ������ݡ��Ȥ���RMI���֥������Ȥ�̾���ϡ����Υ��ץ�������ꤹ�뤳�Ȥˤ�äơ���դ�̾���ˤ��뤳�Ȥ��Ǥ��ޤ��������������Υ��ץ�������Ѥ����硢��˥���󥰡����饤����Ȥ�\fBhostid\fR�����\fBvmid\fRʸ����ˡ����ΰ�դΥ����С�̾��ޤ��ɬ�פ�����ޤ���
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-JVMに\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されている\fIオプション\fRを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+JVM��\fBoption\fR���Ϥ��ޤ���option�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ���\fB���ץ����\fR��1�Ļ��ꤷ�ޤ������Ȥ��С�\fB\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
 .RE
-.SH "セキュリティ"
+.SH "�������ƥ�"
 .PP
-\fIjstatd\fRサーバーは、適切なネイティブ・アクセス権を持つJVMのみを監視できます。したがって、\fIjstatd\fRプロセスは、ターゲットJVMと同じユーザー資格で実行されている必要があります。UNIXベースのシステムにおけるrootユーザーなどの一部のユーザー資格は、システム上の任意のJVMによってエクスポートされたインストゥルメンテーションへのアクセス権を持っています。このような資格で実行されている\fIjstatd\fRプロセスは、システム上のすべてのJVMを監視できますが、セキュリティ上の別の問題が起こります。
+\fBjstatd\fR�����С��ϡ�Ŭ�ڤʥͥ��ƥ��֡����������������JVM�Τߤ��˥����Ǥ��ޤ����������äơ�\fBjstatd\fR�ץ������ϡ��������å�JVM��Ʊ���桼������ʾ����Ǽ¹Ԥ���Ƥ���ɬ�פ�����ޤ���Solaris��Linux�����OS X���ڥ졼�ƥ��󥰡������ƥ�ˤ�����root�桼�����ʤɤΰ����Υ桼������ʾ����ϡ������ƥ���Ǥ�դ�JVM�ˤ�äƥ������ݡ��Ȥ��줿���󥹥ȥ�����ơ������ؤΥ�������������äƤ��ޤ������Τ褦�ʻ�ʾ����Ǽ¹Ԥ���Ƥ���\fBjstatd\fR�ץ������ϡ������ƥ��Τ��٤Ƥ�JVM���˥����Ǥ��ޤ������������ƥ�����̤����꤬������ޤ���
 .PP
-\fIjstatd\fRサーバーには、リモート・クライアントの認証機能がありません。そのため、\fIjstatd\fRサーバー・プロセスを実行すると、\fIjstatd\fRプロセスがアクセス権を持つすべてのJVMによるインストゥルメンテーションのエクスポートを、ネットワーク上のすべてのユーザーに公開することになります。この無防備な状態は、環境によっては望ましくない場合があるので、特に実稼働環境または安全でないネットワークでは、\fIjstatd\fRプロセスを起動する前に、ローカル・セキュリティ・ポリシーを検討する必要があります。
+\fBjstatd\fR�����С��ˤϡ���⡼�ȡ����饤����Ȥ�ǧ�ڵ�ǽ������ޤ��󡣤��Τ��ᡢ\fBjstatd\fR�����С����ץ�������¹Ԥ���ȡ�\fBjstatd\fR�ץ���������������������Ĥ��٤Ƥ�JVM�ˤ�륤�󥹥ȥ�����ơ������Υ������ݡ��Ȥ򡢥ͥåȥ����Τ��٤ƤΥ桼�����˸������뤳�Ȥˤʤ�ޤ�������̵�����ʾ��֤ϡ��Ķ��ˤ�äƤ�˾�ޤ����ʤ���礬����Τǡ��ä����ִĶ��ޤ��ϥ����奢�Ǥʤ��ͥåȥ���Ǥϡ�\fBjstatd\fR�ץ�������ư�������ˡ��������롦�������ƥ����ݥꥷ����Ƥ����ɬ�פ�����ޤ���
 .PP
-\fIjstatd\fRサーバーは、他のセキュリティ・マネージャがインストールされていない場合には、\fIRMISecurityPolicy\fRのインスタンスをインストールします。そのため、セキュリティ・ポリシー・ファイルを指定する必要があります。ポリシー・ファイルは、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/PolicyFiles\&.htmlにある
-「デフォルトのPolicyの実装とポリシー・ファイルの構文」に準拠している必要があります
+\fBjstatd\fR�����С��ϡ�¾�Υ������ƥ����ޥ͡����㤬���󥹥ȡ��뤵��Ƥ��ʤ����ˤϡ�\fBRMISecurityPolicy\fR�Υ��󥹥��󥹤򥤥󥹥ȡ��뤷�ޤ������Τ��ᡢ�������ƥ����ݥꥷ�����ե��������ꤹ��ɬ�פ�����ޤ����ݥꥷ�����ե�����ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/PolicyFiles\&.html�ˤ���
+�֥ǥե���Ȥ�Policy�μ����ȥݥꥷ�����ե�����ι�ʸ�פ˽�򤷤Ƥ���ɬ�פ�����ޤ�
 .PP
-次のポリシー・ファイルでは、セキュリティ例外を発生せずに\fIjstatd\fRサーバーを実行できます。このポリシーは、すべてのコード・ベースへのあらゆるアクセス権を認めるポリシーよりも自由度が低いですが、\fIjstatd\fRサーバーを実行するために最低限必要なアクセス権のみを認めるポリシーよりも自由度が高くなっています。
+���Υݥꥷ�����ե�����Ǥϡ��������ƥ��㳰��ȯ��������\fBjstatd\fR�����С���¹ԤǤ��ޤ������Υݥꥷ���ϡ����٤ƤΥ����ɡ��١����ؤΤ����륢����������ǧ���ݥꥷ�����⼫ͳ�٤��㤤�Ǥ�����\fBjstatd\fR�����С���¹Ԥ��뤿��˺����ɬ�פʥ����������Τߤ�ǧ���ݥꥷ�����⼫ͳ�٤��⤯�ʤäƤ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-grant codebase "file:${java\&.home}/\&.\&./lib/tools\&.jar" {   
-    permission java\&.security\&.AllPermission;
-};
+\fBgrant codebase "file:${java\&.home}/\&.\&./lib/tools\&.jar" {   \fR
+\fB    permission java\&.security\&.AllPermission;\fR
+\fB};\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-このポリシー設定を使用するには、このテキストを\fIjstatd\&.all\&.policy\fRというファイルにコピーし、次のように\fIjstatd\fRサーバーを実行します。
+���Υݥꥷ���������Ѥ���ˤϡ����Υƥ����Ȥ�\fBjstatd\&.all\&.policy\fR�Ȥ����ե�����˥��ԡ��������Τ褦��\fBjstatd\fR�����С���¹Ԥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jstatd \-J\-Djava\&.security\&.policy=jstatd\&.all\&.policy
+\fBjstatd \-J\-Djava\&.security\&.policy=jstatd\&.all\&.policy\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-より厳しいセキュリティを実施するサイトの場合、カスタム・ポリシー・ファイルを使用して、特定の信頼できるホストまたはネットワークにアクセスを制限することができます。ただし、このような方法は、IPアドレスの盗聴攻撃を受けやすくなります。セキュリティの問題について、カスタマイズしたポリシー・ファイルでも対処できない場合は、\fIjstatd\fRサーバーを実行せずに、\fIjstat\fRと\fIjps\fRツールをローカルで使用することが最も安全な方法になります。
-.SH "リモート・インタフェース"
+��긷�����������ƥ���»ܤ��륵���Ȥξ�硢�������ࡦ�ݥꥷ�����ե��������Ѥ��ơ�����ο���Ǥ���ۥ��Ȥޤ��ϥͥåȥ���˥������������¤��뤳�Ȥ��Ǥ��ޤ��������������Τ褦����ˡ�ϡ�IP���ɥ쥹����İ���������䤹���ʤ�ޤ����������ƥ�������ˤĤ��ơ��������ޥ��������ݥꥷ�����ե�����Ǥ��н�Ǥ��ʤ����ϡ�\fBjstatd\fR�����С���¹Ԥ����ˡ�\fBjstat\fR��\fBjps\fR�ġ�����������ǻ��Ѥ��뤳�Ȥ��Ǥ��������ˡ�ˤʤ�ޤ���
+.SH "��⡼�ȡ����󥿥ե�����"
 .PP
-\fIjstatd\fRプロセスがエクスポートするインタフェースは、独自に開発したものであり変更される予定です。ユーザーおよび開発者は、このインタフェースへの書込みを行わないでください。
-.SH "例"
+\fBjstatd\fR�ץ��������������ݡ��Ȥ��륤�󥿥ե������ϡ��ȼ��˳�ȯ������ΤǤ����ѹ������ͽ��Ǥ����桼��������ӳ�ȯ�Ԥϡ����Υ��󥿥ե������ؤν���ߤ�Ԥ�ʤ��Ǥ���������
+.SH "��"
 .PP
-次に、\fIjstatd\fRコマンドの例を示します。\fIjstatd\fRスクリプトによって、サーバーはバックグラウンドで自動的に起動します。
-.SS "内部RMIレジストリ"
+���ˡ�\fBjstatd\fR���ޥ�ɤ���򼨤��ޤ���\fBjstatd\fR������ץȤˤ�äơ������С��ϥХå����饦��ɤǼ�ưŪ�˵�ư���ޤ���
+.SS "����RMI�쥸���ȥ�"
 .PP
-この例は、内部RMIレジストリを使用したホストによる\fIjstatd\fRセッションの起動を表しています。この例では、デフォルトのRMIレジストリ・ポート(ポート1099)には、他のサーバーはバインドされていないと想定しています。
+������ϡ�����RMI�쥸���ȥ����Ѥ���\fBjstatd\fR���å����ε�ư��ˡ��ɽ���Ƥ��ޤ���������Ǥϡ��ǥե���Ȥ�RMI�쥸���ȥꡦ�ݡ���(�ݡ���1099)�ˤϡ�¾�Υ����С��ϥХ���ɤ���Ƥ��ʤ������ꤷ�Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jstatd \-J\-Djava\&.security\&.policy=all\&.policy
+\fBjstatd \-J\-Djava\&.security\&.policy=all\&.policy\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "外部RMIレジストリ"
+.SS "����RMI�쥸���ȥ�"
 .PP
-この例は、外部RMIレジストリを使用した\fIjstatd\fRセッションの起動を表しています。
+������ϡ�����RMI�쥸���ȥ����Ѥ���\fBjstatd\fR���å����ε�ư��ɽ���Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-rmiregistry&
-jstatd \-J\-Djava\&.security\&.policy=all\&.policy
+\fBrmiregistry&\fR
+\fBjstatd \-J\-Djava\&.security\&.policy=all\&.policy\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-この例では、ポート2020の外部RMIレジストリを使用して\fIjstatd\fRセッションを起動します。
+������Ǥϡ��ݡ���2020�γ���RMI�쥸���ȥ����Ѥ���\fBjstatd\fR���å�����ư���ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jrmiregistry 2020&
-jstatd \-J\-Djava\&.security\&.policy=all\&.policy \-p 2020
+\fBjrmiregistry 2020&\fR
+\fBjstatd \-J\-Djava\&.security\&.policy=all\&.policy \-p 2020\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-この例では、ポート2020の外部RMIレジストリを使用して、\fIAlternateJstatdServerName\fRにバインドされている\fIjstatd\fRセッションを起動します。
+������Ǥϡ��ݡ���2020�γ���RMI�쥸���ȥ����Ѥ��ơ�\fBAlternateJstatdServerName\fR�˥Х���ɤ���Ƥ���\fBjstatd\fR���å�����ư���ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-rmiregistry 2020&
-jstatd \-J\-Djava\&.security\&.policy=all\&.policy \-p 2020
-    \-n AlternateJstatdServerName
+\fBrmiregistry 2020&\fR
+\fBjstatd \-J\-Djava\&.security\&.policy=all\&.policy \-p 2020\fR
+\fB    \-n AlternateJstatdServerName\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "インプロセスRMIレジストリの作成の停止"
+.SS "����ץ�����RMI�쥸���ȥ�κ��������"
 .PP
-この例では、外部RMIレジストリがない場合に作成しない\fIjstatd\fRセッションを起動します。この例では、RMIレジストリがすでに実行されていると想定しています。RMIレジストリが実行されていない場合、エラー・メッセージが表示されます。
+������Ǥϡ�����RMI�쥸���ȥ꤬�ʤ����˺������ʤ�\fBjstatd\fR���å�����ư���ޤ���������Ǥϡ�RMI�쥸���ȥ꤬���Ǥ˼¹Ԥ���Ƥ�������ꤷ�Ƥ��ޤ���RMI�쥸���ȥ꤬�¹Ԥ���Ƥ��ʤ���硢���顼����å�������ɽ������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jstatd \-J\-Djava\&.security\&.policy=all\&.policy \-nr
+\fBjstatd \-J\-Djava\&.security\&.policy=all\&.policy \-nr\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "RMIロギングの有効化"
+.SS "RMI�����󥰤�ͭ����"
 .PP
-この例では、RMIロギング機能を有効化して\fIjstatd\fRセッションを起動します。この方法は、トラブルシューティングまたはサーバー活動のモニタリングに役立ちます。
+������Ǥϡ�RMI�����󥰵�ǽ��ͭ��������\fBjstatd\fR���å�����ư���ޤ���������ˡ�ϡ��ȥ�֥륷�塼�ƥ��󥰤ޤ��ϥ����С���ư�Υ�˥���󥰤���Ω���ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-jstatd \-J\-Djava\&.security\&.policy=all\&.policy
-    \-J\-Djava\&.rmi\&.server\&.logCalls=true
+\fBjstatd \-J\-Djava\&.security\&.policy=all\&.policy\fR
+\fB    \-J\-Djava\&.rmi\&.server\&.logCalls=true\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

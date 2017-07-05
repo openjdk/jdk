@@ -547,7 +547,7 @@ charset GBK GBK                  # Simplified Chinese
 
 charset GB18030 GB18030
     package sun.nio.cs.ext
-    type    source
+    type    template
     alias   gb18030-2000
 
 charset GB2312 EUC_CN
