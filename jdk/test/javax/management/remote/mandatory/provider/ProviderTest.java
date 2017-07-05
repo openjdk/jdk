@@ -49,13 +49,13 @@ import javax.management.MBeanServer;
 import provider.JMXConnectorProviderImpl;
 import provider.JMXConnectorServerProviderImpl;
 public class ProviderTest {
+
     public static void main(String[] args) throws Exception {
         System.out.println("Starting ProviderTest");
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
-        //First do the test with a protocol handled by Service providers
-        JMXServiceURL url =
-            new JMXServiceURL("service:jmx:rmi://");
 
+        // First do the test with a protocol handled by Service providers
+        JMXServiceURL url = new JMXServiceURL("service:jmx:rmi://");
         dotest(url, mbs);
 
         boolean clientCalled = provider.JMXConnectorProviderImpl.called();
@@ -66,16 +66,22 @@ public class ProviderTest {
                 System.out.println("Client provider not called");
             if (!serverCalled)
                 System.out.println("Server provider not called");
-            System.out.println("Test Failed");
-            System.exit(1);
+            throw new RuntimeException("Test failed - see log for details");
         }
 
-        //The Service Provider doesn't handle IIOP. Default providers MUST
-        //be called.
-        url =
-            new JMXServiceURL("service:jmx:iiop://");
-
-        dotest(url, mbs);
+        // The Service Provider doesn't handle IIOP. Default providers MUST
+        // be called, which may or may not support IIOP.
+        url = new JMXServiceURL("service:jmx:iiop://");
+        try {
+            dotest(url, mbs);
+        } catch (MalformedURLException e) {
+            try {
+                Class.forName("javax.management.remote.rmi._RMIConnectionImpl_Tie");
+                e.printStackTrace(System.out);
+                throw new RuntimeException("MalformedURLException throw but IIOP appears to be supported");
+            } catch (ClassNotFoundException expected) { }
+            System.out.println("MalformedURLException thrown, IIOP transport not supported");
+        }
 
         // Unsupported protocol.
         JMXConnectorServer server = null;
@@ -87,30 +93,18 @@ public class ProviderTest {
                 JMXConnectorServerFactory.newJMXConnectorServer(url,
                                                                 null,
                                                                 mbs);
-            System.out.println("Exception not thrown.");
-            System.exit(1);
-        }catch(MalformedURLException e) {
+            throw new RuntimeException("Exception not thrown.");
+        } catch (MalformedURLException e) {
             System.out.println("Expected MalformedURLException thrown.");
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            System.out.println("Exception thrown : " + e);
-            System.exit(1);
         }
 
         try {
             client =
                 JMXConnectorFactory.newJMXConnector(url,
                                                     null);
-            System.out.println("Exception not thrown.");
-            System.exit(1);
-        }catch(MalformedURLException e) {
+            throw new RuntimeException("Exception not thrown.");
+        } catch (MalformedURLException e) {
             System.out.println("Expected MalformedURLException thrown.");
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            System.out.println("Exception thrown : " + e);
-            System.exit(1);
         }
 
         //JMXConnectorProviderException
@@ -121,60 +115,34 @@ public class ProviderTest {
                 JMXConnectorServerFactory.newJMXConnectorServer(url,
                                                                 null,
                                                                 mbs);
-            System.out.println("Exception not thrown.");
-            System.exit(1);
-        }catch(JMXProviderException e) {
+            throw new RuntimeException("Exception not thrown.");
+        } catch(JMXProviderException e) {
             System.out.println("Expected JMXProviderException thrown.");
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            System.out.println("Exception thrown : " + e);
-            System.exit(1);
         }
 
         try {
             client =
                 JMXConnectorFactory.newJMXConnector(url,
                                                     null);
-            System.out.println("Exception not thrown.");
-            System.exit(1);
+            throw new RuntimeException("Exception not thrown.");
         }catch(JMXProviderException e) {
             System.out.println("Expected JMXProviderException thrown.");
         }
-        catch(Exception e) {
-            e.printStackTrace();
-            System.out.println("Exception thrown : " + e);
-            System.exit(1);
-        }
 
         System.out.println("Test OK");
-        return;
     }
 
     private static void dotest(JMXServiceURL url, MBeanServer mbs)
         throws Exception {
         JMXConnectorServer server = null;
         JMXConnector client = null;
-        try {
-            server =
-                JMXConnectorServerFactory.newJMXConnectorServer(url,
-                                                                null,
-                                                                mbs);
-        }catch(IllegalArgumentException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
+
+        server = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
         server.start();
         JMXServiceURL outputAddr = server.getAddress();
         System.out.println("Server started ["+ outputAddr+ "]");
 
-        try {
-            client =
-                JMXConnectorFactory.newJMXConnector(outputAddr, null);
-        }catch(IllegalArgumentException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
+        client = JMXConnectorFactory.newJMXConnector(outputAddr, null);
 
         client.connect();
         System.out.println("Client connected");

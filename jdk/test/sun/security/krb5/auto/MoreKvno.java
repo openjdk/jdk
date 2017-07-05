@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @bug 6893158
- * @bug 6907425
+ * @bug 6893158 6907425 7197159
  * @run main/othervm MoreKvno
  * @summary AP_REQ check should use key version number
  */
@@ -69,11 +68,13 @@ public class MoreKvno {
             go(OneKDC.SERVER, "com.sun.security.jgss.krb5.accept", pass);
             throw new Exception("This test should fail");
         } catch (GSSException gsse) {
-            KrbException ke = (KrbException)gsse.getCause();
-            if (ke.returnCode() != Krb5.KRB_AP_ERR_BADKEYVER) {
-                throw new Exception("Not expected failure code: " +
-                        ke.returnCode());
-            }
+            // Since 7197159, different kvno is accepted, this return code
+            // will never be thrown out again.
+            //KrbException ke = (KrbException)gsse.getCause();
+            //if (ke.returnCode() != Krb5.KRB_AP_ERR_BADKEYVER) {
+            //    throw new Exception("Not expected failure code: " +
+            //            ke.returnCode());
+            //}
         }
     }
 

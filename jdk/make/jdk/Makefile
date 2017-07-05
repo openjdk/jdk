@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,18 @@
 # questions.
 #
 
-#
-# Makefile for building all of java
-#
-
 BUILDDIR = ..
+PACKAGE = jdk
 PRODUCT = jdk
+JAVAC_LINT_OPTIONS=-Xlint:all
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = asm
-include $(BUILDDIR)/common/Subdirs.gmk
+#
+# Files to compile
+#
+AUTO_FILES_JAVA_DIRS = jdk
 
-all build clean clobber::
-	$(SUBDIRS-loop)
+#
+# Rules
+#
+include $(BUILDDIR)/common/Classes.gmk
