@@ -27,7 +27,7 @@
  * @summary make sure we can access the NSS trust anchor module
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TrustAnchors
  * @run main/othervm TrustAnchors sm policy
  */

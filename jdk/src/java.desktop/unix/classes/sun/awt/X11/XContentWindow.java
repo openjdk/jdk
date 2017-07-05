@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,15 +123,26 @@ public final class XContentWindow extends XWindow {
             // Change in the size of the content window means, well, change of the size
             // Change in the location of the content window means change in insets
             boolean needHandleResize = !(newBounds.equals(getBounds()));
+            boolean needPaint = width <= 0 || height <= 0;
             reshape(newBounds);
             if (needHandleResize) {
                 insLog.fine("Sending RESIZED");
                 handleResize(newBounds);
             }
+            if (needPaint) {
+                postPaintEvent(target, 0, 0, newBounds.width, newBounds.height);
+            }
         } finally {
             XToolkit.awtUnlock();
         }
-        validateSurface();
+    }
+
+    @Override
+    public void handleExposeEvent(XEvent xev) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        super.handleExposeEvent(xev);
     }
 
     // NOTE: This method may be called by privileged threads.

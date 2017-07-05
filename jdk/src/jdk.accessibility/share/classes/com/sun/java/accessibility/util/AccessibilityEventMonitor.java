@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class AccessibilityEventMonitor {
      * occurs.  By doing things this way, the actual number of listeners
      * installed on a component instance is drastically reduced.
      */
-    static protected final AccessibilityEventListener accessibilityListener =
+    static private final AccessibilityEventListener accessibilityListener =
         new AccessibilityEventListener();
 
     /**

@@ -418,6 +418,8 @@ class ClassLoader: AllStatic {
     }
   }
 
+  static bool is_in_patch_mod_entries(Symbol* module_name);
+
 #if INCLUDE_CDS
   // Sharing dump and restore
 

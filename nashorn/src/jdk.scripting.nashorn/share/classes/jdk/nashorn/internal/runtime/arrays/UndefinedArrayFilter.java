@@ -77,9 +77,10 @@ final class UndefinedArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public void shiftLeft(final int by) {
+    public ArrayData shiftLeft(final int by) {
         super.shiftLeft(by);
         undefined.shiftLeft(by, length());
+        return this;
     }
 
     @Override

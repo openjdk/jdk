@@ -77,7 +77,8 @@ define_pd_global(uintx, TypeProfileLevel, 111);
 
 define_pd_global(bool, CompactStrings, true);
 
-define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
+// 2x unrolled loop is shorter with more than 9 HeapWords.
+define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop, \

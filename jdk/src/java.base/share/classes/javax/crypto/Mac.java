@@ -415,6 +415,10 @@ public class Mac implements Cloneable {
         return spi.engineGetMacLength();
     }
 
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
+    }
+
     /**
      * Initializes this {@code Mac} object with the given key.
      *
@@ -437,7 +441,7 @@ public class Mac implements Cloneable {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("Mac." + algorithm + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 
@@ -464,7 +468,7 @@ public class Mac implements Cloneable {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("Mac." + algorithm + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,13 +109,9 @@ final class ProcessImpl extends Process {
         private String helperPath(String javahome, String osArch) {
             switch (this) {
                 case SOLARIS:
-                    if (osArch.equals("x86")) { osArch = "i386"; }
-                    else if (osArch.equals("x86_64")) { osArch = "amd64"; }
                     // fall through...
                 case LINUX:
                 case AIX:
-                    return javahome + "/lib/" + osArch + "/jspawnhelper";
-
                 case BSD:
                     return javahome + "/lib/jspawnhelper";
 

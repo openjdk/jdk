@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,13 @@ abstract class FileSystem {
     public abstract long getSpace(File f, int t);
 
     /* -- Basic infrastructure -- */
+
+    /**
+     * Retrieve the maximum length of a component of a file path.
+     *
+     * @return The maximum length of a file path component.
+     */
+    public abstract int getNameMax(String path);
 
     /**
      * Compare two abstract pathnames lexicographically.

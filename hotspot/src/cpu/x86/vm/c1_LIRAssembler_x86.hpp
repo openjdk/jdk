@@ -47,16 +47,19 @@
   void type_profile_helper(Register mdo,
                            ciMethodData *md, ciProfileData *data,
                            Register recv, Label* update_done);
+
+  enum {
+    _call_stub_size = NOT_LP64(15) LP64_ONLY(28),
+    _call_aot_stub_size = NOT_LP64(7) LP64_ONLY(12),
+    _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
+    _deopt_handler_size = NOT_LP64(10) LP64_ONLY(17)
+  };
+
 public:
 
   void store_parameter(Register r,  int offset_from_esp_in_words);
   void store_parameter(jint c,      int offset_from_esp_in_words);
   void store_parameter(jobject c,   int offset_from_esp_in_words);
   void store_parameter(Metadata* c, int offset_from_esp_in_words);
-
-  enum { call_stub_size = NOT_LP64(15) LP64_ONLY(28),
-         exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
-         deopt_handler_size = NOT_LP64(10) LP64_ONLY(17)
-       };
 
 #endif // CPU_X86_VM_C1_LIRASSEMBLER_X86_HPP

@@ -25,6 +25,7 @@
   test
   @bug 6242241
   @summary Tests basic DnD functionality in an applet
+  @requires (os.family == "windows")
   @author Your Name: Alexey Utkin area=dnd
   @run applet/manual=yesno DnDFileGroupDescriptor.html
 */

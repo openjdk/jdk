@@ -82,7 +82,7 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public void shiftLeft(final int by) {
+    public ArrayData shiftLeft(final int by) {
         throw unsupported("shiftLeft");
     }
 
