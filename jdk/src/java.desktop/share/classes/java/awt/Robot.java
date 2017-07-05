@@ -137,6 +137,7 @@ public class Robot {
         initLegalButtonMask();
     }
 
+    @SuppressWarnings("deprecation")
     private static synchronized void initLegalButtonMask() {
         if (LEGAL_BUTTON_MASK != 0) return;
 
