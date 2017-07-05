@@ -3387,7 +3387,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "Load4I" ,"Load2I" ,"Load2L" ,"Load2D" ,"Load4F" ,"Load2F" ,"Load16B" ,
     "Load8B" ,"Load4B" ,"Load8C" ,"Load4C" ,"Load2C" ,"Load8S", "Load4S","Load2S",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
-    "LoadPLocked", "LoadLLocked",
+    "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
     "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "StoreCM",

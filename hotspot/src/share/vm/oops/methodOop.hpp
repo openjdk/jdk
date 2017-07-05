@@ -64,7 +64,6 @@
 // | klass                                                |
 // |------------------------------------------------------|
 // | constMethodOop                 (oop)                 |
-// | constants                      (oop)                 |
 // |------------------------------------------------------|
 // | methodData                     (oop)                 |
 // | interp_invocation_count                              |
@@ -110,7 +109,6 @@ class methodOopDesc : public oopDesc {
  friend class VMStructs;
  private:
   constMethodOop    _constMethod;                // Method read-only data.
-  constantPoolOop   _constants;                  // Constant pool
   methodDataOop     _method_data;
   int               _interpreter_invocation_count; // Count of times invoked (reused as prev_event_count in tiered)
   AccessFlags       _access_flags;               // Access flags
@@ -170,17 +168,17 @@ class methodOopDesc : public oopDesc {
   void set_access_flags(AccessFlags flags)       { _access_flags = flags; }
 
   // name
-  Symbol* name() const                           { return _constants->symbol_at(name_index()); }
+  Symbol* name() const                           { return constants()->symbol_at(name_index()); }
   int name_index() const                         { return constMethod()->name_index();         }
   void set_name_index(int index)                 { constMethod()->set_name_index(index);       }
 
   // signature
-  Symbol* signature() const                      { return _constants->symbol_at(signature_index()); }
+  Symbol* signature() const                      { return constants()->symbol_at(signature_index()); }
   int signature_index() const                    { return constMethod()->signature_index();         }
   void set_signature_index(int index)            { constMethod()->set_signature_index(index);       }
 
   // generics support
-  Symbol* generic_signature() const              { int idx = generic_signature_index(); return ((idx != 0) ? _constants->symbol_at(idx) : (Symbol*)NULL); }
+  Symbol* generic_signature() const              { int idx = generic_signature_index(); return ((idx != 0) ? constants()->symbol_at(idx) : (Symbol*)NULL); }
   int generic_signature_index() const            { return constMethod()->generic_signature_index(); }
   void set_generic_signature_index(int index)    { constMethod()->set_generic_signature_index(index); }
 
@@ -198,8 +196,8 @@ class methodOopDesc : public oopDesc {
   // C string, for the purpose of providing more useful NoSuchMethodErrors
   // and fatal error handling. The string is allocated in resource
   // area if a buffer is not provided by the caller.
-  char* name_and_sig_as_C_string();
-  char* name_and_sig_as_C_string(char* buf, int size);
+  char* name_and_sig_as_C_string() const;
+  char* name_and_sig_as_C_string(char* buf, int size) const;
 
   // Static routine in the situations we don't have a methodOop
   static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature);
@@ -242,8 +240,8 @@ class methodOopDesc : public oopDesc {
   }
 
   // constant pool for klassOop holding this method
-  constantPoolOop constants() const              { return _constants; }
-  void set_constants(constantPoolOop c)          { oop_store_without_check((oop*)&_constants, c); }
+  constantPoolOop constants() const              { return constMethod()->constants(); }
+  void set_constants(constantPoolOop c)          { constMethod()->set_constants(c); }
 
   // max stack
   int  max_stack() const                         { return _max_stack; }
@@ -453,7 +451,7 @@ class methodOopDesc : public oopDesc {
                        { return constMethod()->compressed_linenumber_table(); }
 
   // method holder (the klassOop holding this method)
-  klassOop method_holder() const                 { return _constants->pool_holder(); }
+  klassOop method_holder() const                 { return constants()->pool_holder(); }
 
   void compute_size_of_parameters(Thread *thread); // word size of parameters (receiver if any + arguments)
   Symbol* klass_name() const;                    // returns the name of the method holder
@@ -544,7 +542,6 @@ class methodOopDesc : public oopDesc {
 
   // interpreter support
   static ByteSize const_offset()                 { return byte_offset_of(methodOopDesc, _constMethod       ); }
-  static ByteSize constants_offset()             { return byte_offset_of(methodOopDesc, _constants         ); }
   static ByteSize access_flags_offset()          { return byte_offset_of(methodOopDesc, _access_flags      ); }
 #ifdef CC_INTERP
   static ByteSize result_index_offset()          { return byte_offset_of(methodOopDesc, _result_index ); }
@@ -723,7 +720,6 @@ class methodOopDesc : public oopDesc {
 
   // Garbage collection support
   oop*  adr_constMethod() const                  { return (oop*)&_constMethod;     }
-  oop*  adr_constants() const                    { return (oop*)&_constants;       }
   oop*  adr_method_data() const                  { return (oop*)&_method_data;     }
 };
 
