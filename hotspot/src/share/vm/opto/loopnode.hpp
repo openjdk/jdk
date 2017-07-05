@@ -821,7 +821,7 @@ public:
   BoolNode* rc_predicate(Node* ctrl,
                          int scale, Node* offset,
                          Node* init, Node* limit, Node* stride,
-                         Node* range);
+                         Node* range, bool upper);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
