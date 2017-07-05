@@ -105,16 +105,16 @@ class LatestMethodOopCache : public CommonMethodOopCache {
   Method* get_Method();
 };
 
-// For UseCompressedOops.
-struct NarrowOopStruct {
-  // Base address for oop-within-java-object materialization.
-  // NULL if using wide oops or zero based narrow oops.
+// For UseCompressedOops and UseCompressedKlassPointers.
+struct NarrowPtrStruct {
+  // Base address for oop/klass-within-java-object materialization.
+  // NULL if using wide oops/klasses or zero based narrow oops/klasses.
   address _base;
-  // Number of shift bits for encoding/decoding narrow oops.
-  // 0 if using wide oops or zero based unscaled narrow oops,
-  // LogMinObjAlignmentInBytes otherwise.
+  // Number of shift bits for encoding/decoding narrow ptrs.
+  // 0 if using wide ptrs or zero based unscaled narrow ptrs,
+  // LogMinObjAlignmentInBytes/LogKlassAlignmentInBytes otherwise.
   int     _shift;
-  // Generate code with implicit null checks for narrow oops.
+  // Generate code with implicit null checks for narrow ptrs.
   bool    _use_implicit_null_checks;
 };
 
@@ -206,7 +206,10 @@ class Universe: AllStatic {
   static CollectedHeap* _collectedHeap;
 
   // For UseCompressedOops.
-  static struct NarrowOopStruct _narrow_oop;
+  static struct NarrowPtrStruct _narrow_oop;
+  // For UseCompressedKlassPointers.
+  static struct NarrowPtrStruct _narrow_klass;
+  static address _narrow_ptrs_base;
 
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
@@ -259,8 +262,21 @@ class Universe: AllStatic {
     HeapBasedNarrowOop = 2
   };
   static char*    preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode);
-  static void     set_narrow_oop_base(address base)   { _narrow_oop._base  = base; }
-  static void     set_narrow_oop_use_implicit_null_checks(bool use) { _narrow_oop._use_implicit_null_checks = use; }
+  static char*    preferred_metaspace_base(size_t heap_size, NARROW_OOP_MODE mode);
+  static void     set_narrow_oop_base(address base) {
+    assert(UseCompressedOops, "no compressed oops?");
+    _narrow_oop._base    = base;
+  }
+  static void     set_narrow_klass_base(address base) {
+    assert(UseCompressedKlassPointers, "no compressed klass ptrs?");
+    _narrow_klass._base   = base;
+  }
+  static void     set_narrow_oop_use_implicit_null_checks(bool use) {
+    assert(UseCompressedOops, "no compressed ptrs?");
+    _narrow_oop._use_implicit_null_checks   = use;
+  }
+  static bool     reserve_metaspace_helper(bool with_base = false);
+  static ReservedHeapSpace reserve_heap_metaspace(size_t heap_size, size_t alignment, bool& contiguous);
 
   // Debugging
   static int _verify_count;                           // number of verifies done
@@ -354,14 +370,30 @@ class Universe: AllStatic {
   static CollectedHeap* heap() { return _collectedHeap; }
 
   // For UseCompressedOops
-  static address* narrow_oop_base_addr()              { return &_narrow_oop._base; }
-  static address  narrow_oop_base()                   { return  _narrow_oop._base; }
-  static bool  is_narrow_oop_base(void* addr)         { return (narrow_oop_base() == (address)addr); }
-  static int      narrow_oop_shift()                  { return  _narrow_oop._shift; }
-  static bool     narrow_oop_use_implicit_null_checks()             { return  _narrow_oop._use_implicit_null_checks; }
+  static address  narrow_oop_base()                       { return  _narrow_oop._base; }
+  static bool  is_narrow_oop_base(void* addr)             { return (narrow_oop_base() == (address)addr); }
+  static int      narrow_oop_shift()                      { return  _narrow_oop._shift; }
+  static bool     narrow_oop_use_implicit_null_checks()   { return  _narrow_oop._use_implicit_null_checks; }
+
+  // For UseCompressedKlassPointers
+  static address  narrow_klass_base()                     { return  _narrow_klass._base; }
+  static bool  is_narrow_klass_base(void* addr)           { return (narrow_klass_base() == (address)addr); }
+  static int      narrow_klass_shift()                    { return  _narrow_klass._shift; }
+  static bool     narrow_klass_use_implicit_null_checks() { return  _narrow_klass._use_implicit_null_checks; }
+
+  static address* narrow_ptrs_base_addr()                 { return &_narrow_ptrs_base; }
+  static void     set_narrow_ptrs_base(address a)         { _narrow_ptrs_base = a; }
+  static address  narrow_ptrs_base()                      { return _narrow_ptrs_base; }
 
   // this is set in vm_version on sparc (and then reset in universe afaict)
-  static void     set_narrow_oop_shift(int shift)     { _narrow_oop._shift = shift; }
+  static void     set_narrow_oop_shift(int shift)         {
+    _narrow_oop._shift   = shift;
+  }
+
+  static void     set_narrow_klass_shift(int shift)       {
+    assert(shift == 0 || shift == LogKlassAlignmentInBytes, "invalid shift for klass ptrs");
+    _narrow_klass._shift   = shift;
+  }
 
   // Reserve Java heap and determine CompressedOops mode
   static ReservedSpace reserve_heap(size_t heap_size, size_t alignment);

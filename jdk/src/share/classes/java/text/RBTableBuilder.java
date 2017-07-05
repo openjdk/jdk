@@ -71,7 +71,7 @@ final class RBTableBuilder {
      * This is the main function that actually builds the tables and
      * stores them back in the RBCollationTables object.  It is called
      * ONLY by the RBCollationTables constructor.
-     * @see java.util.RuleBasedCollator#RuleBasedCollator
+     * @see RuleBasedCollator#RuleBasedCollator
      * @exception ParseException If the rules format is incorrect.
      */
 

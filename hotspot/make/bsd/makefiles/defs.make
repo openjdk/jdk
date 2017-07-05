@@ -155,6 +155,7 @@ EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
+EXPORT_MINIMAL_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/minimal
 
 EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
 
@@ -166,6 +167,19 @@ endif
 ifeq ($(JVM_VARIANT_CLIENT),true)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX)
+endif
+
+ifeq ($(JVM_VARIANT_MINIMAL1),true)
+  EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/Xusage.txt
+  EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.$(LIBRARY_SUFFIX)
+
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.diz
+    else
+	EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.debuginfo
+    endif
+  endif 
 endif
 
 # Serviceability Binaries

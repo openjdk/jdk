@@ -47,8 +47,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *     private static final AtomicInteger nextId = new AtomicInteger(0);
  *
  *     // Thread local variable containing each thread's ID
- *     private static final ThreadLocal&lt;Integer> threadId =
- *         new ThreadLocal&lt;Integer>() {
+ *     private static final ThreadLocal&lt;Integer&gt; threadId =
+ *         new ThreadLocal&lt;Integer&gt;() {
  *             &#64;Override protected Integer initialValue() {
  *                 return nextId.getAndIncrement();
  *         }
@@ -222,7 +222,6 @@ public class ThreadLocal<T> {
      *
      * @param t the current thread
      * @param firstValue value for the initial entry of the map
-     * @param map the map to store.
      */
     void createMap(Thread t, T firstValue) {
         t.threadLocals = new ThreadLocalMap(this, firstValue);

@@ -3144,7 +3144,8 @@ void AwtComponent::JavaKeyToWindowsKey(UINT javaKey,
     return;
 }
 
-UINT AwtComponent::WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers)
+UINT AwtComponent::WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers, UINT character, BOOL isDeadKey)
+
 {
     // Handle the few cases where we need to take the modifier into
     // consideration for the Java VK code or where we have to take the keyboard
@@ -3170,6 +3171,15 @@ UINT AwtComponent::WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers)
             }
             break;
     };
+
+    // check dead key
+    if (isDeadKey) {
+      for (int i = 0; charToDeadVKTable[i].c != 0; i++) {
+        if (charToDeadVKTable[i].c == character) {
+            return charToDeadVKTable[i].javaKey;
+        }
+      }
+    }
 
     // for the general case, use a bi-directional table
     for (int i = 0; keyMapTable[i].windowsKey != 0; i++) {
@@ -3384,14 +3394,18 @@ AwtComponent::UpdateDynPrimaryKeymap(UINT wkey, UINT jkeyLegacy, jint keyLocatio
     }
 }
 
-UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops)
+UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops, BOOL &isDeadKey)
 {
     static Hashtable transTable("VKEY translations");
+    static Hashtable deadKeyFlagTable("Dead Key Flags");
+    isDeadKey = FALSE;
 
     // Try to translate using last saved translation
     if (ops == LOAD) {
+       void* deadKeyFlag = deadKeyFlagTable.remove(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)));
        void* value = transTable.remove(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)));
        if (value != NULL) {
+           isDeadKey = static_cast<BOOL>(reinterpret_cast<INT_PTR>(deadKeyFlag));
            return static_cast<UINT>(reinterpret_cast<INT_PTR>(value));
        }
     }
@@ -3484,12 +3498,13 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops)
 
     // instead of creating our own conversion tables, I'll let Win32
     // convert the character for me.
-    WORD mbChar;
+    WORD wChar[2];
     UINT scancode = ::MapVirtualKey(wkey, 0);
-    int converted = ::ToAsciiEx(wkey, scancode, keyboardState,
-                                &mbChar, 0, GetKeyboardLayout());
+    int converted = ::ToUnicodeEx(wkey, scancode, keyboardState,
+                                  wChar, 2, 0, GetKeyboardLayout());
 
     UINT translation;
+    BOOL deadKeyFlag = (converted == 2);
 
     // Dead Key
     if (converted < 0) {
@@ -3508,16 +3523,16 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops)
     } else
     // the caller expects a Unicode character.
     if (converted > 0) {
-        WCHAR unicodeChar[2];
-        VERIFY(::MultiByteToWideChar(GetCodePage(), MB_PRECOMPOSED,
-        (LPCSTR)&mbChar, 1, unicodeChar, 1));
-
-        translation = unicodeChar[0];
+        translation = wChar[0];
     }
     if (ops == SAVE) {
         transTable.put(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)),
                        reinterpret_cast<void*>(static_cast<INT_PTR>(translation)));
+        deadKeyFlagTable.put(reinterpret_cast<void*>(static_cast<INT_PTR>(wkey)),
+                       reinterpret_cast<void*>(static_cast<INT_PTR>(deadKeyFlag)));
     }
+
+    isDeadKey = deadKeyFlag;
     return translation;
 }
 
@@ -3537,8 +3552,9 @@ MsgRouting AwtComponent::WmKeyDown(UINT wkey, UINT repCnt,
 
     UINT modifiers = GetJavaModifiers();
     jint keyLocation = GetKeyLocation(wkey, flags);
-    UINT jkey = WindowsKeyToJavaKey(wkey, modifiers);
-    UINT character = WindowsKeyToJavaChar(wkey, modifiers, SAVE);
+    BOOL isDeadKey = FALSE;
+    UINT character = WindowsKeyToJavaChar(wkey, modifiers, SAVE, isDeadKey);
+    UINT jkey = WindowsKeyToJavaKey(wkey, modifiers, character, isDeadKey);
     UpdateDynPrimaryKeymap(wkey, jkey, keyLocation, modifiers);
 
 
@@ -3579,8 +3595,9 @@ MsgRouting AwtComponent::WmKeyUp(UINT wkey, UINT repCnt,
 
     UINT modifiers = GetJavaModifiers();
     jint keyLocation = GetKeyLocation(wkey, flags);
-    UINT jkey = WindowsKeyToJavaKey(wkey, modifiers);
-    UINT character = WindowsKeyToJavaChar(wkey, modifiers, LOAD);
+    BOOL isDeadKey = FALSE;
+    UINT character = WindowsKeyToJavaChar(wkey, modifiers, LOAD, isDeadKey);
+    UINT jkey = WindowsKeyToJavaKey(wkey, modifiers, character, isDeadKey);
     UpdateDynPrimaryKeymap(wkey, jkey, keyLocation, modifiers);
 
     SendKeyEventToFocusOwner(java_awt_event_KeyEvent_KEY_RELEASED,
@@ -5628,7 +5645,8 @@ void AwtComponent::_NativeHandleEvent(void *param)
                         }
                     }
 
-                    modifiedChar = p->WindowsKeyToJavaChar(winKey, modifiers, AwtComponent::NONE);
+                    BOOL isDeadKey = FALSE;
+                    modifiedChar = p->WindowsKeyToJavaChar(winKey, modifiers, AwtComponent::NONE, isDeadKey);
                     bCharChanged = (keyChar != modifiedChar);
                 }
                 break;

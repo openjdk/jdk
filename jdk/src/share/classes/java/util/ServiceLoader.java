@@ -213,7 +213,7 @@ public final class ServiceLoader<S>
     }
 
     private ServiceLoader(Class<S> svc, ClassLoader cl) {
-        service = svc;
+        service = Objects.requireNonNull(svc, "Service interface cannot be null");
         loader = cl;
         reload();
     }

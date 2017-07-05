@@ -345,7 +345,7 @@ class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
      * the same size, and every member of the given set is contained in
      * this set.
      *
-     * @param e object to be compared for equality with this set
+     * @param o object to be compared for equality with this set
      * @return <tt>true</tt> if the specified object is equal to this set
      */
     public boolean equals(Object o) {

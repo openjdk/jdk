@@ -44,7 +44,7 @@ public class ArrayKlass extends Klass {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type          = db.lookupType("arrayKlass");
+    Type type          = db.lookupType("ArrayKlass");
     dimension          = new CIntField(type.getCIntegerField("_dimension"), 0);
     higherDimension    = new MetadataField(type.getAddressField("_higher_dimension"), 0);
     lowerDimension     = new MetadataField(type.getAddressField("_lower_dimension"), 0);

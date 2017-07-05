@@ -545,7 +545,7 @@ public final class System {
      * <tr><td><code>java.version</code></td>
      *     <td>Java Runtime Environment version</td></tr>
      * <tr><td><code>java.vendor</code></td>
-     *     <td>Java Runtime Environment vendor</td></tr
+     *     <td>Java Runtime Environment vendor</td></tr>
      * <tr><td><code>java.vendor.url</code></td>
      *     <td>Java vendor URL</td></tr>
      * <tr><td><code>java.home</code></td>

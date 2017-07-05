@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -114,21 +114,21 @@ $(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).dylib
 
 # $@.tmp is created first to avoid an empty $(JVMOFFS).h if an error occurs.
 $(JVMOFFS).h: $(GENOFFS)
-	$(QUIETLY) DYLD_LIBRARY_PATH=. ./$(GENOFFS) -header > $@.tmp; touch $@; \
+	$(QUIETLY) DYLD_LIBRARY_PATH=.:$(DYLD_LIBRARY_PATH) ./$(GENOFFS) -header > $@.tmp; touch $@; \
 	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
 	then rm -f $@; mv $@.tmp $@; \
 	else rm -f $@.tmp; \
 	fi
 
 $(JVMOFFS)Index.h: $(GENOFFS)
-	$(QUIETLY) DYLD_LIBRARY_PATH=. ./$(GENOFFS) -index > $@.tmp; touch $@; \
+	$(QUIETLY) DYLD_LIBRARY_PATH=.:$(DYLD_LIBRARY_PATH) ./$(GENOFFS) -index > $@.tmp; touch $@; \
 	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
 	then rm -f $@; mv $@.tmp $@; \
 	else rm -f $@.tmp; \
 	fi
 
 $(JVMOFFS).cpp: $(GENOFFS) $(JVMOFFS).h $(JVMOFFS)Index.h
-	$(QUIETLY) DYLD_LIBRARY_PATH=. ./$(GENOFFS) -table > $@.tmp; touch $@; \
+	$(QUIETLY) DYLD_LIBRARY_PATH=.:$(DYLD_LIBRARY_PATH) ./$(GENOFFS) -table > $@.tmp; touch $@; \
 	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
 	then rm -f $@; mv $@.tmp $@; \
 	else rm -f $@.tmp; \

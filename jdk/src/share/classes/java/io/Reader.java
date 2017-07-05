@@ -91,7 +91,7 @@ public abstract class Reader implements Readable, Closeable {
      *         -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if target is null
-     * @throws ReadOnlyBufferException if target is a read only buffer
+     * @throws java.nio.ReadOnlyBufferException if target is a read only buffer
      * @since 1.5
      */
     public int read(java.nio.CharBuffer target) throws IOException {

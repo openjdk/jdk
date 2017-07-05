@@ -43,7 +43,7 @@ public class ObjArrayKlass extends ArrayKlass {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type = db.lookupType("objArrayKlass");
+    Type type = db.lookupType("ObjArrayKlass");
     elementKlass = new MetadataField(type.getAddressField("_element_klass"), 0);
     bottomKlass  = new MetadataField(type.getAddressField("_bottom_klass"), 0);
   }

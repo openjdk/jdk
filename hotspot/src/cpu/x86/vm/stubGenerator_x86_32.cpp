@@ -1801,7 +1801,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(src, src_pos, dst, dst_pos, rcx_lh);
     arraycopy_range_checks(src, src_pos, dst, dst_pos, LENGTH, L_failed);
 
-    // typeArrayKlass
+    // TypeArrayKlass
     //
     // src_addr = (src + array_header_in_bytes()) + (src_pos << log2elemsize);
     // dst_addr = (dst + array_header_in_bytes()) + (dst_pos << log2elemsize);
@@ -1864,7 +1864,7 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
-    // objArrayKlass
+    // ObjArrayKlass
   __ BIND(L_objArray);
     // live at this point:  rcx_src_klass, src[_pos], dst[_pos]
 
@@ -1894,7 +1894,7 @@ class StubGenerator: public StubCodeGenerator {
     // live at this point:  rcx_src_klass, dst[_pos], src[_pos]
     {
       // Handy offsets:
-      int  ek_offset = in_bytes(objArrayKlass::element_klass_offset());
+      int  ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
       int sco_offset = in_bytes(Klass::super_check_offset_offset());
 
       Register rsi_dst_klass = rsi;

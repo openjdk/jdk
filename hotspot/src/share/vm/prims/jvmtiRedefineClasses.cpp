@@ -2606,7 +2606,7 @@ void VM_RedefineClasses::set_new_constant_pool(
 
 
 void VM_RedefineClasses::adjust_array_vtable(Klass* k_oop) {
-  arrayKlass* ak = arrayKlass::cast(k_oop);
+  ArrayKlass* ak = ArrayKlass::cast(k_oop);
   bool trace_name_printed = false;
   ak->vtable()->adjust_method_entries(_matching_old_methods,
                                       _matching_new_methods,

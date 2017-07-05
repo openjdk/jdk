@@ -207,7 +207,7 @@ public class CodeSource implements java.io.Serializable {
      * Returns the code signers associated with this CodeSource.
      * <p>
      * If this CodeSource object was created using the
-     * {@link #CodeSource(URL url, Certificate[] certs)}
+     * {@link #CodeSource(URL url, java.security.cert.Certificate[] certs)}
      * constructor then its certificate chains are extracted and used to
      * create an array of CodeSigner objects. Note that only X.509 certificates
      * are examined - all other certificate types are ignored.
