@@ -41,4 +41,12 @@
     </asmv3:windowsSettings>
   </asmv3:application>
 
+  <!-- Indicate this JDK version is Windows 7 compatible -->
+   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+      <application>
+        <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
+        <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>
+      </application>
+    </compatibility>
+
 </assembly>

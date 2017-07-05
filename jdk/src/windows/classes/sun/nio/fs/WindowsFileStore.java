@@ -117,28 +117,47 @@ class WindowsFileStore
         return ((volInfo.flags() & FILE_READ_ONLY_VOLUME) != 0);
     }
 
+    // read the free space info
+    private DiskFreeSpace readDiskFreeSpace() throws IOException {
+        try {
+            return GetDiskFreeSpaceEx(root);
+        } catch (WindowsException x) {
+            x.rethrowAsIOException(root);
+            return null;
+        }
+    }
+
     @Override
-    @SuppressWarnings("unchecked")
+    public long getTotalSpace() throws IOException {
+        return readDiskFreeSpace().totalNumberOfBytes();
+    }
+
+    @Override
+    public long getUsableSpace() throws IOException {
+        return readDiskFreeSpace().freeBytesAvailable();
+    }
+
+    @Override
+    public long getUnallocatedSpace() throws IOException {
+        return readDiskFreeSpace().freeBytesAvailable();
+    }
+
+    @Override
     public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
         if (type == null)
             throw new NullPointerException();
-        if (type == FileStoreSpaceAttributeView.class)
-            return (V) new WindowsFileStoreAttributeView(this);
         return (V) null;
     }
 
     @Override
     public Object getAttribute(String attribute) throws IOException {
         // standard
-        if (attribute.equals("space:totalSpace"))
-            return new WindowsFileStoreAttributeView(this)
-                .readAttributes().totalSpace();
-        if (attribute.equals("space:usableSpace"))
-            return new WindowsFileStoreAttributeView(this)
-                 .readAttributes().usableSpace();
-        if (attribute.equals("space:unallocatedSpace"))
-            return new WindowsFileStoreAttributeView(this)
-                 .readAttributes().unallocatedSpace();
+        if (attribute.equals("totalSpace"))
+            return getTotalSpace();
+        if (attribute.equals("usableSpace"))
+            return getUsableSpace();
+        if (attribute.equals("unallocatedSpace"))
+            return getUnallocatedSpace();
         // windows specific for testing purposes
         if (attribute.equals("volume:vsn"))
             return volInfo.volumeSerialNumber();
@@ -201,49 +220,5 @@ class WindowsFileStore
         sb.append(root.subSequence(0, root.length()-1));
         sb.append(")");
         return sb.toString();
-    }
-
-    static class WindowsFileStoreAttributeView
-        implements FileStoreSpaceAttributeView
-    {
-        private final WindowsFileStore fs;
-
-        WindowsFileStoreAttributeView(WindowsFileStore fs) {
-            this.fs = fs;
-        }
-
-        @Override
-        public String name() {
-            return "space";
-        }
-
-        @Override
-        public FileStoreSpaceAttributes readAttributes()
-            throws IOException
-        {
-            // read the free space info
-            DiskFreeSpace info = null;
-            try {
-                info = GetDiskFreeSpaceEx(fs.root);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(fs.root);
-            }
-
-            final DiskFreeSpace result = info;
-            return new FileStoreSpaceAttributes() {
-                @Override
-                public long totalSpace() {
-                    return result.totalNumberOfBytes();
-                }
-                @Override
-                public long usableSpace() {
-                    return result.freeBytesAvailable();
-                }
-                @Override
-                public long unallocatedSpace() {
-                    return result.totalNumberOfFreeBytes();
-                }
-            };
-        }
     }
  }

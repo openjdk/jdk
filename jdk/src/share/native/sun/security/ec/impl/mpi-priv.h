@@ -63,8 +63,6 @@
 #ifndef _MPI_PRIV_H
 #define _MPI_PRIV_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 /* $Id: mpi-priv.h,v 1.20 2005/11/22 07:16:43 relyea%netscape.com Exp $ */
 
 #include "mpi.h"

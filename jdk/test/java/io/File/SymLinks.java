@@ -27,7 +27,7 @@
  */
 
 import java.io.*;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.nio.file.attribute.*;
 import static java.nio.file.LinkOption.*;
 
@@ -80,39 +80,33 @@ public class SymLinks {
         if (file != null)
             file.delete();
         if (link2file != null)
-            link2file.toPath().deleteIfExists();
+            Files.deleteIfExists(link2file.toPath());
         if (link2link2file != null)
-            link2link2file.toPath().deleteIfExists();
+            Files.deleteIfExists(link2link2file.toPath());
         if (dir != null)
             dir.delete();
         if (link2dir != null)
-            link2dir.toPath().deleteIfExists();
+            Files.deleteIfExists(link2dir.toPath());
         if (link2link2dir != null)
-            link2link2dir.toPath().deleteIfExists();
+            Files.deleteIfExists(link2link2dir.toPath());
         if (link2nobody != null)
-            link2nobody.toPath().deleteIfExists();
+            Files.deleteIfExists(link2nobody.toPath());
         if (link2link2nobody != null)
-            link2link2nobody.toPath().deleteIfExists();
+            Files.deleteIfExists(link2link2nobody.toPath());
     }
 
     /**
      * Creates a sym link source->target
      */
     static void mklink(File source, File target) throws IOException {
-        source.toPath().createSymbolicLink(target.toPath());
+        Files.createSymbolicLink(source.toPath(), target.toPath());
     }
 
     /**
      * Returns true if the "link" exists and is a sym link.
      */
     static boolean isSymLink(File link) {
-         try {
-            BasicFileAttributes attrs =
-                Attributes.readBasicFileAttributes(link.toPath(), NOFOLLOW_LINKS);
-            return attrs.isSymbolicLink();
-         } catch (IOException x) {
-             return false;
-         }
+         return Files.isSymbolicLink(link.toPath());
     }
 
     /**
@@ -120,7 +114,7 @@ public class SymLinks {
      */
     static long lastModifiedOfSymLink(File link) throws IOException {
         BasicFileAttributes attrs =
-            Attributes.readBasicFileAttributes(link.toPath(), NOFOLLOW_LINKS);
+            Files.readAttributes(link.toPath(), BasicFileAttributes.class, NOFOLLOW_LINKS);
         assertTrue(attrs.isSymbolicLink());
         return attrs.lastModifiedTime().toMillis();
     }
@@ -133,8 +127,8 @@ public class SymLinks {
         Path link = dir.toPath().resolve("link");
         Path target = dir.toPath().resolve("target");
         try {
-            link.createSymbolicLink(target);
-            link.delete();
+            Files.createSymbolicLink(link, target);
+            Files.delete(link);
             return true;
         } catch (UnsupportedOperationException x) {
             return false;
@@ -224,7 +218,7 @@ public class SymLinks {
             assertTrue(isSymLink(link2nobody));
 
         } finally {
-            link.toPath().deleteIfExists();
+            Files.deleteIfExists(link.toPath());
         }
 
         header("renameTo");
@@ -287,8 +281,8 @@ public class SymLinks {
 
         // on Windows we test with the DOS hidden attribute set
         if (System.getProperty("os.name").startsWith("Windows")) {
-            DosFileAttributeView view = file.toPath()
-                .getFileAttributeView(DosFileAttributeView.class);
+            DosFileAttributeView view = Files
+                .getFileAttributeView(file.toPath(), DosFileAttributeView.class);
             view.setHidden(true);
             try {
                 assertTrue(file.isHidden());

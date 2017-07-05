@@ -264,11 +264,10 @@ public class Chmod {
     /**
      * Changes the permissions of the file using the given Changer.
      */
-    static void chmod(FileRef file, Changer changer) {
+    static void chmod(Path file, Changer changer) {
         try {
-            Set<PosixFilePermission> perms = Attributes
-                .readPosixFileAttributes(file).permissions();
-            Attributes.setPosixFilePermissions(file, changer.change(perms));
+            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+            Files.setPosixFilePermissions(file, changer.change(perms));
         } catch (IOException x) {
             System.err.println(x);
         }
@@ -277,7 +276,7 @@ public class Chmod {
     /**
      * Changes the permission of each file and directory visited
      */
-    static class TreeVisitor implements FileVisitor<FileRef> {
+    static class TreeVisitor implements FileVisitor<Path> {
         private final Changer changer;
 
         TreeVisitor(Changer changer) {
@@ -285,26 +284,26 @@ public class Chmod {
         }
 
         @Override
-        public FileVisitResult preVisitDirectory(FileRef dir, BasicFileAttributes attrs) {
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
             chmod(dir, changer);
             return CONTINUE;
         }
 
         @Override
-        public FileVisitResult visitFile(FileRef file, BasicFileAttributes attrs) {
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             chmod(file, changer);
             return CONTINUE;
         }
 
         @Override
-        public FileVisitResult postVisitDirectory(FileRef dir, IOException exc) {
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
             if (exc != null)
                 System.err.println("WARNING: " + exc);
             return CONTINUE;
         }
 
         @Override
-        public FileVisitResult visitFileFailed(FileRef file, IOException exc) {
+        public FileVisitResult visitFileFailed(Path file, IOException exc) {
             System.err.println("WARNING: " + exc);
             return CONTINUE;
         }

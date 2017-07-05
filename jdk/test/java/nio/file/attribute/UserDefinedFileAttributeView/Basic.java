@@ -79,8 +79,8 @@ public class Basic {
     }
 
     static void test(Path file, LinkOption... options) throws IOException {
-        final UserDefinedFileAttributeView view = file
-            .getFileAttributeView(UserDefinedFileAttributeView.class, options);
+        final UserDefinedFileAttributeView view =
+            Files.getFileAttributeView(file, UserDefinedFileAttributeView.class, options);
         ByteBuffer buf = rand.nextBoolean() ?
             ByteBuffer.allocate(100) : ByteBuffer.allocateDirect(100);
 
@@ -131,24 +131,24 @@ public class Basic {
         // Test: dynamic access
         String name = "user:" + ATTR_NAME;
         byte[] valueAsBytes = ATTR_VALUE.getBytes();
-        file.setAttribute(name, valueAsBytes);
-        byte[] actualAsBytes = (byte[])file.getAttribute(name);
+        Files.setAttribute(file, name, valueAsBytes);
+        byte[] actualAsBytes = (byte[])Files.getAttribute(file, name);
         if (!Arrays.equals(valueAsBytes, actualAsBytes))
             throw new RuntimeException("Unexpected attribute value");
-        Map<String,?> map = file.readAttributes(name);
+        Map<String,?> map = Files.readAttributes(file, name);
         if (!Arrays.equals(valueAsBytes, (byte[])map.get(ATTR_NAME)))
             throw new RuntimeException("Unexpected attribute value");
-        map = file.readAttributes("user:*");
+        map = Files.readAttributes(file, "user:*");
         if (!Arrays.equals(valueAsBytes, (byte[])map.get(ATTR_NAME)))
             throw new RuntimeException("Unexpected attribute value");
-        map = file.readAttributes("user:DoesNotExist");
+        map = Files.readAttributes(file, "user:DoesNotExist");
         if (!map.isEmpty())
             throw new RuntimeException("Map expected to be empty");
     }
 
     static void miscTests(final Path file) throws IOException {
-        final UserDefinedFileAttributeView view = file
-            .getFileAttributeView(UserDefinedFileAttributeView.class);
+        final UserDefinedFileAttributeView view =
+            Files.getFileAttributeView(file, UserDefinedFileAttributeView.class);
         view.write(ATTR_NAME, ByteBuffer.wrap(ATTR_VALUE.getBytes()));
 
         // NullPointerException
@@ -180,31 +180,31 @@ public class Basic {
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                file.getAttribute(null);
+                Files.getAttribute(file, null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                file.getAttribute("user:" + ATTR_NAME, (LinkOption[])null);
+                Files.getAttribute(file, "user:" + ATTR_NAME, (LinkOption[])null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                file.setAttribute("user:" + ATTR_NAME, null);
+                Files.setAttribute(file, "user:" + ATTR_NAME, null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                file.setAttribute(null, new byte[0]);
+                Files.setAttribute(file, null, new byte[0]);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                file.setAttribute("user: " + ATTR_NAME, new byte[0], (LinkOption[])null);
+                Files.setAttribute(file, "user: " + ATTR_NAME, new byte[0], (LinkOption[])null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                file.readAttributes((String)null);
+                Files.readAttributes(file, (String)null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                file.readAttributes("*", (LinkOption[])null);
+                Files.readAttributes(file, "*", (LinkOption[])null);
             }});
 
         // Read-only buffer
@@ -229,46 +229,50 @@ public class Basic {
         // create temporary directory to run tests
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            if (!dir.getFileStore().supportsFileAttributeView("user")) {
+            if (!Files.getFileStore(dir).supportsFileAttributeView("user")) {
                 System.out.println("UserDefinedFileAttributeView not supported - skip test");
                 return;
             }
 
             // test access to user defined attributes of regular file
-            Path file = dir.resolve("foo.html").createFile();
+            Path file = dir.resolve("foo.html");
+            Files.createFile(file);
             try {
                 test(file);
             } finally {
-                file.delete();
+                Files.delete(file);
             }
 
-            // test access to user define attributes of directory
-            file = dir.resolve("foo").createDirectory();
+            // test access to user defined attributes of directory
+            Path subdir = dir.resolve("foo");
+            Files.createDirectory(subdir);
             try {
-                test(file);
+                test(subdir);
             } finally {
-                file.delete();
+                Files.delete(subdir);
             }
 
             // test access to user defined attributes of sym link
             if (TestUtil.supportsLinks(dir)) {
                 Path target = dir.resolve("doesnotexist");
-                Path link = dir.resolve("link").createSymbolicLink(target);
+                Path link = dir.resolve("link");
+                Files.createSymbolicLink(link, target);
                 try {
                     test(link, NOFOLLOW_LINKS);
                 } catch (IOException x) {
                     // access to attributes of sym link may not be supported
                 } finally {
-                    link.delete();
+                    Files.delete(link);
                 }
             }
 
             // misc. tests
             try {
-                file = dir.resolve("foo.txt").createFile();
+                file = dir.resolve("foo.txt");
+                Files.createFile(file);
                 miscTests(dir);
             } finally {
-                file.delete();
+                Files.delete(file);
             }
 
         } finally {

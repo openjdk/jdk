@@ -59,8 +59,7 @@ abstract class AbstractUserDefinedFileAttributeView
         return "user";
     }
 
-    @Override
-    public final Object getAttribute(String attribute) throws IOException {
+    private Object getAttribute(String attribute) throws IOException {
         int size;
         try {
             size = size(attribute);
@@ -90,11 +89,11 @@ abstract class AbstractUserDefinedFileAttributeView
     }
 
     @Override
-    public final Map<String,?> readAttributes(String[] attributes)
+    public final Map<String,Object> readAttributes(String[] attributes)
         throws IOException
     {
         // names of attributes to return
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
 
         for (String name: attributes) {
             if (name.equals("*")) {
@@ -106,7 +105,7 @@ abstract class AbstractUserDefinedFileAttributeView
         }
 
         // read each value and return in map
-        Map<String,Object> result = new HashMap<String,Object>();
+        Map<String,Object> result = new HashMap<>();
         for (String name: names) {
             Object value = getAttribute(name);
             if (value != null)

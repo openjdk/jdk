@@ -100,7 +100,7 @@ public class PathOps {
     PathOps name(String expected) {
         out.println("check name");
         checkPath();
-        check(path.getName(), expected);
+        check(path.getFileName(), expected);
         return this;
     }
 
@@ -197,7 +197,7 @@ public class PathOps {
         try {
             out.println("check two paths are same");
             checkPath();
-            check(path.isSameFile(test(target).path()), true);
+            check(Files.isSameFile(path, test(target).path()), true);
         } catch (IOException ioe) {
             fail();
         }
@@ -252,31 +252,41 @@ public class PathOps {
             .name("foo");
 
         // startsWith
+        test("")
+            .starts("")
+            .notStarts("/");
         test("/")
             .starts("/")
             .notStarts("/foo");
         test("/foo")
             .starts("/")
             .starts("/foo")
-            .notStarts("/f");
+            .notStarts("/f")
+            .notStarts("");
         test("/foo/bar")
             .starts("/")
             .starts("/foo")
+            .starts("/foo/")
             .starts("/foo/bar")
             .notStarts("/f")
             .notStarts("foo")
-            .notStarts("foo/bar");
+            .notStarts("foo/bar")
+            .notStarts("");
         test("foo")
             .starts("foo")
             .notStarts("f");
         test("foo/bar")
             .starts("foo")
+            .starts("foo/")
             .starts("foo/bar")
             .notStarts("f")
             .notStarts("/foo")
             .notStarts("/foo/bar");
 
         // endsWith
+        test("")
+            .ends("")
+            .notEnds("/");
         test("/")
             .ends("/")
             .notEnds("foo")
@@ -288,13 +298,23 @@ public class PathOps {
         test("/foo/bar")
             .ends("bar")
             .ends("foo/bar")
+            .ends("foo/bar/")
+            .ends("/foo/bar")
+            .notEnds("/bar");
+        test("/foo/bar/")
+            .ends("bar")
+            .ends("foo/bar")
+            .ends("foo/bar/")
             .ends("/foo/bar")
             .notEnds("/bar");
         test("foo")
             .ends("foo");
         test("foo/bar")
             .ends("bar")
+            .ends("bar/")
+            .ends("foo/bar/")
             .ends("foo/bar");
+
 
         // elements
         test("a/b/c")
@@ -309,6 +329,8 @@ public class PathOps {
             .absolute();
         test("tmp")
             .notAbsolute();
+        test("")
+            .notAbsolute();
 
         // resolve
         test("/tmp")
@@ -320,7 +342,7 @@ public class PathOps {
 
         // relativize
         test("/a/b/c")
-            .relativize("/a/b/c", null)
+            .relativize("/a/b/c", "")
             .relativize("/a/b/c/d/e", "d/e")
             .relativize("/a/x", "../../x");
 
@@ -332,7 +354,7 @@ public class PathOps {
         test("/foo")
             .normalize("/foo");
         test(".")
-            .normalize(null);
+            .normalize("");
         test("..")
             .normalize("..");
         test("/..")
@@ -344,7 +366,7 @@ public class PathOps {
         test("./foo")
             .normalize("foo");
         test("foo/..")
-            .normalize(null);
+            .normalize("");
         test("../foo")
             .normalize("../foo");
         test("../../foo")
@@ -411,13 +433,13 @@ public class PathOps {
         }
 
         try {
-            path.startsWith(null);
+            path.startsWith((Path)null);
             throw new RuntimeException("NullPointerException not thrown");
         } catch (NullPointerException npe) {
         }
 
         try {
-            path.endsWith(null);
+            path.endsWith((Path)null);
             throw new RuntimeException("NullPointerException not thrown");
         } catch (NullPointerException npe) {
         }
@@ -427,8 +449,7 @@ public class PathOps {
     public static void main(String[] args) throws Throwable {
 
         Path zipfile = Paths.get(args[0]);
-        Map<String,?> env = new HashMap<String,Object>();
-        fs = FileSystems.newFileSystem(zipfile, env, null);
+        fs = FileSystems.newFileSystem(zipfile, null);
         npes();
         doPathOpTests();
         fs.close();

@@ -54,8 +54,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecl.h"
 #include "ecl-curve.h"
 #include "ecl-priv.h"

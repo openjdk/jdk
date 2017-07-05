@@ -4911,7 +4911,7 @@ public abstract class JComponent extends Container implements Serializable,
      * painting to originate from this Component, or one of its ancestors.
      * <p/>
      * Calling {@link JComponent#repaint} on a Swing component will be delegated to
-     * the first ancestor which {@code isPaintingOrigin()} returns {@true},
+     * the first ancestor which {@code isPaintingOrigin()} returns {@code true},
      * if there are any.
      * <p/>
      * {@code JComponent} subclasses that need to be repainted when any of their

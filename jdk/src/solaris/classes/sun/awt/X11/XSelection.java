@@ -301,13 +301,8 @@ public final class XSelection {
                 } finally {
                     XToolkit.awtUnlock();
                 }
-                if (!dataGetter.isExecuted()) {
-                    throw new IOException("Owner timed out");
-                }
 
-                if (dataGetter.isDisposed()) {
-                    throw new IOException("Owner failed to convert data");
-                }
+                validateDataGetter(dataGetter);
 
                 // Handle incremental transfer.
                 if (dataGetter.getActualType() ==
@@ -380,14 +375,7 @@ public final class XSelection {
                                 XToolkit.awtUnlock();
                             }
 
-                            // The owner didn't respond - terminate the transfer.
-                            if (!incrDataGetter.isExecuted()) {
-                                throw new IOException("Owner timed out");
-                            }
-
-                            if (incrDataGetter.isDisposed()) {
-                                throw new IOException("Owner failed to convert data");
-                            }
+                            validateDataGetter(dataGetter);
 
                             if (incrDataGetter.getActualFormat() != 8) {
                                 throw new IOException("Unsupported data format: " +
@@ -443,6 +431,23 @@ public final class XSelection {
         }
 
         return data != null ? data : new byte[0];
+    }
+
+    void validateDataGetter(WindowPropertyGetter propertyGetter)
+            throws IOException
+    {
+        // The order of checks is important because a property getter
+        // has not been executed in case of timeout as well as in case of
+        // changed selection owner.
+
+        if (propertyGetter.isDisposed()) {
+            throw new IOException("Owner failed to convert data");
+        }
+
+        // The owner didn't respond - terminate the transfer.
+        if (!propertyGetter.isExecuted()) {
+            throw new IOException("Owner timed out");
+        }
     }
 
     // To be MT-safe this method should be called under awtLock.
