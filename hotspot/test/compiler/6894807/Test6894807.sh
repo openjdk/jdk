@@ -31,6 +31,11 @@ case "$OS" in
     PS=";"
     FS="\\"
     ;;
+  CYGWIN_* )
+    NULL=/dev/null
+    PS=";"
+    FS="/"
+    ;;
   * )
     echo "Unrecognized system!"
     exit 1;

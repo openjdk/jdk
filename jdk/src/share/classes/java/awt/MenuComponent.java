@@ -29,7 +29,6 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import sun.awt.AppContext;
-import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
 import javax.accessibility.*;
 
@@ -142,6 +141,9 @@ public abstract class MenuComponent implements java.io.Serializable {
                 }
                 public MenuContainer getParent(MenuComponent menuComp) {
                     return menuComp.parent;
+                }
+                public Font getFont_NoClientCode(MenuComponent menuComp) {
+                    return menuComp.getFont_NoClientCode();
                 }
             });
     }

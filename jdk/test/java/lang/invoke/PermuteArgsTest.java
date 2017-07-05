@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /* @test
  * @summary unit tests for method handles which permute their arguments
- * @run junit/othervm -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
+ * @run junit/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
  */
 /* Examples of manual runs:
  * java -DPermuteArgsTest.{DRY_RUN=true,MAX_ARITY=253} test.java.lang.invoke.PermuteArgsTest
@@ -191,7 +191,11 @@ public class PermuteArgsTest {
                 pt = mt1.parameterType(mt1.parameterCount() - posArgs);
             mt1 = mt1.appendParameterTypes(pt);
         }
-        return mh.asType(mt1);
+        try {
+            return mh.asType(mt1);
+        } catch (WrongMethodTypeException | IllegalArgumentException ex) {
+            throw new IllegalArgumentException("cannot convert to type "+mt1+" from "+mh, ex);
+        }
     }
     static MethodHandle findTestMH(String name, int[] perm) throws ReflectiveOperationException {
         int arity = perm.length;

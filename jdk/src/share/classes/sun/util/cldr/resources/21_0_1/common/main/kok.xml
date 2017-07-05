@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="kok"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="aa">अफार</language>
+			<language type="ab">अबखेज़ियन</language>
+			<language type="af">अफ्रिकान्स</language>
+			<language type="am">अमहारिक्</language>
+			<language type="ar">अरेबिक्</language>
+			<language type="as">असामी</language>
+			<language type="ay">ऐमरा</language>
+			<language type="az">अज़रबैजानी</language>
+			<language type="ba">बष्किर</language>
+			<language type="be">बैलोरुसियन्</language>
+			<language type="bg">बल्गेरियन</language>
+			<language type="bh">बीहारी</language>
+			<language type="bi">बिसलमा</language>
+			<language type="bn">बंगाली</language>
+			<language type="bo">तिबेतियन</language>
+			<language type="br">ब्रेटन</language>
+			<language type="ca">कटलान</language>
+			<language type="co">कोर्शियन</language>
+			<language type="cs">ज़ेक्</language>
+			<language type="cy">वेळ्ष्</language>
+			<language type="da">डानिष</language>
+			<language type="de">जर्मन</language>
+			<language type="dz">भूटानी</language>
+			<language type="el">ग्रीक्</language>
+			<language type="en">आंग्ल</language>
+			<language type="eo">इस्परान्टो</language>
+			<language type="es">स्पानिष</language>
+			<language type="et">इस्टोनियन्</language>
+			<language type="eu">बास्क</language>
+			<language type="fa">पर्षियन्</language>
+			<language type="fi">फिन्निष्</language>
+			<language type="fj">फिजी</language>
+			<language type="fo">फेरोस्</language>
+			<language type="fr">फ्रेन्च</language>
+			<language type="fy">फ्रिशियन्</language>
+			<language type="ga">ऐरिष</language>
+			<language type="gd">स्काटस् गेलिक्</language>
+			<language type="gl">गेलीशियन</language>
+			<language type="gn">गौरानी</language>
+			<language type="gu">गुजराती</language>
+			<language type="ha">हौसा</language>
+			<language type="he">हेब्रु</language>
+			<language type="hi">हिन्दी</language>
+			<language type="hr">क्रोयेषियन्</language>
+			<language type="hu">हंगेरियन्</language>
+			<language type="hy">आर्मीनियन्</language>
+			<language type="ia">इन्टरलिंग्वा</language>
+			<language type="id">इन्डोनेषियन</language>
+			<language type="ie">इन्टरलिंग्</language>
+			<language type="ik">इनूपेयाक्</language>
+			<language type="is">आईस्लान्डिक</language>
+			<language type="it">इटालियन</language>
+			<language type="iu">इन्युकट्ट</language>
+			<language type="ja">जापनीस्</language>
+			<language type="jv">जावनीस्</language>
+			<language type="ka">जार्जियन्</language>
+			<language type="kk">कज़ख्</language>
+			<language type="kl">ग्रीनलान्डिक</language>
+			<language type="km">कंबोडियन</language>
+			<language type="kn">कन्नडा</language>
+			<language type="ko">कोरियन्</language>
+			<language type="kok">कोंकणी</language>
+			<language type="ks">कश्मीरी</language>
+			<language type="ku">कुर्दिष</language>
+			<language type="ky">किर्गिज़</language>
+			<language type="la">लाटिन</language>
+			<language type="ln">लिंगाला</language>
+			<language type="lo">लाओतियन्</language>
+			<language type="lt">लिथुआनियन्</language>
+			<language type="lv">लाट्वियन् (लेट्टिष्)</language>
+			<language type="mg">मलागसी</language>
+			<language type="mi">माओरी</language>
+			<language type="mk">मसीडोनियन्</language>
+			<language type="ml">मळियाळम</language>
+			<language type="mn">मंगोलियन्</language>
+			<language type="mo">मोल्डावियन्</language>
+			<language type="mr">मराठी</language>
+			<language type="ms">मलय</language>
+			<language type="mt">मालतीस्</language>
+			<language type="my">बर्मीज़्</language>
+			<language type="na">नौरो</language>
+			<language type="ne">नेपाळी</language>
+			<language type="nl">डच्</language>
+			<language type="no">नोर्वेजियन</language>
+			<language type="oc">ओसिटान्</language>
+			<language type="om">ओरोमो (अफान)</language>
+			<language type="or">ओरिया</language>
+			<language type="pa">पंजाबी</language>
+			<language type="pl">पोलिष</language>
+			<language type="ps">पाष्टो (पुष्टो)</language>
+			<language type="pt">पोर्चुगीज़्</language>
+			<language type="qu">क्वेच्वा</language>
+			<language type="rm">रहटो-रोमान्स्</language>
+			<language type="rn">किरुन्दी</language>
+			<language type="ro">रोमानियन्</language>
+			<language type="ru">रष्यन्</language>
+			<language type="rw">किन्यार्वान्डा</language>
+			<language type="sa">संस्कृत</language>
+			<language type="sd">सिंधी</language>
+			<language type="sg">सांग्रो</language>
+			<language type="sh">सेर्बो-क्रोयेषियन्</language>
+			<language type="si">सिन्हलीस्</language>
+			<language type="sk">स्लोवाक</language>
+			<language type="sl">स्लोवेनियन्</language>
+			<language type="sm">समोन</language>
+			<language type="sn">शोना</language>
+			<language type="so">सोमाळी</language>
+			<language type="sq">आल्बेनियन्</language>
+			<language type="sr">सेर्बियन्</language>
+			<language type="ss">सिस्वाती</language>
+			<language type="st">सेसोथो</language>
+			<language type="su">सुंदनीस</language>
+			<language type="sv">स्वीदीष</language>
+			<language type="sw">स्वाहिली</language>
+			<language type="ta">तमिळ</language>
+			<language type="te">तेलुगू</language>
+			<language type="tg">तजिक</language>
+			<language type="th">थाई</language>
+			<language type="ti">तिग्रिन्या</language>
+			<language type="tk">तुर्कमन</language>
+			<language type="tl">तगालोग</language>
+			<language type="tn">सेत्स्वाना</language>
+			<language type="to">तोंगा</language>
+			<language type="tr">तुर्किष</language>
+			<language type="ts">त्सोगा</language>
+			<language type="tt">तटार</language>
+			<language type="tw">त्वि</language>
+			<language type="ug">उधूर</language>
+			<language type="uk">युक्रेनियन्</language>
+			<language type="ur">उर्दू</language>
+			<language type="uz">उज़बेक</language>
+			<language type="vi">वियत्नामीज़</language>
+			<language type="vo">ओलापुक</language>
+			<language type="wo">उलोफ़</language>
+			<language type="xh">झ़ौसा</language>
+			<language type="yi">इद्दिष्</language>
+			<language type="yo">यूरुबा</language>
+			<language type="za">झ्हुन्ग</language>
+			<language type="zh">चीनीस्</language>
+			<language type="zu">जुलू</language>
+		</languages>
+		<territories>
+			<territory type="IN">भारत</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[\u093C ० १ २ ३ ४ ५ ६ ७ ८ ९ ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क {क\u093C} ख {ख\u093C} ग {ग\u093C} घ ङ च छ ज {ज\u093C} झ ञ ट ठ ड {ड\u093C} ढ {ढ\u093C} ण त थ द ध न प फ {फ\u093C} ब भ म य {य\u093C} र ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ॐ अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ ऽ]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">जानेवारी</month>
+							<month type="2">फेब्रुवारी</month>
+							<month type="3">मार्च</month>
+							<month type="4">एप्रिल</month>
+							<month type="5">मे</month>
+							<month type="6">जून</month>
+							<month type="7">जुलै</month>
+							<month type="8">ओगस्ट</month>
+							<month type="9">सेप्टेंबर</month>
+							<month type="10">ओक्टोबर</month>
+							<month type="11">नोव्हेंबर</month>
+							<month type="12">डिसेंबर</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">रवि</day>
+							<day type="mon">सोम</day>
+							<day type="tue">मंगळ</day>
+							<day type="wed">बुध</day>
+							<day type="thu">गुरु</day>
+							<day type="fri">शुक्र</day>
+							<day type="sat">शनि</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">आदित्यवार</day>
+							<day type="mon">सोमवार</day>
+							<day type="tue">मंगळार</day>
+							<day type="wed">बुधवार</day>
+							<day type="thu">गुरुवार</day>
+							<day type="fri">शुक्रवार</day>
+							<day type="sat">शनिवार</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">म.पू.</dayPeriod>
+							<dayPeriod type="pm">म.नं.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0">क्रिस्तपूर्व</era>
+						<era type="1">क्रिस्तशखा</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd-MM-yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d-M-yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="India">
+				<long>
+					<standard>भारतीय समय</standard>
+				</long>
+				<short>
+					<standard>IST</standard>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>deva</native>
+		</otherNumberingSystems>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤ #,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>
+

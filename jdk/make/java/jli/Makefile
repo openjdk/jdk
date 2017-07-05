@@ -46,6 +46,8 @@ include $(BUILDDIR)/common/Defs.gmk
 
 ifneq ($(SYSTEM_ZLIB),true)
   ZIP_SRC = $(SHARE_SRC)/native/java/util/zip/zlib-$(ZLIB_VERSION)
+else # SYSTEM_ZLIB
+  OTHER_CFLAGS += $(ZLIB_CFLAGS)
 endif #SYSTEM_ZLIB
 LAUNCHER_SHARE_SRC = $(SHARE_SRC)/bin
 
@@ -162,7 +164,7 @@ OTHER_INCLUDES += -I$(LAUNCHER_PLATFORM_SRC)
 ifneq ($(SYSTEM_ZLIB),true)
   OTHER_INCLUDES += -I$(ZIP_SRC)
 else # !SYSTEM_ZLIB
-  LDLIBS += -lz
+  LDLIBS += $(ZLIB_LIBS)
 endif # SYSTEM_ZLIB
 
 #

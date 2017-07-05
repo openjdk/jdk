@@ -577,6 +577,9 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   Node *sfpt = x->in(LoopNode::LoopBackControl);
   if (sfpt->Opcode() == Op_SafePoint && is_deleteable_safept(sfpt)) {
     lazy_replace( sfpt, iftrue );
+    if (loop->_safepts != NULL) {
+      loop->_safepts->yank(sfpt);
+    }
     loop->_tail = iftrue;
   }
 
@@ -668,8 +671,12 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   // Check for immediately preceding SafePoint and remove
   Node *sfpt2 = le->in(0);
-  if (sfpt2->Opcode() == Op_SafePoint && is_deleteable_safept(sfpt2))
+  if (sfpt2->Opcode() == Op_SafePoint && is_deleteable_safept(sfpt2)) {
     lazy_replace( sfpt2, sfpt2->in(TypeFunc::Control));
+    if (loop->_safepts != NULL) {
+      loop->_safepts->yank(sfpt2);
+    }
+  }
 
   // Free up intermediate goo
   _igvn.remove_dead_node(hook);
@@ -1526,10 +1533,8 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
 void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
   // Bottom up traversal
   IdealLoopTree* ch = _child;
-  while (ch != NULL) {
-    ch->check_safepts(visited, stack);
-    ch = ch->_next;
-  }
+  if (_child) _child->check_safepts(visited, stack);
+  if (_next)  _next ->check_safepts(visited, stack);
 
   if (!_head->is_CountedLoop() && !_has_sfpt && _parent != NULL && !_irreducible) {
     bool  has_call         = false; // call on dom-path
@@ -1702,29 +1707,39 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
       phase->is_counted_loop(_head, this)) {
     _has_sfpt = 1;              // Indicate we do not need a safepoint here
 
-    // Look for a safepoint to remove
-    for (Node* n = tail(); n != _head; n = phase->idom(n))
-      if (n->Opcode() == Op_SafePoint && phase->get_loop(n) == this &&
-          phase->is_deleteable_safept(n))
-        phase->lazy_replace(n,n->in(TypeFunc::Control));
+    // Look for safepoints to remove.
+    Node_List* sfpts = _safepts;
+    if (sfpts != NULL) {
+      for (uint i = 0; i < sfpts->size(); i++) {
+        Node* n = sfpts->at(i);
+        assert(phase->get_loop(n) == this, "");
+        if (phase->is_deleteable_safept(n)) {
+          phase->lazy_replace(n, n->in(TypeFunc::Control));
+        }
+      }
+    }
 
     // Look for induction variables
     phase->replace_parallel_iv(this);
 
   } else if (_parent != NULL && !_irreducible) {
     // Not a counted loop.
-    // Look for a safepoint on the idom-path to remove, preserving the first one
-    bool found = false;
-    Node* n = tail();
-    for (; n != _head && !found; n = phase->idom(n)) {
-      if (n->Opcode() == Op_SafePoint && phase->get_loop(n) == this)
-        found = true; // Found one
+    // Look for a safepoint on the idom-path.
+    Node* sfpt = tail();
+    for (; sfpt != _head; sfpt = phase->idom(sfpt)) {
+      if (sfpt->Opcode() == Op_SafePoint && phase->get_loop(sfpt) == this)
+        break; // Found one
     }
-    // Skip past it and delete the others
-    for (; n != _head; n = phase->idom(n)) {
-      if (n->Opcode() == Op_SafePoint && phase->get_loop(n) == this &&
-          phase->is_deleteable_safept(n))
-        phase->lazy_replace(n,n->in(TypeFunc::Control));
+    // Delete other safepoints in this loop.
+    Node_List* sfpts = _safepts;
+    if (sfpts != NULL && sfpt != _head && sfpt->Opcode() == Op_SafePoint) {
+      for (uint i = 0; i < sfpts->size(); i++) {
+        Node* n = sfpts->at(i);
+        assert(phase->get_loop(n) == this, "");
+        if (n != sfpt && phase->is_deleteable_safept(n)) {
+          phase->lazy_replace(n, n->in(TypeFunc::Control));
+        }
+      }
     }
   }
 
@@ -2766,6 +2781,10 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         // if the allocation is not eliminated for some reason.
         innermost->_allow_optimizations = false;
         innermost->_has_call = 1; // = true
+      } else if (n->Opcode() == Op_SafePoint) {
+        // Record all safepoints in this loop.
+        if (innermost->_safepts == NULL) innermost->_safepts = new Node_List();
+        innermost->_safepts->push(n);
       }
     }
   }
@@ -2816,6 +2835,9 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
               is_deleteable_safept(n)) {
             Node *in = n->in(TypeFunc::Control);
             lazy_replace(n,in);       // Pull safepoint now
+            if (ilt->_safepts != NULL) {
+              ilt->_safepts->yank(n);
+            }
             // Carry on with the recursion "as if" we are walking
             // only the control input
             if( !visited.test_set( in->_idx ) ) {

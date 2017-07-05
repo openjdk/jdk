@@ -1983,6 +1983,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     private Node expr(Node end) {
         Node prev = null;
         Node firstTail = null;
+        Branch branch = null;
         Node branchConn = null;
 
         for (;;) {
@@ -2006,8 +2007,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     // the "tail.next" of each atom goes to branchConn
                     nodeTail.next = branchConn;
                 }
-                if (prev instanceof Branch) {
-                    ((Branch)prev).add(node);
+                if (prev == branch) {
+                    branch.add(node);
                 } else {
                     if (prev == end) {
                         prev = null;
@@ -2016,7 +2017,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                         // when put the "prev" into the branch as the first atom.
                         firstTail.next = branchConn;
                     }
-                    prev = new Branch(prev, node, branchConn);
+                    prev = branch = new Branch(prev, node, branchConn);
                 }
             }
             if (peek() != '|') {

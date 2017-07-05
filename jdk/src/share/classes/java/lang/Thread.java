@@ -1449,8 +1449,7 @@ class Thread implements Runnable {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ClassLoader ccl = ClassLoader.getCallerClassLoader();
-            if (ccl != null && ccl != contextClassLoader &&
-                    !contextClassLoader.isAncestor(ccl)) {
+            if (ClassLoader.needsClassLoaderPermissionCheck(ccl, contextClassLoader)) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
         }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5695 $"/>
+		<generation date="$Date: 2011-04-27 03:39:31 +0900 (Wed, 27 Apr 2011) $"/>
+		<language type="ar"/>
+		<territory type="JO"/>
+	</identity>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">كانون الثاني</month>
+							<month type="2">شباط</month>
+							<month type="3">آذار</month>
+							<month type="4">نيسان</month>
+							<month type="5">أيار</month>
+							<month type="6">حزيران</month>
+							<month type="7">تموز</month>
+							<month type="8">آب</month>
+							<month type="9">أيلول</month>
+							<month type="10">تشرين الأول</month>
+							<month type="11">تشرين الثاني</month>
+							<month type="12">كانون الأول</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>
+

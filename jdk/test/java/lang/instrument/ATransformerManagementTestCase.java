@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,12 +99,28 @@ ATransformerManagementTestCase
         Instrumentation         manager,
         ClassFileTransformer    transformer)
     {
+        addTransformerToManager(manager, transformer, false);
+    }
+
+    /**
+     * Method addTransformerToManager.
+     * @param manager
+     * @param transformer
+     * @param canRetransform
+     */
+    protected void
+    addTransformerToManager(
+        Instrumentation         manager,
+        ClassFileTransformer    transformer,
+        boolean                 canRetransform)
+    {
         if (transformer != null)
         {
             fTransformers.add(transformer);
         }
-        manager.addTransformer(transformer);
-        verbosePrint("Added transformer " + transformer);
+        manager.addTransformer(transformer, canRetransform);
+        verbosePrint("Added transformer " + transformer
+            + " with canRetransform=" + canRetransform);
     }
 
     /**

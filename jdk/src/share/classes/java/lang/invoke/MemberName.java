@@ -306,12 +306,6 @@ import java.util.Objects;
         return this;
     }
 
-    private void setFlags(int flags) {
-        this.flags = flags;
-        assert(testAnyFlags(ALL_KINDS));
-        assert(referenceKindIsConsistent());
-    }
-
     private boolean testFlags(int mask, int value) {
         return (flags & mask) == value;
     }
@@ -452,8 +446,10 @@ import java.util.Objects;
         this.clazz = defClass;
         this.name = name;
         this.type = type;
-        setFlags(flags);
+        this.flags = flags;
+        assert(testAnyFlags(ALL_KINDS));
         assert(this.resolution == null);  // nobody should have touched this yet
+        //assert(referenceKindIsConsistent());  // do this after resolution
     }
 
     private void expandFromVM() {

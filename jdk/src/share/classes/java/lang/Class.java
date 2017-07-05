@@ -228,7 +228,8 @@ public final
      * ensure it's ok to access the bootstrap class loader.
      *
      * @param name       fully qualified name of the desired class
-     * @param initialize whether the class must be initialized
+     * @param initialize if {@code true} the class will be initialized.
+     *                   See Section 12.4 of <em>The Java Language Specification</em>.
      * @param loader     class loader from which the class must be loaded
      * @return           class object representing the desired class
      *
@@ -605,7 +606,7 @@ public final
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ClassLoader ccl = ClassLoader.getCallerClassLoader();
-            if (ccl != null && ccl != cl && !cl.isAncestor(ccl)) {
+            if (ClassLoader.needsClassLoaderPermissionCheck(ccl, cl)) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
         }
@@ -2170,8 +2171,7 @@ public final
         if (s != null) {
             s.checkMemberAccess(this, which);
             ClassLoader cl = getClassLoader0();
-            if ((ccl != null) && (ccl != cl) &&
-                  ((cl == null) || !cl.isAncestor(ccl))) {
+            if (sun.reflect.misc.ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
                 String name = this.getName();
                 int i = name.lastIndexOf('.');
                 if (i != -1) {

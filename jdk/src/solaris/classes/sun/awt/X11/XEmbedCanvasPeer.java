@@ -29,13 +29,8 @@ import java.awt.*;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.*;
-import java.awt.image.ColorModel;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
-import java.awt.image.VolatileImage;
-import java.awt.peer.*;
 import sun.awt.*;
-import java.lang.reflect.*;
+import sun.awt.AWTAccessor;
 import sun.util.logging.PlatformLogger;
 import java.util.*;
 import static sun.awt.X11.XEmbedHelper.*;
@@ -454,16 +449,8 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
-    static Field bdataField;
     static byte[] getBData(KeyEvent e) {
-        try {
-            if (bdataField == null) {
-                bdataField = SunToolkit.getField(java.awt.AWTEvent.class, "bdata");
-            }
-            return (byte[])bdataField.get(e);
-        } catch (IllegalAccessException ex) {
-            return null;
-        }
+        return AWTAccessor.getAWTEventAccessor().getBData(e);
     }
 
     void forwardKeyEvent(KeyEvent e) {

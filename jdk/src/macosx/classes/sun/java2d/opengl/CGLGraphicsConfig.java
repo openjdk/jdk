@@ -31,8 +31,12 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.ImageCapabilities;
+import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -44,6 +48,7 @@ import java.awt.image.WritableRaster;
 
 import sun.awt.CGraphicsConfig;
 import sun.awt.CGraphicsDevice;
+import sun.awt.TextureSizeConstraining;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
@@ -65,7 +70,7 @@ import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
 import sun.lwawt.macosx.CPlatformView;
 
 public class CGLGraphicsConfig extends CGraphicsConfig
-    implements OGLGraphicsConfig
+    implements OGLGraphicsConfig, TextureSizeConstraining
 {
     //private static final int kOpenGLSwapInterval = RuntimeOptions.getCurrentOptions().OpenGLSwapInterval;
     private static final int kOpenGLSwapInterval = 0; // TODO
@@ -242,6 +247,8 @@ public class CGLGraphicsConfig extends CGraphicsConfig
         } finally {
             rq.unlock();
         }
+
+        updateTotalDisplayBounds();
     }
 
     @Override
@@ -477,5 +484,51 @@ public class CGLGraphicsConfig extends CGraphicsConfig
 
     public void removeDeviceEventListener(AccelDeviceEventListener l) {
         AccelDeviceEventNotifier.removeListener(l);
+    }
+
+    private static final Rectangle totalDisplayBounds = new Rectangle();
+
+    private static void updateTotalDisplayBounds() {
+        synchronized (totalDisplayBounds) {
+            Rectangle virtualBounds = new Rectangle();
+            for (GraphicsDevice gd : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
+                for (GraphicsConfiguration gc : gd.getConfigurations()) {
+                    virtualBounds = virtualBounds.union(gc.getBounds());
+                }
+            }
+            totalDisplayBounds.setBounds(virtualBounds);
+        }
+    }
+
+    // 7160609: GL still fails to create a square texture of this size,
+    //          so we use this value to cap the total display bounds.
+    native private static int getMaxTextureSize();
+
+    @Override
+    public int getMaxTextureWidth() {
+        int width;
+
+        synchronized (totalDisplayBounds) {
+            if (totalDisplayBounds.width == 0) {
+                updateTotalDisplayBounds();
+            }
+            width = totalDisplayBounds.width;
+        }
+
+        return Math.min(width, getMaxTextureSize());
+    }
+
+    @Override
+    public int getMaxTextureHeight() {
+        int height;
+
+        synchronized (totalDisplayBounds) {
+            if (totalDisplayBounds.height == 0) {
+                updateTotalDisplayBounds();
+            }
+            height = totalDisplayBounds.height;
+        }
+
+        return Math.min(height, getMaxTextureSize());
     }
 }

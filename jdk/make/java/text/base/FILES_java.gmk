@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ FILES_java = \
     java/text/Annotation.java \
     java/text/AttributedCharacterIterator.java \
     java/text/AttributedString.java \
-    java/text/BreakDictionary.java \
     java/text/BreakIterator.java \
     java/text/CalendarBuilder.java \
     java/text/CharacterIterator.java \
@@ -36,11 +35,9 @@ FILES_java = \
     java/text/Collator.java \
     java/text/CollationElementIterator.java \
     java/text/CollationKey.java \
-    java/text/CollationRules.java \
     java/text/DateFormat.java \
     java/text/DateFormatSymbols.java \
     java/text/DecimalFormat.java \
-    java/text/DictionaryBasedBreakIterator.java \
     java/text/DigitList.java \
     java/text/EntryPair.java \
     java/text/Format.java \
@@ -56,7 +53,6 @@ FILES_java = \
     java/text/PatternEntry.java \
     java/text/RBCollationTables.java \
     java/text/RBTableBuilder.java \
-    java/text/RuleBasedBreakIterator.java \
     java/text/RuleBasedCollator.java \
     java/text/RuleBasedCollationKey.java \
     java/text/SimpleDateFormat.java \
@@ -107,158 +103,150 @@ FILES_java = \
         sun/text/resources/BreakIteratorInfo.java \
 	\
         sun/text/resources/CollationData.java \
-        sun/text/resources/CollationData_be.java \
-        sun/text/resources/CollationData_bg.java \
-        sun/text/resources/CollationData_ca.java \
-        sun/text/resources/CollationData_cs.java \
-        sun/text/resources/CollationData_da.java \
-        sun/text/resources/CollationData_de.java \
-        sun/text/resources/CollationData_el.java \
-        sun/text/resources/CollationData_en.java \
-        sun/text/resources/CollationData_es.java \
-        sun/text/resources/CollationData_et.java \
-        sun/text/resources/CollationData_fi.java \
-        sun/text/resources/CollationData_fr.java \
-        sun/text/resources/CollationData_hr.java \
-        sun/text/resources/CollationData_hu.java \
-        sun/text/resources/CollationData_is.java \
-        sun/text/resources/CollationData_it.java \
-        sun/text/resources/CollationData_lt.java \
-        sun/text/resources/CollationData_lv.java \
-        sun/text/resources/CollationData_mk.java \
-        sun/text/resources/CollationData_nl.java \
-        sun/text/resources/CollationData_no.java \
-        sun/text/resources/CollationData_pl.java \
-        sun/text/resources/CollationData_pt.java \
-        sun/text/resources/CollationData_ro.java \
-        sun/text/resources/CollationData_ru.java \
-        sun/text/resources/CollationData_sk.java \
-        sun/text/resources/CollationData_sl.java \
-        sun/text/resources/CollationData_sq.java \
-        sun/text/resources/CollationData_sr.java \
-        sun/text/resources/CollationData_sr_Latn.java \
-        sun/text/resources/CollationData_sv.java \
-        sun/text/resources/CollationData_tr.java \
-        sun/text/resources/CollationData_uk.java \
+        sun/text/resources/be/CollationData_be.java \
+        sun/text/resources/bg/CollationData_bg.java \
+        sun/text/resources/ca/CollationData_ca.java \
+        sun/text/resources/cs/CollationData_cs.java \
+        sun/text/resources/da/CollationData_da.java \
+        sun/text/resources/el/CollationData_el.java \
+        sun/text/resources/es/CollationData_es.java \
+        sun/text/resources/et/CollationData_et.java \
+        sun/text/resources/fi/CollationData_fi.java \
+        sun/text/resources/fr/CollationData_fr.java \
+        sun/text/resources/hr/CollationData_hr.java \
+        sun/text/resources/hu/CollationData_hu.java \
+        sun/text/resources/is/CollationData_is.java \
+        sun/text/resources/lt/CollationData_lt.java \
+        sun/text/resources/lv/CollationData_lv.java \
+        sun/text/resources/mk/CollationData_mk.java \
+        sun/text/resources/no/CollationData_no.java \
+        sun/text/resources/pl/CollationData_pl.java \
+        sun/text/resources/ro/CollationData_ro.java \
+        sun/text/resources/ru/CollationData_ru.java \
+        sun/text/resources/sk/CollationData_sk.java \
+        sun/text/resources/sl/CollationData_sl.java \
+        sun/text/resources/sq/CollationData_sq.java \
+        sun/text/resources/sr/CollationData_sr.java \
+        sun/text/resources/sr/CollationData_sr_Latn.java \
+        sun/text/resources/sv/CollationData_sv.java \
+        sun/text/resources/tr/CollationData_tr.java \
+        sun/text/resources/uk/CollationData_uk.java \
 	\
         sun/text/resources/FormatData.java \
-        sun/text/resources/FormatData_be.java \
-        sun/text/resources/FormatData_be_BY.java \
-        sun/text/resources/FormatData_bg.java \
-        sun/text/resources/FormatData_bg_BG.java \
-        sun/text/resources/FormatData_ca.java \
-        sun/text/resources/FormatData_ca_ES.java \
-        sun/text/resources/FormatData_cs.java \
-        sun/text/resources/FormatData_cs_CZ.java \
-        sun/text/resources/FormatData_da.java \
-        sun/text/resources/FormatData_da_DK.java \
-        sun/text/resources/FormatData_de.java \
-        sun/text/resources/FormatData_de_AT.java \
-        sun/text/resources/FormatData_de_CH.java \
-        sun/text/resources/FormatData_de_DE.java \
-        sun/text/resources/FormatData_de_LU.java \
-        sun/text/resources/FormatData_el.java \
-        sun/text/resources/FormatData_el_CY.java \
-        sun/text/resources/FormatData_el_GR.java \
-        sun/text/resources/FormatData_en.java \
-        sun/text/resources/FormatData_en_US.java \
-        sun/text/resources/FormatData_en_AU.java \
-        sun/text/resources/FormatData_en_CA.java \
-        sun/text/resources/FormatData_en_GB.java \
-        sun/text/resources/FormatData_en_IE.java \
-        sun/text/resources/FormatData_en_IN.java \
-        sun/text/resources/FormatData_en_MT.java \
-        sun/text/resources/FormatData_en_NZ.java \
-        sun/text/resources/FormatData_en_PH.java \
-        sun/text/resources/FormatData_en_SG.java \
-        sun/text/resources/FormatData_en_ZA.java \
-        sun/text/resources/FormatData_es.java \
-        sun/text/resources/FormatData_es_BO.java \
-        sun/text/resources/FormatData_es_AR.java \
-        sun/text/resources/FormatData_es_CL.java \
-        sun/text/resources/FormatData_es_CO.java \
-        sun/text/resources/FormatData_es_CR.java \
-        sun/text/resources/FormatData_es_DO.java \
-        sun/text/resources/FormatData_es_EC.java \
-        sun/text/resources/FormatData_es_ES.java \
-        sun/text/resources/FormatData_es_GT.java \
-        sun/text/resources/FormatData_es_HN.java \
-        sun/text/resources/FormatData_es_MX.java \
-        sun/text/resources/FormatData_es_NI.java \
-        sun/text/resources/FormatData_es_PA.java \
-        sun/text/resources/FormatData_es_PE.java \
-        sun/text/resources/FormatData_es_PR.java \
-        sun/text/resources/FormatData_es_PY.java \
-        sun/text/resources/FormatData_es_SV.java \
-        sun/text/resources/FormatData_es_US.java \
-        sun/text/resources/FormatData_es_UY.java \
-        sun/text/resources/FormatData_es_VE.java \
-        sun/text/resources/FormatData_et.java \
-        sun/text/resources/FormatData_et_EE.java \
-        sun/text/resources/FormatData_fi.java \
-        sun/text/resources/FormatData_fi_FI.java \
-        sun/text/resources/FormatData_fr.java \
-        sun/text/resources/FormatData_fr_BE.java \
-        sun/text/resources/FormatData_fr_CA.java \
-        sun/text/resources/FormatData_fr_CH.java \
-        sun/text/resources/FormatData_fr_FR.java \
-        sun/text/resources/FormatData_fr_LU.java \
-        sun/text/resources/FormatData_ga.java \
-        sun/text/resources/FormatData_ga_IE.java \
-        sun/text/resources/FormatData_hr.java \
-        sun/text/resources/FormatData_hr_HR.java \
-        sun/text/resources/FormatData_hu.java \
-        sun/text/resources/FormatData_hu_HU.java \
-        sun/text/resources/FormatData_in.java \
-        sun/text/resources/FormatData_in_ID.java \
-        sun/text/resources/FormatData_is.java \
-        sun/text/resources/FormatData_is_IS.java \
-        sun/text/resources/FormatData_it.java \
-        sun/text/resources/FormatData_it_CH.java \
-        sun/text/resources/FormatData_it_IT.java \
-        sun/text/resources/FormatData_lt.java \
-        sun/text/resources/FormatData_lt_LT.java \
-        sun/text/resources/FormatData_lv.java \
-        sun/text/resources/FormatData_lv_LV.java \
-        sun/text/resources/FormatData_mk.java \
-        sun/text/resources/FormatData_mk_MK.java \
-        sun/text/resources/FormatData_ms.java \
-        sun/text/resources/FormatData_ms_MY.java \
-        sun/text/resources/FormatData_mt.java \
-        sun/text/resources/FormatData_mt_MT.java \
-        sun/text/resources/FormatData_nl.java \
-        sun/text/resources/FormatData_nl_BE.java \
-        sun/text/resources/FormatData_nl_NL.java \
-        sun/text/resources/FormatData_no.java \
-        sun/text/resources/FormatData_no_NO.java \
-        sun/text/resources/FormatData_no_NO_NY.java \
-        sun/text/resources/FormatData_pl.java \
-        sun/text/resources/FormatData_pl_PL.java \
-        sun/text/resources/FormatData_pt.java \
-        sun/text/resources/FormatData_pt_BR.java \
-        sun/text/resources/FormatData_pt_PT.java \
-        sun/text/resources/FormatData_ro.java \
-        sun/text/resources/FormatData_ro_RO.java \
-        sun/text/resources/FormatData_ru.java \
-        sun/text/resources/FormatData_ru_RU.java \
-        sun/text/resources/FormatData_sk.java \
-        sun/text/resources/FormatData_sk_SK.java \
-        sun/text/resources/FormatData_sl.java \
-        sun/text/resources/FormatData_sl_SI.java \
-        sun/text/resources/FormatData_sq.java \
-        sun/text/resources/FormatData_sq_AL.java \
-        sun/text/resources/FormatData_sr.java \
-        sun/text/resources/FormatData_sr_BA.java \
-        sun/text/resources/FormatData_sr_CS.java \
-        sun/text/resources/FormatData_sr_ME.java \
-        sun/text/resources/FormatData_sr_RS.java \
-        sun/text/resources/FormatData_sr_Latn.java \
-        sun/text/resources/FormatData_sr_Latn_BA.java \
-        sun/text/resources/FormatData_sr_Latn_ME.java \
-        sun/text/resources/FormatData_sr_Latn_RS.java \
-        sun/text/resources/FormatData_sv.java \
-        sun/text/resources/FormatData_sv_SE.java \
-        sun/text/resources/FormatData_tr.java \
-        sun/text/resources/FormatData_tr_TR.java \
-        sun/text/resources/FormatData_uk.java \
-        sun/text/resources/FormatData_uk_UA.java
+        sun/text/resources/be/FormatData_be.java \
+        sun/text/resources/be/FormatData_be_BY.java \
+        sun/text/resources/bg/FormatData_bg.java \
+        sun/text/resources/bg/FormatData_bg_BG.java \
+        sun/text/resources/ca/FormatData_ca.java \
+        sun/text/resources/ca/FormatData_ca_ES.java \
+        sun/text/resources/cs/FormatData_cs.java \
+        sun/text/resources/cs/FormatData_cs_CZ.java \
+        sun/text/resources/da/FormatData_da.java \
+        sun/text/resources/da/FormatData_da_DK.java \
+        sun/text/resources/de/FormatData_de.java \
+        sun/text/resources/de/FormatData_de_AT.java \
+        sun/text/resources/de/FormatData_de_CH.java \
+        sun/text/resources/de/FormatData_de_DE.java \
+        sun/text/resources/de/FormatData_de_LU.java \
+        sun/text/resources/el/FormatData_el.java \
+        sun/text/resources/el/FormatData_el_CY.java \
+        sun/text/resources/el/FormatData_el_GR.java \
+        sun/text/resources/en/FormatData_en.java \
+        sun/text/resources/en/FormatData_en_US.java \
+        sun/text/resources/en/FormatData_en_AU.java \
+        sun/text/resources/en/FormatData_en_CA.java \
+        sun/text/resources/en/FormatData_en_GB.java \
+        sun/text/resources/en/FormatData_en_IE.java \
+        sun/text/resources/en/FormatData_en_IN.java \
+        sun/text/resources/en/FormatData_en_MT.java \
+        sun/text/resources/en/FormatData_en_NZ.java \
+        sun/text/resources/en/FormatData_en_PH.java \
+        sun/text/resources/en/FormatData_en_SG.java \
+        sun/text/resources/en/FormatData_en_ZA.java \
+        sun/text/resources/es/FormatData_es.java \
+        sun/text/resources/es/FormatData_es_BO.java \
+        sun/text/resources/es/FormatData_es_AR.java \
+        sun/text/resources/es/FormatData_es_CL.java \
+        sun/text/resources/es/FormatData_es_CO.java \
+        sun/text/resources/es/FormatData_es_CR.java \
+        sun/text/resources/es/FormatData_es_DO.java \
+        sun/text/resources/es/FormatData_es_EC.java \
+        sun/text/resources/es/FormatData_es_ES.java \
+        sun/text/resources/es/FormatData_es_GT.java \
+        sun/text/resources/es/FormatData_es_HN.java \
+        sun/text/resources/es/FormatData_es_MX.java \
+        sun/text/resources/es/FormatData_es_NI.java \
+        sun/text/resources/es/FormatData_es_PA.java \
+        sun/text/resources/es/FormatData_es_PE.java \
+        sun/text/resources/es/FormatData_es_PR.java \
+        sun/text/resources/es/FormatData_es_PY.java \
+        sun/text/resources/es/FormatData_es_SV.java \
+        sun/text/resources/es/FormatData_es_US.java \
+        sun/text/resources/es/FormatData_es_UY.java \
+        sun/text/resources/es/FormatData_es_VE.java \
+        sun/text/resources/et/FormatData_et.java \
+        sun/text/resources/et/FormatData_et_EE.java \
+        sun/text/resources/fi/FormatData_fi.java \
+        sun/text/resources/fi/FormatData_fi_FI.java \
+        sun/text/resources/fr/FormatData_fr.java \
+        sun/text/resources/fr/FormatData_fr_BE.java \
+        sun/text/resources/fr/FormatData_fr_CA.java \
+        sun/text/resources/fr/FormatData_fr_CH.java \
+        sun/text/resources/fr/FormatData_fr_FR.java \
+        sun/text/resources/ga/FormatData_ga.java \
+        sun/text/resources/ga/FormatData_ga_IE.java \
+        sun/text/resources/hr/FormatData_hr.java \
+        sun/text/resources/hr/FormatData_hr_HR.java \
+        sun/text/resources/hu/FormatData_hu.java \
+        sun/text/resources/hu/FormatData_hu_HU.java \
+        sun/text/resources/in/FormatData_in.java \
+        sun/text/resources/in/FormatData_in_ID.java \
+        sun/text/resources/is/FormatData_is.java \
+        sun/text/resources/is/FormatData_is_IS.java \
+        sun/text/resources/it/FormatData_it.java \
+        sun/text/resources/it/FormatData_it_CH.java \
+        sun/text/resources/it/FormatData_it_IT.java \
+        sun/text/resources/lt/FormatData_lt.java \
+        sun/text/resources/lt/FormatData_lt_LT.java \
+        sun/text/resources/lv/FormatData_lv.java \
+        sun/text/resources/lv/FormatData_lv_LV.java \
+        sun/text/resources/mk/FormatData_mk.java \
+        sun/text/resources/mk/FormatData_mk_MK.java \
+        sun/text/resources/ms/FormatData_ms.java \
+        sun/text/resources/ms/FormatData_ms_MY.java \
+        sun/text/resources/mt/FormatData_mt.java \
+        sun/text/resources/mt/FormatData_mt_MT.java \
+        sun/text/resources/nl/FormatData_nl.java \
+        sun/text/resources/nl/FormatData_nl_BE.java \
+        sun/text/resources/nl/FormatData_nl_NL.java \
+        sun/text/resources/no/FormatData_no.java \
+        sun/text/resources/no/FormatData_no_NO.java \
+        sun/text/resources/no/FormatData_no_NO_NY.java \
+        sun/text/resources/pl/FormatData_pl.java \
+        sun/text/resources/pl/FormatData_pl_PL.java \
+        sun/text/resources/pt/FormatData_pt.java \
+        sun/text/resources/pt/FormatData_pt_BR.java \
+        sun/text/resources/pt/FormatData_pt_PT.java \
+        sun/text/resources/ro/FormatData_ro.java \
+        sun/text/resources/ro/FormatData_ro_RO.java \
+        sun/text/resources/ru/FormatData_ru.java \
+        sun/text/resources/ru/FormatData_ru_RU.java \
+        sun/text/resources/sk/FormatData_sk.java \
+        sun/text/resources/sk/FormatData_sk_SK.java \
+        sun/text/resources/sl/FormatData_sl.java \
+        sun/text/resources/sl/FormatData_sl_SI.java \
+        sun/text/resources/sq/FormatData_sq.java \
+        sun/text/resources/sq/FormatData_sq_AL.java \
+        sun/text/resources/sr/FormatData_sr.java \
+        sun/text/resources/sr/FormatData_sr_BA.java \
+        sun/text/resources/sr/FormatData_sr_CS.java \
+        sun/text/resources/sr/FormatData_sr_ME.java \
+        sun/text/resources/sr/FormatData_sr_RS.java \
+        sun/text/resources/sr/FormatData_sr_Latn.java \
+        sun/text/resources/sr/FormatData_sr_Latn_ME.java \
+        sun/text/resources/sv/FormatData_sv.java \
+        sun/text/resources/sv/FormatData_sv_SE.java \
+        sun/text/resources/tr/FormatData_tr.java \
+        sun/text/resources/tr/FormatData_tr_TR.java \
+        sun/text/resources/uk/FormatData_uk.java \
+        sun/text/resources/uk/FormatData_uk_UA.java
