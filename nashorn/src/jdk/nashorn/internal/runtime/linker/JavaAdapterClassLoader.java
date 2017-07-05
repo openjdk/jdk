@@ -31,6 +31,8 @@ import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 
 /**
  * This class encapsulates the bytecode of the adapter class and can be used to load it into the JVM as an actual Class.
@@ -85,13 +87,14 @@ final class JavaAdapterClassLoader {
             @Override
             public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
                 try {
+                    Context.checkPackageAccess(name);
                     return super.loadClass(name, resolve);
                 } catch (final SecurityException se) {
                     // we may be implementing an interface or extending a class that was
                     // loaded by a loader that prevents package.access. If so, it'd throw
                     // SecurityException for nashorn's classes!. For adapter's to work, we
-                    // should be able to refer to nashorn classes.
-                    if (name.startsWith("jdk.nashorn.internal.")) {
+                    // should be able to refer to the few classes it needs in its implementation.
+                    if(ScriptFunction.class.getName().equals(name) || JavaAdapterServices.class.getName().equals(name)) {
                         return myLoader.loadClass(name);
                     }
                     throw se;

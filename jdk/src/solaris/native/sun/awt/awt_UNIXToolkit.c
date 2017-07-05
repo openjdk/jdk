@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ jboolean _icon_upcall(JNIEnv *env, jobject this, GdkPixbuf *pixbuf)
                                           (*env)->GetObjectClass(env, this));
         icon_upcall_method = (*env)->GetMethodID(env, this_class,
                                  "loadIconCallback", "([BIIIIIZ)V");
+        CHECK_NULL_RETURN(icon_upcall_method, JNI_FALSE);
     }
 
     if (pixbuf != NULL)
@@ -112,6 +113,8 @@ jboolean _icon_upcall(JNIEnv *env, jobject this, GdkPixbuf *pixbuf)
 
         /* Copy the data array into a Java structure so we can pass it back. */
         jbyteArray data = (*env)->NewByteArray(env, (row_stride * height));
+        JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+
         (*env)->SetByteArrayRegion(env, data, 0, (row_stride * height),
                                    (jbyte *)pixbuf_data);
 

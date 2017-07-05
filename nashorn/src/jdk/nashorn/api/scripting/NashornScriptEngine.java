@@ -27,16 +27,14 @@ package jdk.nashorn.api.scripting;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permissions;
@@ -124,21 +122,21 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
     }
 
-    // load engine.js and return content as a char[]
+    // load engine.js
     @SuppressWarnings("resource")
-    private static char[] loadEngineJSSource() {
+    private static Source loadEngineJSSource() {
         final String script = "resources/engine.js";
         try {
-            final InputStream is = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<InputStream>() {
+            return AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<Source>() {
                         @Override
-                        public InputStream run() throws Exception {
+                        public Source run() throws IOException {
                             final URL url = NashornScriptEngine.class.getResource(script);
-                            return url.openStream();
+                            return sourceFor(NashornException.ENGINE_SCRIPT_SOURCE_NAME, url);
                         }
-                    });
-            return Source.readFully(new InputStreamReader(is));
-        } catch (final PrivilegedActionException | IOException e) {
+                    }
+            );
+        } catch (final PrivilegedActionException e) {
             if (Context.DEBUG) {
                 e.printStackTrace();
             }
@@ -147,7 +145,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     // Source object for engine.js
-    private static final Source ENGINE_SCRIPT_SRC = new Source(NashornException.ENGINE_SCRIPT_SOURCE_NAME, loadEngineJSSource());
+    private static final Source ENGINE_SCRIPT_SRC = loadEngineJSSource();
 
     NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
         this(factory, DEFAULT_OPTIONS, appLoader);
@@ -282,19 +280,14 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     private static Source makeSource(final Reader reader, final ScriptContext ctxt) throws ScriptException {
         try {
-            if (reader instanceof URLReader) {
-                final URL url = ((URLReader)reader).getURL();
-                final Charset cs = ((URLReader)reader).getCharset();
-                return new Source(url.toString(), url, cs);
-            }
-            return new Source(getScriptName(ctxt), Source.readFully(reader));
-        } catch (final IOException e) {
+            return sourceFor(getScriptName(ctxt), reader);
+        } catch (IOException e) {
             throw new ScriptException(e);
         }
     }
 
     private static Source makeSource(final String src, final ScriptContext ctxt) {
-        return new Source(getScriptName(ctxt), src);
+        return sourceFor(getScriptName(ctxt), src);
     }
 
     private static String getScriptName(final ScriptContext ctxt) {

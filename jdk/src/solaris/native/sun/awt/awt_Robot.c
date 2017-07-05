@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,10 +175,13 @@ Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls, jint numberOfButton
 
     num_buttons = numberOfButtons;
     tmp = (*env)->GetIntArrayElements(env, buttonDownMasks, JNI_FALSE);
+    CHECK_NULL(tmp);
+
     masks = (jint *)SAFE_SIZE_ARRAY_ALLOC(malloc, sizeof(jint), num_buttons);
     if (masks == (jint *) NULL) {
-        JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL);
+        (*env)->ExceptionClear(env);
         (*env)->ReleaseIntArrayElements(env, buttonDownMasks, tmp, 0);
+        JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL);
         return;
     }
     for (i = 0; i < num_buttons; i++) {
