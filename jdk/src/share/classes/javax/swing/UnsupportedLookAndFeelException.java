@@ -25,7 +25,7 @@
 package javax.swing;
 
 /**
- * An exception that indicates the requested look & feel
+ * An exception that indicates the requested look &amp; feel
  * management classes are not present on the user's system.
  * <p>
  * <strong>Warning:</strong>

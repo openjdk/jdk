@@ -25,8 +25,7 @@
 
 package java.util;
 
-import java.security.SecureRandom;
-import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
@@ -242,12 +241,34 @@ public final class SplittableRandom {
                 s = (s << 8) | ((long)(seedBytes[i]) & 0xffL);
             return s;
         }
-        int hh = 0; // hashed host address
+        long h = 0L;
         try {
-            hh = InetAddress.getLocalHost().hashCode();
+            Enumeration<NetworkInterface> ifcs =
+                    NetworkInterface.getNetworkInterfaces();
+            boolean retry = false; // retry once if getHardwareAddress is null
+            while (ifcs.hasMoreElements()) {
+                NetworkInterface ifc = ifcs.nextElement();
+                if (!ifc.isVirtual()) { // skip fake addresses
+                    byte[] bs = ifc.getHardwareAddress();
+                    if (bs != null) {
+                        int n = bs.length;
+                        int m = Math.min(n >>> 1, 4);
+                        for (int i = 0; i < m; ++i)
+                            h = (h << 16) ^ (bs[i] << 8) ^ bs[n-1-i];
+                        if (m < 4)
+                            h = (h << 8) ^ bs[n-1-m];
+                        h = mix64(h);
+                        break;
+                    }
+                    else if (!retry)
+                        retry = true;
+                    else
+                        break;
+                }
+            }
         } catch (Exception ignore) {
         }
-        return (mix64((((long)hh) << 32) ^ System.currentTimeMillis()) ^
+        return (h ^ mix64(System.currentTimeMillis()) ^
                 mix64(System.nanoTime()));
     }
 

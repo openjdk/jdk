@@ -45,6 +45,7 @@ public class XRMaskImage {
     int blitMaskPicture;
     int lastMaskWidth = 0;
     int lastMaskHeight = 0;
+    int lastEA = -1;
     AffineTransform lastMaskTransform;
 
     XRCompositeManager xrMgr;
@@ -82,13 +83,15 @@ public class XRMaskImage {
                 lastMaskTransform = maskTX;
         }
 
-        if (lastMaskWidth != maskWidth || lastMaskHeight != maskHeight)  {
+        int currentEA = xrMgr.getAlphaColor().getAlpha();
+        if (lastMaskWidth != maskWidth || lastMaskHeight != maskHeight || lastEA != currentEA)  {
             //Only clear mask, if previous mask area is larger than new one, otherwise simple overpaint it
             if (lastMaskWidth > maskWidth || lastMaskHeight > maskHeight)  {
                 con.renderRectangle(blitMaskPicture, XRUtils.PictOpClear, XRColor.NO_ALPHA, 0, 0, lastMaskWidth, lastMaskHeight);
             }
 
             con.renderRectangle(blitMaskPicture, XRUtils.PictOpSrc, xrMgr.getAlphaColor(), 0, 0, maskWidth, maskHeight);
+            lastEA = currentEA;
         }
 
         lastMaskWidth = maskWidth;

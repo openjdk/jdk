@@ -61,7 +61,7 @@ import java.security.AccessControlException;
  * <p>
  * The default layout for a dialog is <code>BorderLayout</code>.
  * <p>
- * A dialog may have its native decorations (i.e. Frame & Titlebar) turned off
+ * A dialog may have its native decorations (i.e. Frame &amp; Titlebar) turned off
  * with <code>setUndecorated</code>.  This can only be done while the dialog
  * is not {@link Component#isDisplayable() displayable}.
  * <p>

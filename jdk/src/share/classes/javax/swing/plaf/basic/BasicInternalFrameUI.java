@@ -35,7 +35,7 @@ import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
 /**
- * A basic L&F implementation of JInternalFrame.
+ * A basic L&amp;F implementation of JInternalFrame.
  *
  * @author David Kloba
  * @author Rich Schiavi

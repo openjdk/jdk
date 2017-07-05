@@ -242,9 +242,9 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ComboBoxUI</code> L&F object
+     * @param ui  the <code>ComboBoxUI</code> L&amp;F object
      * @see UIDefaults#getUI
      *
      * @beaninfo
@@ -273,7 +273,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "ComboBoxUI"
      * @see JComponent#getUIClassID
@@ -285,7 +285,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
 
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the ComboBoxUI object that renders this component
      */
@@ -607,7 +607,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @param anIndex an integer specifying the list item to select,
      *                  where 0 specifies the first item in the list and -1 indicates no selection
-     * @exception IllegalArgumentException if <code>anIndex</code> < -1 or
+     * @exception IllegalArgumentException if <code>anIndex</code> &lt; -1 or
      *                  <code>anIndex</code> is greater than or equal to size
      * @beaninfo
      *   preferred: true

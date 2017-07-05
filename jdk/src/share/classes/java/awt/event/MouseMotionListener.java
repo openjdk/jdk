@@ -60,9 +60,9 @@ public interface MouseMotionListener extends EventListener {
      * mouse button is released (regardless of whether the mouse position
      * is within the bounds of the component).
      * <p>
-     * Due to platform-dependent Drag&Drop implementations,
+     * Due to platform-dependent Drag&amp;Drop implementations,
      * <code>MOUSE_DRAGGED</code> events may not be delivered during a native
-     * Drag&Drop operation.
+     * Drag&amp;Drop operation.
      */
     public void mouseDragged(MouseEvent e);
 
