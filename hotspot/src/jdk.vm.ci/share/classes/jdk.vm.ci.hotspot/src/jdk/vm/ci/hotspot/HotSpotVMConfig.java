@@ -23,14 +23,23 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.common.UnsafeUtil.readCString;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Iterator;
 
-import sun.misc.*;
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.hotspotvmconfig.*;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspotvmconfig.HotSpotVMAddress;
+import jdk.vm.ci.hotspotvmconfig.HotSpotVMConstant;
+import jdk.vm.ci.hotspotvmconfig.HotSpotVMData;
+import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
+import jdk.vm.ci.hotspotvmconfig.HotSpotVMFlag;
+import jdk.vm.ci.hotspotvmconfig.HotSpotVMManual;
+import jdk.vm.ci.hotspotvmconfig.HotSpotVMType;
+import sun.misc.Unsafe;
 
 //JaCoCo Exclude
 
@@ -42,13 +51,20 @@ import jdk.vm.ci.hotspotvmconfig.*;
 public class HotSpotVMConfig {
 
     /**
+     * Gets the configuration associated with the singleton {@link HotSpotJVMCIRuntime}.
+     */
+    public static HotSpotVMConfig config() {
+        return runtime().getConfig();
+    }
+
+    /**
      * Maximum allowed size of allocated area for a frame.
      */
     public final int maxFrameSize = 16 * 1024;
 
     public HotSpotVMConfig(CompilerToVM compilerToVm) {
         // Get raw pointer to the array that contains all gHotSpotVM values.
-        final long gHotSpotVMData = compilerToVm.initializeConfiguration();
+        final long gHotSpotVMData = compilerToVm.initializeConfiguration(this);
         assert gHotSpotVMData != 0;
 
         // Make FindBugs happy.
@@ -105,6 +121,8 @@ public class HotSpotVMConfig {
         handleWrongMethodStub = wrongMethodBlob + UNSAFE.getInt(wrongMethodBlob + codeBlobCodeOffsetOffset);
         handleDeoptStub = deoptBlob + UNSAFE.getInt(deoptBlob + codeBlobCodeOffsetOffset) + UNSAFE.getInt(deoptBlob + deoptimizationBlobUnpackOffsetOffset);
         uncommonTrapStub = deoptBlob + UNSAFE.getInt(deoptBlob + codeBlobCodeOffsetOffset) + UNSAFE.getInt(deoptBlob + deoptimizationBlobUncommonTrapOffsetOffset);
+
+        tlabAlignmentReserve = roundUp(threadLocalAllocBufferEndReserve(), minObjAlignment());
 
         assert check();
         assert HotSpotVMConfigVerifier.check();
@@ -844,6 +862,7 @@ public class HotSpotVMConfig {
 
     @HotSpotVMConstant(name = "ASSERT") @Stable public boolean cAssertions;
     public final boolean windowsOs = System.getProperty("os.name", "").startsWith("Windows");
+    public final boolean linuxOs = System.getProperty("os.name", "").startsWith("Linux");
 
     @HotSpotVMFlag(name = "CodeEntryAlignment") @Stable public int codeEntryAlignment;
     @HotSpotVMFlag(name = "VerifyOops") @Stable public boolean verifyOops;
@@ -938,6 +957,16 @@ public class HotSpotVMConfig {
     @HotSpotVMConstant(name = "VM_Version::CPU_ERMS", archs = {"amd64"}) @Stable public long cpuERMS;
     @HotSpotVMConstant(name = "VM_Version::CPU_CLMUL", archs = {"amd64"}) @Stable public long cpuCLMUL;
     @HotSpotVMConstant(name = "VM_Version::CPU_BMI1", archs = {"amd64"}) @Stable public long cpuBMI1;
+    @HotSpotVMConstant(name = "VM_Version::CPU_BMI2", archs = {"amd64"}) @Stable public long cpuBMI2;
+    @HotSpotVMConstant(name = "VM_Version::CPU_RTM", archs = {"amd64"}) @Stable public long cpuRTM;
+    @HotSpotVMConstant(name = "VM_Version::CPU_ADX", archs = {"amd64"}) @Stable public long cpuADX;
+    @HotSpotVMConstant(name = "VM_Version::CPU_AVX512F", archs = {"amd64"}) @Stable public long cpuAVX512F;
+    @HotSpotVMConstant(name = "VM_Version::CPU_AVX512DQ", archs = {"amd64"}) @Stable public long cpuAVX512DQ;
+    @HotSpotVMConstant(name = "VM_Version::CPU_AVX512PF", archs = {"amd64"}) @Stable public long cpuAVX512PF;
+    @HotSpotVMConstant(name = "VM_Version::CPU_AVX512ER", archs = {"amd64"}) @Stable public long cpuAVX512ER;
+    @HotSpotVMConstant(name = "VM_Version::CPU_AVX512CD", archs = {"amd64"}) @Stable public long cpuAVX512CD;
+    @HotSpotVMConstant(name = "VM_Version::CPU_AVX512BW", archs = {"amd64"}) @Stable public long cpuAVX512BW;
+    @HotSpotVMConstant(name = "VM_Version::CPU_AVX512VL", archs = {"amd64"}) @Stable public long cpuAVX512VL;
 
     // SPARC specific values
     @HotSpotVMField(name = "VM_Version::_features", type = "int", get = HotSpotVMField.Type.VALUE, archs = {"sparc"}) @Stable public int sparcFeatures;
@@ -945,6 +974,26 @@ public class HotSpotVMConfig {
     @HotSpotVMConstant(name = "VM_Version::vis2_instructions_m", archs = {"sparc"}) @Stable public int vis2Instructions;
     @HotSpotVMConstant(name = "VM_Version::vis1_instructions_m", archs = {"sparc"}) @Stable public int vis1Instructions;
     @HotSpotVMConstant(name = "VM_Version::cbcond_instructions_m", archs = {"sparc"}) @Stable public int cbcondInstructions;
+    @HotSpotVMConstant(name = "VM_Version::v8_instructions_m", archs = {"sparc"}) @Stable public int v8Instructions;
+    @HotSpotVMConstant(name = "VM_Version::hardware_mul32_m", archs = {"sparc"}) @Stable public int hardwareMul32;
+    @HotSpotVMConstant(name = "VM_Version::hardware_div32_m", archs = {"sparc"}) @Stable public int hardwareDiv32;
+    @HotSpotVMConstant(name = "VM_Version::hardware_fsmuld_m", archs = {"sparc"}) @Stable public int hardwareFsmuld;
+    @HotSpotVMConstant(name = "VM_Version::hardware_popc_m", archs = {"sparc"}) @Stable public int hardwarePopc;
+    @HotSpotVMConstant(name = "VM_Version::v9_instructions_m", archs = {"sparc"}) @Stable public int v9Instructions;
+    @HotSpotVMConstant(name = "VM_Version::sun4v_m", archs = {"sparc"}) @Stable public int sun4v;
+    @HotSpotVMConstant(name = "VM_Version::blk_init_instructions_m", archs = {"sparc"}) @Stable public int blkInitInstructions;
+    @HotSpotVMConstant(name = "VM_Version::fmaf_instructions_m", archs = {"sparc"}) @Stable public int fmafInstructions;
+    @HotSpotVMConstant(name = "VM_Version::fmau_instructions_m", archs = {"sparc"}) @Stable public int fmauInstructions;
+    @HotSpotVMConstant(name = "VM_Version::sparc64_family_m", archs = {"sparc"}) @Stable public int sparc64Family;
+    @HotSpotVMConstant(name = "VM_Version::M_family_m", archs = {"sparc"}) @Stable public int mFamily;
+    @HotSpotVMConstant(name = "VM_Version::T_family_m", archs = {"sparc"}) @Stable public int tFamily;
+    @HotSpotVMConstant(name = "VM_Version::T1_model_m", archs = {"sparc"}) @Stable public int t1Model;
+    @HotSpotVMConstant(name = "VM_Version::sparc5_instructions_m", archs = {"sparc"}) @Stable public int sparc5Instructions;
+    @HotSpotVMConstant(name = "VM_Version::aes_instructions_m", archs = {"sparc"}) @Stable public int aesInstructions;
+    @HotSpotVMConstant(name = "VM_Version::sha1_instruction_m", archs = {"sparc"}) @Stable public int sha1Instruction;
+    @HotSpotVMConstant(name = "VM_Version::sha256_instruction_m", archs = {"sparc"}) @Stable public int sha256Instruction;
+    @HotSpotVMConstant(name = "VM_Version::sha512_instruction_m", archs = {"sparc"}) @Stable public int sha512Instruction;
+
     @HotSpotVMFlag(name = "UseBlockZeroing", archs = {"sparc"}) @Stable public boolean useBlockZeroing;
     @HotSpotVMFlag(name = "BlockZeroingLowLimit", archs = {"sparc"}) @Stable public int blockZeroingLowLimit;
 
@@ -1396,6 +1445,7 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "Thread::_allocated_bytes", type = "jlong", get = HotSpotVMField.Type.OFFSET) @Stable public int threadAllocatedBytesOffset;
 
     @HotSpotVMFlag(name = "TLABWasteIncrement") @Stable public int tlabRefillWasteIncrement;
+    @HotSpotVMManual(name = "ThreadLocalAllocBuffer::alignment_reserve()") @Stable public int tlabAlignmentReserve;
 
     @HotSpotVMField(name = "ThreadLocalAllocBuffer::_start", type = "HeapWord*", get = HotSpotVMField.Type.OFFSET) @Stable private int threadLocalAllocBufferStartOffset;
     @HotSpotVMField(name = "ThreadLocalAllocBuffer::_end", type = "HeapWord*", get = HotSpotVMField.Type.OFFSET) @Stable private int threadLocalAllocBufferEndOffset;
@@ -1451,13 +1501,6 @@ public class HotSpotVMConfig {
         // T_INT arrays need not be 8 byte aligned.
         final int reserveSize = typeSizeInBytes / heapWordSize;
         return Integer.max(reserveSize, abstractVmVersionReserveForAllocationPrefetch);
-    }
-
-    /**
-     * See: {@code ThreadLocalAllocBuffer::alignment_reserve()}.
-     */
-    public final int tlabAlignmentReserve() {
-        return roundUp(threadLocalAllocBufferEndReserve(), minObjAlignment());
     }
 
     @HotSpotVMFlag(name = "TLABStats") @Stable public boolean tlabStats;
@@ -1688,12 +1731,27 @@ public class HotSpotVMConfig {
     @HotSpotVMConstant(name = "CodeInstaller::POLL_RETURN_NEAR") @Stable public int MARKID_POLL_RETURN_NEAR;
     @HotSpotVMConstant(name = "CodeInstaller::POLL_FAR") @Stable public int MARKID_POLL_FAR;
     @HotSpotVMConstant(name = "CodeInstaller::POLL_RETURN_FAR") @Stable public int MARKID_POLL_RETURN_FAR;
+    @HotSpotVMConstant(name = "CodeInstaller::CARD_TABLE_SHIFT") @Stable public int MARKID_CARD_TABLE_SHIFT;
     @HotSpotVMConstant(name = "CodeInstaller::CARD_TABLE_ADDRESS") @Stable public int MARKID_CARD_TABLE_ADDRESS;
     @HotSpotVMConstant(name = "CodeInstaller::HEAP_TOP_ADDRESS") @Stable public int MARKID_HEAP_TOP_ADDRESS;
     @HotSpotVMConstant(name = "CodeInstaller::HEAP_END_ADDRESS") @Stable public int MARKID_HEAP_END_ADDRESS;
     @HotSpotVMConstant(name = "CodeInstaller::NARROW_KLASS_BASE_ADDRESS") @Stable public int MARKID_NARROW_KLASS_BASE_ADDRESS;
     @HotSpotVMConstant(name = "CodeInstaller::CRC_TABLE_ADDRESS") @Stable public int MARKID_CRC_TABLE_ADDRESS;
     @HotSpotVMConstant(name = "CodeInstaller::INVOKE_INVALID") @Stable public int MARKID_INVOKE_INVALID;
+
+    @HotSpotVMConstant(name = "BitData::exception_seen_flag") @Stable public int bitDataExceptionSeenFlag;
+    @HotSpotVMConstant(name = "BitData::null_seen_flag") @Stable public int bitDataNullSeenFlag;
+    @HotSpotVMConstant(name = "CounterData::count_off") @Stable public int methodDataCountOffset;
+    @HotSpotVMConstant(name = "JumpData::taken_off_set") @Stable public int jumpDataTakenOffset;
+    @HotSpotVMConstant(name = "JumpData::displacement_off_set") @Stable public int jumpDataDisplacementOffset;
+    @HotSpotVMConstant(name = "ReceiverTypeData::nonprofiled_count_off_set") @Stable public int receiverTypeDataNonprofiledCountOffset;
+    @HotSpotVMConstant(name = "ReceiverTypeData::receiver_type_row_cell_count") @Stable public int receiverTypeDataReceiverTypeRowCellCount;
+    @HotSpotVMConstant(name = "ReceiverTypeData::receiver0_offset") @Stable public int receiverTypeDataReceiver0Offset;
+    @HotSpotVMConstant(name = "ReceiverTypeData::count0_offset") @Stable public int receiverTypeDataCount0Offset;
+    @HotSpotVMConstant(name = "BranchData::not_taken_off_set") @Stable public int branchDataNotTakenOffset;
+    @HotSpotVMConstant(name = "ArrayData::array_len_off_set") @Stable public int arrayDataArrayLenOffset;
+    @HotSpotVMConstant(name = "ArrayData::array_start_off_set") @Stable public int arrayDataArrayStartOffset;
+    @HotSpotVMConstant(name = "MultiBranchData::per_case_cell_count") @Stable public int multiBranchDataPerCaseCellCount;
 
     // Checkstyle: resume
 

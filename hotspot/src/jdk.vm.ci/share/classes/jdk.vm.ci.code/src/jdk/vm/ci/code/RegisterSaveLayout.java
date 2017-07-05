@@ -22,7 +22,11 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A map from registers to frame slots. This can be used to describe where callee saved registers

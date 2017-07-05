@@ -425,12 +425,12 @@ class JavaThreadStatusChanger : public StackObj {
   }
 
   JavaThreadStatusChanger(JavaThread* java_thread,
-                          java_lang_Thread::ThreadStatus state) {
+                          java_lang_Thread::ThreadStatus state) : _old_state(java_lang_Thread::NEW) {
     save_old_state(java_thread);
     set_thread_status(state);
   }
 
-  JavaThreadStatusChanger(JavaThread* java_thread) {
+  JavaThreadStatusChanger(JavaThread* java_thread) : _old_state(java_lang_Thread::NEW) {
     save_old_state(java_thread);
   }
 
@@ -527,7 +527,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   // Current thread is the notifying thread which holds the monitor.
   static bool wait_reenter_begin(JavaThread *java_thread, ObjectMonitor *obj_m) {
     assert((java_thread != NULL), "Java thread should not be null here");
-    bool active  = false;
+    bool active = false;
     if (is_alive(java_thread) && ServiceUtil::visible_oop((oop)obj_m->object())) {
       active = contended_enter_begin(java_thread);
     }
@@ -542,7 +542,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   }
 
   JavaThreadBlockedOnMonitorEnterState(JavaThread *java_thread, ObjectMonitor *obj_m) :
-    JavaThreadStatusChanger(java_thread) {
+    _stat(NULL), _active(false), JavaThreadStatusChanger(java_thread) {
     assert((java_thread != NULL), "Java thread should not be null here");
     // Change thread status and collect contended enter stats for monitor contended
     // enter done for external java world objects and it is contended. All other cases

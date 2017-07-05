@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_CONCURRENTG1REFINE_HPP
 
 #include "gc/g1/g1HotCardCache.hpp"
+#include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -39,8 +40,9 @@ class G1RemSet;
 class DirtyCardQueue;
 
 class ConcurrentG1Refine: public CHeapObj<mtGC> {
+  G1YoungRemSetSamplingThread* _sample_thread;
+
   ConcurrentG1RefineThread** _threads;
-  uint _n_threads;
   uint _n_worker_threads;
  /*
   * The value of the update buffer queue length falls into one of 3 zones:
@@ -91,8 +93,8 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   // Iterate over all worker refinement threads
   void worker_threads_do(ThreadClosure * tc);
 
-  // The RS sampling thread
-  ConcurrentG1RefineThread * sampling_thread() const;
+  // The RS sampling thread has nothing to do with refinement, but is here for now.
+  G1YoungRemSetSamplingThread * sampling_thread() const { return _sample_thread; }
 
   static uint thread_num();
 
@@ -106,7 +108,6 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   int yellow_zone() const     { return _yellow_zone; }
   int red_zone() const        { return _red_zone;    }
 
-  uint total_thread_num() const  { return _n_threads;        }
   uint worker_thread_num() const { return _n_worker_threads; }
 
   int thread_threshold_step() const { return _thread_threshold_step; }

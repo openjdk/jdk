@@ -320,7 +320,7 @@ void AbstractInterpreter::set_entry_for_kind(AbstractInterpreter::MethodKind kin
 
 // Return true if the interpreter can prove that the given bytecode has
 // not yet been executed (in Java semantics, not in actual operation).
-bool AbstractInterpreter::is_not_reached(methodHandle method, int bci) {
+bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
   Bytecodes::Code code = method()->code_at(bci);
 
   if (!Bytecodes::must_rewrite(code)) {

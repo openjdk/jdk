@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class ObjArrayKlass : public ArrayKlass {
   bool can_be_primary_super_slow() const;
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
   bool compute_is_subtype_of(Klass* k);
-  bool oop_is_objArray_slow()  const  { return true; }
+  DEBUG_ONLY(bool is_objArray_klass_slow()  const  { return true; })
   int oop_size(oop obj) const;
 
   // Allocation
@@ -91,8 +91,8 @@ class ObjArrayKlass : public ArrayKlass {
  public:
   // Casting from Klass*
   static ObjArrayKlass* cast(Klass* k) {
-    assert(k->oop_is_objArray(), "cast to ObjArrayKlass");
-    return (ObjArrayKlass*) k;
+    assert(k->is_objArray_klass(), "cast to ObjArrayKlass");
+    return static_cast<ObjArrayKlass*>(k);
   }
 
   // Sizing

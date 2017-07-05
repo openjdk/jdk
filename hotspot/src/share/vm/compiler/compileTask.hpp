@@ -71,8 +71,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
     _lock = new Monitor(Mutex::nonleaf+2, "CompileTaskLock");
   }
 
-  void initialize(int compile_id, methodHandle method, int osr_bci, int comp_level,
-                  methodHandle hot_method, int hot_count, const char* comment,
+  void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
+                  const methodHandle& hot_method, int hot_count, const char* comment,
                   bool is_blocking);
 
   static CompileTask* allocate();

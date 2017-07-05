@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
+package jdk.vm.ci.runtime;
 
 /**
- * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
+ * Factory for a JVMCI compiler.
  */
-public @interface SuppressFBWarnings {
-    /**
-     * The set of FindBugs <a
-     * href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
-     * suppressed in annotated element. The value can be a bug category, kind or pattern.
-     */
-    String[] value();
+public interface JVMCICompilerFactory {
 
     /**
-     * Reason why the warning is suppressed.
+     * Get the name of this compiler. The compiler will be selected when the jvmci.compiler system
+     * property is equal to this name.
      */
-    String justification();
+    String getCompilerName();
+
+    /**
+     * Create a new instance of the {@link JVMCICompiler}.
+     */
+    JVMCICompiler createCompiler(JVMCIRuntime runtime);
+
+    /**
+     * In a tiered system it might be advantageous for startup to keep the JVMCI compiler from
+     * compiling itself so provide a hook to request that certain packages are compiled only by an
+     * optimizing first tier. The prefixes should class or package names using / as the separator,
+     * i.e. jdk/vm/ci for instance.
+     *
+     * @return 0 or more Strings identifying packages that should by compiled by the first tier
+     *         only.
+     */
+    default String[] getTrivialPrefixes() {
+        return null;
+    }
 }
