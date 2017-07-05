@@ -71,7 +71,7 @@ import java.lang.ref.*;
  * The modeling of HTML is provided by the class <code>HTMLDocument</code>.
  * Its documentation describes the details of how the HTML is modeled.
  * The editing support leverages heavily off of the text package.
- * <p>
+ *
  * <dt>
  * Extendable/Scalable
  * <dd>
@@ -114,7 +114,7 @@ import java.lang.ref.*;
  *   attributes for display.  This helps make the View implementations
  *   more general purpose
  * </ol>
- * <p>
+ *
  * <dt>
  * Asynchronous Loading
  * <dd>
@@ -127,7 +127,7 @@ import java.lang.ref.*;
  * by the <code>HTMLDocument.HTMLReader</code> class.  The actual
  * work is done by the <code>DefaultStyledDocument</code> and
  * <code>AbstractDocument</code> classes in the text package.
- * <p>
+ *
  * <dt>
  * Customization from current LAF
  * <dd>
@@ -141,7 +141,7 @@ import java.lang.ref.*;
  * The support for this is provided by the <code>StyleSheet</code>
  * class.  The presentation of the HTML can be heavily influenced
  * by the setting of the StyleSheet property on the EditorKit.
- * <p>
+ *
  * <dt>
  * Not lossy
  * <dd>
@@ -839,7 +839,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * if the given position represents a link. If this was the result
          * of a mouse click, <code>x</code> and
          * <code>y</code> will give the location of the mouse, otherwise
-         * they will be < 0.
+         * they will be {@literal <} 0.
          *
          * @param pos the position
          * @param html the editor pane
@@ -2027,8 +2027,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
              * Paints a portion of a highlight.
              *
              * @param g the graphics context
-             * @param offs0 the starting model offset >= 0
-             * @param offs1 the ending model offset >= offs1
+             * @param offs0 the starting model offset &ge; 0
+             * @param offs1 the ending model offset &ge; offs1
              * @param bounds the bounding box of the view, which is not
              *        necessarily the region to paint.
              * @param c the editor

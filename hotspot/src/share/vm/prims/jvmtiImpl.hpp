@@ -299,7 +299,7 @@ public:
   static inline bool is_breakpoint(address bcp);
 
   static void oops_do(OopClosure* f);
-  static void metadata_do(void f(Metadata*));
+  static void metadata_do(void f(Metadata*)) NOT_JVMTI_RETURN;
   static void gc_epilogue();
 };
 

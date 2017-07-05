@@ -75,13 +75,13 @@ import static sun.font.EAttribute.*;
  *
  * A <em>character</em> is a symbol that represents an item such as a letter,
  * a digit, or punctuation in an abstract way. For example, <code>'g'</code>,
- * <font size=-1>LATIN SMALL LETTER G</font>, is a character.
+ * LATIN SMALL LETTER G, is a character.
  * <p>
  * A <em>glyph</em> is a shape used to render a character or a sequence of
  * characters. In simple writing systems, such as Latin, typically one glyph
  * represents one character. In general, however, characters and glyphs do not
  * have one-to-one correspondence. For example, the character '&aacute;'
- * <font size=-1>LATIN SMALL LETTER A WITH ACUTE</font>, can be represented by
+ * LATIN SMALL LETTER A WITH ACUTE, can be represented by
  * two glyphs: one for 'a' and one for '&acute;'. On the other hand, the
  * two-character string "fi" can be represented by a single glyph, an
  * "fi" ligature. In complex writing systems, such as Arabic or the South
@@ -93,7 +93,7 @@ import static sun.font.EAttribute.*;
  * of characters as well as the tables needed to map sequences of characters to
  * corresponding sequences of glyphs.
  *
- * <h4>Physical and Logical Fonts</h4>
+ * <h3>Physical and Logical Fonts</h3>
  *
  * The Java Platform distinguishes between two kinds of fonts:
  * <em>physical</em> fonts and <em>logical</em> fonts.
@@ -130,7 +130,7 @@ import static sun.font.EAttribute.*;
  * <a href="http://www.oracle.com/technetwork/java/javase/tech/faq-jsp-138165.html">Internationalization FAQ</a>
  * document.
  *
- * <h4>Font Faces and Names</h4>
+ * <h3>Font Faces and Names</h3>
  *
  * A <code>Font</code>
  * can have many faces, such as heavy, medium, oblique, gothic and
@@ -160,7 +160,7 @@ import static sun.font.EAttribute.*;
  * with varying sizes, styles, transforms and font features via the
  * <code>deriveFont</code> methods in this class.
  *
- * <h4>Font and TextAttribute</h4>
+ * <h3>Font and TextAttribute</h3>
  *
  * <p><code>Font</code> supports most
  * <code>TextAttribute</code>s.  This makes some operations, such as
@@ -197,7 +197,7 @@ import static sun.font.EAttribute.*;
  * avoid this problem.  Clients who use input method highlights can
  * convert these to the platform-specific attributes for that
  * highlight on the current platform and set them on the Font as
- * a workaround.</p>
+ * a workaround.
  *
  * <p>The <code>Map</code>-based constructor and
  * <code>deriveFont</code> APIs ignore the FONT attribute, and it is
@@ -1419,7 +1419,7 @@ public class Font implements java.io.Serializable
      * To ensure that this method returns the desired Font,
      * format the <code>str</code> parameter in
      * one of these ways
-     * <p>
+     *
      * <ul>
      * <li><em>fontname-style-pointsize</em>
      * <li><em>fontname-pointsize</em>

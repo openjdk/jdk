@@ -107,7 +107,7 @@ public interface AppletContext {
      * <code>target</code> argument indicates in which HTML frame the
      * document is to be displayed.
      * The target argument is interpreted as follows:
-     * <p>
+     *
      * <center><table border="3" summary="Target arguments and their descriptions">
      * <tr><th>Target Argument</th><th>Description</th></tr>
      * <tr><td><code>"_self"</code>  <td>Show in the window and frame that

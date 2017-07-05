@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,29 @@
  */
 
 /*
- *
+ * @test
+ * @summary The Serialization benchmark test. This java class is used to run the
+ *          test under JTREG.
+ * @library ../../
+ * @build bench.BenchInfo bench.HtmlReporter bench.Util bench.Benchmark
+ * @build bench.Reporter bench.XmlReporter bench.ConfigFormatException
+ * @build bench.Harness bench.TextReporter
+ * @build bench.serial.BooleanArrays bench.serial.Booleans
+ * @build bench.serial.ByteArrays bench.serial.Bytes bench.serial.CharArrays
+ * @build bench.serial.Chars bench.serial.ClassDesc bench.serial.Cons
+ * @build bench.serial.CustomDefaultObjTrees bench.serial.CustomObjTrees
+ * @build bench.serial.DoubleArrays bench.serial.Doubles
+ * @build bench.serial.ExternObjTrees bench.serial.FloatArrays
+ * @build bench.serial.Floats bench.serial.GetPutFieldTrees
+ * @build bench.serial.IntArrays bench.serial.Ints bench.serial.LongArrays
+ * @build bench.serial.Longs bench.serial.Main bench.serial.ObjArrays
+ * @build bench.serial.ObjTrees bench.serial.ProxyArrays
+ * @build bench.serial.ProxyClassDesc bench.serial.RepeatObjs
+ * @build bench.serial.ReplaceTrees bench.serial.ShortArrays
+ * @build bench.serial.Shorts bench.serial.SmallObjTrees
+ * @build bench.serial.StreamBuffer bench.serial.Strings
+ * @run main/othervm/timeout=1800 bench.serial.Main -c jtreg-config
+ * @author Mike Warres, Nigel Daley
  */
 
 package bench.serial;
@@ -33,7 +55,9 @@ import bench.HtmlReporter;
 import bench.Reporter;
 import bench.TextReporter;
 import bench.XmlReporter;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -47,8 +71,9 @@ import java.util.TimerTask;
  */
 public class Main {
 
-    static final String CONFFILE = "/bench/serial/config";
+    static final String CONFFILE = "config";
     static final String VERSION = "1.3";
+    static final String TEST_SRC_PATH = System.getProperty("test.src") + File.separator;
 
     static final int TEXT = 0;
     static final int HTML = 1;
@@ -84,15 +109,18 @@ public class Main {
     }
 
     /**
-     * Print error message and exit.
+     * Throw RuntimeException that wrap message.
+     *
+     * @param mesg a message will be wrapped in the RuntimeException.
      */
     static void die(String mesg) {
-        System.err.println(mesg);
-        System.exit(1);
+        throw new RuntimeException(mesg);
     }
 
     /**
      * Mainline parses command line, then hands off to benchmark harness.
+     *
+     * @param args
      */
     public static void main(String[] args) {
         parseArgs(args);
@@ -104,15 +132,11 @@ public class Main {
             setupReporter();
             if (exitOnTimer) {
                 setupTimer(testDurationSeconds);
-                while (true) {
+                do {
                     runBenchmarks();
-                    if (exitRequested) {
-                        System.exit(0);
-                    }
-                }
+                } while (!exitRequested);
             } else {
                 runBenchmarks();
-                System.exit(0);
             }
         }
     }
@@ -122,50 +146,59 @@ public class Main {
      */
     static void parseArgs(String[] args) {
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-h")) {
-                usage();
-                System.exit(0);
-            } else if (args[i].equals("-v")) {
-                verbose = true;
-            } else if (args[i].equals("-l")) {
-                list = true;
-            } else if (args[i].equals("-t")) {
-                if (++i >= args.length)
-                    die("Error: no timeout value specified");
-                try {
-                    exitOnTimer = true;
-                    testDurationSeconds = Integer.parseInt(args[i]) * 3600;
-                } catch (Exception e) {
-                    die("Error: unable to determine timeout value");
-                }
-            } else if (args[i].equals("-o")) {
-                if (++i >= args.length)
-                    die("Error: no output file specified");
-                try {
-                    repstr = new FileOutputStream(args[i]);
-                } catch (IOException e) {
-                    die("Error: unable to open \"" + args[i] + "\"");
-                }
-            } else if (args[i].equals("-c")) {
-                if (++i >= args.length)
-                    die("Error: no config file specified");
-                try {
-                    confstr = new FileInputStream(args[i]);
-                } catch (IOException e) {
-                    die("Error: unable to open \"" + args[i] + "\"");
-                }
-            } else if (args[i].equals("-html")) {
-                if (format != TEXT)
-                    die("Error: conflicting formats");
-                format = HTML;
-            } else if (args[i].equals("-xml")) {
-                if (format != TEXT)
-                    die("Error: conflicting formats");
-                format = XML;
-            } else {
-                System.err.println("Illegal option: \"" + args[i] + "\"");
-                usage();
-                System.exit(1);
+            switch (args[i]) {
+                case "-h":
+                    usage();
+                    System.exit(0);
+                    break;
+                case "-v":
+                    verbose = true;
+                    break;
+                case "-l":
+                    list = true;
+                    break;
+                case "-t":
+                    if (++i >= args.length)
+                        die("Error: no timeout value specified");
+                    try {
+                        exitOnTimer = true;
+                        testDurationSeconds = Integer.parseInt(args[i]) * 3600;
+                    } catch (NumberFormatException e) {
+                        die("Error: unable to determine timeout value");
+                    }
+                    break;
+                case "-o":
+                    if (++i >= args.length)
+                        die("Error: no output file specified");
+                    try {
+                        repstr = new FileOutputStream(args[i]);
+                    } catch (FileNotFoundException e) {
+                        die("Error: unable to open \"" + args[i] + "\"");
+                    }
+                    break;
+                case "-c":
+                    if (++i >= args.length)
+                        die("Error: no config file specified");
+                    String confFileName = TEST_SRC_PATH + args[i];
+                    try {
+                        confstr = new FileInputStream(confFileName);
+                    } catch (FileNotFoundException e) {
+                        die("Error: unable to open \"" + confFileName + "\"");
+                    }
+                    break;
+                case "-html":
+                    if (format != TEXT)
+                        die("Error: conflicting formats");
+                    format = HTML;
+                    break;
+                case "-xml":
+                    if (format != TEXT)
+                        die("Error: conflicting formats");
+                    format = XML;
+                    break;
+                default:
+                    usage();
+                    die("Illegal option: \"" + args[i] + "\"");
             }
         }
     }
@@ -177,7 +210,7 @@ public class Main {
         if (repstr == null)
             repstr = System.out;
         if (confstr == null)
-            confstr = (new Main()).getClass().getResourceAsStream(CONFFILE);
+            confstr = Main.class.getResourceAsStream(TEST_SRC_PATH + CONFFILE);
         if (confstr == null)
             die("Error: unable to find default config file");
     }
@@ -206,6 +239,7 @@ public class Main {
         timer = new Timer(true);
         timer.schedule(
             new TimerTask() {
+                @Override
                 public void run() {
                     exitRequested = true;
                 }

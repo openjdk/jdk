@@ -804,7 +804,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * returns will give better performance for situations where large
      * parts of the document are being scanned.  The following is an example
      * of using the partial return to access the entire document:
-     * <p>
+     *
      * <pre>
      * &nbsp; int nleft = doc.getDocumentLength();
      * &nbsp; Segment text = new Segment();

@@ -44,6 +44,11 @@ inline void MarkSweep::mark_object(oop obj) {
   }
 }
 
+inline void MarkSweep::follow_klass(Klass* klass) {
+  oop op = klass->klass_holder();
+  MarkSweep::mark_and_push(&op);
+}
+
 template <class T> inline void MarkSweep::follow_root(T* p) {
   assert(!Universe::heap()->is_in_reserved(p),
          "roots shouldn't be things within the heap");
