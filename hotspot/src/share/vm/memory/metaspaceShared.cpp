@@ -376,18 +376,17 @@ void VM_PopulateDumpSharedSpace::doit() {
   const char* fmt = "%s space: %9d [ %4.1f%% of total] out of %9d bytes [%4.1f%% used] at " PTR_FORMAT;
   Metaspace* ro_space = _loader_data->ro_metaspace();
   Metaspace* rw_space = _loader_data->rw_metaspace();
-  const size_t BPW = BytesPerWord;
 
   // Allocated size of each space (may not be all occupied)
-  const size_t ro_alloced = ro_space->capacity_words(Metaspace::NonClassType) * BPW;
-  const size_t rw_alloced = rw_space->capacity_words(Metaspace::NonClassType) * BPW;
+  const size_t ro_alloced = ro_space->capacity_bytes_slow(Metaspace::NonClassType);
+  const size_t rw_alloced = rw_space->capacity_bytes_slow(Metaspace::NonClassType);
   const size_t md_alloced = md_end-md_low;
   const size_t mc_alloced = mc_end-mc_low;
   const size_t total_alloced = ro_alloced + rw_alloced + md_alloced + mc_alloced;
 
   // Occupied size of each space.
-  const size_t ro_bytes = ro_space->used_words(Metaspace::NonClassType) * BPW;
-  const size_t rw_bytes = rw_space->used_words(Metaspace::NonClassType) * BPW;
+  const size_t ro_bytes = ro_space->used_bytes_slow(Metaspace::NonClassType);
+  const size_t rw_bytes = rw_space->used_bytes_slow(Metaspace::NonClassType);
   const size_t md_bytes = size_t(md_top - md_low);
   const size_t mc_bytes = size_t(mc_top - mc_low);
 

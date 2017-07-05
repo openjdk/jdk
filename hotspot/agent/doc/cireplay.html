@@ -1,22 +1,22 @@
 <html>
 <head>
 <title>
-C2 Replay
+Replay
 </title>
 </head>
 <body>
 
-<h1>C2 compiler replay</h1>
+<h1>Compiler replay</h1>
 <p>
-The C2 compiler replay is a function to repeat the compiling process from a crashed java process in compiled method<br>
+The compiler replay is a function to repeat the compiling process from a crashed java process in compiled method<br>
 This function only exists in debug version of VM
 </p>
 <h2>Usage</h2>
-<pre> 
-First, use SA to attach to the core file, if suceeded, do
-       clhsdb>dumpreplaydata <address> | -a | <thread_id> [> replay.txt]
+<pre>
+First, use SA to attach to the core file, if succeeded, do
+       hsdb&gt; dumpreplaydata &lt;address&gt; | -a | &lt;thread_id&gt; [&gt; replay.txt]
        create file replay.txt, address is address of Method, or nmethod(CodeBlob)
-       clhsdb>buildreplayjars [all | boot | app]
+       hsdb&gt; buildreplayjars [all | boot | app]
        create files:
          all:
            app.jar, boot.jar
@@ -26,16 +26,16 @@ First, use SA to attach to the core file, if suceeded, do
            app.jar
        exit SA now.
 Second, use the obtained replay text file, replay.txt and jar files, app.jar and boot.jar, using debug version of java
-       java -Xbootclasspath/p:boot.jar -cp app.jar -XX:ReplayDataFile=<datafile> -XX:+ReplayCompiles ....
+       java -Xbootclasspath/p:boot.jar -cp app.jar -XX:ReplayDataFile=&lt;datafile&gt; -XX:+ReplayCompiles ....
        This will replay the compiling process.
 
        With ReplayCompiles, the replay will recompile all the methods in app.jar, and in boot.jar to emulate the process in java app.
 
 notes:
        1) Most time, we don't need the boot.jar which is the classes loaded from JDK. It will be only modified when an agent(JVMDI) is running and modifies the classes.
-       2) If encounter error as "<flag>" not found, that means the SA is using a VMStructs which is different from the one with corefile. In this case, SA has a utility tool vmstructsdump which is located at agent/src/os/<os>/proc/<os_platform>
+       2) If encounter error as "&lt;flag&gt;" not found, that means the SA is using a VMStructs which is different from the one with corefile. In this case, SA has a utility tool vmstructsdump which is located at agent/src/os/&lt;os&gt;/proc/&lt;os_platform&gt;
 
        Use this tool to dump VM type library:
-       vmstructsdump libjvm.so > <type_name>.db
+       vmstructsdump libjvm.so &gt; &lt;type_name&gt;.db
 
-       set env SA_TYPEDB=<type_name>.db (refer different shell for set envs)
+       set env SA_TYPEDB=&lt;type_name&gt;.db (refer different shell for set envs)
