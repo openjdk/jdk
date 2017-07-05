@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,11 @@
 
 #include "sun_misc_VM.h"
 
+/* Only register the performance-critical methods */
+static JNINativeMethod methods[] = {
+    {"getNanoTimeAdjustment", "(J)J", (void *)&JVM_GetNanoTimeAdjustment}
+};
+
 JNIEXPORT jobject JNICALL
 Java_sun_misc_VM_latestUserDefinedLoader(JNIEnv *env, jclass cls) {
     return JVM_LatestUserDefinedLoader(env);
@@ -48,6 +53,14 @@ Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
         JNU_ThrowInternalError(env, "Handle for JVM not found for symbol lookup");
         return;
     }
+
+    // Registers implementations of native methods described in methods[]
+    // above.
+    // In particular, registers JVM_GetNanoTimeAdjustment as the implementation
+    // of the native sun.misc.VM.getNanoTimeAdjustment - avoiding the cost of
+    // introducing a Java_sun_misc_VM_getNanoTimeAdjustment  wrapper
+    (*env)->RegisterNatives(env, cls,
+                            methods, sizeof(methods)/sizeof(methods[0]));
 
     func_p = (GetJvmVersionInfo_fp) JDK_FindJvmEntry("JVM_GetVersionInfo");
      if (func_p != NULL) {

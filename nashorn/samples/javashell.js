@@ -40,6 +40,7 @@
 var Arrays = Java.type("java.util.Arrays");
 var BufferedReader = Java.type("java.io.BufferedReader");
 var FileWriter = Java.type("java.io.FileWriter");
+var List = Java.type("java.util.List");
 var LocalDateTime = Java.type("java.time.LocalDateTime");
 var InputStreamReader = Java.type("java.io.InputStreamReader");
 var PrintWriter = Java.type("java.io.PrintWriter");
@@ -121,7 +122,7 @@ EOF
 // execute code command
 function exec(args) {
     // build child process and start it!
-    new ProcessBuilder(Arrays.asList(args.split(' ')))
+    new ProcessBuilder(Java.to(args.split(' '), List))
          .inheritIO()
          .start()
          .waitFor();

@@ -326,6 +326,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         return addStatement(throwNode); //ThrowNodes are always terminal, marked as such in constructor
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends Node> T ensureUniqueNamesIn(final T node) {
         return (T)node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override

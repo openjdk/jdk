@@ -88,6 +88,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.util.List;
+import java.util.Objects;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -252,7 +253,7 @@ public class DynamicLinker {
         // Make sure we filter the invocation before linking it into the call site. This is typically used to match the
         // return type of the invocation to the call site.
         guardedInvocation = prelinkFilter.filter(guardedInvocation, linkRequest, linkerServices);
-        guardedInvocation.getClass(); // null pointer check
+        Objects.requireNonNull(guardedInvocation);
 
         int newRelinkCount = relinkCount;
         // Note that the short-circuited "&&" evaluation below ensures we'll increment the relinkCount until

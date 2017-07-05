@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
@@ -143,7 +144,7 @@ public final class Options {
      * @return true if set to true, default value if unset or set to false
      */
     public static boolean getBooleanProperty(final String name, final Boolean defValue) {
-        name.getClass(); // null check
+        Objects.requireNonNull(name);
         if (!name.startsWith("nashorn.")) {
             throw new IllegalArgumentException(name);
         }
@@ -184,7 +185,7 @@ public final class Options {
      * @return string property if set or default value
      */
     public static String getStringProperty(final String name, final String defValue) {
-        name.getClass(); // null check
+        Objects.requireNonNull(name);
         if (! name.startsWith("nashorn.")) {
             throw new IllegalArgumentException(name);
         }
@@ -211,7 +212,7 @@ public final class Options {
      * @return integer property if set or default value
      */
     public static int getIntProperty(final String name, final int defValue) {
-        name.getClass(); // null check
+        Objects.requireNonNull(name);
         if (! name.startsWith("nashorn.")) {
             throw new IllegalArgumentException(name);
         }

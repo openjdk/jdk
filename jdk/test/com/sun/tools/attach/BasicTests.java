@@ -80,8 +80,7 @@ public class BasicTests {
 
         // Need to add jdk/lib/tools.jar to classpath.
         String classpath =
-            System.getProperty("test.class.path", "") + File.pathSeparator +
-            System.getProperty("test.jdk", ".") + sep + "lib" + sep + "tools.jar";
+            System.getProperty("test.class.path", "");
         String testClassDir = System.getProperty("test.classes", "") + sep;
 
         // Argumenta : -classpath cp BasicTests$TestMain pid agent badagent redefineagent

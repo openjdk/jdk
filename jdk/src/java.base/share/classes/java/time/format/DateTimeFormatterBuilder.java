@@ -849,6 +849,7 @@ public final class DateTimeFormatterBuilder {
      * @param fractionalDigits  the number of fractional second digits to format with,
      *  from 0 to 9, or -1 to use as many digits as necessary
      * @return this, for chaining, not null
+     * @throws IllegalArgumentException if the number of fractional digits is invalid
      */
     public DateTimeFormatterBuilder appendInstant(int fractionalDigits) {
         if (fractionalDigits < -1 || fractionalDigits > 9) {
@@ -909,6 +910,7 @@ public final class DateTimeFormatterBuilder {
      * @param pattern  the pattern to use, not null
      * @param noOffsetText  the text to use when the offset is zero, not null
      * @return this, for chaining, not null
+     * @throws IllegalArgumentException if the pattern is invalid
      */
     public DateTimeFormatterBuilder appendOffset(String pattern, String noOffsetText) {
         appendInternal(new OffsetIdPrinterParser(pattern, noOffsetText));
