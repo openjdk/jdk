@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ CXX_FLAGS=$(CXX_FLAGS) /D TARGET_COMPILER_visCPP
 #      1400 is for VS2005
 #      1500 is for VS2008
 #      1600 is for VS2010
+#      1700 is for VS2012
 #    Do not confuse this MSC_VER with the predefined macro _MSC_VER that the
 #    compiler provides, when MSC_VER==1399, _MSC_VER will be 1400.
 #    Normally they are the same, but a pre-release of the VS2005 compilers
@@ -142,6 +143,9 @@ COMPILER_NAME=VS2008
 !if "$(MSC_VER)" == "1600"
 COMPILER_NAME=VS2010
 !endif
+!if "$(MSC_VER)" == "1700"
+COMPILER_NAME=VS2012
+!endif
 !endif
 
 # By default, we do not want to use the debug version of the msvcrt.dll file
@@ -151,9 +155,13 @@ MS_RUNTIME_OPTION = /MD
 MS_RUNTIME_OPTION = /MTd /D "_DEBUG"
 !endif
 
+# VS2012 and later won't work with:
+#     /D _STATIC_CPPLIB /D _DISABLE_DEPRECATE_STATIC_CPPLIB
+!if "$(MSC_VER)" < "1700"
 # Always add the _STATIC_CPPLIB flag
 STATIC_CPPLIB_OPTION = /D _STATIC_CPPLIB /D _DISABLE_DEPRECATE_STATIC_CPPLIB
 MS_RUNTIME_OPTION = $(MS_RUNTIME_OPTION) $(STATIC_CPPLIB_OPTION)
+!endif
 CXX_FLAGS=$(CXX_FLAGS) $(MS_RUNTIME_OPTION)
 
 # How /GX option is spelled
@@ -206,6 +214,22 @@ MT=mt.exe
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2010"
+PRODUCT_OPT_OPTION   = /O2 /Oy-
+FASTDEBUG_OPT_OPTION = /O2 /Oy-
+DEBUG_OPT_OPTION     = /Od
+GX_OPTION = /EHsc
+LD_FLAGS = /manifest $(LD_FLAGS)
+# Manifest Tool - used in VS2005 and later to adjust manifests stored
+# as resources inside build artifacts.
+!if "x$(MT)" == "x"
+MT=mt.exe
+!endif
+!if "$(BUILDARCH)" == "i486"
+LD_FLAGS = /SAFESEH $(LD_FLAGS)
+!endif
+!endif
+
+!if "$(COMPILER_NAME)" == "VS2012"
 PRODUCT_OPT_OPTION   = /O2 /Oy-
 FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
