@@ -1,5 +1,5 @@
 /*
- * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,33 @@ import java.security.PrivilegedAction;
 
 final class VersionHelper12 extends VersionHelper {
 
+    // System property to control whether classes may be loaded from an
+    // arbitrary URL code base.
+    private static final String TRUST_URL_CODEBASE_PROPERTY =
+        "com.sun.jndi.ldap.object.trustURLCodebase";
+
+    // Determine whether classes may be loaded from an arbitrary URL code base.
+    private static final String trustURLCodebase =
+        AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                public String run() {
+                    return System.getProperty(TRUST_URL_CODEBASE_PROPERTY,
+                            "false");
+                }
+            }
+        );
+
     VersionHelper12() {} // Disallow external from creating one of these.
 
     ClassLoader getURLClassLoader(String[] url)
         throws MalformedURLException {
             ClassLoader parent = getContextClassLoader();
-            if (url != null) {
+            /*
+             * Classes may only be loaded from an arbitrary URL code base when
+             * the system property com.sun.jndi.ldap.object.trustURLCodebase
+             * has been set to "true".
+             */
+            if (url != null && "true".equalsIgnoreCase(trustURLCodebase)) {
                 return URLClassLoader.newInstance(getUrlArray(url), parent);
             } else {
                 return parent;

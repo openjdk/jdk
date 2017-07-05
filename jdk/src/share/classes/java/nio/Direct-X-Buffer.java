@@ -412,10 +412,12 @@ class Direct$Type$Buffer$RW$$BO$
 
         if ((start < 0) || (end > len) || (start > end))
             throw new IndexOutOfBoundsException();
-        int sublen = end - start;
-        int off = (pos + start) << $LG_BYTES_PER_VALUE$;
-        assert (off >= 0);
-        return new DirectCharBuffer$RW$$BO$(this, -1, 0, sublen, sublen, off);
+        return new DirectCharBuffer$RW$$BO$(this,
+                                            -1,
+                                            pos + start,
+                                            pos + end,
+                                            capacity(),
+                                            offset);
     }
 
 #end[char]

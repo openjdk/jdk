@@ -217,6 +217,9 @@
   template(base_name,                                 "base")                                     \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
+  template(java_dyn_Dynamic,                          "java/dyn/Dynamic")                         \
+  template(java_dyn_Linkage,                          "java/dyn/Linkage")                         \
+  template(java_dyn_CallSite,                         "java/dyn/CallSite")                        \
   template(java_dyn_MethodHandle,                     "java/dyn/MethodHandle")                    \
   template(java_dyn_MethodType,                       "java/dyn/MethodType")                      \
   template(java_dyn_WrongMethodTypeException,         "java/dyn/WrongMethodTypeException")        \
@@ -230,8 +233,13 @@
   template(sun_dyn_AdapterMethodHandle,               "sun/dyn/AdapterMethodHandle")              \
   template(sun_dyn_BoundMethodHandle,                 "sun/dyn/BoundMethodHandle")                \
   template(sun_dyn_DirectMethodHandle,                "sun/dyn/DirectMethodHandle")               \
+  template(sun_dyn_CallSiteImpl,                      "sun/dyn/CallSiteImpl")                     \
   template(makeImpl_name,                             "makeImpl") /*MethodType::makeImpl*/        \
   template(makeImpl_signature,    "(Ljava/lang/Class;[Ljava/lang/Class;ZZ)Ljava/dyn/MethodType;") \
+  template(makeSite_name,                             "makeSite") /*CallSiteImpl::makeImpl*/       \
+  template(makeSite_signature,    "(Ljava/lang/Class;Ljava/lang/String;Ljava/dyn/MethodType;II)Ljava/dyn/CallSite;") \
+  template(findBootstrapMethod_name,                  "findBootstrapMethod")                      \
+  template(findBootstrapMethod_signature, "(Ljava/lang/Class;Ljava/lang/Class;)Ljava/dyn/MethodHandle;") \
   NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
   LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
                                                                                                   \
@@ -308,9 +316,11 @@
   template(bitCount_name,                             "bitCount")                                 \
   template(profile_name,                              "profile")                                  \
   template(equals_name,                               "equals")                                   \
+  template(target_name,                               "target")                                   \
   template(toString_name,                             "toString")                                 \
   template(values_name,                               "values")                                   \
   template(receiver_name,                             "receiver")                                 \
+  template(vmmethod_name,                             "vmmethod")                                 \
   template(vmtarget_name,                             "vmtarget")                                 \
   template(vmentry_name,                              "vmentry")                                  \
   template(vmslots_name,                              "vmslots")                                  \

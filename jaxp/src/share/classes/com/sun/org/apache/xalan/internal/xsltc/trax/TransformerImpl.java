@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: TransformerImpl.java,v 1.5 2005/09/28 13:48:46 pvedula Exp $
+ * $Id: TransformerImpl.java,v 1.10 2007/06/13 01:57:09 joehw Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;

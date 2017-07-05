@@ -102,10 +102,12 @@ class StringCharBuffer                                  // package-private
     public final CharBuffer subSequence(int start, int end) {
         try {
             int pos = position();
-            return new StringCharBuffer(str, -1,
+            return new StringCharBuffer(str,
+                                        -1,
                                         pos + checkIndex(start, pos),
                                         pos + checkIndex(end, pos),
-                                        remaining(), offset);
+                                        capacity(),
+                                        offset);
         } catch (IllegalArgumentException x) {
             throw new IndexOutOfBoundsException();
         }

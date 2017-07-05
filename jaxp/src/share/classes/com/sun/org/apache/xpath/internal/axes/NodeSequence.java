@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: NodeSequence.java,v 1.2.4.2 2005/09/14 19:45:19 jeffsuttor Exp $
+ * $Id: NodeSequence.java,v 1.6 2007/01/12 19:26:42 spericas Exp $
  */
 package com.sun.org.apache.xpath.internal.axes;
 

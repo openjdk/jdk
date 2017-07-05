@@ -451,9 +451,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
         }
     }
 
-    /*
     @Override
-    */
     public boolean isTranslucencyCapable() {
         return isTranslucencyCapable(getAData());
     }

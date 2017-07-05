@@ -146,6 +146,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
         params.put(OVERRIDE_REDIRECT, Boolean.valueOf(isOverrideRedirect()));
 
+        SunToolkit.awtLock();
+        try {
+            windows.add(this);
+        } finally {
+            SunToolkit.awtUnlock();
+        }
+
         cachedFocusableWindow = isFocusableWindow();
 
         Font f = target.getFont();
@@ -173,9 +180,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
         GraphicsConfiguration gc = getGraphicsConfiguration();
         ((X11GraphicsDevice)gc.getDevice()).addDisplayChangedListener(this);
-
-        Rectangle bounds = (Rectangle)(params.get(BOUNDS));
-        params.put(BOUNDS, constrainBounds(bounds.x, bounds.y, bounds.width, bounds.height));
     }
 
     protected String getWMName() {
@@ -430,56 +434,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return ownerPeer;
     }
 
-    // This method is overriden at the XDecoratedPeer to handle
-    // decorated windows a bit differently.
-    Rectangle constrainBounds(int x, int y, int width, int height) {
-        // We don't restrict the setBounds() operation if the code is trusted.
-        if (!hasWarningWindow()) {
-            return new Rectangle(x, y, width, height);
-        }
-
-        // The window bounds should be within the visible part of the screen
-        int newX = x;
-        int newY = y;
-        int newW = width;
-        int newH = height;
-
-        // Now check each point is within the visible part of the screen
-        GraphicsConfiguration gc = ((Window)target).getGraphicsConfiguration();
-        Rectangle sB = gc.getBounds();
-        Insets sIn = ((Window)target).getToolkit().getScreenInsets(gc);
-
-        int screenX = sB.x + sIn.left;
-        int screenY = sB.y + sIn.top;
-        int screenW = sB.width - sIn.left - sIn.right;
-        int screenH = sB.height - sIn.top - sIn.bottom;
-
-
-        // First make sure the size is withing the visible part of the screen
-        if (newW > screenW) {
-            newW = screenW;
-        }
-
-        if (newH > screenH) {
-            newH = screenH;
-        }
-
-        // Tweak the location if needed
-        if (newX < screenX) {
-            newX = screenX;
-        } else if (newX + newW > screenX + screenW) {
-            newX = screenX + screenW - newW;
-        }
-
-        if (newY < screenY) {
-            newY = screenY;
-        } else if (newY + newH > screenY + screenH) {
-            newY = screenY + screenH - newH;
-        }
-
-        return new Rectangle(newX, newY, newW, newH);
-    }
-
     //Fix for 6318144: PIT:Setting Min Size bigger than current size enlarges
     //the window but fails to revalidate, Sol-CDE
     //This bug is regression for
@@ -488,13 +442,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     //Note that this function is overriden in XDecoratedPeer so event
     //posting is not changing for decorated peers
     public void setBounds(int x, int y, int width, int height, int op) {
-        Rectangle newBounds = constrainBounds(x, y, width, height);
-
         XToolkit.awtLock();
         try {
             Rectangle oldBounds = getBounds();
 
-            super.setBounds(newBounds.x, newBounds.y, newBounds.width, newBounds.height, op);
+            super.setBounds(x, y, width, height, op);
 
             Rectangle bounds = getBounds();
 

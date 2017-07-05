@@ -248,7 +248,6 @@ private:
     static int ms_instanceCounter;
     static HHOOK ms_hCBTFilter;
     static LRESULT CALLBACK CBTFilter(int nCode, WPARAM wParam, LPARAM lParam);
-    static HWND sm_retainingHierarchyZOrderInShow; // a referred window in the process of show
     static BOOL sm_resizing;        /* in the middle of a resizing operation */
 
     RECT m_insets;          /* a cache of the insets being used */
