@@ -597,9 +597,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   # Setup the assembler (AS)
   #
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # FIXME: should this really be solaris, or solstudio?
     BASIC_PATH_PROGS(AS, as)
     BASIC_FIXUP_EXECUTABLE(AS)
+    if test "x$AS" = x; then
+      AC_MSG_ERROR([Solaris assembler (as) is required. Please install via "pkg install pkg:/developer/assembler".])
+    fi
   else
     # FIXME: is this correct for microsoft?
     AS="$CC -c"
