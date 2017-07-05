@@ -318,7 +318,7 @@ Node *PhaseIdealLoop::find_use_block( Node *use, Node *def, Node *old_false, Nod
 
   if( use->is_Phi() ) {         // Phi uses in prior block
     // Grab the first Phi use; there may be many.
-    // Each will be handled as a seperate iteration of
+    // Each will be handled as a separate iteration of
     // the "while( phi->outcnt() )" loop.
     uint j;
     for( j = 1; j < use->req(); j++ )

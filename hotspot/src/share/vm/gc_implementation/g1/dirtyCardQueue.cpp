@@ -78,8 +78,8 @@ size_t DirtyCardQueueSet::num_par_ids() {
 
 void DirtyCardQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
                                    int max_completed_queue,
-                                   Mutex* lock) {
-  PtrQueueSet::initialize(cbl_mon, fl_lock, max_completed_queue);
+                                   Mutex* lock, PtrQueueSet* fl_owner) {
+  PtrQueueSet::initialize(cbl_mon, fl_lock, max_completed_queue, fl_owner);
   set_buffer_size(DCQBarrierQueueBufferSize);
   set_process_completed_threshold(DCQBarrierProcessCompletedThreshold);
 

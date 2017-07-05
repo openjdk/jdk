@@ -47,7 +47,7 @@
 #ifdef JAVA_ARGS
 /*
  * ApplicationHome is prepended to each of these entries; the resulting
- * strings are concatenated (seperated by PATH_SEPARATOR) and used as the
+ * strings are concatenated (separated by PATH_SEPARATOR) and used as the
  * value of -cp option to the launcher.
  */
 #ifndef APP_CLASSPATH

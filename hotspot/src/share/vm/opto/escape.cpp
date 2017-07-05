@@ -515,7 +515,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   // cause the failure in add_offset() with narrow oops since TypeOopPtr()
   // constructor verifies correctness of the offset.
   //
-  // It could happend on subclass's branch (from the type profiling
+  // It could happened on subclass's branch (from the type profiling
   // inlining) which was not eliminated during parsing since the exactness
   // of the allocation type was not propagated to the subclass type check.
   //
@@ -703,7 +703,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   while (prev != result) {
     prev = result;
     if (result == start_mem)
-      break;  // hit one of our sentinals
+      break;  // hit one of our sentinels
     if (result->is_Mem()) {
       const Type *at = phase->type(result->in(MemNode::Address));
       if (at != Type::TOP) {
@@ -720,7 +720,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
     if (result->is_Proj() && result->as_Proj()->_con == TypeFunc::Memory) {
       Node *proj_in = result->in(0);
       if (proj_in->is_Allocate() && proj_in->_idx == (uint)tinst->instance_id()) {
-        break;  // hit one of our sentinals
+        break;  // hit one of our sentinels
       } else if (proj_in->is_Call()) {
         CallNode *call = proj_in->as_Call();
         if (!call->may_modify(tinst, phase)) {
@@ -756,6 +756,16 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       } else {
         break;
       }
+    } else if (result->Opcode() == Op_SCMemProj) {
+      assert(result->in(0)->is_LoadStore(), "sanity");
+      const Type *at = phase->type(result->in(0)->in(MemNode::Address));
+      if (at != Type::TOP) {
+        assert (at->isa_ptr() != NULL, "pointer type required.");
+        int idx = C->get_alias_index(at->is_ptr());
+        assert(idx != alias_idx, "Object is not scalar replaceable if a LoadStore node access its field");
+        break;
+      }
+      result = result->in(0)->in(MemNode::Memory);
     }
   }
   if (result->is_Phi()) {
@@ -794,7 +804,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
 //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
 //            search the Memory chain for a store with the appropriate type
 //            address type.  If a Phi is found, create a new version with
-//            the approriate memory slices from each of the Phi inputs.
+//            the appropriate memory slices from each of the Phi inputs.
 //            For stores, process the users as follows:
 //               MemNode:  push on memnode_worklist
 //               MergeMem: push on mergemem_worklist
@@ -1548,7 +1558,7 @@ bool ConnectionGraph::compute_escape() {
       has_non_escaping_obj = true; // Non GlobalEscape
     Node* n = ptn->_node;
     if (n->is_Allocate() && ptn->_scalar_replaceable ) {
-      // Push scalar replaceable alocations on alloc_worklist
+      // Push scalar replaceable allocations on alloc_worklist
       // for processing in split_unique_types().
       alloc_worklist.append(n);
     }

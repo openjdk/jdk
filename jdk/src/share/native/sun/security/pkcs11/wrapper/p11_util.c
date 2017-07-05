@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -73,11 +73,11 @@ jobject createLockObject(JNIEnv *env) {
     jmethodID jConstructor;
 
     jObjectClass = (*env)->FindClass(env, "java/lang/Object");
-    assert(jObjectClass != 0);
+    if (jObjectClass == NULL) { return NULL; }
     jConstructor = (*env)->GetMethodID(env, jObjectClass, "<init>", "()V");
-    assert(jConstructor != 0);
+    if (jConstructor == NULL) { return NULL; }
     jLockObject = (*env)->NewObject(env, jObjectClass, jConstructor);
-    assert(jLockObject != 0);
+    if (jLockObject == NULL) { return NULL; }
     jLockObject = (*env)->NewGlobalRef(env, jLockObject);
 
     return jLockObject ;
@@ -200,84 +200,30 @@ jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
         return 0L ;
     } else {
         jPKCS11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
-        assert(jPKCS11ExceptionClass != 0);
-        jConstructor = (*env)->GetMethodID(env, jPKCS11ExceptionClass, "<init>", "(J)V");
-        assert(jConstructor != 0);
-        jErrorCode = ckULongToJLong(returnValue);
-        jPKCS11Exception = (jthrowable) (*env)->NewObject(env, jPKCS11ExceptionClass, jConstructor, jErrorCode);
-        (*env)->Throw(env, jPKCS11Exception);
+        if (jPKCS11ExceptionClass != NULL) {
+            jConstructor = (*env)->GetMethodID(env, jPKCS11ExceptionClass, "<init>", "(J)V");
+            if (jConstructor != NULL) {
+                jErrorCode = ckULongToJLong(returnValue);
+                jPKCS11Exception = (jthrowable) (*env)->NewObject(env, jPKCS11ExceptionClass, jConstructor, jErrorCode);
+                if (jPKCS11Exception != NULL) {
+                    (*env)->Throw(env, jPKCS11Exception);
+                }
+            }
+        }
+        (*env)->DeleteLocalRef(env, jPKCS11ExceptionClass);
         return jErrorCode ;
     }
 }
 
 /*
- * this function simply throws a FileNotFoundException
- *
- * @param env Used to call JNI funktions and to get the Exception class.
- * @param jmessage The message string of the Exception object.
- */
-void throwFileNotFoundException(JNIEnv *env, jstring jmessage)
-{
-    jclass jFileNotFoundExceptionClass;
-    jmethodID jConstructor;
-    jthrowable jFileNotFoundException;
-
-    jFileNotFoundExceptionClass = (*env)->FindClass(env, CLASS_FILE_NOT_FOUND_EXCEPTION);
-    assert(jFileNotFoundExceptionClass != 0);
-
-    jConstructor = (*env)->GetMethodID(env, jFileNotFoundExceptionClass, "<init>", "(Ljava/lang/String;)V");
-    assert(jConstructor != 0);
-    jFileNotFoundException = (jthrowable) (*env)->NewObject(env, jFileNotFoundExceptionClass, jConstructor, jmessage);
-    (*env)->Throw(env, jFileNotFoundException);
-}
-
-/*
- * this function simply throws an IOException
+ * This function simply throws an IOException
  *
  * @param env Used to call JNI funktions and to get the Exception class.
  * @param message The message string of the Exception object.
  */
-void throwIOException(JNIEnv *env, const char * message)
+void throwIOException(JNIEnv *env, const char *message)
 {
-    jclass jIOExceptionClass;
-
-    jIOExceptionClass = (*env)->FindClass(env, CLASS_IO_EXCEPTION);
-    assert(jIOExceptionClass != 0);
-
-    (*env)->ThrowNew(env, jIOExceptionClass, message);
-}
-
-/*
- * this function simply throws an IOException and takes a unicode
- * messge.
- *
- * @param env Used to call JNI funktions and to get the Exception class.
- * @param message The unicode message string of the Exception object.
- */
-void throwIOExceptionUnicodeMessage(JNIEnv *env, const short *message)
-{
-    jclass jIOExceptionClass;
-    jmethodID jConstructor;
-    jthrowable jIOException;
-    jstring jmessage;
-    jsize length;
-    short *currentCharacter;
-
-    jIOExceptionClass = (*env)->FindClass(env, CLASS_IO_EXCEPTION);
-    assert(jIOExceptionClass != 0);
-
-    length = 0;
-    if (message != NULL) {
-        currentCharacter = (short *) message;
-        while (*(currentCharacter++) != 0) length++;
-    }
-
-    jmessage = (*env)->NewString(env, (const jchar *)message, length);
-
-    jConstructor = (*env)->GetMethodID(env, jIOExceptionClass, "<init>", "(Ljava/lang/String;)V");
-    assert(jConstructor != 0);
-    jIOException = (jthrowable) (*env)->NewObject(env, jIOExceptionClass, jConstructor, jmessage);
-    (*env)->Throw(env, jIOException);
+    JNU_ThrowByName(env, CLASS_IO_EXCEPTION, message);
 }
 
 /*
@@ -288,26 +234,9 @@ void throwIOExceptionUnicodeMessage(JNIEnv *env, const short *message)
  * @param env Used to call JNI funktions and to get the Exception class.
  * @param jmessage The message string of the Exception object.
  */
-void throwPKCS11RuntimeException(JNIEnv *env, jstring jmessage)
+void throwPKCS11RuntimeException(JNIEnv *env, const char *message)
 {
-    jclass jPKCS11RuntimeExceptionClass;
-    jmethodID jConstructor;
-    jthrowable jPKCS11RuntimeException;
-
-    jPKCS11RuntimeExceptionClass = (*env)->FindClass(env, CLASS_PKCS11RUNTIMEEXCEPTION);
-    assert(jPKCS11RuntimeExceptionClass != 0);
-
-    if (jmessage == NULL) {
-        jConstructor = (*env)->GetMethodID(env, jPKCS11RuntimeExceptionClass, "<init>", "()V");
-        assert(jConstructor != 0);
-        jPKCS11RuntimeException = (jthrowable) (*env)->NewObject(env, jPKCS11RuntimeExceptionClass, jConstructor);
-        (*env)->Throw(env, jPKCS11RuntimeException);
-    } else {
-        jConstructor = (*env)->GetMethodID(env, jPKCS11RuntimeExceptionClass, "<init>", "(Ljava/lang/String;)V");
-        assert(jConstructor != 0);
-        jPKCS11RuntimeException = (jthrowable) (*env)->NewObject(env, jPKCS11RuntimeExceptionClass, jConstructor, jmessage);
-        (*env)->Throw(env, jPKCS11RuntimeException);
-    }
+    JNU_ThrowByName(env, CLASS_PKCS11RUNTIMEEXCEPTION, message);
 }
 
 /*
@@ -318,9 +247,24 @@ void throwPKCS11RuntimeException(JNIEnv *env, jstring jmessage)
  */
 void throwDisconnectedRuntimeException(JNIEnv *env)
 {
-    jstring jExceptionMessage = (*env)->NewStringUTF(env, "This object is not connected to a module.");
+    throwPKCS11RuntimeException(env, "This object is not connected to a module.");
+}
 
-    throwPKCS11RuntimeException(env, jExceptionMessage);
+/* This function frees the specified CK_ATTRIBUTE array.
+ *
+ * @param attrPtr pointer to the to-be-freed CK_ATTRIBUTE array.
+ * @param len the length of the array
+ */
+void freeCKAttributeArray(CK_ATTRIBUTE_PTR attrPtr, int len)
+{
+    int i;
+
+    for (i=0; i<len; i++) {
+        if (attrPtr[i].pValue != NULL_PTR) {
+            free(attrPtr[i].pValue);
+        }
+    }
+    free(attrPtr);
 }
 
 /*
@@ -375,8 +319,22 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jboolean*) malloc((*ckpLength) * sizeof(jboolean));
+    if (jpTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     (*env)->GetBooleanArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
+    if ((*env)->ExceptionCheck(env)) {
+        free(jpTemp);
+        return;
+    }
+
     *ckpArray = (CK_BBOOL*) malloc ((*ckpLength) * sizeof(CK_BBOOL));
+    if (*ckpArray == NULL) {
+        free(jpTemp);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     for (i=0; i<(*ckpLength); i++) {
         (*ckpArray)[i] = jBooleanToCKBBool(jpTemp[i]);
     }
@@ -403,13 +361,26 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jbyte*) malloc((*ckpLength) * sizeof(jbyte));
+    if (jpTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     (*env)->GetByteArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
+    if ((*env)->ExceptionCheck(env)) {
+        free(jpTemp);
+        return;
+    }
 
     /* if CK_BYTE is the same size as jbyte, we save an additional copy */
     if (sizeof(CK_BYTE) == sizeof(jbyte)) {
         *ckpArray = (CK_BYTE_PTR) jpTemp;
     } else {
         *ckpArray = (CK_BYTE_PTR) malloc ((*ckpLength) * sizeof(CK_BYTE));
+        if (*ckpArray == NULL) {
+            free(jpTemp);
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return;
+        }
         for (i=0; i<(*ckpLength); i++) {
             (*ckpArray)[i] = jByteToCKByte(jpTemp[i]);
         }
@@ -437,8 +408,22 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jTemp = (jlong*) malloc((*ckpLength) * sizeof(jlong));
+    if (jTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     (*env)->GetLongArrayRegion(env, jArray, 0, *ckpLength, jTemp);
+    if ((*env)->ExceptionCheck(env)) {
+        free(jTemp);
+        return;
+    }
+
     *ckpArray = (CK_ULONG_PTR) malloc (*ckpLength * sizeof(CK_ULONG));
+    if (*ckpArray == NULL) {
+        free(jTemp);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     for (i=0; i<(*ckpLength); i++) {
         (*ckpArray)[i] = jLongToCKULong(jTemp[i]);
     }
@@ -465,8 +450,22 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jchar*) malloc((*ckpLength) * sizeof(jchar));
+    if (jpTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
+    if ((*env)->ExceptionCheck(env)) {
+        free(jpTemp);
+        return;
+    }
+
     *ckpArray = (CK_CHAR_PTR) malloc (*ckpLength * sizeof(CK_CHAR));
+    if (*ckpArray == NULL) {
+        free(jpTemp);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     for (i=0; i<(*ckpLength); i++) {
         (*ckpArray)[i] = jCharToCKChar(jpTemp[i]);
     }
@@ -493,8 +492,22 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jTemp = (jchar*) malloc((*ckpLength) * sizeof(jchar));
+    if (jTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jTemp);
+    if ((*env)->ExceptionCheck(env)) {
+        free(jTemp);
+        return;
+    }
+
     *ckpArray = (CK_UTF8CHAR_PTR) malloc (*ckpLength * sizeof(CK_UTF8CHAR));
+    if (*ckpArray == NULL) {
+        free(jTemp);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     for (i=0; i<(*ckpLength); i++) {
         (*ckpArray)[i] = jCharToCKUTF8Char(jTemp[i]);
     }
@@ -521,8 +534,15 @@ void jStringToCKUTF8CharArray(JNIEnv *env, const jstring jArray, CK_UTF8CHAR_PTR
     }
 
     pCharArray = (*env)->GetStringUTFChars(env, jArray, &isCopy);
+    if (pCharArray == NULL) { return; }
+
     *ckpLength = strlen(pCharArray);
     *ckpArray = (CK_UTF8CHAR_PTR) malloc((*ckpLength + 1) * sizeof(CK_UTF8CHAR));
+    if (*ckpArray == NULL) {
+        (*env)->ReleaseStringUTFChars(env, (jstring) jArray, pCharArray);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     strcpy((char*)*ckpArray, pCharArray);
     (*env)->ReleaseStringUTFChars(env, (jstring) jArray, pCharArray);
 }
@@ -552,47 +572,28 @@ void jAttributeArrayToCKAttributeArray(JNIEnv *env, jobjectArray jArray, CK_ATTR
     jLength = (*env)->GetArrayLength(env, jArray);
     *ckpLength = jLongToCKULong(jLength);
     *ckpArray = (CK_ATTRIBUTE_PTR) malloc(*ckpLength * sizeof(CK_ATTRIBUTE));
+    if (*ckpArray == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     TRACE1(", converting %d attibutes", jLength);
     for (i=0; i<(*ckpLength); i++) {
         TRACE1(", getting %d. attibute", i);
         jAttribute = (*env)->GetObjectArrayElement(env, jArray, i);
+        if ((*env)->ExceptionCheck(env)) {
+            freeCKAttributeArray(*ckpArray, i);
+            return;
+        }
         TRACE1(", jAttribute = %d", jAttribute);
         TRACE1(", converting %d. attibute", i);
         (*ckpArray)[i] = jAttributeToCKAttribute(env, jAttribute);
+        if ((*env)->ExceptionCheck(env)) {
+            freeCKAttributeArray(*ckpArray, i);
+            return;
+        }
     }
     TRACE0("FINISHED\n");
 }
-
-/*
- * converts a jobjectArray to a CK_VOID_PTR array. The allocated memory has to be freed after
- * use!
- * NOTE: this function does not work and is not used yet
- *
- * @param env - used to call JNI funktions to get the array informtaion
- * @param jArray - the Java object array to convert
- * @param ckpArray - the reference, where the pointer to the new CK_VOID_PTR array will be stored
- * @param ckpLength - the reference, where the array length will be stored
- */
-/*
-void jObjectArrayToCKVoidPtrArray(JNIEnv *env, const jobjectArray jArray, CK_VOID_PTR_PTR *ckpArray, CK_ULONG_PTR ckpLength)
-{
-    jobject jTemp;
-    CK_ULONG i;
-
-    if(jArray == NULL) {
-        *ckpArray = NULL_PTR;
-        *ckpLength = 0L;
-        return;
-    }
-    *ckpLength = (*env)->GetArrayLength(env, jArray);
-    *ckpArray = (CK_VOID_PTR_PTR) malloc (*ckpLength * sizeof(CK_VOID_PTR));
-    for (i=0; i<(*ckpLength); i++) {
-        jTemp = (*env)->GetObjectArrayElement(env, jArray, i);
-        (*ckpArray)[i] = jObjectToCKVoidPtr(jTemp);
-    }
-    free(jTemp);
-}
-*/
 
 /*
  * converts a CK_BYTE array and its length to a jbyteArray.
@@ -600,7 +601,7 @@ void jObjectArrayToCKVoidPtrArray(JNIEnv *env, const jobjectArray jArray, CK_VOI
  * @param env - used to call JNI funktions to create the new Java array
  * @param ckpArray - the pointer to the CK_BYTE array to convert
  * @param ckpLength - the length of the array to convert
- * @return - the new Java byte array
+ * @return - the new Java byte array or NULL if error occurred
  */
 jbyteArray ckByteArrayToJByteArray(JNIEnv *env, const CK_BYTE_PTR ckpArray, CK_ULONG ckLength)
 {
@@ -613,17 +614,21 @@ jbyteArray ckByteArrayToJByteArray(JNIEnv *env, const CK_BYTE_PTR ckpArray, CK_U
         jpTemp = (jbyte*) ckpArray;
     } else {
         jpTemp = (jbyte*) malloc((ckLength) * sizeof(jbyte));
+        if (jpTemp == NULL) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return NULL;
+        }
         for (i=0; i<ckLength; i++) {
             jpTemp[i] = ckByteToJByte(ckpArray[i]);
         }
     }
 
     jArray = (*env)->NewByteArray(env, ckULongToJSize(ckLength));
-    (*env)->SetByteArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
-
-    if (sizeof(CK_BYTE) != sizeof(jbyte)) {
-        free(jpTemp);
+    if (jArray != NULL) {
+        (*env)->SetByteArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
     }
+
+    if (sizeof(CK_BYTE) != sizeof(jbyte)) { free(jpTemp); }
 
     return jArray ;
 }
@@ -643,11 +648,17 @@ jlongArray ckULongArrayToJLongArray(JNIEnv *env, const CK_ULONG_PTR ckpArray, CK
     jlongArray jArray;
 
     jpTemp = (jlong*) malloc((ckLength) * sizeof(jlong));
+    if (jpTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     for (i=0; i<ckLength; i++) {
         jpTemp[i] = ckLongToJLong(ckpArray[i]);
     }
     jArray = (*env)->NewLongArray(env, ckULongToJSize(ckLength));
-    (*env)->SetLongArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
+    if (jArray != NULL) {
+        (*env)->SetLongArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
+    }
     free(jpTemp);
 
     return jArray ;
@@ -668,11 +679,17 @@ jcharArray ckCharArrayToJCharArray(JNIEnv *env, const CK_CHAR_PTR ckpArray, CK_U
     jcharArray jArray;
 
     jpTemp = (jchar*) malloc(ckLength * sizeof(jchar));
+    if (jpTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     for (i=0; i<ckLength; i++) {
         jpTemp[i] = ckCharToJChar(ckpArray[i]);
     }
     jArray = (*env)->NewCharArray(env, ckULongToJSize(ckLength));
-    (*env)->SetCharArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
+    if (jArray != NULL) {
+        (*env)->SetCharArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
+    }
     free(jpTemp);
 
     return jArray ;
@@ -693,11 +710,17 @@ jcharArray ckUTF8CharArrayToJCharArray(JNIEnv *env, const CK_UTF8CHAR_PTR ckpArr
     jcharArray jArray;
 
     jpTemp = (jchar*) malloc(ckLength * sizeof(jchar));
+    if (jpTemp == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     for (i=0; i<ckLength; i++) {
         jpTemp[i] = ckUTF8CharToJChar(ckpArray[i]);
     }
     jArray = (*env)->NewCharArray(env, ckULongToJSize(ckLength));
-    (*env)->SetCharArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
+    if (jArray != NULL) {
+        (*env)->SetCharArrayRegion(env, jArray, 0, ckULongToJSize(ckLength), jpTemp);
+    }
     free(jpTemp);
 
     return jArray ;
@@ -736,12 +759,11 @@ jobject ckBBoolPtrToJBooleanObject(JNIEnv *env, const CK_BBOOL *ckpValue)
     jboolean jValue;
 
     jValueObjectClass = (*env)->FindClass(env, "java/lang/Boolean");
-    assert(jValueObjectClass != 0);
+    if (jValueObjectClass == NULL) { return NULL; }
     jConstructor = (*env)->GetMethodID(env, jValueObjectClass, "<init>", "(Z)V");
-    assert(jConstructor != 0);
+    if (jConstructor == NULL) { return NULL; }
     jValue = ckBBoolToJBoolean(*ckpValue);
     jValueObject = (*env)->NewObject(env, jValueObjectClass, jConstructor, jValue);
-    assert(jValueObject != 0);
 
     return jValueObject ;
 }
@@ -761,12 +783,11 @@ jobject ckULongPtrToJLongObject(JNIEnv *env, const CK_ULONG_PTR ckpValue)
     jlong jValue;
 
     jValueObjectClass = (*env)->FindClass(env, "java/lang/Long");
-    assert(jValueObjectClass != 0);
+    if (jValueObjectClass == NULL) { return NULL; }
     jConstructor = (*env)->GetMethodID(env, jValueObjectClass, "<init>", "(J)V");
-    assert(jConstructor != 0);
+    if (jConstructor == NULL) { return NULL; }
     jValue = ckULongToJLong(*ckpValue);
     jValueObject = (*env)->NewObject(env, jValueObjectClass, jConstructor, jValue);
-    assert(jValueObject != 0);
 
     return jValueObject ;
 }
@@ -787,11 +808,15 @@ CK_BBOOL* jBooleanObjectToCKBBoolPtr(JNIEnv *env, jobject jObject)
     CK_BBOOL *ckpValue;
 
     jObjectClass = (*env)->FindClass(env, "java/lang/Boolean");
-    assert(jObjectClass != 0);
+    if (jObjectClass == NULL) { return NULL; }
     jValueMethod = (*env)->GetMethodID(env, jObjectClass, "booleanValue", "()Z");
-    assert(jValueMethod != 0);
+    if (jValueMethod == NULL) { return NULL; }
     jValue = (*env)->CallBooleanMethod(env, jObject, jValueMethod);
     ckpValue = (CK_BBOOL *) malloc(sizeof(CK_BBOOL));
+    if (ckpValue == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     *ckpValue = jBooleanToCKBBool(jValue);
 
     return ckpValue ;
@@ -813,13 +838,16 @@ CK_BYTE_PTR jByteObjectToCKBytePtr(JNIEnv *env, jobject jObject)
     CK_BYTE_PTR ckpValue;
 
     jObjectClass = (*env)->FindClass(env, "java/lang/Byte");
-    assert(jObjectClass != 0);
+    if (jObjectClass == NULL) { return NULL; }
     jValueMethod = (*env)->GetMethodID(env, jObjectClass, "byteValue", "()B");
-    assert(jValueMethod != 0);
+    if (jValueMethod == NULL) { return NULL; }
     jValue = (*env)->CallByteMethod(env, jObject, jValueMethod);
     ckpValue = (CK_BYTE_PTR) malloc(sizeof(CK_BYTE));
+    if (ckpValue == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     *ckpValue = jByteToCKByte(jValue);
-
     return ckpValue ;
 }
 
@@ -839,13 +867,16 @@ CK_ULONG* jIntegerObjectToCKULongPtr(JNIEnv *env, jobject jObject)
     CK_ULONG *ckpValue;
 
     jObjectClass = (*env)->FindClass(env, "java/lang/Integer");
-    assert(jObjectClass != 0);
+    if (jObjectClass == NULL) { return NULL; }
     jValueMethod = (*env)->GetMethodID(env, jObjectClass, "intValue", "()I");
-    assert(jValueMethod != 0);
+    if (jValueMethod == NULL) { return NULL; }
     jValue = (*env)->CallIntMethod(env, jObject, jValueMethod);
     ckpValue = (CK_ULONG *) malloc(sizeof(CK_ULONG));
+    if (ckpValue == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     *ckpValue = jLongToCKLong(jValue);
-
     return ckpValue ;
 }
 
@@ -865,11 +896,15 @@ CK_ULONG* jLongObjectToCKULongPtr(JNIEnv *env, jobject jObject)
     CK_ULONG *ckpValue;
 
     jObjectClass = (*env)->FindClass(env, "java/lang/Long");
-    assert(jObjectClass != 0);
+    if (jObjectClass == NULL) { return NULL; }
     jValueMethod = (*env)->GetMethodID(env, jObjectClass, "longValue", "()J");
-    assert(jValueMethod != 0);
+    if (jValueMethod == NULL) { return NULL; }
     jValue = (*env)->CallLongMethod(env, jObject, jValueMethod);
     ckpValue = (CK_ULONG *) malloc(sizeof(CK_ULONG));
+    if (ckpValue == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     *ckpValue = jLongToCKULong(jValue);
 
     return ckpValue ;
@@ -891,11 +926,15 @@ CK_CHAR_PTR jCharObjectToCKCharPtr(JNIEnv *env, jobject jObject)
     CK_CHAR_PTR ckpValue;
 
     jObjectClass = (*env)->FindClass(env, "java/lang/Char");
-    assert(jObjectClass != 0);
+    if (jObjectClass == NULL) { return NULL; }
     jValueMethod = (*env)->GetMethodID(env, jObjectClass, "charValue", "()C");
-    assert(jValueMethod != 0);
+    if (jValueMethod == NULL) { return NULL; }
     jValue = (*env)->CallCharMethod(env, jObject, jValueMethod);
     ckpValue = (CK_CHAR_PTR) malloc(sizeof(CK_CHAR));
+    if (ckpValue == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
     *ckpValue = jCharToCKChar(jValue);
 
     return ckpValue ;
@@ -913,124 +952,172 @@ CK_CHAR_PTR jCharObjectToCKCharPtr(JNIEnv *env, jobject jObject)
  */
 void jObjectToPrimitiveCKObjectPtrPtr(JNIEnv *env, jobject jObject, CK_VOID_PTR *ckpObjectPtr, CK_ULONG *ckpLength)
 {
-    jclass jBooleanClass     = (*env)->FindClass(env, "java/lang/Boolean");
-    jclass jByteClass        = (*env)->FindClass(env, "java/lang/Byte");
-    jclass jCharacterClass   = (*env)->FindClass(env, "java/lang/Character");
-    jclass jClassClass = (*env)->FindClass(env, "java/lang/Class");
-    /* jclass jShortClass       = (*env)->FindClass(env, "java/lang/Short"); */
-    jclass jIntegerClass     = (*env)->FindClass(env, "java/lang/Integer");
-    jclass jLongClass        = (*env)->FindClass(env, "java/lang/Long");
-    /* jclass jFloatClass       = (*env)->FindClass(env, "java/lang/Float"); */
-    /* jclass jDoubleClass      = (*env)->FindClass(env, "java/lang/Double"); */
-    jclass jDateClass      = (*env)->FindClass(env, CLASS_DATE);
-    jclass jStringClass      = (*env)->FindClass(env, "java/lang/String");
-    jclass jStringBufferClass      = (*env)->FindClass(env, "java/lang/StringBuffer");
-    jclass jBooleanArrayClass = (*env)->FindClass(env, "[Z");
-    jclass jByteArrayClass    = (*env)->FindClass(env, "[B");
-    jclass jCharArrayClass    = (*env)->FindClass(env, "[C");
-    /* jclass jShortArrayClass   = (*env)->FindClass(env, "[S"); */
-    jclass jIntArrayClass     = (*env)->FindClass(env, "[I");
-    jclass jLongArrayClass    = (*env)->FindClass(env, "[J");
-    /* jclass jFloatArrayClass   = (*env)->FindClass(env, "[F"); */
-    /* jclass jDoubleArrayClass  = (*env)->FindClass(env, "[D"); */
-    jclass jObjectClass = (*env)->FindClass(env, "java/lang/Object");
-    /* jclass jObjectArrayClass = (*env)->FindClass(env, "[java/lang/Object"); */
-    /* ATTENTION: jObjectArrayClass is always NULL !! */
-    /* CK_ULONG ckArrayLength; */
-    /* CK_VOID_PTR *ckpElementObject; */
-    /* CK_ULONG ckElementLength; */
-    /* CK_ULONG i; */
+    jclass jLongClass, jBooleanClass, jByteArrayClass, jCharArrayClass;
+    jclass jByteClass, jDateClass, jCharacterClass, jIntegerClass;
+    jclass jBooleanArrayClass, jIntArrayClass, jLongArrayClass;
+    jclass jStringClass;
+    jclass jObjectClass, jClassClass;
     CK_VOID_PTR ckpVoid = *ckpObjectPtr;
     jmethodID jMethod;
     jobject jClassObject;
     jstring jClassNameString;
-    jstring jExceptionMessagePrefix;
-    jobject jExceptionMessageStringBuffer;
-    jstring jExceptionMessage;
+    char *classNameString, *exceptionMsgPrefix, *exceptionMsg;
 
     TRACE0("\nDEBUG: jObjectToPrimitiveCKObjectPtrPtr");
     if (jObject == NULL) {
         *ckpObjectPtr = NULL;
         *ckpLength = 0;
-    } else if ((*env)->IsInstanceOf(env, jObject, jLongClass)) {
+        return;
+    }
+
+    jLongClass = (*env)->FindClass(env, "java/lang/Long");
+    if (jLongClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jLongClass)) {
         *ckpObjectPtr = jLongObjectToCKULongPtr(env, jObject);
         *ckpLength = sizeof(CK_ULONG);
         TRACE1("<converted long value %X>", *((CK_ULONG *) *ckpObjectPtr));
-    } else if ((*env)->IsInstanceOf(env, jObject, jBooleanClass)) {
+        return;
+    }
+
+    jBooleanClass = (*env)->FindClass(env, "java/lang/Boolean");
+    if (jBooleanClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jBooleanClass)) {
         *ckpObjectPtr = jBooleanObjectToCKBBoolPtr(env, jObject);
         *ckpLength = sizeof(CK_BBOOL);
         TRACE0(" <converted boolean value ");
         TRACE0((*((CK_BBOOL *) *ckpObjectPtr) == TRUE) ? "TRUE>" : "FALSE>");
-    } else if ((*env)->IsInstanceOf(env, jObject, jByteArrayClass)) {
+        return;
+    }
+
+    jByteArrayClass = (*env)->FindClass(env, "[B");
+    if (jByteArrayClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jByteArrayClass)) {
         jByteArrayToCKByteArray(env, jObject, (CK_BYTE_PTR*)ckpObjectPtr, ckpLength);
-    } else if ((*env)->IsInstanceOf(env, jObject, jCharArrayClass)) {
+        return;
+    }
+
+    jCharArrayClass = (*env)->FindClass(env, "[C");
+    if (jCharArrayClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jCharArrayClass)) {
         jCharArrayToCKUTF8CharArray(env, jObject, (CK_UTF8CHAR_PTR*)ckpObjectPtr, ckpLength);
-    } else if ((*env)->IsInstanceOf(env, jObject, jByteClass)) {
+        return;
+    }
+
+    jByteClass = (*env)->FindClass(env, "java/lang/Byte");
+    if (jByteClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jByteClass)) {
         *ckpObjectPtr = jByteObjectToCKBytePtr(env, jObject);
         *ckpLength = sizeof(CK_BYTE);
         TRACE1("<converted byte value %X>", *((CK_BYTE *) *ckpObjectPtr));
-    } else if ((*env)->IsInstanceOf(env, jObject, jDateClass)) {
+        return;
+    }
+
+    jDateClass = (*env)->FindClass(env, CLASS_DATE);
+    if (jDateClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jDateClass)) {
         *ckpObjectPtr = jDateObjectPtrToCKDatePtr(env, jObject);
         *ckpLength = sizeof(CK_DATE);
-        TRACE3("<converted date value %.4s-%.2s-%.2s>", (*((CK_DATE *) *ckpObjectPtr)).year,
-                                                    (*((CK_DATE *) *ckpObjectPtr)).month,
-                                                    (*((CK_DATE *) *ckpObjectPtr)).day);
-    } else if ((*env)->IsInstanceOf(env, jObject, jCharacterClass)) {
+        TRACE3("<converted date value %.4s-%.2s-%.2s>", (*((CK_DATE *) *ckpObjectPtr)).year, (*((CK_DATE *) *ckpObjectPtr)).month, (*((CK_DATE *) *ckpObjectPtr)).day);
+        return;
+    }
+
+    jCharacterClass = (*env)->FindClass(env, "java/lang/Character");
+    if (jCharacterClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jCharacterClass)) {
         *ckpObjectPtr = jCharObjectToCKCharPtr(env, jObject);
         *ckpLength = sizeof(CK_UTF8CHAR);
         TRACE1("<converted char value %c>", *((CK_CHAR *) *ckpObjectPtr));
-    } else if ((*env)->IsInstanceOf(env, jObject, jIntegerClass)) {
+        return;
+    }
+
+    jIntegerClass = (*env)->FindClass(env, "java/lang/Integer");
+    if (jIntegerClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jIntegerClass)) {
         *ckpObjectPtr = jIntegerObjectToCKULongPtr(env, jObject);
         *ckpLength = sizeof(CK_ULONG);
         TRACE1("<converted integer value %X>", *((CK_ULONG *) *ckpObjectPtr));
-    } else if ((*env)->IsInstanceOf(env, jObject, jBooleanArrayClass)) {
-        jBooleanArrayToCKBBoolArray(env, jObject, (CK_BBOOL**)ckpObjectPtr, ckpLength);
-    } else if ((*env)->IsInstanceOf(env, jObject, jIntArrayClass)) {
-        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*)ckpObjectPtr, ckpLength);
-    } else if ((*env)->IsInstanceOf(env, jObject, jLongArrayClass)) {
-        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*)ckpObjectPtr, ckpLength);
-    } else if ((*env)->IsInstanceOf(env, jObject, jStringClass)) {
-        jStringToCKUTF8CharArray(env, jObject, (CK_UTF8CHAR_PTR*)ckpObjectPtr, ckpLength);
-
-        /* a Java object array is not used by CK_ATTRIBUTE by now... */
-/*  } else if ((*env)->IsInstanceOf(env, jObject, jObjectArrayClass)) {
-        ckArrayLength = (*env)->GetArrayLength(env, (jarray) jObject);
-        ckpObjectPtr = (CK_VOID_PTR_PTR) malloc(sizeof(CK_VOID_PTR) * ckArrayLength);
-        *ckpLength = 0;
-        for (i = 0; i < ckArrayLength; i++) {
-            jObjectToPrimitiveCKObjectPtrPtr(env, (*env)->GetObjectArrayElement(env, (jarray) jObject, i),
-                     ckpElementObject, &ckElementLength);
-            (*ckpObjectPtr)[i] = *ckpElementObject;
-            *ckpLength += ckElementLength;
-        }
-*/
-    } else {
-        /* type of jObject unknown, throw PKCS11RuntimeException */
-        jMethod = (*env)->GetMethodID(env, jObjectClass, "getClass", "()Ljava/lang/Class;");
-        assert(jMethod != 0);
-        jClassObject = (*env)->CallObjectMethod(env, jObject, jMethod);
-        assert(jClassObject != 0);
-        jMethod = (*env)->GetMethodID(env, jClassClass, "getName", "()Ljava/lang/String;");
-        assert(jMethod != 0);
-        jClassNameString = (jstring)
-                (*env)->CallObjectMethod(env, jClassObject, jMethod);
-        assert(jClassNameString != 0);
-        jExceptionMessagePrefix = (*env)->NewStringUTF(env, "Java object of this class cannot be converted to native PKCS#11 type: ");
-        jMethod = (*env)->GetMethodID(env, jStringBufferClass, "<init>", "(Ljava/lang/String;)V");
-        assert(jMethod != 0);
-        jExceptionMessageStringBuffer = (*env)->NewObject(env, jStringBufferClass, jMethod, jExceptionMessagePrefix);
-        assert(jClassNameString != 0);
-        jMethod = (*env)->GetMethodID(env, jStringBufferClass, "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
-        assert(jMethod != 0);
-        jExceptionMessage = (jstring)
-                 (*env)->CallObjectMethod(env, jExceptionMessageStringBuffer, jMethod, jClassNameString);
-        assert(jExceptionMessage != 0);
-
-        throwPKCS11RuntimeException(env, jExceptionMessage);
-
-        *ckpObjectPtr = NULL;
-        *ckpLength = 0;
+        return;
     }
+
+    jBooleanArrayClass = (*env)->FindClass(env, "[Z");
+    if (jBooleanArrayClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jBooleanArrayClass)) {
+        jBooleanArrayToCKBBoolArray(env, jObject, (CK_BBOOL**)ckpObjectPtr, ckpLength);
+        return;
+    }
+
+    jIntArrayClass = (*env)->FindClass(env, "[I");
+    if (jIntArrayClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jIntArrayClass)) {
+        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*)ckpObjectPtr, ckpLength);
+        return;
+    }
+
+    jLongArrayClass = (*env)->FindClass(env, "[J");
+    if (jLongArrayClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jLongArrayClass)) {
+        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*)ckpObjectPtr, ckpLength);
+        return;
+    }
+
+    jStringClass = (*env)->FindClass(env, "java/lang/String");
+    if (jStringClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jObject, jStringClass)) {
+        jStringToCKUTF8CharArray(env, jObject, (CK_UTF8CHAR_PTR*)ckpObjectPtr, ckpLength);
+        return;
+    }
+
+    /* type of jObject unknown, throw PKCS11RuntimeException */
+    jObjectClass = (*env)->FindClass(env, "java/lang/Object");
+    if (jObjectClass == NULL) { return; }
+    jMethod = (*env)->GetMethodID(env, jObjectClass, "getClass", "()Ljava/lang/Class;");
+    if (jMethod == NULL) { return; }
+    jClassObject = (*env)->CallObjectMethod(env, jObject, jMethod);
+    assert(jClassObject != 0);
+    jClassClass = (*env)->FindClass(env, "java/lang/Class");
+    if (jClassClass == NULL) { return; }
+    jMethod = (*env)->GetMethodID(env, jClassClass, "getName", "()Ljava/lang/String;");
+    if (jMethod == NULL) { return; }
+    jClassNameString = (jstring)
+        (*env)->CallObjectMethod(env, jClassObject, jMethod);
+    assert(jClassNameString != 0);
+    classNameString = (char*)
+        (*env)->GetStringUTFChars(env, jClassNameString, NULL);
+    if (classNameString == NULL) { return; }
+    exceptionMsgPrefix = "Java object of this class cannot be converted to native PKCS#11 type: ";
+    exceptionMsg = (char *)
+        malloc((strlen(exceptionMsgPrefix) + strlen(classNameString) + 1));
+    if (exceptionMsg == NULL) {
+        (*env)->ReleaseStringUTFChars(env, jClassNameString, classNameString);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
+    strcpy(exceptionMsg, exceptionMsgPrefix);
+    strcat(exceptionMsg, classNameString);
+    (*env)->ReleaseStringUTFChars(env, jClassNameString, classNameString);
+    throwPKCS11RuntimeException(env, exceptionMsg);
+    free(exceptionMsg);
+    *ckpObjectPtr = NULL;
+    *ckpLength = 0;
 
     TRACE0("FINISHED\n");
 }
+
+#ifdef P11_MEMORYDEBUG
+
+#undef malloc
+#undef free
+
+void *p11malloc(size_t c, char *file, int line) {
+    void *p = malloc(c);
+    printf("malloc\t%08x\t%d\t%s:%d\n", p, c, file, line); fflush(stdout);
+    return p;
+}
+
+void p11free(void *p, char *file, int line) {
+    printf("free\t%08x\t\t%s:%d\n", p, file, line); fflush(stdout);
+    free(p);
+}
+
+#endif
+

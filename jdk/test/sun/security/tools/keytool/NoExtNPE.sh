@@ -1,12 +1,10 @@
 #
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Sun designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Sun in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,25 +21,45 @@
 # have any questions.
 #
 
+# @test
+# @bug 6813402
+# @summary keytool cannot -printcert entries without extensions
 #
-# Compiler settings for all platforms and the default compiler for each.
-#
+# @run shell NoExtNPE.sh
 
-# Windows uses Microsoft compilers by default
-ifeq ($(PLATFORM), windows)
-  override CC_VERSION = msvc
-endif
+# set a few environment variables so that the shell-script can run stand-alone
+# in the source directory
+if [ "${TESTSRC}" = "" ] ; then
+   TESTSRC="."
+fi
 
-# Solaris uses Sun Studio compilers by default
-ifeq ($(PLATFORM), solaris)
-  override CC_VERSION = sun
-endif
+if [ "${TESTJAVA}" = "" ] ; then
+   echo "TESTJAVA not set.  Test cannot execute."
+   echo "FAILED!!!"
+   exit 1
+fi
 
-# Linux uses GNU compilers by default
-ifeq ($(PLATFORM), linux)
-  override CC_VERSION = gcc
-endif
+# set platform-dependent variables
+OS=`uname -s`
+case "$OS" in
+  SunOS )
+    FILESEP="/"
+    ;;
+  Linux )
+    FILESEP="/"
+    ;;
+  Windows* )
+    FILESEP="\\"
+    ;;
+  * )
+    echo "Unrecognized system!"
+    exit 1;
+    ;;
+esac
 
-# Get the compiler specific settings
-include $(JDK_MAKE_SHARED_DIR)/Compiler-$(CC_VERSION).gmk
+${TESTJAVA}${FILESEP}bin${FILESEP}keytool \
+	-list -v \
+	-keystore ${TESTSRC}${FILESEP}CloneKeyAskPassword.jks \
+	-storepass test123
 
+exit $?

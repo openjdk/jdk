@@ -1917,7 +1917,7 @@ methodOop instanceKlass::method_at_itable(klassOop holder, int index, TRAPS) {
                        / itableOffsetEntry::size();
 
   for (int cnt = 0 ; ; cnt ++, ioe ++) {
-    // If the interface isn't implemented by the reciever class,
+    // If the interface isn't implemented by the receiver class,
     // the VM should throw IncompatibleClassChangeError.
     if (cnt >= nof_interfaces) {
       THROW_OOP_0(vmSymbols::java_lang_IncompatibleClassChangeError());

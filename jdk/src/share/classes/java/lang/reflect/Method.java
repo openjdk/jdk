@@ -705,13 +705,11 @@ public final
         return (T) declaredAnnotations().get(annotationClass);
     }
 
-    private static final Annotation[] EMPTY_ANNOTATION_ARRAY=new Annotation[0];
-
     /**
      * @since 1.5
      */
     public Annotation[] getDeclaredAnnotations()  {
-        return declaredAnnotations().values().toArray(EMPTY_ANNOTATION_ARRAY);
+        return AnnotationParser.toArray(declaredAnnotations());
     }
 
     private transient Map<Class, Annotation> declaredAnnotations;

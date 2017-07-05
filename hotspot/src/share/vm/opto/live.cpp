@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 // Leftover bits become the new live-in for the predecessor block, and the pred
 // block is put on the worklist.
 //   The locally live-in stuff is computed once and added to predecessor
-// live-out sets.  This seperate compilation is done in the outer loop below.
+// live-out sets.  This separate compilation is done in the outer loop below.
 PhaseLive::PhaseLive( const PhaseCFG &cfg, LRG_List &names, Arena *arena ) : Phase(LIVE), _cfg(cfg), _names(names), _arena(arena), _live(0) {
 }
 

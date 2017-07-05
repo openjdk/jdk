@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1982,6 +1982,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     heap->record_gen_tops_before_GC();
   }
 
+  heap->pre_full_gc_dump();
+
   _print_phases = PrintGCDetails && PrintParallelOldGCPhaseTimes;
 
   // Make sure data structures are sane, make the heap parsable, and do other
@@ -2203,6 +2205,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                            collection_exit.ticks());
     gc_task_manager()->print_task_time_stamps();
   }
+
+  heap->post_full_gc_dump();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
