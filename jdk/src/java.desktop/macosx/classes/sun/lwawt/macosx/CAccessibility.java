@@ -175,7 +175,7 @@ class CAccessibility implements PropertyChangeListener {
                 final AccessibleSelection as = ac.getAccessibleSelection();
                 if (as == null) return Boolean.FALSE;
 
-                return new Boolean(as.isAccessibleChildSelected(index));
+                return as.isAccessibleChildSelected(index);
             }
         }, c);
     }

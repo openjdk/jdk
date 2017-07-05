@@ -25,6 +25,8 @@
 
 package java.util;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 import java.lang.reflect.Array;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BinaryOperator;
@@ -42,7 +44,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * This class contains various methods for manipulating arrays (such as
@@ -2586,6 +2587,55 @@ public class Arrays {
     }
 
     /**
+     * Returns true if the two specified arrays of longs, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static boolean equals(long[] a, int aFromIndex, int aToIndex,
+                                 long[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++)
+            if (a[aFromIndex++] != b[bFromIndex++])
+                return false;
+
+        return true;
+    }
+
+    /**
      * Returns {@code true} if the two specified arrays of ints are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
@@ -2615,6 +2665,55 @@ public class Arrays {
     }
 
     /**
+     * Returns true if the two specified arrays of ints, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static boolean equals(int[] a, int aFromIndex, int aToIndex,
+                                 int[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++)
+            if (a[aFromIndex++] != b[bFromIndex++])
+                return false;
+
+        return true;
+    }
+
+    /**
      * Returns {@code true} if the two specified arrays of shorts are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
@@ -2638,6 +2737,55 @@ public class Arrays {
 
         for (int i=0; i<length; i++)
             if (a[i] != a2[i])
+                return false;
+
+        return true;
+    }
+
+    /**
+     * Returns true if the two specified arrays of shorts, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static boolean equals(short[] a, int aFromIndex, int aToIndex,
+                                 short[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++)
+            if (a[aFromIndex++] != b[bFromIndex++])
                 return false;
 
         return true;
@@ -2674,6 +2822,55 @@ public class Arrays {
     }
 
     /**
+     * Returns true if the two specified arrays of chars, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static boolean equals(char[] a, int aFromIndex, int aToIndex,
+                                 char[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++)
+            if (a[aFromIndex++] != b[bFromIndex++])
+                return false;
+
+        return true;
+    }
+
+    /**
      * Returns {@code true} if the two specified arrays of bytes are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
@@ -2697,6 +2894,55 @@ public class Arrays {
 
         for (int i=0; i<length; i++)
             if (a[i] != a2[i])
+                return false;
+
+        return true;
+    }
+
+    /**
+     * Returns true if the two specified arrays of bytes, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static boolean equals(byte[] a, int aFromIndex, int aToIndex,
+                                 byte[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++)
+            if (a[aFromIndex++] != b[bFromIndex++])
                 return false;
 
         return true;
@@ -2732,6 +2978,55 @@ public class Arrays {
     }
 
     /**
+     * Returns true if the two specified arrays of booleans, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static boolean equals(boolean[] a, int aFromIndex, int aToIndex,
+                                 boolean[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++)
+            if (a[aFromIndex++] != b[bFromIndex++])
+                return false;
+
+        return true;
+    }
+
+    /**
      * Returns {@code true} if the two specified arrays of doubles are
      * <i>equal</i> to one another.  Two arrays are considered equal if both
      * arrays contain the same number of elements, and all corresponding pairs
@@ -2759,9 +3054,70 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (Double.doubleToLongBits(a[i])!=Double.doubleToLongBits(a2[i]))
-                return false;
+        for (int i=0; i<length; i++) {
+            double v1 = a[i], v2 = a2[i];
+            if (Double.doubleToRawLongBits(v1) != Double.doubleToRawLongBits(v2))
+                if (!Double.isNaN(v1) || !Double.isNaN(v2))
+                    return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns true if the two specified arrays of doubles, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * <p>Two doubles {@code d1} and {@code d2} are considered equal if:
+     * <pre>    {@code new Double(d1).equals(new Double(d2))}</pre>
+     * (Unlike the {@code ==} operator, this method considers
+     * {@code NaN} equals to itself, and 0.0d unequal to -0.0d.)
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @see Double#equals(Object)
+     * @since 9
+     */
+    public static boolean equals(double[] a, int aFromIndex, int aToIndex,
+                                 double[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++) {
+            Double va = a[aFromIndex++], vb = b[bFromIndex++];
+            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb))
+                if (!Double.isNaN(va) || !Double.isNaN(vb))
+                    return false;
+        }
 
         return true;
     }
@@ -2794,9 +3150,70 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (Float.floatToIntBits(a[i])!=Float.floatToIntBits(a2[i]))
-                return false;
+        for (int i=0; i<length; i++) {
+            float v1 = a[i], v2 = a2[i];
+            if (Float.floatToRawIntBits(v1) != Float.floatToRawIntBits(v2))
+                if (!Float.isNaN(v1) || !Float.isNaN(v2))
+                    return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns true if the two specified arrays of floats, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * <p>Two floats {@code f1} and {@code f2} are considered equal if:
+     * <pre>    {@code new Float(f1).equals(new Float(f2))}</pre>
+     * (Unlike the {@code ==} operator, this method considers
+     * {@code NaN} equals to itself, and 0.0f unequal to -0.0f.)
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @see Float#equals(Object)
+     * @since 9
+     */
+    public static boolean equals(float[] a, int aFromIndex, int aToIndex,
+                                 float[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++) {
+            float va = a[aFromIndex++], vb = b[bFromIndex++];
+            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb))
+                if (!Float.isNaN(va) || !Float.isNaN(vb))
+                    return false;
+        }
 
         return true;
     }
@@ -2827,9 +3244,60 @@ public class Arrays {
             return false;
 
         for (int i=0; i<length; i++) {
-            Object o1 = a[i];
-            Object o2 = a2[i];
-            if (!(o1==null ? o2==null : o1.equals(o2)))
+            if (!Objects.equals(a[i], a2[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns true if the two specified arrays of Objects, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * <p>Two objects {@code e1} and {@code e2} are considered <i>equal</i> if
+     * {@code Objects.equals(e1, e2)}.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static boolean equals(Object[] a, int aFromIndex, int aToIndex,
+                                 Object[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++) {
+            if (!Objects.equals(a[aFromIndex++], b[bFromIndex++]))
                 return false;
         }
 
@@ -5184,5 +5652,3234 @@ public class Arrays {
      */
     public static DoubleStream stream(double[] array, int startInclusive, int endExclusive) {
         return StreamSupport.doubleStream(spliterator(array, startInclusive, endExclusive), false);
+    }
+
+
+    // Comparison methods
+
+    // Compare boolean
+
+    /**
+     * Compares two {@code boolean} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Boolean#compare(boolean, boolean)}, at an index within the
+     * respective arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(boolean[], boolean[])} for the definition of a
+     * common and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(boolean[], boolean[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Boolean.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(boolean[] a, boolean[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Boolean.compare(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code boolean} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Boolean#compare(boolean, boolean)}, at a
+     * relative index within the respective arrays that is the length of the
+     * prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(boolean[], int, int, boolean[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(boolean[], int, int, boolean[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Boolean.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(boolean[] a, int aFromIndex, int aToIndex,
+                              boolean[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            boolean va = a[aFromIndex++];
+            boolean vb = b[bFromIndex++];
+            if (va != vb) return Boolean.compare(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare byte
+
+    /**
+     * Compares two {@code byte} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Byte#compare(byte, byte)}, at an index within the respective
+     * arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(byte[], byte[])} for the definition of a common and
+     * proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(byte[], byte[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Byte.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(byte[] a, byte[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Byte.compare(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code byte} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Byte#compare(byte, byte)}, at a relative index
+     * within the respective arrays that is the length of the prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(byte[], int, int, byte[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(byte[], int, int, byte[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Byte.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(byte[] a, int aFromIndex, int aToIndex,
+                              byte[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            byte va = a[aFromIndex++];
+            byte vb = b[bFromIndex++];
+            if (va != vb) return Byte.compare(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    /**
+     * Compares two {@code byte} arrays lexicographically, numerically treating
+     * elements as unsigned.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Byte#compareUnsigned(byte, byte)}, at an index within the
+     * respective arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(byte[], byte[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Byte.compareUnsigned(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are
+     *         equal and contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compareUnsigned(byte[] a, byte[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Byte.compareUnsigned(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+
+    /**
+     * Compares two {@code byte} arrays lexicographically over the specified
+     * ranges, numerically treating elements as unsigned.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Byte#compareUnsigned(byte, byte)}, at a
+     * relative index within the respective arrays that is the length of the
+     * prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(byte[], int, int, byte[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Byte.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is null
+     * @since 9
+     */
+    public static int compareUnsigned(byte[] a, int aFromIndex, int aToIndex,
+                                      byte[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            byte va = a[aFromIndex++];
+            byte vb = b[bFromIndex++];
+            if (va != vb) return Byte.compareUnsigned(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare short
+
+    /**
+     * Compares two {@code short} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Short#compare(short, short)}, at an index within the respective
+     * arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(short[], short[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(short[], short[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Short.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(short[] a, short[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Short.compare(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code short} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Short#compare(short, short)}, at a relative
+     * index within the respective arrays that is the length of the prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(short[], int, int, short[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(short[], int, int, short[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Short.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(short[] a, int aFromIndex, int aToIndex,
+                              short[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            short va = a[aFromIndex++];
+            short vb = b[bFromIndex++];
+            if (va != vb) return Short.compare(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    /**
+     * Compares two {@code short} arrays lexicographically, numerically treating
+     * elements as unsigned.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Short#compareUnsigned(short, short)}, at an index within the
+     * respective arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(short[], short[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Short.compareUnsigned(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are
+     *         equal and contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compareUnsigned(short[] a, short[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Short.compareUnsigned(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code short} arrays lexicographically over the specified
+     * ranges, numerically treating elements as unsigned.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Short#compareUnsigned(short, short)}, at a
+     * relative index within the respective arrays that is the length of the
+     * prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(short[], int, int, short[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Short.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is null
+     * @since 9
+     */
+    public static int compareUnsigned(short[] a, int aFromIndex, int aToIndex,
+                                      short[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            short va = a[aFromIndex++];
+            short vb = b[bFromIndex++];
+            if (va != vb) return Short.compareUnsigned(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare char
+
+    /**
+     * Compares two {@code char} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Character#compare(char, char)}, at an index within the respective
+     * arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(char[], char[])} for the definition of a common and
+     * proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(char[], char[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Character.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(char[] a, char[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Character.compare(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code char} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Character#compare(char, char)}, at a relative
+     * index within the respective arrays that is the length of the prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(char[], int, int, char[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(char[], int, int, char[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Character.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(char[] a, int aFromIndex, int aToIndex,
+                              char[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            char va = a[aFromIndex++];
+            char vb = b[bFromIndex++];
+            if (va != vb) return Character.compare(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare int
+
+    /**
+     * Compares two {@code int} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Integer#compare(int, int)}, at an index within the respective
+     * arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(int[], int[])} for the definition of a common and
+     * proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(int[], int[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Integer.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(int[] a, int[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Integer.compare(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code int} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Integer#compare(int, int)}, at a relative index
+     * within the respective arrays that is the length of the prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(int[], int, int, int[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(int[], int, int, int[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Integer.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(int[] a, int aFromIndex, int aToIndex,
+                              int[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            int va = a[aFromIndex++];
+            int vb = b[bFromIndex++];
+            if (va != vb) return Integer.compare(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    /**
+     * Compares two {@code int} arrays lexicographically, numerically treating
+     * elements as unsigned.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Integer#compareUnsigned(int, int)}, at an index within the
+     * respective arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(int[], int[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Integer.compareUnsigned(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are
+     *         equal and contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compareUnsigned(int[] a, int[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Integer.compareUnsigned(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code int} arrays lexicographically over the specified
+     * ranges, numerically treating elements as unsigned.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Integer#compareUnsigned(int, int)}, at a
+     * relative index within the respective arrays that is the length of the
+     * prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(int[], int, int, int[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Integer.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is null
+     * @since 9
+     */
+    public static int compareUnsigned(int[] a, int aFromIndex, int aToIndex,
+                                      int[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            int va = a[aFromIndex++];
+            int vb = b[bFromIndex++];
+            if (va != vb) return Integer.compareUnsigned(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare long
+
+    /**
+     * Compares two {@code long} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Long#compare(long, long)}, at an index within the respective
+     * arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(long[], long[])} for the definition of a common and
+     * proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(long[], long[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Long.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(long[] a, long[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Long.compare(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code long} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Long#compare(long, long)}, at a relative index
+     * within the respective arrays that is the length of the prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(long[], int, int, long[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(long[], int, int, long[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Long.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(long[] a, int aFromIndex, int aToIndex,
+                              long[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            long va = a[aFromIndex++];
+            long vb = b[bFromIndex++];
+            if (va != vb) return Long.compare(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    /**
+     * Compares two {@code long} arrays lexicographically, numerically treating
+     * elements as unsigned.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Long#compareUnsigned(long, long)}, at an index within the
+     * respective arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(long[], long[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Long.compareUnsigned(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are
+     *         equal and contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compareUnsigned(long[] a, long[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return Long.compareUnsigned(a[i], b[i]);
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code long} arrays lexicographically over the specified
+     * ranges, numerically treating elements as unsigned.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Long#compareUnsigned(long, long)}, at a
+     * relative index within the respective arrays that is the length of the
+     * prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(long[], int, int, long[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Long.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is null
+     * @since 9
+     */
+    public static int compareUnsigned(long[] a, int aFromIndex, int aToIndex,
+                                      long[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            long va = a[aFromIndex++];
+            long vb = b[bFromIndex++];
+            if (va != vb) return Long.compareUnsigned(va, vb);
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare float
+
+    /**
+     * Compares two {@code float} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Float#compare(float, float)}, at an index within the respective
+     * arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(float[], float[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(float[], float[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Float.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(float[] a, float[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            float va = a[i], vb = b[i];
+            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb)) {
+                int c = Float.compare(va, vb);
+                if (c != 0) return c;
+            }
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code float} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Float#compare(float, float)}, at a relative
+     * index within the respective arrays that is the length of the prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(float[], int, int, float[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(float[], int, int, float[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Float.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(float[] a, int aFromIndex, int aToIndex,
+                              float[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            float va = a[aFromIndex++], vb = b[bFromIndex++];
+            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb)) {
+                int c = Float.compare(va, vb);
+                if (c != 0) return c;
+            }
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare double
+
+    /**
+     * Compares two {@code double} arrays lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements, as if by
+     * {@link Double#compare(double, double)}, at an index within the respective
+     * arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(double[], double[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(double[], double[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return Double.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static int compare(double[] a, double[] b) {
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            double va = a[i], vb = b[i];
+            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb)) {
+                int c = Double.compare(va, vb);
+                if (c != 0) return c;
+            }
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code double} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements, as if by {@link Double#compare(double, double)}, at a relative
+     * index within the respective arrays that is the length of the prefix.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(double[], int, int, double[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(double[], int, int, double[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if:
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return Double.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int compare(double[] a, int aFromIndex, int aToIndex,
+                              double[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            double va = a[aFromIndex++], vb = b[bFromIndex++];
+            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb)) {
+                int c = Double.compare(va, vb);
+                if (c != 0) return c;
+            }
+        }
+
+        return aLength - bLength;
+    }
+
+    // Compare objects
+
+    /**
+     * Compares two {@code Object} arrays, within comparable elements,
+     * lexicographically.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing two elements of type {@code T} at
+     * an index {@code i} within the respective arrays that is the prefix
+     * length, as if by:
+     * <pre>{@code
+     *     Comparator.nullsFirst(Comparator.<T>naturalOrder()).
+     *         compare(a[i], b[i])
+     * }</pre>
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(Object[], Object[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     * A {@code null} array element is considered lexicographically than a
+     * non-{@code null} array element.  Two {@code null} array elements are
+     * considered equal.
+     *
+     * <p>The comparison is consistent with {@link #equals(Object[], Object[]) equals},
+     * more specifically the following holds for arrays {@code a} and {@code b}:
+     * <pre>{@code
+     *     Arrays.equals(a, b) == (Arrays.compare(a, b) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references
+     * and elements):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return a[i].compareTo(b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @param <T> the type of comparable array elements
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @since 9
+     */
+    public static <T extends Comparable<? super T>> int compare(T[] a, T[] b) {
+        if (a == b)
+            return 0;
+        // A null array is less than a non-null array
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            T oa = a[i];
+            T ob = b[i];
+            if (oa != ob) {
+                // A null element is less than a non-null element
+                if (oa == null || ob == null)
+                    return oa == null ? -1 : 1;
+                int v = oa.compareTo(ob);
+                if (v != 0) {
+                    return v;
+                }
+            }
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code Object} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing two
+     * elements of type {@code T} at a relative index {@code i} within the
+     * respective arrays that is the prefix length, as if by:
+     * <pre>{@code
+     *     Comparator.nullsFirst(Comparator.<T>naturalOrder()).
+     *         compare(a[aFromIndex + i, b[bFromIndex + i])
+     * }</pre>
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(Object[], int, int, Object[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * <p>The comparison is consistent with
+     * {@link #equals(Object[], int, int, Object[], int, int) equals}, more
+     * specifically the following holds for arrays {@code a} and {@code b} with
+     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * <pre>{@code
+     *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
+     *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
+     * }</pre>
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array elements):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return a[aFromIndex + i].compareTo(b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @param <T> the type of comparable array elements
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static <T extends Comparable<? super T>> int compare(
+            T[] a, int aFromIndex, int aToIndex,
+            T[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            T oa = a[aFromIndex++];
+            T ob = b[bFromIndex++];
+            if (oa != ob) {
+                if (oa == null || ob == null)
+                    return oa == null ? -1 : 1;
+                int v = oa.compareTo(ob);
+                if (v != 0) {
+                    return v;
+                }
+            }
+        }
+
+        return aLength - bLength;
+    }
+
+    /**
+     * Compares two {@code Object} arrays lexicographically using a specified
+     * comparator.
+     *
+     * <p>If the two arrays share a common prefix then the lexicographic
+     * comparison is the result of comparing with the specified comparator two
+     * elements at an index within the respective arrays that is the prefix
+     * length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two array lengths.
+     * (See {@link #mismatch(Object[], Object[])} for the definition of a common
+     * and proper prefix.)
+     *
+     * <p>A {@code null} array reference is considered lexicographically less
+     * than a non-{@code null} array reference.  Two {@code null} array
+     * references are considered equal.
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array references):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, b, cmp);
+     *     if (i >= 0 && i < Math.min(a.length, b.length))
+     *         return cmp.compare(a[i], b[i]);
+     *     return a.length - b.length;
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param b the second array to compare
+     * @param cmp the comparator to compare array elements
+     * @param <T> the type of array elements
+     * @return the value {@code 0} if the first and second array are equal and
+     *         contain the same elements in the same order;
+     *         a value less than {@code 0} if the first array is
+     *         lexicographically less than the second array; and
+     *         a value greater than {@code 0} if the first array is
+     *         lexicographically greater than the second array
+     * @throws NullPointerException if the comparator is {@code null}
+     * @since 9
+     */
+    public static <T> int compare(T[] a, T[] b,
+                                  Comparator<? super T> cmp) {
+        Objects.requireNonNull(cmp);
+        if (a == b)
+            return 0;
+        if (a == null || b == null)
+            return a == null ? -1 : 1;
+
+        int length = Math.min(a.length, b.length);
+        for (int i = 0; i < length; i++) {
+            T oa = a[i];
+            T ob = b[i];
+            if (oa != ob) {
+                // Null-value comparison is deferred to the comparator
+                int v = cmp.compare(oa, ob);
+                if (v != 0) {
+                    return v;
+                }
+            }
+        }
+
+        return a.length - b.length;
+    }
+
+    /**
+     * Compares two {@code Object} arrays lexicographically over the specified
+     * ranges.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the lexicographic comparison is the result of comparing with the
+     * specified comparator two elements at a relative index within the
+     * respective arrays that is the prefix length.
+     * Otherwise, one array is a proper prefix of the other and, lexicographic
+     * comparison is the result of comparing the two range lengths.
+     * (See {@link #mismatch(Object[], int, int, Object[], int, int)} for the
+     * definition of a common and proper prefix.)
+     *
+     * @apiNote
+     * <p>This method behaves as if (for non-{@code null} array elements):
+     * <pre>{@code
+     *     int i = Arrays.mismatch(a, aFromIndex, aToIndex,
+     *                             b, bFromIndex, bToIndex, cmp);
+     *     if (i >= 0 && i < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     *         return cmp.compare(a[aFromIndex + i], b[bFromIndex + i]);
+     *     return (aToIndex - aFromIndex) - (bToIndex - bFromIndex);
+     * }</pre>
+     *
+     * @param a the first array to compare
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be compared
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be compared
+     * @param b the second array to compare
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be compared
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be compared
+     * @param cmp the comparator to compare array elements
+     * @param <T> the type of array elements
+     * @return the value {@code 0} if, over the specified ranges, the first and
+     *         second array are equal and contain the same elements in the same
+     *         order;
+     *         a value less than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically less than the second array; and
+     *         a value greater than {@code 0} if, over the specified ranges, the
+     *         first array is lexicographically greater than the second array
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array or the comparator is {@code null}
+     * @since 9
+     */
+    public static <T> int compare(
+            T[] a, int aFromIndex, int aToIndex,
+            T[] b, int bFromIndex, int bToIndex,
+            Comparator<? super T> cmp) {
+        Objects.requireNonNull(cmp);
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            T oa = a[aFromIndex++];
+            T ob = b[bFromIndex++];
+            if (oa != ob) {
+                // Null-value comparison is deferred to the comparator
+                int v = cmp.compare(oa, ob);
+                if (v != 0) {
+                    return v;
+                }
+            }
+        }
+
+        return aLength - bLength;
+    }
+
+
+    // Mismatch methods
+
+    // Mismatch boolean
+
+    /**
+     * Finds and returns the index of the first mismatch between two
+     * {@code boolean} arrays, otherwise return -1 if no mismatch is found.  The
+     * index will be in the range of 0 (inclusive) up to the length (inclusive)
+     * of the smaller array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     a[pl] != b[pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(boolean[] a, boolean[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code boolean} arrays over the specified ranges, otherwise return -1 if
+     * no mismatch is found.  The index will be in the range of 0 (inclusive) up
+     * to the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     a[aFromIndex + pl] != b[bFromIndex + pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(boolean[] a, int aFromIndex, int aToIndex,
+                               boolean[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            if (a[aFromIndex++] != b[bFromIndex++]) return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch byte
+
+    /**
+     * Finds and returns the index of the first mismatch between two {@code byte}
+     * arrays, otherwise return -1 if no mismatch is found.  The index will be
+     * in the range of 0 (inclusive) up to the length (inclusive) of the smaller
+     * array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     a[pl] != b[pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(byte[] a, byte[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code byte} arrays over the specified ranges, otherwise return -1 if no
+     * mismatch is found.  The index will be in the range of 0 (inclusive) up to
+     * the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     a[aFromIndex + pl] != b[bFromIndex + pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(byte[] a, int aFromIndex, int aToIndex,
+                               byte[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            if (a[aFromIndex++] != b[bFromIndex++]) return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch char
+
+    /**
+     * Finds and returns the index of the first mismatch between two {@code char}
+     * arrays, otherwise return -1 if no mismatch is found.  The index will be
+     * in the range of 0 (inclusive) up to the length (inclusive) of the smaller
+     * array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     a[pl] != b[pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(char[] a, char[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code char} arrays over the specified ranges, otherwise return -1 if no
+     * mismatch is found.  The index will be in the range of 0 (inclusive) up to
+     * the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     a[aFromIndex + pl] != b[bFromIndex + pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(char[] a, int aFromIndex, int aToIndex,
+                               char[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            if (a[aFromIndex++] != b[bFromIndex++]) return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch short
+
+    /**
+     * Finds and returns the index of the first mismatch between two {@code short}
+     * arrays, otherwise return -1 if no mismatch is found.  The index will be
+     * in the range of 0 (inclusive) up to the length (inclusive) of the smaller
+     * array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     a[pl] != b[pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(short[] a, short[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code short} arrays over the specified ranges, otherwise return -1 if no
+     * mismatch is found.  The index will be in the range of 0 (inclusive) up to
+     * the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     a[aFromIndex + pl] != b[bFromIndex + pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(short[] a, int aFromIndex, int aToIndex,
+                               short[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            if (a[aFromIndex++] != b[bFromIndex++]) return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch int
+
+    /**
+     * Finds and returns the index of the first mismatch between two {@code int}
+     * arrays, otherwise return -1 if no mismatch is found.  The index will be
+     * in the range of 0 (inclusive) up to the length (inclusive) of the smaller
+     * array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     a[pl] != b[pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(int[] a, int[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code int} arrays over the specified ranges, otherwise return -1 if no
+     * mismatch is found.  The index will be in the range of 0 (inclusive) up to
+     * the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     a[aFromIndex + pl] != b[bFromIndex + pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(int[] a, int aFromIndex, int aToIndex,
+                               int[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            if (a[aFromIndex++] != b[bFromIndex++]) return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch long
+
+    /**
+     * Finds and returns the index of the first mismatch between two {@code long}
+     * arrays, otherwise return -1 if no mismatch is found.  The index will be
+     * in the range of 0 (inclusive) up to the length (inclusive) of the smaller
+     * array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     a[pl] != b[pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(long[] a, long[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            if (a[i] != b[i]) return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code long} arrays over the specified ranges, otherwise return -1 if no
+     * mismatch is found.  The index will be in the range of 0 (inclusive) up to
+     * the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     a[aFromIndex + pl] != b[bFromIndex + pl]
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(long[] a, int aFromIndex, int aToIndex,
+                               long[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            if (a[aFromIndex++] != b[bFromIndex++]) return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch float
+
+    /**
+     * Finds and returns the index of the first mismatch between two {@code float}
+     * arrays, otherwise return -1 if no mismatch is found.  The index will be
+     * in the range of 0 (inclusive) up to the length (inclusive) of the smaller
+     * array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     Float.compare(a[pl], b[pl]) != 0
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(float[] a, float[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            float va = a[i], vb = b[i];
+            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb))
+                if (!Float.isNaN(va) || !Float.isNaN(vb))
+                    return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code float} arrays over the specified ranges, otherwise return -1 if no
+     * mismatch is found.  The index will be in the range of 0 (inclusive) up to
+     * the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     Float.compare(a[aFromIndex + pl], b[bFromIndex + pl]) != 0
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(float[] a, int aFromIndex, int aToIndex,
+                               float[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            float va = a[aFromIndex++], vb = b[bFromIndex++];
+            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb))
+                if (!Float.isNaN(va) || !Float.isNaN(vb))
+                    return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch double
+
+    /**
+     * Finds and returns the index of the first mismatch between two
+     * {@code double} arrays, otherwise return -1 if no mismatch is found.  The
+     * index will be in the range of 0 (inclusive) up to the length (inclusive)
+     * of the smaller array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     Double.compare(a[pl], b[pl]) != 0
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(double[] a, double[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            double va = a[i], vb = b[i];
+            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb))
+                if (!Double.isNaN(va) || !Double.isNaN(vb))
+                    return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code double} arrays over the specified ranges, otherwise return -1 if
+     * no mismatch is found.  The index will be in the range of 0 (inclusive) up
+     * to the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     Double.compare(a[aFromIndex + pl], b[bFromIndex + pl]) != 0
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(double[] a, int aFromIndex, int aToIndex,
+                               double[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            double va = a[aFromIndex++], vb = b[bFromIndex++];
+            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb))
+                if (!Double.isNaN(va) || !Double.isNaN(vb))
+                    return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    // Mismatch objects
+
+    /**
+     * Finds and returns the index of the first mismatch between two
+     * {@code Object} arrays, otherwise return -1 if no mismatch is found.  The
+     * index will be in the range of 0 (inclusive) up to the length (inclusive)
+     * of the smaller array.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl) &&
+     *     !Objects.equals(a[pl], b[pl])
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(Object[] a, Object[] b) {
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            if (!Objects.equals(a[i], b[i]))
+                return i;
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code Object} arrays over the specified ranges, otherwise return -1 if
+     * no mismatch is found.  The index will be in the range of 0 (inclusive) up
+     * to the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl) &&
+     *     !Objects.equals(a[aFromIndex + pl], b[bFromIndex + pl])
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex))
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array is {@code null}
+     * @since 9
+     */
+    public static int mismatch(
+            Object[] a, int aFromIndex, int aToIndex,
+            Object[] b, int bFromIndex, int bToIndex) {
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            if (!Objects.equals(a[aFromIndex++], b[bFromIndex++]))
+                return i;
+        }
+
+        return aLength != bLength ? length : -1;
+    }
+
+    /**
+     * Finds and returns the index of the first mismatch between two
+     * {@code Object} arrays, otherwise return -1 if no mismatch is found.
+     * The index will be in the range of 0 (inclusive) up to the length
+     * (inclusive) of the smaller array.
+     *
+     * <p>The specified comparator is used to determine if two array elements
+     * from the each array are not equal.
+     *
+     * <p>If the two arrays share a common prefix then the returned index is the
+     * length of the common prefix and it follows that there is a mismatch
+     * between the two elements at that index within the respective arrays.
+     * If one array is a proper prefix of the other then the returned index is
+     * the length of the smaller array and it follows that the index is only
+     * valid for the larger array.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(a.length, b.length) &&
+     *     IntStream.range(0, pl).
+     *         map(i -> cmp.compare(a[i], b[i])).
+     *         allMatch(c -> c == 0) &&
+     *     cmp.compare(a[pl], b[pl]) != 0
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b}, share a proper
+     * prefix if the following expression is true:
+     * <pre>{@code
+     *     a.length != b.length &&
+     *     IntStream.range(0, Math.min(a.length, b.length)).
+     *         map(i -> cmp.compare(a[i], b[i])).
+     *         allMatch(c -> c == 0) &&
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param b the second array to be tested for a mismatch
+     * @param cmp the comparator to compare array elements
+     * @param <T> the type of array elements
+     * @return the index of the first mismatch between the two arrays,
+     *         otherwise {@code -1}.
+     * @throws NullPointerException
+     *         if either array or the comparator is {@code null}
+     * @since 9
+     */
+    public static <T> int mismatch(T[] a, T[] b, Comparator<? super T> cmp) {
+        Objects.requireNonNull(cmp);
+        int length = Math.min(a.length, b.length); // Check null array refs
+        if (a == b)
+            return -1;
+
+        for (int i = 0; i < length; i++) {
+            T oa = a[i];
+            T ob = b[i];
+            if (oa != ob) {
+                // Null-value comparison is deferred to the comparator
+                int v = cmp.compare(oa, ob);
+                if (v != 0) {
+                    return i;
+                }
+            }
+        }
+
+        return a.length != b.length ? length : -1;
+    }
+
+    /**
+     * Finds and returns the relative index of the first mismatch between two
+     * {@code Object} arrays over the specified ranges, otherwise return -1 if
+     * no mismatch is found.  The index will be in the range of 0 (inclusive) up
+     * to the length (inclusive) of the smaller range.
+     *
+     * <p>If the two arrays, over the specified ranges, share a common prefix
+     * then the returned relative index is the length of the common prefix and
+     * it follows that there is a mismatch between the two elements at that
+     * relative index within the respective arrays.
+     * If one array is a proper prefix of the other, over the specified ranges,
+     * then the returned relative index is the length of the smaller range and
+     * it follows that the relative index is only valid for the array with the
+     * larger range.
+     * Otherwise, there is no mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * prefix of length {@code pl} if the following expression is true:
+     * <pre>{@code
+     *     pl >= 0 &&
+     *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
+     *     IntStream.range(0, pl).
+     *         map(i -> cmp.compare(a[aFromIndex + i], b[bFromIndex + i])).
+     *         allMatch(c -> c == 0) &&
+     *     cmp.compare(a[aFromIndex + pl], b[bFromIndex + pl]) != 0
+     * }</pre>
+     * Note that a common prefix length of {@code 0} indicates that the first
+     * elements from each array mismatch.
+     *
+     * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
+     * ranges [{@code aFromIndex}, {@code atoIndex}) and
+     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * if the following expression is true:
+     * <pre>{@code
+     *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
+     *     IntStream.range(0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex)).
+     *         map(i -> cmp.compare(a[aFromIndex + i], b[bFromIndex + i])).
+     *         allMatch(c -> c == 0)
+     * }</pre>
+     *
+     * @param a the first array to be tested for a mismatch
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested for a mismatch
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @param cmp the comparator to compare array elements
+     * @param <T> the type of array elements
+     * @return the relative index of the first mismatch between the two arrays
+     *         over the specified ranges, otherwise {@code -1}.
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array or the comparator is {@code null}
+     * @since 9
+     */
+    public static <T> int mismatch(
+            T[] a, int aFromIndex, int aToIndex,
+            T[] b, int bFromIndex, int bToIndex,
+            Comparator<? super T> cmp) {
+        Objects.requireNonNull(cmp);
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        for (int i = 0; i < length; i++) {
+            T oa = a[aFromIndex++];
+            T ob = b[bFromIndex++];
+            if (oa != ob) {
+                // Null-value comparison is deferred to the comparator
+                int v = cmp.compare(oa, ob);
+                if (v != 0) {
+                    return i;
+                }
+            }
+        }
+
+        return aLength != bLength ? length : -1;
     }
 }

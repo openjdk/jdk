@@ -22,7 +22,9 @@
  */
 
 /*
+ * @test
  * @modules java.base/jdk.internal.jimage
+ * @run testng JImageReadTest
  * @summary Unit test for libjimage JIMAGE_Open/Read/Close
  */
 
@@ -57,8 +59,7 @@ public class JImageReadTest {
                 {"java.base", "java/lang/String.class"},
                 {"java.base", "java/lang/Object.class"},
                 {"java.base", "sun/reflect/generics/tree/TypeArgument.class"},
-                {"jdk.jdeps", "com/sun/tools/javap/StackMapWriter$StackMapBuilder.class"},
-                {"jdk.hotspot.agent", "sa.properties"},
+                {"java.base", "sun/net/www/content-types.properties"},
                 {"java.logging", "java/util/logging/Logger.class"},
                 {"java.base", "java/NOSUCHCLASS/yyy.class"},    // non-existent
                 {"NOSUCHMODULE", "java/lang/Class.class"},    // non-existent
@@ -165,8 +166,10 @@ public class JImageReadTest {
         int count = ImageNativeSubstrate.JIMAGE_Resources(jimageHandle,
                 names);
         System.out.printf(" count: %d, a class: %s\n", count, names[0]);
-        Assert.assertTrue(max > 31000,
-                "missing entries, should be more than 31000, reported: " + count);
+        int minEntryCount = 16000;
+        Assert.assertTrue(max > minEntryCount,
+                "missing entries, should be more than " + minEntryCount +
+                ", reported: " + count);
         Assert.assertTrue(count == max,
                 "unexpected count of entries, count: " + count
                         + ", max: " + max);
@@ -310,6 +313,7 @@ public class JImageReadTest {
     static boolean isMetaName(String name) {
         return name.startsWith("/modules")
                 || name.startsWith("/packages")
+                || name.startsWith("META-INF/services")
                 || name.equals("bootmodules.jdata");
     }
 
@@ -360,6 +364,24 @@ public class JImageReadTest {
 
         }
         System.out.printf(" %s: %d names%n", fname, names.length);
+    }
+
+    @Test
+    static void test5_nameTooLong() throws IOException {
+        long[] size = new long[1];
+        String moduleName = "FictiousModuleName";
+        String className = String.format("A%09999d", 1);
+
+        long jimageHandle = ImageNativeSubstrate.JIMAGE_Open(imageFile);
+        Assert.assertTrue(jimageHandle != 0, "JIMAGE_Open failed: id: " + jimageHandle);
+
+        long locationHandle =
+                ImageNativeSubstrate.JIMAGE_FindResource(jimageHandle,
+                        moduleName, "9.0", className, size);
+
+        Assert.assertEquals(0, locationHandle, "Too long name should have failed");
+
+        ImageNativeSubstrate.JIMAGE_Close(jimageHandle);
     }
 
     // main method to run standalone from jtreg

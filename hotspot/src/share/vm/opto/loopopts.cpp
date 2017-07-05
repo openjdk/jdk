@@ -512,8 +512,11 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     PhiNode* phi = out->as_Phi();
     BasicType bt = phi->type()->basic_type();
     switch (bt) {
-    case T_FLOAT:
-    case T_DOUBLE: {
+    case T_DOUBLE:
+      if (C->use_cmove()) {
+        continue; //TODO: maybe we want to add some cost
+      }
+    case T_FLOAT: {
       cost += Matcher::float_cmove_cost(); // Could be very expensive
       break;
     }
@@ -573,7 +576,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         }
       }
     }
-  }
+  }//for
   Node* bol = iff->in(1);
   assert(bol->Opcode() == Op_Bool, "");
   int cmp_op = bol->in(1)->Opcode();
@@ -595,7 +598,8 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   }
   // Check for highly predictable branch.  No point in CMOV'ing if
   // we are going to predict accurately all the time.
-  if (iff->_prob < infrequent_prob ||
+  if (C->use_cmove() && cmp_op == Op_CmpD) ;//keep going
+  else if (iff->_prob < infrequent_prob ||
       iff->_prob > (1.0f - infrequent_prob))
     return NULL;
 

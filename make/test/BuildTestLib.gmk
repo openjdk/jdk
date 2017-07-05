@@ -35,25 +35,19 @@ TARGETS :=
 TEST_LIB_SOURCE_DIR := $(TOPDIR)/test/lib
 TEST_LIB_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/lib
 
-# Unfortunately, test-lib.jar does not compile properly without warnings.
-$(eval $(call SetupJavaCompiler, BOOT_JAVAC_NOWARNINGS, \
-    JAVAC := $(JAVAC), \
-    FLAGS := -XDignore.symbol.file=true -g, \
-    DISABLE_SJAVAC := true, \
-))
-
 $(eval $(call SetupJavaCompilation, BUILD_WB_JAR, \
-    SETUP := BOOT_JAVAC, \
+    SETUP := GENERATE_USINGJDKBYTECODE, \
     SRC := $(TEST_LIB_SOURCE_DIR)/sun, \
     BIN := $(TEST_LIB_SUPPORT), \
     JAR := $(TEST_LIB_SUPPORT)/wb.jar, \
+    ADD_JAVAC_FLAGS := $(JAVAC_WARNINGS), \
 ))
 
 TARGETS += $(BUILD_WB_JAR)
 
 # test-lib.jar will contain only hprof classes until JDK-8081381 is resolved
 $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
-    SETUP := BOOT_JAVAC_NOWARNINGS, \
+    SETUP := GENERATE_USINGJDKBYTECODE, \
     SRC := $(TEST_LIB_SOURCE_DIR)/share/classes/jdk/test/lib/hprof, \
     BIN := $(TEST_LIB_SUPPORT), \
     JAR := $(TEST_LIB_SUPPORT)/test-lib.jar, \

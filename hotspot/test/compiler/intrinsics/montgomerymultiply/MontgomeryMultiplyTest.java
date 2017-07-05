@@ -27,20 +27,35 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Random;
 
+import sun.hotspot.WhiteBox;
+
+import jdk.test.lib.Platform;
+
 /**
  * @test
- * @bug 8130150
+ * @bug 8130150 8131779 8139907
+ * @summary Verify that the Montgomery multiply and square intrinsic works and correctly checks their arguments.
+ * @library /testlibrary /../../test/lib
  * @library /testlibrary
- * @summary Verify that the Montgomery multiply intrinsic works and correctly checks its arguments.
+ * @build MontgomeryMultiplyTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MontgomeryMultiplyTest
  */
 
 public class MontgomeryMultiplyTest {
+
+    private static final WhiteBox wb = WhiteBox.getWhiteBox();
+
+    /* Compilation level corresponding to C2. */
+    private static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
 
     static final MethodHandles.Lookup lookup = MethodHandles.lookup();
 
@@ -73,6 +88,37 @@ public class MontgomeryMultiplyTest {
 
         } catch (Throwable ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    /* Obtain executable for the intrinsics tested. Depending on the
+     * value of 'isMultiply', the executable corresponding to either
+     * implMontgomerMultiply or implMontgomerySqure is returned. */
+    static Executable getExecutable(boolean isMultiply) throws RuntimeException {
+        try {
+            Class aClass = Class.forName("java.math.BigInteger");
+            Method aMethod;
+            if (isMultiply) {
+                aMethod = aClass.getDeclaredMethod("implMontgomeryMultiply",
+                                                   int[].class,
+                                                   int[].class,
+                                                   int[].class,
+                                                   int.class,
+                                                   long.class,
+                                                   int[].class);
+            } else {
+                aMethod = aClass.getDeclaredMethod("implMontgomerySquare",
+                                                   int[].class,
+                                                   int[].class,
+                                                   int.class,
+                                                   long.class,
+                                                   int[].class);
+            }
+            return aMethod;
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Test bug, method is unavailable. " + e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Test bug, class is unavailable. " + e);
         }
     }
 
@@ -267,11 +313,15 @@ public class MontgomeryMultiplyTest {
     }
 
     public static void main(String args[]) {
-        try {
-            new MontgomeryMultiplyTest().testMontgomeryMultiplyChecks();
-            new MontgomeryMultiplyTest().testResultValues();
-        } catch (Throwable ex) {
-            throw new RuntimeException(ex);
+        if (Platform.isServer() &&
+            wb.isIntrinsicAvailable(getExecutable(true), COMP_LEVEL_FULL_OPTIMIZATION) &&
+            wb.isIntrinsicAvailable(getExecutable(false), COMP_LEVEL_FULL_OPTIMIZATION)) {
+            try {
+                new MontgomeryMultiplyTest().testMontgomeryMultiplyChecks();
+                new MontgomeryMultiplyTest().testResultValues();
+            } catch (Throwable ex) {
+                throw new RuntimeException(ex);
+            }
         }
-     }
+    }
 }
