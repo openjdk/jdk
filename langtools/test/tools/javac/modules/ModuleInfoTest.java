@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class ModuleInfoTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("module-info.java:1:8: compiler.err.class.public.should.be.in.file: C"))
+        if (!log.contains("module-info.java:1:8: compiler.err.class.public.should.be.in.file: kindname.class, C"))
             throw new Exception("expected output not found");
     }
 
