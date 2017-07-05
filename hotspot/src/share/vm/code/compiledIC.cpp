@@ -160,7 +160,7 @@ address CompiledIC::stub_address() const {
 // High-level access to an inline cache. Guaranteed to be MT-safe.
 
 
-void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS) {
+bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS) {
   assert(CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
   assert(!is_optimized(), "cannot set an optimized virtual call to megamorphic");
   assert(is_call_to_compiled() || is_call_to_interpreted(), "going directly to megamorphic?");
@@ -170,8 +170,10 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     assert(bytecode == Bytecodes::_invokeinterface, "");
     int itable_index = call_info->itable_index();
     entry = VtableStubs::find_itable_stub(itable_index);
+    if (entry == false) {
+      return false;
+    }
 #ifdef ASSERT
-    assert(entry != NULL, "entry not computed");
     int index = call_info->resolved_method()->itable_index();
     assert(index == itable_index, "CallInfo pre-computes this");
 #endif //ASSERT
@@ -184,6 +186,9 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     int vtable_index = call_info->vtable_index();
     assert(call_info->resolved_klass()->verify_vtable_index(vtable_index), "sanity check");
     entry = VtableStubs::find_vtable_stub(vtable_index);
+    if (entry == NULL) {
+      return false;
+    }
     InlineCacheBuffer::create_transition_stub(this, NULL, entry);
   }
 
@@ -200,6 +205,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
   // race because the IC entry was complete when we safepointed so
   // cleaning it immediately is harmless.
   // assert(is_megamorphic(), "sanity check");
+  return true;
 }
 
 

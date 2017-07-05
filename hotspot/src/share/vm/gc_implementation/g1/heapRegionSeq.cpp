@@ -71,27 +71,16 @@ uint HeapRegionSeq::find_contiguous_from(uint from, uint num) {
 
 // Public
 
-void HeapRegionSeq::initialize(HeapWord* bottom, HeapWord* end,
-                               uint max_length) {
+void HeapRegionSeq::initialize(HeapWord* bottom, HeapWord* end) {
   assert((uintptr_t) bottom % HeapRegion::GrainBytes == 0,
          "bottom should be heap region aligned");
   assert((uintptr_t) end % HeapRegion::GrainBytes == 0,
          "end should be heap region aligned");
 
-  _length = 0;
-  _heap_bottom = bottom;
-  _heap_end = end;
-  _region_shift = HeapRegion::LogOfHRGrainBytes;
   _next_search_index = 0;
   _allocated_length = 0;
-  _max_length = max_length;
 
-  _regions = NEW_C_HEAP_ARRAY(HeapRegion*, max_length, mtGC);
-  memset(_regions, 0, (size_t) max_length * sizeof(HeapRegion*));
-  _regions_biased = _regions - ((uintx) bottom >> _region_shift);
-
-  assert(&_regions[0] == &_regions_biased[addr_to_index_biased(bottom)],
-         "bottom should be included in the region with index 0");
+  _regions.initialize(bottom, end, HeapRegion::GrainBytes);
 }
 
 MemRegion HeapRegionSeq::expand_by(HeapWord* old_end,
@@ -101,15 +90,15 @@ MemRegion HeapRegionSeq::expand_by(HeapWord* old_end,
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   HeapWord* next_bottom = old_end;
-  assert(_heap_bottom <= next_bottom, "invariant");
+  assert(heap_bottom() <= next_bottom, "invariant");
   while (next_bottom < new_end) {
-    assert(next_bottom < _heap_end, "invariant");
+    assert(next_bottom < heap_end(), "invariant");
     uint index = length();
 
-    assert(index < _max_length, "otherwise we cannot expand further");
+    assert(index < max_length(), "otherwise we cannot expand further");
     if (index == 0) {
       // We have not allocated any regions so far
-      assert(next_bottom == _heap_bottom, "invariant");
+      assert(next_bottom == heap_bottom(), "invariant");
     } else {
       // next_bottom should match the end of the last/previous region
       assert(next_bottom == at(index - 1)->end(), "invariant");
@@ -122,8 +111,8 @@ MemRegion HeapRegionSeq::expand_by(HeapWord* old_end,
         // allocation failed, we bail out and return what we have done so far
         return MemRegion(old_end, next_bottom);
       }
-      assert(_regions[index] == NULL, "invariant");
-      _regions[index] = new_hr;
+      assert(_regions.get_by_index(index) == NULL, "invariant");
+      _regions.set_by_index(index, new_hr);
       increment_allocated_length();
     }
     // Have to increment the length first, otherwise we will get an
@@ -228,26 +217,26 @@ uint HeapRegionSeq::shrink_by(uint num_regions_to_remove) {
 
 #ifndef PRODUCT
 void HeapRegionSeq::verify_optional() {
-  guarantee(_length <= _allocated_length,
+  guarantee(length() <= _allocated_length,
             err_msg("invariant: _length: %u _allocated_length: %u",
-                    _length, _allocated_length));
-  guarantee(_allocated_length <= _max_length,
+                    length(), _allocated_length));
+  guarantee(_allocated_length <= max_length(),
             err_msg("invariant: _allocated_length: %u _max_length: %u",
-                    _allocated_length, _max_length));
-  guarantee(_next_search_index <= _length,
+                    _allocated_length, max_length()));
+  guarantee(_next_search_index <= length(),
             err_msg("invariant: _next_search_index: %u _length: %u",
-                    _next_search_index, _length));
+                    _next_search_index, length()));
 
-  HeapWord* prev_end = _heap_bottom;
+  HeapWord* prev_end = heap_bottom();
   for (uint i = 0; i < _allocated_length; i += 1) {
-    HeapRegion* hr = _regions[i];
+    HeapRegion* hr = _regions.get_by_index(i);
     guarantee(hr != NULL, err_msg("invariant: i: %u", i));
     guarantee(hr->bottom() == prev_end,
               err_msg("invariant i: %u "HR_FORMAT" prev_end: "PTR_FORMAT,
                       i, HR_FORMAT_PARAMS(hr), prev_end));
     guarantee(hr->hrs_index() == i,
               err_msg("invariant: i: %u hrs_index(): %u", i, hr->hrs_index()));
-    if (i < _length) {
+    if (i < length()) {
       // Asserts will fire if i is >= _length
       HeapWord* addr = hr->bottom();
       guarantee(addr_to_region(addr) == hr, "sanity");
@@ -265,8 +254,8 @@ void HeapRegionSeq::verify_optional() {
       prev_end = hr->end();
     }
   }
-  for (uint i = _allocated_length; i < _max_length; i += 1) {
-    guarantee(_regions[i] == NULL, err_msg("invariant i: %u", i));
+  for (uint i = _allocated_length; i < max_length(); i += 1) {
+    guarantee(_regions.get_by_index(i) == NULL, err_msg("invariant i: %u", i));
   }
 }
 #endif // PRODUCT
