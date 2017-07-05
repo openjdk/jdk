@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ class ContextFinder {
             Class spFactory = ServiceLoaderUtil.safeLoadClass(className, PLATFORM_DEFAULT_FACTORY_CLASS, classLoader);
             return newInstance(contextPath, spFactory, classLoader, properties);
         } catch (ClassNotFoundException x) {
-            throw new JAXBException(Messages.format(Messages.PROVIDER_NOT_FOUND, className), x);
+            throw new JAXBException(Messages.format(Messages.DEFAULT_PROVIDER_NOT_FOUND), x);
 
         } catch (RuntimeException | JAXBException x) {
             // avoid wrapping RuntimeException to JAXBException,
@@ -228,7 +228,7 @@ class ContextFinder {
         }
     }
 
-    private static Object instantiateProviderIfNecessary(Class<?> implClass) throws JAXBException {
+    private static Object instantiateProviderIfNecessary(final Class<?> implClass) throws JAXBException {
         try {
             if (JAXBContextFactory.class.isAssignableFrom(implClass)) {
                 return AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
@@ -254,7 +254,7 @@ class ContextFinder {
         try {
             spi = ServiceLoaderUtil.safeLoadClass(className, PLATFORM_DEFAULT_FACTORY_CLASS, getContextClassLoader());
         } catch (ClassNotFoundException e) {
-            throw new JAXBException(e);
+            throw new JAXBException(Messages.format(Messages.DEFAULT_PROVIDER_NOT_FOUND), e);
         }
 
         if (logger.isLoggable(Level.FINE)) {
@@ -525,6 +525,7 @@ class ContextFinder {
         } else {
             return (ClassLoader) java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction() {
+                        @Override
                         public java.lang.Object run() {
                             return Thread.currentThread().getContextClassLoader();
                         }
@@ -539,6 +540,7 @@ class ContextFinder {
         } else {
             return (ClassLoader) java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction() {
+                        @Override
                         public java.lang.Object run() {
                             return c.getClassLoader();
                         }
@@ -552,6 +554,7 @@ class ContextFinder {
         } else {
             return (ClassLoader) java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction() {
+                        @Override
                         public java.lang.Object run() {
                             return ClassLoader.getSystemClassLoader();
                         }

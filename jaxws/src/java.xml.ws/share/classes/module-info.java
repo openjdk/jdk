@@ -26,7 +26,17 @@
 /**
  * Defines the Java API for XML-Based Web Services (JAX-WS), and
  * the Web Services Metadata API.
+ *
+ * @uses javax.xml.soap.MessageFactory
+ * @uses javax.xml.soap.SAAJMetaFactory
+ * @uses javax.xml.soap.SOAPConnectionFactory
+ * @uses javax.xml.soap.SOAPFactory
+ * @uses javax.xml.ws.spi.Provider
+ *
+ * @moduleGraph
+ * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.xml.ws {
     requires transitive java.activation;
     requires transitive java.xml;
@@ -36,6 +46,7 @@ module java.xml.ws {
     requires java.logging;
     requires java.management;
     requires jdk.httpserver;
+    requires jdk.unsupported;
 
     uses javax.xml.ws.spi.Provider;
     uses javax.xml.soap.MessageFactory;

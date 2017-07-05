@@ -46,9 +46,6 @@ import sun.nio.cs.ArrayEncoder;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 import static java.lang.String.COMPACT_STRINGS;
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class for string encoding and decoding.
@@ -63,6 +60,10 @@ class StringCoding {
         new ThreadLocal<>();
     private static final ThreadLocal<SoftReference<StringEncoder>> encoder =
         new ThreadLocal<>();
+
+    private static final Charset ISO_8859_1 = Charset.forName("iso-8859-1");
+    private static final Charset US_ASCII = Charset.forName("us-ascii");
+    private static final Charset UTF_8 = Charset.forName("utf-8");
 
     private static boolean warnUnsupportedCharset = true;
 

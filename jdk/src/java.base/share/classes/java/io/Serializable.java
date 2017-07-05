@@ -84,9 +84,9 @@ package java.io;
  * correspondingly named fields in the current object.  This handles the case
  * when the class has evolved to add new fields. The method does not need to
  * concern itself with the state belonging to its superclasses or subclasses.
- * State is saved by writing the individual fields to the
- * ObjectOutputStream using the writeObject method or by using the
- * methods for primitive data types supported by DataOutput.
+ * State is restored by reading data from the ObjectInputStream for
+ * the individual fields and making assignments to the appropriate fields
+ * of the object. Reading primitive data types is supported by DataInput.
  *
  * <p>The readObjectNoData method is responsible for initializing the state of
  * the object for its particular class in the event that the serialization
