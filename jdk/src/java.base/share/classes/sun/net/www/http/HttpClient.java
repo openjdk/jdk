@@ -28,6 +28,7 @@ package sun.net.www.http;
 import java.io.*;
 import java.net.*;
 import java.util.Locale;
+import java.util.Properties;
 import sun.net.NetworkClient;
 import sun.net.ProgressSource;
 import sun.net.www.MessageHeader;
@@ -37,6 +38,7 @@ import sun.net.www.ParseUtil;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
 import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
+import sun.security.action.GetPropertyAction;
 
 /**
  * @author Herb Jellinek
@@ -143,20 +145,18 @@ public class HttpClient extends NetworkClient {
     }
 
     static {
-        String keepAlive = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("http.keepAlive"));
-
-        String retryPost = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.net.http.retryPost"));
+        Properties props = GetPropertyAction.getProperties();
+        String keepAlive = props.getProperty("http.keepAlive");
+        String retryPost = props.getProperty("sun.net.http.retryPost");
 
         if (keepAlive != null) {
-            keepAliveProp = Boolean.valueOf(keepAlive).booleanValue();
+            keepAliveProp = Boolean.parseBoolean(keepAlive);
         } else {
             keepAliveProp = true;
         }
 
         if (retryPost != null) {
-            retryPostProp = Boolean.valueOf(retryPost).booleanValue();
+            retryPostProp = Boolean.parseBoolean(retryPost);
         } else
             retryPostProp = true;
 

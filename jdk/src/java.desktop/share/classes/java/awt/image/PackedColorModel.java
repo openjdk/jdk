@@ -404,9 +404,6 @@ public abstract class PackedColorModel extends ColorModel {
 
         PackedColorModel cm = (PackedColorModel) obj;
         int numC = cm.getNumComponents();
-        if (numC != numComponents) {
-            return false;
-        }
         for(int i=0; i < numC; i++) {
             if (maskArray[i] != cm.getMask(i)) {
                 return false;

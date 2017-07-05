@@ -20,32 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/**
+ * @test
+ * @bug 8044199 8137231
+ * @key intermittent
+ * @summary Check same KeyPair's private key and public key have same modulus.
+ * also check public key's public exponent equals to given spec's public
+ * exponent. Only key size 1024 is tested with RSAKeyGenParameterSpec.F0 (3).
+ * @run main SpecTest 512
+ * @run main SpecTest 768
+ * @run main SpecTest 1024
+ * @run main SpecTest 1024 3
+ * @run main SpecTest 2048
+ * @run main/timeout=240 SpecTest 4096
+ * @run main/timeout=240 SpecTest 5120
+ */
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAKeyGenParameterSpec;
 
-/**
- * @test
- * @bug 8044199
- * @key intermittent
- * @summary Check same KeyPair's private key and public key have same modulus.
- *  also check public key's public exponent equals to given spec's public
- *  exponent.
- * @run main SpecTest 512
- * @run main SpecTest 768
- * @run main SpecTest 1024
- * @run main SpecTest 2048
- * @run main/timeout=240 SpecTest 4096
- * @run main/timeout=240 SpecTest 5120
- */
 public class SpecTest {
+
     /**
      * ALGORITHM name, fixed as RSA.
      */
@@ -70,14 +70,14 @@ public class SpecTest {
         // test the getModulus method
         if ((priv instanceof RSAKey) && (pub instanceof RSAKey)) {
             if (!priv.getModulus().equals(pub.getModulus())) {
-                System.err.println("priv.getModulus() = " + priv.getModulus());
-                System.err.println("pub.getModulus() = " + pub.getModulus());
+                System.out.println("priv.getModulus() = " + priv.getModulus());
+                System.out.println("pub.getModulus() = " + pub.getModulus());
                 passed = false;
             }
 
             if (!pubExponent.equals(pub.getPublicExponent())) {
-                System.err.println("pubExponent = " + pubExponent);
-                System.err.println("pub.getPublicExponent() = "
+                System.out.println("pubExponent = " + pubExponent);
+                System.out.println("pub.getPublicExponent() = "
                         + pub.getPublicExponent());
                 passed = false;
             }
@@ -85,36 +85,26 @@ public class SpecTest {
         return passed;
     }
 
-    public static void main(String[] args) {
-        int failCount = 0;
+    public static void main(String[] args) throws Exception {
 
-        // Test key size.
-        int size = Integer.parseInt(args[0]);
+        int size = 0;
 
-        try {
-            KeyPairGenerator kpg1 = KeyPairGenerator.getInstance(KEYALG, PROVIDER);
-            kpg1.initialize(new RSAKeyGenParameterSpec(size,
-                    RSAKeyGenParameterSpec.F4));
-            if (!specTest(kpg1.generateKeyPair(),
-                    RSAKeyGenParameterSpec.F4)) {
-                failCount++;
-            }
-
-            KeyPairGenerator kpg2 = KeyPairGenerator.getInstance(KEYALG, PROVIDER);
-            kpg2.initialize(new RSAKeyGenParameterSpec(size,
-                    RSAKeyGenParameterSpec.F0));
-            if (!specTest(kpg2.generateKeyPair(), RSAKeyGenParameterSpec.F0)) {
-                failCount++;
-            }
-        } catch (NoSuchAlgorithmException | NoSuchProviderException
-                | InvalidAlgorithmParameterException ex) {
-            ex.printStackTrace(System.err);
-            failCount++;
+        if (args.length >= 1) {
+            size = Integer.parseInt(args[0]);
+        } else {
+            throw new RuntimeException("Missing keysize to test with");
         }
 
-        if (failCount != 0) {
-            throw new RuntimeException("There are " + failCount
-                    + " tests failed.");
+        BigInteger publicExponent
+                = (args.length >= 2) ? new BigInteger(args[1]) : RSAKeyGenParameterSpec.F4;
+
+        System.out.println("Running test with key size: " + size
+                + " and public exponent: " + publicExponent);
+
+        KeyPairGenerator kpg1 = KeyPairGenerator.getInstance(KEYALG, PROVIDER);
+        kpg1.initialize(new RSAKeyGenParameterSpec(size, publicExponent));
+        if (!specTest(kpg1.generateKeyPair(), publicExponent)) {
+            throw new RuntimeException("Test failed.");
         }
     }
 }

@@ -1820,13 +1820,15 @@ const TypeTuple *TypeTuple::make_domain(ciInstanceKlass* recv, ciSignature* sig)
       break;
     case T_OBJECT:
     case T_ARRAY:
-    case T_BOOLEAN:
-    case T_CHAR:
     case T_FLOAT:
-    case T_BYTE:
-    case T_SHORT:
     case T_INT:
       field_array[pos++] = get_const_type(type);
+      break;
+    case T_BOOLEAN:
+    case T_CHAR:
+    case T_BYTE:
+    case T_SHORT:
+      field_array[pos++] = TypeInt::INT;
       break;
     default:
       ShouldNotReachHere();

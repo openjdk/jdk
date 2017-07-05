@@ -71,7 +71,7 @@ public class ExpressionResolver implements ExpressionEvaluator {
             if (m == null) {
                 System.err.println("Warning: Unresolved Symbol: "
                                    + id.getName() + " substituted NaN");
-                return new Literal(new Double(Double.NaN));
+                return new Literal(Double.valueOf(Double.NaN));
             }
             if (m.getVariability() == Variability.CONSTANT) {
                 if (debug) {
@@ -105,7 +105,7 @@ public class ExpressionResolver implements ExpressionEvaluator {
                 Literal rl = (Literal)r;
                 boolean warn = false;
 
-                Double nan = new Double(Double.NaN);
+                Double nan = Double.valueOf(Double.NaN);
                 if (ll.getValue() instanceof String) {
                     warn = true; ll.setValue(nan);
                 }
@@ -129,7 +129,7 @@ public class ExpressionResolver implements ExpressionEvaluator {
                                        + " (right = " + rn.doubleValue() + ")"
                                        + " to literal value " + result);
                 }
-                return new Literal(new Double(result));
+                return new Literal(Double.valueOf(result));
             }
         }
 

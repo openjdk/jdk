@@ -50,17 +50,14 @@
 #define MIN_SHARED_READ_ONLY_SIZE       (NOT_LP64(8*M) LP64_ONLY(9*M))
 
 // the MIN_SHARED_MISC_DATA_SIZE and MIN_SHARED_MISC_CODE_SIZE estimates are based on
-// MetaspaceShared::generate_vtable_methods().
-// The minimum size only accounts for the vtable methods. Any size less than the
-// minimum required size would cause vm crash when allocating the vtable methods.
-#define SHARED_MISC_SIZE_FOR(size)      (DEFAULT_VTBL_VIRTUALS_COUNT*DEFAULT_VTBL_LIST_SIZE*size)
+// the sizes required for dumping the archive using the default classlist. The sizes
+// are multiplied by 1.5 for a safety margin.
 
 #define DEFAULT_SHARED_MISC_DATA_SIZE   (NOT_LP64(2*M) LP64_ONLY(4*M))
-#define MIN_SHARED_MISC_DATA_SIZE       (SHARED_MISC_SIZE_FOR(sizeof(void*)))
+#define MIN_SHARED_MISC_DATA_SIZE       (NOT_LP64(1*M) LP64_ONLY(1200*K))
 
 #define DEFAULT_SHARED_MISC_CODE_SIZE   (120*K)
-#define MIN_SHARED_MISC_CODE_SIZE       (SHARED_MISC_SIZE_FOR(sizeof(void*))+SHARED_MISC_SIZE_FOR(DEFAULT_VTBL_METHOD_SIZE)+DEFAULT_VTBL_COMMON_CODE_SIZE)
-
+#define MIN_SHARED_MISC_CODE_SIZE       (NOT_LP64(63*K) LP64_ONLY(69*K))
 #define DEFAULT_COMBINED_SIZE           (DEFAULT_SHARED_READ_WRITE_SIZE+DEFAULT_SHARED_READ_ONLY_SIZE+DEFAULT_SHARED_MISC_DATA_SIZE+DEFAULT_SHARED_MISC_CODE_SIZE)
 
 // the max size is the MAX size (ie. 0x7FFFFFFF) - the total size of
@@ -128,6 +125,8 @@ class MetaspaceShared : AllStatic {
   static bool _check_classes_made_progress;
   static bool _has_error_classes;
   static bool _archive_loading_failed;
+  static address _cds_i2i_entry_code_buffers;
+  static size_t  _cds_i2i_entry_code_buffers_size;
 
   // Used only during dumping.
   static SharedMiscRegion _md;
@@ -185,6 +184,9 @@ class MetaspaceShared : AllStatic {
   // Return true if given address is in the mapped shared space.
   static bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
 
+  // Return true if given address is in the shared region corresponding to the idx
+  static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
+
   static bool is_string_region(int idx) NOT_CDS_RETURN_(false);
 
   static void generate_vtable_methods(void** vtbl_list,
@@ -217,6 +219,15 @@ class MetaspaceShared : AllStatic {
   // Allocate a block of memory from the "mc" or "md" regions.
   static char* misc_code_space_alloc(size_t num_bytes) {  return _mc.alloc(num_bytes); }
   static char* misc_data_space_alloc(size_t num_bytes) {  return _md.alloc(num_bytes); }
+
+  static address cds_i2i_entry_code_buffers(size_t total_size);
+
+  static address cds_i2i_entry_code_buffers() {
+    return _cds_i2i_entry_code_buffers;
+  }
+  static size_t cds_i2i_entry_code_buffers_size() {
+    return _cds_i2i_entry_code_buffers_size;
+  }
 
   static SharedMiscRegion* misc_code_region() {
     assert(DumpSharedSpaces, "used during dumping only");

@@ -26,7 +26,6 @@
 package com.sun.imageio.stream;
 
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.ManagedLocalsThread;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -92,8 +91,8 @@ public class StreamCloser {
                      * Make its parent the top-level thread group.
                      */
                     ThreadGroup tg = ThreadGroupUtils.getRootThreadGroup();
-                    streamCloser = new ManagedLocalsThread(tg,
-                                                           streamCloserRunnable);
+                    streamCloser = new Thread(tg, streamCloserRunnable,
+                                              "StreamCloser", 0, false);
                     /* Set context class loader to null in order to avoid
                      * keeping a strong reference to an application classloader.
                      */

@@ -31,7 +31,6 @@ import java.awt.event.WindowEvent;
 
 import java.util.ArrayList;
 
-import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
@@ -55,7 +54,7 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  *
  * @since 1.1
  */
-class EventDispatchThread extends ManagedLocalsThread {
+class EventDispatchThread extends Thread {
 
     private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.EventDispatchThread");
 
@@ -66,8 +65,16 @@ class EventDispatchThread extends ManagedLocalsThread {
 
     private ArrayList<EventFilter> eventFilters = new ArrayList<EventFilter>();
 
+   /**
+    * Must always call 5 args super-class constructor passing false
+    * to indicate not to inherit locals.
+    */
+    private EventDispatchThread() {
+        throw new UnsupportedOperationException("Must erase locals");
+    }
+
     EventDispatchThread(ThreadGroup group, String name, EventQueue queue) {
-        super(group, name);
+        super(group, null, name, 0, false);
         setEventQueue(queue);
     }
 

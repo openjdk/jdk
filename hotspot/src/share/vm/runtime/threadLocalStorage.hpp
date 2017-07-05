@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_THREADLOCALSTORAGE_HPP
 #define SHARE_VM_RUNTIME_THREADLOCALSTORAGE_HPP
 
-#include "utilities/top.hpp"
+#include "memory/allocation.hpp"
 
 // forward-decl as we can't have an include cycle
 class Thread;

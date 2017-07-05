@@ -28,11 +28,12 @@
  * @summary Test if package p2 in module m2 is exported to all unnamed,
  *          then class p1.c1 in an unnamed module can read p2.c2 in module m2.
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.module
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java
  * @compile p1/c1.java
- * @compile -XaddExports:java.base/jdk.internal.module=ALL-UNNAMED ExportAllUnnamed.java
- * @run main/othervm -XaddExports:java.base/jdk.internal.module=ALL-UNNAMED -Xbootclasspath/a:. ExportAllUnnamed
+ * @build ExportAllUnnamed
+ * @run main/othervm -Xbootclasspath/a:. ExportAllUnnamed
  */
 
 import static jdk.test.lib.Asserts.*;

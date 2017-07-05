@@ -31,7 +31,6 @@ import java.nio.file.spi.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -57,8 +56,8 @@ abstract class UnixFileSystem
         // if process-wide chdir is allowed or default directory is not the
         // process working directory then paths must be resolved against the
         // default directory.
-        String propValue = AccessController.doPrivileged(
-            new GetPropertyAction("sun.nio.fs.chdirAllowed", "false"));
+        String propValue = GetPropertyAction
+                .getProperty("sun.nio.fs.chdirAllowed", "false");
         boolean chdirAllowed = (propValue.length() == 0) ?
             true : Boolean.valueOf(propValue);
         if (chdirAllowed) {

@@ -140,6 +140,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cpool_and_tags(Register Rcpool, Register Rtags);
   void is_a(Label& L);
 
+  void narrow(Register result);
+
   // Java Call Helpers
   void call_from_interpreter(Register Rtarget_method, Register Rret_addr, Register Rscratch1, Register Rscratch2);
 

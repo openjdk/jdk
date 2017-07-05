@@ -292,7 +292,7 @@ GrowableArray<CommandLineFlagRange*>* CommandLineFlagRangeList::_ranges = NULL;
 // Check the ranges of all flags that have them
 void CommandLineFlagRangeList::init(void) {
 
-  _ranges = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<CommandLineFlagRange*>(INITIAL_RANGES_SIZE, true);
+  _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagRange*>(INITIAL_RANGES_SIZE, true);
 
   emit_range_no(NULL RUNTIME_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
                                    EMIT_RANGE_PD_DEVELOPER_FLAG,

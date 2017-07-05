@@ -76,7 +76,23 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
     public Process startClient(Rectangle[] bounds, long window) {
         try {
             String java_home = System.getProperty("java.home");
-            return Runtime.getRuntime().exec(java_home + "/bin/java  -XaddExports:java.desktop/sun.awt.X11=ALL-UNNAMED  JavaClient " + window);
+            boolean hasModules = true;
+            try {
+                Class.class.getMethod("getModule");
+            }catch(Exception hasModulesEx) {
+                hasModules = false;
+            }
+            if (hasModules) {
+                System.out.println(java_home +
+                               "/bin/java  -XaddExports:java.desktop/sun.awt.X11=ALL-UNNAMED "+
+                               "-XaddExports:java.desktop/sun.awt=ALL-UNNAMED  JavaClient " + window);
+                return Runtime.getRuntime().exec(java_home +
+                               "/bin/java  -XaddExports:java.desktop/sun.awt.X11=ALL-UNNAMED "+
+                               "-XaddExports:java.desktop/sun.awt=ALL-UNNAMED  JavaClient " + window);
+            }else{
+                System.out.println(java_home + "/bin/java JavaClient " + window);
+                return Runtime.getRuntime().exec(java_home + "/bin/java JavaClient " + window);
+            }
         } catch (IOException ex1) {
             ex1.printStackTrace();
         }

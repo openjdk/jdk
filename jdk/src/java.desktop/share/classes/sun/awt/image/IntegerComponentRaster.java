@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.image.WritableRaster;
 import java.awt.image.RasterFormatException;
 import java.awt.image.SampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -107,10 +106,9 @@ public class IntegerComponentRaster extends SunWritableRaster {
      *  @param sampleModel     The SampleModel that specifies the layout.
      *  @param origin          The Point that specified the origin.
      */
-    public IntegerComponentRaster(SampleModel sampleModel,
-                                     Point origin) {
+    public IntegerComponentRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferInt) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -130,8 +128,9 @@ public class IntegerComponentRaster extends SunWritableRaster {
      * @param origin          The Point that specifies the origin.
      */
     public IntegerComponentRaster(SampleModel sampleModel,
-                                     DataBuffer dataBuffer,
-                                     Point origin) {
+                                  DataBufferInt dataBuffer,
+                                  Point origin)
+    {
         this(sampleModel,
              dataBuffer,
              new Rectangle(origin.x,
@@ -161,24 +160,21 @@ public class IntegerComponentRaster extends SunWritableRaster {
      * @param parent          The parent (if any) of this raster.
      */
     public IntegerComponentRaster(SampleModel sampleModel,
-                                     DataBuffer dataBuffer,
-                                     Rectangle aRegion,
-                                     Point origin,
-                                     IntegerComponentRaster parent){
+                                  DataBufferInt dataBuffer,
+                                  Rectangle aRegion,
+                                  Point origin,
+                                  IntegerComponentRaster parent)
+    {
         super(sampleModel,dataBuffer,aRegion,origin,parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
-        if (!(dataBuffer instanceof DataBufferInt)) {
-           throw new RasterFormatException("IntegerComponentRasters must have" +
-                "integer DataBuffers");
-        }
-        DataBufferInt dbi = (DataBufferInt)dataBuffer;
-        if (dbi.getNumBanks() != 1) {
+
+        if (dataBuffer.getNumBanks() != 1) {
             throw new
                 RasterFormatException("DataBuffer for IntegerComponentRasters"+
                                       " must only have 1 bank.");
         }
-        this.data = stealData(dbi, 0);
+        this.data = stealData(dataBuffer, 0);
 
         if (sampleModel instanceof SinglePixelPackedSampleModel) {
             SinglePixelPackedSampleModel sppsm =
@@ -197,7 +193,7 @@ public class IntegerComponentRaster extends SunWritableRaster {
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride    = 1;
             this.dataOffsets = new int[1];
-            this.dataOffsets[0] = dbi.getOffset();
+            this.dataOffsets[0] = dataBuffer.getOffset();
             this.bandOffset = this.dataOffsets[0];
             int xOffset = aRegion.x - origin.x;
             int yOffset = aRegion.y - origin.y;
@@ -569,7 +565,7 @@ public class IntegerComponentRaster extends SunWritableRaster {
         int deltaY = y0 - y;
 
         return new IntegerComponentRaster(sm,
-                                          dataBuffer,
+                                          (DataBufferInt) dataBuffer,
                                           new Rectangle(x0,y0,width,height),
                                           new Point(sampleModelTranslateX+deltaX,
                                                     sampleModelTranslateY+deltaY),

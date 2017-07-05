@@ -30,3 +30,8 @@ TYPE = ZERO
 
 # Install libjvm.so, etc in in server directory.
 VM_SUBDIR = server
+
+# Disable trace for zero builds
+# NOTE: This is used for simple comparison with the new build system, and
+# should not be merged into mainline with build-infra.
+INCLUDE_TRACE := false

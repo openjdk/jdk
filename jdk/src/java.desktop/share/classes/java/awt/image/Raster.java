@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -629,7 +629,8 @@ public class Raster {
                                                          int scanlineStride,
                                                          int pixelStride,
                                                          int bandOffsets[],
-                                                         Point location) {
+                                                         Point location)
+    {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
@@ -645,15 +646,26 @@ public class Raster {
                                             bandOffsets);
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
-            return new ByteInterleavedRaster(csm, dataBuffer, location);
+            if (dataBuffer instanceof DataBufferByte) {
+                return new ByteInterleavedRaster(csm,
+                        (DataBufferByte) dataBuffer, location);
+            }
+            break;
 
         case DataBuffer.TYPE_USHORT:
-            return new ShortInterleavedRaster(csm, dataBuffer, location);
+            if (dataBuffer instanceof DataBufferUShort) {
+                return new ShortInterleavedRaster(csm,
+                        (DataBufferUShort) dataBuffer, location);
+            }
+            break;
 
         default:
             throw new IllegalArgumentException("Unsupported data type " +
                                                 dataType);
         }
+
+        // Create the generic raster
+        return new SunWritableRaster(csm, dataBuffer, location);
     }
 
     /**
@@ -691,7 +703,8 @@ public class Raster {
                                                     int scanlineStride,
                                                     int bankIndices[],
                                                     int bandOffsets[],
-                                                    Point location) {
+                                                    Point location)
+    {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
@@ -713,18 +726,29 @@ public class Raster {
 
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
-            return new ByteBandedRaster(bsm, dataBuffer, location);
+            if (dataBuffer instanceof DataBufferByte) {
+                return new ByteBandedRaster(bsm,
+                        (DataBufferByte) dataBuffer, location);
+            }
+            break;
 
         case DataBuffer.TYPE_USHORT:
-            return new ShortBandedRaster(bsm, dataBuffer, location);
+            if (dataBuffer instanceof DataBufferUShort) {
+                return new ShortBandedRaster(bsm,
+                        (DataBufferUShort) dataBuffer, location);
+            }
+            break;
 
         case DataBuffer.TYPE_INT:
-            return new SunWritableRaster(bsm, dataBuffer, location);
+            break;
 
         default:
             throw new IllegalArgumentException("Unsupported data type " +
                                                 dataType);
         }
+
+        // Create the generic raster
+        return new SunWritableRaster(bsm, dataBuffer, location);
     }
 
     /**
@@ -761,7 +785,8 @@ public class Raster {
                                                     int w, int h,
                                                     int scanlineStride,
                                                     int bandMasks[],
-                                                    Point location) {
+                                                    Point location)
+    {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
@@ -776,18 +801,33 @@ public class Raster {
 
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
-            return new ByteInterleavedRaster(sppsm, dataBuffer, location);
+            if (dataBuffer instanceof DataBufferByte) {
+                return new ByteInterleavedRaster(sppsm,
+                        (DataBufferByte) dataBuffer, location);
+            }
+            break;
 
         case DataBuffer.TYPE_USHORT:
-            return new ShortInterleavedRaster(sppsm, dataBuffer, location);
+            if (dataBuffer instanceof DataBufferUShort) {
+                return new ShortInterleavedRaster(sppsm,
+                        (DataBufferUShort) dataBuffer, location);
+            }
+            break;
 
         case DataBuffer.TYPE_INT:
-            return new IntegerInterleavedRaster(sppsm, dataBuffer, location);
+            if (dataBuffer instanceof DataBufferInt) {
+                return new IntegerInterleavedRaster(sppsm,
+                        (DataBufferInt) dataBuffer, location);
+            }
+            break;
 
         default:
             throw new IllegalArgumentException("Unsupported data type " +
                                                 dataType);
         }
+
+        // Create the generic raster
+        return new SunWritableRaster(sppsm, dataBuffer, location);
     }
 
     /**
@@ -821,7 +861,8 @@ public class Raster {
     public static WritableRaster createPackedRaster(DataBuffer dataBuffer,
                                                     int w, int h,
                                                     int bitsPerPixel,
-                                                    Point location) {
+                                                    Point location)
+    {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
@@ -846,9 +887,10 @@ public class Raster {
         MultiPixelPackedSampleModel mppsm =
                 new MultiPixelPackedSampleModel(dataType, w, h, bitsPerPixel);
 
-        if (dataType == DataBuffer.TYPE_BYTE &&
-            (bitsPerPixel == 1 || bitsPerPixel == 2 || bitsPerPixel == 4)) {
-            return new BytePackedRaster(mppsm, dataBuffer, location);
+        if (dataBuffer instanceof DataBufferByte &&
+            (bitsPerPixel == 1 || bitsPerPixel == 2 || bitsPerPixel == 4))
+        {
+            return new BytePackedRaster(mppsm, (DataBufferByte) dataBuffer, location);
         } else {
             return new SunWritableRaster(mppsm, dataBuffer, location);
         }
@@ -878,7 +920,8 @@ public class Raster {
      */
     public static Raster createRaster(SampleModel sm,
                                       DataBuffer db,
-                                      Point location) {
+                                      Point location)
+    {
         if ((sm == null) || (db == null)) {
             throw new NullPointerException("SampleModel and DataBuffer cannot be null");
         }
@@ -890,32 +933,53 @@ public class Raster {
 
         if (sm instanceof PixelInterleavedSampleModel) {
             switch(dataType) {
-                case DataBuffer.TYPE_BYTE:
-                    return new ByteInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_BYTE:
+                if (db instanceof DataBufferByte) {
+                    return new ByteInterleavedRaster(sm,
+                            (DataBufferByte) db, location);
+                }
+                break;
 
-                case DataBuffer.TYPE_USHORT:
-                    return new ShortInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_USHORT:
+                if (db instanceof DataBufferUShort) {
+                    return new ShortInterleavedRaster(sm,
+                            (DataBufferUShort) db, location);
+                }
+                break;
             }
         } else if (sm instanceof SinglePixelPackedSampleModel) {
             switch(dataType) {
-                case DataBuffer.TYPE_BYTE:
-                    return new ByteInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_BYTE:
+                if (db instanceof DataBufferByte) {
+                    return new ByteInterleavedRaster(sm,
+                            (DataBufferByte) db, location);
+                }
+                break;
 
-                case DataBuffer.TYPE_USHORT:
-                    return new ShortInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_USHORT:
+                if (db instanceof DataBufferUShort) {
+                    return new ShortInterleavedRaster(sm,
+                            (DataBufferUShort) db, location);
+                }
+                break;
 
-                case DataBuffer.TYPE_INT:
-                    return new IntegerInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_INT:
+                if (db instanceof DataBufferInt) {
+                    return new IntegerInterleavedRaster(sm,
+                            (DataBufferInt) db, location);
+                }
+                break;
             }
         } else if (sm instanceof MultiPixelPackedSampleModel &&
                    dataType == DataBuffer.TYPE_BYTE &&
-                   sm.getSampleSize(0) < 8) {
-            return new BytePackedRaster(sm, db, location);
+                   db instanceof DataBufferByte &&
+                   sm.getSampleSize(0) < 8)
+        {
+            return new BytePackedRaster(sm, (DataBufferByte) db, location);
         }
 
         // we couldn't do anything special - do the generic thing
-
-        return new Raster(sm,db,location);
+        return new Raster(sm, db, location);
     }
 
     /**
@@ -964,7 +1028,8 @@ public class Raster {
      */
     public static WritableRaster createWritableRaster(SampleModel sm,
                                                       DataBuffer db,
-                                                      Point location) {
+                                                      Point location)
+    {
         if ((sm == null) || (db == null)) {
             throw new NullPointerException("SampleModel and DataBuffer cannot be null");
         }
@@ -976,32 +1041,53 @@ public class Raster {
 
         if (sm instanceof PixelInterleavedSampleModel) {
             switch(dataType) {
-                case DataBuffer.TYPE_BYTE:
-                    return new ByteInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_BYTE:
+                if (db instanceof DataBufferByte) {
+                    return new ByteInterleavedRaster(sm,
+                            (DataBufferByte) db, location);
+                }
+                break;
 
-                case DataBuffer.TYPE_USHORT:
-                    return new ShortInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_USHORT:
+                if (db instanceof DataBufferUShort) {
+                    return new ShortInterleavedRaster(sm,
+                            (DataBufferUShort) db, location);
+                }
+                break;
             }
         } else if (sm instanceof SinglePixelPackedSampleModel) {
             switch(dataType) {
-                case DataBuffer.TYPE_BYTE:
-                    return new ByteInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_BYTE:
+                if (db instanceof DataBufferByte) {
+                    return new ByteInterleavedRaster(sm,
+                            (DataBufferByte) db, location);
+                }
+                break;
 
-                case DataBuffer.TYPE_USHORT:
-                    return new ShortInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_USHORT:
+                if (db instanceof DataBufferUShort) {
+                    return new ShortInterleavedRaster(sm,
+                            (DataBufferUShort) db, location);
+                }
+                break;
 
-                case DataBuffer.TYPE_INT:
-                    return new IntegerInterleavedRaster(sm, db, location);
+            case DataBuffer.TYPE_INT:
+                if (db instanceof DataBufferInt) {
+                    return new IntegerInterleavedRaster(sm,
+                            (DataBufferInt) db, location);
+                }
+                break;
             }
         } else if (sm instanceof MultiPixelPackedSampleModel &&
                    dataType == DataBuffer.TYPE_BYTE &&
-                   sm.getSampleSize(0) < 8) {
-            return new BytePackedRaster(sm, db, location);
+                   db instanceof DataBufferByte &&
+                   sm.getSampleSize(0) < 8)
+        {
+            return new BytePackedRaster(sm, (DataBufferByte) db, location);
         }
 
         // we couldn't do anything special - do the generic thing
-
-        return new SunWritableRaster(sm,db,location);
+        return new SunWritableRaster(sm, db, location);
     }
 
     /**

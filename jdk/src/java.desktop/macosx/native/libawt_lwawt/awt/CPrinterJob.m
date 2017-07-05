@@ -312,9 +312,9 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
 static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject dstPrinterJob, jobject dstPageable)
 {
     static JNF_MEMBER_CACHE(jm_setService, sjc_CPrinterJob, "setPrinterServiceFromNative", "(Ljava/lang/String;)V");
-    static JNF_MEMBER_CACHE(jm_setCopies, sjc_CPrinterJob, "setCopies", "(I)V");
+    static JNF_MEMBER_CACHE(jm_setCopiesAttribute, sjc_CPrinterJob, "setCopiesAttribute", "(I)V");
     static JNF_MEMBER_CACHE(jm_setCollated, sjc_CPrinterJob, "setCollated", "(Z)V");
-    static JNF_MEMBER_CACHE(jm_setPageRange, sjc_CPrinterJob, "setPageRange", "(II)V");
+    static JNF_MEMBER_CACHE(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
@@ -327,7 +327,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     NSNumber* nsCopies = [printingDictionary objectForKey:NSPrintCopies];
     if ([nsCopies respondsToSelector:@selector(integerValue)])
     {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setCopies, [nsCopies integerValue]); // AWT_THREADING Safe (known object)
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setCopiesAttribute, [nsCopies integerValue]); // AWT_THREADING Safe (known object)
     }
 
     NSNumber* nsCollated = [printingDictionary objectForKey:NSPrintMustCollate];
@@ -340,6 +340,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     if ([nsPrintAllPages respondsToSelector:@selector(boolValue)])
     {
         jint jFirstPage = 0, jLastPage = java_awt_print_Pageable_UNKNOWN_NUMBER_OF_PAGES;
+        jboolean isRangeSet = false;
         if (![nsPrintAllPages boolValue])
         {
             NSNumber* nsFirstPage = [printingDictionary objectForKey:NSPrintFirstPage];
@@ -353,9 +354,12 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
             {
                 jLastPage = [nsLastPage integerValue] - 1;
             }
-        }
+            isRangeSet = true;
+        } 
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPageRangeAttribute, 
+                          jFirstPage, jLastPage, isRangeSet); 
+            // AWT_THREADING Safe (known object)
 
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPageRange, jFirstPage, jLastPage); // AWT_THREADING Safe (known object)
     }
 }
 
@@ -368,6 +372,8 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     static JNF_MEMBER_CACHE(jm_isCollated, sjc_CPrinterJob, "isCollated", "()Z");
     static JNF_MEMBER_CACHE(jm_getFromPage, sjc_CPrinterJob, "getFromPageAttrib", "()I");
     static JNF_MEMBER_CACHE(jm_getToPage, sjc_CPrinterJob, "getToPageAttrib", "()I");
+    static JNF_MEMBER_CACHE(jm_getMinPage, sjc_CPrinterJob, "getMinPageAttrib", "()I");
+    static JNF_MEMBER_CACHE(jm_getMaxPage, sjc_CPrinterJob, "getMaxPageAttrib", "()I");
     static JNF_MEMBER_CACHE(jm_getSelectAttrib, sjc_CPrinterJob, "getSelectAttrib", "()I");
     static JNF_MEMBER_CACHE(jm_getNumberOfPages, jc_Pageable, "getNumberOfPages", "()I");
     static JNF_MEMBER_CACHE(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
@@ -379,31 +385,33 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
 
     jboolean collated = JNFCallBooleanMethod(env, srcPrinterJob, jm_isCollated); // AWT_THREADING Safe (known object)
     [printingDictionary setObject:[NSNumber numberWithBool:collated ? YES : NO] forKey:NSPrintMustCollate];
-    jint jNumPages = JNFCallIntMethod(env, srcPageable, jm_getNumberOfPages); // AWT_THREADING Safe (!appKit)
-    if (jNumPages != java_awt_print_Pageable_UNKNOWN_NUMBER_OF_PAGES)
-    {
-        jint selectID = JNFCallIntMethod(env, srcPrinterJob, jm_getSelectAttrib);
-        if (selectID ==0) {
-            [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintAllPages];
-        } else if (selectID == 2) {
-            // In Mac 10.7,  Print ALL is deselected if PrintSelection is YES whether
-            // NSPrintAllPages is YES or NO
-            [printingDictionary setObject:[NSNumber numberWithBool:NO] forKey:NSPrintAllPages];
-            [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintSelectionOnly];
-        } else {
-            [printingDictionary setObject:[NSNumber numberWithBool:NO] forKey:NSPrintAllPages];
-        }
-
-        jint fromPage = JNFCallIntMethod(env, srcPrinterJob, jm_getFromPage);
-        jint toPage = JNFCallIntMethod(env, srcPrinterJob, jm_getToPage);
-        // setting fromPage and toPage will not be shown in the dialog if printing All pages
-        [printingDictionary setObject:[NSNumber numberWithInteger:fromPage] forKey:NSPrintFirstPage];
-        [printingDictionary setObject:[NSNumber numberWithInteger:toPage] forKey:NSPrintLastPage];
-    }
-    else
-    {
+    jint selectID = JNFCallIntMethod(env, srcPrinterJob, jm_getSelectAttrib);
+    jint fromPage = JNFCallIntMethod(env, srcPrinterJob, jm_getFromPage);
+    jint toPage = JNFCallIntMethod(env, srcPrinterJob, jm_getToPage);
+    if (selectID ==0) {
         [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintAllPages];
+    } else if (selectID == 2) {
+        // In Mac 10.7,  Print ALL is deselected if PrintSelection is YES whether
+        // NSPrintAllPages is YES or NO
+        [printingDictionary setObject:[NSNumber numberWithBool:NO] forKey:NSPrintAllPages];
+        [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintSelectionOnly];
+    } else {
+        jint minPage = JNFCallIntMethod(env, srcPrinterJob, jm_getMinPage);
+        jint maxPage = JNFCallIntMethod(env, srcPrinterJob, jm_getMaxPage);
+
+        // for PD_SELECTION or PD_NOSELECTION, check from/to page
+        // to determine which radio button to select
+        if (fromPage > minPage || toPage < maxPage) {
+            [printingDictionary setObject:[NSNumber numberWithBool:NO] forKey:NSPrintAllPages];
+        } else {
+            [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintAllPages];
+        }
     }
+
+    // setting fromPage and toPage will not be shown in the dialog if printing All pages
+    [printingDictionary setObject:[NSNumber numberWithInteger:fromPage] forKey:NSPrintFirstPage];
+    [printingDictionary setObject:[NSNumber numberWithInteger:toPage] forKey:NSPrintLastPage];
+
     jobject page = JNFCallObjectMethod(env, srcPrinterJob, jm_getPageFormat); 
     if (page != NULL) {
         javaPageFormatToNSPrintInfo(env, NULL, page, dst);

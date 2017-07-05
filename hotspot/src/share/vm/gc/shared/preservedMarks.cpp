@@ -24,24 +24,30 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
-#include "oops/oop.inline.hpp"
 
 void PreservedMarks::restore() {
-  // First, iterate over the stack and restore all marks.
-  StackIterator<OopAndMarkOop, mtGC> iter(_stack);
-  while (!iter.is_empty()) {
-    OopAndMarkOop elem = iter.next();
+  while (!_stack.is_empty()) {
+    const OopAndMarkOop elem = _stack.pop();
     elem.set_mark();
   }
-
-  // Second, reclaim all the stack memory
-  _stack.clear(true /* clear_cache */);
+  assert_empty();
 }
+
+#ifndef PRODUCT
+void PreservedMarks::assert_empty() {
+  assert(_stack.is_empty(), "stack expected to be empty, size = "SIZE_FORMAT,
+         _stack.size());
+  assert(_stack.cache_size() == 0,
+         "stack expected to have no cached segments, cache size = "SIZE_FORMAT,
+         _stack.cache_size());
+}
+#endif // ndef PRODUCT
 
 void RemoveForwardedPointerClosure::do_object(oop obj) {
   if (obj->is_forwarded()) {
-    obj->init_mark();
+    PreservedMarks::init_forwarded_mark(obj);
   }
 }
 
@@ -61,15 +67,48 @@ void PreservedMarksSet::init(uint num) {
   assert_empty();
 }
 
-void PreservedMarksSet::restore() {
-  size_t total_size = 0;
-  for (uint i = 0; i < _num; i += 1) {
-    total_size += get(i)->size();
-    get(i)->restore();
-  }
-  assert_empty();
+class ParRestoreTask : public AbstractGangTask {
+private:
+  PreservedMarksSet* const _preserved_marks_set;
+  SequentialSubTasksDone _sub_tasks;
+  volatile size_t* const _total_size_addr;
 
-  log_trace(gc)("Restored " SIZE_FORMAT " marks", total_size);
+public:
+  virtual void work(uint worker_id) {
+    uint task_id = 0;
+    while (!_sub_tasks.is_task_claimed(/* reference */ task_id)) {
+      PreservedMarks* const preserved_marks = _preserved_marks_set->get(task_id);
+      const size_t size = preserved_marks->size();
+      preserved_marks->restore();
+      // Only do the atomic add if the size is > 0.
+      if (size > 0) {
+        Atomic::add(size, _total_size_addr);
+      }
+    }
+    _sub_tasks.all_tasks_completed();
+  }
+
+  ParRestoreTask(uint worker_num,
+                 PreservedMarksSet* preserved_marks_set,
+                 volatile size_t* total_size_addr)
+      : AbstractGangTask("Parallel Preserved Mark Restoration"),
+        _preserved_marks_set(preserved_marks_set),
+        _total_size_addr(total_size_addr) {
+    _sub_tasks.set_n_threads(worker_num);
+    _sub_tasks.set_n_tasks(preserved_marks_set->num());
+  }
+};
+
+void PreservedMarksSet::restore_internal(WorkGang* workers,
+                                         volatile size_t* total_size_addr) {
+  assert(workers != NULL, "pre-condition");
+  ParRestoreTask task(workers->active_workers(), this, total_size_addr);
+  workers->run_task(&task);
+}
+
+// temporary, used by PS
+void PreservedMarksSet::restore() {
+  restore<WorkGang>(NULL);
 }
 
 void PreservedMarksSet::reclaim() {
@@ -92,7 +131,7 @@ void PreservedMarksSet::reclaim() {
 void PreservedMarksSet::assert_empty() {
   assert(_stacks != NULL && _num > 0, "should have been initialized");
   for (uint i = 0; i < _num; i += 1) {
-    assert(get(i)->is_empty(), "stack should be empty");
+    get(i)->assert_empty();
   }
 }
 #endif // ndef PRODUCT

@@ -36,6 +36,8 @@
  */
 
 import java.lang.Math;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import jdk.test.lib.*;
 import jdk.test.lib.Asserts;
@@ -47,14 +49,29 @@ public class TestLargePageUseForAuxMemory {
     static long smallPageSize;
     static long allocGranularity;
 
+    static void checkSize(OutputAnalyzer output, long expectedSize, String pattern) {
+        String pageSizeStr = output.firstMatch(pattern, 1);
+
+        if (pageSizeStr == null) {
+            output.reportDiagnosticSummary();
+            throw new RuntimeException("Match from '" + pattern + "' got 'null' expected: " + expectedSize);
+        }
+
+        long size = parseMemoryString(pageSizeStr);
+        if (size != expectedSize) {
+            output.reportDiagnosticSummary();
+            throw new RuntimeException("Match from '" + pattern + "' got " + size + " expected: " + expectedSize);
+        }
+    }
+
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        output.shouldContain("G1 'Block offset table': pg_sz=" + expectedPageSize);
-        output.shouldContain("G1 'Card counts table': pg_sz=" + expectedPageSize);
+        checkSize(output, expectedPageSize, "Block Offset Table: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Card Counts Table: .*page_size=([^ ]+)");
     }
 
     static void checkBitmaps(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        output.shouldContain("G1 'Prev Bitmap': pg_sz=" + expectedPageSize);
-        output.shouldContain("G1 'Next Bitmap': pg_sz=" + expectedPageSize);
+        checkSize(output, expectedPageSize, "Prev Bitmap: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Next Bitmap: .*page_size=([^ ]+)");
     }
 
     static void testVM(String what, long heapsize, boolean cardsShouldUseLargePages, boolean bitmapShouldUseLargePages) throws Exception {
@@ -66,7 +83,7 @@ public class TestLargePageUseForAuxMemory {
                                                    "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
                                                    "-Xms" + heapsize,
                                                    "-Xmx" + heapsize,
-                                                   "-XX:+TracePageSizes",
+                                                   "-Xlog:pagesize",
                                                    "-XX:+UseLargePages",
                                                    "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
                                                    "-XX:ObjectAlignmentInBytes=8",
@@ -82,7 +99,7 @@ public class TestLargePageUseForAuxMemory {
                                                    "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
                                                    "-Xms" + heapsize,
                                                    "-Xmx" + heapsize,
-                                                   "-XX:+TracePageSizes",
+                                                   "-Xlog:pagesize",
                                                    "-XX:-UseLargePages",
                                                    "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
                                                    "-XX:ObjectAlignmentInBytes=8",
@@ -108,11 +125,6 @@ public class TestLargePageUseForAuxMemory {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isDebugBuild()) {
-            System.out.println("Skip tests on non-debug builds because the required option TracePageSizes is a debug-only option.");
-            return;
-        }
-
         // Size that a single card covers.
         final int cardSize = 512;
         WhiteBox wb = WhiteBox.getWhiteBox();
@@ -158,5 +170,25 @@ public class TestLargePageUseForAuxMemory {
         testVM("case4: only bitmap uses large pages (barely)", heapSizeForBitmapUsingLargePages, false, true);
         testVM("case5: only bitmap uses large pages (extra slack)", heapSizeForBitmapUsingLargePages + heapSizeDiffForBitmap, false, true);
         testVM("case6: nothing uses large pages (barely not)", heapSizeForBitmapUsingLargePages - heapSizeDiffForBitmap, false, false);
+    }
+
+    public static long parseMemoryString(String value) {
+        long multiplier = 1;
+
+        if (value.endsWith("B")) {
+            multiplier = 1;
+        } else if (value.endsWith("K")) {
+            multiplier = 1024;
+        } else if (value.endsWith("M")) {
+            multiplier = 1024 * 1024;
+        } else if (value.endsWith("G")) {
+            multiplier = 1024 * 1024 * 1024;
+        } else {
+            throw new IllegalArgumentException("Expected memory string '" + value + "'to end with either of: B, K, M, G");
+        }
+
+        long longValue = Long.parseUnsignedLong(value.substring(0, value.length() - 1));
+
+        return longValue * multiplier;
     }
 }

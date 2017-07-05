@@ -29,8 +29,6 @@ module java.corba {
     requires java.logging;
     requires java.naming;
     requires java.transaction;
-    // 8148863
-    requires jdk.unsupported;
 
     exports javax.activity;
     exports javax.rmi;

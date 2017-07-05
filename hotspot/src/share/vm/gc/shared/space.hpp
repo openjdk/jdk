@@ -362,6 +362,12 @@ private:
 
   inline size_t obj_size(const HeapWord* addr) const;
 
+  template <class SpaceType>
+  static inline void verify_up_to_first_dead(SpaceType* space) NOT_DEBUG_RETURN;
+
+  template <class SpaceType>
+  static inline void clear_empty_region(SpaceType* space);
+
 public:
   CompactibleSpace() :
    _compaction_top(NULL), _next_compaction_space(NULL) {}
@@ -454,16 +460,6 @@ protected:
   virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* the_end) {
     return end();
   }
-
-  // Requires "allowed_deadspace_words > 0", that "q" is the start of a
-  // free block of the given "word_len", and that "q", were it an object,
-  // would not move if forwarded.  If the size allows, fill the free
-  // block with an object, to prevent excessive compaction.  Returns "true"
-  // iff the free region was made deadspace, and modifies
-  // "allowed_deadspace_words" to reflect the number of available deadspace
-  // words remaining after this operation.
-  bool insert_deadspace(size_t& allowed_deadspace_words, HeapWord* q,
-                        size_t word_len);
 
   // Below are template functions for scan_and_* algorithms (avoiding virtual calls).
   // The space argument should be a subclass of CompactibleSpace, implementing

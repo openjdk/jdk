@@ -35,7 +35,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
-#include "utilities/top.hpp"
 
 // Wrapper for all entry points to the virtual machine.
 // The HandleMarkCleaner is a faster version of HandleMark.

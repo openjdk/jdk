@@ -26,7 +26,6 @@
 package sun.nio.ch;
 
 import java.nio.channels.spi.AsynchronousChannelProvider;
-import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -60,8 +59,7 @@ public class DefaultAsynchronousChannelProvider {
      * Returns the default AsynchronousChannelProvider.
      */
     public static AsynchronousChannelProvider create() {
-        String osname = AccessController
-            .doPrivileged(new GetPropertyAction("os.name"));
+        String osname = GetPropertyAction.getProperty("os.name");
         if (osname.equals("SunOS"))
             return createProvider("sun.nio.ch.SolarisAsynchronousChannelProvider");
         if (osname.equals("Linux"))

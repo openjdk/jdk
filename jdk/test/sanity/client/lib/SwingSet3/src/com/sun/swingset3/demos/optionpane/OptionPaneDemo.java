@@ -93,7 +93,6 @@ public class OptionPaneDemo extends JPanel {
     public static void main(String[] args) {
         JFrame frame = new JFrame(DEMO_TITLE);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(new OptionPaneDemo());
         frame.setPreferredSize(new Dimension(800, 600));
         frame.pack();

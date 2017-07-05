@@ -553,10 +553,6 @@ public class JImageGenerator {
         public Result extract() {
             return cmd("extract", dir);
         }
-
-        public Result recreate() {
-            return cmd("recreate", image);
-        }
     }
 
     public static class JLinkTask {

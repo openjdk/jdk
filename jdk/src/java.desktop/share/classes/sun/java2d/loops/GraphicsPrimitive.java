@@ -48,7 +48,6 @@ import java.io.FileNotFoundException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import sun.misc.ManagedLocalsThread;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -420,8 +419,9 @@ public abstract class GraphicsPrimitive {
         public static void setShutdownHook() {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
                 TraceReporter t = new TraceReporter();
-                Thread thread = new ManagedLocalsThread(
-                        ThreadGroupUtils.getRootThreadGroup(), t);
+                Thread thread = new Thread(
+                        ThreadGroupUtils.getRootThreadGroup(), t,
+                        "TraceReporter", 0, false);
                 thread.setContextClassLoader(null);
                 Runtime.getRuntime().addShutdownHook(thread);
                 return null;

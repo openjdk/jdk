@@ -36,6 +36,7 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
+#include "utilities/ostream.hpp"
 
 ModuleEntry* ModuleEntryTable::_javabase_module = NULL;
 
@@ -359,31 +360,29 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   java_lang_Class::set_fixup_module_field_list(NULL);
 }
 
-#ifndef PRODUCT
-void ModuleEntryTable::print() {
-  tty->print_cr("Module Entry Table (table_size=%d, entries=%d)",
-                table_size(), number_of_entries());
+void ModuleEntryTable::print(outputStream* st) {
+  st->print_cr("Module Entry Table (table_size=%d, entries=%d)",
+               table_size(), number_of_entries());
   for (int i = 0; i < table_size(); i++) {
     for (ModuleEntry* probe = bucket(i);
                               probe != NULL;
                               probe = probe->next()) {
-      probe->print();
+      probe->print(st);
     }
   }
 }
 
-void ModuleEntry::print() {
+void ModuleEntry::print(outputStream* st) {
   ResourceMark rm;
-  tty->print_cr("entry "PTR_FORMAT" name %s module "PTR_FORMAT" loader %s version %s location %s strict %s next "PTR_FORMAT,
-                p2i(this),
-                name() == NULL ? UNNAMED_MODULE : name()->as_C_string(),
-                p2i(module()),
-                loader()->loader_name(),
-                version() != NULL ? version()->as_C_string() : "NULL",
-                location() != NULL ? location()->as_C_string() : "NULL",
-                BOOL_TO_STR(!can_read_all_unnamed()), p2i(next()));
+  st->print_cr("entry "PTR_FORMAT" name %s module "PTR_FORMAT" loader %s version %s location %s strict %s next "PTR_FORMAT,
+               p2i(this),
+               name() == NULL ? UNNAMED_MODULE : name()->as_C_string(),
+               p2i(module()),
+               loader()->loader_name(),
+               version() != NULL ? version()->as_C_string() : "NULL",
+               location() != NULL ? location()->as_C_string() : "NULL",
+               BOOL_TO_STR(!can_read_all_unnamed()), p2i(next()));
 }
-#endif
 
 void ModuleEntryTable::verify() {
   int element_count = 0;

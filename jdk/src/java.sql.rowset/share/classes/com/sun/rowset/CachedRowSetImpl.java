@@ -1963,7 +1963,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             return (float)0;
         }
         try {
-            return ((new Float(value.toString())).floatValue());
+            return Float.parseFloat(value.toString());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.floatfail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -2007,7 +2007,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             return (double)0;
         }
         try {
-            return ((new Double(value.toString().trim())).doubleValue());
+            return Double.parseDouble(value.toString().trim());
         } catch (NumberFormatException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.doublefail").toString(),
                   new Object[] {value.toString().trim(), columnIndex}));
@@ -4017,9 +4017,9 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                     return new BigDecimal(srcObj.toString().trim());
                 case java.sql.Types.REAL:
                 case java.sql.Types.FLOAT:
-                    return new Float(srcObj.toString().trim());
+                    return Float.valueOf(srcObj.toString().trim());
                 case java.sql.Types.DOUBLE:
-                    return new Double(srcObj.toString().trim());
+                    return Double.valueOf(srcObj.toString().trim());
                 case java.sql.Types.CHAR:
                 case java.sql.Types.VARCHAR:
                 case java.sql.Types.LONGVARCHAR:

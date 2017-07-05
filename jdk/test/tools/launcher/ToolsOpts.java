@@ -149,7 +149,7 @@ public class ToolsOpts extends TestHelper {
      */
     static void runTestOptions() throws IOException {
         init();
-        TestResult tr = null;
+        TestResult tr;
         int jpos = -1;
         for (String arg[] : optionPatterns) {
             jpos = indexOfJoption(arg);

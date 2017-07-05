@@ -324,7 +324,7 @@ public class Parser {
         case StreamTokenizer.TT_NUMBER:
             double literal = lookahead.nval;
             matchNumber();
-            e = new Literal(new Double(literal));
+            e = new Literal(Double.valueOf(literal));
             log(pdebug, "Parsed: number -> " + literal);
             break;
         default:
@@ -360,7 +360,7 @@ public class Parser {
             e1.setOperator(op);
             e1.setRight(e);
             log(pdebug, "Parsed: unary -> " + e1);
-            e1.setLeft(new Literal(new Double(0)));
+            e1.setLeft(new Literal(Double.valueOf(0)));
             e = e1;
         }
     }

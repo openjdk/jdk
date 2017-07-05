@@ -443,7 +443,7 @@ jchar oopDesc::char_field(int offset) const                   { return (jchar) *
 void oopDesc::char_field_put(int offset, jchar contents)      { *char_field_addr(offset) = (jint) contents; }
 
 jboolean oopDesc::bool_field(int offset) const                { return (jboolean) *bool_field_addr(offset); }
-void oopDesc::bool_field_put(int offset, jboolean contents)   { *bool_field_addr(offset) = (jint) contents; }
+void oopDesc::bool_field_put(int offset, jboolean contents)   { *bool_field_addr(offset) = (((jint) contents) & 1); }
 
 jint oopDesc::int_field(int offset) const                     { return *int_field_addr(offset);        }
 void oopDesc::int_field_put(int offset, jint contents)        { *int_field_addr(offset) = contents;    }
@@ -483,7 +483,7 @@ jchar oopDesc::char_field_acquire(int offset) const                   { return O
 void oopDesc::release_char_field_put(int offset, jchar contents)      { OrderAccess::release_store(char_field_addr(offset), contents); }
 
 jboolean oopDesc::bool_field_acquire(int offset) const                { return OrderAccess::load_acquire(bool_field_addr(offset));     }
-void oopDesc::release_bool_field_put(int offset, jboolean contents)   { OrderAccess::release_store(bool_field_addr(offset), contents); }
+void oopDesc::release_bool_field_put(int offset, jboolean contents)   { OrderAccess::release_store(bool_field_addr(offset), (contents & 1)); }
 
 jint oopDesc::int_field_acquire(int offset) const                     { return OrderAccess::load_acquire(int_field_addr(offset));      }
 void oopDesc::release_int_field_put(int offset, jint contents)        { OrderAccess::release_store(int_field_addr(offset), contents);  }

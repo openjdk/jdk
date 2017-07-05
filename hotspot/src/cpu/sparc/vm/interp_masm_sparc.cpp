@@ -208,6 +208,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   case atos: ld_ptr(oop_addr, Otos_l);
              st_ptr(G0, oop_addr);                        break;
   case btos:                                           // fall through
+  case ztos:                                           // fall through
   case ctos:                                           // fall through
   case stos:                                           // fall through
   case itos: ld(val_addr, Otos_l1);                       break;
@@ -452,9 +453,10 @@ void InterpreterMacroAssembler::push(TosState state) {
   interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
   switch (state) {
     case atos: push_ptr();            break;
-    case btos: push_i();              break;
-    case ctos:
-    case stos: push_i();              break;
+    case btos:                        // fall through
+    case ztos:                        // fall through
+    case ctos:                        // fall through
+    case stos:                        // fall through
     case itos: push_i();              break;
     case ltos: push_l();              break;
     case ftos: push_f();              break;
@@ -468,9 +470,10 @@ void InterpreterMacroAssembler::push(TosState state) {
 void InterpreterMacroAssembler::pop(TosState state) {
   switch (state) {
     case atos: pop_ptr();            break;
-    case btos: pop_i();              break;
-    case ctos:
-    case stos: pop_i();              break;
+    case btos:                       // fall through
+    case ztos:                       // fall through
+    case ctos:                       // fall through
+    case stos:                       // fall through
     case itos: pop_i();              break;
     case ltos: pop_l();              break;
     case ftos: pop_f();              break;
@@ -1103,6 +1106,49 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
 }
 
+void InterpreterMacroAssembler::narrow(Register result) {
+
+  ld_ptr(Address(Lmethod, Method::const_offset()), G3_scratch);
+  ldub(G3_scratch, in_bytes(ConstMethod::result_type_offset()), G3_scratch);
+
+  Label notBool, notByte, notChar, done;
+
+  // common case first
+  cmp(G3_scratch, T_INT);
+  br(Assembler::equal, true, pn, done);
+  delayed()->nop();
+
+  cmp(G3_scratch, T_BOOLEAN);
+  br(Assembler::notEqual, true, pn, notBool);
+  delayed()->cmp(G3_scratch, T_BYTE);
+  and3(result, 1, result);
+  ba(done);
+  delayed()->nop();
+
+  bind(notBool);
+  // cmp(G3_scratch, T_BYTE);
+  br(Assembler::notEqual, true, pn, notByte);
+  delayed()->cmp(G3_scratch, T_CHAR);
+  sll(result, 24, result);
+  sra(result, 24, result);
+  ba(done);
+  delayed()->nop();
+
+  bind(notByte);
+  // cmp(G3_scratch, T_CHAR);
+  sll(result, 16, result);
+  br(Assembler::notEqual, true, pn, done);
+  delayed()->sra(result, 16, result);
+  // sll(result, 16, result);
+  srl(result, 16, result);
+
+  // bind(notChar);
+  // must be short, instructions already executed in delay slot
+  // sll(result, 16, result);
+  // sra(result, 16, result);
+
+  bind(done);
+}
 
 // remove activation
 //
@@ -1151,6 +1197,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   case ltos: mov(Otos_l2, Otos_l2->after_save()); // fall through  // O1 -> I1
 #endif
   case btos:                                      // fall through
+  case ztos:                                      // fall through
   case ctos:
   case stos:                                      // fall through
   case atos:                                      // fall through

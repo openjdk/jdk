@@ -85,11 +85,10 @@ public class TooSmallStackSize extends TestHelper {
      */
     static String checkStack(String stackSize) {
         String min_stack_allowed;
-        TestResult tr;
 
         if (verbose)
             System.out.println("*** Testing " + stackSize);
-        tr = doExec(javaCmd, "-Xss" + stackSize, "-version");
+        TestResult tr = doExec(javaCmd, "-Xss" + stackSize, "-version");
         if (verbose)
             printTestOutput(tr);
 
@@ -114,11 +113,9 @@ public class TooSmallStackSize extends TestHelper {
      * Run the JVM with the minimum allowed stack size. This should always succeed.
      */
     static void checkMinStackAllowed(String stackSize) {
-        TestResult tr = null;
-
         if (verbose)
             System.out.println("*** Testing " + stackSize);
-        tr = doExec(javaCmd, "-Xss" + stackSize, "-version");
+        TestResult tr = doExec(javaCmd, "-Xss" + stackSize, "-version");
         if (verbose)
             printTestOutput(tr);
 
