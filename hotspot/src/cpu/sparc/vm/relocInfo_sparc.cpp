@@ -193,36 +193,6 @@ address Relocation::pd_get_address_from_code() {
   return *(address*)addr();
 }
 
-
-int Relocation::pd_breakpoint_size() {
-  // minimum breakpoint size, in short words
-  return NativeIllegalInstruction::instruction_size / sizeof(short);
-}
-
-void Relocation::pd_swap_in_breakpoint(address x, short* instrs, int instrlen) {
-  Untested("pd_swap_in_breakpoint");
-  // %%% probably do not need a general instrlen; just use the trap size
-  if (instrs != NULL) {
-    assert(instrlen * sizeof(short) == NativeIllegalInstruction::instruction_size, "enough instrlen in reloc. data");
-    for (int i = 0; i < instrlen; i++) {
-      instrs[i] = ((short*)x)[i];
-    }
-  }
-  NativeIllegalInstruction::insert(x);
-}
-
-
-void Relocation::pd_swap_out_breakpoint(address x, short* instrs, int instrlen) {
-  Untested("pd_swap_out_breakpoint");
-  assert(instrlen * sizeof(short) == sizeof(int), "enough buf");
-  union { int l; short s[1]; } u;
-  for (int i = 0; i < instrlen; i++) {
-    u.s[i] = instrs[i];
-  }
-  NativeInstruction* ni = nativeInstruction_at(x);
-  ni->set_long_at(0, u.l);
-}
-
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 }
 

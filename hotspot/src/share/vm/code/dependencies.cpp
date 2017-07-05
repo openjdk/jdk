@@ -655,8 +655,8 @@ inline Metadata* Dependencies::DepStream::recorded_metadata_at(int i) {
   } else {
     o = _deps->oop_recorder()->metadata_at(i);
   }
-  assert(o == NULL || o->is_metadata(),
-         err_msg("Should be perm " PTR_FORMAT, o));
+  assert(o == NULL || o->is_metaspace_object(),
+         err_msg("Should be metadata " PTR_FORMAT, o));
   return o;
 }
 
