@@ -32,7 +32,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -43,6 +42,7 @@ import java.util.stream.StreamSupport;
 import static javax.xml.catalog.BaseEntry.CatalogEntryType;
 import static javax.xml.catalog.CatalogFeatures.DEFER_TRUE;
 import javax.xml.catalog.CatalogFeatures.Feature;
+import static javax.xml.catalog.CatalogMessages.formatMessage;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -109,25 +109,20 @@ class CatalogImpl extends GroupEntry implements Catalog {
      */
     public CatalogImpl(CatalogImpl parent, CatalogFeatures f, String... file) throws CatalogException {
         super(CatalogEntryType.CATALOG);
-        this.parent = parent;
-        if (parent == null) {
-            level = 0;
-        } else {
-            level = parent.level + 1;
-        }
         if (f == null) {
-            this.features = CatalogFeatures.defaults();
-        } else {
-            this.features = f;
+            throw new NullPointerException(
+                    formatMessage(CatalogMessages.ERR_NULL_ARGUMENT, new Object[]{"CatalogFeatures"}));
         }
-        setPrefer(features.get(Feature.PREFER));
-        setDeferred(features.get(Feature.DEFER));
-        setResolve(features.get(Feature.RESOLVE));
+
+        if (file.length > 0) {
+            CatalogMessages.reportNPEOnNull("The path to the catalog file", file[0]);
+        }
+
+        init(parent, f);
 
         //Path of catalog files
         String[] catalogFile = file;
-        if (level == 0
-                && (file == null || (file.length == 0 || file[0] == null))) {
+        if (level == 0 && file.length == 0) {
             String files = features.get(Feature.FILES);
             if (files != null) {
                 catalogFile = files.split(";[ ]*");
@@ -164,6 +159,23 @@ class CatalogImpl extends GroupEntry implements Catalog {
                 parse(systemId);
             }
         }
+    }
+
+    private void init(CatalogImpl parent, CatalogFeatures f) {
+        this.parent = parent;
+        if (parent == null) {
+            level = 0;
+        } else {
+            level = parent.level + 1;
+        }
+        if (f == null) {
+            this.features = CatalogFeatures.defaults();
+        } else {
+            this.features = f;
+        }
+        setPrefer(features.get(Feature.PREFER));
+        setDeferred(features.get(Feature.DEFER));
+        setResolve(features.get(Feature.RESOLVE));
     }
 
     /**

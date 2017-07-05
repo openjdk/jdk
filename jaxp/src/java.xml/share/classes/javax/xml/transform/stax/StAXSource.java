@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,7 @@ public class StAXSource implements Source {
      * @throws UnsupportedOperationException Is <strong>always</strong>
      *   thrown by this method.
      */
+    @Override
     public void setSystemId(final String systemId) {
 
         throw new UnsupportedOperationException(
@@ -229,8 +230,21 @@ public class StAXSource implements Source {
      *
      * @return System identifier used by this <code>StAXSource</code>.
      */
+    @Override
     public String getSystemId() {
 
         return systemId;
+    }
+
+    /**
+     * Indicates whether the {@code StAXSource} object is empty. Since a
+     * {@code StAXSource} object can never be empty, this method always returns
+     * false.
+     *
+     * @return unconditionally false
+     */
+    @Override
+    public boolean isEmpty() {
+        return false;
     }
 }

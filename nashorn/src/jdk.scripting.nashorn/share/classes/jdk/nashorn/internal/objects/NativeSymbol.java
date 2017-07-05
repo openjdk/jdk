@@ -25,8 +25,14 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import jdk.dynalink.linker.GuardedInvocation;
+import jdk.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.WeakValueCache;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -39,6 +45,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Symbol;
 import jdk.nashorn.internal.runtime.Undefined;
+import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 
 /**
  * ECMAScript 6 - 19.4 Symbol Objects
@@ -48,11 +55,20 @@ public final class NativeSymbol extends ScriptObject {
 
     private final Symbol symbol;
 
+    /** Method handle to create an object wrapper for a primitive symbol. */
+    static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", MH.type(NativeSymbol.class, Object.class));
+    /** Method handle to retrieve the Symbol prototype object. */
+    private static final MethodHandle PROTOFILTER = findOwnMH("protoFilter", MH.type(Object.class, Object.class));
+
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
     /** See ES6 19.4.2.1 */
     private static WeakValueCache<String, Symbol> globalSymbolRegistry = new WeakValueCache<>();
+
+    NativeSymbol(final Symbol symbol) {
+        this(symbol, Global.instance());
+    }
 
     NativeSymbol(final Symbol symbol, final Global global) {
         this(symbol, global.getSymbolPrototype(), $nasgenmap$);
@@ -71,6 +87,17 @@ public final class NativeSymbol extends ScriptObject {
         } else {
             throw typeError("not.a.symbol");
         }
+    }
+
+    /**
+     * Lookup the appropriate method for an invoke dynamic call.
+     *
+     * @param request  The link request
+     * @param receiver The receiver for the call
+     * @return Link to be invoked at call site.
+     */
+    public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
+        return PrimitiveLookup.lookupPrimitive(request, Symbol.class, new NativeSymbol((Symbol)receiver), WRAPFILTER, PROTOFILTER);
     }
 
     // ECMA 6 19.4.3.4 Symbol.prototype [ @@toPrimitive ] ( hint )
@@ -149,4 +176,19 @@ public final class NativeSymbol extends ScriptObject {
         final String name = ((Symbol) arg).getName();
         return globalSymbolRegistry.get(name) == arg ? name : Undefined.getUndefined();
     }
+
+    @SuppressWarnings("unused")
+    private static NativeSymbol wrapFilter(final Object receiver) {
+        return new NativeSymbol((Symbol)receiver);
+    }
+
+    @SuppressWarnings("unused")
+    private static Object protoFilter(final Object object) {
+        return Global.instance().getSymbolPrototype();
+    }
+
+    private static MethodHandle findOwnMH(final String name, final MethodType type) {
+        return MH.findStatic(MethodHandles.lookup(), NativeSymbol.class, name, type);
+    }
+
 }

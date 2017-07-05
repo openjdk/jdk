@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1285,12 +1285,36 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     public void test_plusWeeks_invalidMaxMinusMin() {
         LocalDate.of(Year.MAX_VALUE, 12, 25).plusWeeks(Long.MIN_VALUE);
     }
-
-    @Test
-    public void test_plusDays_normal() {
-        LocalDate t = TEST_2007_07_15.plusDays(1);
-        assertEquals(t, LocalDate.of(2007, 7, 16));
+    //-----------------------------------------------------------------------
+    @DataProvider(name="PlusDays")
+    Object[][] provider_plusDays() {
+        return new Object[][] {
+                {LocalDate.of(2007, 7, 15), 1, LocalDate.of(2007, 7, 16)},
+                {LocalDate.of(2007, 7, 15), 17, LocalDate.of(2007, 8, 1)},
+                {LocalDate.of(2007, 12, 31), 1, LocalDate.of(2008, 1, 1)},
+                {LocalDate.of(2007, 1, 1), 58, LocalDate.of(2007, 2, 28)},
+                {LocalDate.of(2007, 1, 1), 59, LocalDate.of(2007, 3, 1)},
+                {LocalDate.of(2008, 1, 1), 60, LocalDate.of(2008, 3, 1)},
+                {LocalDate.of(2007, 2, 1), 27, LocalDate.of(2007, 2, 28)},
+                {LocalDate.of(2007, 2, 1), 28, LocalDate.of(2007, 3, 1)},
+                {LocalDate.of(2007, 1, 1), 29, LocalDate.of(2007, 1, 30)},
+                {LocalDate.of(2007, 1, 1), 30, LocalDate.of(2007, 1, 31)},
+                {LocalDate.of(2007, 1, 15), 13, LocalDate.of(2007, 1, 28)},
+                {LocalDate.of(2007, 1, 15), 14, LocalDate.of(2007, 1, 29)},
+                {LocalDate.of(2007, 1, 15), 15, LocalDate.of(2007, 1, 30)},
+                {LocalDate.of(2007, 1, 15), 16, LocalDate.of(2007, 1, 31)},
+                {LocalDate.of(2007, 2, 15), 13, LocalDate.of(2007, 2, 28)},
+                {LocalDate.of(2007, 2, 15), 14, LocalDate.of(2007, 3, 1)},
+                {LocalDate.of(2007, 2, 15), 15, LocalDate.of(2007, 3, 2)},
+                {LocalDate.of(2007, 2, 15), 16, LocalDate.of(2007, 3, 3)},
+        };
     }
+
+    @Test(dataProvider="PlusDays")
+    public void test_plusDays_normal(LocalDate input, int amountsToAdd, LocalDate expected) {
+        LocalDate actual = input.plusDays(amountsToAdd);
+        assertEquals(actual, expected);
+     }
 
     @Test
     public void test_plusDays_overMonths() {

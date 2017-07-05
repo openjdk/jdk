@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 
 /*
  * @test
- * @bug 8051498
+ * @bug 8051498 8145849
  * @summary JEP 244: TLS Application-Layer Protocol Negotiation Extension
+ * @compile MyX509ExtendedKeyManager.java
  * @run main/othervm SSLSocketAlpnTest h2          h2          h2
  * @run main/othervm SSLSocketAlpnTest h2          h2,http/1.1 h2
  * @run main/othervm SSLSocketAlpnTest h2,http/1.1 h2,http/1.1 h2
@@ -40,6 +41,8 @@
  * @author Brad Wetmore
  */
 import java.io.*;
+import java.security.KeyStore;
+
 import javax.net.ssl.*;
 
 public class SSLSocketAlpnTest {
@@ -65,6 +68,16 @@ public class SSLSocketAlpnTest {
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
 
+    static String keyFilename = System.getProperty("test.src", ".") + "/"
+            + pathToStores + "/" + keyStoreFile;
+    static String trustFilename = System.getProperty("test.src", ".") + "/"
+            + pathToStores + "/" + trustStoreFile;
+
+    /*
+     * SSLContext
+     */
+    SSLContext mySSLContext = null;
+
     /*
      * Is the server ready to serve?
      */
@@ -82,7 +95,7 @@ public class SSLSocketAlpnTest {
     /*
      * If the client or server is doing some kind of object creation
      * that the other side depends on, and that thread prematurely
-     * exits, you may experience a hang.  The test harness will
+     * exits, you may experience a hang. The test harness will
      * terminate all hung threads after its timeout has expired,
      * currently 3 minutes by default, but you might try to be
      * smart about it....
@@ -95,10 +108,11 @@ public class SSLSocketAlpnTest {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf
-                = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        SSLServerSocketFactory sslssf = mySSLContext.getServerSocketFactory();
         SSLServerSocket sslServerSocket
                 = (SSLServerSocket) sslssf.createServerSocket(serverPort);
+        // for both client/server to call into X509KM
+        sslServerSocket.setNeedClientAuth(true);
 
         serverPort = sslServerSocket.getLocalPort();
 
@@ -119,20 +133,30 @@ public class SSLSocketAlpnTest {
          */
         String[] suites = sslp.getCipherSuites();
         sslp.setCipherSuites(suites);
-        sslp.setUseCipherSuitesOrder(true);  // Set server side order
+        sslp.setUseCipherSuitesOrder(true); // Set server side order
 
         // Set the ALPN selection.
         sslp.setApplicationProtocols(serverAPs);
         sslSocket.setSSLParameters(sslp);
 
+        if (sslSocket.getHandshakeApplicationProtocol() != null) {
+            throw new Exception ("getHandshakeApplicationProtocol() should "
+                    + "return null before the handshake starts");
+        }
+
         sslSocket.startHandshake();
+
+        if (sslSocket.getHandshakeApplicationProtocol() != null) {
+            throw new Exception ("getHandshakeApplicationProtocol() should "
+                    + "return null after the handshake is completed");
+        }
 
         String ap = sslSocket.getApplicationProtocol();
         System.out.println("Application Protocol: \"" + ap + "\"");
 
         if (ap == null) {
             throw new Exception(
-                "Handshake was completed but null was received");
+                    "Handshake was completed but null was received");
         }
         if (expectedAP.equals("NONE")) {
             if (!ap.isEmpty()) {
@@ -141,8 +165,8 @@ public class SSLSocketAlpnTest {
                 System.out.println("No ALPN value negotiated, as expected");
             }
         } else if (!expectedAP.equals(ap)) {
-            throw new Exception(expectedAP +
-                " ALPN value not available on negotiated connection");
+            throw new Exception(expectedAP
+                    + " ALPN value not available on negotiated connection");
         }
 
         InputStream sslIS = sslSocket.getInputStream();
@@ -170,8 +194,7 @@ public class SSLSocketAlpnTest {
             Thread.sleep(50);
         }
 
-        SSLSocketFactory sslsf
-                = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        SSLSocketFactory sslsf = mySSLContext.getSocketFactory();
         SSLSocket sslSocket
                 = (SSLSocket) sslsf.createSocket("localhost", serverPort);
 
@@ -185,28 +208,35 @@ public class SSLSocketAlpnTest {
          */
         String[] suites = sslp.getCipherSuites();
         sslp.setCipherSuites(suites);
-        sslp.setUseCipherSuitesOrder(true);  // Set server side order
+        sslp.setUseCipherSuitesOrder(true); // Set server side order
 
         // Set the ALPN selection.
         sslp.setApplicationProtocols(clientAPs);
         sslSocket.setSSLParameters(sslp);
 
+        if (sslSocket.getHandshakeApplicationProtocol() != null) {
+            throw new Exception ("getHandshakeApplicationProtocol() should "
+                    + "return null before the handshake starts");
+        }
+
         sslSocket.startHandshake();
+
+        if (sslSocket.getHandshakeApplicationProtocol() != null) {
+            throw new Exception ("getHandshakeApplicationProtocol() should "
+                    + "return null after the handshake is completed");
+        }
 
         /*
          * Check that the resulting connection meets our defined ALPN
          * criteria.  If we were connecting to a non-JSSE implementation,
          * the server might have negotiated something we shouldn't accept.
-         *
-         * We were expecting H2 from server, let's make sure the
-         * conditions match.
          */
         String ap = sslSocket.getApplicationProtocol();
         System.out.println("Application Protocol: \"" + ap + "\"");
 
         if (ap == null) {
             throw new Exception(
-                "Handshake was completed but null was received");
+                    "Handshake was completed but null was received");
         }
         if (expectedAP.equals("NONE")) {
             if (!ap.isEmpty()) {
@@ -215,8 +245,8 @@ public class SSLSocketAlpnTest {
                 System.out.println("No ALPN value negotiated, as expected");
             }
         } else if (!expectedAP.equals(ap)) {
-            throw new Exception(expectedAP +
-                " ALPN value not available on negotiated connection");
+            throw new Exception(expectedAP
+                    + " ALPN value not available on negotiated connection");
         }
 
         InputStream sslIS = sslSocket.getInputStream();
@@ -240,17 +270,6 @@ public class SSLSocketAlpnTest {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        String keyFilename
-                = System.getProperty("test.src", ".") + "/" + pathToStores
-                + "/" + keyStoreFile;
-        String trustFilename
-                = System.getProperty("test.src", ".") + "/" + pathToStores
-                + "/" + trustStoreFile;
-
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
         if (debug) {
             System.setProperty("javax.net.debug", "all");
@@ -278,6 +297,39 @@ public class SSLSocketAlpnTest {
         }
 
         System.out.println("Test Passed.");
+    }
+
+    SSLContext getSSLContext(String keyFilename, String trustFilename)
+            throws Exception {
+        SSLContext ctx = SSLContext.getInstance("TLS");
+
+        // Keystores
+        KeyStore keyKS = KeyStore.getInstance("JKS");
+        keyKS.load(new FileInputStream(keyFilename), passwd.toCharArray());
+
+        KeyStore trustKS = KeyStore.getInstance("JKS");
+        trustKS.load(new FileInputStream(trustFilename), passwd.toCharArray());
+
+        // Generate KeyManager and TrustManager
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(keyKS, passwd.toCharArray());
+
+        KeyManager[] kms = kmf.getKeyManagers();
+        if (!(kms[0] instanceof X509ExtendedKeyManager)) {
+            throw new Exception("kms[0] not X509ExtendedKeyManager");
+        }
+
+        kms = new KeyManager[] { new MyX509ExtendedKeyManager(
+                (X509ExtendedKeyManager) kms[0], expectedAP) };
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(trustKS);
+        TrustManager[] tms = tmf.getTrustManagers();
+
+        // initial SSLContext
+        ctx.init(kms, tms, null);
+
+        return ctx;
     }
 
     /*
@@ -309,6 +361,7 @@ public class SSLSocketAlpnTest {
      */
     SSLSocketAlpnTest() throws Exception {
         Exception startException = null;
+        mySSLContext = getSSLContext(keyFilename, trustFilename);
         try {
             if (separateServerThread) {
                 startServer(true);

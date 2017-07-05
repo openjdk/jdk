@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4801882 5046333
+ * @bug 4801882 5046333 8141595
  * @summary test ServerSocketAdaptor.accept on nonblocking channel
  * @library ..
  * @build TestUtil
@@ -57,8 +57,17 @@ public class NonBlockingAccept {
         SocketChannel sc = SocketChannel.open();
         sc.configureBlocking(false);
         sc.connect(isa);
-        Thread.sleep(100);
-        ss.accept();
+
+        // loop until accepted
+        while (true) {
+            try {
+                ss.accept();
+                break;
+            } catch (IllegalBlockingModeException ex) {
+                System.out.println(ex + ", sleeping ...");
+                Thread.sleep(100);
+            }
+        }
 
     }
 

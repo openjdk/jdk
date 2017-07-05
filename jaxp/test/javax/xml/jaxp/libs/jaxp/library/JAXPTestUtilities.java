@@ -89,7 +89,7 @@ public class JAXPTestUtilities {
     /**
      * BOM table for storing BOM header.
      */
-    private final static Map<String, byte[]> bom = new HashMap();
+    private final static Map<String, byte[]> bom = new HashMap<>();
 
     /**
      * Initialize all BOM headers.
