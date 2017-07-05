@@ -30,7 +30,7 @@
  *
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 /**
@@ -80,9 +80,8 @@
  * </pre>
  *
  * <p>The memory effects for accesses and updates of atomics generally
- * follow the rules for volatiles, as stated in
- * <a href="http://java.sun.com/docs/books/jls/"> The Java Language
- * Specification, Third Edition (17.4 Memory Model)</a>:
+ * follow the rules for volatiles, as stated in section 17.4 of
+ * <cite>The Java&trade; Language Specification</cite>.
  *
  * <ul>
  *

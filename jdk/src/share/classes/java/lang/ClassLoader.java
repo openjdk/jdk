@@ -160,8 +160,8 @@ import sun.security.util.SecurityConstants;
  * <h4> <a name="name">Binary names</a> </h4>
  *
  * <p> Any class name provided as a {@link String} parameter to methods in
- * <tt>ClassLoader</tt> must be a binary name as defined by the <a
- * href="http://java.sun.com/docs/books/jls/">Java Language Specification</a>.
+ * <tt>ClassLoader</tt> must be a binary name as defined by
+ * <cite>The Java&trade; Language Specification</cite>.
  *
  * <p> Examples of valid class names include:
  * <blockquote><pre>
@@ -531,9 +531,8 @@ public abstract class ClassLoader {
      * @param  b
      *         The bytes that make up the class data.  The bytes in positions
      *         <tt>off</tt> through <tt>off+len-1</tt> should have the format
-     *         of a valid class file as defined by the <a
-     *         href="http://java.sun.com/docs/books/vmspec/">Java Virtual
-     *         Machine Specification</a>.
+     *         of a valid class file as defined by
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @param  off
      *         The start offset in <tt>b</tt> of the class data
@@ -597,9 +596,8 @@ public abstract class ClassLoader {
      * @param  b
      *         The bytes that make up the class data.  The bytes in positions
      *         <tt>off</tt> through <tt>off+len-1</tt> should have the format
-     *         of a valid class file as defined by the <a
-     *         href="http://java.sun.com/docs/books/vmspec/">Java Virtual
-     *         Machine Specification</a>.
+     *         of a valid class file as defined by
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @param  off
      *         The start offset in <tt>b</tt> of the class data
@@ -748,9 +746,8 @@ public abstract class ClassLoader {
      * @param  b
      *         The bytes that make up the class data. The bytes in positions
      *         <tt>off</tt> through <tt>off+len-1</tt> should have the format
-     *         of a valid class file as defined by the <a
-     *         href="http://java.sun.com/docs/books/vmspec/">Java Virtual
-     *         Machine Specification</a>.
+     *         of a valid class file as defined by
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @param  off
      *         The start offset in <tt>b</tt> of the class data
@@ -838,8 +835,7 @@ public abstract class ClassLoader {
      *         The bytes that make up the class data. The bytes from positions
      *         <tt>b.position()</tt> through <tt>b.position() + b.limit() -1
      *         </tt> should have the format of a valid class file as defined by
-     *         the <a href="http://java.sun.com/docs/books/vmspec/">Java Virtual
-     *         Machine Specification</a>.
+     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *
      * @param  protectionDomain
      *         The ProtectionDomain of the class, or <tt>null</tt>.
@@ -998,9 +994,8 @@ public abstract class ClassLoader {
      * Links the specified class.  This (misleadingly named) method may be
      * used by a class loader to link a class.  If the class <tt>c</tt> has
      * already been linked, then this method simply returns. Otherwise, the
-     * class is linked as described in the "Execution" chapter of the <a
-     * href="http://java.sun.com/docs/books/jls/">Java Language
-     * Specification</a>.
+     * class is linked as described in the "Execution" chapter of
+     * <cite>The Java&trade; Language Specification</cite>.
      * </p>
      *
      * @param  c
@@ -2034,8 +2029,8 @@ public abstract class ClassLoader {
      *         The name of the package whose package default assertion status
      *         is to be set. A <tt>null</tt> value indicates the unnamed
      *         package that is "current"
-     *         (<a href="http://java.sun.com/docs/books/jls/">Java Language
-     *         Specification</a>, section 7.4.2).
+     *         (see section 7.4.2 of
+     *         <cite>The Java&trade; Language Specification</cite>.)
      *
      * @param  enabled
      *         <tt>true</tt> if classes loaded by this classloader and

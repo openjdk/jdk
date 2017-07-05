@@ -58,7 +58,7 @@ endef
 SIGNING_KEY_DIR    = /security/ws/JCE-signing/src
 SIGNING_KEYSTORE   = $(SIGNING_KEY_DIR)/KeyStore.jks
 SIGNING_PASSPHRASE = $(SIGNING_KEY_DIR)/passphrase.txt
-SIGNING_ALIAS      = jce_rsa
+SIGNING_ALIAS      = oracle_jce_rsa
 
 #
 # Defines for signing the various jar files.
