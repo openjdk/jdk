@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,19 +534,35 @@ class InputRecord extends ByteArrayInputStream implements Record {
     }
 
     /**
+     * Return true if the specified record protocol version is out of the
+     * range of the possible supported versions.
+     */
+    static void checkRecordVersion(ProtocolVersion version,
+            boolean allowSSL20Hello) throws SSLException {
+        // Check if the record version is too old (currently not possible)
+        // or if the major version does not match.
+        //
+        // The actual version negotiation is in the handshaker classes
+        if ((version.v < ProtocolVersion.MIN.v) ||
+            ((version.major & 0xFF) > (ProtocolVersion.MAX.major & 0xFF))) {
+
+            // if it's not SSLv2, we're out of here.
+            if (!allowSSL20Hello ||
+                    (version.v != ProtocolVersion.SSL20Hello.v)) {
+                throw new SSLException("Unsupported record version " + version);
+            }
+        }
+    }
+
+    /**
      * Read a SSL/TLS record. Throw an IOException if the format is invalid.
      */
     private void readV3Record(InputStream s, OutputStream o)
             throws IOException {
         ProtocolVersion recordVersion = ProtocolVersion.valueOf(buf[1], buf[2]);
-        // Check if too old (currently not possible)
-        // or if the major version does not match.
-        // The actual version negotiation is in the handshaker classes
-        if ((recordVersion.v < ProtocolVersion.MIN.v)
-                || (recordVersion.major > ProtocolVersion.MAX.major)) {
-            throw new SSLException(
-                "Unsupported record version " + recordVersion);
-        }
+
+        // check the record version
+        checkRecordVersion(recordVersion, false);
 
         /*
          * Get and check length, then the data.

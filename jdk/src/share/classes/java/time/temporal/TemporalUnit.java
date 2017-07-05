@@ -221,7 +221,7 @@ public interface TemporalUnit {
      * @param temporal  the temporal object to adjust, not null
      * @param amount  the amount of this unit to add, positive or negative
      * @return the adjusted temporal object, not null
-     * @throws DateTimeException if the period cannot be added
+     * @throws DateTimeException if the amount cannot be added
      * @throws UnsupportedTemporalTypeException if the unit is not supported by the temporal
      */
     <R extends Temporal> R addTo(R temporal, long amount);

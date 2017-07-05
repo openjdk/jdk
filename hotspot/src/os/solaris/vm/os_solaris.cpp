@@ -347,11 +347,7 @@ julong os::physical_memory() {
 
 static hrtime_t first_hrtime = 0;
 static const hrtime_t hrtime_hz = 1000*1000*1000;
-const int LOCK_BUSY = 1;
-const int LOCK_FREE = 0;
-const int LOCK_INVALID = -1;
 static volatile hrtime_t max_hrtime = 0;
-static volatile int max_hrtime_lock = LOCK_FREE;     // Update counter with LSB as lock-in-progress
 
 
 void os::Solaris::initialize_system_info() {
@@ -1364,58 +1360,31 @@ void* os::thread_local_storage_at(int index) {
 }
 
 
-// gethrtime can move backwards if read from one cpu and then a different cpu
-// getTimeNanos is guaranteed to not move backward on Solaris
-// local spinloop created as faster for a CAS on an int than
-// a CAS on a 64bit jlong. Also Atomic::cmpxchg for jlong is not
-// supported on sparc v8 or pre supports_cx8 intel boxes.
-// oldgetTimeNanos for systems which do not support CAS on 64bit jlong
-// i.e. sparc v8 and pre supports_cx8 (i486) intel boxes
-inline hrtime_t oldgetTimeNanos() {
-  int gotlock = LOCK_INVALID;
-  hrtime_t newtime = gethrtime();
-
-  for (;;) {
-// grab lock for max_hrtime
-    int curlock = max_hrtime_lock;
-    if (curlock & LOCK_BUSY)  continue;
-    if (gotlock = Atomic::cmpxchg(LOCK_BUSY, &max_hrtime_lock, LOCK_FREE) != LOCK_FREE) continue;
-    if (newtime > max_hrtime) {
-      max_hrtime = newtime;
-    } else {
-      newtime = max_hrtime;
-    }
-    // release lock
-    max_hrtime_lock = LOCK_FREE;
-    return newtime;
-  }
-}
-// gethrtime can move backwards if read from one cpu and then a different cpu
-// getTimeNanos is guaranteed to not move backward on Solaris
+// gethrtime() should be monotonic according to the documentation,
+// but some virtualized platforms are known to break this guarantee.
+// getTimeNanos() must be guaranteed not to move backwards, so we
+// are forced to add a check here.
 inline hrtime_t getTimeNanos() {
-  if (VM_Version::supports_cx8()) {
-    const hrtime_t now = gethrtime();
-    // Use atomic long load since 32-bit x86 uses 2 registers to keep long.
-    const hrtime_t prev = Atomic::load((volatile jlong*)&max_hrtime);
-    if (now <= prev)  return prev;   // same or retrograde time;
-    const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
-    assert(obsv >= prev, "invariant");   // Monotonicity
-    // If the CAS succeeded then we're done and return "now".
-    // If the CAS failed and the observed value "obs" is >= now then
-    // we should return "obs".  If the CAS failed and now > obs > prv then
-    // some other thread raced this thread and installed a new value, in which case
-    // we could either (a) retry the entire operation, (b) retry trying to install now
-    // or (c) just return obs.  We use (c).   No loop is required although in some cases
-    // we might discard a higher "now" value in deference to a slightly lower but freshly
-    // installed obs value.   That's entirely benign -- it admits no new orderings compared
-    // to (a) or (b) -- and greatly reduces coherence traffic.
-    // We might also condition (c) on the magnitude of the delta between obs and now.
-    // Avoiding excessive CAS operations to hot RW locations is critical.
-    // See http://blogs.sun.com/dave/entry/cas_and_cache_trivia_invalidate
-    return (prev == obsv) ? now : obsv ;
-  } else {
-    return oldgetTimeNanos();
+  const hrtime_t now = gethrtime();
+  const hrtime_t prev = max_hrtime;
+  if (now <= prev) {
+    return prev;   // same or retrograde time;
   }
+  const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
+  assert(obsv >= prev, "invariant");   // Monotonicity
+  // If the CAS succeeded then we're done and return "now".
+  // If the CAS failed and the observed value "obsv" is >= now then
+  // we should return "obsv".  If the CAS failed and now > obsv > prv then
+  // some other thread raced this thread and installed a new value, in which case
+  // we could either (a) retry the entire operation, (b) retry trying to install now
+  // or (c) just return obsv.  We use (c).   No loop is required although in some cases
+  // we might discard a higher "now" value in deference to a slightly lower but freshly
+  // installed obsv value.   That's entirely benign -- it admits no new orderings compared
+  // to (a) or (b) -- and greatly reduces coherence traffic.
+  // We might also condition (c) on the magnitude of the delta between obsv and now.
+  // Avoiding excessive CAS operations to hot RW locations is critical.
+  // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
+  return (prev == obsv) ? now : obsv;
 }
 
 // Time since start-up in seconds to a fine granularity.
