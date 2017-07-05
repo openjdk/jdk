@@ -33,6 +33,7 @@ import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -89,10 +90,7 @@ public abstract class LocaleProviderAdapter {
      * LocaleProviderAdapter preference list. The default list is intended
      * to behave the same manner in JDK7.
      */
-    private static Type[] adapterPreference = {
-        Type.JRE,
-        Type.SPI,
-    };
+    private static final List<Type> adapterPreference;
 
     /**
      * JRE Locale Data Adapter instance
@@ -129,10 +127,11 @@ public abstract class LocaleProviderAdapter {
     static {
         String order = AccessController.doPrivileged(
                            new sun.security.action.GetPropertyAction("java.locale.providers"));
-        // Override adapterPreference with the properties one
+        List<Type> typeList = new ArrayList<>();
+
+        // Check user specified adapter preference
         if (order != null && order.length() != 0) {
             String[] types = order.split(",");
-            List<Type> typeList = new ArrayList<>();
             for (String type : types) {
                 try {
                     Type aType = Type.valueOf(type.trim().toUpperCase(Locale.ROOT));
@@ -153,18 +152,22 @@ public abstract class LocaleProviderAdapter {
                     LocaleServiceProviderPool.config(LocaleProviderAdapter.class, e.toString());
                 }
             }
-
-            if (!typeList.isEmpty()) {
-                if (!typeList.contains(Type.JRE)) {
-                    // Append FALLBACK as the last resort.
-                    fallbackLocaleProviderAdapter = new FallbackLocaleProviderAdapter();
-                    typeList.add(Type.FALLBACK);
-                }
-                adapterPreference = typeList.toArray(new Type[0]);
-            }
         }
-    }
 
+        if (!typeList.isEmpty()) {
+            if (!typeList.contains(Type.JRE)) {
+                // Append FALLBACK as the last resort.
+                fallbackLocaleProviderAdapter = new FallbackLocaleProviderAdapter();
+                typeList.add(Type.FALLBACK);
+            }
+        } else {
+            // Default preference list
+            typeList.add(Type.JRE);
+            typeList.add(Type.SPI);
+        }
+
+        adapterPreference = Collections.unmodifiableList(typeList);
+    }
 
     /**
      * Returns the singleton instance for each adapter type
@@ -202,7 +205,7 @@ public abstract class LocaleProviderAdapter {
     /**
      * Returns the preference order of LocaleProviderAdapter.Type
      */
-    public static Type[] getAdapterPreference() {
+    public static List<Type> getAdapterPreference() {
         return adapterPreference;
     }
 

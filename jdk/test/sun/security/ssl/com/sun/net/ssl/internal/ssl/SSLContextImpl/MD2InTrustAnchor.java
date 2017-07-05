@@ -46,8 +46,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.*;
 import java.security.interfaces.*;
-import sun.misc.BASE64Decoder;
-
+import java.util.Base64;
 
 public class MD2InTrustAnchor {
 
@@ -238,7 +237,7 @@ public class MD2InTrustAnchor {
         if (keyCertStr != null) {
             // generate the private key.
             PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                                new BASE64Decoder().decodeBuffer(keySpecStr));
+                                Base64.getMimeDecoder().decode(keySpecStr));
             KeyFactory kf = KeyFactory.getInstance("RSA");
             RSAPrivateKey priKey =
                     (RSAPrivateKey)kf.generatePrivate(priKeySpec);

@@ -50,20 +50,20 @@ public class PrimitiveSumMinMaxTest {
         BinaryOperator<Boolean> xor = Boolean::logicalXor;
         Comparator<Boolean> cmp = Boolean::compare;
 
-        assertTrue(and.operate(true, true));
-        assertFalse(and.operate(true, false));
-        assertFalse(and.operate(false, true));
-        assertFalse(and.operate(false, false));
+        assertTrue(and.apply(true, true));
+        assertFalse(and.apply(true, false));
+        assertFalse(and.apply(false, true));
+        assertFalse(and.apply(false, false));
 
-        assertTrue(or.operate(true, true));
-        assertTrue(or.operate(true, false));
-        assertTrue(or.operate(false, true));
-        assertFalse(or.operate(false, false));
+        assertTrue(or.apply(true, true));
+        assertTrue(or.apply(true, false));
+        assertTrue(or.apply(false, true));
+        assertFalse(or.apply(false, false));
 
-        assertFalse(xor.operate(true, true));
-        assertTrue(xor.operate(true, false));
-        assertTrue(xor.operate(false, true));
-        assertFalse(xor.operate(false, false));
+        assertFalse(xor.apply(true, true));
+        assertTrue(xor.apply(true, false));
+        assertTrue(xor.apply(false, true));
+        assertFalse(xor.apply(false, false));
 
         assertEquals(Boolean.TRUE.compareTo(Boolean.TRUE), cmp.compare(true, true));
         assertEquals(Boolean.TRUE.compareTo(Boolean.FALSE), cmp.compare(true, false));
@@ -83,12 +83,12 @@ public class PrimitiveSumMinMaxTest {
         int[] numbers = { -1, 0, 1, 100, Integer.MAX_VALUE, Integer.MIN_VALUE };
         for (int i : numbers) {
             for (int j : numbers) {
-                assertEquals(i+j, (int) sum1.operate(i, j));
-                assertEquals(i+j, sum2.operateAsInt(i, j));
-                assertEquals(Math.max(i,j), (int) max1.operate(i, j));
-                assertEquals(Math.max(i,j), max2.operateAsInt(i, j));
-                assertEquals(Math.min(i,j), (int) min1.operate(i, j));
-                assertEquals(Math.min(i,j), min2.operateAsInt(i, j));
+                assertEquals(i+j, (int) sum1.apply(i, j));
+                assertEquals(i+j, sum2.applyAsInt(i, j));
+                assertEquals(Math.max(i,j), (int) max1.apply(i, j));
+                assertEquals(Math.max(i,j), max2.applyAsInt(i, j));
+                assertEquals(Math.min(i,j), (int) min1.apply(i, j));
+                assertEquals(Math.min(i,j), min2.applyAsInt(i, j));
                 assertEquals(((Integer) i).compareTo(j), cmp.compare(i, j));
             }
         }
@@ -106,12 +106,12 @@ public class PrimitiveSumMinMaxTest {
         long[] numbers = { -1, 0, 1, 100, Long.MAX_VALUE, Long.MIN_VALUE };
         for (long i : numbers) {
             for (long j : numbers) {
-                assertEquals(i+j, (long) sum1.operate(i, j));
-                assertEquals(i+j, sum2.operateAsLong(i, j));
-                assertEquals(Math.max(i,j), (long) max1.operate(i, j));
-                assertEquals(Math.max(i,j), max2.operateAsLong(i, j));
-                assertEquals(Math.min(i,j), (long) min1.operate(i, j));
-                assertEquals(Math.min(i,j), min2.operateAsLong(i, j));
+                assertEquals(i+j, (long) sum1.apply(i, j));
+                assertEquals(i+j, sum2.applyAsLong(i, j));
+                assertEquals(Math.max(i,j), (long) max1.apply(i, j));
+                assertEquals(Math.max(i,j), max2.applyAsLong(i, j));
+                assertEquals(Math.min(i,j), (long) min1.apply(i, j));
+                assertEquals(Math.min(i,j), min2.applyAsLong(i, j));
                 assertEquals(((Long) i).compareTo(j), cmp.compare(i, j));
             }
         }
@@ -126,9 +126,9 @@ public class PrimitiveSumMinMaxTest {
         float[] numbers = { -1, 0, 1, 100, Float.MAX_VALUE, Float.MIN_VALUE };
         for (float i : numbers) {
             for (float j : numbers) {
-                assertEquals(i+j, (float) sum1.operate(i, j));
-                assertEquals(Math.max(i,j), (float) max1.operate(i, j));
-                assertEquals(Math.min(i,j), (float) min1.operate(i, j));
+                assertEquals(i+j, (float) sum1.apply(i, j));
+                assertEquals(Math.max(i,j), (float) max1.apply(i, j));
+                assertEquals(Math.min(i,j), (float) min1.apply(i, j));
                 assertEquals(((Float) i).compareTo(j), cmp.compare(i, j));
             }
         }
@@ -146,12 +146,12 @@ public class PrimitiveSumMinMaxTest {
         double[] numbers = { -1, 0, 1, 100, Double.MAX_VALUE, Double.MIN_VALUE };
         for (double i : numbers) {
             for (double j : numbers) {
-                assertEquals(i+j, (double) sum1.operate(i, j));
-                assertEquals(i+j, sum2.operateAsDouble(i, j));
-                assertEquals(Math.max(i,j), (double) max1.operate(i, j));
-                assertEquals(Math.max(i,j), max2.operateAsDouble(i, j));
-                assertEquals(Math.min(i,j), (double) min1.operate(i, j));
-                assertEquals(Math.min(i,j), min2.operateAsDouble(i, j));
+                assertEquals(i+j, (double) sum1.apply(i, j));
+                assertEquals(i+j, sum2.applyAsDouble(i, j));
+                assertEquals(Math.max(i,j), (double) max1.apply(i, j));
+                assertEquals(Math.max(i,j), max2.applyAsDouble(i, j));
+                assertEquals(Math.min(i,j), (double) min1.apply(i, j));
+                assertEquals(Math.min(i,j), min2.applyAsDouble(i, j));
                 assertEquals(((Double) i).compareTo(j), cmp.compare(i, j));
             }
         }

@@ -33,9 +33,9 @@ import java.io.*;
 public class StringWriterPrintTest {
     public static void main(String[] args) throws ScriptException {
         ScriptEngineManager sem = new ScriptEngineManager();
-        ScriptEngine engine = sem.getEngineByName("js");
+        ScriptEngine engine = sem.getEngineByName("nashorn");
         if (engine == null) {
-            System.out.println("Warning: No js engine found; test vacuously passes.");
+            System.out.println("Warning: No nashorn engine found; test vacuously passes.");
             return;
         }
         StringWriter sw = new StringWriter();

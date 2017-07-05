@@ -22,7 +22,6 @@
  */
 
 /*
- * @ignore
  * @test
  * @compile -parameters WithParameters.java
  * @run main WithParameters
@@ -85,8 +84,8 @@ public class WithParameters {
                         error++;
                     }
                 }
-                if(parameters[0].toString().equals("int quux")) {
-                    System.err.println("toString for quux is wrong");
+                if(!parameters[0].toString().equals("final int quux")) {
+                    System.err.println("toString for quux is wrong, expected \"final int quux\", got \"" + parameters[0] + "\"");
                     error++;
                 }
                 if(parameters[0].getModifiers() != Modifier.FINAL) {
@@ -101,8 +100,8 @@ public class WithParameters {
                     System.err.println("getParameterizedType for quux is wrong");
                     error++;
                 }
-                if(parameters[1].toString().equals("WithParameters$Foo quuux")) {
-                    System.err.println("toString for quuux is wrong");
+                if(!parameters[1].toString().equals("WithParameters$Foo quuux")) {
+                    System.err.println("toString for quuux is wrong, expected \"WithParameters$Foo quuux\", got \"" + parameters[1] + "\"");
                     error++;
                 }
                 if(parameters[1].isVarArgs()) {
@@ -121,8 +120,8 @@ public class WithParameters {
                     System.err.println("getAnnotations has the wrong annotation");
                     error++;
                 }
-                if(parameters[2].toString().equals("java.util.List<?> quuux")) {
-                    System.err.println("toString for l is wrong");
+                if(!parameters[2].toString().equals("java.util.List<?> l")) {
+                    System.err.println("toString for l is wrong, expected \"java.util.List<?> l\", got \"" + parameters[2] + "\"");
                     error++;
                 }
                 if(parameters[2].isVarArgs()) {
@@ -149,8 +148,8 @@ public class WithParameters {
                         error++;
                     }
                 }
-                if(parameters[3].toString().equals("java.util.List<WithParameters$Foo> l")) {
-                    System.err.println("toString for l2 is wrong");
+                if(!parameters[3].toString().equals("java.util.List<WithParameters$Foo> l2")) {
+                    System.err.println("toString for l2 is wrong, expected \"java.util.List<WithParameters$Foo> l2\", got \"" + parameters[3] + "\"");
                     error++;
                 }
                 if(parameters[3].isVarArgs()) {
@@ -177,8 +176,8 @@ public class WithParameters {
                         error++;
                     }
                 }
-                if(parameters[4].toString().equals("java.util.List<? extends WithParameters$Foo> l")) {
-                    System.err.println("toString for l3 is wrong");
+                if(!parameters[4].toString().equals("java.util.List<? extends WithParameters$Foo> l3")) {
+                    System.err.println("toString for l3 is wrong, expected \"java.util.List<? extends WithParameters$Foo> l3\", got \"" + parameters[3] + "\"");
                     error++;
                 }
                 if(parameters[4].isVarArgs()) {
@@ -212,8 +211,8 @@ public class WithParameters {
                         }
                     }
                 }
-                if(parameters[5].toString().equals("java.lang.String... rest")) {
-                    System.err.println("toString for l is wrong");
+                if(!parameters[5].toString().equals("java.lang.String... rest")) {
+                    System.err.println("toString for rest is wrong, expected \"java.lang.String... rest\", got \"" + parameters[5] + "\"");
                     error++;
                 }
                 if(!parameters[5].isVarArgs()) {

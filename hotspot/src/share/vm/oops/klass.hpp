@@ -79,7 +79,6 @@
 //    [last_biased_lock_bulk_revocation_time] (64 bits)
 //    [prototype_header]
 //    [biased_lock_revocation_count]
-//    [verify_count  ] - not in product
 //    [alloc_count   ]
 //    [_modified_oops]
 //    [_accumulated_modified_oops]
@@ -171,10 +170,6 @@ class Klass : public Metadata {
   jlong    _last_biased_lock_bulk_revocation_time;
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
-
-#ifndef PRODUCT
-  int           _verify_count;  // to avoid redundant verifies
-#endif
 
   juint    _alloc_count;        // allocation profiling support
 

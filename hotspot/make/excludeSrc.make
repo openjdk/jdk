@@ -69,7 +69,7 @@ ifeq ($(INCLUDE_CDS), false)
       CXXFLAGS += -DINCLUDE_CDS=0
       CFLAGS += -DINCLUDE_CDS=0
 
-      Src_Files_EXCLUDE += metaspaceShared.cpp
+      Src_Files_EXCLUDE += filemap.cpp metaspaceShared.cpp
 endif
 
 ifeq ($(INCLUDE_ALL_GCS), false)

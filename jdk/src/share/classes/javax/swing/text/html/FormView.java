@@ -159,6 +159,10 @@ public class FormView extends ComponentView implements ActionListener {
             attr.getAttribute(StyleConstants.NameAttribute);
         JComponent c = null;
         Object model = attr.getAttribute(StyleConstants.ModelAttribute);
+
+        // Remove listeners previously registered in shared model
+        // when a new UI component is replaced.  See bug 7189299.
+        removeStaleListenerForModel(model);
         if (t == HTML.Tag.INPUT) {
             c = createInputComponent(attr, model);
         } else if (t == HTML.Tag.SELECT) {
@@ -310,6 +314,63 @@ public class FormView extends ComponentView implements ActionListener {
         return c;
     }
 
+    private void removeStaleListenerForModel(Object model) {
+        if (model instanceof DefaultButtonModel) {
+            // case of JButton whose model is DefaultButtonModel
+            // Need to remove stale ActionListener, ChangeListener and
+            // ItemListener that are instance of AbstractButton$Handler.
+            DefaultButtonModel buttonModel = (DefaultButtonModel) model;
+            String listenerClass = "javax.swing.AbstractButton$Handler";
+            for (ActionListener listener : buttonModel.getActionListeners()) {
+                if (listenerClass.equals(listener.getClass().getName())) {
+                    buttonModel.removeActionListener(listener);
+                }
+            }
+            for (ChangeListener listener : buttonModel.getChangeListeners()) {
+                if (listenerClass.equals(listener.getClass().getName())) {
+                    buttonModel.removeChangeListener(listener);
+                }
+            }
+            for (ItemListener listener : buttonModel.getItemListeners()) {
+                if (listenerClass.equals(listener.getClass().getName())) {
+                    buttonModel.removeItemListener(listener);
+                }
+            }
+        } else if (model instanceof AbstractListModel) {
+            // case of JComboBox and JList
+            // For JList, the stale ListDataListener is instance
+            // BasicListUI$Handler.
+            // For JComboBox, there are 2 stale ListDataListeners, which are
+            // BasicListUI$Handler and BasicComboBoxUI$Handler.
+            AbstractListModel listModel = (AbstractListModel) model;
+            String listenerClass1 =
+                    "javax.swing.plaf.basic.BasicListUI$Handler";
+            String listenerClass2 =
+                    "javax.swing.plaf.basic.BasicComboBoxUI$Handler";
+            for (ListDataListener listener : listModel.getListDataListeners()) {
+                if (listenerClass1.equals(listener.getClass().getName())
+                        || listenerClass2.equals(listener.getClass().getName()))
+                {
+                    listModel.removeListDataListener(listener);
+                }
+            }
+        } else if (model instanceof AbstractDocument) {
+            // case of JPasswordField, JTextField and JTextArea
+            // All have 2 stale DocumentListeners.
+            String listenerClass1 =
+                    "javax.swing.plaf.basic.BasicTextUI$UpdateHandler";
+            String listenerClass2 =
+                    "javax.swing.text.DefaultCaret$Handler";
+            AbstractDocument docModel = (AbstractDocument) model;
+            for (DocumentListener listener : docModel.getDocumentListeners()) {
+                if (listenerClass1.equals(listener.getClass().getName())
+                        || listenerClass2.equals(listener.getClass().getName()))
+                {
+                    docModel.removeDocumentListener(listener);
+                }
+            }
+        }
+    }
 
     /**
      * Determines the maximum span for this view along an
@@ -347,7 +408,7 @@ public class FormView extends ComponentView implements ActionListener {
 
 
     /**
-     * Responsible for processeing the ActionEvent.
+     * Responsible for processing the ActionEvent.
      * If the element associated with the FormView,
      * has a type of "submit", "reset", "text" or "password"
      * then the action is processed.  In the case of a "submit"

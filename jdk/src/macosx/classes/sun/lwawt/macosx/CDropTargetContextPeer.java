@@ -128,6 +128,15 @@ final class CDropTargetContextPeer extends SunDropTargetContextPeer {
         }
     }
 
+    @Override
+    protected int postDropTargetEvent(Component component, int x, int y, int dropAction,
+                                      int actions, long[] formats, long nativeCtxt, int eventID,
+                                      boolean dispatchType) {
+        // On MacOS X all the DnD events should be synchronous
+        return super.postDropTargetEvent(component, x, y, dropAction, actions, formats, nativeCtxt,
+                eventID, SunDropTargetContextPeer.DISPATCH_SYNC);
+    }
+
     // Signal drop complete:
     protected void doDropDone(boolean success, int dropAction, boolean isLocal) {
         long nativeDropTarget = this.getNativeDragContext();

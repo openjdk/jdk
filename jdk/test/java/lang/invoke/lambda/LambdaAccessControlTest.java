@@ -25,7 +25,7 @@
  * @test
  * @bug 8003881
  * @summary tests Lambda expression with a a security manager at top level
- * @compile -XDignore.symbol.file LambdaAccessControlTest.java
+ * @compile -XDignore.symbol.file LambdaAccessControlTest.java LUtils.java
  *
  * @run main/othervm LambdaAccessControlTest
  */

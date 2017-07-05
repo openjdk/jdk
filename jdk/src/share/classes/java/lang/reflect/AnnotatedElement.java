@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.AnnotationFormatError;
 
 /**
  * Represents an annotated element of the program currently running in this
@@ -86,8 +87,8 @@ import java.lang.annotation.Annotation;
  *
  * <p>Attempting to read annotations of a repeatable annotation type T
  * that are contained in an annotation whose type is not, in fact, the
- * containing annotation type of T will result in an
- * InvalidContainerAnnotationError.
+ * containing annotation type of T, will result in an {@link
+ * AnnotationFormatError}.
  *
  * <p>Finally, attempting to read a member whose definition has evolved
  * incompatibly will result in a {@link
@@ -96,10 +97,9 @@ import java.lang.annotation.Annotation;
  *
  * @see java.lang.EnumConstantNotPresentException
  * @see java.lang.TypeNotPresentException
- * @see java.lang.annotation.AnnotationFormatError
+ * @see AnnotationFormatError
  * @see java.lang.annotation.AnnotationTypeMismatchException
  * @see java.lang.annotation.IncompleteAnnotationException
- * @see java.lang.annotation.InvalidContainerAnnotationError
  * @since 1.5
  * @author Josh Bloch
  */

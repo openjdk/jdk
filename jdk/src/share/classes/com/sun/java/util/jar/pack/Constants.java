@@ -479,4 +479,10 @@ class Constants {
     public final static int _qldc   = _xldc_op+7;
     public final static int _qldc_w = _xldc_op+8;
     public final static int _xldc_limit = _xldc_op+9;
+
+    // handling of InterfaceMethodRef
+    public final static int _invoke_int_op = _xldc_limit;
+    public final static int _invokespecial_int = _invoke_int_op+0;
+    public final static int _invokestatic_int = _invoke_int_op+1;
+    public final static int _invoke_int_limit = _invoke_int_op+2;
 }

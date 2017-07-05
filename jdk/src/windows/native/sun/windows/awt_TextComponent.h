@@ -42,8 +42,7 @@
 
 class AwtTextComponent : public AwtComponent {
 public:
-    /* java.awt.TextComponent canAccessClipboard field ID */
-    static jfieldID canAccessClipboardID;
+    static jmethodID canAccessClipboardMID;
 
     AwtTextComponent();
 

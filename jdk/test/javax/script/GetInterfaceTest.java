@@ -22,6 +22,7 @@
  */
 
 /*
+ * @run ignore
  * @test
  * @bug 6960211
  * @summary JavaScript engine allows creation of interface although methods not available.
@@ -32,10 +33,10 @@ import javax.script.*;
 public class GetInterfaceTest {
     public static void main(String[] args) throws Exception {
         ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("js");
+        ScriptEngine engine = manager.getEngineByName("nashorn");
 
         if (engine == null) {
-            System.out.println("Warning: No engine engine found; test vacuously passes.");
+            System.out.println("Warning: No js engine engine found; test vacuously passes.");
             return;
         }
 
