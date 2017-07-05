@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1113,11 +1113,19 @@ AwtMenuBar* AwtFrame::GetMenuBar()
 
 void AwtFrame::SetMenuBar(AwtMenuBar* mb)
 {
+    if (menuBar) {
+        menuBar->SetFrame(NULL);
+    }
     menuBar = mb;
     if (mb == NULL) {
         // Remove existing menu bar, if any.
         ::SetMenu(GetHWnd(), NULL);
     } else {
+        AwtFrame* oldFrame = menuBar->GetFrame();
+        if (oldFrame && oldFrame != this) {
+            oldFrame->SetMenuBar(NULL);
+        }
+        menuBar->SetFrame(this);
         if (menuBar->GetHMenu() != NULL) {
             ::SetMenu(GetHWnd(), menuBar->GetHMenu());
         }

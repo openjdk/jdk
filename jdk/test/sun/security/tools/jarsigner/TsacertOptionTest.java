@@ -31,6 +31,7 @@ import jdk.testlibrary.JarUtils;
  * @library /lib/testlibrary warnings
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
+ *          java.base/sun.security.tools.keytool
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.management
