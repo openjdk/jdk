@@ -58,8 +58,11 @@ public class MemoryTest {
     // They are: Copy/Scavenger + MSC + CodeCache manager
     // (or equivalent for other collectors)
     // Number of GC memory managers = 2
-    private static int[] expectedMinNumPools = {3, 2};
-    private static int[] expectedMaxNumPools = {3, 4};
+
+    // Hotspot VM 1.8+ after perm gen removal is expected to have only
+    // one non-heap memory pool
+    private static int[] expectedMinNumPools = {3, 1};
+    private static int[] expectedMaxNumPools = {3, 1};
     private static int expectedNumGCMgrs = 2;
     private static int expectedNumMgrs = expectedNumGCMgrs + 1;
     private static String[] types = { "heap", "non-heap" };
@@ -80,6 +83,7 @@ public class MemoryTest {
 
     private static void checkMemoryPools() throws Exception {
         List pools = ManagementFactory.getMemoryPoolMXBeans();
+        boolean hasPerm = false;
 
         int[] numPools = new int[NUM_TYPES];
         for (ListIterator iter = pools.listIterator(); iter.hasNext();) {
@@ -90,6 +94,16 @@ public class MemoryTest {
             if (pool.getType() == MemoryType.NON_HEAP) {
                 numPools[NONHEAP]++;
             }
+            if (pool.getName().toLowerCase().contains("perm")) {
+                hasPerm = true;
+            }
+        }
+
+        if (hasPerm) {
+            // If the VM has perm gen there will be between 2 and 4 non heap
+            // pools (4 if class data sharing is used)
+            expectedMinNumPools[NONHEAP] = 2;
+            expectedMaxNumPools[NONHEAP] = 4;
         }
 
         // Check the number of Memory pools

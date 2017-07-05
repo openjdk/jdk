@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
-#include "oops/methodDataOop.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/handles.inline.hpp"
@@ -299,7 +299,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   }
   iframe()->interpreter_frame_set_bcx((intptr_t)bcp); // cannot use bcp because frame is not initialized yet
   if (ProfileInterpreter) {
-    methodDataOop mdo = method()->method_data();
+    MethodData* mdo = method()->method_data();
     if (mdo != NULL) {
       int bci = iframe()->interpreter_frame_bci();
       if (use_next_mdp) ++bci;

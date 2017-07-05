@@ -77,7 +77,6 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 class CollectedHeap : public CHeapObj<mtInternal> {
   friend class VMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
-  friend class constantPoolCacheKlass; // allocate() method inserts is_conc_safe
 
 #ifdef ASSERT
   static int       _fire_out_of_memory_count;
@@ -139,14 +138,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Like allocate_init, but the block returned by a successful allocation
   // is guaranteed initialized to zeros.
   inline static HeapWord* common_mem_allocate_init(size_t size, TRAPS);
-
-  // Same as common_mem version, except memory is allocated in the permanent area
-  // If there is no permanent area, revert to common_mem_allocate_noinit
-  inline static HeapWord* common_permanent_mem_allocate_noinit(size_t size, TRAPS);
-
-  // Same as common_mem version, except memory is allocated in the permanent area
-  // If there is no permanent area, revert to common_mem_allocate_init
-  inline static HeapWord* common_permanent_mem_allocate_init(size_t size, TRAPS);
 
   // Helper functions for (VM) allocation.
   inline static void post_allocation_setup_common(KlassHandle klass, HeapWord* obj);
@@ -221,14 +212,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // reach, without a garbage collection.
   virtual bool is_maximal_no_gc() const = 0;
 
-  virtual size_t permanent_capacity() const = 0;
-  virtual size_t permanent_used() const = 0;
-
   // Support for java.lang.Runtime.maxMemory():  return the maximum amount of
   // memory that the vm could make available for storing 'normal' java objects.
   // This is based on the reserved address space, but should not include space
-  // that the vm uses internally for bookkeeping or temporary storage (e.g.,
-  // perm gen space or, in the case of the young gen, one of the survivor
+  // that the vm uses internally for bookkeeping or temporary storage
+  // (e.g., in the case of the young gen, one of the survivor
   // spaces).
   virtual size_t max_capacity() const = 0;
 
@@ -248,6 +236,15 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   bool is_in_or_null(const void* p) const {
     return p == NULL || is_in(p);
+  }
+
+  bool is_in_place(Metadata** p) {
+    return !Universe::heap()->is_in(p);
+  }
+  bool is_in_place(oop* p) { return Universe::heap()->is_in(p); }
+  bool is_in_place(narrowOop* p) {
+    oop o = oopDesc::load_decode_heap_oop_not_null(p);
+    return Universe::heap()->is_in((const void*)o);
   }
 
   // Let's define some terms: a "closed" subset of a heap is one that
@@ -282,36 +279,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     return p == NULL || is_in_closed_subset(p);
   }
 
-  // XXX is_permanent() and is_in_permanent() should be better named
-  // to distinguish one from the other.
-
-  // Returns "TRUE" if "p" is allocated as "permanent" data.
-  // If the heap does not use "permanent" data, returns the same
-  // value is_in_reserved() would return.
-  // NOTE: this actually returns true if "p" is in reserved space
-  // for the space not that it is actually allocated (i.e. in committed
-  // space). If you need the more conservative answer use is_permanent().
-  virtual bool is_in_permanent(const void *p) const = 0;
-
-
 #ifdef ASSERT
   // Returns true if "p" is in the part of the
   // heap being collected.
   virtual bool is_in_partial_collection(const void *p) = 0;
 #endif
-
-  bool is_in_permanent_or_null(const void *p) const {
-    return p == NULL || is_in_permanent(p);
-  }
-
-  // Returns "TRUE" if "p" is in the committed area of  "permanent" data.
-  // If the heap does not use "permanent" data, returns the same
-  // value is_in() would return.
-  virtual bool is_permanent(const void *p) const = 0;
-
-  bool is_permanent_or_null(const void *p) const {
-    return p == NULL || is_permanent(p);
-  }
 
   // An object is scavengable if its location may move during a scavenge.
   // (A scavenge is a GC which is not a full GC.)
@@ -320,7 +292,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Returns "TRUE" if "p" is a method oop in the
   // current heap, with high probability. This predicate
   // is not stable, in general.
-  bool is_valid_method(oop p) const;
+  bool is_valid_method(Method* p) const;
 
   void set_gc_cause(GCCause::Cause v) {
      if (UsePerfData) {
@@ -338,11 +310,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // May be overridden to set additional parallelism.
   virtual void set_par_threads(uint t) { _n_par_threads = t; };
 
-  // Preload classes into the shared portion of the heap, and then dump
-  // that data to a file so that it can be loaded directly by another
-  // VM (then terminate).
-  virtual void preload_and_dump(TRAPS) { ShouldNotReachHere(); }
-
   // Allocate and initialize instances of Class
   static oop Class_obj_allocate(KlassHandle klass, int size, KlassHandle real_klass, TRAPS);
 
@@ -351,30 +318,15 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   inline static oop array_allocate(KlassHandle klass, int size, int length, TRAPS);
   inline static oop array_allocate_nozero(KlassHandle klass, int size, int length, TRAPS);
 
-  // Special obj/array allocation facilities.
-  // Some heaps may want to manage "permanent" data uniquely. These default
-  // to the general routines if the heap does not support such handling.
-  inline static oop permanent_obj_allocate(KlassHandle klass, int size, TRAPS);
-  // permanent_obj_allocate_no_klass_install() does not do the installation of
-  // the klass pointer in the newly created object (as permanent_obj_allocate()
-  // above does).  This allows for a delay in the installation of the klass
-  // pointer that is needed during the create of klassKlass's.  The
-  // method post_allocation_install_obj_klass() is used to install the
-  // klass pointer.
-  inline static oop permanent_obj_allocate_no_klass_install(KlassHandle klass,
-                                                            int size,
-                                                            TRAPS);
-  inline static void post_allocation_install_obj_klass(KlassHandle klass, oop obj);
-  inline static oop permanent_array_allocate(KlassHandle klass, int size, int length, TRAPS);
+  inline static void post_allocation_install_obj_klass(KlassHandle klass,
+                                                       oop obj);
 
   // Raw memory allocation facilities
   // The obj and array allocate methods are covers for these methods.
-  // The permanent allocation method should default to mem_allocate if
-  // permanent memory isn't supported. mem_allocate() should never be
+  // mem_allocate() should never be
   // called to allocate TLABs, only individual objects.
   virtual HeapWord* mem_allocate(size_t size,
                                  bool* gc_overhead_limit_was_exceeded) = 0;
-  virtual HeapWord* permanent_mem_allocate(size_t size) = 0;
 
   // Utilities for turning raw memory into filler objects.
   //
@@ -504,11 +456,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // remembered set.
   virtual void flush_deferred_store_barrier(JavaThread* thread);
 
-  // Can a compiler elide a store barrier when it writes
-  // a permanent oop into the heap?  Applies when the compiler
-  // is storing x to the heap, where x->is_perm() is true.
-  virtual bool can_elide_permanent_oop_store_barriers() const = 0;
-
   // Does this heap support heap inspection (+PrintClassHistogram?)
   virtual bool supports_heap_inspection() const = 0;
 
@@ -517,11 +464,19 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // "CollectedHeap" supports.
   virtual void collect(GCCause::Cause cause) = 0;
 
+  // Perform a full collection
+  virtual void do_full_collection(bool clear_all_soft_refs) = 0;
+
   // This interface assumes that it's being called by the
   // vm thread. It collects the heap assuming that the
   // heap lock is already held and that we are executing in
   // the context of the vm thread.
-  virtual void collect_as_vm_thread(GCCause::Cause cause) = 0;
+  virtual void collect_as_vm_thread(GCCause::Cause cause);
+
+  // Callback from VM_CollectForMetadataAllocation operation.
+  MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
+                                               size_t size,
+                                               Metaspace::MetadataType mdtype);
 
   // Returns the barrier set for this heap
   BarrierSet* barrier_set() { return _barrier_set; }
@@ -552,27 +507,18 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
 
+  void oop_iterate_no_header(OopClosure* cl);
+
   // Iterate over all the ref-containing fields of all objects, calling
-  // "cl.do_oop" on each. This includes objects in permanent memory.
-  virtual void oop_iterate(OopClosure* cl) = 0;
+  // "cl.do_oop" on each.
+  virtual void oop_iterate(ExtendedOopClosure* cl) = 0;
 
   // Iterate over all objects, calling "cl.do_object" on each.
-  // This includes objects in permanent memory.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
   // Similar to object_iterate() except iterates only
   // over live objects.
   virtual void safe_object_iterate(ObjectClosure* cl) = 0;
-
-  // Behaves the same as oop_iterate, except only traverses
-  // interior pointers contained in permanent memory. If there
-  // is no permanent memory, does nothing.
-  virtual void permanent_oop_iterate(OopClosure* cl) = 0;
-
-  // Behaves the same as object_iterate, except only traverses
-  // object contained in permanent memory. If there is no
-  // permanent memory, does nothing.
-  virtual void permanent_object_iterate(ObjectClosure* cl) = 0;
 
   // NOTE! There is no requirement that a collector implement these
   // functions.

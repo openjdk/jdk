@@ -27,6 +27,7 @@
 
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
+#include "oops/metadata.hpp"
 
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
@@ -35,7 +36,7 @@ class ExceptionCache : public CHeapObj<mtCode> {
   friend class VMStructs;
  private:
   enum { cache_size = 16 };
-  klassOop _exception_type;
+  Klass*   _exception_type;
   address  _pc[cache_size];
   address  _handler[cache_size];
   int      _count;
@@ -52,8 +53,7 @@ class ExceptionCache : public CHeapObj<mtCode> {
 
   ExceptionCache(Handle exception, address pc, address handler);
 
-  klassOop  exception_type()                { return _exception_type; }
-  klassOop* exception_type_addr()           { return &_exception_type; }
+  Klass*    exception_type()                { return _exception_type; }
   ExceptionCache* next()                    { return _next; }
   void      set_next(ExceptionCache *ec)    { _next = ec; }
 
@@ -112,12 +112,12 @@ class nmethod : public CodeBlob {
   friend class CodeCache;  // scavengable oops
  private:
   // Shared fields for all nmethod's
-  methodOop _method;
+  Method*   _method;
   int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
   jmethodID _jmethod_id;       // Cache of method()->jmethod_id()
 
   // To support simple linked-list chaining of nmethods:
-  nmethod*  _osr_link;         // from instanceKlass::osr_nmethods_head
+  nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
   nmethod*  _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
   nmethod*  _saved_nmethod_link; // from CodeCache::speculatively_disconnect
 
@@ -148,6 +148,7 @@ class nmethod : public CodeBlob {
   int _consts_offset;
   int _stub_offset;
   int _oops_offset;                       // offset to where embedded oop table begins (inside data)
+  int _metadata_offset;                   // embedded meta data table
   int _scopes_data_offset;
   int _scopes_pcs_offset;
   int _dependencies_offset;
@@ -226,7 +227,7 @@ class nmethod : public CodeBlob {
   friend class nmethodLocker;
 
   // For native wrappers
-  nmethod(methodOop method,
+  nmethod(Method* method,
           int nmethod_size,
           int compile_id,
           CodeOffsets* offsets,
@@ -238,7 +239,7 @@ class nmethod : public CodeBlob {
 
 #ifdef HAVE_DTRACE_H
   // For native wrappers
-  nmethod(methodOop method,
+  nmethod(Method* method,
           int nmethod_size,
           CodeOffsets* offsets,
           CodeBuffer *code_buffer,
@@ -246,7 +247,7 @@ class nmethod : public CodeBlob {
 #endif // def HAVE_DTRACE_H
 
   // Creation support
-  nmethod(methodOop method,
+  nmethod(Method* method,
           int nmethod_size,
           int compile_id,
           int entry_bci,
@@ -325,7 +326,7 @@ class nmethod : public CodeBlob {
 #endif // def HAVE_DTRACE_H
 
   // accessors
-  methodOop method() const                        { return _method; }
+  Method* method() const                          { return _method; }
   AbstractCompiler* compiler() const              { return _compiler; }
 
   // type info
@@ -350,7 +351,10 @@ class nmethod : public CodeBlob {
   address deopt_mh_handler_begin() const          { return           header_begin() + _deoptimize_mh_offset ; }
   address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : NULL; }
   oop*    oops_begin            () const          { return (oop*)   (header_begin() + _oops_offset)         ; }
-  oop*    oops_end              () const          { return (oop*)   (header_begin() + _scopes_data_offset)  ; }
+  oop*    oops_end              () const          { return (oop*)   (header_begin() + _metadata_offset)     ; }
+
+  Metadata** metadata_begin   () const            { return (Metadata**)  (header_begin() + _metadata_offset)     ; }
+  Metadata** metadata_end     () const            { return (Metadata**)  (header_begin() + _scopes_data_offset)  ; }
 
   address scopes_data_begin     () const          { return           header_begin() + _scopes_data_offset   ; }
   address scopes_data_end       () const          { return           header_begin() + _scopes_pcs_offset    ; }
@@ -368,6 +372,7 @@ class nmethod : public CodeBlob {
   int insts_size        () const                  { return            insts_end        () -            insts_begin        (); }
   int stub_size         () const                  { return            stub_end         () -            stub_begin         (); }
   int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
+  int metadata_size     () const                  { return (address)  metadata_end     () - (address)  metadata_begin     (); }
   int scopes_data_size  () const                  { return            scopes_data_end  () -            scopes_data_begin  (); }
   int scopes_pcs_size   () const                  { return (intptr_t) scopes_pcs_end   () - (intptr_t) scopes_pcs_begin   (); }
   int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
@@ -381,6 +386,7 @@ class nmethod : public CodeBlob {
   bool insts_contains        (address addr) const { return insts_begin        () <= addr && addr < insts_end        (); }
   bool stub_contains         (address addr) const { return stub_begin         () <= addr && addr < stub_end         (); }
   bool oops_contains         (oop*    addr) const { return oops_begin         () <= addr && addr < oops_end         (); }
+  bool metadata_contains     (Metadata** addr) const   { return metadata_begin     () <= addr && addr < metadata_end     (); }
   bool scopes_data_contains  (address addr) const { return scopes_data_begin  () <= addr && addr < scopes_data_end  (); }
   bool scopes_pcs_contains   (PcDesc* addr) const { return scopes_pcs_begin   () <= addr && addr < scopes_pcs_end   (); }
   bool handler_table_contains(address addr) const { return handler_table_begin() <= addr && addr < handler_table_end(); }
@@ -448,7 +454,17 @@ class nmethod : public CodeBlob {
     return &oops_begin()[index - 1];
   }
 
-  void copy_oops(GrowableArray<jobject>* oops);
+  // Support for meta data in scopes and relocs:
+  // Note: index 0 is reserved for null.
+  Metadata*     metadata_at(int index) const      { return index == 0 ? NULL: *metadata_addr_at(index); }
+  Metadata**  metadata_addr_at(int index) const {  // for GC
+    // relocation indexes are biased by 1 (because 0 is reserved)
+    assert(index > 0 && index <= metadata_size(), "must be a valid non-zero index");
+    return &metadata_begin()[index - 1];
+  }
+
+  void copy_values(GrowableArray<jobject>* oops);
+  void copy_values(GrowableArray<Metadata*>* metadata);
 
   // Relocation support
 private:
@@ -516,6 +532,9 @@ public:
     return (addr >= code_begin() && addr < verified_entry_point());
   }
 
+  // Check that all metadata is still alive
+  void verify_metadata_loaders(address low_boundary, BoolObjectClosure* is_alive);
+
   // unlink and deallocate this nmethod
   // Only NMethodSweeper class is expected to use this. NMethodSweeper is not
   // expected to use any other private methods/data in this class.
@@ -533,8 +552,8 @@ public:
   void mark_as_seen_on_stack();
   bool can_not_entrant_be_converted();
 
-  // Evolution support. We make old (discarded) compiled methods point to new methodOops.
-  void set_method(methodOop method) { _method = method; }
+  // Evolution support. We make old (discarded) compiled methods point to new Method*s.
+  void set_method(Method* method) { _method = method; }
 
   // GC support
   void do_unloading(BoolObjectClosure* is_alive, OopClosure* keep_alive,
@@ -663,12 +682,12 @@ public:
   // Evolution support. Tells if this compiled method is dependent on any of
   // methods m() of class dependee, such that if m() in dependee is replaced,
   // this compiled method will have to be deoptimized.
-  bool is_evol_dependent_on(klassOop dependee);
+  bool is_evol_dependent_on(Klass* dependee);
 
   // Fast breakpoint support. Tells if this compiled method is
   // dependent on the given method. Returns true if this nmethod
   // corresponds to the given method as well.
-  bool is_dependent_on_method(methodOop dependee);
+  bool is_dependent_on_method(Method* dependee);
 
   // is it ok to patch at address?
   bool is_patchable_at(address instr_address);
@@ -686,6 +705,12 @@ public:
   static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
   static int entry_bci_offset()                   { return offset_of(nmethod, _entry_bci); }
 
+  // RedefineClasses support.   Mark metadata in nmethods as on_stack so that
+  // redefine classes doesn't purge it.
+  static void mark_on_stack(nmethod* nm) {
+    nm->metadata_do(Metadata::mark_on_stack);
+  }
+  void metadata_do(void f(Metadata*));
 };
 
 // Locks an nmethod so its code will not get removed and it will not

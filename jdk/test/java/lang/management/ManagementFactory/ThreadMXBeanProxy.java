@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     5086470 6358247
+ * @bug     5086470 6358247 7193302
  * @summary Test type conversion when invoking ThreadMXBean.dumpAllThreads
  *          through proxy.
  *
@@ -172,6 +172,10 @@ public class ThreadMXBeanProxy {
             if (hcode != syncs[0].getIdentityHashCode()) {
                 throw new RuntimeException("LockInfo: " + syncs[0] +
                     " IdentityHashCode not matched. Expected: " + hcode);
+            }
+            LockInfo li = info.getLockInfo();
+            if (li == null) {
+                throw new RuntimeException("Expected non-null LockInfo");
             }
         }
     }

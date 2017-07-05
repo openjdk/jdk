@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,7 @@ public class PropertyResourceBundle extends ResourceBundle {
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if <code>stream</code> is null
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public PropertyResourceBundle (InputStream stream) throws IOException {
         Properties properties = new Properties();
         properties.load(stream);
@@ -143,6 +144,7 @@ public class PropertyResourceBundle extends ResourceBundle {
      * @throws NullPointerException if <code>reader</code> is null
      * @since 1.6
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public PropertyResourceBundle (Reader reader) throws IOException {
         Properties properties = new Properties();
         properties.load(reader);

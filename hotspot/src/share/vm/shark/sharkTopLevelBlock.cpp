@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1103,7 +1103,7 @@ ciMethod* SharkTopLevelBlock::improve_virtual_call(ciMethod*   caller,
 Value *SharkTopLevelBlock::get_direct_callee(ciMethod* method) {
   return builder()->CreateBitCast(
     builder()->CreateInlineOop(method),
-    SharkType::methodOop_type(),
+    SharkType::Method*_type(),
     "callee");
 }
 
@@ -1118,9 +1118,9 @@ Value *SharkTopLevelBlock::get_virtual_callee(SharkValue* receiver,
   return builder()->CreateLoad(
     builder()->CreateArrayAddress(
       klass,
-      SharkType::methodOop_type(),
+      SharkType::Method*_type(),
       vtableEntry::size() * wordSize,
-      in_ByteSize(instanceKlass::vtable_start_offset() * wordSize),
+      in_ByteSize(InstanceKlass::vtable_start_offset() * wordSize),
       LLVMValue::intptr_constant(vtable_index)),
     "callee");
 }
@@ -1142,12 +1142,12 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
   Value *vtable_start = builder()->CreateAdd(
     builder()->CreatePtrToInt(object_klass, SharkType::intptr_type()),
     LLVMValue::intptr_constant(
-      instanceKlass::vtable_start_offset() * HeapWordSize),
+      InstanceKlass::vtable_start_offset() * HeapWordSize),
     "vtable_start");
 
   Value *vtable_length = builder()->CreateValueOfStructEntry(
     object_klass,
-    in_ByteSize(instanceKlass::vtable_length_offset() * HeapWordSize),
+    in_ByteSize(InstanceKlass::vtable_length_offset() * HeapWordSize),
     SharkType::jint_type(),
     "vtable_length");
   vtable_length =
@@ -1231,7 +1231,7 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
             method->itable_index() * itableMethodEntry::size() * wordSize)),
         LLVMValue::intptr_constant(
           itableMethodEntry::method_offset_in_bytes())),
-      PointerType::getUnqual(SharkType::methodOop_type())),
+      PointerType::getUnqual(SharkType::Method*_type())),
     "callee");
 }
 
@@ -1312,7 +1312,7 @@ void SharkTopLevelBlock::do_call() {
 
   // Load the SharkEntry from the callee
   Value *base_pc = builder()->CreateValueOfStructEntry(
-    callee, methodOopDesc::from_interpreted_offset(),
+    callee, Method::from_interpreted_offset(),
     SharkType::intptr_type(),
     "base_pc");
 

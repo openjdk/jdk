@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "runtime/perfData.hpp"
 #include "utilities/growableArray.hpp"
 
-class instanceKlass;
+class InstanceKlass;
 
 // VM monitoring and management support for the Class Loading subsystem
 class ClassLoadingService : public AllStatic {
@@ -48,7 +48,7 @@ private:
 
   static PerfVariable* _class_methods_size;
 
-  static size_t compute_class_size(instanceKlass* k);
+  static size_t compute_class_size(InstanceKlass* k);
 
 public:
   static void init();
@@ -102,9 +102,9 @@ public:
     return (UsePerfData ? _class_methods_size->get_value() : -1);
   }
 
-  static void notify_class_loaded(instanceKlass* k, bool shared_class);
+  static void notify_class_loaded(InstanceKlass* k, bool shared_class);
   // All unloaded classes are non-shared
-  static void notify_class_unloaded(instanceKlass* k);
+  static void notify_class_unloaded(InstanceKlass* k);
   static void add_class_method_size(int size) {
     if (UsePerfData) {
       _class_methods_size->inc(size);
@@ -127,12 +127,12 @@ public:
   int num_loaded_classes()         { return _klass_handle_array->length(); }
   KlassHandle get_klass(int index) { return _klass_handle_array->at(index); }
 
-  static void add_loaded_class(klassOop k) {
+  static void add_loaded_class(Klass* k) {
     // FIXME: For now - don't include array klasses
     // The spec is unclear at this point to count array klasses or not
     // and also indirect creation of array of super class and secondaries
     //
-    // for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+    // for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
     //  KlassHandle h(_current_thread, l);
     //  _loaded_classes->append(h);
     // }

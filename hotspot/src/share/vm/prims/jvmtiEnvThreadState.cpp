@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ JvmtiEnvThreadState::~JvmtiEnvThreadState()   {
 // - instruction rewrites
 // - breakpoint followed by single step
 // - single step at a breakpoint
-void JvmtiEnvThreadState::compare_and_set_current_location(methodOop new_method,
+void JvmtiEnvThreadState::compare_and_set_current_location(Method* new_method,
                                                            address new_location, jvmtiEvent event) {
 
   int new_bci = new_location - new_method->code_base();
@@ -271,7 +271,7 @@ class VM_GetCurrentLocation : public VM_Operation {
     RegisterMap rm(_thread, false);
     javaVFrame* vf = _thread->last_java_vframe(&rm);
     assert(vf != NULL, "must have last java frame");
-    methodOop method = vf->method();
+    Method* method = vf->method();
     _method_id = method->jmethod_id();
     _bci = vf->bci();
   }

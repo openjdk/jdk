@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,16 +97,6 @@ bool BlockOffsetSharedArray::is_card_boundary(HeapWord* p) const {
   return (delta & right_n_bits(LogN_words)) == (size_t)NoBits;
 }
 
-
-void BlockOffsetSharedArray::serialize(SerializeOopClosure* soc,
-                                       HeapWord* start, HeapWord* end) {
-  assert(_offset_array[0] == 0, "objects can't cross covered areas");
-  assert(start <= end, "bad address range");
-  size_t start_index = index_for(start);
-  size_t end_index = index_for(end-1)+1;
-  soc->do_region(&_offset_array[start_index],
-                 (end_index - start_index) * sizeof(_offset_array[0]));
-}
 
 //////////////////////////////////////////////////////////////////////
 // BlockOffsetArray
@@ -799,17 +789,6 @@ void BlockOffsetArrayContigSpace::zero_bottom_entry() {
          "just checking");
   size_t bottom_index = _array->index_for(_bottom);
   _array->set_offset_array(bottom_index, 0);
-}
-
-
-void BlockOffsetArrayContigSpace::serialize(SerializeOopClosure* soc) {
-  if (soc->reading()) {
-    // Null these values so that the serializer won't object to updating them.
-    _next_offset_threshold = NULL;
-    _next_offset_index = 0;
-  }
-  soc->do_ptr(&_next_offset_threshold);
-  soc->do_size_t(&_next_offset_index);
 }
 
 size_t BlockOffsetArrayContigSpace::last_active_index() const {

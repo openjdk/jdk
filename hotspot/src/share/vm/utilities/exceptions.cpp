@@ -88,7 +88,7 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
   // adequate stack space.
   // This can happen with stress testing a large value of StackShadowPages
   if (h_exception()->klass() == SystemDictionary::StackOverflowError_klass()) {
-    instanceKlass* ik = instanceKlass::cast(h_exception->klass());
+    InstanceKlass* ik = InstanceKlass::cast(h_exception->klass());
     assert(ik->is_initialized(),
            "need to increase min_stack_allowed calculation");
   }
@@ -219,10 +219,10 @@ void Exceptions::_throw_cause(Thread* thread, const char* file, int line, Symbol
 void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line, methodHandle method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
-    klassOop k = SystemDictionary::StackOverflowError_klass();
-    oop e = instanceKlass::cast(k)->allocate_instance(CHECK);
+    Klass* k = SystemDictionary::StackOverflowError_klass();
+    oop e = InstanceKlass::cast(k)->allocate_instance(CHECK);
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
-    assert(instanceKlass::cast(k)->is_initialized(), "need to increase min_stack_allowed calculation");
+    assert(InstanceKlass::cast(k)->is_initialized(), "need to increase min_stack_allowed calculation");
     if (StackTraceInThrowable) {
       java_lang_Throwable::fill_in_stack_trace(exception, method());
     }
@@ -257,7 +257,7 @@ Handle Exceptions::new_exception(Thread *thread, Symbol* name,
   Handle h_exception;
 
   // Resolve exception klass
-  klassOop ik = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
+  Klass* ik = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
   instanceKlassHandle klass(thread, ik);
 
   if (!thread->has_pending_exception()) {
@@ -451,7 +451,7 @@ void Exceptions::debug_check_abort(Handle exception, const char* message) {
         message = java_lang_String::as_utf8_string(msg);
       }
     }
-    debug_check_abort(instanceKlass::cast(exception()->klass())->external_name(), message);
+    debug_check_abort(InstanceKlass::cast(exception()->klass())->external_name(), message);
   }
 }
 #endif

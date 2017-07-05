@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,24 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   }
   if (_id == load_klass_id) {
     // produce a copy of the load klass instruction for use by the being initialized case
+#ifdef ASSERT
     address start = __ pc();
+#endif
+    Metadata* o = NULL;
+    __ mov_metadata(_obj, o);
+#ifdef ASSERT
+    for (int i = 0; i < _bytes_to_copy; i++) {
+      address ptr = (address)(_pc_start + i);
+      int a_byte = (*ptr) & 0xFF;
+      assert(a_byte == *start++, "should be the same code");
+    }
+#endif
+  } else if (_id == load_mirror_id) {
+    // produce a copy of the load mirror instruction for use by the being
+    // initialized case
+#ifdef ASSERT
+    address start = __ pc();
+#endif
     jobject o = NULL;
     __ movoop(_obj, o);
 #ifdef ASSERT
@@ -306,7 +323,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address end_of_patch = __ pc();
   int bytes_to_skip = 0;
-  if (_id == load_klass_id) {
+  if (_id == load_mirror_id) {
     int offset = __ offset();
     if (CommentedAssembly) {
       __ block_comment(" being_initialized check");
@@ -318,9 +335,9 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     __ push(tmp2);
     // Load without verification to keep code size small. We need it because
     // begin_initialized_entry_offset has to fit in a byte. Also, we know it's not null.
-    __ load_heap_oop_not_null(tmp2, Address(_obj, java_lang_Class::klass_offset_in_bytes()));
+    __ movptr(tmp2, Address(_obj, java_lang_Class::klass_offset_in_bytes()));
     __ get_thread(tmp);
-    __ cmpptr(tmp, Address(tmp2, instanceKlass::init_thread_offset()));
+    __ cmpptr(tmp, Address(tmp2, InstanceKlass::init_thread_offset()));
     __ pop(tmp2);
     __ pop(tmp);
     __ jcc(Assembler::notEqual, call_patch);
@@ -357,9 +374,11 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   address entry = __ pc();
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
   address target = NULL;
+  relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
     case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;
-    case load_klass_id:    target = Runtime1::entry_for(Runtime1::load_klass_patching_id); break;
+    case load_klass_id:    target = Runtime1::entry_for(Runtime1::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
+    case load_mirror_id:   target = Runtime1::entry_for(Runtime1::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);
@@ -377,10 +396,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   for (int j = __ offset() ; j < jmp_off + 5 ; j++ ) {
     __ nop();
   }
-  if (_id == load_klass_id) {
+  if (_id == load_klass_id || _id == load_mirror_id) {
     CodeSection* cs = __ code_section();
     RelocIterator iter(cs, (address)_pc_start, (address)(_pc_start + 1));
-    relocInfo::change_reloc_info_for_address(&iter, (address) _pc_start, relocInfo::oop_type, relocInfo::none);
+    relocInfo::change_reloc_info_for_address(&iter, (address) _pc_start, reloc_type, relocInfo::none);
   }
 }
 
@@ -420,7 +439,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   //---------------slow case: call to native-----------------
   __ bind(_entry);
   // Figure out where the args should go
-  // This should really convert the IntrinsicID to the methodOop and signature
+  // This should really convert the IntrinsicID to the Method* and signature
   // but I don't know how to do that.
   //
   VMRegPair args[5];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@ public class LocalVariableTableElement {
   private static long offsetOfSignatureCPIndex;
   private static long offsetOfSlot;
 
-  private OopHandle handle;
+  private Address   handle;
   private long      offset;
 
-  public LocalVariableTableElement(OopHandle handle, long offset) {
+  public LocalVariableTableElement(Address handle, long offset) {
     this.handle = handle;
     this.offset = offset;
   }

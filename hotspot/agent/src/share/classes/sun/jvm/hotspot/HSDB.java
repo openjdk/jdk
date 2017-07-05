@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -998,7 +998,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                                                        curFrame.addressOfInterpreterFrameLocal((int) interpreterFrameMethod.getMaxLocals() + offset),
                                                        "Interpreter locals area for frame with SP = " + curFrame.getSP()));
               }
-              String methodAnno = "Interpreter frame methodOop";
+              String methodAnno = "Interpreter frame Method*";
               if (interpreterFrameMethod == null) {
                 methodAnno += " (BAD OOP)";
               }
@@ -1054,13 +1054,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                             }
                           }
 
-                          if (bad) {
-                            // Try perm gen
-                            if (heap.permGen().isIn(handle)) {
-                              anno = "PermGen ";
-                              bad = false;
-                            }
-                          }
                         } else if (collHeap instanceof ParallelScavengeHeap) {
                           ParallelScavengeHeap heap = (ParallelScavengeHeap) collHeap;
                           if (heap.youngGen().isIn(handle)) {
@@ -1068,9 +1061,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                             bad = false;
                           } else if (heap.oldGen().isIn(handle)) {
                             anno = "PSOldGen ";
-                            bad = false;
-                          } else if (heap.permGen().isIn(handle)) {
-                            anno = "PSPermGen ";
                             bad = false;
                           }
                         } else {

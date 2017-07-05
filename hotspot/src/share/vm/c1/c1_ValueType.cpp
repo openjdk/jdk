@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,22 +85,6 @@ ValueType* ValueType::join(ValueType* y) const {
 }
 
 
-
-jobject ObjectType::encoding() const {
-  assert(is_constant(), "must be");
-  return constant_value()->constant_encoding();
-}
-
-bool ObjectType::is_loaded() const {
-  assert(is_constant(), "must be");
-  return constant_value()->is_loaded();
-}
-
-ciObject* ObjectConstant::constant_value() const                   { return _value; }
-ciObject* ArrayConstant::constant_value() const                    { return _value; }
-ciObject* InstanceConstant::constant_value() const                 { return _value; }
-ciObject* ClassConstant::constant_value() const                    { return _value; }
-
 ciType* ObjectConstant::exact_type() const {
   ciObject* c = constant_value();
   return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
@@ -114,10 +98,28 @@ ciType* InstanceConstant::exact_type() const {
   return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
 }
 ciType* ClassConstant::exact_type() const {
-  ciObject* c = constant_value();
-  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+  return Compilation::current()->env()->Class_klass();
 }
 
+
+jobject ObjectType::encoding() const {
+  assert(is_constant(), "must be");
+  return constant_value()->constant_encoding();
+}
+
+bool ObjectType::is_loaded() const {
+  assert(is_constant(), "must be");
+  return constant_value()->is_loaded();
+}
+
+bool MetadataType::is_loaded() const {
+  assert(is_constant(), "must be");
+  return constant_value()->is_loaded();
+}
+
+ciObject* ObjectConstant::constant_value() const                   { return _value; }
+ciObject* ArrayConstant::constant_value() const                    { return _value; }
+ciObject* InstanceConstant::constant_value() const                 { return _value; }
 
 ValueType* as_ValueType(BasicType type) {
   switch (type) {
@@ -166,6 +168,7 @@ BasicType as_BasicType(ValueType* type) {
     case floatTag:   return T_FLOAT;
     case doubleTag:  return T_DOUBLE;
     case objectTag:  return T_OBJECT;
+    case metaDataTag:return T_METADATA;
     case addressTag: return T_ADDRESS;
     case illegalTag: return T_ILLEGAL;
   }

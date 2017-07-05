@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
 #define SHARE_VM_OOPS_TYPEARRAYKLASS_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
 
 // A typeArrayKlass is the klass of a typeArray
@@ -34,7 +35,13 @@ class typeArrayKlass : public arrayKlass {
   friend class VMStructs;
  private:
   jint _max_length;            // maximum number of elements allowed in an array
+
+  // Constructor
+  typeArrayKlass(BasicType type, Symbol* name);
+  static typeArrayKlass* allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
  public:
+  typeArrayKlass() {} // For dummy objects.
+
   // instance variables
   jint max_length()                     { return _max_length; }
   void set_max_length(jint m)           { _max_length = m;    }
@@ -43,30 +50,29 @@ class typeArrayKlass : public arrayKlass {
   bool oop_is_typeArray_slow() const    { return true; }
 
   // klass allocation
-  DEFINE_ALLOCATE_PERMANENT(typeArrayKlass);
-  static klassOop create_klass(BasicType type, int scale, const char* name_str,
+  static typeArrayKlass* create_klass(BasicType type, const char* name_str,
                                TRAPS);
-  static inline klassOop create_klass(BasicType type, int scale, TRAPS) {
-    return create_klass(type, scale, external_name(type), CHECK_NULL);
+  static inline Klass* create_klass(BasicType type, int scale, TRAPS) {
+    typeArrayKlass* tak = create_klass(type, external_name(type), CHECK_NULL);
+    assert(scale == (1 << tak->log2_element_size()), "scale must check out");
+    return tak;
   }
 
   int oop_size(oop obj) const;
-  int klass_oop_size() const  { return object_size(); }
 
-  bool compute_is_subtype_of(klassOop k);
+  bool compute_is_subtype_of(Klass* k);
 
   // Allocation
   typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
   typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
-  typeArrayOop allocate_permanent(int length, TRAPS);  // used for class file structures
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
   // Iteration
-  int oop_oop_iterate(oop obj, OopClosure* blk);
-  int oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr);
+  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk);
+  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr);
 
   // Garbage collection
   void oop_follow_contents(oop obj);
@@ -77,37 +83,37 @@ class typeArrayKlass : public arrayKlass {
 
  protected:
   // Find n'th dimensional array
-  virtual klassOop array_klass_impl(bool or_null, int n, TRAPS);
+  virtual Klass* array_klass_impl(bool or_null, int n, TRAPS);
 
   // Returns the array class with this class as element type
-  virtual klassOop array_klass_impl(bool or_null, TRAPS);
+  virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
  public:
-  // Casting from klassOop
-  static typeArrayKlass* cast(klassOop k) {
-    assert(k->klass_part()->oop_is_typeArray_slow(), "cast to typeArrayKlass");
-    return (typeArrayKlass*) k->klass_part();
+  // Casting from Klass*
+  static typeArrayKlass* cast(Klass* k) {
+    assert(k->oop_is_typeArray(), "cast to typeArrayKlass");
+    return (typeArrayKlass*) k;
   }
 
   // Naming
   static const char* external_name(BasicType type);
 
   // Sizing
-  static int header_size()  { return oopDesc::header_size() + sizeof(typeArrayKlass)/HeapWordSize; }
-  int object_size() const   { return arrayKlass::object_size(header_size()); }
+  static int header_size()  { return sizeof(typeArrayKlass)/HeapWordSize; }
+  int size() const          { return arrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)
   void initialize(TRAPS);
 
- private:
-   // Helpers
-   static klassOop array_klass_impl(typeArrayKlassHandle h_this, bool or_null, int n, TRAPS);
-
-#ifndef PRODUCT
  public:
   // Printing
+#ifndef PRODUCT
   void oop_print_on(oop obj, outputStream* st);
 #endif
+
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
  public:
   const char* internal_name() const;
 };

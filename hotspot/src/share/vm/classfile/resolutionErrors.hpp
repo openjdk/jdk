@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_RESOLUTIONERRORS_HPP
 #define SHARE_VM_CLASSFILE_RESOLUTIONERRORS_HPP
 
-#include "oops/constantPoolOop.hpp"
+#include "oops/constantPool.hpp"
 #include "utilities/hashtable.hpp"
 
 class ResolutionErrorEntry;
@@ -33,25 +33,25 @@ class ResolutionErrorEntry;
 // ResolutionError objects are used to record errors encountered during
 // constant pool resolution (JVMS 5.4.3).
 
-class ResolutionErrorTable : public Hashtable<constantPoolOop, mtClass> {
+class ResolutionErrorTable : public Hashtable<ConstantPool*, mtClass> {
 
 public:
   ResolutionErrorTable(int table_size);
 
-  ResolutionErrorEntry* new_entry(int hash, constantPoolOop pool, int cp_index, Symbol* error);
+  ResolutionErrorEntry* new_entry(int hash, ConstantPool* pool, int cp_index, Symbol* error);
   void free_entry(ResolutionErrorEntry *entry);
 
   ResolutionErrorEntry* bucket(int i) {
-    return (ResolutionErrorEntry*)Hashtable<constantPoolOop, mtClass>::bucket(i);
+    return (ResolutionErrorEntry*)Hashtable<ConstantPool*, mtClass>::bucket(i);
   }
 
   ResolutionErrorEntry** bucket_addr(int i) {
-    return (ResolutionErrorEntry**)Hashtable<constantPoolOop, mtClass>::bucket_addr(i);
+    return (ResolutionErrorEntry**)Hashtable<ConstantPool*, mtClass>::bucket_addr(i);
   }
 
   void add_entry(int index, ResolutionErrorEntry* new_entry) {
-    Hashtable<constantPoolOop, mtClass>::add_entry(index,
-      (HashtableEntry<constantPoolOop, mtClass>*)new_entry);
+    Hashtable<ConstantPool*, mtClass>::add_entry(index,
+      (HashtableEntry<ConstantPool*, mtClass>*)new_entry);
   }
 
   void add_entry(int index, unsigned int hash,
@@ -68,21 +68,21 @@ public:
   }
 
   // purges unloaded entries from the table
-  void purge_resolution_errors(BoolObjectClosure* is_alive);
+  void purge_resolution_errors();
 
-  // GC support.
-  void oops_do(OopClosure* f);
+  // RedefineClasses support - remove obsolete constant pool entry
+  void delete_entry(ConstantPool* c);
 };
 
 
-class ResolutionErrorEntry : public HashtableEntry<constantPoolOop, mtClass> {
+class ResolutionErrorEntry : public HashtableEntry<ConstantPool*, mtClass> {
  private:
   int               _cp_index;
   Symbol*           _error;
 
  public:
-  constantPoolOop    pool() const               { return (constantPoolOop)literal(); }
-  constantPoolOop*   pool_addr()                { return (constantPoolOop*)literal_addr(); }
+  ConstantPool*      pool() const               { return (ConstantPool*)literal(); }
+  ConstantPool**   pool_addr()                { return (ConstantPool**)literal_addr(); }
 
   int                cp_index() const           { return _cp_index; }
   void               set_cp_index(int cp_index) { _cp_index = cp_index; }
@@ -91,15 +91,12 @@ class ResolutionErrorEntry : public HashtableEntry<constantPoolOop, mtClass> {
   void               set_error(Symbol* e);
 
   ResolutionErrorEntry* next() const {
-    return (ResolutionErrorEntry*)HashtableEntry<constantPoolOop, mtClass>::next();
+    return (ResolutionErrorEntry*)HashtableEntry<ConstantPool*, mtClass>::next();
   }
 
   ResolutionErrorEntry** next_addr() {
-    return (ResolutionErrorEntry**)HashtableEntry<constantPoolOop, mtClass>::next_addr();
+    return (ResolutionErrorEntry**)HashtableEntry<ConstantPool*, mtClass>::next_addr();
   }
-
-  // GC support
-  void oops_do(OopClosure* blk);
 };
 
 #endif // SHARE_VM_CLASSFILE_RESOLUTIONERRORS_HPP

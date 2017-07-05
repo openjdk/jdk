@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,8 @@ class GenerationSizer : public TwoGenerationCollectorPolicy {
   size_t old_gen_size()       { return _initial_gen1_size; }
   size_t max_old_gen_size()   { return _max_gen1_size; }
 
-  size_t perm_gen_size()      { return PermSize; }
-  size_t max_perm_gen_size()  { return MaxPermSize; }
+  size_t metaspace_size()      { return MetaspaceSize; }
+  size_t max_metaspace_size()  { return MaxMetaspaceSize; }
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP

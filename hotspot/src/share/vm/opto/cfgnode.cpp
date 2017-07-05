@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1936,7 +1936,7 @@ const RegMask &PhiNode::in_RegMask(uint i) const {
 }
 
 const RegMask &PhiNode::out_RegMask() const {
-  uint ideal_reg = Matcher::base2reg[_type->base()];
+  uint ideal_reg = _type->ideal_reg();
   assert( ideal_reg != Node::NotAMachineReg, "invalid type at Phi" );
   if( ideal_reg == 0 ) return RegMask::Empty;
   return *(Compile::current()->matcher()->idealreg2spillmask[ideal_reg]);

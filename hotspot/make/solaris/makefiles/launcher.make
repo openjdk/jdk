@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ LAUNCHERFLAGS = $(ARCHFLAG) \
 
 ifeq ($(LINK_INTO),AOUT)
   LAUNCHER.o                 = launcher.o $(JVM_OBJ_FILES)
-  LAUNCHER_MAPFILE           = mapfile_reorder
+  LAUNCHER_MAPFILE           = mapfile_extended
   LFLAGS_LAUNCHER$(LDNOMAP) += $(MAPFLAG:FILENAME=$(LAUNCHER_MAPFILE))
   LIBS_LAUNCHER             += $(LIBS)
 else

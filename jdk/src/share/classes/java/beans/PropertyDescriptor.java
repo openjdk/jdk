@@ -632,6 +632,16 @@ public class PropertyDescriptor extends FeatureDescriptor {
         constrained = old.constrained;
     }
 
+    void updateGenericsFor(Class<?> type) {
+        setClass0(type);
+        try {
+            setPropertyType(findPropertyType(getReadMethod0(), getWriteMethod0()));
+        }
+        catch (IntrospectionException exception) {
+            setPropertyType(null);
+        }
+    }
+
     /**
      * Returns the property type that corresponds to the read and write method.
      * The type precedence is given to the readMethod.

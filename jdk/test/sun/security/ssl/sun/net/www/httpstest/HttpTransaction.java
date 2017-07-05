@@ -37,7 +37,7 @@ public class HttpTransaction {
 
     String command;
     URI requesturi;
-    HttpServer.ServerWorker server;
+    TestHttpsServer.ServerWorker server;
     MessageHeader reqheaders, reqtrailers;
     String reqbody;
     byte[] rspbody;
@@ -46,7 +46,7 @@ public class HttpTransaction {
     int rspbodylen;
     boolean rspchunked;
 
-    HttpTransaction (HttpServer.ServerWorker server, String command,
+    HttpTransaction (TestHttpsServer.ServerWorker server, String command,
                         URI requesturi, MessageHeader headers,
                         String body, MessageHeader trailers, SocketChannel ch) {
         this.command = command;
@@ -290,7 +290,7 @@ public class HttpTransaction {
      * @param rTag the response string to send with the response code
      */
     public void sendResponse (int rCode, String rTag) throws IOException {
-        OutputStream os = new HttpServer.NioOutputStream(channel(), server.getSSLEngine(), server.outNetBB(), server.outAppBB());
+        OutputStream os = new TestHttpsServer.NioOutputStream(channel(), server.getSSLEngine(), server.outNetBB(), server.outAppBB());
         PrintStream ps = new PrintStream (os);
         ps.print ("HTTP/1.1 " + rCode + " " + rTag + "\r\n");
         if (rspheaders != null) {
@@ -314,7 +314,7 @@ public class HttpTransaction {
     /* sends one byte less than intended */
 
     public void sendPartialResponse (int rCode, String rTag)throws IOException {
-        OutputStream os = new HttpServer.NioOutputStream(channel(), server.getSSLEngine(), server.outNetBB(), server.outAppBB());
+        OutputStream os = new TestHttpsServer.NioOutputStream(channel(), server.getSSLEngine(), server.outNetBB(), server.outAppBB());
         PrintStream ps = new PrintStream (os);
         ps.print ("HTTP/1.1 " + rCode + " " + rTag + "\r\n");
         ps.flush();

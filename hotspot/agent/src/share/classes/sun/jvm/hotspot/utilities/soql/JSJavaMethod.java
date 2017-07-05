@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 
 /**
- * Wraps a methodOop from the debuggee VM.
+ * Wraps a Method* from the debuggee VM.
  */
-public class JSJavaMethod extends JSJavaObject {
+public class JSJavaMethod extends JSMetadata {
    private static final int FIELD_NAME               = 0;
    private static final int FIELD_SIGNATURE          = 1;
    private static final int FIELD_HOLDER             = 2;
@@ -54,7 +54,7 @@ public class JSJavaMethod extends JSJavaObject {
    }
 
    public final Method getMethod() {
-      return (Method) getOop();
+      return (Method) getMetadata();
    }
 
    public Object get(String name) {

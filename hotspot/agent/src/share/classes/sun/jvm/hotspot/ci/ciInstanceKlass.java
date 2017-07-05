@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ public class ciInstanceKlass extends ciKlass {
     Type type      = db.lookupType("ciInstanceKlass");
     initStateField = new CIntField(type.getCIntegerField("_init_state"), 0);
     isSharedField = new CIntField(type.getCIntegerField("_is_shared"), 0);
-    CLASS_STATE_LINKED = db.lookupIntConstant("instanceKlass::linked").intValue();
-    CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("instanceKlass::fully_initialized").intValue();
+    CLASS_STATE_LINKED = db.lookupIntConstant("InstanceKlass::linked").intValue();
+    CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
   }
 
   private static CIntField initStateField;
@@ -63,7 +63,7 @@ public class ciInstanceKlass extends ciKlass {
   public int initState() {
     int initState = (int)initStateField.getValue(getAddress());
     if (isShared() && initState < CLASS_STATE_LINKED) {
-      InstanceKlass ik = (InstanceKlass)getOop();
+      InstanceKlass ik = (InstanceKlass)getMetadata();
       initState = ik.getInitStateAsInt();
     }
     return initState;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
@@ -480,10 +480,10 @@ class SlowSignatureHandler
 
 IRT_ENTRY(address,
           InterpreterRuntime::slow_signature_handler(JavaThread* thread,
-                                                     methodOopDesc* method,
+                                                     Method* method,
                                                      intptr_t* from,
                                                      intptr_t* to))
-  methodHandle m(thread, (methodOop)method);
+  methodHandle m(thread, (Method*)method);
   assert(m->is_native(), "sanity check");
 
   // handle arguments

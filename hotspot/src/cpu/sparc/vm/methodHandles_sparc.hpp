@@ -35,13 +35,13 @@ public:
   static void load_klass_from_Class(MacroAssembler* _masm, Register klass_reg, Register temp_reg, Register temp2_reg);
 
   static void verify_klass(MacroAssembler* _masm,
-                           Register obj_reg, KlassHandle klass,
+                           Register obj_reg, SystemDictionary::WKID klass_id,
                            Register temp_reg, Register temp2_reg,
                            const char* error_message = "wrong klass") NOT_DEBUG_RETURN;
 
   static void verify_method_handle(MacroAssembler* _masm, Register mh_reg,
                                    Register temp_reg, Register temp2_reg) {
-    verify_klass(_masm, mh_reg, SystemDictionaryHandles::MethodHandle_klass(),
+    verify_klass(_masm, mh_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_invoke_MethodHandle),
                  temp_reg, temp2_reg,
                  "reference is a MH");
   }

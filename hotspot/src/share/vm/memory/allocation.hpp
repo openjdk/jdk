@@ -70,6 +70,9 @@
 // For classes used as name spaces.
 // - AllStatic
 //
+// For classes in Metaspace (class data)
+// - MetaspaceObj
+//
 // The printable subclasses are used for debugging and define virtual
 // member functions for printing. Classes that avoid allocating the
 // vtbl entries in the objects should therefore not be the printable
@@ -211,6 +214,29 @@ class _ValueObj {
   void operator delete(void* p);
 };
 
+
+// Base class for objects stored in Metaspace.
+// Calling delete will result in fatal error.
+//
+// Do not inherit from something with a vptr because this class does
+// not introduce one.  This class is used to allocate both shared read-only
+// and shared read-write classes.
+//
+
+class ClassLoaderData;
+
+class MetaspaceObj {
+ public:
+  bool is_metadata() const;
+  bool is_shared() const;
+  void print_address_on(outputStream* st) const;  // nonvirtual address printing
+
+  void* operator new(size_t size, ClassLoaderData* loader_data,
+                     size_t word_size, bool read_only, Thread* thread);
+                     // can't use TRAPS from this header file.
+  void operator delete(void* p) { ShouldNotCallThis(); }
+};
+
 // Base class for classes that constitute name spaces.
 
 class AllStatic {
@@ -252,6 +278,7 @@ class Chunk: CHeapObj<mtChunk> {
   void chop();                  // Chop this chunk
   void next_chop();             // Chop next chunk
   static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
+  static size_t aligned_overhead_size(size_t byte_size) { return ARENA_ALIGN(byte_size); }
 
   size_t length() const         { return _len;  }
   Chunk* next() const           { return _next;  }

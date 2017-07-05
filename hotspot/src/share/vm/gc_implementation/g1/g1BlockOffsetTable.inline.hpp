@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,10 @@ G1BlockOffsetSharedArray::address_for_index(size_t index) const {
   assert(index < _vs.committed_size(), "bad index");
   HeapWord* result = _reserved.start() + (index << LogN_words);
   assert(result >= _reserved.start() && result < _reserved.end(),
-         "bad address from index");
+         err_msg("bad address from index result " PTR_FORMAT
+                 " _reserved.start() " PTR_FORMAT " _reserved.end() "
+                 PTR_FORMAT,
+                 result, _reserved.start(), _reserved.end()));
   return result;
 }
 

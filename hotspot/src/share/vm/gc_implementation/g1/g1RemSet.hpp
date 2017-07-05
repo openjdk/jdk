@@ -153,7 +153,7 @@ public:
   HeapWord* start_first() { return _start_first; }
 };
 
-class UpdateRSOopClosure: public OopClosure {
+class UpdateRSOopClosure: public ExtendedOopClosure {
   HeapRegion* _from;
   G1RemSet* _rs;
   int _worker_i;
