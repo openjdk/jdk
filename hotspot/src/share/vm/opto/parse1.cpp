@@ -1404,7 +1404,8 @@ void Parse::do_one_block() {
 
     do_one_bytecode();
 
-    assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth, "correct depth prediction");
+    assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
+           err_msg_res("incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth));
 
     do_exceptions();
 

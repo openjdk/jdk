@@ -38,7 +38,8 @@ class outputStream;
 typedef Array<u1> AnnotationArray;
 
 // Class to hold the various types of annotations. The only metadata that points
-// to this is InstanceKlass.
+// to this is InstanceKlass, or another Annotations instance if this is a
+// a type_annotation instance.
 
 class Annotations: public MetaspaceObj {
 
@@ -58,6 +59,8 @@ class Annotations: public MetaspaceObj {
   // such annotations.
   // Index is the idnum, which is initially the same as the methods array index.
   Array<AnnotationArray*>*     _methods_default_annotations;
+  // Type annotations for this class, or null if none.
+  Annotations*                 _type_annotations;
 
   // Constructor where some some values are known to not be null
   Annotations(Array<AnnotationArray*>* fa, Array<AnnotationArray*>* ma,
@@ -66,7 +69,8 @@ class Annotations: public MetaspaceObj {
                  _fields_annotations(fa),
                  _methods_annotations(ma),
                  _methods_parameter_annotations(mpa),
-                 _methods_default_annotations(mda) {}
+                 _methods_default_annotations(mda),
+                 _type_annotations(NULL) {}
 
  public:
   // Allocate instance of this class
@@ -81,22 +85,26 @@ class Annotations: public MetaspaceObj {
   static int size()    { return sizeof(Annotations) / wordSize; }
 
   // Constructor to initialize to null
-  Annotations() : _class_annotations(NULL), _fields_annotations(NULL),
+  Annotations() : _class_annotations(NULL),
+                  _fields_annotations(NULL),
                   _methods_annotations(NULL),
                   _methods_parameter_annotations(NULL),
-                  _methods_default_annotations(NULL) {}
+                  _methods_default_annotations(NULL),
+                  _type_annotations(NULL) {}
 
   AnnotationArray* class_annotations() const                       { return _class_annotations; }
   Array<AnnotationArray*>* fields_annotations() const              { return _fields_annotations; }
   Array<AnnotationArray*>* methods_annotations() const             { return _methods_annotations; }
   Array<AnnotationArray*>* methods_parameter_annotations() const   { return _methods_parameter_annotations; }
   Array<AnnotationArray*>* methods_default_annotations() const     { return _methods_default_annotations; }
+  Annotations* type_annotations() const                            { return _type_annotations; }
 
   void set_class_annotations(AnnotationArray* md)                     { _class_annotations = md; }
   void set_fields_annotations(Array<AnnotationArray*>* md)            { _fields_annotations = md; }
   void set_methods_annotations(Array<AnnotationArray*>* md)           { _methods_annotations = md; }
   void set_methods_parameter_annotations(Array<AnnotationArray*>* md) { _methods_parameter_annotations = md; }
   void set_methods_default_annotations(Array<AnnotationArray*>* md)   { _methods_default_annotations = md; }
+  void set_type_annotations(Annotations* annos)                       { _type_annotations = annos; }
 
   // Redefine classes support
   AnnotationArray* get_method_annotations_of(int idnum)
@@ -129,6 +137,7 @@ class Annotations: public MetaspaceObj {
   inline AnnotationArray* get_method_annotations_from(int idnum, Array<AnnotationArray*>* annos);
   void set_annotations(Array<AnnotationArray*>* md, Array<AnnotationArray*>** md_p)  { *md_p = md; }
 
+  bool is_klass() const { return false; }
  private:
   void set_methods_annotations_of(instanceKlassHandle ik,
                                   int idnum, AnnotationArray* anno,

@@ -417,7 +417,7 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 
     // exception handler lookup
     KlassHandle h_klass(THREAD, h_exception->klass());
-    handler_bci = h_method->fast_exception_handler_bci_for(h_klass, current_bci, THREAD);
+    handler_bci = Method::fast_exception_handler_bci_for(h_method, h_klass, current_bci, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // We threw an exception while trying to find the exception handler.
       // Transfer the new exception to the exception handle which will

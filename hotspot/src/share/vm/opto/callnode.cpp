@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "compiler/oopMap.hpp"
+#include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/locknode.hpp"
@@ -775,14 +776,36 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
   // and the exception object may not exist if an exception handler
   // swallows the exception but all the other must exist and be found.
   assert(projs->fallthrough_proj      != NULL, "must be found");
-  assert(projs->fallthrough_catchproj != NULL, "must be found");
-  assert(projs->fallthrough_memproj   != NULL, "must be found");
-  assert(projs->fallthrough_ioproj    != NULL, "must be found");
-  assert(projs->catchall_catchproj    != NULL, "must be found");
+  assert(Compile::current()->inlining_incrementally() || projs->fallthrough_catchproj != NULL, "must be found");
+  assert(Compile::current()->inlining_incrementally() || projs->fallthrough_memproj   != NULL, "must be found");
+  assert(Compile::current()->inlining_incrementally() || projs->fallthrough_ioproj    != NULL, "must be found");
+  assert(Compile::current()->inlining_incrementally() || projs->catchall_catchproj    != NULL, "must be found");
   if (separate_io_proj) {
-    assert(projs->catchall_memproj      != NULL, "must be found");
-    assert(projs->catchall_ioproj       != NULL, "must be found");
+    assert(Compile::current()->inlining_incrementally() || projs->catchall_memproj    != NULL, "must be found");
+    assert(Compile::current()->inlining_incrementally() || projs->catchall_ioproj     != NULL, "must be found");
   }
+}
+
+Node *CallNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  CallGenerator* cg = generator();
+  if (can_reshape && cg != NULL && cg->is_mh_late_inline() && !cg->already_attempted()) {
+    // Check whether this MH handle call becomes a candidate for inlining
+    ciMethod* callee = cg->method();
+    vmIntrinsics::ID iid = callee->intrinsic_id();
+    if (iid == vmIntrinsics::_invokeBasic) {
+      if (in(TypeFunc::Parms)->Opcode() == Op_ConP) {
+        phase->C->prepend_late_inline(cg);
+        set_generator(NULL);
+      }
+    } else {
+      assert(callee->has_member_arg(), "wrong type of call?");
+      if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
+        phase->C->prepend_late_inline(cg);
+        set_generator(NULL);
+      }
+    }
+  }
+  return SafePointNode::Ideal(phase, can_reshape);
 }
 
 

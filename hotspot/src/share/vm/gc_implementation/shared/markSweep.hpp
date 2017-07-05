@@ -44,21 +44,6 @@ class DataLayout;
 //
 // Class unloading will only occur when a full gc is invoked.
 
-// If VALIDATE_MARK_SWEEP is defined, the -XX:+ValidateMarkSweep flag will
-// be operational, and will provide slow but comprehensive self-checks within
-// the GC.  This is not enabled by default in product or release builds,
-// since the extra call to track_adjusted_pointer() in _adjust_pointer()
-// would be too much overhead, and would disturb performance measurement.
-// However, debug builds are sometimes way too slow to run GC tests!
-#ifdef ASSERT
-#define VALIDATE_MARK_SWEEP 1
-#endif
-#ifdef VALIDATE_MARK_SWEEP
-#define VALIDATE_MARK_SWEEP_ONLY(code) code
-#else
-#define VALIDATE_MARK_SWEEP_ONLY(code)
-#endif
-
 // declared at end
 class PreservedMark;
 
@@ -147,33 +132,6 @@ class MarkSweep : AllStatic {
   // Reference processing (used in ...follow_contents)
   static ReferenceProcessor*             _ref_processor;
 
-#ifdef VALIDATE_MARK_SWEEP
-  static GrowableArray<void*>*           _root_refs_stack;
-  static GrowableArray<oop> *            _live_oops;
-  static GrowableArray<oop> *            _live_oops_moved_to;
-  static GrowableArray<size_t>*          _live_oops_size;
-  static size_t                          _live_oops_index;
-  static size_t                          _live_oops_index_at_perm;
-  static GrowableArray<void*>*           _other_refs_stack;
-  static GrowableArray<void*>*           _adjusted_pointers;
-  static bool                            _pointer_tracking;
-  static bool                            _root_tracking;
-
-  // The following arrays are saved since the time of the last GC and
-  // assist in tracking down problems where someone has done an errant
-  // store into the heap, usually to an oop that wasn't properly
-  // handleized across a GC. If we crash or otherwise fail before the
-  // next GC, we can query these arrays to find out the object we had
-  // intended to do the store to (assuming it is still alive) and the
-  // offset within that object. Covered under RecordMarkSweepCompaction.
-  static GrowableArray<HeapWord*> *      _cur_gc_live_oops;
-  static GrowableArray<HeapWord*> *      _cur_gc_live_oops_moved_to;
-  static GrowableArray<size_t>*          _cur_gc_live_oops_size;
-  static GrowableArray<HeapWord*> *      _last_gc_live_oops;
-  static GrowableArray<HeapWord*> *      _last_gc_live_oops_moved_to;
-  static GrowableArray<size_t>*          _last_gc_live_oops_size;
-#endif
-
   // Non public closures
   static KeepAliveClosure keep_alive;
 
@@ -227,24 +185,6 @@ class MarkSweep : AllStatic {
   static void adjust_pointer(oop* p)       { adjust_pointer(p, false); }
   static void adjust_pointer(narrowOop* p) { adjust_pointer(p, false); }
 
-#ifdef VALIDATE_MARK_SWEEP
-  static void track_adjusted_pointer(void* p, bool isroot);
-  static void check_adjust_pointer(void* p);
-  static void track_interior_pointers(oop obj);
-  static void check_interior_pointers();
-
-  static void reset_live_oop_tracking();
-  static void register_live_oop(oop p, size_t size);
-  static void validate_live_oop(oop p, size_t size);
-  static void live_oop_moved_to(HeapWord* q, size_t size, HeapWord* compaction_top);
-  static void compaction_complete();
-
-  // Querying operation of RecordMarkSweepCompaction results.
-  // Finds and prints the current base oop and offset for a word
-  // within an oop that was live during the last GC. Helpful for
-  // tracking down heap stomps.
-  static void print_new_location_of_heap_address(HeapWord* q);
-#endif
 };
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {

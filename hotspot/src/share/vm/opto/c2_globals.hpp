@@ -606,6 +606,16 @@
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
+                                                                            \
+  product(bool, IncrementalInline, true,                                    \
+          "do post parse inlining")                                         \
+                                                                            \
+  develop(bool, AlwaysIncrementalInline, false,                             \
+          "do all inlining incrementally")                                  \
+                                                                            \
+  product(intx, LiveNodeCountInliningCutoff, 20000,                         \
+          "max number of live nodes in a method")                           \
+
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)
 

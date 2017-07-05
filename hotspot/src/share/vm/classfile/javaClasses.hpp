@@ -554,6 +554,7 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static int annotations_offset;
   static int parameter_annotations_offset;
   static int annotation_default_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -599,6 +600,10 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop method);
+  static void set_type_annotations(oop method, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -618,6 +623,7 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static int signature_offset;
   static int annotations_offset;
   static int parameter_annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -653,6 +659,10 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static oop parameter_annotations(oop method);
   static void set_parameter_annotations(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop constructor);
+  static void set_type_annotations(oop constructor, oop value);
+
   // Debugging
   friend class JavaClasses;
 };
@@ -671,6 +681,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int modifiers_offset;
   static int signature_offset;
   static int annotations_offset;
+  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -710,7 +721,42 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
 
+  static bool has_type_annotations_field();
+  static oop type_annotations(oop field);
+  static void set_type_annotations(oop field, oop value);
+
   // Debugging
+  friend class JavaClasses;
+};
+
+class java_lang_reflect_Parameter {
+ private:
+  // Note that to reduce dependencies on the JDK we compute these
+  // offsets at run-time.
+  static int name_offset;
+  static int modifiers_offset;
+  static int index_offset;
+  static int executable_offset;
+
+  static void compute_offsets();
+
+ public:
+  // Allocation
+  static Handle create(TRAPS);
+
+  // Accessors
+  static oop name(oop field);
+  static void set_name(oop field, oop value);
+
+  static int index(oop reflect);
+  static void set_index(oop reflect, int value);
+
+  static int modifiers(oop reflect);
+  static void set_modifiers(oop reflect, int value);
+
+  static oop executable(oop constructor);
+  static void set_executable(oop constructor, oop value);
+
   friend class JavaClasses;
 };
 

@@ -77,9 +77,18 @@
 // |  (access flags bit tells whether table is present)   |
 // |  (indexed from end of ConstMethod*)                  |
 // |------------------------------------------------------|
+// | method parameters elements + length (length last)    |
+// |  (length is u2, elements are u2, u4 structures)      |
+// |  (see class MethodParametersElement)                 |
+// |  (access flags bit tells whether table is present)   |
+// |  (indexed from end of ConstMethod*)                  |
+// |------------------------------------------------------|
 // | generic signature index (u2)                         |
 // |  (indexed from start of constMethodOop)              |
 // |------------------------------------------------------|
+//
+// IMPORTANT: If anything gets added here, there need to be changes to
+// ensure that ServicabilityAgent doesn't get broken as a result!
 
 
 // Utitily class decribing elements in checked exceptions table inlined in Method*.
@@ -109,6 +118,13 @@ class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
   u2 catch_type_index;
 };
 
+// Utility class describing elements in method parameters
+class MethodParametersElement VALUE_OBJ_CLASS_SPEC {
+ public:
+  u2 name_cp_index;
+  u4 flags;
+};
+
 
 class ConstMethod : public MetaspaceObj {
   friend class VMStructs;
@@ -123,7 +139,8 @@ private:
     _has_localvariable_table = 4,
     _has_exception_table = 8,
     _has_generic_signature = 16,
-    _is_overpass = 32
+    _has_method_parameters = 32,
+    _is_overpass = 64
   };
 
   // Bit vector of signature
@@ -160,6 +177,7 @@ private:
               int localvariable_table_length,
               int exception_table_length,
               int checked_exceptions_length,
+              int method_parameters_length,
               u2  generic_signature_index,
               MethodType is_overpass,
               int size);
@@ -171,6 +189,7 @@ public:
                                int localvariable_table_length,
                                int exception_table_length,
                                int checked_exceptions_length,
+                               int method_parameters_length,
                                u2  generic_signature_index,
                                MethodType mt,
                                TRAPS);
@@ -182,7 +201,8 @@ public:
                                  int checked_exceptions_len,
                                  int compressed_line_number_size,
                                  int localvariable_table_len,
-                                 int exception_table_len);
+                                 int exception_table_len,
+                                 int method_parameters_length);
 
   bool has_generic_signature() const
     { return (_flags & _has_generic_signature) != 0; }
@@ -198,6 +218,9 @@ public:
 
   bool has_exception_handler() const
     { return (_flags & _has_exception_table) != 0; }
+
+  bool has_method_parameters() const
+    { return (_flags & _has_method_parameters) != 0; }
 
   MethodType method_type() const {
     return ((_flags & _is_overpass) == 0) ? NORMAL : OVERPASS;
@@ -284,10 +307,11 @@ public:
 
   // Size needed
   static int size(int code_size, int compressed_line_number_size,
-                         int local_variable_table_length,
-                         int exception_table_length,
-                         int checked_exceptions_length,
-                         u2  generic_signature_index);
+                  int local_variable_table_length,
+                  int exception_table_length,
+                  int checked_exceptions_length,
+                  int method_parameters_length,
+                  u2  generic_signature_index);
 
   int size() const                    { return _constMethod_size;}
   void set_constMethod_size(int size)     { _constMethod_size = size; }
@@ -308,6 +332,7 @@ public:
   u2* checked_exceptions_length_addr() const;
   u2* localvariable_table_length_addr() const;
   u2* exception_table_length_addr() const;
+  u2* method_parameters_length_addr() const;
 
   // checked exceptions
   int checked_exceptions_length() const;
@@ -320,6 +345,10 @@ public:
   // exception table
   int exception_table_length() const;
   ExceptionTableElement* exception_table_start() const;
+
+  // method parameters table
+  int method_parameters_length() const;
+  MethodParametersElement* method_parameters_start() const;
 
   // byte codes
   void    set_code(address code) {
