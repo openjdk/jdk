@@ -25,7 +25,6 @@
 
 package sun.reflect.misc;
 
-import java.lang.reflect.Module;
 import java.io.EOFException;
 import java.security.AllPermission;
 import java.security.AccessController;

@@ -186,37 +186,12 @@ public abstract class BaseFileManager implements JavaFileManager {
                         Class.forName(classLoaderClass).asSubclass(ClassLoader.class);
                 Class<?>[] constrArgTypes = { URL[].class, ClassLoader.class };
                 Constructor<? extends ClassLoader> constr = loader.getConstructor(constrArgTypes);
-                return ensureReadable(constr.newInstance(urls, thisClassLoader));
+                return constr.newInstance(urls, thisClassLoader);
             } catch (ReflectiveOperationException t) {
                 // ignore errors loading user-provided class loader, fall through
             }
         }
-        return ensureReadable(new URLClassLoader(urls, thisClassLoader));
-    }
-
-    /**
-     * Ensures that the unnamed module of the given classloader is readable to this
-     * module.
-     */
-    private ClassLoader ensureReadable(ClassLoader targetLoader) {
-        try {
-            Method getModuleMethod = Class.class.getMethod("getModule");
-            Object thisModule = getModuleMethod.invoke(this.getClass());
-            Method getUnnamedModuleMethod = ClassLoader.class.getMethod("getUnnamedModule");
-            Object targetModule = getUnnamedModuleMethod.invoke(targetLoader);
-
-            Class<?> moduleClass = getModuleMethod.getReturnType();
-            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
-            addReadsMethod.invoke(thisModule, targetModule);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } catch (IllegalAccessException
-                | IllegalArgumentException
-                | SecurityException
-                | InvocationTargetException e) {
-            throw new Abort(e);
-        }
-        return targetLoader;
+        return new URLClassLoader(urls, thisClassLoader);
     }
 
     public boolean isDefaultBootClassPath() {

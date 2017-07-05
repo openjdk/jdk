@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262 8173636
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -37,10 +37,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +51,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -527,53 +530,173 @@ public class AnnotationProcessing extends ModuleTestBase {
 
         tb.writeJavaFiles(m1,
                           "module m1x { exports api1; }",
-                          "package api1; public class Api { GenApi ga; impl.Impl i; }");
+                          "package api1; public class Api { }",
+                          "package clash; public class C { }");
 
         writeFile("1", m1, "api1", "api");
-        writeFile("1", m1, "impl", "impl");
+        writeFile("2", m1, "clash", "clash");
 
         Path m2 = moduleSrc.resolve("m2x");
 
         tb.writeJavaFiles(m2,
                           "module m2x { requires m1x; exports api2; }",
-                          "package api2; public class Api { api1.GenApi ga1; GenApi qa2; impl.Impl i;}");
+                          "package api2; public class Api { }",
+                          "package clash; public class C { }");
 
-        writeFile("2", m2, "api2", "api");
-        writeFile("2", m2, "impl", "impl");
+        writeFile("3", m2, "api2", "api");
+        writeFile("4", m2, "clash", "api");
 
-        for (FileType fileType : FileType.values()) {
-            if (Files.isDirectory(classes)) {
-                tb.cleanDirectory(classes);
-            } else {
-                Files.createDirectories(classes);
+        //passing testcases:
+        for (String module : Arrays.asList("", "m1x/")) {
+            for (String originating : Arrays.asList("", ", jlObject")) {
+                tb.writeJavaFiles(m1,
+                                  "package test; class Test { api1.Impl i; }");
+
+                //source:
+                runCompiler(base,
+                            moduleSrc,
+                            classes,
+                            "createSource(() -> filer.createSourceFile(\"" + module + "api1.Impl\"" + originating + "), \"api1.Impl\", \"package api1; public class Impl {}\")",
+                            "--module-source-path", moduleSrc.toString());
+                assertFileExists(classes, "m1x", "api1", "Impl.class");
+
+                //class:
+                runCompiler(base,
+                            moduleSrc,
+                            classes,
+                            "createClass(() -> filer.createClassFile(\"" + module + "api1.Impl\"" + originating + "), \"api1.Impl\", \"package api1; public class Impl {}\")",
+                            "--module-source-path", moduleSrc.toString());
+                assertFileExists(classes, "m1x", "api1", "Impl.class");
+
+                Files.delete(m1.resolve("test").resolve("Test.java"));
+
+                //resource class output:
+                runCompiler(base,
+                            moduleSrc,
+                            classes,
+                            "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"" + module + "api1\", \"impl\"" + originating + "), \"impl\", \"impl\")",
+                            "--module-source-path", moduleSrc.toString());
+                assertFileExists(classes, "m1x", "api1", "impl");
             }
-
-            new JavacTask(tb)
-              .options("-processor", MultiModeAPITestAP.class.getName(),
-                       "--module-source-path", moduleSrc.toString(),
-                       "-Afiletype=" + fileType.name())
-              .outdir(classes)
-              .files(findJavaFiles(moduleSrc))
-              .run()
-              .writeAll();
-
-            assertFileExists(classes, "m1x", "api1", "GenApi.class");
-            assertFileExists(classes, "m1x", "impl", "Impl.class");
-            assertFileExists(classes, "m1x", "api1", "gen1");
-            assertFileExists(classes, "m2x", "api2", "GenApi.class");
-            assertFileExists(classes, "m2x", "impl", "Impl.class");
-            assertFileExists(classes, "m2x", "api2", "gen1");
         }
-    }
 
-    enum FileType {
-        SOURCE,
-        CLASS;
+        //get resource module source path:
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "doReadResource(() -> filer.getResource(StandardLocation.MODULE_SOURCE_PATH, \"m1x/api1\", \"api\"), \"1\")",
+                    "--module-source-path", moduleSrc.toString());
+
+        //can generate resources to the single root module:
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"m1x/impl\", \"impl\"), \"impl\", \"impl\")",
+                    "--module-source-path", moduleSrc.toString());
+        assertFileExists(classes, "m1x", "impl", "impl");
+
+        //check --default-module-for-created-files option:
+        for (String pack : Arrays.asList("clash", "doesnotexist")) {
+            tb.writeJavaFiles(m1,
+                              "package test; class Test { " + pack + ".Pass i; }");
+            runCompiler(base,
+                        moduleSrc,
+                        classes,
+                        "createSource(() -> filer.createSourceFile(\"" + pack + ".Pass\")," +
+                        "                                          \"" + pack + ".Pass\"," +
+                        "                                          \"package " + pack + ";" +
+                        "                                            public class Pass { }\")",
+                        "--module-source-path", moduleSrc.toString(),
+                        "--default-module-for-created-files=m1x");
+            assertFileExists(classes, "m1x", pack, "Pass.class");
+            assertFileNotExists(classes, "m2x", pack, "Pass.class");
+
+            runCompiler(base,
+                        moduleSrc,
+                        classes,
+                        "createClass(() -> filer.createClassFile(\"" + pack + ".Pass\")," +
+                        "                                        \"" + pack + ".Pass\"," +
+                        "                                        \"package " + pack + ";" +
+                        "                                          public class Pass { }\")",
+                        "--module-source-path", moduleSrc.toString(),
+                        "--default-module-for-created-files=m1x");
+            assertFileExists(classes, "m1x", pack, "Pass.class");
+            assertFileNotExists(classes, "m2x", pack, "Pass.class");
+
+            Files.delete(m1.resolve("test").resolve("Test.java"));
+
+            runCompiler(base,
+                        moduleSrc,
+                        classes,
+                        "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT," +
+                        "                                        \"" + pack + "\", \"impl\"), \"impl\", \"impl\")",
+                        "--module-source-path", moduleSrc.toString(),
+                        "--default-module-for-created-files=m1x");
+            assertFileExists(classes, "m1x", pack, "impl");
+            assertFileNotExists(classes, "m2x", pack, "impl");
+
+            runCompiler(base,
+                        moduleSrc,
+                        classes,
+                        "doReadResource(() -> filer.getResource(StandardLocation.CLASS_OUTPUT," +
+                        "                                       \"" + pack + "\", \"resource\"), \"1\")",
+                        p -> writeFile("1", p.resolve("m1x"), pack, "resource"),
+                        "--module-source-path", moduleSrc.toString(),
+                        "--default-module-for-created-files=m1x");
+        }
+
+        //wrong default module:
+        runCompiler(base,
+                    moduleSrc,
+                    classes,
+                    "expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT," +
+                    "                                                \"clash\", \"impl\"))",
+                    "--module-source-path", moduleSrc.toString(),
+                    "--default-module-for-created-files=doesnotexist");
+
+        String[] failingCases = {
+            //must not generate to unnamed package:
+            "expectFilerException(() -> filer.createSourceFile(\"Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"Fail\"))",
+            "expectFilerException(() -> filer.createSourceFile(\"m1x/Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"m1x/Fail\"))",
+
+            //cannot infer module name, package clash:
+            "expectFilerException(() -> filer.createSourceFile(\"clash.Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"clash.Fail\"))",
+            "expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"clash\", \"impl\"))",
+            "expectFilerException(() -> filer.getResource(StandardLocation.CLASS_OUTPUT, \"clash\", \"impl\"))",
+
+            //cannot infer module name, package does not exist:
+            "expectFilerException(() -> filer.createSourceFile(\"doesnotexist.Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"doesnotexist.Fail\"))",
+            "expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"doesnotexist\", \"impl\"))",
+            "expectFilerException(() -> filer.getResource(StandardLocation.CLASS_OUTPUT, \"doesnotexist\", \"impl\"))",
+
+            //cannot generate sources/classes to modules that are not root modules:
+            "expectFilerException(() -> filer.createSourceFile(\"java.base/fail.Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"java.base/fail.Fail\"))",
+
+            //cannot read from module locations if module not given and not inferable:
+            "expectFilerException(() -> filer.getResource(StandardLocation.SYSTEM_MODULES, \"fail\", \"Fail\"))",
+
+            //wrong module given:
+            "expectException(() -> filer.getResource(StandardLocation.SYSTEM_MODULES, \"java.compiler/java.lang\", \"Object.class\"))",
+        };
+
+        for (String failingCode : failingCases) {
+            System.err.println("failing code: " + failingCode);
+            runCompiler(base,
+                        moduleSrc,
+                        classes,
+                        failingCode,
+                        "--module-source-path", moduleSrc.toString());
+        }
     }
 
     public static abstract class GeneratingAP extends AbstractProcessor {
 
-        void createSource(CreateFileObject file, String name, String content) {
+        public void createSource(CreateFileObject file, String name, String content) {
             try (Writer out = file.create().openWriter()) {
                 out.write(content);
             } catch (IOException ex) {
@@ -581,7 +704,7 @@ public class AnnotationProcessing extends ModuleTestBase {
             }
         }
 
-        void createClass(CreateFileObject file, String name, String content) {
+        public void createClass(CreateFileObject file, String name, String content) {
             String fileNameStub = name.replace(".", File.separator);
 
             try (OutputStream out = file.create().openOutputStream()) {
@@ -617,7 +740,7 @@ public class AnnotationProcessing extends ModuleTestBase {
             }
         }
 
-        void doReadResource(CreateFileObject file, String expectedContent) {
+        public void doReadResource(CreateFileObject file, String expectedContent) {
             try {
                 StringBuilder actualContent = new StringBuilder();
 
@@ -636,15 +759,34 @@ public class AnnotationProcessing extends ModuleTestBase {
             }
         }
 
+        public void checkResourceExists(CreateFileObject file) {
+            try {
+                file.create().openInputStream().close();
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
         public interface CreateFileObject {
             public FileObject create() throws IOException;
         }
 
-        void expectFilerException(Callable<Object> c) {
+        public void expectFilerException(Callable<Object> c) {
             try {
                 c.call();
                 throw new AssertionError("Expected exception not thrown");
             } catch (FilerException ex) {
+                //expected
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        public void expectException(Callable<Object> c) {
+            try {
+                c.call();
+                throw new AssertionError("Expected exception not thrown");
+            } catch (IOException ex) {
                 //expected
             } catch (Exception ex) {
                 throw new IllegalStateException(ex);
@@ -658,167 +800,220 @@ public class AnnotationProcessing extends ModuleTestBase {
 
     }
 
-    @SupportedAnnotationTypes("*")
-    @SupportedOptions({"filetype", "modulename"})
-    public static final class MultiModeAPITestAP extends GeneratingAP {
-
-        int round;
-
-        @Override
-        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-            if (round++ != 0)
-                return false;
-
-            createClass("m1x", "api1.GenApi", "package api1; public class GenApi {}");
-            createClass("m1x", "impl.Impl", "package impl; public class Impl {}");
-            createClass("m2x", "api2.GenApi", "package api2; public class GenApi {}");
-            createClass("m2x", "impl.Impl", "package impl; public class Impl {}");
-
-            createResource("m1x", "api1", "gen1");
-            createResource("m2x", "api2", "gen1");
-
-            readResource("m1x", "api1", "api", "1");
-            readResource("m1x", "impl", "impl", "1");
-            readResource("m2x", "api2", "api", "2");
-            readResource("m2x", "impl", "impl", "2");
-
-            Filer filer = processingEnv.getFiler();
-
-            expectFilerException(() -> filer.createSourceFile("fail.Fail"));
-            expectFilerException(() -> filer.createClassFile("fail.Fail"));
-            expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "fail", "fail"));
-            expectFilerException(() -> filer.getResource(StandardLocation.MODULE_SOURCE_PATH, "fail", "fail"));
-
-            //must not generate to unnamed package:
-            expectFilerException(() -> filer.createSourceFile("m1/Fail"));
-            expectFilerException(() -> filer.createClassFile("m1/Fail"));
-
-            //cannot generate resources to modules that are not root modules:
-            expectFilerException(() -> filer.createSourceFile("java.base/fail.Fail"));
-            expectFilerException(() -> filer.createClassFile("java.base/fail.Fail"));
-            expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "java.base/fail", "Fail"));
-
-            return false;
-        }
-
-        void createClass(String expectedModule, String name, String content) {
-            Filer filer = processingEnv.getFiler();
-            FileType filetype = FileType.valueOf(processingEnv.getOptions().getOrDefault("filetype", ""));
-
-            switch (filetype) {
-                case SOURCE:
-                    createSource(() -> filer.createSourceFile(expectedModule + "/" + name), name, content);
-                    break;
-                case CLASS:
-                    createClass(() -> filer.createClassFile(expectedModule + "/" + name), name, content);
-                    break;
-                default:
-                    throw new AssertionError("Unexpected filetype: " + filetype);
-            }
-        }
-
-        void createResource(String expectedModule, String pkg, String relName) {
-            try {
-                Filer filer = processingEnv.getFiler();
-
-                filer.createResource(StandardLocation.CLASS_OUTPUT, expectedModule + "/" + pkg, relName)
-                     .openOutputStream()
-                     .close();
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
-            }
-        }
-
-        void readResource(String expectedModule, String pkg, String relName, String expectedContent) {
-            Filer filer = processingEnv.getFiler();
-
-            doReadResource(() -> filer.getResource(StandardLocation.MODULE_SOURCE_PATH, expectedModule + "/" + pkg, relName),
-                           expectedContent);
-        }
-
-    }
-
     @Test
-    public void testGenerateInSingleNameModeAPI(Path base) throws Exception {
+    public void testGenerateSingleModule(Path base) throws Exception {
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
-        Path m1 = base.resolve("module-src");
+        Path src = base.resolve("module-src");
+        Path m1 = src.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1x { }");
+                          "module m1x { }",
+                          "package test; class Test { impl.Impl i; }");
+        Path m2 = src.resolve("m2x");
 
-        writeFile("3", m1, "impl", "resource");
+        tb.writeJavaFiles(m2,
+                          "module m2x { }");
 
-        new JavacTask(tb)
-          .options("-processor", SingleNameModeAPITestAP.class.getName(),
-                   "-sourcepath", m1.toString())
-          .outdir(classes)
-          .files(findJavaFiles(m1))
-          .run()
-          .writeAll();
+        for (String[] options : new String[][] {new String[] {"-sourcepath", m1.toString()},
+                                                new String[] {"--module-source-path", src.toString()}}) {
+            String modulePath = options[0].equals("--module-source-path") ? "m1x" : "";
+            //passing testcases:
+            for (String module : Arrays.asList("", "m1x/")) {
+                for (String originating : Arrays.asList("", ", jlObject")) {
+                    tb.writeJavaFiles(m1,
+                                      "package test; class Test { impl.Impl i; }");
 
-        assertFileExists(classes, "impl", "Impl1.class");
-        assertFileExists(classes, "impl", "Impl2.class");
-        assertFileExists(classes, "impl", "Impl3");
-        assertFileExists(classes, "impl", "Impl4.class");
-        assertFileExists(classes, "impl", "Impl5.class");
-        assertFileExists(classes, "impl", "Impl6");
-        assertFileExists(classes, "impl", "Impl7.class");
-        assertFileExists(classes, "impl", "Impl8.class");
-        assertFileExists(classes, "impl", "Impl9");
+                    //source:
+                    runCompiler(base,
+                                m1,
+                                classes,
+                                "createSource(() -> filer.createSourceFile(\"" + module + "impl.Impl\"" + originating + "), \"impl.Impl\", \"package impl; public class Impl {}\")",
+                                options);
+                    assertFileExists(classes, modulePath, "impl", "Impl.class");
+
+                    //class:
+                    runCompiler(base,
+                                m1,
+                                classes,
+                                "createClass(() -> filer.createClassFile(\"" + module + "impl.Impl\"" + originating + "), \"impl.Impl\", \"package impl; public class Impl {}\")",
+                                options);
+                    assertFileExists(classes, modulePath, "impl", "Impl.class");
+
+                    Files.delete(m1.resolve("test").resolve("Test.java"));
+
+                    //resource class output:
+                    runCompiler(base,
+                                m1,
+                                classes,
+                                "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"impl\", \"impl\"" + originating + "), \"impl\", \"impl\")",
+                                options);
+                    assertFileExists(classes, modulePath, "impl", "impl");
+                }
+            }
+        }
+
+        //get resource source path:
+        writeFile("1", m1, "impl", "resource");
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "doReadResource(() -> filer.getResource(StandardLocation.SOURCE_PATH, \"impl\", \"resource\"), \"1\")",
+                    "-sourcepath", m1.toString());
+        //must not specify module when reading non-module oriented locations:
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "expectFilerException(() -> filer.getResource(StandardLocation.SOURCE_PATH, \"m1x/impl\", \"resource\"))",
+                    "-sourcepath", m1.toString());
+
+        Files.delete(m1.resolve("impl").resolve("resource"));
+
+        //can read resources from the system module path if module name given:
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "checkResourceExists(() -> filer.getResource(StandardLocation.SYSTEM_MODULES, \"java.base/java.lang\", \"Object.class\"))",
+                    "-sourcepath", m1.toString());
+
+        //can read resources from the system module path if module inferable:
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "expectFilerException(() -> filer.getResource(StandardLocation.SYSTEM_MODULES, \"java.lang\", \"Object.class\"))",
+                    "-sourcepath", m1.toString());
+
+        //cannot generate resources to modules that are not root modules:
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"java.base/fail\", \"Fail\"))",
+                    "--module-source-path", src.toString());
+
+        //can generate resources to the single root module:
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"impl\", \"impl\"), \"impl\", \"impl\")",
+                    "--module-source-path", src.toString());
+        assertFileExists(classes, "m1x", "impl", "impl");
+
+        String[] failingCases = {
+            //must not generate to unnamed package:
+            "expectFilerException(() -> filer.createSourceFile(\"Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"Fail\"))",
+            "expectFilerException(() -> filer.createSourceFile(\"m1x/Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"m1x/Fail\"))",
+
+            //cannot generate sources/classes to modules that are not root modules:
+            "expectFilerException(() -> filer.createSourceFile(\"java.base/fail.Fail\"))",
+            "expectFilerException(() -> filer.createClassFile(\"java.base/fail.Fail\"))",
+
+            //cannot specify module name for class output when not in the multi-module mode:
+            "expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"m1x/fail\", \"Fail\"))",
+
+            //cannot read from module locations if module not given:
+            "expectFilerException(() -> filer.getResource(StandardLocation.SYSTEM_MODULES, \"fail\", \"Fail\"))",
+
+            //wrong module given:
+            "expectException(() -> filer.getResource(StandardLocation.SYSTEM_MODULES, \"java.compiler/java.lang\", \"Object.class\"))",
+        };
+
+        for (String failingCode : failingCases) {
+            System.err.println("failing code: " + failingCode);
+            runCompiler(base,
+                        m1,
+                        classes,
+                        failingCode,
+                        "-sourcepath", m1.toString());
+        }
+
+        Files.delete(m1.resolve("module-info.java"));
+        tb.writeJavaFiles(m1,
+                          "package test; class Test { }");
+
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "expectFilerException(() -> filer.createSourceFile(\"m1x/impl.Impl\"))",
+                    "-sourcepath", m1.toString(),
+                    "-source", "8");
+
+        runCompiler(base,
+                    m1,
+                    classes,
+                    "expectFilerException(() -> filer.createClassFile(\"m1x/impl.Impl\"))",
+                    "-sourcepath", m1.toString(),
+                    "-source", "8");
     }
 
+    private void runCompiler(Path base, Path src, Path classes,
+                             String code, String... options) throws IOException {
+        runCompiler(base, src, classes, code, p -> {}, options);
+    }
 
-    @SupportedAnnotationTypes("*")
-    public static final class SingleNameModeAPITestAP extends GeneratingAP {
-
-        int round;
-
-        @Override
-        public synchronized void init(ProcessingEnvironment processingEnv) {
-            super.init(processingEnv);
+    private void runCompiler(Path base, Path src, Path classes,
+                             String code, Consumer<Path> generateToClasses,
+                             String... options) throws IOException {
+        Path apClasses = base.resolve("ap-classes");
+        if (Files.exists(apClasses)) {
+            tb.cleanDirectory(apClasses);
+        } else {
+            Files.createDirectories(apClasses);
         }
-
-        @Override
-        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-            if (round++ != 0)
-                return false;
-
-            Filer filer = processingEnv.getFiler();
-
-            createSource(() -> filer.createSourceFile("impl.Impl1"), "impl.Impl1", "package impl; class Impl1 {}");
-            createClass(() -> filer.createClassFile("impl.Impl2"), "impl.Impl2", "package impl; class Impl2 {}");
-            createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "impl", "Impl3"), "impl.Impl3", "");
-            doReadResource(() -> filer.getResource(StandardLocation.SOURCE_PATH, "impl", "resource"), "3");
-
-            createSource(() -> filer.createSourceFile("m1x/impl.Impl4"), "impl.Impl4", "package impl; class Impl4 {}");
-            createClass(() -> filer.createClassFile("m1x/impl.Impl5"), "impl.Impl5", "package impl; class Impl5 {}");
-            createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "m1x/impl", "Impl6"), "impl.Impl6", "");
-            doReadResource(() -> filer.getResource(StandardLocation.SOURCE_PATH, "m1x/impl", "resource"), "3");
-
-            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement("java.lang.Object");
-
-            //"broken" originating element:
-            createSource(() -> filer.createSourceFile("impl.Impl7", jlObject), "impl.Impl7", "package impl; class Impl7 {}");
-            createClass(() -> filer.createClassFile("impl.Impl8", jlObject), "impl.Impl8", "package impl; class Impl8 {}");
-            createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "impl", "Impl9", jlObject), "impl.Impl9", "");
-
-            //must not generate to unnamed package:
-            expectFilerException(() -> filer.createSourceFile("Fail"));
-            expectFilerException(() -> filer.createClassFile("Fail"));
-            expectFilerException(() -> filer.createSourceFile("m1x/Fail"));
-            expectFilerException(() -> filer.createClassFile("m1x/Fail"));
-
-            //cannot generate resources to modules that are not root modules:
-            expectFilerException(() -> filer.createSourceFile("java.base/fail.Fail"));
-            expectFilerException(() -> filer.createClassFile("java.base/fail.Fail"));
-            expectFilerException(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "java.base/fail", "Fail"));
-
-            return false;
+        compileAP(apClasses, code);
+        if (Files.exists(classes)) {
+            tb.cleanDirectory(classes);
+        } else {
+            Files.createDirectories(classes);
         }
+        generateToClasses.accept(classes);
+        List<String> opts = new ArrayList<>();
+        opts.addAll(Arrays.asList(options));
+        opts.add("-processorpath");
+        opts.add(System.getProperty("test.class.path") + File.pathSeparator + apClasses.toString());
+        opts.add("-processor");
+        opts.add("AP");
+        new JavacTask(tb)
+          .options(opts)
+          .outdir(classes)
+          .files(findJavaFiles(src))
+          .run()
+          .writeAll();
+    }
 
+    private void compileAP(Path target, String code) {
+        String processorCode =
+            "import java.util.*;\n" +
+            "import javax.annotation.processing.*;\n" +
+            "import javax.lang.model.*;\n" +
+            "import javax.lang.model.element.*;\n" +
+            "import javax.lang.model.type.*;\n" +
+            "import javax.lang.model.util.*;\n" +
+            "import javax.tools.*;\n" +
+            "@SupportedAnnotationTypes(\"*\")\n" +
+            "public final class AP extends AnnotationProcessing.GeneratingAP {\n" +
+            "\n" +
+            "        int round;\n" +
+            "\n" +
+            "        @Override\n" +
+            "        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {\n" +
+            "            if (round++ != 0)\n" +
+            "                return false;\n" +
+            "            Filer filer = processingEnv.getFiler();\n" +
+            "            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement(\"java.lang.Object\");\n" +
+            code + ";\n" +
+            "            return false;\n" +
+            "        }\n" +
+            "    }\n";
+        new JavacTask(tb)
+          .options("-classpath", System.getProperty("test.class.path"))
+          .sources(processorCode)
+          .outdir(target)
+          .run()
+          .writeAll();
     }
 
     @Test
@@ -1089,13 +1284,17 @@ public class AnnotationProcessing extends ModuleTestBase {
 
     }
 
-    private static void writeFile(String content, Path base, String... pathElements) throws IOException {
-        Path file = resolveFile(base, pathElements);
+    private static void writeFile(String content, Path base, String... pathElements) {
+        try {
+            Path file = resolveFile(base, pathElements);
 
-        Files.createDirectories(file.getParent());
+            Files.createDirectories(file.getParent());
 
-        try (Writer out = Files.newBufferedWriter(file)) {
-            out.append(content);
+            try (Writer out = Files.newBufferedWriter(file)) {
+                out.append(content);
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
@@ -1286,6 +1485,35 @@ public class AnnotationProcessing extends ModuleTestBase {
 
     }
 
+    @Test
+    public void testWrongDefaultTargetModule(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package test; public class Test { }");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+            .options("--default-module-for-created-files=m!",
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+            "- compiler.err.bad.name.for.option: --default-module-for-created-files, m!"
+        );
+
+        if (!log.equals(expected)) {
+            throw new AssertionError("Expected output not found.");
+        }
+    }
+
     private static void assertNonNull(String msg, Object val) {
         if (val == null) {
             throw new AssertionError(msg);
@@ -1308,6 +1536,14 @@ public class AnnotationProcessing extends ModuleTestBase {
         Path file = resolveFile(base, pathElements);
 
         if (!Files.exists(file)) {
+            throw new AssertionError("Expected file: " + file + " exist, but it does not.");
+        }
+    }
+
+    private static void assertFileNotExists(Path base, String... pathElements) {
+        Path file = resolveFile(base, pathElements);
+
+        if (Files.exists(file)) {
             throw new AssertionError("Expected file: " + file + " exist, but it does not.");
         }
     }

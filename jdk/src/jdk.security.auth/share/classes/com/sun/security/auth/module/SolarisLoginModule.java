@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ public class SolarisLoginModule implements LoginModule {
     private boolean debug = true;
 
     // SolarisSystem to retrieve underlying system info
+    @SuppressWarnings("removal")
     private SolarisSystem ss;
 
     // the authentication status
@@ -73,9 +74,13 @@ public class SolarisLoginModule implements LoginModule {
     private boolean commitSucceeded = false;
 
     // Underlying system info
+    @SuppressWarnings("removal")
     private SolarisPrincipal userPrincipal;
+    @SuppressWarnings("removal")
     private SolarisNumericUserPrincipal UIDPrincipal;
+    @SuppressWarnings("removal")
     private SolarisNumericGroupPrincipal GIDPrincipal;
+    @SuppressWarnings("removal")
     private LinkedList<SolarisNumericGroupPrincipal> supplementaryGroups =
                 new LinkedList<>();
 
@@ -121,6 +126,7 @@ public class SolarisLoginModule implements LoginModule {
      * @return true in all cases (this {@code LoginModule}
      *          should not be ignored).
      */
+    @SuppressWarnings("removal")
     public boolean login() throws LoginException {
 
         long[] solarisGroups = null;
@@ -234,6 +240,7 @@ public class SolarisLoginModule implements LoginModule {
      * @return false if this LoginModule's own login and/or commit attempts
      *          failed, and true otherwise.
      */
+    @SuppressWarnings("removal")
     public boolean abort() throws LoginException {
         if (debug) {
             System.out.println("\t\t[SolarisLoginModule]: " +
@@ -271,6 +278,7 @@ public class SolarisLoginModule implements LoginModule {
      * @return true in all cases (this {@code LoginModule}
      *          should not be ignored).
      */
+    @SuppressWarnings("removal")
     public boolean logout() throws LoginException {
         if (debug) {
             System.out.println("\t\t[SolarisLoginModule]: " +
