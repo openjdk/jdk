@@ -287,17 +287,18 @@
           "The number of times we'll force an overflow during "             \
           "concurrent marking")                                             \
                                                                             \
-  experimental(uintx, G1DefaultMinNewGenPercent, 20,                        \
-          "Percentage (0-100) of the heap size to use as minimum "          \
-          "young gen size.")                                                \
+  experimental(uintx, G1NewSizePercent, 20,                                 \
+          "Percentage (0-100) of the heap size to use as default "          \
+          "minimum young gen size.")                                        \
                                                                             \
-  experimental(uintx, G1DefaultMaxNewGenPercent, 80,                        \
-          "Percentage (0-100) of the heap size to use as maximum "          \
-          "young gen size.")                                                \
+  experimental(uintx, G1MaxNewSizePercent, 80,                              \
+          "Percentage (0-100) of the heap size to use as default "          \
+          " maximum young gen size.")                                       \
                                                                             \
-  experimental(uintx, G1OldCSetRegionLiveThresholdPercent, 90,              \
-          "Threshold for regions to be added to the collection set. "       \
-          "Regions with more live bytes than this will not be collected.")  \
+  experimental(uintx, G1MixedGCLiveThresholdPercent, 90,                    \
+          "Threshold for regions to be considered for inclusion in the "    \
+          "collection set of mixed GCs. "                                   \
+          "Regions with live bytes exceeding this will not be collected.")  \
                                                                             \
   product(uintx, G1HeapWastePercent, 5,                                     \
           "Amount of space, expressed as a percentage of the heap size, "   \

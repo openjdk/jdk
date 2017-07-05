@@ -33,6 +33,9 @@ include NativeCompilation.gmk
 # Setup the java compilers for the JDK build.
 include Setup.gmk
 
+# Prepare the find cache. Only used if running on windows.
+$(eval $(call FillCacheFind,$(JDK_TOPDIR)/src))
+
 # Append demo goals to this variable.
 BUILD_DEMOS=
 
@@ -185,7 +188,7 @@ ifndef OPENJDK
 
     BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%,\
 			$(JDK_OUTPUTDIR)/demo/nbproject/%,\
-			$(shell $(FIND) $(JDK_TOPDIR)/src/closed/share/demo/nbproject/ -type f))
+			$(call CacheFind,$(JDK_TOPDIR)/src/closed/share/demo/nbproject))
     $(JDK_OUTPUTDIR)/demo/nbproject/% : $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%
 		$(MKDIR) -p $(@D)
 		$(CP) $< $@
@@ -317,7 +320,7 @@ $(eval $(call SetupJVMTIDemo,versionCheck,		agent_util))
 
 # The jpda demo (com/sun/tools/example) is oddly enough stored in src/share/classes.
 # At least, we do not need to compile the jpda demo, just jar/zip up the sources.
-JPDA_SOURCES:=$(shell $(FIND) $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example -type f)
+JPDA_SOURCES:=$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/tools/example)
 # The number of files are few enough so that we can use echo safely below to list them.
 JPDA_FILES:=$(subst $(JDK_TOPDIR)/src/share/classes/,,$(JPDA_SOURCES))
 
@@ -363,7 +366,7 @@ BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/management/index.html \
 # The netbeans project files are copied into the demo directory.
 BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/share/demo/nbproject/%,\
 		$(JDK_OUTPUTDIR)/demo/nbproject/%,\
-		$(shell $(FIND) $(JDK_TOPDIR)/src/share/demo/nbproject/ -type f))
+		$(call CacheFind,$(JDK_TOPDIR)/src/share/demo/nbproject))
 
 $(JDK_OUTPUTDIR)/demo/nbproject/% : $(JDK_TOPDIR)/src/share/demo/nbproject/%
 	$(MKDIR) -p $(@D)
@@ -439,7 +442,7 @@ endif
 ##################################################################################################
 
 ifndef OPENJDK
-    DB_DEMO_ZIPFILE := $(shell $(FIND) $(JDK_TOPDIR)/src/closed/share/db -name "*demo*.zip")
+    DB_DEMO_ZIPFILE := $(wildcard $(JDK_TOPDIR)/src/closed/share/db/*demo*.zip)
 
     $(JDK_OUTPUTDIR)/demo/_the.db.unzipped: $(DB_DEMO_ZIPFILE)
 	$(MKDIR) -p $(@D)

@@ -182,7 +182,7 @@ void os::init_system_properties_values() {
 
       if (!getenv("_ALT_JAVA_HOME_DIR", home_dir, MAX_PATH)) {
           os::jvm_path(home_dir, sizeof(home_dir));
-          // Found the full path to jvm[_g].dll.
+          // Found the full path to jvm.dll.
           // Now cut the path to <java_home>/jre if we can.
           *(strrchr(home_dir, '\\')) = '\0';  /* get rid of \jvm.dll */
           pslash = strrchr(home_dir, '\\');
@@ -1715,7 +1715,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 
 static char saved_jvm_path[MAX_PATH] = {0};
 
-// Find the full path to the current module, jvm.dll or jvm_g.dll
+// Find the full path to the current module, jvm.dll
 void os::jvm_path(char *buf, jint buflen) {
   // Error checking.
   if (buflen < MAX_PATH) {

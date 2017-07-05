@@ -507,6 +507,7 @@ public:
   Node* exobj;
 };
 
+class CallGenerator;
 
 //------------------------------CallNode---------------------------------------
 // Call nodes now subsume the function of debug nodes at callsites, so they
@@ -517,26 +518,31 @@ public:
   const TypeFunc *_tf;        // Function type
   address      _entry_point;  // Address of method being called
   float        _cnt;          // Estimate of number of times called
+  CallGenerator* _generator;  // corresponding CallGenerator for some late inline calls
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type)
     : SafePointNode(tf->domain()->cnt(), NULL, adr_type),
       _tf(tf),
       _entry_point(addr),
-      _cnt(COUNT_UNKNOWN)
+      _cnt(COUNT_UNKNOWN),
+      _generator(NULL)
   {
     init_class_id(Class_Call);
   }
 
-  const TypeFunc* tf()        const { return _tf; }
-  const address entry_point() const { return _entry_point; }
-  const float   cnt()         const { return _cnt; }
+  const TypeFunc* tf()         const { return _tf; }
+  const address  entry_point() const { return _entry_point; }
+  const float    cnt()         const { return _cnt; }
+  CallGenerator* generator()   const { return _generator; }
 
-  void set_tf(const TypeFunc* tf) { _tf = tf; }
-  void set_entry_point(address p) { _entry_point = p; }
-  void set_cnt(float c)           { _cnt = c; }
+  void set_tf(const TypeFunc* tf)       { _tf = tf; }
+  void set_entry_point(address p)       { _entry_point = p; }
+  void set_cnt(float c)                 { _cnt = c; }
+  void set_generator(CallGenerator* cg) { _generator = cg; }
 
   virtual const Type *bottom_type() const;
   virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node *Identity( PhaseTransform *phase ) { return this; }
   virtual uint        cmp( const Node &n ) const;
   virtual uint        size_of() const = 0;
