@@ -66,7 +66,8 @@ public class Interrupt {
     static void testQueue(final BlockingQueue<Object> q) {
         try {
             final BlockingDeque<Object> deq =
-                q instanceof BlockingDeque ? (BlockingDeque<Object>) q : null;
+                (q instanceof BlockingDeque<?>) ?
+                (BlockingDeque<Object>) q : null;
             q.clear();
             List<Fun> fs = new ArrayList<Fun>();
             fs.add(new Fun() { void f() throws Throwable
@@ -107,7 +108,10 @@ public class Interrupt {
                         { deq.offerLast(1, 7, SECONDS); }});
             }
             checkInterrupted(fs);
-        } catch (Throwable t) { unexpected(t); }
+        } catch (Throwable t) {
+          System.out.printf("Failed: %s%n", q.getClass().getSimpleName());
+          unexpected(t);
+        }
     }
 
     private static void realMain(final String[] args) throws Throwable {

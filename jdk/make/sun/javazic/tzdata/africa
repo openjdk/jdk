@@ -22,6 +22,8 @@
 # have any questions.
 #
 # <pre>
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
@@ -263,18 +265,18 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	23:00s	0	-
 # The following appeared in Red Hat bugzilla[1] (edited):
 #
 # > $ zdump -v /usr/share/zoneinfo/Africa/Cairo | grep 2009
-# > /usr/share/zoneinfo/Africa/Cairo  Thu Apr 23 21:59:59 2009 UTC =3D Thu =
+# > /usr/share/zoneinfo/Africa/Cairo  Thu Apr 23 21:59:59 2009 UTC = Thu =
 # Apr 23
-# > 23:59:59 2009 EET isdst=3D0 gmtoff=3D7200
-# > /usr/share/zoneinfo/Africa/Cairo  Thu Apr 23 22:00:00 2009 UTC =3D Fri =
+# > 23:59:59 2009 EET isdst=0 gmtoff=7200
+# > /usr/share/zoneinfo/Africa/Cairo  Thu Apr 23 22:00:00 2009 UTC = Fri =
 # Apr 24
-# > 01:00:00 2009 EEST isdst=3D1 gmtoff=3D10800
-# > /usr/share/zoneinfo/Africa/Cairo  Thu Aug 27 20:59:59 2009 UTC =3D Thu =
+# > 01:00:00 2009 EEST isdst=1 gmtoff=10800
+# > /usr/share/zoneinfo/Africa/Cairo  Thu Aug 27 20:59:59 2009 UTC = Thu =
 # Aug 27
-# > 23:59:59 2009 EEST isdst=3D1 gmtoff=3D10800
-# > /usr/share/zoneinfo/Africa/Cairo  Thu Aug 27 21:00:00 2009 UTC =3D Thu =
+# > 23:59:59 2009 EEST isdst=1 gmtoff=10800
+# > /usr/share/zoneinfo/Africa/Cairo  Thu Aug 27 21:00:00 2009 UTC = Thu =
 # Aug 27
-# > 23:00:00 2009 EET isdst=3D0 gmtoff=3D7200
+# > 23:00:00 2009 EET isdst=0 gmtoff=7200
 #
 # > end date should be Thu Sep 24 2009 (Last Thursday in September at 23:59=
 # :59)
@@ -282,11 +284,11 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	23:00s	0	-
 #
 # timeanddate[2] and another site I've found[3] also support that.
 #
-# [1] <a href="https://bugzilla.redhat.com/show_bug.cgi?id=3D492263">
-# https://bugzilla.redhat.com/show_bug.cgi?id=3D492263
+# [1] <a href="https://bugzilla.redhat.com/show_bug.cgi?id=492263">
+# https://bugzilla.redhat.com/show_bug.cgi?id=492263
 # </a>
-# [2] <a href="http://www.timeanddate.com/worldclock/clockchange.html?n=3D53">
-# http://www.timeanddate.com/worldclock/clockchange.html?n=3D53
+# [2] <a href="http://www.timeanddate.com/worldclock/clockchange.html?n=53">
+# http://www.timeanddate.com/worldclock/clockchange.html?n=53
 # </a>
 # [3] <a href="http://wwp.greenwichmeantime.com/time-zone/africa/egypt/">
 # http://wwp.greenwichmeantime.com/time-zone/africa/egypt/
@@ -296,8 +298,27 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	23:00s	0	-
 # In 2009 (and for the next several years), Ramadan ends before the fourth
 # Thursday in September; Egypt is expected to revert to the last Thursday
 # in September.
+
+# From Steffen Thorsen (2009-08-11):
+# We have been able to confirm the August change with the Egyptian Cabinet 
+# Information and Decision Support Center:
+# <a href="http://www.timeanddate.com/news/time/egypt-dst-ends-2009.html">
+# http://www.timeanddate.com/news/time/egypt-dst-ends-2009.html
+# </a>
+# 
+# The Middle East News Agency
+# <a href="http://www.mena.org.eg/index.aspx">
+# http://www.mena.org.eg/index.aspx
+# </a>
+# also reports "Egypt starts winter time on August 21"
+# today in article numbered "71, 11/08/2009 12:25 GMT." 
+# Only the title above is available without a subscription to their service,
+# and can be found by searching for "winter" in their search engine
+# (at least today).
+
 Rule	Egypt	2008	only	-	Aug	lastThu	23:00s	0	-
-Rule	Egypt	2009	max	-	Sep	lastThu	23:00s	0	-
+Rule	Egypt	2009	only	-	Aug	20	23:00s	0	-
+Rule	Egypt	2010	max	-	Sep	lastThu	23:00s	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Cairo	2:05:00 -	LMT	1900 Oct
@@ -499,8 +520,8 @@ Zone Africa/Nouakchott	-1:03:48 -	LMT	1912
 
 # From Riad M. Hossen Ally (2008-08-03):
 # The Government of Mauritius weblink
-# <a href="http://www.gov.mu/portal/site/pmosite/menuitem.4ca0efdee47462e7440a600248a521ca/?content_id=3D4728ca68b2a5b110VgnVCM1000000a04a8c0RCRD">
-# http://www.gov.mu/portal/site/pmosite/menuitem.4ca0efdee47462e7440a600248a521ca/?content_id=3D4728ca68b2a5b110VgnVCM1000000a04a8c0RCRD
+# <a href="http://www.gov.mu/portal/site/pmosite/menuitem.4ca0efdee47462e7440a600248a521ca/?content_id=4728ca68b2a5b110VgnVCM1000000a04a8c0RCRD">
+# http://www.gov.mu/portal/site/pmosite/menuitem.4ca0efdee47462e7440a600248a521ca/?content_id=4728ca68b2a5b110VgnVCM1000000a04a8c0RCRD
 # </a>
 # Cabinet Decision of July 18th, 2008 states as follows:
 #
@@ -522,11 +543,33 @@ Zone Africa/Nouakchott	-1:03:48 -	LMT	1912
 # http://www.gov.mu/portal/goc/assemblysite/file/bill2708.pdf
 # </a>
 
+# From Steffen Thorsen (2009-06-05):
+# According to several sources, Mauritius will not continue to observe
+# DST the coming summer...
+#
+# Some sources, in French:
+# <a href="http://www.defimedia.info/news/946/Rashid-Beebeejaun-:-%C2%AB-L%E2%80%99heure-d%E2%80%99%C3%A9t%C3%A9-ne-sera-pas-appliqu%C3%A9e-cette-ann%C3%A9e-%C2%BB">
+# http://www.defimedia.info/news/946/Rashid-Beebeejaun-:-%C2%AB-L%E2%80%99heure-d%E2%80%99%C3%A9t%C3%A9-ne-sera-pas-appliqu%C3%A9e-cette-ann%C3%A9e-%C2%BB
+# </a>
+# <a href="http://lexpress.mu/Story/3398~Beebeejaun---Les-objectifs-d-%C3%A9conomie-d-%C3%A9nergie-de-l-heure-d-%C3%A9t%C3%A9-ont-%C3%A9t%C3%A9-atteints-">
+# http://lexpress.mu/Story/3398~Beebeejaun---Les-objectifs-d-%C3%A9conomie-d-%C3%A9nergie-de-l-heure-d-%C3%A9t%C3%A9-ont-%C3%A9t%C3%A9-atteints-
+# </a>
+#
+# Our wrap-up:
+# <a href="http://www.timeanddate.com/news/time/mauritius-dst-will-not-repeat.html">
+# http://www.timeanddate.com/news/time/mauritius-dst-will-not-repeat.html
+# </a>
+
+# From Arthur David Olson (2009-07-11):
+# The "mauritius-dst-will-not-repeat" wrapup includes this: 
+# "The trial ended on March 29, 2009, when the clocks moved back by one hour
+# at 2am (or 02:00) local time..."
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule Mauritius	1982	only	-	Oct	10	0:00	1:00	S
 Rule Mauritius	1983	only	-	Mar	21	0:00	0	-
-Rule Mauritius	2008	max	-	Oct	lastSun	2:00s	1:00	S
-Rule Mauritius	2009	max	-	Mar	lastSun	2:00s	0	-
+Rule Mauritius	2008	only	-	Oct	lastSun	2:00	1:00	S
+Rule Mauritius	2009	only	-	Mar	lastSun	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Indian/Mauritius	3:50:00 -	LMT	1907		# Port Louis
 			4:00 Mauritius	MU%sT	# Mauritius Time

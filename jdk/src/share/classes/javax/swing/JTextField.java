@@ -24,6 +24,8 @@
  */
 package javax.swing;
 
+import sun.swing.SwingUtilities2;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
@@ -288,11 +290,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @see JComponent#isValidateRoot
      */
     public boolean isValidateRoot() {
-        Component parent = getParent();
-        if (parent instanceof JViewport) {
-            return false;
-        }
-        return true;
+        return SwingUtilities2.getViewport(this) == null;
     }
 
 

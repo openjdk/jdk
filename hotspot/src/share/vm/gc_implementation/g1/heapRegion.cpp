@@ -25,6 +25,12 @@
 #include "incls/_precompiled.incl"
 #include "incls/_heapRegion.cpp.incl"
 
+int HeapRegion::LogOfHRGrainBytes = 0;
+int HeapRegion::LogOfHRGrainWords = 0;
+int HeapRegion::GrainBytes        = 0;
+int HeapRegion::GrainWords        = 0;
+int HeapRegion::CardsPerRegion    = 0;
+
 HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  HeapRegion* hr, OopClosure* cl,
                                  CardTableModRefBS::PrecisionStyle precision,
@@ -229,6 +235,73 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
       oop(bottom)->oop_iterate(cl2, mr);
     }
   }
+}
+
+// Minimum region size; we won't go lower than that.
+// We might want to decrease this in the future, to deal with small
+// heaps a bit more efficiently.
+#define MIN_REGION_SIZE  (      1024 * 1024 )
+
+// Maximum region size; we don't go higher than that. There's a good
+// reason for having an upper bound. We don't want regions to get too
+// large, otherwise cleanup's effectiveness would decrease as there
+// will be fewer opportunities to find totally empty regions after
+// marking.
+#define MAX_REGION_SIZE  ( 32 * 1024 * 1024 )
+
+// The automatic region size calculation will try to have around this
+// many regions in the heap (based on the min heap size).
+#define TARGET_REGION_NUMBER          2048
+
+void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
+  // region_size in bytes
+  uintx region_size = G1HeapRegionSize;
+  if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
+    // We base the automatic calculation on the min heap size. This
+    // can be problematic if the spread between min and max is quite
+    // wide, imagine -Xms128m -Xmx32g. But, if we decided it based on
+    // the max size, the region size might be way too large for the
+    // min size. Either way, some users might have to set the region
+    // size manually for some -Xms / -Xmx combos.
+
+    region_size = MAX2(min_heap_size / TARGET_REGION_NUMBER,
+                       (uintx) MIN_REGION_SIZE);
+  }
+
+  int region_size_log = log2_long((jlong) region_size);
+  // Recalculate the region size to make sure it's a power of
+  // 2. This means that region_size is the largest power of 2 that's
+  // <= what we've calculated so far.
+  region_size = 1 << region_size_log;
+
+  // Now make sure that we don't go over or under our limits.
+  if (region_size < MIN_REGION_SIZE) {
+    region_size = MIN_REGION_SIZE;
+  } else if (region_size > MAX_REGION_SIZE) {
+    region_size = MAX_REGION_SIZE;
+  }
+
+  // And recalculate the log.
+  region_size_log = log2_long((jlong) region_size);
+
+  // Now, set up the globals.
+  guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
+  LogOfHRGrainBytes = region_size_log;
+
+  guarantee(LogOfHRGrainWords == 0, "we should only set it once");
+  LogOfHRGrainWords = LogOfHRGrainBytes - LogHeapWordSize;
+
+  guarantee(GrainBytes == 0, "we should only set it once");
+  // The cast to int is safe, given that we've bounded region_size by
+  // MIN_REGION_SIZE and MAX_REGION_SIZE.
+  GrainBytes = (int) region_size;
+
+  guarantee(GrainWords == 0, "we should only set it once");
+  GrainWords = GrainBytes >> LogHeapWordSize;
+  guarantee(1 << LogOfHRGrainWords == GrainWords, "sanity");
+
+  guarantee(CardsPerRegion == 0, "we should only set it once");
+  CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
 }
 
 void HeapRegion::reset_after_compaction() {

@@ -3347,7 +3347,7 @@ public class Window extends Container implements Accessible {
      *
      * @return the opacity of the window
      *
-     * @see Window#setOpacity
+     * @see Window#setOpacity(float)
      * @see GraphicsDevice.WindowTranslucency
      *
      * @since 1.7
@@ -3366,7 +3366,7 @@ public class Window extends Container implements Accessible {
      * window. This is a platform-dependent behavior.
      * <p>
      * In order for this method to enable the translucency effect, the {@link
-     * GraphicsDevice#isWindowTranslucencySupported()} method must indicate that
+     * GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)} method must indicate that
      * the {@link GraphicsDevice.WindowTranslucency#TRANSLUCENT TRANSLUCENT}
      * translucency is supported.
      * <p>
@@ -3375,8 +3375,8 @@ public class Window extends Container implements Accessible {
      * IllegalComponentStateException} is thrown.
      * <p>
      * The translucency levels of individual pixels may also be effected by the
-     * alpha component of their color (see {@link setBackground()}) and the
-     * current shape of this window (see {@link setShape()}).
+     * alpha component of their color (see {@link Window#setBackground(Color)}) and the
+     * current shape of this window (see {@link #setShape(Shape)}).
      *
      * @param opacity the opacity level to set to the window
      *
@@ -3389,10 +3389,10 @@ public class Window extends Container implements Accessible {
      *     translucency kind is not supported and the opacity is less than 1.0f
      *
      * @see Window#getOpacity
-     * @see Window#setBackground()
-     * @see Window#setShape()
+     * @see Window#setBackground(Color)
+     * @see Window#setShape(Shape)
      * @see GraphicsDevice.WindowTranslucency
-     * @see GraphicsDevice#isWindowTranslucencySupported()
+     * @see GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)
      *
      * @since 1.7
      */
@@ -3434,7 +3434,7 @@ public class Window extends Container implements Accessible {
      * @return the shape of the window or {@code null} if no
      *     shape is specified for the window
      *
-     * @see Window#setShape
+     * @see Window#setShape(Shape)
      * @see GraphicsDevice.WindowTranslucency
      *
      * @since 1.7
@@ -3458,19 +3458,19 @@ public class Window extends Container implements Accessible {
      * <ul>
      * <li>The {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSPARENT
      * PERPIXEL_TRANSPARENT} translucency kind must be supported by the
-     * underlying system (see {@link })
+     * underlying system
      * <i>and</i>
      * <li>The window must not be in the full-screen mode (see
-     * {@link GraphicsDevice#setFullScreenWindow()})
+     * {@link GraphicsDevice#setFullScreenWindow(Window)})
      * </ul>
      * If a certain condition is not met, either the {@code
      * UnsupportedOperationException} or {@code IllegalComponentStateException}
      * is thrown.
      * <p>
      * The tranlucency levels of individual pixels may also be effected by the
-     * alpha component of their color (see {@link setBackground()}) and the
-     * opacity value (see {@link setOpacity()}). See {@link
-     * GraphicsDevice#WindowTranslucency} for more details.
+     * alpha component of their color (see {@link Window#setBackground(Color)}) and the
+     * opacity value (see {@link #setOpacity(float)}). See {@link
+     * GraphicsDevice.WindowTranslucency} for more details.
      *
      * @param shape the shape to set to the window
      *
@@ -3481,10 +3481,10 @@ public class Window extends Container implements Accessible {
      *     PERPIXEL_TRANSPARENT} translucency is not supported
      *
      * @see Window#getShape()
-     * @see Window#setBackgound()
-     * @see Window#setOpacity()
+     * @see Window#setBackground(Color)
+     * @see Window#setOpacity(float)
      * @see GraphicsDevice.WindowTranslucency
-     * @see GraphicsDevice#isWindowTranslucencySupported()
+     * @see GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)
      *
      * @since 1.7
      */
@@ -3520,7 +3520,7 @@ public class Window extends Container implements Accessible {
      *
      * @return this component's background color
      *
-     * @see Window#setBackground
+     * @see Window#setBackground(Color)
      * @see Window#isOpaque
      * @see GraphicsDevice.WindowTranslucency
      */
@@ -3544,7 +3544,7 @@ public class Window extends Container implements Accessible {
      * PERPIXEL_TRANSLUCENT} translucency must be supported
      * by the graphics device where this window is located <i>and</i>
      * <li>The window must not be in the full-screen mode (see {@link
-     * GraphicsDevice#setFullScreenWindow()})
+     * GraphicsDevice#setFullScreenWindow(Window)})
      * </ul>
      * If a certain condition is not met at the time of calling this method,
      * the alpha component of the given background color will not effect the
@@ -3561,8 +3561,8 @@ public class Window extends Container implements Accessible {
      * method is equal to zero.)
      * <p>
      * The actual level of translucency of a given pixel also depends on window
-     * opacity (see {@link setOpacity()}), as well as the current shape of
-     * this window (see {@link setShape()}).
+     * opacity (see {@link #setOpacity(float)}), as well as the current shape of
+     * this window (see {@link #setShape(Shape)}).
      * <p>
      * Note that painting a pixel with the alpha value of 0 may or may not
      * disable the mouse event handling on this pixel. This is a
@@ -3585,10 +3585,10 @@ public class Window extends Container implements Accessible {
      *
      * @see Window#getBackground
      * @see Window#isOpaque
-     * @see Window#setOpacity()
-     * @see Window#setShape()
+     * @see Window#setOpacity(float)
+     * @see Window#setShape(Shape)
      * @see GraphicsDevice.WindowTranslucency
-     * @see GraphicsDevice#isWindowTranslucencySupported()
+     * @see GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)
      * @see GraphicsConfiguration#isTranslucencyCapable()
      */
     @Override
@@ -3635,7 +3635,7 @@ public class Window extends Container implements Accessible {
      * @return {@code true} if the window is opaque, {@code false} otherwise
      *
      * @see Window#getBackground
-     * @see Window#setBackground
+     * @see Window#setBackground(Color)
      * @since 1.7
      */
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import sun.awt.shell.ShellFolder;
-import sun.awt.OSInfo;
 import sun.swing.*;
 
 import javax.accessibility.*;
@@ -57,8 +56,6 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
     // The following are private because the implementation of the
     // Windows FileChooser L&F is not complete yet.
-
-    private static final OSInfo.WindowsVersion OS_VERSION = OSInfo.getWindowsVersion();
 
     private JPanel centerPanel;
 
@@ -118,17 +115,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     private String upFolderToolTipText = null;
     private String upFolderAccessibleName = null;
 
-    private String homeFolderToolTipText = null;
-    private String homeFolderAccessibleName = null;
-
     private String newFolderToolTipText = null;
     private String newFolderAccessibleName = null;
-
-    private String listViewButtonToolTipText = null;
-    private String listViewButtonAccessibleName = null;
-
-    private String detailsViewButtonToolTipText = null;
-    private String detailsViewButtonAccessibleName = null;
 
     private String viewMenuButtonToolTipText = null;
     private String viewMenuButtonAccessibleName = null;
@@ -231,9 +219,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         // Directory manipulation buttons
         JToolBar topPanel = new JToolBar();
         topPanel.setFloatable(false);
-        if (OS_VERSION.compareTo(OSInfo.WINDOWS_ME) >= 0) {
-            topPanel.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
-        }
+        topPanel.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
 
         // Add the top panel to the fileChooser
         fc.add(topPanel, BorderLayout.NORTH);
@@ -287,218 +273,103 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         topPanel.add(Box.createRigidArea(hstrut10));
 
         // Up Button
-        JButton upFolderButton = new JButton(getChangeToParentDirectoryAction());
-        upFolderButton.setText(null);
-        upFolderButton.setIcon(upFolderIcon);
-        upFolderButton.setToolTipText(upFolderToolTipText);
-        upFolderButton.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY,
-                                         upFolderAccessibleName);
-        upFolderButton.putClientProperty(WindowsLookAndFeel.HI_RES_DISABLED_ICON_CLIENT_KEY,
-                                         Boolean.TRUE);
-        upFolderButton.setAlignmentX(JComponent.LEFT_ALIGNMENT);
-        upFolderButton.setAlignmentY(JComponent.CENTER_ALIGNMENT);
-        upFolderButton.setMargin(shrinkwrap);
-        upFolderButton.setFocusPainted(false);
+        JButton upFolderButton = createToolButton(getChangeToParentDirectoryAction(), upFolderIcon,
+            upFolderToolTipText, upFolderAccessibleName);
         topPanel.add(upFolderButton);
-        if (OS_VERSION.compareTo(OSInfo.WINDOWS_ME) < 0) {
-            topPanel.add(Box.createRigidArea(hstrut10));
-        }
-
-        JButton b;
-
-        if (OS_VERSION == OSInfo.WINDOWS_98) {
-            // Desktop Button
-            File homeDir = fsv.getHomeDirectory();
-            String toolTipText = homeFolderToolTipText;
-            if (fsv.isRoot(homeDir)) {
-                toolTipText = getFileView(fc).getName(homeDir); // Probably "Desktop".
-            }
-            b = new JButton(getFileView(fc).getIcon(homeDir));
-            b.setToolTipText(toolTipText);
-            b.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY,
-                                toolTipText);
-            b.setAlignmentX(JComponent.LEFT_ALIGNMENT);
-            b.setAlignmentY(JComponent.CENTER_ALIGNMENT);
-            b.setMargin(shrinkwrap);
-            b.setFocusPainted(false);
-            b.addActionListener(getGoHomeAction());
-            topPanel.add(b);
-            topPanel.add(Box.createRigidArea(hstrut10));
-        }
 
         // New Directory Button
         if (!UIManager.getBoolean("FileChooser.readOnly")) {
-            b = new JButton(filePane.getNewFolderAction());
-            b.setText(null);
-            b.setIcon(newFolderIcon);
-            b.setToolTipText(newFolderToolTipText);
-            b.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY,
-                                newFolderAccessibleName);
-            b.putClientProperty(WindowsLookAndFeel.HI_RES_DISABLED_ICON_CLIENT_KEY,
-                                Boolean.TRUE);
-            b.setAlignmentX(JComponent.LEFT_ALIGNMENT);
-            b.setAlignmentY(JComponent.CENTER_ALIGNMENT);
-            b.setMargin(shrinkwrap);
-            b.setFocusPainted(false);
-            topPanel.add(b);
+            JButton newFolderButton = createToolButton(filePane.getNewFolderAction(), newFolderIcon,
+                newFolderToolTipText, newFolderAccessibleName);
+            topPanel.add(newFolderButton);
         }
-        if (OS_VERSION.compareTo(OSInfo.WINDOWS_ME) < 0) {
-            topPanel.add(Box.createRigidArea(hstrut10));
 
-            // View button group
-            ButtonGroup viewButtonGroup = new ButtonGroup();
+        // View button group
+        ButtonGroup viewButtonGroup = new ButtonGroup();
 
-            // List Button
-            final JToggleButton listViewButton = new JToggleButton(listViewIcon);
-            listViewButton.setToolTipText(listViewButtonToolTipText);
-            listViewButton.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY,
-                    listViewButtonAccessibleName);
-            listViewButton.putClientProperty(WindowsLookAndFeel.HI_RES_DISABLED_ICON_CLIENT_KEY,
-                    Boolean.TRUE);
-            listViewButton.setFocusPainted(false);
-            listViewButton.setSelected(true);
-            listViewButton.setAlignmentX(JComponent.LEFT_ALIGNMENT);
-            listViewButton.setAlignmentY(JComponent.CENTER_ALIGNMENT);
-            listViewButton.setMargin(shrinkwrap);
-            listViewButton.addActionListener(filePane.getViewTypeAction(FilePane.VIEWTYPE_LIST));
-            topPanel.add(listViewButton);
-            viewButtonGroup.add(listViewButton);
+        // Popup Menu
+        final JPopupMenu viewTypePopupMenu = new JPopupMenu();
 
-            // Details Button
-            final JToggleButton detailsViewButton = new JToggleButton(detailsViewIcon);
-            detailsViewButton.setToolTipText(detailsViewButtonToolTipText);
-            detailsViewButton.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY,
-                    detailsViewButtonAccessibleName);
-            detailsViewButton.putClientProperty(WindowsLookAndFeel.HI_RES_DISABLED_ICON_CLIENT_KEY,
-                    Boolean.TRUE);
-            detailsViewButton.setFocusPainted(false);
-            detailsViewButton.setAlignmentX(JComponent.LEFT_ALIGNMENT);
-            detailsViewButton.setAlignmentY(JComponent.CENTER_ALIGNMENT);
-            detailsViewButton.setMargin(shrinkwrap);
-            detailsViewButton.addActionListener(filePane.getViewTypeAction(FilePane.VIEWTYPE_DETAILS));
-            topPanel.add(detailsViewButton);
-            viewButtonGroup.add(detailsViewButton);
+        final JRadioButtonMenuItem listViewMenuItem = new JRadioButtonMenuItem(
+                filePane.getViewTypeAction(FilePane.VIEWTYPE_LIST));
+        listViewMenuItem.setSelected(filePane.getViewType() == FilePane.VIEWTYPE_LIST);
+        viewTypePopupMenu.add(listViewMenuItem);
+        viewButtonGroup.add(listViewMenuItem);
 
-            topPanel.add(Box.createRigidArea(new Dimension(60, 0)));
+        final JRadioButtonMenuItem detailsViewMenuItem = new JRadioButtonMenuItem(
+                filePane.getViewTypeAction(FilePane.VIEWTYPE_DETAILS));
+        detailsViewMenuItem.setSelected(filePane.getViewType() == FilePane.VIEWTYPE_DETAILS);
+        viewTypePopupMenu.add(detailsViewMenuItem);
+        viewButtonGroup.add(detailsViewMenuItem);
 
-            filePane.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent e) {
-                    if ("viewType".equals(e.getPropertyName())) {
-                        int viewType = filePane.getViewType();
+        // Create icon for viewMenuButton
+        BufferedImage image = new BufferedImage(viewMenuIcon.getIconWidth() + 7, viewMenuIcon.getIconHeight(),
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics graphics = image.getGraphics();
+        viewMenuIcon.paintIcon(filePane, graphics, 0, 0);
+        int x = image.getWidth() - 5;
+        int y = image.getHeight() / 2 - 1;
+        graphics.setColor(Color.BLACK);
+        graphics.fillPolygon(new int[]{x, x + 5, x + 2}, new int[]{y, y, y + 3}, 3);
 
-                        switch (viewType) {
-                            case FilePane.VIEWTYPE_LIST:
-                                listViewButton.setSelected(true);
-                                break;
+        // Details Button
+        final JButton viewMenuButton = createToolButton(null, new ImageIcon(image), viewMenuButtonToolTipText,
+                viewMenuButtonAccessibleName);
 
-                            case FilePane.VIEWTYPE_DETAILS:
-                                detailsViewButton.setSelected(true);
-                                break;
-                        }
+        viewMenuButton.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e) && !viewMenuButton.isSelected()) {
+                    viewMenuButton.setSelected(true);
+
+                    viewTypePopupMenu.show(viewMenuButton, 0, viewMenuButton.getHeight());
+                }
+            }
+        });
+        viewMenuButton.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                // Forbid keyboard actions if the button is not in rollover state
+                if (e.getKeyCode() == KeyEvent.VK_SPACE && viewMenuButton.getModel().isRollover()) {
+                    viewMenuButton.setSelected(true);
+
+                    viewTypePopupMenu.show(viewMenuButton, 0, viewMenuButton.getHeight());
+                }
+            }
+        });
+        viewTypePopupMenu.addPopupMenuListener(new PopupMenuListener() {
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+            }
+
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        viewMenuButton.setSelected(false);
+                    }
+                });
+            }
+
+            public void popupMenuCanceled(PopupMenuEvent e) {
+            }
+        });
+
+        topPanel.add(viewMenuButton);
+
+        topPanel.add(Box.createRigidArea(new Dimension(80, 0)));
+
+        filePane.addPropertyChangeListener(new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent e) {
+                if ("viewType".equals(e.getPropertyName())) {
+                    switch (filePane.getViewType()) {
+                        case FilePane.VIEWTYPE_LIST:
+                            listViewMenuItem.setSelected(true);
+                            break;
+
+                        case FilePane.VIEWTYPE_DETAILS:
+                            detailsViewMenuItem.setSelected(true);
+                            break;
                     }
                 }
-            });
-        } else { // After Windows Me
-            // View button group
-            ButtonGroup viewButtonGroup = new ButtonGroup();
-
-            // Popup Menu
-            final JPopupMenu viewTypePopupMenu = new JPopupMenu();
-
-            final JRadioButtonMenuItem listViewMenuItem = new JRadioButtonMenuItem(
-                    filePane.getViewTypeAction(FilePane.VIEWTYPE_LIST));
-            listViewMenuItem.setSelected(filePane.getViewType() == FilePane.VIEWTYPE_LIST);
-            viewTypePopupMenu.add(listViewMenuItem);
-            viewButtonGroup.add(listViewMenuItem);
-
-            final JRadioButtonMenuItem detailsViewMenuItem = new JRadioButtonMenuItem(
-                    filePane.getViewTypeAction(FilePane.VIEWTYPE_DETAILS));
-            detailsViewMenuItem.setSelected(filePane.getViewType() == FilePane.VIEWTYPE_DETAILS);
-            viewTypePopupMenu.add(detailsViewMenuItem);
-            viewButtonGroup.add(detailsViewMenuItem);
-
-            // Create icon for viewMenuButton
-            BufferedImage image = new BufferedImage(viewMenuIcon.getIconWidth() + 7, viewMenuIcon.getIconHeight(),
-                    BufferedImage.TYPE_INT_ARGB);
-            Graphics graphics = image.getGraphics();
-            viewMenuIcon.paintIcon(filePane, graphics, 0, 0);
-            int x = image.getWidth() - 5;
-            int y = image.getHeight() / 2 - 1;
-            graphics.setColor(Color.BLACK);
-            graphics.fillPolygon(new int[]{x, x + 5, x + 2}, new int[]{y, y, y + 3}, 3);
-
-            // Details Button
-            final JButton viewMenuButton = new JButton(new ImageIcon(image));
-            viewMenuButton.setToolTipText(viewMenuButtonToolTipText);
-            viewMenuButton.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, viewMenuButtonAccessibleName);
-            viewMenuButton.putClientProperty(WindowsLookAndFeel.HI_RES_DISABLED_ICON_CLIENT_KEY, Boolean.TRUE);
-            viewMenuButton.setFocusable(false);
-            viewMenuButton.setAlignmentX(JComponent.LEFT_ALIGNMENT);
-            viewMenuButton.setAlignmentY(JComponent.CENTER_ALIGNMENT);
-            viewMenuButton.setMargin(shrinkwrap);
-            viewMenuButton.setModel(new DefaultButtonModel() {
-                public void setPressed(boolean b) {
-                }
-
-                public void setArmed(boolean b) {
-                }
-
-                public void setSelected(boolean b) {
-                    super.setSelected(b);
-
-                    if (b) {
-                        stateMask |= PRESSED | ARMED;
-                    } else {
-                        stateMask &= ~(PRESSED | ARMED);
-                    }
-                }
-            });
-            viewMenuButton.addMouseListener(new MouseAdapter() {
-                public void mousePressed(MouseEvent e) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        viewMenuButton.setSelected(!viewMenuButton.isSelected());
-
-                        if (viewMenuButton.isSelected()) {
-                            viewTypePopupMenu.show(viewMenuButton, 0, viewMenuButton.getHeight());
-                        }
-                    }
-                }
-            });
-            viewTypePopupMenu.addPopupMenuListener(new PopupMenuListener() {
-                public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                }
-
-                public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            viewMenuButton.setSelected(false);
-                        }
-                    });
-                }
-
-                public void popupMenuCanceled(PopupMenuEvent e) {
-                }
-            });
-            topPanel.add(viewMenuButton);
-
-            topPanel.add(Box.createRigidArea(new Dimension(80, 0)));
-
-            filePane.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent e) {
-                    if ("viewType".equals(e.getPropertyName())) {
-                        switch (filePane.getViewType()) {
-                            case FilePane.VIEWTYPE_LIST:
-                                listViewMenuItem.setSelected(true);
-                                break;
-
-                            case FilePane.VIEWTYPE_DETAILS:
-                                detailsViewMenuItem.setSelected(true);
-                                break;
-                        }
-                    }
-                }
-            });
-        }
+            }
+        });
 
         // ************************************** //
         // ******* Add the directory pane ******* //
@@ -622,19 +493,18 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         // Decide whether to use the ShellFolder class to populate shortcut
         // panel and combobox.
         JFileChooser fc = getFileChooser();
-        if (OS_VERSION.compareTo(OSInfo.WINDOWS_ME) >= 0) {
-            if (FilePane.usesShellFolder(fc)) {
-                if (placesBar == null && !UIManager.getBoolean("FileChooser.noPlacesBar")) {
-                    placesBar = new WindowsPlacesBar(fc, XPStyle.getXP() != null);
-                    fc.add(placesBar, BorderLayout.BEFORE_LINE_BEGINS);
-                    fc.addPropertyChangeListener(placesBar);
-                }
-            } else {
-                if (placesBar != null) {
-                    fc.remove(placesBar);
-                    fc.removePropertyChangeListener(placesBar);
-                    placesBar = null;
-                }
+
+        if (FilePane.usesShellFolder(fc)) {
+            if (placesBar == null && !UIManager.getBoolean("FileChooser.noPlacesBar")) {
+                placesBar = new WindowsPlacesBar(fc, XPStyle.getXP() != null);
+                fc.add(placesBar, BorderLayout.BEFORE_LINE_BEGINS);
+                fc.addPropertyChangeListener(placesBar);
+            }
+        } else {
+            if (placesBar != null) {
+                fc.remove(placesBar);
+                fc.removePropertyChangeListener(placesBar);
+                placesBar = null;
             }
         }
     }
@@ -673,17 +543,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         upFolderToolTipText =  UIManager.getString("FileChooser.upFolderToolTipText",l);
         upFolderAccessibleName = UIManager.getString("FileChooser.upFolderAccessibleName",l);
 
-        homeFolderToolTipText =  UIManager.getString("FileChooser.homeFolderToolTipText",l);
-        homeFolderAccessibleName = UIManager.getString("FileChooser.homeFolderAccessibleName",l);
-
         newFolderToolTipText = UIManager.getString("FileChooser.newFolderToolTipText",l);
         newFolderAccessibleName = UIManager.getString("FileChooser.newFolderAccessibleName",l);
-
-        listViewButtonToolTipText = UIManager.getString("FileChooser.listViewButtonToolTipText",l);
-        listViewButtonAccessibleName = UIManager.getString("FileChooser.listViewButtonAccessibleName",l);
-
-        detailsViewButtonToolTipText = UIManager.getString("FileChooser.detailsViewButtonToolTipText",l);
-        detailsViewButtonAccessibleName = UIManager.getString("FileChooser.detailsViewButtonAccessibleName",l);
 
         viewMenuButtonToolTipText = UIManager.getString("FileChooser.viewMenuButtonToolTipText",l);
         viewMenuButtonAccessibleName = UIManager.getString("FileChooser.viewMenuButtonAccessibleName",l);
@@ -1050,6 +911,65 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
     protected DirectoryComboBoxRenderer createDirectoryComboBoxRenderer(JFileChooser fc) {
         return new DirectoryComboBoxRenderer();
+    }
+
+    private static JButton createToolButton(Action a, Icon defaultIcon, String toolTipText, String accessibleName) {
+        final JButton result = new JButton(a);
+
+        result.setText(null);
+        result.setIcon(defaultIcon);
+        result.setToolTipText(toolTipText);
+        result.setRequestFocusEnabled(false);
+        result.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, accessibleName);
+        result.putClientProperty(WindowsLookAndFeel.HI_RES_DISABLED_ICON_CLIENT_KEY, Boolean.TRUE);
+        result.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+        result.setAlignmentY(JComponent.CENTER_ALIGNMENT);
+        result.setMargin(shrinkwrap);
+        result.setFocusPainted(false);
+
+        result.setModel(new DefaultButtonModel() {
+            public void setPressed(boolean b) {
+                // Forbid keyboard actions if the button is not in rollover state
+                if (!b || isRollover()) {
+                    super.setPressed(b);
+                }
+            }
+
+            public void setRollover(boolean b) {
+                if (b && !isRollover()) {
+                    // Reset other buttons
+                    for (Component component : result.getParent().getComponents()) {
+                        if (component instanceof JButton && component != result) {
+                            ((JButton) component).getModel().setRollover(false);
+                        }
+                    }
+                }
+
+                super.setRollover(b);
+            }
+
+            public void setSelected(boolean b) {
+                super.setSelected(b);
+
+                if (b) {
+                    stateMask |= PRESSED | ARMED;
+                } else {
+                    stateMask &= ~(PRESSED | ARMED);
+                }
+            }
+        });
+
+        result.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+                result.getModel().setRollover(true);
+            }
+
+            public void focusLost(FocusEvent e) {
+                result.getModel().setRollover(false);
+            }
+        });
+
+        return result;
     }
 
     //

@@ -101,14 +101,7 @@ final class ${LAF_NAME}Defaults {
      */
     private FontUIResource defaultFont;
 
-    /**
-     * Map of lists of derived colors keyed by the DerivedColorKeys
-     */
-    private Map<DerivedColorKey, DerivedColor> derivedColorsMap =
-            new HashMap<DerivedColorKey, DerivedColor>();
-
-    /** Tempory key used for fetching from the derivedColorsMap */
-    private final DerivedColorKey tmpDCKey = new DerivedColorKey();
+    private ColorTree colorTree = new ColorTree();
 
     /** Listener for changes to user defaults table */
     private DefaultsListener defaultsListener = new DefaultsListener();
@@ -117,14 +110,14 @@ final class ${LAF_NAME}Defaults {
     void initialize() {
         // add listener for derived colors
         UIManager.addPropertyChangeListener(defaultsListener);
-        UIManager.getDefaults().addPropertyChangeListener(defaultsListener);
+        UIManager.getDefaults().addPropertyChangeListener(colorTree);
     }
 
     /** Called by UIManager when this look and feel is uninstalled. */
     void uninitialize() {
         // remove listener for derived colors
-        UIManager.getDefaults().removePropertyChangeListener(defaultsListener);
         UIManager.removePropertyChangeListener(defaultsListener);
+        UIManager.getDefaults().removePropertyChangeListener(colorTree);
     }
 
     /**
@@ -663,22 +656,23 @@ ${UI_DEFAULT_INIT}
         }
     }
 
-    /**
-     * Get a derived color, derived colors are shared instances and will be
-     * updated when its parent UIDefault color changes.
-     *
-     * @param uiDefaultParentName The parent UIDefault key
-     * @param hOffset The hue offset
-     * @param sOffset The saturation offset
-     * @param bOffset The brightness offset
-     * @param aOffset The alpha offset
-     * @return The stored derived color
-     */
-    public DerivedColor getDerivedColor(String uiDefaultParentName,
-                                        float hOffset, float sOffset,
-                                        float bOffset, int aOffset){
-        return getDerivedColor(uiDefaultParentName, hOffset, sOffset,
-                               bOffset, aOffset, true);
+    private void addColor(UIDefaults d, String uin, int r, int g, int b, int a) {
+        Color color = new ColorUIResource(new Color(r, g, b, a));
+        colorTree.addColor(uin, color);
+        d.put(uin, color);
+    }
+
+    private void addColor(UIDefaults d, String uin, String parentUin,
+            float hOffset, float sOffset, float bOffset, int aOffset) {
+        addColor(d, uin, parentUin, hOffset, sOffset, bOffset, aOffset, true);
+    }
+
+    private void addColor(UIDefaults d, String uin, String parentUin,
+            float hOffset, float sOffset, float bOffset,
+            int aOffset, boolean uiResource) {
+        Color color = getDerivedColor(uin, parentUin,
+                hOffset, sOffset, bOffset, aOffset, uiResource);
+        d.put(uin, color);
     }
 
     /**
@@ -694,89 +688,110 @@ ${UI_DEFAULT_INIT}
      *        false if it should not be a UIResource
      * @return The stored derived color
      */
-    public DerivedColor getDerivedColor(String uiDefaultParentName,
+    public DerivedColor getDerivedColor(String parentUin,
                                         float hOffset, float sOffset,
                                         float bOffset, int aOffset,
                                         boolean uiResource){
-        tmpDCKey.set(uiDefaultParentName, hOffset, sOffset, bOffset, aOffset,
-            uiResource);
-        DerivedColor color = derivedColorsMap.get(tmpDCKey);
-        if (color == null){
-            if (uiResource) {
-                color = new DerivedColor.UIResource(uiDefaultParentName,
-                        hOffset, sOffset, bOffset, aOffset);
-            } else {
-                color = new DerivedColor(uiDefaultParentName, hOffset, sOffset,
-                    bOffset, aOffset);
-            }
-            // calculate the initial value
-            color.rederiveColor();
-            // add the listener so that if the color changes we'll propogate it
-            color.addPropertyChangeListener(defaultsListener);
-            // add to the derived colors table
-            derivedColorsMap.put(new DerivedColorKey(uiDefaultParentName,
-                    hOffset, sOffset, bOffset, aOffset, uiResource),color);
-        }
-        return color;
+        return getDerivedColor(null, parentUin,
+                hOffset, sOffset, bOffset, aOffset, uiResource);
     }
 
-    /**
-     * Key class for derived colors
-     */
-    private class DerivedColorKey {
-        private String uiDefaultParentName;
-        private float hOffset, sOffset, bOffset;
-        private int aOffset;
-        private boolean uiResource;
-
-        DerivedColorKey(){}
-
-        DerivedColorKey(String uiDefaultParentName, float hOffset,
-                        float sOffset, float bOffset, int aOffset,
-                        boolean uiResource) {
-            set(uiDefaultParentName, hOffset, sOffset, bOffset, aOffset, uiResource);
+    private DerivedColor getDerivedColor(String uin, String parentUin,
+                                        float hOffset, float sOffset,
+                                        float bOffset, int aOffset,
+                                        boolean uiResource) {
+        DerivedColor color;
+        if (uiResource) {
+            color = new DerivedColor.UIResource(parentUin,
+                    hOffset, sOffset, bOffset, aOffset);
+        } else {
+            color = new DerivedColor(parentUin, hOffset, sOffset,
+                bOffset, aOffset);
         }
 
-        void set (String uiDefaultParentName, float hOffset,
-                        float sOffset, float bOffset, int aOffset,
-                        boolean uiResource) {
-            this.uiDefaultParentName = uiDefaultParentName;
-            this.hOffset = hOffset;
-            this.sOffset = sOffset;
-            this.bOffset = bOffset;
-            this.aOffset = aOffset;
-            this.uiResource = uiResource;
+        if (derivedColors.containsKey(color)) {
+            return derivedColors.get(color);
+        } else {
+            derivedColors.put(color, color);
+            color.rederiveColor(); /// move to ARP.decodeColor() ?
+            colorTree.addColor(uin, color);
+            return color;
+        }
+    }
+
+    private Map<DerivedColor, DerivedColor> derivedColors =
+            new HashMap<DerivedColor, DerivedColor>();
+
+    private class ColorTree implements PropertyChangeListener {
+        private Node root = new Node(null, null);
+        private Map<String, Node> nodes = new HashMap<String, Node>();
+
+        public Color getColor(String uin) {
+            return nodes.get(uin).color;
+        }
+
+        public void addColor(String uin, Color color) {
+            Node parent = getParentNode(color);
+            Node node = new Node(color, parent);
+            parent.children.add(node);
+            if (uin != null) {
+                nodes.put(uin, node);
+            }
+        }
+
+        private Node getParentNode(Color color) {
+            Node parent = root;
+            if (color instanceof DerivedColor) {
+                String parentUin = ((DerivedColor)color).getUiDefaultParentName();
+                Node p = nodes.get(parentUin);
+                if (p != null) {
+                    parent = p;
+                }
+            }
+            return parent;
+        }
+
+        public void update() {
+            root.update();
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof DerivedColorKey)) return false;
-            DerivedColorKey that = (DerivedColorKey) o;
-            if (aOffset != that.aOffset) return false;
-            if (Float.compare(that.bOffset, bOffset) != 0) return false;
-            if (Float.compare(that.hOffset, hOffset) != 0) return false;
-            if (Float.compare(that.sOffset, sOffset) != 0) return false;
-            if (uiDefaultParentName != null ?
-                !uiDefaultParentName.equals(that.uiDefaultParentName) :
-                that.uiDefaultParentName != null) return false;
-            if (this.uiResource != that.uiResource) return false;
-            return true;
+        public void propertyChange(PropertyChangeEvent ev) {
+            String name = ev.getPropertyName();
+            Node node = nodes.get(name);
+            if (node != null) {
+                // this is a registered color
+                node.parent.children.remove(node);
+                Color color = (Color) ev.getNewValue();
+                Node parent = getParentNode(color);
+                node.set(color, parent);
+                parent.children.add(node);
+                node.update();
+            }
         }
 
-        @Override
-        public int hashCode() {
-            int result = super.hashCode();
-            result = 31 * result + uiDefaultParentName.hashCode();
-            result = 31 * result + hOffset != +0.0f ?
-                    Float.floatToIntBits(hOffset) : 0;
-            result = 31 * result + sOffset != +0.0f ?
-                    Float.floatToIntBits(sOffset) : 0;
-            result = 31 * result + bOffset != +0.0f ?
-                    Float.floatToIntBits(bOffset) : 0;
-            result = 31 * result + aOffset;
-            result = 31 * result + (uiResource ? 1 : 0);
-            return result;
+        class Node {
+            Color color;
+            Node parent;
+            List<Node> children = new LinkedList<Node>();
+
+            Node(Color color, Node parent) {
+                set(color, parent);
+            }
+
+            public void set(Color color, Node parent) {
+                this.color = color;
+                this.parent = parent;
+            }
+
+            public void update() {
+                if (color instanceof DerivedColor) {
+                    ((DerivedColor)color).rederiveColor();
+                }
+                for (Node child: children) {
+                    child.update();
+                }
+            }
         }
     }
 
@@ -786,49 +801,12 @@ ${UI_DEFAULT_INIT}
     private class DefaultsListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
-            Object src = evt.getSource();
-            String key = evt.getPropertyName();
-            if (key.equals("lookAndFeel")){
+            if ("lookAndFeel".equals(evt.getPropertyName())) {
                 // LAF has been installed, this is the first point at which we
                 // can access our defaults table via UIManager so before now
                 // all derived colors will be incorrect.
                 // First we need to update
-                for (DerivedColor color : derivedColorsMap.values()) {
-                    color.rederiveColor();
-                }
-            } else if (src instanceof DerivedColor && key.equals("rgb")) {
-                // derived color that is in UIManager defaults has changed
-                // update all its dependent colors. Don't worry about doing
-                // this recursively since calling rederiveColor will cause
-                // another PCE to be fired, ending up here and essentially
-                // recursing
-                DerivedColor parentColor = (DerivedColor)src;
-                String parentKey = null;
-                Set<Map.Entry<Object,Object>> entries =
-                        UIManager.getDefaults().entrySet();
-                
-                for (Map.Entry entry : entries) {
-                    Object value = entry.getValue();
-                    if (value == parentColor) {
-                        parentKey = entry.getKey().toString();
-                    }
-                }
-                
-                if (parentKey == null) {
-                    //couldn't find the DerivedColor in the UIDefaults map,
-                    //so we just bail.
-                    return;
-                }
-                
-                for (Map.Entry entry : entries) {
-                    Object value = entry.getValue();
-                    if (value instanceof DerivedColor) {
-                        DerivedColor color = (DerivedColor)entry.getValue();
-                        if (parentKey.equals(color.getUiDefaultParentName())) {
-                            color.rederiveColor();
-                        }
-                    }
-                }
+                colorTree.update();
             }
         }
     }
@@ -875,4 +853,3 @@ ${UI_DEFAULT_INIT}
         }
     }
 }
-

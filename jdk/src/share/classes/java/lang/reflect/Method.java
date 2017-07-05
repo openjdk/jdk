@@ -88,12 +88,6 @@ public final
     private Class securityCheckCache;
     private Class securityCheckTargetClassCache;
 
-    // Modifiers that can be applied to a method in source code
-    private static final int LANGUAGE_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
-        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |
-        Modifier.SYNCHRONIZED   | Modifier.NATIVE;
-
    // Generics infrastructure
 
     private String getGenericSignature() {return signature;}
@@ -408,12 +402,12 @@ public final
      * {@code public}, {@code protected} or {@code private} first,
      * and then other modifiers in the following order:
      * {@code abstract}, {@code static}, {@code final},
-     * {@code synchronized}, {@code native}.
+     * {@code synchronized}, {@code native}, {@code strictfp}.
      */
     public String toString() {
         try {
             StringBuffer sb = new StringBuffer();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.methodModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }
@@ -473,7 +467,7 @@ public final
      * {@code public}, {@code protected} or {@code private} first,
      * and then other modifiers in the following order:
      * {@code abstract}, {@code static}, {@code final},
-     * {@code synchronized} {@code native}.
+     * {@code synchronized}, {@code native}, {@code strictfp}.
      *
      * @return a string describing this {@code Method},
      * include type parameters
@@ -483,7 +477,7 @@ public final
     public String toGenericString() {
         try {
             StringBuilder sb = new StringBuilder();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.methodModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }

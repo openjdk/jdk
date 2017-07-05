@@ -593,6 +593,7 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                                                                                      \
   nonstatic_field(PcDesc,                      _pc_offset,                                    int)                                   \
   nonstatic_field(PcDesc,                      _scope_decode_offset,                          int)                                   \
+  nonstatic_field(PcDesc,                      _flags,                        PcDesc::PcDescFlags)                                   \
                                                                                                                                      \
   /***************************************************/                                                                              \
   /* CodeBlobs (NOTE: incomplete, but only a little) */                                                                              \
@@ -1158,6 +1159,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   /***************************************/                               \
                                                                           \
   declare_toplevel_type(PcDesc)                                           \
+  declare_integer_type(PcDesc::PcDescFlags)                               \
                                                                           \
   /************************/                                              \
   /* OopMap and OopMapSet */                                              \

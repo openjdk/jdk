@@ -195,7 +195,7 @@ class SynthMenuItemLayoutHelper extends MenuItemLayoutHelper {
                     getHorizontalAlignment(), getVerticalAlignment(),
                     getHorizontalTextPosition(), getVerticalTextPosition(),
                     getViewRect(), iconRect, textRect, getGap());
-            textRect.width += getLeftTextExtraWidth() + getRightTextExtraWidth();
+            textRect.width += getLeftTextExtraWidth();
             Rectangle labelRect = iconRect.union(textRect);
             getLabelSize().setHeight(labelRect.height);
             getLabelSize().setWidth(labelRect.width);

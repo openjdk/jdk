@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ enum {
 // registers
 enum {
   pd_nof_cpu_regs_frame_map = 32,  // number of registers used during code emission
-  pd_nof_caller_save_cpu_regs_frame_map = 6,  // number of cpu registers killed by calls
+  pd_nof_caller_save_cpu_regs_frame_map = 10,  // number of cpu registers killed by calls
   pd_nof_cpu_regs_reg_alloc = 20,  // number of registers that are visible to register allocator
   pd_nof_cpu_regs_linearscan = 32,// number of registers visible linear scan
   pd_first_cpu_reg = 0,

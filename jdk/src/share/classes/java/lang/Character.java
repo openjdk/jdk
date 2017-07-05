@@ -162,7 +162,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      *
      * @since   1.0.2
      */
-    public static final char   MAX_VALUE = '\uffff';
+    public static final char   MAX_VALUE = '\uFFFF';
 
     /**
      * The <code>Class</code> instance representing the primitive type
@@ -518,75 +518,91 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
     public static final byte DIRECTIONALITY_POP_DIRECTIONAL_FORMAT = 18;
 
     /**
-     * The minimum value of a Unicode high-surrogate code unit in the
-     * UTF-16 encoding. A high-surrogate is also known as a
-     * <i>leading-surrogate</i>.
+     * The minimum value of a
+     * <a href="http://www.unicode.org/glossary/#high_surrogate_code_unit">
+     * Unicode high-surrogate code unit</a>
+     * in the UTF-16 encoding, constant <code>'&#92;uD800'</code>.
+     * A high-surrogate is also known as a <i>leading-surrogate</i>.
      *
      * @since 1.5
      */
     public static final char MIN_HIGH_SURROGATE = '\uD800';
 
     /**
-     * The maximum value of a Unicode high-surrogate code unit in the
-     * UTF-16 encoding. A high-surrogate is also known as a
-     * <i>leading-surrogate</i>.
+     * The maximum value of a
+     * <a href="http://www.unicode.org/glossary/#high_surrogate_code_unit">
+     * Unicode high-surrogate code unit</a>
+     * in the UTF-16 encoding, constant <code>'&#92;uDBFF'</code>.
+     * A high-surrogate is also known as a <i>leading-surrogate</i>.
      *
      * @since 1.5
      */
     public static final char MAX_HIGH_SURROGATE = '\uDBFF';
 
     /**
-     * The minimum value of a Unicode low-surrogate code unit in the
-     * UTF-16 encoding. A low-surrogate is also known as a
-     * <i>trailing-surrogate</i>.
+     * The minimum value of a
+     * <a href="http://www.unicode.org/glossary/#low_surrogate_code_unit">
+     * Unicode low-surrogate code unit</a>
+     * in the UTF-16 encoding, constant <code>'&#92;uDC00'</code>.
+     * A low-surrogate is also known as a <i>trailing-surrogate</i>.
      *
      * @since 1.5
      */
     public static final char MIN_LOW_SURROGATE  = '\uDC00';
 
     /**
-     * The maximum value of a Unicode low-surrogate code unit in the
-     * UTF-16 encoding. A low-surrogate is also known as a
-     * <i>trailing-surrogate</i>.
+     * The maximum value of a
+     * <a href="http://www.unicode.org/glossary/#low_surrogate_code_unit">
+     * Unicode low-surrogate code unit</a>
+     * in the UTF-16 encoding, constant <code>'&#92;uDFFF'</code>.
+     * A low-surrogate is also known as a <i>trailing-surrogate</i>.
      *
      * @since 1.5
      */
     public static final char MAX_LOW_SURROGATE  = '\uDFFF';
 
     /**
-     * The minimum value of a Unicode surrogate code unit in the UTF-16 encoding.
+     * The minimum value of a Unicode surrogate code unit in the
+     * UTF-16 encoding, constant <code>'&#92;uD800'</code>.
      *
      * @since 1.5
      */
     public static final char MIN_SURROGATE = MIN_HIGH_SURROGATE;
 
     /**
-     * The maximum value of a Unicode surrogate code unit in the UTF-16 encoding.
+     * The maximum value of a Unicode surrogate code unit in the
+     * UTF-16 encoding, constant <code>'&#92;uDFFF'</code>.
      *
      * @since 1.5
      */
     public static final char MAX_SURROGATE = MAX_LOW_SURROGATE;
 
     /**
-     * The minimum value of a supplementary code point.
+     * The minimum value of a
+     * <a href="http://www.unicode.org/glossary/#supplementary_code_point">
+     * Unicode supplementary code point</a>, constant {@code U+10000}.
      *
      * @since 1.5
      */
     public static final int MIN_SUPPLEMENTARY_CODE_POINT = 0x010000;
 
     /**
-     * The minimum value of a Unicode code point.
+     * The minimum value of a
+     * <a href="http://www.unicode.org/glossary/#code_point">
+     * Unicode code point</a>, constant {@code U+0000}.
      *
      * @since 1.5
      */
     public static final int MIN_CODE_POINT = 0x000000;
 
     /**
-     * The maximum value of a Unicode code point.
+     * The maximum value of a
+     * <a href="http://www.unicode.org/glossary/#code_point">
+     * Unicode code point</a>, constant {@code U+10FFFF}.
      *
      * @since 1.5
      */
-    public static final int MAX_CODE_POINT = 0x10ffff;
+    public static final int MAX_CODE_POINT = 0X10FFFF;
 
 
     /**
@@ -2571,9 +2587,9 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * significantly better space and time performance by caching
      * frequently requested values.
      *
-     * This method will always cache values in the range '&#92;u0000'
-     * to '&#92;u007f'", inclusive, and may cache other values outside
-     * of this range.
+     * This method will always cache values in the range {@code
+     * '\u005Cu0000'} to {@code '\u005Cu007f'}, inclusive, and may
+     * cache other values outside of this range.
      *
      * @param  c a char value.
      * @return a <tt>Character</tt> instance representing <tt>c</tt>.
@@ -2648,19 +2664,15 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
     }
 
     /**
-     * Determines whether the specified code point is a valid Unicode
-     * code point value in the range of <code>0x0000</code> to
-     * <code>0x10FFFF</code> inclusive. This method is equivalent to
-     * the expression:
-     *
-     * <blockquote><pre>
-     * codePoint >= 0x0000 && codePoint <= 0x10FFFF
-     * </pre></blockquote>
+     * Determines whether the specified code point is a valid
+     * <a href="http://www.unicode.org/glossary/#code_point">
+     * Unicode code point value</a>.
      *
      * @param  codePoint the Unicode code point to be tested
-     * @return <code>true</code> if the specified code point value
-     * is a valid code point value;
-     * <code>false</code> otherwise.
+     * @return {@code true} if the specified code point value is between
+     *         {@link #MIN_CODE_POINT} and
+     *         {@link #MAX_CODE_POINT} inclusive;
+     *         {@code false} otherwise.
      * @since  1.5
      */
     public static boolean isValidCodePoint(int codePoint) {
@@ -2669,15 +2681,13 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
 
     /**
      * Determines whether the specified character (Unicode code point)
-     * is in the supplementary character range. The method call is
-     * equivalent to the expression:
-     * <blockquote><pre>
-     * codePoint >= 0x10000 && codePoint <= 0x10FFFF
-     * </pre></blockquote>
+     * is in the <a href="#supplementary">supplementary character</a> range.
      *
      * @param  codePoint the character (Unicode code point) to be tested
-     * @return <code>true</code> if the specified character is in the Unicode
-     *         supplementary character range; <code>false</code> otherwise.
+     * @return {@code true} if the specified code point is between
+     *         {@link #MIN_SUPPLEMENTARY_CODE_POINT} and
+     *         {@link #MAX_CODE_POINT} inclusive;
+     *         {@code false} otherwise.
      * @since  1.5
      */
     public static boolean isSupplementaryCodePoint(int codePoint) {
@@ -2686,56 +2696,83 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
     }
 
     /**
-     * Determines if the given <code>char</code> value is a
-     * high-surrogate code unit (also known as <i>leading-surrogate
-     * code unit</i>). Such values do not represent characters by
-     * themselves, but are used in the representation of <a
-     * href="#supplementary">supplementary characters</a> in the
-     * UTF-16 encoding.
+     * Determines if the given {@code char} value is a
+     * <a href="http://www.unicode.org/glossary/#high_surrogate_code_unit">
+     * Unicode high-surrogate code unit</a>
+     * (also known as <i>leading-surrogate code unit</i>).
      *
-     * <p>This method returns <code>true</code> if and only if
-     * <blockquote><pre>ch >= '&#92;uD800' && ch <= '&#92;uDBFF'
-     * </pre></blockquote>
-     * is <code>true</code>.
+     * <p>Such values do not represent characters by themselves,
+     * but are used in the representation of
+     * <a href="#supplementary">supplementary characters</a>
+     * in the UTF-16 encoding.
      *
-     * @param   ch   the <code>char</code> value to be tested.
-     * @return  <code>true</code> if the <code>char</code> value
-     *          is between '&#92;uD800' and '&#92;uDBFF' inclusive;
-     *          <code>false</code> otherwise.
-     * @see     java.lang.Character#isLowSurrogate(char)
-     * @see     Character.UnicodeBlock#of(int)
-     * @since   1.5
+     * @param  ch the {@code char} value to be tested.
+     * @return {@code true} if the {@code char} value is between
+     *         {@link #MIN_HIGH_SURROGATE} and
+     *         {@link #MAX_HIGH_SURROGATE} inclusive;
+     *         {@code false} otherwise.
+     * @see    #isLowSurrogate(char)
+     * @see    Character.UnicodeBlock#of(int)
+     * @since  1.5
      */
     public static boolean isHighSurrogate(char ch) {
         return ch >= MIN_HIGH_SURROGATE && ch <= MAX_HIGH_SURROGATE;
     }
 
     /**
-     * Determines if the given <code>char</code> value is a
-     * low-surrogate code unit (also known as <i>trailing-surrogate code
-     * unit</i>). Such values do not represent characters by themselves,
-     * but are used in the representation of <a
-     * href="#supplementary">supplementary characters</a> in the UTF-16 encoding.
+     * Determines if the given {@code char} value is a
+     * <a href="http://www.unicode.org/glossary/#low_surrogate_code_unit">
+     * Unicode low-surrogate code unit</a>
+     * (also known as <i>trailing-surrogate code unit</i>).
      *
-     * <p> This method returns <code>true</code> if and only if
-     * <blockquote><pre>ch >= '&#92;uDC00' && ch <= '&#92;uDFFF'
-     * </pre></blockquote> is <code>true</code>.
+     * <p>Such values do not represent characters by themselves,
+     * but are used in the representation of
+     * <a href="#supplementary">supplementary characters</a>
+     * in the UTF-16 encoding.
      *
-     * @param   ch   the <code>char</code> value to be tested.
-     * @return  <code>true</code> if the <code>char</code> value
-     *          is between '&#92;uDC00' and '&#92;uDFFF' inclusive;
-     *          <code>false</code> otherwise.
-     * @see java.lang.Character#isHighSurrogate(char)
-     * @since   1.5
+     * @param  ch the {@code char} value to be tested.
+     * @return {@code true} if the {@code char} value is between
+     *         {@link #MIN_LOW_SURROGATE} and
+     *         {@link #MAX_LOW_SURROGATE} inclusive;
+     *         {@code false} otherwise.
+     * @see    #isHighSurrogate(char)
+     * @since  1.5
      */
     public static boolean isLowSurrogate(char ch) {
         return ch >= MIN_LOW_SURROGATE && ch <= MAX_LOW_SURROGATE;
     }
 
     /**
+     * Determines if the given {@code char} value is a Unicode
+     * <i>surrogate code unit</i>.
+     *
+     * <p>Such values do not represent characters by themselves,
+     * but are used in the representation of
+     * <a href="#supplementary">supplementary characters</a>
+     * in the UTF-16 encoding.
+     *
+     * <p>A char value is a surrogate code unit if and only if it is either
+     * a {@linkplain #isLowSurrogate(char) low-surrogate code unit} or
+     * a {@linkplain #isHighSurrogate(char) high-surrogate code unit}.
+     *
+     * @param  ch the {@code char} value to be tested.
+     * @return {@code true} if the {@code char} value is between
+     *         {@link #MIN_SURROGATE} and
+     *         {@link #MAX_SURROGATE} inclusive;
+     *         {@code false} otherwise.
+     * @since  1.7
+     */
+    public static boolean isSurrogate(char ch) {
+        return ch >= MIN_SURROGATE && ch <= MAX_SURROGATE;
+    }
+
+    /**
      * Determines whether the specified pair of <code>char</code>
-     * values is a valid surrogate pair. This method is equivalent to
-     * the expression:
+     * values is a valid
+     * <a href="http://www.unicode.org/glossary/#surrogate_pair">
+     * Unicode surrogate pair</a>.
+
+     * <p>This method is equivalent to the expression:
      * <blockquote><pre>
      * isHighSurrogate(high) && isLowSurrogate(low)
      * </pre></blockquote>
@@ -4968,7 +5005,7 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
 
     /**
      * The number of bits used to represent a <tt>char</tt> value in unsigned
-     * binary form.
+     * binary form, constant {@code 16}.
      *
      * @since 1.5
      */
