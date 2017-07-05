@@ -359,6 +359,12 @@ public class InstanceKlass extends Klass {
     public static final int innerClassNextOffset = 4;
   };
 
+  public static interface EnclosingMethodAttributeOffset {
+    public static final int enclosing_method_class_index_offset = 0;
+    public static final int enclosing_method_method_index_offset = 1;
+    public static final int enclosing_method_attribute_size = 2;
+  };
+
   // refer to compute_modifier_flags in VM code.
   public long computeModifierFlags() {
     long access = getAccessFlags();
@@ -367,9 +373,14 @@ public class InstanceKlass extends Klass {
     int length = ( innerClassList == null)? 0 : (int) innerClassList.getLength();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0, "just checking");
+          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
+                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosing_method_attribute_size,
+                      "just checking");
        }
        for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
+          if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
+              break;
+          }
           int ioff = innerClassList.getShortAt(i +
                          InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
           // 'ioff' can be zero.
@@ -419,9 +430,14 @@ public class InstanceKlass extends Klass {
     int length = ( innerClassList == null)? 0 : (int) innerClassList.getLength();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
-         Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0, "just checking");
+         Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
+                     length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosing_method_attribute_size,
+                     "just checking");
        }
        for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
+         if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
+             break;
+         }
          int ioff = innerClassList.getShortAt(i +
                         InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
          // 'ioff' can be zero.
