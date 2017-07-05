@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /* @test
  * @bug 4313887 6838333 6917021 7006126 6950237 8006645
- * @summary Unit test for java.nio.file.Files copy and move methods
- * @library ..
- * @build CopyAndMove PassThroughFileSystem
+ * @summary Unit test for java.nio.file.Files copy and move methods (use -Dseed=X to set PRNG seed)
+ * @library .. /lib/testlibrary/
+ * @build jdk.testlibrary.* CopyAndMove PassThroughFileSystem
  * @run main/othervm CopyAndMove
  * @key randomness
  */
@@ -39,9 +39,10 @@ import java.nio.file.attribute.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import jdk.testlibrary.RandomFactory;
 
 public class CopyAndMove {
-    static final Random rand = new Random();
+    static final Random rand = RandomFactory.getRandom();
     static boolean heads() { return rand.nextBoolean(); }
     private static boolean testPosixAttributes = false;
 

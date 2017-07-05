@@ -351,8 +351,8 @@ java_props_t *
 GetJavaProperties(JNIEnv* env)
 {
     static java_props_t sprops = {0};
-
-    OSVERSIONINFOEX ver;
+    int majorVersion;
+    int minorVersion;
 
     if (sprops.line_separator) {
         return &sprops;
@@ -383,21 +383,67 @@ GetJavaProperties(JNIEnv* env)
     /* OS properties */
     {
         char buf[100];
-        SYSTEM_INFO si;
-        PGNSI pGNSI;
+        boolean is_workstation;
+        boolean is_64bit;
+        DWORD platformId;
+        {
+            OSVERSIONINFOEX ver;
+            ver.dwOSVersionInfoSize = sizeof(ver);
+            GetVersionEx((OSVERSIONINFO *) &ver);
+            majorVersion = ver.dwMajorVersion;
+            minorVersion = ver.dwMinorVersion;
+            is_workstation = (ver.wProductType == VER_NT_WORKSTATION);
+            platformId = ver.dwPlatformId;
+            sprops.patch_level = _strdup(ver.szCSDVersion);
+        }
 
-        ver.dwOSVersionInfoSize = sizeof(ver);
-        GetVersionEx((OSVERSIONINFO *) &ver);
+        {
+            SYSTEM_INFO si;
+            ZeroMemory(&si, sizeof(SYSTEM_INFO));
+            GetNativeSystemInfo(&si);
 
-        ZeroMemory(&si, sizeof(SYSTEM_INFO));
-        // Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
-        pGNSI = (PGNSI) GetProcAddress(
-                GetModuleHandle(TEXT("kernel32.dll")),
-                "GetNativeSystemInfo");
-        if(NULL != pGNSI)
-            pGNSI(&si);
-        else
-            GetSystemInfo(&si);
+            is_64bit = (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64);
+        }
+        do {
+            // Read the major and minor version number from kernel32.dll
+            VS_FIXEDFILEINFO *file_info;
+            WCHAR kernel32_path[MAX_PATH];
+            DWORD version_size;
+            LPTSTR version_info;
+            UINT len, ret;
+
+            // Get the full path to \Windows\System32\kernel32.dll and use that for
+            // determining what version of Windows we're running on.
+            len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
+            ret = GetSystemDirectoryW(kernel32_path, len);
+            if (ret == 0 || ret > len) {
+                break;
+            }
+            wcsncat(kernel32_path, L"\\kernel32.dll", MAX_PATH - ret);
+
+            version_size = GetFileVersionInfoSizeW(kernel32_path, NULL);
+            if (version_size == 0) {
+                break;
+            }
+
+            version_info = (LPTSTR)malloc(version_size);
+            if (version_info == NULL) {
+                break;
+            }
+
+            if (!GetFileVersionInfoW(kernel32_path, 0, version_size, version_info)) {
+                free(version_info);
+                break;
+            }
+
+            if (!VerQueryValueW(version_info, L"\\", (LPVOID*)&file_info, &len)) {
+                free(version_info);
+                break;
+            }
+            majorVersion = HIWORD(file_info->dwProductVersionMS);
+            minorVersion = LOWORD(file_info->dwProductVersionMS);
+            free(version_info);
+        } while (0);
 
         /*
          * From msdn page on OSVERSIONINFOEX, current as of this
@@ -423,17 +469,15 @@ GetJavaProperties(JNIEnv* env)
          * Windows Server 2008 R2       6               1  (!VER_NT_WORKSTATION)
          * Windows 8                    6               2  (VER_NT_WORKSTATION)
          * Windows Server 2012          6               2  (!VER_NT_WORKSTATION)
+         * Windows 10                   10              0  (VER_NT_WORKSTATION)
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
          */
-        switch (ver.dwPlatformId) {
-        case VER_PLATFORM_WIN32s:
-            sprops.os_name = "Windows 3.1";
-            break;
+        switch (platformId) {
         case VER_PLATFORM_WIN32_WINDOWS:
-           if (ver.dwMajorVersion == 4) {
-                switch (ver.dwMinorVersion) {
+           if (majorVersion == 4) {
+                switch (minorVersion) {
                 case  0: sprops.os_name = "Windows 95";           break;
                 case 10: sprops.os_name = "Windows 98";           break;
                 case 90: sprops.os_name = "Windows Me";           break;
@@ -444,10 +488,10 @@ GetJavaProperties(JNIEnv* env)
             }
             break;
         case VER_PLATFORM_WIN32_NT:
-            if (ver.dwMajorVersion <= 4) {
+            if (majorVersion <= 4) {
                 sprops.os_name = "Windows NT";
-            } else if (ver.dwMajorVersion == 5) {
-                switch (ver.dwMinorVersion) {
+            } else if (majorVersion == 5) {
+                switch (minorVersion) {
                 case  0: sprops.os_name = "Windows 2000";         break;
                 case  1: sprops.os_name = "Windows XP";           break;
                 case  2:
@@ -462,8 +506,7 @@ GetJavaProperties(JNIEnv* env)
                     * If it is, the operating system is Windows XP 64 bit;
                     * otherwise, it is Windows Server 2003."
                     */
-                    if(ver.wProductType == VER_NT_WORKSTATION &&
-                       si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+                    if (is_workstation && is_64bit) {
                         sprops.os_name = "Windows XP"; /* 64 bit */
                     } else {
                         sprops.os_name = "Windows 2003";
@@ -471,12 +514,12 @@ GetJavaProperties(JNIEnv* env)
                     break;
                 default: sprops.os_name = "Windows NT (unknown)"; break;
                 }
-            } else if (ver.dwMajorVersion == 6) {
+            } else if (majorVersion == 6) {
                 /*
                  * See table in MSDN OSVERSIONINFOEX documentation.
                  */
-                if (ver.wProductType == VER_NT_WORKSTATION) {
-                    switch (ver.dwMinorVersion) {
+                if (is_workstation) {
+                    switch (minorVersion) {
                     case  0: sprops.os_name = "Windows Vista";        break;
                     case  1: sprops.os_name = "Windows 7";            break;
                     case  2: sprops.os_name = "Windows 8";            break;
@@ -484,11 +527,22 @@ GetJavaProperties(JNIEnv* env)
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 } else {
-                    switch (ver.dwMinorVersion) {
+                    switch (minorVersion) {
                     case  0: sprops.os_name = "Windows Server 2008";    break;
                     case  1: sprops.os_name = "Windows Server 2008 R2"; break;
                     case  2: sprops.os_name = "Windows Server 2012";    break;
                     case  3: sprops.os_name = "Windows Server 2012 R2"; break;
+                    default: sprops.os_name = "Windows NT (unknown)";
+                    }
+                }
+            } else if (majorVersion == 10) {
+                if (is_workstation) {
+                    switch (minorVersion) {
+                    case  0: sprops.os_name = "Windows 10";           break;
+                    default: sprops.os_name = "Windows NT (unknown)";
+                    }
+                } else {
+                    switch (minorVersion) {
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 }
@@ -500,7 +554,7 @@ GetJavaProperties(JNIEnv* env)
             sprops.os_name = "Windows (unknown)";
             break;
         }
-        sprintf(buf, "%d.%d", ver.dwMajorVersion, ver.dwMinorVersion);
+        sprintf(buf, "%d.%d", majorVersion, minorVersion);
         sprops.os_version = _strdup(buf);
 #if _M_IA64
         sprops.os_arch = "ia64";
@@ -511,9 +565,6 @@ GetJavaProperties(JNIEnv* env)
 #else
         sprops.os_arch = "unknown";
 #endif
-
-        sprops.patch_level = _strdup(ver.szCSDVersion);
-
         sprops.desktop = "windows";
     }
 
@@ -624,7 +675,7 @@ GetJavaProperties(JNIEnv* env)
                            &display_encoding);
 
             sprops.sun_jnu_encoding = getEncodingInternal(systemDefaultLCID);
-            if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && ver.dwMajorVersion == 6) {
+            if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && majorVersion == 6) {
                 // MS claims "Vista has built-in support for HKSCS-2004.
                 // All of the HKSCS-2004 characters have Unicode 4.1.
                 // PUA code point assignments". But what it really means

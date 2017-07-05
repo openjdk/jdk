@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -47,6 +49,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     private String zoneNameStyle; // "long" or "short" for time zone names
     private String zonePrefix;
     private final String id;
+    private String currentContext = ""; // "format"/"stand-alone"
+    private String currentWidth = ""; // "wide"/"narrow"/"abbreviated"
 
     LDMLParseHandler(String id) {
         this.id = id;
@@ -78,20 +82,17 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 pushIgnoredContainer(qName);
             }
             break;
+
         case "language":
-            // for LocaleNames
-            // copy string
-            pushStringEntry(qName, attributes, CLDRConverter.LOCALE_NAME_PREFIX + attributes.getValue("type"));
-            break;
         case "script":
-            // for LocaleNames
-            // copy string
-            pushStringEntry(qName, attributes, CLDRConverter.LOCALE_NAME_PREFIX + attributes.getValue("type"));
-            break;
         case "territory":
+        case "variant":
             // for LocaleNames
             // copy string
-            pushStringEntry(qName, attributes, CLDRConverter.LOCALE_NAME_PREFIX + attributes.getValue("type"));
+            pushStringEntry(qName, attributes,
+                CLDRConverter.LOCALE_NAME_PREFIX +
+                (qName.equals("variant") ? "%%" : "") +
+                attributes.getValue("type"));
             break;
 
         //
@@ -112,9 +113,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         // Calendar or currency
         case "displayName":
             {
-                if (currentCalendarType != null) {
+                if (currentContainer.getqName().equals("field")) {
                     pushStringEntry(qName, attributes,
-                            currentCalendarType.keyElementName() + "field." + getContainerKey());
+                            (currentCalendarType != null ? currentCalendarType.keyElementName() : "")
+                            + "field." + getContainerKey());
                 } else {
                     // for CurrencyNames
                     // need to get the key from the containing <currency> element
@@ -149,10 +151,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             }
             break;
         case "fields":
-            if (currentCalendarType != null) {
+            {
                 pushContainer(qName, attributes);
-            } else {
-                pushIgnoredContainer(qName);
             }
             break;
         case "field":
@@ -183,6 +183,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // need to keep stand-alone and format, to allow for inheritance in CLDR
                 String type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
+                    currentContext = type;
                     pushKeyContainer(qName, attributes, type);
                 } else {
                     pushIgnoredContainer(qName);
@@ -194,8 +195,13 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // for FormatData
                 // create string array for the two types that the JRE knows
                 // keep info about the context type so we can sort out inheritance later
+                if (currentCalendarType == null) {
+                    pushIgnoredContainer(qName);
+                    break;
+                }
                 String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                switch (attributes.getValue("type")) {
+                currentWidth = attributes.getValue("type");
+                switch (currentWidth) {
                 case "wide":
                     pushStringArrayEntry(qName, attributes, prefix + "MonthNames/" + getContainerKey(), 13);
                     break;
@@ -222,6 +228,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // need to keep stand-alone and format, to allow for multiple inheritance in CLDR
                 String type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
+                    currentContext = type;
                     pushKeyContainer(qName, attributes, type);
                 } else {
                     pushIgnoredContainer(qName);
@@ -234,7 +241,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // create string array for the two types that the JRE knows
                 // keep info about the context type so we can sort out inheritance later
                 String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                switch (attributes.getValue("type")) {
+                currentWidth = attributes.getValue("type");
+                switch (currentWidth) {
                 case "wide":
                     pushStringArrayEntry(qName, attributes, prefix + "DayNames/" + getContainerKey(), 7);
                     break;
@@ -263,6 +271,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             {
                 String type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
+                    currentContext = type;
                     pushKeyContainer(qName, attributes, type);
                 } else {
                     pushIgnoredContainer(qName);
@@ -272,7 +281,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "dayPeriodWidth":
             // for FormatData
             // create string array entry for am/pm. only keeping wide
-            switch (attributes.getValue("type")) {
+            currentWidth = attributes.getValue("type");
+            switch (currentWidth) {
             case "wide":
                 pushStringArrayEntry(qName, attributes, "AmPmMarkers/" + getContainerKey(), 2);
                 break;
@@ -362,6 +372,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // need to keep stand-alone and format, to allow for inheritance in CLDR
                 String type = attributes.getValue("type");
                 if ("stand-alone".equals(type) || "format".equals(type)) {
+                    currentContext = type;
                     pushKeyContainer(qName, attributes, type);
                 } else {
                     pushIgnoredContainer(qName);
@@ -373,7 +384,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // for FormatData
                 // keep info about the context type so we can sort out inheritance later
                 String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                switch (attributes.getValue("type")) {
+                currentWidth = attributes.getValue("type");
+                switch (currentWidth) {
                 case "wide":
                     pushStringArrayEntry(qName, attributes, prefix + "QuarterNames/" + getContainerKey(), 4);
                     break;
@@ -450,12 +462,20 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "currencyFormat":
             // for FormatData
             // copy string for later assembly into NumberPatterns
+            if (attributes.getValue("type").equals("standard")) {
             pushStringEntry(qName, attributes, "NumberPatterns/currency");
+            } else {
+                pushIgnoredContainer(qName);
+            }
             break;
         case "percentFormat":
             // for FormatData
             // copy string for later assembly into NumberPatterns
+            if (attributes.getValue("type").equals("standard")) {
             pushStringEntry(qName, attributes, "NumberPatterns/percent");
+            } else {
+                pushIgnoredContainer(qName);
+            }
             break;
         case "defaultNumberingSystem":
             // default numbering system if multiple numbering systems are used.
@@ -582,12 +602,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + attributes.getValue("type") + "-date");
             }
             break;
-        case "dateTimeFormat":
+        case "dateTimeFormatLength":
             {
                 // for FormatData
                 // copy string for later assembly into DateTimePatterns
                 String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
-                pushStringEntry(qName, attributes, prefix + "DateTimePatterns/date-time");
+                pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + attributes.getValue("type") + "-dateTime");
             }
             break;
         case "localizedPatternChars":
@@ -599,11 +619,203 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             }
             break;
 
+        // "alias" for root
+        case "alias":
+            {
+                if (id.equals("root") &&
+                        !isIgnored(attributes) &&
+                        currentCalendarType != null &&
+                        !currentCalendarType.lname().startsWith("islamic-")) { // ignore Islamic variants
+                    pushAliasEntry(qName, attributes, attributes.getValue("path"));
+                } else {
+                    pushIgnoredContainer(qName);
+                }
+            }
+            break;
+
         default:
             // treat anything else as a container
             pushContainer(qName, attributes);
             break;
         }
+    }
+
+    private static final String[] CONTEXTS = {"stand-alone", "format"};
+    private static final String[] WIDTHS = {"wide", "narrow", "abbreviated"};
+    private static final String[] LENGTHS = {"full", "long", "medium", "short"};
+
+    private void populateWidthAlias(String type, Set<String> keys) {
+        for (String context : CONTEXTS) {
+            for (String width : WIDTHS) {
+                String keyName = toJDKKey(type+"Width", context, width);
+                if (keyName.length() > 0) {
+                    keys.add(keyName + "," + context + "," + width);
+                }
+            }
+        }
+    }
+
+    private void populateFormatLengthAlias(String type, Set<String> keys) {
+        for (String length: LENGTHS) {
+            String keyName = toJDKKey(type+"FormatLength", currentContext, length);
+            if (keyName.length() > 0) {
+                keys.add(keyName + "," + currentContext + "," + length);
+            }
+        }
+    }
+
+    private Set<String> populateAliasKeys(String qName, String context, String width) {
+        HashSet<String> ret = new HashSet<>();
+        String keyName = qName;
+
+        switch (qName) {
+        case "monthWidth":
+        case "dayWidth":
+        case "quarterWidth":
+        case "dayPeriodWidth":
+        case "dateFormatLength":
+        case "timeFormatLength":
+        case "dateTimeFormatLength":
+        case "eraNames":
+        case "eraAbbr":
+        case "eraNarrow":
+            ret.add(toJDKKey(qName, context, width) + "," + context + "," + width);
+            break;
+        case "days":
+            populateWidthAlias("day", ret);
+            break;
+        case "months":
+            populateWidthAlias("month", ret);
+            break;
+        case "quarters":
+            populateWidthAlias("quarter", ret);
+            break;
+        case "dayPeriods":
+            populateWidthAlias("dayPeriod", ret);
+            break;
+        case "eras":
+            ret.add(toJDKKey("eraNames", context, width) + "," + context + "," + width);
+            ret.add(toJDKKey("eraAbbr", context, width) + "," + context + "," + width);
+            ret.add(toJDKKey("eraNarrow", context, width) + "," + context + "," + width);
+            break;
+        case "dateFormats":
+            populateFormatLengthAlias("date", ret);
+            break;
+        case "timeFormats":
+            populateFormatLengthAlias("time", ret);
+            break;
+        default:
+            break;
+        }
+        return ret;
+    }
+
+    private String translateWidthAlias(String qName, String context, String width) {
+        String keyName = qName;
+        String type = Character.toUpperCase(qName.charAt(0)) + qName.substring(1, qName.indexOf("Width"));
+
+        switch (width) {
+        case "wide":
+            keyName = type + "Names/" + context;
+            break;
+        case "abbreviated":
+            keyName = type + "Abbreviations/" + context;
+            break;
+        case "narrow":
+            keyName = type + "Narrows/" + context;
+            break;
+        default:
+            assert false;
+        }
+
+        return keyName;
+    }
+
+    private String toJDKKey(String containerqName, String context, String type) {
+        String keyName = containerqName;
+
+        switch (containerqName) {
+        case "monthWidth":
+        case "dayWidth":
+        case "quarterWidth":
+            keyName = translateWidthAlias(keyName, context, type);
+            break;
+        case "dayPeriodWidth":
+            switch (type) {
+            case "wide":
+                keyName = "AmPmMarkers/" + context;
+                break;
+            case "narrow":
+                keyName = "narrow.AmPmMarkers/" + context;
+                break;
+            case "abbreviated":
+                keyName = "";
+                break;
+            }
+            break;
+        case "dateFormatLength":
+        case "timeFormatLength":
+        case "dateTimeFormatLength":
+            keyName = "DateTimePatterns/" +
+                type + "-" +
+                keyName.substring(0, keyName.indexOf("FormatLength"));
+            break;
+        case "eraNames":
+            keyName = "long.Eras";
+            break;
+        case "eraAbbr":
+            keyName = "Eras";
+            break;
+        case "eraNarrow":
+            keyName = "narrow.Eras";
+            break;
+        case "dateFormats":
+        case "timeFormats":
+        case "days":
+        case "months":
+        case "quarters":
+        case "dayPeriods":
+        case "eras":
+            break;
+        default:
+            keyName = "";
+            break;
+        }
+
+        return keyName;
+    }
+
+    private String getTarget(String qName, String path, String calType, String context, String width) {
+        // qName
+        int lastSlash = path.lastIndexOf('/');
+        qName = path.substring(lastSlash+1);
+        int bracket = qName.indexOf('[');
+        if (bracket != -1) {
+            qName = qName.substring(0, bracket);
+        }
+
+        // calType
+        String typeKey = "/calendar[@type='";
+        int start = path.indexOf(typeKey);
+        if (start != -1) {
+            calType = path.substring(start+typeKey.length(), path.indexOf("']", start));
+        }
+
+        // context
+        typeKey = "Context[@type='";
+        start = path.indexOf(typeKey);
+        if (start != -1) {
+            context = (path.substring(start+typeKey.length(), path.indexOf("']", start)));
+        }
+
+        // width
+        typeKey = "Width[@type='";
+        start = path.indexOf(typeKey);
+        if (start != -1) {
+            width = path.substring(start+typeKey.length(), path.indexOf("']", start));
+        }
+
+        return calType + "." + toJDKKey(qName, context, width);
     }
 
     @Override
@@ -628,6 +840,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "timeZoneNames":
             zonePrefix = null;
             break;
+
         case "generic":
         case "standard":
         case "daylight":
@@ -638,8 +851,52 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 valmap.put(entry.getKey(), (String) entry.getValue());
             }
             break;
+
+        case "monthWidth":
+        case "dayWidth":
+        case "dayPeriodWidth":
+        case "quarterWidth":
+            currentWidth = "";
+            putIfEntry();
+            break;
+
+        case "monthContext":
+        case "dayContext":
+        case "dayPeriodContext":
+        case "quarterContext":
+            currentContext = "";
+            putIfEntry();
+            break;
+
         default:
-            if (currentContainer instanceof Entry) {
+            putIfEntry();
+        }
+        currentContainer = currentContainer.getParent();
+    }
+
+    private void putIfEntry() {
+        if (currentContainer instanceof AliasEntry) {
+            Entry<?> entry = (Entry<?>) currentContainer;
+            String containerqName = entry.getParent().getqName();
+            Set<String> keyNames = populateAliasKeys(containerqName, currentContext, currentWidth);
+            if (!keyNames.isEmpty()) {
+                for (String keyName : keyNames) {
+                    String[] tmp = keyName.split(",", 3);
+                    String calType = currentCalendarType.lname();
+                    String src = calType+"."+tmp[0];
+                    String target = getTarget(containerqName,
+                                entry.getKey(),
+                                calType,
+                                tmp[1].length()>0 ? tmp[1] : currentContext,
+                                tmp[2].length()>0 ? tmp[2] : currentWidth);
+                    if (target.substring(target.lastIndexOf('.')+1).equals(containerqName)) {
+                        target = target.substring(0, target.indexOf('.'))+"."+tmp[0];
+                    }
+                    CLDRConverter.aliases.put(src.replaceFirst("^gregorian.", ""),
+                                              target.replaceFirst("^gregorian.", ""));
+                }
+            }
+        } else if (currentContainer instanceof Entry) {
                 Entry<?> entry = (Entry<?>) currentContainer;
                 Object value = entry.getValue();
                 if (value != null) {
@@ -647,6 +904,4 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 }
             }
         }
-        currentContainer = currentContainer.getParent();
     }
-}

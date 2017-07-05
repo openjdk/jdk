@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,30 +69,6 @@ final class Config {
         }
     }
 
-    // temporary storage for configurations
-    // needed because the SunPKCS11 needs to call the superclass constructor
-    // in provider before accessing any instance variables
-    private final static Map<String,Config> configMap =
-                                        new HashMap<String,Config>();
-
-    static Config getConfig(final String name, final InputStream stream) {
-        Config config = configMap.get(name);
-        if (config != null) {
-            return config;
-        }
-        try {
-            config = new Config(name, stream);
-            configMap.put(name, config);
-            return config;
-        } catch (Exception e) {
-            throw new ProviderException("Error parsing configuration", e);
-        }
-    }
-
-    static Config removeConfig(String name) {
-        return configMap.remove(name);
-    }
-
     private final static boolean DEBUG = false;
 
     private static void debug(Object o) {
@@ -100,6 +76,9 @@ final class Config {
             System.out.println(o);
         }
     }
+
+    // file name containing this configuration
+    private String filename;
 
     // Reader and StringTokenizer used during parsing
     private Reader reader;
@@ -201,23 +180,24 @@ final class Config {
     // memory footprint (true).
     private boolean nssOptimizeSpace = false;
 
-    private Config(String filename, InputStream in) throws IOException {
-        if (in == null) {
-            if (filename.startsWith("--")) {
-                // inline config
-                String config = filename.substring(2).replace("\\n", "\n");
-                reader = new StringReader(config);
-            } else {
-                in = new FileInputStream(expand(filename));
-            }
-        }
-        if (reader == null) {
-            reader = new BufferedReader(new InputStreamReader(in));
+    Config(String fn) throws IOException {
+        this.filename = fn;
+        if (filename.startsWith("--")) {
+            // inline config
+            String config = filename.substring(2).replace("\\n", "\n");
+            reader = new StringReader(config);
+        } else {
+            reader = new BufferedReader(new InputStreamReader
+                (new FileInputStream(expand(filename))));
         }
         parsedKeywords = new HashSet<String>();
         st = new StreamTokenizer(reader);
         setupTokenizer();
         parse();
+    }
+
+    String getFileName() {
+        return filename;
     }
 
     String getName() {

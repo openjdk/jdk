@@ -249,6 +249,11 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         // If the last intermediate operation is stateful then
         // evaluate directly to avoid an extra collection step
         if (isParallel() && previousStage != null && opIsStateful()) {
+            // Set the depth of this, last, pipeline stage to zero to slice the
+            // pipeline such that this operation will not be included in the
+            // upstream slice and upstream operations will not be included
+            // in this slice
+            depth = 0;
             return opEvaluateParallel(previousStage, previousStage.sourceSpliterator(0), generator);
         }
         else {
@@ -402,47 +407,19 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             throw new IllegalStateException(MSG_CONSUMED);
         }
 
-        boolean hasTerminalFlags = terminalFlags != 0;
         if (isParallel() && sourceStage.sourceAnyStateful) {
-            // Adjust pipeline stages if there are stateful ops,
-            // and find the last short circuiting op, if any, that
-            // defines the head stage for back-propagation of terminal flags
-            @SuppressWarnings("rawtypes")
-            AbstractPipeline backPropagationHead = sourceStage;
-            int depth = 1;
-            for (@SuppressWarnings("rawtypes") AbstractPipeline p = sourceStage.nextStage;
-                 p != null;
-                 p = p.nextStage) {
-                if (p.opIsStateful()) {
-                    if (StreamOpFlag.SHORT_CIRCUIT.isKnown(p.sourceOrOpFlags)) {
-                        // If the stateful operation is a short-circuit operation
-                        // then move the back propagation head forwards
-                        // NOTE: there are no size-injecting ops
-                        backPropagationHead = p;
-                    }
-
-                    depth = 0;
-                }
-                p.depth = depth++;
-            }
-
             // Adapt the source spliterator, evaluating each stateful op
-            // in the pipeline up to and including this pipeline stage
-            // Flags for each pipeline stage are adjusted accordingly
-            boolean backPropagate = false;
-            int upstreamTerminalFlags = terminalFlags & StreamOpFlag.UPSTREAM_TERMINAL_OP_MASK;
+            // in the pipeline up to and including this pipeline stage.
+            // The depth and flags of each pipeline stage are adjusted accordingly.
+            int depth = 1;
             for (@SuppressWarnings("rawtypes") AbstractPipeline u = sourceStage, p = sourceStage.nextStage, e = this;
                  u != e;
                  u = p, p = p.nextStage) {
 
-                if (hasTerminalFlags &&
-                    (backPropagate || (backPropagate = (u == backPropagationHead)))) {
-                    // Back-propagate flags from the terminal operation
-                    u.combinedFlags = StreamOpFlag.combineOpFlags(upstreamTerminalFlags, u.combinedFlags);
-                }
-
                 int thisOpFlags = p.sourceOrOpFlags;
                 if (p.opIsStateful()) {
+                    depth = 0;
+
                     if (StreamOpFlag.SHORT_CIRCUIT.isKnown(thisOpFlags)) {
                         // Clear the short circuit flag for next pipeline stage
                         // This stage encapsulates short-circuiting, the next
@@ -460,18 +437,18 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
                             ? (thisOpFlags & ~StreamOpFlag.NOT_SIZED) | StreamOpFlag.IS_SIZED
                             : (thisOpFlags & ~StreamOpFlag.IS_SIZED) | StreamOpFlag.NOT_SIZED;
                 }
+                p.depth = depth++;
                 p.combinedFlags = StreamOpFlag.combineOpFlags(thisOpFlags, u.combinedFlags);
             }
         }
 
-        if (hasTerminalFlags)  {
+        if (terminalFlags != 0)  {
             // Apply flags from the terminal operation to last pipeline stage
             combinedFlags = StreamOpFlag.combineOpFlags(terminalFlags, combinedFlags);
         }
 
         return spliterator;
     }
-
 
     // PipelineHelper
 

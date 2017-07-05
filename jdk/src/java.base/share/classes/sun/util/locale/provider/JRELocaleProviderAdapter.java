@@ -36,7 +36,9 @@ import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -379,6 +381,13 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         return localeData;
     }
 
+    @Override
+    public List<Locale> getCandidateLocales(String baseName, Locale locale) {
+        return ResourceBundle.Control
+            .getNoFallbackControl(ResourceBundle.Control.FORMAT_DEFAULT)
+            .getCandidateLocales(baseName, locale);
+    }
+
     /**
      * Returns a list of the installed locales. Currently, this simply returns
      * the list of locales for which a sun.text.resources.FormatData bundle
@@ -417,12 +426,12 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     }
 
     private static String createSupportedLocaleString(String category) {
-        // Directly call English tags, as we know it's in the base module.
-        String supportedLocaleString = EnLocaleDataMetaInfo.getSupportedLocaleString(category);
+        // Directly call Base tags, as we know it's in the base module.
+        String supportedLocaleString = BaseLocaleDataMetaInfo.getSupportedLocaleString(category);
 
         // Use ServiceLoader to dynamically acquire installed locales' tags.
         try {
-            String nonENTags = AccessController.doPrivileged(new PrivilegedExceptionAction<String>() {
+            String nonBaseTags = AccessController.doPrivileged(new PrivilegedExceptionAction<String>() {
                 @Override
                 public String run() {
                     String tags = null;
@@ -443,8 +452,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
                 }
             });
 
-            if (nonENTags != null) {
-                supportedLocaleString += " " + nonENTags;
+            if (nonBaseTags != null) {
+                supportedLocaleString += " " + nonBaseTags;
             }
         }  catch (Exception e) {
             // catch any exception, and ignore them as if non-EN locales do not exist.
@@ -496,5 +505,23 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             }
         }
         return locales;
+    }
+
+    @Override
+    public boolean isSupportedProviderLocale(Locale locale,  Set<String> langtags) {
+        if (Locale.ROOT.equals(locale)) {
+            return true;
+}
+
+        locale = locale.stripExtensions();
+        if (langtags.contains(locale.toLanguageTag())) {
+            return true;
+        }
+
+        String oldname = locale.toString().replace('_', '-');
+        return langtags.contains(oldname) ||
+                   "ja-JP-JP".equals(oldname) ||
+                   "th-TH-TH".equals(oldname) ||
+                   "no-NO-NY".equals(oldname);
     }
 }

@@ -465,44 +465,7 @@ public:
 
   void movptr(Register r, uintptr_t imm64);
 
-  // Macro to mov replicated immediate to vector register.
-  // Where imm32 == hex abcdefgh, Vd will get the following values
-  // for different arrangements in T
-  //   T8B:  Vd = ghghghghghghghgh
-  //   T16B: Vd = ghghghghghghghghghghghghghghghgh
-  //   T4H:  Vd = efghefghefghefgh
-  //   T8H:  Vd = efghefghefghefghefghefghefghefgh
-  //   T2S:  Vd = abcdefghabcdefgh
-  //   T4S:  Vd = abcdefghabcdefghabcdefghabcdefgh
-  //   T1D/T2D: invalid
-  void mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32) {
-    assert(T != T1D && T != T2D, "invalid arrangement");
-    u_int32_t nimm32 = ~imm32;
-    if (T == T8B || T == T16B) { imm32 &= 0xff; nimm32 &= 0xff; }
-    if (T == T4H || T == T8H) { imm32 &= 0xffff; nimm32 &= 0xffff; }
-    u_int32_t x = imm32;
-    int movi_cnt = 0;
-    int movn_cnt = 0;
-    while (x) { if (x & 0xff) movi_cnt++; x >>= 8; }
-    x = nimm32;
-    while (x) { if (x & 0xff) movn_cnt++; x >>= 8; }
-    if (movn_cnt < movi_cnt) imm32 = nimm32;
-    unsigned lsl = 0;
-    while (imm32 && (imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
-    if (movn_cnt < movi_cnt)
-      mvni(Vd, T, imm32 & 0xff, lsl);
-    else
-      movi(Vd, T, imm32 & 0xff, lsl);
-    imm32 >>= 8; lsl += 8;
-    while (imm32) {
-      while ((imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
-      if (movn_cnt < movi_cnt)
-        bici(Vd, T, imm32 & 0xff, lsl);
-      else
-        orri(Vd, T, imm32 & 0xff, lsl);
-      lsl += 8; imm32 >>= 8;
-    }
-  }
+  void mov(FloatRegister Vd, SIMD_Arrangement T, u_int32_t imm32);
 
   // macro instructions for accessing and updating floating point
   // status register
