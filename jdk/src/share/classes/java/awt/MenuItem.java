@@ -847,7 +847,7 @@ public class MenuItem extends MenuComponent implements Accessible {
         public String getAccessibleActionDescription(int i) {
             if (i == 0) {
                 // [[[PENDING:  WDW -- need to provide a localized string]]]
-                return new String("click");
+                return "click";
             } else {
                 return null;
             }

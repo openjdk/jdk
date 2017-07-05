@@ -924,29 +924,23 @@ void FlatProfilerTask::task() {
   FlatProfiler::record_thread_ticks();
 }
 
-void ThreadProfiler::record_interpreted_tick(frame fr, TickPosition where, int* ticks) {
+void ThreadProfiler::record_interpreted_tick(JavaThread* thread, frame fr, TickPosition where, int* ticks) {
   FlatProfiler::all_int_ticks++;
   if (!FlatProfiler::full_profile()) {
     return;
   }
 
-  if (!fr.is_interpreted_frame_valid()) {
+  if (!fr.is_interpreted_frame_valid(thread)) {
     // tick came at a bad time
     interpreter_ticks += 1;
     FlatProfiler::interpreter_ticks += 1;
     return;
   }
 
-  methodOop method = NULL;
-  if (fr.fp() != NULL) {
-    method = *fr.interpreter_frame_method_addr();
-  }
-  if (!Universe::heap()->is_valid_method(method)) {
-    // tick came at a bad time, stack frame not initialized correctly
-    interpreter_ticks += 1;
-    FlatProfiler::interpreter_ticks += 1;
-    return;
-  }
+  // The frame has been fully validated so we can trust the method and bci
+
+  methodOop method = *fr.interpreter_frame_method_addr();
+
   interpreted_update(method, where);
 
   // update byte code table
@@ -997,7 +991,7 @@ void ThreadProfiler::record_tick_for_running_frame(JavaThread* thread, frame fr)
   // The tick happend in real code -> non VM code
   if (fr.is_interpreted_frame()) {
     interval_data_ref()->inc_interpreted();
-    record_interpreted_tick(fr, tp_code, FlatProfiler::bytecode_ticks);
+    record_interpreted_tick(thread, fr, tp_code, FlatProfiler::bytecode_ticks);
     return;
   }
 
@@ -1028,7 +1022,7 @@ void ThreadProfiler::record_tick_for_calling_frame(JavaThread* thread, frame fr)
   // The tick happend in VM code
   interval_data_ref()->inc_native();
   if (fr.is_interpreted_frame()) {
-    record_interpreted_tick(fr, tp_native, FlatProfiler::bytecode_ticks_stub);
+    record_interpreted_tick(thread, fr, tp_native, FlatProfiler::bytecode_ticks_stub);
     return;
   }
   if (CodeCache::contains(fr.pc())) {

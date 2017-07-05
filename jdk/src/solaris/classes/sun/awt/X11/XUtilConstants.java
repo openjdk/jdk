@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package sun.awt.X11;
 
-public interface XUtilConstants {
+final public class XUtilConstants {
+
+    private XUtilConstants(){}
+
     /*
      * Bitmask returned by XParseGeometry().  Each bit tells if the corresponding
      * value (x, y, width, height) was found in the parsed string.

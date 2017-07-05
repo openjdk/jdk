@@ -133,6 +133,16 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
+//-------------------------------MulHiLNode------------------------------------
+// Upper 64 bits of a 64 bit by 64 bit multiply
+class MulHiLNode : public Node {
+public:
+  MulHiLNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type *Value( PhaseTransform *phase ) const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
 
 //------------------------------AndINode---------------------------------------
 // Logically AND 2 integers.  Included with the MUL nodes because it inherits

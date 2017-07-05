@@ -267,15 +267,29 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   addq(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
   // Scan rcx words at [rdi] for occurance of rax
   // Set NZ/Z based on last compare
-  repne_scan();
-  // Not equal?
-  jcc(Assembler::notEqual, not_subtype);
+
+  // this part is kind tricky, as values in supers array could be 32 or 64 bit wide
+  // and we store values in objArrays always encoded, thus we need to encode value
+  // before repne
+  if (UseCompressedOops) {
+    encode_heap_oop(rax);
+    repne_scanl();
+    // Not equal?
+    jcc(Assembler::notEqual, not_subtype);
+    // decode heap oop here for movq
+    decode_heap_oop(rax);
+  } else {
+    repne_scanq();
+    jcc(Assembler::notEqual, not_subtype);
+  }
   // Must be equal but missed in cache.  Update cache.
   movq(Address(Rsub_klass, sizeof(oopDesc) +
                Klass::secondary_super_cache_offset_in_bytes()), rax);
   jmp(ok_is_subtype);
 
   bind(not_subtype);
+  // decode heap oop here for miss
+  if (UseCompressedOops) decode_heap_oop(rax);
   profile_typecheck_failed(rcx); // blows rcx
 }
 

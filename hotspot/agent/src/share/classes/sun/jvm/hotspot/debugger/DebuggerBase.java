@@ -37,6 +37,7 @@ package sun.jvm.hotspot.debugger;
     DbxDebugger interfaces. </P> */
 
 public abstract class DebuggerBase implements Debugger {
+
   // May be set lazily, but must be set before calling any of the read
   // routines below
   protected MachineDescription machDesc;
@@ -52,6 +53,11 @@ public abstract class DebuggerBase implements Debugger {
   protected long jlongSize;
   protected long jshortSize;
   protected boolean javaPrimitiveTypesConfigured;
+  // heap data.
+  protected long oopSize;
+  protected long heapOopSize;
+  protected long heapBase;                 // heap base for compressed oops.
+  protected long logMinObjAlignmentInBytes; // Used to decode compressed oops.
   // Should be initialized if desired by calling initCache()
   private PageCache cache;
 
@@ -151,6 +157,12 @@ public abstract class DebuggerBase implements Debugger {
        (jshortSize   == 2));
 
     javaPrimitiveTypesConfigured = true;
+  }
+
+  public void putHeapConst(long heapBase, long heapOopSize, long logMinObjAlignmentInBytes) {
+    this.heapBase = heapBase;
+    this.heapOopSize = heapOopSize;
+    this.logMinObjAlignmentInBytes = logMinObjAlignmentInBytes;
   }
 
   /** May be called by subclasses if desired to initialize the page
@@ -442,6 +454,16 @@ public abstract class DebuggerBase implements Debugger {
     return readCInteger(address, machDesc.getAddressSize(), true);
   }
 
+  protected long readCompOopAddressValue(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+    long value = readCInteger(address, getHeapOopSize(), true);
+    if (value != 0) {
+      // See oop.inline.hpp decode_heap_oop
+      value = (long)(heapBase + (long)(value << logMinObjAlignmentInBytes));
+    }
+    return value;
+  }
+
   protected void writeAddressValue(long address, long value)
     throws UnmappedAddressException, UnalignedAddressException {
     writeCInteger(address, machDesc.getAddressSize(), value);
@@ -517,5 +539,16 @@ public abstract class DebuggerBase implements Debugger {
 
   public long getJShortSize() {
     return jshortSize;
+  }
+
+  public long getHeapOopSize() {
+    return heapOopSize;
+  }
+
+  public long getHeapBase() {
+    return heapBase;
+  }
+  public long getLogMinObjAlignmentInBytes() {
+    return logMinObjAlignmentInBytes;
   }
 }

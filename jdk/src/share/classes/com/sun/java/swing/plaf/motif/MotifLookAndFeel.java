@@ -290,7 +290,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabBackground = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("control");
+                Color c = table.getColor("control");
                 return new ColorUIResource(Math.max((int)(c.getRed()*.85),0),
                                            Math.max((int)(c.getGreen()*.85),0),
                                            Math.max((int)(c.getBlue()*.85),0));
@@ -299,7 +299,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabForeground = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("controlText");
+                Color c = table.getColor("controlText");
                 return new ColorUIResource(Math.max((int)(c.getRed()*.85),0),
                                            Math.max((int)(c.getGreen()*.85),0),
                                            Math.max((int)(c.getBlue()*.85),0));
@@ -308,7 +308,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabShadow = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("control");
+                Color c = table.getColor("control");
                 Color base = new Color(Math.max((int)(c.getRed()*.85),0),
                                        Math.max((int)(c.getGreen()*.85),0),
                                        Math.max((int)(c.getBlue()*.85),0));
@@ -318,7 +318,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object unselectedTabHighlight = new UIDefaults.LazyValue() {
             public Object createValue(UIDefaults table) {
-                Color c = (Color)table.getColor("control");
+                Color c = table.getColor("control");
                 Color base = new Color(Math.max((int)(c.getRed()*.85),0),
                                        Math.max((int)(c.getGreen()*.85),0),
                                        Math.max((int)(c.getBlue()*.85),0));
@@ -567,7 +567,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "ProgressBar.selectionBackground", table.get("controlText"),
             "ProgressBar.border", loweredBevelBorder,
             "ProgressBar.cellLength", new Integer(6),
-            "ProgressBar.cellSpacing", new Integer(0),
+            "ProgressBar.cellSpacing", Integer.valueOf(0),
 
             // Buttons
             "Button.margin", new InsetsUIResource(2, 4, 2, 4),
@@ -859,7 +859,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "SplitPane.background", table.get("control"),
             "SplitPane.highlight", table.get("controlHighlight"),
             "SplitPane.shadow", table.get("controlShadow"),
-            "SplitPane.dividerSize", new Integer(20),
+            "SplitPane.dividerSize", Integer.valueOf(20),
             "SplitPane.activeThumb", table.get("activeCaptionBorder"),
             "SplitPane.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
@@ -1160,7 +1160,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
               }),
 
             "TextField.caretForeground", black,
-            "TextField.caretBlinkRate", new Integer(500),
+            "TextField.caretBlinkRate", Integer.valueOf(500),
             "TextField.inactiveForeground", table.get("textInactiveText"),
             "TextField.selectionBackground", table.get("textHighlight"),
             "TextField.selectionForeground", table.get("textHighlightText"),
@@ -1171,7 +1171,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "TextField.focusInputMap", fieldInputMap,
 
             "PasswordField.caretForeground", black,
-            "PasswordField.caretBlinkRate", new Integer(500),
+            "PasswordField.caretBlinkRate", Integer.valueOf(500),
             "PasswordField.inactiveForeground", table.get("textInactiveText"),
             "PasswordField.selectionBackground", table.get("textHighlight"),
             "PasswordField.selectionForeground", table.get("textHighlightText"),
@@ -1182,7 +1182,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "PasswordField.focusInputMap", passwordInputMap,
 
             "TextArea.caretForeground", black,
-            "TextArea.caretBlinkRate", new Integer(500),
+            "TextArea.caretBlinkRate", Integer.valueOf(500),
             "TextArea.inactiveForeground", table.get("textInactiveText"),
             "TextArea.selectionBackground", table.get("textHighlight"),
             "TextArea.selectionForeground", table.get("textHighlightText"),
@@ -1193,7 +1193,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "TextArea.focusInputMap", multilineInputMap,
 
             "TextPane.caretForeground", black,
-            "TextPane.caretBlinkRate", new Integer(500),
+            "TextPane.caretBlinkRate", Integer.valueOf(500),
             "TextPane.inactiveForeground", table.get("textInactiveText"),
             "TextPane.selectionBackground", lightGray,
             "TextPane.selectionForeground", table.get("textHighlightText"),
@@ -1204,7 +1204,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "TextPane.focusInputMap", multilineInputMap,
 
             "EditorPane.caretForeground", red,
-            "EditorPane.caretBlinkRate", new Integer(500),
+            "EditorPane.caretBlinkRate", Integer.valueOf(500),
             "EditorPane.inactiveForeground", table.get("textInactiveText"),
             "EditorPane.selectionBackground", lightGray,
             "EditorPane.selectionForeground", table.get("textHighlightText"),

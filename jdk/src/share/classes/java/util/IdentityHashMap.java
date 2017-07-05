@@ -188,7 +188,6 @@ public class IdentityHashMap<K,V>
     /**
      * Use NULL_KEY for key if it is null.
      */
-
     private static Object maskNull(Object key) {
         return (key == null ? NULL_KEY : key);
     }
@@ -378,8 +377,8 @@ public class IdentityHashMap<K,V>
      */
     public boolean containsValue(Object value) {
         Object[] tab = table;
-        for (int i = 1; i < tab.length; i+= 2)
-            if (tab[i] == value)
+        for (int i = 1; i < tab.length; i += 2)
+            if (tab[i] == value && tab[i - 1] != null)
                 return true;
 
         return false;
@@ -905,7 +904,6 @@ public class IdentityHashMap<K,V>
      * view the first time this view is requested.  The view is stateless,
      * so there's no reason to create more than one.
      */
-
     private transient Set<Map.Entry<K,V>> entrySet = null;
 
     /**

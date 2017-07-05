@@ -27,7 +27,8 @@
 
 extern "C" {
   static void unimplemented_panic(const char *fmt, ...) {
-    Unimplemented();
+    // mitigate testing damage from bug 6626677
+    warning("hpi::unimplemented_panic called");
   }
 
   static void unimplemented_monitorRegister(sys_mon_t *mid, char *info_str) {

@@ -34,6 +34,7 @@ import com.sun.management.GcInfo;
 import javax.management.openmbean.CompositeData;
 import javax.management.MBeanInfo;
 import javax.management.MBeanAttributeInfo;
+import javax.management.ObjectName;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -86,6 +87,10 @@ class GarbageCollectorImpl extends MemoryManagerImpl
 
         GcInfo info = gcInfoBuilder.getLastGcInfo();
         return info;
+    }
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE, getName());
     }
 
 }

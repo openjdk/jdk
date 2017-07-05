@@ -726,6 +726,9 @@ bool InstructForm::captures_bottom_type() const {
   if( _matrule && _matrule->_rChild &&
        (!strcmp(_matrule->_rChild->_opType,"CastPP")     ||  // new result type
         !strcmp(_matrule->_rChild->_opType,"CastX2P")    ||  // new result type
+        !strcmp(_matrule->_rChild->_opType,"DecodeN")    ||
+        !strcmp(_matrule->_rChild->_opType,"EncodeP")    ||
+        !strcmp(_matrule->_rChild->_opType,"LoadN")      ||
         !strcmp(_matrule->_rChild->_opType,"CreateEx")   ||  // type of exception
         !strcmp(_matrule->_rChild->_opType,"CheckCastPP")) ) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
@@ -2101,6 +2104,7 @@ bool OperandForm::is_bound_register() const {
   if (strcmp(name,"RegF")==0) size =  1;
   if (strcmp(name,"RegD")==0) size =  2;
   if (strcmp(name,"RegL")==0) size =  2;
+  if (strcmp(name,"RegN")==0) size =  1;
   if (strcmp(name,"RegP")==0) size =  globalAD->get_preproc_def("_LP64") ? 2 : 1;
   if (size == 0) return false;
   return size == reg_class->size();
@@ -2365,11 +2369,12 @@ void  OperandForm::ext_format(FILE *fp, FormDict &globals, uint index) {
 
 void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   switch(const_type) {
-  case Form::idealI: fprintf(fp,"st->print(\"#%%d\", _c%d);\n", const_index); break;
-  case Form::idealP: fprintf(fp,"_c%d->dump_on(st);\n",         const_index); break;
-  case Form::idealL: fprintf(fp,"st->print(\"#%%lld\", _c%d);\n", const_index); break;
-  case Form::idealF: fprintf(fp,"st->print(\"#%%f\", _c%d);\n", const_index); break;
-  case Form::idealD: fprintf(fp,"st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealI:  fprintf(fp,"st->print(\"#%%d\", _c%d);\n", const_index); break;
+  case Form::idealP:  fprintf(fp,"_c%d->dump_on(st);\n",         const_index); break;
+  case Form::idealN:  fprintf(fp,"_c%d->dump_on(st);\n",         const_index); break;
+  case Form::idealL:  fprintf(fp,"st->print(\"#%%lld\", _c%d);\n", const_index); break;
+  case Form::idealF:  fprintf(fp,"st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealD:  fprintf(fp,"st->print(\"#%%f\", _c%d);\n", const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
   }
@@ -3300,9 +3305,9 @@ void MatchNode::output(FILE *fp) {
 
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
-    "StoreI","StoreL","StoreP","StoreD","StoreF" ,
+    "StoreI","StoreL","StoreP","StoreN","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
-    "LoadI" ,"LoadL", "LoadP" ,"LoadD" ,"LoadF"  ,
+    "LoadI" ,"LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" ,"LoadC" ,"LoadS" ,"Load"   ,
     "Store4I","Store2I","Store2L","Store2D","Store4F","Store2F","Store16B",
     "Store8B","Store4B","Store8C","Store4C","Store2C",
@@ -3311,7 +3316,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "LoadRange", "LoadKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked", "LoadLLocked",
     "StorePConditional", "StoreLConditional",
-    "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP",
+    "CompareAndSwapI", "CompareAndSwapL", "CompareAndSwapP", "CompareAndSwapN",
     "StoreCM",
     "ClearArray"
   };
@@ -3712,6 +3717,7 @@ bool MatchRule::is_base_register(FormDict &globals) const {
     if( base_operand(position, globals, result, name, opType) &&
         (strcmp(opType,"RegI")==0 ||
          strcmp(opType,"RegP")==0 ||
+         strcmp(opType,"RegN")==0 ||
          strcmp(opType,"RegL")==0 ||
          strcmp(opType,"RegF")==0 ||
          strcmp(opType,"RegD")==0 ||

@@ -32,10 +32,11 @@
 import sun.management.*;
 import java.util.*;
 import java.lang.management.ThreadMXBean;
+import java.lang.management.ManagementFactory;
 
 public class GetInternalThreads {
     private static HotspotThreadMBean mbean =
-        ManagementFactory.getHotspotThreadMBean();
+        ManagementFactoryHelper.getHotspotThreadMBean();
 
     // Minimum number of VM internal threads
     //   VM thread, watcher thread, Low memory detector, compiler thread
@@ -55,7 +56,7 @@ public class GetInternalThreads {
         System.out.println("Internal Thread Count = " + value);
 
         ThreadMXBean thread =
-            java.lang.management.ManagementFactory.getThreadMXBean();
+            ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) {
             System.out.println("Thread Cpu Time is not supported.");
             return;

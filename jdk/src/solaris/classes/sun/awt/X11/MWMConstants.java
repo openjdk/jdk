@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 
 package sun.awt.X11;
 
-public interface MWMConstants {
+final public class MWMConstants {
+
+    private MWMConstants(){}
 
 /* bit definitions for MwmHints.flags */
     static final int MWM_HINTS_FUNCTIONS=       (1  << 0);

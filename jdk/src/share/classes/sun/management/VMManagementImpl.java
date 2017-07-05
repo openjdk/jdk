@@ -59,7 +59,7 @@ class VMManagementImpl implements VMManagement {
     static {
         version = getVersion0();
         if (version == null) {
-            throw new InternalError("Invalid Management Version");
+            throw new AssertionError("Invalid Management Version");
         }
         initOptionalSupportFields();
     }
@@ -244,7 +244,7 @@ class VMManagementImpl implements VMManagement {
             // was set
             noPerfData = true;
         } catch (IOException e) {
-            throw new InternalError(e.getMessage());
+            throw new AssertionError(e);
         }
         return perfInstr;
     }

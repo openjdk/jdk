@@ -45,8 +45,6 @@ class AbstractRefProcTaskExecutor;
 class DiscoveredList;
 
 class ReferenceProcessor : public CHeapObj {
- friend class DiscoveredList;
- friend class DiscoveredListIterator;
  protected:
   // End of list marker
   static oop  _sentinelRef;
@@ -70,16 +68,20 @@ class ReferenceProcessor : public CHeapObj {
   BoolObjectClosure* _is_alive_non_header;
 
   // The discovered ref lists themselves
-  int             _num_q;       // the MT'ness degree of the queues below
-  DiscoveredList* _discoveredSoftRefs; // pointer to array of oops
+
+  // The MT'ness degree of the queues below
+  int             _num_q;
+  // Arrays of lists of oops, one per thread
+  DiscoveredList* _discoveredSoftRefs;
   DiscoveredList* _discoveredWeakRefs;
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
 
  public:
-  int  num_q()                           { return _num_q; }
+  int num_q()                            { return _num_q; }
   DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
-  static oop* sentinel_ref()             { return &_sentinelRef; }
+  static oop  sentinel_ref()             { return _sentinelRef; }
+  static oop* adr_sentinel_ref()         { return &_sentinelRef; }
 
  public:
   // Process references with a certain reachability level.
@@ -98,45 +100,45 @@ class ReferenceProcessor : public CHeapObj {
   // Work methods used by the method process_discovered_reflist
   // Phase1: keep alive all those referents that are otherwise
   // dead but which must be kept alive by policy (and their closure).
-  void process_phase1(DiscoveredList&     refs_list_addr,
+  void process_phase1(DiscoveredList&     refs_list,
                       ReferencePolicy*    policy,
                       BoolObjectClosure*  is_alive,
                       OopClosure*         keep_alive,
                       VoidClosure*        complete_gc);
   // Phase2: remove all those references whose referents are
   // reachable.
-  inline void process_phase2(DiscoveredList&    refs_list_addr,
+  inline void process_phase2(DiscoveredList&    refs_list,
                              BoolObjectClosure* is_alive,
                              OopClosure*        keep_alive,
                              VoidClosure*       complete_gc) {
     if (discovery_is_atomic()) {
       // complete_gc is ignored in this case for this phase
-      pp2_work(refs_list_addr, is_alive, keep_alive);
+      pp2_work(refs_list, is_alive, keep_alive);
     } else {
       assert(complete_gc != NULL, "Error");
-      pp2_work_concurrent_discovery(refs_list_addr, is_alive,
+      pp2_work_concurrent_discovery(refs_list, is_alive,
                                     keep_alive, complete_gc);
     }
   }
   // Work methods in support of process_phase2
-  void pp2_work(DiscoveredList&    refs_list_addr,
+  void pp2_work(DiscoveredList&    refs_list,
                 BoolObjectClosure* is_alive,
                 OopClosure*        keep_alive);
   void pp2_work_concurrent_discovery(
-                DiscoveredList&    refs_list_addr,
+                DiscoveredList&    refs_list,
                 BoolObjectClosure* is_alive,
                 OopClosure*        keep_alive,
                 VoidClosure*       complete_gc);
   // Phase3: process the referents by either clearing them
   // or keeping them alive (and their closure)
-  void process_phase3(DiscoveredList&    refs_list_addr,
+  void process_phase3(DiscoveredList&    refs_list,
                       bool               clear_referent,
                       BoolObjectClosure* is_alive,
                       OopClosure*        keep_alive,
                       VoidClosure*       complete_gc);
 
   // Enqueue references with a certain reachability level
-  void enqueue_discovered_reflist(DiscoveredList& refs_list, oop* pending_list_addr);
+  void enqueue_discovered_reflist(DiscoveredList& refs_list, HeapWord* pending_list_addr);
 
   // "Preclean" all the discovered reference lists
   // by removing references with strongly reachable referents.
@@ -169,6 +171,8 @@ class ReferenceProcessor : public CHeapObj {
   // occupying the i / _num_q slot.
   const char* list_name(int i);
 
+  void enqueue_discovered_reflists(HeapWord* pending_list_addr, AbstractRefProcTaskExecutor* task_executor);
+
  protected:
   // "Preclean" the given discovered reference list
   // by removing references with strongly reachable referents.
@@ -179,7 +183,6 @@ class ReferenceProcessor : public CHeapObj {
                                    VoidClosure*       complete_gc,
                                    YieldClosure*      yield);
 
-  void enqueue_discovered_reflists(oop* pending_list_addr, AbstractRefProcTaskExecutor* task_executor);
   int next_id() {
     int id = _next_id;
     if (++_next_id == _num_q) {
@@ -189,7 +192,7 @@ class ReferenceProcessor : public CHeapObj {
   }
   DiscoveredList* get_discovered_list(ReferenceType rt);
   inline void add_to_discovered_list_mt(DiscoveredList& refs_list, oop obj,
-                                        oop* discovered_addr);
+                                        HeapWord* discovered_addr);
   void verify_ok_to_handle_reflists() PRODUCT_RETURN;
 
   void abandon_partial_discovered_list(DiscoveredList& refs_list);
@@ -477,7 +480,7 @@ class AbstractRefProcTaskExecutor::EnqueueTask {
 protected:
   EnqueueTask(ReferenceProcessor& ref_processor,
               DiscoveredList      refs_lists[],
-              oop*                pending_list_addr,
+              HeapWord*           pending_list_addr,
               oop                 sentinel_ref,
               int                 n_queues)
     : _ref_processor(ref_processor),
@@ -493,7 +496,7 @@ public:
 protected:
   ReferenceProcessor& _ref_processor;
   DiscoveredList*     _refs_lists;
-  oop*                _pending_list_addr;
+  HeapWord*           _pending_list_addr;
   oop                 _sentinel_ref;
   int                 _n_queues;
 };

@@ -670,8 +670,12 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr
   switch (type) {
     case JVM_SIGNATURE_CLASS :
     case JVM_SIGNATURE_ARRAY : {
-      oop* f = (oop*)addr;
-      oop o = *f;
+      oop o;
+      if (UseCompressedOops) {
+        o = oopDesc::load_decode_heap_oop((narrowOop*)addr);
+      } else {
+        o = oopDesc::load_decode_heap_oop((oop*)addr);
+      }
 
       // reflection and sun.misc.Unsafe classes may have a reference to a
       // klassOop so filter it out.
@@ -1077,6 +1081,7 @@ class SymbolTableDumper : public OopClosure {
  public:
   SymbolTableDumper(DumpWriter* writer)     { _writer = writer; }
   void do_oop(oop* obj_p);
+  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
 void SymbolTableDumper::do_oop(oop* obj_p) {
@@ -1106,6 +1111,7 @@ class JNILocalsDumper : public OopClosure {
     _thread_serial_num = thread_serial_num;
   }
   void do_oop(oop* obj_p);
+  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
 
@@ -1133,6 +1139,7 @@ class JNIGlobalsDumper : public OopClosure {
     _writer = writer;
   }
   void do_oop(oop* obj_p);
+  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
 void JNIGlobalsDumper::do_oop(oop* obj_p) {
@@ -1164,6 +1171,7 @@ class MonitorUsedDumper : public OopClosure {
     writer()->write_u1(HPROF_GC_ROOT_MONITOR_USED);
     writer()->write_objectID(*obj_p);
   }
+  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
 
@@ -1178,6 +1186,7 @@ class StickyClassDumper : public OopClosure {
     _writer = writer;
   }
   void do_oop(oop* obj_p);
+  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
 void StickyClassDumper::do_oop(oop* obj_p) {

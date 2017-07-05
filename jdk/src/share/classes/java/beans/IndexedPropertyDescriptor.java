@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,6 +231,7 @@ perty.
 
         indexedReadMethodName = readMethod.getName();
         this.indexedReadMethodRef = getSoftReference(readMethod);
+        setTransient(readMethod.getAnnotation(Transient.class));
     }
 
 
@@ -303,6 +304,7 @@ perty.
 
         indexedWriteMethodName = writeMethod.getName();
         this.indexedWriteMethodRef = getSoftReference(writeMethod);
+        setTransient(writeMethod.getAnnotation(Transient.class));
     }
 
     /**

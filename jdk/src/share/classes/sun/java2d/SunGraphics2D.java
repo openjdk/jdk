@@ -1374,7 +1374,7 @@ public final class SunGraphics2D
                   SunHints.Value.get(SunHints.INTKEY_FRACTIONALMETRICS,
                                      fractionalMetricsHint));
         model.put(SunHints.KEY_TEXT_ANTIALIAS_LCD_CONTRAST,
-                  new Integer(lcdTextContrast));
+                  Integer.valueOf(lcdTextContrast));
         Object value;
         switch (interpolationHint) {
         case SunHints.INTVAL_INTERPOLATION_NEAREST_NEIGHBOR:

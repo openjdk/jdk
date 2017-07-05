@@ -33,7 +33,6 @@ class ParEvacuateFollowersClosure;
 // but they must be here to allow ParScanClosure::do_oop_work to be defined
 // in genOopClosures.inline.hpp.
 
-
 typedef OopTaskQueue    ObjToScanQueue;
 typedef OopTaskQueueSet ObjToScanQueueSet;
 
@@ -41,15 +40,20 @@ typedef OopTaskQueueSet ObjToScanQueueSet;
 const int PAR_STATS_ENABLED = 0;
 
 class ParKeepAliveClosure: public DefNewGeneration::KeepAliveClosure {
+ private:
   ParScanWeakRefClosure* _par_cl;
+ protected:
+  template <class T> void do_oop_work(T* p);
  public:
   ParKeepAliveClosure(ParScanWeakRefClosure* cl);
-  void do_oop(oop* p);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
 
 // The state needed by thread performing parallel young-gen collection.
 class ParScanThreadState {
   friend class ParScanThreadStateSet;
+ private:
   ObjToScanQueue *_work_queue;
 
   ParGCAllocBuffer _to_space_alloc_buffer;
@@ -111,7 +115,7 @@ class ParScanThreadState {
                      ObjToScanQueueSet* work_queue_set_, size_t desired_plab_sz_,
                      ParallelTaskTerminator& term_);
 
-public:
+ public:
   ageTable* age_table() {return &_ageTable;}
 
   ObjToScanQueue* work_queue() { return _work_queue; }
@@ -195,13 +199,13 @@ public:
   double elapsed() {
     return os::elapsedTime() - _start;
   }
-
 };
 
 class ParNewGenTask: public AbstractGangTask {
-  ParNewGeneration* _gen;
-  Generation* _next_gen;
-  HeapWord* _young_old_boundary;
+ private:
+  ParNewGeneration*            _gen;
+  Generation*                  _next_gen;
+  HeapWord*                    _young_old_boundary;
   class ParScanThreadStateSet* _state_set;
 
 public:
@@ -216,35 +220,44 @@ public:
 };
 
 class KeepAliveClosure: public DefNewGeneration::KeepAliveClosure {
+ protected:
+  template <class T> void do_oop_work(T* p);
  public:
   KeepAliveClosure(ScanWeakRefClosure* cl);
-  void do_oop(oop* p);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
 
 class EvacuateFollowersClosureGeneral: public VoidClosure {
-    GenCollectedHeap* _gch;
-    int _level;
-    OopsInGenClosure* _scan_cur_or_nonheap;
-    OopsInGenClosure* _scan_older;
-  public:
-    EvacuateFollowersClosureGeneral(GenCollectedHeap* gch, int level,
-                                    OopsInGenClosure* cur,
-                                    OopsInGenClosure* older);
-    void do_void();
+ private:
+  GenCollectedHeap* _gch;
+  int               _level;
+  OopsInGenClosure* _scan_cur_or_nonheap;
+  OopsInGenClosure* _scan_older;
+ public:
+  EvacuateFollowersClosureGeneral(GenCollectedHeap* gch, int level,
+                                  OopsInGenClosure* cur,
+                                  OopsInGenClosure* older);
+  virtual void do_void();
 };
 
 // Closure for scanning ParNewGeneration.
 // Same as ScanClosure, except does parallel GC barrier.
 class ScanClosureWithParBarrier: public ScanClosure {
-public:
+ protected:
+  template <class T> void do_oop_work(T* p);
+ public:
   ScanClosureWithParBarrier(ParNewGeneration* g, bool gc_barrier);
-  void do_oop(oop* p);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
 
 // Implements AbstractRefProcTaskExecutor for ParNew.
 class ParNewRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-public:
-
+ private:
+  ParNewGeneration&      _generation;
+  ParScanThreadStateSet& _state_set;
+ public:
   ParNewRefProcTaskExecutor(ParNewGeneration& generation,
                             ParScanThreadStateSet& state_set)
     : _generation(generation), _state_set(state_set)
@@ -255,9 +268,6 @@ public:
   virtual void execute(EnqueueTask& task);
   // Switch to single threaded mode.
   virtual void set_single_threaded_mode();
-private:
-  ParNewGeneration&      _generation;
-  ParScanThreadStateSet& _state_set;
 };
 
 
@@ -269,6 +279,7 @@ class ParNewGeneration: public DefNewGeneration {
   friend class ParNewRefProcTaskExecutor;
   friend class ParScanThreadStateSet;
 
+ private:
   // XXX use a global constant instead of 64!
   struct ObjToScanQueuePadded {
         ObjToScanQueue work_queue;
@@ -314,7 +325,7 @@ class ParNewGeneration: public DefNewGeneration {
   // the details of the policy.
   virtual void adjust_desired_tenuring_threshold();
 
-public:
+ public:
   ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level);
 
   ~ParNewGeneration() {

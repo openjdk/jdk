@@ -32,49 +32,53 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
 
   assert(Thread::current() == this, "caller must be current thread");
   assert(this->is_Java_thread(), "must be JavaThread");
-
   JavaThread* jt = (JavaThread *)this;
 
-  // If we have a last_Java_frame, then we should use it even if
-  // isInJava == true.  It should be more reliable than ucontext info.
+  // last_Java_frame is always walkable and safe use it if we have it
+
   if (jt->has_last_Java_frame()) {
     *fr_addr = jt->pd_last_frame();
     return true;
   }
 
-  // At this point, we don't have a last_Java_frame, so
-  // we try to glean some information out of the ucontext
-  // if we were running Java code when SIGPROF came in.
-  if (isInJava) {
-    ucontext_t* uc = (ucontext_t*) ucontext;
+  ucontext_t* uc = (ucontext_t*) ucontext;
 
-    intptr_t* ret_fp;
-    intptr_t* ret_sp;
-    ExtendedPC addr = os::Solaris::fetch_frame_from_ucontext(this, uc,
-      &ret_sp, &ret_fp);
-    if (addr.pc() == NULL || ret_sp == NULL ) {
-      // ucontext wasn't useful
-      return false;
-    }
+  // We always want to use the initial frame we create from the ucontext as
+  // it certainly signals where we currently are. However that frame may not
+  // be safe for calling sender. In that case if we have a last_Java_frame
+  // then the forte walker will switch to that frame as the virtual sender
+  // for the frame we create here which is not sender safe.
 
-    frame ret_frame(ret_sp, ret_fp, addr.pc());
-    if (!ret_frame.safe_for_sender(jt)) {
-#ifdef COMPILER2
-      frame ret_frame2(ret_sp, NULL, addr.pc());
-      if (!ret_frame2.safe_for_sender(jt)) {
-        // nothing else to try if the frame isn't good
-        return false;
-      }
-      ret_frame = ret_frame2;
-#else
-      // nothing else to try if the frame isn't good
-      return false;
-#endif /* COMPILER2 */
-    }
-    *fr_addr = ret_frame;
-    return true;
+  intptr_t* ret_fp;
+  intptr_t* ret_sp;
+  ExtendedPC addr = os::Solaris::fetch_frame_from_ucontext(this, uc, &ret_sp, &ret_fp);
+
+  // Something would really have to be screwed up to get a NULL pc
+
+  if (addr.pc() == NULL ) {
+    assert(false, "NULL pc from signal handler!");
+    return false;
+
   }
 
-  // nothing else to try
-  return false;
+  // If sp and fp are nonsense just leave them out
+
+  if ((address)ret_sp >= jt->stack_base() ||
+      (address)ret_sp < jt->stack_base() - jt->stack_size() ) {
+
+      ret_sp = NULL;
+      ret_fp = NULL;
+  } else {
+
+    // sp is reasonable is fp reasonable?
+    if ( (address)ret_fp >= jt->stack_base() || ret_fp < ret_sp) {
+      ret_fp = NULL;
+    }
+  }
+
+  frame ret_frame(ret_sp, ret_fp, addr.pc());
+
+  *fr_addr = ret_frame;
+  return true;
+
 }
