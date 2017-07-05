@@ -863,11 +863,16 @@ public class ICC_Profile implements Serializable {
         case ColorSpace.CS_PYCC:
             synchronized(ICC_Profile.class) {
                 if (PYCCprofile == null) {
-                    ProfileDeferralInfo pInfo =
-                        new ProfileDeferralInfo("PYCC.pf",
-                                                ColorSpace.TYPE_3CLR, 3,
-                                                CLASS_DISPLAY);
-                    PYCCprofile = getDeferredInstance(pInfo);
+                    if (getProfileFile("PYCC.pf") != null) {
+                        ProfileDeferralInfo pInfo =
+                            new ProfileDeferralInfo("PYCC.pf",
+                                                    ColorSpace.TYPE_3CLR, 3,
+                                                    CLASS_DISPLAY);
+                        PYCCprofile = getDeferredInstance(pInfo);
+                    } else {
+                        throw new IllegalArgumentException(
+                                "Can't load standard profile: PYCC.pf");
+                    }
                 }
                 thisProfile = PYCCprofile;
             }
@@ -1783,17 +1788,33 @@ public class ICC_Profile implements Serializable {
         return (FileInputStream)java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction() {
             public Object run() {
-                return privilegedOpenProfile(fileName);
+                File f = privilegedGetProfileFile(fileName);
+                if (f != null) {
+                    try {
+                        return new FileInputStream(f);
+                    } catch (FileNotFoundException e) {
+                    }
+                }
+                return null;
+            }
+        });
+    }
+
+    private static File getProfileFile(final String fileName) {
+        return (File)java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction() {
+            public Object run() {
+                return privilegedGetProfileFile(fileName);
             }
         });
     }
 
     /*
-     * this version is called from doPrivileged in privilegedOpenProfile.
-     * the whole method is privileged!
+     * this version is called from doPrivileged in openProfile
+     * or getProfileFile, so the whole method is privileged!
      */
-    private static FileInputStream privilegedOpenProfile(String fileName) {
-        FileInputStream fis = null;
+
+    private static File privilegedGetProfileFile(String fileName) {
         String path, dir, fullPath;
 
         File f = new File(fileName); /* try absolute file name */
@@ -1830,12 +1851,9 @@ public class ICC_Profile implements Serializable {
             }
 
         if (f.isFile()) {
-            try {
-                fis = new FileInputStream(f);
-            } catch (FileNotFoundException e) {
-            }
+            return f;
         }
-        return fis;
+        return null;
     }
 
 
