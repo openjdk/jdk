@@ -228,7 +228,7 @@ public abstract class InputStream implements Closeable {
      *         allocated. For example, if an array larger than {@code 2GB} would
      *         be required to store the bytes.
      *
-     * @since 1.9
+     * @since 9
      */
     public byte[] readAllBytes() throws IOException {
         byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
@@ -298,7 +298,7 @@ public abstract class InputStream implements Closeable {
      * @throws IndexOutOfBoundsException If {@code off} is negative, {@code len}
      *         is negative, or {@code len} is greater than {@code b.length - off}
      *
-     * @since 1.9
+     * @since 9
      */
     public int readNBytes(byte[] b, int off, int len) throws IOException {
         Objects.requireNonNull(b);
@@ -514,7 +514,7 @@ public abstract class InputStream implements Closeable {
      * @throws IOException if an I/O error occurs when reading or writing
      * @throws NullPointerException if {@code out} is {@code null}
      *
-     * @since 1.9
+     * @since 9
      */
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");

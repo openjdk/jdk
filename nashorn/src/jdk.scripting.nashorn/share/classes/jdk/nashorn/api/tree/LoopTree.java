@@ -28,7 +28,7 @@ package jdk.nashorn.api.tree;
 /**
  * A mixin for "loop" statements.
  *
- * @since 1.9
+ * @since 9
  */
 public interface LoopTree extends StatementTree {
     /**

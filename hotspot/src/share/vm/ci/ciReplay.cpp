@@ -1040,10 +1040,8 @@ void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level
   }
   void* data = rp.process_inline(method, method->get_Method(), entry_bci, comp_level, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    oop throwable = PENDING_EXCEPTION;
+    Handle throwable(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-    java_lang_Throwable::print(throwable, tty);
-    tty->cr();
     java_lang_Throwable::print_stack_trace(throwable, tty);
     tty->cr();
     return NULL;
@@ -1085,10 +1083,8 @@ int ciReplay::replay_impl(TRAPS) {
   }
 
   if (HAS_PENDING_EXCEPTION) {
-    oop throwable = PENDING_EXCEPTION;
+    Handle throwable(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-    java_lang_Throwable::print(throwable, tty);
-    tty->cr();
     java_lang_Throwable::print_stack_trace(throwable, tty);
     tty->cr();
     exit_code = 2;

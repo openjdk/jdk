@@ -962,7 +962,6 @@ enum LIR_Code {
       , lir_cos
       , lir_tan
       , lir_log10
-      , lir_pow
       , lir_logic_and
       , lir_logic_or
       , lir_logic_xor
@@ -2198,7 +2197,6 @@ class LIR_List: public CompilationResourceObj {
   void sin (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_sin , from, tmp1, to, tmp2)); }
   void cos (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_cos , from, tmp1, to, tmp2)); }
   void tan (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_tan , from, tmp1, to, tmp2)); }
-  void pow (LIR_Opr arg1, LIR_Opr arg2, LIR_Opr res, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, LIR_Opr tmp5) { append(new LIR_Op2(lir_pow, arg1, arg2, res, tmp1, tmp2, tmp3, tmp4, tmp5)); }
 
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }
   void sub (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL) { append(new LIR_Op2(lir_sub, left, right, res, info)); }

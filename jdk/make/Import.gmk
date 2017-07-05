@@ -48,7 +48,7 @@ endif
 ifneq ($(STATIC_BUILD), true)
   JSIG_IMPORT = jsig.*
 else
-  JSIG_IMPORT = 
+  JSIG_IMPORT =
 endif
 
 HOTSPOT_BASE_IMPORT_FILES := \

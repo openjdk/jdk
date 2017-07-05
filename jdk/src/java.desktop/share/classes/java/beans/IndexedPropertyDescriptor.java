@@ -152,7 +152,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      *               and the {@code value} is the automatically generated property info
      * @param bound  the flag indicating whether it is possible to treat this property as a bound property
      *
-     * @since 1.9
+     * @since 9
      */
     IndexedPropertyDescriptor(Entry<String,PropertyInfo> entry, boolean bound) {
         super(entry, bound);

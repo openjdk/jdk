@@ -40,8 +40,8 @@ MODULES_LIBS_STRIPPED := $(SUPPORT_OUTPUTDIR)/modules_libs-stripped
 
 ifneq ($(STRIP), )
   define StripRecipe
-	$(ECHO) Stripping $(LOG_INFO) $(patsubst $(OUTPUT_ROOT)/%,%,$<)
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Stripping $(patsubst $(OUTPUT_ROOT)/%,%,$<))
+	$(call MakeDir, $(@D))
 	$(CP) $< $@.tmp
 	$(CHMOD) u+w $@.tmp
 	$(STRIP) $(STRIPFLAGS) $@.tmp

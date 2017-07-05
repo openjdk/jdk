@@ -68,15 +68,15 @@ define SetupRMICompilationBody
   $$($1_TARGETS): $$($1_DEP_FILE) $$($1_CLASS_FILES)
 
   $$($1_DEP_FILE): $$($1_CLASS_FILES)
-	$(MKDIR) -p $$($1_STUB_CLASSES_DIR)
-	$(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS) for $$($1_DOLLAR_SAFE_CLASSES) && \
+	$$(call LogInfo, Running rmic $$($1_ARGS) for $$($1_DOLLAR_SAFE_CLASSES))
+	$$(call MakeDir, $$($1_STUB_CLASSES_DIR))
 	$(RMIC) $$($1_ARGS) -classpath "$$($1_CLASSES_DIR)" \
 	    -d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES); \
 	if [ "x$$($1_ARGS2)" != "x" ]; then \
 	  $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS2) for $$($1_DOLLAR_SAFE_CLASSES) && \
 	  $(RMIC) $$($1_ARGS2) -classpath "$$($1_CLASSES_DIR)" \
 	      -d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES); \
-	fi;
+	fi; \
 	$(TOUCH) $$@
 
 

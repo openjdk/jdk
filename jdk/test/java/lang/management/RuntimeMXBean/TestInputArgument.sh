@@ -48,8 +48,8 @@ runOne()
 
 runOne InputArgument 
 
-runOne -XX:+UseFastJNIAccessors -XX:+PrintGCDetails InputArgument -XX:+PrintGCDetails
-runOne -XX:+UseFastJNIAccessors -XX:+PrintGCDetails InputArgument -XX:+UseFastJNIAccessors
+runOne -XX:+UseFastJNIAccessors -Xlog:gc*=debug InputArgument
+runOne -XX:+UseFastJNIAccessors -Xlog:gc*=debug InputArgument -XX:+UseFastJNIAccessors
 runOne "-Dprops=one two three" InputArgument "-Dprops=one two three"
 
 exit 0

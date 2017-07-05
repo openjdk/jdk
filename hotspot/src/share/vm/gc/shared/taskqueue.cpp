@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "oops/oop.inline.hpp"
+#include "logging/log.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
@@ -212,11 +213,8 @@ ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
 #endif
         }
       } else {
-        if (PrintGCDetails && Verbose) {
-         gclog_or_tty->print_cr("ParallelTaskTerminator::offer_termination() "
-           "thread " PTR_FORMAT " sleeps after %u yields",
-           p2i(Thread::current()), yield_count);
-        }
+        log_develop_trace(gc, task)("ParallelTaskTerminator::offer_termination() thread " PTR_FORMAT " sleeps after %u yields",
+                                    p2i(Thread::current()), yield_count);
         yield_count = 0;
         // A sleep will cause this processor to seek work on another processor's
         // runqueue, if it has nothing else to run (as opposed to the yield
@@ -240,7 +238,7 @@ ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
 
 #ifdef TRACESPINNING
 void ParallelTaskTerminator::print_termination_counts() {
-  gclog_or_tty->print_cr("ParallelTaskTerminator Total yields: %u"
+  log_trace(gc, task)("ParallelTaskTerminator Total yields: %u"
     " Total spins: %u Total peeks: %u",
     total_yields(),
     total_spins(),

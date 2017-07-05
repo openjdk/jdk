@@ -266,3 +266,14 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_BUILD_TWEAKS],
   HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
   AC_SUBST(HOTSPOT_MAKE_ARGS)
 ])
+
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
+    # Fastdebug builds with this setting will essentially be slowdebug
+    # in hotspot.
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false

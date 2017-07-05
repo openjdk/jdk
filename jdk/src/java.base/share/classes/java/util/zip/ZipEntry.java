@@ -220,7 +220,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      *         The last modification time of the entry in local date-time
      *
      * @see #getTimeLocal()
-     * @since 1.9
+     * @since 9
      */
     public void setTimeLocal(LocalDateTime time) {
         int year = time.getYear() - 1980;
@@ -259,7 +259,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @return  The last modification time of the entry in local date-time
      *
      * @see #setTimeLocal(LocalDateTime)
-     * @since 1.9
+     * @since 9
      */
     public LocalDateTime getTimeLocal() {
         if (mtime != null) {

@@ -44,7 +44,7 @@ import java.security.spec.*;
  * Ucrypto-private KeyFactory class for generating native keys
  * needed for using ucrypto APIs.
  *
- * @since 1.9
+ * @since 9
  */
 public final class NativeRSAKeyFactory extends KeyFactorySpi {
 

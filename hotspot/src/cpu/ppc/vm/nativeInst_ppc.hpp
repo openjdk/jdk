@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   friend class Relocation;
 
  public:
+  bool is_jump() { return Assembler::is_b(long_at(0)); } // See NativeGeneralJump.
+
   bool is_sigtrap_ic_miss_check() {
     assert(UseSIGTRAP, "precondition");
     return MacroAssembler::is_trap_ic_miss_check(long_at(0));
@@ -235,8 +237,8 @@ inline NativeFarCall* nativeFarCall_at(address instr) {
   return call;
 }
 
-// An interface for accessing/manipulating native set_oop imm, reg instructions.
-// (used to manipulate inlined data references, etc.)
+// An interface for accessing/manipulating native set_oop imm, reg instructions
+// (used to manipulate inlined data references, etc.).
 class NativeMovConstReg: public NativeInstruction {
  public:
 
@@ -384,15 +386,124 @@ class NativeCallTrampolineStub : public NativeInstruction {
   void set_destination(address new_destination);
 };
 
+// Note: Other stubs must not begin with this pattern.
 inline bool is_NativeCallTrampolineStub_at(address address) {
   int first_instr = *(int*)address;
-  return Assembler::is_addis(first_instr) &&
-    (Register)(intptr_t)Assembler::inv_rt_field(first_instr) == R12_scratch2;
+  // calculate_address_from_global_toc and long form of ld_largeoffset_unchecked begin with addis with target R12
+  if (Assembler::is_addis(first_instr) &&
+      (Register)(intptr_t)Assembler::inv_rt_field(first_instr) == R12_scratch2) return true;
+
+  // short form of ld_largeoffset_unchecked is ld which is followed by mtctr
+  int second_instr = *((int*)address + 1);
+  if (Assembler::is_ld(first_instr) &&
+      (Register)(intptr_t)Assembler::inv_rt_field(first_instr) == R12_scratch2 &&
+      Assembler::is_mtctr(second_instr) &&
+      (Register)(intptr_t)Assembler::inv_rs_field(second_instr) == R12_scratch2) return true;
+
+  return false;
 }
 
 inline NativeCallTrampolineStub* NativeCallTrampolineStub_at(address address) {
   assert(is_NativeCallTrampolineStub_at(address), "no call trampoline found");
   return (NativeCallTrampolineStub*)address;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------
+//  N a t i v e G e n e r a l J u m p
+//-------------------------------------
+
+// Despite the name, handles only simple branches.
+class NativeGeneralJump;
+inline NativeGeneralJump* nativeGeneralJump_at(address address);
+
+// Currently only implemented as single unconditional branch.
+class NativeGeneralJump: public NativeInstruction {
+ public:
+
+  enum PPC64_specific_constants {
+    instruction_size = 4
+  };
+
+  address instruction_address() const { return addr_at(0); }
+
+  // Creation.
+  friend inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
+    NativeGeneralJump* jump = (NativeGeneralJump*)(addr);
+    DEBUG_ONLY( jump->verify(); )
+    return jump;
+  }
+
+  // Insertion of native general jump instruction.
+  static void insert_unconditional(address code_pos, address entry);
+
+  address jump_destination() const {
+    DEBUG_ONLY( verify(); )
+    return addr_at(0) + Assembler::inv_li_field(long_at(0));
+  }
+
+  void set_jump_destination(address dest) {
+    DEBUG_ONLY( verify(); )
+    insert_unconditional(addr_at(0), dest);
+  }
+
+  static void replace_mt_safe(address instr_addr, address code_buffer);
+
+  void verify() const { guarantee(Assembler::is_b(long_at(0)), "invalid NativeGeneralJump"); }
+};
+
+// An interface for accessing/manipulating native load int (load_const32).
+class NativeMovRegMem;
+inline NativeMovRegMem* nativeMovRegMem_at(address address);
+class NativeMovRegMem: public NativeInstruction {
+ public:
+
+  enum PPC64_specific_constants {
+    instruction_size = 8
+  };
+
+  address instruction_address() const { return addr_at(0); }
+
+  intptr_t offset() const {
+#ifdef VM_LITTLE_ENDIAN
+    short *hi_ptr = (short*)(addr_at(0));
+    short *lo_ptr = (short*)(addr_at(4));
+#else
+    short *hi_ptr = (short*)(addr_at(0) + 2);
+    short *lo_ptr = (short*)(addr_at(4) + 2);
+#endif
+    return ((*hi_ptr) << 16) | ((*lo_ptr) & 0xFFFF);
+  }
+
+  void set_offset(intptr_t x) {
+#ifdef VM_LITTLE_ENDIAN
+    short *hi_ptr = (short*)(addr_at(0));
+    short *lo_ptr = (short*)(addr_at(4));
+#else
+    short *hi_ptr = (short*)(addr_at(0) + 2);
+    short *lo_ptr = (short*)(addr_at(4) + 2);
+#endif
+    *hi_ptr = x >> 16;
+    *lo_ptr = x & 0xFFFF;
+    ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
+  }
+
+  void add_offset_in_bytes(intptr_t radd_offset) {
+    set_offset(offset() + radd_offset);
+  }
+
+  void verify() const {
+    guarantee(Assembler::is_lis(long_at(0)), "load_const32 1st instr");
+    guarantee(Assembler::is_ori(long_at(4)), "load_const32 2nd instr");
+  }
+
+ private:
+  friend inline NativeMovRegMem* nativeMovRegMem_at(address address) {
+    NativeMovRegMem* test = (NativeMovRegMem*)address;
+    DEBUG_ONLY( test->verify(); )
+    return test;
+  }
+};
 
 #endif // CPU_PPC_VM_NATIVEINST_PPC_HPP

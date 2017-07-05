@@ -419,12 +419,12 @@ class PhaseCFG : public Phase {
   void global_code_motion();
 
   // Schedule Nodes early in their basic blocks.
-  bool schedule_early(VectorSet &visited, Node_List &roots);
+  bool schedule_early(VectorSet &visited, Node_Stack &roots);
 
   // For each node, find the latest block it can be scheduled into
   // and then select the cheapest block between the latest and earliest
   // block to place the node.
-  void schedule_late(VectorSet &visited, Node_List &stack);
+  void schedule_late(VectorSet &visited, Node_Stack &stack);
 
   // Compute the (backwards) latency of a node from a single use
   int latency_from_use(Node *n, const Node *def, Node *use);
@@ -433,7 +433,7 @@ class PhaseCFG : public Phase {
   void partial_latency_of_defs(Node *n);
 
   // Compute the instruction global latency with a backwards walk
-  void compute_latencies_backwards(VectorSet &visited, Node_List &stack);
+  void compute_latencies_backwards(VectorSet &visited, Node_Stack &stack);
 
   // Pick a block between early and late that is a cheaper alternative
   // to late. Helper for schedule_late.

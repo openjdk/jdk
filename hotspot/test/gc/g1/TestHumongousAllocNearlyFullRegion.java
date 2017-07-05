@@ -44,11 +44,11 @@ public class TestHumongousAllocNearlyFullRegion {
             "-Xms" + heapSize + "m",
             "-Xmx" + heapSize + "m",
             "-XX:G1HeapRegionSize=" + heapRegionSize + "m",
-            "-XX:+PrintGC",
+            "-Xlog:gc",
             HumongousObjectAllocator.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("GC pause (G1 Humongous Allocation) (young) (initial-mark)");
+        output.shouldContain("Pause Initial Mark (G1 Humongous Allocation)");
         output.shouldHaveExitValue(0);
     }
 

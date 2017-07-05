@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  * {@code DesktopDatatransferService} interface.
  *
  * @author Petr Pchelko
- * @since 1.9
+ * @since 9
  */
 public class DesktopDatatransferServiceImpl implements DesktopDatatransferService {
 

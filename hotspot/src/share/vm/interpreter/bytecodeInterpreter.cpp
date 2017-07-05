@@ -31,6 +31,7 @@
 #include "interpreter/bytecodeInterpreterProfiling.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -2778,14 +2779,15 @@ run:
       SET_STACK_OBJECT(except_oop(), 0);
       MORE_STACK(1);
       pc = METHOD->code_base() + continuation_bci;
-      if (TraceExceptions) {
-        ttyLocker ttyl;
+      if (log_is_enabled(Info, exceptions)) {
         ResourceMark rm;
-        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), p2i(except_oop()));
-        tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
-        tty->print_cr(" at bci %d, continuing at %d for thread " INTPTR_FORMAT,
-                      (int)(istate->bcp() - METHOD->code_base()),
-                      (int)continuation_bci, p2i(THREAD));
+        log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ")\n"
+                             " thrown in interpreter method <%s>\n"
+                             " at bci %d, continuing at %d for thread " INTPTR_FORMAT,
+                             except_oop->print_value_string(), p2i(except_oop()),
+                             METHOD->print_value_string(),
+                             (int)(istate->bcp() - METHOD->code_base()),
+                             (int)continuation_bci, p2i(THREAD));
       }
       // for AbortVMOnException flag
       Exceptions::debug_check_abort(except_oop);
@@ -2794,14 +2796,15 @@ run:
       BI_PROFILE_ALIGN_TO_CURRENT_BCI();
       goto run;
     }
-    if (TraceExceptions) {
-      ttyLocker ttyl;
+    if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm;
-      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), p2i(except_oop()));
-      tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
-      tty->print_cr(" at bci %d, unwinding for thread " INTPTR_FORMAT,
-                    (int)(istate->bcp() - METHOD->code_base()),
-                    p2i(THREAD));
+      log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ")\n"
+                           " thrown in interpreter method <%s>\n"
+                           " at bci %d, unwinding for thread " INTPTR_FORMAT,
+                           except_oop->print_value_string(), p2i(except_oop()),
+                           METHOD->print_value_string(),
+                           (int)(istate->bcp() - METHOD->code_base()),
+                           p2i(THREAD));
     }
     // for AbortVMOnException flag
     Exceptions::debug_check_abort(except_oop);

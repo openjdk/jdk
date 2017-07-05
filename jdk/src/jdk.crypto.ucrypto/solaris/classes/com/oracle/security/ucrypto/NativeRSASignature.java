@@ -59,7 +59,7 @@ import java.nio.ByteBuffer;
  *   . SHA384withRSA
  *   . SHA512withRSA
  *
- * @since 1.9
+ * @since 9
  */
 class NativeRSASignature extends SignatureSpi {
 

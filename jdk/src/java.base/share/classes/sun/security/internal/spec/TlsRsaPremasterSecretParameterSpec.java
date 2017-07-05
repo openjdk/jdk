@@ -43,6 +43,8 @@ import java.security.PrivilegedAction;
 public class TlsRsaPremasterSecretParameterSpec
         implements AlgorithmParameterSpec {
 
+    private final byte[] encodedSecret;
+
     /*
      * The TLS spec says that the version in the RSA premaster secret must
      * be the maximum version supported by the client (i.e. the version it
@@ -89,6 +91,33 @@ public class TlsRsaPremasterSecretParameterSpec
 
         this.clientVersion = checkVersion(clientVersion);
         this.serverVersion = checkVersion(serverVersion);
+        this.encodedSecret = null;
+    }
+
+    /**
+     * Constructs a new TlsRsaPremasterSecretParameterSpec.
+     *
+     * @param clientVersion the version of the TLS protocol by which the
+     *        client wishes to communicate during this session
+     * @param serverVersion the negotiated version of the TLS protocol which
+     *        contains the lower of that suggested by the client in the client
+     *        hello and the highest supported by the server.
+     * @param encodedSecret the encoded secret key
+     *
+     * @throws IllegalArgumentException if clientVersion or serverVersion are
+     *   negative or larger than (2^16 - 1) or if encodedSecret is not
+     *   exactly 48 bytes
+     */
+    public TlsRsaPremasterSecretParameterSpec(
+            int clientVersion, int serverVersion, byte[] encodedSecret) {
+
+        this.clientVersion = checkVersion(clientVersion);
+        this.serverVersion = checkVersion(serverVersion);
+        if (encodedSecret == null || encodedSecret.length != 48) {
+            throw new IllegalArgumentException(
+                        "Encoded secret is not exactly 48 bytes");
+        }
+        this.encodedSecret = encodedSecret.clone();
     }
 
     /**
@@ -146,5 +175,14 @@ public class TlsRsaPremasterSecretParameterSpec
                         "Version must be between 0 and 65,535");
         }
         return version;
+    }
+
+    /**
+     * Returns the encoded secret.
+     *
+     * @return the encoded secret, may be null if no encoded secret.
+     */
+    public byte[] getEncodedSecret() {
+        return encodedSecret == null ? null : encodedSecret.clone();
     }
 }

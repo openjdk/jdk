@@ -166,6 +166,7 @@ class klassVtable : public ResourceObj {
 //      from_interpreter_entry_point   -> i2cadapter
 class vtableEntry VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
  public:
   // size in words

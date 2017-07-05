@@ -181,19 +181,6 @@ void MacroAssembler::null_check(Register reg, int offset) {
 
 // Ring buffer jumps
 
-#ifndef PRODUCT
-void MacroAssembler::ret(  bool trace )   { if (trace) {
-                                                    mov(I7, O7); // traceable register
-                                                    JMP(O7, 2 * BytesPerInstWord);
-                                                  } else {
-                                                    jmpl( I7, 2 * BytesPerInstWord, G0 );
-                                                  }
-                                                }
-
-void MacroAssembler::retl( bool trace )  { if (trace) JMP(O7, 2 * BytesPerInstWord);
-                                                 else jmpl( O7, 2 * BytesPerInstWord, G0 ); }
-#endif /* PRODUCT */
-
 
 void MacroAssembler::jmp2(Register r1, Register r2, const char* file, int line ) {
   assert_not_delayed();
@@ -401,9 +388,6 @@ static Thread* verify_thread_subroutine(Thread* gthread_value) {
 void MacroAssembler::verify_thread() {
   if (VerifyThread) {
     // NOTE: this chops off the heads of the 64-bit O registers.
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     // make sure G2_thread contains the right value
     save_frame_and_mov(0, Lmethod, Lmethod);   // to avoid clobbering O0 (and propagate Lmethod for -Xprof)
     mov(G1, L1);                // avoid clobbering G1
@@ -411,7 +395,6 @@ void MacroAssembler::verify_thread() {
     mov(G3, L3);                // avoid clobbering G3
     mov(G4, L4);                // avoid clobbering G4
     mov(G5_method, L5);         // avoid clobbering G5_method
-#endif /* CC_INTERP */
 #if defined(COMPILER2) && !defined(_LP64)
     // Save & restore possible 64-bit Long arguments in G-regs
     srlx(G1,32,L0);
@@ -530,11 +513,7 @@ void MacroAssembler::reset_last_Java_frame(void) {
 
 #ifdef ASSERT
   // check that it WAS previously set
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod to helper frame for -Xprof
-#endif /* CC_INTERP */
     ld_ptr(sp_addr, L0);
     tst(L0);
     breakpoint_trap(Assembler::zero, Assembler::ptr_cc);
@@ -754,11 +733,7 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 
 # ifdef ASSERT
     // Check that we are not overwriting any other oop.
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod for -Xprof
-#endif /* CC_INTERP */
     ld_ptr(vm_result_addr, L0);
     tst(L0);
     restore();
@@ -770,8 +745,8 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 }
 
 
-void MacroAssembler::ic_call(address entry, bool emit_delay) {
-  RelocationHolder rspec = virtual_call_Relocation::spec(pc());
+void MacroAssembler::ic_call(address entry, bool emit_delay, jint method_index) {
+  RelocationHolder rspec = virtual_call_Relocation::spec(pc(), method_index);
   patchable_set((intptr_t)Universe::non_oop_word(), G5_inline_cache_reg);
   relocate(rspec);
   call(entry, relocInfo::none);
@@ -779,7 +754,6 @@ void MacroAssembler::ic_call(address entry, bool emit_delay) {
     delayed()->nop();
   }
 }
-
 
 void MacroAssembler::card_table_write(jbyte* byte_map_base,
                                       Register tmp, Register obj) {
@@ -3595,10 +3569,28 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 1; i < StackShadowPages; i++) {
+  for (int i = 1; i < JavaThread::stack_shadow_zone_size() / os::vm_page_size(); i++) {
     set((-i*offset)+STACK_BIAS, Rscratch);
     st(G0, Rtsp, Rscratch);
   }
+}
+
+void MacroAssembler::reserved_stack_check() {
+  // testing if reserved zone needs to be enabled
+  Label no_reserved_zone_enabling;
+
+  ld_ptr(G2_thread, JavaThread::reserved_stack_activation_offset(), G4_scratch);
+  cmp_and_brx_short(SP, G4_scratch, Assembler::lessUnsigned, Assembler::pt, no_reserved_zone_enabling);
+
+  call_VM_leaf(L0, CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), G2_thread);
+
+  AddressLiteral stub(StubRoutines::throw_delayed_StackOverflowError_entry());
+  jump_to(stub, G4_scratch);
+  delayed()->restore();
+
+  should_not_reach_here();
+
+  bind(no_reserved_zone_enabling);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

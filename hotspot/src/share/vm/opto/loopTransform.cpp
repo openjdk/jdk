@@ -1399,8 +1399,8 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
           limit = new Opaque2Node( C, limit );
           register_new_node( limit, opaq_ctrl );
         }
-        if (stride_con > 0 && ((limit_type->_lo - stride_con) < limit_type->_lo) ||
-                   stride_con < 0 && ((limit_type->_hi - stride_con) > limit_type->_hi)) {
+        if (stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo) ||
+            stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi)) {
           // No underflow.
           new_limit = new SubINode(limit, stride);
         } else {
@@ -1908,6 +1908,12 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale,
     if (is_scaled_iv(exp->in(1), iv, p_scale)) {
       if (p_offset != NULL) {
         *p_offset = exp->in(2);
+      }
+      return true;
+    }
+    if (is_scaled_iv(exp->in(2), iv, p_scale)) {
+      if (p_offset != NULL) {
+        *p_offset = exp->in(1);
       }
       return true;
     }

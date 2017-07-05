@@ -48,7 +48,7 @@ import sun.security.util.*;
  * as possible AES-GCM-ICVlen values, so we allow all 6 values.
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public final class GCMParameters extends AlgorithmParametersSpi {
 

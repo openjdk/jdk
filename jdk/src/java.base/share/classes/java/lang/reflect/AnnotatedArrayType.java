@@ -53,7 +53,7 @@ public interface AnnotatedArrayType extends AnnotatedType {
      *
      * @return {@code null}
      *
-     * @since 1.9
+     * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();

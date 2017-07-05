@@ -52,7 +52,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
         -D "JDK_INTERNAL_NAME=j2pcsc" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2pcsc, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 TARGETS += $(BUILD_LIBJ2PCSC)
 

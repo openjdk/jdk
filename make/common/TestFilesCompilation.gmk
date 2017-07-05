@@ -87,7 +87,7 @@ define SetupTestFilesCompilationBody
         CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$($1_PREFIX)$$(name)), \
         LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$($1_PREFIX)$$(name)), \
         OPTIMIZATION := LOW, \
-        DEBUG_SYMBOLS := true)) \
+    )) \
     $$(eval $1 += $$(BUILD_TEST_$$(name)) )  \
   )
 
