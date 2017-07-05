@@ -45,6 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -56,6 +57,7 @@ import jdk.nashorn.internal.objects.AbstractIterator;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeObject;
 import jdk.nashorn.internal.parser.Lexer;
+import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
@@ -1039,7 +1041,30 @@ public final class ScriptRuntime {
                 return ((JSObject)obj).hasMember(Objects.toString(property));
             }
 
-            return false;
+            final Object key = JSType.toPropertyKey(property);
+
+            if (obj instanceof StaticClass) {
+                final Class<?> clazz = ((StaticClass) obj).getRepresentedClass();
+                return BeansLinker.getReadableStaticPropertyNames(clazz).contains(Objects.toString(key))
+                    || BeansLinker.getStaticMethodNames(clazz).contains(Objects.toString(key));
+            } else {
+                if (obj instanceof Map && ((Map) obj).containsKey(key)) {
+                    return true;
+                }
+
+                final int index = ArrayIndex.getArrayIndex(key);
+                if (index >= 0) {
+                    if (obj instanceof List && index < ((List) obj).size()) {
+                        return true;
+                    }
+                    if (obj.getClass().isArray() && index < Array.getLength(obj)) {
+                        return true;
+                    }
+                }
+
+                return BeansLinker.getReadableInstancePropertyNames(obj.getClass()).contains(Objects.toString(key))
+                    || BeansLinker.getInstanceMethodNames(obj.getClass()).contains(Objects.toString(key));
+            }
         }
 
         throw typeError("in.with.non.object", rvalType.toString().toLowerCase(Locale.ENGLISH));

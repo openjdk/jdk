@@ -154,7 +154,6 @@ module java.base {
         jdk.jartool,
         jdk.jlink;
     exports jdk.internal.misc to
-        java.corba,
         java.desktop,
         jdk.incubator.httpclient,
         java.logging,
@@ -183,7 +182,6 @@ module java.base {
         java.desktop,
         jdk.unsupported;
     exports jdk.internal.reflect to
-        java.corba,
         java.logging,
         java.sql,
         java.sql.rowset,
@@ -232,7 +230,6 @@ module java.base {
     exports sun.reflect.generics.reflectiveObjects to
         java.desktop;
     exports sun.reflect.misc to
-        java.corba,
         java.desktop,
         java.datatransfer,
         java.management,

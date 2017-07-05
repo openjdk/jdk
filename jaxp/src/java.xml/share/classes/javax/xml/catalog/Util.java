@@ -149,14 +149,6 @@ class Util {
             CatalogMessages.reportIAE(CatalogMessages.ERR_URI_NOTVALIDURL,
                     new Object[]{uri}, null);
         }
-
-        // verify the resource exists where possible
-        if (isFileUri(uri)) {
-            if (!isFileUriExist(uri, false)) {
-                CatalogMessages.reportIAE(CatalogMessages.ERR_URI_NOTVALIDURL,
-                        new Object[]{uri}, null);
-            }
-        }
     }
 
     /**

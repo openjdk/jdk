@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,9 +647,12 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
 
         Region.registerUIs(table);
         table.setDefaultLocale(Locale.getDefault());
-        table.addResourceBundle(
-              "com.sun.swing.internal.plaf.basic.resources.basic" );
-        table.addResourceBundle("com.sun.swing.internal.plaf.synth.resources.synth");
+        SwingAccessor.getUIDefaultsAccessor()
+                     .addInternalBundle(table,
+                             "com.sun.swing.internal.plaf.basic.resources.basic");
+        SwingAccessor.getUIDefaultsAccessor()
+                     .addInternalBundle(table,
+                             "com.sun.swing.internal.plaf.synth.resources.synth");
 
         // SynthTabbedPaneUI supports rollover on tabs, GTK does not
         table.put("TabbedPane.isTabRollover", Boolean.TRUE);

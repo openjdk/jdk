@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,13 +85,13 @@ public class JAXPTestUtilities {
      * A map storing every test's current test file pointer. File number should
      * be incremental and it's a thread-safe reading on this file number.
      */
-    private static final ConcurrentHashMap<Class, Integer> currentFileNumber
+    private static final ConcurrentHashMap<Class<?>, Integer> currentFileNumber
                 = new ConcurrentHashMap<>();
 
     /**
      * BOM table for storing BOM header.
      */
-    private final static Map<String, byte[]> bom = new HashMap();
+    private final static Map<String, byte[]> bom = new HashMap<>();
 
     /**
      * Initialize all BOM headers.
@@ -313,7 +313,7 @@ public class JAXPTestUtilities {
      * @param clazz test class.
      * @return next test output file name.
      */
-    public static String getNextFile(Class clazz) {
+    public static String getNextFile(Class<?> clazz) {
         int nextNumber = currentFileNumber.contains(clazz)
                 ? currentFileNumber.get(clazz) + 1 : 1;
         Integer i = currentFileNumber.putIfAbsent(clazz, nextNumber);
@@ -332,7 +332,7 @@ public class JAXPTestUtilities {
      *        path.
      * @return a string represents the full path of accessing path.
      */
-    public static String getPathByClassName(Class clazz, String relativeDir) {
+    public static String getPathByClassName(Class<?> clazz, String relativeDir) {
         String javaSourcePath = System.getProperty("test.src").replaceAll("\\" + File.separator, FILE_SEP);
         String normalizedPath = Paths.get(javaSourcePath, relativeDir).normalize().
                 toAbsolutePath().toString();
@@ -435,7 +435,7 @@ public class JAXPTestUtilities {
      */
     public static void runWithTmpPermission(Runnable r, Permission... ps) {
         JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
-        List<Integer> tmpPermissionIndexes = new ArrayList();
+        List<Integer> tmpPermissionIndexes = new ArrayList<>();
         if (policyManager != null) {
             for (Permission p : ps)
                 tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
@@ -459,7 +459,7 @@ public class JAXPTestUtilities {
      */
     public static <T> T runWithTmpPermission(Supplier<T> s, Permission... ps) {
         JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
-        List<Integer> tmpPermissionIndexes = new ArrayList();
+        List<Integer> tmpPermissionIndexes = new ArrayList<>();
         if (policyManager != null) {
             for (Permission p : ps)
                 tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
@@ -483,7 +483,7 @@ public class JAXPTestUtilities {
      */
     public static void tryRunWithTmpPermission(RunnableWithException r, Permission... ps) throws Exception {
         JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
-        List<Integer> tmpPermissionIndexes = new ArrayList();
+        List<Integer> tmpPermissionIndexes = new ArrayList<>();
         if (policyManager != null) {
             for (Permission p : ps)
                 tmpPermissionIndexes.add(policyManager.addTmpPermission(p));

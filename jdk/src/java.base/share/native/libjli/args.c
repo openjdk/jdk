@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
  * questions.
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 #ifdef DEBUG_ARGFILE
   #ifndef NO_JNI
     #define NO_JNI
   #endif
-  #define JLI_ReportMessage(p1, p2) printf((p1), (p2))
+  #define JLI_ReportMessage(...) printf(__VA_ARGS__)
+  #define JAVA_OPTIONS "JAVA_OPTIONS"
+  int IsWhiteSpaceOption(const char* name) { return 1; }
 #else
   #include "java.h"
 #endif
@@ -69,14 +73,17 @@ typedef struct {
 static int firstAppArgIndex = NOT_FOUND;
 
 static jboolean expectingNoDashArg = JNI_FALSE;
-static size_t argsCount = 0;
+// Initialize to 1, as the first argument is the app name and not preprocessed
+static size_t argsCount = 1;
 static jboolean stopExpansion = JNI_FALSE;
+static jboolean relaunch = JNI_FALSE;
 
 void JLI_InitArgProcessing(jboolean isJava, jboolean disableArgFile) {
     // No expansion for relaunch
-    if (argsCount != 0) {
+    if (argsCount != 1) {
+        relaunch = JNI_TRUE;
         stopExpansion = JNI_TRUE;
-        argsCount = 0;
+        argsCount = 1;
     } else {
         stopExpansion = disableArgFile;
     }
@@ -95,10 +102,6 @@ int JLI_GetAppArgIndex() {
 static void checkArg(const char *arg) {
     size_t idx = 0;
     argsCount++;
-    if (argsCount == 1) {
-        // ignore first argument, the application name
-        return;
-    }
 
     // All arguments arrive here must be a launcher argument,
     // ie. by now, all argfile expansions must have been performed.
@@ -109,6 +112,7 @@ static void checkArg(const char *arg) {
             expectingNoDashArg = JNI_TRUE;
 
             if (JLI_StrCmp(arg, "-jar") == 0 ||
+                JLI_StrCmp(arg, "--module") == 0 ||
                 JLI_StrCmp(arg, "-m") == 0) {
                 // This is tricky, we do expect NoDashArg
                 // But that is considered main class to stop expansion
@@ -116,7 +120,7 @@ static void checkArg(const char *arg) {
                 // We can not just update the idx here because if -jar @file
                 // still need expansion of @file to get the argument for -jar
             }
-        } else if (JLI_StrCmp(arg, "-Xdisable-@files") == 0) {
+        } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
             stopExpansion = JNI_TRUE;
         }
     } else {
@@ -405,6 +409,117 @@ JLI_List JLI_PreprocessArg(const char *arg)
         rv = expandArgFile(arg);
     }
     return rv;
+}
+
+int isTerminalOpt(char *arg) {
+    return JLI_StrCmp(arg, "-jar") == 0 ||
+           JLI_StrCmp(arg, "-m") == 0 ||
+           JLI_StrCmp(arg, "--module") == 0 ||
+           JLI_StrCmp(arg, "--dry-run") == 0 ||
+           JLI_StrCmp(arg, "-h") == 0 ||
+           JLI_StrCmp(arg, "-?") == 0 ||
+           JLI_StrCmp(arg, "-help") == 0 ||
+           JLI_StrCmp(arg, "--help") == 0 ||
+           JLI_StrCmp(arg, "-X") == 0 ||
+           JLI_StrCmp(arg, "--help-extra") == 0 ||
+           JLI_StrCmp(arg, "-version") == 0 ||
+           JLI_StrCmp(arg, "--version") == 0 ||
+           JLI_StrCmp(arg, "-fullversion") == 0 ||
+           JLI_StrCmp(arg, "--full-version") == 0;
+}
+
+jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
+
+#ifndef ENABLE_JAVA_OPTIONS
+    return JNI_FALSE;
+#else
+    char *env = getenv(var_name);
+    char *p, *arg;
+    char quote;
+    JLI_List argsInFile;
+
+    if (firstAppArgIndex == 0) {
+        // Not 'java', return
+        return JNI_FALSE;
+    }
+
+    if (relaunch) {
+        return JNI_FALSE;
+    }
+
+    if (NULL == env) {
+        return JNI_FALSE;
+    }
+
+    JLI_ReportMessage(ARG_INFO_ENVVAR, var_name, env);
+
+    // This is retained until the process terminates as it is saved as the args
+    p = JLI_MemAlloc(JLI_StrLen(env) + 1);
+    while (*env != '\0') {
+        while (*env != '\0' && isspace(*env)) {
+            env++;
+        }
+
+        arg = p;
+        while (*env != '\0' && !isspace(*env)) {
+            if (*env == '"' || *env == '\'') {
+                quote = *env++;
+                while (*env != quote && *env != '\0') {
+                    *p++ = *env++;
+                }
+
+                if (*env == '\0') {
+                    JLI_ReportMessage(ARG_ERROR8, var_name);
+                    exit(1);
+                }
+                env++;
+            } else {
+                *p++ = *env++;
+            }
+        }
+
+        *p++ = '\0';
+
+        argsInFile = JLI_PreprocessArg(arg);
+
+        if (NULL == argsInFile) {
+            if (isTerminalOpt(arg)) {
+                JLI_ReportMessage(ARG_ERROR9, arg, var_name);
+                exit(1);
+            }
+            JLI_List_add(args, arg);
+        } else {
+            size_t cnt, idx;
+            char *argFile = arg;
+            cnt = argsInFile->size;
+            for (idx = 0; idx < cnt; idx++) {
+                arg = argsInFile->elements[idx];
+                if (isTerminalOpt(arg)) {
+                    JLI_ReportMessage(ARG_ERROR10, arg, argFile, var_name);
+                    exit(1);
+                }
+                JLI_List_add(args, arg);
+            }
+            // Shallow free, we reuse the string to avoid copy
+            JLI_MemFree(argsInFile->elements);
+            JLI_MemFree(argsInFile);
+        }
+        /*
+         * Check if main-class is specified after argument being checked. It
+         * must always appear after expansion, as a main-class could be specified
+         * indirectly into environment variable via an @argfile, and it must be
+         * caught now.
+         */
+        if (firstAppArgIndex != NOT_FOUND) {
+            JLI_ReportMessage(ARG_ERROR11, var_name);
+            exit(1);
+        }
+
+        assert (*env == '\0' || isspace(*env));
+    }
+
+    return JNI_TRUE;
+#endif
 }
 
 #ifdef DEBUG_ARGFILE

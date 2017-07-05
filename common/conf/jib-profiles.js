@@ -610,6 +610,19 @@ var getJibProfilesProfiles = function (input, common, data) {
     }
     profiles = concatObjects(profiles, testOnlyProfilesPrebuilt);
 
+    // On macosx add the devkit bin dir to the path in all the run-test profiles.
+    // This gives us a guaranteed working version of lldb for the jtreg failure handler.
+    if (input.build_os == "macosx") {
+        macosxRunTestExtra = {
+            dependencies: [ "devkit" ],
+            environment_path: input.get("devkit", "install_path")
+                + "/Xcode.app/Contents/Developer/usr/bin"
+        }
+        profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
+        profiles["run-test-jprt"] = concatObjects(profiles["run-test-jprt"], macosxRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    }
+
     //
     // Define artifacts for profiles
     //
@@ -844,7 +857,7 @@ var getJibProfilesDependencies = function (input, common) {
             file: boot_jdk_platform + "/jdk-" + common.boot_jdk_revision
                 + "-" + boot_jdk_platform + ".tar.gz",
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
-            environment_path: common.boot_jdk_home
+            environment_path: common.boot_jdk_home + "/bin"
         },
 
         devkit: {
