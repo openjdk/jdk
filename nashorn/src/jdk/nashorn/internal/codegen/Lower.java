@@ -88,8 +88,6 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
     /**
      * Constructor.
-     *
-     * @param compiler the compiler
      */
     Lower() {
         super(new BlockLexicalContext() {
@@ -307,8 +305,8 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
         final IdentNode exception = new IdentNode(token, finish, lc.getCurrentFunction().uniqueName("catch_all"));
 
-        final Block catchBody = new Block(token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception), ThrowNode.IS_SYNTHETIC_RETHROW)).
-                setIsTerminal(lc, true); //ends with throw, so terminal
+        final Block catchBody = new Block(token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception), ThrowNode.IS_SYNTHETIC_RETHROW));
+        assert catchBody.isTerminal(); //ends with throw, so terminal
 
         final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody, CatchNode.IS_SYNTHETIC_RETHROW);
         final Block     catchAllBlock = new Block(token, finish, catchAllNode);
@@ -330,13 +328,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
     /**
      * Splice finally code into all endpoints of a trynode
      * @param tryNode the try node
-     * @param list of rethrowing throw nodes from synthetic catch blocks
+     * @param rethrows list of rethrowing throw nodes from synthetic catch blocks
      * @param finallyBody the code in the original finally block
      * @return new try node after splicing finally code (same if nop)
      */
     private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
         assert tryNode.getFinallyBody() == null;
-        final int            finish = tryNode.getFinish();
 
         final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             final List<Node> insideTry = new ArrayList<>();
@@ -404,7 +401,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                     if (!isTerminal(newStatements)) {
                         newStatements.add(endpoint);
                     }
-                    return BlockStatement.createReplacement(endpoint, finish, newStatements);
+                    return BlockStatement.createReplacement(endpoint, tryNode.getFinish(), newStatements);
                 }
                 return endpoint;
             }
@@ -466,7 +463,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         if (tryNode.getCatchBlocks().isEmpty()) {
             newTryNode = tryNode.setFinallyBody(null);
         } else {
-            Block outerBody = new Block(tryNode.getToken(), tryNode.getFinish(), new ArrayList<Statement>(Arrays.asList(tryNode.setFinallyBody(null))));
+            Block outerBody = new Block(tryNode.getToken(), tryNode.getFinish(), tryNode.setFinallyBody(null));
             newTryNode = tryNode.setBody(outerBody).setCatchBlocks(null);
         }
 

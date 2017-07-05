@@ -36,13 +36,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
@@ -121,11 +125,6 @@ public final class Context {
      * @param global the global scope
      */
     public static void setGlobal(final ScriptObject global) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("nashorn.setGlobal"));
-        }
-
         if (global != null && !(global instanceof Global)) {
             throw new IllegalArgumentException("global is not an instance of Global!");
         }
@@ -205,6 +204,7 @@ public final class Context {
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
+    private static final AccessControlContext NO_PERMISSIONS_CONTEXT;
 
     static {
         sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
@@ -213,6 +213,7 @@ public final class Context {
                 return new StructureLoader(myLoader, null);
             }
         });
+        NO_PERMISSIONS_CONTEXT = new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
     }
 
     /**
@@ -483,7 +484,7 @@ public final class Context {
                 source = new Source(name, script);
             }
         } else if (src instanceof Map) {
-            final Map map = (Map)src;
+            final Map<?,?> map = (Map<?,?>)src;
             if (map.containsKey("script") && map.containsKey("name")) {
                 final String script = JSType.toString(map.get("script"));
                 final String name   = JSType.toString(map.get("name"));
@@ -553,22 +554,57 @@ public final class Context {
      * @throws ClassNotFoundException if structure class cannot be resolved
      */
     public static Class<?> forStructureClass(final String fullName) throws ClassNotFoundException {
+        if (System.getSecurityManager() != null && !NashornLoader.isStructureClass(fullName)) {
+            throw new ClassNotFoundException(fullName);
+        }
         return Class.forName(fullName, true, sharedLoader);
     }
 
     /**
-     * Checks that the given package can be accessed from current call stack.
+     * Checks that the given package can be accessed from no permissions context.
      *
      * @param fullName fully qualified package name
+     * @throw SecurityException if not accessible
      */
     public static void checkPackageAccess(final String fullName) {
         final int index = fullName.lastIndexOf('.');
         if (index != -1) {
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPackageAccess(fullName.substring(0, index));
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    @Override
+                    public Void run() {
+                        sm.checkPackageAccess(fullName.substring(0, index));
+                        return null;
+                    }
+                }, NO_PERMISSIONS_CONTEXT);
             }
         }
+    }
+
+    /**
+     * Checks that the given package can be accessed from no permissions context.
+     *
+     * @param fullName fully qualified package name
+     * @return true if package is accessible, false otherwise
+     */
+    public static boolean isAccessiblePackage(final String fullName) {
+        try {
+            checkPackageAccess(fullName);
+            return true;
+        } catch (final SecurityException se) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks that the given Class is public and it can be accessed from no permissions context.
+     *
+     * @param clazz Class object to check
+     * @return true if Class is accessible, false otherwise
+     */
+    public static boolean isAccessibleClass(final Class<?> clazz) {
+        return Modifier.isPublic(clazz.getModifiers()) && Context.isAccessiblePackage(clazz.getName());
     }
 
     /**
@@ -626,7 +662,7 @@ public final class Context {
             // No verification when security manager is around as verifier
             // may load further classes - which should be avoided.
             if (System.getSecurityManager() == null) {
-                CheckClassAdapter.verify(new ClassReader(bytecode), scriptLoader, false, new PrintWriter(System.err, true));
+                CheckClassAdapter.verify(new ClassReader(bytecode), sharedLoader, false, new PrintWriter(System.err, true));
             }
         }
     }
@@ -645,12 +681,7 @@ public final class Context {
      * @return the global script object
      */
     public ScriptObject newGlobal() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("nashorn.newGlobal"));
-        }
-
-        return newGlobalTrusted();
+        return new Global(this);
     }
 
     /**
@@ -826,10 +857,6 @@ public final class Context {
                     return new ScriptLoader(sharedLoader, Context.this);
                 }
              });
-    }
-
-    private ScriptObject newGlobalTrusted() {
-        return new Global(this);
     }
 
     private long getUniqueScriptId() {

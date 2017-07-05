@@ -67,7 +67,7 @@ public abstract class ScriptFunctionData {
      * @param isBuiltin     is the function built in
      * @param isConstructor is the function a constructor
      */
-    protected ScriptFunctionData(final String name, final int arity, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
+    ScriptFunctionData(final String name, final int arity, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
         this.name          = name;
         this.arity         = arity;
         this.code          = new CompiledFunctions();

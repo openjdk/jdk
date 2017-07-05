@@ -1149,9 +1149,10 @@ public class JFileChooser extends JComponent implements Accessible {
         int index = filters.indexOf(f);
         if (index >= 0) {
             if(getFileFilter() == f) {
-                if (isAcceptAllFileFilterUsed()) {
+                FileFilter aaff = getAcceptAllFileFilter();
+                if (isAcceptAllFileFilterUsed() && (aaff != f)) {
                     // choose default filter if it is used
-                    setFileFilter(getAcceptAllFileFilter());
+                    setFileFilter(aaff);
                 }
                 else if (index > 0) {
                     // choose the first filter, because it is not removed

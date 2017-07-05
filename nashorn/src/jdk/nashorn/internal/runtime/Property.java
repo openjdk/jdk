@@ -100,7 +100,7 @@ public abstract class Property {
      * @param flags property flags
      * @param slot  property field number or spill slot
      */
-    public Property(final String key, final int flags, final int slot) {
+    Property(final String key, final int flags, final int slot) {
         assert key != null;
         this.key   = key;
         this.flags = flags;
@@ -112,7 +112,7 @@ public abstract class Property {
      *
      * @param property source property
      */
-    protected Property(final Property property) {
+    Property(final Property property) {
         this.key   = property.key;
         this.flags = property.flags;
         this.slot  = property.slot;
@@ -123,7 +123,7 @@ public abstract class Property {
      *
      * @return cloned property
      */
-    protected abstract Property copy();
+    abstract Property copy();
 
     /**
      * Property flag utility method for {@link PropertyDescriptor}s. Given two property descriptors,

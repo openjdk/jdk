@@ -77,7 +77,6 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -962,12 +961,9 @@ public final class DateTimeFormatterBuilder {
      * <pre>
      *   "Europe/London"           -- ZoneId.of("Europe/London")
      *   "Z"                       -- ZoneOffset.UTC
-     *   "UT"                      -- ZoneOffset.UTC
-     *   "UTC"                     -- ZoneOffset.UTC
-     *   "GMT"                     -- ZoneOffset.UTC
-     *   "UT0"                     -- ZoneOffset.UTC
-     *   "UTC0"                    -- ZoneOffset.UTC
-     *   "GMT0"                    -- ZoneOffset.UTC
+     *   "UT"                      -- ZoneId.of("UT")
+     *   "UTC"                     -- ZoneId.of("UTC")
+     *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
      *   "UT+01:30"                -- ZoneOffset.of("+01:30")
      *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
@@ -1016,12 +1012,9 @@ public final class DateTimeFormatterBuilder {
      * <pre>
      *   "Europe/London"           -- ZoneId.of("Europe/London")
      *   "Z"                       -- ZoneOffset.UTC
-     *   "UT"                      -- ZoneOffset.UTC
-     *   "UTC"                     -- ZoneOffset.UTC
-     *   "GMT"                     -- ZoneOffset.UTC
-     *   "UT0"                     -- ZoneOffset.UTC
-     *   "UTC0"                    -- ZoneOffset.UTC
-     *   "GMT0"                    -- ZoneOffset.UTC
+     *   "UT"                      -- ZoneId.of("UT")
+     *   "UTC"                     -- ZoneId.of("UTC")
+     *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
      *   "UT+01:30"                -- ZoneOffset.of("+01:30")
      *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
@@ -1077,16 +1070,13 @@ public final class DateTimeFormatterBuilder {
      * <pre>
      *   "Europe/London"           -- ZoneId.of("Europe/London")
      *   "Z"                       -- ZoneOffset.UTC
-     *   "UT"                      -- ZoneOffset.UTC
-     *   "UTC"                     -- ZoneOffset.UTC
-     *   "GMT"                     -- ZoneOffset.UTC
-     *   "UT0"                     -- ZoneOffset.UTC
-     *   "UTC0"                    -- ZoneOffset.UTC
-     *   "GMT0"                    -- ZoneOffset.UTC
+     *   "UT"                      -- ZoneId.of("UT")
+     *   "UTC"                     -- ZoneId.of("UTC")
+     *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
+     *   "UT+01:30"                -- ZoneOffset.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneOffset.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneOffset.of("GMT+01:30")
      * </pre>
      * <p>
      * Note that this method is is identical to {@code appendZoneId()} except
@@ -2530,7 +2520,7 @@ public final class DateTimeFormatterBuilder {
             DecimalStyle decimalStyle = context.getDecimalStyle();
             String str = (value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value)));
             if (str.length() > maxWidth) {
-                throw new DateTimeException("Field " + field.getName() +
+                throw new DateTimeException("Field " + field +
                     " cannot be printed as the value " + value +
                     " exceeds the maximum print width of " + maxWidth);
             }
@@ -2555,7 +2545,7 @@ public final class DateTimeFormatterBuilder {
                         buf.append(decimalStyle.getNegativeSign());
                         break;
                     case NOT_NEGATIVE:
-                        throw new DateTimeException("Field " + field.getName() +
+                        throw new DateTimeException("Field " + field +
                             " cannot be printed as the value " + value +
                             " cannot be negative according to the SignStyle");
                 }
@@ -2699,12 +2689,12 @@ public final class DateTimeFormatterBuilder {
         @Override
         public String toString() {
             if (minWidth == 1 && maxWidth == 19 && signStyle == SignStyle.NORMAL) {
-                return "Value(" + field.getName() + ")";
+                return "Value(" + field + ")";
             }
             if (minWidth == maxWidth && signStyle == SignStyle.NOT_NEGATIVE) {
-                return "Value(" + field.getName() + "," + minWidth + ")";
+                return "Value(" + field + "," + minWidth + ")";
             }
-            return "Value(" + field.getName() + "," + minWidth + "," + maxWidth + "," + signStyle + ")";
+            return "Value(" + field + "," + minWidth + "," + maxWidth + "," + signStyle + ")";
         }
     }
 
@@ -2817,7 +2807,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            return "ReducedValue(" + field.getName() + "," + minWidth + "," + maxWidth + "," + baseValue + ")";
+            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + baseValue + ")";
         }
     }
 
@@ -2842,7 +2832,7 @@ public final class DateTimeFormatterBuilder {
         FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
             Objects.requireNonNull(field, "field");
             if (field.range().isFixed() == false) {
-                throw new IllegalArgumentException("Field must have a fixed set of values: " + field.getName());
+                throw new IllegalArgumentException("Field must have a fixed set of values: " + field);
             }
             if (minWidth < 0 || minWidth > 9) {
                 throw new IllegalArgumentException("Minimum width must be from 0 to 9 inclusive but was " + minWidth);
@@ -2984,7 +2974,7 @@ public final class DateTimeFormatterBuilder {
         @Override
         public String toString() {
             String decimal = (decimalPoint ? ",DecimalPoint" : "");
-            return "Fraction(" + field.getName() + "," + minWidth + "," + maxWidth + decimal + ")";
+            return "Fraction(" + field + "," + minWidth + "," + maxWidth + decimal + ")";
         }
     }
 
@@ -3079,9 +3069,9 @@ public final class DateTimeFormatterBuilder {
         @Override
         public String toString() {
             if (textStyle == TextStyle.FULL) {
-                return "Text(" + field.getName() + ")";
+                return "Text(" + field + ")";
             }
-            return "Text(" + field.getName() + "," + textStyle + ")";
+            return "Text(" + field + "," + textStyle + ")";
         }
     }
 
@@ -3756,17 +3746,17 @@ public final class DateTimeFormatterBuilder {
             // handle fixed time-zone IDs
             char nextChar = text.charAt(position);
             if (nextChar == '+' || nextChar == '-') {
-                return parseOffsetBased(context, text, position, OffsetIdPrinterParser.INSTANCE_ID_Z);
+                return parseOffsetBased(context, text, position, position, OffsetIdPrinterParser.INSTANCE_ID_Z);
             } else if (length >= position + 2) {
                 char nextNextChar = text.charAt(position + 1);
                 if (context.charEquals(nextChar, 'U') && context.charEquals(nextNextChar, 'T')) {
                     if (length >= position + 3 && context.charEquals(text.charAt(position + 2), 'C')) {
-                        return parseOffsetBased(context, text, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
+                        return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                     }
-                    return parseOffsetBased(context, text, position + 2, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
+                    return parseOffsetBased(context, text, position, position + 2, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                 } else if (context.charEquals(nextChar, 'G') && length >= position + 3 &&
                         context.charEquals(nextNextChar, 'M') && context.charEquals(text.charAt(position + 2), 'T')) {
-                    return parseOffsetBased(context, text, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
+                    return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                 }
             }
 
@@ -3785,20 +3775,49 @@ public final class DateTimeFormatterBuilder {
             return ppos.getIndex();
         }
 
-        private int parseOffsetBased(DateTimeParseContext context, CharSequence text, int position, OffsetIdPrinterParser parser) {
-            DateTimeParseContext newContext = context.copy();
-            int endPos = parser.parse(newContext, text, position);
-            if (endPos < 0) {
-                if (parser == OffsetIdPrinterParser.INSTANCE_ID_Z) {
-                    return ~position;
-                }
-                context.setParsed(ZoneOffset.UTC);
+        /**
+         * Parse an offset following a prefix and set the ZoneId if it is valid.
+         * To matching the parsing of ZoneId.of the values are not normalized
+         * to ZoneOffsets.
+         *
+         * @param context the parse context
+         * @param text the input text
+         * @param prefixPos start of the prefix
+         * @param position start of text after the prefix
+         * @param parser parser for the value after the prefix
+         * @return the position after the parse
+         */
+        private int parseOffsetBased(DateTimeParseContext context, CharSequence text, int prefixPos, int position, OffsetIdPrinterParser parser) {
+            String prefix = text.toString().substring(prefixPos, position).toUpperCase();
+            if (position >= text.length()) {
+                context.setParsed(ZoneId.of(prefix));
                 return position;
             }
-            int offset = (int) newContext.getParsed(OFFSET_SECONDS).longValue();
-            ZoneId zone = ZoneOffset.ofTotalSeconds(offset);
-            context.setParsed(zone);
-            return endPos;
+
+            // '0' or 'Z' after prefix is not part of a valid ZoneId; use bare prefix
+            if (text.charAt(position) == '0' ||
+                context.charEquals(text.charAt(position), 'Z')) {
+                context.setParsed(ZoneId.of(prefix));
+                return position;
+            }
+
+            DateTimeParseContext newContext = context.copy();
+            int endPos = parser.parse(newContext, text, position);
+            try {
+                if (endPos < 0) {
+                    if (parser == OffsetIdPrinterParser.INSTANCE_ID_Z) {
+                        return ~prefixPos;
+                    }
+                    context.setParsed(ZoneId.of(prefix));
+                    return position;
+                }
+                int offset = (int) newContext.getParsed(OFFSET_SECONDS).longValue();
+                ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(offset);
+                context.setParsed(ZoneId.ofOffset(prefix, zoneOffset));
+                return endPos;
+            } catch (DateTimeException dte) {
+                return ~prefixPos;
+            }
         }
 
         @Override

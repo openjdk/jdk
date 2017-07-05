@@ -27,14 +27,15 @@ package java.util.function;
 import java.util.Objects;
 
 /**
- * Apply a function to the input arguments, yielding an appropriate result. This
- * is the two-arity specialization of {@link Function}. A function may
- * variously provide a mapping between types, object instances or keys and
- * values or any other form of transformation upon the input.
+ * Represents a function that accepts two arguments and produces a result.
+ * This is the two-arity specialization of {@link Function}.
  *
- * @param <T> the type of the first argument to the {@code apply} operation
- * @param <U> the type of the second argument to the {@code apply} operation
- * @param <R> the type of results returned by the {@code apply} operation
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #apply(Object, Object)}.
+ *
+ * @param <T> the type of the first argument to the function
+ * @param <U> the type of the second argument to the function
+ * @param <R> the type of the result of the function
  *
  * @see Function
  * @since 1.8
@@ -43,25 +44,25 @@ import java.util.Objects;
 public interface BiFunction<T, U, R> {
 
     /**
-     * Compute the result of applying the function to the input arguments
+     * Applies this function to the given arguments.
      *
-     * @param t an input object
-     * @param u an input object
+     * @param t the first function argument
+     * @param u the second function argument
      * @return the function result
      */
     R apply(T t, U u);
 
     /**
-     * Returns a new function which applies this function followed by the
-     * provided function.  If either function throws an exception, it is relayed
-     * to the caller.
+     * Returns a composed function that first applies this function to
+     * its input, and then applies the {@code after} function to the result.
+     * If evaluation of either function throws an exception, it is relayed to
+     * the caller of the composed function.
      *
-     * @param <V> Type of output objects to the combined function. May be the
-     * same type as {@code <T>}, {@code <U>} or {@code <R>}
-     * @param after An additional function to be applied after this function is
-     * applied
-     * @return A function which performs this function followed by the provided
-     * function
+     * @param <V> the type of output of the {@code after} function, and of the
+     *           composed function
+     * @param after the function to apply after this function is applied
+     * @return a composed function that first applies this function and then
+     * applies the {@code after} function
      * @throws NullPointerException if after is null
      */
     default <V> BiFunction<T, U, V> andThen(Function<? super R, ? extends V> after) {

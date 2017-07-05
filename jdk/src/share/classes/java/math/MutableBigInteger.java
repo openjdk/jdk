@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ package java.math;
  *
  * @see     BigInteger
  * @author  Michael McCloskey
+ * @author  Timothy Buktu
  * @since   1.3
  */
 
-import java.util.Arrays;
-
-import static java.math.BigInteger.LONG_MASK;
 import static java.math.BigDecimal.INFLATED;
+import static java.math.BigInteger.LONG_MASK;
+import java.util.Arrays;
 
 class MutableBigInteger {
     /**
@@ -74,6 +74,24 @@ class MutableBigInteger {
      * only when the method is not going to modify this object.
      */
     static final MutableBigInteger ONE = new MutableBigInteger(1);
+
+    /**
+     * The minimum {@code intLen} for cancelling powers of two before
+     * dividing.
+     * If the number of ints is less than this threshold,
+     * {@code divideKnuth} does not eliminate common powers of two from
+     * the dividend and divisor.
+     */
+    static final int KNUTH_POW2_THRESH_LEN = 6;
+
+    /**
+     * The minimum number of trailing zero ints for cancelling powers of two
+     * before dividing.
+     * If the dividend and divisor don't share at least this many zero ints
+     * at the end, {@code divideKnuth} does not eliminate common powers
+     * of two from the dividend and divisor.
+     */
+    static final int KNUTH_POW2_THRESH_ZEROS = 3;
 
     // Constructors
 
@@ -124,6 +142,20 @@ class MutableBigInteger {
     }
 
     /**
+     * Makes this number an {@code n}-int number all of whose bits are ones.
+     * Used by Burnikel-Ziegler division.
+     * @param n number of ints in the {@code value} array
+     * @return a number equal to {@code ((1<<(32*n)))-1}
+     */
+    private void ones(int n) {
+        if (n > value.length)
+            value = new int[n];
+        Arrays.fill(value, -1);
+        offset = 0;
+        intLen = n;
+    }
+
+    /**
      * Internal helper method to return the magnitude array. The caller is not
      * supposed to modify the returned array.
      */
@@ -152,6 +184,14 @@ class MutableBigInteger {
         if (intLen == 0 || sign == 0)
             return BigInteger.ZERO;
         return new BigInteger(getMagnitudeArray(), sign);
+    }
+
+    /**
+     * Converts this number to a nonnegative {@code BigInteger}.
+     */
+    BigInteger toBigInteger() {
+        normalize();
+        return toBigInteger(isZero() ? 0 : 1);
     }
 
     /**
@@ -238,6 +278,32 @@ class MutableBigInteger {
     }
 
     /**
+     * Returns a value equal to what {@code b.leftShift(32*ints); return compare(b);}
+     * would return, but doesn't change the value of {@code b}.
+     */
+    private int compareShifted(MutableBigInteger b, int ints) {
+        int blen = b.intLen;
+        int alen = intLen - ints;
+        if (alen < blen)
+            return -1;
+        if (alen > blen)
+           return 1;
+
+        // Add Integer.MIN_VALUE to make the comparison act as unsigned integer
+        // comparison.
+        int[] bval = b.value;
+        for (int i = offset, j = b.offset; i < alen + offset; i++, j++) {
+            int b1 = value[i] + 0x80000000;
+            int b2 = bval[j]  + 0x80000000;
+            if (b1 < b2)
+                return -1;
+            if (b1 > b2)
+                return 1;
+        }
+        return 0;
+    }
+
+    /**
      * Compare this against half of a MutableBigInteger object (Needed for
      * remainder tests).
      * Assumes no leading unnecessary zeros, which holds for results
@@ -247,7 +313,7 @@ class MutableBigInteger {
         int blen = b.intLen;
         int len = intLen;
         if (len <= 0)
-            return blen <=0 ? 0 : -1;
+            return blen <= 0 ? 0 : -1;
         if (len > blen)
             return 1;
         if (len < blen - 1)
@@ -274,7 +340,7 @@ class MutableBigInteger {
                 return v < hb ? -1 : 1;
             carry = (bv & 1) << 31; // carray will be either 0x80000000 or 0
         }
-        return carry == 0? 0 : -1;
+        return carry == 0 ? 0 : -1;
     }
 
     /**
@@ -285,10 +351,10 @@ class MutableBigInteger {
         if (intLen == 0)
             return -1;
         int j, b;
-        for (j=intLen-1; (j>0) && (value[j+offset]==0); j--)
+        for (j=intLen-1; (j > 0) && (value[j+offset] == 0); j--)
             ;
         b = value[j+offset];
-        if (b==0)
+        if (b == 0)
             return -1;
         return ((intLen-1-j)<<5) + Integer.numberOfTrailingZeros(b);
     }
@@ -329,11 +395,11 @@ class MutableBigInteger {
         int indexBound = index+intLen;
         do {
             index++;
-        } while(index < indexBound && value[index]==0);
+        } while(index < indexBound && value[index] == 0);
 
         int numZeros = index - offset;
         intLen -= numZeros;
-        offset = (intLen==0 ?  0 : offset+numZeros);
+        offset = (intLen == 0 ?  0 : offset+numZeros);
     }
 
     /**
@@ -354,7 +420,7 @@ class MutableBigInteger {
      */
     int[] toIntArray() {
         int[] result = new int[intLen];
-        for(int i=0; i<intLen; i++)
+        for(int i=0; i < intLen; i++)
             result[i] = value[offset+i];
         return result;
     }
@@ -440,7 +506,7 @@ class MutableBigInteger {
     boolean isNormal() {
         if (intLen + offset > value.length)
             return false;
-        if (intLen ==0)
+        if (intLen == 0)
             return true;
         return (value[offset] != 0);
     }
@@ -451,6 +517,17 @@ class MutableBigInteger {
     public String toString() {
         BigInteger b = toBigInteger(1);
         return b.toString();
+    }
+
+    /**
+     * Like {@link #rightShift(int)} but {@code n} can be greater than the length of the number.
+     */
+    void safeRightShift(int n) {
+        if (n/32 >= intLen) {
+            reset();
+        } else {
+            rightShift(n);
+        }
     }
 
     /**
@@ -471,6 +548,15 @@ class MutableBigInteger {
             this.intLen--;
         } else {
             primitiveRightShift(nBits);
+        }
+    }
+
+    /**
+     * Like {@link #leftShift(int)} but {@code n} can be zero.
+     */
+    void safeLeftShift(int n) {
+        if (n > 0) {
+            leftShift(n);
         }
     }
 
@@ -502,18 +588,18 @@ class MutableBigInteger {
         if (value.length < newLen) {
             // The array must grow
             int[] result = new int[newLen];
-            for (int i=0; i<intLen; i++)
+            for (int i=0; i < intLen; i++)
                 result[i] = value[offset+i];
             setValue(result, newLen);
         } else if (value.length - offset >= newLen) {
             // Use space on right
-            for(int i=0; i<newLen - intLen; i++)
+            for(int i=0; i < newLen - intLen; i++)
                 value[offset+intLen+i] = 0;
         } else {
             // Must use space on left
-            for (int i=0; i<intLen; i++)
+            for (int i=0; i < intLen; i++)
                 value[i] = value[offset+i];
-            for (int i=intLen; i<newLen; i++)
+            for (int i=intLen; i < newLen; i++)
                 value[i] = 0;
             offset = 0;
         }
@@ -590,7 +676,7 @@ class MutableBigInteger {
     private final void primitiveRightShift(int n) {
         int[] val = value;
         int n2 = 32 - n;
-        for (int i=offset+intLen-1, c=val[i]; i>offset; i--) {
+        for (int i=offset+intLen-1, c=val[i]; i > offset; i--) {
             int b = c;
             c = val[i-1];
             val[i] = (c << n2) | (b >>> n);
@@ -606,12 +692,41 @@ class MutableBigInteger {
     private final void primitiveLeftShift(int n) {
         int[] val = value;
         int n2 = 32 - n;
-        for (int i=offset, c=val[i], m=i+intLen-1; i<m; i++) {
+        for (int i=offset, c=val[i], m=i+intLen-1; i < m; i++) {
             int b = c;
             c = val[i+1];
             val[i] = (b << n) | (c >>> n2);
         }
         val[offset+intLen-1] <<= n;
+    }
+
+    /**
+     * Returns a {@code BigInteger} equal to the {@code n}
+     * low ints of this number.
+     */
+    private BigInteger getLower(int n) {
+        if (isZero()) {
+            return BigInteger.ZERO;
+        } else if (intLen < n) {
+            return toBigInteger(1);
+        } else {
+            // strip zeros
+            int len = n;
+            while (len > 0 && value[offset+intLen-len] == 0)
+                len--;
+            int sign = len > 0 ? 1 : 0;
+            return new BigInteger(Arrays.copyOfRange(value, offset+intLen-len, offset+intLen), sign);
+        }
+    }
+
+    /**
+     * Discards all ints whose index is greater than {@code n}.
+     */
+    private void keepLower(int n) {
+        if (intLen >= n) {
+            offset += intLen - n;
+            intLen = n;
+        }
     }
 
     /**
@@ -630,7 +745,7 @@ class MutableBigInteger {
         long carry = 0;
 
         // Add common parts of both numbers
-        while(x>0 && y>0) {
+        while(x > 0 && y > 0) {
             x--; y--;
             sum = (value[x+offset] & LONG_MASK) +
                 (addend.value[y+addend.offset] & LONG_MASK) + carry;
@@ -639,7 +754,7 @@ class MutableBigInteger {
         }
 
         // Add remainder of the longer number
-        while(x>0) {
+        while(x > 0) {
             x--;
             if (carry == 0 && result == value && rstart == (x + offset))
                 return;
@@ -647,7 +762,7 @@ class MutableBigInteger {
             result[rstart--] = (int)sum;
             carry = sum >>> 32;
         }
-        while(y>0) {
+        while(y > 0) {
             y--;
             sum = (addend.value[y+addend.offset] & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
@@ -673,6 +788,123 @@ class MutableBigInteger {
         offset = result.length - resultLen;
     }
 
+    /**
+     * Adds the value of {@code addend} shifted {@code n} ints to the left.
+     * Has the same effect as {@code addend.leftShift(32*ints); add(addend);}
+     * but doesn't change the value of {@code addend}.
+     */
+    void addShifted(MutableBigInteger addend, int n) {
+        if (addend.isZero()) {
+            return;
+        }
+
+        int x = intLen;
+        int y = addend.intLen + n;
+        int resultLen = (intLen > y ? intLen : y);
+        int[] result = (value.length < resultLen ? new int[resultLen] : value);
+
+        int rstart = result.length-1;
+        long sum;
+        long carry = 0;
+
+        // Add common parts of both numbers
+        while (x > 0 && y > 0) {
+            x--; y--;
+            int bval = y+addend.offset < addend.value.length ? addend.value[y+addend.offset] : 0;
+            sum = (value[x+offset] & LONG_MASK) +
+                (bval & LONG_MASK) + carry;
+            result[rstart--] = (int)sum;
+            carry = sum >>> 32;
+        }
+
+        // Add remainder of the longer number
+        while (x > 0) {
+            x--;
+            if (carry == 0 && result == value && rstart == (x + offset)) {
+                return;
+            }
+            sum = (value[x+offset] & LONG_MASK) + carry;
+            result[rstart--] = (int)sum;
+            carry = sum >>> 32;
+        }
+        while (y > 0) {
+            y--;
+            int bval = y+addend.offset < addend.value.length ? addend.value[y+addend.offset] : 0;
+            sum = (bval & LONG_MASK) + carry;
+            result[rstart--] = (int)sum;
+            carry = sum >>> 32;
+        }
+
+        if (carry > 0) { // Result must grow in length
+            resultLen++;
+            if (result.length < resultLen) {
+                int temp[] = new int[resultLen];
+                // Result one word longer from carry-out; copy low-order
+                // bits into new result.
+                System.arraycopy(result, 0, temp, 1, result.length);
+                temp[0] = 1;
+                result = temp;
+            } else {
+                result[rstart--] = 1;
+            }
+        }
+
+        value = result;
+        intLen = resultLen;
+        offset = result.length - resultLen;
+    }
+
+    /**
+     * Like {@link #addShifted(MutableBigInteger, int)} but {@code this.intLen} must
+     * not be greater than {@code n}. In other words, concatenates {@code this}
+     * and {@code addend}.
+     */
+    void addDisjoint(MutableBigInteger addend, int n) {
+        if (addend.isZero())
+            return;
+
+        int x = intLen;
+        int y = addend.intLen + n;
+        int resultLen = (intLen > y ? intLen : y);
+        int[] result;
+        if (value.length < resultLen)
+            result = new int[resultLen];
+        else {
+            result = value;
+            Arrays.fill(value, offset+intLen, value.length, 0);
+        }
+
+        int rstart = result.length-1;
+
+        // copy from this if needed
+        System.arraycopy(value, offset, result, rstart+1-x, x);
+        y -= x;
+        rstart -= x;
+
+        int len = Math.min(y, addend.value.length-addend.offset);
+        System.arraycopy(addend.value, addend.offset, result, rstart+1-y, len);
+
+        // zero the gap
+        for (int i=rstart+1-y+len; i < rstart+1; i++)
+            result[i] = 0;
+
+        value = result;
+        intLen = resultLen;
+        offset = result.length - resultLen;
+    }
+
+    /**
+     * Adds the low {@code n} ints of {@code addend}.
+     */
+    void addLower(MutableBigInteger addend, int n) {
+        MutableBigInteger a = new MutableBigInteger(addend);
+        if (a.offset + a.intLen >= n) {
+            a.offset = a.offset + a.intLen - n;
+            a.intLen = n;
+        }
+        a.normalize();
+        add(a);
+    }
 
     /**
      * Subtracts the smaller of this and b from the larger and places the
@@ -704,7 +936,7 @@ class MutableBigInteger {
         int rstart = result.length - 1;
 
         // Subtract common parts of both numbers
-        while (y>0) {
+        while (y > 0) {
             x--; y--;
 
             diff = (a.value[x+a.offset] & LONG_MASK) -
@@ -712,7 +944,7 @@ class MutableBigInteger {
             result[rstart--] = (int)diff;
         }
         // Subtract remainder of longer number
-        while (x>0) {
+        while (x > 0) {
             x--;
             diff = (a.value[x+a.offset] & LONG_MASK) - ((int)-(diff>>32));
             result[rstart--] = (int)diff;
@@ -733,7 +965,7 @@ class MutableBigInteger {
     private int difference(MutableBigInteger b) {
         MutableBigInteger a = this;
         int sign = a.compare(b);
-        if (sign ==0)
+        if (sign == 0)
             return 0;
         if (sign < 0) {
             MutableBigInteger tmp = a;
@@ -746,14 +978,14 @@ class MutableBigInteger {
         int y = b.intLen;
 
         // Subtract common parts of both numbers
-        while (y>0) {
+        while (y > 0) {
             x--; y--;
             diff = (a.value[a.offset+ x] & LONG_MASK) -
                 (b.value[b.offset+ y] & LONG_MASK) - ((int)-(diff>>32));
             a.value[a.offset+x] = (int)diff;
         }
         // Subtract remainder of longer number
-        while (x>0) {
+        while (x > 0) {
             x--;
             diff = (a.value[a.offset+ x] & LONG_MASK) - ((int)-(diff>>32));
             a.value[a.offset+x] = (int)diff;
@@ -822,7 +1054,7 @@ class MutableBigInteger {
 
         // Perform the multiplication word by word
         long ylong = y & LONG_MASK;
-        int[] zval = (z.value.length<intLen+1 ? new int[intLen + 1]
+        int[] zval = (z.value.length < intLen+1 ? new int[intLen + 1]
                                               : z.value);
         long carry = 0;
         for (int i = intLen-1; i >= 0; i--) {
@@ -910,6 +1142,31 @@ class MutableBigInteger {
      * Calculates the quotient of this div b and places the quotient in the
      * provided MutableBigInteger objects and the remainder object is returned.
      *
+     */
+    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient) {
+        return divide(b,quotient,true);
+    }
+
+    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient, boolean needRemainder) {
+        if (intLen < BigInteger.BURNIKEL_ZIEGLER_THRESHOLD ||
+                b.intLen < BigInteger.BURNIKEL_ZIEGLER_THRESHOLD) {
+            return divideKnuth(b, quotient, needRemainder);
+        } else {
+            return divideAndRemainderBurnikelZiegler(b, quotient);
+        }
+    }
+
+    /**
+     * @see #divideKnuth(MutableBigInteger, MutableBigInteger, boolean)
+     */
+    MutableBigInteger divideKnuth(MutableBigInteger b, MutableBigInteger quotient) {
+        return divideKnuth(b,quotient,true);
+    }
+
+    /**
+     * Calculates the quotient of this div b and places the quotient in the
+     * provided MutableBigInteger objects and the remainder object is returned.
+     *
      * Uses Algorithm D in Knuth section 4.3.1.
      * Many optimizations to that algorithm have been adapted from the Colin
      * Plumb C library.
@@ -917,38 +1174,34 @@ class MutableBigInteger {
      * changed.
      *
      */
-    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient) {
-        return divide(b,quotient,true);
-    }
-
-    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient, boolean needReminder) {
+    MutableBigInteger divideKnuth(MutableBigInteger b, MutableBigInteger quotient, boolean needRemainder) {
         if (b.intLen == 0)
             throw new ArithmeticException("BigInteger divide by zero");
 
         // Dividend is zero
         if (intLen == 0) {
-            quotient.intLen = quotient.offset;
-            return needReminder ? new MutableBigInteger() : null;
+            quotient.intLen = quotient.offset = 0;
+            return needRemainder ? new MutableBigInteger() : null;
         }
 
         int cmp = compare(b);
         // Dividend less than divisor
         if (cmp < 0) {
             quotient.intLen = quotient.offset = 0;
-            return needReminder ? new MutableBigInteger(this) : null;
+            return needRemainder ? new MutableBigInteger(this) : null;
         }
         // Dividend equal to divisor
         if (cmp == 0) {
             quotient.value[0] = quotient.intLen = 1;
             quotient.offset = 0;
-            return needReminder ? new MutableBigInteger() : null;
+            return needRemainder ? new MutableBigInteger() : null;
         }
 
         quotient.clear();
         // Special case one word divisor
         if (b.intLen == 1) {
             int r = divideOneWord(b.value[b.offset], quotient);
-            if(needReminder) {
+            if(needRemainder) {
                 if (r == 0)
                     return new MutableBigInteger();
                 return new MutableBigInteger(r);
@@ -956,7 +1209,220 @@ class MutableBigInteger {
                 return null;
             }
         }
-        return divideMagnitude(b, quotient, needReminder);
+
+        // Cancel common powers of two if we're above the KNUTH_POW2_* thresholds
+        if (intLen >= KNUTH_POW2_THRESH_LEN) {
+            int trailingZeroBits = Math.min(getLowestSetBit(), b.getLowestSetBit());
+            if (trailingZeroBits >= KNUTH_POW2_THRESH_ZEROS*32) {
+                MutableBigInteger a = new MutableBigInteger(this);
+                b = new MutableBigInteger(b);
+                a.rightShift(trailingZeroBits);
+                b.rightShift(trailingZeroBits);
+                MutableBigInteger r = a.divideKnuth(b, quotient);
+                r.leftShift(trailingZeroBits);
+                return r;
+            }
+        }
+
+        return divideMagnitude(b, quotient, needRemainder);
+    }
+
+    /**
+     * Computes {@code this/b} and {@code this%b} using the
+     * <a href="http://cr.yp.to/bib/1998/burnikel.ps"> Burnikel-Ziegler algorithm</a>.
+     * This method implements algorithm 3 from pg. 9 of the Burnikel-Ziegler paper.
+     * The parameter beta was chosen to b 2<sup>32</sup> so almost all shifts are
+     * multiples of 32 bits.<br/>
+     * {@code this} and {@code b} must be nonnegative.
+     * @param b the divisor
+     * @param quotient output parameter for {@code this/b}
+     * @return the remainder
+     */
+    MutableBigInteger divideAndRemainderBurnikelZiegler(MutableBigInteger b, MutableBigInteger quotient) {
+        int r = intLen;
+        int s = b.intLen;
+
+        if (r < s) {
+            return this;
+        } else {
+            // Unlike Knuth division, we don't check for common powers of two here because
+            // BZ already runs faster if both numbers contain powers of two and cancelling them has no
+            // additional benefit.
+
+            // step 1: let m = min{2^k | (2^k)*BURNIKEL_ZIEGLER_THRESHOLD > s}
+            int m = 1 << (32-Integer.numberOfLeadingZeros(s/BigInteger.BURNIKEL_ZIEGLER_THRESHOLD));
+
+            int j = (s+m-1) / m;      // step 2a: j = ceil(s/m)
+            int n = j * m;            // step 2b: block length in 32-bit units
+            int n32 = 32 * n;         // block length in bits
+            int sigma = Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B < beta^n}
+            MutableBigInteger bShifted = new MutableBigInteger(b);
+            bShifted.safeLeftShift(sigma);   // step 4a: shift b so its length is a multiple of n
+            safeLeftShift(sigma);     // step 4b: shift this by the same amount
+
+            // step 5: t is the number of blocks needed to accommodate this plus one additional bit
+            int t = (bitLength()+n32) / n32;
+            if (t < 2) {
+                t = 2;
+            }
+
+            // step 6: conceptually split this into blocks a[t-1], ..., a[0]
+            MutableBigInteger a1 = getBlock(t-1, t, n);   // the most significant block of this
+
+            // step 7: z[t-2] = [a[t-1], a[t-2]]
+            MutableBigInteger z = getBlock(t-2, t, n);    // the second to most significant block
+            z.addDisjoint(a1, n);   // z[t-2]
+
+            // do schoolbook division on blocks, dividing 2-block numbers by 1-block numbers
+            MutableBigInteger qi = new MutableBigInteger();
+            MutableBigInteger ri;
+            quotient.offset = quotient.intLen = 0;
+            for (int i=t-2; i > 0; i--) {
+                // step 8a: compute (qi,ri) such that z=b*qi+ri
+                ri = z.divide2n1n(bShifted, qi);
+
+                // step 8b: z = [ri, a[i-1]]
+                z = getBlock(i-1, t, n);   // a[i-1]
+                z.addDisjoint(ri, n);
+                quotient.addShifted(qi, i*n);   // update q (part of step 9)
+            }
+            // final iteration of step 8: do the loop one more time for i=0 but leave z unchanged
+            ri = z.divide2n1n(bShifted, qi);
+            quotient.add(qi);
+
+            ri.rightShift(sigma);   // step 9: this and b were shifted, so shift back
+            return ri;
+        }
+    }
+
+    /**
+     * This method implements algorithm 1 from pg. 4 of the Burnikel-Ziegler paper.
+     * It divides a 2n-digit number by a n-digit number.<br/>
+     * The parameter beta is 2<sup>32</sup> so all shifts are multiples of 32 bits.
+     * <br/>
+     * {@code this} must be a nonnegative number such that {@code this.bitLength() <= 2*b.bitLength()}
+     * @param b a positive number such that {@code b.bitLength()} is even
+     * @param quotient output parameter for {@code this/b}
+     * @return {@code this%b}
+     */
+    private MutableBigInteger divide2n1n(MutableBigInteger b, MutableBigInteger quotient) {
+        int n = b.intLen;
+
+        // step 1: base case
+        if (n%2 != 0 || n < BigInteger.BURNIKEL_ZIEGLER_THRESHOLD) {
+            return divideKnuth(b, quotient);
+        }
+
+        // step 2: view this as [a1,a2,a3,a4] where each ai is n/2 ints or less
+        MutableBigInteger aUpper = new MutableBigInteger(this);
+        aUpper.safeRightShift(32*(n/2));   // aUpper = [a1,a2,a3]
+        keepLower(n/2);   // this = a4
+
+        // step 3: q1=aUpper/b, r1=aUpper%b
+        MutableBigInteger q1 = new MutableBigInteger();
+        MutableBigInteger r1 = aUpper.divide3n2n(b, q1);
+
+        // step 4: quotient=[r1,this]/b, r2=[r1,this]%b
+        addDisjoint(r1, n/2);   // this = [r1,this]
+        MutableBigInteger r2 = divide3n2n(b, quotient);
+
+        // step 5: let quotient=[q1,quotient] and return r2
+        quotient.addDisjoint(q1, n/2);
+        return r2;
+    }
+
+    /**
+     * This method implements algorithm 2 from pg. 5 of the Burnikel-Ziegler paper.
+     * It divides a 3n-digit number by a 2n-digit number.<br/>
+     * The parameter beta is 2<sup>32</sup> so all shifts are multiples of 32 bits.<br/>
+     * <br/>
+     * {@code this} must be a nonnegative number such that {@code 2*this.bitLength() <= 3*b.bitLength()}
+     * @param quotient output parameter for {@code this/b}
+     * @return {@code this%b}
+     */
+    private MutableBigInteger divide3n2n(MutableBigInteger b, MutableBigInteger quotient) {
+        int n = b.intLen / 2;   // half the length of b in ints
+
+        // step 1: view this as [a1,a2,a3] where each ai is n ints or less; let a12=[a1,a2]
+        MutableBigInteger a12 = new MutableBigInteger(this);
+        a12.safeRightShift(32*n);
+
+        // step 2: view b as [b1,b2] where each bi is n ints or less
+        MutableBigInteger b1 = new MutableBigInteger(b);
+        b1.safeRightShift(n * 32);
+        BigInteger b2 = b.getLower(n);
+
+        MutableBigInteger r;
+        MutableBigInteger d;
+        if (compareShifted(b, n) < 0) {
+            // step 3a: if a1<b1, let quotient=a12/b1 and r=a12%b1
+            r = a12.divide2n1n(b1, quotient);
+
+            // step 4: d=quotient*b2
+            d = new MutableBigInteger(quotient.toBigInteger().multiply(b2));
+        } else {
+            // step 3b: if a1>=b1, let quotient=beta^n-1 and r=a12-b1*2^n+b1
+            quotient.ones(n);
+            a12.add(b1);
+            b1.leftShift(32*n);
+            a12.subtract(b1);
+            r = a12;
+
+            // step 4: d=quotient*b2=(b2 << 32*n) - b2
+            d = new MutableBigInteger(b2);
+            d.leftShift(32 * n);
+            d.subtract(new MutableBigInteger(b2));
+        }
+
+        // step 5: r = r*beta^n + a3 - d (paper says a4)
+        // However, don't subtract d until after the while loop so r doesn't become negative
+        r.leftShift(32 * n);
+        r.addLower(this, n);
+
+        // step 6: add b until r>=d
+        while (r.compare(d) < 0) {
+            r.add(b);
+            quotient.subtract(MutableBigInteger.ONE);
+        }
+        r.subtract(d);
+
+        return r;
+    }
+
+    /**
+     * Returns a {@code MutableBigInteger} containing {@code blockLength} ints from
+     * {@code this} number, starting at {@code index*blockLength}.<br/>
+     * Used by Burnikel-Ziegler division.
+     * @param index the block index
+     * @param numBlocks the total number of blocks in {@code this} number
+     * @param blockLength length of one block in units of 32 bits
+     * @return
+     */
+    private MutableBigInteger getBlock(int index, int numBlocks, int blockLength) {
+        int blockStart = index * blockLength;
+        if (blockStart >= intLen) {
+            return new MutableBigInteger();
+        }
+
+        int blockEnd;
+        if (index == numBlocks-1) {
+            blockEnd = intLen;
+        } else {
+            blockEnd = (index+1) * blockLength;
+        }
+        if (blockEnd > intLen) {
+            return new MutableBigInteger();
+        }
+
+        int[] newVal = Arrays.copyOfRange(value, offset+intLen-blockEnd, offset+intLen-blockStart);
+        return new MutableBigInteger(newVal);
+    }
+
+    /** @see BigInteger#bitLength() */
+    int bitLength() {
+        if (intLen == 0)
+            return 0;
+        return intLen*32 - Integer.numberOfLeadingZeros(value[offset]);
     }
 
     /**
@@ -1006,7 +1472,7 @@ class MutableBigInteger {
      */
     private MutableBigInteger divideMagnitude(MutableBigInteger div,
                                               MutableBigInteger quotient,
-                                              boolean needReminder ) {
+                                              boolean needRemainder ) {
         // assert div.intLen > 1
         // D1 normalize the divisor
         int shift = Integer.numberOfLeadingZeros(div.value[div.offset]);
@@ -1017,7 +1483,7 @@ class MutableBigInteger {
         if (shift > 0) {
             divisor = new int[dlen];
             copyAndShift(div.value,div.offset,dlen,divisor,0,shift);
-            if(Integer.numberOfLeadingZeros(value[offset])>=shift) {
+            if (Integer.numberOfLeadingZeros(value[offset]) >= shift) {
                 int[] remarr = new int[intLen + 1];
                 rem = new MutableBigInteger(remarr);
                 rem.intLen = intLen;
@@ -1070,7 +1536,7 @@ class MutableBigInteger {
         int dl = divisor[1];
 
         // D2 Initialize j
-        for(int j=0; j<limit-1; j++) {
+        for (int j=0; j < limit-1; j++) {
             // D3 Calculate qhat
             // estimate qhat
             int qhat = 0;
@@ -1176,7 +1642,7 @@ class MutableBigInteger {
             // D4 Multiply and subtract
             int borrow;
             rem.value[limit - 1 + rem.offset] = 0;
-            if(needReminder)
+            if(needRemainder)
                 borrow = mulsub(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);
             else
                 borrow = mulsubBorrow(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);
@@ -1184,7 +1650,7 @@ class MutableBigInteger {
             // D5 Test remainder
             if (borrow + 0x80000000 > nh2) {
                 // D6 Add back
-                if(needReminder)
+                if(needRemainder)
                     divadd(divisor, rem.value, limit - 1 + 1 + rem.offset);
                 qhat--;
             }
@@ -1194,14 +1660,14 @@ class MutableBigInteger {
         }
 
 
-        if(needReminder) {
+        if (needRemainder) {
             // D8 Unnormalize
             if (shift > 0)
                 rem.rightShift(shift);
             rem.normalize();
         }
         quotient.normalize();
-        return needReminder ? rem : null;
+        return needRemainder ? rem : null;
     }
 
     /**
@@ -1367,7 +1833,7 @@ class MutableBigInteger {
      * This method divides a long quantity by an int to estimate
      * qhat for two multi precision numbers. It is used when
      * the signed value of n is less than zero.
-     * Returns long value where high 32 bits contain reminder value and
+     * Returns long value where high 32 bits contain remainder value and
      * low 32 bits contain quotient value.
      */
     static long divWord(long n, int d) {
@@ -1436,7 +1902,7 @@ class MutableBigInteger {
         }
 
         // step B2
-        boolean uOdd = (k==s1);
+        boolean uOdd = (k == s1);
         MutableBigInteger t = uOdd ? v: u;
         int tsign = uOdd ? -1 : 1;
 
@@ -1478,9 +1944,9 @@ class MutableBigInteger {
      * Calculate GCD of a and b interpreted as unsigned integers.
      */
     static int binaryGcd(int a, int b) {
-        if (b==0)
+        if (b == 0)
             return a;
-        if (a==0)
+        if (a == 0)
             return b;
 
         // Right shift a & b till their last bits equal to 1.
@@ -1582,7 +2048,7 @@ class MutableBigInteger {
         return result;
     }
 
-    /*
+    /**
      * Returns the multiplicative inverse of val mod 2^32.  Assumes val is odd.
      */
     static int inverseMod32(int val) {
@@ -1595,7 +2061,7 @@ class MutableBigInteger {
         return t;
     }
 
-    /*
+    /**
      * Calculate the multiplicative inverse of 2^k mod mod, where mod is odd.
      */
     static MutableBigInteger modInverseBP2(MutableBigInteger mod, int k) {
@@ -1631,7 +2097,7 @@ class MutableBigInteger {
         }
 
         // The Almost Inverse Algorithm
-        while(!f.isOne()) {
+        while (!f.isOne()) {
             // If gcd(f, g) != 1, number is not invertible modulo mod
             if (f.isZero())
                 throw new ArithmeticException("BigInteger not invertible.");
@@ -1665,7 +2131,7 @@ class MutableBigInteger {
         return fixup(c, p, k);
     }
 
-    /*
+    /**
      * The Fixup Algorithm
      * Calculates X such that X = C * 2^(-k) (mod P)
      * Assumes C<P and P is odd.
@@ -1676,7 +2142,7 @@ class MutableBigInteger {
         // Set r to the multiplicative inverse of p mod 2^32
         int r = -inverseMod32(p.value[p.offset+p.intLen-1]);
 
-        for(int i=0, numWords = k >> 5; i<numWords; i++) {
+        for (int i=0, numWords = k >> 5; i < numWords; i++) {
             // V = R * c (mod 2^j)
             int  v = r * c.value[c.offset + c.intLen-1];
             // c = c + (v * p)

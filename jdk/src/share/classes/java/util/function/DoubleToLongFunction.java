@@ -25,22 +25,24 @@
 package java.util.function;
 
 /**
- * Apply a function to the input argument, yielding an appropriate result.
- * This is the {@code double}-to-{@code long} specialization for {@link Function}.
+ * Represents a function that accepts a double-valued argument and produces a
+ * long-valued result.  This is the {@code double}-to-{@code long} primitive
+ * specialization for {@link Function}.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #applyAsLong(double)}.
  *
  * @see Function
- * @see LongToDoubleFunction
- * @see IntToLongFunction
  * @since 1.8
  */
 @FunctionalInterface
 public interface DoubleToLongFunction {
 
     /**
-     * Compute the result of applying the function to the input arguments.
+     * Applies this function to the given argument.
      *
-     * @param value the input value
-     * @return the function result value
+     * @param value the function argument
+     * @return the function result
      */
     long applyAsLong(double value);
 }

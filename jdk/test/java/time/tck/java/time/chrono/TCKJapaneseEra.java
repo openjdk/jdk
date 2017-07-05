@@ -81,7 +81,6 @@ public class TCKJapaneseEra {
                     {JapaneseEra.SHOWA, "Showa", 1},
                     {JapaneseEra.TAISHO, "Taisho", 0},
                     {JapaneseEra.MEIJI, "Meiji", -1},
-                    {JapaneseEra.SEIREKI, "Seireki", -999},
         };
     }
 
@@ -112,8 +111,8 @@ public class TCKJapaneseEra {
     public void test_range() {
         // eras may be added after release
         for (JapaneseEra era : JapaneseEra.values()) {
-            assertEquals(era.range(ERA).getMinimum(), -999);
-            assertEquals(era.range(ERA).getLargestMinimum(), -999);
+            assertEquals(era.range(ERA).getMinimum(), -1);
+            assertEquals(era.range(ERA).getLargestMinimum(), -1);
             assertEquals(era.range(ERA).getSmallestMaximum(), era.range(ERA).getMaximum());
             assertEquals(era.range(ERA).getMaximum() >= 2, true);
         }

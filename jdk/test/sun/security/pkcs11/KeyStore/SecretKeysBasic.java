@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,10 @@
 
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
-
 import java.security.*;
-import java.security.cert.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
-import java.math.BigInteger;
-
 import javax.crypto.*;
 import javax.crypto.spec.*;
+import javax.xml.bind.DatatypeConverter;
 
 public class SecretKeysBasic extends PKCS11Test {
 
@@ -94,6 +88,17 @@ public class SecretKeysBasic extends PKCS11Test {
             SecretKey expected,
             boolean saveBeforeCheck)
             throws Exception {
+
+        // A bug in NSS 3.12 (Mozilla bug 471665) causes AES key lengths
+        // to be read incorrectly.  Checking for improper 16 byte length
+        // in key string.
+        if (isNSS(provider) && expected.getAlgorithm().equals("AES") &&
+                (getNSSVersion() >= 3.12 && getNSSVersion() <= 3.122)) {
+            System.out.println("NSS 3.12 bug returns incorrect AES key "+
+                    "length breaking key storage. Aborting...");
+            return true;
+        }
+
         if (saveBeforeCheck) {
             ks.setKeyEntry(alias, expected, null, null);
         }
@@ -127,7 +132,7 @@ public class SecretKeysBasic extends PKCS11Test {
         System.out.println("\tALGO=" + key.getAlgorithm());
         if (key.getFormat() != null) {
             System.out.println("\t[" + key.getFormat() + "] VALUE=" +
-                    new BigInteger(key.getEncoded()));
+                    DatatypeConverter.printHexBinary(key.getEncoded()));
         } else {
             System.out.println("\tVALUE=n/a");
         }

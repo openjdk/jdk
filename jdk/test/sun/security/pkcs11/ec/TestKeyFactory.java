@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,17 @@ public class TestKeyFactory extends PKCS11Test {
             System.out.println("Provider does not support EC, skipping");
             return;
         }
-        int[] keyLengths = {192, 163, 521, 409};
+        int[] keyLengths = {192, 163, 409, 521};
+        int len = 0;
+        if (getNSSECC() == ECCState.Basic) {
+            System.out.println("NSS Basic ECC only. Skipping 192, 163, & 409");
+            len = 3;
+        }
         KeyFactory kf = KeyFactory.getInstance("EC", p);
-        for (int len : keyLengths) {
+        for (; keyLengths.length > len ; len++) {
+            System.out.println("Length "+keyLengths[len]);
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", p);
-            kpg.initialize(len);
+            kpg.initialize(keyLengths[len]);
             KeyPair kp = kpg.generateKeyPair();
             test(kf, kp.getPrivate());
             test(kf, kp.getPublic());

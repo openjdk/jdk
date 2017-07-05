@@ -127,6 +127,7 @@ import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -723,10 +724,12 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
             public boolean isSupported(TemporalField field) {
                 return TEST_DATE_TIME_PARIS.toLocalDateTime().isSupported(field);
             }
+
             @Override
             public long getLong(TemporalField field) {
                 return TEST_DATE_TIME_PARIS.toLocalDateTime().getLong(field);
             }
+
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
@@ -791,17 +794,18 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     @DataProvider(name="parseAdditional")
     Object[][] data_parseAdditional() {
         return new Object[][] {
-                {"2012-06-30T12:30:40Z[GMT]", 2012, 6, 30, 12, 30, 40, 0, "Z"},
-                {"2012-06-30T12:30:40Z[UT]", 2012, 6, 30, 12, 30, 40, 0, "Z"},
-                {"2012-06-30T12:30:40Z[UTC]", 2012, 6, 30, 12, 30, 40, 0, "Z"},
+                {"2012-06-30T12:30:40Z[GMT]", 2012, 6, 30, 12, 30, 40, 0, "GMT"},
+                {"2012-06-30T12:30:40Z[UT]", 2012, 6, 30, 12, 30, 40, 0, "UT"},
+                {"2012-06-30T12:30:40Z[UTC]", 2012, 6, 30, 12, 30, 40, 0, "UTC"},
+                {"2012-06-30T12:30:40+01:00[Z]", 2012, 6, 30, 12, 30, 40, 0, "Z"},
                 {"2012-06-30T12:30:40+01:00[+01:00]", 2012, 6, 30, 12, 30, 40, 0, "+01:00"},
-                {"2012-06-30T12:30:40+01:00[GMT+01:00]", 2012, 6, 30, 12, 30, 40, 0, "+01:00"},
-                {"2012-06-30T12:30:40+01:00[UT+01:00]", 2012, 6, 30, 12, 30, 40, 0, "+01:00"},
-                {"2012-06-30T12:30:40+01:00[UTC+01:00]", 2012, 6, 30, 12, 30, 40, 0, "+01:00"},
+                {"2012-06-30T12:30:40+01:00[GMT+01:00]", 2012, 6, 30, 12, 30, 40, 0, "GMT+01:00"},
+                {"2012-06-30T12:30:40+01:00[UT+01:00]", 2012, 6, 30, 12, 30, 40, 0, "UT+01:00"},
+                {"2012-06-30T12:30:40+01:00[UTC+01:00]", 2012, 6, 30, 12, 30, 40, 0, "UTC+01:00"},
                 {"2012-06-30T12:30:40-01:00[-01:00]", 2012, 6, 30, 12, 30, 40, 0, "-01:00"},
-                {"2012-06-30T12:30:40-01:00[GMT-01:00]", 2012, 6, 30, 12, 30, 40, 0, "-01:00"},
-                {"2012-06-30T12:30:40-01:00[UT-01:00]", 2012, 6, 30, 12, 30, 40, 0, "-01:00"},
-                {"2012-06-30T12:30:40-01:00[UTC-01:00]", 2012, 6, 30, 12, 30, 40, 0, "-01:00"},
+                {"2012-06-30T12:30:40-01:00[GMT-01:00]", 2012, 6, 30, 12, 30, 40, 0, "GMT-01:00"},
+                {"2012-06-30T12:30:40-01:00[UT-01:00]", 2012, 6, 30, 12, 30, 40, 0, "UT-01:00"},
+                {"2012-06-30T12:30:40-01:00[UTC-01:00]", 2012, 6, 30, 12, 30, 40, 0, "UTC-01:00"},
                 {"2012-06-30T12:30:40+01:00[Europe/London]", 2012, 6, 30, 12, 30, 40, 0, "Europe/London"},
         };
     }
@@ -897,6 +901,68 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
         } else {
             assertEquals(a.toString(), localDateTime.toString() + offset.toString() + "[" + zone.toString() + "]");
         }
+    }
+
+    //-----------------------------------------------------------------------
+    // isSupported(TemporalField)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalField() {
+        assertEquals(TEST_DATE_TIME.isSupported((TemporalField) null), false);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.NANO_OF_SECOND), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.NANO_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.MICRO_OF_SECOND), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.MICRO_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.MILLI_OF_SECOND), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.MILLI_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.SECOND_OF_MINUTE), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.SECOND_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.MINUTE_OF_HOUR), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.MINUTE_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.HOUR_OF_AMPM), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.CLOCK_HOUR_OF_AMPM), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.HOUR_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.CLOCK_HOUR_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.AMPM_OF_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.DAY_OF_WEEK), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.DAY_OF_MONTH), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.DAY_OF_YEAR), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.EPOCH_DAY), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.ALIGNED_WEEK_OF_MONTH), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.ALIGNED_WEEK_OF_YEAR), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.MONTH_OF_YEAR), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.PROLEPTIC_MONTH), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.YEAR), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.YEAR_OF_ERA), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.ERA), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.INSTANT_SECONDS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoField.OFFSET_SECONDS), true);
+    }
+
+    //-----------------------------------------------------------------------
+    // isSupported(TemporalUnit)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalUnit() {
+        assertEquals(TEST_DATE_TIME.isSupported((TemporalUnit) null), false);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.NANOS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.MICROS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.MILLIS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.SECONDS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.MINUTES), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.HOURS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.HALF_DAYS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.DAYS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.WEEKS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.MONTHS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.YEARS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.DECADES), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.CENTURIES), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.MILLENNIA), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.ERAS), true);
+        assertEquals(TEST_DATE_TIME.isSupported(ChronoUnit.FOREVER), false);
     }
 
     //-----------------------------------------------------------------------
@@ -1977,37 +2043,37 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // periodUntil(Temporal,TemporalUnit)
+    // until(Temporal,TemporalUnit)
     //-----------------------------------------------------------------------
     // TODO: more tests for period between two different zones
-    // compare results to OffsetDateTime.periodUntil, especially wrt dates
+    // compare results to OffsetDateTime.until, especially wrt dates
 
     @Test(dataProvider="plusDays")
     public void test_periodUntil_days(ZonedDateTime base, long expected, ZonedDateTime end) {
         if (base.toLocalTime().equals(end.toLocalTime()) == false) {
             return;  // avoid DST gap input values
         }
-        assertEquals(base.periodUntil(end, DAYS), expected);
+        assertEquals(base.until(end, DAYS), expected);
     }
 
     @Test(dataProvider="plusTime")
     public void test_periodUntil_hours(ZonedDateTime base, long expected, ZonedDateTime end) {
-        assertEquals(base.periodUntil(end, HOURS), expected);
+        assertEquals(base.until(end, HOURS), expected);
     }
 
     @Test(dataProvider="plusTime")
     public void test_periodUntil_minutes(ZonedDateTime base, long expected, ZonedDateTime end) {
-        assertEquals(base.periodUntil(end, MINUTES), expected * 60);
+        assertEquals(base.until(end, MINUTES), expected * 60);
     }
 
     @Test(dataProvider="plusTime")
     public void test_periodUntil_seconds(ZonedDateTime base, long expected, ZonedDateTime end) {
-        assertEquals(base.periodUntil(end, SECONDS), expected * 3600);
+        assertEquals(base.until(end, SECONDS), expected * 3600);
     }
 
     @Test(dataProvider="plusTime")
     public void test_periodUntil_nanos(ZonedDateTime base, long expected, ZonedDateTime end) {
-        assertEquals(base.periodUntil(end, NANOS), expected * 3600_000_000_000L);
+        assertEquals(base.until(end, NANOS), expected * 3600_000_000_000L);
     }
 
     @Test
@@ -2017,13 +2083,13 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
         ZonedDateTime oneAm1 = LocalDateTime.of(2012, 6, 29, 1, 0).atZone(ZONE_PARIS);
         ZonedDateTime midnightParis2 = LocalDate.of(2012, 6, 30).atStartOfDay(ZONE_PARIS);
 
-        assertEquals(midnightLondon.periodUntil(midnightParis1, HOURS), 23);
-        assertEquals(midnightLondon.periodUntil(oneAm1, HOURS), 24);
-        assertEquals(midnightLondon.periodUntil(midnightParis2, HOURS), 23 + 24);
+        assertEquals(midnightLondon.until(midnightParis1, HOURS), 23);
+        assertEquals(midnightLondon.until(oneAm1, HOURS), 24);
+        assertEquals(midnightLondon.until(midnightParis2, HOURS), 23 + 24);
 
-        assertEquals(midnightLondon.periodUntil(midnightParis1, DAYS), 0);
-        assertEquals(midnightLondon.periodUntil(oneAm1, DAYS), 1);
-        assertEquals(midnightLondon.periodUntil(midnightParis2, DAYS), 1);
+        assertEquals(midnightLondon.until(midnightParis1, DAYS), 0);
+        assertEquals(midnightLondon.until(oneAm1, DAYS), 1);
+        assertEquals(midnightLondon.until(midnightParis2, DAYS), 1);
     }
 
     @Test
@@ -2031,8 +2097,8 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
         ZonedDateTime before = TEST_PARIS_GAP_2008_03_30_02_30.withHour(0).withMinute(0).atZone(ZONE_PARIS);
         ZonedDateTime after = TEST_PARIS_GAP_2008_03_30_02_30.withHour(0).withMinute(0).plusDays(1).atZone(ZONE_PARIS);
 
-        assertEquals(before.periodUntil(after, HOURS), 23);
-        assertEquals(before.periodUntil(after, DAYS), 1);
+        assertEquals(before.until(after, HOURS), 23);
+        assertEquals(before.until(after, DAYS), 1);
     }
 
     @Test
@@ -2040,23 +2106,23 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
         ZonedDateTime before = TEST_PARIS_OVERLAP_2008_10_26_02_30.withHour(0).withMinute(0).atZone(ZONE_PARIS);
         ZonedDateTime after = TEST_PARIS_OVERLAP_2008_10_26_02_30.withHour(0).withMinute(0).plusDays(1).atZone(ZONE_PARIS);
 
-        assertEquals(before.periodUntil(after, HOURS), 25);
-        assertEquals(before.periodUntil(after, DAYS), 1);
+        assertEquals(before.until(after, HOURS), 25);
+        assertEquals(before.until(after, DAYS), 1);
     }
 
     @Test(expectedExceptions=DateTimeException.class)
     public void test_periodUntil_differentType() {
-        TEST_DATE_TIME_PARIS.periodUntil(TEST_LOCAL_2008_06_30_11_30_59_500, DAYS);
+        TEST_DATE_TIME_PARIS.until(TEST_LOCAL_2008_06_30_11_30_59_500, DAYS);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_periodUntil_nullTemporal() {
-        TEST_DATE_TIME_PARIS.periodUntil(null, DAYS);
+        TEST_DATE_TIME_PARIS.until(null, DAYS);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_periodUntil_nullUnit() {
-        TEST_DATE_TIME_PARIS.periodUntil(TEST_DATE_TIME_PARIS, null);
+        TEST_DATE_TIME_PARIS.until(TEST_DATE_TIME_PARIS, null);
     }
 
     //-----------------------------------------------------------------------

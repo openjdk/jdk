@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8017231
+ * @bug 8017231 8020977
  * @summary test  StringJoiner::merge
  * @run testng MergeTest
  */
@@ -120,5 +120,14 @@ public class MergeTest {
 
         sj.merge(other);
         assertEquals(sj.toString(), "{a,b,c,d:e:f}");
+    }
+
+    public void testMergeSelf() {
+        final StringJoiner sj = new StringJoiner(",", "[", "]").add("a").add("b");
+        assertEquals(sj.merge(sj).toString(), "[a,b,a,b]");
+        assertEquals(sj.merge(sj).toString(), "[a,b,a,b,a,b,a,b]");
+
+        final StringJoiner sj2 = new StringJoiner(",").add("c").add("d");
+        assertEquals(sj2.merge(sj2).toString(), "c,d,c,d");
     }
 }
