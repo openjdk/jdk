@@ -130,14 +130,14 @@ public class CheckedSetBash {
             boolean prePresent = s.contains(e);
             boolean added = s.add(e);
             if (!s.contains(e))
-                fail ("Element not present after addition.");
+                fail("Element not present after addition.");
             if (added == prePresent)
-                fail ("added == alreadyPresent");
+                fail("added == alreadyPresent");
             int postSize = s.size();
             if (added && preSize == postSize)
-                fail ("Add returned true, but size didn't change.");
+                fail("Add returned true, but size didn't change.");
             if (!added && preSize != postSize)
-                fail ("Add returned false, but size changed.");
+                fail("Add returned false, but size changed.");
         }
     }
 
@@ -145,7 +145,7 @@ public class CheckedSetBash {
     public static Iterator<Object[]> navigableSetsProvider() {
         ArrayList<Object[]> iters = new ArrayList<>(makeCheckedSets());
         iters.ensureCapacity(numItr * iters.size());
-        for(int each=1; each < numItr; each++) {
+        for (int each=1; each < numItr; each++) {
             iters.addAll( makeCheckedSets());
         }
         return iters.iterator();

@@ -78,7 +78,7 @@ public class Basic {
     abstract static class Locker extends Thread {
         static AtomicInteger count = new AtomicInteger(1);
         private volatile Throwable thrown;
-        private volatile long stamp;;
+        private volatile long stamp;
         protected void thrown(Throwable thrown) { this.thrown = thrown; }
         public Throwable thrown() { return thrown; }
         protected void stamp(long stamp) { this.stamp = stamp; }
@@ -371,7 +371,7 @@ public class Basic {
                 check(!sl.tryUnlockRead());
                 check(!sl.tryUnlockWrite());
                 check(sl.tryOptimisticRead() != 0L);
-                Locker[] wThreads = new Locker[100];;
+                Locker[] wThreads = new Locker[100];
                 for (int j=0; j<100; j++)
                     wThreads[j] = writers.next();
                 for (int j=0; j<100; j++)
@@ -401,7 +401,7 @@ public class Basic {
                 check(!sl.tryUnlockRead());
                 check(!sl.tryUnlockWrite());
                 check(sl.tryOptimisticRead() != 0L);
-                Locker[] rThreads = new Locker[100];;
+                Locker[] rThreads = new Locker[100];
                 for (int j=0; j<100; j++)
                     rThreads[j] = readers.next();
                 for (int j=0; j<100; j++)

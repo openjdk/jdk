@@ -51,8 +51,7 @@ public class COWSubList {
             r.run();
             throw new RuntimeException("Failed: expected IOOBE to be thrown");
         } catch (IndexOutOfBoundsException x) {
-            // ok, excpeted
+            // ok, expected
         }
     }
 }
-

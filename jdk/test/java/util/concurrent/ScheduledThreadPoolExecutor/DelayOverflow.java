@@ -88,7 +88,7 @@ public class DelayOverflow {
     /**
      * Attempts to test exhaustively and deterministically, all 20
      * possible ways that one task can be scheduled in the maximal
-     * distant future, while at the same time an existing tasks's time
+     * distant future, while at the same time an existing task's time
      * has already expired.
      */
     void test(String[] args) throws Throwable {
