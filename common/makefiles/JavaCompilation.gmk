@@ -501,7 +501,7 @@ define SetupJavaCompilation
 		$(ECHO) Compiling $1
 		($$($1_JVM) $$($1_SJAVAC) \
 			$$($1_REMOTE) \
-			-j $(NUM_CORES) \
+			-j $(JOBS) \
 			--permit-unidentified-artifacts \
 			--permit-sources-without-package \
 			--compare-found-sources $$($1_BIN)/_the.batch.tmp \
