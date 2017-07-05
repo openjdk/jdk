@@ -29,10 +29,10 @@
  * @author Luis-Miguel Alventosa
  * @run clean JvmstatCountersTest
  * @run build JvmstatCountersTest
- * @run main/othervm/timeout=600 JvmstatCountersTest 1
- * @run main/othervm/timeout=600 -Dcom.sun.management.jmxremote JvmstatCountersTest 2
- * @run main/othervm/timeout=600 -Dcom.sun.management.jmxremote.port=0 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false JvmstatCountersTest 3
- * @run main/othervm/timeout=600 JvmstatCountersTest 4
+ * @run main/othervm/timeout=600 -XX:+UsePerfData JvmstatCountersTest 1
+ * @run main/othervm/timeout=600 -XX:+UsePerfData -Dcom.sun.management.jmxremote JvmstatCountersTest 2
+ * @run main/othervm/timeout=600 -XX:+UsePerfData -Dcom.sun.management.jmxremote.port=0 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false JvmstatCountersTest 3
+ * @run main/othervm/timeout=600 -XX:+UsePerfData JvmstatCountersTest 4
  */
 
 import java.io.*;

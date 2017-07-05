@@ -70,7 +70,7 @@ void VM_ParallelGCSystemGC::doit() {
     "must be a ParallelScavengeHeap");
 
   GCCauseSetter gccs(heap, _gc_cause);
-  if (_gc_cause == GCCause::_gc_locker
+  if (_gc_cause == GCCause::_gc_locker || _gc_cause == GCCause::_wb_young_gc
       DEBUG_ONLY(|| _gc_cause == GCCause::_scavenge_alot)) {
     // If (and only if) the scavenge fails, this will invoke a full gc.
     heap->invoke_scavenge();

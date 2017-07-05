@@ -201,6 +201,7 @@ FULL_JRE_RTJAR_INCLUDE_PACKAGES := \
     sun/audio \
     sun/awt \
     sun/corba \
+    sun/datatransfer \
     sun/dc \
     sun/font \
     sun/java2d \

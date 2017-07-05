@@ -151,7 +151,7 @@ static jboolean isSourceFilterSupported(){
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
 {
-    /* Here because Windows native code does need to init IDs */
+     initInetAddressIDs(env);
 }
 
 JNIEXPORT jboolean JNICALL

@@ -35,7 +35,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   # JDK_BUNDLE_DIR and JRE_BUNDLE_DIR are defined in SPEC.
 
-  MACOSX_PLIST_SRC := $(JDK_TOPDIR)/make/bundle
+  MACOSX_PLIST_SRC := $(JDK_TOPDIR)/make/data/bundle
 
   # All these OPENJDK checks are needed since there is no coherency between
   # these values in open and closed. Should probably be fixed.

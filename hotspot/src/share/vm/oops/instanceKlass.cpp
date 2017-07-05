@@ -2303,12 +2303,14 @@ void InstanceKlass::remove_unshareable_info() {
   array_klasses_do(remove_unshareable_in_class);
 }
 
-void restore_unshareable_in_class(Klass* k, TRAPS) {
-  k->restore_unshareable_info(CHECK);
+static void restore_unshareable_in_class(Klass* k, TRAPS) {
+  // Array classes have null protection domain.
+  // --> see ArrayKlass::complete_create_array_klass()
+  k->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
 }
 
-void InstanceKlass::restore_unshareable_info(TRAPS) {
-  Klass::restore_unshareable_info(CHECK);
+void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   instanceKlassHandle ik(THREAD, this);
 
   Array<Method*>* methods = ik->methods();
@@ -2332,6 +2334,38 @@ void InstanceKlass::restore_unshareable_info(TRAPS) {
   ik->constants()->restore_unshareable_info(CHECK);
 
   ik->array_klasses_do(restore_unshareable_in_class, CHECK);
+}
+
+// returns true IFF is_in_error_state() has been changed as a result of this call.
+bool InstanceKlass::check_sharing_error_state() {
+  assert(DumpSharedSpaces, "should only be called during dumping");
+  bool old_state = is_in_error_state();
+
+  if (!is_in_error_state()) {
+    bool bad = false;
+    for (InstanceKlass* sup = java_super(); sup; sup = sup->java_super()) {
+      if (sup->is_in_error_state()) {
+        bad = true;
+        break;
+      }
+    }
+    if (!bad) {
+      Array<Klass*>* interfaces = transitive_interfaces();
+      for (int i = 0; i < interfaces->length(); i++) {
+        Klass* iface = interfaces->at(i);
+        if (InstanceKlass::cast(iface)->is_in_error_state()) {
+          bad = true;
+          break;
+        }
+      }
+    }
+
+    if (bad) {
+      set_in_error_state();
+    }
+  }
+
+  return (old_state != is_in_error_state());
 }
 
 static void clear_all_breakpoints(Method* m) {

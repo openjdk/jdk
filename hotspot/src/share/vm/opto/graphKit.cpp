@@ -2520,6 +2520,21 @@ void GraphKit::make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool sep
   set_control(norm);
 }
 
+static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolTest::mask test, float p, PhaseGVN* gvn, BasicType bt) {
+  Node* cmp = NULL;
+  switch(bt) {
+  case T_INT: cmp = new CmpINode(in1, in2); break;
+  case T_ADDRESS: cmp = new CmpPNode(in1, in2); break;
+  default: fatal(err_msg("unexpected comparison type %s", type2name(bt)));
+  }
+  gvn->transform(cmp);
+  Node* bol = gvn->transform(new BoolNode(cmp, test));
+  IfNode* iff = new IfNode(ctrl, bol, p, COUNT_UNKNOWN);
+  gvn->transform(iff);
+  if (!bol->is_Con()) gvn->record_for_igvn(iff);
+  return iff;
+}
+
 
 //-------------------------------gen_subtype_check-----------------------------
 // Generate a subtyping check.  Takes as input the subtype and supertype.
@@ -2529,16 +2544,17 @@ void GraphKit::make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool sep
 // but that's not exposed to the optimizer.  This call also doesn't take in an
 // Object; if you wish to check an Object you need to load the Object's class
 // prior to coming here.
-Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
+Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, MergeMemNode* mem, PhaseGVN* gvn) {
+  Compile* C = gvn->C;
   // Fast check for identical types, perhaps identical constants.
   // The types can even be identical non-constants, in cases
   // involving Array.newInstance, Object.clone, etc.
   if (subklass == superklass)
-    return top();             // false path is dead; no test needed.
+    return C->top();             // false path is dead; no test needed.
 
-  if (_gvn.type(superklass)->singleton()) {
-    ciKlass* superk = _gvn.type(superklass)->is_klassptr()->klass();
-    ciKlass* subk   = _gvn.type(subklass)->is_klassptr()->klass();
+  if (gvn->type(superklass)->singleton()) {
+    ciKlass* superk = gvn->type(superklass)->is_klassptr()->klass();
+    ciKlass* subk   = gvn->type(subklass)->is_klassptr()->klass();
 
     // In the common case of an exact superklass, try to fold up the
     // test before generating code.  You may ask, why not just generate
@@ -2549,25 +2565,23 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
     //    Foo[] fa = blah(); Foo x = fa[0]; fa[1] = x;
     // Here, the type of 'fa' is often exact, so the store check
     // of fa[1]=x will fold up, without testing the nullness of x.
-    switch (static_subtype_check(superk, subk)) {
-    case SSC_always_false:
+    switch (C->static_subtype_check(superk, subk)) {
+    case Compile::SSC_always_false:
       {
-        Node* always_fail = control();
-        set_control(top());
+        Node* always_fail = *ctrl;
+        *ctrl = gvn->C->top();
         return always_fail;
       }
-    case SSC_always_true:
-      return top();
-    case SSC_easy_test:
+    case Compile::SSC_always_true:
+      return C->top();
+    case Compile::SSC_easy_test:
       {
         // Just do a direct pointer compare and be done.
-        Node* cmp = _gvn.transform( new CmpPNode(subklass, superklass) );
-        Node* bol = _gvn.transform( new BoolNode(cmp, BoolTest::eq) );
-        IfNode* iff = create_and_xform_if(control(), bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
-        set_control( _gvn.transform( new IfTrueNode (iff) ) );
-        return       _gvn.transform( new IfFalseNode(iff) );
+        IfNode* iff = gen_subtype_check_compare(*ctrl, subklass, superklass, BoolTest::eq, PROB_STATIC_FREQUENT, gvn, T_ADDRESS);
+        *ctrl = gvn->transform(new IfTrueNode(iff));
+        return gvn->transform(new IfFalseNode(iff));
       }
-    case SSC_full_test:
+    case Compile::SSC_full_test:
       break;
     default:
       ShouldNotReachHere();
@@ -2579,11 +2593,11 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   // will always succeed.  We could leave a dependency behind to ensure this.
 
   // First load the super-klass's check-offset
-  Node *p1 = basic_plus_adr( superklass, superklass, in_bytes(Klass::super_check_offset_offset()) );
-  Node *chk_off = _gvn.transform(new LoadINode(NULL, memory(p1), p1, _gvn.type(p1)->is_ptr(),
-                                                   TypeInt::INT, MemNode::unordered));
+  Node *p1 = gvn->transform(new AddPNode(superklass, superklass, gvn->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+  Node* m = mem->memory_at(C->get_alias_index(gvn->type(p1)->is_ptr()));
+  Node *chk_off = gvn->transform(new LoadINode(NULL, m, p1, gvn->type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
   int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
-  bool might_be_cache = (find_int_con(chk_off, cacheoff_con) == cacheoff_con);
+  bool might_be_cache = (gvn->find_int_con(chk_off, cacheoff_con) == cacheoff_con);
 
   // Load from the sub-klass's super-class display list, or a 1-word cache of
   // the secondary superclass list, or a failing value with a sentinel offset
@@ -2591,42 +2605,44 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   // hierarchy and we have to scan the secondary superclass list the hard way.
   // Worst-case type is a little odd: NULL is allowed as a result (usually
   // klass loads can never produce a NULL).
-  Node *chk_off_X = ConvI2X(chk_off);
-  Node *p2 = _gvn.transform( new AddPNode(subklass,subklass,chk_off_X) );
+  Node *chk_off_X = chk_off;
+#ifdef _LP64
+  chk_off_X = gvn->transform(new ConvI2LNode(chk_off_X));
+#endif
+  Node *p2 = gvn->transform(new AddPNode(subklass,subklass,chk_off_X));
   // For some types like interfaces the following loadKlass is from a 1-word
   // cache which is mutable so can't use immutable memory.  Other
   // types load from the super-class display table which is immutable.
-  Node *kmem = might_be_cache ? memory(p2) : immutable_memory();
-  Node *nkls = _gvn.transform( LoadKlassNode::make( _gvn, kmem, p2, _gvn.type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL ) );
+  m = mem->memory_at(C->get_alias_index(gvn->type(p2)->is_ptr()));
+  Node *kmem = might_be_cache ? m : C->immutable_memory();
+  Node *nkls = gvn->transform(LoadKlassNode::make(*gvn, kmem, p2, gvn->type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL));
 
   // Compile speed common case: ARE a subtype and we canNOT fail
   if( superklass == nkls )
-    return top();             // false path is dead; no test needed.
+    return C->top();             // false path is dead; no test needed.
 
   // See if we get an immediate positive hit.  Happens roughly 83% of the
   // time.  Test to see if the value loaded just previously from the subklass
   // is exactly the superklass.
-  Node *cmp1 = _gvn.transform( new CmpPNode( superklass, nkls ) );
-  Node *bol1 = _gvn.transform( new BoolNode( cmp1, BoolTest::eq ) );
-  IfNode *iff1 = create_and_xform_if( control(), bol1, PROB_LIKELY(0.83f), COUNT_UNKNOWN );
-  Node *iftrue1 = _gvn.transform( new IfTrueNode ( iff1 ) );
-  set_control(    _gvn.transform( new IfFalseNode( iff1 ) ) );
+  IfNode *iff1 = gen_subtype_check_compare(*ctrl, superklass, nkls, BoolTest::eq, PROB_LIKELY(0.83f), gvn, T_ADDRESS);
+  Node *iftrue1 = gvn->transform( new IfTrueNode (iff1));
+  *ctrl = gvn->transform(new IfFalseNode(iff1));
 
   // Compile speed common case: Check for being deterministic right now.  If
   // chk_off is a constant and not equal to cacheoff then we are NOT a
   // subklass.  In this case we need exactly the 1 test above and we can
   // return those results immediately.
   if (!might_be_cache) {
-    Node* not_subtype_ctrl = control();
-    set_control(iftrue1); // We need exactly the 1 test above
+    Node* not_subtype_ctrl = *ctrl;
+    *ctrl = iftrue1; // We need exactly the 1 test above
     return not_subtype_ctrl;
   }
 
   // Gather the various success & failures here
   RegionNode *r_ok_subtype = new RegionNode(4);
-  record_for_igvn(r_ok_subtype);
+  gvn->record_for_igvn(r_ok_subtype);
   RegionNode *r_not_subtype = new RegionNode(3);
-  record_for_igvn(r_not_subtype);
+  gvn->record_for_igvn(r_not_subtype);
 
   r_ok_subtype->init_req(1, iftrue1);
 
@@ -2635,21 +2651,17 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   // check-offset points into the subklass display list or the 1-element
   // cache.  If it points to the display (and NOT the cache) and the display
   // missed then it's not a subtype.
-  Node *cacheoff = _gvn.intcon(cacheoff_con);
-  Node *cmp2 = _gvn.transform( new CmpINode( chk_off, cacheoff ) );
-  Node *bol2 = _gvn.transform( new BoolNode( cmp2, BoolTest::ne ) );
-  IfNode *iff2 = create_and_xform_if( control(), bol2, PROB_LIKELY(0.63f), COUNT_UNKNOWN );
-  r_not_subtype->init_req(1, _gvn.transform( new IfTrueNode (iff2) ) );
-  set_control(                _gvn.transform( new IfFalseNode(iff2) ) );
+  Node *cacheoff = gvn->intcon(cacheoff_con);
+  IfNode *iff2 = gen_subtype_check_compare(*ctrl, chk_off, cacheoff, BoolTest::ne, PROB_LIKELY(0.63f), gvn, T_INT);
+  r_not_subtype->init_req(1, gvn->transform(new IfTrueNode (iff2)));
+  *ctrl = gvn->transform(new IfFalseNode(iff2));
 
   // Check for self.  Very rare to get here, but it is taken 1/3 the time.
   // No performance impact (too rare) but allows sharing of secondary arrays
   // which has some footprint reduction.
-  Node *cmp3 = _gvn.transform( new CmpPNode( subklass, superklass ) );
-  Node *bol3 = _gvn.transform( new BoolNode( cmp3, BoolTest::eq ) );
-  IfNode *iff3 = create_and_xform_if( control(), bol3, PROB_LIKELY(0.36f), COUNT_UNKNOWN );
-  r_ok_subtype->init_req(2, _gvn.transform( new IfTrueNode ( iff3 ) ) );
-  set_control(               _gvn.transform( new IfFalseNode( iff3 ) ) );
+  IfNode *iff3 = gen_subtype_check_compare(*ctrl, subklass, superklass, BoolTest::eq, PROB_LIKELY(0.36f), gvn, T_ADDRESS);
+  r_ok_subtype->init_req(2, gvn->transform(new IfTrueNode(iff3)));
+  *ctrl = gvn->transform(new IfFalseNode(iff3));
 
   // -- Roads not taken here: --
   // We could also have chosen to perform the self-check at the beginning
@@ -2672,68 +2684,16 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   // out of line, and it can only improve I-cache density.
   // The decision to inline or out-of-line this final check is platform
   // dependent, and is found in the AD file definition of PartialSubtypeCheck.
-  Node* psc = _gvn.transform(
-    new PartialSubtypeCheckNode(control(), subklass, superklass) );
+  Node* psc = gvn->transform(
+    new PartialSubtypeCheckNode(*ctrl, subklass, superklass));
 
-  Node *cmp4 = _gvn.transform( new CmpPNode( psc, null() ) );
-  Node *bol4 = _gvn.transform( new BoolNode( cmp4, BoolTest::ne ) );
-  IfNode *iff4 = create_and_xform_if( control(), bol4, PROB_FAIR, COUNT_UNKNOWN );
-  r_not_subtype->init_req(2, _gvn.transform( new IfTrueNode (iff4) ) );
-  r_ok_subtype ->init_req(3, _gvn.transform( new IfFalseNode(iff4) ) );
+  IfNode *iff4 = gen_subtype_check_compare(*ctrl, psc, gvn->zerocon(T_OBJECT), BoolTest::ne, PROB_FAIR, gvn, T_ADDRESS);
+  r_not_subtype->init_req(2, gvn->transform(new IfTrueNode (iff4)));
+  r_ok_subtype ->init_req(3, gvn->transform(new IfFalseNode(iff4)));
 
   // Return false path; set default control to true path.
-  set_control( _gvn.transform(r_ok_subtype) );
-  return _gvn.transform(r_not_subtype);
-}
-
-//----------------------------static_subtype_check-----------------------------
-// Shortcut important common cases when superklass is exact:
-// (0) superklass is java.lang.Object (can occur in reflective code)
-// (1) subklass is already limited to a subtype of superklass => always ok
-// (2) subklass does not overlap with superklass => always fail
-// (3) superklass has NO subtypes and we can check with a simple compare.
-int GraphKit::static_subtype_check(ciKlass* superk, ciKlass* subk) {
-  if (StressReflectiveCode) {
-    return SSC_full_test;       // Let caller generate the general case.
-  }
-
-  if (superk == env()->Object_klass()) {
-    return SSC_always_true;     // (0) this test cannot fail
-  }
-
-  ciType* superelem = superk;
-  if (superelem->is_array_klass())
-    superelem = superelem->as_array_klass()->base_element_type();
-
-  if (!subk->is_interface()) {  // cannot trust static interface types yet
-    if (subk->is_subtype_of(superk)) {
-      return SSC_always_true;   // (1) false path dead; no dynamic test needed
-    }
-    if (!(superelem->is_klass() && superelem->as_klass()->is_interface()) &&
-        !superk->is_subtype_of(subk)) {
-      return SSC_always_false;
-    }
-  }
-
-  // If casting to an instance klass, it must have no subtypes
-  if (superk->is_interface()) {
-    // Cannot trust interfaces yet.
-    // %%% S.B. superk->nof_implementors() == 1
-  } else if (superelem->is_instance_klass()) {
-    ciInstanceKlass* ik = superelem->as_instance_klass();
-    if (!ik->has_subklass() && !ik->is_interface()) {
-      if (!ik->is_final()) {
-        // Add a dependency if there is a chance of a later subclass.
-        C->dependencies()->assert_leaf_type(ik);
-      }
-      return SSC_easy_test;     // (3) caller can do a simple ptr comparison
-    }
-  } else {
-    // A primitive array type has no subtypes.
-    return SSC_easy_test;       // (3) caller can do a simple ptr comparison
-  }
-
-  return SSC_full_test;
+  *ctrl = gvn->transform(r_ok_subtype);
+  return gvn->transform(r_not_subtype);
 }
 
 // Profile-driven exact type check:
@@ -2813,7 +2773,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   ciKlass* exact_kls = spec_klass == NULL ? profile_has_unique_klass() : spec_klass;
   if (exact_kls != NULL) {// no cast failures here
     if (require_klass == NULL ||
-        static_subtype_check(require_klass, exact_kls) == SSC_always_true) {
+        C->static_subtype_check(require_klass, exact_kls) == Compile::SSC_always_true) {
       // If we narrow the type to match what the type profile sees or
       // the speculative type, we can then remove the rest of the
       // cast.
@@ -2833,7 +2793,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
       }
       return exact_obj;
     }
-    // assert(ssc == SSC_always_true)... except maybe the profile lied to us.
+    // assert(ssc == Compile::SSC_always_true)... except maybe the profile lied to us.
   }
 
   return NULL;
@@ -2938,8 +2898,8 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
     ciKlass* superk = _gvn.type(superklass)->is_klassptr()->klass();
     ciKlass* subk = _gvn.type(obj)->is_oopptr()->klass();
     if (subk != NULL && subk->is_loaded()) {
-      int static_res = static_subtype_check(superk, subk);
-      known_statically = (static_res == SSC_always_true || static_res == SSC_always_false);
+      int static_res = C->static_subtype_check(superk, subk);
+      known_statically = (static_res == Compile::SSC_always_true || static_res == Compile::SSC_always_false);
     }
   }
 
@@ -3007,13 +2967,13 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   if (tk->singleton()) {
     const TypeOopPtr* objtp = _gvn.type(obj)->isa_oopptr();
     if (objtp != NULL && objtp->klass() != NULL) {
-      switch (static_subtype_check(tk->klass(), objtp->klass())) {
-      case SSC_always_true:
+      switch (C->static_subtype_check(tk->klass(), objtp->klass())) {
+      case Compile::SSC_always_true:
         // If we know the type check always succeed then we don't use
         // the profiling data at this bytecode. Don't lose it, feed it
         // to the type system as a speculative type.
         return record_profiled_receiver_for_speculation(obj);
-      case SSC_always_false:
+      case Compile::SSC_always_false:
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
         return null_assert(obj);

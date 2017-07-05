@@ -32,13 +32,14 @@
 #include "services/allocationSite.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/nmtCommon.hpp"
+#include "utilities/nativeCallStack.hpp"
 
 // MallocSite represents a code path that eventually calls
 // os::malloc() to allocate memory
 class MallocSite : public AllocationSite<MemoryCounter> {
  public:
   MallocSite() :
-    AllocationSite<MemoryCounter>(emptyStack) { }
+    AllocationSite<MemoryCounter>(NativeCallStack::EMPTY_STACK) { }
 
   MallocSite(const NativeCallStack& stack) :
     AllocationSite<MemoryCounter>(stack) { }
