@@ -292,36 +292,25 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   if (_root_region_scan_wait_time_ms > 0.0) {
     print_stats(1, "Root Region Scan Waiting", _root_region_scan_wait_time_ms);
   }
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    print_stats(1, "Parallel Time", _cur_collection_par_time_ms, _active_gc_threads);
-    _last_gc_worker_start_times_ms.print(2, "GC Worker Start (ms)");
-    _last_ext_root_scan_times_ms.print(2, "Ext Root Scanning (ms)");
-    if (_last_satb_filtering_times_ms.sum() > 0.0) {
-      _last_satb_filtering_times_ms.print(2, "SATB Filtering (ms)");
-    }
-    _last_update_rs_times_ms.print(2, "Update RS (ms)");
-      _last_update_rs_processed_buffers.print(3, "Processed Buffers");
-    _last_scan_rs_times_ms.print(2, "Scan RS (ms)");
-    _last_strong_code_root_scan_times_ms.print(2, "Code Root Scanning (ms)");
-    _last_obj_copy_times_ms.print(2, "Object Copy (ms)");
-    _last_termination_times_ms.print(2, "Termination (ms)");
-    if (G1Log::finest()) {
-      _last_termination_attempts.print(3, "Termination Attempts");
-    }
-    _last_gc_worker_other_times_ms.print(2, "GC Worker Other (ms)");
-    _last_gc_worker_times_ms.print(2, "GC Worker Total (ms)");
-    _last_gc_worker_end_times_ms.print(2, "GC Worker End (ms)");
-  } else {
-    _last_ext_root_scan_times_ms.print(1, "Ext Root Scanning (ms)");
-    if (_last_satb_filtering_times_ms.sum() > 0.0) {
-      _last_satb_filtering_times_ms.print(1, "SATB Filtering (ms)");
-    }
-    _last_update_rs_times_ms.print(1, "Update RS (ms)");
-      _last_update_rs_processed_buffers.print(2, "Processed Buffers");
-    _last_scan_rs_times_ms.print(1, "Scan RS (ms)");
-    _last_strong_code_root_scan_times_ms.print(1, "Code Root Scanning (ms)");
-    _last_obj_copy_times_ms.print(1, "Object Copy (ms)");
+  print_stats(1, "Parallel Time", _cur_collection_par_time_ms, _active_gc_threads);
+  _last_gc_worker_start_times_ms.print(2, "GC Worker Start (ms)");
+  _last_ext_root_scan_times_ms.print(2, "Ext Root Scanning (ms)");
+  if (_last_satb_filtering_times_ms.sum() > 0.0) {
+    _last_satb_filtering_times_ms.print(2, "SATB Filtering (ms)");
   }
+  _last_update_rs_times_ms.print(2, "Update RS (ms)");
+    _last_update_rs_processed_buffers.print(3, "Processed Buffers");
+  _last_scan_rs_times_ms.print(2, "Scan RS (ms)");
+  _last_strong_code_root_scan_times_ms.print(2, "Code Root Scanning (ms)");
+  _last_obj_copy_times_ms.print(2, "Object Copy (ms)");
+  _last_termination_times_ms.print(2, "Termination (ms)");
+  if (G1Log::finest()) {
+    _last_termination_attempts.print(3, "Termination Attempts");
+  }
+  _last_gc_worker_other_times_ms.print(2, "GC Worker Other (ms)");
+  _last_gc_worker_times_ms.print(2, "GC Worker Total (ms)");
+  _last_gc_worker_end_times_ms.print(2, "GC Worker End (ms)");
+
   print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
   print_stats(1, "Code Root Purge", _cur_strong_code_root_purge_time_ms);
   if (G1StringDedup::is_enabled()) {

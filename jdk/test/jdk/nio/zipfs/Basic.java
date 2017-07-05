@@ -35,7 +35,7 @@ import java.io.IOException;
  * @summary Basic test for zip provider
  *
  * @run main Basic
- * @run main/othervm/policy=test.policy Basic
+ * @run main/othervm/java.security.policy=test.policy Basic
  */
 
 public class Basic {

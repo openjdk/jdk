@@ -4328,7 +4328,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1413533532
+DATE_WHEN_GENERATED=1414663067
 
 ###############################################################################
 #
@@ -41681,8 +41681,8 @@ $as_echo "$tool_specified" >&6; }
       SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
       SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-      SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
-      SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
+      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
+      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
       SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
       SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
@@ -44037,17 +44037,6 @@ fi
         -R$OPENWIN_HOME/lib$OPENJDK_TARGET_CPU_ISADIR"
   fi
 
-  #
-  # Weird Sol10 something check...TODO change to try compile
-  #
-  if test "x${OPENJDK_TARGET_OS}" = xsolaris; then
-    if test "`uname -r`" = "5.10"; then
-      if test "`${EGREP} -c XLinearGradient ${OPENWIN_HOME}/share/include/X11/extensions/Xrender.h`" = "0"; then
-        X_CFLAGS="${X_CFLAGS} -DSOLARIS10_NO_XRENDER_STRUCTS"
-      fi
-    fi
-  fi
-
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -44055,7 +44044,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
   OLD_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $X_CFLAGS"
+  CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
 
   # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
   for ac_header in X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h
@@ -44078,6 +44067,31 @@ fi
 
 done
 
+
+  # If XLinearGradient isn't available in Xrender.h, signal that it needs to be
+  # defined in libawt_xawt.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if XlinearGradient is defined in Xrender.h" >&5
+$as_echo_n "checking if XlinearGradient is defined in Xrender.h... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <X11/extensions/Xrender.h>
+int
+main ()
+{
+XLinearGradient x;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       X_CFLAGS="$X_CFLAGS -DSOLARIS10_NO_XRENDER_STRUCTS"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
   CFLAGS="$OLD_CFLAGS"
   ac_ext=cpp

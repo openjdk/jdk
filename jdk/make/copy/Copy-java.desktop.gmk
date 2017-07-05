@@ -67,8 +67,11 @@ ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
     FREETYPE_TARGET_LIB := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
   endif
 
+  # We can't use $(install-file) in this rule because it preserves symbolic links and
+  # libfreetype.so is usually a symbolic link to something like libfreetype.so.6 on Unix.
   $(FREETYPE_TARGET_LIB): $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
-	$(install-file)
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
         ifeq ($(OPENJDK_BUILD_OS), windows)
 	  $(CHMOD) +rx $@
         endif

@@ -1438,10 +1438,9 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     void updateForm(LambdaForm newForm) {
         if (form == newForm)  return;
-        assert(this instanceof DirectMethodHandle && this.internalMemberName().isStatic());
-        // ISSUE: Should we have a memory fence here?
+        newForm.prepare();  // as in MethodHandle.<init>
         UNSAFE.putObject(this, FORM_OFFSET, newForm);
-        this.form.prepare();  // as in MethodHandle.<init>
+        UNSAFE.fullFence();
     }
 
     private static final long FORM_OFFSET;

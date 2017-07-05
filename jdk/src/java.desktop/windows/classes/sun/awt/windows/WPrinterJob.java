@@ -93,7 +93,7 @@ import sun.print.SunAlternateMedia;
 import sun.print.SunPageSelection;
 import sun.print.Win32MediaTray;
 import sun.print.Win32PrintService;
-import sun.print.Win32PrintServiceLookup;
+import sun.print.PrintServiceLookupProvider;
 import sun.print.ServiceDialog;
 import sun.print.DialogOwner;
 
@@ -454,7 +454,7 @@ public final class WPrinterJob extends RasterPrinterJob
                 // native printer is different !
                 // we update the current PrintService
                 try {
-                    setPrintService(Win32PrintServiceLookup.
+                    setPrintService(PrintServiceLookupProvider.
                                     getWin32PrintLUS().
                                     getPrintServiceByName(printerName));
                 } catch (PrinterException e) {
@@ -628,7 +628,7 @@ public final class WPrinterJob extends RasterPrinterJob
             String printerName = getNativePrintService();
 
             if (printerName != null) {
-                myService = Win32PrintServiceLookup.getWin32PrintLUS().
+                myService = PrintServiceLookupProvider.getWin32PrintLUS().
                     getPrintServiceByName(printerName);
                 // no need to call setNativePrintService as this name is
                 // currently set in native
