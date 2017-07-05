@@ -2985,6 +2985,7 @@ add_to_collection_set(HeapRegion* hr) {
   _collection_set = hr;
   _collection_set_size++;
   _collection_set_bytes_used_before += hr->used();
+  _g1->register_region_with_in_cset_fast_test(hr);
 }
 
 void

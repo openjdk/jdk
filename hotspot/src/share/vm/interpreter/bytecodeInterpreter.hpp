@@ -66,7 +66,6 @@ friend class CppInterpreterGenerator;
 friend class InterpreterGenerator;
 friend class InterpreterMacroAssembler;
 friend class frame;
-friend class SharedRuntime;
 friend class VMStructs;
 
 public:

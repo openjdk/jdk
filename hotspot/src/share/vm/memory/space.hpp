@@ -193,6 +193,9 @@ class Space: public CHeapObj {
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
   virtual void object_iterate(ObjectClosure* blk) = 0;
+  // Similar to object_iterate() except only iterates over
+  // objects whose internal references point to objects in the space.
+  virtual void safe_object_iterate(ObjectClosure* blk) = 0;
 
   // Iterate over all objects that intersect with mr, calling "cl->do_object"
   // on each.  There is an exception to this: if this closure has already
@@ -843,6 +846,9 @@ class ContiguousSpace: public CompactibleSpace {
   void oop_iterate(OopClosure* cl);
   void oop_iterate(MemRegion mr, OopClosure* cl);
   void object_iterate(ObjectClosure* blk);
+  // For contiguous spaces this method will iterate safely over objects
+  // in the space (i.e., between bottom and top) when at a safepoint.
+  void safe_object_iterate(ObjectClosure* blk);
   void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
   // iterates on objects up to the safe limit
   HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
