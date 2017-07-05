@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1097,7 +1097,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
     return NULL;
   }
   oop r = *oop_adr;
-  assert(Universe::heap()->is_in_or_null(r), err_msg("bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", (intptr_t) r, (intptr_t) r));
+  assert(Universe::heap()->is_in_or_null(r), err_msg("bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", (void *) r, (void *) r));
   return r;
 }
 
@@ -1228,9 +1228,7 @@ void frame::check_derived_oop(oop* base, oop* derived) {
 
 void frame::ZapDeadClosure::do_oop(oop* p) {
   if (TraceZapDeadLocals) tty->print_cr("zapping @ " INTPTR_FORMAT " containing " INTPTR_FORMAT, p, (address)*p);
-  // Need cast because on _LP64 the conversion to oop is ambiguous.  Constant
-  // can be either long or int.
-  *p = (oop)(int)0xbabebabe;
+  *p = cast_to_oop<intptr_t>(0xbabebabe);
 }
 frame::ZapDeadClosure frame::_zap_dead;
 

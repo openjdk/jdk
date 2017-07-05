@@ -55,11 +55,16 @@ typedef class     typeArrayOopDesc*            typeArrayOop;
 // to and from the underlying oopDesc pointer type.
 //
 // Because oop and its subclasses <type>Oop are class types, arbitrary
-// conversions are not accepted by the compiler, and you may get a message
-// about overloading ambiguity (between long and int is common when converting
-// from a constant in 64 bit mode), or unable to convert from type to 'oop'.
-// Applying a cast to one of these conversion operators first will get to the
-// underlying oopDesc* type if appropriate.
+// conversions are not accepted by the compiler.  Applying a cast to
+// an oop will cause the best matched conversion operator to be
+// invoked returning the underlying oopDesc* type if appropriate.
+// No copy constructors, explicit user conversions or operators of
+// numerical type should be defined within the oop class. Most C++
+// compilers will issue a compile time error concerning the overloading
+// ambiguity between operators of numerical and pointer types. If
+// a conversion to or from an oop to a numerical type is needed,
+// use the inline template methods, cast_*_oop, defined below.
+//
 // Converting NULL to oop to Handle implicit is no longer accepted by the
 // compiler because there are too many steps in the conversion.  Use Handle()
 // instead, which generates less code anyway.
@@ -83,12 +88,9 @@ public:
   void raw_set_obj(const void* p)     { _o = (oopDesc*)p; }
 
   oop()                               { set_obj(NULL); }
+  oop(const oop& o)                   { set_obj(o.obj()); }
   oop(const volatile oop& o)          { set_obj(o.obj()); }
   oop(const void* p)                  { set_obj(p); }
-  oop(intptr_t i)                     { set_obj((void *)i); }
-#ifdef _LP64
-  oop(int i)                          { set_obj((void *)i); }
-#endif
   ~oop()                              {
     if (CheckUnhandledOops) unregister_oop();
   }
@@ -101,8 +103,6 @@ public:
   bool operator==(void *p) const      { return obj() == p; }
   bool operator!=(const volatile oop o) const  { return obj() != o.obj(); }
   bool operator!=(void *p) const      { return obj() != p; }
-  bool operator==(intptr_t p) const   { return obj() == (oopDesc*)p; }
-  bool operator!=(intptr_t p) const   { return obj() != (oopDesc*)p; }
 
   bool operator<(oop o) const         { return obj() < o.obj(); }
   bool operator>(oop o) const         { return obj() > o.obj(); }
@@ -110,8 +110,18 @@ public:
   bool operator>=(oop o) const        { return obj() >= o.obj(); }
   bool operator!() const              { return !obj(); }
 
-  // Cast
+  // Assignment
+  oop& operator=(const oop& o)                            { _o = o.obj(); return *this; }
+#ifndef SOLARIS
+  volatile oop& operator=(const oop& o) volatile          { _o = o.obj(); return *this; }
+#endif
+  volatile oop& operator=(const volatile oop& o) volatile { _o = o.obj(); return *this; }
+
+  // Explict user conversions
   operator void* () const             { return (void *)obj(); }
+#ifndef SOLARIS
+  operator void* () const volatile    { return (void *)obj(); }
+#endif
   operator HeapWord* () const         { return (HeapWord*)obj(); }
   operator oopDesc* () const          { return obj(); }
   operator intptr_t* () const         { return (intptr_t*)obj(); }
@@ -119,7 +129,6 @@ public:
   operator markOop () const           { return markOop(obj()); }
 
   operator address   () const         { return (address)obj(); }
-  operator intptr_t () const volatile { return (intptr_t)obj(); }
 
   // from javaCalls.cpp
   operator jobject () const           { return (jobject)obj(); }
@@ -141,11 +150,25 @@ public:
    class type##Oop : public oop {                                          \
      public:                                                               \
        type##Oop() : oop() {}                                              \
+       type##Oop(const oop& o) : oop(o) {}                                 \
        type##Oop(const volatile oop& o) : oop(o) {}                        \
        type##Oop(const void* p) : oop(p) {}                                \
        operator type##OopDesc* () const { return (type##OopDesc*)obj(); }  \
        type##OopDesc* operator->() const {                                 \
             return (type##OopDesc*)obj();                                  \
+       }                                                                   \
+       type##Oop& operator=(const type##Oop& o) {                          \
+            oop::operator=(o);                                             \
+            return *this;                                                  \
+       }                                                                   \
+       NOT_SOLARIS(                                                        \
+       volatile type##Oop& operator=(const type##Oop& o) volatile {        \
+            (void)const_cast<oop&>(oop::operator=(o));                     \
+            return *this;                                                  \
+       })                                                                  \
+       volatile type##Oop& operator=(const volatile type##Oop& o) volatile {\
+            (void)const_cast<oop&>(oop::operator=(o));                     \
+            return *this;                                                  \
        }                                                                   \
    };
 
@@ -155,6 +178,16 @@ DEF_OOP(objArray);
 DEF_OOP(typeArray);
 
 #endif // CHECK_UNHANDLED_OOPS
+
+// For CHECK_UNHANDLED_OOPS, it is ambiguous C++ behavior to have the oop
+// structure contain explicit user defined conversions of both numerical
+// and pointer type. Define inline methods to provide the numerical conversions.
+template <class T> inline oop cast_to_oop(T value) {
+  return (oop)(CHECK_UNHANDLED_OOPS_ONLY((void *))(value));
+}
+template <class T> inline T cast_from_oop(oop o) {
+  return (T)(CHECK_UNHANDLED_OOPS_ONLY((void*))o);
+}
 
 // The metadata hierarchy is separate from the oop hierarchy
 
