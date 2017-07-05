@@ -20,41 +20,15 @@
 package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
 import jdk.nashorn.internal.runtime.regexp.joni.ScanEnvironment;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 public final class BackRefNode extends StateNode {
-    //private static int NODE_BACKREFS_SIZE = 6;
+    public final int backRef;
 
-    //int state;
-    public int backNum;
-    public int back[];
+    public BackRefNode(int backRef, ScanEnvironment env) {
+        this.backRef = backRef;
 
-    public int nestLevel;
-
-    public BackRefNode(int backNum, int[]backRefs, boolean byName, ScanEnvironment env) {
-        this.backNum = backNum;
-        if (byName) setNameRef();
-
-        for (int i=0; i<backNum; i++) {
-            if (backRefs[i] <= env.numMem && env.memNodes[backRefs[i]] == null) {
-                setRecursion(); /* /...(\1).../ */
-                break;
-            }
-        }
-
-        back = new int[backNum];
-        System.arraycopy(backRefs, 0, back, 0, backNum); // shall we really dup it ???
-    }
-
-    // #ifdef USE_BACKREF_AT_LEVEL
-    public BackRefNode(int backNum, int[]backRefs, boolean byName, boolean existLevel, int nestLevel, ScanEnvironment env) {
-        this(backNum, backRefs, byName, env);
-
-        if (existLevel) {
-            //state |= NST_NEST_LEVEL;
-            setNestLevel();
-            this.nestLevel = nestLevel;
+        if (backRef <= env.numMem && env.memNodes[backRef] == null) {
+            setRecursion(); /* /...(\1).../ */
         }
     }
 
@@ -71,28 +45,7 @@ public final class BackRefNode extends StateNode {
     @Override
     public String toString(int level) {
         StringBuilder value = new StringBuilder(super.toString(level));
-        value.append("\n  backNum: " + backNum);
-        String backs = "";
-        for (int i=0; i<back.length; i++) backs += back[i] + ", ";
-        value.append("\n  back: " + backs);
-        value.append("\n  nextLevel: " + nestLevel);
+        value.append("\n  back: ").append(backRef);
         return value.toString();
     }
-
-    public void renumber(int[]map) {
-        if (!isNameRef()) throw new ValueException(ErrorMessages.ERR_NUMBERED_BACKREF_OR_CALL_NOT_ALLOWED);
-
-        int oldNum = backNum;
-
-        int pos = 0;
-        for (int i=0; i<oldNum; i++) {
-            int n = map[back[i]];
-            if (n > 0) {
-                back[pos] = n;
-                pos++;
-            }
-        }
-        backNum = pos;
-    }
-
 }

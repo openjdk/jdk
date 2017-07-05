@@ -54,17 +54,43 @@ public class LexicalContext {
 
     /**
      * Set the flags for a lexical context node on the stack. Does not
-     * replace the flags, but rather adds to them
+     * replace the flags, but rather adds to them.
      *
      * @param node  node
      * @param flag  new flag to set
      */
     public void setFlag(final LexicalContextNode node, final int flag) {
         if (flag != 0) {
+            // Use setBlockNeedsScope() instead
+            assert !(flag == Block.NEEDS_SCOPE && node instanceof Block);
+
             for (int i = sp - 1; i >= 0; i--) {
                 if (stack[i] == node) {
                     flags[i] |= flag;
                     return;
+                }
+            }
+        }
+        assert false;
+    }
+
+    /**
+     * Marks the block as one that creates a scope. Note that this method must
+     * be used instead of {@link #setFlag(LexicalContextNode, int)} with
+     * {@link Block#NEEDS_SCOPE} because it atomically also sets the
+     * {@link FunctionNode#HAS_SCOPE_BLOCK} flag on the block's containing
+     * function.
+     * @param block the block that needs to be marked as creating a scope.
+     */
+    public void setBlockNeedsScope(final Block block) {
+        for (int i = sp - 1; i >= 0; i--) {
+            if (stack[i] == block) {
+                flags[i] |= Block.NEEDS_SCOPE;
+                for(int j = i - 1; j >=0; j --) {
+                    if(stack[j] instanceof FunctionNode) {
+                        flags[j] |= FunctionNode.HAS_SCOPE_BLOCK;
+                        return;
+                    }
                 }
             }
         }
@@ -550,19 +576,20 @@ public class LexicalContext {
         final StringBuffer sb = new StringBuffer();
         sb.append("[ ");
         for (int i = 0; i < sp; i++) {
-            final Node node = stack[i];
+            final Object node = stack[i];
             sb.append(node.getClass().getSimpleName());
             sb.append('@');
             sb.append(Debug.id(node));
             sb.append(':');
             if (node instanceof FunctionNode) {
-                final Source source = ((FunctionNode)node).getSource();
+                final FunctionNode fn = (FunctionNode)node;
+                final Source source = fn.getSource();
                 String src = source.toString();
                 if (src.indexOf(File.pathSeparator) != -1) {
                     src = src.substring(src.lastIndexOf(File.pathSeparator));
                 }
                 src += ' ';
-                src += source.getLine(node.getStart());
+                src += source.getLine(fn.getStart());
                 sb.append(src);
             }
             sb.append(' ');
@@ -605,7 +632,7 @@ public class LexicalContext {
 
         private T findNext() {
             for (int i = index; i >= 0; i--) {
-                final Node node = stack[i];
+                final Object node = stack[i];
                 if (node == until) {
                     return null;
                 }

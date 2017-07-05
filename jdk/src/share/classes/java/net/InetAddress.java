@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import sun.net.spi.nameservice.*;
  * with a host name or whether it has already done reverse host name
  * resolution).
  *
- * <h4> Address types </h4>
+ * <h3> Address types </h3>
  *
  * <blockquote><table cellspacing=2 summary="Description of unicast and multicast address types">
  *   <tr><th valign=top><i>unicast</i></th>
@@ -165,7 +165,6 @@ import sun.net.spi.nameservice.*;
  * <p>
  * A value of -1 indicates "cache forever".
  * </dd>
- * <p>
  * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
  * <dd>Indicates the caching policy for un-successful name lookups
  * from the name service. The value is specified as as integer to

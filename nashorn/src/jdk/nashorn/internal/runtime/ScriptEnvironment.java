@@ -119,8 +119,14 @@ public final class ScriptEnvironment {
     /** Create a new class loaded for each compilation */
     public final boolean _loader_per_compile;
 
+    /** Do not support Java support extensions. */
+    public final boolean _no_java;
+
     /** Do not support non-standard syntax extensions. */
     public final boolean _no_syntax_extensions;
+
+    /** Do not support typed arrays. */
+    public final boolean _no_typed_arrays;
 
     /** Package to which generated class files are added */
     public final String  _package;
@@ -207,7 +213,9 @@ public final class ScriptEnvironment {
         _fx                   = options.getBoolean("fx");
         _lazy_compilation     = options.getBoolean("lazy.compilation");
         _loader_per_compile   = options.getBoolean("loader.per.compile");
+        _no_java              = options.getBoolean("no.java");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
+        _no_typed_arrays      = options.getBoolean("no.typed.arrays");
         _package              = options.getString("package");
         _parse_only           = options.getBoolean("parse.only");
         _print_ast            = options.getBoolean("print.ast");

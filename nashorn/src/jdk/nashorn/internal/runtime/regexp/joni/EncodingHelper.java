@@ -132,23 +132,6 @@ public class EncodingHelper {
         }
     }
 
-    // CodeRange.isInCodeRange
-    public static boolean isInCodeRange(int[]p, int code) {
-        int low = 0;
-        int n = p[0];
-        int high = n;
-
-        while (low < high) {
-            int x = (low + high) >> 1;
-            if (code > p[(x << 1) + 2]) {
-                low = x + 1;
-            } else {
-                high = x;
-            }
-        }
-        return low < n && code >= p[(low << 1) + 1];
-    }
-
     public static int[] ctypeCodeRange(int ctype, IntHolder sbOut) {
         sbOut.value = 0x100; // use bitset for codes smaller than 256
         int[] range = null;
@@ -188,7 +171,7 @@ public class EncodingHelper {
     }
 
     // CodeRange.isInCodeRange
-    public static boolean isInCodeRange(int[]p, int offset, int code) {
+    public static boolean isInCodeRange(int[] p, int offset, int code) {
         int low = 0;
         int n = p[offset];
         int high = n ;

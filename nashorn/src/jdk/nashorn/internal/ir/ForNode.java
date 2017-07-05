@@ -34,10 +34,10 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 @Immutable
 public final class ForNode extends LoopNode {
     /** Initialize expression. */
-    private final Node init;
+    private final Expression init;
 
     /** Test expression. */
-    private final Node modify;
+    private final Expression modify;
 
     /** Iterator symbol. */
     private Symbol iterator;
@@ -65,14 +65,14 @@ public final class ForNode extends LoopNode {
      * @param modify     modify
      * @param flags      flags
      */
-    public ForNode(final int lineNumber, final long token, final int finish, final Node init, final Node test, final Block body, final Node modify, final int flags) {
+    public ForNode(final int lineNumber, final long token, final int finish, final Expression init, final Expression test, final Block body, final Expression modify, final int flags) {
         super(lineNumber, token, finish, test, body, false);
         this.init   = init;
         this.modify = modify;
         this.flags  = flags;
     }
 
-    private ForNode(final ForNode forNode, final Node init, final Node test, final Block body, final Node modify, final int flags, final boolean controlFlowEscapes) {
+    private ForNode(final ForNode forNode, final Expression init, final Expression test, final Block body, final Expression modify, final int flags, final boolean controlFlowEscapes) {
         super(forNode, test, body, controlFlowEscapes);
         this.init   = init;
         this.modify = modify;
@@ -86,12 +86,12 @@ public final class ForNode extends LoopNode {
     }
 
     @Override
-    protected Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterForNode(this)) {
             return visitor.leaveForNode(
-                setInit(lc, init == null ? null : init.accept(visitor)).
-                setTest(lc, test == null ? null : test.accept(visitor)).
-                setModify(lc, modify == null ? null : modify.accept(visitor)).
+                setInit(lc, init == null ? null : (Expression)init.accept(visitor)).
+                setTest(lc, test == null ? null : (Expression)test.accept(visitor)).
+                setModify(lc, modify == null ? null : (Expression)modify.accept(visitor)).
                 setBody(lc, (Block)body.accept(visitor)));
         }
 
@@ -140,7 +140,7 @@ public final class ForNode extends LoopNode {
      * Get the initialization expression for this for loop
      * @return the initialization expression
      */
-    public Node getInit() {
+    public Expression getInit() {
         return init;
     }
 
@@ -150,7 +150,7 @@ public final class ForNode extends LoopNode {
      * @param init new initialization expression
      * @return new for node if changed or existing if not
      */
-    public ForNode setInit(final LexicalContext lc, final Node init) {
+    public ForNode setInit(final LexicalContext lc, final Expression init) {
         if (this.init == init) {
             return this;
         }
@@ -212,7 +212,7 @@ public final class ForNode extends LoopNode {
      * Get the modification expression for this ForNode
      * @return the modification expression
      */
-    public Node getModify() {
+    public Expression getModify() {
         return modify;
     }
 
@@ -222,7 +222,7 @@ public final class ForNode extends LoopNode {
      * @param modify new modification expression
      * @return new for node if changed or existing if not
      */
-    public ForNode setModify(final LexicalContext lc, final Node modify) {
+    public ForNode setModify(final LexicalContext lc, final Expression modify) {
         if (this.modify == modify) {
             return this;
         }
@@ -230,12 +230,12 @@ public final class ForNode extends LoopNode {
     }
 
     @Override
-    public Node getTest() {
+    public Expression getTest() {
         return test;
     }
 
     @Override
-    public ForNode setTest(final LexicalContext lc, final Node test) {
+    public ForNode setTest(final LexicalContext lc, final Expression test) {
         if (this.test == test) {
             return this;
         }

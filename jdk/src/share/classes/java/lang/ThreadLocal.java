@@ -131,12 +131,13 @@ public class ThreadLocal<T> {
      * Creates a thread local variable. The initial value of the variable is
      * determined by invoking the {@code get} method on the {@code Supplier}.
      *
+     * @param <S> the type of the thread local's value
      * @param supplier the supplier to be used to determine the initial value
      * @return a new thread local variable
      * @throws NullPointerException if the specified supplier is null
      * @since 1.8
      */
-    public static <T> ThreadLocal<T> withInitial(Supplier<? extends T> supplier) {
+    public static <S> ThreadLocal<S> withInitial(Supplier<? extends S> supplier) {
         return new SuppliedThreadLocal<>(supplier);
     }
 

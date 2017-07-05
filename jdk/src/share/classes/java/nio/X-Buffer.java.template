@@ -1495,7 +1495,7 @@ public abstract class $Type$Buffer
 #end[char]
     public $Streamtype$Stream $type$s() {
         return StreamSupport.$streamtype$Stream(() -> new $Type$BufferSpliterator(this),
-            Buffer.SPLITERATOR_CHARACTERISTICS);
+            Buffer.SPLITERATOR_CHARACTERISTICS, false);
     }
 
 #end[streamableType]

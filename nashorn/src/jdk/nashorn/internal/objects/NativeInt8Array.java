@@ -47,6 +47,7 @@ public final class NativeInt8Array extends ArrayBufferView {
     public static final int BYTES_PER_ELEMENT = 1;
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     private static final Factory FACTORY = new Factory(BYTES_PER_ELEMENT) {
@@ -143,7 +144,7 @@ public final class NativeInt8Array extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getInt8ArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getInt8ArrayPrototype();
     }
 }

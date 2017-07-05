@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ package java.lang.management;
  * It can be obtained by calling the
  * {@link PlatformManagedObject#getObjectName} method.
  *
- * <h4>Memory Type</h4>
+ * <h3>Memory Type</h3>
  * <p>The Java virtual machine has a heap for object allocation and also
  * maintains non-heap memory for the method area and the Java virtual
  * machine execution.  The Java virtual machine can have one or more
@@ -60,7 +60,7 @@ package java.lang.management;
  *   <li>{@link MemoryType#NON_HEAP non-heap}</li>
  * </ul>
  *
- * <h4>Memory Usage Monitoring</h4>
+ * <h3>Memory Usage Monitoring</h3>
  *
  * A memory pool has the following attributes:
  * <ul>
@@ -71,7 +71,7 @@ package java.lang.management;
  *       (only supported by some <em>garbage-collected</em> memory pools)</li>
  * </ul>
  *
- * <h4><a name="Usage">1. Memory Usage</a></h4>
+ * <h3><a name="Usage">1. Memory Usage</a></h3>
  *
  * The {@link #getUsage} method provides an estimate
  * of the current usage of a memory pool.
@@ -86,14 +86,14 @@ package java.lang.management;
  * the current memory usage.  An implementation should document when
  * this is the case.
  *
- * <h4><a name="PeakUsage">2. Peak Memory Usage</a></h4>
+ * <h3><a name="PeakUsage">2. Peak Memory Usage</a></h3>
  *
  * The Java virtual machine maintains the peak memory usage of a memory
  * pool since the virtual machine was started or the peak was reset.
  * The peak memory usage is returned by the {@link #getPeakUsage} method
  * and reset by calling the {@link #resetPeakUsage} method.
  *
- * <h4><a name="UsageThreshold">3. Usage Threshold</a></h4>
+ * <h3><a name="UsageThreshold">3. Usage Threshold</a></h3>
  *
  * Each memory pool has a manageable attribute
  * called the <i>usage threshold</i> which has a default value supplied
@@ -304,7 +304,7 @@ package java.lang.management;
  *   </li>
  * </ol>
  *
- * <h4><a name="CollectionThreshold">4. Collection Usage Threshold</a></h4>
+ * <h3><a name="CollectionThreshold">4. Collection Usage Threshold</a></h3>
  *
  * Collection usage threshold is a manageable attribute only applicable
  * to some garbage-collected memory pools.

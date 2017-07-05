@@ -29,7 +29,6 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
-
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
@@ -705,7 +704,7 @@ public final class Symbol implements Comparable<Symbol> {
     public static void setSymbolIsScope(final LexicalContext lc, final Symbol symbol) {
         symbol.setIsScope();
         if (!symbol.isGlobal()) {
-            lc.setFlag(lc.getDefiningBlock(symbol), Block.NEEDS_SCOPE);
+            lc.setBlockNeedsScope(lc.getDefiningBlock(symbol));
         }
     }
 

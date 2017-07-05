@@ -27,7 +27,10 @@ package jdk.nashorn.api.scripting;
 
 import static org.testng.Assert.fail;
 
+import java.util.Objects;
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import javax.script.ScriptEngineManager;
 import org.testng.annotations.Test;
 
@@ -44,6 +47,7 @@ public class ScriptEngineSecurityTest {
     public void securityPackagesTest() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
+            return;
         }
 
         final ScriptEngineManager m = new ScriptEngineManager();
@@ -64,6 +68,7 @@ public class ScriptEngineSecurityTest {
     public void securityJavaTypeTest() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
+            return;
         }
 
         final ScriptEngineManager m = new ScriptEngineManager();
@@ -84,6 +89,7 @@ public class ScriptEngineSecurityTest {
     public void securityClassForNameTest() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
+            return;
         }
 
         final ScriptEngineManager m = new ScriptEngineManager();
@@ -104,6 +110,7 @@ public class ScriptEngineSecurityTest {
     public void securitySystemExit() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
+            return;
         }
 
         final ScriptEngineManager m = new ScriptEngineManager();
@@ -124,6 +131,7 @@ public class ScriptEngineSecurityTest {
     public void securitySystemLoadLibrary() {
         if (System.getSecurityManager() == null) {
             // pass vacuously
+            return;
         }
 
         final ScriptEngineManager m = new ScriptEngineManager();
@@ -136,6 +144,42 @@ public class ScriptEngineSecurityTest {
                 log("got " + exp + " as expected");
             } else {
                 fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that script can't implement sensitive package interfaces.
+     */
+    public void checkSensitiveInterfaceImplTest() throws ScriptException {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Object[] holder = new Object[1];
+        e.put("holder", holder);
+        // put an empty script object into array
+        e.eval("holder[0] = {}");
+        // holder[0] is an object of some subclass of ScriptObject
+        Class ScriptObjectClass = holder[0].getClass().getSuperclass();
+        Class PropertyAccessClass = ScriptObjectClass.getInterfaces()[0];
+        // implementation methods for PropertyAccess class
+        e.eval("function set() {}; function get() {}; function getInt(){} " +
+               "function getDouble(){}; function getLong() {}; " +
+               "this.delete = function () {}; function has() {}; " +
+               "function hasOwnProperty() {}");
+
+        // get implementation of a restricted package interface
+        try {
+            log(Objects.toString(((Invocable)e).getInterface((Class<?>)PropertyAccessClass)));
+            fail("should have thrown SecurityException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof SecurityException)) {
+                fail("SecurityException expected, got " + exp);
             }
         }
     }

@@ -664,7 +664,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      *
      * @return a stream builder
      */
-    public static StreamBuilder.OfInt builder() {
+    public static Builder builder() {
         return new Streams.IntStreamBuilderImpl();
     }
 
@@ -674,7 +674,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @return an empty sequential stream
      */
     public static IntStream empty() {
-        return StreamSupport.intStream(Spliterators.emptyIntSpliterator());
+        return StreamSupport.intStream(Spliterators.emptyIntSpliterator(), false);
     }
 
     /**
@@ -684,7 +684,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @return a singleton sequential stream
      */
     public static IntStream of(int t) {
-        return StreamSupport.intStream(new Streams.IntStreamBuilderImpl(t));
+        return StreamSupport.intStream(new Streams.IntStreamBuilderImpl(t), false);
     }
 
     /**
@@ -732,7 +732,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
         };
         return StreamSupport.intStream(Spliterators.spliteratorUnknownSize(
                 iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
     /**
@@ -746,7 +746,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
     public static IntStream generate(IntSupplier s) {
         Objects.requireNonNull(s);
         return StreamSupport.intStream(
-                new StreamSpliterators.InfiniteSupplyingSpliterator.OfInt(Long.MAX_VALUE, s));
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfInt(Long.MAX_VALUE, s), false);
     }
 
     /**
@@ -771,7 +771,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
             return empty();
         } else {
             return StreamSupport.intStream(
-                    new Streams.RangeIntSpliterator(startInclusive, endExclusive, false));
+                    new Streams.RangeIntSpliterator(startInclusive, endExclusive, false), false);
         }
     }
 
@@ -797,7 +797,84 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
             return empty();
         } else {
             return StreamSupport.intStream(
-                    new Streams.RangeIntSpliterator(startInclusive, endInclusive, true));
+                    new Streams.RangeIntSpliterator(startInclusive, endInclusive, true), false);
         }
+    }
+
+    /**
+     * Creates a lazy concatenated {@code IntStream} whose elements are all the
+     * elements of a first {@code IntStream} succeeded by all the elements of the
+     * second {@code IntStream}. The resulting stream is ordered if both
+     * of the input streams are ordered, and parallel if either of the input
+     * streams is parallel.
+     *
+     * @param a the first stream
+     * @param b the second stream to concatenate on to end of the first stream
+     * @return the concatenation of the two streams
+     */
+    public static IntStream concat(IntStream a, IntStream b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        Spliterator.OfInt split = new Streams.ConcatSpliterator.OfInt(
+                a.spliterator(), b.spliterator());
+        return StreamSupport.intStream(split, a.isParallel() || b.isParallel());
+    }
+
+    /**
+     * A mutable builder for an {@code IntStream}.
+     *
+     * <p>A stream builder has a lifecycle, where it starts in a building
+     * phase, during which elements can be added, and then transitions to a
+     * built phase, after which elements may not be added.  The built phase
+     * begins when the {@link #build()} method is called, which creates an
+     * ordered stream whose elements are the elements that were added to the
+     * stream builder, in the order they were added.
+     *
+     * @see IntStream#builder()
+     * @since 1.8
+     */
+    public interface Builder extends IntConsumer {
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        @Override
+        void accept(int t);
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @implSpec
+         * The default implementation behaves as if:
+         * <pre>{@code
+         *     accept(t)
+         *     return this;
+         * }</pre>
+         *
+         * @param t the element to add
+         * @return {@code this} builder
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        default Builder add(int t) {
+            accept(t);
+            return this;
+        }
+
+        /**
+         * Builds the stream, transitioning this builder to the built state.
+         * An {@code IllegalStateException} is thrown if there are further
+         * attempts to operate on the builder after it has entered the built
+         * state.
+         *
+         * @return the built stream
+         * @throws IllegalStateException if the builder has already transitioned to
+         * the built state
+         */
+        IntStream build();
     }
 }

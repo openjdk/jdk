@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 6175517 6278707 6318827 6305746 6392303 6600709
+ * @bug 6175517 6278707 6318827 6305746 6392303 6600709 8010285
  * @summary General MXBean test.
  * @author Eamonn McManus
+ * @author Jaroslav Bachorik
  * @run clean MXBeanTest MerlinMXBean TigerMXBean
  * @run build MXBeanTest MerlinMXBean TigerMXBean
  * @run main MXBeanTest
@@ -51,6 +52,7 @@ import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
 import javax.management.MBeanServerInvocationHandler;
+import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.StandardMBean;
 import javax.management.openmbean.ArrayType;
@@ -75,6 +77,8 @@ public class MXBeanTest {
         testExplicitMXBean();
         testSubclassMXBean();
         testIndirectMXBean();
+        testNonCompliantMXBean("Private", new Private());
+        testNonCompliantMXBean("NonCompliant", new NonCompliant());
 
         if (failures == 0)
             System.out.println("Test passed");
@@ -83,6 +87,39 @@ public class MXBeanTest {
     }
 
     private static int failures = 0;
+
+    private static interface PrivateMXBean {
+        public int[] getInts();
+    }
+
+    public static class Private implements PrivateMXBean {
+        public int[] getInts() {
+            return new int[]{1,2,3};
+        }
+    }
+
+    public static interface NonCompliantMXBean {
+        public boolean getInt();
+        public boolean isInt();
+        public void setInt(int a);
+        public void setInt(long b);
+    }
+
+    public static class NonCompliant implements NonCompliantMXBean {
+        public boolean getInt() {
+            return false;
+        }
+
+        public boolean isInt() {
+            return true;
+        }
+
+        public void setInt(int a) {
+        }
+
+        public void setInt(long b) {
+        }
+    }
 
     public static interface ExplicitMXBean {
         public int[] getInts();
@@ -107,6 +144,19 @@ public class MXBeanTest {
     public static class Indirect implements IndirectInterface {
         public int[] getInts() {
             return new int[] {1, 2, 3};
+        }
+    }
+
+    private static void testNonCompliantMXBean(String type, Object bean) throws Exception {
+        System.out.println(type + " MXBean test...");
+        MBeanServer mbs = MBeanServerFactory.newMBeanServer();
+        ObjectName on = new ObjectName("test:type=" + type);
+        try {
+            mbs.registerMBean(bean, on);
+            failure(bean.getClass().getInterfaces()[0].getName() + " is not a compliant "
+                + "MXBean interface");
+        } catch (NotCompliantMBeanException e) {
+            success("Non-compliant MXBean not registered");
         }
     }
 

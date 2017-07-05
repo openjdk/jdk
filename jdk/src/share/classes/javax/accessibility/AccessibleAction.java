@@ -54,7 +54,7 @@ public interface AccessibleAction {
      * @since 1.5
      */
     public static final String TOGGLE_EXPAND =
-        new String ("toggle expand");
+        new String ("toggleexpand");
 
     /**
      * An action which increments a value.

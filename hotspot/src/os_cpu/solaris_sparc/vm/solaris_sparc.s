@@ -21,47 +21,6 @@
 !! questions.
 !!
 
-    !! Prototype: int SafeFetch32 (int * adr, int ErrValue)
-    !! The "ld" at Fetch32 is potentially faulting instruction.
-    !! If the instruction traps the trap handler will arrange
-    !! for control to resume at Fetch32Resume.  
-    !! By convention with the trap handler we ensure there is a non-CTI
-    !! instruction in the trap shadow.  
-    !!
-    !! The reader might be tempted to move this service to .il.
-    !! Don't.  Sun's CC back-end reads and optimize code emitted 
-    !! by the .il "call", in some cases optimizing the code, completely eliding it,
-    !! or by moving the code from the "call site". 
-        
-     !! ASM better know we may use G6 for our own purposes
-    .register %g6, #ignore
-        
-    .globl  SafeFetch32
-    .align  32
-    .global Fetch32PFI, Fetch32Resume 
-SafeFetch32:
-    mov     %o0, %g1
-    mov     %o1, %o0
-Fetch32PFI:
-    ld      [%g1], %o0          !! <-- Potentially faulting instruction
-Fetch32Resume:
-    nop
-    retl
-    nop
-
-    .globl  SafeFetchN
-    .align  32
-    .globl  FetchNPFI, FetchNResume
-SafeFetchN:
-    mov     %o0, %g1
-    mov     %o1, %o0
-FetchNPFI:
-    ldn     [%g1], %o0
-FetchNResume:
-    nop
-    retl
-    nop
-
     !! Possibilities:
     !! -- membar
     !! -- CAS (SP + BIAS, G0, G0)

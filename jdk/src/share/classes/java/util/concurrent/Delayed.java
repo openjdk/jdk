@@ -40,8 +40,8 @@ package java.util.concurrent;
  * acted upon after a given delay.
  *
  * <p>An implementation of this interface must define a
- * <tt>compareTo</tt> method that provides an ordering consistent with
- * its <tt>getDelay</tt> method.
+ * {@code compareTo} method that provides an ordering consistent with
+ * its {@code getDelay} method.
  *
  * @since 1.5
  * @author Doug Lea

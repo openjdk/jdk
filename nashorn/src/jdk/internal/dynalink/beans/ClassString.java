@@ -155,8 +155,8 @@ final class ClassString {
     }
 
     List<MethodHandle> getMaximallySpecifics(List<MethodHandle> methods, LinkerServices linkerServices, boolean varArg) {
-        return MaximallySpecific.getMaximallySpecificMethods(getApplicables(methods, linkerServices, varArg), varArg,
-                classes, linkerServices);
+        return MaximallySpecific.getMaximallySpecificMethodHandles(getApplicables(methods, linkerServices, varArg),
+                varArg, classes, linkerServices);
     }
 
     /**

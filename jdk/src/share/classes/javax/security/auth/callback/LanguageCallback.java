@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.util.Locale;
 
 /**
  * <p> Underlying security services instantiate and pass a
- * <code>LanguageCallback</code> to the <code>handle</code>
- * method of a <code>CallbackHandler</code> to retrieve the <code>Locale</code>
+ * {@code LanguageCallback} to the {@code handle}
+ * method of a {@code CallbackHandler} to retrieve the {@code Locale}
  * used for localizing text.
  *
  * @see javax.security.auth.callback.CallbackHandler
@@ -46,16 +46,16 @@ public class LanguageCallback implements Callback, java.io.Serializable {
     private Locale locale;
 
     /**
-     * Construct a <code>LanguageCallback</code>.
+     * Construct a {@code LanguageCallback}.
      */
     public LanguageCallback() { }
 
     /**
-     * Set the retrieved <code>Locale</code>.
+     * Set the retrieved {@code Locale}.
      *
      * <p>
      *
-     * @param locale the retrieved <code>Locale</code>.
+     * @param locale the retrieved {@code Locale}.
      *
      * @see #getLocale
      */
@@ -64,12 +64,12 @@ public class LanguageCallback implements Callback, java.io.Serializable {
     }
 
     /**
-     * Get the retrieved <code>Locale</code>.
+     * Get the retrieved {@code Locale}.
      *
      * <p>
      *
-     * @return the retrieved <code>Locale</code>, or null
-     *          if no <code>Locale</code> could be retrieved.
+     * @return the retrieved {@code Locale}, or null
+     *          if no {@code Locale} could be retrieved.
      *
      * @see #setLocale
      */

@@ -358,10 +358,10 @@ class FileOutputStream extends OutputStream
 
     /**
      * Returns the unique {@link java.nio.channels.FileChannel FileChannel}
-     * object associated with this file output stream. </p>
+     * object associated with this file output stream.
      *
      * <p> The initial {@link java.nio.channels.FileChannel#position()
-     * </code>position<code>} of the returned channel will be equal to the
+     * position} of the returned channel will be equal to the
      * number of bytes written to the file so far unless this stream is in
      * append mode, in which case it will be equal to the size of the file.
      * Writing bytes to this stream will increment the channel's position

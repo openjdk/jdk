@@ -546,14 +546,27 @@ public class Lexer extends Scanner {
     }
 
     /**
+     * interface to receive line information for multi-line literals.
+     */
+    protected interface LineInfoReceiver {
+        /**
+         * Receives line information
+         * @param line last line number
+         * @param linePosition position of last line
+         */
+        public void lineInfo(int line, int linePosition);
+    }
+
+    /**
      * Check whether the given token represents the beginning of a literal. If so scan
      * the literal and return <tt>true</tt>, otherwise return false.
      *
      * @param token the token.
      * @param startTokenType the token type.
+     * @parasm lir LineInfoReceiver that receives line info for multi-line string literals.
      * @return True if a literal beginning with startToken was found and scanned.
      */
-    protected boolean scanLiteral(final long token, final TokenType startTokenType) {
+    protected boolean scanLiteral(final long token, final TokenType startTokenType, final LineInfoReceiver lir) {
         // Check if it can be a literal.
         if (!canStartLiteral(startTokenType)) {
             return false;
@@ -569,7 +582,7 @@ public class Lexer extends Scanner {
             return scanRegEx();
         } else if (ch0 == '<') {
             if (ch1 == '<') {
-                return scanHereString();
+                return scanHereString(lir);
             } else if (Character.isJavaIdentifierStart(ch1)) {
                 return scanXMLLiteral();
             }
@@ -1417,7 +1430,7 @@ public class Lexer extends Scanner {
      *
      * @return TRUE if is a here string.
      */
-    private boolean scanHereString() {
+    private boolean scanHereString(final LineInfoReceiver lir) {
         assert ch0 == '<' && ch1 == '<';
         if (scripting) {
             // Record beginning of here string.
@@ -1446,7 +1459,13 @@ public class Lexer extends Scanner {
 
             // Record rest of line.
             final State restState = saveState();
+            // keep line number updated
+            int lastLine = line;
+            int lastLinePosition = linePosition;
+
             skipLine(false);
+            lastLine++;
+            lastLinePosition = position;
             restState.setLimit(position);
 
             // Record beginning of string.
@@ -1463,8 +1482,13 @@ public class Lexer extends Scanner {
                 }
 
                 skipLine(false);
+                lastLine++;
+                lastLinePosition = position;
                 stringEnd = position;
             }
+
+            // notify last line information
+            lir.lineInfo(lastLine, lastLinePosition);
 
             // Record end of string.
             stringState.setLimit(stringEnd);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,16 @@ import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 
 /**
- * An interface for creating instances of <tt>SaslClient</tt>.
+ * An interface for creating instances of {@code SaslClient}.
  * A class that implements this interface
  * must be thread-safe and handle multiple simultaneous
  * requests. It must also have a public constructor that accepts no
  * argument.
  *<p>
  * This interface is not normally accessed directly by a client, which will use the
- * <tt>Sasl</tt> static methods
+ * {@code Sasl} static methods
  * instead. However, a particular environment may provide and install a
- * new or different <tt>SaslClientFactory</tt>.
+ * new or different {@code SaslClientFactory}.
  *
  * @since 1.5
  *
@@ -66,7 +66,7 @@ public abstract interface SaslClientFactory {
      * of the server to authenticate to.
      * @param props The possibly null set of properties used to select the SASL
      * mechanism and to configure the authentication exchange of the selected
-     * mechanism. See the <tt>Sasl</tt> class for a list of standard properties.
+     * mechanism. See the {@code Sasl} class for a list of standard properties.
      * Other, possibly mechanism-specific, properties can be included.
      * Properties not relevant to the selected mechanism are ignored,
      * including any map entries with non-String keys.
@@ -75,16 +75,16 @@ public abstract interface SaslClientFactory {
      * mechanisms to get further information from the application/library
      * to complete the authentication. For example, a SASL mechanism might
      * require the authentication ID, password and realm from the caller.
-     * The authentication ID is requested by using a <tt>NameCallback</tt>.
-     * The password is requested by using a <tt>PasswordCallback</tt>.
-     * The realm is requested by using a <tt>RealmChoiceCallback</tt> if there is a list
-     * of realms to choose from, and by using a <tt>RealmCallback</tt> if
+     * The authentication ID is requested by using a {@code NameCallback}.
+     * The password is requested by using a {@code PasswordCallback}.
+     * The realm is requested by using a {@code RealmChoiceCallback} if there is a list
+     * of realms to choose from, and by using a {@code RealmCallback} if
      * the realm must be entered.
      *
-     *@return A possibly null <tt>SaslClient</tt> created using the parameters
-     * supplied. If null, this factory cannot produce a <tt>SaslClient</tt>
+     *@return A possibly null {@code SaslClient} created using the parameters
+     * supplied. If null, this factory cannot produce a {@code SaslClient}
      * using the parameters supplied.
-     *@exception SaslException If cannot create a <tt>SaslClient</tt> because
+     *@exception SaslException If cannot create a {@code SaslClient} because
      * of an error.
      */
     public abstract SaslClient createSaslClient(
@@ -99,12 +99,12 @@ public abstract interface SaslClientFactory {
      * Returns an array of names of mechanisms that match the specified
      * mechanism selection policies.
      * @param props The possibly null set of properties used to specify the
-     * security policy of the SASL mechanisms. For example, if <tt>props</tt>
-     * contains the <tt>Sasl.POLICY_NOPLAINTEXT</tt> property with the value
-     * <tt>"true"</tt>, then the factory must not return any SASL mechanisms
+     * security policy of the SASL mechanisms. For example, if {@code props}
+     * contains the {@code Sasl.POLICY_NOPLAINTEXT} property with the value
+     * {@code "true"}, then the factory must not return any SASL mechanisms
      * that are susceptible to simple plain passive attacks.
-     * See the <tt>Sasl</tt> class for a complete list of policy properties.
-     * Non-policy related properties, if present in <tt>props</tt>, are ignored,
+     * See the {@code Sasl} class for a complete list of policy properties.
+     * Non-policy related properties, if present in {@code props}, are ignored,
      * including any map entries with non-String keys.
      * @return A non-null array containing a IANA-registered SASL mechanism names.
      */

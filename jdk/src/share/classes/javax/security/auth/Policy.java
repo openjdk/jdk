@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@ import sun.security.util.Debug;
  * <p> This is an abstract class for representing the system policy for
  * Subject-based authorization.  A subclass implementation
  * of this class provides a means to specify a Subject-based
- * access control <code>Policy</code>.
+ * access control {@code Policy}.
  *
- * <p> A <code>Policy</code> object can be queried for the set of
+ * <p> A {@code Policy} object can be queried for the set of
  * Permissions granted to code running as a
- * <code>Principal</code> in the following manner:
+ * {@code Principal} in the following manner:
  *
  * <pre>
  *      policy = Policy.getPolicy();
@@ -44,20 +44,20 @@ import sun.security.util.Debug;
  *                                                      codeSource);
  * </pre>
  *
- * The <code>Policy</code> object consults the local policy and returns
- * and appropriate <code>Permissions</code> object with the
+ * The {@code Policy} object consults the local policy and returns
+ * and appropriate {@code Permissions} object with the
  * Permissions granted to the Principals associated with the
  * provided <i>subject</i>, and granted to the code specified
  * by the provided <i>codeSource</i>.
  *
- * <p> A <code>Policy</code> contains the following information.
+ * <p> A {@code Policy} contains the following information.
  * Note that this example only represents the syntax for the default
- * <code>Policy</code> implementation. Subclass implementations of this class
+ * {@code Policy} implementation. Subclass implementations of this class
  * may implement alternative syntaxes and may retrieve the
- * <code>Policy</code> from any source such as files, databases,
+ * {@code Policy} from any source such as files, databases,
  * or servers.
  *
- * <p> Each entry in the <code>Policy</code> is represented as
+ * <p> Each entry in the {@code Policy} is represented as
  * a <b><i>grant</i></b> entry.  Each <b><i>grant</i></b> entry
  * specifies a codebase, code signers, and Principals triplet,
  * as well as the Permissions granted to that triplet.
@@ -84,23 +84,23 @@ import sun.security.util.Debug;
  * </pre>
  *
  * This <b><i>grant</i></b> entry specifies that code from "foo.com",
- * signed by "foo', and running as a <code>SolarisPrincipal</code> with the
- * name, duke, has one <code>Permission</code>.  This <code>Permission</code>
+ * signed by "foo', and running as a {@code SolarisPrincipal} with the
+ * name, duke, has one {@code Permission}.  This {@code Permission}
  * permits the executing code to read and write files in the directory,
  * "/home/duke".
  *
- * <p> To "run" as a particular <code>Principal</code>,
- * code invokes the <code>Subject.doAs(subject, ...)</code> method.
+ * <p> To "run" as a particular {@code Principal},
+ * code invokes the {@code Subject.doAs(subject, ...)} method.
  * After invoking that method, the code runs as all the Principals
- * associated with the specified <code>Subject</code>.
- * Note that this <code>Policy</code> (and the Permissions
- * granted in this <code>Policy</code>) only become effective
- * after the call to <code>Subject.doAs</code> has occurred.
+ * associated with the specified {@code Subject}.
+ * Note that this {@code Policy} (and the Permissions
+ * granted in this {@code Policy}) only become effective
+ * after the call to {@code Subject.doAs} has occurred.
  *
  * <p> Multiple Principals may be listed within one <b><i>grant</i></b> entry.
  * All the Principals in the grant entry must be associated with
- * the <code>Subject</code> provided to <code>Subject.doAs</code>
- * for that <code>Subject</code> to be granted the specified Permissions.
+ * the {@code Subject} provided to {@code Subject.doAs}
+ * for that {@code Subject} to be granted the specified Permissions.
  *
  * <pre>
  *      grant Principal com.sun.security.auth.SolarisPrincipal "duke",
@@ -115,7 +115,7 @@ import sun.security.util.Debug;
  * as well as permission to make socket connections to "duke.com".
  *
  * <p> Note that non Principal-based grant entries are not permitted
- * in this <code>Policy</code>.  Therefore, grant entries such as:
+ * in this {@code Policy}.  Therefore, grant entries such as:
  *
  * <pre>
  *      grant CodeBase "foo.com", Signedby "foo" {
@@ -124,7 +124,7 @@ import sun.security.util.Debug;
  * </pre>
  *
  * are rejected.  Such permission must be listed in the
- * <code>java.security.Policy</code>.
+ * {@code java.security.Policy}.
  *
  * <p> The default {@code Policy} implementation can be changed by
  * setting the value of the {@code auth.policy.provider} security property to
@@ -179,14 +179,14 @@ public abstract class Policy {
     /**
      * Returns the installed Policy object.
      * This method first calls
-     * <code>SecurityManager.checkPermission</code> with the
-     * <code>AuthPermission("getPolicy")</code> permission
+     * {@code SecurityManager.checkPermission} with the
+     * {@code AuthPermission("getPolicy")} permission
      * to ensure the caller has permission to get the Policy object.
      *
      * <p>
      *
      * @return the installed Policy.  The return value cannot be
-     *          <code>null</code>.
+     *          {@code null}.
      *
      * @exception java.lang.SecurityException if the current thread does not
      *      have permission to get the Policy object.
@@ -252,8 +252,8 @@ public abstract class Policy {
 
     /**
      * Sets the system-wide Policy object. This method first calls
-     * <code>SecurityManager.checkPermission</code> with the
-     * <code>AuthPermission("setPolicy")</code>
+     * {@code SecurityManager.checkPermission} with the
+     * {@code AuthPermission("setPolicy")}
      * permission to ensure the caller has permission to set the Policy.
      *
      * <p>
@@ -313,25 +313,25 @@ public abstract class Policy {
 
     /**
      * Retrieve the Permissions granted to the Principals associated with
-     * the specified <code>CodeSource</code>.
+     * the specified {@code CodeSource}.
      *
      * <p>
      *
-     * @param subject the <code>Subject</code>
+     * @param subject the {@code Subject}
      *                  whose associated Principals,
      *                  in conjunction with the provided
-     *                  <code>CodeSource</code>, determines the Permissions
+     *                  {@code CodeSource}, determines the Permissions
      *                  returned by this method.  This parameter
-     *                  may be <code>null</code>. <p>
+     *                  may be {@code null}. <p>
      *
-     * @param cs the code specified by its <code>CodeSource</code>
+     * @param cs the code specified by its {@code CodeSource}
      *                  that determines, in conjunction with the provided
-     *                  <code>Subject</code>, the Permissions
+     *                  {@code Subject}, the Permissions
      *                  returned by this method.  This parameter may be
-     *                  <code>null</code>.
+     *                  {@code null}.
      *
      * @return the Collection of Permissions granted to all the
-     *                  <code>Subject</code> and code specified in
+     *                  {@code Subject} and code specified in
      *                  the provided <i>subject</i> and <i>cs</i>
      *                  parameters.
      */
@@ -345,7 +345,7 @@ public abstract class Policy {
      * <p>This method causes this object to refresh/reload its current
      * Policy. This is implementation-dependent.
      * For example, if the Policy object is stored in
-     * a file, calling <code>refresh</code> will cause the file to be re-read.
+     * a file, calling {@code refresh} will cause the file to be re-read.
      *
      * <p>
      *

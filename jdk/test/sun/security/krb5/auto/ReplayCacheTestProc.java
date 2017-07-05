@@ -98,6 +98,14 @@ public class ReplayCacheTestProc {
             kdc.writeKtab(OneKDC.KTAB);
             KDC.saveConfig(OneKDC.KRB5_CONF, kdc);
 
+            if (mode != -1) {
+                // A special native server to check basic sanity
+                if (ns(-1).waitFor() != 0) {
+                    Proc.d("Native mode sanity check failed, revert to java");
+                    mode = -1;
+                }
+            }
+
             pc = Proc.create("ReplayCacheTestProc").debug("C")
                     .args("client")
                     .start();
@@ -164,6 +172,11 @@ public class ReplayCacheTestProc {
                         result[i].csize);
             }
             if (!finalOut) throw new Exception();
+        } else if (args[0].equals("N-1")) {
+            // Native mode sanity check
+            Proc.d("Detect start");
+            Context s = Context.fromUserKtab("*", OneKDC.KTAB, true);
+            s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
         } else if (args[0].equals("client")) {
             while (true) {
                 String title = Proc.textIn();

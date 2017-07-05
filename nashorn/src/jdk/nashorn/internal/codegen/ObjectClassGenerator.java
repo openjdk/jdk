@@ -74,11 +74,6 @@ public final class ObjectClassGenerator {
     static final int FIELD_PADDING  = 4;
 
     /**
-     * Rounding when calculating the number of fields.
-     */
-    static final int FIELD_ROUNDING = 4;
-
-    /**
      * Debug field logger
      * Should we print debugging information for fields when they are generated and getters/setters are called?
      */
@@ -325,7 +320,6 @@ public final class ObjectClassGenerator {
         final List<String> initFields   = addFields(classEmitter, fieldCount);
 
         final MethodEmitter init = newInitMethod(classEmitter);
-        initializeToUndefined(init, className, initFields);
         init.returnVoid();
         init.end();
 
@@ -441,13 +435,13 @@ public final class ObjectClassGenerator {
      * @return Open method emitter.
      */
     private static MethodEmitter newInitScopeWithArgumentsMethod(final ClassEmitter classEmitter) {
-        final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, Object.class);
+        final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
         init.load(Type.OBJECT, INIT_MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.load(Type.OBJECT, INIT_ARGUMENTS.slot());
-        init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class, Object.class));
+        init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class, ScriptObject.class));
 
         return init;
     }
@@ -707,6 +701,15 @@ public final class ObjectClassGenerator {
             assert false;
             return null;
         }
+    }
+
+    /**
+     * Add padding to field count to avoid creating too many classes and have some spare fields
+     * @param count the field count
+     * @return the padded field count
+     */
+    static int getPaddedFieldCount(final int count) {
+        return count / FIELD_PADDING * FIELD_PADDING + FIELD_PADDING;
     }
 
     //

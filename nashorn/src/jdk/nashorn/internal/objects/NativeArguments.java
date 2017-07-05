@@ -31,8 +31,10 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -41,8 +43,6 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * ECMA 10.6 Arguments Object.
@@ -64,10 +64,14 @@ public final class NativeArguments extends ScriptObject {
     private static final PropertyMap map$;
 
     static {
-        PropertyMap map = PropertyMap.newMap(NativeArguments.class);
-        map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
-        map = Lookup.newProperty(map, "callee", Property.NOT_ENUMERABLE, G$CALLEE, S$CALLEE);
-        map$ = map;
+        final ArrayList<Property> properties = new ArrayList<>(2);
+        properties.add(AccessorProperty.create("length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH));
+        properties.add(AccessorProperty.create("callee", Property.NOT_ENUMERABLE, G$CALLEE, S$CALLEE));
+        map$ = PropertyMap.newMap(properties).setIsShared();
+    }
+
+    static PropertyMap getInitialMap() {
+        return map$;
     }
 
     private Object length;
@@ -76,8 +80,8 @@ public final class NativeArguments extends ScriptObject {
     // This is lazily initialized - only when delete is invoked at all
     private BitSet deleted;
 
-    NativeArguments(final ScriptObject proto, final Object[] arguments, final Object callee, final int numParams) {
-        super(proto, map$);
+    NativeArguments(final Object[] arguments, final Object callee, final int numParams, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         setIsArguments();
 
         setArray(ArrayData.allocate(arguments));
@@ -550,8 +554,13 @@ public final class NativeArguments extends ScriptObject {
     public static ScriptObject allocate(final Object[] arguments, final ScriptFunction callee, final int numParams) {
         // Strict functions won't always have a callee for arguments, and will pass null instead.
         final boolean isStrict = callee == null || callee.isStrict();
-        final ScriptObject proto = Global.objectPrototype();
-        return isStrict ? new NativeStrictArguments(proto, arguments, numParams) : new NativeArguments(proto, arguments, callee, numParams);
+        final Global global = Global.instance();
+        final ScriptObject proto = global.getObjectPrototype();
+        if (isStrict) {
+            return new NativeStrictArguments(arguments, numParams, proto, global.getStrictArgumentsMap());
+        } else {
+            return new NativeArguments(arguments, callee, numParams, proto, global.getArgumentsMap());
+        }
     }
 
     /**
@@ -623,11 +632,6 @@ public final class NativeArguments extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(NativeArguments.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeArguments.class, name, MH.type(rtype, types));
     }
-
 }
