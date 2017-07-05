@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public final class RIXMLProvider extends SyncProvider {
     /**
      * The vendor name of this SyncProvider implementation.
      */
-    private String vendorName = "Sun Microsystems Inc.";
+    private String vendorName = "Oracle Corporation";
 
     /**
      * The version number of this SyncProvider implementation.

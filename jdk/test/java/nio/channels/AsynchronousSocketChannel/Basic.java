@@ -121,8 +121,20 @@ public class Basic {
         AsynchronousSocketChannel ch = AsynchronousSocketChannel.open()
             .setOption(SO_RCVBUF, 128*1024)
             .setOption(SO_SNDBUF, 128*1024)
-            .setOption(SO_REUSEADDR, true)
-            .bind(new InetSocketAddress(0));
+            .setOption(SO_REUSEADDR, true);
+
+        // check SO_SNDBUF/SO_RCVBUF limits
+        int before, after;
+        before = ch.getOption(SO_SNDBUF);
+        after = ch.setOption(SO_SNDBUF, Integer.MAX_VALUE).getOption(SO_SNDBUF);
+        if (after < before)
+            throw new RuntimeException("setOption caused SO_SNDBUF to decrease");
+        before = ch.getOption(SO_RCVBUF);
+        after = ch.setOption(SO_RCVBUF, Integer.MAX_VALUE).getOption(SO_RCVBUF);
+        if (after < before)
+            throw new RuntimeException("setOption caused SO_RCVBUF to decrease");
+
+        ch.bind(new InetSocketAddress(0));
 
         // default values
         if ((Boolean)ch.getOption(SO_KEEPALIVE))

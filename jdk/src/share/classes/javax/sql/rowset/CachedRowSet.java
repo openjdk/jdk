@@ -39,7 +39,7 @@ import javax.sql.rowset.spi.*;
  * <code>CachedRowSet</code> must implement.
  * <P>
  * The reference implementation of the <code>CachedRowSet</code> interface provided
- * by Sun Microsystems is a standard implementation. Developers may use this implementation
+ * by Oracle Corporation is a standard implementation. Developers may use this implementation
  * just as it is, they may extend it, or they may choose to write their own implementations
  * of this interface.
  * <P>
@@ -1623,4 +1623,3 @@ public interface CachedRowSet extends RowSet, Joinable {
     public boolean previousPage() throws SQLException;
 
 }
-

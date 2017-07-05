@@ -569,6 +569,9 @@ public final class Locale implements Cloneable, Serializable {
      * @exception NullPointerException thrown if any argument is null.
      */
     public Locale(String language, String country, String variant) {
+        if (language== null || country == null || variant == null) {
+            throw new NullPointerException();
+        }
         _baseLocale = BaseLocale.getInstance(convertOldISOCodes(language), "", country, variant);
         _extensions = getCompatibilityExtensions(language, "", country, variant);
     }

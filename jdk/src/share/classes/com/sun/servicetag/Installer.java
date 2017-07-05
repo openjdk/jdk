@@ -43,7 +43,8 @@ public class Installer {
         "servicetag.dir.path";
     private static String SVCTAG_ENABLE_REGISTRATION =
         "servicetag.registration.enabled";
-    private final static String SUN_VENDOR = "Sun Microsystems";
+    private final static String ORACLE = "Oracle";
+    private final static String SUN = "Sun Microsystems";
     private final static String REGISTRATION_XML = "registration.xml";
     private final static String SERVICE_TAG_FILE = "servicetag";
     private final static String REGISTRATION_HTML_NAME = "register";
@@ -84,9 +85,10 @@ public class Installer {
 
     // Implementation of ServiceTag.getJavaServiceTag(String) method
     static ServiceTag getJavaServiceTag(String source) throws IOException {
-        if (!System.getProperty("java.vendor").startsWith(SUN_VENDOR)) {
+        String vendor = System.getProperty("java.vendor", "");
+        if (!vendor.startsWith(SUN) && !vendor.startsWith(ORACLE)) {
             // Products bundling this implementation may run on
-            // Mac OS which is not a Sun JDK
+            // Mac OS which is not a Sun/Oracle JDK
             return null;
         }
         boolean cleanup = false;
@@ -365,7 +367,7 @@ public class Installer {
                                       props.getProperty("servicetag.parent.name"),
                                       props.getProperty("servicetag.parent.urn"),
                                       getProductDefinedId(),
-                                      SUN_VENDOR,
+                                      System.getProperty("java.vendor"),
                                       System.getProperty("os.arch"),
                                       getZoneName(),
                                       svcTagSource);

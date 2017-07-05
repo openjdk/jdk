@@ -1603,6 +1603,7 @@ public class BasicScrollBarUI
                 BoundedRangeModel newModel = (BoundedRangeModel)e.getNewValue();
                 oldModel.removeChangeListener(modelListener);
                 newModel.addChangeListener(modelListener);
+                scrollBarValue = scrollbar.getValue();
                 scrollbar.repaint();
                 scrollbar.revalidate();
             } else if ("orientation" == propertyName) {

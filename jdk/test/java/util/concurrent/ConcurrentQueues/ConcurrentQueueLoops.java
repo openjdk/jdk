@@ -55,6 +55,7 @@ public class ConcurrentQueueLoops {
 
     Collection<Queue<Integer>> concurrentQueues() {
         List<Queue<Integer>> queues = new ArrayList<Queue<Integer>>();
+        queues.add(new ConcurrentLinkedDeque<Integer>());
         queues.add(new ConcurrentLinkedQueue<Integer>());
         queues.add(new ArrayBlockingQueue<Integer>(items, false));
         //queues.add(new ArrayBlockingQueue<Integer>(count, true));
@@ -105,7 +106,7 @@ public class ConcurrentQueueLoops {
         final Queue<Integer> queue;
         final CyclicBarrier barrier;
         int items;
-        Stage (Queue<Integer> q, CyclicBarrier b, int items) {
+        Stage(Queue<Integer> q, CyclicBarrier b, int items) {
             queue = q;
             barrier = b;
             this.items = items;
