@@ -279,7 +279,7 @@ inline void CMTask::push(oop obj) {
   assert(_nextMarkBitMap->isMarked(objAddr), "invariant");
 
   if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%d] pushing "PTR_FORMAT, _task_id, (void*) obj);
+    gclog_or_tty->print_cr("[%u] pushing "PTR_FORMAT, _worker_id, (void*) obj);
   }
 
   if (!_task_queue->push(obj)) {
@@ -287,9 +287,9 @@ inline void CMTask::push(oop obj) {
     // to the global stack.
 
     if (_cm->verbose_medium()) {
-      gclog_or_tty->print_cr("[%d] task queue overflow, "
+      gclog_or_tty->print_cr("[%u] task queue overflow, "
                              "moving entries to the global stack",
-                             _task_id);
+                             _worker_id);
     }
     move_entries_to_global_stack();
 
@@ -318,8 +318,8 @@ inline void CMTask::push(oop obj) {
 
 inline void CMTask::deal_with_reference(oop obj) {
   if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%d] we're dealing with reference = "PTR_FORMAT,
-                           _task_id, (void*) obj);
+    gclog_or_tty->print_cr("[%u] we're dealing with reference = "PTR_FORMAT,
+                           _worker_id, (void*) obj);
   }
 
   ++_refs_reached;
@@ -335,8 +335,8 @@ inline void CMTask::deal_with_reference(oop obj) {
       HeapRegion* hr = _g1h->heap_region_containing_raw(obj);
       if (!hr->obj_allocated_since_next_marking(obj)) {
         if (_cm->verbose_high()) {
-          gclog_or_tty->print_cr("[%d] "PTR_FORMAT" is not considered marked",
-                                 _task_id, (void*) obj);
+          gclog_or_tty->print_cr("[%u] "PTR_FORMAT" is not considered marked",
+                                 _worker_id, (void*) obj);
         }
 
         // we need to mark it first
@@ -350,8 +350,8 @@ inline void CMTask::deal_with_reference(oop obj) {
 
           if (_finger != NULL && objAddr < _finger) {
             if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%d] below the local finger ("PTR_FORMAT"), "
-                                     "pushing it", _task_id, _finger);
+              gclog_or_tty->print_cr("[%u] below the local finger ("PTR_FORMAT"), "
+                                     "pushing it", _worker_id, _finger);
             }
             push(obj);
           } else if (_curr_region != NULL && objAddr < _region_limit) {
@@ -367,9 +367,9 @@ inline void CMTask::deal_with_reference(oop obj) {
             // correctness problems.
 
             if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%d] below the global finger "
+              gclog_or_tty->print_cr("[%u] below the global finger "
                                      "("PTR_FORMAT"), pushing it",
-                                     _task_id, global_finger);
+                                     _worker_id, global_finger);
             }
             push(obj);
           } else {
@@ -382,9 +382,9 @@ inline void CMTask::deal_with_reference(oop obj) {
             // see long comment above
 
             if (_cm->verbose_high()) {
-              gclog_or_tty->print_cr("[%d] below the global finger "
+              gclog_or_tty->print_cr("[%u] below the global finger "
                                      "("PTR_FORMAT"), pushing it",
-                                     _task_id, global_finger);
+                                     _worker_id, global_finger);
             }
             push(obj);
           }

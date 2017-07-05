@@ -110,11 +110,11 @@ class Handle VALUE_OBJ_CLASS_SPEC {
     /* Constructors */                           \
     type##Handle ()                              : Handle()                 {} \
     type##Handle (type##Oop obj) : Handle((oop)obj) {                         \
-      assert(SharedSkipVerify || is_null() || ((oop)obj)->is_a(),             \
+      assert(is_null() || ((oop)obj)->is_a(),                                 \
              "illegal type");                                                 \
     }                                                                         \
     type##Handle (Thread* thread, type##Oop obj) : Handle(thread, (oop)obj) { \
-      assert(SharedSkipVerify || is_null() || ((oop)obj)->is_a(), "illegal type");  \
+      assert(is_null() || ((oop)obj)->is_a(), "illegal type");                \
     }                                                                         \
     \
     /* Operators for ease of use */              \
@@ -201,11 +201,11 @@ class instanceKlassHandle : public KlassHandle {
   /* Constructors */
   instanceKlassHandle () : KlassHandle() {}
   instanceKlassHandle (const Klass* k) : KlassHandle(k) {
-    assert(SharedSkipVerify || k == NULL || k->oop_is_instance(),
+    assert(k == NULL || k->oop_is_instance(),
            "illegal type");
   }
   instanceKlassHandle (Thread* thread, const Klass* k) : KlassHandle(thread, k) {
-    assert(SharedSkipVerify || k == NULL || k->oop_is_instance(),
+    assert(k == NULL || k->oop_is_instance(),
            "illegal type");
   }
   /* Access to klass part */
