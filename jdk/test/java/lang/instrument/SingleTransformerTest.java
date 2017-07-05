@@ -27,7 +27,6 @@
  * @summary simple test with one transformer (makes sure it gets called)
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build SingleTransformerTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar SingleTransformerTest SingleTransformerTest

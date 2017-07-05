@@ -27,7 +27,6 @@
  * @summary make sure addTransformer(null) throws what it should
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build NullTransformerAddTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar NullTransformerAddTest NullTransformerAddTest

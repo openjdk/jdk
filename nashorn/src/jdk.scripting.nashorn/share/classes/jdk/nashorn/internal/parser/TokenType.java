@@ -183,6 +183,10 @@ public enum TokenType {
     XML            (LITERAL,  null),
     OBJECT         (LITERAL,  null),
     ARRAY          (LITERAL,  null),
+    TEMPLATE       (LITERAL,  null),
+    TEMPLATE_HEAD  (LITERAL,  null),
+    TEMPLATE_MIDDLE(LITERAL,  null),
+    TEMPLATE_TAIL  (LITERAL,  null),
 
     COMMALEFT      (IR,       null),
     DECPOSTFIX     (IR,       null),
