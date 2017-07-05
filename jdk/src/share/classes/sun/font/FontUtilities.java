@@ -30,6 +30,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.lang.ref.SoftReference;
+import java.util.concurrent.ConcurrentHashMap;
 import java.security.AccessController;
 
 import java.security.PrivilegedAction;
@@ -383,6 +385,10 @@ public final class FontUtilities {
      * }
      * return fuir;
      */
+    private static volatile
+        SoftReference<ConcurrentHashMap<PhysicalFont, CompositeFont>>
+        compMapRef = new SoftReference(null);
+
     public static FontUIResource getCompositeFontUIResource(Font font) {
 
         FontUIResource fuir = new FontUIResource(font);
@@ -402,12 +408,22 @@ public final class FontUtilities {
 
         FontManager fm = FontManagerFactory.getInstance();
         CompositeFont dialog2D =
-          (CompositeFont) fm.findFont2D("dialog", font.getStyle(), FontManager.NO_FALLBACK);
+          (CompositeFont) fm.findFont2D("dialog", font.getStyle(),
+                                        FontManager.NO_FALLBACK);
         if (dialog2D == null) { /* shouldn't happen */
             return fuir;
         }
         PhysicalFont physicalFont = (PhysicalFont)font2D;
-        CompositeFont compFont = new CompositeFont(physicalFont, dialog2D);
+        ConcurrentHashMap<PhysicalFont, CompositeFont> compMap = compMapRef.get();
+        if (compMap == null) { // Its been collected.
+            compMap = new ConcurrentHashMap<PhysicalFont, CompositeFont>();
+            compMapRef = new SoftReference(compMap);
+        }
+        CompositeFont compFont = compMap.get(physicalFont);
+        if (compFont == null) {
+            compFont = new CompositeFont(physicalFont, dialog2D);
+            compMap.put(physicalFont, compFont);
+        }
         FontAccess.getFontAccess().setFont2D(fuir, compFont.handle);
         /* marking this as a created font is needed as only created fonts
          * copy their creator's handles.

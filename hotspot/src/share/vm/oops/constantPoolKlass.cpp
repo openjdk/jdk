@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,26 +55,35 @@
 constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS) {
   int size = constantPoolOopDesc::object_size(length);
   KlassHandle klass (THREAD, as_klassOop());
-  constantPoolOop c =
-    (constantPoolOop)CollectedHeap::permanent_obj_allocate(klass, size, CHECK_NULL);
+  assert(klass()->is_oop(), "Can't be null, else handlizing of c below won't work");
+  constantPoolHandle pool;
+  {
+    constantPoolOop c =
+      (constantPoolOop)CollectedHeap::permanent_obj_allocate(klass, size, CHECK_NULL);
+    assert(c->klass_or_null() != NULL, "Handlizing below won't work");
+    pool = constantPoolHandle(THREAD, c);
+  }
 
-  c->set_length(length);
-  c->set_tags(NULL);
-  c->set_cache(NULL);
-  c->set_operands(NULL);
-  c->set_pool_holder(NULL);
-  c->set_flags(0);
+  pool->set_length(length);
+  pool->set_tags(NULL);
+  pool->set_cache(NULL);
+  pool->set_operands(NULL);
+  pool->set_pool_holder(NULL);
+  pool->set_flags(0);
   // only set to non-zero if constant pool is merged by RedefineClasses
-  c->set_orig_length(0);
+  pool->set_orig_length(0);
   // if constant pool may change during RedefineClasses, it is created
   // unsafe for GC concurrent processing.
-  c->set_is_conc_safe(is_conc_safe);
+  pool->set_is_conc_safe(is_conc_safe);
   // all fields are initialized; needed for GC
 
+  // Note: because we may be in this "conc_unsafe" state when allocating
+  // t_oop below, which may in turn cause a GC, it is imperative that our
+  // size be correct, consistent and henceforth stable, at this stage.
+  assert(pool->is_oop() && pool->is_parsable(), "Else size() below is unreliable");
+  assert(size == pool->size(), "size() is wrong");
+
   // initialize tag array
-  // Note: cannot introduce constant pool handle before since it is not
-  //       completely initialized (no class) -> would cause assertion failure
-  constantPoolHandle pool (THREAD, c);
   typeArrayOop t_oop = oopFactory::new_permanent_byteArray(length, CHECK_NULL);
   typeArrayHandle tags (THREAD, t_oop);
   for (int index = 0; index < length; index++) {
@@ -82,6 +91,8 @@ constantPoolOop constantPoolKlass::allocate(int length, bool is_conc_safe, TRAPS
   }
   pool->set_tags(tags());
 
+  // Check that our size was stable at its old value.
+  assert(size == pool->size(), "size() changed");
   return pool();
 }
 
@@ -268,40 +279,6 @@ int constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   PSParallelCompact::adjust_pointer(cp->cache_addr());
   PSParallelCompact::adjust_pointer(cp->operands_addr());
   PSParallelCompact::adjust_pointer(cp->pool_holder_addr());
-  return cp->object_size();
-}
-
-int
-constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                       HeapWord* beg_addr, HeapWord* end_addr) {
-  assert (obj->is_constantPool(), "obj must be constant pool");
-  constantPoolOop cp = (constantPoolOop) obj;
-
-  // If the tags array is null we are in the middle of allocating this constant
-  // pool.
-  if (cp->tags() != NULL) {
-    oop* base = (oop*)cp->base();
-    oop* const beg_oop = MAX2((oop*)beg_addr, base);
-    oop* const end_oop = MIN2((oop*)end_addr, base + cp->length());
-    const size_t beg_idx = pointer_delta(beg_oop, base, sizeof(oop*));
-    const size_t end_idx = pointer_delta(end_oop, base, sizeof(oop*));
-    for (size_t cur_idx = beg_idx; cur_idx < end_idx; ++cur_idx, ++base) {
-      if (cp->is_pointer_entry(int(cur_idx))) {
-        PSParallelCompact::adjust_pointer(base);
-      }
-    }
-  }
-
-  oop* p;
-  p = cp->tags_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = cp->cache_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = cp->operands_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = cp->pool_holder_addr();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-
   return cp->object_size();
 }
 

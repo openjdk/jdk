@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import sun.dyn.Access;
 import sun.dyn.Invokers;
+import sun.dyn.MethodHandleImpl;
 import sun.dyn.MethodTypeImpl;
 import sun.dyn.util.BytecodeDescriptor;
 import static sun.dyn.MemberName.newIllegalArgumentException;
@@ -41,8 +42,8 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * and expected  by a method handle caller.  Method types must be properly
  * matched between a method handle and all its callers,
  * and the JVM's operations enforce this matching at, specifically
- * during calls to {@link MethodHandle#invokeExact}
- * and {@link MethodHandle#invokeGeneric}, and during execution
+ * during calls to {@link MethodHandle#invokeExact MethodHandle.invokeExact}
+ * and {@link MethodHandle#invokeGeneric MethodHandle.invokeGeneric}, and during execution
  * of {@code invokedynamic} instructions.
  * <p>
  * The structure is a return type accompanied by any number of parameter types.
@@ -70,8 +71,9 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * with the instructions in a class file's constant pool.
  * <p>
  * Like classes and strings, method types can also be represented directly
- * in a class file's constant pool as constants. The may be loaded by an {@code ldc}
- * instruction which refers to a suitable {@code CONSTANT_MethodType} constant pool entry.
+ * in a class file's constant pool as constants.
+ * A method type may be loaded by an {@code ldc} instruction which refers
+ * to a suitable {@code CONSTANT_MethodType} constant pool entry.
  * The entry refers to a {@code CONSTANT_Utf8} spelling for the descriptor string.
  * For more details, see the <a href="package-summary.html#mtcon">package summary</a>.
  * <p>
@@ -82,9 +84,14 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * @author John Rose, JSR 292 EG
  */
 public final
-class MethodType {
+class MethodType implements java.io.Serializable {
+    private static final long serialVersionUID = 292L;  // {rtype, {ptype...}}
+
+    // The rtype and ptypes fields define the structural identity of the method type:
     private final Class<?>   rtype;
     private final Class<?>[] ptypes;
+
+    // The remaining fields are caches of various sorts:
     private MethodTypeForm form; // erased form, plus cached data about primitives
     private MethodType wrapAlt;  // alternative wrapped/unwrapped version
     private Invokers invokers;   // cache of handy higher-order adapters
@@ -117,6 +124,9 @@ class MethodType {
         });
     }
 
+    /**
+     * Check the given parameters for validity and store them into the final fields.
+     */
     private MethodType(Class<?> rtype, Class<?>[] ptypes) {
         checkRtype(rtype);
         checkPtypes(ptypes);
@@ -124,15 +134,32 @@ class MethodType {
         this.ptypes = ptypes;
     }
 
-    private void checkRtype(Class<?> rtype) {
+    private static void checkRtype(Class<?> rtype) {
         rtype.equals(rtype);  // null check
     }
-    private void checkPtypes(Class<?>[] ptypes) {
+    private static int checkPtype(Class<?> ptype) {
+        ptype.getClass();  //NPE
+        if (ptype == void.class)
+            throw newIllegalArgumentException("parameter type cannot be void");
+        if (ptype == double.class || ptype == long.class)  return 1;
+        return 0;
+    }
+    /** Return number of extra slots (count of long/double args). */
+    private static int checkPtypes(Class<?>[] ptypes) {
+        int slots = 0;
         for (Class<?> ptype : ptypes) {
-            ptype.equals(ptype);  // null check
-            if (ptype == void.class)
-                throw newIllegalArgumentException("parameter type cannot be void");
+            slots += checkPtype(ptype);
         }
+        checkSlotCount(ptypes.length + slots);
+        return slots;
+    }
+    private static void checkSlotCount(int count) {
+        if ((count & 0xFF) != count)
+            throw newIllegalArgumentException("bad parameter count "+count);
+    }
+    private static IndexOutOfBoundsException newIndexOutOfBoundsException(Object num) {
+        if (num instanceof Integer)  num = "bad index: "+num;
+        return new IndexOutOfBoundsException(num.toString());
     }
 
     static final HashMap<MethodType,MethodType> internTable
@@ -140,27 +167,39 @@ class MethodType {
 
     static final Class<?>[] NO_PTYPES = {};
 
-    /** Find or create an instance of the given method type.
+    /**
+     * Find or create an instance of the given method type.
      * @param rtype  the return type
      * @param ptypes the parameter types
-     * @return a method type with the given parts
-     * @throws NullPointerException if rtype or any ptype is null
-     * @throws IllegalArgumentException if any of the ptypes is void
+     * @return a method type with the given components
+     * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
+     * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
      */
     public static
     MethodType methodType(Class<?> rtype, Class<?>[] ptypes) {
         return makeImpl(rtype, ptypes, false);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}. */
+    /**
+     * Finds or creates a method type with the given components.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * @return a method type with the given components
+     * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
+     * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
+     */
     public static
-    MethodType methodType(Class<?> rtype, List<? extends Class<?>> ptypes) {
+    MethodType methodType(Class<?> rtype, List<Class<?>> ptypes) {
         boolean notrust = false;  // random List impl. could return evil ptypes array
         return makeImpl(rtype, ptypes.toArray(NO_PTYPES), notrust);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     *  The leading parameter type is prepended to the remaining array.
+    /**
+     * Finds or creates a method type with the given components.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * The leading parameter type is prepended to the remaining array.
+     * @return a method type with the given components
+     * @throws NullPointerException if {@code rtype} or {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is null
+     * @throws IllegalArgumentException if {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is {@code void.class}
      */
     public static
     MethodType methodType(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
@@ -170,25 +209,37 @@ class MethodType {
         return makeImpl(rtype, ptypes1, true);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     *  The resulting method has no parameter types.
+    /**
+     * Finds or creates a method type with the given components.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * The resulting method has no parameter types.
+     * @return a method type with the given return value
+     * @throws NullPointerException if {@code rtype} is null
      */
     public static
     MethodType methodType(Class<?> rtype) {
         return makeImpl(rtype, NO_PTYPES, true);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     *  The resulting method has the single given parameter type.
+    /**
+     * Finds or creates a method type with the given components.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * The resulting method has the single given parameter type.
+     * @return a method type with the given return value and parameter type
+     * @throws NullPointerException if {@code rtype} or {@code ptype0} is null
+     * @throws IllegalArgumentException if {@code ptype0} is {@code void.class}
      */
     public static
     MethodType methodType(Class<?> rtype, Class<?> ptype0) {
         return makeImpl(rtype, new Class<?>[]{ ptype0 }, true);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     *  The resulting method has the same parameter types as {@code ptypes},
-     *  and the specified return type.
+    /**
+     * Finds or creates a method type with the given components.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * The resulting method has the same parameter types as {@code ptypes},
+     * and the specified return type.
+     * @throws NullPointerException if {@code rtype} or {@code ptypes} is null
      */
     public static
     MethodType methodType(Class<?> rtype, MethodType ptypes) {
@@ -237,17 +288,20 @@ class MethodType {
     private static final MethodType[] objectOnlyTypes = new MethodType[20];
 
     /**
-     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * Finds or creates a method type whose components are {@code Object} with an optional trailing {@code Object[]} array.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All parameters and the return type will be {@code Object},
      * except the final varargs parameter if any, which will be {@code Object[]}.
      * @param objectArgCount number of parameters (excluding the varargs parameter if any)
      * @param varargs whether there will be a varargs parameter, of type {@code Object[]}
      * @return a totally generic method type, given only its count of parameters and varargs
+     * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255
      * @see #genericMethodType(int)
      */
     public static
     MethodType genericMethodType(int objectArgCount, boolean varargs) {
         MethodType mt;
+        checkSlotCount(objectArgCount);
         int ivarargs = (!varargs ? 0 : 1);
         int ootIndex = objectArgCount*2 + ivarargs;
         if (ootIndex < objectOnlyTypes.length) {
@@ -265,9 +319,12 @@ class MethodType {
     }
 
     /**
+     * Finds or creates a method type whose components are all {@code Object}.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All parameters and the return type will be Object.
      * @param objectArgCount number of parameters
      * @return a totally generic method type, given only its count of parameters
+     * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255
      * @see #genericMethodType(int, boolean)
      */
     public static
@@ -275,27 +332,41 @@ class MethodType {
         return genericMethodType(objectArgCount, false);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+    /**
+     * Finds or creates a method type with a single different parameter type.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * @param num    the index (zero-based) of the parameter type to change
      * @param nptype a new parameter type to replace the old one with
      * @return the same type, except with the selected parameter changed
+     * @throws IndexOutOfBoundsException if {@code num} is not a valid index into {@code parameterArray()}
+     * @throws IllegalArgumentException if {@code nptype} is {@code void.class}
+     * @throws NullPointerException if {@code nptype} is null
      */
     public MethodType changeParameterType(int num, Class<?> nptype) {
         if (parameterType(num) == nptype)  return this;
+        checkPtype(nptype);
         Class<?>[] nptypes = ptypes.clone();
         nptypes[num] = nptype;
         return makeImpl(rtype, nptypes, true);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+    /**
+     * Finds or creates a method type with additional parameter types.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * @param num    the position (zero-based) of the inserted parameter type(s)
-     * @param ptypesToInsert zero or more a new parameter types to insert into the parameter list
+     * @param ptypesToInsert zero or more new parameter types to insert into the parameter list
      * @return the same type, except with the selected parameter(s) inserted
+     * @throws IndexOutOfBoundsException if {@code num} is negative or greater than {@code parameterCount()}
+     * @throws IllegalArgumentException if any element of {@code ptypesToInsert} is {@code void.class}
+     *                                  or if the resulting method type would have more than 255 parameter slots
+     * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
      */
     public MethodType insertParameterTypes(int num, Class<?>... ptypesToInsert) {
         int len = ptypes.length;
         if (num < 0 || num > len)
-            throw newIllegalArgumentException("num="+num); //SPECME
+            throw newIndexOutOfBoundsException(num);
+        int ins = checkPtypes(ptypesToInsert);
+        checkSlotCount(parameterSlotCount() + ptypesToInsert.length + ins);
         int ilen = ptypesToInsert.length;
         if (ilen == 0)  return this;
         Class<?>[] nptypes = Arrays.copyOfRange(ptypes, 0, len+ilen);
@@ -304,40 +375,61 @@ class MethodType {
         return makeImpl(rtype, nptypes, true);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     * @param ptypesToInsert zero or more a new parameter types to insert after the end of the parameter list
+    /**
+     * Finds or creates a method type with additional parameter types.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * @param ptypesToInsert zero or more new parameter types to insert after the end of the parameter list
      * @return the same type, except with the selected parameter(s) appended
+     * @throws IllegalArgumentException if any element of {@code ptypesToInsert} is {@code void.class}
+     *                                  or if the resulting method type would have more than 255 parameter slots
+     * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
      */
     public MethodType appendParameterTypes(Class<?>... ptypesToInsert) {
         return insertParameterTypes(parameterCount(), ptypesToInsert);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     * @param ptypesToInsert zero or more a new parameter types to insert after the end of the parameter list
-     * @return the same type, except with the selected parameter(s) appended
-     */
-    public MethodType appendParameterTypes(List<Class<?>> ptypesToInsert) {
-        return insertParameterTypes(parameterCount(), ptypesToInsert);
-    }
-
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+    /**
+     * Finds or creates a method type with additional parameter types.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * @param num    the position (zero-based) of the inserted parameter type(s)
-     * @param ptypesToInsert zero or more a new parameter types to insert into the parameter list
+     * @param ptypesToInsert zero or more new parameter types to insert into the parameter list
      * @return the same type, except with the selected parameter(s) inserted
+     * @throws IndexOutOfBoundsException if {@code num} is negative or greater than {@code parameterCount()}
+     * @throws IllegalArgumentException if any element of {@code ptypesToInsert} is {@code void.class}
+     *                                  or if the resulting method type would have more than 255 parameter slots
+     * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
      */
     public MethodType insertParameterTypes(int num, List<Class<?>> ptypesToInsert) {
         return insertParameterTypes(num, ptypesToInsert.toArray(NO_PTYPES));
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+    /**
+     * Finds or creates a method type with additional parameter types.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * @param ptypesToInsert zero or more new parameter types to insert after the end of the parameter list
+     * @return the same type, except with the selected parameter(s) appended
+     * @throws IllegalArgumentException if any element of {@code ptypesToInsert} is {@code void.class}
+     *                                  or if the resulting method type would have more than 255 parameter slots
+     * @throws NullPointerException if {@code ptypesToInsert} or any of its elements is null
+     */
+    public MethodType appendParameterTypes(List<Class<?>> ptypesToInsert) {
+        return insertParameterTypes(parameterCount(), ptypesToInsert);
+    }
+
+    /**
+     * Finds or creates a method type with some parameter types omitted.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * @param start  the index (zero-based) of the first parameter type to remove
      * @param end    the index (greater than {@code start}) of the first parameter type after not to remove
      * @return the same type, except with the selected parameter(s) removed
+     * @throws IndexOutOfBoundsException if {@code start} is negative or greater than {@code parameterCount()}
+     *                                  or if {@code end} is negative or greater than {@code parameterCount()}
+     *                                  or if {@code start} is greater than {@code end}
      */
     public MethodType dropParameterTypes(int start, int end) {
         int len = ptypes.length;
         if (!(0 <= start && start <= end && end <= len))
-            throw newIllegalArgumentException("start="+start+" end="+end); //SPECME
+            throw newIndexOutOfBoundsException("start="+start+" end="+end);
         if (start == end)  return this;
         Class<?>[] nptypes;
         if (start == 0) {
@@ -361,17 +453,20 @@ class MethodType {
         return makeImpl(rtype, nptypes, true);
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+    /**
+     * Finds or creates a method type with a different return type.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * @param nrtype a return parameter type to replace the old one with
      * @return the same type, except with the return type change
+     * @throws NullPointerException if {@code nrtype} is null
      */
     public MethodType changeReturnType(Class<?> nrtype) {
         if (returnType() == nrtype)  return this;
         return makeImpl(nrtype, ptypes, true);
     }
 
-    /** Convenience method.
-     * Report if this type contains a primitive argument or return value.
+    /**
+     * Reports if this type contains a primitive argument or return value.
      * The return type {@code void} counts as a primitive.
      * @return true if any of the types are primitives
      */
@@ -379,8 +474,8 @@ class MethodType {
         return form.hasPrimitives();
     }
 
-    /** Convenience method.
-     * Report if this type contains a wrapper argument or return value.
+    /**
+     * Reports if this type contains a wrapper argument or return value.
      * Wrappers are types which box primitive values, such as {@link Integer}.
      * The reference type {@code java.lang.Void} counts as a wrapper.
      * @return true if any of the types are wrappers
@@ -389,8 +484,9 @@ class MethodType {
         return unwrap() != this;
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     * Erase all reference types to {@code Object}.
+    /**
+     * Erases all reference types to {@code Object}.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All primitive types (including {@code void}) will remain unchanged.
      * @return a version of the original type with all reference types replaced
      */
@@ -398,8 +494,9 @@ class MethodType {
         return form.erasedType();
     }
 
-    /** Convenience method for {@link #genericMethodType(int)}.
-     * Convert all types, both reference and primitive, to {@code Object}.
+    /**
+     * Converts all types, both reference and primitive, to {@code Object}.
+     * Convenience method for {@link #genericMethodType(int) genericMethodType}.
      * The expression {@code type.wrap().erase()} produces the same value
      * as {@code type.generic()}.
      * @return a version of the original type with all types replaced
@@ -408,8 +505,9 @@ class MethodType {
         return genericMethodType(parameterCount());
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     * Convert all primitive types to their corresponding wrapper types.
+    /**
+     * Converts all primitive types to their corresponding wrapper types.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All reference types (including wrapper types) will remain unchanged.
      * A {@code void} return type is changed to the type {@code java.lang.Void}.
      * The expression {@code type.wrap().erase()} produces the same value
@@ -420,8 +518,9 @@ class MethodType {
         return hasPrimitives() ? wrapWithPrims(this) : this;
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+    /**
      * Convert all wrapper types to their corresponding primitive types.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All primitive types (including {@code void}) will remain unchanged.
      * A return type of {@code java.lang.Void} is changed to {@code void}.
      * @return a version of the original type with all wrapper types replaced
@@ -456,23 +555,33 @@ class MethodType {
         return uwt;
     }
 
-    /** @param num the index (zero-based) of the desired parameter type
-     *  @return the selected parameter type
+    /**
+     * Returns the parameter type at the specified index, within this method type.
+     * @param num the index (zero-based) of the desired parameter type
+     * @return the selected parameter type
+     * @throws IndexOutOfBoundsException if {@code num} is not a valid index into {@code parameterArray()}
      */
     public Class<?> parameterType(int num) {
         return ptypes[num];
     }
-    /** @return the number of parameter types */
+    /**
+     * Returns the number of parameter types in this method type.
+     * @return the number of parameter types
+     */
     public int parameterCount() {
         return ptypes.length;
     }
-    /** @return the return type */
+    /**
+     * Returns the return type of this method type.
+     * @return the return type
+     */
     public Class<?> returnType() {
         return rtype;
     }
 
     /**
-     * Convenience method to present the arguments as a list.
+     * Presents the parameter types as a list (a convenience method).
+     * The list will be immutable.
      * @return the parameter types (as an immutable list)
      */
     public List<Class<?>> parameterList() {
@@ -480,7 +589,7 @@ class MethodType {
     }
 
     /**
-     * Convenience method to present the arguments as an array.
+     * Presents the parameter types as an array (a convenience method).
      * Changes to the array will not result in changes to the type.
      * @return the parameter types (as a fresh copy if necessary)
      */
@@ -524,14 +633,14 @@ class MethodType {
     }
 
     /**
+     * Returns a string representation of the method type,
+     * of the form {@code "(PT0,PT1...)RT"}.
      * The string representation of a method type is a
      * parenthesis enclosed, comma separated list of type names,
      * followed immediately by the return type.
      * <p>
      * Each type is represented by its
      * {@link java.lang.Class#getSimpleName simple name}.
-     * If a type name name is array, it the base type followed
-     * by [], rather than the Class.getName of the array type.
      */
     @Override
     public String toString() {
@@ -548,21 +657,22 @@ class MethodType {
 
     /// Queries which have to do with the bytecode architecture
 
-    /** The number of JVM stack slots required to invoke a method
+    /** Reports the number of JVM stack slots required to invoke a method
      * of this type.  Note that (for historic reasons) the JVM requires
      * a second stack slot to pass long and double arguments.
-     * So this method returns {@link #parameterCount()} plus the
+     * So this method returns {@link #parameterCount() parameterCount} plus the
      * number of long and double parameters (if any).
      * <p>
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots for this type's parameters
+     * @deprecated Will be removed for PFD.
      */
     public int parameterSlotCount() {
         return form.parameterSlotCount();
     }
 
-    /** Number of JVM stack slots which carry all parameters including and after
+    /** Reports the number of JVM stack slots which carry all parameters including and after
      * the given position, which must be in the range of 0 to
      * {@code parameterCount} inclusive.  Successive parameters are
      * more shallowly stacked, and parameters are indexed in the bytecodes
@@ -583,6 +693,8 @@ class MethodType {
      * @param num an index (zero-based, inclusive) within the parameter types
      * @return the index of the (shallowest) JVM stack slot transmitting the
      *         given parameter
+     * @throws IllegalArgumentException if {@code num} is negative or greater than {@code parameterCount()}
+     * @deprecated Will be removed for PFD.
      */
     public int parameterSlotDepth(int num) {
         if (num < 0 || num > ptypes.length)
@@ -590,7 +702,7 @@ class MethodType {
         return form.parameterToArgSlot(num-1);
     }
 
-    /** The number of JVM stack slots required to receive a return value
+    /** Reports the number of JVM stack slots required to receive a return value
      * from a method of this type.
      * If the {@link #returnType() return type} is void, it will be zero,
      * else if the return type is long or double, it will be two, else one.
@@ -598,13 +710,15 @@ class MethodType {
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots (0, 1, or 2) for this type's return value
+     * @deprecated Will be removed for PFD.
      */
     public int returnSlotCount() {
         return form.returnSlotCount();
     }
 
-    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
-     * Find or create an instance of the given method type.
+    /**
+     * Find or create an instance of a method type, given the spelling of its bytecode descriptor.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * Any class or interface name embedded in the descriptor string
      * will be resolved by calling {@link ClassLoader#loadClass(java.lang.String)}
      * on the given loader (or if it is null, on the system class loader).
@@ -614,10 +728,10 @@ class MethodType {
      * not all reachable from a common class loader.
      * <p>
      * This method is included for the benfit of applications that must
-     * generate bytecodes that process method handles and invokedynamic.
-     * @param descriptor a bytecode-level signature string "(T...)T"
+     * generate bytecodes that process method handles and {@code invokedynamic}.
+     * @param descriptor a bytecode-level type descriptor string "(T...)T"
      * @param loader the class loader in which to look up the types
-     * @return a method type matching the bytecode-level signature
+     * @return a method type matching the bytecode-level type descriptor
      * @throws IllegalArgumentException if the string is not well-formed
      * @throws TypeNotPresentException if a named type cannot be found
      */
@@ -631,19 +745,121 @@ class MethodType {
     }
 
     /**
-     * Create a bytecode descriptor representation of the method type.
+     * Produces a bytecode descriptor representation of the method type.
      * <p>
-     * Note that this is not a strict inverse of {@link #fromMethodDescriptorString}.
+     * Note that this is not a strict inverse of {@link #fromMethodDescriptorString fromMethodDescriptorString}.
      * Two distinct classes which share a common name but have different class loaders
      * will appear identical when viewed within descriptor strings.
      * <p>
      * This method is included for the benfit of applications that must
-     * generate bytecodes that process method handles and invokedynamic.
-     * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader)},
+     * generate bytecodes that process method handles and {@code invokedynamic}.
+     * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader) fromMethodDescriptorString},
      * because the latter requires a suitable class loader argument.
-     * @return the bytecode signature representation
+     * @return the bytecode type descriptor representation
      */
     public String toMethodDescriptorString() {
         return BytecodeDescriptor.unparse(this);
+    }
+
+    /// Serialization.
+
+    /**
+     * There are no serializable fields for {@code MethodType}.
+     */
+    private static final java.io.ObjectStreamField[] serialPersistentFields = { };
+
+    /**
+     * Save the {@code MethodType} instance to a stream.
+     *
+     * @serialData
+     * For portability, the serialized format does not refer to named fields.
+     * Instead, the return type and parameter type arrays are written directly
+     * from the {@code writeObject} method, using two calls to {@code s.writeObject}
+     * as follows:
+     * <blockquote><pre>
+s.writeObject(this.returnType());
+s.writeObject(this.parameterArray());
+     * </pre></blockquote>
+     * <p>
+     * The deserialized field values are checked as if they were
+     * provided to the factory method {@link #methodType(Class,Class[]) methodType}.
+     * For example, null values, or {@code void} parameter types,
+     * will lead to exceptions during deserialization.
+     * @param the stream to write the object to
+     */
+    private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
+        s.defaultWriteObject();  // requires serialPersistentFields to be an empty array
+        s.writeObject(returnType());
+        s.writeObject(parameterArray());
+    }
+
+    /**
+     * Reconstitute the {@code MethodType} instance from a stream (that is,
+     * deserialize it).
+     * This instance is a scratch object with bogus final fields.
+     * It provides the parameters to the factory method called by
+     * {@link #readResolve readResolve}.
+     * After that call it is discarded.
+     * @param the stream to read the object from
+     * @see #MethodType()
+     * @see #readResolve
+     * @see #writeObject
+     */
+    private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
+        s.defaultReadObject();  // requires serialPersistentFields to be an empty array
+
+        Class<?>   returnType     = (Class<?>)   s.readObject();
+        Class<?>[] parameterArray = (Class<?>[]) s.readObject();
+
+        // Probably this object will never escape, but let's check
+        // the field values now, just to be sure.
+        checkRtype(returnType);
+        checkPtypes(parameterArray);
+
+        parameterArray = parameterArray.clone();  // make sure it is unshared
+        MethodType_init(returnType, parameterArray);
+    }
+
+    /**
+     * For serialization only.
+     * Sets the final fields to null, pending {@code Unsafe.putObject}.
+     */
+    private MethodType() {
+        this.rtype = null;
+        this.ptypes = null;
+    }
+    private void MethodType_init(Class<?> rtype, Class<?>[] ptypes) {
+        // In order to communicate these values to readResolve, we must
+        // store them into the implementation-specific final fields.
+        checkRtype(rtype);
+        checkPtypes(ptypes);
+        unsafe.putObject(this, rtypeOffset, rtype);
+        unsafe.putObject(this, ptypesOffset, ptypes);
+    }
+
+    // Support for resetting final fields while deserializing
+    private static final sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
+    private static final long rtypeOffset, ptypesOffset;
+    static {
+        try {
+            rtypeOffset = unsafe.objectFieldOffset
+                (MethodType.class.getDeclaredField("rtype"));
+            ptypesOffset = unsafe.objectFieldOffset
+                (MethodType.class.getDeclaredField("ptypes"));
+        } catch (Exception ex) {
+            throw new Error(ex);
+        }
+    }
+
+    /**
+     * Resolves and initializes a {@code MethodType} object
+     * after serialization.
+     * @return the fully initialized {@code MethodType} object
+     */
+    private Object readResolve() {
+        // Do not use a trusted path for deserialization:
+        //return makeImpl(rtype, ptypes, true);
+        // Verify all operands, and make sure ptypes is unshared:
+        return methodType(rtype, ptypes);
     }
 }

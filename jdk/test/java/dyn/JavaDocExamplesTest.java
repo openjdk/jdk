@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ static final private Lookup LOOKUP = lookup();
 // static final private MethodHandle HASHCODE_1 = LOOKUP.findVirtual(Object.class,
 //     "hashCode", methodType(int.class));
 
-// form required if NoAccessException is intercepted:
+// form required if ReflectiveOperationException is intercepted:
 static final private MethodHandle CONCAT_2, HASHCODE_2;
 static {
   try {
@@ -82,7 +82,7 @@ static {
       "concat", methodType(String.class, String.class));
     HASHCODE_2 = LOOKUP.findVirtual(Object.class,
       "hashCode", methodType(int.class));
-   } catch (NoAccessException ex) {
+   } catch (ReflectiveOperationException ex) {
      throw new RuntimeException(ex);
    }
 }
@@ -142,37 +142,79 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
         Assert.assertEquals(exp, act);
     }
 
-static MethodHandle asList;
-    @Test public void testWithTypeHandler() throws Throwable {
+    @Test public void testMethodHandlesSummary() throws Throwable {
         {{
 {} /// JAVADOC
-MethodHandle makeEmptyList = MethodHandles.constant(List.class, Arrays.asList());
-MethodHandle asList = lookup()
-  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class));
-
-JavaDocExamplesTest.asList = asList;
-/*
-static MethodHandle collectingTypeHandler(MethodHandle base, MethodType newType) {
-  return asList.asCollector(Object[].class, newType.parameterCount()).asType(newType);
-}
-*/
-
-MethodHandle collectingTypeHandler = lookup()
-  .findStatic(lookup().lookupClass(), "collectingTypeHandler",
-     methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
-MethodHandle makeAnyList = makeEmptyList.withTypeHandler(collectingTypeHandler);
-
-assertEquals("[]", makeAnyList.invokeGeneric().toString());
-assertEquals("[1]", makeAnyList.invokeGeneric(1).toString());
-assertEquals("[two, too]", makeAnyList.invokeGeneric("two", "too").toString());
+Object x, y; String s; int i;
+MethodType mt; MethodHandle mh;
+MethodHandles.Lookup lookup = MethodHandles.lookup();
+// mt is (char,char)String
+mt = MethodType.methodType(String.class, char.class, char.class);
+mh = lookup.findVirtual(String.class, "replace", mt);
+s = (String) mh.invokeExact("daddy",'d','n');
+// invokeExact(Ljava/lang/String;CC)Ljava/lang/String;
+assert(s.equals("nanny"));
+// weakly typed invocation (using MHs.invoke)
+s = (String) mh.invokeWithArguments("sappy", 'p', 'v');
+assert(s.equals("savvy"));
+// mt is (Object[])List
+mt = MethodType.methodType(java.util.List.class, Object[].class);
+mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
+assert(mh.isVarargsCollector());
+x = mh.invokeGeneric("one", "two");
+// invokeGeneric(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
+assert(x.equals(java.util.Arrays.asList("one","two")));
+// mt is (Object,Object,Object)Object
+mt = MethodType.genericMethodType(3);
+mh = mh.asType(mt);
+x = mh.invokeExact((Object)1, (Object)2, (Object)3);
+// invokeExact(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+assert(x.equals(java.util.Arrays.asList(1,2,3)));
+// mt is { =&gt; int}
+mt = MethodType.methodType(int.class);
+mh = lookup.findVirtual(java.util.List.class, "size", mt);
+i = (int) mh.invokeExact(java.util.Arrays.asList(1,2,3));
+// invokeExact(Ljava/util/List;)I
+assert(i == 3);
+mt = MethodType.methodType(void.class, String.class);
+mh = lookup.findVirtual(java.io.PrintStream.class, "println", mt);
+mh.invokeExact(System.out, "Hello, world.");
+// invokeExact(Ljava/io/PrintStream;Ljava/lang/String;)V
+{}
             }}
     }
 
-static MethodHandle collectingTypeHandler(MethodHandle base, MethodType newType) {
-    //System.out.println("Converting "+asList+" to "+newType);
-    MethodHandle conv = asList.asCollector(Object[].class, newType.parameterCount()).asType(newType);
-    //System.out.println(" =>"+conv);
-    return conv;
-}
+    @Test public void testAsVarargsCollector() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle asList = publicLookup()
+  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
+  .asVarargsCollector(Object[].class);
+assertEquals("[]", asList.invokeGeneric().toString());
+assertEquals("[1]", asList.invokeGeneric(1).toString());
+assertEquals("[two, too]", asList.invokeGeneric("two", "too").toString());
+Object[] argv = { "three", "thee", "tee" };
+assertEquals("[three, thee, tee]", asList.invokeGeneric(argv).toString());
+List ls = (List) asList.invokeGeneric((Object)argv);
+assertEquals(1, ls.size());
+assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
+            }}
+    }
 
+    @Test public void testVarargsCollectorSuppression() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle vamh = publicLookup()
+  .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
+  .asVarargsCollector(Object[].class);
+MethodHandle mh = MethodHandles.exactInvoker(vamh.type()).bindTo(vamh);
+assert(vamh.type().equals(mh.type()));
+assertEquals("[1, 2, 3]", vamh.invokeGeneric(1,2,3).toString());
+boolean failed = false;
+try { mh.invokeGeneric(1,2,3); }
+catch (WrongMethodTypeException ex) { failed = true; }
+assert(failed);
+{}
+            }}
+    }
 }

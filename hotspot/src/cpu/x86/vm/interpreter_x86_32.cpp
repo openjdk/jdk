@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@
 #endif
 
 #define __ _masm->
-
-// Initialize the sentinel used to distinguish an interpreter return address.
-const int Interpreter::return_sentinel = 0xfeedbeed;
 
 //------------------------------------------------------------------------------------------------------------------------
 
