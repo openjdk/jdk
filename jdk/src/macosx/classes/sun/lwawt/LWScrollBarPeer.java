@@ -54,8 +54,8 @@ final class LWScrollBarPeer extends LWComponentPeer<Scrollbar, JScrollBar>
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         final Scrollbar target = getTarget();
         setValues(target.getValue(), target.getVisibleAmount(),
                   target.getMinimum(), target.getMaximum());
