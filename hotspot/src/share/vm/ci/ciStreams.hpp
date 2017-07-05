@@ -46,6 +46,7 @@ private:
 
   ciMethod* _method;           // the method
   ciInstanceKlass* _holder;
+  ciCPCache* _cpcache;
   address _bc_start;            // Start of current bytecode for table
   address _was_wide;            // Address past last wide bytecode
   jint* _table_base;            // Aligned start of last table or switch
@@ -58,7 +59,9 @@ private:
 
   void reset( address base, unsigned int size ) {
     _bc_start =_was_wide = 0;
-    _start = _pc = base; _end = base + size; }
+    _start = _pc = base; _end = base + size;
+    _cpcache = NULL;
+  }
 
   void assert_wide(bool require_wide) const {
     if (require_wide)
@@ -136,15 +139,20 @@ public:
   bool is_wide() const { return ( _pc == _was_wide ); }
 
   // Does this instruction contain an index which refes into the CP cache?
-  bool uses_cp_cache() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
+  bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
   int get_index_u1() const {
     return bytecode()->get_index_u1(cur_bc_raw());
   }
 
+  int get_index_u1_cpcache() const {
+    return bytecode()->get_index_u1_cpcache(cur_bc_raw());
+  }
+
   // Get a byte index following this bytecode.
   // If prefixed with a wide bytecode, get a wide index.
   int get_index() const {
+    assert(!has_cache_index(), "else use cpcache variant");
     return (_pc == _was_wide)   // was widened?
       ? get_index_u2(true)      // yes, return wide index
       : get_index_u1();         // no, return narrow index
@@ -207,7 +215,9 @@ public:
     return cur_bci() + get_int_table(index); }
 
   // --- Constant pool access ---
-  int get_constant_index() const;
+  int get_constant_raw_index() const;
+  int get_constant_pool_index() const;
+  int get_constant_cache_index() const;
   int get_field_index();
   int get_method_index();
 
@@ -217,12 +227,17 @@ public:
   int get_klass_index() const;
 
   // If this bytecode is one of the ldc variants, get the referenced
-  // constant
+  // constant.  Do not attempt to resolve it, since that would require
+  // execution of Java code.  If it is not resolved, return an unloaded
+  // object (ciConstant.as_object()->is_loaded() == false).
   ciConstant get_constant();
-  // True if the ldc variant points to an unresolved string
-  bool is_unresolved_string() const;
-  // True if the ldc variant points to an unresolved klass
-  bool is_unresolved_klass() const;
+  constantTag get_constant_pool_tag(int index) const;
+
+  // True if the klass-using bytecode points to an unresolved klass
+  bool is_unresolved_klass() const {
+    constantTag tag = get_constant_pool_tag(get_klass_index());
+    return tag.is_unresolved_klass();
+  }
 
   // If this bytecode is one of get_field, get_static, put_field,
   // or put_static, get the referenced field.
@@ -238,7 +253,7 @@ public:
   int       get_method_holder_index();
   int       get_method_signature_index();
 
-  ciCPCache*  get_cpcache();
+  ciCPCache*  get_cpcache() const;
   ciCallSite* get_call_site();
 };
 

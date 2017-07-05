@@ -372,6 +372,13 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
         entry->print_value_on(st);
         }
         break;
+      case JVM_CONSTANT_MethodHandle :
+        st->print("ref_kind=%d", cp->method_handle_ref_kind_at(index));
+        st->print(" ref_index=%d", cp->method_handle_index_at(index));
+        break;
+      case JVM_CONSTANT_MethodType :
+        st->print("signature_index=%d", cp->method_type_index_at(index));
+        break;
       default:
         ShouldNotReachHere();
         break;
@@ -437,6 +444,7 @@ void constantPoolKlass::oop_verify_on(oop obj, outputStream* st) {
           // can be non-perm, can be non-instance (array)
         }
       }
+      // FIXME: verify JSR 292 tags JVM_CONSTANT_MethodHandle, etc.
       base++;
     }
     guarantee(cp->tags()->is_perm(),         "should be in permspace");

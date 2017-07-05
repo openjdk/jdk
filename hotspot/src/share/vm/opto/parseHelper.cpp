@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,43 @@ void Parse::array_store_check() {
 }
 
 
+void Parse::emit_guard_for_new(ciInstanceKlass* klass) {
+  // Emit guarded new
+  //   if (klass->_init_thread != current_thread ||
+  //       klass->_init_state != being_initialized)
+  //      uncommon_trap
+  Node* cur_thread = _gvn.transform( new (C, 1) ThreadLocalNode() );
+  Node* merge = new (C, 3) RegionNode(3);
+  _gvn.set_type(merge, Type::CONTROL);
+  Node* kls = makecon(TypeKlassPtr::make(klass));
+
+  Node* init_thread_offset = _gvn.MakeConX(instanceKlass::init_thread_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes());
+  Node* adr_node = basic_plus_adr(kls, kls, init_thread_offset);
+  Node* init_thread = make_load(NULL, adr_node, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node *tst   = Bool( CmpP( init_thread, cur_thread), BoolTest::eq);
+  IfNode* iff = create_and_map_if(control(), tst, PROB_ALWAYS, COUNT_UNKNOWN);
+  set_control(IfTrue(iff));
+  merge->set_req(1, IfFalse(iff));
+
+  Node* init_state_offset = _gvn.MakeConX(instanceKlass::init_state_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes());
+  adr_node = basic_plus_adr(kls, kls, init_state_offset);
+  Node* init_state = make_load(NULL, adr_node, TypeInt::INT, T_INT);
+  Node* being_init = _gvn.intcon(instanceKlass::being_initialized);
+  tst   = Bool( CmpI( init_state, being_init), BoolTest::eq);
+  iff = create_and_map_if(control(), tst, PROB_ALWAYS, COUNT_UNKNOWN);
+  set_control(IfTrue(iff));
+  merge->set_req(2, IfFalse(iff));
+
+  PreserveJVMState pjvms(this);
+  record_for_igvn(merge);
+  set_control(merge);
+
+  uncommon_trap(Deoptimization::Reason_uninitialized,
+                Deoptimization::Action_reinterpret,
+                klass);
+}
+
+
 //------------------------------do_new-----------------------------------------
 void Parse::do_new() {
   kill_dead_locals();
@@ -206,7 +243,7 @@ void Parse::do_new() {
   assert(will_link, "_new: typeflow responsibility");
 
   // Should initialize, or throw an InstantiationError?
-  if (!klass->is_initialized() ||
+  if (!klass->is_initialized() && !klass->is_being_initialized() ||
       klass->is_abstract() || klass->is_interface() ||
       klass->name() == ciSymbol::java_lang_Class() ||
       iter().is_unresolved_klass()) {
@@ -214,6 +251,9 @@ void Parse::do_new() {
                   Deoptimization::Action_reinterpret,
                   klass);
     return;
+  }
+  if (klass->is_being_initialized()) {
+    emit_guard_for_new(klass);
   }
 
   Node* kls = makecon(TypeKlassPtr::make(klass));
