@@ -58,13 +58,13 @@ UNICODEDATA := $(JDK_TOPDIR)/make/data/unicodedata/UnicodeData.txt
 
 # output
 BASE_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/java.base/sun/text/resources
-SL_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/jdk.localedata/sun/text/resources
+LD_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/jdk.localedata/sun/text/resources
 BIFILES := $(BASE_DATA_PKG_DIR)/CharacterBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/WordBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/LineBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/SentenceBreakIteratorData
-BIFILES_TH := $(SA_DATA_PKG_DIR)/th/WordBreakIteratorData_th \
-    $(SA_DATA_PKG_DIR)/th/LineBreakIteratorData_th
+BIFILES_TH := $(LD_DATA_PKG_DIR)/th/WordBreakIteratorData_th \
+    $(LD_DATA_PKG_DIR)/th/LineBreakIteratorData_th
 
 $(BIFILES): $(BASE_DATA_PKG_DIR)/_the.bifiles
 $(BASE_DATA_PKG_DIR)/_the.bifiles: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
@@ -77,9 +77,9 @@ $(BASE_DATA_PKG_DIR)/_the.bifiles: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKIT
 	    -spec $(UNICODEDATA)
 	$(TOUCH) $@
 
-$(BIFILES_TH): $(SL_DATA_PKG_DIR)/_the.bifiles_th
-$(SL_DATA_PKG_DIR)/_the.bifiles_th: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
-$(SL_DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
+$(BIFILES_TH): $(LD_DATA_PKG_DIR)/_the.bifiles_th
+$(LD_DATA_PKG_DIR)/_the.bifiles_th: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
+$(LD_DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
 	$(ECHO) $(LOG_INFO) "Generating BreakIteratorData_th"
 	$(MKDIR) -p $(@D)/th
 	$(RM) $(BIFILES_TH)

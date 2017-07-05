@@ -212,4 +212,34 @@ void G1NewTracer::report_evacuation_statistics(const G1EvacSummary& young_summar
   send_old_evacuation_statistics(old_summary);
 }
 
+void G1NewTracer::report_basic_ihop_statistics(size_t threshold,
+                                               size_t target_ccupancy,
+                                               size_t current_occupancy,
+                                               size_t last_allocation_size,
+                                               double last_allocation_duration,
+                                               double last_marking_length) {
+  send_basic_ihop_statistics(threshold,
+                             target_ccupancy,
+                             current_occupancy,
+                             last_allocation_size,
+                             last_allocation_duration,
+                             last_marking_length);
+}
+
+void G1NewTracer::report_adaptive_ihop_statistics(size_t threshold,
+                                                  size_t internal_target_occupancy,
+                                                  size_t current_occupancy,
+                                                  size_t additional_buffer_size,
+                                                  double predicted_allocation_rate,
+                                                  double predicted_marking_length,
+                                                  bool prediction_active) {
+  send_adaptive_ihop_statistics(threshold,
+                                internal_target_occupancy,
+                                additional_buffer_size,
+                                current_occupancy,
+                                predicted_allocation_rate,
+                                predicted_marking_length,
+                                prediction_active);
+}
+
 #endif

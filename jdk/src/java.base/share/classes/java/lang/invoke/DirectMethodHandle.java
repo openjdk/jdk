@@ -108,12 +108,6 @@ class DirectMethodHandle extends MethodHandle {
             return makeAllocator(member);
         return make(member.getDeclaringClass(), member);
     }
-    static DirectMethodHandle make(Method method) {
-        return make(method.getDeclaringClass(), new MemberName(method));
-    }
-    static DirectMethodHandle make(Field field) {
-        return make(field.getDeclaringClass(), new MemberName(field));
-    }
     private static DirectMethodHandle makeAllocator(MemberName ctor) {
         assert(ctor.isConstructor() && ctor.getName().equals("<init>"));
         Class<?> instanceClass = ctor.getDeclaringClass();

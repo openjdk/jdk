@@ -43,6 +43,7 @@ import sun.java2d.xr.XRGraphicsConfig;
 import sun.java2d.loops.SurfaceType;
 
 import sun.awt.util.ThreadGroupUtils;
+import sun.java2d.SunGraphicsEnvironment;
 import sun.misc.ManagedLocalsThread;
 
 /**
@@ -63,9 +64,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
     private boolean shutdownHookRegistered;
+    private final int scale;
 
     public X11GraphicsDevice(int screennum) {
         this.screen = screennum;
+        this.scale = initScaleFactor();
     }
 
     /*
@@ -279,6 +282,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
                                                  int width, int height,
                                                  int displayMode);
     private static native void resetNativeData(int screen);
+    private static native int getNativeScaleFactor(int screen);
 
     /**
      * Returns true only if:
@@ -507,6 +511,27 @@ public final class X11GraphicsDevice extends GraphicsDevice
      */
     public void addDisplayChangedListener(DisplayChangedListener client) {
         topLevels.add(client);
+    }
+
+    public int getScaleFactor() {
+        return scale;
+    }
+
+    private int initScaleFactor() {
+
+        if (SunGraphicsEnvironment.isUIScaleEnabled()) {
+
+            double debugScale = SunGraphicsEnvironment.getDebugScale();
+
+            if (debugScale >= 1) {
+                return (int) debugScale;
+            }
+
+            int nativeScale = getNativeScaleFactor(screen);
+            return nativeScale >= 1 ? nativeScale : 1;
+        }
+
+        return 1;
     }
 
     /**

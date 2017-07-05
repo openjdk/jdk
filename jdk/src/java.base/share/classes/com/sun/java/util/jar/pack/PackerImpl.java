@@ -272,22 +272,6 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
 
         // (Done collecting options from props.)
 
-        boolean isClassFile(String name) {
-            if (!name.endsWith(".class"))  return false;
-            for (String prefix = name; ; ) {
-                if (passFiles.contains(prefix))  return false;
-                int chop = prefix.lastIndexOf('/');
-                if (chop < 0)  break;
-                prefix = prefix.substring(0, chop);
-            }
-            return true;
-        }
-
-        boolean isMetaInfFile(String name) {
-            return name.startsWith("/" + Utils.METAINF) ||
-                        name.startsWith(Utils.METAINF);
-        }
-
         // Get a new package, based on the old one.
         private void makeNextPackage() {
             pkg.reset();
@@ -331,6 +315,29 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
             }
             InFile(JarEntry je) {
                 this(null, je);
+            }
+            boolean isClassFile() {
+                if (!name.endsWith(".class")) {
+                    return false;
+                }
+                for (String prefix = name;;) {
+                    if (passFiles.contains(prefix)) {
+                        return false;
+                    }
+                    int chop = prefix.lastIndexOf('/');
+                    if (chop < 0) {
+                        break;
+                    }
+                    prefix = prefix.substring(0, chop);
+                }
+                return true;
+            }
+            boolean isMetaInfFile() {
+                return name.startsWith("/" + Utils.METAINF)
+                        || name.startsWith(Utils.METAINF);
+            }
+            boolean mustProcess() {
+                return !isMetaInfFile() && isClassFile();
             }
             long getInputLength() {
                 long len = (je != null)? je.getSize(): f.length();
@@ -391,7 +398,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
                 Package.File file = null;
                 // (5078608) : discount the resource files in META-INF
                 // from segment computation.
-                long inflen = (isMetaInfFile(name))
+                long inflen = (inFile.isMetaInfFile())
                               ? 0L
                               : inFile.getInputLength();
 
@@ -406,7 +413,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
 
                 assert(je.isDirectory() == name.endsWith("/"));
 
-                if (isClassFile(name)) {
+                if (inFile.mustProcess()) {
                     file = readClass(name, bits.getInputStream());
                 }
                 if (file == null) {
@@ -429,7 +436,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
             for (InFile inFile : inFiles) {
                 String name      = inFile.name;
                 // (5078608) : discount the resource files completely from segmenting
-                long inflen = (isMetaInfFile(name))
+                long inflen = (inFile.isMetaInfFile())
                                ? 0L
                                : inFile.getInputLength() ;
                 if ((segmentSize += inflen) > segmentLimit) {
@@ -447,7 +454,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
                 if (verbose > 1)
                     Utils.log.fine("Reading " + name);
                 Package.File file = null;
-                if (isClassFile(name)) {
+                if (inFile.mustProcess()) {
                     file = readClass(name, strm);
                     if (file == null) {
                         strm.close();

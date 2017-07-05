@@ -23,29 +23,18 @@
 
 package compiler.compilercontrol.share.scenario;
 
-import compiler.compilercontrol.share.actions.BaseAction;
 import compiler.compilercontrol.share.method.MethodDescriptor;
 import compiler.compilercontrol.share.processors.CommandProcessor;
 import compiler.compilercontrol.share.processors.LogProcessor;
+import compiler.compilercontrol.share.processors.PrintDirectivesProcessor;
 import compiler.compilercontrol.share.processors.PrintProcessor;
-import compiler.compilercontrol.share.processors.QuietProcessor;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Pair;
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.dcmd.CommandExecutorException;
-import jdk.test.lib.dcmd.JcmdExecutor;
 import pool.PoolHelper;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.lang.reflect.Executable;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -60,18 +49,18 @@ import java.util.function.Consumer;
  */
 public final class Scenario {
     private final boolean isValid;
-    private final List<String> vmopts;
     private final Map<Executable, State> states;
     private final List<Consumer<OutputAnalyzer>> processors;
-    private final List<String> jcmdExecCommands;
+    private final Executor executor;
+    private final Consumer<List<OutputAnalyzer>> jcmdProcessor;
 
     private Scenario(boolean isValid,
                      List<String> vmopts,
                      Map<Executable, State> states,
                      List<CompileCommand> compileCommands,
-                     List<JcmdCommand> jcmdCommands) {
+                     List<JcmdCommand> jcmdCommands,
+                     List<CompileCommand> directives) {
         this.isValid = isValid;
-        this.vmopts = vmopts;
         this.states = states;
         processors = new ArrayList<>();
         processors.add(new LogProcessor(states));
@@ -87,10 +76,10 @@ public final class Scenario {
                 nonQuieted.add(cc);
             }
         }
-        processors.add(new CommandProcessor(nonQuieted));
-        processors.add(new QuietProcessor(quieted));
-        jcmdExecCommands = new ArrayList<>();
+        processors.add(new CommandProcessor(nonQuieted, quieted));
+        List<String> jcmdExecCommands = new ArrayList<>();
         boolean addCommandMet = false;
+        boolean printCommandMet = false;
         for (JcmdCommand cmd : jcmdCommands) {
             switch (cmd.jcmdType) {
                 case ADD:
@@ -99,97 +88,40 @@ public final class Scenario {
                     }
                     addCommandMet = true;
                     break;
+                case PRINT:
+                    printCommandMet = true;
+                    break;
                 default:
                     jcmdExecCommands.add(cmd.jcmdType.command);
                     break;
             }
         }
+        // Add print command only in the end to get directives printed
+        if (printCommandMet) {
+            jcmdExecCommands.add(JcmdType.PRINT.command);
+        }
+        jcmdProcessor = new PrintDirectivesProcessor(directives);
+        executor = new Executor(isValid, vmopts, states, jcmdExecCommands);
     }
 
     /**
      * Executes scenario
      */
     public void execute() {
-        // Construct execution command with CompileCommand and class
-        List<String> argsList = new ArrayList<>();
-        // Add VM options
-        argsList.addAll(vmopts);
-        // Add class name that would be executed in a separate VM
-        String classCmd = BaseAction.class.getName();
-        argsList.add(classCmd);
-        OutputAnalyzer output;
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            if (isValid) {
-                // Get port test VM will connect to
-                int port = serverSocket.getLocalPort();
-                if (port == -1) {
-                    throw new Error("Socket is not bound: " + port);
-                }
-                argsList.add(String.valueOf(port));
-                // Start separate thread to connect with test VM
-                new Thread(() -> connectTestVM(serverSocket)).start();
-            }
-            // Start test VM
-            output = ProcessTools.executeTestJvmAllArgs(
-                    argsList.toArray(new String[argsList.size()]));
-        } catch (Throwable thr) {
-            throw new Error("Execution failed", thr);
-        }
+        List<OutputAnalyzer> outputList = executor.execute();
+        // The first one contains output from the test VM
+        OutputAnalyzer mainOuput = outputList.get(0);
         if (isValid) {
-            output.shouldHaveExitValue(0);
-            for (Consumer<OutputAnalyzer> processor : processors) {
-                processor.accept(output);
-            }
+            mainOuput.shouldHaveExitValue(0);
+            processors.forEach(processor -> processor.accept(mainOuput));
+            // only the last output contains directives got from print command
+            List<OutputAnalyzer> last = new ArrayList<>();
+            last.add(outputList.get(outputList.size() - 1));
+            jcmdProcessor.accept(last);
         } else {
-            Asserts.assertNE(output.getExitValue(), 0, "VM should exit with "
+            Asserts.assertNE(mainOuput.getExitValue(), 0, "VM should exit with "
                     + "error for incorrect directives");
-            output.shouldContain("Parsing of compiler directives failed");
-        }
-    }
-
-    /*
-     * Performs connection with a test VM, sends method states and performs
-     * JCMD operations on a test VM.
-     */
-    private void connectTestVM(ServerSocket serverSocket) {
-        /*
-         * There are no way to prove that accept was invoked before we started
-         * test VM that connects to this serverSocket. Connection timeout is
-         * enough
-         */
-        try (
-                Socket socket = serverSocket.accept();
-                PrintWriter pw = new PrintWriter(socket.getOutputStream(),
-                        true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(
-                        socket.getInputStream()))) {
-            // Get pid of the executed process
-            int pid = Integer.parseInt(in.readLine());
-            Asserts.assertNE(pid, 0, "Got incorrect pid");
-            executeJCMD(pid);
-            // serialize and send state map
-            for (Executable x : states.keySet()) {
-                pw.println("{");
-                pw.println(x.toGenericString());
-                pw.println(states.get(x).toString());
-                pw.println("}");
-            }
-        } catch (IOException e) {
-            throw new Error("Failed to write data", e);
-        }
-    }
-
-    // Executes all diagnostic commands
-    private void executeJCMD(int pid) {
-        for (String command : jcmdExecCommands) {
-            new JcmdExecutor() {
-                @Override
-                protected List<String> createCommandLine(String cmd)
-                        throws CommandExecutorException {
-                    return Arrays.asList(jcmdBinary, Integer.toString(pid),
-                            cmd);
-                }
-            }.execute(command);
+            mainOuput.shouldContain("Parsing of compiler directives failed");
         }
     }
 
@@ -265,6 +197,7 @@ public final class Scenario {
         private final Map<Type, StateBuilder<CompileCommand>> builders
                 = new HashMap<>();
         private final JcmdStateBuilder jcmdStateBuilder;
+        private final List<JcmdCommand> jcmdCommands = new ArrayList<>();
 
         public Builder() {
             builders.put(Type.FILE, new CommandFileBuilder(Type.FILE.fileName));
@@ -279,6 +212,7 @@ public final class Scenario {
             Collections.addAll(vmopts, vmOptions);
             if (compileCommand.type == Type.JCMD) {
                 jcmdStateBuilder.add((JcmdCommand) compileCommand);
+                jcmdCommands.add((JcmdCommand) compileCommand);
             } else {
                 StateBuilder<CompileCommand> builder = builders.get(
                         compileCommand.type);
@@ -301,11 +235,9 @@ public final class Scenario {
             Map<Executable, State> directiveFileStates
                     = builders.get(Type.DIRECTIVE).getStates();
 
-            // get all jcmd commands
-            List<JcmdCommand> jcmdCommands = jcmdStateBuilder
-                    .getCompileCommands();
+            // check if directives stack was cleared by jcmd
             boolean isClearedState = false;
-            if (jcmdClearedState(jcmdCommands)) {
+            if (jcmdContainsCommand(JcmdType.CLEAR)) {
                 isClearedState = true;
             }
 
@@ -321,13 +253,13 @@ public final class Scenario {
                 State st = State.merge(commandOptionState, commandFileState);
                 if (!isClearedState) {
                     State directiveState = directiveFileStates.get(x);
-                    if (directiveState != null) {
-                        st = directiveState;
+                    State jcmdState = jcmdStates.get(x);
+                    if (jcmdState != null) {
+                        st = State.merge(st, jcmdState);
+                    } else if (directiveState != null) {
+                        st = State.merge(st, directiveState);
                     }
                 }
-                State jcmdState = jcmdStates.get(x);
-                st = State.merge(st, jcmdState);
-
                 finalStates.put(x, st);
             }
 
@@ -339,6 +271,16 @@ public final class Scenario {
             ccList.addAll(builders.get(Type.OPTION).getCompileCommands());
             ccList.addAll(builders.get(Type.FILE).getCompileCommands());
 
+            // Create a list of directives to check which one was printed
+            List<CompileCommand> directives = new ArrayList<>();
+            if (jcmdContainsCommand(JcmdType.PRINT)) {
+                if (!isClearedState) {
+                    directives.addAll(builders.get(Type.DIRECTIVE)
+                            .getCompileCommands());
+                }
+                directives.addAll(jcmdStateBuilder.getCompileCommands());
+            }
+
             // Get all VM options after we build all states and files
             List<String> options = new ArrayList<>();
             options.addAll(vmopts);
@@ -348,13 +290,13 @@ public final class Scenario {
             }
             options.addAll(jcmdStateBuilder.getOptions());
             return new Scenario(isValid, options, finalStates, ccList,
-                    jcmdCommands);
+                    jcmdCommands, directives);
         }
 
-        // shows if jcmd have passed a clear command
-        private boolean jcmdClearedState(List<JcmdCommand> jcmdCommands) {
+        // shows if jcmd have passed a specified jcmd command type
+        private boolean jcmdContainsCommand(JcmdType type) {
             for (JcmdCommand jcmdCommand : jcmdCommands) {
-                if (jcmdCommand.jcmdType == JcmdType.CLEAR) {
+                if (jcmdCommand.jcmdType == type) {
                     return true;
                 }
             }

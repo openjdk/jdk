@@ -28,7 +28,6 @@
 # It also:
 #   -builds and runs adlc via adlc.make
 #   -generates JVMTI source and docs via jvmti.make (JSR-163)
-#   -generate sa-jdi.jar (JDI binding to core files)
 
 # It assumes the following flags are set:
 # CFLAGS Platform_file, Src_Dirs_I, Src_Dirs_V, SYSDEFS, AOUT, Jvm_Obj_Files
@@ -79,7 +78,7 @@ default: vm_build_preliminaries the_vm
 	@echo All done.
 
 # This is an explicit dependency for the sake of parallel makes.
-vm_build_preliminaries:  checks $(Cached_plat) $(AD_Files_If_Required) jvmti_stuff trace_stuff sa_stuff dtrace_stuff
+vm_build_preliminaries:  checks $(Cached_plat) $(AD_Files_If_Required) jvmti_stuff trace_stuff dtrace_stuff
 	@# We need a null action here, so implicit rules don't get consulted.
 
 $(Cached_plat): $(Plat_File)
@@ -96,10 +95,6 @@ jvmti_stuff: $(Cached_plat) $(adjust-mflags)
 # generate trace files
 trace_stuff: jvmti_stuff $(Cached_plat) $(adjust-mflags)
 	@$(MAKE) -f trace.make $(MFLAGS-adjusted)
-
-# generate SA jar files and native header
-sa_stuff:
-	@$(MAKE) -f sa.make $(MFLAGS-adjusted)
 
 dtrace_stuff: $(Cached_plat) $(adjust-mflags)
 	@$(MAKE) -f dtrace.make dtrace_gen_headers $(MFLAGS-adjusted) GENERATED=$(GENERATED)
@@ -140,7 +135,7 @@ realclean:
 	rm -fr $(GENERATED)
 
 .PHONY: default vm_build_preliminaries
-.PHONY: lists ad_stuff jvmti_stuff trace_stuff sa_stuff the_vm clean realclean
+.PHONY: lists ad_stuff jvmti_stuff trace_stuff the_vm clean realclean
 .PHONY: checks check_os_version install
 
 .NOTPARALLEL:

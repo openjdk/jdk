@@ -922,7 +922,7 @@ public abstract class AbstractQueuedLongSynchronizer
 
     /**
      * Queries whether any threads have ever contended to acquire this
-     * synchronizer; that is if an acquire method has ever blocked.
+     * synchronizer; that is, if an acquire method has ever blocked.
      *
      * <p>In this implementation, this operation returns in
      * constant time.
@@ -977,13 +977,11 @@ public abstract class AbstractQueuedLongSynchronizer
          * guaranteeing termination.
          */
 
-        Node t = tail;
         Thread firstThread = null;
-        while (t != null && t != head) {
-            Thread tt = t.thread;
-            if (tt != null)
-                firstThread = tt;
-            t = t.prev;
+        for (Node p = tail; p != null && p != head; p = p.prev) {
+            Thread t = p.thread;
+            if (t != null)
+                firstThread = t;
         }
         return firstThread;
     }
@@ -1031,8 +1029,8 @@ public abstract class AbstractQueuedLongSynchronizer
      * <p>An invocation of this method is equivalent to (but may be
      * more efficient than):
      * <pre> {@code
-     * getFirstQueuedThread() != Thread.currentThread() &&
-     * hasQueuedThreads()}</pre>
+     * getFirstQueuedThread() != Thread.currentThread()
+     *   && hasQueuedThreads()}</pre>
      *
      * <p>Note that because cancellations due to interrupts and
      * timeouts may occur at any time, a {@code true} return does not
@@ -1635,7 +1633,7 @@ public abstract class AbstractQueuedLongSynchronizer
                     transferAfterCancelledWait(node);
                     break;
                 }
-                if (nanosTimeout >= SPIN_FOR_TIMEOUT_THRESHOLD)
+                if (nanosTimeout > SPIN_FOR_TIMEOUT_THRESHOLD)
                     LockSupport.parkNanos(this, nanosTimeout);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
@@ -1723,7 +1721,7 @@ public abstract class AbstractQueuedLongSynchronizer
                     timedout = transferAfterCancelledWait(node);
                     break;
                 }
-                if (nanosTimeout >= SPIN_FOR_TIMEOUT_THRESHOLD)
+                if (nanosTimeout > SPIN_FOR_TIMEOUT_THRESHOLD)
                     LockSupport.parkNanos(this, nanosTimeout);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
@@ -1847,8 +1845,9 @@ public abstract class AbstractQueuedLongSynchronizer
      * Initializes head and tail fields on first contention.
      */
     private final void initializeSyncQueue() {
-        if (U.compareAndSwapObject(this, HEAD, null, new Node()))
-            tail = head;
+        Node h;
+        if (U.compareAndSwapObject(this, HEAD, null, (h = new Node())))
+            tail = h;
     }
 
     /**

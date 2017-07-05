@@ -1753,11 +1753,6 @@ public class JInternalFrame extends JComponent implements
         if (isVisible()) {
             setVisible(false);
         }
-        if (isSelected()) {
-            try {
-                setSelected(false);
-            } catch (PropertyVetoException pve) {}
-        }
         if (!isClosed) {
           firePropertyChange(IS_CLOSED_PROPERTY, Boolean.FALSE, Boolean.TRUE);
           isClosed = true;

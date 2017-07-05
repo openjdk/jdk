@@ -112,7 +112,7 @@ void JVMCICompiler::bootstrap() {
   _bootstrapping = false;
 }
 
-void JVMCICompiler::compile_method(methodHandle method, int entry_bci, JVMCIEnv* env) {
+void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JVMCIEnv* env) {
   JVMCI_EXCEPTION_CONTEXT
 
   bool is_osr = entry_bci != InvocationEntryBci;

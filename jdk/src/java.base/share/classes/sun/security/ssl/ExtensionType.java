@@ -43,8 +43,7 @@ final class ExtensionType {
         return name;
     }
 
-    static List<ExtensionType> knownExtensions =
-            new ArrayList<ExtensionType>(14);
+    static List<ExtensionType> knownExtensions = new ArrayList<>(15);
 
     static ExtensionType get(int id) {
         for (ExtensionType ext : knownExtensions) {
@@ -96,6 +95,11 @@ final class ExtensionType {
     // extensions defined in RFC 5246
     static final ExtensionType EXT_SIGNATURE_ALGORITHMS =
             e(0x000D, "signature_algorithms");   // IANA registry value: 13
+
+    // extension defined in RFC 7301 (ALPN)
+    static final ExtensionType EXT_ALPN =
+            e(0x0010, "application_layer_protocol_negotiation");
+                                                 // IANA registry value: 16
 
     // extensions defined in RFC 6961
     static final ExtensionType EXT_STATUS_REQUEST_V2 =

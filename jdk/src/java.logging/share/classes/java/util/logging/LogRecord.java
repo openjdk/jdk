@@ -30,9 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
 import java.time.Clock;
+import java.util.function.Predicate;
 
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.SharedSecrets;
 import static jdk.internal.logger.SimpleConsoleLogger.skipLoggingFrame;
 
 /**
@@ -469,12 +468,11 @@ public class LogRecord implements java.io.Serializable {
      * @implSpec This is equivalent to calling
      *      {@link #getInstant() getInstant().toEpochMilli()}.
      *
-     * @deprecated To get the full nanosecond resolution event time,
+     * @apiNote To get the full nanosecond resolution event time,
      *             use {@link #getInstant()}.
      *
      * @see #getInstant()
      */
-    @Deprecated
     public long getMillis() {
         return instant.toEpochMilli();
     }
@@ -488,8 +486,10 @@ public class LogRecord implements java.io.Serializable {
      *      {@link #setInstant(java.time.Instant)
      *      setInstant(Instant.ofEpochMilli(millis))}.
      *
-     * @deprecated To set event time with nanosecond resolution,
-     *             use {@link #setInstant(java.time.Instant)}.
+     * @deprecated LogRecord maintains timestamps with nanosecond resolution,
+     *             using {@link Instant} values. For this reason,
+     *             {@link #setInstant(java.time.Instant) setInstant()}
+     *             should be used in preference to {@code setMillis()}.
      *
      * @see #setInstant(java.time.Instant)
      */
@@ -511,14 +511,23 @@ public class LogRecord implements java.io.Serializable {
 
     /**
      * Sets the instant that the event occurred.
+     * <p>
+     * If the given {@code instant} represents a point on the time-line too
+     * far in the future or past to fit in a {@code long} milliseconds and
+     * nanoseconds adjustment, then an {@code ArithmeticException} will be
+     * thrown.
      *
      * @param instant the instant that the event occurred.
      *
      * @throws NullPointerException if {@code instant} is null.
+     * @throws ArithmeticException if numeric overflow would occur while
+     *         calling {@link Instant#toEpochMilli() instant.toEpochMilli()}.
+     *
      * @since 1.9
      */
     public void setInstant(Instant instant) {
-        this.instant = Objects.requireNonNull(instant);
+        instant.toEpochMilli();
+        this.instant = instant;
     }
 
     /**
@@ -661,42 +670,58 @@ public class LogRecord implements java.io.Serializable {
     //
     private void inferCaller() {
         needToInferCaller = false;
-        JavaLangAccess access = SharedSecrets.getJavaLangAccess();
-        Throwable throwable = new Throwable();
-        int depth = access.getStackTraceDepth(throwable);
+        // Skip all frames until we have found the first logger frame.
+        Optional<StackWalker.StackFrame> frame = new CallerFinder().get();
+        frame.ifPresent(f -> {
+            setSourceClassName(f.getClassName());
+            setSourceMethodName(f.getMethodName());
+        });
 
-        boolean lookingForLogger = true;
-        for (int ix = 0; ix < depth; ix++) {
-            // Calling getStackTraceElement directly prevents the VM
-            // from paying the cost of building the entire stack frame.
-            StackTraceElement frame =
-                access.getStackTraceElement(throwable, ix);
-            String cname = frame.getClassName();
-            boolean isLoggerImpl = isLoggerImplFrame(cname);
-            if (lookingForLogger) {
-                // Skip all frames until we have found the first logger frame.
-                if (isLoggerImpl) {
-                    lookingForLogger = false;
-                }
-            } else {
-                if (!isLoggerImpl) {
-                    // skip logging/logger infrastructure and reflection calls
-                    if (!skipLoggingFrame(cname)) {
-                       // We've found the relevant frame.
-                       setSourceClassName(cname);
-                       setSourceMethodName(frame.getMethodName());
-                       return;
-                    }
-                }
-            }
-        }
         // We haven't found a suitable frame, so just punt.  This is
         // OK as we are only committed to making a "best effort" here.
     }
 
-    private boolean isLoggerImplFrame(String cname) {
-        // the log record could be created for a platform logger
-        return (cname.equals("java.util.logging.Logger") ||
-                cname.startsWith("sun.util.logging.PlatformLogger"));
+    /*
+     * CallerFinder is a stateful predicate.
+     */
+    static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
+        static final StackWalker WALKER = StackWalker.getInstance();
+
+        /**
+         * Returns StackFrame of the caller's frame.
+         * @return StackFrame of the caller's frame.
+         */
+        Optional<StackWalker.StackFrame> get() {
+            return WALKER.walk((s) -> s.filter(this).findFirst());
+        }
+
+        private boolean lookingForLogger = true;
+        /**
+         * Returns true if we have found the caller's frame, false if the frame
+         * must be skipped.
+         *
+         * @param t The frame info.
+         * @return true if we have found the caller's frame, false if the frame
+         * must be skipped.
+         */
+        @Override
+        public boolean test(StackWalker.StackFrame t) {
+            final String cname = t.getClassName();
+            // We should skip all frames until we have found the logger,
+            // because these frames could be frames introduced by e.g. custom
+            // sub classes of Handler.
+            if (lookingForLogger) {
+                // the log record could be created for a platform logger
+                lookingForLogger = !isLoggerImplFrame(cname);
+                return false;
+            }
+            // skip logging/logger infrastructure and reflection calls
+            return !skipLoggingFrame(cname);
+        }
+
+        private boolean isLoggerImplFrame(String cname) {
+            return (cname.equals("java.util.logging.Logger") ||
+                    cname.startsWith("sun.util.logging.PlatformLogger"));
+        }
     }
 }

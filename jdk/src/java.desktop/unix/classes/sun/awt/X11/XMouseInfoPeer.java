@@ -30,6 +30,7 @@ import java.awt.Window;
 import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
 import java.awt.peer.MouseInfoPeer;
+import sun.awt.X11GraphicsDevice;
 
 import sun.awt.AWTAccessor;
 
@@ -64,6 +65,12 @@ public class XMouseInfoPeer implements MouseInfoPeer {
                 if (pointerFound) {
                     point.x = Native.getInt(XlibWrapper.larg3);
                     point.y = Native.getInt(XlibWrapper.larg4);
+                    GraphicsDevice device = gds[i];
+                    if (device instanceof X11GraphicsDevice) {
+                        int scale = ((X11GraphicsDevice) device).getScaleFactor();
+                        point.x = XlibUtil.scaleDown(point.x, scale);
+                        point.y = XlibUtil.scaleDown(point.y, scale);
+                    }
                     return i;
                 }
             }

@@ -24,6 +24,7 @@
 #ifndef SHARE_VM_LOGGING_LOGTAGLEVELEXPRESSION_HPP
 #define SHARE_VM_LOGGING_LOGTAGLEVELEXPRESSION_HPP
 
+#include "logging/logConfiguration.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
@@ -35,6 +36,7 @@ class LogTagSet;
 // Class used to temporary encode a 'what'-expression during log configuration.
 // Consists of a combination of tags and levels, e.g. "tag1+tag2=level1,tag3*=level2".
 class LogTagLevelExpression : public StackObj {
+  friend void LogConfiguration::configure_stdout(LogLevelType, bool, ...);
  private:
   static const size_t MaxCombinations = 32;
   static const char* DefaultExpressionString;
@@ -43,7 +45,6 @@ class LogTagLevelExpression : public StackObj {
   LogTagType    _tags[MaxCombinations][LogTag::MaxTags];
   LogLevelType  _level[MaxCombinations];
   bool          _allow_other_tags[MaxCombinations];
-  char*         _string;
 
   void new_combination() {
     _ncombinations++;
@@ -66,14 +67,9 @@ class LogTagLevelExpression : public StackObj {
   void clear();
 
  public:
-  LogTagLevelExpression() : _ntags(0), _ncombinations(0), _string(NULL) {
+  LogTagLevelExpression() : _ntags(0), _ncombinations(0) {
   }
 
-  const char* to_string() const {
-    return _string;
-  }
-
-  ~LogTagLevelExpression();
   bool parse(const char* str, outputStream* errstream = NULL);
   LogLevelType level_for(const LogTagSet& ts) const;
 };
