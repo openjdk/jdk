@@ -52,9 +52,14 @@ import sun.security.util.SecurityConstants;
  * thread group to call the applet's init(), start(), stop(), and
  * destroy() methods.
  *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
+ *
  * @author      Arthur van Hoff
  */
-@SuppressWarnings({"serial", "deprecation"}) // JDK implementation class
+@SuppressWarnings({"serial"}) // JDK implementation class
+@Deprecated(since = "9")
 public
 abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 

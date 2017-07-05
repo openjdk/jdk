@@ -525,8 +525,12 @@ public class RepaintManager
      * @param h Height of the region to repaint
      * @see JApplet#repaint
      * @since 1.6
+     *
+     * @deprecated The Applet API is deprecated. See the
+     * <a href="../../java/applet/package-summary.html"> java.applet package
+     * documentation</a> for further information.
      */
-    @SuppressWarnings("deprecation")
+    @Deprecated(since = "9")
     public void addDirtyRegion(Applet applet, int x, int y, int w, int h) {
         addDirtyRegion0(applet, x, y, w, h);
     }

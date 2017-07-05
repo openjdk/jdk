@@ -63,8 +63,8 @@ JNIEXPORT void JNICALL initInetAddressIDs(JNIEnv *env);
  */
 extern jobject getInet6Address_scopeifname(JNIEnv *env, jobject ia6Obj);
 extern jboolean setInet6Address_scopeifname(JNIEnv *env, jobject ia6Obj, jobject scopeifname);
-extern int getInet6Address_scopeid_set(JNIEnv *env, jobject ia6Obj);
-extern int getInet6Address_scopeid(JNIEnv *env, jobject ia6Obj);
+extern jboolean getInet6Address_scopeid_set(JNIEnv *env, jobject ia6Obj);
+extern unsigned int getInet6Address_scopeid(JNIEnv *env, jobject ia6Obj);
 extern jboolean setInet6Address_scopeid(JNIEnv *env, jobject ia6Obj, int scopeid);
 extern jboolean getInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *dest);
 extern jboolean setInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *address);
@@ -132,24 +132,41 @@ JNIEXPORT jint JNICALL ipv6_available();
 
 JNIEXPORT jint JNICALL reuseport_available();
 
+/**
+ * This function will fill a SOCKETADDRESS structure from an InetAddress
+ * object.
+ *
+ * The parameter 'sa' must point to valid storage of size
+ * 'sizeof(SOCKETADDRESS)'.
+ *
+ * The parameter 'len' is a pointer to an int and is used for returning
+ * the actual sockaddr length, e.g. 'sizeof(struct sockaddr_in)' or
+ * 'sizeof(struct sockaddr_in6)'.
+ *
+ * If the type of the InetAddress object is IPv6, the function will fill a
+ * sockaddr_in6 structure. IPv6 must be available in that case, otherwise an
+ * exception is thrown.
+ * In the case of an IPv4 InetAddress, when IPv6 is available and
+ * v4MappedAddress is TRUE, this method will fill a sockaddr_in6 structure
+ * containing an IPv4 mapped IPv6 address. Otherwise a sockaddr_in
+ * structure will be filled.
+ */
 JNIEXPORT int JNICALL
 NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
-                          struct sockaddr *him, int *len,
+                          SOCKETADDRESS *sa, int *len,
                           jboolean v4MappedAddress);
 
 JNIEXPORT jobject JNICALL
-NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port);
+NET_SockaddrToInetAddress(JNIEnv *env, SOCKETADDRESS *sa, int *port);
 
 void platformInit();
 
 void parseExclusiveBindProperty(JNIEnv *env);
 
-void NET_SetTrafficClass(struct sockaddr *him, int trafficClass);
+JNIEXPORT jint JNICALL NET_GetPortFromSockaddr(SOCKETADDRESS *sa);
 
-JNIEXPORT jint JNICALL NET_GetPortFromSockaddr(struct sockaddr *him);
-
-JNIEXPORT jint JNICALL
-NET_SockaddrEqualsInetAddress(JNIEnv *env,struct sockaddr *him, jobject iaObj);
+JNIEXPORT jboolean JNICALL
+NET_SockaddrEqualsInetAddress(JNIEnv *env, SOCKETADDRESS *sa, jobject iaObj);
 
 int NET_IsIPv4Mapped(jbyte* caddr);
 
@@ -172,7 +189,7 @@ JNIEXPORT int JNICALL
 NET_SetSockOpt(int fd, int level, int opt, const void *arg, int len);
 
 JNIEXPORT int JNICALL
-NET_Bind(int fd, struct sockaddr *him, int len);
+NET_Bind(int fd, SOCKETADDRESS *sa, int len);
 
 JNIEXPORT int JNICALL
 NET_MapSocketOption(jint cmd, int *level, int *optname);
@@ -182,10 +199,6 @@ NET_MapSocketOptionV6(jint cmd, int *level, int *optname);
 
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd);
-
-int getScopeID(struct sockaddr *);
-
-int cmpScopeID(unsigned int, struct sockaddr *);
 
 unsigned short in_cksum(unsigned short *addr, int len);
 

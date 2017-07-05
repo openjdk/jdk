@@ -22,7 +22,6 @@
  */
 
 import sun.awt.image.MultiResolutionToolkitImage;
-import sun.java2d.SunGraphics2D;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,7 +36,6 @@ import static java.awt.event.InputEvent.BUTTON1_DOWN_MASK;
  * @summary [macosx] Drag image of TransferHandler does not honor
  * MultiResolutionImage
  * @modules java.desktop/sun.awt.image
- *          java.desktop/sun.java2d
  * @run main MultiResolutionDragImageTest TEST_DRAG
  */
 public class MultiResolutionDragImageTest {
@@ -126,30 +124,11 @@ public class MultiResolutionDragImageTest {
         return Math.abs(n - m) <= 50;
     }
 
-    private static float getScaleFactor() {
-
-        final Dialog dialog = new Dialog((Window) null);
-        dialog.setSize(100, 100);
-        dialog.setModal(true);
-        final float[] scaleFactors = new float[1];
-        Panel panel = new Panel() {
-
-            @Override
-            public void paint(Graphics g) {
-                float scaleFactor = 1;
-                if (g instanceof SunGraphics2D) {
-                    scaleFactor = ((SunGraphics2D) g).surfaceData.getDefaultScale();
-                }
-                scaleFactors[0] = scaleFactor;
-                dialog.setVisible(false);
-            }
-        };
-
-        dialog.add(panel);
-        dialog.setVisible(true);
-        dialog.dispose();
-
-        return scaleFactors[0];
+    static float getScaleFactor() {
+        return (float) GraphicsEnvironment.
+                getLocalGraphicsEnvironment().
+                getDefaultScreenDevice().getDefaultConfiguration().
+                getDefaultTransform().getScaleX();
     }
 
     private static Image createMultiResolutionImage() {

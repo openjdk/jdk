@@ -383,6 +383,10 @@ jdk.javadoc_COPY := .xml .css .js .png
 
 ################################################################################
 
+jdk.jartool_ADD_JAVAC_FLAGS := -XDstringConcat=inline
+
+################################################################################
+
 jdk.rmic_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 jdk.rmic_CLEAN := .properties
 

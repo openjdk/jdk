@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static java.lang.System.out;
 
 /*
  * @test
- * @bug 8167328
+ * @bug 8167328 8171830
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jartool
@@ -241,6 +241,11 @@ public class Basic {
 
         java(mp, FOO.moduleName + "/" + FOO.mainClass)
             .assertSuccess()
+.resultChecker(r -> {
+        System.out.println("===================================");
+        System.out.println(r.output);
+        System.out.println("===================================");
+})
             .resultChecker(r -> assertModuleData(r, FOO));
         try (InputStream fis = Files.newInputStream(modularJar);
              JarInputStream jis = new JarInputStream(fis)) {
@@ -417,6 +422,7 @@ public class Basic {
         jar("--update",
             "--file=" + modularJar.toString(),
             "--main-class=" + FOO.mainClass,
+            "--module-version=" + FOO.version,
             "-m", mrjarDir.resolve("META-INF/MANIFEST.MF").toRealPath().toString(),
             "-C", mrjarDir.toString(), "META-INF/versions/9/module-info.class")
             .assertSuccess();
@@ -731,6 +737,25 @@ public class Basic {
             "-C", modClasses.toString(), "jdk/test/baz/BazService.class",
             "-C", modClasses.toString(), "jdk/test/baz/internal/BazServiceImpl.class")
             .assertSuccess();
+    }
+
+    @Test
+    public void exportCreateWithMissingPkg() throws IOException {
+
+        Path foobar = TEST_SRC.resolve("src").resolve("foobar");
+        Path dst = Files.createDirectories(MODULE_CLASSES.resolve("foobar"));
+        javac(dst, null, sourceList(foobar));
+
+        Path mp = Paths.get("exportWithMissingPkg");
+        createTestDir(mp);
+        Path modClasses = dst;
+        Path modularJar = mp.resolve("foofoo.jar");
+
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "-C", modClasses.toString(), "module-info.class",
+            "-C", modClasses.toString(), "jdk/test/foo/Foo.class")
+            .assertFailure();
     }
 
     @Test

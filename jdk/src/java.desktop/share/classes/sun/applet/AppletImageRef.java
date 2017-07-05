@@ -31,6 +31,7 @@ import java.lang.ref.SoftReference;
 import sun.awt.image.URLImageSource;
 import java.net.URL;
 
+@Deprecated(since = "9")
 class AppletImageRef {
     private SoftReference<Image> soft = null;
 

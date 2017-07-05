@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary Test TestImpl REGISTRY RegistryRunner
+ * @build TestLibrary Test TestImpl RegistryVM RegistryRunner
  * @run main/othervm/policy=security.policy/timeout=360 DGCDeadLock
  */
 
@@ -68,21 +68,18 @@ public class DGCDeadLock implements Runnable {
 
     static public void main(String[] args) {
 
-        REGISTRY testImplVM = null;
+        RegistryVM testImplVM = null;
 
         System.err.println("\nregression test for 4118056\n");
         TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
         try {
-            String options = " -Djava.security.policy=" +
-                TestParams.defaultPolicy +
-                " --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED" +
+            String options = " --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED" +
                 " -Djava.rmi.dgc.leaseValue=500000" +
                 " -Dsun.rmi.dgc.checkInterval=" +
-                (HOLD_TARGET_TIME - 5000) +
-                "" ;
+                (HOLD_TARGET_TIME - 5000);
 
-            testImplVM = REGISTRY.createREGISTRYWithRunner("TestImpl", options);
+            testImplVM = RegistryVM.createRegistryVMWithRunner("TestImpl", options);
             testImplVM.start();
             registryPort = testImplVM.getPort();
 
@@ -107,7 +104,7 @@ public class DGCDeadLock implements Runnable {
             TestLibrary.bomb("test failed in main()", e);
         } finally {
             if (testImplVM != null) {
-                testImplVM.shutdown();
+                testImplVM.cleanup();
                 testImplVM = null;
             }
         }

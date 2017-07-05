@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2477,7 +2477,7 @@ public final class Class<T> implements java.io.Serializable,
      * <ul>
      *
      * <li> If the {@code name} begins with a {@code '/'}
-     * (<tt>'&#92;u002f'</tt>), then the absolute name of the resource is the
+     * (<code>'&#92;u002f'</code>), then the absolute name of the resource is the
      * portion of the {@code name} following the {@code '/'}.
      *
      * <li> Otherwise, the absolute name is of the following form:
@@ -2488,7 +2488,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> Where the {@code modified_package_name} is the package name of this
      * object with {@code '/'} substituted for {@code '.'}
-     * (<tt>'&#92;u002e'</tt>).
+     * (<code>'&#92;u002e'</code>).
      *
      * </ul>
      *
@@ -2570,7 +2570,7 @@ public final class Class<T> implements java.io.Serializable,
      * <ul>
      *
      * <li> If the {@code name} begins with a {@code '/'}
-     * (<tt>'&#92;u002f'</tt>), then the absolute name of the resource is the
+     * (<code>'&#92;u002f'</code>), then the absolute name of the resource is the
      * portion of the {@code name} following the {@code '/'}.
      *
      * <li> Otherwise, the absolute name is of the following form:
@@ -2581,7 +2581,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> Where the {@code modified_package_name} is the package name of this
      * object with {@code '/'} substituted for {@code '.'}
-     * (<tt>'&#92;u002e'</tt>).
+     * (<code>'&#92;u002e'</code>).
      *
      * </ul>
      *
