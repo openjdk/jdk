@@ -399,7 +399,10 @@ public:
 // Cosinus of a double
 class CosDNode : public Node {
 public:
-  CosDNode( Node *in1  ) : Node(0, in1) {}
+  CosDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -410,7 +413,10 @@ public:
 // Sinus of a double
 class SinDNode : public Node {
 public:
-  SinDNode( Node *in1  ) : Node(0, in1) {}
+  SinDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -422,7 +428,10 @@ public:
 // tangens of a double
 class TanDNode : public Node {
 public:
-  TanDNode(Node *in1  ) : Node(0, in1) {}
+  TanDNode(Compile* C, Node *c,Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -445,7 +454,10 @@ public:
 // square root a double
 class SqrtDNode : public Node {
 public:
-  SqrtDNode(Node *c, Node *in1  ) : Node(c, in1) {}
+  SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -470,7 +482,10 @@ public:
 // Log_e of a double
 class LogDNode : public Node {
 public:
-  LogDNode( Node *in1 ) : Node(0, in1) {}
+  LogDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -481,7 +496,10 @@ public:
 // Log_10 of a double
 class Log10DNode : public Node {
 public:
-  Log10DNode( Node *in1 ) : Node(0, in1) {}
+  Log10DNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
