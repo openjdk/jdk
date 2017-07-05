@@ -63,13 +63,13 @@ class MemPointerIterator : public MemPointerArrayIteratorImpl {
       MemPointer* p1 = (MemPointer*)ptr;
       MemPointer* p2 = (MemPointer*)_array->at(_pos - 1);
       assert(!is_dup_pointer(p1, p2),
-        "dup pointer");
+        err_msg("duplicated pointer, flag = [%x]", (unsigned int)((MemPointerRecord*)p1)->flags()));
     }
      if (_pos < _array->length() -1) {
       MemPointer* p1 = (MemPointer*)ptr;
       MemPointer* p2 = (MemPointer*)_array->at(_pos + 1);
       assert(!is_dup_pointer(p1, p2),
-        "dup pointer");
+        err_msg("duplicated pointer, flag = [%x]", (unsigned int)((MemPointerRecord*)p1)->flags()));
      }
     return _array->insert_at(ptr, _pos);
   }
@@ -79,14 +79,14 @@ class MemPointerIterator : public MemPointerArrayIteratorImpl {
       MemPointer* p1 = (MemPointer*)ptr;
       MemPointer* p2 = (MemPointer*)_array->at(_pos - 1);
       assert(!is_dup_pointer(p1, p2),
-        "dup pointer");
+        err_msg("duplicated pointer, flag = [%x]", (unsigned int)((MemPointerRecord*)p1)->flags()));
     }
     if (_pos < _array->length() - 1) {
       MemPointer* p1 = (MemPointer*)ptr;
       MemPointer* p2 = (MemPointer*)_array->at(_pos + 1);
 
       assert(!is_dup_pointer(p1, p2),
-        "dup pointer");
+        err_msg("duplicated pointer, flag = [%x]", (unsigned int)((MemPointerRecord*)p1)->flags()));
      }
     if (_array->insert_at(ptr, _pos + 1)) {
       _pos ++;

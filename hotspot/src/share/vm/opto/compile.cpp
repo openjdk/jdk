@@ -2604,7 +2604,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     if (n->req()-1 > 2) {
       // Replace many operand PackNodes with a binary tree for matching
       PackNode* p = (PackNode*) n;
-      Node* btp = p->binaryTreePack(Compile::current(), 1, n->req());
+      Node* btp = p->binary_tree_pack(Compile::current(), 1, n->req());
       n->subsume_by(btp);
     }
     break;
