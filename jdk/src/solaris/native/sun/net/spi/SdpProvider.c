@@ -44,7 +44,11 @@ JNIEXPORT void JNICALL
 Java_sun_net_spi_SdpProvider_convert(JNIEnv *env, jclass cls, jint fd)
 {
 #ifdef PROTO_SDP
+#ifdef AF_INET6
     int domain = ipv6_available() ? AF_INET6 : AF_INET;
+#else
+    int domain = AF_INET;
+#endif
     int s = socket(domain, SOCK_STREAM, PROTO_SDP);
     if (s < 0) {
         JNU_ThrowIOExceptionWithLastError(env, "socket");

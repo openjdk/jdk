@@ -953,7 +953,7 @@ public class Date
      * without affecting its internal state.
      */
     static final long getMillisOf(Date date) {
-        if (date.cdate == null) {
+        if (date.cdate == null || date.cdate.isNormalized()) {
             return date.fastTime;
         }
         BaseCalendar.Date d = (BaseCalendar.Date) date.cdate.clone();
