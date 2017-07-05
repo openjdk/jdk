@@ -28,7 +28,7 @@ package jdk.nashorn.api.tree;
 /**
  * Interface for receiving diagnostics from Nashorn parser.
  *
- * @since 1.9
+ * @since 9
  */
 @FunctionalInterface
 public interface DiagnosticListener {

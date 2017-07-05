@@ -30,9 +30,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.Remote;
@@ -40,6 +43,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.RMISocketFactory;
 import java.rmi.server.RemoteObject;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.KeyStore;
@@ -60,6 +64,8 @@ import javax.management.remote.JMXServiceURL;
 import javax.management.remote.rmi.RMIConnectorServer;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
@@ -107,6 +113,8 @@ public final class ConnectorBootstrap {
 
         public static final String PORT =
                 "com.sun.management.jmxremote.port";
+        public static final String HOST =
+                "com.sun.management.jmxremote.host";
         public static final String RMI_PORT =
                 "com.sun.management.jmxremote.rmi.port";
         public static final String CONFIG_FILE_NAME =
@@ -424,10 +432,14 @@ public final class ConnectorBootstrap {
             checkAccessFile(accessFileName);
         }
 
+        final String bindAddress =
+                props.getProperty(PropertyNames.HOST);
+
         if (log.debugOn()) {
             log.debug("startRemoteConnectorServer",
                     Agent.getText("jmxremote.ConnectorBootstrap.starting") +
                     "\n\t" + PropertyNames.PORT + "=" + port +
+                    (bindAddress == null ? "" : "\n\t" + PropertyNames.HOST + "=" + bindAddress) +
                     "\n\t" + PropertyNames.RMI_PORT + "=" + rmiPort +
                     "\n\t" + PropertyNames.USE_SSL + "=" + useSsl +
                     "\n\t" + PropertyNames.USE_REGISTRY_SSL + "=" + useRegistrySsl +
@@ -458,7 +470,7 @@ public final class ConnectorBootstrap {
                     sslConfigFileName, enabledCipherSuitesList,
                     enabledProtocolsList, sslNeedClientAuth,
                     useAuthentication, loginConfigName,
-                    passwordFileName, accessFileName);
+                    passwordFileName, accessFileName, bindAddress);
             cs = data.jmxConnectorServer;
             url = data.jmxRemoteURL;
             log.config("startRemoteConnectorServer",
@@ -628,12 +640,13 @@ public final class ConnectorBootstrap {
             String sslConfigFileName,
             String[] enabledCipherSuites,
             String[] enabledProtocols,
-            boolean sslNeedClientAuth) {
+            boolean sslNeedClientAuth,
+            String bindAddress) {
         if (sslConfigFileName == null) {
-            return new SslRMIServerSocketFactory(
+            return new HostAwareSslSocketFactory(
                     enabledCipherSuites,
                     enabledProtocols,
-                    sslNeedClientAuth);
+                    sslNeedClientAuth, bindAddress);
         } else {
             checkRestrictedFile(sslConfigFileName);
             try {
@@ -687,11 +700,11 @@ public final class ConnectorBootstrap {
                 SSLContext ctx = SSLContext.getInstance("SSL");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-                return new SslRMIServerSocketFactory(
+                return new HostAwareSslSocketFactory(
                         ctx,
                         enabledCipherSuites,
                         enabledProtocols,
-                        sslNeedClientAuth);
+                        sslNeedClientAuth, bindAddress);
             } catch (Exception e) {
                 throw new AgentConfigurationError(AGENT_EXCEPTION, e, e.toString());
             }
@@ -711,7 +724,8 @@ public final class ConnectorBootstrap {
             boolean useAuthentication,
             String loginConfigName,
             String passwordFileName,
-            String accessFileName)
+            String accessFileName,
+            String bindAddress)
             throws IOException, MalformedURLException {
 
         /* Make sure we use non-guessable RMI object IDs.  Otherwise
@@ -719,13 +733,15 @@ public final class ConnectorBootstrap {
          * IDs.  */
         System.setProperty("java.rmi.server.randomIDs", "true");
 
-        JMXServiceURL url = new JMXServiceURL("rmi", null, rmiPort);
+        JMXServiceURL url = new JMXServiceURL("rmi", bindAddress, rmiPort);
 
         Map<String, Object> env = new HashMap<>();
 
         PermanentExporter exporter = new PermanentExporter();
 
         env.put(RMIExporter.EXPORTER_ATTRIBUTE, exporter);
+
+        boolean useSocketFactory = bindAddress != null && !useSsl;
 
         if (useAuthentication) {
             if (loginConfigName != null) {
@@ -751,12 +767,18 @@ public final class ConnectorBootstrap {
             csf = new SslRMIClientSocketFactory();
             ssf = createSslRMIServerSocketFactory(
                     sslConfigFileName, enabledCipherSuites,
-                    enabledProtocols, sslNeedClientAuth);
+                    enabledProtocols, sslNeedClientAuth, bindAddress);
         }
 
         if (useSsl) {
             env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE,
                     csf);
+            env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
+                    ssf);
+        }
+
+        if (useSocketFactory) {
+            ssf = new HostAwareSocketFactory(bindAddress);
             env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
                     ssf);
         }
@@ -777,6 +799,10 @@ public final class ConnectorBootstrap {
         }
 
         if (useRegistrySsl) {
+            registry =
+                    new SingleEntryRegistry(port, csf, ssf,
+                    "jmxrmi", exporter.firstExported);
+        } else if (useSocketFactory) {
             registry =
                     new SingleEntryRegistry(port, csf, ssf,
                     "jmxrmi", exporter.firstExported);
@@ -813,4 +839,172 @@ public final class ConnectorBootstrap {
     private static final ClassLogger log =
         new ClassLogger(ConnectorBootstrap.class.getPackage().getName(),
                         "ConnectorBootstrap");
+
+    private static class HostAwareSocketFactory implements RMIServerSocketFactory {
+
+        private final String bindAddress;
+
+        private HostAwareSocketFactory(String bindAddress) {
+             this.bindAddress = bindAddress;
+        }
+
+        @Override
+        public ServerSocket createServerSocket(int port) throws IOException {
+            if (bindAddress == null) {
+                return new ServerSocket(port);
+            } else {
+                try {
+                    InetAddress addr = InetAddress.getByName(bindAddress);
+                    return new ServerSocket(port, 0, addr);
+                } catch (UnknownHostException e) {
+                    return new ServerSocket(port);
+                }
+            }
+        }
+    }
+
+    private static class HostAwareSslSocketFactory extends SslRMIServerSocketFactory {
+
+        private final String bindAddress;
+        private final String[] enabledCipherSuites;
+        private final String[] enabledProtocols;
+        private final boolean needClientAuth;
+        private final SSLContext context;
+
+        private HostAwareSslSocketFactory(String[] enabledCipherSuites,
+                                          String[] enabledProtocols,
+                                          boolean sslNeedClientAuth,
+                                          String bindAddress) throws IllegalArgumentException {
+            this(null, enabledCipherSuites, enabledProtocols, sslNeedClientAuth, bindAddress);
+        }
+
+        private HostAwareSslSocketFactory(SSLContext ctx,
+                                          String[] enabledCipherSuites,
+                                          String[] enabledProtocols,
+                                          boolean sslNeedClientAuth,
+                                          String bindAddress) throws IllegalArgumentException {
+            this.context = ctx;
+            this.bindAddress = bindAddress;
+            this.enabledProtocols = enabledProtocols;
+            this.enabledCipherSuites = enabledCipherSuites;
+            this.needClientAuth = sslNeedClientAuth;
+            checkValues(ctx, enabledCipherSuites, enabledProtocols);
+        }
+
+        @Override
+        public ServerSocket createServerSocket(int port) throws IOException {
+            if (bindAddress != null) {
+                try {
+                    InetAddress addr = InetAddress.getByName(bindAddress);
+                    return new SslServerSocket(port, 0, addr, context,
+                                               enabledCipherSuites, enabledProtocols, needClientAuth);
+                } catch (UnknownHostException e) {
+                    return new SslServerSocket(port, context,
+                                               enabledCipherSuites, enabledProtocols, needClientAuth);
+                }
+            } else {
+                return new SslServerSocket(port, context,
+                                           enabledCipherSuites, enabledProtocols, needClientAuth);
+            }
+        }
+
+        private static void checkValues(SSLContext context,
+                                        String[] enabledCipherSuites,
+                                        String[] enabledProtocols) throws IllegalArgumentException {
+            // Force the initialization of the default at construction time,
+            // rather than delaying it to the first time createServerSocket()
+            // is called.
+            //
+            final SSLSocketFactory sslSocketFactory =
+                    context == null ?
+                        (SSLSocketFactory)SSLSocketFactory.getDefault() : context.getSocketFactory();
+            SSLSocket sslSocket = null;
+            if (enabledCipherSuites != null || enabledProtocols != null) {
+                try {
+                    sslSocket = (SSLSocket) sslSocketFactory.createSocket();
+                } catch (Exception e) {
+                    final String msg = "Unable to check if the cipher suites " +
+                            "and protocols to enable are supported";
+                    throw (IllegalArgumentException)
+                    new IllegalArgumentException(msg).initCause(e);
+                }
+            }
+
+            // Check if all the cipher suites and protocol versions to enable
+            // are supported by the underlying SSL/TLS implementation and if
+            // true create lists from arrays.
+            //
+            if (enabledCipherSuites != null) {
+                sslSocket.setEnabledCipherSuites(enabledCipherSuites);
+            }
+            if (enabledProtocols != null) {
+                sslSocket.setEnabledProtocols(enabledProtocols);
+            }
+        }
+    }
+
+    private static class SslServerSocket extends ServerSocket {
+
+        private static SSLSocketFactory defaultSSLSocketFactory;
+        private final String[] enabledCipherSuites;
+        private final String[] enabledProtocols;
+        private final boolean needClientAuth;
+        private final SSLContext context;
+
+        private SslServerSocket(int port,
+                                SSLContext ctx,
+                                String[] enabledCipherSuites,
+                                String[] enabledProtocols,
+                                boolean needClientAuth) throws IOException {
+            super(port);
+            this.enabledProtocols = enabledProtocols;
+            this.enabledCipherSuites = enabledCipherSuites;
+            this.needClientAuth = needClientAuth;
+            this.context = ctx;
+        }
+
+        private SslServerSocket(int port,
+                                int backlog,
+                                InetAddress bindAddr,
+                                SSLContext ctx,
+                                String[] enabledCipherSuites,
+                                String[] enabledProtocols,
+                                boolean needClientAuth) throws IOException {
+            super(port, backlog, bindAddr);
+            this.enabledProtocols = enabledProtocols;
+            this.enabledCipherSuites = enabledCipherSuites;
+            this.needClientAuth = needClientAuth;
+            this.context = ctx;
+        }
+
+        @Override
+        public Socket accept() throws IOException {
+            final SSLSocketFactory sslSocketFactory =
+                    context == null ?
+                        getDefaultSSLSocketFactory() : context.getSocketFactory();
+            Socket socket = super.accept();
+            SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(
+                    socket, socket.getInetAddress().getHostName(),
+                    socket.getPort(), true);
+            sslSocket.setUseClientMode(false);
+            if (enabledCipherSuites != null) {
+                sslSocket.setEnabledCipherSuites(enabledCipherSuites);
+            }
+            if (enabledProtocols != null) {
+                sslSocket.setEnabledProtocols(enabledProtocols);
+            }
+            sslSocket.setNeedClientAuth(needClientAuth);
+            return sslSocket;
+        }
+
+        private static synchronized SSLSocketFactory getDefaultSSLSocketFactory() {
+            if (defaultSSLSocketFactory == null) {
+                defaultSSLSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
+                return defaultSSLSocketFactory;
+            } else {
+                return defaultSSLSocketFactory;
+            }
+        }
+
+    }
 }

@@ -25,6 +25,7 @@
 
 package sun.reflect.annotation;
 
+import java.io.ObjectInputStream;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.io.Serializable;
@@ -431,35 +432,72 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
-        s.defaultReadObject();
+        ObjectInputStream.GetField fields = s.readFields();
+
+        @SuppressWarnings("unchecked")
+        Class<? extends Annotation> t = (Class<? extends Annotation>)fields.get("type", null);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> streamVals = (Map<String, Object>)fields.get("memberValues", null);
 
         // Check to make sure that types have not evolved incompatibly
 
         AnnotationType annotationType = null;
         try {
-            annotationType = AnnotationType.getInstance(type);
+            annotationType = AnnotationType.getInstance(t);
         } catch(IllegalArgumentException e) {
             // Class is no longer an annotation type; time to punch out
             throw new java.io.InvalidObjectException("Non-annotation type in annotation serial stream");
         }
 
         Map<String, Class<?>> memberTypes = annotationType.memberTypes();
+        // consistent with runtime Map type
+        Map<String, Object> mv = new LinkedHashMap<>();
 
         // If there are annotation members without values, that
         // situation is handled by the invoke method.
-        for (Map.Entry<String, Object> memberValue : memberValues.entrySet()) {
+        for (Map.Entry<String, Object> memberValue : streamVals.entrySet()) {
             String name = memberValue.getKey();
+            Object value = null;
             Class<?> memberType = memberTypes.get(name);
             if (memberType != null) {  // i.e. member still exists
-                Object value = memberValue.getValue();
+                value = memberValue.getValue();
                 if (!(memberType.isInstance(value) ||
                       value instanceof ExceptionProxy)) {
-                    memberValue.setValue(
-                        new AnnotationTypeMismatchExceptionProxy(
+                    value = new AnnotationTypeMismatchExceptionProxy(
                             value.getClass() + "[" + value + "]").setMember(
-                                annotationType.members().get(name)));
+                                annotationType.members().get(name));
                 }
             }
+            mv.put(name, value);
+        }
+
+        UnsafeAccessor.setType(this, t);
+        UnsafeAccessor.setMemberValues(this, mv);
+    }
+
+    private static class UnsafeAccessor {
+        private static final jdk.internal.misc.Unsafe unsafe;
+        private static final long typeOffset;
+        private static final long memberValuesOffset;
+        static {
+            try {
+                unsafe = jdk.internal.misc.Unsafe.getUnsafe();
+                typeOffset = unsafe.objectFieldOffset
+                        (AnnotationInvocationHandler.class.getDeclaredField("type"));
+                memberValuesOffset = unsafe.objectFieldOffset
+                        (AnnotationInvocationHandler.class.getDeclaredField("memberValues"));
+            } catch (Exception ex) {
+                throw new ExceptionInInitializerError(ex);
+            }
+        }
+        static void setType(AnnotationInvocationHandler o,
+                            Class<? extends Annotation> type) {
+            unsafe.putObject(o, typeOffset, type);
+        }
+
+        static void setMemberValues(AnnotationInvocationHandler o,
+                                    Map<String, Object> memberValues) {
+            unsafe.putObject(o, memberValuesOffset, memberValues);
         }
     }
 }

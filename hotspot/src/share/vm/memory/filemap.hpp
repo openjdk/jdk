@@ -100,6 +100,7 @@ public:
     Universe::NARROW_OOP_MODE _narrow_oop_mode; // compressed oop encoding mode
     int     _narrow_klass_shift;      // save narrow klass base and shift
     address _narrow_klass_base;
+    char*   _misc_data_patching_start;
 
     struct space_info {
       int    _crc;           // crc checksum of the current space
@@ -185,6 +186,8 @@ public:
   int     narrow_klass_shift() const  { return _header->_narrow_klass_shift; }
   size_t space_capacity(int i)        { return _header->_space[i]._capacity; }
   struct FileMapHeader* header()      { return _header; }
+  char* misc_data_patching_start()            { return _header->_misc_data_patching_start; }
+  void set_misc_data_patching_start(char* p)  { _header->_misc_data_patching_start = p; }
 
   static FileMapInfo* current_info() {
     CDS_ONLY(return _current_info;)

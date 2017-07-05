@@ -34,7 +34,7 @@
 
 // CRC32 Intrinsics.
 void StubRoutines::ppc64::generate_load_crc_table_addr(MacroAssembler* masm, Register table) {
-  __ load_const(table, StubRoutines::_crc_table_adr);
+  __ load_const_optimized(table, StubRoutines::_crc_table_adr, R0);
 }
 
 // CRC32 Intrinsics.

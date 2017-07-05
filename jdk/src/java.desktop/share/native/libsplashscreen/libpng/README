@@ -1,4 +1,4 @@
-README for libpng version 1.6.16 - December 22, 2014 (shared library 16.0)
+README for libpng version 1.6.20 - December 3, 2015 (shared library 16.0)
 See the note about version numbers near the top of png.h
 
 See INSTALL for instructions on how to install libpng.
@@ -134,7 +134,7 @@ and ...".  If in doubt, send questions to me.  I'll bounce them
 to others, if necessary.
 
 Please do not send suggestions on how to change PNG.  We have
-been discussing PNG for nineteen years now, and it is official and
+been discussing PNG for twenty years now, and it is official and
 finished.  If you have suggestions for libpng, however, I'll
 gladly listen.  Even if your suggestion is not used immediately,
 it may be used later.

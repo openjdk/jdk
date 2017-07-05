@@ -38,7 +38,8 @@ include TextFileProcessing.gmk
 include ZipArchive.gmk
 
 # Prepare the find cache.
-$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src))
+$(eval $(call FillCacheFind, $(wildcard $(JDK_TOPDIR)/src/demo \
+    $(JDK_TOPDIR)/src/*/demo)))
 
 # Append demo goals to this variable.
 TARGETS =

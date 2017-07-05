@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "logging/log.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,12 +60,7 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing_specialized(oop obj, OopCl
   // Treat discovered as normal oop, if ref is not "active" (next non-NULL)
   if (!oopDesc::is_null(next_oop) && contains(disc_addr)) {
     // i.e. ref is not "active"
-    debug_only(
-      if(TraceReferenceGC && PrintGCDetails) {
-        gclog_or_tty->print_cr("   Process discovered as normal "
-                               PTR_FORMAT, p2i(disc_addr));
-      }
-    )
+    log_develop_trace(gc, ref)("   Process discovered as normal " PTR_FORMAT, p2i(disc_addr));
     Devirtualizer<nv>::do_oop(closure, disc_addr);
   }
   // treat next as normal oop

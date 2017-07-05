@@ -34,7 +34,7 @@ package jdk.nashorn.api.tree;
  *   <em>variable</em> <em>operator</em> <em>expression</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface CompoundAssignmentTree extends ExpressionTree {
     /**

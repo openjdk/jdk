@@ -29,7 +29,7 @@ package jdk.nashorn.api.tree;
  * A tree node used as the base class for the different kinds of
  * statements.
  *
- * @since 1.9
+ * @since 9
  */
 public interface StatementTree extends Tree {
 }

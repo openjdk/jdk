@@ -28,7 +28,7 @@ package jdk.nashorn.api.tree;
 /**
  * A mixin for conditional "loop" statements.
  *
- * @since 1.9
+ * @since 9
  */
 public interface ConditionalLoopTree extends LoopTree {
     /**

@@ -39,11 +39,11 @@ public class TestUnrecognizedVMOptionsHandling {
   public static void main(String args[]) throws Exception {
     // The first two JAVA processes are expected to fail, but with a correct VM option suggestion
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:+PrintGc",
+      "-XX:+UseDynamicNumberOfGcThreads",
       "-version"
       );
     OutputAnalyzer outputWithError = new OutputAnalyzer(pb.start());
-    outputWithError.shouldContain("Did you mean '(+/-)PrintGC'?");
+    outputWithError.shouldContain("Did you mean '(+/-)UseDynamicNumberOfGCThreads'?");
     if (outputWithError.getExitValue() == 0) {
       throw new RuntimeException("Not expected to get exit value 0");
     }
@@ -60,11 +60,11 @@ public class TestUnrecognizedVMOptionsHandling {
 
     // The last JAVA process should run successfully for the purpose of sanity check
     pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:+PrintGC",
+      "-XX:+UseDynamicNumberOfGCThreads",
       "-version"
       );
     OutputAnalyzer outputWithNoError = new OutputAnalyzer(pb.start());
-    outputWithNoError.shouldNotContain("Did you mean '(+/-)PrintGC'?");
+    outputWithNoError.shouldNotContain("Did you mean '(+/-)UseDynamicNumberOfGCThreads'?");
     outputWithNoError.shouldHaveExitValue(0);
   }
 }

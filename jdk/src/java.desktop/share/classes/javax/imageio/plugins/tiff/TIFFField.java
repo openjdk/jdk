@@ -257,7 +257,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * </table>
  *
- * @since 1.9
+ * @since 9
  * @see   TIFFDirectory
  * @see   TIFFTag
  */

@@ -30,9 +30,10 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -53,7 +54,7 @@ void EventLogBase<GCMessage>::print(outputStream* st, GCMessage& m) {
   st->print_raw(m);
 }
 
-void GCHeapLog::log_heap(bool before) {
+void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   if (!should_log()) {
     return;
   }
@@ -65,11 +66,14 @@ void GCHeapLog::log_heap(bool before) {
   _records[index].timestamp = timestamp;
   _records[index].data.is_before = before;
   stringStream st(_records[index].data.buffer(), _records[index].data.size());
-  if (before) {
-    Universe::print_heap_before_gc(&st, true);
-  } else {
-    Universe::print_heap_after_gc(&st, true);
-  }
+
+  st.print_cr("{Heap %s GC invocations=%u (full %u):",
+                 before ? "before" : "after",
+                 heap->total_collections(),
+                 heap->total_full_collections());
+
+  heap->print_on(&st);
+  st.print_cr("}");
 }
 
 VirtualSpaceSummary CollectedHeap::create_heap_space_summary() {
@@ -108,20 +112,16 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
 }
 
 void CollectedHeap::print_heap_before_gc() {
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-  }
+  Universe::print_heap_before_gc();
   if (_gc_heap_log != NULL) {
-    _gc_heap_log->log_heap_before();
+    _gc_heap_log->log_heap_before(this);
   }
 }
 
 void CollectedHeap::print_heap_after_gc() {
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  Universe::print_heap_after_gc();
   if (_gc_heap_log != NULL) {
-    _gc_heap_log->log_heap_after();
+    _gc_heap_log->log_heap_after(this);
   }
 }
 
@@ -571,34 +571,30 @@ void CollectedHeap::resize_all_tlabs() {
   }
 }
 
-void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
-  if (HeapDumpBeforeFullGC) {
+void CollectedHeap::full_gc_dump(GCTimer* timer, const char* when) {
+  if (HeapDumpBeforeFullGC || HeapDumpAfterFullGC) {
     GCIdMarkAndRestore gc_id_mark;
-    GCTraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, timer);
-    // We are doing a full collection and a heap dump before
-    // full collection has been requested.
+    FormatBuffer<> title("Heap Dump (%s full gc)", when);
+    GCTraceTime(Info, gc) tm(title.buffer(), timer);
     HeapDumper::dump_heap();
   }
-  if (PrintClassHistogramBeforeFullGC) {
+  LogHandle(gc, classhisto) log;
+  if (log.is_trace()) {
+    ResourceMark rm;
     GCIdMarkAndRestore gc_id_mark;
-    GCTraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, timer);
-    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
+    FormatBuffer<> title("Class Histogram (%s full gc)", when);
+    GCTraceTime(Trace, gc, classhisto) tm(title.buffer(), timer);
+    VM_GC_HeapInspection inspector(log.trace_stream(), false /* ! full gc */);
     inspector.doit();
   }
 }
 
+void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
+  full_gc_dump(timer, "before");
+}
+
 void CollectedHeap::post_full_gc_dump(GCTimer* timer) {
-  if (HeapDumpAfterFullGC) {
-    GCIdMarkAndRestore gc_id_mark;
-    GCTraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, timer);
-    HeapDumper::dump_heap();
-  }
-  if (PrintClassHistogramAfterFullGC) {
-    GCIdMarkAndRestore gc_id_mark;
-    GCTraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, timer);
-    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
-    inspector.doit();
-  }
+  full_gc_dump(timer, "after");
 }
 
 void CollectedHeap::initialize_reserved_region(HeapWord *start, HeapWord *end) {

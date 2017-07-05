@@ -55,11 +55,17 @@ final class AdaptationResult {
     static final AdaptationResult SUCCESSFUL_RESULT = new AdaptationResult(Outcome.SUCCESS, "");
 
     private final Outcome outcome;
+    private final RuntimeException cause;
     private final String[] messageArgs;
 
-    AdaptationResult(final Outcome outcome, final String... messageArgs) {
+    AdaptationResult(final Outcome outcome, final RuntimeException cause, final String... messageArgs) {
         this.outcome = outcome;
+        this.cause = cause;
         this.messageArgs = messageArgs;
+    }
+
+    AdaptationResult(final Outcome outcome, final String... messageArgs) {
+        this(outcome, null, messageArgs);
     }
 
     Outcome getOutcome() {
@@ -67,6 +73,6 @@ final class AdaptationResult {
     }
 
     ECMAException typeError() {
-        return ECMAErrors.typeError("extend." + outcome, messageArgs);
+        return ECMAErrors.typeError(cause, "extend." + outcome, messageArgs);
     }
 }

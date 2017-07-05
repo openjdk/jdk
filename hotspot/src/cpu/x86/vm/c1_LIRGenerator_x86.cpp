@@ -736,19 +736,6 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   obj.load_item();
   offset.load_nonconstant();
 
-  if (type == objectType) {
-    cmp.load_item_force(FrameMap::rax_oop_opr);
-    val.load_item();
-  } else if (type == intType) {
-    cmp.load_item_force(FrameMap::rax_opr);
-    val.load_item();
-  } else if (type == longType) {
-    cmp.load_item_force(FrameMap::long0_opr);
-    val.load_item_force(FrameMap::long1_opr);
-  } else {
-    ShouldNotReachHere();
-  }
-
   LIR_Opr addr = new_pointer_register();
   LIR_Address* a;
   if(offset.result()->is_constant()) {
@@ -785,6 +772,19 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
                 true /* do_load */, false /* patch */, NULL);
   }
 
+  if (type == objectType) {
+    cmp.load_item_force(FrameMap::rax_oop_opr);
+    val.load_item();
+  } else if (type == intType) {
+    cmp.load_item_force(FrameMap::rax_opr);
+    val.load_item();
+  } else if (type == longType) {
+    cmp.load_item_force(FrameMap::long0_opr);
+    val.load_item_force(FrameMap::long1_opr);
+  } else {
+    ShouldNotReachHere();
+  }
+
   LIR_Opr ill = LIR_OprFact::illegalOpr;  // for convenience
   if (type == objectType)
     __ cas_obj(addr, cmp.result(), val.result(), ill, ill);
@@ -810,7 +810,8 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
 void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   assert(x->number_of_arguments() == 1 || (x->number_of_arguments() == 2 && x->id() == vmIntrinsics::_dpow), "wrong type");
 
-  if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog) {
+  if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
+      x->id() == vmIntrinsics::_dpow) {
     do_LibmIntrinsic(x);
     return;
   }
@@ -824,7 +825,6 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       case vmIntrinsics::_dcos:
       case vmIntrinsics::_dtan:
       case vmIntrinsics::_dlog10:
-      case vmIntrinsics::_dpow:
         use_fpu = true;
     }
   } else {
@@ -874,7 +874,6 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dcos:   __ cos  (calc_input, calc_result, tmp1, tmp2);              break;
     case vmIntrinsics::_dtan:   __ tan  (calc_input, calc_result, tmp1, tmp2);              break;
     case vmIntrinsics::_dlog10: __ log10(calc_input, calc_result, tmp1);                    break;
-    case vmIntrinsics::_dpow:   __ pow  (calc_input, calc_input2, calc_result, tmp1, tmp2, FrameMap::rax_opr, FrameMap::rcx_opr, FrameMap::rdx_opr); break;
     default:                    ShouldNotReachHere();
   }
 
@@ -890,11 +889,25 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
   LIR_Opr calc_result = rlock_result(x);
   LIR_Opr result_reg = result_register_for(x->type());
 
-  BasicTypeList signature(1);
-  signature.append(T_DOUBLE);
-  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  CallingConvention* cc = NULL;
 
-  value.load_item_force(cc->at(0));
+  if (x->id() == vmIntrinsics::_dpow) {
+    LIRItem value1(x->argument_at(1), this);
+
+    value1.set_destroys_register();
+
+    BasicTypeList signature(2);
+    signature.append(T_DOUBLE);
+    signature.append(T_DOUBLE);
+    cc = frame_map()->c_calling_convention(&signature);
+    value.load_item_force(cc->at(0));
+    value1.load_item_force(cc->at(1));
+  } else {
+    BasicTypeList signature(1);
+    signature.append(T_DOUBLE);
+    cc = frame_map()->c_calling_convention(&signature);
+    value.load_item_force(cc->at(0));
+  }
 
 #ifndef _LP64
   LIR_Opr tmp = FrameMap::fpu0_double_opr;
@@ -915,6 +928,14 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog), getThreadTemp(), result_reg, cc->args());
       }
       break;
+    case vmIntrinsics::_dpow:
+      if (VM_Version::supports_sse2()) {
+        __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
+      }
+      else {
+        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
     default:  ShouldNotReachHere();
   }
 #else
@@ -924,6 +945,9 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dlog:
       __ call_runtime_leaf(StubRoutines::dlog(), getThreadTemp(), result_reg, cc->args());
+      break;
+    case vmIntrinsics::_dpow:
+      __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
       break;
   }
 #endif

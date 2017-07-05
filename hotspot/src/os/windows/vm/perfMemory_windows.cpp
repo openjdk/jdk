@@ -1308,25 +1308,21 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
   // the file. This is important as the apis do not allow a terminating
   // JVM being monitored by another process to remove the file name.
   //
-  // the FILE_SHARE_DELETE share mode is valid only in winnt
-  //
   fh = CreateFile(
-             filename,                   /* LPCTSTR file name */
+             filename,                          /* LPCTSTR file name */
 
-             GENERIC_READ|GENERIC_WRITE, /* DWORD desired access */
+             GENERIC_READ|GENERIC_WRITE,        /* DWORD desired access */
+             FILE_SHARE_DELETE|FILE_SHARE_READ, /* DWORD share mode, future READONLY
+                                                 * open operations allowed
+                                                 */
+             lpFileSA,                          /* LPSECURITY security attributes */
+             CREATE_ALWAYS,                     /* DWORD creation disposition
+                                                 * create file, if it already
+                                                 * exists, overwrite it.
+                                                 */
+             FILE_FLAG_DELETE_ON_CLOSE,         /* DWORD flags and attributes */
 
-             (os::win32::is_nt() ? FILE_SHARE_DELETE : 0)|
-             FILE_SHARE_READ,            /* DWORD share mode, future READONLY
-                                          * open operations allowed
-                                          */
-             lpFileSA,                   /* LPSECURITY security attributes */
-             CREATE_ALWAYS,              /* DWORD creation disposition
-                                          * create file, if it already
-                                          * exists, overwrite it.
-                                          */
-             FILE_FLAG_DELETE_ON_CLOSE,  /* DWORD flags and attributes */
-
-             NULL);                      /* HANDLE template file access */
+             NULL);                             /* HANDLE template file access */
 
   free_security_attr(lpFileSA);
 
@@ -1734,7 +1730,7 @@ void delete_shared_memory(char* addr, size_t size) {
 //
 void PerfMemory::create_memory_region(size_t size) {
 
-  if (PerfDisableSharedMem || !os::win32::is_nt()) {
+  if (PerfDisableSharedMem) {
     // do not share the memory for the performance data.
     PerfDisableSharedMem = true;
     _start = create_standard_memory(size);

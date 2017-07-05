@@ -26,7 +26,6 @@
 #include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
-#include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 
@@ -136,8 +135,8 @@ void CollectionSetChooser::sort_regions() {
     assert(regions_at(i) != NULL, "Should be true by sorting!");
   }
 #endif // ASSERT
-  if (G1PrintRegionLivenessInfo) {
-    G1PrintRegionLivenessInfoClosure cl(gclog_or_tty, "Post-Sorting");
+  if (log_is_enabled(Trace, gc, liveness)) {
+    G1PrintRegionLivenessInfoClosure cl("Post-Sorting");
     for (uint i = 0; i < _end; ++i) {
       HeapRegion* r = regions_at(i);
       cl.doHeapRegion(r);

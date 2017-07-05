@@ -677,12 +677,6 @@ class JVMCIArchiveParticipant:
                 assert service
                 self.services.setdefault(service, []).append(provider)
             return True
-        elif arcname.endswith('_OptionDescriptors.class'):
-            # Need to create service files for the providers of the
-            # jdk.vm.ci.options.Options service created by
-            # jdk.vm.ci.options.processor.OptionProcessor.
-            provider = arcname[:-len('.class'):].replace('/', '.')
-            self.services.setdefault('jdk.vm.ci.options.OptionDescriptors', []).append(provider)
         return False
 
     def __addsrc__(self, arcname, contents):
@@ -760,21 +754,6 @@ class JVMCI9JDKConfig(mx.JDKConfig):
         jacocoArgs = mx_gate.get_jacoco_agent_args()
         if jacocoArgs:
             args = jacocoArgs + args
-
-        # Support for -G: options
-        def translateGOption(arg):
-            if arg.startswith('-G:+'):
-                if '=' in arg:
-                    mx.abort('Mixing + and = in -G: option specification: ' + arg)
-                arg = '-Djvmci.option.' + arg[len('-G:+'):] + '=true'
-            elif arg.startswith('-G:-'):
-                if '=' in arg:
-                    mx.abort('Mixing - and = in -G: option specification: ' + arg)
-                arg = '-Djvmci.option.' + arg[len('-G:+'):] + '=false'
-            elif arg.startswith('-G:'):
-                arg = '-Djvmci.option.' + arg[len('-G:'):]
-            return arg
-        args = map(translateGOption, args)
 
         args = ['-Xbootclasspath/p:' + dep.classpath_repr() for dep in _jvmci_bootclasspath_prepends] + args
 

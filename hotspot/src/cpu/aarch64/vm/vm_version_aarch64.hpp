@@ -30,7 +30,8 @@
 #include "runtime/vm_version.hpp"
 
 class VM_Version : public Abstract_VM_Version {
-public:
+  friend class JVMCIVMStructs;
+
 protected:
   static int _cpu;
   static int _model;
@@ -38,9 +39,6 @@ protected:
   static int _variant;
   static int _revision;
   static int _stepping;
-  static int _cpuFeatures;     // features returned by the "cpuid" instruction
-                               // 0 if this instruction is not available
-  static const char* _features_str;
 
   static void get_processor_features();
 
@@ -52,7 +50,7 @@ public:
   static void assert_is_initialized() {
   }
 
-  enum {
+  enum Family {
     CPU_ARM       = 'A',
     CPU_BROADCOM  = 'B',
     CPU_CAVIUM    = 'C',
@@ -64,9 +62,9 @@ public:
     CPU_QUALCOM   = 'Q',
     CPU_MARVELL   = 'V',
     CPU_INTEL     = 'i',
-  } cpuFamily;
+  };
 
-  enum {
+  enum Feature_Flag {
     CPU_FP           = (1<<0),
     CPU_ASIMD        = (1<<1),
     CPU_EVTSTRM      = (1<<2),
@@ -77,16 +75,13 @@ public:
     CPU_CRC32        = (1<<7),
     CPU_A53MAC       = (1 << 30),
     CPU_DMB_ATOMICS  = (1 << 31),
-  } cpuFeatureFlags;
+  };
 
-  static const char* cpu_features()           { return _features_str; }
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
   static int cpu_model2()                     { return _model2; }
   static int cpu_variant()                    { return _variant; }
   static int cpu_revision()                   { return _revision; }
-  static int cpu_cpuFeatures()                { return _cpuFeatures; }
-
 };
 
 #endif // CPU_AARCH64_VM_VM_VERSION_AARCH64_HPP

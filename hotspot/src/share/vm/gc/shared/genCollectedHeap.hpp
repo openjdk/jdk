@@ -142,6 +142,14 @@ public:
     return CollectedHeap::GenCollectedHeap;
   }
 
+  virtual const char* name() const {
+    if (UseConcMarkSweepGC) {
+      return "Concurrent Mark Sweep";
+    } else {
+      return "Serial";
+    }
+  }
+
   Generation* young_gen() const { return _young_gen; }
   Generation* old_gen()   const { return _old_gen; }
 
@@ -329,7 +337,7 @@ public:
   void prepare_for_verify();
 
   // Override.
-  void verify(bool silent, VerifyOption option);
+  void verify(VerifyOption option);
 
   // Override.
   virtual void print_on(outputStream* st) const;
@@ -338,8 +346,7 @@ public:
   virtual void print_tracing_info() const;
   virtual void print_on_error(outputStream* st) const;
 
-  // PrintGC, PrintGCDetails support
-  void print_heap_change(size_t prev_used) const;
+  void print_heap_change(size_t young_prev_used, size_t old_prev_used) const;
 
   // The functions below are helper functions that a subclass of
   // "CollectedHeap" can use in the implementation of its virtual

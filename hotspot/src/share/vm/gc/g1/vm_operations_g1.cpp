@@ -27,10 +27,9 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/g1/g1Log.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "runtime/interfaceSupport.hpp"
 
@@ -226,10 +225,10 @@ void VM_CGC_Operation::release_and_notify_pending_list_lock() {
 }
 
 void VM_CGC_Operation::doit() {
-  TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCIdMark gc_id_mark(_gc_id);
-  GCTraceTime t(_printGCMessage, G1Log::fine(), true, g1h->gc_timer_cm());
+  GCTraceCPUTime tcpu;
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  GCTraceTime(Info, gc) t(_printGCMessage, g1h->gc_timer_cm(), GCCause::_no_gc, true);
   IsGCActiveMark x;
   _cl->do_void();
 }

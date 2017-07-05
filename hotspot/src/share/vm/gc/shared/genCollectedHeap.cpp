@@ -33,7 +33,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
@@ -314,13 +314,11 @@ bool GenCollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
 void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t size,
                                           bool is_tlab, bool run_verification, bool clear_soft_refs,
                                           bool restore_marks_for_biased_locking) {
-  // Timer for individual generations. Last argument is false: no CR
-  // FIXME: We should try to start the timing earlier to cover more of the GC pause
-  GCTraceTime t1(gen->short_name(), PrintGCDetails, false, NULL);
+  FormatBuffer<> title("Collect gen: %s", gen->short_name());
+  GCTraceTime(Debug, gc) t1(title);
   TraceCollectorStats tcs(gen->counters());
   TraceMemoryManagerStats tmms(gen->kind(),gc_cause());
 
-  size_t prev_used = gen->used();
   gen->stat_record()->invocations++;
   gen->stat_record()->accumulated_time.start();
 
@@ -329,24 +327,11 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   // change top of some spaces.
   record_gen_tops_before_GC();
 
-  if (PrintGC && Verbose) {
-    // I didn't want to change the logging when removing the level concept,
-    // but I guess this logging could say young/old or something instead of 0/1.
-    uint level;
-    if (heap()->is_young_gen(gen)) {
-      level = 0;
-    } else {
-      level = 1;
-    }
-    gclog_or_tty->print("level=%u invoke=%d size=" SIZE_FORMAT,
-                        level,
-                        gen->stat_record()->invocations,
-                        size * HeapWordSize);
-  }
+  log_trace(gc)("%s invoke=%d size=" SIZE_FORMAT, heap()->is_young_gen(gen) ? "Young" : "Old", gen->stat_record()->invocations, size * HeapWordSize);
 
   if (run_verification && VerifyBeforeGC) {
     HandleMark hm;  // Discard invalid handles created during verification
-    Universe::verify(" VerifyBeforeGC:");
+    Universe::verify("Before GC");
   }
   COMPILER2_PRESENT(DerivedPointerTable::clear());
 
@@ -404,12 +389,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
 
   if (run_verification && VerifyAfterGC) {
     HandleMark hm;  // Discard invalid handles created during verification
-    Universe::verify(" VerifyAfterGC:");
-  }
-
-  if (PrintGCDetails) {
-    gclog_or_tty->print(":");
-    gen->print_heap_change(prev_used);
+    Universe::verify("After GC");
   }
 }
 
@@ -448,21 +428,31 @@ void GenCollectedHeap::do_collection(bool           full,
     FlagSetting fl(_is_gc_active, true);
 
     bool complete = full && (max_generation == OldGen);
-    const char* gc_cause_prefix = complete ? "Full GC" : "GC";
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL);
+    bool old_collects_young = complete && !ScavengeBeforeFullGC;
+    bool do_young_collection = !old_collects_young && _young_gen->should_collect(full, size, is_tlab);
+
+    FormatBuffer<> gc_string("%s", "Pause ");
+    if (do_young_collection) {
+      gc_string.append("Young");
+    } else {
+      gc_string.append("Full");
+    }
+
+    GCTraceCPUTime tcpu;
+    GCTraceTime(Info, gc) t(gc_string, NULL, gc_cause(), true);
 
     gc_prologue(complete);
     increment_total_collections(complete);
 
-    size_t gch_prev_used = used();
+    size_t young_prev_used = _young_gen->used();
+    size_t old_prev_used = _old_gen->used();
+
     bool run_verification = total_collections() >= VerifyGCStartAt;
 
     bool prepared_for_verification = false;
     bool collected_old = false;
-    bool old_collects_young = complete && !ScavengeBeforeFullGC;
 
-    if (!old_collects_young && _young_gen->should_collect(full, size, is_tlab)) {
+    if (do_young_collection) {
       if (run_verification && VerifyGCLevel <= 0 && VerifyBeforeGC) {
         prepare_for_verify();
         prepared_for_verification = true;
@@ -487,7 +477,6 @@ void GenCollectedHeap::do_collection(bool           full,
     bool must_restore_marks_for_biased_locking = false;
 
     if (max_generation == OldGen && _old_gen->should_collect(full, size, is_tlab)) {
-      GCIdMarkAndRestore gc_id_mark;
       if (!complete) {
         // The full_collections increment was missed above.
         increment_total_full_collections();
@@ -501,13 +490,16 @@ void GenCollectedHeap::do_collection(bool           full,
       }
 
       assert(_old_gen->performs_in_place_marking(), "All old generations do in place marking");
-      collect_generation(_old_gen,
-                         full,
-                         size,
-                         is_tlab,
-                         run_verification && VerifyGCLevel <= 1,
-                         do_clear_all_soft_refs,
-                         true);
+
+      if (do_young_collection) {
+        // We did a young GC. Need a new GC id for the old GC.
+        GCIdMarkAndRestore gc_id_mark;
+        GCTraceTime(Info, gc) t("Pause Full", NULL, gc_cause(), true);
+        collect_generation(_old_gen, full, size, is_tlab, run_verification && VerifyGCLevel <= 1, do_clear_all_soft_refs, true);
+      } else {
+        // No young GC done. Use the same GC id as was set up earlier in this method.
+        collect_generation(_old_gen, full, size, is_tlab, run_verification && VerifyGCLevel <= 1, do_clear_all_soft_refs, true);
+      }
 
       must_restore_marks_for_biased_locking = true;
       collected_old = true;
@@ -523,14 +515,8 @@ void GenCollectedHeap::do_collection(bool           full,
       post_full_gc_dump(NULL);   // do any post full gc dumps
     }
 
-    if (PrintGCDetails) {
-      print_heap_change(gch_prev_used);
-
-      // Print metaspace info for full GC with PrintGCDetails flag.
-      if (complete) {
-        MetaspaceAux::print_metaspace_change(metadata_prev_used);
-      }
-    }
+    print_heap_change(young_prev_used, old_prev_used);
+    MetaspaceAux::print_metaspace_change(metadata_prev_used);
 
     // Adjust generation sizes.
     if (collected_old) {
@@ -874,10 +860,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
   // been attempted and failed, because the old gen was too full
   if (local_last_generation == YoungGen && gc_cause() == GCCause::_gc_locker &&
       incremental_collection_will_fail(false /* don't consult_young */)) {
-    if (PrintGCDetails) {
-      gclog_or_tty->print_cr("GC locker: Trying a full collection "
-                             "because scavenge failed");
-    }
+    log_debug(gc, jni)("GC locker: Trying a full collection because scavenge failed");
     // This time allow the old gen to be collected as well
     do_collection(true,                // full
                   clear_all_soft_refs, // clear_all_soft_refs
@@ -1106,22 +1089,14 @@ void GenCollectedHeap::prepare_for_compaction() {
   _young_gen->prepare_for_compaction(&cp);
 }
 
-void GenCollectedHeap::verify(bool silent, VerifyOption option /* ignored */) {
-  if (!silent) {
-    gclog_or_tty->print("%s", _old_gen->name());
-    gclog_or_tty->print(" ");
-  }
+void GenCollectedHeap::verify(VerifyOption option /* ignored */) {
+  log_debug(gc, verify)("%s", _old_gen->name());
   _old_gen->verify();
 
-  if (!silent) {
-    gclog_or_tty->print("%s", _young_gen->name());
-    gclog_or_tty->print(" ");
-  }
+  log_debug(gc, verify)("%s", _old_gen->name());
   _young_gen->verify();
 
-  if (!silent) {
-    gclog_or_tty->print("remset ");
-  }
+  log_debug(gc, verify)("RemSet");
   rem_set()->verify();
 }
 
@@ -1171,18 +1146,11 @@ void GenCollectedHeap::print_tracing_info() const {
   }
 }
 
-void GenCollectedHeap::print_heap_change(size_t prev_used) const {
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print(" "  SIZE_FORMAT
-                        "->" SIZE_FORMAT
-                        "("  SIZE_FORMAT ")",
-                        prev_used, used(), capacity());
-  } else {
-    gclog_or_tty->print(" "  SIZE_FORMAT "K"
-                        "->" SIZE_FORMAT "K"
-                        "("  SIZE_FORMAT "K)",
-                        prev_used / K, used() / K, capacity() / K);
-  }
+void GenCollectedHeap::print_heap_change(size_t young_prev_used, size_t old_prev_used) const {
+  log_info(gc, heap)("%s: " SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
+                     _young_gen->short_name(), young_prev_used / K, _young_gen->used() /K, _young_gen->capacity() /K);
+  log_info(gc, heap)("%s: " SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
+                     _old_gen->short_name(), old_prev_used / K, _old_gen->used() /K, _old_gen->capacity() /K);
 }
 
 class GenGCPrologueClosure: public GenCollectedHeap::GenClosure {

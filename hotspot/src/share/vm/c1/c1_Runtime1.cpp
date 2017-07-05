@@ -43,6 +43,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -319,6 +320,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::dexp());
   FUNCTION_CASE(entry, StubRoutines::dlog());
+  FUNCTION_CASE(entry, StubRoutines::dpow());
 
 #undef FUNCTION_CASE
 
@@ -502,7 +504,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // Check the stack guard pages and reenable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
-  bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+  bool guard_pages_enabled = thread->stack_guards_enabled();
   if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
 
   if (JvmtiExport::can_post_on_exceptions()) {
@@ -548,11 +550,14 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
 
     // debugging support
     // tracing
-    if (TraceExceptions) {
-      ttyLocker ttyl;
+    if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm;
-      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ") thrown in compiled method <%s> at PC " INTPTR_FORMAT " for thread " INTPTR_FORMAT "",
-                    exception->print_value_string(), p2i((address)exception()), nm->method()->print_value_string(), p2i(pc), p2i(thread));
+      log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT
+                           ") thrown in compiled method <%s> at PC " INTPTR_FORMAT
+                           " for thread " INTPTR_FORMAT,
+                           exception->print_value_string(),
+                           p2i((address)exception()),
+                           nm->method()->print_value_string(), p2i(pc), p2i(thread));
     }
     // for AbortVMOnException flag
     Exceptions::debug_check_abort(exception);
@@ -583,11 +588,11 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // Set flag if return address is a method handle call site.
   thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
 
-  if (TraceExceptions) {
-    ttyLocker ttyl;
+  if (log_is_enabled(Info, exceptions)) {
     ResourceMark rm;
-    tty->print_cr("Thread " PTR_FORMAT " continuing at PC " PTR_FORMAT " for exception thrown at PC " PTR_FORMAT,
-                  p2i(thread), p2i(continuation), p2i(pc));
+    log_info(exceptions)("Thread " PTR_FORMAT " continuing at PC " PTR_FORMAT
+                         " for exception thrown at PC " PTR_FORMAT,
+                         p2i(thread), p2i(continuation), p2i(pc));
   }
 
   return continuation;

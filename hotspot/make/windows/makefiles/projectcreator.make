@@ -70,6 +70,7 @@ ProjectCreatorIncludesPRIVATE=\
         -ignorePath zero \
         -ignorePath aix \
         -ignorePath aarch64 \
+        -ignorePath jdk.vm.ci \
         -hidePath .hg
 
 
@@ -103,6 +104,7 @@ ProjectCreatorIDEOptions=\
         -define ALIGN_STACK_FRAMES \
         -define VM_LITTLE_ENDIAN \
         -prelink  "" "Generating vm.def..." "cd $(HOTSPOTBUILDSPACE)\%f\%b	set HOTSPOTMKSHOME=$(HOTSPOTMKSHOME)	set JAVA_HOME=$(HOTSPOTJDKDIST)	$(HOTSPOTMKSHOME)\sh $(HOTSPOTWORKSPACE)\make\windows\build_vm_def.sh $(LD_VER)" \
+        -ignorePath src\jdk.hotspot.agent \
         -ignoreFile jsig.c \
         -ignoreFile jvmtiEnvRecommended.cpp \
         -ignoreFile jvmtiEnvStub.cpp \
@@ -120,19 +122,23 @@ ProjectCreatorIDEOptions=\
 # Add in build-specific options
 !if "$(BUILDARCH)" == "i486"
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
-	-platformName Win32 \
-        -define IA32 \
+        -platformName Win32 \
         -ignorePath x86_64 \
+        -ignorePath src\share\vm\jvmci \
+        -ignoreFile jvmciCodeInstaller_x86.cpp \
+        -define IA32 \
+        -define INCLUDE_JVMCI=0 \
         -define TARGET_ARCH_MODEL_x86_32
 !else
 !if "$(BUILDARCH)" == "amd64"
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
-	-platformName x64 \
-        -define AMD64 \
-	-define _LP64 \
+        -platformName x64 \
         -ignorePath x86_32 \
+        -define AMD64 \
+        -define _LP64 \
+        -define INCLUDE_JVMCI=1 \
         -define TARGET_ARCH_MODEL_x86_64 \
-	-define TARGET_OS_ARCH_MODEL_windows_x86_64
+        -define TARGET_OS_ARCH_MODEL_windows_x86_64
 !endif
 !endif
 
@@ -140,10 +146,6 @@ ProjectCreatorIDEOptionsIgnoreCompiler1=\
  -ignorePath_TARGET compiler1 \
  -ignorePath_TARGET tiered \
  -ignorePath_TARGET c1_
-
-ProjectCreatorIDEOptionsIgnoreJVMCI=\
- -ignorePath_TARGET src/share/vm/jvmci \
- -ignorePath_TARGET vm/jvmci
 
 ProjectCreatorIDEOptionsIgnoreCompiler2=\
  -ignorePath_TARGET compiler2 \
@@ -165,8 +167,6 @@ ProjectCreatorIDEOptionsIgnoreCompiler2=\
 ##################################################
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
  -define_compiler1 COMPILER1 \
- -define_compiler1 INCLUDE_JVMCI=0 \
-$(ProjectCreatorIDEOptionsIgnoreJVMCI:TARGET=compiler1) \
 $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=compiler1)
 
 ##################################################
