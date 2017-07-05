@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,11 @@ public interface PlatformWindow {
     public void setBounds(int x, int y, int w, int h);
 
     /*
+     * Sets the maximized bounds.
+     */
+    public default void setMaximizedBounds(int x, int y, int w, int h){}
+
+    /*
      * Returns the graphics device where the window is.
      */
     public GraphicsDevice getGraphicsDevice();
@@ -106,8 +111,6 @@ public interface PlatformWindow {
     public void setMenuBar(MenuBar mb);
 
     public void setAlwaysOnTop(boolean value);
-
-    public PlatformWindow getTopmostPlatformWindowUnderMouse();
 
     public void updateFocusableWindowState();
 

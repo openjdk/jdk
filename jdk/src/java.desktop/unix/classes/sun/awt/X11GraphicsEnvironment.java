@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,6 @@ import java.awt.AWTError;
 import java.awt.GraphicsDevice;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.StreamTokenizer;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -43,11 +36,6 @@ import java.net.UnknownHostException;
 
 import java.util.*;
 
-import sun.font.MFontConfiguration;
-import sun.font.FcFontConfiguration;
-import sun.font.Font2D;
-import sun.font.FontManager;
-import sun.font.NativeFont;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.UnixSurfaceManagerFactory;
@@ -60,11 +48,10 @@ import sun.java2d.xr.XRSurfaceData;
  * for X11 environments.
  *
  * @see GraphicsDevice
- * @see GraphicsConfiguration
+ * @see java.awt.GraphicsConfiguration
  */
-public class X11GraphicsEnvironment
-    extends SunGraphicsEnvironment
-{
+public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
+
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11GraphicsEnvironment");
     private static final PlatformLogger screenLog = PlatformLogger.getLogger("sun.awt.screen.X11GraphicsEnvironment");
 
@@ -200,7 +187,7 @@ public class X11GraphicsEnvironment
         return new X11GraphicsDevice(screennum);
     }
 
-    protected native int getDefaultScreenNum();
+    private native int getDefaultScreenNum();
     /**
      * Returns the default screen graphics device.
      */

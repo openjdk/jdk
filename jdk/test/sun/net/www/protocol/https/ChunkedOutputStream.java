@@ -25,7 +25,6 @@
  * @test
  * @bug 5026745
  * @modules java.base/sun.net.www
- * @library ../../httpstest/
  * @build TestHttpsServer HttpCallback
  * @run main/othervm ChunkedOutputStream
  *

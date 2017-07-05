@@ -260,7 +260,11 @@ public class Config {
     }
 
     /**
-     * Gets all values for the specified keys.
+     * Gets all values (at least one) for the specified keys separated by
+     * a whitespace, or null if there is no such keys.
+     * The values can either be provided on a single line, or on multiple lines
+     * using the same key. When provided on a single line, the value can be
+     * comma or space separated.
      * @throws IllegalArgumentException if any of the keys is illegal
      *         (See {@link #get})
      */
@@ -270,6 +274,7 @@ public class Config {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
         for (String s: v) {
+            s = s.replaceAll("[\\s,]+", " ");
             if (first) {
                 sb.append(s);
                 first = false;

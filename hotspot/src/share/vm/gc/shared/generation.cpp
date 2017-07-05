@@ -293,9 +293,10 @@ void Generation::oop_iterate(ExtendedOopClosure* cl) {
 }
 
 void Generation::younger_refs_in_space_iterate(Space* sp,
-                                               OopsInGenClosure* cl) {
+                                               OopsInGenClosure* cl,
+                                               uint n_threads) {
   GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
-  rs->younger_refs_in_space_iterate(sp, cl);
+  rs->younger_refs_in_space_iterate(sp, cl, n_threads);
 }
 
 class GenerationObjIterateClosure : public SpaceClosure {

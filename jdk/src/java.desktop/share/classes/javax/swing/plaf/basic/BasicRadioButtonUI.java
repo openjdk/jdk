@@ -438,7 +438,7 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
         // to the button group or not
         Component getFocusTransferBaseComponent(boolean next){
             Component focusBaseComp = activeBtn;
-            Window container = SwingUtilities.getWindowAncestor(activeBtn);
+            Container container = focusBaseComp.getFocusCycleRootAncestor();
             if (container != null) {
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
                 Component comp = next ? policy.getComponentAfter(container, activeBtn)

@@ -161,7 +161,7 @@ uint AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
       }
       _debug_perturbation = !_debug_perturbation;
     }
-    assert((new_active_workers <= (uintx) ParallelGCThreads) &&
+    assert((new_active_workers <= ParallelGCThreads) &&
            (new_active_workers >= min_workers),
       "Jiggled active workers too much");
   }

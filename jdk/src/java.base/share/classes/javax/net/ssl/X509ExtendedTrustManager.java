@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,17 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 
 /**
- * Extensions to the <code>X509TrustManager</code> interface to support
- * SSL/TLS connection sensitive trust management.
+ * Extensions to the {@code X509TrustManager} interface to support
+ * SSL/TLS/DTLS connection sensitive trust management.
  * <p>
  * To prevent man-in-the-middle attacks, hostname checks can be done
  * to verify that the hostname in an end-entity certificate matches the
- * targeted hostname.  TLS does not require such checks, but some protocols
- * over TLS (such as HTTPS) do.  In earlier versions of the JDK, the
- * certificate chain checks were done at the SSL/TLS layer, and the hostname
- * verification checks were done at the layer over TLS.  This class allows
- * for the checking to be done during a single call to this class.
+ * targeted hostname.  TLS/DTLS does not require such checks, but some
+ * protocols over TLS/DTLS (such as HTTPS) do.  In earlier versions of the
+ * JDK, the certificate chain checks were done at the SSL/TLS/DTLS layer,
+ * and the hostname verification checks were done at the layer over TLS/DTLS.
+ * This class allows for the checking to be done during a single call to
+ * this class.
  * <p>
  * RFC 2830 defines the server identification specification for the "LDAPS"
  * algorithm. RFC 2818 defines both the server identification and the
@@ -62,17 +63,17 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * used. For instance, if RSAPublicKey is used, the authType
      * should be "RSA". Checking is case-sensitive.
      * <p>
-     * If the <code>socket</code> parameter is an instance of
+     * If the {@code socket} parameter is an instance of
      * {@link javax.net.ssl.SSLSocket}, and the endpoint identification
-     * algorithm of the <code>SSLParameters</code> is non-empty, to prevent
-     * man-in-the-middle attacks, the address that the <code>socket</code>
+     * algorithm of the {@code SSLParameters} is non-empty, to prevent
+     * man-in-the-middle attacks, the address that the {@code socket}
      * connected to should be checked against the peer's identity presented
      * in the end-entity X509 certificate, as specified in the endpoint
      * identification algorithm.
      * <p>
-     * If the <code>socket</code> parameter is an instance of
+     * If the {@code socket} parameter is an instance of
      * {@link javax.net.ssl.SSLSocket}, and the algorithm constraints of the
-     * <code>SSLParameters</code> is non-null, for every certificate in the
+     * {@code SSLParameters} is non-null, for every certificate in the
      * certification path, fields such as subject public key, the signature
      * algorithm, key usage, extended key usage, etc. need to conform to the
      * algorithm constraints in place on this socket.
@@ -83,8 +84,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      *        can be null, which indicates that implementations need not check
      *        the ssl parameters
      * @throws IllegalArgumentException if null or zero-length array is passed
-     *        in for the <code>chain</code> parameter or if null or zero-length
-     *        string is passed in for the <code>authType</code> parameter
+     *        in for the {@code chain} parameter or if null or zero-length
+     *        string is passed in for the {@code authType} parameter
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *
@@ -110,17 +111,17 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * used for the key exchange, and RSA when the key from the server
      * certificate is used. Checking is case-sensitive.
      * <p>
-     * If the <code>socket</code> parameter is an instance of
+     * If the {@code socket} parameter is an instance of
      * {@link javax.net.ssl.SSLSocket}, and the endpoint identification
-     * algorithm of the <code>SSLParameters</code> is non-empty, to prevent
-     * man-in-the-middle attacks, the address that the <code>socket</code>
+     * algorithm of the {@code SSLParameters} is non-empty, to prevent
+     * man-in-the-middle attacks, the address that the {@code socket}
      * connected to should be checked against the peer's identity presented
      * in the end-entity X509 certificate, as specified in the endpoint
      * identification algorithm.
      * <p>
-     * If the <code>socket</code> parameter is an instance of
+     * If the {@code socket} parameter is an instance of
      * {@link javax.net.ssl.SSLSocket}, and the algorithm constraints of the
-     *  <code>SSLParameters</code> is non-null, for every certificate in the
+     *  {@code SSLParameters} is non-null, for every certificate in the
      * certification path, fields such as subject public key, the signature
      * algorithm, key usage, extended key usage, etc. need to conform to the
      * algorithm constraints in place on this socket.
@@ -131,8 +132,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      *        can be null, which indicates that implementations need not check
      *        the ssl parameters
      * @throws IllegalArgumentException if null or zero-length array is passed
-     *        in for the <code>chain</code> parameter or if null or zero-length
-     *        string is passed in for the <code>authType</code> parameter
+     *        in for the {@code chain} parameter or if null or zero-length
+     *        string is passed in for the {@code authType} parameter
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *
@@ -153,15 +154,15 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * used. For instance, if RSAPublicKey is used, the authType
      * should be "RSA". Checking is case-sensitive.
      * <p>
-     * If the <code>engine</code> parameter is available, and the endpoint
-     * identification algorithm of the <code>SSLParameters</code> is
+     * If the {@code engine} parameter is available, and the endpoint
+     * identification algorithm of the {@code SSLParameters} is
      * non-empty, to prevent man-in-the-middle attacks, the address that
-     * the <code>engine</code> connected to should be checked against
+     * the {@code engine} connected to should be checked against
      * the peer's identity presented in the end-entity X509 certificate,
      * as specified in the endpoint identification algorithm.
      * <p>
-     * If the <code>engine</code> parameter is available, and the algorithm
-     * constraints of the <code>SSLParameters</code> is non-null, for every
+     * If the {@code engine} parameter is available, and the algorithm
+     * constraints of the {@code SSLParameters} is non-null, for every
      * certificate in the certification path, fields such as subject public
      * key, the signature algorithm, key usage, extended key usage, etc.
      * need to conform to the algorithm constraints in place on this engine.
@@ -172,8 +173,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      *        can be null, which indicates that implementations need not check
      *        the ssl parameters
      * @throws IllegalArgumentException if null or zero-length array is passed
-     *        in for the <code>chain</code> parameter or if null or zero-length
-     *        string is passed in for the <code>authType</code> parameter
+     *        in for the {@code chain} parameter or if null or zero-length
+     *        string is passed in for the {@code authType} parameter
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *
@@ -199,15 +200,15 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      * used for the key exchange, and RSA when the key from the server
      * certificate is used. Checking is case-sensitive.
      * <p>
-     * If the <code>engine</code> parameter is available, and the endpoint
-     * identification algorithm of the <code>SSLParameters</code> is
+     * If the {@code engine} parameter is available, and the endpoint
+     * identification algorithm of the {@code SSLParameters} is
      * non-empty, to prevent man-in-the-middle attacks, the address that
-     * the <code>engine</code> connected to should be checked against
+     * the {@code engine} connected to should be checked against
      * the peer's identity presented in the end-entity X509 certificate,
      * as specified in the endpoint identification algorithm.
      * <p>
-     * If the <code>engine</code> parameter is available, and the algorithm
-     * constraints of the <code>SSLParameters</code> is non-null, for every
+     * If the {@code engine} parameter is available, and the algorithm
+     * constraints of the {@code SSLParameters} is non-null, for every
      * certificate in the certification path, fields such as subject public
      * key, the signature algorithm, key usage, extended key usage, etc.
      * need to conform to the algorithm constraints in place on this engine.
@@ -218,8 +219,8 @@ public abstract class X509ExtendedTrustManager implements X509TrustManager {
      *        can be null, which indicates that implementations need not check
      *        the ssl parameters
      * @throws IllegalArgumentException if null or zero-length array is passed
-     *        in for the <code>chain</code> parameter or if null or zero-length
-     *        string is passed in for the <code>authType</code> parameter
+     *        in for the {@code chain} parameter or if null or zero-length
+     *        string is passed in for the {@code authType} parameter
      * @throws CertificateException if the certificate chain is not trusted
      *        by this TrustManager
      *

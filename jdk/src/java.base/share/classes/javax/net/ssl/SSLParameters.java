@@ -35,22 +35,22 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 
 /**
- * Encapsulates parameters for an SSL/TLS connection. The parameters
- * are the list of ciphersuites to be accepted in an SSL/TLS handshake,
+ * Encapsulates parameters for an SSL/TLS/DTLS connection. The parameters
+ * are the list of ciphersuites to be accepted in an SSL/TLS/DTLS handshake,
  * the list of protocols to be allowed, the endpoint identification
- * algorithm during SSL/TLS handshaking, the Server Name Indication (SNI),
- * the algorithm constraints and whether SSL/TLS servers should request
- * or require client authentication, etc.
+ * algorithm during SSL/TLS/DTLS handshaking, the Server Name Indication (SNI),
+ * the maximum network packet size, the algorithm constraints and whether
+ * SSL/TLS/DTLS servers should request or require client authentication, etc.
  * <p>
  * SSLParameters can be created via the constructors in this class.
- * Objects can also be obtained using the <code>getSSLParameters()</code>
+ * Objects can also be obtained using the {@code getSSLParameters()}
  * methods in
  * {@link SSLSocket#getSSLParameters SSLSocket} and
  * {@link SSLServerSocket#getSSLParameters SSLServerSocket} and
  * {@link SSLEngine#getSSLParameters SSLEngine} or the
  * {@link SSLContext#getDefaultSSLParameters getDefaultSSLParameters()} and
  * {@link SSLContext#getSupportedSSLParameters getSupportedSSLParameters()}
- * methods in <code>SSLContext</code>.
+ * methods in {@code SSLContext}.
  * <p>
  * SSLParameters can be applied to a connection via the methods
  * {@link SSLSocket#setSSLParameters SSLSocket.setSSLParameters()} and
@@ -74,14 +74,18 @@ public class SSLParameters {
     private Map<Integer, SNIServerName> sniNames = null;
     private Map<Integer, SNIMatcher> sniMatchers = null;
     private boolean preferLocalCipherSuites;
+    private boolean enableRetransmissions = true;
+    private int maximumPacketSize = 0;
 
     /**
      * Constructs SSLParameters.
      * <p>
      * The values of cipherSuites, protocols, cryptographic algorithm
      * constraints, endpoint identification algorithm, server names and
-     * server name matchers are set to <code>null</code>, useCipherSuitesOrder,
-     * wantClientAuth and needClientAuth are set to <code>false</code>.
+     * server name matchers are set to {@code null}; useCipherSuitesOrder,
+     * wantClientAuth and needClientAuth are set to {@code false};
+     * enableRetransmissions is set to {@code true}; maximum network packet
+     * size is set to {@code 0}.
      */
     public SSLParameters() {
         // empty
@@ -92,7 +96,7 @@ public class SSLParameters {
      * <p>
      * Calling this constructor is equivalent to calling the no-args
      * constructor followed by
-     * <code>setCipherSuites(cipherSuites);</code>.
+     * {@code setCipherSuites(cipherSuites);}.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      */
@@ -106,7 +110,7 @@ public class SSLParameters {
      * <p>
      * Calling this constructor is equivalent to calling the no-args
      * constructor followed by
-     * <code>setCipherSuites(cipherSuites); setProtocols(protocols);</code>.
+     * {@code setCipherSuites(cipherSuites); setProtocols(protocols);}.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      * @param protocols the array of protocols (or null)
@@ -171,7 +175,7 @@ public class SSLParameters {
 
     /**
      * Sets whether client authentication should be requested. Calling
-     * this method clears the <code>needClientAuth</code> flag.
+     * this method clears the {@code needClientAuth} flag.
      *
      * @param wantClientAuth whether client authentication should be requested
      */
@@ -191,7 +195,7 @@ public class SSLParameters {
 
     /**
      * Sets whether client authentication should be required. Calling
-     * this method clears the <code>wantClientAuth</code> flag.
+     * this method clears the {@code wantClientAuth} flag.
      *
      * @param needClientAuth whether client authentication should be required
      */
@@ -218,9 +222,9 @@ public class SSLParameters {
      * Sets the cryptographic algorithm constraints, which will be used
      * in addition to any configured by the runtime environment.
      * <p>
-     * If the <code>constraints</code> parameter is non-null, every
+     * If the {@code constraints} parameter is non-null, every
      * cryptographic algorithm, key and algorithm parameters used in the
-     * SSL/TLS handshake must be permitted by the constraints.
+     * SSL/TLS/DTLS handshake must be permitted by the constraints.
      *
      * @param constraints the algorithm constraints (or null)
      *
@@ -249,9 +253,9 @@ public class SSLParameters {
     /**
      * Sets the endpoint identification algorithm.
      * <p>
-     * If the <code>algorithm</code> parameter is non-null or non-empty, the
+     * If the {@code algorithm} parameter is non-null or non-empty, the
      * endpoint identification/verification procedures must be handled during
-     * SSL/TLS handshaking.  This is to prevent man-in-the-middle attacks.
+     * SSL/TLS/DTLS handshaking.  This is to prevent man-in-the-middle attacks.
      *
      * @param algorithm The standard string name of the endpoint
      *     identification algorithm (or null).  See Appendix A in the <a href=
@@ -317,7 +321,7 @@ public class SSLParameters {
      * This method is only useful to {@link SSLSocket}s or {@link SSLEngine}s
      * operating in client mode.
      * <P>
-     * For SSL/TLS connections, the underlying SSL/TLS provider
+     * For SSL/TLS/DTLS connections, the underlying SSL/TLS/DTLS provider
      * may specify a default value for a certain server name type.  In
      * client mode, it is recommended that, by default, providers should
      * include the server name indication whenever the server can be located
@@ -440,7 +444,7 @@ public class SSLParameters {
      *
      * @param honorOrder whether local cipher suites order in
      *        {@code #getCipherSuites} should be honored during
-     *        SSL/TLS handshaking.
+     *        SSL/TLS/DTLS handshaking.
      *
      * @see #getUseCipherSuitesOrder()
      *
@@ -454,7 +458,7 @@ public class SSLParameters {
      * Returns whether the local cipher suites preference should be honored.
      *
      * @return whether local cipher suites order in {@code #getCipherSuites}
-     *         should be honored during SSL/TLS handshaking.
+     *         should be honored during SSL/TLS/DTLS handshaking.
      *
      * @see #setUseCipherSuitesOrder(boolean)
      *
@@ -463,5 +467,107 @@ public class SSLParameters {
     public final boolean getUseCipherSuitesOrder() {
         return preferLocalCipherSuites;
     }
+
+    /**
+     * Sets whether DTLS handshake retransmissions should be enabled.
+     *
+     * This method only applies to DTLS.
+     *
+     * @param   enableRetransmissions
+     *          {@code true} indicates that DTLS handshake retransmissions
+     *          should be enabled; {@code false} indicates that DTLS handshake
+     *          retransmissions should be disabled
+     *
+     * @see     #getEnableRetransmissions()
+     *
+     * @since 1.9
+     */
+    public void setEnableRetransmissions(boolean enableRetransmissions) {
+        this.enableRetransmissions = enableRetransmissions;
+    }
+
+    /**
+     * Returns whether DTLS handshake retransmissions should be enabled.
+     *
+     * This method only applies to DTLS.
+     *
+     * @return  true, if DTLS handshake retransmissions should be enabled
+     *
+     * @see     #setEnableRetransmissions(boolean)
+     *
+     * @since 1.9
+     */
+    public boolean getEnableRetransmissions() {
+        return enableRetransmissions;
+    }
+
+    /**
+     * Sets the maximum expected network packet size in bytes for
+     * SSL/TLS/DTLS records.
+     *
+     * @apiNote  It is recommended that if possible, the maximum packet size
+     *           should not be less than 256 bytes so that small handshake
+     *           messages, such as HelloVerifyRequests, are not fragmented.
+     *
+     * @implNote If the maximum packet size is too small to hold a minimal
+     *           record, an implementation may attempt to generate as minimal
+     *           records as possible.  However, this may cause a generated
+     *           packet to be larger than the maximum packet size.
+     *
+     * @param   maximumPacketSize
+     *          the maximum expected network packet size in bytes, or
+     *          {@code 0} to use the implicit size that is automatically
+     *          specified by the underlying implementation.
+     * @throws  IllegalArgumentException
+     *          if {@code maximumPacketSize} is negative.
+     *
+     * @see     #getMaximumPacketSize()
+     *
+     * @since 1.9
+     */
+    public void setMaximumPacketSize(int maximumPacketSize) {
+        if (maximumPacketSize < 0) {
+            throw new IllegalArgumentException(
+                "The maximum packet size cannot be negative");
+        }
+
+        this.maximumPacketSize = maximumPacketSize;
+    }
+
+    /**
+     * Returns the maximum expected network packet size in bytes for
+     * SSL/TLS/DTLS records.
+     *
+     * @apiNote  The implicit size may not be a fixed value, especially
+     *           for a DTLS protocols implementation.
+     *
+     * @implNote For SSL/TLS/DTLS connections, the underlying provider
+     *           should calculate and specify the implicit value of the
+     *           maximum expected network packet size if it is not
+     *           configured explicitly.  For any connection populated
+     *           object, this method should never return {@code 0} so
+     *           that applications can retrieve the actual implicit size
+     *           of the underlying implementation.
+     *           <P>
+     *           An implementation should attempt to comply with the maximum
+     *           packet size configuration.  However, if the maximum packet
+     *           size is too small to hold a minimal record, an implementation
+     *           may try to generate as minimal records as possible.  This
+     *           may cause a generated packet to be larger than the maximum
+     *           packet size.
+     *
+     * @return   the maximum expected network packet size, or {@code 0} if
+     *           use the implicit size that is automatically specified by
+     *           the underlying implementation and this object has not been
+     *           populated by any connection.
+     *
+     * @see      #setMaximumPacketSize(int)
+     *
+     * @since 1.9
+     */
+    public int getMaximumPacketSize() {
+        return maximumPacketSize;
+    }
+
 }
 

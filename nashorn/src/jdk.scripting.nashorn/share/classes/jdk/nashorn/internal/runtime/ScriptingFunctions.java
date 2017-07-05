@@ -137,7 +137,7 @@ public final class ScriptingFunctions {
         final ScriptObject global = Context.getGlobal();
 
         // Set up initial process.
-        final ProcessBuilder processBuilder = new ProcessBuilder(tokenizeCommandLine(JSType.toString(string)));
+        final ProcessBuilder processBuilder = new ProcessBuilder(tokenizeString(JSType.toString(string)));
 
         // Current ENV property state.
         final Object env = global.get(ENV_NAME);
@@ -237,23 +237,22 @@ public final class ScriptingFunctions {
     }
 
     /**
-     * Break an exec string into tokens, honoring quoted arguments and escaped
-     * spaces.
+     * Break a string into tokens, honoring quoted arguments and escaped spaces.
      *
-     * @param execString a {@link String} with the command line to execute.
+     * @param str a {@link String} to tokenize.
      * @return a {@link List} of {@link String}s representing the tokens that
-     * constitute the command line.
+     * constitute the string.
      * @throws IOException in case {@link StreamTokenizer#nextToken()} raises it.
      */
-    public static List<String> tokenizeCommandLine(final String execString) throws IOException {
-        final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(execString));
+    public static List<String> tokenizeString(final String str) throws IOException {
+        final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(str));
         tokenizer.resetSyntax();
         tokenizer.wordChars(0, 255);
         tokenizer.whitespaceChars(0, ' ');
         tokenizer.commentChar('#');
         tokenizer.quoteChar('"');
         tokenizer.quoteChar('\'');
-        final List<String> cmdList = new ArrayList<>();
+        final List<String> tokenList = new ArrayList<>();
         final StringBuilder toAppend = new StringBuilder();
         while (tokenizer.nextToken() != StreamTokenizer.TT_EOF) {
             final String s = tokenizer.sval;
@@ -265,13 +264,13 @@ public final class ScriptingFunctions {
                 // omit trailing \, append space instead
                 toAppend.append(s.substring(0, s.length() - 1)).append(' ');
             } else {
-                cmdList.add(toAppend.append(s).toString());
+                tokenList.add(toAppend.append(s).toString());
                 toAppend.setLength(0);
             }
         }
         if (toAppend.length() != 0) {
-            cmdList.add(toAppend.toString());
+            tokenList.add(toAppend.toString());
         }
-        return cmdList;
+        return tokenList;
     }
 }
