@@ -30,14 +30,7 @@
 BUILDDIR = ../../..
 PACKAGE = sun.rmi
 PRODUCT = sun
-LIBRARY = rmi
 include $(BUILDDIR)/common/Defs.gmk
-
-#
-# Add use of a mapfile
-#
-FILES_m = mapfile-vers
-include $(BUILDDIR)/common/Mapfile-vers.gmk
 
 #
 # Java files to compile.
@@ -52,31 +45,9 @@ AUTO_FILES_JAVA_DIRS = \
 	com/sun/rmi
 
 #
-# Native files to compile.
-#
-FILES_c = \
-	sun/rmi/server/MarshalInputStream.c
-
-#
-# Add ambient vpath to pick up files not part of sun.rmi package
-#
-vpath %.c $(SHARE_SRC)/native/sun/rmi/server
-
-#
-# Exported files that require generated .h 
-#
-FILES_export = \
-    sun/rmi/server/MarshalInputStream.java
-
-#
-# Link to JVM for JVM_LatestUserDefinedLoader
-#
-OTHER_LDLIBS = $(JVMLIB)
-
-#
 # Rules
 #
-include $(BUILDDIR)/common/Library.gmk
+include $(BUILDDIR)/common/Rules.gmk
 
 #
 # Full package names of implementations requiring stubs

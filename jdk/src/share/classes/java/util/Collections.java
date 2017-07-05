@@ -2352,6 +2352,64 @@ public class Collections {
     }
 
     /**
+     * Returns a dynamically typesafe view of the specified queue.
+     * Any attempt to insert an element of the wrong type will result in
+     * an immediate {@link ClassCastException}.  Assuming a queue contains
+     * no incorrectly typed elements prior to the time a dynamically typesafe
+     * view is generated, and that all subsequent access to the queue
+     * takes place through the view, it is <i>guaranteed</i> that the
+     * queue cannot contain an incorrectly typed element.
+     *
+     * <p>A discussion of the use of dynamically typesafe views may be
+     * found in the documentation for the {@link #checkedCollection
+     * checkedCollection} method.
+     *
+     * <p>The returned queue will be serializable if the specified queue
+     * is serializable.
+     *
+     * <p>Since {@code null} is considered to be a value of any reference
+     * type, the returned queue permits insertion of {@code null} elements
+     * whenever the backing queue does.
+     *
+     * @param queue the queue for which a dynamically typesafe view is to be
+     *             returned
+     * @param type the type of element that {@code queue} is permitted to hold
+     * @return a dynamically typesafe view of the specified queue
+     * @since 1.8
+     */
+    public static <E> Queue<E> checkedQueue(Queue<E> queue, Class<E> type) {
+        return new CheckedQueue<>(queue, type);
+    }
+
+    /**
+     * @serial include
+     */
+    static class CheckedQueue<E>
+        extends CheckedCollection<E>
+        implements Queue<E>, Serializable
+    {
+        private static final long serialVersionUID = 1433151992604707767L;
+        final Queue<E> queue;
+
+        CheckedQueue(Queue<E> queue, Class<E> elementType) {
+            super(queue, elementType);
+            this.queue = queue;
+        }
+
+        public E element()              {return queue.element();}
+        public boolean equals(Object o) {return o == this || c.equals(o);}
+        public int hashCode()           {return c.hashCode();}
+        public E peek()                 {return queue.peek();}
+        public E poll()                 {return queue.poll();}
+        public E remove()               {return queue.remove();}
+
+        public boolean offer(E e) {
+            typeCheck(e);
+            return add(e);
+        }
+    }
+
+    /**
      * Returns a dynamically typesafe view of the specified set.
      * Any attempt to insert an element of the wrong type will result in
      * an immediate {@link ClassCastException}.  Assuming a set contains

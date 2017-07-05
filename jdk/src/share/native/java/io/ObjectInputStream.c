@@ -173,16 +173,3 @@ Java_java_io_ObjectInputStream_bytesToDoubles(JNIEnv *env,
     (*env)->ReleasePrimitiveArrayCritical(env, dst, doubles, 0);
 }
 
-/*
- * Class:     java_io_ObjectInputStream
- * Method:    latestUserDefinedLoader
- * Signature: ()Ljava/lang/ClassLoader;
- *
- * Returns the first non-null class loader up the execution stack, or null
- * if only code from the null class loader is on the stack.
- */
-JNIEXPORT jobject JNICALL
-Java_java_io_ObjectInputStream_latestUserDefinedLoader(JNIEnv *env, jclass cls)
-{
-    return JVM_LatestUserDefinedLoader(env);
-}

@@ -122,10 +122,10 @@ public:
   void set_try_claimed() { _try_claimed = true; }
 
   void scanCard(size_t index, HeapRegion *r) {
-    DirtyCardToOopClosure* cl =
-      r->new_dcto_closure(_oc,
-                         CardTableModRefBS::Precise,
-                         HeapRegionDCTOC::IntoCSFilterKind);
+    // Stack allocate the DirtyCardToOopClosure instance
+    HeapRegionDCTOC cl(_g1h, r, _oc,
+                       CardTableModRefBS::Precise,
+                       HeapRegionDCTOC::IntoCSFilterKind);
 
     // Set the "from" region in the closure.
     _oc->set_region(r);
@@ -140,7 +140,7 @@ public:
       // scans (the rsets of the regions in the cset can intersect).
       _ct_bs->set_card_claimed(index);
       _cards_done++;
-      cl->do_MemRegion(mr);
+      cl.do_MemRegion(mr);
     }
   }
 

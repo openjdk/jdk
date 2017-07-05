@@ -1277,11 +1277,10 @@ public class JarSigner {
                     System.out.println(rb.getString("TSA.location.") + tsaUrl);
                 }
                 if (tsaCert != null) {
-                    String certUrl =
-                        TimestampedSigner.getTimestampingUrl(tsaCert);
-                    if (certUrl != null) {
+                    URI tsaURI = TimestampedSigner.getTimestampingURI(tsaCert);
+                    if (tsaURI != null) {
                         System.out.println(rb.getString("TSA.location.") +
-                            certUrl);
+                            tsaURI);
                     }
                     System.out.println(rb.getString("TSA.certificate.") +
                         printCert("", tsaCert, false, 0, false));
