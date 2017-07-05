@@ -30,7 +30,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g FinalizerTest.java
  *
- *  @run main FinalizerTest
+ *  @run driver FinalizerTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

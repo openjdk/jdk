@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g DebuggerThreadTest.java
- *  @run main DebuggerThreadTest
+ *  @run driver DebuggerThreadTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

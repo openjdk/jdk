@@ -49,7 +49,9 @@ import java.util.Arrays;
  * <p> A SerialClob is not safe for use by multiple concurrent threads.  If a
  * SerialClob is to be used by more than one thread then access to the SerialClob
  * should be controlled by appropriate synchronization.
+ *
  * @author Jonathan Bruce
+ * @since 1.5
  */
 public class SerialClob implements Clob, Serializable, Cloneable {
 

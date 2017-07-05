@@ -50,6 +50,8 @@ import java.sql.SQLException;
  * The inherited methods <code>getMessage</code>, <code>getSQLState</code>,
  * and <code>getErrorCode</code> retrieve information contained in a
  * <code>RowSetWarning</code> object.
+ *
+ * @since 1.5
  */
 public class RowSetWarning extends SQLException {
 

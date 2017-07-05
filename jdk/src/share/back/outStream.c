@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include "util.h"
+#include "utf_util.h"
 #include "stream.h"
 #include "outStream.h"
 #include "inStream.h"
@@ -307,8 +308,7 @@ outStream_writeString(PacketOutputStream *stream, char *string)
     } else {
         jint      new_length;
 
-        new_length = (gdata->npt->utf8mToUtf8sLength)
-                            (gdata->npt->utf, (jbyte*)string, length);
+        new_length = utf8mToUtf8sLength((jbyte*)string, length);
         if ( new_length == length ) {
             (void)outStream_writeInt(stream, length);
             error = writeBytes(stream, (jbyte *)string, length);
@@ -316,9 +316,7 @@ outStream_writeString(PacketOutputStream *stream, char *string)
             char *new_string;
 
             new_string = jvmtiAllocate(new_length+1);
-            (gdata->npt->utf8mToUtf8s)
-                            (gdata->npt->utf, (jbyte*)string, length,
-                             (jbyte*)new_string, new_length);
+            utf8mToUtf8s((jbyte*)string, length, (jbyte*)new_string, new_length);
             (void)outStream_writeInt(stream, new_length);
             error = writeBytes(stream, (jbyte *)new_string, new_length);
             jvmtiDeallocate(new_string);

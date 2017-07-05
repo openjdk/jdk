@@ -28,10 +28,10 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g InstTarg.java
- *  @run main ConnectedVMs Kill
- *  @run main ConnectedVMs Resume-to-exit
- *  @run main ConnectedVMs dispose()
- *  @run main ConnectedVMs exit()
+ *  @run driver ConnectedVMs Kill
+ *  @run driver ConnectedVMs Resume-to-exit
+ *  @run driver ConnectedVMs dispose()
+ *  @run driver ConnectedVMs exit()
  *
  * @summary ConnectedVMs checks the method
  * VirtualMachineManager.connectedVirtualMachines()

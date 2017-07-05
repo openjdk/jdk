@@ -203,19 +203,19 @@ final class DigestMD5Server extends DigestMD5Base implements SaslServer {
             String supportedCiphers = null;
             if ((allQop&PRIVACY_PROTECTION) != 0) {
                 myCiphers = getPlatformCiphers();
-                StringBuffer buf = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
 
                 // myCipher[i] is a byte that indicates whether CIPHER_TOKENS[i]
                 // is supported
                 for (int i = 0; i < CIPHER_TOKENS.length; i++) {
                     if (myCiphers[i] != 0) {
-                        if (buf.length() > 0) {
-                            buf.append(',');
+                        if (sb.length() > 0) {
+                            sb.append(',');
                         }
-                        buf.append(CIPHER_TOKENS[i]);
+                        sb.append(CIPHER_TOKENS[i]);
                     }
                 }
-                supportedCiphers = buf.toString();
+                supportedCiphers = sb.toString();
             }
 
             try {

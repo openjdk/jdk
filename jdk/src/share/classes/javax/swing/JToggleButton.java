@@ -140,6 +140,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * Creates a toggle button where properties are taken from the
      * Action supplied.
      *
+     * @param a an instance of an {@code Action}
      * @since 1.3
      */
     public JToggleButton(Action a) {
@@ -390,6 +391,9 @@ public class JToggleButton extends AbstractButton implements Accessible {
     protected class AccessibleJToggleButton extends AccessibleAbstractButton
             implements ItemListener {
 
+        /**
+         * Constructs {@code AccessibleJToggleButton}
+         */
         public AccessibleJToggleButton() {
             super();
             JToggleButton.this.addItemListener(this);

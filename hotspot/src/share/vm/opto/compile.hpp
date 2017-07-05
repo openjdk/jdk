@@ -431,9 +431,6 @@ class Compile : public Phase {
   // Remove the speculative part of types and clean up the graph
   void remove_speculative_types(PhaseIterGVN &igvn);
 
-  // Are we within a PreserveJVMState block?
-  int _preserve_jvm_state;
-
   void* _replay_inline_data; // Pointer to data loaded from file
 
   void print_inlining_init();
@@ -1198,21 +1195,6 @@ class Compile : public Phase {
 
   // Auxiliary method for randomized fuzzing/stressing
   static bool randomized_select(int count);
-
-  // enter a PreserveJVMState block
-  void inc_preserve_jvm_state() {
-    _preserve_jvm_state++;
-  }
-
-  // exit a PreserveJVMState block
-  void dec_preserve_jvm_state() {
-    _preserve_jvm_state--;
-    assert(_preserve_jvm_state >= 0, "_preserve_jvm_state shouldn't be negative");
-  }
-
-  bool has_preserve_jvm_state() const {
-    return _preserve_jvm_state > 0;
-  }
 };
 
 #endif // SHARE_VM_OPTO_COMPILE_HPP

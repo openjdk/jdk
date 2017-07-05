@@ -1026,7 +1026,7 @@ class ConstantPool {
         }
         static
         String stringValueOf(MethodHandleEntry bsmRef, Entry[] argRefs) {
-            StringBuffer sb = new StringBuffer(bsmRef.stringValue());
+            StringBuilder sb = new StringBuilder(bsmRef.stringValue());
             // Arguments are formatted as "<foo;bar;baz>" instead of "[foo,bar,baz]".
             // This ensures there will be no confusion if "[,]" appear inside of names.
             char nextSep = '<';

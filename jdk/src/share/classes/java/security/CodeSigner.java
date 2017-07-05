@@ -154,7 +154,7 @@ public final class CodeSigner implements Serializable {
      *         if present.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("(");
         sb.append("Signer: " + signerCertPath.getCertificates().get(0));
         if (timestamp != null) {

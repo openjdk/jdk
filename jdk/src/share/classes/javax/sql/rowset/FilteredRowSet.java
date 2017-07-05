@@ -122,6 +122,7 @@ import java.math.*;
  * synchronized with the data source.
  *
  * @author Jonathan Bruce
+ * @since 1.5
  */
 
 public interface FilteredRowSet extends WebRowSet {

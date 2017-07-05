@@ -10,7 +10,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile SourceDebugExtensionTest.java
  *  @run compile -g SourceDebugExtensionTarg.java
- *  @run main SourceDebugExtensionTest
+ *  @run driver SourceDebugExtensionTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

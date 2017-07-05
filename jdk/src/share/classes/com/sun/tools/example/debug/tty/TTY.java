@@ -827,17 +827,17 @@ public class TTY implements EventNotifier {
     private static String addArgument(String string, String argument) {
         if (hasWhitespace(argument) || argument.indexOf(',') != -1) {
             // Quotes were stripped out for this argument, add 'em back.
-            StringBuffer buffer = new StringBuffer(string);
-            buffer.append('"');
+            StringBuilder sb = new StringBuilder(string);
+            sb.append('"');
             for (int i = 0; i < argument.length(); i++) {
                 char c = argument.charAt(i);
                 if (c == '"') {
-                    buffer.append('\\');
+                    sb.append('\\');
                 }
-                buffer.append(c);
+                sb.append(c);
             }
-            buffer.append("\" ");
-            return buffer.toString();
+            sb.append("\" ");
+            return sb.toString();
         } else {
             return string + argument + ' ';
         }

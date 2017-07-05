@@ -34,7 +34,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g DataModelTest.java
- *  @run main DataModelTest
+ *  @run driver DataModelTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
