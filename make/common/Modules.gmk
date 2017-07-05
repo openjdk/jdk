@@ -229,6 +229,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                       sub(/public/, ""); \
 	                       sub(/\/\/.*/, ""); \
 	                       sub(/\/\*.*\*\//, ""); \
+	                       gsub(/^ +\*.*/, ""); \
 	                       gsub(/ /, ""); \
 	                       printf(" %s", $$0) } \
 	          END        { printf("\n") }' $m \

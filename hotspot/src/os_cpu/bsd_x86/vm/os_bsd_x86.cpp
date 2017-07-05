@@ -417,7 +417,15 @@ intptr_t* _get_previous_fp() {
 #else
   register intptr_t **ebp __asm__ (SPELL_REG_FP);
 #endif
-  return (intptr_t*) *ebp;   // we want what it points to.
+  // ebp is for this frame (_get_previous_fp). We want the ebp for the
+  // caller of os::current_frame*(), so go up two frames. However, for
+  // optimized builds, _get_previous_fp() will be inlined, so only go
+  // up 1 frame in that case.
+#ifdef _NMT_NOINLINE_
+  return **(intptr_t***)ebp;
+#else
+  return *ebp;
+#endif
 }
 
 
