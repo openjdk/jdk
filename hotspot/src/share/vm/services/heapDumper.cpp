@@ -27,6 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
+#include "memory/gcLocker.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -1709,11 +1710,16 @@ void VM_HeapDumper::doit() {
 
   HandleMark hm;
   CollectedHeap* ch = Universe::heap();
+
+  ch->ensure_parsability(false); // must happen, even if collection does
+                                 // not happen (e.g. due to GC_locker)
+
   if (_gc_before_heap_dump) {
-    ch->collect_as_vm_thread(GCCause::_heap_dump);
-  } else {
-    // make the heap parsable (no need to retire TLABs)
-    ch->ensure_parsability(false);
+    if (GC_locker::is_active()) {
+      warning("GC locker is held; pre-heapdump GC was skipped");
+    } else {
+      ch->collect_as_vm_thread(GCCause::_heap_dump);
+    }
   }
 
   // At this point we should be the only dumper active, so

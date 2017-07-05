@@ -1281,11 +1281,17 @@ void Universe::flush_dependents_on_method(methodHandle m_h) {
   }
 }
 
-void Universe::print() { print_on(gclog_or_tty); }
+void Universe::print() {
+  print_on(gclog_or_tty);
+}
 
-void Universe::print_on(outputStream* st) {
+void Universe::print_on(outputStream* st, bool extended) {
   st->print_cr("Heap");
-  heap()->print_on(st);
+  if (!extended) {
+    heap()->print_on(st);
+  } else {
+    heap()->print_extended_on(st);
+  }
 }
 
 void Universe::print_heap_at_SIGBREAK() {
@@ -1301,14 +1307,22 @@ void Universe::print_heap_before_gc(outputStream* st) {
   st->print_cr("{Heap before GC invocations=%u (full %u):",
                heap()->total_collections(),
                heap()->total_full_collections());
-  heap()->print_on(st);
+  if (!PrintHeapAtGCExtended) {
+    heap()->print_on(st);
+  } else {
+    heap()->print_extended_on(st);
+  }
 }
 
 void Universe::print_heap_after_gc(outputStream* st) {
   st->print_cr("Heap after GC invocations=%u (full %u):",
                heap()->total_collections(),
                heap()->total_full_collections());
-  heap()->print_on(st);
+  if (!PrintHeapAtGCExtended) {
+    heap()->print_on(st);
+  } else {
+    heap()->print_extended_on(st);
+  }
   st->print_cr("}");
 }
 

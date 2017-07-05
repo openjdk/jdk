@@ -28,6 +28,7 @@ package java.security;
 
 import java.util.Enumeration;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import sun.security.jca.GetInstance;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
@@ -60,8 +61,8 @@ import sun.security.util.SecurityConstants;
  * with a standard type.  The default policy type is "JavaPolicy".
  *
  * <p> Once a Policy instance has been installed (either by default, or by
- * calling <code>setPolicy</code>),
- * the Java runtime invokes its <code>implies</code> when it needs to
+ * calling <code>setPolicy</code>), the Java runtime invokes its
+ * <code>implies</code> method when it needs to
  * determine whether executing code (encapsulated in a ProtectionDomain)
  * can perform SecurityManager-protected operations.  How a Policy object
  * retrieves its policy data is up to the Policy implementation itself.
@@ -94,18 +95,33 @@ public abstract class Policy {
     public static final PermissionCollection UNSUPPORTED_EMPTY_COLLECTION =
                         new UnsupportedEmptyCollection();
 
-    /** the system-wide policy. */
-    private static Policy policy; // package private for AccessControlContext
+    // Information about the system-wide policy.
+    private static class PolicyInfo {
+        // the system-wide policy
+        final Policy policy;
+        // a flag indicating if the system-wide policy has been initialized
+        final boolean initialized;
+
+        PolicyInfo(Policy policy, boolean initialized) {
+            this.policy = policy;
+            this.initialized = initialized;
+        }
+    }
+
+    // PolicyInfo is stored in an AtomicReference
+    private static AtomicReference<PolicyInfo> policy =
+        new AtomicReference<>(new PolicyInfo(null, false));
 
     private static final Debug debug = Debug.getInstance("policy");
 
     // Cache mapping ProtectionDomain.Key to PermissionCollection
     private WeakHashMap<ProtectionDomain.Key, PermissionCollection> pdMapping;
 
-    /** package private for AccessControlContext */
+    /** package private for AccessControlContext and ProtectionDomain */
     static boolean isSet()
     {
-        return policy != null;
+        PolicyInfo pi = policy.get();
+        return pi.policy != null && pi.initialized == true;
     }
 
     private static void checkPermission(String type) {
@@ -143,80 +159,92 @@ public abstract class Policy {
 
     /**
      * Returns the installed Policy object, skipping the security check.
-     * Used by SecureClassLoader and getPolicy.
+     * Used by ProtectionDomain and getPolicy.
      *
      * @return the installed Policy.
-     *
      */
-    static synchronized Policy getPolicyNoCheck()
+    static Policy getPolicyNoCheck()
     {
-        if (policy == null) {
-            String policy_class = null;
-            policy_class = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    public String run() {
-                        return Security.getProperty("policy.provider");
-                    }
-                });
-            if (policy_class == null) {
-                policy_class = "sun.security.provider.PolicyFile";
-            }
-
-            try {
-                policy = (Policy)
-                    Class.forName(policy_class).newInstance();
-            } catch (Exception e) {
-                /*
-                 * The policy_class seems to be an extension
-                 * so we have to bootstrap loading it via a policy
-                 * provider that is on the bootclasspath
-                 * If it loads then shift gears to using the configured
-                 * provider.
-                 */
-
-                // install the bootstrap provider to avoid recursion
-                policy = new sun.security.provider.PolicyFile();
-
-                final String pc = policy_class;
-                Policy p = AccessController.doPrivileged(
-                    new PrivilegedAction<Policy>() {
-                        public Policy run() {
-                            try {
-                                ClassLoader cl =
-                                        ClassLoader.getSystemClassLoader();
-                                // we want the extension loader
-                                ClassLoader extcl = null;
-                                while (cl != null) {
-                                    extcl = cl;
-                                    cl = cl.getParent();
-                                }
-                                return (extcl != null ? (Policy)Class.forName(
-                                        pc, true, extcl).newInstance() : null);
-                            } catch (Exception e) {
-                                if (debug != null) {
-                                    debug.println("policy provider " +
-                                                pc +
-                                                " not available");
-                                    e.printStackTrace();
-                                }
-                                return null;
-                            }
+        PolicyInfo pi = policy.get();
+        // Use double-check idiom to avoid locking if system-wide policy is
+        // already initialized
+        if (pi.initialized == false || pi.policy == null) {
+            synchronized (Policy.class) {
+                PolicyInfo pinfo = policy.get();
+                if (pinfo.policy == null) {
+                    String policy_class = AccessController.doPrivileged(
+                        new PrivilegedAction<String>() {
+                        public String run() {
+                            return Security.getProperty("policy.provider");
                         }
                     });
-                /*
-                 * if it loaded install it as the policy provider. Otherwise
-                 * continue to use the system default implementation
-                 */
-                if (p != null) {
-                    policy = p;
-                } else {
-                    if (debug != null) {
-                        debug.println("using sun.security.provider.PolicyFile");
+                    if (policy_class == null) {
+                        policy_class = "sun.security.provider.PolicyFile";
                     }
+
+                    try {
+                        pinfo = new PolicyInfo(
+                            (Policy) Class.forName(policy_class).newInstance(),
+                            true);
+                    } catch (Exception e) {
+                        /*
+                         * The policy_class seems to be an extension
+                         * so we have to bootstrap loading it via a policy
+                         * provider that is on the bootclasspath.
+                         * If it loads then shift gears to using the configured
+                         * provider.
+                         */
+
+                        // install the bootstrap provider to avoid recursion
+                        Policy polFile = new sun.security.provider.PolicyFile();
+                        pinfo = new PolicyInfo(polFile, false);
+                        policy.set(pinfo);
+
+                        final String pc = policy_class;
+                        Policy pol = AccessController.doPrivileged(
+                            new PrivilegedAction<Policy>() {
+                            public Policy run() {
+                                try {
+                                    ClassLoader cl =
+                                            ClassLoader.getSystemClassLoader();
+                                    // we want the extension loader
+                                    ClassLoader extcl = null;
+                                    while (cl != null) {
+                                        extcl = cl;
+                                        cl = cl.getParent();
+                                    }
+                                    return (extcl != null ? (Policy)Class.forName(
+                                            pc, true, extcl).newInstance() : null);
+                                } catch (Exception e) {
+                                    if (debug != null) {
+                                        debug.println("policy provider " +
+                                                    pc +
+                                                    " not available");
+                                        e.printStackTrace();
+                                    }
+                                    return null;
+                                }
+                            }
+                        });
+                        /*
+                         * if it loaded install it as the policy provider. Otherwise
+                         * continue to use the system default implementation
+                         */
+                        if (pol != null) {
+                            pinfo = new PolicyInfo(pol, true);
+                        } else {
+                            if (debug != null) {
+                                debug.println("using sun.security.provider.PolicyFile");
+                            }
+                            pinfo = new PolicyInfo(polFile, true);
+                        }
+                    }
+                    policy.set(pinfo);
                 }
+                return pinfo.policy;
             }
         }
-        return policy;
+        return pi.policy;
     }
 
     /**
@@ -245,7 +273,7 @@ public abstract class Policy {
             initPolicy(p);
         }
         synchronized (Policy.class) {
-            Policy.policy = p;
+            policy.set(new PolicyInfo(p, p != null));
         }
     }
 
@@ -292,14 +320,14 @@ public abstract class Policy {
         PermissionCollection policyPerms = null;
         synchronized (p) {
             if (p.pdMapping == null) {
-                p.pdMapping =
-                    new WeakHashMap<ProtectionDomain.Key, PermissionCollection>();
+                p.pdMapping = new WeakHashMap<>();
            }
         }
 
         if (policyDomain.getCodeSource() != null) {
-            if (Policy.isSet()) {
-                policyPerms = policy.getPermissions(policyDomain);
+            Policy pol = policy.get().policy;
+            if (pol != null) {
+                policyPerms = pol.getPermissions(policyDomain);
             }
 
             if (policyPerms == null) { // assume it has all
@@ -434,7 +462,7 @@ public abstract class Policy {
                                                         type,
                                                         params);
         } catch (NoSuchAlgorithmException nsae) {
-            return handleException (nsae);
+            return handleException(nsae);
         }
     }
 
@@ -494,7 +522,7 @@ public abstract class Policy {
                                                         type,
                                                         params);
         } catch (NoSuchAlgorithmException nsae) {
-            return handleException (nsae);
+            return handleException(nsae);
         }
     }
 
@@ -808,7 +836,7 @@ public abstract class Policy {
          *
          * @param permission the Permission object to compare.
          *
-         * @return true if "permission" is implied by the  permissions in
+         * @return true if "permission" is implied by the permissions in
          * the collection, false if not.
          */
         @Override public boolean implies(Permission permission) {

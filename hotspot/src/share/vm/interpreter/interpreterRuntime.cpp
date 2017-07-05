@@ -549,8 +549,8 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
 
   if (is_put && !is_static && klass->is_subclass_of(SystemDictionary::CallSite_klass()) && (info.name() == vmSymbols::target_name())) {
     const jint direction = frame::interpreter_frame_expression_stack_direction();
-    oop call_site     = *((oop*) thread->last_frame().interpreter_frame_tos_at(-1 * direction));
-    oop method_handle = *((oop*) thread->last_frame().interpreter_frame_tos_at( 0 * direction));
+    Handle call_site    (THREAD, *((oop*) thread->last_frame().interpreter_frame_tos_at(-1 * direction)));
+    Handle method_handle(THREAD, *((oop*) thread->last_frame().interpreter_frame_tos_at( 0 * direction)));
     assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
     assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
 

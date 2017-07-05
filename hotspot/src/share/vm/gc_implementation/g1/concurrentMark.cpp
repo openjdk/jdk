@@ -1518,6 +1518,7 @@ class G1NoteEndOfConcMarkClosure : public HeapRegionClosure {
   size_t _regions_claimed;
   size_t _freed_bytes;
   FreeRegionList* _local_cleanup_list;
+  OldRegionSet* _old_proxy_set;
   HumongousRegionSet* _humongous_proxy_set;
   HRRSCleanupTask* _hrrs_cleanup_task;
   double _claimed_region_time;
@@ -1527,6 +1528,7 @@ public:
   G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
                              int worker_num,
                              FreeRegionList* local_cleanup_list,
+                             OldRegionSet* old_proxy_set,
                              HumongousRegionSet* humongous_proxy_set,
                              HRRSCleanupTask* hrrs_cleanup_task);
   size_t freed_bytes() { return _freed_bytes; }
@@ -1557,9 +1559,11 @@ public:
   void work(int i) {
     double start = os::elapsedTime();
     FreeRegionList local_cleanup_list("Local Cleanup List");
+    OldRegionSet old_proxy_set("Local Cleanup Old Proxy Set");
     HumongousRegionSet humongous_proxy_set("Local Cleanup Humongous Proxy Set");
     HRRSCleanupTask hrrs_cleanup_task;
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h, i, &local_cleanup_list,
+                                           &old_proxy_set,
                                            &humongous_proxy_set,
                                            &hrrs_cleanup_task);
     if (G1CollectedHeap::use_parallel_gc_threads()) {
@@ -1573,6 +1577,7 @@ public:
     // Now update the lists
     _g1h->update_sets_after_freeing_regions(g1_note_end.freed_bytes(),
                                             NULL /* free_list */,
+                                            &old_proxy_set,
                                             &humongous_proxy_set,
                                             true /* par */);
     {
@@ -1643,6 +1648,7 @@ G1NoteEndOfConcMarkClosure::
 G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
                            int worker_num,
                            FreeRegionList* local_cleanup_list,
+                           OldRegionSet* old_proxy_set,
                            HumongousRegionSet* humongous_proxy_set,
                            HRRSCleanupTask* hrrs_cleanup_task)
   : _g1(g1), _worker_num(worker_num),
@@ -1650,6 +1656,7 @@ G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
     _freed_bytes(0),
     _claimed_region_time(0.0), _max_region_time(0.0),
     _local_cleanup_list(local_cleanup_list),
+    _old_proxy_set(old_proxy_set),
     _humongous_proxy_set(humongous_proxy_set),
     _hrrs_cleanup_task(hrrs_cleanup_task) { }
 
@@ -1665,6 +1672,7 @@ bool G1NoteEndOfConcMarkClosure::doHeapRegion(HeapRegion *hr) {
     _g1->free_region_if_empty(hr,
                               &_freed_bytes,
                               _local_cleanup_list,
+                              _old_proxy_set,
                               _humongous_proxy_set,
                               _hrrs_cleanup_task,
                               true /* par */);
@@ -1689,6 +1697,7 @@ void ConcurrentMark::cleanup() {
     return;
   }
 
+  HRSPhaseSetter x(HRSPhaseCleanup);
   g1h->verify_region_sets_optional();
 
   if (VerifyDuringGC) {

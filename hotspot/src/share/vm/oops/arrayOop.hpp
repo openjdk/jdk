@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,20 +104,32 @@ class arrayOopDesc : public oopDesc {
 
   // Return the maximum length of an array of BasicType.  The length can passed
   // to typeArrayOop::object_size(scale, length, header_size) without causing an
-  // overflow.
+  // overflow. We also need to make sure that this will not overflow a size_t on
+  // 32 bit platforms when we convert it to a byte size.
   static int32_t max_array_length(BasicType type) {
     assert(type >= 0 && type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
-    const int bytes_per_element = type2aelembytes(type);
-    if (bytes_per_element < HeapWordSize) {
-      return max_jint;
-    }
 
-    const int32_t max_words = align_size_down(max_jint, MinObjAlignment);
-    const int32_t max_element_words = max_words - header_size(type);
-    const int32_t words_per_element = bytes_per_element >> LogHeapWordSize;
-    return max_element_words / words_per_element;
+    const size_t max_element_words_per_size_t =
+      align_size_down((SIZE_MAX/HeapWordSize - header_size(type)), MinObjAlignment);
+    const size_t max_elements_per_size_t =
+      HeapWordSize * max_element_words_per_size_t / type2aelembytes(type);
+    if ((size_t)max_jint < max_elements_per_size_t) {
+      // It should be ok to return max_jint here, but parts of the code
+      // (CollectedHeap, Klass::oop_oop_iterate(), and more) uses an int for
+      // passing around the size (in words) of an object. So, we need to avoid
+      // overflowing an int when we add the header. See CRs 4718400 and 7110613.
+      return align_size_down(max_jint - header_size(type), MinObjAlignment);
+    }
+    return (int32_t)max_elements_per_size_t;
   }
+
+// for unit testing
+#ifndef PRODUCT
+  static bool check_max_length_overflow(BasicType type);
+  static int32_t old_max_array_length(BasicType type);
+  static bool test_max_array_length();
+#endif
 };
 
 #endif // SHARE_VM_OOPS_ARRAYOOP_HPP

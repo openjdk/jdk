@@ -42,12 +42,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _jvmti_force_gc:
       return "JvmtiEnv ForceGarbageCollection";
 
-    case _no_gc:
-      return "No GC";
-
-    case _allocation_failure:
-      return "Allocation Failure";
-
     case _gc_locker:
       return "GCLocker Initiated GC";
 
@@ -56,6 +50,12 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _heap_dump:
       return "Heap Dump Initiated GC";
+
+    case _no_gc:
+      return "No GC";
+
+    case _allocation_failure:
+      return "Allocation Failure";
 
     case _tenured_generation_full:
       return "Tenured Generation Full";
@@ -77,6 +77,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _old_generation_too_full_to_scavenge:
       return "Old Generation Too Full To Scavenge";
+
+    case _adaptive_size_policy:
+      return "Ergonomics";
 
     case _g1_inc_collection_pause:
       return "G1 Evacuation Pause";

@@ -484,6 +484,13 @@ int MachConstantNode::constant_offset() {
   // Bind the offset lazily.
   if (offset == -1) {
     Compile::ConstantTable& constant_table = Compile::current()->constant_table();
+    // If called from Compile::scratch_emit_size assume the worst-case
+    // for load offsets: half the constant table size.
+    // NOTE: Don't return or calculate the actual offset (which might
+    // be zero) because that leads to problems with e.g. jumpXtnd on
+    // some architectures (cf. add-optimization in SPARC jumpXtnd).
+    if (Compile::current()->in_scratch_emit_size())
+      return constant_table.size() / 2;
     offset = constant_table.table_base_offset() + constant_table.find_offset(_constant);
     _constant.set_offset(offset);
   }
