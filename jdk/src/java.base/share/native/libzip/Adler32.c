@@ -66,5 +66,3 @@ Java_java_util_zip_Adler32_updateByteBuffer(JNIEnv *env, jclass cls, jint adler,
     }
     return adler;
 }
-
-

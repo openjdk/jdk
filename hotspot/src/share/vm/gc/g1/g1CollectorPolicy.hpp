@@ -26,8 +26,8 @@
 #define SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
 
 #include "gc/g1/collectionSetChooser.hpp"
-#include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 

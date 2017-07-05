@@ -169,11 +169,7 @@ class ParScanThreadState {
   // Allocate a to-space block of size "sz", or else return NULL.
   HeapWord* alloc_in_to_space_slow(size_t word_sz);
 
-  HeapWord* alloc_in_to_space(size_t word_sz) {
-    HeapWord* obj = to_space_alloc_buffer()->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
-    if (obj != NULL) return obj;
-    else return alloc_in_to_space_slow(word_sz);
-  }
+  inline HeapWord* alloc_in_to_space(size_t word_sz);
 
   HeapWord* young_old_boundary() { return _young_old_boundary; }
 

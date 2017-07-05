@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -398,11 +399,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   if (PrintBiasedLockingStatistics && counters == NULL)
     counters = BiasedLocking::counters();
 
-  bool need_tmp_reg = false;
-  if (tmp_reg == noreg) {
-    tmp_reg = rscratch2;
-  }
-  assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg, rscratch1);
+  assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg, rscratch1, rscratch2, noreg);
   assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
   Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
   Address klass_addr     (obj_reg, oopDesc::klass_offset_in_bytes());
@@ -432,7 +429,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   if (counters != NULL) {
     Label around;
     cbnz(tmp_reg, around);
-    atomic_incw(Address((address)counters->biased_lock_entry_count_addr()), tmp_reg, rscratch1);
+    atomic_incw(Address((address)counters->biased_lock_entry_count_addr()), tmp_reg, rscratch1, rscratch2);
     b(done);
     bind(around);
   } else {
@@ -485,7 +482,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     bind(here);
     if (counters != NULL) {
       atomic_incw(Address((address)counters->anonymously_biased_lock_entry_count_addr()),
-                  tmp_reg, rscratch1);
+                  tmp_reg, rscratch1, rscratch2);
     }
   }
   b(done);
@@ -511,7 +508,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     bind(here);
     if (counters != NULL) {
       atomic_incw(Address((address)counters->rebiased_lock_entry_count_addr()),
-                  tmp_reg, rscratch1);
+                  tmp_reg, rscratch1, rscratch2);
     }
   }
   b(done);
@@ -539,7 +536,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     // removing the bias bit from the object's header.
     if (counters != NULL) {
       atomic_incw(Address((address)counters->revoked_lock_entry_count_addr()), tmp_reg,
-                  rscratch1);
+                  rscratch1, rscratch2);
     }
     bind(nope);
   }
@@ -1640,15 +1637,15 @@ Address MacroAssembler::form_address(Register Rd, Register base, long byte_offse
   return Address(Rd);
 }
 
-void MacroAssembler::atomic_incw(Register counter_addr, Register tmp) {
+void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register tmp2) {
   Label retry_load;
   bind(retry_load);
   // flush and load exclusive from the memory location
   ldxrw(tmp, counter_addr);
   addw(tmp, tmp, 1);
   // if we store+flush with no intervening write tmp wil be zero
-  stxrw(tmp, tmp, counter_addr);
-  cbnzw(tmp, retry_load);
+  stxrw(tmp2, tmp, counter_addr);
+  cbnzw(tmp2, retry_load);
 }
 
 
@@ -2021,6 +2018,14 @@ void MacroAssembler::sub(Register Rd, Register Rn, RegisterOrConstant decrement)
   }
 }
 
+void MacroAssembler::subw(Register Rd, Register Rn, RegisterOrConstant decrement) {
+  if (decrement.is_register()) {
+    subw(Rd, Rn, decrement.as_register());
+  } else {
+    subw(Rd, Rn, decrement.as_constant());
+  }
+}
+
 void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
@@ -2110,7 +2115,7 @@ static bool different(Register a, RegisterOrConstant b, Register c) {
     return a != b.as_register() && a != c && b.as_register() != c;
 }
 
-#define ATOMIC_OP(LDXR, OP, STXR)                                       \
+#define ATOMIC_OP(LDXR, OP, IOP, STXR)                                       \
 void MacroAssembler::atomic_##OP(Register prev, RegisterOrConstant incr, Register addr) { \
   Register result = rscratch2;                                          \
   if (prev->is_valid())                                                 \
@@ -2120,14 +2125,15 @@ void MacroAssembler::atomic_##OP(Register prev, RegisterOrConstant incr, Registe
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   OP(rscratch1, result, incr);                                          \
-  STXR(rscratch1, rscratch1, addr);                                     \
-  cbnzw(rscratch1, retry_load);                                         \
-  if (prev->is_valid() && prev != result)                               \
-    mov(prev, result);                                                  \
+  STXR(rscratch2, rscratch1, addr);                                     \
+  cbnzw(rscratch2, retry_load);                                         \
+  if (prev->is_valid() && prev != result) {                             \
+    IOP(prev, rscratch1, incr);                                         \
+  }                                                                     \
 }
 
-ATOMIC_OP(ldxr, add, stxr)
-ATOMIC_OP(ldxrw, addw, stxrw)
+ATOMIC_OP(ldxr, add, sub, stxr)
+ATOMIC_OP(ldxrw, addw, subw, stxrw)
 
 #undef ATOMIC_OP
 
