@@ -124,7 +124,7 @@
 
 # jdk_management
 
-# 8046351
+# 8044591
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
 # 8056143
@@ -138,6 +138,9 @@ java/lang/management/MemoryMXBean/LowMemoryTest.java                            
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  aix-all
 javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
+
+# 8050115
+javax/management/monitor/GaugeMonitorDeadlockTest.java          generic-all
 
 ############################################################################
 
@@ -272,6 +275,9 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 
 # jdk_util
 
+# 8051641
+sun/util/calendar/zi/TestZoneInfo310.java                        generic-all
+
 ############################################################################
 
 # jdk_instrument
@@ -283,15 +289,13 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 # 8031482
 sun/tools/jcmd/TestJcmdSanity.java				windows-all
 
-# 8033104
-sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
-
 # 8027668
 sun/tools/jstatd/TestJstatdDefaults.java                generic-all
 sun/tools/jstatd/TestJstatdServer.java                  generic-all
 sun/tools/jstatd/TestJstatdPort.java                    generic-all
+sun/tools/jstatd/TestJstatdPortAndServer.java                    generic-all
 
-# 8046355
+# 8046285 8027668 
 sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
 # 6456333

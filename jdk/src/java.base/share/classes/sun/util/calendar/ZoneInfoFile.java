@@ -615,7 +615,9 @@ public final class ZoneInfoFile {
                 //                 startTime=86400000   <= 24 hours
                 // This:           startDayOfWeek=6
                 //                 startTime=0
-                // Below is the workaround, it probably slows down everyone a little
+                // Similar workaround needs to be applied to Africa/Cairo and
+                // its endDayOfWeek and endTime
+                // Below is the workarounds, it probably slows down everyone a little
                 if (params[2] == 6 && params[3] == 0 &&
                     (zoneId.equals("Asia/Amman") ||
                      zoneId.equals("Asia/Gaza") ||
@@ -623,6 +625,13 @@ public final class ZoneInfoFile {
                     params[2] = 5;
                     params[3] = 86400000;
                 }
+                //endDayOfWeek and endTime workaround
+                if (params[7] == 6 && params[8] == 0 &&
+                    (zoneId.equals("Africa/Cairo"))) {
+                    params[7] = 5;
+                    params[8] = 86400000;
+                }
+
             } else if (nTrans > 0) {  // only do this if there is something in table already
                 if (lastyear < LASTYEAR) {
                     // ZoneInfo has an ending entry for 2037

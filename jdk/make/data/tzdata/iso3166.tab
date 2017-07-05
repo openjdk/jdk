@@ -26,20 +26,20 @@
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 #
-# From Paul Eggert (2013-05-27):
+# From Paul Eggert (2014-07-18):
+# This file contains a table of two-letter country codes.  Columns are
+# separated by a single tab.  Lines beginning with '#' are comments.
+# Although all text currently uses ASCII encoding, this is planned to
+# change to UTF-8 soon.  The columns of the table are as follows:
 #
-# This file contains a table with the following columns:
 # 1.  ISO 3166-1 alpha-2 country code, current as of
-#     ISO 3166-1 Newsletter VI-15 (2013-05-10).  See: Updates on ISO 3166
+#     ISO 3166-1 Newsletter VI-16 (2013-07-11).  See: Updates on ISO 3166
 #   http://www.iso.org/iso/home/standards/country_codes/updates_on_iso_3166.htm
 # 2.  The usual English name for the coded region,
 #     chosen so that alphabetic sorting of subsets produces helpful lists.
 #     This is not the same as the English name in the ISO 3166 tables.
 #
-# Columns are separated by a single tab.
 # The table is sorted by country code.
-#
-# Lines beginning with `#' are comments.
 #
 # This table is intended as an aid for users, to help them select time
 # zone data appropriate for their practical needs.  It is not intended

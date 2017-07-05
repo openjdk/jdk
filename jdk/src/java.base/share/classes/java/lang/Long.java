@@ -606,37 +606,6 @@ public final class Long extends Number implements Comparable<Long> {
 
     /**
      * Parses the {@link CharSequence} argument as a signed {@code long} in
-     * the specified {@code radix}, beginning at the specified {@code beginIndex}
-     * and extending to the end of the sequence.
-     *
-     * <p>The method does not take steps to guard against the
-     * {@code CharSequence} being mutated while parsing.
-     *
-     * @param      s   the {@code CharSequence} containing the {@code long}
-     *                  representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
-     * @param      beginIndex   the beginning index, inclusive.
-     * @return     the signed {@code long} represented by the subsequence in
-     *             the specified radix.
-     * @throws     NullPointerException  if {@code s} is null.
-     * @throws     IndexOutOfBoundsException  if {@code beginIndex} is
-     *             negative, or if {@code beginIndex} is greater than
-     *             {@code s.length()}.
-     * @throws     NumberFormatException  if the {@code CharSequence} does not
-     *             contain a parsable {@code long} in the specified
-     *             {@code radix}, or if {@code radix} is either smaller than
-     *             {@link java.lang.Character#MIN_RADIX} or larger than
-     *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
-     */
-    public static long parseLong(CharSequence s, int radix, int beginIndex)
-            throws NumberFormatException {
-        // forces a null check of s
-        return parseLong(s, radix, beginIndex, s.length());
-    }
-
-    /**
-     * Parses the {@link CharSequence} argument as a signed {@code long} in
      * the specified {@code radix}, beginning at the specified
      * {@code beginIndex} and extending to {@code endIndex - 1}.
      *
@@ -645,9 +614,9 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @param      s   the {@code CharSequence} containing the {@code long}
      *                  representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
      * @param      beginIndex   the beginning index, inclusive.
      * @param      endIndex     the ending index, exclusive.
+     * @param      radix   the radix to be used while parsing {@code s}.
      * @return     the signed {@code long} represented by the subsequence in
      *             the specified radix.
      * @throws     NullPointerException  if {@code s} is null.
@@ -662,7 +631,7 @@ public final class Long extends Number implements Comparable<Long> {
      *             {@link java.lang.Character#MAX_RADIX}.
      * @since  1.9
      */
-    public static long parseLong(CharSequence s, int radix, int beginIndex, int endIndex)
+    public static long parseLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         s = Objects.requireNonNull(s);
 
@@ -702,7 +671,7 @@ public final class Long extends Number implements Comparable<Long> {
             long result = 0;
             while (i < endIndex) {
                 // Accumulating negatively avoids surprises near MAX_VALUE
-                int digit = Character.digit(s.charAt(i++), radix);
+                int digit = Character.digit(s.charAt(i), radix);
                 if (digit < 0 || result < multmin) {
                     throw NumberFormatException.forCharSequence(s, beginIndex,
                             endIndex, i);
@@ -712,6 +681,7 @@ public final class Long extends Number implements Comparable<Long> {
                     throw NumberFormatException.forCharSequence(s, beginIndex,
                             endIndex, i);
                 }
+                i++;
                 result -= digit;
             }
             return negative ? result : -result;
@@ -811,7 +781,7 @@ public final class Long extends Number implements Comparable<Long> {
                 }
 
                 // No need for range checks on len due to testing above.
-                long first = parseLong(s, radix, 0, len - 1);
+                long first = parseLong(s, 0, len - 1, radix);
                 int second = Character.digit(s.charAt(len - 1), radix);
                 if (second < 0) {
                     throw new NumberFormatException("Bad digit at end of " + s);
@@ -883,37 +853,6 @@ public final class Long extends Number implements Comparable<Long> {
     /**
      * Parses the {@link CharSequence} argument as an unsigned {@code long} in
      * the specified {@code radix}, beginning at the specified
-     * {@code beginIndex} and extending to the end of the sequence.
-     *
-     * <p>The method does not take steps to guard against the
-     * {@code CharSequence} being mutated while parsing.
-     *
-     * @param      s   the {@code CharSequence} containing the unsigned
-     *                 {@code long} representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
-     * @param      beginIndex   the beginning index, inclusive.
-     * @return     the unsigned {@code long} represented by the subsequence in
-     *             the specified radix.
-     * @throws     NullPointerException  if {@code s} is null.
-     * @throws     IndexOutOfBoundsException  if {@code beginIndex} is
-     *             negative, or if {@code beginIndex} is greater than
-     *             {@code s.length()}.
-     * @throws     NumberFormatException  if the {@code CharSequence} does not
-     *             contain a parsable unsigned {@code long} in the specified
-     *             {@code radix}, or if {@code radix} is either smaller than
-     *             {@link java.lang.Character#MIN_RADIX} or larger than
-     *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
-     */
-    public static long parseUnsignedLong(CharSequence s, int radix, int beginIndex)
-                throws NumberFormatException {
-        // forces a null check of s
-        return parseUnsignedLong(s, radix, beginIndex, s.length());
-    }
-
-    /**
-     * Parses the {@link CharSequence} argument as an unsigned {@code long} in
-     * the specified {@code radix}, beginning at the specified
      * {@code beginIndex} and extending to {@code endIndex - 1}.
      *
      * <p>The method does not take steps to guard against the
@@ -921,9 +860,9 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @param      s   the {@code CharSequence} containing the unsigned
      *                 {@code long} representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
      * @param      beginIndex   the beginning index, inclusive.
      * @param      endIndex     the ending index, exclusive.
+     * @param      radix   the radix to be used while parsing {@code s}.
      * @return     the unsigned {@code long} represented by the subsequence in
      *             the specified radix.
      * @throws     NullPointerException  if {@code s} is null.
@@ -938,7 +877,7 @@ public final class Long extends Number implements Comparable<Long> {
      *             {@link java.lang.Character#MAX_RADIX}.
      * @since  1.9
      */
-    public static long parseUnsignedLong(CharSequence s, int radix, int beginIndex, int endIndex)
+    public static long parseUnsignedLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         s = Objects.requireNonNull(s);
 
@@ -955,11 +894,11 @@ public final class Long extends Number implements Comparable<Long> {
             } else {
                 if (len <= 12 || // Long.MAX_VALUE in Character.MAX_RADIX is 13 digits
                     (radix == 10 && len <= 18) ) { // Long.MAX_VALUE in base 10 is 19 digits
-                    return parseLong(s, radix, start, start + len);
+                    return parseLong(s, start, start + len, radix);
                 }
 
                 // No need for range checks on end due to testing above.
-                long first = parseLong(s, radix, start, start + len - 1);
+                long first = parseLong(s, start, start + len - 1, radix);
                 int second = Character.digit(s.charAt(start + len - 1), radix);
                 if (second < 0) {
                     throw new NumberFormatException("Bad digit at end of " +

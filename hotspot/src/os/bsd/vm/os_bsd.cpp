@@ -1678,14 +1678,9 @@ void os::print_dll_info(outputStream *st) {
 
   dlclose(handle);
 #elif defined(__APPLE__)
-  uint32_t count;
-  uint32_t i;
-
-  count = _dyld_image_count();
-  for (i = 1; i < count; i++) {
-    const char *name = _dyld_get_image_name(i);
-    intptr_t slide = _dyld_get_image_vmaddr_slide(i);
-    st->print_cr(PTR_FORMAT " \t%s", slide, name);
+  for (uint32_t i = 1; i < _dyld_image_count(); i++) {
+    st->print_cr(PTR_FORMAT " \t%s", _dyld_get_image_header(i),
+        _dyld_get_image_name(i));
   }
 #else
   st->print_cr("Error: Cannot print dynamic libraries.");
