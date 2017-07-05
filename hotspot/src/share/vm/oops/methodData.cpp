@@ -1556,7 +1556,7 @@ class CleanExtraDataMethodClosure : public CleanExtraDataClosure {
 public:
   CleanExtraDataMethodClosure() {}
   bool is_live(Method* m) {
-    return m->on_stack();
+    return !m->is_old() || m->on_stack();
   }
 };
 
