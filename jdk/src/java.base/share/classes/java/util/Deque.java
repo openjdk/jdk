@@ -60,15 +60,15 @@ package java.util;
  * <caption>Summary of Deque methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER COLSPAN = 2> <b>First Element (Head)</b></td>
- *    <td ALIGN=CENTER COLSPAN = 2> <b>Last Element (Tail)</b></td>
+ *    <td style="text-align:center" COLSPAN = 2> <b>First Element (Head)</b></td>
+ *    <td style="text-align:center" COLSPAN = 2> <b>Last Element (Tail)</b></td>
  *  </tr>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER><em>Throws exception</em></td>
- *    <td ALIGN=CENTER><em>Special value</em></td>
- *    <td ALIGN=CENTER><em>Throws exception</em></td>
- *    <td ALIGN=CENTER><em>Special value</em></td>
+ *    <td style="text-align:center"><em>Throws exception</em></td>
+ *    <td style="text-align:center"><em>Special value</em></td>
+ *    <td style="text-align:center"><em>Throws exception</em></td>
+ *    <td style="text-align:center"><em>Special value</em></td>
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
@@ -102,8 +102,8 @@ package java.util;
  * <table BORDER CELLPADDING=3 CELLSPACING=1>
  * <caption>Comparison of Queue and Deque methods</caption>
  *  <tr>
- *    <td ALIGN=CENTER> <b>{@code Queue} Method</b></td>
- *    <td ALIGN=CENTER> <b>Equivalent {@code Deque} Method</b></td>
+ *    <td style="text-align:center"> <b>{@code Queue} Method</b></td>
+ *    <td style="text-align:center"> <b>Equivalent {@code Deque} Method</b></td>
  *  </tr>
  *  <tr>
  *    <td>{@link java.util.Queue#add add(e)}</td>
@@ -140,8 +140,8 @@ package java.util;
  * <table BORDER CELLPADDING=3 CELLSPACING=1>
  * <caption>Comparison of Stack and Deque methods</caption>
  *  <tr>
- *    <td ALIGN=CENTER> <b>Stack Method</b></td>
- *    <td ALIGN=CENTER> <b>Equivalent {@code Deque} Method</b></td>
+ *    <td style="text-align:center"> <b>Stack Method</b></td>
+ *    <td style="text-align:center"> <b>Equivalent {@code Deque} Method</b></td>
  *  </tr>
  *  <tr>
  *    <td>{@link #push push(e)}</td>
@@ -181,9 +181,9 @@ package java.util;
  * methods, but instead inherit the identity-based versions from class
  * {@code Object}.
  *
- * <p>This interface is a member of the <a
- * href="{@docRoot}/../technotes/guides/collections/index.html"> Java Collections
- * Framework</a>.
+ * <p>This interface is a member of the
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * Java Collections Framework</a>.
  *
  * @author Doug Lea
  * @author Josh Bloch

@@ -211,6 +211,7 @@ import java.util.Arrays;
  * theory, any method handle could be used. Currently supported are direct method
  * handles representing invocation of virtual, interface, constructor and static
  * methods.
+ * @since 1.8
  */
 public class LambdaMetafactory {
 

@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 5024104
- *  @summary Test ReferenceType.majorVersion(), minorVersion, constantPoolCount and ConstantPool apis.
+ * @test
+ * @bug 5024104
+ * @summary Test ReferenceType.majorVersion(), minorVersion, constantPoolCount and ConstantPool apis.
+ * @author Swamy Venkataramanappa
  *
- *  @author Swamy Venkataramanappa
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection
- *  @run compile -g ConstantPoolInfo.java
- *  @run driver ConstantPoolInfo
+ * @run build TestScaffold VMConnection
+ * @run compile -g ConstantPoolInfo.java
+ * @run driver ConstantPoolInfo
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

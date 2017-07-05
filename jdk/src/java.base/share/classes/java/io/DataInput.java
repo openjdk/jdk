@@ -48,7 +48,7 @@ package java.io;
  * may be thrown if the input stream has been
  * closed.
  *
- * <h3><a name="modified-utf-8">Modified UTF-8</a></h3>
+ * <h3><a id="modified-utf-8">Modified UTF-8</a></h3>
  * <p>
  * Implementations of the DataInput and DataOutput interfaces represent
  * Unicode strings in a format that is a slight modification of UTF-8.
@@ -72,8 +72,8 @@ package java.io;
  *     </tr>
  *     <tr>
  *       <th id="byte1_a">Byte 1</th>
- *       <td><center>0</center>
- *       <td colspan="7"><center>bits 6-0</center>
+ *       <td style="text-align:center">0
+ *       <td colspan="7" style="text-align:center">bits 6-0
  *     </tr>
  *     <tr>
  *       <th colspan="9"><span style="font-weight:normal">
@@ -87,16 +87,16 @@ package java.io;
  *     </tr>
  *     <tr>
  *       <th id="byte1_b">Byte 1</th>
- *       <td><center>1</center>
- *       <td><center>1</center>
- *       <td><center>0</center>
- *       <td colspan="5"><center>bits 10-6</center>
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">0
+ *       <td colspan="5" style="text-align:center">bits 10-6
  *     </tr>
  *     <tr>
  *       <th id="byte2_a">Byte 2</th>
- *       <td><center>1</center>
- *       <td><center>0</center>
- *       <td colspan="6"><center>bits 5-0</center>
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">0
+ *       <td colspan="6" style="text-align:center">bits 5-0
  *     </tr>
  *     <tr>
  *       <th colspan="9"><span style="font-weight:normal">
@@ -109,23 +109,23 @@ package java.io;
  *     </tr>
  *     <tr>
  *       <th id="byte1_c">Byte 1</th>
- *       <td><center>1</center>
- *       <td><center>1</center>
- *       <td><center>1</center>
- *       <td><center>0</center>
- *       <td colspan="4"><center>bits 15-12</center>
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">0
+ *       <td colspan="4" style="text-align:center">bits 15-12
  *     </tr>
  *     <tr>
  *       <th id="byte2_b">Byte 2</th>
- *       <td><center>1</center>
- *       <td><center>0</center>
- *       <td colspan="6"><center>bits 11-6</center>
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">0
+ *       <td colspan="6" style="text-align:center">bits 11-6
  *     </tr>
  *     <tr>
  *       <th id="byte3">Byte 3</th>
- *       <td><center>1</center>
- *       <td><center>0</center>
- *       <td colspan="6"><center>bits 5-0</center>
+ *       <td style="text-align:center">1
+ *       <td style="text-align:center">0
+ *       <td colspan="6" style="text-align:center">bits 5-0
  *     </tr>
  *   </table>
  * </blockquote>
