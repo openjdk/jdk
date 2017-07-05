@@ -109,7 +109,6 @@ import org.w3c.dom.Text;
  * @author Arnaud  Le Hors, IBM
  * @author Joe Kesselman, IBM
  * @author Andy Clark, IBM
- * @version $Id: AttrImpl.java,v 1.5 2008/06/10 00:59:32 joehw Exp $
  * @since PR-DOM-Level-1-19980818.
  *
  */

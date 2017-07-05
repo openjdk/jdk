@@ -32,7 +32,6 @@ import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
  *
  * @author Sandy Gao, IBM
  *
- * @version $Id: DTDDVFactory.java,v 1.6 2010-11-01 04:39:43 joehw Exp $
  */
 public abstract class DTDDVFactory {
 

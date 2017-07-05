@@ -153,7 +153,7 @@ public class ClipboardTransferable implements Transferable {
         Object ret = flavorsToData.get(flavor);
         if (ret instanceof IOException) {
             // rethrow IOExceptions generated while fetching data
-            throw (IOException)ret;
+            throw new IOException("Exception fetching data: ", (IOException)ret);
         } else if (ret instanceof DataFactory) {
             // Now we can render the data
             DataFactory factory = (DataFactory)ret;

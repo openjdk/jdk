@@ -269,62 +269,62 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define CASPTR(a,c,s) intptr_t(Atomic::cmpxchg_ptr ((void *)(s),(void *)(a),(void *)(c)))
 #define UNS(x) (uintptr_t(x))
-#define TRACE(m) { static volatile int ctr = 0 ; int x = ++ctr ; if ((x & (x-1))==0) { ::printf ("%d:%s\n", x, #m); ::fflush(stdout); }}
+#define TRACE(m) { static volatile int ctr = 0; int x = ++ctr; if ((x & (x-1))==0) { ::printf ("%d:%s\n", x, #m); ::fflush(stdout); }}
 
 // Simplistic low-quality Marsaglia SHIFT-XOR RNG.
 // Bijective except for the trailing mask operation.
 // Useful for spin loops as the compiler can't optimize it away.
 
 static inline jint MarsagliaXORV (jint x) {
-  if (x == 0) x = 1|os::random() ;
+  if (x == 0) x = 1|os::random();
   x ^= x << 6;
   x ^= ((unsigned)x) >> 21;
-  x ^= x << 7 ;
-  return x & 0x7FFFFFFF ;
+  x ^= x << 7;
+  return x & 0x7FFFFFFF;
 }
 
 static int Stall (int its) {
-  static volatile jint rv = 1 ;
-  volatile int OnFrame = 0 ;
-  jint v = rv ^ UNS(OnFrame) ;
+  static volatile jint rv = 1;
+  volatile int OnFrame = 0;
+  jint v = rv ^ UNS(OnFrame);
   while (--its >= 0) {
-    v = MarsagliaXORV (v) ;
+    v = MarsagliaXORV(v);
   }
   // Make this impossible for the compiler to optimize away,
   // but (mostly) avoid W coherency sharing on MP systems.
-  if (v == 0x12345) rv = v ;
-  return v ;
+  if (v == 0x12345) rv = v;
+  return v;
 }
 
-int Monitor::TryLock () {
-  intptr_t v = _LockWord.FullWord ;
+int Monitor::TryLock() {
+  intptr_t v = _LockWord.FullWord;
   for (;;) {
-    if ((v & _LBIT) != 0) return 0 ;
-    const intptr_t u = CASPTR (&_LockWord, v, v|_LBIT) ;
-    if (v == u) return 1 ;
-    v = u ;
+    if ((v & _LBIT) != 0) return 0;
+    const intptr_t u = CASPTR(&_LockWord, v, v|_LBIT);
+    if (v == u) return 1;
+    v = u;
   }
 }
 
-int Monitor::TryFast () {
+int Monitor::TryFast() {
   // Optimistic fast-path form ...
   // Fast-path attempt for the common uncontended case.
   // Avoid RTS->RTO $ coherence upgrade on typical SMP systems.
-  intptr_t v = CASPTR (&_LockWord, 0, _LBIT) ;  // agro ...
-  if (v == 0) return 1 ;
+  intptr_t v = CASPTR(&_LockWord, 0, _LBIT);  // agro ...
+  if (v == 0) return 1;
 
   for (;;) {
-    if ((v & _LBIT) != 0) return 0 ;
-    const intptr_t u = CASPTR (&_LockWord, v, v|_LBIT) ;
-    if (v == u) return 1 ;
-    v = u ;
+    if ((v & _LBIT) != 0) return 0;
+    const intptr_t u = CASPTR(&_LockWord, v, v|_LBIT);
+    if (v == u) return 1;
+    v = u;
   }
 }
 
-int Monitor::ILocked () {
-  const intptr_t w = _LockWord.FullWord & 0xFF ;
-  assert (w == 0 || w == _LBIT, "invariant") ;
-  return w == _LBIT ;
+int Monitor::ILocked() {
+  const intptr_t w = _LockWord.FullWord & 0xFF;
+  assert(w == 0 || w == _LBIT, "invariant");
+  return w == _LBIT;
 }
 
 // Polite TATAS spinlock with exponential backoff - bounded spin.
@@ -342,38 +342,38 @@ int Monitor::ILocked () {
 // See synchronizer.cpp for details and rationale.
 
 int Monitor::TrySpin (Thread * const Self) {
-  if (TryLock())    return 1 ;
-  if (!os::is_MP()) return 0 ;
+  if (TryLock())    return 1;
+  if (!os::is_MP()) return 0;
 
-  int Probes  = 0 ;
-  int Delay   = 0 ;
-  int Steps   = 0 ;
-  int SpinMax = NativeMonitorSpinLimit ;
-  int flgs    = NativeMonitorFlags ;
+  int Probes  = 0;
+  int Delay   = 0;
+  int Steps   = 0;
+  int SpinMax = NativeMonitorSpinLimit;
+  int flgs    = NativeMonitorFlags;
   for (;;) {
     intptr_t v = _LockWord.FullWord;
     if ((v & _LBIT) == 0) {
       if (CASPTR (&_LockWord, v, v|_LBIT) == v) {
-        return 1 ;
+        return 1;
       }
-      continue ;
+      continue;
     }
 
     if ((flgs & 8) == 0) {
-      SpinPause () ;
+      SpinPause();
     }
 
     // Periodically increase Delay -- variable Delay form
     // conceptually: delay *= 1 + 1/Exponent
-    ++ Probes;
-    if (Probes > SpinMax) return 0 ;
+    ++Probes;
+    if (Probes > SpinMax) return 0;
 
     if ((Probes & 0x7) == 0) {
-      Delay = ((Delay << 1)|1) & 0x7FF ;
+      Delay = ((Delay << 1)|1) & 0x7FF;
       // CONSIDER: Delay += 1 + (Delay/4); Delay &= 0x7FF ;
     }
 
-    if (flgs & 2) continue ;
+    if (flgs & 2) continue;
 
     // Consider checking _owner's schedctl state, if OFFPROC abort spin.
     // If the owner is OFFPROC then it's unlike that the lock will be dropped
@@ -389,48 +389,48 @@ int Monitor::TrySpin (Thread * const Self) {
     // spin loop.  N1 and brethren write-around the L1$ over the xbar into the L2$.
     // Furthermore, they don't have a W$ like traditional SPARC processors.
     // We currently use a Marsaglia Shift-Xor RNG loop.
-    Steps += Delay ;
+    Steps += Delay;
     if (Self != NULL) {
-      jint rv = Self->rng[0] ;
-      for (int k = Delay ; --k >= 0; ) {
-        rv = MarsagliaXORV (rv) ;
-        if ((flgs & 4) == 0 && SafepointSynchronize::do_call_back()) return 0 ;
+      jint rv = Self->rng[0];
+      for (int k = Delay; --k >= 0;) {
+        rv = MarsagliaXORV(rv);
+        if ((flgs & 4) == 0 && SafepointSynchronize::do_call_back()) return 0;
       }
-      Self->rng[0] = rv ;
+      Self->rng[0] = rv;
     } else {
-      Stall (Delay) ;
+      Stall(Delay);
     }
   }
 }
 
 static int ParkCommon (ParkEvent * ev, jlong timo) {
   // Diagnostic support - periodically unwedge blocked threads
-  intx nmt = NativeMonitorTimeout ;
+  intx nmt = NativeMonitorTimeout;
   if (nmt > 0 && (nmt < timo || timo <= 0)) {
-     timo = nmt ;
+     timo = nmt;
   }
-  int err = OS_OK ;
+  int err = OS_OK;
   if (0 == timo) {
-    ev->park() ;
+    ev->park();
   } else {
-    err = ev->park(timo) ;
+    err = ev->park(timo);
   }
-  return err ;
+  return err;
 }
 
 inline int Monitor::AcquireOrPush (ParkEvent * ESelf) {
-  intptr_t v = _LockWord.FullWord ;
+  intptr_t v = _LockWord.FullWord;
   for (;;) {
     if ((v & _LBIT) == 0) {
-      const intptr_t u = CASPTR (&_LockWord, v, v|_LBIT) ;
-      if (u == v) return 1 ;        // indicate acquired
-      v = u ;
+      const intptr_t u = CASPTR(&_LockWord, v, v|_LBIT);
+      if (u == v) return 1;        // indicate acquired
+      v = u;
     } else {
       // Anticipate success ...
-      ESelf->ListNext = (ParkEvent *) (v & ~_LBIT) ;
-      const intptr_t u = CASPTR (&_LockWord, v, intptr_t(ESelf)|_LBIT) ;
-      if (u == v) return 0 ;        // indicate pushed onto cxq
-      v = u ;
+      ESelf->ListNext = (ParkEvent *)(v & ~_LBIT);
+      const intptr_t u = CASPTR(&_LockWord, v, intptr_t(ESelf)|_LBIT);
+      if (u == v) return 0;        // indicate pushed onto cxq
+      v = u;
     }
     // Interference - LockWord change - just retry
   }
@@ -444,33 +444,33 @@ inline int Monitor::AcquireOrPush (ParkEvent * ESelf) {
 // _owner is a higher-level logical concept.
 
 void Monitor::ILock (Thread * Self) {
-  assert (_OnDeck != Self->_MutexEvent, "invariant") ;
+  assert(_OnDeck != Self->_MutexEvent, "invariant");
 
   if (TryFast()) {
  Exeunt:
-    assert (ILocked(), "invariant") ;
-    return ;
+    assert(ILocked(), "invariant");
+    return;
   }
 
-  ParkEvent * const ESelf = Self->_MutexEvent ;
-  assert (_OnDeck != ESelf, "invariant") ;
+  ParkEvent * const ESelf = Self->_MutexEvent;
+  assert(_OnDeck != ESelf, "invariant");
 
   // As an optimization, spinners could conditionally try to set ONDECK to _LBIT
   // Synchronizer.cpp uses a similar optimization.
-  if (TrySpin (Self)) goto Exeunt ;
+  if (TrySpin(Self)) goto Exeunt;
 
   // Slow-path - the lock is contended.
   // Either Enqueue Self on cxq or acquire the outer lock.
   // LockWord encoding = (cxq,LOCKBYTE)
-  ESelf->reset() ;
-  OrderAccess::fence() ;
+  ESelf->reset();
+  OrderAccess::fence();
 
   // Optional optimization ... try barging on the inner lock
   if ((NativeMonitorFlags & 32) && CASPTR (&_OnDeck, NULL, UNS(Self)) == 0) {
-    goto OnDeck_LOOP ;
+    goto OnDeck_LOOP;
   }
 
-  if (AcquireOrPush (ESelf)) goto Exeunt ;
+  if (AcquireOrPush(ESelf)) goto Exeunt;
 
   // At any given time there is at most one ondeck thread.
   // ondeck implies not resident on cxq and not resident on EntryList
@@ -478,26 +478,26 @@ void Monitor::ILock (Thread * Self) {
   // CONSIDER: use Self->OnDeck instead of m->OnDeck.
   // Deschedule Self so that others may run.
   while (_OnDeck != ESelf) {
-    ParkCommon (ESelf, 0) ;
+    ParkCommon(ESelf, 0);
   }
 
   // Self is now in the ONDECK position and will remain so until it
   // manages to acquire the lock.
  OnDeck_LOOP:
   for (;;) {
-    assert (_OnDeck == ESelf, "invariant") ;
-    if (TrySpin (Self)) break ;
+    assert(_OnDeck == ESelf, "invariant");
+    if (TrySpin(Self)) break;
     // CONSIDER: if ESelf->TryPark() && TryLock() break ...
     // It's probably wise to spin only if we *actually* blocked
     // CONSIDER: check the lockbyte, if it remains set then
     // preemptively drain the cxq into the EntryList.
     // The best place and time to perform queue operations -- lock metadata --
     // is _before having acquired the outer lock, while waiting for the lock to drop.
-    ParkCommon (ESelf, 0) ;
+    ParkCommon(ESelf, 0);
   }
 
-  assert (_OnDeck == ESelf, "invariant") ;
-  _OnDeck = NULL ;
+  assert(_OnDeck == ESelf, "invariant");
+  _OnDeck = NULL;
 
   // Note that we current drop the inner lock (clear OnDeck) in the slow-path
   // epilogue immediately after having acquired the outer lock.
@@ -512,11 +512,11 @@ void Monitor::ILock (Thread * Self) {
   //    effective length of the critical section.
   // Note that (A) and (B) are tantamount to succession by direct handoff for
   // the inner lock.
-  goto Exeunt ;
+  goto Exeunt;
 }
 
 void Monitor::IUnlock (bool RelaxAssert) {
-  assert (ILocked(), "invariant") ;
+  assert(ILocked(), "invariant");
   // Conceptually we need a MEMBAR #storestore|#loadstore barrier or fence immediately
   // before the store that releases the lock.  Crucially, all the stores and loads in the
   // critical section must be globally visible before the store of 0 into the lock-word
@@ -532,9 +532,9 @@ void Monitor::IUnlock (bool RelaxAssert) {
   // safety or lock release consistency.
   OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], 0); // drop outer lock
 
-  OrderAccess::storeload ();
-  ParkEvent * const w = _OnDeck ;
-  assert (RelaxAssert || w != Thread::current()->_MutexEvent, "invariant") ;
+  OrderAccess::storeload();
+  ParkEvent * const w = _OnDeck;
+  assert(RelaxAssert || w != Thread::current()->_MutexEvent, "invariant");
   if (w != NULL) {
     // Either we have a valid ondeck thread or ondeck is transiently "locked"
     // by some exiting thread as it arranges for succession.  The LSBit of
@@ -549,19 +549,19 @@ void Monitor::IUnlock (bool RelaxAssert) {
     // then progress is known to have occurred as that means the thread associated
     // with "w" acquired the lock.  In that case this thread need take no further
     // action to guarantee progress.
-    if ((UNS(w) & _LBIT) == 0) w->unpark() ;
-    return ;
+    if ((UNS(w) & _LBIT) == 0) w->unpark();
+    return;
   }
 
-  intptr_t cxq = _LockWord.FullWord ;
+  intptr_t cxq = _LockWord.FullWord;
   if (((cxq & ~_LBIT)|UNS(_EntryList)) == 0) {
-    return ;      // normal fast-path exit - cxq and EntryList both empty
+    return;      // normal fast-path exit - cxq and EntryList both empty
   }
   if (cxq & _LBIT) {
     // Optional optimization ...
     // Some other thread acquired the lock in the window since this
     // thread released it.  Succession is now that thread's responsibility.
-    return ;
+    return;
   }
 
  Succession:
@@ -575,22 +575,22 @@ void Monitor::IUnlock (bool RelaxAssert) {
   // picks a successor and marks that thread as OnDeck.  That successor
   // thread will then clear OnDeck once it eventually acquires the outer lock.
   if (CASPTR (&_OnDeck, NULL, _LBIT) != UNS(NULL)) {
-    return ;
+    return;
   }
 
-  ParkEvent * List = _EntryList ;
+  ParkEvent * List = _EntryList;
   if (List != NULL) {
     // Transfer the head of the EntryList to the OnDeck position.
     // Once OnDeck, a thread stays OnDeck until it acquires the lock.
     // For a given lock there is at most OnDeck thread at any one instant.
    WakeOne:
-    assert (List == _EntryList, "invariant") ;
-    ParkEvent * const w = List ;
-    assert (RelaxAssert || w != Thread::current()->_MutexEvent, "invariant") ;
-    _EntryList = w->ListNext ;
+    assert(List == _EntryList, "invariant");
+    ParkEvent * const w = List;
+    assert(RelaxAssert || w != Thread::current()->_MutexEvent, "invariant");
+    _EntryList = w->ListNext;
     // as a diagnostic measure consider setting w->_ListNext = BAD
-    assert (UNS(_OnDeck) == _LBIT, "invariant") ;
-    _OnDeck = w ;           // pass OnDeck to w.
+    assert(UNS(_OnDeck) == _LBIT, "invariant");
+    _OnDeck = w;           // pass OnDeck to w.
                             // w will clear OnDeck once it acquires the outer lock
 
     // Another optional optimization ...
@@ -599,25 +599,25 @@ void Monitor::IUnlock (bool RelaxAssert) {
     // Try to defer the unpark() operation - Delegate the responsibility
     // for unpark()ing the OnDeck thread to the current or subsequent owners
     // That is, the new owner is responsible for unparking the OnDeck thread.
-    OrderAccess::storeload() ;
-    cxq = _LockWord.FullWord ;
-    if (cxq & _LBIT) return ;
+    OrderAccess::storeload();
+    cxq = _LockWord.FullWord;
+    if (cxq & _LBIT) return;
 
-    w->unpark() ;
-    return ;
+    w->unpark();
+    return;
   }
 
-  cxq = _LockWord.FullWord ;
+  cxq = _LockWord.FullWord;
   if ((cxq & ~_LBIT) != 0) {
     // The EntryList is empty but the cxq is populated.
     // drain RATs from cxq into EntryList
     // Detach RATs segment with CAS and then merge into EntryList
     for (;;) {
       // optional optimization - if locked, the owner is responsible for succession
-      if (cxq & _LBIT) goto Punt ;
-      const intptr_t vfy = CASPTR (&_LockWord, cxq, cxq & _LBIT) ;
-      if (vfy == cxq) break ;
-      cxq = vfy ;
+      if (cxq & _LBIT) goto Punt;
+      const intptr_t vfy = CASPTR(&_LockWord, cxq, cxq & _LBIT);
+      if (vfy == cxq) break;
+      cxq = vfy;
       // Interference - LockWord changed - Just retry
       // We can see concurrent interference from contending threads
       // pushing themselves onto the cxq or from lock-unlock operations.
@@ -639,10 +639,10 @@ void Monitor::IUnlock (bool RelaxAssert) {
     // the EntryList, but it might make sense to reverse the order
     // or perhaps sort by thread priority.  See the comments in
     // synchronizer.cpp objectMonitor::exit().
-    assert (_EntryList == NULL, "invariant") ;
-    _EntryList = List = (ParkEvent *)(cxq & ~_LBIT) ;
-    assert (List != NULL, "invariant") ;
-    goto WakeOne ;
+    assert(_EntryList == NULL, "invariant");
+    _EntryList = List = (ParkEvent *)(cxq & ~_LBIT);
+    assert(List != NULL, "invariant");
+    goto WakeOne;
   }
 
   // cxq|EntryList is empty.
@@ -651,8 +651,8 @@ void Monitor::IUnlock (bool RelaxAssert) {
   // A thread could have added itself to cxq since this thread previously checked.
   // Detect and recover by refetching cxq.
  Punt:
-  assert (UNS(_OnDeck) == _LBIT, "invariant") ;
-  _OnDeck = NULL ;            // Release inner lock.
+  assert(UNS(_OnDeck) == _LBIT, "invariant");
+  _OnDeck = NULL;            // Release inner lock.
   OrderAccess::storeload();   // Dekker duality - pivot point
 
   // Resample LockWord/cxq to recover from possible race.
@@ -665,32 +665,32 @@ void Monitor::IUnlock (bool RelaxAssert) {
   // Note that we don't need to recheck EntryList, just cxq.
   // If threads moved onto EntryList since we dropped OnDeck
   // that implies some other thread forced succession.
-  cxq = _LockWord.FullWord ;
+  cxq = _LockWord.FullWord;
   if ((cxq & ~_LBIT) != 0 && (cxq & _LBIT) == 0) {
-    goto Succession ;         // potential race -- re-run succession
+    goto Succession;         // potential race -- re-run succession
   }
-  return ;
+  return;
 }
 
 bool Monitor::notify() {
-  assert (_owner == Thread::current(), "invariant") ;
-  assert (ILocked(), "invariant") ;
-  if (_WaitSet == NULL) return true ;
-  NotifyCount ++ ;
+  assert(_owner == Thread::current(), "invariant");
+  assert(ILocked(), "invariant");
+  if (_WaitSet == NULL) return true;
+  NotifyCount++;
 
   // Transfer one thread from the WaitSet to the EntryList or cxq.
   // Currently we just unlink the head of the WaitSet and prepend to the cxq.
   // And of course we could just unlink it and unpark it, too, but
   // in that case it'd likely impale itself on the reentry.
-  Thread::muxAcquire (_WaitLock, "notify:WaitLock") ;
-  ParkEvent * nfy = _WaitSet ;
+  Thread::muxAcquire(_WaitLock, "notify:WaitLock");
+  ParkEvent * nfy = _WaitSet;
   if (nfy != NULL) {                  // DCL idiom
-    _WaitSet = nfy->ListNext ;
-    assert (nfy->Notified == 0, "invariant") ;
+    _WaitSet = nfy->ListNext;
+    assert(nfy->Notified == 0, "invariant");
     // push nfy onto the cxq
     for (;;) {
-      const intptr_t v = _LockWord.FullWord ;
-      assert ((v & 0xFF) == _LBIT, "invariant") ;
+      const intptr_t v = _LockWord.FullWord;
+      assert((v & 0xFF) == _LBIT, "invariant");
       nfy->ListNext = (ParkEvent *)(v & ~_LBIT);
       if (CASPTR (&_LockWord, v, UNS(nfy)|_LBIT) == v) break;
       // interference - _LockWord changed -- just retry
@@ -698,17 +698,17 @@ bool Monitor::notify() {
     // Note that setting Notified before pushing nfy onto the cxq is
     // also legal and safe, but the safety properties are much more
     // subtle, so for the sake of code stewardship ...
-    OrderAccess::fence() ;
+    OrderAccess::fence();
     nfy->Notified = 1;
   }
-  Thread::muxRelease (_WaitLock) ;
+  Thread::muxRelease(_WaitLock);
   if (nfy != NULL && (NativeMonitorFlags & 16)) {
     // Experimental code ... light up the wakee in the hope that this thread (the owner)
     // will drop the lock just about the time the wakee comes ONPROC.
-    nfy->unpark() ;
+    nfy->unpark();
   }
-  assert (ILocked(), "invariant") ;
-  return true ;
+  assert(ILocked(), "invariant");
+  return true;
 }
 
 // Currently notifyAll() transfers the waiters one-at-a-time from the waitset
@@ -719,14 +719,14 @@ bool Monitor::notify() {
 // will be empty and the cxq will be "DCBAXYZ".  This is benign, of course.
 
 bool Monitor::notify_all() {
-  assert (_owner == Thread::current(), "invariant") ;
-  assert (ILocked(), "invariant") ;
-  while (_WaitSet != NULL) notify() ;
-  return true ;
+  assert(_owner == Thread::current(), "invariant");
+  assert(ILocked(), "invariant");
+  while (_WaitSet != NULL) notify();
+  return true;
 }
 
 int Monitor::IWait (Thread * Self, jlong timo) {
-  assert (ILocked(), "invariant") ;
+  assert(ILocked(), "invariant");
 
   // Phases:
   // 1. Enqueue Self on WaitSet - currently prepend
@@ -734,10 +734,10 @@ int Monitor::IWait (Thread * Self, jlong timo) {
   // 3. wait for either notification or timeout
   // 4. lock - reentry - reacquire the outer lock
 
-  ParkEvent * const ESelf = Self->_MutexEvent ;
-  ESelf->Notified = 0 ;
-  ESelf->reset() ;
-  OrderAccess::fence() ;
+  ParkEvent * const ESelf = Self->_MutexEvent;
+  ESelf->Notified = 0;
+  ESelf->reset();
+  OrderAccess::fence();
 
   // Add Self to WaitSet
   // Ideally only the holder of the outer lock would manipulate the WaitSet -
@@ -766,10 +766,10 @@ int Monitor::IWait (Thread * Self, jlong timo) {
   // In that case we could have one ListElement on the WaitSet and another
   // on the EntryList, with both referring to the same pure Event.
 
-  Thread::muxAcquire (_WaitLock, "wait:WaitLock:Add") ;
-  ESelf->ListNext = _WaitSet ;
-  _WaitSet = ESelf ;
-  Thread::muxRelease (_WaitLock) ;
+  Thread::muxAcquire(_WaitLock, "wait:WaitLock:Add");
+  ESelf->ListNext = _WaitSet;
+  _WaitSet = ESelf;
+  Thread::muxRelease(_WaitLock);
 
   // Release the outer lock
   // We call IUnlock (RelaxAssert=true) as a thread T1 might
@@ -781,16 +781,16 @@ int Monitor::IWait (Thread * Self, jlong timo) {
   // IUnlock() call a thread should _never find itself on the EntryList
   // or cxq, but in the case of wait() it's possible.
   // See synchronizer.cpp objectMonitor::wait().
-  IUnlock (true) ;
+  IUnlock(true);
 
   // Wait for either notification or timeout
   // Beware that in some circumstances we might propagate
   // spurious wakeups back to the caller.
 
   for (;;) {
-    if (ESelf->Notified) break ;
-    int err = ParkCommon (ESelf, timo) ;
-    if (err == OS_TIMEOUT || (NativeMonitorFlags & 1)) break ;
+    if (ESelf->Notified) break;
+    int err = ParkCommon(ESelf, timo);
+    if (err == OS_TIMEOUT || (NativeMonitorFlags & 1)) break;
   }
 
   // Prepare for reentry - if necessary, remove ESelf from WaitSet
@@ -799,55 +799,55 @@ int Monitor::IWait (Thread * Self, jlong timo) {
   // 2. On the cxq or EntryList
   // 3. Not resident on cxq, EntryList or WaitSet, but in the OnDeck position.
 
-  OrderAccess::fence() ;
-  int WasOnWaitSet = 0 ;
+  OrderAccess::fence();
+  int WasOnWaitSet = 0;
   if (ESelf->Notified == 0) {
-    Thread::muxAcquire (_WaitLock, "wait:WaitLock:remove") ;
+    Thread::muxAcquire(_WaitLock, "wait:WaitLock:remove");
     if (ESelf->Notified == 0) {     // DCL idiom
-      assert (_OnDeck != ESelf, "invariant") ;   // can't be both OnDeck and on WaitSet
+      assert(_OnDeck != ESelf, "invariant");   // can't be both OnDeck and on WaitSet
       // ESelf is resident on the WaitSet -- unlink it.
       // A doubly-linked list would be better here so we can unlink in constant-time.
       // We have to unlink before we potentially recontend as ESelf might otherwise
       // end up on the cxq|EntryList -- it can't be on two lists at once.
-      ParkEvent * p = _WaitSet ;
-      ParkEvent * q = NULL ;            // classic q chases p
+      ParkEvent * p = _WaitSet;
+      ParkEvent * q = NULL;            // classic q chases p
       while (p != NULL && p != ESelf) {
-        q = p ;
-        p = p->ListNext ;
+        q = p;
+        p = p->ListNext;
       }
-      assert (p == ESelf, "invariant") ;
+      assert(p == ESelf, "invariant");
       if (p == _WaitSet) {      // found at head
-        assert (q == NULL, "invariant") ;
-        _WaitSet = p->ListNext ;
+        assert(q == NULL, "invariant");
+        _WaitSet = p->ListNext;
       } else {                  // found in interior
-        assert (q->ListNext == p, "invariant") ;
-        q->ListNext = p->ListNext ;
+        assert(q->ListNext == p, "invariant");
+        q->ListNext = p->ListNext;
       }
-      WasOnWaitSet = 1 ;        // We were *not* notified but instead encountered timeout
+      WasOnWaitSet = 1;        // We were *not* notified but instead encountered timeout
     }
-    Thread::muxRelease (_WaitLock) ;
+    Thread::muxRelease(_WaitLock);
   }
 
   // Reentry phase - reacquire the lock
   if (WasOnWaitSet) {
     // ESelf was previously on the WaitSet but we just unlinked it above
     // because of a timeout.  ESelf is not resident on any list and is not OnDeck
-    assert (_OnDeck != ESelf, "invariant") ;
-    ILock (Self) ;
+    assert(_OnDeck != ESelf, "invariant");
+    ILock(Self);
   } else {
     // A prior notify() operation moved ESelf from the WaitSet to the cxq.
     // ESelf is now on the cxq, EntryList or at the OnDeck position.
     // The following fragment is extracted from Monitor::ILock()
     for (;;) {
-      if (_OnDeck == ESelf && TrySpin(Self)) break ;
-      ParkCommon (ESelf, 0) ;
+      if (_OnDeck == ESelf && TrySpin(Self)) break;
+      ParkCommon(ESelf, 0);
     }
-    assert (_OnDeck == ESelf, "invariant") ;
-    _OnDeck = NULL ;
+    assert(_OnDeck == ESelf, "invariant");
+    _OnDeck = NULL;
   }
 
-  assert (ILocked(), "invariant") ;
-  return WasOnWaitSet != 0 ;        // return true IFF timeout
+  assert(ILocked(), "invariant");
+  return WasOnWaitSet != 0;        // return true IFF timeout
 }
 
 
@@ -896,15 +896,15 @@ void Monitor::lock (Thread * Self) {
 #endif // CHECK_UNHANDLED_OOPS
 
   debug_only(check_prelock_state(Self));
-  assert (_owner != Self              , "invariant") ;
-  assert (_OnDeck != Self->_MutexEvent, "invariant") ;
+  assert(_owner != Self              , "invariant");
+  assert(_OnDeck != Self->_MutexEvent, "invariant");
 
   if (TryFast()) {
  Exeunt:
-    assert (ILocked(), "invariant") ;
-    assert (owner() == NULL, "invariant");
-    set_owner (Self);
-    return ;
+    assert(ILocked(), "invariant");
+    assert(owner() == NULL, "invariant");
+    set_owner(Self);
+    return;
   }
 
   // The lock is contended ...
@@ -916,23 +916,23 @@ void Monitor::lock (Thread * Self) {
     // and go on.  we note this with _snuck so we can also
     // pretend to unlock when the time comes.
     _snuck = true;
-    goto Exeunt ;
+    goto Exeunt;
   }
 
   // Try a brief spin to avoid passing thru thread state transition ...
-  if (TrySpin (Self)) goto Exeunt ;
+  if (TrySpin(Self)) goto Exeunt;
 
   check_block_state(Self);
   if (Self->is_Java_thread()) {
     // Horrible dictu - we suffer through a state transition
     assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
-    ThreadBlockInVM tbivm ((JavaThread *) Self) ;
-    ILock (Self) ;
+    ThreadBlockInVM tbivm((JavaThread *) Self);
+    ILock(Self);
   } else {
     // Mirabile dictu
-    ILock (Self) ;
+    ILock(Self);
   }
-  goto Exeunt ;
+  goto Exeunt;
 }
 
 void Monitor::lock() {
@@ -945,14 +945,14 @@ void Monitor::lock() {
 // thread state set to be in VM, the safepoint synchronization code will deadlock!
 
 void Monitor::lock_without_safepoint_check (Thread * Self) {
-  assert (_owner != Self, "invariant") ;
-  ILock (Self) ;
-  assert (_owner == NULL, "invariant");
-  set_owner (Self);
+  assert(_owner != Self, "invariant");
+  ILock(Self);
+  assert(_owner == NULL, "invariant");
+  set_owner(Self);
 }
 
-void Monitor::lock_without_safepoint_check () {
-  lock_without_safepoint_check (Thread::current()) ;
+void Monitor::lock_without_safepoint_check() {
+  lock_without_safepoint_check(Thread::current());
 }
 
 
@@ -976,23 +976,23 @@ bool Monitor::try_lock() {
 
   if (TryLock()) {
     // We got the lock
-    assert (_owner == NULL, "invariant");
-    set_owner (Self);
+    assert(_owner == NULL, "invariant");
+    set_owner(Self);
     return true;
   }
   return false;
 }
 
 void Monitor::unlock() {
-  assert (_owner  == Thread::current(), "invariant") ;
-  assert (_OnDeck != Thread::current()->_MutexEvent , "invariant") ;
-  set_owner (NULL) ;
+  assert(_owner  == Thread::current(), "invariant");
+  assert(_OnDeck != Thread::current()->_MutexEvent , "invariant");
+  set_owner(NULL);
   if (_snuck) {
     assert(SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread(), "sneak");
     _snuck = false;
-    return ;
+    return;
   }
-  IUnlock (false) ;
+  IUnlock(false);
 }
 
 // Yet another degenerate version of Monitor::lock() or lock_without_safepoint_check()
@@ -1020,29 +1020,29 @@ void Monitor::jvm_raw_lock() {
 
   if (TryLock()) {
  Exeunt:
-    assert (ILocked(), "invariant") ;
-    assert (_owner == NULL, "invariant");
+    assert(ILocked(), "invariant");
+    assert(_owner == NULL, "invariant");
     // This can potentially be called by non-java Threads. Thus, the ThreadLocalStorage
     // might return NULL. Don't call set_owner since it will break on an NULL owner
     // Consider installing a non-null "ANON" distinguished value instead of just NULL.
     _owner = ThreadLocalStorage::thread();
-    return ;
+    return;
   }
 
-  if (TrySpin(NULL)) goto Exeunt ;
+  if (TrySpin(NULL)) goto Exeunt;
 
   // slow-path - apparent contention
   // Allocate a ParkEvent for transient use.
   // The ParkEvent remains associated with this thread until
   // the time the thread manages to acquire the lock.
-  ParkEvent * const ESelf = ParkEvent::Allocate(NULL) ;
-  ESelf->reset() ;
-  OrderAccess::storeload() ;
+  ParkEvent * const ESelf = ParkEvent::Allocate(NULL);
+  ESelf->reset();
+  OrderAccess::storeload();
 
   // Either Enqueue Self on cxq or acquire the outer lock.
   if (AcquireOrPush (ESelf)) {
-    ParkEvent::Release (ESelf) ;      // surrender the ParkEvent
-    goto Exeunt ;
+    ParkEvent::Release(ESelf);      // surrender the ParkEvent
+    goto Exeunt;
   }
 
   // At any given time there is at most one ondeck thread.
@@ -1050,37 +1050,37 @@ void Monitor::jvm_raw_lock() {
   // Only the OnDeck thread can try to acquire -- contended for -- the lock.
   // CONSIDER: use Self->OnDeck instead of m->OnDeck.
   for (;;) {
-    if (_OnDeck == ESelf && TrySpin(NULL)) break ;
-    ParkCommon (ESelf, 0) ;
+    if (_OnDeck == ESelf && TrySpin(NULL)) break;
+    ParkCommon(ESelf, 0);
   }
 
-  assert (_OnDeck == ESelf, "invariant") ;
-  _OnDeck = NULL ;
-  ParkEvent::Release (ESelf) ;      // surrender the ParkEvent
-  goto Exeunt ;
+  assert(_OnDeck == ESelf, "invariant");
+  _OnDeck = NULL;
+  ParkEvent::Release(ESelf);      // surrender the ParkEvent
+  goto Exeunt;
 }
 
 void Monitor::jvm_raw_unlock() {
   // Nearly the same as Monitor::unlock() ...
   // directly set _owner instead of using set_owner(null)
-  _owner = NULL ;
+  _owner = NULL;
   if (_snuck) {         // ???
     assert(SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread(), "sneak");
     _snuck = false;
-    return ;
+    return;
   }
-  IUnlock(false) ;
+  IUnlock(false);
 }
 
 bool Monitor::wait(bool no_safepoint_check, long timeout, bool as_suspend_equivalent) {
-  Thread * const Self = Thread::current() ;
-  assert (_owner == Self, "invariant") ;
-  assert (ILocked(), "invariant") ;
+  Thread * const Self = Thread::current();
+  assert(_owner == Self, "invariant");
+  assert(ILocked(), "invariant");
 
   // as_suspend_equivalent logically implies !no_safepoint_check
-  guarantee (!as_suspend_equivalent || !no_safepoint_check, "invariant") ;
+  guarantee(!as_suspend_equivalent || !no_safepoint_check, "invariant");
   // !no_safepoint_check logically implies java_thread
-  guarantee (no_safepoint_check || Self->is_Java_thread(), "invariant") ;
+  guarantee(no_safepoint_check || Self->is_Java_thread(), "invariant");
 
   #ifdef ASSERT
     Monitor * least = get_least_ranked_lock_besides_this(Self->owned_locks());
@@ -1093,14 +1093,14 @@ bool Monitor::wait(bool no_safepoint_check, long timeout, bool as_suspend_equiva
     }
   #endif // ASSERT
 
-  int wait_status ;
+  int wait_status;
   // conceptually set the owner to NULL in anticipation of
   // abdicating the lock in wait
   set_owner(NULL);
   if (no_safepoint_check) {
-    wait_status = IWait (Self, timeout) ;
+    wait_status = IWait(Self, timeout);
   } else {
-    assert (Self->is_Java_thread(), "invariant") ;
+    assert(Self->is_Java_thread(), "invariant");
     JavaThread *jt = (JavaThread *)Self;
 
     // Enter safepoint region - ornate and Rococo ...
@@ -1113,7 +1113,7 @@ bool Monitor::wait(bool no_safepoint_check, long timeout, bool as_suspend_equiva
       // java_suspend_self()
     }
 
-    wait_status = IWait (Self, timeout) ;
+    wait_status = IWait(Self, timeout);
 
     // were we externally suspended while we were waiting?
     if (as_suspend_equivalent && jt->handle_special_suspend_equivalent_condition()) {
@@ -1121,67 +1121,67 @@ bool Monitor::wait(bool no_safepoint_check, long timeout, bool as_suspend_equiva
       // while we were waiting another thread suspended us. We don't
       // want to hold the lock while suspended because that
       // would surprise the thread that suspended us.
-      assert (ILocked(), "invariant") ;
-      IUnlock (true) ;
+      assert(ILocked(), "invariant");
+      IUnlock(true);
       jt->java_suspend_self();
-      ILock (Self) ;
-      assert (ILocked(), "invariant") ;
+      ILock(Self);
+      assert(ILocked(), "invariant");
     }
   }
 
   // Conceptually reestablish ownership of the lock.
   // The "real" lock -- the LockByte -- was reacquired by IWait().
-  assert (ILocked(), "invariant") ;
-  assert (_owner == NULL, "invariant") ;
-  set_owner (Self) ;
-  return wait_status != 0 ;          // return true IFF timeout
+  assert(ILocked(), "invariant");
+  assert(_owner == NULL, "invariant");
+  set_owner(Self);
+  return wait_status != 0;          // return true IFF timeout
 }
 
 Monitor::~Monitor() {
-  assert ((UNS(_owner)|UNS(_LockWord.FullWord)|UNS(_EntryList)|UNS(_WaitSet)|UNS(_OnDeck)) == 0, "") ;
+  assert((UNS(_owner)|UNS(_LockWord.FullWord)|UNS(_EntryList)|UNS(_WaitSet)|UNS(_OnDeck)) == 0, "");
 }
 
 void Monitor::ClearMonitor (Monitor * m, const char *name) {
-  m->_owner             = NULL ;
-  m->_snuck             = false ;
+  m->_owner             = NULL;
+  m->_snuck             = false;
   if (name == NULL) {
-    strcpy(m->_name, "UNKNOWN") ;
+    strcpy(m->_name, "UNKNOWN");
   } else {
     strncpy(m->_name, name, MONITOR_NAME_LEN - 1);
     m->_name[MONITOR_NAME_LEN - 1] = '\0';
   }
-  m->_LockWord.FullWord = 0 ;
-  m->_EntryList         = NULL ;
-  m->_OnDeck            = NULL ;
-  m->_WaitSet           = NULL ;
-  m->_WaitLock[0]       = 0 ;
+  m->_LockWord.FullWord = 0;
+  m->_EntryList         = NULL;
+  m->_OnDeck            = NULL;
+  m->_WaitSet           = NULL;
+  m->_WaitLock[0]       = 0;
 }
 
 Monitor::Monitor() { ClearMonitor(this); }
 
 Monitor::Monitor (int Rank, const char * name, bool allow_vm_block) {
-  ClearMonitor (this, name) ;
+  ClearMonitor(this, name);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
-  _rank            = Rank ;
+  _rank            = Rank;
 #endif
 }
 
 Mutex::~Mutex() {
-  assert ((UNS(_owner)|UNS(_LockWord.FullWord)|UNS(_EntryList)|UNS(_WaitSet)|UNS(_OnDeck)) == 0, "") ;
+  assert((UNS(_owner)|UNS(_LockWord.FullWord)|UNS(_EntryList)|UNS(_WaitSet)|UNS(_OnDeck)) == 0, "");
 }
 
 Mutex::Mutex (int Rank, const char * name, bool allow_vm_block) {
-  ClearMonitor ((Monitor *) this, name) ;
+  ClearMonitor((Monitor *) this, name);
 #ifdef ASSERT
  _allow_vm_block   = allow_vm_block;
- _rank             = Rank ;
+ _rank             = Rank;
 #endif
 }
 
 bool Monitor::owned_by_self() const {
   bool ret = _owner == Thread::current();
-  assert (!ret || _LockWord.Bytes[_LSBINDEX] != 0, "invariant") ;
+  assert(!ret || _LockWord.Bytes[_LSBINDEX] != 0, "invariant");
   return ret;
 }
 

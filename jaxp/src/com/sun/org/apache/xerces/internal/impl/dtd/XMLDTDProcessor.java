@@ -113,7 +113,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
  *
  * @author Neil Graham, IBM
  *
- * @version $Id: XMLDTDProcessor.java,v 1.5 2010-11-01 04:39:42 joehw Exp $
  */
 public class XMLDTDProcessor
         implements XMLComponent, XMLDTDFilter, XMLDTDContentModelFilter {

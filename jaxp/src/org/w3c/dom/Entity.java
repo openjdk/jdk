@@ -96,7 +96,7 @@ public interface Entity extends Node {
      * of parsing, when it is an external parsed entity. This is
      * <code>null</code> if it an entity from the internal subset or if it
      * is not known.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getInputEncoding();
 
@@ -104,7 +104,7 @@ public interface Entity extends Node {
      * An attribute specifying, as part of the text declaration, the encoding
      * of this entity, when it is an external parsed entity. This is
      * <code>null</code> otherwise.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getXmlEncoding();
 
@@ -112,7 +112,7 @@ public interface Entity extends Node {
      * An attribute specifying, as part of the text declaration, the version
      * number of this entity, when it is an external parsed entity. This is
      * <code>null</code> otherwise.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getXmlVersion();
 

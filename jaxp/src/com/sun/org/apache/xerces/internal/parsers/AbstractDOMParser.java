@@ -85,7 +85,6 @@ import org.xml.sax.SAXException;
  * @author Andy Clark, IBM
  * @author Elena Litani, IBM
  *
- * @version $Id: AbstractDOMParser.java,v 1.10 2010-11-01 04:40:09 joehw Exp $
  */
 public class AbstractDOMParser extends AbstractXMLDocumentParser {
 

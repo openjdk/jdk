@@ -31,7 +31,6 @@ import org.w3c.dom.Node;
  * @author Rahul Srivastava, Sun Microsystems Inc.
  * @author Sandy Gao, IBM
  *
- * @version $Id: ElementImpl.java,v 1.7 2010-11-01 04:40:01 joehw Exp $
  */
 public class ElementImpl extends DefaultElement {
 

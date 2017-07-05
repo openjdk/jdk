@@ -87,6 +87,7 @@ import javax.accessibility.*;
  *
  * @author Georges Saab
  * @author David Karlton
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,

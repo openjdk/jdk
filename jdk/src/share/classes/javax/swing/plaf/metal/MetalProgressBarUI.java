@@ -50,6 +50,12 @@ public class MetalProgressBarUI extends BasicProgressBarUI {
     private Rectangle innards;
     private Rectangle box;
 
+    /**
+     * Constructs an instance of {@code MetalProgressBarUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code MetalProgressBarUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new MetalProgressBarUI();
     }

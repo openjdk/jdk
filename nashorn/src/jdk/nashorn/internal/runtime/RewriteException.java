@@ -331,7 +331,7 @@ public final class RewriteException extends Exception {
      * @return bytecode slot contents.
      */
     public Object[] getByteCodeSlots() {
-        return byteCodeSlots;
+        return byteCodeSlots == null ? null : byteCodeSlots.clone();
     }
 
     /**
@@ -339,7 +339,7 @@ public final class RewriteException extends Exception {
      * function (a rest-of triggering a rest-of triggering a...)
      */
     public int[] getPreviousContinuationEntryPoints() {
-        return previousContinuationEntryPoints;
+        return previousContinuationEntryPoints == null ? null : previousContinuationEntryPoints.clone();
     }
 
     /**
@@ -388,7 +388,7 @@ public final class RewriteException extends Exception {
 
         //slot contents
         if (!isShort) {
-            final Object[] slots = getByteCodeSlots();
+            final Object[] slots = byteCodeSlots;
             if (slots != null) {
                 sb.append("slots=").
                     append(Arrays.asList(slots)).

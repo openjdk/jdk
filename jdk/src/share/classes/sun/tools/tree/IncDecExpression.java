@@ -131,7 +131,7 @@ class IncDecExpression extends UnaryExpression {
             asm.add(where, inc ? opc_iadd : opc_isub);
             break;
           case TC_LONG:
-            asm.add(where, opc_ldc2_w, new Long(1));
+            asm.add(where, opc_ldc2_w, 1L);
             asm.add(where, inc ? opc_ladd : opc_lsub);
             break;
           case TC_FLOAT:

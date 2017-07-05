@@ -49,6 +49,8 @@ package javax.xml.transform;
  *
  * <p><code>Transformer</code>s may use this mechanism to report XML parsing
  * errors as well as transformation errors.</p>
+ *
+ * @since 1.4
  */
 public interface ErrorListener {
 

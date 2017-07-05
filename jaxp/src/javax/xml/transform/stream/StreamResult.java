@@ -37,6 +37,7 @@ import java.net.MalformedURLException;
  * which may be XML, plain Text, HTML, or some other form of markup.</p>
  *
  * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @since 1.4
  */
 public class StreamResult implements Result {
 

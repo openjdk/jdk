@@ -30,6 +30,7 @@ package javax.swing;
  * Constants used with the JScrollPane component.
  *
  * @author Hans Muller
+ * @since 1.2
  */
 public interface ScrollPaneConstants
 {

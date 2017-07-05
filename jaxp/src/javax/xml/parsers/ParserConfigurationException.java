@@ -29,6 +29,7 @@ package javax.xml.parsers;
  * Indicates a serious configuration error.
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @since 1.4
  */
 
 public class ParserConfigurationException extends Exception {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ CXX_DONT_USE_PCH=/D DONT_USE_PRECOMPILED_HEADER
 
 !if "$(USE_PRECOMPILED_HEADER)" != "0"
 CXX_USE_PCH=/Fp"vm.pch" /Yu"precompiled.hpp"
-!if "$(COMPILER_NAME)" == "VS2012"
+!if "$(MSC_VER)" > "1600"
 # VS2012 requires this object file to be listed:
 LD_FLAGS=$(LD_FLAGS) _build_pch_file.obj
 !endif

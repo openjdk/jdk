@@ -90,9 +90,9 @@ import java.awt.print.*;
 public class UnixPrintJob implements CancelablePrintJob {
     private static String debugPrefix = "UnixPrintJob>> ";
 
-    transient private Vector jobListeners;
-    transient private Vector attrListeners;
-    transient private Vector listenedAttributeSets;
+    transient private Vector<PrintJobListener> jobListeners;
+    transient private Vector<PrintJobAttributeListener> attrListeners;
+    transient private Vector<PrintJobAttributeSet> listenedAttributeSets;
 
     private PrintService service;
     private boolean fidelity;
@@ -150,7 +150,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                 return;
             }
             if (jobListeners == null) {
-                jobListeners = new Vector();
+                jobListeners = new Vector<>();
             }
             jobListeners.add(listener);
         }
@@ -238,7 +238,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                 PrintJobListener listener;
                 PrintJobEvent event = new PrintJobEvent(this, reason);
                 for (int i = 0; i < jobListeners.size(); i++) {
-                    listener = (PrintJobListener)(jobListeners.elementAt(i));
+                    listener = jobListeners.elementAt(i);
                     switch (reason) {
 
                         case PrintJobEvent.JOB_CANCELED :
@@ -273,8 +273,8 @@ public class UnixPrintJob implements CancelablePrintJob {
                 return;
             }
             if (attrListeners == null) {
-                attrListeners = new Vector();
-                listenedAttributeSets = new Vector();
+                attrListeners = new Vector<>();
+                listenedAttributeSets = new Vector<>();
             }
             attrListeners.add(listener);
             if (attributes == null) {
@@ -770,7 +770,7 @@ public class UnixPrintJob implements CancelablePrintJob {
 
     private void getAttributeValues(DocFlavor flavor) throws PrintException {
         Attribute attr;
-        Class category;
+        Class<? extends Attribute> category;
 
         if (reqAttrSet.get(Fidelity.class) == Fidelity.FIDELITY_TRUE) {
             fidelity = true;
@@ -941,11 +941,11 @@ public class UnixPrintJob implements CancelablePrintJob {
 
     // Inner class to run "privileged" to open the printer output stream.
 
-    private class PrinterOpener implements java.security.PrivilegedAction {
+    private class PrinterOpener implements java.security.PrivilegedAction<OutputStream> {
         PrintException pex;
         OutputStream result;
 
-        public Object run() {
+        public OutputStream run() {
             try {
                 if (mDestType == UnixPrintJob.DESTFILE) {
                     spoolFile = new File(mDestination);
@@ -971,7 +971,7 @@ public class UnixPrintJob implements CancelablePrintJob {
 
     // Inner class to run "privileged" to invoke the system print command
 
-    private class PrinterSpooler implements java.security.PrivilegedAction {
+    private class PrinterSpooler implements java.security.PrivilegedAction<Object> {
         PrintException pex;
 
         private void handleProcessFailure(final Process failedProcess,
@@ -992,8 +992,8 @@ public class UnixPrintJob implements CancelablePrintJob {
                     }
                 } finally {
                     pw.flush();
-                    throw new IOException(sw.toString());
                 }
+                throw new IOException(sw.toString());
             }
         }
 

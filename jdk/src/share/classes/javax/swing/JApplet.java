@@ -89,6 +89,7 @@ import javax.accessibility.*;
  *    description: Swing's Applet subclass.
  *
  * @author Arnaud Weber
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JApplet extends Applet implements Accessible,

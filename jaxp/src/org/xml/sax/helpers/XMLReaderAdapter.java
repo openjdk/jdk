@@ -68,7 +68,7 @@ import org.xml.sax.SAXNotSupportedException;
  * supports a false value for the http://xml.org/sax/features/namespaces
  * property, that will also be used to improve efficiency.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @see org.xml.sax.Parser
  * @see org.xml.sax.XMLReader

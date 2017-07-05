@@ -63,13 +63,13 @@ public class MapCreator<T> {
     /**
      * Constructs a property map based on a set of fields.
      *
-     * @param hasArguments does the created object have an "arguments" property
+     * @param hasArguments  does the created object have an "arguments" property
      * @param fieldCount    Number of fields in use.
-     * @param fieldMaximum Number of fields available.
-     *
+     * @param fieldMaximum  Number of fields available.
+     * @param evalCode      is this property map created for 'eval' code?
      * @return New map populated with accessor properties.
      */
-    PropertyMap makeFieldMap(final boolean hasArguments, final int fieldCount, final int fieldMaximum) {
+    PropertyMap makeFieldMap(final boolean hasArguments, final int fieldCount, final int fieldMaximum, final boolean evalCode) {
         final List<Property> properties = new ArrayList<>();
         assert tuples != null;
 
@@ -79,7 +79,7 @@ public class MapCreator<T> {
             final Class<?> initialType = tuple.getValueType();
 
             if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
-                final int      flags    = getPropertyFlags(symbol, hasArguments);
+                final int      flags    = getPropertyFlags(symbol, hasArguments, evalCode);
                 final Property property = new AccessorProperty(
                         key,
                         flags,
@@ -104,7 +104,7 @@ public class MapCreator<T> {
 
             //TODO initial type is object here no matter what. Is that right?
             if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
-                final int flags = getPropertyFlags(symbol, hasArguments);
+                final int flags = getPropertyFlags(symbol, hasArguments, false);
                 properties.add(
                         new SpillProperty(
                                 key,
@@ -124,7 +124,7 @@ public class MapCreator<T> {
      *
      * @return flags to use for fields
      */
-    static int getPropertyFlags(final Symbol symbol, final boolean hasArguments) {
+    static int getPropertyFlags(final Symbol symbol, final boolean hasArguments, final boolean evalCode) {
         int flags = 0;
 
         if (symbol.isParam()) {
@@ -135,7 +135,13 @@ public class MapCreator<T> {
             flags |= Property.HAS_ARGUMENTS;
         }
 
-        if (symbol.isScope()) {
+        // See ECMA 5.1 10.5 Declaration Binding Instantiation.
+        // Step 2  If code is eval code, then let configurableBindings
+        // be true else let configurableBindings be false.
+        // We have to make vars, functions declared in 'eval' code
+        // configurable. But vars, functions from any other code is
+        // not configurable.
+        if (symbol.isScope() && !evalCode) {
             flags |= Property.NOT_CONFIGURABLE;
         }
 

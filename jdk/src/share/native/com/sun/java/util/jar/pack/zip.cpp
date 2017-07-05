@@ -435,7 +435,7 @@ uLong jar::get_dostime(int modtime) {
   struct tm* s = gmtime_r(&t, &sbuf);
   if (s == NULL) {
     fprintf(u->errstrm, "Error: gmtime failure, invalid input archive\n");
-    exit(2);
+    exit(-1);
   }
   modtime_cache = modtime;
   dostime_cache = dostime(s->tm_year + 1900, s->tm_mon + 1, s->tm_mday,
@@ -551,6 +551,7 @@ static jlong read_input_via_gzip(unpacker* u,
       break;
     }
     int nr = readlen - zs.avail_out;
+    u->gzcrc = crc32(u->gzcrc, (const unsigned char *)bufptr, nr);
     numread += nr;
     bufptr += nr;
     assert(numread <= maxlen);
@@ -589,6 +590,7 @@ void gunzip::init(unpacker* u_) {
   zstream = NEW(z_stream, 1);
   u->gzin = this;
   u->read_input_fn = read_input_via_gzip;
+  u->gzcrc = crc32(0L, Z_NULL, 0);
 }
 
 void gunzip::start(int magic) {

@@ -29,7 +29,6 @@ import java.util.ResourceBundle;
  * <p>Used to format JAXP 1.3 Datatype API error messages using a specified locale.</p>
  *
  * @author  Neeraj Bajaj, Sun Microsystems
- * @version $Id: DatatypeMessageFormatter.java,v 1.6 2010-11-01 04:40:14 joehw Exp $
  */
 public class DatatypeMessageFormatter {
 

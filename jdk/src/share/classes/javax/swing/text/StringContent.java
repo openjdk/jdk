@@ -271,11 +271,11 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param length the length &gt;= 0
      * @return the set of instances
      */
-    protected Vector getPositionsInRange(Vector v, int offset,
+    protected Vector<UndoPosRef> getPositionsInRange(Vector<UndoPosRef> v, int offset,
                                                       int length) {
         int n = marks.size();
         int end = offset + length;
-        Vector placeIn = (v == null) ? new Vector() : v;
+        Vector<UndoPosRef> placeIn = (v == null) ? new Vector<>() : v;
         for (int i = 0; i < n; i++) {
             PosRec mark = marks.elementAt(i);
             if (mark.unused) {
@@ -298,9 +298,9 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      *
      * @param positions the positions of the instances
      */
-    protected void updateUndoPositions(Vector positions) {
+    protected void updateUndoPositions(Vector<UndoPosRef> positions) {
         for(int counter = positions.size() - 1; counter >= 0; counter--) {
-            UndoPosRef ref = (UndoPosRef)positions.elementAt(counter);
+            UndoPosRef ref = positions.elementAt(counter);
             // Check if the Position is still valid.
             if(ref.rec.unused) {
                 positions.removeElementAt(counter);
@@ -437,7 +437,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         protected String string;
         // An array of instances of UndoPosRef for the Positions in the
         // range that was removed, valid after undo.
-        protected Vector posRefs;
+        protected Vector<UndoPosRef> posRefs;
     }
 
 
@@ -494,6 +494,6 @@ public final class StringContent implements AbstractDocument.Content, Serializab
         protected String string;
         // An array of instances of UndoPosRef for the Positions in the
         // range that was removed, valid before undo.
-        protected Vector posRefs;
+        protected Vector<UndoPosRef> posRefs;
     }
 }

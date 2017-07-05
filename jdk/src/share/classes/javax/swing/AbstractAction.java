@@ -55,6 +55,7 @@ import sun.security.action.GetPropertyAction;
  *
  * @author Georges Saab
  * @see Action
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractAction implements Action, Cloneable, Serializable

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,11 @@ import java.util.Enumeration;
  * @author Arthur van Hoff
  */
 public final class AudioStreamSequence extends SequenceInputStream {
-
-        Enumeration e;
-        InputStream in;
-
         /**
          * Create an AudioStreamSequence given an
          * enumeration of streams.
          */
-        public AudioStreamSequence(Enumeration e) {
+        public AudioStreamSequence(Enumeration<? extends InputStream> e) {
             super(e);
         }
-
-    }
+}

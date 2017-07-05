@@ -115,7 +115,6 @@ import java.util.Objects;
  * @author Peter McCracken, IBM
  * @author Michael Glavassevich, IBM
  *
- * @version $Id: XIncludeHandler.java,v 1.7 2010-11-01 04:40:18 joehw Exp $
  *
  * @see XIncludeNamespaceSupport
  */

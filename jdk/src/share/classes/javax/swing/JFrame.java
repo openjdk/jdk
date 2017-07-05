@@ -111,6 +111,7 @@ import javax.accessibility.*;
  * @author Jeff Dinkins
  * @author Georges Saab
  * @author David Kloba
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JFrame  extends Frame implements WindowConstants,

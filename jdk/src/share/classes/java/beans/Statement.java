@@ -248,7 +248,7 @@ public class Statement {
                 // ignored elsewhere.
                 if (target == Character.class && arguments.length == 1 &&
                     argClasses[0] == String.class) {
-                    return new Character(((String)arguments[0]).charAt(0));
+                    return ((String)arguments[0]).charAt(0);
                 }
                 try {
                     m = ConstructorFinder.findConstructor((Class)target, argClasses);

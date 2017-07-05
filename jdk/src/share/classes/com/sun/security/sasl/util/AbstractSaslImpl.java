@@ -77,7 +77,7 @@ public abstract class AbstractSaslImpl {
 
             if (logger.isLoggable(Level.FINE)) {
                 logger.logp(Level.FINE, myClassName, "constructor",
-                    "SASLIMPL02:Preferred qop mask: {0}", new Byte(allQop));
+                    "SASLIMPL02:Preferred qop mask: {0}", allQop);
 
                 if (qop.length > 0) {
                     StringBuilder str = new StringBuilder();

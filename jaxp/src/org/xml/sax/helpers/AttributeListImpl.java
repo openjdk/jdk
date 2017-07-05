@@ -82,7 +82,7 @@ import java.util.Vector;
  *             which is implemented in the
  *             {@link org.xml.sax.helpers.AttributesImpl
  *            AttributesImpl} helper class.
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.AttributeList
  * @see org.xml.sax.DocumentHandler#startElement

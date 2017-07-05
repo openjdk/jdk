@@ -47,7 +47,6 @@ import org.w3c.dom.Element;
  * @author Rahul Srivastava, Sun Microsystems Inc.
  * @author Elena Litani, IBM
  * @author Lisa Martin,  IBM
- * @version $Id: XSDGroupTraverser.java,v 1.7 2010-11-01 04:40:02 joehw Exp $
  */
 class  XSDGroupTraverser extends XSDAbstractParticleTraverser {
 

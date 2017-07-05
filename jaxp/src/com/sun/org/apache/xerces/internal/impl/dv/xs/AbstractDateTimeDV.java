@@ -47,7 +47,6 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.XSDateTime;
  * @author Len Berman
  * @author Gopal Sharma, SUN Microsystems Inc.
  *
- * @version $Id: AbstractDateTimeDV.java,v 1.7 2010-11-01 04:39:46 joehw Exp $
  */
 public abstract class AbstractDateTimeDV extends TypeValidator {
 

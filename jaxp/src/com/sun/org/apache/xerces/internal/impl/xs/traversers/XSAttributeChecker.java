@@ -69,7 +69,6 @@ import org.w3c.dom.Element;
  * @xerces.internal
  *
  * @author Sandy Gao, IBM
- * @version $Id: XSAttributeChecker.java,v 1.12 2010-11-01 04:40:02 joehw Exp $
  */
 
 public class XSAttributeChecker {

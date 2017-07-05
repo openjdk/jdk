@@ -152,7 +152,7 @@ class OverloadedMethod {
 
     @SuppressWarnings("unused")
     private MethodHandle selectMethod(final Object[] args) throws NoSuchMethodException {
-        final Class<?>[] argTypes = new Class[args.length];
+        final Class<?>[] argTypes = new Class<?>[args.length];
         for(int i = 0; i < argTypes.length; ++i) {
             final Object arg = args[i];
             argTypes[i] = arg == null ? ClassString.NULL_CLASS : arg.getClass();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public abstract class PrintJob {
      * object is disposed.  This graphics object will also implement
      * the PrintGraphics interface.
      * @see PrintGraphics
+     * @return the graphics context for printing the next page
      */
     public abstract Graphics getGraphics();
 
@@ -49,6 +50,8 @@ public abstract class PrintJob {
      * Returns the dimensions of the page in pixels.
      * The resolution of the page is chosen so that it
      * is similar to the screen resolution.
+     *
+     * @return the page dimension
      */
     public abstract Dimension getPageDimension();
 
@@ -56,11 +59,16 @@ public abstract class PrintJob {
      * Returns the resolution of the page in pixels per inch.
      * Note that this doesn't have to correspond to the physical
      * resolution of the printer.
+     *
+     * @return the page resolution
      */
     public abstract int getPageResolution();
 
     /**
      * Returns true if the last page will be printed first.
+     *
+     * @return {@code true} if the last page will be printed first;
+     *         otherwise {@code false}
      */
     public abstract boolean lastPageFirst();
 

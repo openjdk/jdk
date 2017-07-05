@@ -138,13 +138,21 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    //
-    // ComponentUI Interface Implementation methods
-    //
+    /**
+     * Constructs a new instance of {@code MetalFileChooserUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code MetalFileChooserUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new MetalFileChooserUI((JFileChooser) c);
     }
 
+    /**
+     * Constructs a new instance of {@code MetalFileChooserUI}.
+     *
+     * @param filechooser a {@code JFileChooser}
+     */
     public MetalFileChooserUI(JFileChooser filechooser) {
         super(filechooser);
     }
@@ -446,6 +454,11 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         groupLabels(new AlignedLabel[] { fileNameLabel, filesOfTypeLabel });
     }
 
+    /**
+     * Returns the button panel.
+     *
+     * @return the button panel
+     */
     protected JPanel getButtonPanel() {
         if (buttonPanel == null) {
             buttonPanel = new JPanel();
@@ -453,6 +466,11 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         return buttonPanel;
     }
 
+    /**
+     * Returns the bottom panel.
+     *
+     * @return the bottom panel
+     */
     protected JPanel getBottomPanel() {
         if(bottomPanel == null) {
             bottomPanel = new JPanel();
@@ -503,20 +521,42 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         SwingUtilities.replaceUIActionMap(fc, actionMap);
     }
 
+    /**
+     * Returns an instance of {@code ActionMap}.
+     *
+     * @return an instance of {@code ActionMap}
+     */
     protected ActionMap getActionMap() {
         return createActionMap();
     }
 
+    /**
+     * Constructs an instance of {@code ActionMap}.
+     *
+     * @return an instance of {@code ActionMap}
+     */
     protected ActionMap createActionMap() {
         ActionMap map = new ActionMapUIResource();
         FilePane.addActionsToMap(map, filePane.getActions());
         return map;
     }
 
+    /**
+     * Constructs a details view.
+     *
+     * @param fc a {@code JFileChooser}
+     * @return the list
+     */
     protected JPanel createList(JFileChooser fc) {
         return filePane.createList();
     }
 
+    /**
+     * Constructs a details view.
+     *
+     * @param fc a {@code JFileChooser}
+     * @return the details view
+     */
     protected JPanel createDetailsView(JFileChooser fc) {
         return filePane.createDetailsView();
     }
@@ -533,7 +573,12 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
     // Obsolete class, not used in this version.
     protected class SingleClickListener extends MouseAdapter {
-        public  SingleClickListener(JList list) {
+        /**
+         * Constructs an instance of {@code SingleClickListener}.
+         *
+         * @param list an instance of {@code JList}
+         */
+        public SingleClickListener(JList list) {
         }
     }
 
@@ -788,11 +833,16 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         };
     }
 
-
+    /**
+     * Removes control buttons from bottom panel.
+     */
     protected void removeControlButtons() {
         getBottomPanel().remove(getButtonPanel());
     }
 
+    /**
+     * Adds control buttons to bottom panel.
+     */
     protected void addControlButtons() {
         getBottomPanel().add(getButtonPanel());
     }
@@ -842,15 +892,31 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    /**
+     * Returns the directory name.
+     *
+     * @return the directory name
+     */
     public String getDirectoryName() {
         // PENDING(jeff) - get the name from the directory combobox
         return null;
     }
 
+    /**
+     * Sets the directory name.
+     *
+     * @param dirname the directory name
+     */
     public void setDirectoryName(String dirname) {
         // PENDING(jeff) - set the name in the directory combobox
     }
 
+    /**
+     * Constructs a new instance of {@code DirectoryComboBoxRenderer}.
+     *
+     * @param fc a {@code JFileChooser}
+     * @return a new instance of {@code DirectoryComboBoxRenderer}
+     */
     protected DirectoryComboBoxRenderer createDirectoryComboBoxRenderer(JFileChooser fc) {
         return new DirectoryComboBoxRenderer();
     }
@@ -906,9 +972,12 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
     }
 
-    //
-    // DataModel for DirectoryComboxbox
-    //
+    /**
+     * Constructs a new instance of {@code DataModel} for {@code DirectoryComboBox}.
+     *
+     * @param fc a {@code JFileChooser}
+     * @return a new instance of {@code DataModel} for {@code DirectoryComboBox}
+     */
     protected DirectoryComboBoxModel createDirectoryComboBoxModel(JFileChooser fc) {
         return new DirectoryComboBoxModel();
     }
@@ -924,6 +993,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         JFileChooser chooser = getFileChooser();
         FileSystemView fsv = chooser.getFileSystemView();
 
+        /**
+         * Constructs an instance of {@code DirectoryComboBoxModel}.
+         */
         public DirectoryComboBoxModel() {
             // Add the current directory to the model, and make it the
             // selectedDirectory
@@ -1017,6 +1089,12 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
             }
         }
 
+        /**
+         * Returns the depth of {@code i}-th file.
+         *
+         * @param i an index
+         * @return the depth of {@code i}-th file
+         */
         public int getDepth(int i) {
             return (depths != null && i >= 0 && i < depths.length) ? depths[i] : 0;
         }
@@ -1039,9 +1117,11 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    //
-    // Renderer for Types ComboBox
-    //
+    /**
+     * Constructs a {@code Renderer} for types {@code ComboBox}.
+     *
+     * @return a {@code Renderer} for types {@code ComboBox}
+     */
     protected FilterComboBoxRenderer createFilterComboBoxRenderer() {
         return new FilterComboBoxRenderer();
     }
@@ -1065,9 +1145,11 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    //
-    // DataModel for Types Comboxbox
-    //
+    /**
+     * Constructs a {@code DataModel} for types {@code ComboBox}.
+     *
+     * @return a {@code DataModel} for types {@code ComboBox}
+     */
     protected FilterComboBoxModel createFilterComboBoxModel() {
         return new FilterComboBoxModel();
     }
@@ -1077,7 +1159,15 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class FilterComboBoxModel extends AbstractListModel<Object> implements ComboBoxModel<Object>, PropertyChangeListener {
+
+        /**
+         * An array of file filters.
+         */
         protected FileFilter[] filters;
+
+        /**
+         * Constructs an instance of {@code FilterComboBoxModel}.
+         */
         protected FilterComboBoxModel() {
             super();
             filters = getFileChooser().getChoosableFileFilters();
@@ -1142,6 +1232,11 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    /**
+     * Invokes when {@code ListSelectionEvent} occurs.
+     *
+     * @param e an instance of {@code ListSelectionEvent}
+     */
     public void valueChanged(ListSelectionEvent e) {
         JFileChooser fc = getFileChooser();
         File f = fc.getSelectedFile();
@@ -1155,6 +1250,10 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryComboBoxAction extends AbstractAction {
+
+        /**
+         * Constructs a new instance of {@code DirectoryComboBoxAction}.
+         */
         protected DirectoryComboBoxAction() {
             super("DirectoryComboBoxAction");
         }

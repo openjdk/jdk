@@ -36,7 +36,6 @@ import com.sun.org.apache.xerces.internal.xs.XSModel;
  *
  * @xerces.internal
  *
- * @version $Id: XSGrammarPool.java,v 1.7 2010-11-01 04:40:06 joehw Exp $
  */
 public class XSGrammarPool extends XMLGrammarPoolImpl {
 

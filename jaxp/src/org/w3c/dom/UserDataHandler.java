@@ -49,7 +49,7 @@ package org.w3c.dom;
  * implement various behaviors regarding the data it associates to the DOM
  * nodes. This interface defines that handler.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
- * @since DOM Level 3
+ * @since 1.5, DOM Level 3
  */
 public interface UserDataHandler {
     // OperationType

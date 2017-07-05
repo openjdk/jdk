@@ -33,6 +33,7 @@ import java.awt.event.*;
  * to handle selection and navigation in menu hierarchies.
  *
  * @author Arnaud Weber
+ * @since 1.2
  */
 
 public interface MenuElement {

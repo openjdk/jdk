@@ -85,7 +85,7 @@ package org.xml.sax;
  * <p>The order of attributes in the list is unspecified, and will
  * vary from implementation to implementation.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @see org.xml.sax.helpers.AttributesImpl
  * @see org.xml.sax.ext.DeclHandler#attributeDecl

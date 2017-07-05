@@ -94,7 +94,6 @@ import org.xml.sax.ext.EntityResolver2;
  * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  * @author Michael Glavassevich, IBM
  *
- * @version $Id: ValidatorHandlerImpl.java,v 1.10 2010-11-01 04:40:08 joehw Exp $
  */
 final class ValidatorHandlerImpl extends ValidatorHandler implements
     DTDHandler, EntityState, PSVIProvider, ValidatorHelper, XMLDocumentHandler {

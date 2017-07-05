@@ -32,7 +32,6 @@ package com.sun.org.apache.xerces.internal.utils;
  * when bundled as part of the JDK.
  * <p>
  *
- * @version $Id: ObjectFactory.java,v 1.6 2010/04/23 01:44:34 joehw Exp $
  */
 public final class ObjectFactory {
 

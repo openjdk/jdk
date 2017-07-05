@@ -32,7 +32,6 @@ import java.util.ResourceBundle;
  *
  * @author Peter McCracken, IBM
  *
- * @version $Id: XIncludeMessageFormatter.java,v 1.7 2010-11-01 04:40:18 joehw Exp $
  */
 public class XIncludeMessageFormatter implements MessageFormatter {
 

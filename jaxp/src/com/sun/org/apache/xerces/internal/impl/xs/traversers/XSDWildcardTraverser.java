@@ -57,7 +57,6 @@ import org.w3c.dom.Element;
  * @author Rahul Srivastava, Sun Microsystems Inc.
  * @author Sandy Gao, IBM
  *
- * @version $Id: XSDWildcardTraverser.java,v 1.7 2010-11-01 04:40:02 joehw Exp $
  */
 class XSDWildcardTraverser extends XSDAbstractTraverser {
 

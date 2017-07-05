@@ -68,7 +68,6 @@ import com.sun.org.apache.xerces.internal.xni.QName;
 
 /**
 
- * @version $Id: DFAContentModel.java,v 1.4 2010/08/06 23:49:43 joehw Exp $
  * DFAContentModel is the derivative of ContentModel that does
  * all of the non-trivial element content validation. This class does
  * the conversion from the regular expression to the DFA that
@@ -82,7 +81,6 @@ import com.sun.org.apache.xerces.internal.xni.QName;
  *
  * @xerces.internal
  *
- * @version $Id: DFAContentModel.java,v 1.4 2010/08/06 23:49:43 joehw Exp $
  */
 public class DFAContentModel
     implements ContentModelValidator {

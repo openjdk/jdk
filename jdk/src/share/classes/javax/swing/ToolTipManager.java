@@ -49,6 +49,7 @@ import java.awt.*;
  * @see JComponent#createToolTip
  * @author Dave Moore
  * @author Rich Schiavi
+ * @since 1.2
  */
 public class ToolTipManager extends MouseAdapter implements MouseMotionListener  {
     Timer enterTimer, exitTimer, insideTimer;

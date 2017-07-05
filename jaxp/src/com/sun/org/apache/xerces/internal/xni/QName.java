@@ -77,7 +77,6 @@ package com.sun.org.apache.xerces.internal.xni;
  * == were used to compare strings
  * @author Joe Wang, Oracle
  *
- * @version $Id: QName.java,v 1.6 2010/03/18 19:32:31 joehw Exp $
  */
 public class QName
 implements Cloneable {

@@ -59,7 +59,6 @@ import org.w3c.dom.Element;
  *
  * @author Sandy Gao, IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
- * @version $Id: XSDAttributeTraverser.java,v 1.7 2010-11-01 04:40:02 joehw Exp $
  */
 class XSDAttributeTraverser extends XSDAbstractTraverser {
 

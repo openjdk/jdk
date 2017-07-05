@@ -710,7 +710,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @param length the length &gt;= 0
      * @return the set of instances
      */
-    protected Vector getPositionsInRange(Vector v, int offset, int length) {
+    protected Vector<UndoPosRef> getPositionsInRange(Vector<UndoPosRef> v,
+                                                     int offset, int length) {
         int endOffset = offset + length;
         int startIndex;
         int endIndex;
@@ -738,8 +739,9 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             endIndex = findMarkAdjustIndex(endOffset + (g1 - g0) + 1);
         }
 
-        Vector placeIn = (v == null) ? new Vector(Math.max(1, endIndex -
-                                                           startIndex)) : v;
+        Vector<UndoPosRef> placeIn = (v == null) ?
+            new Vector<>(Math.max(1, endIndex - startIndex)) :
+            v;
 
         for (int counter = startIndex; counter < endIndex; counter++) {
             placeIn.addElement(new UndoPosRef(marks.elementAt(counter)));
@@ -756,7 +758,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      *
      * @param positions the UndoPosRef instances to reset
      */
-    protected void updateUndoPositions(Vector positions, int offset,
+    protected void updateUndoPositions(Vector<UndoPosRef> positions, int offset,
                                        int length) {
         // Find the indexs of the end points.
         int endOffset = offset + length;
@@ -773,7 +775,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
 
         // Reset the location of the refenences.
         for(int counter = positions.size() - 1; counter >= 0; counter--) {
-            UndoPosRef ref = (UndoPosRef)positions.elementAt(counter);
+            UndoPosRef ref = positions.elementAt(counter);
             ref.resetLocation(endOffset, g1);
         }
         // We have to resort the marks in the range startIndex to endIndex.
@@ -900,7 +902,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         protected String string;
         /** An array of instances of UndoPosRef for the Positions in the
          * range that was removed, valid after undo. */
-        protected Vector posRefs;
+        protected Vector<UndoPosRef> posRefs;
     } // GapContent.InsertUndo
 
 
@@ -952,6 +954,6 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         protected String string;
         /** An array of instances of UndoPosRef for the Positions in the
          * range that was removed, valid before undo. */
-        protected Vector posRefs;
+        protected Vector<UndoPosRef> posRefs;
     } // GapContent.RemoveUndo
 }

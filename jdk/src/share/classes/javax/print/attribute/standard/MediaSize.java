@@ -56,9 +56,9 @@ public class MediaSize extends Size2DSyntax implements Attribute {
 
     private MediaSizeName mediaName;
 
-    private static HashMap mediaMap = new HashMap(100, 10);
+    private static HashMap<MediaSizeName, MediaSize> mediaMap = new HashMap<>(100, 10);
 
-    private static Vector sizeVector = new Vector(100, 10);
+    private static Vector<MediaSize> sizeVector = new Vector<>(100, 10);
 
     /**
      * Construct a new media size attribute from the given floating-point
@@ -174,7 +174,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * with any size.
      */
     public static MediaSize getMediaSizeForName(MediaSizeName media) {
-        return (MediaSize)mediaMap.get(media);
+        return mediaMap.get(media);
     }
 
     /**
@@ -213,7 +213,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
         float diffy = y;
 
         for (int i=0; i < sizeVector.size() ; i++) {
-            MediaSize mediaSize = (MediaSize)sizeVector.elementAt(i);
+            MediaSize mediaSize = sizeVector.elementAt(i);
             dim = mediaSize.getSize(units);
             if (x == dim[0] && y == dim[1]) {
                 match = mediaSize;

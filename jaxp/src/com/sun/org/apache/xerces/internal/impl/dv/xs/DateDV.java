@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
  * @author Elena Litani
  * @author Gopal Sharma, SUN Microsystems Inc.
  *
- * @version $Id: DateDV.java,v 1.7 2010-11-01 04:39:46 joehw Exp $
  */
 public class DateDV extends DateTimeDV {
 

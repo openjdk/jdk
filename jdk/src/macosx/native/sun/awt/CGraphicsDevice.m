@@ -57,7 +57,7 @@ static CFMutableArrayRef getAllValidDisplayModes(jint displayID){
     CFArrayRef allModes = CGDisplayCopyAllDisplayModes(displayID, NULL);
 
     CFIndex numModes = CFArrayGetCount(allModes);
-    CFMutableArrayRef validModes = CFArrayCreateMutable(kCFAllocatorDefault, numModes + 1, NULL);
+    CFMutableArrayRef validModes = CFArrayCreateMutable(kCFAllocatorDefault, numModes + 1, &kCFTypeArrayCallBacks);
 
     CFIndex n;
     for (n=0; n < numModes; n++) {

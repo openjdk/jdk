@@ -228,9 +228,9 @@ public class ServiceUI {
 
         if (dialog.getStatus() == ServiceDialog.APPROVE) {
             PrintRequestAttributeSet newas = dialog.getAttributes();
-            Class dstCategory = Destination.class;
-            Class amCategory = SunAlternateMedia.class;
-            Class fdCategory = Fidelity.class;
+            Class<?> dstCategory = Destination.class;
+            Class<?> amCategory = SunAlternateMedia.class;
+            Class<?> fdCategory = Fidelity.class;
 
             if (attributes.containsKey(dstCategory) &&
                 !newas.containsKey(dstCategory))
@@ -315,7 +315,7 @@ public class ServiceUI {
             Attribute[] usAttrs = asUnsupported.toArray();
 
             for (int i=0; i<usAttrs.length; i++) {
-                Class category = usAttrs[i].getCategory();
+                Class<? extends Attribute> category = usAttrs[i].getCategory();
 
                 if (ps.isAttributeCategorySupported(category)) {
                     Attribute attr =

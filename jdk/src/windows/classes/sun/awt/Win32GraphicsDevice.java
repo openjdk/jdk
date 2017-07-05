@@ -172,7 +172,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
 
             int max = getMaxConfigs(screen);
             int defaultPixID = getDefaultPixID(screen);
-            Vector v = new Vector( max );
+            Vector<GraphicsConfiguration> v = new Vector<>( max );
             if (defaultPixID == 0) {
                 // Workaround for failing GDI calls
                 defaultConfig = Win32GraphicsConfig.getConfig(this,
@@ -437,7 +437,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     protected native void configDisplayMode(int screen, WindowPeer w, int width,
                                           int height, int bitDepth,
                                           int refreshRate);
-    protected native void enumDisplayModes(int screen, ArrayList modes);
+    protected native void enumDisplayModes(int screen, ArrayList<DisplayMode> modes);
 
     @Override
     public synchronized DisplayMode getDisplayMode() {
@@ -447,12 +447,12 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
 
     @Override
     public synchronized DisplayMode[] getDisplayModes() {
-        ArrayList modes = new ArrayList();
+        ArrayList<DisplayMode> modes = new ArrayList<>();
         enumDisplayModes(screen, modes);
         int listSize = modes.size();
         DisplayMode[] retArray = new DisplayMode[listSize];
         for (int i = 0; i < listSize; i++) {
-            retArray[i] = (DisplayMode)modes.get(i);
+            retArray[i] = modes.get(i);
         }
         return retArray;
     }

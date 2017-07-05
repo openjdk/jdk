@@ -86,26 +86,27 @@ final class WInputMethod extends InputMethodAdapter
 
     // Initialize highlight mapping table
     static {
+        @SuppressWarnings({"rawtypes", "unchecked"})
         Map<TextAttribute,Object> styles[] = new Map[4];
         HashMap<TextAttribute,Object> map;
 
         // UNSELECTED_RAW_TEXT_HIGHLIGHT
-        map = new HashMap(1);
+        map = new HashMap<>(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE, TextAttribute.UNDERLINE_LOW_DOTTED);
         styles[0] = Collections.unmodifiableMap(map);
 
         // SELECTED_RAW_TEXT_HIGHLIGHT
-        map = new HashMap(1);
+        map = new HashMap<>(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE, TextAttribute.UNDERLINE_LOW_GRAY);
         styles[1] = Collections.unmodifiableMap(map);
 
         // UNSELECTED_CONVERTED_TEXT_HIGHLIGHT
-        map = new HashMap(1);
+        map = new HashMap<>(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE, TextAttribute.UNDERLINE_LOW_DOTTED);
         styles[2] = Collections.unmodifiableMap(map);
 
         // SELECTED_CONVERTED_TEXT_HIGHLIGHT
-        map = new HashMap(4);
+        map = new HashMap<>(4);
         Color navyBlue = new Color(0, 0, 128);
         map.put(TextAttribute.FOREGROUND, navyBlue);
         map.put(TextAttribute.BACKGROUND, Color.white);

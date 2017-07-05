@@ -45,7 +45,7 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * <p> This is not part of core-only SAX2 distributions.</p>
  *
- * @since SAX 2.0.2
+ * @since 1.5, SAX 2.0.2
  * @author David Brownell
  */
 public class Locator2Impl extends LocatorImpl implements Locator2
