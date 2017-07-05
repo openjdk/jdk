@@ -60,6 +60,8 @@ Flag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose);
 Flag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose);
 Flag::Error CMSOldPLABMaxConstraintFunc(size_t value, bool verbose);
 Flag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose);
+Flag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose);
+Flag::Error CMSConcMarkMultipleConstraintFunc(size_t value, bool verbose);
 Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose);
 Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose);
 Flag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose);

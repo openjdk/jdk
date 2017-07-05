@@ -34,8 +34,7 @@ import java.nio.charset.spi.CharsetProvider;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import sun.security.action.GetPropertyAction;
 
 public class StandardCharsets extends CharsetProvider {
 
@@ -201,15 +200,7 @@ public class StandardCharsets extends CharsetProvider {
     }
 
     private static String getProperty(String key) {
-        // this method may be called during initialization of
-        // system class loader and thus not using lambda
-        return AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty(key);
-                }
-            });
+        return GetPropertyAction.getProperty(key);
     }
 
 

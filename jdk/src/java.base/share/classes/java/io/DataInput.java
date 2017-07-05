@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,10 +182,11 @@ interface DataInput {
      * not all bytes of {@code b} have been
      * updated with data from the input stream.
      *
-     * @param     b   the buffer into which the data is read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @param   b   the buffer into which the data is read.
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @throws  EOFException  if this stream reaches the end before reading
+     *          all the bytes.
+     * @throws  IOException   if an I/O error occurs.
      */
     void readFully(byte b[]) throws IOException;
 
@@ -226,12 +227,16 @@ interface DataInput {
      * and so on. The number of bytes read is,
      * at most, equal to {@code len}.
      *
-     * @param     b   the buffer into which the data is read.
-     * @param off  an int specifying the offset into the data.
-     * @param len  an int specifying the number of bytes to read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @param   b    the buffer into which the data is read.
+     * @param   off  an int specifying the offset in the data array {@code b}.
+     * @param   len  an int specifying the number of bytes to read.
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @throws  IndexOutOfBoundsException if {@code off} is negative,
+     *          {@code len} is negative, or {@code len} is greater than
+     *          {@code b.length - off}.
+     * @throws  EOFException  if this stream reaches the end before reading
+     *          all the bytes.
+     * @throws  IOException   if an I/O error occurs.
      */
     void readFully(byte b[], int off, int len) throws IOException;
 

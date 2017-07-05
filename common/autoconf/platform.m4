@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -274,168 +274,172 @@ AC_DEFUN([PLATFORM_SETUP_TARGET_CPU_BITS],
 #
 AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
 [
+  PLATFORM_SETUP_LEGACY_VARS_HELPER([TARGET])
+  PLATFORM_SETUP_LEGACY_VARS_HELPER([BUILD])
+
+  # ZERO_ARCHDEF is used to enable architecture-specific code.
+  # This is used in legacy hotspot build.
+  ZERO_ARCHDEF="$HOTSPOT_TARGET_CPU_DEFINE"
+  AC_SUBST(ZERO_ARCHDEF)
+
+])
+
+# $1 - Either TARGET or BUILD to setup the variables for.
+AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
+[
   # Also store the legacy naming of the cpu.
   # Ie i586 and amd64 instead of x86 and x86_64
-  OPENJDK_TARGET_CPU_LEGACY="$OPENJDK_TARGET_CPU"
-  if test "x$OPENJDK_TARGET_CPU" = xx86; then
-    OPENJDK_TARGET_CPU_LEGACY="i586"
-  elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+  OPENJDK_$1_CPU_LEGACY="$OPENJDK_$1_CPU"
+  if test "x$OPENJDK_$1_CPU" = xx86; then
+    OPENJDK_$1_CPU_LEGACY="i586"
+  elif test "x$OPENJDK_$1_OS" != xmacosx && test "x$OPENJDK_$1_CPU" = xx86_64; then
     # On all platforms except MacOSX replace x86_64 with amd64.
-    OPENJDK_TARGET_CPU_LEGACY="amd64"
+    OPENJDK_$1_CPU_LEGACY="amd64"
   fi
-  AC_SUBST(OPENJDK_TARGET_CPU_LEGACY)
+  AC_SUBST(OPENJDK_$1_CPU_LEGACY)
 
   # And the second legacy naming of the cpu.
   # Ie i386 and amd64 instead of x86 and x86_64.
-  OPENJDK_TARGET_CPU_LEGACY_LIB="$OPENJDK_TARGET_CPU"
-  if test "x$OPENJDK_TARGET_CPU" = xx86; then
-    OPENJDK_TARGET_CPU_LEGACY_LIB="i386"
-  elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
-    OPENJDK_TARGET_CPU_LEGACY_LIB="amd64"
+  OPENJDK_$1_CPU_LEGACY_LIB="$OPENJDK_$1_CPU"
+  if test "x$OPENJDK_$1_CPU" = xx86; then
+    OPENJDK_$1_CPU_LEGACY_LIB="i386"
+  elif test "x$OPENJDK_$1_CPU" = xx86_64; then
+    OPENJDK_$1_CPU_LEGACY_LIB="amd64"
   fi
-  AC_SUBST(OPENJDK_TARGET_CPU_LEGACY_LIB)
+  AC_SUBST(OPENJDK_$1_CPU_LEGACY_LIB)
 
   # This is the name of the cpu (but using i386 and amd64 instead of
   # x86 and x86_64, respectively), preceeded by a /, to be used when
   # locating libraries. On macosx, it's empty, though.
-  OPENJDK_TARGET_CPU_LIBDIR="/$OPENJDK_TARGET_CPU_LEGACY_LIB"
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    OPENJDK_TARGET_CPU_LIBDIR=""
+  OPENJDK_$1_CPU_LIBDIR="/$OPENJDK_$1_CPU_LEGACY_LIB"
+  if test "x$OPENJDK_$1_OS" = xmacosx; then
+    OPENJDK_$1_CPU_LIBDIR=""
   fi
-  AC_SUBST(OPENJDK_TARGET_CPU_LIBDIR)
+  AC_SUBST(OPENJDK_$1_CPU_LIBDIR)
 
-  # Now do the same for OPENJDK_BUILD_CPU...
-  # Also store the legacy naming of the cpu.
-  # Ie i586 and amd64 instead of x86 and x86_64
-  OPENJDK_BUILD_CPU_LEGACY="$OPENJDK_BUILD_CPU"
-  if test "x$OPENJDK_BUILD_CPU" = xx86; then
-    OPENJDK_BUILD_CPU_LEGACY="i586"
-  elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
-    # On all platforms except MacOSX replace x86_64 with amd64.
-    OPENJDK_BUILD_CPU_LEGACY="amd64"
-  fi
-  AC_SUBST(OPENJDK_BUILD_CPU_LEGACY)
-
-  # And the second legacy naming of the cpu.
-  # Ie i386 and amd64 instead of x86 and x86_64.
-  OPENJDK_BUILD_CPU_LEGACY_LIB="$OPENJDK_BUILD_CPU"
-  if test "x$OPENJDK_BUILD_CPU" = xx86; then
-    OPENJDK_BUILD_CPU_LEGACY_LIB="i386"
-  elif test "x$OPENJDK_BUILD_CPU" = xx86_64; then
-    OPENJDK_BUILD_CPU_LEGACY_LIB="amd64"
-  fi
-  AC_SUBST(OPENJDK_BUILD_CPU_LEGACY_LIB)
-
-  # This is the name of the cpu (but using i386 and amd64 instead of
-  # x86 and x86_64, respectively), preceeded by a /, to be used when
-  # locating libraries. On macosx, it's empty, though.
-  OPENJDK_BUILD_CPU_LIBDIR="/$OPENJDK_BUILD_CPU_LEGACY_LIB"
-  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-    OPENJDK_BUILD_CPU_LIBDIR=""
-  fi
-  AC_SUBST(OPENJDK_BUILD_CPU_LIBDIR)
-
-  # OPENJDK_TARGET_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
+  # OPENJDK_$1_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
   # /amd64 or /sparcv9. This string is appended to some library paths, like this:
-  # /usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libexample.so
-  OPENJDK_TARGET_CPU_ISADIR=""
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
-      OPENJDK_TARGET_CPU_ISADIR="/amd64"
-    elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
-      OPENJDK_TARGET_CPU_ISADIR="/sparcv9"
+  # /usr/lib${OPENJDK_$1_CPU_ISADIR}/libexample.so
+  OPENJDK_$1_CPU_ISADIR=""
+  if test "x$OPENJDK_$1_OS" = xsolaris; then
+    if test "x$OPENJDK_$1_CPU" = xx86_64; then
+      OPENJDK_$1_CPU_ISADIR="/amd64"
+    elif test "x$OPENJDK_$1_CPU" = xsparcv9; then
+      OPENJDK_$1_CPU_ISADIR="/sparcv9"
     fi
   fi
-  AC_SUBST(OPENJDK_TARGET_CPU_ISADIR)
+  AC_SUBST(OPENJDK_$1_CPU_ISADIR)
 
-  # Setup OPENJDK_TARGET_CPU_OSARCH, which is used to set the os.arch Java system property
-  OPENJDK_TARGET_CPU_OSARCH="$OPENJDK_TARGET_CPU"
-  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_CPU" = xx86; then
+  # Setup OPENJDK_$1_CPU_OSARCH, which is used to set the os.arch Java system property
+  OPENJDK_$1_CPU_OSARCH="$OPENJDK_$1_CPU"
+  if test "x$OPENJDK_$1_OS" = xlinux && test "x$OPENJDK_$1_CPU" = xx86; then
     # On linux only, we replace x86 with i386.
-    OPENJDK_TARGET_CPU_OSARCH="i386"
-  elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    OPENJDK_$1_CPU_OSARCH="i386"
+  elif test "x$OPENJDK_$1_OS" != xmacosx && test "x$OPENJDK_$1_CPU" = xx86_64; then
     # On all platforms except macosx, we replace x86_64 with amd64.
-    OPENJDK_TARGET_CPU_OSARCH="amd64"
+    OPENJDK_$1_CPU_OSARCH="amd64"
   fi
-  AC_SUBST(OPENJDK_TARGET_CPU_OSARCH)
+  AC_SUBST(OPENJDK_$1_CPU_OSARCH)
 
-  OPENJDK_TARGET_CPU_JLI="$OPENJDK_TARGET_CPU"
-  if test "x$OPENJDK_TARGET_CPU" = xx86; then
-    OPENJDK_TARGET_CPU_JLI="i386"
-  elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+  OPENJDK_$1_CPU_JLI="$OPENJDK_$1_CPU"
+  if test "x$OPENJDK_$1_CPU" = xx86; then
+    OPENJDK_$1_CPU_JLI="i386"
+  elif test "x$OPENJDK_$1_OS" != xmacosx && test "x$OPENJDK_$1_CPU" = xx86_64; then
     # On all platforms except macosx, we replace x86_64 with amd64.
-    OPENJDK_TARGET_CPU_JLI="amd64"
+    OPENJDK_$1_CPU_JLI="amd64"
   fi
   # Now setup the -D flags for building libjli.
-  OPENJDK_TARGET_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_TARGET_CPU_JLI\"'"
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    if test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc; then
-      OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
-    elif test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
-      OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
+  OPENJDK_$1_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_$1_CPU_JLI\"'"
+  if test "x$OPENJDK_$1_OS" = xsolaris; then
+    if test "x$OPENJDK_$1_CPU_ARCH" = xsparc; then
+      OPENJDK_$1_CPU_JLI_CFLAGS="$OPENJDK_$1_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
+    elif test "x$OPENJDK_$1_CPU_ARCH" = xx86; then
+      OPENJDK_$1_CPU_JLI_CFLAGS="$OPENJDK_$1_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
     fi
   fi
-  AC_SUBST(OPENJDK_TARGET_CPU_JLI_CFLAGS)
+  AC_SUBST(OPENJDK_$1_CPU_JLI_CFLAGS)
 
-  OPENJDK_BUILD_CPU_JLI="$OPENJDK_BUILD_CPU"
-  if test "x$OPENJDK_BUILD_CPU" = xx86; then
-    OPENJDK_BUILD_CPU_JLI="i386"
-  elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
-    # On all platforms except macosx, we replace x86_64 with amd64.
-    OPENJDK_BUILD_CPU_JLI="amd64"
-  fi
-  # Now setup the -D flags for building libjli.
-  OPENJDK_BUILD_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_BUILD_CPU_JLI\"'"
-  if test "x$OPENJDK_BUILD_OS" = xsolaris; then
-    if test "x$OPENJDK_BUILD_CPU_ARCH" = xsparc; then
-      OPENJDK_BUILD_CPU_JLI_CFLAGS="$OPENJDK_BUILD_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
-    elif test "x$OPENJDK_BUILD_CPU_ARCH" = xx86; then
-      OPENJDK_BUILD_CPU_JLI_CFLAGS="$OPENJDK_BUILD_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
-    fi
-  fi
-  AC_SUBST(OPENJDK_BUILD_CPU_JLI_CFLAGS)
-
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
+  if test "x$OPENJDK_$1_OS" = xmacosx; then
+      OPENJDK_$1_OS_EXPORT_DIR=macosx
   else
-      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_TYPE}
+      OPENJDK_$1_OS_EXPORT_DIR=${OPENJDK_$1_OS_TYPE}
   fi
-  AC_SUBST(OPENJDK_TARGET_OS_EXPORT_DIR)
+  AC_SUBST(OPENJDK_$1_OS_EXPORT_DIR)
 
-  if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+  if test "x$OPENJDK_$1_CPU_BITS" = x64; then
     A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
     # unpack200.exe
-    if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      ADD_LP64="-D_LP64=1"
+    if test "x$OPENJDK_$1_OS" = xlinux || test "x$OPENJDK_$1_OS" = xmacosx; then
+      OPENJDK_$1_ADD_LP64="-D_LP64=1"
     fi
   fi
   AC_SUBST(LP64,$A_LP64)
-  if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
-    if test "x$OPENJDK_BUILD_OS" = xlinux || test "x$OPENJDK_BUILD_OS" = xmacosx; then
-      OPENJDK_BUILD_ADD_LP64="-D_LP64=1"
-    fi
-  fi
 
   if test "x$COMPILE_TYPE" = "xcross"; then
     # FIXME: ... or should this include reduced builds..?
-    DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$OPENJDK_TARGET_CPU_LEGACY"
+    DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$OPENJDK_$1_CPU_LEGACY"
   else
     DEFINE_CROSS_COMPILE_ARCH=""
   fi
   AC_SUBST(DEFINE_CROSS_COMPILE_ARCH)
 
-  # ZERO_ARCHDEF is used to enable architecture-specific code
-  case "${OPENJDK_TARGET_CPU}" in
-    ppc)     ZERO_ARCHDEF=PPC32 ;;
-    ppc64)   ZERO_ARCHDEF=PPC64 ;;
-    s390*)   ZERO_ARCHDEF=S390  ;;
-    sparc*)  ZERO_ARCHDEF=SPARC ;;
-    x86_64*) ZERO_ARCHDEF=AMD64 ;;
-    x86)     ZERO_ARCHDEF=IA32  ;;
-    *)      ZERO_ARCHDEF=$(echo "${OPENJDK_TARGET_CPU_LEGACY_LIB}" | tr a-z A-Z)
-  esac
-  AC_SUBST(ZERO_ARCHDEF)
+  # Convert openjdk platform names to hotspot names
+
+  HOTSPOT_$1_OS=${OPENJDK_$1_OS}
+  if test "x$OPENJDK_$1_OS" = xmacosx; then
+    HOTSPOT_$1_OS=bsd
+  fi
+  AC_SUBST(HOTSPOT_$1_OS)
+
+  HOTSPOT_$1_OS_TYPE=${OPENJDK_$1_OS_TYPE}
+  if test "x$OPENJDK_$1_OS_TYPE" = xunix; then
+    HOTSPOT_$1_OS_TYPE=posix
+  fi
+  AC_SUBST(HOTSPOT_$1_OS_TYPE)
+
+  HOTSPOT_$1_CPU=${OPENJDK_$1_CPU}
+  if test "x$OPENJDK_$1_CPU" = xx86; then
+    HOTSPOT_$1_CPU=x86_32
+  elif test "x$OPENJDK_$1_CPU" = xsparcv9; then
+    HOTSPOT_$1_CPU=sparc
+  elif test "x$OPENJDK_$1_CPU" = xppc64; then
+    HOTSPOT_$1_CPU=ppc_64
+  elif test "x$OPENJDK_$1_CPU" = xppc64le; then
+    HOTSPOT_$1_CPU=ppc_64
+  fi
+  AC_SUBST(HOTSPOT_$1_CPU)
+
+  # This is identical with OPENJDK_*, but define anyway for consistency.
+  HOTSPOT_$1_CPU_ARCH=${OPENJDK_$1_CPU_ARCH}
+  AC_SUBST(HOTSPOT_$1_CPU_ARCH)
+
+  # Setup HOTSPOT_$1_CPU_DEFINE
+  if test "x$OPENJDK_$1_CPU" = xx86; then
+    HOTSPOT_$1_CPU_DEFINE=IA32
+  elif test "x$OPENJDK_$1_CPU" = xx86_64; then
+    HOTSPOT_$1_CPU_DEFINE=AMD64
+  elif test "x$OPENJDK_$1_CPU" = xsparcv9; then
+    HOTSPOT_$1_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_$1_CPU" = xaarch64; then
+    HOTSPOT_$1_CPU_DEFINE=AARCH64
+  elif test "x$OPENJDK_$1_CPU" = xppc64; then
+    HOTSPOT_$1_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_$1_CPU" = xppc64le; then
+    HOTSPOT_$1_CPU_DEFINE=PPC64
+
+  # The cpu defines below are for zero, we don't support them directly.
+  elif test "x$OPENJDK_$1_CPU" = xsparc; then
+    HOTSPOT_$1_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_$1_CPU" = xppc; then
+    HOTSPOT_$1_CPU_DEFINE=PPC32
+  elif test "x$OPENJDK_$1_CPU" = xs390; then
+    HOTSPOT_$1_CPU_DEFINE=S390
+  elif test "x$OPENJDK_$1_CPU" = ss390x; then
+    HOTSPOT_$1_CPU_DEFINE=S390
+  fi
+  AC_SUBST(HOTSPOT_$1_CPU_DEFINE)
+
 ])
 
 AC_DEFUN([PLATFORM_SET_RELEASE_FILE_OS_VALUES],
@@ -521,6 +525,10 @@ AC_DEFUN([PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS],
   CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
   CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
   LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+
+  JVM_CFLAGS="$JVM_CFLAGS $ADDED_CFLAGS"
+  JVM_LDFLAGS="$JVM_LDFLAGS $ADDED_LDFLAGS"
+  JVM_ASFLAGS="$JVM_ASFLAGS $ADDED_CFLAGS"
 ])
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
@@ -541,6 +549,11 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
       # Specify -m if running reduced on unix platforms
       PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS
     fi
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    JVM_CFLAGS="$JVM_CFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+    JVM_LDFLAGS="$JVM_LDFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+    JVM_ASFLAGS="$JVM_ASFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   fi
 
   # Make compilation sanity check

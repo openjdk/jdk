@@ -28,7 +28,6 @@ package sun.java2d.opengl;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
-import sun.misc.ManagedLocalsThread;
 
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import java.security.AccessController;
@@ -161,7 +160,8 @@ public class OGLRenderQueue extends RenderQueue {
 
         public QueueFlusher() {
             String name = "Java2D Queue Flusher";
-            thread = new ManagedLocalsThread(ThreadGroupUtils.getRootThreadGroup(), this, name);
+            thread = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                this, name, 0, false);
             thread.setDaemon(true);
             thread.setPriority(Thread.MAX_PRIORITY);
             thread.start();

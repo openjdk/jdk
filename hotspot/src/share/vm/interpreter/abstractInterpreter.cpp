@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/interpreter.hpp"
@@ -32,6 +33,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -93,6 +95,7 @@ address    AbstractInterpreter::_native_entry_begin                         = NU
 address    AbstractInterpreter::_native_entry_end                           = NULL;
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
+address    AbstractInterpreter::_cds_entry_table        [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -204,14 +207,41 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
   return zerolocals;
 }
 
+#if INCLUDE_CDS
+
+address AbstractInterpreter::get_trampoline_code_buffer(AbstractInterpreter::MethodKind kind) {
+  const size_t trampoline_size = SharedRuntime::trampoline_size();
+  address addr = MetaspaceShared::cds_i2i_entry_code_buffers((size_t)(AbstractInterpreter::number_of_method_entries) * trampoline_size);
+  addr += (size_t)(kind) * trampoline_size;
+
+  return addr;
+}
+
+void AbstractInterpreter::update_cds_entry_table(AbstractInterpreter::MethodKind kind) {
+  if (DumpSharedSpaces || UseSharedSpaces) {
+    address trampoline = get_trampoline_code_buffer(kind);
+    _cds_entry_table[kind] = trampoline;
+
+    CodeBuffer buffer(trampoline, (int)(SharedRuntime::trampoline_size()));
+    MacroAssembler _masm(&buffer);
+    SharedRuntime::generate_trampoline(&_masm, _entry_table[kind]);
+
+    if (PrintInterpreter) {
+      Disassembler::decode(buffer.insts_begin(), buffer.insts_end());
+    }
+  }
+}
+
+#endif
 
 void AbstractInterpreter::set_entry_for_kind(AbstractInterpreter::MethodKind kind, address entry) {
   assert(kind >= method_handle_invoke_FIRST &&
          kind <= method_handle_invoke_LAST, "late initialization only for MH entry points");
   assert(_entry_table[kind] == _entry_table[abstract], "previous value must be AME entry");
   _entry_table[kind] = entry;
-}
 
+  update_cds_entry_table(kind);
+}
 
 // Return true if the interpreter can prove that the given bytecode has
 // not yet been executed (in Java semantics, not in actual operation).
@@ -416,5 +446,6 @@ void AbstractInterpreter::initialize_method_handle_entries() {
   for (int i = method_handle_invoke_FIRST; i <= method_handle_invoke_LAST; i++) {
     MethodKind kind = (MethodKind) i;
     _entry_table[kind] = _entry_table[Interpreter::abstract];
+    Interpreter::update_cds_entry_table(kind);
   }
 }

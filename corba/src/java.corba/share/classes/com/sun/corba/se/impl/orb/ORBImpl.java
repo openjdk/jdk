@@ -691,7 +691,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
         for (int i = 0; i < req.length; i++) {
             AsynchInvoke invokeObject = new AsynchInvoke( this,
                 (com.sun.corba.se.impl.corba.RequestImpl)req[i], true);
-            new sun.misc.ManagedLocalsThread(invokeObject).start();
+            new Thread(null, invokeObject, "ORB-Request-Thread", 0, false).start();
         }
     }
 

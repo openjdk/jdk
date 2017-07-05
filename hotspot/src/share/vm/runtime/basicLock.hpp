@@ -27,7 +27,6 @@
 
 #include "oops/markOop.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/top.hpp"
 
 class BasicLock VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;

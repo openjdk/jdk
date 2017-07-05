@@ -28,9 +28,8 @@
 #include "asm/macroAssembler.hpp"
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/top.hpp"
 
 // This file contains the platform-independent parts
 // of the abstract interpreter and the abstract interpreter generator.
@@ -113,6 +112,7 @@ class AbstractInterpreter: AllStatic {
 
   // method entry points
   static address    _entry_table[number_of_method_entries];     // entry points for a given method
+  static address    _cds_entry_table[number_of_method_entries]; // entry points for methods in the CDS archive
   static address    _native_abi_to_tosca[number_of_result_handlers];  // for native method result handlers
   static address    _slow_signature_handler;                              // the native method generic (slow) signature handler
 
@@ -131,6 +131,17 @@ class AbstractInterpreter: AllStatic {
   static MethodKind method_kind(methodHandle m);
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
   static address    entry_for_method(methodHandle m)            { return entry_for_kind(method_kind(m)); }
+
+  static address entry_for_cds_method(methodHandle m) {
+    MethodKind k = method_kind(m);
+    assert(0 <= k && k < number_of_method_entries, "illegal kind");
+    return _cds_entry_table[k];
+  }
+
+  // used by class data sharing
+  static void       update_cds_entry_table(MethodKind kind) NOT_CDS_RETURN;
+
+  static address    get_trampoline_code_buffer(AbstractInterpreter::MethodKind kind) NOT_CDS_RETURN_(0);
 
   // used for bootstrapping method handles:
   static void       set_entry_for_kind(MethodKind k, address e);

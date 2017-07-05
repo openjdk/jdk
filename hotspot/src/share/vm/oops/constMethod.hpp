@@ -121,6 +121,7 @@ class MethodParametersElement VALUE_OBJ_CLASS_SPEC {
 };
 
 class KlassSizeStats;
+class AdapterHandlerEntry;
 
 // Class to collect the sizes of ConstMethod inline tables
 #define INLINE_TABLES_DO(do_element)            \
@@ -201,8 +202,15 @@ private:
   // Raw stackmap data for the method
   Array<u1>*        _stackmap_data;
 
+  // Adapter blob (i2c/c2i) for this Method*. Set once when method is linked.
+  union {
+    AdapterHandlerEntry* _adapter;
+    AdapterHandlerEntry** _adapter_trampoline;
+  };
+
   int               _constMethod_size;
   u2                _flags;
+  u1                _result_type;                 // BasicType of result
 
   // Size of Java bytecodes allocated immediately after Method*.
   u2                _code_size;
@@ -275,6 +283,29 @@ public:
   void set_stackmap_data(Array<u1>* sd) { _stackmap_data = sd; }
   void copy_stackmap_data(ClassLoaderData* loader_data, u1* sd, int length, TRAPS);
   bool has_stackmap_table() const { return _stackmap_data != NULL; }
+
+  // adapter
+  void set_adapter_entry(AdapterHandlerEntry* adapter) {
+    assert(!is_shared(), "shared methods have fixed adapter_trampoline");
+    _adapter = adapter;
+  }
+  void set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
+    assert(DumpSharedSpaces, "must be");
+    assert(*trampoline == NULL, "must be NULL during dump time, to be initialized at run time");
+    _adapter_trampoline = trampoline;
+  }
+  void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
+    assert(is_shared(), "must be");
+    *_adapter_trampoline = adapter;
+    assert(this->adapter() == adapter, "must be");
+  }
+  AdapterHandlerEntry* adapter() {
+    if (is_shared()) {
+      return *_adapter_trampoline;
+    } else {
+      return _adapter;
+    }
+  }
 
   void init_fingerprint() {
     const uint64_t initval = UCONST64(0x8000000000000000);
@@ -464,6 +495,8 @@ public:
   static ByteSize size_of_parameters_offset()
                             { return byte_offset_of(ConstMethod, _size_of_parameters); }
 
+  static ByteSize result_type_offset()
+                            { return byte_offset_of(ConstMethod, _result_type); }
 
   // Unique id for the method
   static const u2 MAX_IDNUM;
@@ -486,6 +519,8 @@ public:
   int  size_of_parameters() const                { return _size_of_parameters; }
   void set_size_of_parameters(int size)          { _size_of_parameters = size; }
 
+  void set_result_type(BasicType rt)             { assert(rt < 16, "result type too large");
+                                                   _result_type = (u1)rt; }
   // Deallocation for RedefineClasses
   void deallocate_contents(ClassLoaderData* loader_data);
   bool is_klass() const { return false; }

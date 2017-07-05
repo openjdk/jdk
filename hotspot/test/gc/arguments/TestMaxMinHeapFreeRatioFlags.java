@@ -168,6 +168,11 @@ public class TestMaxMinHeapFreeRatioFlags {
             long maxHeapSize = getMax();
             int gcTries = (shrinkHeapInSteps ? GC_TRIES : 1);
 
+            // Initial checks. This also links up everything in these helper methods,
+            // in case it brings more garbage.
+            forceGC(gcTries);
+            verifyRatio(minRatio, maxRatio);
+
             // commit 0.5 of total heap size to have enough space
             // to both shink and expand
             while (getCommitted() < maxHeapSize / 2) {
@@ -215,7 +220,6 @@ public class TestMaxMinHeapFreeRatioFlags {
             if (previouslyCommitted <= getCommitted()) {
                 throw new RuntimeException("Heap was not shrinked.");
             }
-
         }
 
         public static void forceGC(int gcTries) {

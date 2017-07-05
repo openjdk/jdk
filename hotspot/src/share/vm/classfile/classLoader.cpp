@@ -98,12 +98,13 @@ static Crc32_t           Crc32              = NULL;
 
 // Entry points for jimage.dll for loading jimage file entries
 
-static JImageOpen_t                    JImageOpen                    = NULL;
-static JImageClose_t                   JImageClose                   = NULL;
-static JImagePackageToModule_t         JImagePackageToModule         = NULL;
-static JImageFindResource_t            JImageFindResource            = NULL;
-static JImageGetResource_t             JImageGetResource             = NULL;
-static JImageResourceIterator_t        JImageResourceIterator        = NULL;
+static JImageOpen_t                    JImageOpen             = NULL;
+static JImageClose_t                   JImageClose            = NULL;
+static JImagePackageToModule_t         JImagePackageToModule  = NULL;
+static JImageFindResource_t            JImageFindResource     = NULL;
+static JImageGetResource_t             JImageGetResource      = NULL;
+static JImageResourceIterator_t        JImageResourceIterator = NULL;
+static JImage_ResourcePath_t           JImageResourcePath     = NULL;
 
 // Globals
 
@@ -233,6 +234,7 @@ ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_
   strcpy(copy, zip_name);
   _zip_name = copy;
   _is_boot_append = is_boot_append;
+  _multi_versioned = _unknown;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -330,13 +332,20 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
 
 bool ClassPathZipEntry::is_multiple_versioned(TRAPS) {
   assert(DumpSharedSpaces, "called only at dump time");
+  if (_multi_versioned != _unknown) {
+    return (_multi_versioned == _yes) ? true : false;
+  }
   jint size;
-  char* buffer = (char*)open_entry("META-INF/MANIFEST.MF", &size, false, CHECK_false);
+  char* buffer = (char*)open_entry("META-INF/MANIFEST.MF", &size, true, CHECK_false);
   if (buffer != NULL) {
-    if (strstr(buffer, "Multi-Release: true") != NULL) {
+    char* p = buffer;
+    for ( ; *p; ++p) *p = tolower(*p);
+    if (strstr(buffer, "multi-release: true") != NULL) {
+      _multi_versioned = _yes;
       return true;
     }
   }
+  _multi_versioned = _no;
   return false;
 }
 #endif // INCLUDE_CDS
@@ -917,6 +926,8 @@ void ClassLoader::load_jimage_library() {
   guarantee(JImageGetResource != NULL, "function JIMAGE_GetResource not found");
   JImageResourceIterator = CAST_TO_FN_PTR(JImageResourceIterator_t, os::dll_lookup(handle, "JIMAGE_ResourceIterator"));
   guarantee(JImageResourceIterator != NULL, "function JIMAGE_ResourceIterator not found");
+  JImageResourcePath = CAST_TO_FN_PTR(JImage_ResourcePath_t, os::dll_lookup(handle, "JIMAGE_ResourcePath"));
+  guarantee(JImageResourcePath != NULL, "function JIMAGE_ResourcePath not found");
 }
 
 jboolean ClassLoader::decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg) {

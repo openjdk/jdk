@@ -46,8 +46,10 @@ import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Properties;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.SharedSecrets;
+import sun.security.action.GetPropertyAction;
 
 /**
  * java.lang.Process subclass in the UNIX environment.
@@ -123,11 +125,9 @@ final class ProcessImpl extends Process {
         }
 
         String helperPath() {
-            return AccessController.doPrivileged(
-                (PrivilegedAction<String>) () ->
-                    helperPath(System.getProperty("java.home"),
-                               System.getProperty("os.arch"))
-            );
+            Properties props = GetPropertyAction.getProperties();
+            return helperPath(props.getProperty("java.home"),
+                              props.getProperty("os.arch"));
         }
 
         LaunchMechanism launchMechanism() {
@@ -159,9 +159,7 @@ final class ProcessImpl extends Process {
         }
 
         static Platform get() {
-            String osName = AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> System.getProperty("os.name")
-            );
+            String osName = GetPropertyAction.getProperty("os.name");
 
             if (osName.equals("Linux")) { return LINUX; }
             if (osName.contains("OS X")) { return BSD; }

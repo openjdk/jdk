@@ -237,19 +237,21 @@ else
 		      $(MAKE_ARGS) $(VM_TARGET)
 endif
 
+# NOTE: Changes in this file was just to facilitate comparison when 
+# developing the new build, and should not be integrated.
 generic_buildcore: $(HOTSPOT_SCRIPT)
-ifeq ($(HS_ARCH),ppc)
-  ifeq ($(ARCH_DATA_MODEL),64)
+#ifeq ($(HS_ARCH),ppc)
+#  ifeq ($(ARCH_DATA_MODEL),64)
 	$(MKDIR) -p $(OUTPUTDIR)
 	$(CD) $(OUTPUTDIR); \
 		$(MAKE) -f $(ABS_OS_MAKEFILE) \
 			$(MAKE_ARGS) $(VM_TARGET)
-  else
-	@$(ECHO) "No ($(VM_TARGET)) for ppc ARCH_DATA_MODEL=$(ARCH_DATA_MODEL)"
-  endif
-else
-	@$(ECHO) "No ($(VM_TARGET)) for $(HS_ARCH)"
-endif
+#  else
+#	@$(ECHO) "No ($(VM_TARGET)) for ppc ARCH_DATA_MODEL=$(ARCH_DATA_MODEL)"
+#  endif
+#else
+#	@$(ECHO) "No ($(VM_TARGET)) for $(HS_ARCH)"
+#endif
 
 generic_buildzero: $(HOTSPOT_SCRIPT)
 	$(MKDIR) -p $(OUTPUTDIR)
