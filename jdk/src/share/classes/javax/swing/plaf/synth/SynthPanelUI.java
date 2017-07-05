@@ -25,29 +25,37 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicPanelUI;
 import java.awt.*;
-import java.awt.event.*;
 import java.beans.*;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * Synth's PanelUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JPanel}.
  *
  * @author Steve Wilson
+ * @since 1.7
  */
-class SynthPanelUI extends BasicPanelUI implements PropertyChangeListener,
-        SynthUI {
+public class SynthPanelUI extends BasicPanelUI
+                          implements PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthPanelUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void installUI(JComponent c) {
         JPanel p = (JPanel)c;
 
@@ -55,6 +63,10 @@ class SynthPanelUI extends BasicPanelUI implements PropertyChangeListener,
         installListeners(p);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void uninstallUI(JComponent c) {
         JPanel p = (JPanel)c;
 
@@ -62,18 +74,36 @@ class SynthPanelUI extends BasicPanelUI implements PropertyChangeListener,
         super.uninstallUI(c);
     }
 
+    /**
+     * Installs listeners into the panel.
+     *
+     * @param p the {@code JPanel} object
+     */
     protected void installListeners(JPanel p) {
         p.addPropertyChangeListener(this);
     }
 
+    /**
+     * Uninstalls listeners from the panel.
+     *
+     * @param p the {@code JPanel} object
+     */
     protected void uninstallListeners(JPanel p) {
         p.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults(JPanel p) {
         updateStyle(p);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults(JPanel p) {
         SynthContext context = getContext(p, ENABLED);
 
@@ -88,6 +118,10 @@ class SynthPanelUI extends BasicPanelUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -97,14 +131,14 @@ class SynthPanelUI extends BasicPanelUI implements PropertyChangeListener,
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
     private int getComponentState(JComponent c) {
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -115,6 +149,10 @@ class SynthPanelUI extends BasicPanelUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -122,15 +160,29 @@ class SynthPanelUI extends BasicPanelUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * Paints the specified component. This implementation does nothing.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
         // do actual painting
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintPanelBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent pce) {
         if (SynthLookAndFeel.shouldUpdateStyle(pce)) {
             updateStyle((JPanel)pce.getSource());

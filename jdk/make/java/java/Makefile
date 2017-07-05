@@ -390,7 +390,7 @@ clean::
 LOCALES_GEN_SH = localelist.sh
 
 $(GENSRCDIR)/sun/util/CoreResourceBundleControl.java: \
-	$(SHARE_SRC)/classes/sun/util/CoreResourceBundleControl-XLocales.java $(LOCALES_GEN_SH)
+	$(SHARE_SRC)/classes/sun/util/CoreResourceBundleControl-XLocales.java.template $(LOCALES_GEN_SH)
 	@$(prep-target) 
 	NAWK="$(NAWK)" SED="$(SED)" $(SH) $(LOCALES_GEN_SH) "$(JRE_NONEXIST_LOCALES)" \
 		$< $@ 

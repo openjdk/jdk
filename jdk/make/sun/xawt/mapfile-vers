@@ -126,6 +126,8 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_ServerVendor;
         Java_sun_awt_X11_XlibWrapper_VendorRelease;
         Java_sun_awt_X11_XlibWrapper_IsXsunKPBehavior;
+        Java_sun_awt_X11_XlibWrapper_IsSunKeyboard;
+        Java_sun_awt_X11_XlibWrapper_IsKanaKeyboard;
         Java_sun_awt_X11_XlibWrapper_SetToolkitErrorHandler;
         Java_sun_awt_X11_XlibWrapper_XSetErrorHandler;
         Java_sun_awt_X11_XlibWrapper_CallErrorHandler;
@@ -306,6 +308,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_XkbTranslateKeyCode;
         Java_sun_awt_X11_XlibWrapper_XGetModifierMapping;
         Java_sun_awt_X11_XlibWrapper_XFreeModifiermap;
+        Java_sun_awt_X11_XlibWrapper_XRefreshKeyboardMapping;
         Java_sun_awt_X11_XlibWrapper_XChangeActivePointerGrab;
         Java_sun_awt_X11_XlibWrapper_XNextSecondaryLoopEvent;
         Java_sun_awt_X11_XlibWrapper_ExitSecondaryLoop;

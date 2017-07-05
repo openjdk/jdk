@@ -136,6 +136,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
 
     native void createAwtFrame(WComponentPeer parent);
     void create(WComponentPeer parent) {
+        preCreate(parent);
         createAwtFrame(parent);
     }
 

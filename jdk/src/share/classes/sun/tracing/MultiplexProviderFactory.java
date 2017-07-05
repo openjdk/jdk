@@ -30,7 +30,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import com.sun.tracing.ProviderFactory;
 import com.sun.tracing.Provider;
@@ -65,13 +64,7 @@ public class MultiplexProviderFactory extends ProviderFactory {
             providers.add(factory.createProvider(cls));
         }
         MultiplexProvider provider = new MultiplexProvider(cls, providers);
-        try {
-            provider.init();
-        } catch (Exception e) {
-            // Probably a permission problem (can't get declared members)
-            Logger.getAnonymousLogger().warning(
-                "Could not initialize tracing provider: " + e.getMessage());
-        }
+        provider.init();
         return provider.newProxyInstance();
     }
 }

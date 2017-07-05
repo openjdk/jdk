@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.logging.Logger;
 import java.security.Permission;
 
 import com.sun.tracing.ProviderFactory;
@@ -80,15 +79,8 @@ public final class DTraceProviderFactory extends ProviderFactory {
         DTraceProvider jsdt = new DTraceProvider(cls);
         T proxy = jsdt.newProxyInstance();
         jsdt.setProxy(proxy);
-        try {
-            jsdt.init();
-            new Activation(jsdt.getModuleName(), new DTraceProvider[] { jsdt });
-        } catch (Exception e) {
-            // Probably a permission problem (can't get declared members)
-            Logger.getAnonymousLogger().warning(
-                "Could not initialize tracing provider: " + e.getMessage());
-            jsdt.dispose();
-        }
+        jsdt.init();
+        new Activation(jsdt.getModuleName(), new DTraceProvider[] { jsdt });
         return proxy;
     }
 

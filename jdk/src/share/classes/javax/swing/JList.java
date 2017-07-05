@@ -25,11 +25,24 @@
 
 package javax.swing;
 
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.*;
-import java.awt.*;
 
 import java.util.Vector;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -59,27 +72,29 @@ import static sun.swing.SwingUtilities2.Section.*;
  * constructor that automatically builds a read-only {@code ListModel} instance
  * for you:
  * <pre>
+ * {@code
  * // Create a JList that displays strings from an array
  *
  * String[] data = {"one", "two", "three", "four"};
- * JList myList = new JList(data);
+ * JList<String> myList = new JList<String>(data);
  *
  * // Create a JList that displays the superclasses of JList.class, by
  * // creating it with a Vector populated with this data
  *
- * Vector superClasses = new Vector();
- * Class rootClass = javax.swing.JList.class;
- * for(Class cls = rootClass; cls != null; cls = cls.getSuperclass()) {
+ * Vector<Class<?>> superClasses = new Vector<Class<?>>();
+ * Class<JList> rootClass = javax.swing.JList.class;
+ * for(Class<?> cls = rootClass; cls != null; cls = cls.getSuperclass()) {
  *     superClasses.addElement(cls);
  * }
- * JList myList = new JList(superClasses);
+ * JList<Class<?>> myList = new JList<Class<?>>(superClasses);
  *
  * // The automatically created model is stored in JList's "model"
  * // property, which you can retrieve
  *
- * ListModel model = myList.getModel();
+ * ListModel<Class<?>> model = myList.getModel();
  * for(int i = 0; i < model.getSize(); i++) {
  *     System.out.println(model.getElementAt(i));
+ * }
  * }
  * </pre>
  * <p>
@@ -103,12 +118,14 @@ import static sun.swing.SwingUtilities2.Section.*;
  * notifying listeners. For example, a read-only implementation of
  * {@code AbstractListModel}:
  * <pre>
+ * {@code
  * // This list model has about 2^16 elements.  Enjoy scrolling.
  *
- * ListModel bigData = new AbstractListModel() {
+ * ListModel<String> bigData = new AbstractListModel<String>() {
  *     public int getSize() { return Short.MAX_VALUE; }
- *     public Object getElementAt(int index) { return "Index " + index; }
+ *     public String getElementAt(int index) { return "Index " + index; }
  * };
+ * }
  * </pre>
  * <p>
  * The selection state of a {@code JList} is managed by another separate
@@ -150,9 +167,10 @@ import static sun.swing.SwingUtilities2.Section.*;
  * component to render, is installed by the lists's {@code ListUI}. You can
  * substitute your own renderer using code like this:
  * <pre>
+ * {@code
  *  // Display an icon and a string for each object in the list.
  *
- * class MyCellRenderer extends JLabel implements ListCellRenderer {
+ * class MyCellRenderer extends JLabel implements ListCellRenderer<Object> {
  *     final static ImageIcon longIcon = new ImageIcon("long.gif");
  *     final static ImageIcon shortIcon = new ImageIcon("short.gif");
  *
@@ -160,7 +178,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  *     // We just reconfigure the JLabel each time we're called.
  *
  *     public Component getListCellRendererComponent(
- *       JList list,              // the list
+ *       JList<?> list,           // the list
  *       Object value,            // value to display
  *       int index,               // cell index
  *       boolean isSelected,      // is the cell selected
@@ -184,6 +202,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * }
  *
  * myList.setCellRenderer(new MyCellRenderer());
+ * }
  * </pre>
  * <p>
  * Another job for the cell renderer is in helping to determine sizing
@@ -195,7 +214,8 @@ import static sun.swing.SwingUtilities2.Section.*;
  * automatically based on a single prototype value:
  * <a name="prototype_example">
  * <pre>
- * JList bigDataList = new JList(bigData);
+ * {@code
+ * JList<String> bigDataList = new JList<String>(bigData);
  *
  * // We don't want the JList implementation to compute the width
  * // or height of all of the list cells, so we give it a string
@@ -204,6 +224,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * // properties.
  *
  * bigDataList.setPrototypeCellValue("Index 1234567890");
+ * }
  * </pre>
  * <p>
  * {@code JList} doesn't implement scrolling directly. To create a list that
@@ -260,13 +281,15 @@ import static sun.swing.SwingUtilities2.Section.*;
  * @see ListCellRenderer
  * @see DefaultListCellRenderer
  *
+ * @param <E> the type of the elements of this list
+ *
  * @beaninfo
  *   attribute: isContainer false
  * description: A component which allows for the selection of one or more objects from a list.
  *
  * @author Hans Muller
  */
-public class JList extends JComponent implements Scrollable, Accessible
+public class JList<E> extends JComponent implements Scrollable, Accessible
 {
     /**
      * @see #getUIClassID
@@ -301,15 +324,15 @@ public class JList extends JComponent implements Scrollable, Accessible
     private int fixedCellWidth = -1;
     private int fixedCellHeight = -1;
     private int horizontalScrollIncrement = -1;
-    private Object prototypeCellValue;
+    private E prototypeCellValue;
     private int visibleRowCount = 8;
     private Color selectionForeground;
     private Color selectionBackground;
     private boolean dragEnabled;
 
     private ListSelectionModel selectionModel;
-    private ListModel dataModel;
-    private ListCellRenderer cellRenderer;
+    private ListModel<E> dataModel;
+    private ListCellRenderer<? super E> cellRenderer;
     private ListSelectionListener selectionListener;
 
     /**
@@ -402,7 +425,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @param dataModel the model for the list
      * @exception IllegalArgumentException if the model is {@code null}
      */
-    public JList(ListModel dataModel)
+    public JList(ListModel<E> dataModel)
     {
         if (dataModel == null) {
             throw new IllegalArgumentException("dataModel must be non null");
@@ -437,12 +460,12 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @param  listData  the array of Objects to be loaded into the data model,
      *                   {@code non-null}
      */
-    public JList(final Object[] listData)
+    public JList(final E[] listData)
     {
         this (
-            new AbstractListModel() {
+            new AbstractListModel<E>() {
                 public int getSize() { return listData.length; }
-                public Object getElementAt(int i) { return listData[i]; }
+                public E getElementAt(int i) { return listData[i]; }
             }
         );
     }
@@ -462,11 +485,11 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @param  listData  the <code>Vector</code> to be loaded into the
      *                   data model, {@code non-null}
      */
-    public JList(final Vector<?> listData) {
+    public JList(final Vector<? extends E> listData) {
         this (
-            new AbstractListModel() {
+            new AbstractListModel<E>() {
                 public int getSize() { return listData.size(); }
-                public Object getElementAt(int i) { return listData.elementAt(i); }
+                public E getElementAt(int i) { return listData.elementAt(i); }
             }
         );
     }
@@ -477,9 +500,9 @@ public class JList extends JComponent implements Scrollable, Accessible
      */
     public JList() {
         this (
-            new AbstractListModel() {
+            new AbstractListModel<E>() {
               public int getSize() { return 0; }
-              public Object getElementAt(int i) { return "No Data Model"; }
+              public E getElementAt(int i) { throw new IndexOutOfBoundsException("No Data Model"); }
             }
         );
     }
@@ -526,7 +549,7 @@ public class JList extends JComponent implements Scrollable, Accessible
     public void updateUI() {
         setUI((ListUI)UIManager.getUI(this));
 
-        ListCellRenderer renderer = getCellRenderer();
+        ListCellRenderer<? super E> renderer = getCellRenderer();
         if (renderer instanceof Component) {
             SwingUtilities.updateComponentTreeUI((Component)renderer);
         }
@@ -560,8 +583,8 @@ public class JList extends JComponent implements Scrollable, Accessible
      */
     private void updateFixedCellSize()
     {
-        ListCellRenderer cr = getCellRenderer();
-        Object value = getPrototypeCellValue();
+        ListCellRenderer<? super E> cr = getCellRenderer();
+        E value = getPrototypeCellValue();
 
         if ((cr != null) && (value != null)) {
             Component c = cr.getListCellRendererComponent(this, value, 0, false, false);
@@ -592,7 +615,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @return the value of the {@code prototypeCellValue} property
      * @see #setPrototypeCellValue
      */
-    public Object getPrototypeCellValue() {
+    public E getPrototypeCellValue() {
         return prototypeCellValue;
     }
 
@@ -632,8 +655,8 @@ public class JList extends JComponent implements Scrollable, Accessible
      *   attribute: visualUpdate true
      * description: The cell prototype value, used to compute cell width and height.
      */
-    public void setPrototypeCellValue(Object prototypeCellValue) {
-        Object oldValue = this.prototypeCellValue;
+    public void setPrototypeCellValue(E prototypeCellValue) {
+        E oldValue = this.prototypeCellValue;
         this.prototypeCellValue = prototypeCellValue;
 
         /* If the prototypeCellValue has changed and is non-null,
@@ -727,7 +750,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @see #setCellRenderer
      */
     @Transient
-    public ListCellRenderer getCellRenderer() {
+    public ListCellRenderer<? super E> getCellRenderer() {
         return cellRenderer;
     }
 
@@ -755,8 +778,8 @@ public class JList extends JComponent implements Scrollable, Accessible
      *   attribute: visualUpdate true
      * description: The component used to draw the cells.
      */
-    public void setCellRenderer(ListCellRenderer cellRenderer) {
-        ListCellRenderer oldValue = this.cellRenderer;
+    public void setCellRenderer(ListCellRenderer<? super E> cellRenderer) {
+        ListCellRenderer<? super E> oldValue = this.cellRenderer;
         this.cellRenderer = cellRenderer;
 
         /* If the cellRenderer has changed and prototypeCellValue
@@ -1455,7 +1478,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @since 1.4
      */
     public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
-        ListModel model = getModel();
+        ListModel<E> model = getModel();
         int max = model.getSize();
         if (prefix == null) {
             throw new IllegalArgumentException();
@@ -1469,16 +1492,16 @@ public class JList extends JComponent implements Scrollable, Accessible
         int increment = (bias == Position.Bias.Forward) ? 1 : -1;
         int index = startIndex;
         do {
-            Object o = model.getElementAt(index);
+            E element = model.getElementAt(index);
 
-            if (o != null) {
+            if (element != null) {
                 String string;
 
-                if (o instanceof String) {
-                    string = ((String)o).toUpperCase();
+                if (element instanceof String) {
+                    string = ((String)element).toUpperCase();
                 }
                 else {
-                    string = o.toString();
+                    string = element.toString();
                     if (string != null) {
                         string = string.toUpperCase();
                     }
@@ -1516,7 +1539,7 @@ public class JList extends JComponent implements Scrollable, Accessible
         if(event != null) {
             Point p = event.getPoint();
             int index = locationToIndex(p);
-            ListCellRenderer r = getCellRenderer();
+            ListCellRenderer<? super E> r = getCellRenderer();
             Rectangle cellBounds;
 
             if (index != -1 && r != null && (cellBounds =
@@ -1634,7 +1657,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      *                          list of items
      * @see #setModel
      */
-    public ListModel getModel() {
+    public ListModel<E> getModel() {
         return dataModel;
     }
 
@@ -1656,11 +1679,11 @@ public class JList extends JComponent implements Scrollable, Accessible
      *   attribute: visualUpdate true
      * description: The object that contains the data to be drawn by this JList.
      */
-    public void setModel(ListModel model) {
+    public void setModel(ListModel<E> model) {
         if (model == null) {
             throw new IllegalArgumentException("model must be non null");
         }
-        ListModel oldValue = dataModel;
+        ListModel<E> oldValue = dataModel;
         dataModel = model;
         firePropertyChange("model", oldValue, dataModel);
         clearSelection();
@@ -1668,7 +1691,7 @@ public class JList extends JComponent implements Scrollable, Accessible
 
 
     /**
-     * Constructs a read-only <code>ListModel</code> from an array of objects,
+     * Constructs a read-only <code>ListModel</code> from an array of items,
      * and calls {@code setModel} with this model.
      * <p>
      * Attempts to pass a {@code null} value to this method results in
@@ -1676,15 +1699,15 @@ public class JList extends JComponent implements Scrollable, Accessible
      * references the given array directly. Attempts to modify the array
      * after invoking this method results in undefined behavior.
      *
-     * @param listData an array of {@code Objects} containing the items to
+     * @param listData an array of {@code E} containing the items to
      *        display in the list
      * @see #setModel
      */
-    public void setListData(final Object[] listData) {
+    public void setListData(final E[] listData) {
         setModel (
-            new AbstractListModel() {
+            new AbstractListModel<E>() {
                 public int getSize() { return listData.length; }
-                public Object getElementAt(int i) { return listData[i]; }
+                public E getElementAt(int i) { return listData[i]; }
             }
         );
     }
@@ -1703,11 +1726,11 @@ public class JList extends JComponent implements Scrollable, Accessible
      *                                          display in the list
      * @see #setModel
      */
-    public void setListData(final Vector<?> listData) {
+    public void setListData(final Vector<? extends E> listData) {
         setModel (
-            new AbstractListModel() {
+            new AbstractListModel<E>() {
                 public int getSize() { return listData.size(); }
-                public Object getElementAt(int i) { return listData.elementAt(i); }
+                public E getElementAt(int i) { return listData.elementAt(i); }
             }
         );
     }
@@ -2235,10 +2258,13 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @see #isSelectedIndex
      * @see #getModel
      * @see #addListSelectionListener
+     *
+     * @deprecated As of JDK 1.7, replaced by {@link #getSelectedValuesList()}
      */
+    @Deprecated
     public Object[] getSelectedValues() {
         ListSelectionModel sm = getSelectionModel();
-        ListModel dm = getModel();
+        ListModel<E> dm = getModel();
 
         int iMin = sm.getMinSelectionIndex();
         int iMax = sm.getMaxSelectionIndex();
@@ -2257,6 +2283,37 @@ public class JList extends JComponent implements Scrollable, Accessible
         Object[] rv = new Object[n];
         System.arraycopy(rvTmp, 0, rv, 0, n);
         return rv;
+    }
+
+    /**
+     * Returns a list of all the selected items, in increasing order based
+     * on their indices in the list.
+     *
+     * @return the selected items, or an empty list if nothing is selected
+     * @see #isSelectedIndex
+     * @see #getModel
+     * @see #addListSelectionListener
+     *
+     * @since 1.7
+     */
+    public List<E> getSelectedValuesList() {
+        ListSelectionModel sm = getSelectionModel();
+        ListModel<E> dm = getModel();
+
+        int iMin = sm.getMinSelectionIndex();
+        int iMax = sm.getMaxSelectionIndex();
+
+        if ((iMin < 0) || (iMax < 0)) {
+            return Collections.emptyList();
+        }
+
+        List<E> selectedItems = new ArrayList<E>();
+        for(int i = iMin; i <= iMax; i++) {
+            if (sm.isSelectedIndex(i)) {
+                selectedItems.add(dm.getElementAt(i));
+            }
+        }
+        return selectedItems;
     }
 
 
@@ -2291,7 +2348,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @see #getModel
      * @see #addListSelectionListener
      */
-    public Object getSelectedValue() {
+    public E getSelectedValue() {
         int i = getMinSelectionIndex();
         return (i == -1) ? null : getModel().getElementAt(i);
     }
@@ -2309,7 +2366,7 @@ public class JList extends JComponent implements Scrollable, Accessible
             setSelectedIndex(-1);
         else if(!anObject.equals(getSelectedValue())) {
             int i,c;
-            ListModel dm = getModel();
+            ListModel<E> dm = getModel();
             for(i=0,c=dm.getSize();i<c;i++)
                 if(anObject.equals(dm.getElementAt(i))){
                     setSelectedIndex(i);
@@ -3138,14 +3195,14 @@ public class JList extends JComponent implements Scrollable, Accessible
            */
         protected class AccessibleJListChild extends AccessibleContext
                 implements Accessible, AccessibleComponent {
-            private JList     parent = null;
+            private JList<E>     parent = null;
             private int       indexInParent;
             private Component component = null;
             private AccessibleContext accessibleContext = null;
-            private ListModel listModel;
-            private ListCellRenderer cellRenderer = null;
+            private ListModel<E> listModel;
+            private ListCellRenderer<? super E> cellRenderer = null;
 
-            public AccessibleJListChild(JList parent, int indexInParent) {
+            public AccessibleJListChild(JList<E> parent, int indexInParent) {
                 this.parent = parent;
                 this.setAccessibleParent(parent);
                 this.indexInParent = indexInParent;
@@ -3175,7 +3232,7 @@ public class JList extends JComponent implements Scrollable, Accessible
                 if ((parent != null)
                         && (listModel != null)
                         && cellRenderer != null) {
-                    Object value = listModel.getElementAt(index);
+                    E value = listModel.getElementAt(index);
                     boolean isSelected = parent.isSelectedIndex(index);
                     boolean isFocussed = parent.isFocusOwner()
                             && (index == parent.getLeadSelectionIndex());

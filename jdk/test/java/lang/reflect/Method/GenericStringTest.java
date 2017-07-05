@@ -26,8 +26,6 @@
  * @bug 5033583 6316717 6470106
  * @summary Check toGenericString() and toString() methods
  * @author Joseph D. Darcy
- * @compile -source 1.5 GenericStringTest.java
- * @run main GenericStringTest
  */
 
 import java.lang.reflect.*;

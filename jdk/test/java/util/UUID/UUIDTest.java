@@ -23,8 +23,6 @@
 
 /* @test
  * @bug 4173528 5068772
- * @compile -source 1.4 -target 1.4 UUIDTest.java
- * @run main UUIDTest
  * @summary Unit tests for java.util.UUID
  */
 

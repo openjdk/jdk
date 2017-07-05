@@ -26,9 +26,6 @@
  * @bug     4495754
  * @summary Basic test for int bit twiddling
  * @author  Josh Bloch
- *
- * @compile -source 1.5 BitTwiddle.java
- * @run main BitTwiddle
  */
 
 import java.util.Random;

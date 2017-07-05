@@ -2552,9 +2552,6 @@ public final class Formatter implements Closeable, Flushable {
         private boolean dt = false;
         private char c;
 
-        // cache the line separator
-        private String ls;
-
         private int index(String s) {
             if (s != null) {
                 try {
@@ -2702,9 +2699,7 @@ public final class Formatter implements Closeable, Flushable {
                 printHashCode(arg);
                 break;
             case Conversion.LINE_SEPARATOR:
-                if (ls == null)
-                    ls = System.getProperty("line.separator");
-                a.append(ls);
+                a.append(System.lineSeparator());
                 break;
             case Conversion.PERCENT_SIGN:
                 a.append('%');

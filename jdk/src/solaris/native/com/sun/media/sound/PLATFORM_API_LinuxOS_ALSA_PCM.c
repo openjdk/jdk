@@ -143,8 +143,12 @@ void DAUDIO_GetFormats(INT32 mixerIndex, INT32 deviceID, int isSource, void* cre
             ERROR1("snd_pcm_hw_params_malloc returned error %d\n", ret);
         } else {
             ret = snd_pcm_hw_params_any(handle, hwParams);
-            if (ret != 0) {
-                ERROR1("snd_pcm_hw_params_any returned error %d\n", ret);
+            /* snd_pcm_hw_params_any can return a positive value on success too */
+            if (ret < 0) {
+                 ERROR1("snd_pcm_hw_params_any returned error %d\n", ret);
+            } else {
+                /* for the logic following this code, set ret to 0 to indicate success */
+                ret = 0;
             }
         }
         snd_pcm_hw_params_get_format_mask(hwParams, formatMask);

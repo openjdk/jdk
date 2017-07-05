@@ -96,6 +96,7 @@ OTHER_CPPFLAGS += $(LIBARCH_DEFINES)
 
 
 ifneq ($(PLATFORM), windows)	# UNIX systems
+        LD_RUNPATH_EXTRAS += ..
 	LIB_LOCATION = $(LIBDIR)/$(LIBARCH)/jli
 	# Note: its important to keep this order meaning -lc is the
 	# last library otherwise it could cause compatibility issues

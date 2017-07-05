@@ -29,7 +29,6 @@ import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import javax.swing.border.*;
 import javax.swing.plaf.UIResource;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
  * SynthBorder is a border that delegates to a Painter. The Insets
