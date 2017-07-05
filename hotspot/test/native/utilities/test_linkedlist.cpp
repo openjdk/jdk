@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,96 +19,103 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
+
  */
 
 #include "precompiled.hpp"
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-#include "runtime/os.hpp"
+#include "unittest.hpp"
 #include "utilities/linkedlist.hpp"
-#include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 
 class Integer : public StackObj {
  private:
-  int  _value;
+  int _value;
  public:
-  Integer(int i) : _value(i) { }
 
-  int   value() const { return _value; }
-  bool  equals(const Integer& i) const {
-   return _value == i.value();
+  Integer(int i) : _value(i) {
+  }
+
+  int value() const {
+    return _value;
+  }
+
+  bool equals(const Integer& i) const {
+    return _value == i.value();
+  }
+
+  static int compare(const Integer& i1, const Integer& i2) {
+    return i1.value() - i2.value();
   }
 };
 
-int compare_Integer(const Integer& i1, const Integer& i2) {
-  return i1.value() - i2.value();
-}
-
-void check_list_values(const int* expected, const LinkedList<Integer>* list) {
+static void check_list_values(const int* expected, const LinkedList<Integer>* list) {
   LinkedListNode<Integer>* head = list->head();
   int index = 0;
   while (head != NULL) {
-    assert(head->peek()->value() == expected[index], "Unexpected value");
+    ASSERT_EQ(expected[index], head->peek()->value())
+            << "Unexpected value at index " << index;
     head = head->next();
-    index ++;
+    index++;
   }
 }
 
-void Test_linked_list() {
-  LinkedListImpl<Integer, ResourceObj::C_HEAP, mtTest>  ll;
+const Integer one(1), two(2), three(3), four(4), five(5), six(6);
 
+// Test regular linked list
+TEST(LinkedList, simple) {
+  LinkedListImpl<Integer, ResourceObj::C_HEAP, mtTest> ll;
 
-  // Test regular linked list
-  assert(ll.is_empty(), "Start with empty list");
-  Integer one(1), two(2), three(3), four(4), five(5), six(6);
+  ASSERT_TRUE(ll.is_empty()) << "Start with empty list";
 
   ll.add(six);
-  assert(!ll.is_empty(), "Should not be empty");
+  ASSERT_TRUE(!ll.is_empty()) << "Should not be empty";
 
   Integer* i = ll.find(six);
-  assert(i != NULL, "Should find it");
+  ASSERT_TRUE(i != NULL) << "Should find it";
+  ASSERT_EQ(six.value(), i->value()) << "Should be 6";
 
   i = ll.find(three);
-  assert(i == NULL, "Not in the list");
+  ASSERT_EQ(NULL, i) << "Not in the list";
 
   LinkedListNode<Integer>* node = ll.find_node(six);
-  assert(node != NULL, "6 is in the list");
+  ASSERT_TRUE(node != NULL) << "6 is in the list";
 
   ll.insert_after(three, node);
   ll.insert_before(one, node);
   int expected[3] = {1, 6, 3};
   check_list_values(expected, &ll);
+}
 
+// Test sorted linked list
+TEST(SortedLinkedList, simple) {
+  LinkedListImpl<Integer, ResourceObj::C_HEAP, mtTest> ll;
+  ll.add(one);
+  ll.add(six);
+  ll.add(three);
   ll.add(two);
   ll.add(four);
   ll.add(five);
 
-  // Test sorted linked list
-  SortedLinkedList<Integer, compare_Integer, ResourceObj::C_HEAP, mtTest> sl;
-  assert(sl.is_empty(), "Start with empty list");
+  SortedLinkedList<Integer, Integer::compare, ResourceObj::C_HEAP, mtTest> sl;
+  ASSERT_TRUE(sl.is_empty()) << "Start with empty list";
 
   size_t ll_size = ll.size();
   sl.move(&ll);
   size_t sl_size = sl.size();
 
-  assert(ll_size == sl_size, "Should be the same size");
-  assert(ll.is_empty(), "No more entires");
+  ASSERT_EQ(ll_size, sl_size) << "Should be the same size";
+  ASSERT_TRUE(ll.is_empty()) << "No more entries";
 
   // sorted result
   int sorted_result[] = {1, 2, 3, 4, 5, 6};
   check_list_values(sorted_result, &sl);
+  if (HasFatalFailure()) {
+    return;
+  }
 
-  node = sl.find_node(four);
-  assert(node != NULL, "4 is in the list");
+  LinkedListNode<Integer>* node = sl.find_node(four);
+  ASSERT_TRUE(node != NULL) << "4 is in the list";
   sl.remove_before(node);
   sl.remove_after(node);
   int remains[] = {1, 2, 4, 6};
   check_list_values(remains, &sl);
 }
-#endif // PRODUCT
-

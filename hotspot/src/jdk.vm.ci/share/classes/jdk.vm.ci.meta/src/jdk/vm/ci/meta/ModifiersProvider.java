@@ -22,18 +22,9 @@
  */
 package jdk.vm.ci.meta;
 
-import static java.lang.reflect.Modifier.ABSTRACT;
-import static java.lang.reflect.Modifier.FINAL;
-import static java.lang.reflect.Modifier.INTERFACE;
-import static java.lang.reflect.Modifier.NATIVE;
 import static java.lang.reflect.Modifier.PRIVATE;
 import static java.lang.reflect.Modifier.PROTECTED;
 import static java.lang.reflect.Modifier.PUBLIC;
-import static java.lang.reflect.Modifier.STATIC;
-import static java.lang.reflect.Modifier.STRICT;
-import static java.lang.reflect.Modifier.SYNCHRONIZED;
-import static java.lang.reflect.Modifier.TRANSIENT;
-import static java.lang.reflect.Modifier.VOLATILE;
 
 import java.lang.reflect.Modifier;
 
@@ -42,17 +33,9 @@ import java.lang.reflect.Modifier;
  * language {@linkplain #getModifiers() modifiers}.
  */
 public interface ModifiersProvider {
-    int BRIDGE = MetaUtil.getNonPublicModifierStaticField("BRIDGE");
-    int VARARGS = MetaUtil.getNonPublicModifierStaticField("VARARGS");
-    int SYNTHETIC = MetaUtil.getNonPublicModifierStaticField("SYNTHETIC");
-    int ANNOTATION = MetaUtil.getNonPublicModifierStaticField("ANNOTATION");
-    int ENUM = MetaUtil.getNonPublicModifierStaticField("ENUM");
-    int MANDATED = MetaUtil.getNonPublicModifierStaticField("MANDATED");
 
     /**
-     * Returns the Java Virtual Machine modifiers for this element. Note that this can differ from
-     * standard Java Reflection modifiers. For example at the JVM level, classes (
-     * {@link ResolvedJavaType}) can not be private or protected.
+     * Returns the modifiers for this element.
      */
     int getModifiers();
 
@@ -160,18 +143,5 @@ public interface ModifiersProvider {
      */
     default boolean isConcrete() {
         return !isAbstract();
-    }
-
-    static int jvmClassModifiers() {
-        // no SUPER
-        return PUBLIC | FINAL | INTERFACE | ABSTRACT | ANNOTATION | ENUM | SYNTHETIC;
-    }
-
-    static int jvmMethodModifiers() {
-        return PUBLIC | PRIVATE | PROTECTED | STATIC | FINAL | SYNCHRONIZED | BRIDGE | VARARGS | NATIVE | ABSTRACT | STRICT | SYNTHETIC;
-    }
-
-    static int jvmFieldModifiers() {
-        return PUBLIC | PRIVATE | PROTECTED | STATIC | FINAL | VOLATILE | TRANSIENT | ENUM | SYNTHETIC;
     }
 }

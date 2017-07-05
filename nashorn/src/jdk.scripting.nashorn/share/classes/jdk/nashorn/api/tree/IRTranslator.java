@@ -191,9 +191,9 @@ final class IRTranslator extends SimpleNodeVisitor {
     @Override
     public boolean enterExpressionStatement(final ExpressionStatement expressionStatement) {
         if (expressionStatement.destructuringDeclarationType() != null) {
-            ExpressionTree expr = translateExpr(expressionStatement.getExpression());
+            final ExpressionTree expr = translateExpr(expressionStatement.getExpression());
             assert expr instanceof AssignmentTree : "destructuring decl. statement does not have assignment";
-            AssignmentTree assign = (AssignmentTree)expr;
+            final AssignmentTree assign = (AssignmentTree)expr;
             curStat = new DestructuringDeclTreeImpl(expressionStatement, assign.getVariable(), assign.getExpression());
         } else {
             curStat = new ExpressionStatementTreeImpl(expressionStatement,
@@ -544,12 +544,12 @@ final class IRTranslator extends SimpleNodeVisitor {
     }
 
     private List<? extends ExpressionTree> translateParameters(final FunctionNode func) {
-        Map<IdentNode, Expression> paramExprs = func.getParameterExpressions();
+        final Map<IdentNode, Expression> paramExprs = func.getParameterExpressions();
         if (paramExprs != null) {
-            List<IdentNode> params = func.getParameters();
+            final List<IdentNode> params = func.getParameters();
             final List<ExpressionTreeImpl> exprTrees = new ArrayList<>(params.size());
             for (final IdentNode ident : params) {
-                Expression expr = paramExprs.containsKey(ident)? paramExprs.get(ident) : ident;
+                final Expression expr = paramExprs.containsKey(ident)? paramExprs.get(ident) : ident;
                 curExpr = null;
                 expr.accept(this);
                 assert curExpr != null;

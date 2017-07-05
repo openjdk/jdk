@@ -184,7 +184,7 @@ public:
   // We may support a shared contiguous allocation area, if the youngest
   // generation does.
   bool supports_inline_contig_alloc() const;
-  HeapWord** top_addr() const;
+  HeapWord* volatile* top_addr() const;
   HeapWord** end_addr() const;
 
   // Perform a full collection of the heap; intended for use in implementing

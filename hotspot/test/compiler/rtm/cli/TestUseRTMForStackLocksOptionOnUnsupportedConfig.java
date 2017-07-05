@@ -42,6 +42,7 @@
 package compiler.rtm.cli;
 
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedOS;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
@@ -53,8 +54,8 @@ public class TestUseRTMForStackLocksOptionOnUnsupportedConfig
     private static final String DEFAULT_VALUE = "false";
 
     private TestUseRTMForStackLocksOptionOnUnsupportedConfig() {
-        super(new NotPredicate(new AndPredicate(new SupportedCPU(),
-                        new SupportedVM())),
+        super(new NotPredicate(
+                new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM())),
                 "UseRTMForStackLocks", true, true,
                 TestUseRTMForStackLocksOptionOnUnsupportedConfig.DEFAULT_VALUE,
                 "true");

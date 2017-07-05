@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,11 +77,6 @@ public:
     // returns the d3d adapter ordinal given GDI screen number:
     // these may differ depending on which display is primary
     UINT GetAdapterOrdinalForScreen(jint gdiScreen);
-
-    // notifies adapter event listeners by calling
-    // AccelDeviceEventNotifier.eventOccured()
-    static
-    void NotifyAdapterEventListeners(UINT adapter, jint eventType);
 
 private:
     D3DPipelineManager(void);

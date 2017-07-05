@@ -141,7 +141,7 @@ final public class AllocationStrategy implements Serializable {
         final private WeakReference<ScriptObject> prototype;
         final private WeakReference<PropertyMap> prototypeMap;
 
-        private PropertyMap allocatorMap;
+        private final PropertyMap allocatorMap;
 
         AllocatorMap(final ScriptObject prototype, final PropertyMap protoMap, final PropertyMap allocMap) {
             this.prototype = new WeakReference<>(prototype);

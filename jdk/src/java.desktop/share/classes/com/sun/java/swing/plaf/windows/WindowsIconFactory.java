@@ -36,6 +36,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.*;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 import sun.swing.MenuItemCheckIconFactory;
+import sun.swing.SwingUtilities2;
 
 /**
  * Factory object that can vend Icons appropriate for the Windows {@literal L & F}.
@@ -400,15 +401,24 @@ public class WindowsIconFactory implements Serializable
 
                 // paint check
                 if (model.isSelected()) {
-                    g.drawLine(x+9, y+3, x+9, y+3);
-                    g.drawLine(x+8, y+4, x+9, y+4);
-                    g.drawLine(x+7, y+5, x+9, y+5);
-                    g.drawLine(x+6, y+6, x+8, y+6);
-                    g.drawLine(x+3, y+7, x+7, y+7);
-                    g.drawLine(x+4, y+8, x+6, y+8);
-                    g.drawLine(x+5, y+9, x+5, y+9);
-                    g.drawLine(x+3, y+5, x+3, y+5);
-                    g.drawLine(x+3, y+6, x+4, y+6);
+                    if (SwingUtilities2.isScaledGraphics(g)) {
+                        int[] xPoints = {3, 5, 9, 9, 5, 3};
+                        int[] yPoints = {5, 7, 3, 5, 9, 7};
+                        g.translate(x, y);
+                        g.fillPolygon(xPoints, yPoints, 6);
+                        g.drawPolygon(xPoints, yPoints, 6);
+                        g.translate(-x, -y);
+                    } else {
+                        g.drawLine(x + 9, y + 3, x + 9, y + 3);
+                        g.drawLine(x + 8, y + 4, x + 9, y + 4);
+                        g.drawLine(x + 7, y + 5, x + 9, y + 5);
+                        g.drawLine(x + 6, y + 6, x + 8, y + 6);
+                        g.drawLine(x + 3, y + 7, x + 7, y + 7);
+                        g.drawLine(x + 4, y + 8, x + 6, y + 8);
+                        g.drawLine(x + 5, y + 9, x + 5, y + 9);
+                        g.drawLine(x + 3, y + 5, x + 3, y + 5);
+                        g.drawLine(x + 3, y + 6, x + 4, y + 6);
+                    }
                 }
             }
         }
@@ -475,54 +485,94 @@ public class WindowsIconFactory implements Serializable
                 g.fillRect(x+2, y+2, 8, 8);
 
 
+                boolean isScaledGraphics = SwingUtilities2.isScaledGraphics(g);
+
+                if (isScaledGraphics) {
+
+                    Graphics2D g2d = (Graphics2D) g;
+                    Stroke oldStroke = g2d.getStroke();
+                    g2d.setStroke(new BasicStroke(1.03f, BasicStroke.CAP_ROUND,
+                                                  BasicStroke.JOIN_ROUND));
+                    Object aaHint = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                         RenderingHints.VALUE_ANTIALIAS_ON);
+
                     // outter left arc
-                g.setColor(UIManager.getColor("RadioButton.shadow"));
-                g.drawLine(x+4, y+0, x+7, y+0);
-                g.drawLine(x+2, y+1, x+3, y+1);
-                g.drawLine(x+8, y+1, x+9, y+1);
-                g.drawLine(x+1, y+2, x+1, y+3);
-                g.drawLine(x+0, y+4, x+0, y+7);
-                g.drawLine(x+1, y+8, x+1, y+9);
+                    g.setColor(UIManager.getColor("RadioButton.shadow"));
+                    g.drawArc(x, y, 11, 11, 45, 180);
+                    // outter right arc
+                    g.setColor(UIManager.getColor("RadioButton.highlight"));
+                    g.drawArc(x, y, 11, 11, 45, -180);
+                    // inner left arc
+                    g.setColor(UIManager.getColor("RadioButton.darkShadow"));
+                    g.drawArc(x + 1, y + 1, 9, 9, 45, 180);
+                    // inner right arc
+                    g.setColor(UIManager.getColor("RadioButton.light"));
+                    g.drawArc(x + 1, y + 1, 9, 9, 45, -180);
 
-                // outter right arc
-                g.setColor(UIManager.getColor("RadioButton.highlight"));
-                g.drawLine(x+2, y+10, x+3, y+10);
-                g.drawLine(x+4, y+11, x+7, y+11);
-                g.drawLine(x+8, y+10, x+9, y+10);
-                g.drawLine(x+10, y+9, x+10, y+8);
-                g.drawLine(x+11, y+7, x+11, y+4);
-                g.drawLine(x+10, y+3, x+10, y+2);
+                    g2d.setStroke(oldStroke);
 
-
-                // inner left arc
-                g.setColor(UIManager.getColor("RadioButton.darkShadow"));
-                g.drawLine(x+4, y+1, x+7, y+1);
-                g.drawLine(x+2, y+2, x+3, y+2);
-                g.drawLine(x+8, y+2, x+9, y+2);
-                g.drawLine(x+2, y+3, x+2, y+3);
-                g.drawLine(x+1, y+4, x+1, y+7);
-                g.drawLine(x+2, y+8, x+2, y+8);
-
-
-                // inner right arc
-                g.setColor(UIManager.getColor("RadioButton.light"));
-                g.drawLine(x+2,  y+9,  x+3,  y+9);
-                g.drawLine(x+4,  y+10, x+7,  y+10);
-                g.drawLine(x+8,  y+9,  x+9,  y+9);
-                g.drawLine(x+9,  y+8,  x+9,  y+8);
-                g.drawLine(x+10, y+7,  x+10, y+4);
-                g.drawLine(x+9,  y+3,  x+9,  y+3);
-
-
-                 // indicate whether selected or not
-                if (model.isSelected()) {
-                    if (model.isEnabled()) {
-                        g.setColor(UIManager.getColor("RadioButton.foreground"));
-                    } else {
-                        g.setColor(UIManager.getColor("RadioButton.shadow"));
+                    if (model.isSelected()) {
+                        if (model.isEnabled()) {
+                            g.setColor(UIManager.getColor("RadioButton.foreground"));
+                        } else {
+                            g.setColor(UIManager.getColor("RadioButton.shadow"));
+                        }
+                        g.fillOval(x + 3, y + 3, 5, 5);
                     }
-                    g.fillRect(x+4, y+5, 4, 2);
-                    g.fillRect(x+5, y+4, 2, 4);
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, aaHint);
+
+                } else {
+
+                    // outter left arc
+                    g.setColor(UIManager.getColor("RadioButton.shadow"));
+                    g.drawLine(x+4, y+0, x+7, y+0);
+                    g.drawLine(x+2, y+1, x+3, y+1);
+                    g.drawLine(x+8, y+1, x+9, y+1);
+                    g.drawLine(x+1, y+2, x+1, y+3);
+                    g.drawLine(x+0, y+4, x+0, y+7);
+                    g.drawLine(x+1, y+8, x+1, y+9);
+
+                    // outter right arc
+                    g.setColor(UIManager.getColor("RadioButton.highlight"));
+                    g.drawLine(x+2, y+10, x+3, y+10);
+                    g.drawLine(x+4, y+11, x+7, y+11);
+                    g.drawLine(x+8, y+10, x+9, y+10);
+                    g.drawLine(x+10, y+9, x+10, y+8);
+                    g.drawLine(x+11, y+7, x+11, y+4);
+                    g.drawLine(x+10, y+3, x+10, y+2);
+
+
+                    // inner left arc
+                    g.setColor(UIManager.getColor("RadioButton.darkShadow"));
+                    g.drawLine(x+4, y+1, x+7, y+1);
+                    g.drawLine(x+2, y+2, x+3, y+2);
+                    g.drawLine(x+8, y+2, x+9, y+2);
+                    g.drawLine(x+2, y+3, x+2, y+3);
+                    g.drawLine(x+1, y+4, x+1, y+7);
+                    g.drawLine(x+2, y+8, x+2, y+8);
+
+
+                    // inner right arc
+                    g.setColor(UIManager.getColor("RadioButton.light"));
+                    g.drawLine(x+2,  y+9,  x+3,  y+9);
+                    g.drawLine(x+4,  y+10, x+7,  y+10);
+                    g.drawLine(x+8,  y+9,  x+9,  y+9);
+                    g.drawLine(x+9,  y+8,  x+9,  y+8);
+                    g.drawLine(x+10, y+7,  x+10, y+4);
+                    g.drawLine(x+9,  y+3,  x+9,  y+3);
+
+
+                     // indicate whether selected or not
+                    if (model.isSelected()) {
+                        if (model.isEnabled()) {
+                            g.setColor(UIManager.getColor("RadioButton.foreground"));
+                        } else {
+                            g.setColor(UIManager.getColor("RadioButton.shadow"));
+                        }
+                        g.fillRect(x+4, y+5, 4, 2);
+                        g.fillRect(x+5, y+4, 2, 4);
+                    }
                 }
             }
         }

@@ -169,7 +169,7 @@ class ParserContextFunctionNode extends ParserContextBaseNode {
         return parameters;
     }
 
-    void setParameters(List<IdentNode> parameters) {
+    void setParameters(final List<IdentNode> parameters) {
         this.parameters = parameters;
     }
 
@@ -182,7 +182,7 @@ class ParserContextFunctionNode extends ParserContextBaseNode {
         return parameterExpressions;
     }
 
-    void addParameterExpression(IdentNode ident, Expression node) {
+    void addParameterExpression(final IdentNode ident, final Expression node) {
         if (parameterExpressions == null) {
             parameterExpressions = new HashMap<>();
         }

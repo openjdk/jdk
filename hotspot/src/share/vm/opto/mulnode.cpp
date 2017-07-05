@@ -1343,3 +1343,47 @@ const Type* URShiftLNode::Value(PhaseGVN* phase) const {
 
   return TypeLong::LONG;                // Give up
 }
+
+//=============================================================================
+//------------------------------Value------------------------------------------
+const Type* FmaDNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type(in(1));
+  if (t1 == Type::TOP) return Type::TOP;
+  if (t1->base() != Type::DoubleCon) return Type::DOUBLE;
+  const Type *t2 = phase->type(in(2));
+  if (t2 == Type::TOP) return Type::TOP;
+  if (t2->base() != Type::DoubleCon) return Type::DOUBLE;
+  const Type *t3 = phase->type(in(3));
+  if (t3 == Type::TOP) return Type::TOP;
+  if (t3->base() != Type::DoubleCon) return Type::DOUBLE;
+#ifndef __STDC_IEC_559__
+  return Type::DOUBLE;
+#else
+  double d1 = t1->getd();
+  double d2 = t2->getd();
+  double d3 = t3->getd();
+  return TypeD::make(fma(d1, d2, d3));
+#endif
+}
+
+//=============================================================================
+//------------------------------Value------------------------------------------
+const Type* FmaFNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type(in(1));
+  if (t1 == Type::TOP) return Type::TOP;
+  if (t1->base() != Type::FloatCon) return Type::FLOAT;
+  const Type *t2 = phase->type(in(2));
+  if (t2 == Type::TOP) return Type::TOP;
+  if (t2->base() != Type::FloatCon) return Type::FLOAT;
+  const Type *t3 = phase->type(in(3));
+  if (t3 == Type::TOP) return Type::TOP;
+  if (t3->base() != Type::FloatCon) return Type::FLOAT;
+#ifndef __STDC_IEC_559__
+  return Type::FLOAT;
+#else
+  float f1 = t1->getf();
+  float f2 = t2->getf();
+  float f3 = t3->getf();
+  return TypeF::make(fma(f1, f2, f3));
+#endif
+}

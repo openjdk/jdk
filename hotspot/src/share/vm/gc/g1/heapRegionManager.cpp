@@ -482,8 +482,9 @@ void HeapRegionManager::verify_optional() {
 HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
     _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._allocated_heapregions_length), _claims(NULL) {
   assert(n_workers > 0, "Need at least one worker.");
-  _claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
-  memset(_claims, Unclaimed, sizeof(*_claims) * _n_regions);
+  uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
+  memset(new_claims, Unclaimed, sizeof(*_claims) * _n_regions);
+  _claims = new_claims;
 }
 
 HeapRegionClaimer::~HeapRegionClaimer() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,6 +378,7 @@ class ZoneName {
         "Europe/Helsinki", "Europe_Eastern", "Europe/Bucharest",
         "America/Nome", "Alaska", "America/Juneau",
         "Asia/Yakutsk", "Yakutsk", "Asia/Yakutsk",
+        "Asia/Yangon", "Myanmar", "Asia/Rangoon",
         "Africa/Conakry", "GMT", "Atlantic/Reykjavik",
         "Asia/Seoul", "Korea", "Asia/Seoul",
         "America/Antigua", "Atlantic", "America/Halifax",
@@ -747,6 +748,7 @@ class ZoneName {
         "NZ", "Pacific/Auckland",
         "Asia/Tel_Aviv", "Asia/Jerusalem",
         "Hongkong", "Asia/Hong_Kong",
+        "Asia/Rangoon", "Asia/Yangon",
     };
 
     private static final Map<String, String> zidToMzone = new HashMap<>();

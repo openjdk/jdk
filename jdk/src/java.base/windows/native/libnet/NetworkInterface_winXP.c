@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -595,14 +595,14 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
     while (addrs != NULL) {
         jobject iaObj, ia2Obj;
         jobject ibObj = NULL;
-        if (addrs->addr.him.sa_family == AF_INET) {
+        if (addrs->addr.sa.sa_family == AF_INET) {
             iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (iaObj == NULL) {
                 return NULL;
             }
             /* default ctor will set family to AF_INET */
 
-            setInetAddress_addr(env, iaObj, ntohl(addrs->addr.him4.sin_addr.s_addr));
+            setInetAddress_addr(env, iaObj, ntohl(addrs->addr.sa4.sin_addr.s_addr));
 
             ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
             if (ibObj == NULL) {
@@ -615,7 +615,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
               free_netaddr(netaddrP);
               return NULL;
             }
-            setInetAddress_addr(env, ia2Obj, ntohl(addrs->brdcast.him4.sin_addr.s_addr));
+            setInetAddress_addr(env, ia2Obj, ntohl(addrs->brdcast.sa4.sin_addr.s_addr));
             (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
             (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
@@ -623,11 +623,11 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             int scope;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             if (iaObj) {
-                jboolean ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                jboolean ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.sa6.sin6_addr.s6_addr));
                 if (ret == JNI_FALSE) {
                     return NULL;
                 }
-                scope = addrs->addr.him6.sin6_scope_id;
+                scope = addrs->addr.sa6.sin6_scope_id;
                 if (scope != 0) { /* zero is default value, no need to set */
                     setInet6Address_scopeid(env, iaObj, scope);
                     setInet6Address_scopeifname(env, iaObj, netifObj);

@@ -68,15 +68,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      */
     boolean isPrimitive();
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Only the flags specified in the JVM specification will be included in the returned mask. This
-     * method is identical to {@link Class#getModifiers()} in terms of the value return for this
-     * type.
-     */
-    int getModifiers();
-
     /*
      * The setting of the final bit for types is a bit confusing since arrays are marked as final.
      * This method provides a semantically equivalent test that appropriate for types.
