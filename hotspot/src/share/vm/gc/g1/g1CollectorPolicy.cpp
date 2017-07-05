@@ -31,6 +31,7 @@
 #include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Log.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "runtime/arguments.hpp"
