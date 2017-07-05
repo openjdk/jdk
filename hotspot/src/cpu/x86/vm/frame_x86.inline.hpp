@@ -62,6 +62,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   _pc = pc;
   assert(pc != NULL, "no pc?");
   _cb = CodeCache::find_blob(pc);
+  adjust_unextended_sp();
 
   address original_pc = nmethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {

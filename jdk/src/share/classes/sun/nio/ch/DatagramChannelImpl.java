@@ -188,7 +188,7 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOption.IP_TOS) {
+            if (name == StandardSocketOptions.IP_TOS) {
                 // IPv4 only; no-op for IPv6
                 if (family == StandardProtocolFamily.INET) {
                     Net.setSocketOption(fd, family, name, value);
@@ -196,15 +196,15 @@ class DatagramChannelImpl
                 return this;
             }
 
-            if (name == StandardSocketOption.IP_MULTICAST_TTL ||
-                name == StandardSocketOption.IP_MULTICAST_LOOP)
+            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
+                name == StandardSocketOptions.IP_MULTICAST_LOOP)
             {
                 // options are protocol dependent
                 Net.setSocketOption(fd, family, name, value);
                 return this;
             }
 
-            if (name == StandardSocketOption.IP_MULTICAST_IF) {
+            if (name == StandardSocketOptions.IP_MULTICAST_IF) {
                 if (value == null)
                     throw new IllegalArgumentException("Cannot set IP_MULTICAST_IF to 'null'");
                 NetworkInterface interf = (NetworkInterface)value;
@@ -243,7 +243,7 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOption.IP_TOS) {
+            if (name == StandardSocketOptions.IP_TOS) {
                 // IPv4 only; always return 0 on IPv6
                 if (family == StandardProtocolFamily.INET) {
                     return (T) Net.getSocketOption(fd, family, name);
@@ -252,13 +252,13 @@ class DatagramChannelImpl
                 }
             }
 
-            if (name == StandardSocketOption.IP_MULTICAST_TTL ||
-                name == StandardSocketOption.IP_MULTICAST_LOOP)
+            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
+                name == StandardSocketOptions.IP_MULTICAST_LOOP)
             {
                 return (T) Net.getSocketOption(fd, family, name);
             }
 
-            if (name == StandardSocketOption.IP_MULTICAST_IF) {
+            if (name == StandardSocketOptions.IP_MULTICAST_IF) {
                 if (family == StandardProtocolFamily.INET) {
                     int address = Net.getInterface4(fd);
                     if (address == 0)
@@ -291,14 +291,14 @@ class DatagramChannelImpl
 
         private static Set<SocketOption<?>> defaultOptions() {
             HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(8);
-            set.add(StandardSocketOption.SO_SNDBUF);
-            set.add(StandardSocketOption.SO_RCVBUF);
-            set.add(StandardSocketOption.SO_REUSEADDR);
-            set.add(StandardSocketOption.SO_BROADCAST);
-            set.add(StandardSocketOption.IP_TOS);
-            set.add(StandardSocketOption.IP_MULTICAST_IF);
-            set.add(StandardSocketOption.IP_MULTICAST_TTL);
-            set.add(StandardSocketOption.IP_MULTICAST_LOOP);
+            set.add(StandardSocketOptions.SO_SNDBUF);
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            set.add(StandardSocketOptions.SO_REUSEADDR);
+            set.add(StandardSocketOptions.SO_BROADCAST);
+            set.add(StandardSocketOptions.IP_TOS);
+            set.add(StandardSocketOptions.IP_MULTICAST_IF);
+            set.add(StandardSocketOptions.IP_MULTICAST_TTL);
+            set.add(StandardSocketOptions.IP_MULTICAST_LOOP);
             return Collections.unmodifiableSet(set);
         }
     }

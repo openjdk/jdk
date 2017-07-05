@@ -29,7 +29,7 @@ import java.net.SocketOption;
 
 /**
  * Defines socket options that are supported by the implementation
- * but not defined in StandardSocketOption.
+ * but not defined in StandardSocketOptions.
  */
 
 class ExtendedSocketOption {

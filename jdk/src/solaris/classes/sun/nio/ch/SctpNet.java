@@ -35,7 +35,7 @@ import java.util.HashSet;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 import com.sun.nio.sctp.SctpSocketOption;
-import static com.sun.nio.sctp.SctpStandardSocketOption.*;
+import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
 public class SctpNet {
     static final String osName = AccessController.doPrivileged(

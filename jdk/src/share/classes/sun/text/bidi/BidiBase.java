@@ -2889,10 +2889,6 @@ public class BidiBase {
         verifyValidPara();
         verifyRange(start, 0, limit);
         verifyRange(limit, 0, length+1);
-        if (getParagraphIndex(start) != getParagraphIndex(limit - 1)) {
-            /* the line crosses a paragraph boundary */
-            throw new IllegalArgumentException();
-        }
 
         return BidiLine.setLine(bidi, this, newBidi, newBidiBase, start, limit);
     }

@@ -52,13 +52,16 @@ public class ClosedByInterrupt {
                 fc.write(bb);
         }
 
-        // test with 1-8 concurrent threads
-        for (int i=1; i<=8; i++) {
+        // test with 1-16 concurrent threads
+        for (int i=1; i<=16; i++) {
             System.out.format("%d thread(s)%n", i);
             test(f, i);
             if (failed)
                 break;
         }
+
+        if (failed)
+            throw new RuntimeException("Test failed");
     }
 
     /**
@@ -132,12 +135,14 @@ public class ClosedByInterrupt {
                         // give the interruptible thread a chance
                         try {
                             Thread.sleep(rand.nextInt(50));
-                        } catch (InterruptedException ignore) { }
+                        } catch (InterruptedException e) {
+                            unexpected(e);
+                        }
                     }
                 }
             } catch (ClosedByInterruptException e) {
                 if (interruptible) {
-                    if (Thread.currentThread().isInterrupted()) {
+                    if (Thread.interrupted()) {
                         expected(e + " thrown and interrupt status set");
                     } else {
                         unexpected(e + " thrown but interrupt status not set");
@@ -158,7 +163,7 @@ public class ClosedByInterrupt {
     }
 
     static void expected(Exception e) {
-        System.out.format("%s (not expected)%n", e);
+        System.out.format("%s (expected)%n", e);
     }
 
     static void expected(String msg) {

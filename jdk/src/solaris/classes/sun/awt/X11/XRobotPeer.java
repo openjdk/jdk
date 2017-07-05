@@ -48,7 +48,7 @@ class XRobotPeer implements RobotPeer {
     }
 
     public void dispose() {
-        _dispose();
+        // does nothing
     }
 
     public void mouseMove(int x, int y) {
@@ -88,7 +88,6 @@ class XRobotPeer implements RobotPeer {
     }
 
     private static native synchronized void setup(int numberOfButtons, int[] buttonDownMasks);
-    private static native synchronized void _dispose();
 
     private static native synchronized void mouseMoveImpl(X11GraphicsConfig xgc, int x, int y);
     private static native synchronized void mousePressImpl(int buttons);

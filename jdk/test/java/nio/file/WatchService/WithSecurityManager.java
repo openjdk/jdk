@@ -66,7 +66,7 @@ public class WithSecurityManager {
         // attempt to register directory
         try {
             dir.register(dir.getFileSystem().newWatchService(),
-                         new WatchEvent.Kind<?>[]{ StandardWatchEventKind.ENTRY_CREATE },
+                         new WatchEvent.Kind<?>[]{ StandardWatchEventKinds.ENTRY_CREATE },
                          modifiers);
             if (expectedToFail)
                 throw new RuntimeException("SecurityException not thrown");

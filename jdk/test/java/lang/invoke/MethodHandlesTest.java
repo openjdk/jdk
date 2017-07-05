@@ -105,24 +105,6 @@ public class MethodHandlesTest {
     public MethodHandlesTest() {
     }
 
-    @Before
-    public void checkImplementedPlatform() {
-        boolean platformOK = false;
-        Properties properties = System.getProperties();
-        String vers = properties.getProperty("java.vm.version");
-        String name = properties.getProperty("java.vm.name");
-        String arch = properties.getProperty("os.arch");
-        if ((arch.equals("amd64") || arch.equals("i386") || arch.equals("x86") ||
-             arch.equals("sparc") || arch.equals("sparcv9")) &&
-            (name.contains("Client") || name.contains("Server"))
-            ) {
-            platformOK = true;
-        } else {
-            System.err.println("Skipping tests for unsupported platform: "+Arrays.asList(vers, name, arch));
-        }
-        assumeTrue(platformOK);
-    }
-
     String testName;
     static int allPosTests, allNegTests;
     int posTests, negTests;
@@ -330,6 +312,9 @@ public class MethodHandlesTest {
     /** Return lambda(arg...[arity]) { Arrays.asList(arg...) } */
     static MethodHandle varargsArray(int arity) {
         return ValueConversions.varargsArray(arity);
+    }
+    static MethodHandle varargsArray(Class<?> arrayType, int arity) {
+        return ValueConversions.varargsArray(arrayType, arity);
     }
     /** Variation of varargsList, but with the given rtype. */
     static MethodHandle varargsList(int arity, Class<?> rtype) {
@@ -865,7 +850,7 @@ public class MethodHandlesTest {
                     Class<?> type = (Class<?>) t[1];
                     Object value;
                     Field field;
-                    try {
+                        try {
                         field = HasFields.class.getDeclaredField(name);
                     } catch (Exception ex) {
                         throw new InternalError("no field HasFields."+name);
@@ -1144,16 +1129,9 @@ public class MethodHandlesTest {
                 : MethodHandles.arrayElementSetter(arrayType);
         assertSame(mh.type(), expType);
         if (elemType != int.class && elemType != boolean.class) {
-            MethodType gtype;
-            if (true) { // FIXME: remove this path (and remove <void> below in the mh.invokes)
-                gtype = mh.type().changeParameterType(0, Object.class);
-                if (testSetter)
-                    gtype = gtype.changeParameterType(2, Object.class);
-                else
-                    gtype = gtype.changeReturnType(Object.class);
-            } else
-                // FIXME: This simpler path hits a bug in convertArguments => ToGeneric
-                gtype = mh.type().generic().changeParameterType(1, int.class);
+            // FIXME: change Integer.class and (Integer) below to int.class and (int) below.
+            MethodType gtype = mh.type().generic().changeParameterType(1, Integer.class);
+            if (testSetter)  gtype = gtype.changeReturnType(void.class);
             mh = MethodHandles.convertArguments(mh, gtype);
         }
         Object sawValue, expValue;
@@ -1169,7 +1147,7 @@ public class MethodHandlesTest {
                 else if (elemType == boolean.class)
                     mh.invokeExact((boolean[]) array, i, (boolean)random);
                 else
-                    mh.invokeExact(array, i, random);
+                    mh.invokeExact(array, (Integer)i, random);
                 assertEquals(model, array2list(array));
             } else {
                 Array.set(array, i, random);
@@ -1189,7 +1167,7 @@ public class MethodHandlesTest {
                 else if (elemType == boolean.class)
                     sawValue = (boolean) mh.invokeExact((boolean[]) array, i);
                 else
-                    sawValue = mh.invokeExact(array, i);
+                    sawValue = mh.invokeExact(array, (Integer)i);
                 assertEquals(sawValue, expValue);
                 assertEquals(model, array2list(array));
             }
@@ -1341,21 +1319,15 @@ public class MethodHandlesTest {
             int numcases = 1;
             for (int outargs = 0; outargs <= max; outargs++) {
                 if (outargs - inargs >= MAX_ARG_INCREASE)  continue;
-                int[] reorder = new int[outargs];
                 int casStep = dilution + 1;
                 // Avoid some common factors:
                 while ((casStep > 2 && casStep % 2 == 0 && inargs % 2 == 0) ||
                        (casStep > 3 && casStep % 3 == 0 && inargs % 3 == 0))
                     casStep++;
-                for (int cas = 0; cas < numcases; cas += casStep) {
-                    for (int i = 0, c = cas; i < outargs; i++) {
-                        reorder[i] = c % inargs;
-                        c /= inargs;
-                    }
-                    testPermuteArguments(args, types, reorder);
-                }
+                testPermuteArguments(args, types, outargs, numcases, casStep);
                 numcases *= inargs;
                 if (dilution > 10 && outargs >= 4) {
+                    int[] reorder = new int[outargs];
                     // Do some special patterns, which we probably missed.
                     // Replication of a single argument or argument pair.
                     for (int i = 0; i < inargs; i++) {
@@ -1380,6 +1352,19 @@ public class MethodHandlesTest {
                     }
                 }
             }
+        }
+    }
+
+    public void testPermuteArguments(Object[] args, Class<?>[] types,
+                                     int outargs, int numcases, int casStep) throws Throwable {
+        int inargs = args.length;
+        int[] reorder = new int[outargs];
+        for (int cas = 0; cas < numcases; cas += casStep) {
+            for (int i = 0, c = cas; i < outargs; i++) {
+                reorder[i] = c % inargs;
+                c /= inargs;
+            }
+            testPermuteArguments(args, types, reorder);
         }
     }
 
@@ -1433,6 +1418,12 @@ public class MethodHandlesTest {
         MethodHandle newTarget = MethodHandles.permuteArguments(target, inType, reorder);
         Object result = newTarget.invokeWithArguments(args);
         Object expected = Arrays.asList(permArgs);
+        if (!expected.equals(result)) {
+            System.out.println("*** failed permuteArguments "+Arrays.toString(reorder)+" types="+Arrays.asList(types));
+            System.out.println("in args:   "+Arrays.asList(args));
+            System.out.println("out args:  "+expected);
+            System.out.println("bad args:  "+result);
+        }
         assertEquals(expected, result);
     }
 
@@ -1456,26 +1447,27 @@ public class MethodHandlesTest {
     }
     public void testSpreadArguments(Class<?> argType, int pos, int nargs) throws Throwable {
         countTest();
-        MethodHandle target = varargsArray(nargs);
-        MethodHandle target2 = changeArgTypes(target, argType);
+        Class<?> arrayType = java.lang.reflect.Array.newInstance(argType, 0).getClass();
+        MethodHandle target2 = varargsArray(arrayType, nargs);
+        MethodHandle target = target2.asType(target2.type().generic());
         if (verbosity >= 3)
             System.out.println("spread into "+target2+" ["+pos+".."+nargs+"]");
         Object[] args = randomArgs(target2.type().parameterArray());
         // make sure the target does what we think it does:
-        if (pos == 0 && nargs < 5) {
-            Object[] check = (Object[]) target.invokeWithArguments(args);
+        if (pos == 0 && nargs < 5 && !argType.isPrimitive()) {
+            Object[] check = (Object[]) (Object) target.invokeWithArguments(args);
             assertArrayEquals(args, check);
             switch (nargs) {
                 case 0:
-                    check = (Object[]) target.invokeExact();
+                    check = (Object[]) (Object) target.invokeExact();
                     assertArrayEquals(args, check);
                     break;
                 case 1:
-                    check = (Object[]) target.invokeExact(args[0]);
+                    check = (Object[]) (Object) target.invokeExact(args[0]);
                     assertArrayEquals(args, check);
                     break;
                 case 2:
-                    check = (Object[]) target.invokeExact(args[0], args[1]);
+                    check = (Object[]) (Object) target.invokeExact(args[0], args[1]);
                     assertArrayEquals(args, check);
                     break;
             }
@@ -1483,23 +1475,50 @@ public class MethodHandlesTest {
         List<Class<?>> newParams = new ArrayList<Class<?>>(target2.type().parameterList());
         {   // modify newParams in place
             List<Class<?>> spreadParams = newParams.subList(pos, nargs);
-            spreadParams.clear(); spreadParams.add(Object[].class);
+            spreadParams.clear(); spreadParams.add(arrayType);
         }
-        MethodType newType = MethodType.methodType(Object.class, newParams);
-        MethodHandle result = target2.asSpreader(Object[].class, nargs-pos).asType(newType);
-        Object[] returnValue;
+        MethodType newType = MethodType.methodType(arrayType, newParams);
+        MethodHandle result = target2.asSpreader(arrayType, nargs-pos);
+        assert(result.type() == newType) : Arrays.asList(result, newType);
+        result = result.asType(newType.generic());
+        Object returnValue;
         if (pos == 0) {
-            // In the following line, the first cast implies
-            // normal Object return value for the MH call (Object[])->Object,
-            // while the second cast dynamically converts to an Object array.
-            // Such a double cast is typical of MH.invokeExact.
-            returnValue = (Object[]) (Object) result.invokeExact(args);
+            Object args2 = ValueConversions.changeArrayType(arrayType, Arrays.copyOfRange(args, pos, args.length));
+            returnValue = result.invokeExact(args2);
         } else {
             Object[] args1 = Arrays.copyOfRange(args, 0, pos+1);
-            args1[pos] = Arrays.copyOfRange(args, pos, args.length);
-            returnValue = (Object[]) result.invokeWithArguments(args1);
+            args1[pos] = ValueConversions.changeArrayType(arrayType, Arrays.copyOfRange(args, pos, args.length));
+            returnValue = result.invokeWithArguments(args1);
         }
-        assertArrayEquals(args, returnValue);
+        String argstr = Arrays.toString(args);
+        if (!argType.isPrimitive()) {
+            Object[] rv = (Object[]) returnValue;
+            String rvs = Arrays.toString(rv);
+            if (!Arrays.equals(args, rv)) {
+                System.out.println("method:   "+result);
+                System.out.println("expected: "+argstr);
+                System.out.println("returned: "+rvs);
+                assertArrayEquals(args, rv);
+            }
+        } else if (argType == int.class) {
+            String rvs = Arrays.toString((int[]) returnValue);
+            if (!argstr.equals(rvs)) {
+                System.out.println("method:   "+result);
+                System.out.println("expected: "+argstr);
+                System.out.println("returned: "+rvs);
+                assertEquals(argstr, rvs);
+            }
+        } else if (argType == long.class) {
+            String rvs = Arrays.toString((long[]) returnValue);
+            if (!argstr.equals(rvs)) {
+                System.out.println("method:   "+result);
+                System.out.println("expected: "+argstr);
+                System.out.println("returned: "+rvs);
+                assertEquals(argstr, rvs);
+            }
+        } else {
+            // cannot test...
+        }
     }
 
     @Test
@@ -1780,7 +1799,7 @@ public class MethodHandlesTest {
         assertCalled("invokee", args);
         // generic invoker
         countTest();
-        inv = MethodHandles.genericInvoker(type);
+        inv = MethodHandles.invoker(type);
         if (nargs <= 3) {
             calledLog.clear();
             switch (nargs) {
@@ -2130,15 +2149,12 @@ public class MethodHandlesTest {
             Object z = surprise.invokeExact(x);
             System.out.println("Failed to throw; got z="+z);
             assertTrue(false);
-        } catch (Exception ex) {
+        } catch (ClassCastException ex) {
             if (verbosity > 2)
                 System.out.println("caught "+ex);
             if (verbosity > 3)
                 ex.printStackTrace();
-            assertTrue(ex instanceof ClassCastException
-                    // FIXME: accept only one of the two for any given unit test
-                    || ex instanceof WrongMethodTypeException
-                    );
+            assertTrue(true);  // all is well
         }
     }
 
@@ -2327,6 +2343,34 @@ class ValueConversions {
             return ARRAYS[nargs];
         // else need to spin bytecode or do something else fancy
         throw new UnsupportedOperationException("NYI: cannot form a varargs array of length "+nargs);
+    }
+    public static MethodHandle varargsArray(Class<?> arrayType, int nargs) {
+        Class<?> elemType = arrayType.getComponentType();
+        MethodType vaType = MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType));
+        MethodHandle mh = varargsArray(nargs);
+        if (arrayType != Object[].class)
+            mh = MethodHandles.filterReturnValue(mh, CHANGE_ARRAY_TYPE.bindTo(arrayType));
+        return mh.asType(vaType);
+    }
+    static Object changeArrayType(Class<?> arrayType, Object[] a) {
+        Class<?> elemType = arrayType.getComponentType();
+        if (!elemType.isPrimitive())
+            return Arrays.copyOf(a, a.length, arrayType.asSubclass(Object[].class));
+        Object b = java.lang.reflect.Array.newInstance(elemType, a.length);
+        for (int i = 0; i < a.length; i++)
+            java.lang.reflect.Array.set(b, i, a[i]);
+        return b;
+    }
+    private static final MethodHandle CHANGE_ARRAY_TYPE;
+    static {
+        try {
+            CHANGE_ARRAY_TYPE = IMPL_LOOKUP.findStatic(ValueConversions.class, "changeArrayType",
+                                                       MethodType.methodType(Object.class, Class.class, Object[].class));
+        } catch (NoSuchMethodException | IllegalAccessException ex) {
+            Error err = new InternalError("uncaught exception");
+            err.initCause(ex);
+            throw err;
+        }
     }
 
     private static final List<Object> NO_ARGS_LIST = Arrays.asList(NO_ARGS_ARRAY);
