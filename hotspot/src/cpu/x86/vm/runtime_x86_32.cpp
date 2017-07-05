@@ -43,11 +43,11 @@ ExceptionBlob*     OptoRuntime::_exception_blob;
 // This code is entered with a jmp.
 //
 // Arguments:
-//   rax,: exception oop
+//   rax: exception oop
 //   rdx: exception pc
 //
 // Results:
-//   rax,: exception oop
+//   rax: exception oop
 //   rdx: exception pc in caller or ???
 //   destination: exception handler of caller
 //
@@ -113,17 +113,17 @@ void OptoRuntime::generate_exception_blob() {
   __ addptr(rsp, return_off * wordSize);   // Epilog!
   __ pop(rdx); // Exception pc
 
+  // rax: exception handler for given <exception oop/exception pc>
 
-  // rax,: exception handler for given <exception oop/exception pc>
+  // Restore SP from BP if the exception PC is a MethodHandle call.
+  __ cmpl(Address(rcx, JavaThread::is_method_handle_exception_offset()), 0);
+  __ cmovptr(Assembler::notEqual, rsp, rbp);
 
   // We have a handler in rax, (could be deopt blob)
   // rdx - throwing pc, deopt blob will need it.
 
   __ push(rax);
 
-  // rcx contains handler address
-
-  __ get_thread(rcx);           // TLS
   // Get the exception
   __ movptr(rax, Address(rcx, JavaThread::exception_oop_offset()));
   // Get the exception pc in case we are deoptimized
@@ -137,7 +137,7 @@ void OptoRuntime::generate_exception_blob() {
 
   __ pop(rcx);
 
-  // rax,: exception oop
+  // rax: exception oop
   // rcx: exception handler
   // rdx: exception pc
   __ jmp (rcx);

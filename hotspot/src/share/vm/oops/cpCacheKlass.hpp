@@ -61,9 +61,10 @@ class constantPoolCacheKlass: public Klass {
   juint alloc_size() const              { return _alloc_size; }
   void set_alloc_size(juint n)          { _alloc_size = n; }
 
-#ifndef PRODUCT
  public:
   // Printing
+  void oop_print_value_on(oop obj, outputStream* st);
+#ifndef PRODUCT
   void oop_print_on(oop obj, outputStream* st);
 #endif
 

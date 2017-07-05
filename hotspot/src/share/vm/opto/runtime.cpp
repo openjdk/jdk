@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -790,7 +790,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   NOT_PRODUCT(Exceptions::debug_check_abort(exception));
 
   #ifdef ASSERT
-    if (!(exception->is_a(SystemDictionary::throwable_klass()))) {
+    if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
       // should throw an exception here
       ShouldNotReachHere();
     }
@@ -858,6 +858,9 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     thread->set_exception_pc(pc);
     thread->set_exception_handler_pc(handler_address);
     thread->set_exception_stack_size(0);
+
+    // Check if the exception PC is a MethodHandle call.
+    thread->set_is_method_handle_exception(nm->is_method_handle_return(pc));
   }
 
   // Restore correct return pc.  Was saved above.
@@ -936,7 +939,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 #endif
   assert (exception != NULL, "should have thrown a NULLPointerException");
 #ifdef ASSERT
-  if (!(exception->is_a(SystemDictionary::throwable_klass()))) {
+  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
     // should throw an exception here
     ShouldNotReachHere();
   }

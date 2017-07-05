@@ -130,7 +130,7 @@ public class FormatData_de extends ListResourceBundle {
             },
             { "DateTimePatterns",
                 new String[] {
-                    "H.mm' Uhr 'z", // full time pattern
+                    "HH:mm' Uhr 'z", // full time pattern
                     "HH:mm:ss z", // long time pattern
                     "HH:mm:ss", // medium time pattern
                     "HH:mm", // short time pattern

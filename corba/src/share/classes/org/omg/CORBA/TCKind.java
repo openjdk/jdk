@@ -545,8 +545,6 @@ public class TCKind {
     * @param  _value the <code>int</code> to convert.  It must be one of
     *         the <code>int</code> constants in the class
     *         <code>TCKind</code>.
-    * @return  a new <code>TCKind</code> instance whose <code>value</code>
-    * field matches the given <code>int</code>
     */
     @Deprecated
     protected TCKind(int _value){

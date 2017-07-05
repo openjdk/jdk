@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,7 +687,7 @@ int ciMethod::scale_count(int count, float prof_factor) {
 // ------------------------------------------------------------------
 // invokedynamic support
 //
-bool ciMethod::is_method_handle_invoke() {
+bool ciMethod::is_method_handle_invoke() const {
   check_is_loaded();
   bool flag = ((flags().as_int() & JVM_MH_INVOKE_BITS) == JVM_MH_INVOKE_BITS);
 #ifdef ASSERT
@@ -698,6 +698,12 @@ bool ciMethod::is_method_handle_invoke() {
   }
 #endif //ASSERT
   return flag;
+}
+
+bool ciMethod::is_method_handle_adapter() const {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  return get_methodOop()->is_method_handle_adapter();
 }
 
 ciInstance* ciMethod::method_handle_type() {

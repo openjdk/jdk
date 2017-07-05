@@ -268,22 +268,36 @@ static jlong *double_signmask_pool = double_quadword(&fp_signmask_pool[2*2], CON
 static jlong *float_signflip_pool  = double_quadword(&fp_signmask_pool[3*2], CONST64(0x8000000080000000), CONST64(0x8000000080000000));
 static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
 
+// Offset hacking within calls.
+static int pre_call_FPU_size() {
+  if (Compile::current()->in_24_bit_fp_mode())
+    return 6; // fldcw
+  return 0;
+}
+
+static int preserve_SP_size() {
+  return LP64_ONLY(1 +) 2;  // [rex,] op, rm(reg/reg)
+}
+
 // !!!!! Special hack to get all type of calls to specify the byte offset
 //       from the start of the call to the point where the return address
 //       will point.
 int MachCallStaticJavaNode::ret_addr_offset() {
-  return 5 + (Compile::current()->in_24_bit_fp_mode() ? 6 : 0);  // 5 bytes from start of call to where return address points
+  int offset = 5 + pre_call_FPU_size();  // 5 bytes from start of call to where return address points
+  if (_method_handle_invoke)
+    offset += preserve_SP_size();
+  return offset;
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
-  return 10 + (Compile::current()->in_24_bit_fp_mode() ? 6 : 0);  // 10 bytes from start of call to where return address points
+  return 10 + pre_call_FPU_size();  // 10 bytes from start of call to where return address points
 }
 
 static int sizeof_FFree_Float_Stack_All = -1;
 
 int MachCallRuntimeNode::ret_addr_offset() {
   assert(sizeof_FFree_Float_Stack_All != -1, "must have been emitted already");
-  return sizeof_FFree_Float_Stack_All + 5 + (Compile::current()->in_24_bit_fp_mode() ? 6 : 0);
+  return sizeof_FFree_Float_Stack_All + 5 + pre_call_FPU_size();
 }
 
 // Indicate if the safepoint node needs the polling page as an input.
@@ -299,8 +313,16 @@ bool SafePointNode::needs_polling_address_input() {
 // The address of the call instruction needs to be 4-byte aligned to
 // ensure that it does not span a cache line so that it can be patched.
 int CallStaticJavaDirectNode::compute_padding(int current_offset) const {
-  if (Compile::current()->in_24_bit_fp_mode())
-    current_offset += 6;    // skip fldcw in pre_call_FPU, if any
+  current_offset += pre_call_FPU_size();  // skip fldcw, if any
+  current_offset += 1;      // skip call opcode byte
+  return round_to(current_offset, alignment_required()) - current_offset;
+}
+
+// The address of the call instruction needs to be 4-byte aligned to
+// ensure that it does not span a cache line so that it can be patched.
+int CallStaticJavaHandleNode::compute_padding(int current_offset) const {
+  current_offset += pre_call_FPU_size();  // skip fldcw, if any
+  current_offset += preserve_SP_size();   // skip mov rbp, rsp
   current_offset += 1;      // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
@@ -308,8 +330,7 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const {
 // The address of the call instruction needs to be 4-byte aligned to
 // ensure that it does not span a cache line so that it can be patched.
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const {
-  if (Compile::current()->in_24_bit_fp_mode())
-    current_offset += 6;    // skip fldcw in pre_call_FPU, if any
+  current_offset += pre_call_FPU_size();  // skip fldcw, if any
   current_offset += 5;      // skip MOV instruction
   current_offset += 1;      // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
@@ -1460,6 +1481,10 @@ RegMask Matcher::modL_proj_mask() {
   return RegMask();
 }
 
+const RegMask Matcher::method_handle_invoke_SP_save_mask() {
+  return EBP_REG_mask;
+}
+
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -1772,10 +1797,13 @@ encode %{
 
   enc_class pre_call_FPU %{
     // If method sets FPU control word restore it here
+    debug_only(int off0 = cbuf.code_size());
     if( Compile::current()->in_24_bit_fp_mode() ) {
       MacroAssembler masm(&cbuf);
       masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
     }
+    debug_only(int off1 = cbuf.code_size());
+    assert(off1 - off0 == pre_call_FPU_size(), "correct size prediction");
   %}
 
   enc_class post_call_FPU %{
@@ -1784,6 +1812,21 @@ encode %{
       MacroAssembler masm(&cbuf);
       masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
     }
+  %}
+
+  enc_class preserve_SP %{
+    debug_only(int off0 = cbuf.code_size());
+    MacroAssembler _masm(&cbuf);
+    // RBP is preserved across all calls, even compiled calls.
+    // Use it to preserve RSP in places where the callee might change the SP.
+    __ movptr(rbp, rsp);
+    debug_only(int off1 = cbuf.code_size());
+    assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
+  %}
+
+  enc_class restore_SP %{
+    MacroAssembler _masm(&cbuf);
+    __ movptr(rsp, rbp);
   %}
 
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
@@ -13406,6 +13449,7 @@ instruct cmovXX_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regX dst, 
 //       compute_padding() functions will have to be adjusted.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
+  predicate(! ((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth);
 
   ins_cost(300);
@@ -13413,6 +13457,30 @@ instruct CallStaticJavaDirect(method meth) %{
   opcode(0xE8); /* E8 cd */
   ins_encode( pre_call_FPU,
               Java_Static_Call( meth ),
+              call_epilog,
+              post_call_FPU );
+  ins_pipe( pipe_slow );
+  ins_pc_relative(1);
+  ins_alignment(4);
+%}
+
+// Call Java Static Instruction (method handle version)
+// Note: If this code changes, the corresponding ret_addr_offset() and
+//       compute_padding() functions will have to be adjusted.
+instruct CallStaticJavaHandle(method meth, eBPRegP ebp) %{
+  match(CallStaticJava);
+  predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
+  effect(USE meth);
+  // EBP is saved by all callees (for interpreter stack correction).
+  // We use it here for a similar purpose, in {preserve,restore}_SP.
+
+  ins_cost(300);
+  format %{ "CALL,static/MethodHandle " %}
+  opcode(0xE8); /* E8 cd */
+  ins_encode( pre_call_FPU,
+              preserve_SP,
+              Java_Static_Call( meth ),
+              restore_SP,
               call_epilog,
               post_call_FPU );
   ins_pipe( pipe_slow );

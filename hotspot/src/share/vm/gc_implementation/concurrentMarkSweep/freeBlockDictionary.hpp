@@ -55,7 +55,8 @@ class FreeBlockDictionary: public CHeapObj {
   virtual void       dictCensusUpdate(size_t size, bool split, bool birth) = 0;
   virtual bool       coalDictOverPopulated(size_t size) = 0;
   virtual void       beginSweepDictCensus(double coalSurplusPercent,
-                       float sweep_current, float sweep_ewstimate) = 0;
+                       float inter_sweep_current, float inter_sweep_estimate,
+                       float intra__sweep_current) = 0;
   virtual void       endSweepDictCensus(double splitSurplusPercent) = 0;
   virtual FreeChunk* findLargestDict() const = 0;
   // verify that the given chunk is in the dictionary.
@@ -79,6 +80,7 @@ class FreeBlockDictionary: public CHeapObj {
   }
 
   virtual void       printDictCensus() const = 0;
+  virtual void       print_free_lists(outputStream* st) const = 0;
 
   virtual void       verify()         const = 0;
 
