@@ -40,6 +40,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.security.AccessController;
 import java.security.AccessControlContext;
+import java.security.Permission;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
@@ -132,24 +133,30 @@ import java.util.concurrent.locks.LockSupport;
  *  </tr>
  * </table>
  *
- * <p>The common pool is by default constructed with default
- * parameters, but these may be controlled by setting the following
- * {@linkplain System#getProperty system properties}:
+ * <p>The parameters used to construct the common pool may be controlled by
+ * setting the following {@linkplain System#getProperty system properties}:
  * <ul>
  * <li>{@code java.util.concurrent.ForkJoinPool.common.parallelism}
  * - the parallelism level, a non-negative integer
  * <li>{@code java.util.concurrent.ForkJoinPool.common.threadFactory}
- * - the class name of a {@link ForkJoinWorkerThreadFactory}
+ * - the class name of a {@link ForkJoinWorkerThreadFactory}.
+ * The {@linkplain ClassLoader#getSystemClassLoader() system class loader}
+ * is used to load this class.
  * <li>{@code java.util.concurrent.ForkJoinPool.common.exceptionHandler}
- * - the class name of a {@link UncaughtExceptionHandler}
+ * - the class name of a {@link UncaughtExceptionHandler}.
+ * The {@linkplain ClassLoader#getSystemClassLoader() system class loader}
+ * is used to load this class.
  * <li>{@code java.util.concurrent.ForkJoinPool.common.maximumSpares}
  * - the maximum number of allowed extra threads to maintain target
  * parallelism (default 256).
  * </ul>
- * If a {@link SecurityManager} is present and no factory is
- * specified, then the default pool uses a factory supplying
- * threads that have no {@link Permissions} enabled.
- * The system class loader is used to load these classes.
+ * If no thread factory is supplied via a system property, then the
+ * common pool uses a factory that uses the system class loader as the
+ * {@linkplain Thread#getContextClassLoader() thread context class loader}.
+ * In addition, if a {@link SecurityManager} is present, then
+ * the common pool uses a factory supplying threads that have no
+ * {@link Permissions} enabled.
+ *
  * Upon any error in establishing these settings, default parameters
  * are used. It is possible to disable or limit the use of threads in
  * the common pool by setting the parallelism property to zero, and/or
@@ -638,20 +645,38 @@ public class ForkJoinPool extends AbstractExecutorService {
          *
          * @param pool the pool this thread works in
          * @return the new worker thread, or {@code null} if the request
-         *         to create a thread is rejected.
+         *         to create a thread is rejected
          * @throws NullPointerException if the pool is null
          */
         public ForkJoinWorkerThread newThread(ForkJoinPool pool);
     }
 
+    static AccessControlContext contextWithPermissions(Permission ... perms) {
+        Permissions permissions = new Permissions();
+        for (Permission perm : perms)
+            permissions.add(perm);
+        return new AccessControlContext(
+            new ProtectionDomain[] { new ProtectionDomain(null, permissions) });
+    }
+
     /**
      * Default ForkJoinWorkerThreadFactory implementation; creates a
-     * new ForkJoinWorkerThread.
+     * new ForkJoinWorkerThread using the system class loader as the
+     * thread context class loader.
      */
     private static final class DefaultForkJoinWorkerThreadFactory
         implements ForkJoinWorkerThreadFactory {
+        private static final AccessControlContext ACC = contextWithPermissions(
+            new RuntimePermission("getClassLoader"),
+            new RuntimePermission("setContextClassLoader"));
+
         public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
-            return new ForkJoinWorkerThread(pool);
+            return AccessController.doPrivileged(
+                new PrivilegedAction<>() {
+                    public ForkJoinWorkerThread run() {
+                        return new ForkJoinWorkerThread(
+                            pool, ClassLoader.getSystemClassLoader()); }},
+                ACC);
         }
     }
 
@@ -3244,26 +3269,20 @@ public class ForkJoinPool extends AbstractExecutorService {
          * An ACC to restrict permissions for the factory itself.
          * The constructed workers have no permissions set.
          */
-        private static final AccessControlContext INNOCUOUS_ACC;
-        static {
-            Permissions innocuousPerms = new Permissions();
-            innocuousPerms.add(modifyThreadPermission);
-            innocuousPerms.add(new RuntimePermission(
-                                   "enableContextClassLoaderOverride"));
-            innocuousPerms.add(new RuntimePermission(
-                                   "modifyThreadGroup"));
-            INNOCUOUS_ACC = new AccessControlContext(new ProtectionDomain[] {
-                    new ProtectionDomain(null, innocuousPerms)
-                });
-        }
+        private static final AccessControlContext ACC = contextWithPermissions(
+            modifyThreadPermission,
+            new RuntimePermission("enableContextClassLoaderOverride"),
+            new RuntimePermission("modifyThreadGroup"),
+            new RuntimePermission("getClassLoader"),
+            new RuntimePermission("setContextClassLoader"));
 
         public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
-            return AccessController.doPrivileged(new PrivilegedAction<>() {
-                public ForkJoinWorkerThread run() {
-                    return new ForkJoinWorkerThread.
-                        InnocuousForkJoinWorkerThread(pool);
-                }}, INNOCUOUS_ACC);
+            return AccessController.doPrivileged(
+                new PrivilegedAction<>() {
+                    public ForkJoinWorkerThread run() {
+                        return new ForkJoinWorkerThread.
+                            InnocuousForkJoinWorkerThread(pool); }},
+                ACC);
         }
     }
-
 }

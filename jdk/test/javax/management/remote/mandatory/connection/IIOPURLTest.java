@@ -26,7 +26,7 @@
  * @bug 4886799
  * @summary Check that IIOP URLs have /ior/ in the path
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean IIOPURLTest
  * @run build IIOPURLTest
  * @run main IIOPURLTest

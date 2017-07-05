@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4990825
- * @modules jdk.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
  * @summary test that VmIdentifier objects get created as expected
  */
 

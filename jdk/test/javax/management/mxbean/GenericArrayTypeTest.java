@@ -27,7 +27,7 @@
  * @summary Test support for arrays in parameterized types.
  * @author Luis-Miguel Alventosa
  * @key intermittent
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean GenericArrayTypeTest
  * @run build GenericArrayTypeTest
  * @run main GenericArrayTypeTest

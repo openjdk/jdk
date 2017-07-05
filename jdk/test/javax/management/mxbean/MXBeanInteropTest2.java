@@ -26,7 +26,7 @@
  * @bug 8058865
  * @summary Checks access to test MXBean
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @library /lib/testlibrary
  * @compile Basic.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD MXBeanInteropTest2

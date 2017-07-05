@@ -26,7 +26,7 @@
  * @bug 5016705
  * @summary Tests the use of the RMIExporter class.
  * @author Luis-Miguel Alventosa
- * @modules java.management/com.sun.jmx.remote.internal
+ * @modules java.management.rmi/com.sun.jmx.remote.internal.rmi
  * @run clean RMIExporterTest
  * @run build RMIExporterTest
  * @run main RMIExporterTest
@@ -46,7 +46,7 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
-import com.sun.jmx.remote.internal.RMIExporter;
+import com.sun.jmx.remote.internal.rmi.RMIExporter;
 
 public class RMIExporterTest {
 

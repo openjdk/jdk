@@ -250,7 +250,11 @@ public:
 
   address insts_begin() const { return code_begin(); }
   address insts_end() const { return stub_begin(); }
+  // Returns true if a given address is in the 'insts' section. The method
+  // insts_contains_inclusive() is end-inclusive.
   bool insts_contains(address addr) const { return insts_begin() <= addr && addr < insts_end(); }
+  bool insts_contains_inclusive(address addr) const { return insts_begin() <= addr && addr <= insts_end(); }
+
   int insts_size() const { return insts_end() - insts_begin(); }
 
   virtual address consts_begin() const = 0;

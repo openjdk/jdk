@@ -27,7 +27,8 @@
  * @summary Tests the use of the subject delegation feature in the
  *          RMI connector
  * @author Luis-Miguel Alventosa
- * @modules java.management/com.sun.jmx.remote.security
+ * @modules java.management.rmi
+ *          java.management/com.sun.jmx.remote.security
  * @run clean SubjectDelegation1Test SimpleStandard SimpleStandardMBean
  * @run build SubjectDelegation1Test SimpleStandard SimpleStandardMBean
  * @run main SubjectDelegation1Test policy11 ok

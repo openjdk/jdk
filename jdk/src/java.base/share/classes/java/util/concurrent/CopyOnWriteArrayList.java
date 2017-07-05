@@ -797,7 +797,7 @@ public class CopyOnWriteArrayList<E>
      * @throws NullPointerException {@inheritDoc}
      */
     public void forEach(Consumer<? super E> action) {
-        if (action == null) throw new NullPointerException();
+        Objects.requireNonNull(action);
         for (Object x : getArray()) {
             @SuppressWarnings("unchecked") E e = (E) x;
             action.accept(e);
@@ -808,7 +808,7 @@ public class CopyOnWriteArrayList<E>
      * @throws NullPointerException {@inheritDoc}
      */
     public boolean removeIf(Predicate<? super E> filter) {
-        if (filter == null) throw new NullPointerException();
+        Objects.requireNonNull(filter);
         return bulkRemove(filter);
     }
 
@@ -865,7 +865,7 @@ public class CopyOnWriteArrayList<E>
     }
 
     public void replaceAll(UnaryOperator<E> operator) {
-        if (operator == null) throw new NullPointerException();
+        Objects.requireNonNull(operator);
         synchronized (lock) {
             replaceAll(operator, 0, getArray().length);
         }
@@ -1329,7 +1329,7 @@ public class CopyOnWriteArrayList<E>
         }
 
         public void forEach(Consumer<? super E> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action);
             int i, end; final Object[] es;
             synchronized (l.lock) {
                 es = getArrayChecked();
@@ -1341,7 +1341,7 @@ public class CopyOnWriteArrayList<E>
         }
 
         public void replaceAll(UnaryOperator<E> operator) {
-            if (operator == null) throw new NullPointerException();
+            Objects.requireNonNull(operator);
             synchronized (l.lock) {
                 checkForComodification();
                 l.replaceAll(operator, offset, offset + size);

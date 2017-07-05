@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,20 @@
  * questions.
  */
 
+#include <dlfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
 #include "jvm_md.h"
-#include "jlong.h"
-#include "sun_net_spi_DefaultProxySelector.h"
-#include <dlfcn.h>
-#include <stdio.h>
-#include <stdlib.h>
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
-#include <string.h>
-#else
-#include <strings.h>
-#endif
 
-#ifndef CHECK_NULL_RETURN
-#define CHECK_NULL_RETURN(x, y) if ((x) == NULL) return y;
-#endif
+#include "proxy_util.h"
+
+#include "sun_net_spi_DefaultProxySelector.h"
+
 
 /**
  * These functions are used by the sun.net.spi.DefaultProxySelector class
@@ -112,42 +108,10 @@ static g_network_address_get_hostname_func* g_network_address_get_hostname = NUL
 static g_network_address_get_port_func* g_network_address_get_port = NULL;
 static g_strfreev_func* g_strfreev = NULL;
 
-
-static jclass proxy_class;
-static jclass isaddr_class;
-static jclass ptype_class;
-static jmethodID isaddr_createUnresolvedID;
-static jmethodID proxy_ctrID;
-static jfieldID ptype_httpID;
-static jfieldID ptype_socksID;
-
-
 static void* gconf_client = NULL;
 static int use_gproxyResolver = 0;
 static int use_gconf = 0;
 
-
-static jobject createProxy(JNIEnv *env, jfieldID ptype_ID,
-                           const char* phost, unsigned short pport)
-{
-    jobject jProxy = NULL;
-    jobject type_proxy = NULL;
-    type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_ID);
-    if (type_proxy) {
-        jstring jhost = NULL;
-        jhost = (*env)->NewStringUTF(env, phost);
-        if (jhost) {
-            jobject isa = NULL;
-            isa = (*env)->CallStaticObjectMethod(env, isaddr_class,
-                    isaddr_createUnresolvedID, jhost, pport);
-            if (isa) {
-                jProxy = (*env)->NewObject(env, proxy_class, proxy_ctrID,
-                                          type_proxy, isa);
-            }
-        }
-    }
-    return jProxy;
-}
 
 static int initGConf() {
     /**
@@ -196,18 +160,18 @@ static int initGConf() {
     return 0;
 }
 
-static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
-                               const char* chost)
+static jobjectArray getProxyByGConf(JNIEnv *env, const char* cproto,
+                                    const char* chost)
 {
     char *phost = NULL;
     char *mode = NULL;
     int pport = 0;
     int use_proxy = 0;
     int use_same_proxy = 0;
-    jobject proxy = NULL;
+    jobjectArray proxy_array = NULL;
     jfieldID ptype_ID = ptype_httpID;
 
-    // We only check manual proxy configurations
+    /* We only check manual proxy configurations */
     mode =  (*my_get_string_func)(gconf_client, "/system/proxy/mode", NULL);
     if (mode && !strcasecmp(mode, "manual")) {
         /*
@@ -293,7 +257,7 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
         char *s;
 
         /**
-         * check for the exclude list (aka "No Proxy For" list).
+         * Check for the exclude list (aka "No Proxy For" list).
          * It's a list of comma separated suffixes (e.g. domain name).
          */
         noproxyfor = (*my_get_string_func)(gconf_client, "/system/proxy/no_proxy_for", NULL);
@@ -313,11 +277,25 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
                 s = strtok_r(NULL, ", ", tmpbuf);
             }
         }
-        if (use_proxy)
+        if (use_proxy) {
+            jobject proxy = NULL;
+            /* create a proxy array with one element. */
+            proxy_array = (*env)->NewObjectArray(env, 1, proxy_class, NULL);
+            if (proxy_array == NULL || (*env)->ExceptionCheck(env)) {
+                return NULL;
+            }
             proxy = createProxy(env, ptype_ID, phost, pport);
+            if (proxy == NULL || (*env)->ExceptionCheck(env)) {
+                return NULL;
+            }
+            (*env)->SetObjectArrayElement(env, proxy_array, 0, proxy);
+            if ((*env)->ExceptionCheck(env)) {
+                return NULL;
+            }
+        }
     }
 
-    return proxy;
+    return proxy_array;
 }
 
 static int initGProxyResolver() {
@@ -371,8 +349,8 @@ static int initGProxyResolver() {
     return 1;
 }
 
-static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
-                                        const char* chost)
+static jobjectArray getProxyByGProxyResolver(JNIEnv *env, const char *cproto,
+                                             const char *chost)
 {
     GProxyResolver* resolver = NULL;
     char** proxies = NULL;
@@ -382,19 +360,19 @@ static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
     size_t hostLen = 0;
     char* uri = NULL;
 
-    jobject jProxy = NULL;
+    jobjectArray proxy_array = NULL;
 
     resolver = (*g_proxy_resolver_get_default)();
     if (resolver == NULL) {
         return NULL;
     }
 
-    // Construct the uri, cproto + "://" + chost
+    /* Construct the uri, cproto + "://" + chost */
     protoLen = strlen(cproto);
     hostLen = strlen(chost);
     uri = malloc(protoLen + hostLen + 4);
     if (!uri) {
-        // Out of memory
+        /* Out of memory */
         return NULL;
     }
     memcpy(uri, cproto, protoLen);
@@ -414,22 +392,56 @@ static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
     if (proxies) {
         if (!error) {
             int i;
-            for(i = 0; proxies[i] && !jProxy; i++) {
-                if (strcmp(proxies[i], "direct://")) {
-                    GSocketConnectable* conn =
-                            (*g_network_address_parse_uri)(proxies[i], 0,
-                                                           &error);
-                    if (conn && !error) {
-                        const char* phost = NULL;
-                        unsigned short pport = 0;
-                        phost = (*g_network_address_get_hostname)(conn);
-                        pport = (*g_network_address_get_port)(conn);
-                        if (phost && pport > 0) {
-                            jfieldID ptype_ID = ptype_httpID;
-                            if (!strncmp(proxies[i], "socks", 5))
-                                ptype_ID = ptype_socksID;
+            int nr_proxies = 0;
+            char** p = proxies;
+            /* count the elements in the null terminated string vector. */
+            while (*p) {
+                nr_proxies++;
+                p++;
+            }
+            /* create a proxy array that has to be filled. */
+            proxy_array = (*env)->NewObjectArray(env, nr_proxies, proxy_class, NULL);
+            if (proxy_array != NULL && !(*env)->ExceptionCheck(env)) {
+                for (i = 0; proxies[i]; i++) {
+                    if (strncmp(proxies[i], "direct://", 9)) {
+                        GSocketConnectable* conn =
+                                (*g_network_address_parse_uri)(proxies[i], 0,
+                                                               &error);
+                        if (conn && !error) {
+                            const char *phost = NULL;
+                            unsigned short pport = 0;
+                            phost = (*g_network_address_get_hostname)(conn);
+                            pport = (*g_network_address_get_port)(conn);
+                            if (phost && pport > 0) {
+                                jobject proxy = NULL;
+                                jfieldID ptype_ID = ptype_httpID;
+                                if (!strncmp(proxies[i], "socks", 5))
+                                    ptype_ID = ptype_socksID;
 
-                            jProxy = createProxy(env, ptype_ID, phost, pport);
+                                proxy = createProxy(env, ptype_ID, phost, pport);
+                                if (proxy == NULL || (*env)->ExceptionCheck(env)) {
+                                    proxy_array = NULL;
+                                    break;
+                                }
+                                (*env)->SetObjectArrayElement(env, proxy_array, i, proxy);
+                                if ((*env)->ExceptionCheck(env)) {
+                                    proxy_array = NULL;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        /* direct connection - no proxy */
+                        jobject proxy = (*env)->GetStaticObjectField(env, proxy_class,
+                                                                     pr_no_proxyID);
+                        if (proxy == NULL || (*env)->ExceptionCheck(env)) {
+                            proxy_array = NULL;
+                            break;
+                        }
+                        (*env)->SetObjectArrayElement(env, proxy_array, i, proxy);
+                        if ((*env)->ExceptionCheck(env)) {
+                            proxy_array = NULL;
+                            break;
                         }
                     }
                 }
@@ -438,47 +450,8 @@ static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
         (*g_strfreev)(proxies);
     }
 
-    return jProxy;
+    return proxy_array;
 }
-
-static int initJavaClass(JNIEnv *env) {
-    jclass proxy_cls = NULL;
-    jclass ptype_cls = NULL;
-    jclass isaddr_cls = NULL;
-
-    // Proxy initialization
-    proxy_cls = (*env)->FindClass(env,"java/net/Proxy");
-    CHECK_NULL_RETURN(proxy_cls, 0);
-    proxy_class = (*env)->NewGlobalRef(env, proxy_cls);
-    CHECK_NULL_RETURN(proxy_class, 0);
-    proxy_ctrID = (*env)->GetMethodID(env, proxy_class, "<init>",
-            "(Ljava/net/Proxy$Type;Ljava/net/SocketAddress;)V");
-    CHECK_NULL_RETURN(proxy_ctrID, 0);
-
-    // Proxy$Type initialization
-    ptype_cls = (*env)->FindClass(env,"java/net/Proxy$Type");
-    CHECK_NULL_RETURN(ptype_cls, 0);
-    ptype_class = (*env)->NewGlobalRef(env, ptype_cls);
-    CHECK_NULL_RETURN(ptype_class, 0);
-    ptype_httpID = (*env)->GetStaticFieldID(env, ptype_class, "HTTP",
-                                            "Ljava/net/Proxy$Type;");
-    CHECK_NULL_RETURN(ptype_httpID, 0);
-    ptype_socksID = (*env)->GetStaticFieldID(env, ptype_class, "SOCKS",
-                                             "Ljava/net/Proxy$Type;");
-    CHECK_NULL_RETURN(ptype_socksID, 0);
-
-    // InetSocketAddress initialization
-    isaddr_cls = (*env)->FindClass(env, "java/net/InetSocketAddress");
-    CHECK_NULL_RETURN(isaddr_cls, 0);
-    isaddr_class = (*env)->NewGlobalRef(env, isaddr_cls);
-    CHECK_NULL_RETURN(isaddr_class, 0);
-    isaddr_createUnresolvedID = (*env)->GetStaticMethodID(env, isaddr_class,
-            "createUnresolved",
-            "(Ljava/lang/String;I)Ljava/net/InetSocketAddress;");
-
-    return isaddr_createUnresolvedID != NULL ? 1 : 0;
-}
-
 
 /*
  * Class:     sun_net_spi_DefaultProxySelector
@@ -500,14 +473,14 @@ Java_sun_net_spi_DefaultProxySelector_init(JNIEnv *env, jclass clazz) {
 
 /*
  * Class:     sun_net_spi_DefaultProxySelector
- * Method:    getSystemProxy
- * Signature: ([Ljava/lang/String;Ljava/lang/String;)Ljava/net/Proxy;
+ * Method:    getSystemProxies
+ * Signature: ([Ljava/lang/String;Ljava/lang/String;)[Ljava/net/Proxy;
  */
-JNIEXPORT jobject JNICALL
-Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
-                                                     jobject this,
-                                                     jstring proto,
-                                                     jstring host)
+JNIEXPORT jobjectArray JNICALL
+Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
+                                                       jobject this,
+                                                       jstring proto,
+                                                       jstring host)
 {
     const char* cproto;
     const char* chost;
@@ -515,7 +488,7 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
     jboolean isProtoCopy;
     jboolean isHostCopy;
 
-    jobject proxy = NULL;
+    jobjectArray proxyArray = NULL;
 
     cproto = (*env)->GetStringUTFChars(env, proto, &isProtoCopy);
 
@@ -523,16 +496,15 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
         chost = (*env)->GetStringUTFChars(env, host, &isHostCopy);
         if (chost != NULL) {
             if (use_gproxyResolver)
-                proxy = getProxyByGProxyResolver(env, cproto, chost);
+                proxyArray = getProxyByGProxyResolver(env, cproto, chost);
             else if (use_gconf)
-                proxy = getProxyByGConf(env, cproto, chost);
-
+                proxyArray = getProxyByGConf(env, cproto, chost);
             if (isHostCopy == JNI_TRUE)
                 (*env)->ReleaseStringUTFChars(env, host, chost);
         }
         if (isProtoCopy == JNI_TRUE)
             (*env)->ReleaseStringUTFChars(env, proto, cproto);
     }
-    return proxy;
+    return proxyArray;
 }
 

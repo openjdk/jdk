@@ -26,7 +26,8 @@
  * @bug 4871761
  * @summary Tests that JMXServiceErrorException is correctly emitted.
  * @author Daniel Fuchs
- * @modules java.management/com.sun.jmx.remote.security
+ * @modules java.management.rmi
+ *          java.management/com.sun.jmx.remote.security
  * @run clean JMXServerErrorTest
  * @run build JMXServerErrorTest
  * @run main  JMXServerErrorTest
