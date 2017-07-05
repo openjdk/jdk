@@ -61,8 +61,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
     private static native void nativeSetNSWindowSecurityWarningPositioning(long nsWindowPtr, double x, double y, float biasX, float biasY);
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
-    private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr);
+    private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeDispose(long nsWindowPtr);
+    private static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
     private static native int nativeGetNSWindowDisplayID_AppKitThread(long nsWindowPtr);
 
@@ -588,7 +589,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         }
 
-        nativeSynthesizeMouseEnteredExitedEvents(nsWindowPtr);
+        nativeSynthesizeMouseEnteredExitedEvents();
 
         // Configure stuff #2
         updateFocusabilityForAutoRequestFocus(true);
@@ -729,6 +730,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         setStyleBits(ALWAYS_ON_TOP, isAlwaysOnTop);
     }
 
+    public PlatformWindow getTopmostPlatformWindowUnderMouse(){
+        return CPlatformWindow.nativeGetTopmostPlatformWindowUnderMouse();
+    }
+
     @Override
     public void setOpacity(float opacity) {
         CWrapper.NSWindow.setAlphaValue(getNSWindowPtr(), opacity);
@@ -803,7 +808,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 throw new RuntimeException("Unknown window state: " + windowState);
         }
 
-        nativeSynthesizeMouseEnteredExitedEvents(nsWindowPtr);
+        nativeSynthesizeMouseEnteredExitedEvents();
 
         // NOTE: the SWP.windowState field gets updated to the newWindowState
         //       value when the native notification comes to us

@@ -41,6 +41,7 @@ import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
 import sun.awt.CausedFocusEvent;
+import sun.awt.TimedWindowEvent;
 
 /**
  * The default KeyboardFocusManager for AWT applications. Focus traversal is
@@ -72,8 +73,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private WeakReference<Window> realOppositeWindowWR = NULL_WINDOW_WR;
     private WeakReference<Component> realOppositeComponentWR = NULL_COMPONENT_WR;
     private int inSendMessage;
-    private LinkedList enqueuedKeyEvents = new LinkedList(),
-        typeAheadMarkers = new LinkedList();
+    private LinkedList<KeyEvent> enqueuedKeyEvents = new LinkedList<KeyEvent>();
+    private LinkedList<TypeAheadMarker> typeAheadMarkers = new LinkedList<TypeAheadMarker>();
     private boolean consumeNextKeyTyped;
 
     static {
@@ -269,6 +270,31 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         return se.dispatched;
     }
 
+    /*
+     * Checks if the focus window event follows key events waiting in the type-ahead
+     * queue (if any). This may happen when a user types ahead in the window, the client
+     * listeners hang EDT for a while, and the user switches b/w toplevels. In that
+     * case the focus window events may be dispatched before the type-ahead events
+     * get handled. This may lead to wrong focus behavior and in order to avoid it,
+     * the focus window events are reposted to the end of the event queue. See 6981400.
+     */
+    private boolean repostIfFollowsKeyEvents(WindowEvent e) {
+        if (!(e instanceof TimedWindowEvent)) {
+            return false;
+        }
+        TimedWindowEvent we = (TimedWindowEvent)e;
+        long time = we.getWhen();
+        synchronized (this) {
+            for (KeyEvent ke: enqueuedKeyEvents) {
+                if (time >= ke.getWhen()) {
+                    SunToolkit.postEvent(AppContext.getAppContext(), new SequencedEvent(e));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * This method is called by the AWT event dispatcher requesting that the
      * current KeyboardFocusManager dispatch the specified event on its behalf.
@@ -287,6 +313,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         if (focusLog.isLoggable(PlatformLogger.FINE) && (e instanceof WindowEvent || e instanceof FocusEvent)) focusLog.fine("" + e);
         switch (e.getID()) {
             case WindowEvent.WINDOW_GAINED_FOCUS: {
+                if (repostIfFollowsKeyEvents((WindowEvent)e)) {
+                    break;
+                }
+
                 WindowEvent we = (WindowEvent)e;
                 Window oldFocusedWindow = getGlobalFocusedWindow();
                 Window newFocusedWindow = we.getWindow();
@@ -646,6 +676,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
 
             case WindowEvent.WINDOW_LOST_FOCUS: {
+                if (repostIfFollowsKeyEvents((WindowEvent)e)) {
+                    break;
+                }
+
                 WindowEvent we = (WindowEvent)e;
                 Window currentFocusedWindow = getGlobalFocusedWindow();
                 Window losingFocusWindow = we.getWindow();
@@ -825,10 +859,9 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             ke = null;
             synchronized (this) {
                 if (enqueuedKeyEvents.size() != 0) {
-                    ke = (KeyEvent)enqueuedKeyEvents.getFirst();
+                    ke = enqueuedKeyEvents.getFirst();
                     if (typeAheadMarkers.size() != 0) {
-                        TypeAheadMarker marker = (TypeAheadMarker)
-                            typeAheadMarkers.getFirst();
+                        TypeAheadMarker marker = typeAheadMarkers.getFirst();
                         // Fixed 5064013: may appears that the events have the same time
                         // if (ke.getWhen() >= marker.after) {
                         // The fix is rolled out.
@@ -857,9 +890,9 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             focusLog.finest(">>> Markers dump, time: {0}", System.currentTimeMillis());
             synchronized (this) {
                 if (typeAheadMarkers.size() != 0) {
-                    Iterator iter = typeAheadMarkers.iterator();
+                    Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator();
                     while (iter.hasNext()) {
-                        TypeAheadMarker marker = (TypeAheadMarker)iter.next();
+                        TypeAheadMarker marker = iter.next();
                         focusLog.finest("    {0}", marker);
                     }
                 }
@@ -881,8 +914,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 KeyEvent ke = (KeyEvent)e;
                 synchronized (this) {
                     if (e.isPosted && typeAheadMarkers.size() != 0) {
-                        TypeAheadMarker marker = (TypeAheadMarker)
-                            typeAheadMarkers.getFirst();
+                        TypeAheadMarker marker = typeAheadMarkers.getFirst();
                         // Fixed 5064013: may appears that the events have the same time
                         // if (ke.getWhen() >= marker.after) {
                         // The fix is rolled out.
@@ -915,12 +947,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 synchronized (this) {
                     boolean found = false;
                     if (hasMarker(target)) {
-                        for (Iterator iter = typeAheadMarkers.iterator();
+                        for (Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator();
                              iter.hasNext(); )
                         {
-                            if (((TypeAheadMarker)iter.next()).untilFocused ==
-                                target)
-                            {
+                            if (iter.next().untilFocused == target) {
                                 found = true;
                             } else if (found) {
                                 break;
@@ -955,8 +985,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * @since 1.5
      */
     private boolean hasMarker(Component comp) {
-        for (Iterator iter = typeAheadMarkers.iterator(); iter.hasNext(); ) {
-            if (((TypeAheadMarker)iter.next()).untilFocused == comp) {
+        for (Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator(); iter.hasNext(); ) {
+            if (iter.next().untilFocused == comp) {
                 return true;
             }
         }
@@ -982,11 +1012,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             return true;
         }
 
-        // Explicitly set the current event and most recent timestamp here in
-        // addition to the call in Component.dispatchEventImpl. Because
-        // KeyEvents can be delivered in response to a FOCUS_GAINED event, the
-        // current timestamp may be incorrect. We need to set it here so that
-        // KeyEventDispatchers will use the correct time.
+        // Explicitly set the key event timestamp here (not in Component.dispatchEventImpl):
+        // - A key event is anyway passed to this method which starts its actual dispatching.
+        // - If a key event is put to the type ahead queue, its time stamp should not be registered
+        //   until its dispatching actually starts (by this method).
         EventQueue.setCurrentEventAndMostRecentTime(ke);
 
         /**
@@ -1174,10 +1203,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
         int insertionIndex = 0,
             i = typeAheadMarkers.size();
-        ListIterator iter = typeAheadMarkers.listIterator(i);
+        ListIterator<TypeAheadMarker> iter = typeAheadMarkers.listIterator(i);
 
         for (; i > 0; i--) {
-            TypeAheadMarker marker = (TypeAheadMarker)iter.previous();
+            TypeAheadMarker marker = iter.previous();
             if (marker.after <= after) {
                 insertionIndex = i;
                 break;
@@ -1213,12 +1242,12 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                        after, untilFocused);
 
         TypeAheadMarker marker;
-        ListIterator iter = typeAheadMarkers.listIterator
+        ListIterator<TypeAheadMarker> iter = typeAheadMarkers.listIterator
             ((after >= 0) ? typeAheadMarkers.size() : 0);
 
         if (after < 0) {
             while (iter.hasNext()) {
-                marker = (TypeAheadMarker)iter.next();
+                marker = iter.next();
                 if (marker.untilFocused == untilFocused)
                 {
                     iter.remove();
@@ -1227,7 +1256,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
         } else {
             while (iter.hasPrevious()) {
-                marker = (TypeAheadMarker)iter.previous();
+                marker = iter.previous();
                 if (marker.untilFocused == untilFocused &&
                     marker.after == after)
                 {
@@ -1255,8 +1284,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
         long start = -1;
 
-        for (Iterator iter = typeAheadMarkers.iterator(); iter.hasNext(); ) {
-            TypeAheadMarker marker = (TypeAheadMarker)iter.next();
+        for (Iterator<TypeAheadMarker> iter = typeAheadMarkers.iterator(); iter.hasNext(); ) {
+            TypeAheadMarker marker = iter.next();
             Component toTest = marker.untilFocused;
             boolean match = (toTest == comp);
             while (!match && toTest != null && !(toTest instanceof Window)) {
@@ -1287,8 +1316,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             return;
         }
 
-        for (Iterator iter = enqueuedKeyEvents.iterator(); iter.hasNext(); ) {
-            KeyEvent ke = (KeyEvent)iter.next();
+        for (Iterator<KeyEvent> iter = enqueuedKeyEvents.iterator(); iter.hasNext(); ) {
+            KeyEvent ke = iter.next();
             long time = ke.getWhen();
 
             if (start < time && (end < 0 || time <= end)) {

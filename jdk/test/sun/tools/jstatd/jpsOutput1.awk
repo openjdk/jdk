@@ -7,7 +7,7 @@ BEGIN	{
 	    matched++;
 	}
 
-/^[0-9]+ -- process information unavailable$/	{
+/^[0-9]+ -- .*$/	{
 	    matched++;
 	}
 
