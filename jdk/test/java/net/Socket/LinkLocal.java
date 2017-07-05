@@ -58,11 +58,10 @@ public class LinkLocal {
         } catch (SocketException e) {
             failed++;
             System.out.println("Test failed: " + e);
+        } finally {
+            s.close();
+            ss.close();
         }
-
-        // clean up
-        s.close();
-        ss.close();
     }
 
     static void UdpTest(InetAddress ia, boolean connected) throws Exception {
@@ -93,16 +92,16 @@ public class LinkLocal {
             ds1.send(p);
             System.out.println("Packet has been sent.");
 
-            ds2.setSoTimeout(1000);
+            ds2.setSoTimeout(5000);
             ds2.receive(p);
             System.out.println("Test passed - packet received.");
         } catch (SocketException e) {
             failed++;
             System.out.println("Test failed: " + e);
+        } finally {
+            ds1.close();
+            ds2.close();
         }
-
-        ds1.close();
-        ds2.close();
     }
 
     static void TestAddress(InetAddress ia) throws Exception {
@@ -138,6 +137,9 @@ public class LinkLocal {
             Enumeration nifs = NetworkInterface.getNetworkInterfaces();
             while (nifs.hasMoreElements()) {
                 NetworkInterface ni = (NetworkInterface)nifs.nextElement();
+                if (!ni.isUp())
+                    continue;
+
                 Enumeration addrs = ni.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = (InetAddress)addrs.nextElement();

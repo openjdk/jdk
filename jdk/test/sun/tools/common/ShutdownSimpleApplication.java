@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  */
 
 /*
+ * Used to shutdown SimpleApplication (or a subclass). The argument to
+ * this class is the name of a file that contains the TCP port number
+ * on which SimpleApplication (or a subclass) is listening.
  *
- *
- * Used to shutdown SimpleApplication. The argument to this class is
- * the TCP port number where SimpleApplication is listening.
+ * Note: When this program returns, the SimpleApplication (or a subclass)
+ * may still be running because the application has not yet reached the
+ * shutdown check.
  */
 import java.net.Socket;
 import java.net.InetSocketAddress;
@@ -35,6 +38,11 @@ import java.io.FileInputStream;
 public class ShutdownSimpleApplication {
     public static void main(String args[]) throws Exception {
 
+        if (args.length != 1) {
+            throw new RuntimeException("Usage: ShutdownSimpleApplication" +
+                " port-file");
+        }
+
         // read the (TCP) port number from the given file
 
         File f = new File(args[0]);
@@ -42,21 +50,27 @@ public class ShutdownSimpleApplication {
         byte b[] = new byte[8];
         int n = fis.read(b);
         if (n < 1) {
-            throw new RuntimeException("Empty file");
+            throw new RuntimeException("Empty port-file");
         }
         fis.close();
 
         String str = new String(b, 0, n, "UTF-8");
-        System.out.println("Port number of application is: " + str);
+        System.out.println("INFO: Port number of SimpleApplication: " + str);
         int port = Integer.parseInt(str);
 
         // Now connect to the port (which will shutdown application)
 
-        System.out.println("Connecting to port " + port +
-            " to shutdown Application ...");
+        System.out.println("INFO: Connecting to port " + port +
+            " to shutdown SimpleApplication ...");
+        System.out.flush();
 
         Socket s = new Socket();
         s.connect( new InetSocketAddress(port) );
         s.close();
+
+        System.out.println("INFO: done connecting to SimpleApplication.");
+        System.out.flush();
+
+        System.exit(0);
     }
 }

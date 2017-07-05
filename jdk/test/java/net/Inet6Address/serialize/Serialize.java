@@ -72,6 +72,7 @@ public class Serialize {
          File file = new File (System.getProperty("test.src"), "serial1.4.2.ser");
          ois = new ObjectInputStream(new FileInputStream(file));
          nobj = (Inet6Address) ois.readObject();
+         ois.close();
          if (!nobj.equals (InetAddress.getByName ("::1"))) {
             throw new RuntimeException ("old ::1 not deserialized right");
          }
@@ -90,6 +91,8 @@ public class Serialize {
              nobj = (Inet6Address) ois.readObject();
          } catch (NullPointerException e) {
              throw new RuntimeException("6656849 Not fixed: NullPointer when deserializing");
+         } finally {
+             ois.close();
          }
          System.out.println(nobj);
          System.out.println("All tests passed");
@@ -102,6 +105,7 @@ public class Serialize {
 
          ObjectInputStream ois = new ObjectInputStream(new FileInputStream("i6a1.ser"));
          Inet6Address nobj = (Inet6Address) ois.readObject();
+         ois.close();
 
          if (nobj.equals(obj)) {
              return true;

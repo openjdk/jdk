@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import sun.security.util.*;
 
@@ -198,8 +199,9 @@ public class DNSName implements GeneralNameInterface {
         else if (inputName.getType() != NAME_DNS)
             constraintType = NAME_DIFF_TYPE;
         else {
-            String inName = (((DNSName)inputName).getName()).toLowerCase();
-            String thisName = name.toLowerCase();
+            String inName =
+                (((DNSName)inputName).getName()).toLowerCase(Locale.ENGLISH);
+            String thisName = name.toLowerCase(Locale.ENGLISH);
             if (inName.equals(thisName))
                 constraintType = NAME_MATCH;
             else if (thisName.endsWith(inName)) {
