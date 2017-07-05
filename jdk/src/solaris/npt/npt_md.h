@@ -32,9 +32,6 @@
 #include <string.h>
 #include <errno.h>
 #include <dlfcn.h>
-#ifndef __APPLE__
-#include <link.h>
-#endif
 #include <jvm_md.h>
 
 #define NPT_LIBNAME "npt"

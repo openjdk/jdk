@@ -20,6 +20,11 @@ BEGIN	{
 	    matched++;
 	}
 
+# or match an empty class name
+/^[0-9]+ $/	{
+	    matched++;
+	}
+
 	{ totallines++; print $0 }
 
 END	{

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,12 @@ bool Flag::is_unlocked() const {
   } else {
     return is_unlocked_ext();
   }
+}
+
+// Get custom message for this locked flag, or return NULL if
+// none is available.
+void Flag::get_locked_message(char* buf, int buflen) const {
+  get_locked_message_ext(buf, buflen);
 }
 
 bool Flag::is_writeable() const {
@@ -260,17 +266,22 @@ inline bool str_equal(const char* s, char* q, size_t len) {
   return strncmp(s, q, len) == 0;
 }
 
-Flag* Flag::find_flag(char* name, size_t length) {
-  for (Flag* current = &flagTable[0]; current->name; current++) {
+// Search the flag table for a named flag
+Flag* Flag::find_flag(char* name, size_t length, bool allow_locked) {
+  for (Flag* current = &flagTable[0]; current->name != NULL; current++) {
     if (str_equal(current->name, name, length)) {
+      // Found a matching entry.  Report locked flags only if allowed.
       if (!(current->is_unlocked() || current->is_unlocker())) {
-        // disable use of diagnostic or experimental flags until they
-        // are explicitly unlocked
-        return NULL;
+        if (!allow_locked) {
+          // disable use of locked flags, e.g. diagnostic, experimental,
+          // commercial... until they are explicitly unlocked
+          return NULL;
+        }
       }
       return current;
     }
   }
+  // Flag name is not in the flag table
   return NULL;
 }
 

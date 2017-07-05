@@ -27,6 +27,7 @@
  * @compile JavaxSSLContextImpl.java ComSSLContextImpl.java
  *      JavaxTrustManagerFactoryImpl.java ComTrustManagerFactoryImpl.java
  *      JavaxKeyManagerFactoryImpl.java ComKeyManagerFactoryImpl.java
+ * @run main ProviderTest
  * @summary brokenness in the com.sun.net.ssl.SSLSecurity wrappers
  */
 

@@ -29,6 +29,7 @@
 # @summary Ensure that if a cleaner throws an exception then the VM exits
 #
 # @build ExitOnThrow
+# @run shell exitOnThrow.sh
 
 # Command-line usage: sh exitOnThrow.sh /path/to/build
 
