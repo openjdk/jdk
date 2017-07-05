@@ -24,9 +24,14 @@
  */
 
 /**
- * Defines the rmic compiler for generating stubs and skeletons using
- * the Java Remote Method Protocol (JRMP) and
+ * Defines the <em>{@index rmic rmic}</em> compiler for generating stubs and
+ * skeletons using the Java Remote Method Protocol (JRMP) and
  * stubs and tie class files (IIOP protocol) for remote objects.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink rmic_tool_reference rmic}
+ * </dl>
  *
  * @moduleGraph
  * @since 9

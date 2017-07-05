@@ -25,8 +25,15 @@
 
 /**
  * Defines tools for transforming a JAR file into a compressed pack200 file
- * and transforming a packed file into a JAR file, including the pack200,
- * and unpack200 tools.
+ * and transforming a packed file into a JAR file, including the
+ * <em>{@index pack200 pack200 tool}</em> and
+ * <em>{@index unpack200 unpack200 tool}</em> tools.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink pack200_tool_reference pack200},
+ *     {@extLink unpack200_tool_reference unpack200}
+ * </dl>
  *
  * @moduleGraph
  * @since 9

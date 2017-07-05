@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,27 @@
  * questions.
  */
 
-import java.io.*;
+/* @test
+ * @bug 7130915
+ * @summary Tests file path with nfc/nfd forms on MacOSX
+ * @requires (os.family == "mac")
+ * @library /test/lib
+ * @build jdk.test.lib.Asserts jdk.test.lib.process.ProcessTools MacPathTest
+ * @run main MacPath
+ */
 
-public class FileOpenPos {
+import java.util.Map;
 
-    public static void main( String[] args)
-        throws IOException {
-        File f = new File(args[0]);
-        FileOutputStream fs = new FileOutputStream(f);
-        fs.write(1);
-        fs.close();
-        System.out.println("Can Write ?" + f.canWrite());
-        System.out.println("The File was successfully opened");
+import jdk.test.lib.Asserts;
+import jdk.test.lib.process.ProcessTools;
+
+public class MacPath {
+    public static void main(String args[]) throws Exception {
+        final ProcessBuilder pb =
+                ProcessTools.createJavaProcessBuilder(true, MacPathTest.class.getName());
+        final Map<String, String> env = pb.environment();
+        env.put("LC_ALL", "en_US.UTF-8");
+        Process p = ProcessTools.startProcess("Mac Path Test", pb);
+        Asserts.assertTrue(p.waitFor() == 0, "test failed!");
     }
 }
