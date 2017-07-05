@@ -456,6 +456,8 @@ class Method : public Metadata {
   void print_codes_on(int from, int to, outputStream* st) const    PRODUCT_RETURN;
 
   // method parameters
+  bool has_method_parameters() const
+                         { return constMethod()->has_method_parameters(); }
   int method_parameters_length() const
                          { return constMethod()->method_parameters_length(); }
   MethodParametersElement* method_parameters_start() const
