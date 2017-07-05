@@ -38,6 +38,7 @@
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbatch
+ *     -Djvmci.Compiler=null
  *     compiler.jvmci.compilerToVM.IsMatureVsReprofileTest
  */
 

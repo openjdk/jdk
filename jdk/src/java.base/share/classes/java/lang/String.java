@@ -2209,23 +2209,23 @@ public final class String
      *     <th>Limit</th>
      *     <th>Result</th>
      * </tr>
-     * <tr><td align=center>:</td>
-     *     <td align=center>2</td>
+     * <tr><td style="text-align:center">:</td>
+     *     <td style="text-align:center">2</td>
      *     <td>{@code { "boo", "and:foo" }}</td></tr>
-     * <tr><td align=center>:</td>
-     *     <td align=center>5</td>
+     * <tr><td style="text-align:center">:</td>
+     *     <td style="text-align:center">5</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td align=center>:</td>
-     *     <td align=center>-2</td>
+     * <tr><td style="text-align:center">:</td>
+     *     <td style="text-align:center">-2</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td align=center>o</td>
-     *     <td align=center>5</td>
+     * <tr><td style="text-align:center">o</td>
+     *     <td style="text-align:center">5</td>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td align=center>o</td>
-     *     <td align=center>-2</td>
+     * <tr><td style="text-align:center">o</td>
+     *     <td style="text-align:center">-2</td>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td align=center>o</td>
-     *     <td align=center>0</td>
+     * <tr><td style="text-align:center">o</td>
+     *     <td style="text-align:center">0</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </table></blockquote>
      *
@@ -2331,9 +2331,9 @@ public final class String
      *  <th>Regex</th>
      *  <th>Result</th>
      * </tr>
-     * <tr><td align=center>:</td>
+     * <tr><td style="text-align:center">:</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td align=center>o</td>
+     * <tr><td style="text-align:center">o</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </table></blockquote>
      *

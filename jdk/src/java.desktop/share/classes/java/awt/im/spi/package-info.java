@@ -33,14 +33,6 @@
  * languages and the use of entirely different input mechanisms, such as
  * handwriting recognition.
  *
- * <h2><a name="package_specification"></a>Package Specification</h2>
- * <ul>
- *     <li><a href="../../../../../technotes/guides/imf/spec.html">
- *         Input Method Framework Specification</a></li>
- *     <li><a href="../../../../../technotes/guides/imf/spi-reference.html">
- *         Input Method Engine SPI Reference</a></li>
- * </ul>
- *
  * <h2><a name="Packaging"></a>Packaging Input Methods</h2>
  * Input methods can be made available by adding them to the application's class
  * path. The main JAR file of an input method must contain the file:
@@ -88,13 +80,7 @@
  *
  * <h2>Related Documentation</h2>
  * For overviews, tutorials, examples, guides, and tool documentation, please
- * see:
- * <ul>
- *     <li><a href="../../../../../technotes/guides/imf/overview.html">
- *         Input Method Framework Overview</a></li>
- *     <li><a href="../../../../../technotes/guides/imf/spi-tutorial.html">
- *         Input Method Engine SPI Tutorial</a></li>
- * </ul>
+ * see {@extLink imf_overview Input Method Framework Overview}.
  *
  * @since 1.3
  */

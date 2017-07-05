@@ -33,8 +33,6 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static jdk.testlibrary.Asserts.assertTrue;
-
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -85,34 +83,102 @@ public class SuggestProviders {
         }
     }
 
+    // check a subset of services used by java.base
+    private final List<String> JAVA_BASE_USES = List.of(
+        "uses java.lang.System$LoggerFinder",
+        "uses java.net.ContentHandlerFactory",
+        "uses java.net.spi.URLStreamHandlerProvider",
+        "uses java.nio.channels.spi.AsynchronousChannelProvider",
+        "uses java.nio.channels.spi.SelectorProvider",
+        "uses java.nio.charset.spi.CharsetProvider",
+        "uses java.nio.file.spi.FileSystemProvider",
+        "uses java.nio.file.spi.FileTypeDetector",
+        "uses java.security.Provider",
+        "uses java.util.spi.ToolProvider"
+    );
+
+    private final List<String> JAVA_BASE_PROVIDERS = List.of(
+        "java.base provides java.nio.file.spi.FileSystemProvider used by java.base"
+    );
+
+    private final List<String> SYSTEM_PROVIDERS = List.of(
+        "jdk.charsets provides java.nio.charset.spi.CharsetProvider used by java.base",
+        "jdk.compiler provides java.util.spi.ToolProvider used by java.base",
+        "jdk.compiler provides javax.tools.JavaCompiler used by java.compiler",
+        "jdk.jlink provides jdk.tools.jlink.plugin.Plugin used by jdk.jlink",
+        "jdk.jlink provides java.util.spi.ToolProvider used by java.base"
+    );
+
+    private final List<String> APP_USES = List.of(
+        "uses p1.S",
+        "uses p2.T"
+    );
+
+    private final List<String> APP_PROVIDERS = List.of(
+        "m1 provides p1.S used by m1",
+        "m2 provides p1.S used by m1",
+        "m2 provides p2.T used by m2",
+        "m3 provides p2.T used by m2",
+        "m3 provides p3.S not used by any observable module"
+    );
+
     @Test
     public void suggestProviders() throws Throwable {
         if (!hasJmods()) return;
 
         List<String> output = JLink.run("--module-path", MODULE_PATH,
+                                        "--suggest-providers").output();
+
+        Stream<String> uses =
+            Stream.concat(JAVA_BASE_USES.stream(), APP_USES.stream());
+        Stream<String> providers =
+            Stream.concat(SYSTEM_PROVIDERS.stream(), APP_PROVIDERS.stream());
+
+        assertTrue(output.containsAll(Stream.concat(uses, providers)
+                                            .collect(Collectors.toList())));
+    }
+
+    /**
+     * find providers from the observable modules and --add-modules has no
+     * effect on the suggested providers
+     */
+    @Test
+    public void observableModules() throws Throwable {
+        if (!hasJmods()) return;
+
+        List<String> output = JLink.run("--module-path", MODULE_PATH,
                                         "--add-modules", "m1",
                                         "--suggest-providers").output();
-        // check a subset of services used by java.base
-        List<String> expected = List.of(
-            "uses java.lang.System$LoggerFinder",
-            "uses java.net.ContentHandlerFactory",
-            "uses java.net.spi.URLStreamHandlerProvider",
-            "uses java.nio.channels.spi.AsynchronousChannelProvider",
-            "uses java.nio.channels.spi.SelectorProvider",
-            "uses java.nio.charset.spi.CharsetProvider",
-            "uses java.nio.file.spi.FileSystemProvider",
-            "uses java.nio.file.spi.FileTypeDetector",
-            "uses java.security.Provider",
-            "uses java.util.spi.ToolProvider",
-            "uses p1.S",
-            "module jdk.charsets provides java.nio.charset.spi.CharsetProvider, used by java.base",
-            "module jdk.compiler provides java.util.spi.ToolProvider, used by java.base",
-            "module jdk.jlink provides java.util.spi.ToolProvider, used by java.base",
-            "module m1 provides p1.S, used by m1",
-            "module m2 provides p1.S, used by m1"
+
+        Stream<String> uses =
+            Stream.concat(JAVA_BASE_USES.stream(), Stream.of("uses p1.S"));
+        Stream<String> providers =
+            Stream.concat(SYSTEM_PROVIDERS.stream(), APP_PROVIDERS.stream());
+
+        assertTrue(output.containsAll(Stream.concat(uses, providers)
+                                            .collect(Collectors.toList())));
+    }
+
+    /**
+     * find providers from the observable modules with --limit-modules
+     */
+    @Test
+    public void limitModules() throws Throwable {
+        if (!hasJmods()) return;
+
+        List<String> output = JLink.run("--module-path", MODULE_PATH,
+                                        "--limit-modules", "m1",
+                                        "--suggest-providers").output();
+
+        Stream<String> uses =
+            Stream.concat(JAVA_BASE_USES.stream(), Stream.of("uses p1.S"));
+        Stream<String> providers =
+            Stream.concat(JAVA_BASE_PROVIDERS.stream(),
+                          Stream.of("m1 provides p1.S used by m1")
         );
 
-        assertTrue(output.containsAll(expected));
+        assertTrue(output.containsAll(Stream.concat(uses, providers)
+                                            .collect(Collectors.toList())));
     }
 
     @Test
@@ -121,20 +187,17 @@ public class SuggestProviders {
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
-                      "--add-modules", "m1",
                       "--suggest-providers",
-                      "java.nio.charset.spi.CharsetProvider,p1.S,p2.T").output();
+                      "java.nio.charset.spi.CharsetProvider,p1.S").output();
 
         System.out.println(output);
-        List<String> expected = List.of(
-            "module jdk.charsets provides java.nio.charset.spi.CharsetProvider, used by java.base",
-            "module m1 provides p1.S, used by m1",
-            "module m2 provides p1.S, used by m1",
-            "module m2 provides p2.T, used by m2",
-            "module m3 provides p2.T, used by m2"
+        Stream<String> expected = Stream.concat(
+            Stream.of("jdk.charsets provides java.nio.charset.spi.CharsetProvider used by java.base"),
+            Stream.of("m1 provides p1.S used by m1",
+                      "m2 provides p1.S used by m1")
         );
 
-        assertTrue(output.containsAll(expected));
+        assertTrue(output.containsAll(expected.collect(Collectors.toList())));
     }
 
     @Test
@@ -143,15 +206,30 @@ public class SuggestProviders {
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
-                "--add-modules", "m1",
-                "--suggest-providers",
-                "nonExistentType").output();
+                      "--suggest-providers",
+                      "p3.S").output();
 
-        System.out.println(output);
         List<String> expected = List.of(
-            "Services specified in --suggest-providers not used: nonExistentType"
+            "m3 provides p3.S not used by any observable module"
         );
+        assertTrue(output.containsAll(expected));
 
+        // should not print other services m3 provides
+        assertFalse(output.contains("m3 provides p2.T used by m2"));
+    }
+
+    @Test
+    public void nonExistentService() throws Throwable {
+        if (!hasJmods()) return;
+
+        List<String> output =
+            JLink.run("--module-path", MODULE_PATH,
+                      "--suggest-providers",
+                      "nonExistentType").output();
+
+        List<String> expected = List.of(
+            "No provider found for service specified to --suggest-providers: nonExistentType"
+        );
         assertTrue(output.containsAll(expected));
     }
 
@@ -161,14 +239,48 @@ public class SuggestProviders {
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
-                      "--add-modules", "m1",
                       "--bind-services",
-                      "--limit-modules", "m1,m2,m3,java.base",
                       "--suggest-providers").output();
 
         String expected = "--bind-services option is specified. No additional providers suggested.";
         assertTrue(output.contains(expected));
 
+    }
+
+    @Test
+    public void suggestTypeNotRealProvider() throws Throwable {
+        if (!hasJmods()) return;
+
+        List<String> output =
+            JLink.run("--module-path", MODULE_PATH,
+                      "--add-modules", "m1",
+                      "--suggest-providers",
+                      "java.util.List").output();
+
+        System.out.println(output);
+        List<String> expected = List.of(
+            "No provider found for service specified to --suggest-providers: java.util.List"
+        );
+
+        assertTrue(output.containsAll(expected));
+    }
+
+    @Test
+    public void addNonObservableModule() throws Throwable {
+        if (!hasJmods()) return;
+
+        List<String> output =
+            JLink.run("--module-path", MODULE_PATH,
+                      "--add-modules", "nonExistentModule",
+                      "--suggest-providers",
+                      "java.nio.charset.spi.CharsetProvider").output();
+
+        System.out.println(output);
+        List<String> expected = List.of(
+            "jdk.charsets provides java.nio.charset.spi.CharsetProvider used by java.base"
+        );
+
+        assertTrue(output.containsAll(expected));
     }
 
     static class JLink {
