@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package javax.xml.parsers.ptests;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.SAXParserFactory;
+import jaxp.library.JAXPBaseTest;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -35,7 +36,7 @@ import org.testng.annotations.Test;
  * Class containing the test cases for SAXParserFactory/DocumentBuilderFactory
  * newInstance methods.
  */
-public class FactoryConfErrorTest {
+public class FactoryConfErrorTest extends JAXPBaseTest {
 
     /**
      * Set properties DocumentBuilderFactory and SAXParserFactory to invalid
@@ -43,8 +44,8 @@ public class FactoryConfErrorTest {
      */
     @BeforeTest
     public void setup() {
-        System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "xx");
-        System.setProperty("javax.xml.parsers.SAXParserFactory", "xx");
+        setSystemProperty("javax.xml.parsers.DocumentBuilderFactory", "xx");
+        setSystemProperty("javax.xml.parsers.SAXParserFactory", "xx");
     }
 
     /**
@@ -53,8 +54,8 @@ public class FactoryConfErrorTest {
      */
     @AfterTest
     public void cleanup() {
-        System.clearProperty("javax.xml.parsers.DocumentBuilderFactory");
-        System.clearProperty("javax.xml.parsers.SAXParserFactory");
+        setSystemProperty("javax.xml.parsers.DocumentBuilderFactory", null);
+        setSystemProperty("javax.xml.parsers.SAXParserFactory", null);
     }
 
     /**
@@ -67,7 +68,7 @@ public class FactoryConfErrorTest {
     }
 
     /**
-     * To test exeception thrown if javax.xml.parsers.DocumentBuilderFactory is
+     * To test exception thrown if javax.xml.parsers.DocumentBuilderFactory is
      * invalid.
      */
     @Test(expectedExceptions = FactoryConfigurationError.class)

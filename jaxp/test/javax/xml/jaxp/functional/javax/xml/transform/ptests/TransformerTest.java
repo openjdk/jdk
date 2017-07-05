@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,9 @@ package javax.xml.transform.ptests;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Properties;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -39,150 +36,132 @@ import javax.xml.transform.dom.DOMSource;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Basic test cases for Transformer API
  */
-public class TransformerTest {
+public class TransformerTest extends JAXPFileReadOnlyBaseTest {
     /**
      * XSLT file serves every test method.
      */
     private final static String TEST_XSL = XML_DIR + "cities.xsl";
 
     /**
-     * This tests if newTransformer(StreamSource) method returns Transformer
+     * This tests if newTransformer(StreamSource) method returns Transformer.
+     * @throws TransformerConfigurationException If for some reason the
+     *         TransformerHandler can not be created.
      */
-    @Test
-    public void transformer01() {
-        try {
-            TransformerFactory tfactory = TransformerFactory.newInstance();
-            StreamSource streamSource = new StreamSource(
-                                        new File(TEST_XSL));
-            Transformer transformer = tfactory.newTransformer(streamSource);
-            assertNotNull(transformer);
-        } catch (TransformerConfigurationException ex){
-            failUnexpected(ex);
-        }
+    @Test (groups = {"readLocalFiles"})
+    public void transformer01() throws TransformerConfigurationException {
+        TransformerFactory tfactory = TransformerFactory.newInstance();
+        StreamSource streamSource = new StreamSource(
+                                    new File(TEST_XSL));
+        Transformer transformer = tfactory.newTransformer(streamSource);
+        assertNotNull(transformer);
     }
 
     /**
-     * This tests if newTransformer(SAXSource) method returns Transformer
+     * This tests if newTransformer(SAXSource) method returns Transformer.
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void transformer02() {
-        try {
+    @Test (groups = {"readLocalFiles"})
+    public void transformer02() throws Exception {
+        try (FileInputStream fis = new FileInputStream(TEST_XSL)) {
             TransformerFactory tfactory = TransformerFactory.newInstance();
-            InputSource is = new InputSource(
-                        new FileInputStream(TEST_XSL));
-            SAXSource saxSource = new SAXSource(is);
+            SAXSource saxSource = new SAXSource(new InputSource(fis));
             Transformer transformer = tfactory.newTransformer(saxSource);
             assertNotNull(transformer);
-        } catch (TransformerConfigurationException | FileNotFoundException ex){
-            failUnexpected(ex);
         }
     }
 
     /**
-     * This tests if newTransformer(DOMSource) method returns Transformer
+     * This tests if newTransformer(DOMSource) method returns Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void transformer03() {
-        try {
-            TransformerFactory tfactory = TransformerFactory.newInstance();
+    @Test (groups = {"readLocalFiles"})
+    public void transformer03() throws Exception {
+        TransformerFactory tfactory = TransformerFactory.newInstance();
 
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document document = db.parse(new File(TEST_XSL));
-            DOMSource domSource = new DOMSource(document);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new File(TEST_XSL));
+        DOMSource domSource = new DOMSource(document);
 
-            Transformer transformer = tfactory.newTransformer(domSource);
-            assertNotNull(transformer);
-        } catch (TransformerConfigurationException | IOException
-                | ParserConfigurationException | SAXException ex){
-            failUnexpected(ex);
-        }
+        Transformer transformer = tfactory.newTransformer(domSource);
+        assertNotNull(transformer);
     }
 
     /**
-     * This tests set/get ErrorListener methods of Transformer
+     * This tests set/get ErrorListener methods of Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void transformer04() {
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document document = db.parse(new File(TEST_XSL));
-            DOMSource domSource = new DOMSource(document);
+    @Test (groups = {"readLocalFiles"})
+    public void transformer04() throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new File(TEST_XSL));
+        DOMSource domSource = new DOMSource(document);
 
-            Transformer transformer = TransformerFactory.newInstance()
-                    .newTransformer(domSource);
-            transformer.setErrorListener(new MyErrorListener());
-            assertNotNull(transformer.getErrorListener());
-            assertTrue(transformer.getErrorListener() instanceof MyErrorListener);
-        } catch (IOException | IllegalArgumentException | ParserConfigurationException
-                | TransformerConfigurationException | SAXException ex){
-            failUnexpected(ex);
-        }
+        Transformer transformer = TransformerFactory.newInstance()
+                .newTransformer(domSource);
+        transformer.setErrorListener(new MyErrorListener());
+        assertNotNull(transformer.getErrorListener());
+        assertTrue(transformer.getErrorListener() instanceof MyErrorListener);
     }
 
     /**
-     * This tests getOutputProperties() method of Transformer
+     * This tests getOutputProperties() method of Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void transformer05() {
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document document = db.parse(new File(TEST_XSL));
-            DOMSource domSource = new DOMSource(document);
+    @Test (groups = {"readLocalFiles"})
+    public void transformer05() throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new File(TEST_XSL));
+        DOMSource domSource = new DOMSource(document);
 
-            Transformer transformer = TransformerFactory.newInstance().
-                    newTransformer(domSource);
-            Properties prop = transformer.getOutputProperties();
+        Transformer transformer = TransformerFactory.newInstance().
+                newTransformer(domSource);
+        Properties prop = transformer.getOutputProperties();
 
-            assertEquals(prop.getProperty("indent"), "yes");
-            assertEquals(prop.getProperty("method"), "xml");
-            assertEquals(prop.getProperty("encoding"), "UTF-8");
-            assertEquals(prop.getProperty("standalone"), "no");
-            assertEquals(prop.getProperty("version"), "1.0");
-            assertEquals(prop.getProperty("omit-xml-declaration"), "no");
-        } catch (ParserConfigurationException | SAXException | IOException
-                | TransformerConfigurationException ex){
-            failUnexpected(ex);
-        }
+        assertEquals(prop.getProperty("indent"), "yes");
+        assertEquals(prop.getProperty("method"), "xml");
+        assertEquals(prop.getProperty("encoding"), "UTF-8");
+        assertEquals(prop.getProperty("standalone"), "no");
+        assertEquals(prop.getProperty("version"), "1.0");
+        assertEquals(prop.getProperty("omit-xml-declaration"), "no");
     }
 
     /**
-     * This tests getOutputProperty() method of Transformer
+     * This tests getOutputProperty() method of Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void transformer06() {
-        try {
-            TransformerFactory tfactory = TransformerFactory.newInstance();
+    @Test (groups = {"readLocalFiles"})
+    public void transformer06() throws Exception {
+        TransformerFactory tfactory = TransformerFactory.newInstance();
 
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document document = db.parse(new File(TEST_XSL));
-            DOMSource domSource = new DOMSource(document);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new File(TEST_XSL));
+        DOMSource domSource = new DOMSource(document);
 
-            Transformer transformer = tfactory.newTransformer(domSource);
-            assertEquals(transformer.getOutputProperty("method"), "xml");
-        } catch (ParserConfigurationException | SAXException | IOException
-                | TransformerConfigurationException | IllegalArgumentException ex){
-            failUnexpected(ex);
-        }
+        Transformer transformer = tfactory.newTransformer(domSource);
+        assertEquals(transformer.getOutputProperty("method"), "xml");
     }
 }
 
