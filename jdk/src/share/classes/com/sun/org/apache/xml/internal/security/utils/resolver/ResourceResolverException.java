@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -31,7 +30,7 @@ import org.w3c.dom.Attr;
  * This Exception is thrown if something related to the
  * {@link com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver} goes wrong.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class ResourceResolverException extends XMLSecurityException {
 

@@ -35,7 +35,7 @@ import org.w3c.dom.Element;
 /**
  * This class maps algorithm identifier URIs to JAVA JCE class names.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class JCEMapper {
 
@@ -45,9 +45,9 @@ public class JCEMapper {
 
 
 
-   private static Map uriToJCEName = new HashMap();
+   private static Map uriToJCEName;
 
-   private static Map algorithmsMap = new HashMap();
+   private static Map algorithmsMap;
 
    private static String providerName = null;
    /**
@@ -63,6 +63,8 @@ public class JCEMapper {
 
    static void loadAlgorithms( Element algorithmsEl) {
        Element[] algorithms = XMLUtils.selectNodes(algorithmsEl.getFirstChild(),Init.CONF_NS,"Algorithm");
+       uriToJCEName = new HashMap( algorithms.length * 2);
+       algorithmsMap = new HashMap( algorithms.length * 2);
        for (int i = 0 ;i < algorithms.length ;i ++) {
            Element el = algorithms[i];
            String id = el.getAttribute("URI");
@@ -70,6 +72,7 @@ public class JCEMapper {
            uriToJCEName.put(id, jceName);
            algorithmsMap.put(id, new Algorithm(el));
        }
+
    }
 
    static Algorithm getAlgorithmMapping(String algoURI) {
@@ -84,8 +87,8 @@ public class JCEMapper {
     *
     */
    public static String translateURItoJCEID(String AlgorithmURI) {
-      if (true)
-          if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Request for URI " + AlgorithmURI);
+      if (log.isLoggable(java.util.logging.Level.FINE))
+          log.log(java.util.logging.Level.FINE, "Request for URI " + AlgorithmURI);
 
       String jceName = (String) uriToJCEName.get(AlgorithmURI);
       return jceName;
@@ -100,8 +103,8 @@ public class JCEMapper {
     *
     */
    public static String getAlgorithmClassFromURI(String AlgorithmURI) {
-       if (true)
-           if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Request for URI " + AlgorithmURI);
+       if (log.isLoggable(java.util.logging.Level.FINE))
+           log.log(java.util.logging.Level.FINE, "Request for URI " + AlgorithmURI);
 
        return ((Algorithm) algorithmsMap.get(AlgorithmURI)).algorithmClass;
    }

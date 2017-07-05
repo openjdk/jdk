@@ -35,7 +35,7 @@ import javax.swing.text.MutableAttributeSet;
 class MockAttributeSet
     implements AttributeSet, MutableAttributeSet
 {
-    public Dictionary backing;
+    public Dictionary<Object, Object> backing;
 
     public boolean isEmpty()
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ package java.lang;
  */
 public
 class AbstractMethodError extends IncompatibleClassChangeError {
+    private static final long serialVersionUID = -1654391082989018462L;
+
     /**
      * Constructs an <code>AbstractMethodError</code> with no detail  message.
      */

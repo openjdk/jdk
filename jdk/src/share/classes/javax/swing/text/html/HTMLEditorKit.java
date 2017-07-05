@@ -898,7 +898,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             } catch (MalformedURLException m) {
                 u = null;
             }
-            HyperlinkEvent linkEvent = null;
+            HyperlinkEvent linkEvent;
 
             if (!hdoc.isFrameDocument()) {
                 linkEvent = new HyperlinkEvent(
@@ -1271,11 +1271,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     && (parentContainer = container.getParent()) != null
                     && (parentContainer instanceof javax.swing.JViewport)) {
                     JViewport viewPort = (JViewport)parentContainer;
-                    Object cachedObject;
                     if (cachedViewPort != null) {
-                        if ((cachedObject = cachedViewPort.get()) != null) {
+                        JViewport cachedObject = cachedViewPort.get();
+                        if (cachedObject != null) {
                             if (cachedObject != viewPort) {
-                                ((JComponent)cachedObject).removeComponentListener(this);
+                                cachedObject.removeComponentListener(this);
                             }
                         } else {
                             cachedViewPort = null;
@@ -1283,7 +1283,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     }
                     if (cachedViewPort == null) {
                         viewPort.addComponentListener(this);
-                        cachedViewPort = new WeakReference(viewPort);
+                        cachedViewPort = new WeakReference<JViewport>(viewPort);
                     }
 
                     componentVisibleWidth = viewPort.getExtentSize().width;
@@ -1295,9 +1295,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     }
                 } else {
                     if (cachedViewPort != null) {
-                        Object cachedObject;
-                        if ((cachedObject = cachedViewPort.get()) != null) {
-                            ((JComponent)cachedObject).removeComponentListener(this);
+                        JViewport cachedObject = cachedViewPort.get();
+                        if (cachedObject != null) {
+                            cachedObject.removeComponentListener(this);
                         }
                         cachedViewPort = null;
                     }
@@ -1351,7 +1351,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
              * we need to keep this reference in order to remove BodyBoxView from viewPort listeners.
              *
              */
-            private Reference cachedViewPort = null;
+            private Reference<JViewport> cachedViewPort = null;
             private boolean isListening = false;
             private int viewVisibleWidth = Integer.MAX_VALUE;
             private int componentVisibleWidth = Integer.MAX_VALUE;
@@ -1928,7 +1928,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             int prevEndOffset = -1;
 
             // highlight the next link or object after the current caret position
-            Element nextElement = null;
+            Element nextElement;
             while ((nextElement = ei.next()) != null) {
                 String name = nextElement.getName();
                 AttributeSet attr = nextElement.getAttributes();
@@ -1969,7 +1969,6 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 comp.setCaretPosition(prevStartOffset);
                 moveCaretPosition(comp, kit, prevStartOffset, prevEndOffset);
                 kit.prevHypertextOffset = prevStartOffset;
-                return;
             }
         }
 
@@ -2113,7 +2112,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             if (view != null && view instanceof ObjectView) {
                 Component comp = ((ObjectView)view).getComponent();
                 if (comp != null && comp instanceof Accessible) {
-                    AccessibleContext ac = ((Accessible)comp).getAccessibleContext();
+                    AccessibleContext ac = comp.getAccessibleContext();
                     if (ac != null) {
                         AccessibleAction aa = ac.getAccessibleAction();
                         if (aa != null) {
@@ -2207,7 +2206,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             // invoke the next link or object action
             String urlString = null;
             String objString = null;
-            Element currentElement = null;
+            Element currentElement;
             while ((currentElement = ei.next()) != null) {
                 String name = currentElement.getName();
                 AttributeSet attr = currentElement.getAttributes();

@@ -61,7 +61,7 @@ import javax.swing.DefaultListSelectionModel;
  *
  * @author Scott Violet
  */
-public class DefaultTreeSelectionModel extends Object implements Cloneable, Serializable, TreeSelectionModel
+public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeSelectionModel
 {
     /** Property name for selectionMode. */
     public static final String          SELECTION_MODE_PROPERTY = "selectionMode";
@@ -98,8 +98,8 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
     /** Used to make sure the paths are unique, will contain all the paths
      * in <code>selection</code>.
      */
-    private Hashtable                       uniquePaths;
-    private Hashtable                       lastPaths;
+    private Hashtable<TreePath, Boolean>    uniquePaths;
+    private Hashtable<TreePath, Boolean>    lastPaths;
     private TreePath[]                      tempPaths;
 
 
@@ -111,8 +111,8 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
         listSelectionModel = new DefaultListSelectionModel();
         selectionMode = DISCONTIGUOUS_TREE_SELECTION;
         leadIndex = leadRow = -1;
-        uniquePaths = new Hashtable();
-        lastPaths = new Hashtable();
+        uniquePaths = new Hashtable<TreePath, Boolean>();
+        lastPaths = new Hashtable<TreePath, Boolean>();
         tempPaths = new TreePath[1];
     }
 
@@ -245,7 +245,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
             }
 
             TreePath         beginLeadPath = leadPath;
-            Vector           cPaths = new Vector(newCount + oldCount);
+            Vector<PathPlaceHolder> cPaths = new Vector<PathPlaceHolder>(newCount + oldCount);
             List<TreePath> newSelectionAsList =
                     new ArrayList<TreePath>(newCount);
 
@@ -276,7 +276,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
 
             selection = newSelection;
 
-            Hashtable      tempHT = uniquePaths;
+            Hashtable<TreePath, Boolean>  tempHT = uniquePaths;
 
             uniquePaths = lastPaths;
             lastPaths = tempHT;
@@ -348,7 +348,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
                 int               counter, validCount;
                 int               oldCount;
                 TreePath          beginLeadPath = leadPath;
-                Vector            cPaths = null;
+                Vector<PathPlaceHolder>  cPaths = null;
 
                 if(selection == null)
                     oldCount = 0;
@@ -363,7 +363,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
                         if (uniquePaths.get(paths[counter]) == null) {
                             validCount++;
                             if(cPaths == null)
-                                cPaths = new Vector();
+                                cPaths = new Vector<PathPlaceHolder>();
                             cPaths.addElement(new PathPlaceHolder
                                               (paths[counter], true));
                             uniquePaths.put(paths[counter], Boolean.TRUE);
@@ -388,12 +388,11 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
                     if(validCount != paths.length) {
                         /* Some of the paths in paths are already in
                            the selection. */
-                        Enumeration   newPaths = lastPaths.keys();
+                        Enumeration<TreePath> newPaths = lastPaths.keys();
 
                         counter = oldCount;
                         while (newPaths.hasMoreElements()) {
-                            newSelection[counter++] = (TreePath)newPaths.
-                                                      nextElement();
+                            newSelection[counter++] = newPaths.nextElement();
                         }
                     }
                     else {
@@ -448,7 +447,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
                 clearSelection();
             }
             else {
-                Vector      pathsToRemove = null;
+                Vector<PathPlaceHolder> pathsToRemove = null;
 
                 /* Find the paths that can be removed. */
                 for (int removeCounter = paths.length - 1; removeCounter >= 0;
@@ -456,7 +455,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
                     if(paths[removeCounter] != null) {
                         if (uniquePaths.get(paths[removeCounter]) != null) {
                             if(pathsToRemove == null)
-                                pathsToRemove = new Vector(paths.length);
+                                pathsToRemove = new Vector<PathPlaceHolder>(paths.length);
                             uniquePaths.remove(paths[removeCounter]);
                             pathsToRemove.addElement(new PathPlaceHolder
                                          (paths[removeCounter], false));
@@ -471,14 +470,13 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
                         selection = null;
                     }
                     else {
-                        Enumeration          pEnum = uniquePaths.keys();
+                        Enumeration<TreePath> pEnum = uniquePaths.keys();
                         int                  validCount = 0;
 
                         selection = new TreePath[selection.length -
                                                 removeCount];
                         while (pEnum.hasMoreElements()) {
-                            selection[validCount++] = (TreePath)pEnum.
-                                                          nextElement();
+                            selection[validCount++] = pEnum.nextElement();
                         }
                     }
                     if (leadPath != null &&
@@ -613,8 +611,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
      * @since 1.4
      */
     public TreeSelectionListener[] getTreeSelectionListeners() {
-        return (TreeSelectionListener[])listenerList.getListeners(
-                TreeSelectionListener.class);
+        return listenerList.getListeners(TreeSelectionListener.class);
     }
 
     /**
@@ -1081,7 +1078,7 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
         PathPlaceHolder        placeholder;
 
         for(int counter = 0; counter < cPathCount; counter++) {
-            placeholder = (PathPlaceHolder)changedPaths.elementAt(counter);
+            placeholder = changedPaths.elementAt(counter);
             newness[counter] = placeholder.isNew;
             paths[counter] = placeholder.path;
         }
@@ -1177,8 +1174,8 @@ public class DefaultTreeSelectionModel extends Object implements Cloneable, Seri
         clone.listenerList = new EventListenerList();
         clone.listSelectionModel = (DefaultListSelectionModel)
             listSelectionModel.clone();
-        clone.uniquePaths = new Hashtable();
-        clone.lastPaths = new Hashtable();
+        clone.uniquePaths = new Hashtable<TreePath, Boolean>();
+        clone.lastPaths = new Hashtable<TreePath, Boolean>();
         clone.tempPaths = new TreePath[1];
         return clone;
     }

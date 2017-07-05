@@ -48,8 +48,8 @@ final class LegacyGlueFocusTraversalPolicy extends FocusTraversalPolicy
     private transient FocusTraversalPolicy delegatePolicy;
     private transient DefaultFocusManager delegateManager;
 
-    private HashMap forwardMap = new HashMap(),
-        backwardMap = new HashMap();
+    private HashMap<Component, Component> forwardMap = new HashMap<Component, Component>(),
+        backwardMap = new HashMap<Component, Component>();
 
     LegacyGlueFocusTraversalPolicy(FocusTraversalPolicy delegatePolicy) {
         this.delegatePolicy = delegatePolicy;
@@ -70,11 +70,11 @@ final class LegacyGlueFocusTraversalPolicy extends FocusTraversalPolicy
     public Component getComponentAfter(Container focusCycleRoot,
                                        Component aComponent) {
         Component hardCoded = aComponent, prevHardCoded;
-        HashSet sanity = new HashSet();
+        HashSet<Component> sanity = new HashSet<Component>();
 
         do {
             prevHardCoded = hardCoded;
-            hardCoded = (Component)forwardMap.get(hardCoded);
+            hardCoded = forwardMap.get(hardCoded);
             if (hardCoded == null) {
                 if (delegatePolicy != null &&
                     prevHardCoded.isFocusCycleRoot(focusCycleRoot)) {
@@ -99,11 +99,11 @@ final class LegacyGlueFocusTraversalPolicy extends FocusTraversalPolicy
     public Component getComponentBefore(Container focusCycleRoot,
                                         Component aComponent) {
         Component hardCoded = aComponent, prevHardCoded;
-        HashSet sanity = new HashSet();
+        HashSet<Component> sanity = new HashSet<Component>();
 
         do {
             prevHardCoded = hardCoded;
-            hardCoded = (Component)backwardMap.get(hardCoded);
+            hardCoded = backwardMap.get(hardCoded);
             if (hardCoded == null) {
                 if (delegatePolicy != null &&
                     prevHardCoded.isFocusCycleRoot(focusCycleRoot)) {

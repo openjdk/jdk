@@ -83,7 +83,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
 
         marks = new MarkVector();
         search = new MarkData(0);
-        queue = new ReferenceQueue();
+        queue = new ReferenceQueue<StickyPosition>();
     }
 
     /**
@@ -262,13 +262,13 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * it.  The update table holds only a reference
      * to this data.
      */
-    final class MarkData extends WeakReference {
+    final class MarkData extends WeakReference<StickyPosition> {
 
         MarkData(int index) {
             super(null);
             this.index = index;
         }
-        MarkData(int index, StickyPosition position, ReferenceQueue queue) {
+        MarkData(int index, StickyPosition position, ReferenceQueue<? super StickyPosition> queue) {
             super(position, queue);
             this.index = index;
         }
@@ -287,7 +287,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         }
 
         StickyPosition getPosition() {
-            return (StickyPosition)get();
+            return get();
         }
         int index;
     }
@@ -329,7 +329,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      */
     private transient int unusedMarks = 0;
 
-    private transient ReferenceQueue queue;
+    private transient ReferenceQueue<StickyPosition> queue;
 
     final static int GROWTH_SIZE = 1024 * 512;
 
@@ -535,7 +535,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             return 0;
         }
 
-        int cmp = 0;
+        int cmp;
         MarkData last = marks.elementAt(upper);
         cmp = compare(o, last);
         if (cmp > 0)
@@ -691,7 +691,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         s.defaultReadObject();
         marks = new MarkVector();
         search = new MarkData(0);
-        queue = new ReferenceQueue();
+        queue = new ReferenceQueue<StickyPosition>();
     }
 
 

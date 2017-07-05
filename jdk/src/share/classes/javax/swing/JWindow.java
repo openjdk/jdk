@@ -185,7 +185,7 @@ public class JWindow extends Window implements Accessible,
         super(owner == null? SwingUtilities.getSharedOwnerFrame() : owner);
         if (owner == null) {
             WindowListener ownerShutdownListener =
-                (WindowListener)SwingUtilities.getSharedOwnerFrameShutdownListener();
+                    SwingUtilities.getSharedOwnerFrameShutdownListener();
             addWindowListener(ownerShutdownListener);
         }
         windowInit();
@@ -212,7 +212,7 @@ public class JWindow extends Window implements Accessible,
               owner);
         if (owner == null) {
             WindowListener ownerShutdownListener =
-                (WindowListener)SwingUtilities.getSharedOwnerFrameShutdownListener();
+                    SwingUtilities.getSharedOwnerFrameShutdownListener();
             addWindowListener(ownerShutdownListener);
         }
         windowInit();
@@ -250,7 +250,7 @@ public class JWindow extends Window implements Accessible,
               owner, gc);
         if (owner == null) {
             WindowListener ownerShutdownListener =
-                (WindowListener)SwingUtilities.getSharedOwnerFrameShutdownListener();
+                    SwingUtilities.getSharedOwnerFrameShutdownListener();
             addWindowListener(ownerShutdownListener);
         }
         windowInit();

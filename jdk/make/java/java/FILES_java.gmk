@@ -209,6 +209,7 @@ JAVA_JAVA_java = \
         sun/util/TimeZoneNameUtility.java \
         sun/util/calendar/ZoneInfo.java \
         sun/util/calendar/ZoneInfoFile.java \
+        sun/util/calendar/TzIDOldMapping.java \
     java/util/TooManyListenersException.java \
     java/util/Comparator.java \
     java/util/Collections.java \

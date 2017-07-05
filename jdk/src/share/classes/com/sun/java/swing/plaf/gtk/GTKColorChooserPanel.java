@@ -442,7 +442,10 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
         }
 
         if (updateModel) {
-            getColorSelectionModel().setSelectedColor(color);
+            ColorSelectionModel model = getColorSelectionModel();
+            if (model != null) {
+                model.setSelectedColor(color);
+            }
         }
 
         triangle.setColor(hue, saturation, brightness);

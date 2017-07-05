@@ -197,25 +197,25 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
 
     protected void addSystemMenuItems(JPopupMenu menu) {
         // PENDING: this should all be localizable!
-        JMenuItem mi = (JMenuItem)menu.add(restoreAction);
+        JMenuItem mi = menu.add(restoreAction);
         mi.setMnemonic('R');
-        mi = (JMenuItem)menu.add(moveAction);
+        mi = menu.add(moveAction);
         mi.setMnemonic('M');
-        mi = (JMenuItem)menu.add(sizeAction);
+        mi = menu.add(sizeAction);
         mi.setMnemonic('S');
-        mi = (JMenuItem)menu.add(iconifyAction);
+        mi = menu.add(iconifyAction);
         mi.setMnemonic('n');
-        mi = (JMenuItem)menu.add(maximizeAction);
+        mi = menu.add(maximizeAction);
         mi.setMnemonic('x');
         menu.add(new JSeparator());
-        mi = (JMenuItem)menu.add(closeAction);
+        mi = menu.add(closeAction);
         mi.setMnemonic('C');
     }
 
     protected void showSystemMenu() {
         Insets insets = frame.getInsets();
         if (!frame.isIcon()) {
-            systemPopupMenu.show(frame, insets.left, getY() + getHeight());
+            systemPopupMenu.show(frame, menuButton.getX(), getY() + getHeight());
         } else {
             systemPopupMenu.show(menuButton,
                 getX() - insets.left - insets.right,

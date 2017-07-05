@@ -2098,8 +2098,8 @@ Zone	America/Antigua	-4:07:12 -	LMT	1912 Mar 2
 # http://www.jonesbahamas.com/?c=45&a=10412
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Bahamas	1964	2006	-	Oct	lastSun	2:00	0	S
-Rule	Bahamas	1964	1986	-	Apr	lastSun	2:00	1:00	D
+Rule	Bahamas	1964	1975	-	Oct	lastSun	2:00	0	S
+Rule	Bahamas	1964	1975	-	Apr	lastSun	2:00	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Nassau	-5:09:24 -	LMT	1912 Mar 2
 			-5:00	Bahamas	E%sT	1976
@@ -2209,6 +2209,69 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # says Cuban clocks will advance at midnight on March 10.
 # For lack of better information, assume Cuba will use US rules,
 # except that it switches at midnight standard time as usual.
+#
+# From Steffen Thorsen (2007-10-25):
+# Carlos Alberto Fonseca Arauz informed me that Cuba will end DST one week 
+# earlier - on the last Sunday of October, just like in 2006.
+# 
+# He supplied these references:
+# 
+# http://www.prensalatina.com.mx/article.asp?ID=%7B4CC32C1B-A9F7-42FB-8A07-8631AFC923AF%7D&language=ES
+# http://actualidad.terra.es/sociedad/articulo/cuba_llama_ahorrar_energia_cambio_1957044.htm
+# 
+# From Alex Kryvenishev (2007-10-25):
+# Here is also article from Granma (Cuba):
+# 
+# [Regira] el Horario Normal desde el [proximo] domingo 28 de octubre
+# http://www.granma.cubaweb.cu/2007/10/24/nacional/artic07.html
+# 
+# http://www.worldtimezone.com/dst_news/dst_news_cuba03.html
+
+# From Arthur David Olson (2008-03-09):
+# I'm in Maryland which is now observing United States Eastern Daylight
+# Time. At 9:44 local time I used RealPlayer to listen to
+# <a href="http://media.enet.cu/radioreloj">
+# http://media.enet.cu/radioreloj
+# </a>, a Cuban information station, and heard
+# the time announced as "ocho cuarenta y cuatro" ("eight forty-four"),
+# indicating that Cuba is still on standard time.
+
+# From Steffen Thorsen (2008-03-12):
+# It seems that Cuba will start DST on Sunday, 2007-03-16...
+# It was announced yesterday, according to this source (in Spanish):
+# <a href="http://www.nnc.cubaweb.cu/marzo-2008/cien-1-11-3-08.htm">
+# http://www.nnc.cubaweb.cu/marzo-2008/cien-1-11-3-08.htm
+# </a>
+#
+# Some more background information is posted here:
+# <a href="http://www.timeanddate.com/news/time/cuba-starts-dst-march-16.html">
+# http://www.timeanddate.com/news/time/cuba-starts-dst-march-16.html
+# </a>
+#
+# The article also says that Cuba has been observing DST since 1963,
+# while Shanks (and tzdata) has 1965 as the first date (except in the
+# 1940's). Many other web pages in Cuba also claim that it has been
+# observed since 1963, but with the exception of 1970 - an exception
+# which is not present in tzdata/Shanks. So there is a chance we need to
+# change some historic records as well.
+#
+# One example:
+# <a href="http://www.radiohc.cu/espanol/noticias/mar07/11mar/hor.htm">
+# http://www.radiohc.cu/espanol/noticias/mar07/11mar/hor.htm
+# </a>
+
+# From Jesper Norgaard Welen (2008-03-13):
+# The Cuban time change has just been confirmed on the most authoritative
+# web site, the Granma.  Please check out
+# <a href="http://www.granma.cubaweb.cu/2008/03/13/nacional/artic10.html">
+# http://www.granma.cubaweb.cu/2008/03/13/nacional/artic10.html
+# </a>
+#
+# Basically as expected after Steffen Thorsens information, the change
+# will take place midnight between Saturday and Sunday.
+
+# From Arthur David Olson (2008-03-12):
+# Assume Sun>=15 (third Sunday) going forward.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Cuba	1928	only	-	Jun	10	0:00	1:00	D
@@ -2240,9 +2303,9 @@ Rule	Cuba	1997	only	-	Oct	12	0:00s	0	S
 Rule	Cuba	1998	1999	-	Mar	lastSun	0:00s	1:00	D
 Rule	Cuba	1998	2003	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2000	2006	-	Apr	Sun>=1	0:00s	1:00	D
-Rule	Cuba	2006	only	-	Oct	lastSun	0:00s	0	S
-Rule	Cuba	2007	max	-	Mar	Sun>=8	0:00s	1:00	D
-Rule	Cuba	2007	max	-	Nov	Sun>=1	0:00s	0	S
+Rule	Cuba	2006	max	-	Oct	lastSun	0:00s	0	S
+Rule	Cuba	2007	only	-	Mar	Sun>=8	0:00s	1:00	D
+Rule	Cuba	2008	max	-	Mar	Sun>=15	0:00s	1:00	D
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Havana	-5:29:28 -	LMT	1890
@@ -2309,6 +2372,10 @@ Zone	America/Grenada	-4:07:00 -	LMT	1911 Jul	# St George's
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Guadeloupe	-4:06:08 -	LMT	1911 Jun 8	# Pointe a Pitre
 			-4:00	-	AST
+# St Barthelemy
+Link America/Guadeloupe	America/St_Barthelemy
+# St Martin (French part)
+Link America/Guadeloupe	America/Marigot
 
 # Guatemala
 #

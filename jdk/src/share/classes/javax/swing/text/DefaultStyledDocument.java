@@ -84,7 +84,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      */
     public DefaultStyledDocument(Content c, StyleContext styles) {
         super(c, styles);
-        listeningStyles = new Vector();
+        listeningStyles = new Vector<Style>();
         buffer = new ElementBuffer(createDefaultRoot());
         Style defaultStyle = styles.getStyle(StyleContext.DEFAULT_STYLE);
         setLogicalStyle(0, defaultStyle);
@@ -349,7 +349,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             int prevStartOffset = prevLeaf.getStartOffset();
             BranchElement prevParent = (BranchElement) prevLeaf.getParentElement();
             int prevIndex = prevParent.getElementIndex(prevStartOffset);
-            Element newElem = null;
+            Element newElem;
             newElem = createLeafElement(prevParent, prevLeaf.getAttributes(),
                                             prevStartOffset, lastEndOffset);
             Element[] prevRemoved = { prevLeaf };
@@ -511,7 +511,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             AttributeSet sCopy = s.copyAttributes();
 
             // PENDING(prinz) - this isn't a very efficient way to iterate
-            int lastEnd = Integer.MAX_VALUE;
+            int lastEnd;
             for (int pos = offset; pos < (offset + length); pos = lastEnd) {
                 Element run = getCharacterElement(pos);
                 lastEnd = run.getEndOffset();
@@ -597,7 +597,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * @return the element
      */
     public Element getParagraphElement(int pos) {
-        Element e = null;
+        Element e;
         for (e = getDefaultRootElement(); ! e.isLeaf(); ) {
             int index = e.getElementIndex(pos);
             e = e.getElement(index);
@@ -614,7 +614,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * @return the element
      */
     public Element getCharacterElement(int pos) {
-        Element e = null;
+        Element e;
         for (e = getDefaultRootElement(); ! e.isLeaf(); ) {
             int index = e.getElementIndex(pos);
             e = e.getElement(index);
@@ -655,7 +655,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
 
         try {
             Segment s = new Segment();
-            Vector parseBuffer = new Vector();
+            Vector<ElementSpec> parseBuffer = new Vector<ElementSpec>();
             ElementSpec lastStartSpec = null;
             boolean insertingAfterNewline = false;
             short lastStartDirection = ElementSpec.OriginateDirection;
@@ -670,8 +670,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                                    offset, endOffset);
                     for(int counter = parseBuffer.size() - 1; counter >= 0;
                         counter--) {
-                        ElementSpec spec = (ElementSpec)parseBuffer.
-                                            elementAt(counter);
+                        ElementSpec spec = parseBuffer.elementAt(counter);
                         if(spec.getType() == ElementSpec.StartTagType) {
                             lastStartSpec = spec;
                             break;
@@ -709,7 +708,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                                            n - lastOffset));
             }
 
-            ElementSpec first = (ElementSpec) parseBuffer.firstElement();
+            ElementSpec first = parseBuffer.firstElement();
 
             int docLength = getLength();
 
@@ -750,7 +749,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             // direction isn't originate, and the element at endOffset
             // is a leaf.
             if(insertingAtBoundry && endOffset < docLength) {
-                ElementSpec last = (ElementSpec) parseBuffer.lastElement();
+                ElementSpec last = parseBuffer.lastElement();
                 if(last.getType() == ElementSpec.ContentType &&
                    last.getDirection() != ElementSpec.JoinPreviousDirection &&
                    ((lastStartSpec == null && (paragraph == pParagraph ||
@@ -772,7 +771,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             else if(!insertingAtBoundry && lastStartSpec != null &&
                     lastStartSpec.getDirection() ==
                     ElementSpec.JoinFractureDirection) {
-                ElementSpec last = (ElementSpec) parseBuffer.lastElement();
+                ElementSpec last = parseBuffer.lastElement();
                 if(last.getType() == ElementSpec.ContentType &&
                    last.getDirection() != ElementSpec.JoinPreviousDirection &&
                    attr.isEqual(cattr)) {
@@ -805,7 +804,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * necessarily create the last start spec).
      */
     short createSpecsForInsertAfterNewline(Element paragraph,
-                    Element pParagraph, AttributeSet pattr, Vector parseBuffer,
+            Element pParagraph, AttributeSet pattr, Vector<ElementSpec> parseBuffer,
                                                  int offset, int endOffset) {
         // Need to find the common parent of pParagraph and paragraph.
         if(paragraph.getParentElement() == pParagraph.getParentElement()) {
@@ -825,8 +824,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         else {
             // Will only happen for text with more than 2 levels.
             // Find the common parent of a paragraph and pParagraph
-            Vector leftParents = new Vector();
-            Vector rightParents = new Vector();
+            Vector<Element> leftParents = new Vector<Element>();
+            Vector<Element> rightParents = new Vector<Element>();
             Element e = pParagraph;
             while(e != null) {
                 leftParents.addElement(e);
@@ -847,11 +846,10 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                                               (null, ElementSpec.EndTagType));
                 }
                 // And the starts.
-                ElementSpec spec = null;
+                ElementSpec spec;
                 for(int counter = rightParents.size() - 1;
                     counter >= 0; counter--) {
-                    spec = new ElementSpec(((Element)rightParents.
-                                   elementAt(counter)).getAttributes(),
+                    spec = new ElementSpec(rightParents.elementAt(counter).getAttributes(),
                                    ElementSpec.StartTagType);
                     if(counter > 0)
                         spec.setDirection(ElementSpec.JoinNextDirection);
@@ -1007,7 +1005,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             if (listenerList.getListenerCount(DocumentListener.class) == 0) {
                 for (int counter = listeningStyles.size() - 1; counter >= 0;
                      counter--) {
-                    ((Style)listeningStyles.elementAt(counter)).
+                    listeningStyles.elementAt(counter).
                                     removeChangeListener(styleChangeListener);
                 }
                 listeningStyles.removeAllElements();
@@ -1077,7 +1075,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
 
     private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException {
-        listeningStyles = new Vector();
+        listeningStyles = new Vector<Style>();
         s.defaultReadObject();
         // Reinstall style listeners.
         if (styleContextChangeListener == null &&
@@ -1101,7 +1099,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
     protected ElementBuffer buffer;
 
     /** Styles listening to. */
-    private transient Vector listeningStyles;
+    private transient Vector<Style> listeningStyles;
 
     /** Listens to Styles. */
     private transient ChangeListener styleChangeListener;
@@ -1401,8 +1399,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          */
         public ElementBuffer(Element root) {
             this.root = root;
-            changes = new Vector();
-            path = new Stack();
+            changes = new Vector<ElemChanges>();
+            path = new Stack<ElemChanges>();
         }
 
         /**
@@ -1454,7 +1452,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 elem = child;
                 index = elem.getElementIndex(0);
             }
-            ElemChanges ec = (ElemChanges) path.peek();
+            ElemChanges ec = path.peek();
             Element child = ec.parent.getElement(ec.index);
             ec.added.addElement(createLeafElement(ec.parent,
                                 child.getAttributes(), getLength(),
@@ -1646,7 +1644,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 index = e.getElementIndex(offs);
             }
 
-            ElemChanges ec = (ElemChanges) path.peek();
+            ElemChanges ec = path.peek();
             Element child = ec.parent.getElement(ec.index);
             // make sure there is something to do... if the
             // offset is already at a boundary then there is
@@ -1722,15 +1720,14 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         void endEdits(DefaultDocumentEvent de) {
             int n = changes.size();
             for (int i = 0; i < n; i++) {
-                ElemChanges ec = (ElemChanges) changes.elementAt(i);
+                ElemChanges ec = changes.elementAt(i);
                 Element[] removed = new Element[ec.removed.size()];
                 ec.removed.copyInto(removed);
                 Element[] added = new Element[ec.added.size()];
                 ec.added.copyInto(added);
                 int index = ec.index;
                 ((BranchElement) ec.parent).replace(index, removed.length, added);
-                ElementEdit ee = new ElementEdit((BranchElement) ec.parent,
-                                                 index, removed, added);
+                ElementEdit ee = new ElementEdit(ec.parent, index, removed, added);
                 de.addEdit(ee);
             }
 
@@ -1767,12 +1764,12 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             this.endOffset = offset + length;
             pos = offset;
             if (changes == null) {
-                changes = new Vector();
+                changes = new Vector<ElemChanges>();
             } else {
                 changes.removeAllElements();
             }
             if (path == null) {
-                path = new Stack();
+                path = new Stack<ElemChanges>();
             } else {
                 path.removeAllElements();
             }
@@ -1799,7 +1796,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         }
 
         void pop() {
-            ElemChanges ec = (ElemChanges) path.peek();
+            ElemChanges ec = path.peek();
             path.pop();
             if ((ec.added.size() > 0) || (ec.removed.size() > 0)) {
                 changes.addElement(ec);
@@ -1808,7 +1805,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 if(e.getElementCount() == 0) {
                     // if we pushed a branch element that didn't get
                     // used, make sure its not marked as having been added.
-                    ec = (ElemChanges) path.peek();
+                    ec = path.peek();
                     ec.added.removeElement(e);
                 }
             }
@@ -1822,7 +1819,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         }
 
         void insertElement(ElementSpec es) {
-            ElemChanges ec = (ElemChanges) path.peek();
+            ElemChanges ec = path.peek();
             switch(es.getType()) {
             case ElementSpec.StartTagType:
                 switch(es.getDirection()) {
@@ -1930,7 +1927,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 int index0 = elem.getElementIndex(rmOffs0);
                 int index1 = elem.getElementIndex(rmOffs1);
                 push(elem, index0);
-                ElemChanges ec = (ElemChanges)path.peek();
+                ElemChanges ec = path.peek();
 
                 // if the range is contained by one element,
                 // we just forward the request
@@ -2068,7 +2065,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 if (rj.getStartOffset() == rmOffs1) {
                     rj = null;
                 }
-                Vector children = new Vector();
+                Vector<Element> children = new Vector<Element>();
 
                 // transfer the left
                 for (int i = 0; i < ljIndex; i++) {
@@ -2142,7 +2139,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             }
             Element e = createBranchElement(parent, clonee.getAttributes());
             int n = clonee.getElementCount();
-            ArrayList childrenList = new ArrayList(n);
+            ArrayList<Element> childrenList = new ArrayList<Element>(n);
             for (int i = 0; i < n; i++) {
                 Element elem = clonee.getElement(i);
                 if (elem.getStartOffset() < rmOffs0 || elem.getEndOffset() > rmOffs1) {
@@ -2150,7 +2147,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 }
             }
             Element[] children = new Element[childrenList.size()];
-            children = (Element[])childrenList.toArray(children);
+            children = childrenList.toArray(children);
             ((BranchElement)e).replace(0, 0, children);
             return e;
         }
@@ -2355,7 +2352,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          */
         void fractureDeepestLeaf(ElementSpec[] specs) {
             // Split the bottommost leaf. It will be recreated elsewhere.
-            ElemChanges ec = (ElemChanges) path.peek();
+            ElemChanges ec = path.peek();
             Element child = ec.parent.getElement(ec.index);
             // Inserts at offset 0 do not need to recreate child (it would
             // have a length of 0!).
@@ -2380,7 +2377,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          */
         void insertFirstContent(ElementSpec[] specs) {
             ElementSpec firstSpec = specs[0];
-            ElemChanges ec = (ElemChanges) path.peek();
+            ElemChanges ec = path.peek();
             Element child = ec.parent.getElement(ec.index);
             int firstEndOffset = offset + firstSpec.getLength();
             boolean isOnlyContent = (specs.length == 1);
@@ -2463,8 +2460,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         transient int offset;
         transient int length;
         transient int endOffset;
-        transient Vector changes;  // Vector<ElemChanges>
-        transient Stack path;      // Stack<ElemChanges>
+        transient Vector<ElemChanges> changes;
+        transient Stack<ElemChanges> path;
         transient boolean insertOp;
 
         transient boolean recreateLeafs; // For insert.
@@ -2494,8 +2491,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 this.parent = parent;
                 this.index = index;
                 this.isFracture = isFracture;
-                added = new Vector();
-                removed = new Vector();
+                added = new Vector<Element>();
+                removed = new Vector<Element>();
             }
 
             public String toString() {
@@ -2504,8 +2501,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
 
             Element parent;
             int index;
-            Vector added;
-            Vector removed;
+            Vector<Element> added;
+            Vector<Element> removed;
             boolean isFracture;
         }
 
@@ -2611,7 +2608,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /* This has an implicit reference to the handler object.  */
         private class DocReference extends WeakReference<DefaultStyledDocument> {
 
-            DocReference(DefaultStyledDocument d, ReferenceQueue q) {
+            DocReference(DefaultStyledDocument d, ReferenceQueue<DefaultStyledDocument> q) {
                 super(d, q);
             }
 
@@ -2624,19 +2621,19 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         }
 
         /** Class-specific reference queues.  */
-        private final static Map<Class, ReferenceQueue> queueMap
-                = new HashMap<Class, ReferenceQueue>();
+        private final static Map<Class, ReferenceQueue<DefaultStyledDocument>> queueMap
+                = new HashMap<Class, ReferenceQueue<DefaultStyledDocument>>();
 
         /** A weak reference to the document object.  */
         private DocReference doc;
 
         AbstractChangeHandler(DefaultStyledDocument d) {
             Class c = getClass();
-            ReferenceQueue q;
+            ReferenceQueue<DefaultStyledDocument> q;
             synchronized (queueMap) {
                 q = queueMap.get(c);
                 if (q == null) {
-                    q = new ReferenceQueue();
+                    q = new ReferenceQueue<DefaultStyledDocument>();
                     queueMap.put(c, q);
                 }
             }
@@ -2650,7 +2647,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          */
         static List<ChangeListener> getStaleListeners(ChangeListener l) {
             List<ChangeListener> staleListeners = new ArrayList<ChangeListener>();
-            ReferenceQueue q = queueMap.get(l.getClass());
+            ReferenceQueue<DefaultStyledDocument> q = queueMap.get(l.getClass());
 
             if (q != null) {
                 DocReference r;

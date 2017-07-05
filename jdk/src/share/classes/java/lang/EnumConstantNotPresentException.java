@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ package java.lang;
  * @since   1.5
  */
 public class EnumConstantNotPresentException extends RuntimeException {
+    private static final long serialVersionUID = -6046998521960521108L;
+
     /**
      * The type of the missing enum constant.
      */

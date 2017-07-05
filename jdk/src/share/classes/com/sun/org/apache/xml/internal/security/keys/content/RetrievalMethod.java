@@ -20,9 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.content;
 
-
-
-
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
@@ -33,17 +30,13 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class RetrievalMethod extends SignatureElementProxy
         implements KeyInfoContent {
 
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(RetrievalMethod.class.getName());
    //J-
     /** DSA retrieval */
    public static final String TYPE_DSA     = Constants.SignatureSpecNS + "DSAKeyValue";
@@ -133,7 +126,7 @@ public class RetrievalMethod extends SignatureElementProxy
 
       try {
        Element transformsElem =
-             XMLUtils.selectDsNode(this._constructionElement,
+             XMLUtils.selectDsNode(this._constructionElement.getFirstChild(),
                                                 Constants
                                                    ._TAG_TRANSFORMS, 0);
 
