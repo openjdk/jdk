@@ -9,35 +9,25 @@ Simple Build Instructions:
      http://java.sun.com/javase/downloads/index.jsp
      Set the environment variable ALT_BOOTDIR to the location of this JDK 6.
 
-  2. Download and install the JIBX libraries, version 1.1.5 from
-     http://sourceforge.net/project/showfiles.php?group_id=69358&package_id=68290
-     You'll need the following four JAR files:
-         bcel.jar
-         jibx-bind.jar
-         jibx-run.jar
-         xpp3.jar
-     Set the environment variable ALT_JIBX_LIBS_PATH to the location of
-     these JAR files.
-     
-  3. Download and install the Binary Plugs for the most recent JDK7 from
+  2. Download and install the Binary Plugs for the most recent JDK7 from
      http://download.java.net/openjdk/jdk7/
      Set the environment variable ALT_BINARY_PLUGS_PATH to the location of
      these binary plugs.
      
-  4. Either download and install the latest JDK7 from
+  3. Either download and install the latest JDK7 from
      http://download.java.net/openjdk/jdk7/, or build your own complete
      OpenJDK7 by using the top level Makefile in the OpenJDK Mercurial forest.
      Set the environment variable ALT_JDK_IMPORT_PATH to the location of
      this latest JDK7 or OpenJDK7 build.
      
-  5. Check the sanity of doing a build with the current machine:
+  4. Check the sanity of doing a build with the current machine:
        cd make && gnumake sanity
      See README-builds.html if you run into problems.
   
-  6. Do a partial build of the jdk:
+  5. Do a partial build of the jdk:
        cd make && gnumake all
   
-  7. Construct the images:
+  6. Construct the images:
        cd make && gnumake images
      The resulting JDK image should be found in build/*/j2sdk-image
 

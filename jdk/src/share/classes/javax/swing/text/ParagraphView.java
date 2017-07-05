@@ -716,7 +716,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * @param axis  the minor axis
      * @param r     the input {@code SizeRequirements} object
      * @return      the new or adjusted {@code SizeRequirements} object
-     * @throw IllegalArgumentException  if the {@code axis} parameter is invalid
+     * @throws IllegalArgumentException  if the {@code axis} parameter is invalid
      */
     @Override
     protected SizeRequirements calculateMinorAxisRequirements(int axis,

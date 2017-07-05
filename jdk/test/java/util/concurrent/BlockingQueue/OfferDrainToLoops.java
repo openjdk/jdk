@@ -34,28 +34,27 @@
 /*
  * @test
  * @bug 6805775 6815766
+ * @run main OfferDrainToLoops 300
  * @summary Test concurrent offer vs. drainTo
  */
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 public class OfferDrainToLoops {
+    final long testDurationMillisDefault = 10L * 1000L;
+    final long testDurationMillis;
+
+    OfferDrainToLoops(String[] args) {
+        testDurationMillis = (args.length > 0) ?
+            Long.valueOf(args[0]) : testDurationMillisDefault;
+    }
+
     void checkNotContainsNull(Iterable it) {
         for (Object x : it)
             check(x != null);
-    }
-
-    abstract class CheckedThread extends Thread {
-        abstract protected void realRun();
-        public void run() {
-            try { realRun(); } catch (Throwable t) { unexpected(t); }
-        }
-        {
-            setDaemon(true);
-            start();
-        }
     }
 
     void test(String[] args) throws Throwable {
@@ -64,51 +63,106 @@ public class OfferDrainToLoops {
         test(new LinkedBlockingDeque());
         test(new LinkedBlockingDeque(2000));
         test(new ArrayBlockingQueue(2000));
+//         test(new LinkedTransferQueue());
+    }
+
+    Random getRandom() {
+        return new Random();
+        // return ThreadLocalRandom.current();
     }
 
     void test(final BlockingQueue q) throws Throwable {
         System.out.println(q.getClass().getSimpleName());
-        final long testDurationSeconds = 1L;
-        final long testDurationMillis = testDurationSeconds * 1000L;
-        final long quittingTimeNanos
-            = System.nanoTime() + testDurationSeconds * 1000L * 1000L * 1000L;
+        final long testDurationNanos = testDurationMillis * 1000L * 1000L;
+        final long quittingTimeNanos = System.nanoTime() + testDurationNanos;
+        final long timeoutMillis = 10L * 1000L;
 
-        Thread offerer = new CheckedThread() {
+        /** Poor man's bounded buffer. */
+        final AtomicLong approximateCount = new AtomicLong(0L);
+
+        abstract class CheckedThread extends Thread {
+            CheckedThread(String name) {
+                super(name);
+                setDaemon(true);
+                start();
+            }
+            /** Polls for quitting time. */
+            protected boolean quittingTime() {
+                return System.nanoTime() - quittingTimeNanos > 0;
+            }
+            /** Polls occasionally for quitting time. */
+            protected boolean quittingTime(long i) {
+                return (i % 1024) == 0 && quittingTime();
+            }
+            abstract protected void realRun();
+            public void run() {
+                try { realRun(); } catch (Throwable t) { unexpected(t); }
+            }
+        }
+
+        Thread offerer = new CheckedThread("offerer") {
             protected void realRun() {
-                for (long i = 0; ; i++) {
-                    if ((i % 1024) == 0 &&
-                        System.nanoTime() - quittingTimeNanos > 0)
-                        break;
-                    while (! q.offer(i))
+                long c = 0;
+                for (long i = 0; ! quittingTime(i); i++) {
+                    if (q.offer(c)) {
+                        if ((++c % 1024) == 0) {
+                            approximateCount.getAndAdd(1024);
+                            while (approximateCount.get() > 10000)
+                                Thread.yield();
+                        }
+                    } else {
                         Thread.yield();
-                }}};
+                    }}}};
 
-        Thread drainer = new CheckedThread() {
+        Thread drainer = new CheckedThread("drainer") {
             protected void realRun() {
-                for (long i = 0; ; i++) {
-                    if (System.nanoTime() - quittingTimeNanos > 0)
-                        break;
+                final Random rnd = getRandom();
+                while (! quittingTime()) {
                     List list = new ArrayList();
-                    int n = q.drainTo(list);
+                    int n = rnd.nextBoolean() ?
+                        q.drainTo(list) :
+                        q.drainTo(list, 100);
+                    approximateCount.getAndAdd(-n);
                     equal(list.size(), n);
                     for (int j = 0; j < n - 1; j++)
                         equal((Long) list.get(j) + 1L, list.get(j + 1));
                     Thread.yield();
-                }}};
+                }
+                q.clear();
+                approximateCount.set(0); // Releases waiting offerer thread
+            }};
 
-        Thread scanner = new CheckedThread() {
+        Thread scanner = new CheckedThread("scanner") {
             protected void realRun() {
-                for (long i = 0; ; i++) {
-                    if (System.nanoTime() - quittingTimeNanos > 0)
+                final Random rnd = getRandom();
+                while (! quittingTime()) {
+                    switch (rnd.nextInt(3)) {
+                    case 0: checkNotContainsNull(q); break;
+                    case 1: q.size(); break;
+                    case 2:
+                        Long[] a = (Long[]) q.toArray(new Long[0]);
+                        int n = a.length;
+                        for (int j = 0; j < n - 1; j++) {
+                            check(a[j] < a[j+1]);
+                            check(a[j] != null);
+                        }
                         break;
-                    checkNotContainsNull(q);
+                    }
                     Thread.yield();
                 }}};
 
-        offerer.join(10 * testDurationMillis);
-        drainer.join(10 * testDurationMillis);
-        check(! offerer.isAlive());
-        check(! drainer.isAlive());
+        for (Thread thread : new Thread[] { offerer, drainer, scanner }) {
+            thread.join(timeoutMillis + testDurationMillis);
+            if (thread.isAlive()) {
+                System.err.printf("Hung thread: %s%n", thread.getName());
+                failed++;
+                for (StackTraceElement e : thread.getStackTrace())
+                    System.err.println(e);
+                // Kludge alert
+                thread.stop();
+                thread.join(timeoutMillis);
+            }
+        }
     }
 
     //--------------------- Infrastructure ---------------------------
@@ -122,7 +176,7 @@ public class OfferDrainToLoops {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        new OfferDrainToLoops().instanceMain(args);}
+        new OfferDrainToLoops(args).instanceMain(args);}
     public void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);

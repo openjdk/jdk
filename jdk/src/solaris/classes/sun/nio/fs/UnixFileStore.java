@@ -145,9 +145,8 @@ abstract class UnixFileStore
         {
             // lookup fstypes.properties
             FeatureStatus status = checkIfFeaturePresent("posix");
-            if (status == FeatureStatus.NOT_PRESENT)
-                return false;
-            return true;
+            // assume supported if UNKNOWN
+            return (status != FeatureStatus.NOT_PRESENT);
         }
         return false;
     }

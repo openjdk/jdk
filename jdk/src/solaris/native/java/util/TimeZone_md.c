@@ -51,9 +51,9 @@
 
 #ifdef __linux__
 
-static const char *sysconfig_clock_file = "/etc/sysconfig/clock";
-static const char *zoneinfo_dir = "/usr/share/zoneinfo";
-static const char *defailt_zoneinfo_file = "/etc/localtime";
+static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
+static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
+static const char *DEFAULT_ZONEINFO_FILE = "/etc/localtime";
 
 /*
  * Returns a point to the zone ID portion of the given zoneinfo file
@@ -201,53 +201,22 @@ getPlatformTimeZoneID()
     size_t size;
 
     /*
-     * First, try the ZONE entry in /etc/sysconfig/clock. However, the
-     * ZONE entry is not set up after initial Red Hat Linux
-     * installation. In case that /etc/localtime is set up without
-     * using timeconfig, there might be inconsistency between
-     * /etc/localtime and the ZONE entry. The inconsistency between
-     * timeconfig and linuxconf is reported as a bug in the Red Hat
-     * web page as of May 1, 2000.
+     * Try reading the /etc/timezone file for Debian distros. There's
+     * no spec of the file format available. This parsing assumes that
+     * there's one line of an Olson tzid followed by a '\n', no
+     * leading or trailing spaces, no comments.
      */
-    if ((fp = fopen(sysconfig_clock_file, "r")) != NULL) {
+    if ((fp = fopen(ETC_TIMEZONE_FILE, "r")) != NULL) {
         char line[256];
 
-        while (fgets(line, sizeof(line), fp) != NULL) {
-            char *p = line;
-            char *s;
-
-            SKIP_SPACE(p);
-            if (*p != 'Z') {
-                continue;
+        if (fgets(line, sizeof(line), fp) != NULL) {
+            char *p = strchr(line, '\n');
+            if (p != NULL) {
+                *p = '\0';
             }
-            if (strncmp(p, "ZONE=\"", 6) == 0) {
-                p += 6;
-            } else {
-                /*
-                 * In case we need to parse it token by token.
-                 */
-                if (strncmp(p, "ZONE", 4) != 0) {
-                    continue;
-                }
-                p += 4;
-                SKIP_SPACE(p);
-                if (*p++ != '=') {
-                    break;
-                }
-                SKIP_SPACE(p);
-                if (*p++ != '"') {
-                    break;
-                }
+            if (strlen(line) > 0) {
+                tz = strdup(line);
             }
-            for (s = p; *s && *s != '"'; s++)
-                ;
-            if (*s != '"') {
-                /* this ZONE entry is broken. */
-                break;
-            }
-            *s = '\0';
-            tz = strdup(p);
-            break;
         }
         (void) fclose(fp);
         if (tz != NULL) {
@@ -258,7 +227,7 @@ getPlatformTimeZoneID()
     /*
      * Next, try /etc/localtime to find the zone ID.
      */
-    if (lstat(defailt_zoneinfo_file, &statbuf) == -1) {
+    if (lstat(DEFAULT_ZONEINFO_FILE, &statbuf) == -1) {
         return NULL;
     }
 
@@ -273,9 +242,9 @@ getPlatformTimeZoneID()
         char linkbuf[PATH_MAX+1];
         int len;
 
-        if ((len = readlink(defailt_zoneinfo_file, linkbuf, sizeof(linkbuf)-1)) == -1) {
+        if ((len = readlink(DEFAULT_ZONEINFO_FILE, linkbuf, sizeof(linkbuf)-1)) == -1) {
             jio_fprintf(stderr, (const char *) "can't get a symlink of %s\n",
-                        defailt_zoneinfo_file);
+                        DEFAULT_ZONEINFO_FILE);
             return NULL;
         }
         linkbuf[len] = '\0';
@@ -295,7 +264,7 @@ getPlatformTimeZoneID()
     if (buf == NULL) {
         return NULL;
     }
-    if ((fd = open(defailt_zoneinfo_file, O_RDONLY)) == -1) {
+    if ((fd = open(DEFAULT_ZONEINFO_FILE, O_RDONLY)) == -1) {
         free((void *) buf);
         return NULL;
     }
@@ -307,7 +276,7 @@ getPlatformTimeZoneID()
     }
     (void) close(fd);
 
-    tz = findZoneinfoFile(buf, size, zoneinfo_dir);
+    tz = findZoneinfoFile(buf, size, ZONEINFO_DIR);
     free((void *) buf);
     return tz;
 }

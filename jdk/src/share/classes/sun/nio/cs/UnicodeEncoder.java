@@ -80,7 +80,7 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
         try {
             while (src.hasRemaining()) {
                 char c = src.get();
-                if (!Surrogate.is(c)) {
+                if (!Character.isSurrogate(c)) {
                     if (dst.remaining() < 2)
                         return CoderResult.OVERFLOW;
                     mark++;
@@ -107,6 +107,6 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     }
 
     public boolean canEncode(char c) {
-        return ! Surrogate.is(c);
+        return ! Character.isSurrogate(c);
     }
 }

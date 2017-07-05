@@ -235,6 +235,11 @@ class Modifier {
      * possible validity of the combination of modifiers represented
      * by the input.
      *
+     * Note that to perform such checking for a known kind of entity,
+     * such as a constructor or method, first AND the argument of
+     * {@code toString} with the appropriate mask from a method like
+     * {@link #constructorModifiers} or {@link #methodModifiers}.
+     *
      * @param   mod a set of modifiers
      * @return  a string representation of the set of modifiers
      * represented by {@code mod}
@@ -352,5 +357,109 @@ class Modifier {
     static final int ENUM      = 0x00004000;
     static boolean isSynthetic(int mod) {
       return (mod & SYNTHETIC) != 0;
+    }
+
+    /**
+     * See JLSv3 section 8.1.1.
+     */
+    private static final int CLASS_MODIFIERS =
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |
+        Modifier.STRICT;
+
+    /**
+     * See JLSv3 section 9.1.1.
+     */
+    private static final int INTERFACE_MODIFIERS =
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.STRICT;
+
+
+    /**
+     * See JLSv3 section 8.8.3.
+     */
+    private static final int CONSTRUCTOR_MODIFIERS =
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
+
+    /**
+     * See JLSv3 section 8.4.3.
+     */
+    private static final int METHOD_MODIFIERS =
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+        Modifier.ABSTRACT       | Modifier.STATIC       | Modifier.FINAL   |
+        Modifier.SYNCHRONIZED   | Modifier.NATIVE       | Modifier.STRICT;
+
+    /**
+     * See JLSv3 section 8.3.1.
+     */
+    private static final int FIELD_MODIFIERS =
+        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |
+        Modifier.STATIC         | Modifier.FINAL        | Modifier.TRANSIENT |
+        Modifier.VOLATILE;
+
+    /**
+     * Return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a class.
+     * @return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a class.
+     *
+     * @jls3 8.1.1 Class Modifiers
+     * @since 1.7
+     */
+    public static int classModifiers() {
+        return CLASS_MODIFIERS;
+    }
+
+    /**
+     * Return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to an interface.
+     * @return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to an inteface.
+     *
+     * @jls3 9.1.1 Interface Modifiers
+     * @since 1.7
+     */
+    public static int interfaceModifiers() {
+        return INTERFACE_MODIFIERS;
+    }
+
+    /**
+     * Return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a constructor.
+     * @return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a constructor.
+     *
+     * @jls3 8.8.3 Constructor Modifiers
+     * @since 1.7
+     */
+    public static int constructorModifiers() {
+        return CONSTRUCTOR_MODIFIERS;
+    }
+
+    /**
+     * Return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a method.
+     * @return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a method.
+     *
+     * @jls3 8.4.3 Method Modifiers
+     * @since 1.7
+     */
+    public static int methodModifiers() {
+        return METHOD_MODIFIERS;
+    }
+
+
+    /**
+     * Return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a field.
+     * @return an {@code int} value OR-ing together the source language
+     * modifiers that can be applied to a field.
+     *
+     * @jls3 8.3.1 Field Modifiers
+     * @since 1.7
+     */
+    public static int fieldModifiers() {
+        return FIELD_MODIFIERS;
     }
 }

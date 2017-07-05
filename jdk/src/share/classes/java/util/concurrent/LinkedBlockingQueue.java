@@ -766,19 +766,21 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         }
 
         /**
-         * Unlike other traversal methods, iterators need to handle:
+         * Returns the next live successor of p, or null if no such.
+         *
+         * Unlike other traversal methods, iterators need to handle both:
          * - dequeued nodes (p.next == p)
-         * - interior removed nodes (p.item == null)
+         * - (possibly multiple) interior removed nodes (p.item == null)
          */
         private Node<E> nextNode(Node<E> p) {
-            Node<E> s = p.next;
-            if (p == s)
-                return head.next;
-            // Skip over removed nodes.
-            // May be necessary if multiple interior Nodes are removed.
-            while (s != null && s.item == null)
-                s = s.next;
-            return s;
+            for (;;) {
+                Node<E> s = p.next;
+                if (s == p)
+                    return head.next;
+                if (s == null || s.item != null)
+                    return s;
+                p = s;
+            }
         }
 
         public E next() {
