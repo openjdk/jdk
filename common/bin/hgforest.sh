@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,35 +27,9 @@
 command="$1"
 pull_extra_base="$2"
 
-# Python always buffers stdout significantly, thus we will not see any output from hg clone jdk,
-# until a lot of time has passed! By passing -u to python, we get incremental updates
-# on stdout. Much nicer.
-whichhg="`which hg 2> /dev/null | grep -v '^no hg in'`"
-
-if [ "${whichhg}" = "" ] ; then
-  echo Cannot find hg!
-  exit 1
-fi
-
 if [ "" = "$command" ] ; then
   echo No command to hg supplied!
   exit 1
-fi
-
-has_hash_bang="`head -n 1 "${whichhg}" | cut -b 1-2`"
-python=""
-bpython=""
-
-if [ "#!" = "$has_hash_bang" ] ; then
-   python="`head -n 1 ${whichhg} | cut -b 3- | sed -e 's/^[ \t]*//;s/[ \t]*$//'`"
-   bpython="`basename "$python"`"
-fi
-
-if [ -x "$python" -a ! -d "$python" -a "`${python} -V 2>&1 | cut -f 1 -d ' '`" = "Python" ] ; then
-  hg="${python} -u ${whichhg}"
-else
-  echo Cannot find python from hg launcher. Running plain hg, which probably has buffered stdout.
-  hg="hg"
 fi
 
 # Clean out the temporary directory that stores the pid files.
@@ -171,7 +145,7 @@ for i in ${repos} ${repos_extra} ; do
     (
       if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
         pull_newrepo="`echo ${pull_base}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
-        echo ${hg} clone ${pull_newrepo} ${i}
+        echo hg clone ${pull_newrepo} ${i}
         path="`dirname ${i}`"
         if [ "${path}" != "." ] ; then
           times=0
@@ -184,10 +158,10 @@ for i in ${repos} ${repos_extra} ; do
             sleep 5
           done
         fi
-        (${hg} clone ${pull_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
+        (PYTHONUNBUFFERED=true hg clone ${pull_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
       else
-        echo "cd ${i} && ${hg} $*"
-        cd ${i} && (${hg} "$@"; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
+        echo "cd ${i} && hg $*"
+        cd ${i} && (PYTHONUNBUFFERED=true hg "$@"; echo "$?" > ${tmp}/${repopidfile}.pid.rc )&
       fi
       echo $! > ${tmp}/${repopidfile}.pid
     ) 2>&1 | sed -e "s@^@${reponame}:   @") &

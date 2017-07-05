@@ -245,8 +245,8 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
 }
 
 
-void* BufferBlob::operator new(size_t s, unsigned size) throw() {
-  void* p = CodeCache::allocate(size);
+void* BufferBlob::operator new(size_t s, unsigned size, bool is_critical) throw() {
+  void* p = CodeCache::allocate(size, is_critical);
   return p;
 }
 
@@ -277,7 +277,10 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   unsigned int size = allocation_size(cb, sizeof(AdapterBlob));
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) AdapterBlob(size, cb);
+    // The parameter 'true' indicates a critical memory allocation.
+    // This means that CodeCacheMinimumFreeSpace is used, if necessary
+    const bool is_critical = true;
+    blob = new (size, is_critical) AdapterBlob(size, cb);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -299,7 +302,10 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
   size += round_to(buffer_size, oopSize);
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) MethodHandlesAdapterBlob(size);
+    // The parameter 'true' indicates a critical memory allocation.
+    // This means that CodeCacheMinimumFreeSpace is used, if necessary
+    const bool is_critical = true;
+    blob = new (size, is_critical) MethodHandlesAdapterBlob(size);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();

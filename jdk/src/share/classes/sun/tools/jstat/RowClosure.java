@@ -62,6 +62,9 @@ public class RowClosure implements Closure {
             double d = ((Number)value).doubleValue();
             double scaledValue = c.getScale().scale(d);
             DecimalFormat df = new DecimalFormat(c.getFormat());
+            DecimalFormatSymbols syms = df.getDecimalFormatSymbols();
+            syms.setNaN("-");
+            df.setDecimalFormatSymbols(syms);
             s = df.format(scaledValue);
         }
 

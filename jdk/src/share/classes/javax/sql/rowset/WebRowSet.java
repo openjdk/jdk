@@ -35,7 +35,7 @@ import org.xml.sax.*;
 /**
  * The standard interface that all implementations of a {@code WebRowSet}
  * must implement.
- * <P>
+ *
  * <h3>1.0 Overview</h3>
  * The {@code WebRowSetImpl} provides the standard
  * reference implementation, which may be extended if required.
@@ -77,12 +77,12 @@ import org.xml.sax.*;
  * in its data back to the originating data source.
  * </li>
  * </ul>
- * <P>
+ *
  * <h3>2.0 WebRowSet States</h3>
  * The following sections demonstrates how a {@code WebRowSet} implementation
  * should use the XML Schema to describe update, insert, and delete operations
  * and to describe the state of a {@code WebRowSet} object in XML.
- * <p>
+ *
  * <h4>2.1 State 1 - Outputting a {@code WebRowSet} Object to XML</h4>
  * In this example, a {@code WebRowSet} object is created and populated with a simple 2 column,
  * 5 row table from a data source. Having the 5 rows in a {@code WebRowSet} object

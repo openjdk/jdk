@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ void RuntimeService::record_safepoint_begin() {
 #endif /* USDT2 */
 
   // Print the time interval in which the app was executing
-  if (PrintGCApplicationConcurrentTime) {
+  if (PrintGCApplicationConcurrentTime && _app_timer.is_updated()) {
     gclog_or_tty->date_stamp(PrintGCDateStamps);
     gclog_or_tty->stamp(PrintGCTimeStamps);
     gclog_or_tty->print_cr("Application time: %3.7f seconds",

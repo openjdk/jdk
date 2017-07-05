@@ -77,6 +77,16 @@ define install-file
 @$(RM) $@
 $(CP) $< $@
 endef
+
+# MacOS X strongly discourages 'cp -r' and provides 'cp -R' instead.
+# May need to have a MacOS X specific definition of install-dir
+# sometime in the future.
+define install-dir
+@$(MKDIR) -p $(@D)
+@$(RM) -r $@
+$(CP) -r $< $@
+endef
+
 define prep-target
 @$(MKDIR) -p $(@D)
 @$(RM) $@

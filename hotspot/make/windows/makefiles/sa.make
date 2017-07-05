@@ -110,6 +110,9 @@ SA_LFLAGS = $(SA_LD_FLAGS) -nologo -subsystem:console -machine:$(MACHINE)
 !if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
 SA_LFLAGS = $(SA_LFLAGS) -map -debug
 !endif
+!if "$(BUILDARCH)" == "i486"
+SA_LFLAGS = $(SAFESEH_FLAG) $(SA_LFLAGS)
+!endif
 
 SA_CFLAGS = $(SA_CFLAGS) $(MP_FLAG)
 

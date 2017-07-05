@@ -36,7 +36,7 @@ import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalAccessor;
 
 import java.util.*;
@@ -134,7 +134,7 @@ public class TestFormatter {
         Class<?> c = o.getClass();
         String clname = c.getName().substring(c.getPackage().getName().length() + 1);
         if (o instanceof TemporalAccessor) {
-            Chronology chrono = ((TemporalAccessor)o).query(TemporalQuery.chronology());
+            Chronology chrono = ((TemporalAccessor)o).query(TemporalQueries.chronology());
             if (chrono != null) {
                 clname = clname + "(" + chrono.getId() + ")";
             }

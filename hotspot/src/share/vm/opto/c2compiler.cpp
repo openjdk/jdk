@@ -44,9 +44,6 @@
 # include "adfiles/ad_ppc.hpp"
 #endif
 
-
-volatile int C2Compiler::_runtimes = uninitialized;
-
 // register information defined by ADLC
 extern const char register_save_policy[];
 extern const int  register_save_type[];
@@ -57,7 +54,7 @@ const char* C2Compiler::retry_no_subsuming_loads() {
 const char* C2Compiler::retry_no_escape_analysis() {
   return "retry without escape analysis";
 }
-void C2Compiler::initialize_runtime() {
+bool C2Compiler::init_c2_runtime() {
 
   // Check assumptions used while running ADLC
   Compile::adlc_verification();
@@ -90,41 +87,31 @@ void C2Compiler::initialize_runtime() {
 
   CompilerThread* thread = CompilerThread::current();
 
-  HandleMark  handle_mark(thread);
-
-  OptoRuntime::generate(thread->env());
-
+  HandleMark handle_mark(thread);
+  return OptoRuntime::generate(thread->env());
 }
 
 
 void C2Compiler::initialize() {
-
-  // This method can only be called once per C2Compiler object
   // The first compiler thread that gets here will initialize the
-  // small amount of global state (and runtime stubs) that c2 needs.
+  // small amount of global state (and runtime stubs) that C2 needs.
 
   // There is a race possible once at startup and then we're fine
 
   // Note that this is being called from a compiler thread not the
   // main startup thread.
-
-  if (_runtimes != initialized) {
-    initialize_runtimes( initialize_runtime, &_runtimes);
+  if (should_perform_init()) {
+    bool successful = C2Compiler::init_c2_runtime();
+    int new_state = (successful) ? initialized : failed;
+    set_state(new_state);
   }
-
-  // Mark this compiler object as ready to roll
-  mark_initialized();
 }
 
-void C2Compiler::compile_method(ciEnv* env,
-                                ciMethod* target,
-                                int entry_bci) {
-  if (!is_initialized()) {
-    initialize();
-  }
+void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
+  assert(is_initialized(), "Compiler thread must be initialized");
+
   bool subsume_loads = SubsumeLoads;
-  bool do_escape_analysis = DoEscapeAnalysis &&
-    !env->jvmti_can_access_local_variables();
+  bool do_escape_analysis = DoEscapeAnalysis && !env->jvmti_can_access_local_variables();
   bool eliminate_boxing = EliminateAutoBox;
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.

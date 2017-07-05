@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.zone.ZoneRulesProvider;
 import java.util.Arrays;
 import java.util.Date;
@@ -150,7 +150,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                                                               .toFormatter(locale)
                                                               .withDecimalStyle(DecimalStyle.of(locale));
 
-        String ret = fmt.parse(text, TemporalQuery.zone()).getId();
+        String ret = fmt.parse(text, TemporalQueries.zone()).getId();
 
         System.out.printf("[%-5s %s] %24s -> %s(%s)%n",
                           locale.toString(),
@@ -186,7 +186,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         if (ci) {
             text = text.toUpperCase();
         }
-        String ret = fmt.parse(text, TemporalQuery.zone()).getId();
+        String ret = fmt.parse(text, TemporalQueries.zone()).getId();
         // TBD: need an excluding list
         // assertEquals(...);
         if (ret.equals(expected) ||

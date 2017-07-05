@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@ final class LocaleEquivalentMaps {
         regionVariantEquivMap = new HashMap<>();
 
         // This is an auto-generated file and should not be manually edited.
-        //   LSR Revision: 2012-09-04
+        //   LSR Revision: 2013-09-23
+        singleEquivMap.put("acn", "xia");
+        singleEquivMap.put("adx", "pcr");
         singleEquivMap.put("ami", "i-ami");
         singleEquivMap.put("art-lojban", "jbo");
         singleEquivMap.put("ase", "sgn-us");
@@ -52,6 +54,7 @@ final class LocaleEquivalentMaps {
         singleEquivMap.put("bjd", "drl");
         singleEquivMap.put("bnn", "i-bnn");
         singleEquivMap.put("bzs", "sgn-br");
+        singleEquivMap.put("cir", "meg");
         singleEquivMap.put("cjr", "mom");
         singleEquivMap.put("cka", "cmr");
         singleEquivMap.put("cmk", "xch");
@@ -65,6 +68,7 @@ final class LocaleEquivalentMaps {
         singleEquivMap.put("dse", "sgn-nl");
         singleEquivMap.put("dsl", "sgn-dk");
         singleEquivMap.put("fsl", "sgn-fr");
+        singleEquivMap.put("gal", "ilw");
         singleEquivMap.put("gan", "zh-gan");
         singleEquivMap.put("gav", "dev");
         singleEquivMap.put("gsg", "sgn-de");
@@ -84,6 +88,7 @@ final class LocaleEquivalentMaps {
         singleEquivMap.put("i-tsu", "tsu");
         singleEquivMap.put("ibi", "opa");
         singleEquivMap.put("id", "in");
+        singleEquivMap.put("ilw", "gal");
         singleEquivMap.put("in", "id");
         singleEquivMap.put("ise", "sgn-it");
         singleEquivMap.put("isg", "sgn-ie");
@@ -100,6 +105,7 @@ final class LocaleEquivalentMaps {
         singleEquivMap.put("lb", "i-lux");
         singleEquivMap.put("lcq", "ppr");
         singleEquivMap.put("lrr", "yma");
+        singleEquivMap.put("meg", "cir");
         singleEquivMap.put("mfs", "sgn-mx");
         singleEquivMap.put("mo", "ro");
         singleEquivMap.put("mom", "cjr");
@@ -113,6 +119,7 @@ final class LocaleEquivalentMaps {
         singleEquivMap.put("nun", "ayx");
         singleEquivMap.put("nv", "i-navajo");
         singleEquivMap.put("opa", "ibi");
+        singleEquivMap.put("pcr", "adx");
         singleEquivMap.put("ppr", "lcq");
         singleEquivMap.put("psr", "sgn-pt");
         singleEquivMap.put("pwn", "i-pwn");
@@ -158,8 +165,10 @@ final class LocaleEquivalentMaps {
         singleEquivMap.put("weo", "tlw");
         singleEquivMap.put("wuu", "zh-wuu");
         singleEquivMap.put("xch", "cmk");
+        singleEquivMap.put("xia", "acn");
         singleEquivMap.put("yi", "ji");
         singleEquivMap.put("yma", "lrr");
+        singleEquivMap.put("yos", "zom");
         singleEquivMap.put("yue", "zh-yue");
         singleEquivMap.put("zh-cmn-hans", "cmn-hans");
         singleEquivMap.put("zh-cmn-hant", "cmn-hant");
@@ -168,6 +177,7 @@ final class LocaleEquivalentMaps {
         singleEquivMap.put("zh-wuu", "wuu");
         singleEquivMap.put("zh-xiang", "hsn");
         singleEquivMap.put("zh-yue", "yue");
+        singleEquivMap.put("zom", "yos");
 
         multiEquivsMap.put("ccq", new String[] {"rki", "ybd"});
         multiEquivsMap.put("cmn", new String[] {"zh-guoyu", "zh-cmn"});

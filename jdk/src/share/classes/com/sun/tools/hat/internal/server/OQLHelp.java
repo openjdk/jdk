@@ -54,10 +54,7 @@ class OQLHelp extends QueryHandler {
                 out.print((char)ch);
             }
         } catch (Exception exp) {
-            out.println(exp.getMessage());
-            out.println("<pre>");
-            exp.printStackTrace(out);
-            out.println("</pre>");
+            printException(exp);
         }
     }
 }
