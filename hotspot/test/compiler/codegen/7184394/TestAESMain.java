@@ -28,7 +28,7 @@
  * @summary add intrinsics to use AES instructions
  * @library /testlibrary
  *
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC TestAESMain
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true -Dmode=CBC -DencInputOffset=1 TestAESMain

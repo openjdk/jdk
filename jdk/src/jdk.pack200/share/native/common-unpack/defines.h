@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,12 @@ extern int assert_failed(const char*);
 #define U_NEW(T, n)  (T*) u->alloc(scale_size(n, sizeof(T)))
 #define T_NEW(T, n)  (T*) u->temp_alloc(scale_size(n, sizeof(T)))
 
+// Dealing with big-endian arch
+#ifdef _BIG_ENDIAN
+#define SWAP_INT(a) (((a>>24)&0xff) | ((a<<8)&0xff0000) | ((a>>8)&0xff00) | ((a<<24)&0xff000000))
+#else
+#define SWAP_INT(a) (a)
+#endif
 
 // bytes and byte arrays
 

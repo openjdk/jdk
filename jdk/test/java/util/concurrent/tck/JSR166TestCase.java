@@ -211,10 +211,13 @@ public class JSR166TestCase extends TestCase {
     private static final int suiteRuns =
         Integer.getInteger("jsr166.suiteRuns", 1);
 
-    private static float systemPropertyValue(String name, float defaultValue) {
+    /**
+     * Returns the value of the system property, or NaN if not defined.
+     */
+    private static float systemPropertyValue(String name) {
         String floatString = System.getProperty(name);
         if (floatString == null)
-            return defaultValue;
+            return Float.NaN;
         try {
             return Float.parseFloat(floatString);
         } catch (NumberFormatException ex) {
@@ -226,16 +229,25 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * The scaling factor to apply to standard delays used in tests.
+     * May be initialized from any of:
+     * - the "jsr166.delay.factor" system property
+     * - the "test.timeout.factor" system property (as used by jtreg)
+     *   See: http://openjdk.java.net/jtreg/tag-spec.html
+     * - hard-coded fuzz factor when using a known slowpoke VM
      */
-    private static final float delayFactor =
-        systemPropertyValue("jsr166.delay.factor", 1.0f);
+    private static final float delayFactor = delayFactor();
 
-    /**
-     * The timeout factor as used in the jtreg test harness.
-     * See: http://openjdk.java.net/jtreg/tag-spec.html
-     */
-    private static final float jtregTestTimeoutFactor
-        = systemPropertyValue("test.timeout.factor", 1.0f);
+    private static float delayFactor() {
+        float x;
+        if (!Float.isNaN(x = systemPropertyValue("jsr166.delay.factor")))
+            return x;
+        if (!Float.isNaN(x = systemPropertyValue("test.timeout.factor")))
+            return x;
+        String prop = System.getProperty("java.vm.version");
+        if (prop != null && prop.matches(".*debug.*"))
+            return 4.0f; // How much slower is fastdebug than product?!
+        return 1.0f;
+    }
 
     public JSR166TestCase() { super(); }
     public JSR166TestCase(String name) { super(name); }
@@ -526,6 +538,7 @@ public class JSR166TestCase extends TestCase {
                 "StampedLockTest",
                 "SubmissionPublisherTest",
                 "ThreadLocalRandom8Test",
+                "TimeUnit8Test",
             };
             addNamedTestClasses(suite, java8TestClassNames);
         }
@@ -616,7 +629,7 @@ public class JSR166TestCase extends TestCase {
      * http://openjdk.java.net/jtreg/command-help.html
      */
     protected long getShortDelay() {
-        return (long) (50 * delayFactor * jtregTestTimeoutFactor);
+        return (long) (50 * delayFactor);
     }
 
     /**

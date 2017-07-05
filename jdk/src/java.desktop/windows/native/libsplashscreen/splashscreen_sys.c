@@ -58,6 +58,8 @@
 #define WM_SPLASHUPDATE         WM_USER+1
 #define WM_SPLASHRECONFIGURE    WM_USER+2
 
+#define BUFF_SIZE 1024
+
 /* Could use npt but decided to cut down on linked code size */
 char* SplashConvertStringAlloc(const char* in, int *size) {
     int len, outChars, rc;
@@ -569,10 +571,66 @@ SplashReconfigure(Splash * splash)
     PostMessage(splash->hWnd, WM_SPLASHRECONFIGURE, 0, 0);
 }
 
-SPLASHEXPORT char*
+jboolean
 SplashGetScaledImageName(const char* jarName, const char* fileName,
-                           float *scaleFactor)
+                           float *scaleFactor, char *scaleImageName,
+                           const size_t scaledImageLength)
 {
-    *scaleFactor = 1;
-    return NULL;
+    float dpiScaleX = -1.0f;
+    float dpiScaleY = -1.0f;
+    FILE *fp = NULL;
+    *scaleFactor = 1.0;
+    GetScreenDpi(getPrimaryMonitor(), &dpiScaleX, &dpiScaleY);
+    *scaleFactor = dpiScaleX > 0 ? dpiScaleX / 96 : *scaleFactor;
+    if (*scaleFactor > 1.0) {
+        char strDpi[BUFF_SIZE];
+        char *dupFileName = strdup(fileName);
+        char *fileExtension = strrchr(dupFileName, '.');
+        char *nameToAppend = ".scale-";
+        size_t length = 0;
+        int retVal = 0;
+        _snprintf(strDpi, BUFF_SIZE, "%d", (int)dpiScaleX);
+        /*File is missing extension */
+        if (fileExtension == NULL) {
+            length = strlen(dupFileName) + strlen(nameToAppend) +
+                strlen(strDpi) + 1;
+            if (length > scaledImageLength) {
+                *scaleFactor = 1;
+                free(dupFileName);
+                return JNI_FALSE;
+            }
+            retVal = _snprintf(scaleImageName, length, "%s%s%s", dupFileName,
+                nameToAppend, strDpi);
+            if (retVal < 0 || (retVal != length - 1)) {
+                *scaleFactor = 1;
+                free(dupFileName);
+                return JNI_FALSE;
+            }
+        }
+        else {
+            size_t length_Without_Ext = fileExtension - dupFileName;
+            length = length_Without_Ext + strlen(nameToAppend) + strlen(strDpi) +
+                strlen(fileExtension) + 1;
+            if (length > scaledImageLength) {
+                *scaleFactor = 1;
+                free(dupFileName);
+                return JNI_FALSE;
+            }
+            retVal = _snprintf(scaleImageName, length, "%.*s%s%s%s",
+                length_Without_Ext, dupFileName, nameToAppend, strDpi, fileExtension);
+            if (retVal < 0 || (retVal != length - 1)) {
+                *scaleFactor = 1;
+                free(dupFileName);
+                return JNI_FALSE;
+            }
+        }
+        free(dupFileName);
+        if (!(fp = fopen(scaleImageName, "r"))) {
+            *scaleFactor = 1;
+            return JNI_FALSE;
+        }
+        fclose(fp);
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
 }

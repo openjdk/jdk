@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test negExact
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile NegExactILoadTest.java Verify.java
  * @run main NegExactILoadTest

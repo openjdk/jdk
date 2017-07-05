@@ -29,7 +29,7 @@
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.AggressiveOpts=="false" | vm.opt.AggressiveOpts=="null"
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.lib.* sun.hotspot.WhiteBox
  * @build TestShrinkAuxiliaryData TestShrinkAuxiliaryData15

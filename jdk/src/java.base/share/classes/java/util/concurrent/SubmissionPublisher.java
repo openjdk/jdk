@@ -1496,7 +1496,7 @@ public class SubmissionPublisher<T> implements Flow.Publisher<T>,
                     else if (((c & CONSUME) != 0 ||
                               U.compareAndSwapInt(this, CTL, c, c | CONSUME)) &&
                              U.compareAndSwapObject(a, i, x, null)) {
-                        U.putOrderedInt(this, HEAD, ++h);
+                        U.putIntRelease(this, HEAD, ++h);
                         U.getAndAddLong(this, DEMAND, -1L);
                         if ((w = waiter) != null)
                             signalWaiter(w);

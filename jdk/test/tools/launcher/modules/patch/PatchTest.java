@@ -128,18 +128,15 @@ public class PatchTest {
         // value for -Xpatch
         String patchPath = PATCHES1_DIR + File.pathSeparator + PATCHES2_DIR;
 
-        // value for -XaddExports
-        String addExportsValue = "java.base/java.lang2=test"
-                + ",jdk.naming.dns/com.sun.jndi.dns=test"
-                + ",jdk.naming.dns/com.sun.jndi.dns2=test"
-                + ",jdk.compiler/com.sun.tools.javac2=test";
-
         // the argument to the test is the list of classes overridden or added
         String arg = Stream.of(CLASSES).collect(Collectors.joining(","));
 
         int exitValue
             =  executeTestJava("-Xpatch:" + patchPath,
-                               "-XaddExports:" + addExportsValue,
+                               "-XaddExports:java.base/java.lang2=test",
+                               "-XaddExports:jdk.naming.dns/com.sun.jndi.dns=test",
+                               "-XaddExports:jdk.naming.dns/com.sun.jndi.dns2=test",
+                               "-XaddExports:jdk.compiler/com.sun.tools.javac2=test",
                                "-addmods", "jdk.naming.dns,jdk.compiler",
                                "-mp", MODS_DIR.toString(),
                                "-m", "test/jdk.test.Main", arg)

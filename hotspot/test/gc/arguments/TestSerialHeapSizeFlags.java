@@ -27,7 +27,7 @@
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the Serial collector
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestSerialHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

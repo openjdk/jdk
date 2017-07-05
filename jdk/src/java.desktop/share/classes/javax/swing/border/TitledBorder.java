@@ -34,6 +34,9 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.geom.Path2D;
 import java.beans.ConstructorProperties;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.lang.ref.WeakReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
@@ -246,6 +249,7 @@ public class TitledBorder extends AbstractBorder
         this.label = new JLabel();
         this.label.setOpaque(false);
         this.label.putClientProperty(BasicHTML.propertyKey, null);
+        installPropertyChangeListeners();
     }
 
     /**
@@ -751,5 +755,26 @@ public class TitledBorder extends AbstractBorder
             insets.set(i.top, i.left, i.bottom, i.right);
         }
         return insets;
+    }
+
+    private void installPropertyChangeListeners() {
+        final WeakReference<TitledBorder> weakReference = new WeakReference<TitledBorder>(this);
+        final PropertyChangeListener listener = new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (weakReference.get() == null) {
+                    UIManager.removePropertyChangeListener(this);
+                    UIManager.getDefaults().removePropertyChangeListener(this);
+                } else {
+                    String prop = evt.getPropertyName();
+                    if ("lookAndFeel".equals(prop) || "LabelUI".equals(prop)) {
+                        label.updateUI();
+                    }
+                }
+            }
+        };
+
+        UIManager.addPropertyChangeListener(listener);
+        UIManager.getDefaults().addPropertyChangeListener(listener);
     }
 }

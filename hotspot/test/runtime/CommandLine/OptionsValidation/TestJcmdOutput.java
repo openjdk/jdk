@@ -27,7 +27,7 @@
  *          value which is not allowed by constraint. Also check that
  *          jcmd does not print an error message to the target process output.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.management
  * @run main TestJcmdOutput

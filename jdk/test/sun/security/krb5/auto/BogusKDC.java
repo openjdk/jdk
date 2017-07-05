@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class BogusKDC {
         // and wrong port for slave KDC
         try (PrintWriter w = new PrintWriter(new FileWriter(KRB5_CONF))) {
             w.write(String.format(KRB5_CONF_TEMPLATE,
-                    KDC.KDCNameService.NOT_EXISTING_HOST, WRONG_KDC_PORT));
+                    KDC.NOT_EXISTING_HOST, WRONG_KDC_PORT));
             w.flush();
         }
 
@@ -98,7 +98,7 @@ public class BogusKDC {
         // but correct port for slave KDC
         try (PrintWriter w = new PrintWriter(new FileWriter(KRB5_CONF))) {
             w.write(String.format(KRB5_CONF_TEMPLATE,
-                    KDC.KDCNameService.NOT_EXISTING_HOST, kdc.getPort()));
+                    KDC.NOT_EXISTING_HOST, kdc.getPort()));
             w.flush();
         }
 

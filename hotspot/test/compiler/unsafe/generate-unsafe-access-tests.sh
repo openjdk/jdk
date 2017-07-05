@@ -30,9 +30,11 @@ SPP=build.tools.spp.Spp
 # Generates unsafe access tests for objects and all primitive types
 # $1 = package name to Unsafe, sun.misc | jdk.internal.misc
 # $2 = test class qualifier name, SunMisc | JdkInternalMisc
+# $3 = module name containing the Unsafe class, for @modules
 function generate {
     package=$1
     Qualifier=$2
+    module=$3
 
     for type in boolean byte short char int long float double Object
     do
@@ -108,12 +110,12 @@ function generate {
       args="$args -Dvalue1=$value1 -Dvalue2=$value2 -Dvalue3=$value3"
 
       echo $args
-      java $SPP -nel -K$Qualifier -Dpackage=$package -DQualifier=$Qualifier \
+      java $SPP -nel -K$Qualifier -Dpackage=$package -DQualifier=$Qualifier -Dmodule=$module \
           $args < X-UnsafeAccessTest.java.template > ${Qualifier}UnsafeAccessTest${Type}.java
     done
 }
 
-generate sun.misc SunMisc
-generate jdk.internal.misc JdkInternalMisc
+generate sun.misc SunMisc jdk.unsupported
+generate jdk.internal.misc JdkInternalMisc java.base
 
 rm -fr build

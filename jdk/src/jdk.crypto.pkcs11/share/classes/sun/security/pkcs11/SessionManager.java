@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import sun.security.util.Debug;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -112,8 +112,8 @@ final class SessionManager {
         }
         maxSessions = (int)Math.min(n, Integer.MAX_VALUE);
         this.token = token;
-        this.objSessions = new Pool(this);
-        this.opSessions = new Pool(this);
+        this.objSessions = new Pool(this, true);
+        this.opSessions = new Pool(this, false);
         if (debug != null) {
             maxActiveSessionsLock = new Object();
         }
@@ -236,12 +236,18 @@ final class SessionManager {
     public static final class Pool {
 
         private final SessionManager mgr;
+        private final AbstractQueue<Session> pool;
+        private final int SESSION_MAX = 5;
 
-        private final ConcurrentLinkedDeque<Session> pool;
-
-        Pool(SessionManager mgr) {
-           this.mgr = mgr;
-           pool = new ConcurrentLinkedDeque<Session>();
+        // Object session pools can contain unlimited sessions.
+        // Operation session pools are limited and enforced by the queue.
+        Pool(SessionManager mgr, boolean obj) {
+            this.mgr = mgr;
+            if (obj) {
+                pool = new LinkedBlockingQueue<Session>();
+            } else {
+                pool = new LinkedBlockingQueue<Session>(SESSION_MAX);
+            }
         }
 
         boolean remove(Session session) {
@@ -249,24 +255,24 @@ final class SessionManager {
         }
 
         Session poll() {
-            return pool.pollLast();
+            return pool.poll();
         }
 
         void release(Session session) {
-            pool.offer(session);
-            if (session.hasObjects()) {
-                return;
+            // Object session pools never return false, only Operation ones
+            if (!pool.offer(session)) {
+                mgr.closeSession(session);
+                free();
             }
+        }
 
-            int n = pool.size();
-            if (n < 5) {
-                return;
-            }
-
+        // Free any old operation session if this queue is full
+        void free() {
+            int n = SESSION_MAX;
+            int i = 0;
             Session oldestSession;
             long time = System.currentTimeMillis();
-            int i = 0;
-            // Check if the session head is too old and continue through queue
+            // Check if the session head is too old and continue through pool
             // until only one is left.
             do {
                 oldestSession = pool.peek();

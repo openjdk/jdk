@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,6 +287,15 @@ struct _GSList
 {
   gpointer data;
   GSList *next;
+};
+
+typedef struct _GList GList;
+
+struct _GList
+{
+  gpointer data;
+  GList *next;
+  GList *prev;
 };
 
 typedef void GdkColormap;
@@ -840,6 +849,11 @@ void (*fp_gtk_main)(void);
 guint (*fp_gtk_main_level)(void);
 gchar* (*fp_g_path_get_dirname) (const gchar *file_name);
 XID (*fp_gdk_x11_drawable_get_xid) (GdkWindow *drawable);
+
+
+GList* (*fp_g_list_append) (GList *list, gpointer data);
+void (*fp_g_list_free) (GList *list);
+void (*fp_g_list_free_full) (GList *list, GDestroyNotify free_func);
 
 /**
  * This function is available for GLIB > 2.20, so it MUST be

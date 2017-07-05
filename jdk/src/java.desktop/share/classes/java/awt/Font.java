@@ -611,8 +611,9 @@ public class Font implements java.io.Serializable
          * so that when the Font2D is GC'd it can also remove the file.
          */
         FontManager fm = FontManagerFactory.getInstance();
-        this.font2DHandle = fm.createFont2D(fontFile, fontFormat, isCopy,
-                                            tracker).handle;
+        Font2D[] fonts =
+            fm.createFont2D(fontFile, fontFormat, false, isCopy, tracker);
+        this.font2DHandle = fonts[0].handle;
         this.name = this.font2DHandle.font2D.getFontName(Locale.getDefault());
         this.style = Font.PLAIN;
         this.size = 1;
@@ -841,6 +842,132 @@ public class Font implements java.io.Serializable
         return hasPerm;
     }
 
+
+    /**
+     * Returns a new array of {@code Font} decoded from the specified stream.
+     * The returned {@code Font[]} will have at least one element.
+     * <p>
+     * The explicit purpose of this variation on the
+     * {@code createFont(int, InputStream)} method is to support font
+     * sources which represent a TrueType/OpenType font collection and
+     * be able to return all individual fonts in that collection.
+     * Consequently this method will throw {@code FontFormatException}
+     * if the data source does not contain at least one TrueType/OpenType
+     * font. The same exception will also be thrown if any of the fonts in
+     * the collection does not contain the required font tables.
+     * <p>
+     * The condition "at least one", allows for the stream to represent
+     * a single OpenType/TrueType font. That is, it does not have to be
+     * a collection.
+     * Each {@code Font} element of the returned array is
+     * created with a point size of 1 and style {@link #PLAIN PLAIN}.
+     * This base font can then be used with the {@code deriveFont}
+     * methods in this class to derive new {@code Font} objects with
+     * varying sizes, styles, transforms and font features.
+     * <p>This method does not close the {@link InputStream}.
+     * <p>
+     * To make each {@code Font} available to Font constructors it
+     * must be registered in the {@code GraphicsEnvironment} by calling
+     * {@link GraphicsEnvironment#registerFont(Font) registerFont(Font)}.
+     * @param fontStream an {@code InputStream} object representing the
+     * input data for the font or font collection.
+     * @return a new {@code Font[]}.
+     * @throws FontFormatException if the {@code fontStream} data does
+     *     not contain the required font tables for any of the elements of
+     *     the collection, or if it contains no fonts at all.
+     * @throws IOException if the {@code fontStream} cannot be completely read.
+     * @see GraphicsEnvironment#registerFont(Font)
+     * @since 9
+     */
+    public static Font[] createFonts(InputStream fontStream)
+        throws FontFormatException, IOException {
+
+        final int fontFormat = Font.TRUETYPE_FONT;
+        if (hasTempPermission()) {
+            return createFont0(fontFormat, fontStream, true, null);
+        }
+
+        // Otherwise, be extra conscious of pending temp file creation and
+        // resourcefully handle the temp file resources, among other things.
+        CreatedFontTracker tracker = CreatedFontTracker.getTracker();
+        boolean acquired = false;
+        try {
+            acquired = tracker.acquirePermit();
+            if (!acquired) {
+                throw new IOException("Timed out waiting for resources.");
+            }
+            return createFont0(fontFormat, fontStream, true, tracker);
+        } catch (InterruptedException e) {
+            throw new IOException("Problem reading font data.");
+        } finally {
+            if (acquired) {
+                tracker.releasePermit();
+            }
+        }
+    }
+
+    /* used to implement Font.createFont */
+    private Font(Font2D font2D) {
+
+        this.createdFont = true;
+        this.font2DHandle = font2D.handle;
+        this.name = font2D.getFontName(Locale.getDefault());
+        this.style = Font.PLAIN;
+        this.size = 1;
+        this.pointSize = 1f;
+    }
+
+    /**
+     * Returns a new array of {@code Font} decoded from the specified file.
+     * The returned {@code Font[]} will have at least one element.
+     * <p>
+     * The explicit purpose of this variation on the
+     * {@code createFont(int, File)} method is to support font
+     * sources which represent a TrueType/OpenType font collection and
+     * be able to return all individual fonts in that collection.
+     * Consequently this method will throw {@code FontFormatException}
+     * if the data source does not contain at least one TrueType/OpenType
+     * font. The same exception will also be thrown if any of the fonts in
+     * the collection does not contain the required font tables.
+     * <p>
+     * The condition "at least one", allows for the stream to represent
+     * a single OpenType/TrueType font. That is, it does not have to be
+     * a collection.
+     * Each {@code Font} element of the returned array is
+     * created with a point size of 1 and style {@link #PLAIN PLAIN}.
+     * This base font can then be used with the {@code deriveFont}
+     * methods in this class to derive new {@code Font} objects with
+     * varying sizes, styles, transforms and font features.
+     * <p>
+     * To make each {@code Font} available to Font constructors it
+     * must be registered in the {@code GraphicsEnvironment} by calling
+     * {@link GraphicsEnvironment#registerFont(Font) registerFont(Font)}.
+     * @param fontFile a {@code File} object containing the
+     * input data for the font or font collection.
+     * @return a new {@code Font[]}.
+     * @throws FontFormatException if the {@code File} does
+     *     not contain the required font tables for any of the elements of
+     *     the collection, or if it contains no fonts at all.
+     * @throws IOException if the {@code fontFile} cannot be read.
+     * @see GraphicsEnvironment#registerFont(Font)
+     * @since 9
+     */
+    public static Font[] createFonts(File fontFile)
+            throws FontFormatException, IOException
+    {
+        int fontFormat = Font.TRUETYPE_FONT;
+        fontFile = checkFontFile(fontFormat, fontFile);
+        FontManager fm = FontManagerFactory.getInstance();
+        Font2D[] font2DArr =
+            fm.createFont2D(fontFile, fontFormat, true, false, null);
+        int num = font2DArr.length;
+        Font[] fonts = new Font[num];
+        for (int i = 0; i < num; i++) {
+           fonts[i] = new Font(font2DArr[i]);
+        }
+        return fonts;
+    }
+
     /**
      * Returns a new {@code Font} using the specified font type
      * and input data.  The new {@code Font} is
@@ -873,7 +1000,7 @@ public class Font implements java.io.Serializable
         throws java.awt.FontFormatException, java.io.IOException {
 
         if (hasTempPermission()) {
-            return createFont0(fontFormat, fontStream, null);
+            return createFont0(fontFormat, fontStream, false, null)[0];
         }
 
         // Otherwise, be extra conscious of pending temp file creation and
@@ -885,7 +1012,7 @@ public class Font implements java.io.Serializable
             if (!acquired) {
                 throw new IOException("Timed out waiting for resources.");
             }
-            return createFont0(fontFormat, fontStream, tracker);
+            return createFont0(fontFormat, fontStream, false, tracker)[0];
         } catch (InterruptedException e) {
             throw new IOException("Problem reading font data.");
         } finally {
@@ -895,8 +1022,9 @@ public class Font implements java.io.Serializable
         }
     }
 
-    private static Font createFont0(int fontFormat, InputStream fontStream,
-                                    CreatedFontTracker tracker)
+    private static Font[] createFont0(int fontFormat, InputStream fontStream,
+                                      boolean allFonts,
+                                      CreatedFontTracker tracker)
         throws java.awt.FontFormatException, java.io.IOException {
 
         if (fontFormat != Font.TRUETYPE_FONT &&
@@ -965,8 +1093,15 @@ public class Font implements java.io.Serializable
                  * without waiting for the results of that constructor.
                  */
                 copiedFontData = true;
-                Font font = new Font(tFile, fontFormat, true, tracker);
-                return font;
+                FontManager fm = FontManagerFactory.getInstance();
+                 Font2D[] font2DArr =
+                    fm.createFont2D(tFile, fontFormat, allFonts, true, tracker);
+                int num = font2DArr.length;
+                Font[] fonts = new Font[num];
+                for (int i = 0; i < num; i++) {
+                   fonts[i] = new Font(font2DArr[i]);
+                }
+                return fonts;
             } finally {
                 if (tracker != null) {
                     tracker.remove(tFile);
@@ -1037,6 +1172,13 @@ public class Font implements java.io.Serializable
     public static Font createFont(int fontFormat, File fontFile)
         throws java.awt.FontFormatException, java.io.IOException {
 
+        fontFile = checkFontFile(fontFormat, fontFile);
+        return new Font(fontFile, fontFormat, false, null);
+    }
+
+    private static File checkFontFile(int fontFormat, File fontFile)
+        throws FontFormatException, IOException {
+
         fontFile = new File(fontFile.getPath());
 
         if (fontFormat != Font.TRUETYPE_FONT &&
@@ -1052,7 +1194,7 @@ public class Font implements java.io.Serializable
         if (!fontFile.canRead()) {
             throw new IOException("Can't read " + fontFile);
         }
-        return new Font(fontFile, fontFormat, false, null);
+        return fontFile;
     }
 
     /**

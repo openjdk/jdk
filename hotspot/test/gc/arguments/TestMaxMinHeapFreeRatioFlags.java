@@ -26,7 +26,7 @@
  * @key gc
  * @summary Verify that heap size changes according to max and min heap free ratios.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestMaxMinHeapFreeRatioFlags
  * @run driver/timeout=240 TestMaxMinHeapFreeRatioFlags

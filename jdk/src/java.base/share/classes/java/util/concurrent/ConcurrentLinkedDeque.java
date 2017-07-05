@@ -309,7 +309,7 @@ public class ConcurrentLinkedDeque<E>
         }
 
         void lazySetNext(Node<E> val) {
-            U.putOrderedObject(this, NEXT, val);
+            U.putObjectRelease(this, NEXT, val);
         }
 
         boolean casNext(Node<E> cmp, Node<E> val) {
@@ -317,7 +317,7 @@ public class ConcurrentLinkedDeque<E>
         }
 
         void lazySetPrev(Node<E> val) {
-            U.putOrderedObject(this, PREV, val);
+            U.putObjectRelease(this, PREV, val);
         }
 
         boolean casPrev(Node<E> cmp, Node<E> val) {

@@ -26,7 +26,7 @@
  * @summary Testing CDS (class data sharing) using varying object alignment.
  *          Using same object alignment for each dump/load pair
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
