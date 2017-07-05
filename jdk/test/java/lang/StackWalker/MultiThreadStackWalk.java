@@ -328,7 +328,7 @@ public class MultiThreadStackWalk {
 
         public void run() {
             try {
-                Env env = runTest(test, 2000, 10);
+                Env env = runTest(test, 1000, 10);
                 //waitWalkers(env);
                 checkTest(env, test);
             } catch(Throwable t) {

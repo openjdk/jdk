@@ -41,7 +41,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import javax.net.ssl.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 import sun.security.internal.spec.*;
 import sun.security.internal.interfaces.TlsMasterSecret;

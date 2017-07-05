@@ -450,16 +450,6 @@ public abstract class Property implements Serializable {
      * @param owner the owner of the property
      * @return  the property value
      */
-    public abstract long getLongValue(final ScriptObject self, final ScriptObject owner);
-
-    /**
-     * get the Object value of this property from {@code owner}. This allows to bypass creation of the
-     * getter MethodHandle for spill and user accessor properties.
-     *
-     * @param self the this object
-     * @param owner the owner of the property
-     * @return  the property value
-     */
     public abstract double getDoubleValue(final ScriptObject self, final ScriptObject owner);
 
     /**
@@ -482,17 +472,6 @@ public abstract class Property implements Serializable {
      * @param strict is this a strict setter?
      */
     public abstract void setValue(final ScriptObject self, final ScriptObject owner, final int value, final boolean strict);
-
-    /**
-     * Set the value of this property in {@code owner}. This allows to bypass creation of the
-     * setter MethodHandle for spill and user accessor properties.
-     *
-     * @param self the this object
-     * @param owner the owner object
-     * @param value the new property value
-     * @param strict is this a strict setter?
-     */
-    public abstract void setValue(final ScriptObject self, final ScriptObject owner, final long value, final boolean strict);
 
     /**
      * Set the value of this property in {@code owner}. This allows to bypass creation of the
@@ -593,8 +572,6 @@ public abstract class Property implements Serializable {
             return "undef";
         } else if (type == int.class) {
             return "i";
-        } else if (type == long.class) {
-            return "j";
         } else if (type == double.class) {
             return "d";
         } else {

@@ -40,7 +40,8 @@ ifeq ($(HAS_SPEC),)
   ##############################################################################
 
   # Make control variables, handled by Init.gmk
-  INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK COMPARE_BUILD
+  INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS TEST_JOBS CONF_CHECK \
+      COMPARE_BUILD
 
   # All known make control variables
   MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER

@@ -40,7 +40,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.*;
-import sun.misc.ManagedLocalsThread;
 
 import jdk.internal.misc.JavaNetInetAddressAccess;
 import jdk.internal.misc.SharedSecrets;
@@ -1153,10 +1152,13 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
                         HandshakeCompletedEvent event =
                             new HandshakeCompletedEvent(this, sess);
 
-                        Thread thread = new ManagedLocalsThread(
+                        Thread thread = new Thread(
+                            null,
                             new NotifyHandshake(
                                 handshakeListeners.entrySet(), event),
-                            "HandshakeCompletedNotify-Thread");
+                            "HandshakeCompletedNotify-Thread",
+                            0,
+                            false);
                         thread.start();
                     }
                 }

@@ -120,13 +120,17 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
 
 AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
 [
-  # Option used to tell the compiler whether to create 32- or 64-bit executables
+  # COMPILER_TARGET_BITS_FLAG  : option for selecting 32- or 64-bit output
+  # COMPILER_COMMAND_FILE_FLAG : option for passing a command file to the compiler
   if test "x$TOOLCHAIN_TYPE" = xxlc; then
     COMPILER_TARGET_BITS_FLAG="-q"
+    COMPILER_COMMAND_FILE_FLAG="-f"
   else
     COMPILER_TARGET_BITS_FLAG="-m"
+    COMPILER_COMMAND_FILE_FLAG="@"
   fi
   AC_SUBST(COMPILER_TARGET_BITS_FLAG)
+  AC_SUBST(COMPILER_COMMAND_FILE_FLAG)
 
   # FIXME: figure out if we should select AR flags depending on OS or toolchain.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
@@ -226,37 +230,38 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       else
         SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
       fi
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1'
+      SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
       SET_SHARED_LIBRARY_MAPFILE=''
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN[$]1'
-      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=[$]1'
-      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=[$]1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
+      SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
     fi
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    PICFLAG=''
     C_FLAG_REORDER=''
     CXX_FLAG_REORDER=''
 
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # Linking is different on MacOSX
+      PICFLAG=''
       SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1'
+      SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
       SET_SHARED_LIBRARY_MAPFILE=''
     else
       # Default works for linux, might work on other platforms as well.
+      PICFLAG='-fPIC'
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN[$]1'
-      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=[$]1'
-      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=[$]1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
+      SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     PICFLAG="-KPIC"
@@ -265,7 +270,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
     SHARED_LIBRARY_FLAGS="-G"
     SET_EXECUTABLE_ORIGIN='-R\$$$$ORIGIN[$]1'
     SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-    SET_SHARED_LIBRARY_NAME=''
+    SET_SHARED_LIBRARY_NAME='-h [$]1'
     SET_SHARED_LIBRARY_MAPFILE='-M[$]1'
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     PICFLAG="-qpic=large"
@@ -280,7 +285,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
     PICFLAG=""
     C_FLAG_REORDER=''
     CXX_FLAG_REORDER=''
-    SHARED_LIBRARY_FLAGS="-LD"
+    SHARED_LIBRARY_FLAGS="-dll"
     SET_EXECUTABLE_ORIGIN=''
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
@@ -293,6 +298,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
   AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
   AC_SUBST(SET_SHARED_LIBRARY_NAME)
   AC_SUBST(SET_SHARED_LIBRARY_MAPFILE)
+  AC_SUBST(SHARED_LIBRARY_FLAGS)
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
@@ -573,6 +579,25 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
     esac
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+	    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+	      # Force compatibility with i586 on 32 bit intel platforms.
+	      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+	    fi
+	    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+	        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+	    case $OPENJDK_TARGET_CPU_ARCH in
+	      ppc )
+	        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+	        ;;
+	      * )
+	        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+	        ;;
+	    esac
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
@@ -748,17 +773,17 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
     if test -n "$HAS_GNU_HASH"; then
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both"
+      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,--hash-style=both"
     fi
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       # And since we now know that the linker is gnu, then add -z defs, to forbid
       # undefined symbols in object files.
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs"
+      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-z,defs"
       case $DEBUG_LEVEL in
         release )
           # tell linker to optimize libraries.
           # Should this be supplied to the OSS linker as well?
-          LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -O1"
+          LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-O1"
           ;;
         slowdebug )
           if test "x$HAS_LINKER_NOW" = "xtrue"; then
@@ -785,7 +810,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
         esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
+    LDFLAGS_JDK="$LDFLAGS_JDK -Wl,-z,defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -bexpall -bernotok"
@@ -803,17 +828,19 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     fi
     LDFLAGS_JDKEXE="${LDFLAGS_JDKEXE} /STACK:$LDFLAGS_STACK_SIZE"
   elif test "x$OPENJDK_TARGET_OS" = xlinux; then
-    LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
+    LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Wl,--allow-shlib-undefined"
   fi
 
   # Customize LDFLAGS for libs
   LDFLAGS_JDKLIB="${LDFLAGS_JDK}"
 
+  LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} ${SHARED_LIBRARY_FLAGS}"
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -dll -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
+    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} \
+        -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
     JDKLIB_LIBS=""
   else
-    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB}  ${SHARED_LIBRARY_FLAGS} \
+    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} \
         -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}"
 
     # On some platforms (mac) the linker warns about non existing -L dirs.

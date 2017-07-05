@@ -29,37 +29,61 @@
 //
 // Defines Aix specific flags. They are not available on other platforms.
 //
+// (Please keep the switches sorted alphabetically.)
 #define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
+                                                                                    \
+  /* Whether to allow the VM to run if EXTSHM=ON. EXTSHM is an environment */       \
+  /* variable used on AIX to activate certain hacks which allow more shm segments */\
+  /* for 32bit processes. For 64bit processes, it is pointless and may have */      \
+  /* harmful side effects (e.g. for some reasonn prevents allocation of 64k pages */\
+  /* via shmctl). */                                                                \
+  /* Per default we quit with an error if that variable is found; for certain */    \
+  /* customer scenarios, we may want to be able to run despite that variable. */    \
+  product(bool, AllowExtshm, false,                                                 \
+          "Allow VM to run with EXTSHM=ON.")                                        \
+                                                                                    \
+  product(intx, AttachListenerTimeout, 1000,                                        \
+          "Timeout in ms the attach listener waits for a request")                  \
+          range(0, 2147483)                                                         \
+                                                                                    \
+  /*  Maximum expected size of the data segment. That correlates with the      */   \
+  /*  to the maximum C Heap consumption we expect.                             */   \
+  /*  We need to know this because we need to leave "breathing space" for the  */   \
+  /*  data segment when placing the java heap. If that space is too small, we  */   \
+  /*  reduce our chance of getting a low heap address (needed for compressed   */   \
+  /*  Oops).                                                                   */   \
+  product(uintx, MaxExpectedDataSegmentSize, (SIZE_4G * 2),                         \
+          "Maximum expected Data Segment Size.")                                    \
+                                                                                    \
+  /* Use optimized addresses for the polling page.                             */   \
+  product(bool, OptimizePollingPageLocation, true,                                  \
+             "Optimize the location of the polling page used for Safepoints")       \
                                                                                     \
   /* Use 64K pages for virtual memory (shmat). */                                   \
   product(bool, Use64KPages, true,                                                  \
           "Use 64K pages if available.")                                            \
                                                                                     \
-  /* If UseLargePages == true allow or deny usage of 16M pages. 16M pages are  */   \
-  /* a scarce resource and there may be situations where we do not want the VM */   \
-  /* to run with 16M pages. (Will fall back to 64K pages).                     */   \
-  product_pd(bool, Use16MPages,                                                     \
-             "Use 16M pages if available.")                                         \
+  /*  If VM uses 64K paged memory (shmat) for virtual memory: threshold below  */   \
+  /*  which virtual memory allocations are done with 4K memory (mmap). This is */   \
+  /*  mainly for test purposes.                                                */   \
+  develop(uintx, Use64KPagesThreshold, 0,                                           \
+          "4K/64K page allocation threshold.")                                      \
                                                                                     \
-  /*  use optimized addresses for the polling page, */                              \
-  /* e.g. map it to a special 32-bit address.       */                              \
-  product_pd(bool, OptimizePollingPageLocation,                                     \
-             "Optimize the location of the polling page used for Safepoints")       \
-                                                                                    \
-  product_pd(intx, AttachListenerTimeout,                                           \
-             "Timeout in ms the attach listener waits for a request")               \
-             range(0, 2147483)                                                      \
+  /* Normally AIX commits memory on touch, but sometimes it is helpful to have */   \
+  /* explicit commit behaviour. This flag, if true, causes the VM to touch     */   \
+  /* memory on os::commit_memory() (which normally is a noop).                 */   \
+  product(bool, UseExplicitCommit, false,                                           \
+          "Explicit commit for virtual memory.")                                    \
                                                                                     \
 
-// Per default, do not allow 16M pages. 16M pages have to be switched on specifically.
-define_pd_global(bool, Use16MPages, false);
-define_pd_global(bool, OptimizePollingPageLocation, true);
-define_pd_global(intx, AttachListenerTimeout, 1000);
 
 //
 // Defines Aix-specific default values. The flags are available on all
 // platforms, but they may have different default values on other platforms.
 //
+
+// UseLargePages means nothing, for now, on AIX.
+// Use Use64KPages or Use16MPages instead.
 define_pd_global(bool, UseLargePages, false);
 define_pd_global(bool, UseLargePagesIndividualAllocation, false);
 define_pd_global(bool, UseOSErrorReporting, false);

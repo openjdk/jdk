@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_G1_G1PREDICTIONS_HPP
 #define SHARE_VM_GC_G1_G1PREDICTIONS_HPP
 
-#include "memory/allocation.inline.hpp"
 #include "utilities/numberSeq.hpp"
 
 // Utility class containing various helper methods for prediction.

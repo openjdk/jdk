@@ -1670,9 +1670,9 @@ public interface Map<K, V> {
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
-    static <K, V> Map<K, V> ofEntries(Entry<K, V>... entries) {
+    static <K, V> Map<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
         Map<K, V> map = new HashMap<>(entries.length * 4 / 3 + 1); // throws NPE if entries is null
-        for (Entry<K, V> e : entries) {
+        for (Entry<? extends K, ? extends V> e : entries) {
             // next line throws NPE if e is null
             map.put(Objects.requireNonNull(e.getKey()), Objects.requireNonNull(e.getValue()));
         }

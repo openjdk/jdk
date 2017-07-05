@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,6 +76,8 @@
 private:
   bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
 public:
+
+  static Thread *aarch64_get_thread_helper();
 
   // These routines are only used on cpu architectures that
   // have separate register stacks (Itanium).

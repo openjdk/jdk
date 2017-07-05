@@ -1,5 +1,5 @@
 /*
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 #endif
 
 #include "loadlib_aix.hpp"
-// for CritSect
 #include "misc_aix.hpp"
 #include "porting_aix.hpp"
 #include "utilities/debug.hpp"

@@ -866,7 +866,11 @@ public class WeakHashMap<K,V>
      */
     public Set<K> keySet() {
         Set<K> ks = keySet;
-        return (ks != null ? ks : (keySet = new KeySet()));
+        if (ks == null) {
+            ks = new KeySet();
+            keySet = ks;
+        }
+        return ks;
     }
 
     private class KeySet extends AbstractSet<K> {
@@ -915,7 +919,11 @@ public class WeakHashMap<K,V>
      */
     public Collection<V> values() {
         Collection<V> vs = values;
-        return (vs != null) ? vs : (values = new Values());
+        if (vs == null) {
+            vs = new Values();
+            values = vs;
+        }
+        return vs;
     }
 
     private class Values extends AbstractCollection<V> {

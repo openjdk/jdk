@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@
  * (or values) from being reclaimed, and phantom references are for
  * scheduling pre-mortem cleanup actions in a more flexible way than
  * is possible with the Java finalization mechanism.
+ * Post-mortem cleanup actions can be registered and managed by a
+ * {@link java.lang.ref.Cleaner}.
  *
  * <p> Each reference-object type is implemented by a subclass of the
  * abstract base {@link java.lang.ref.Reference} class.

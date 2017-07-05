@@ -275,7 +275,6 @@ void AbstractGangWorker::run() {
 }
 
 void AbstractGangWorker::initialize() {
-  this->initialize_thread_local_storage();
   this->record_stack_base_and_size();
   this->initialize_named_thread();
   assert(_gang != NULL, "No gang to run in");

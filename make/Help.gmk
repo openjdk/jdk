@@ -83,6 +83,7 @@ help:
 	$(info $(_)                        # To see executed command lines, use LOG=debug)
 	$(info $(_) JOBS=<n>               # Run <n> parallel make jobs)
 	$(info $(_)                        # Note that -jN does not work as expected!)
+	$(info $(_) TEST_JOBS=<n>          # Run <n> parallel test jobs)
 	$(info $(_) CONF_CHECK=<method>    # What to do if spec file is out of date)
 	$(info $(_)                        # method is 'auto', 'ignore' or 'fail' (default))
 	$(info $(_) make test TEST=<test>  # Only run the given test or tests, e.g.)

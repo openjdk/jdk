@@ -19,6 +19,10 @@ grant codeBase "jrt:/jdk.naming.dns" {
         permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/jdk.dynalink" {
+        permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/jdk.scripting.nashorn" {
         permission java.security.AllPermission;
 };
