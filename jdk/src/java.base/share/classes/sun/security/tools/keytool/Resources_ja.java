@@ -126,16 +126,24 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "\u9375\u306E\u30D3\u30C3\u30C8\u30FB\u30B5\u30A4\u30BA"}, //-keysize
         {"keystore.name",
                 "\u30AD\u30FC\u30B9\u30C8\u30A2\u540D"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "cacerts\u30AD\u30FC\u30B9\u30C8\u30A2\u306B\u30A2\u30AF\u30BB\u30B9\u3059\u308B"}, // -cacerts
+        {"warning.cacerts.option",
+                "\u8B66\u544A: cacerts\u30AD\u30FC\u30B9\u30C8\u30A2\u306B\u30A2\u30AF\u30BB\u30B9\u3059\u308B\u306B\u306F-cacerts\u30AA\u30D7\u30B7\u30E7\u30F3\u3092\u4F7F\u7528\u3057\u3066\u304F\u3060\u3055\u3044"},
         {"new.password",
                 "\u65B0\u898F\u30D1\u30B9\u30EF\u30FC\u30C9"}, //-new
         {"do.not.prompt",
                 "\u30D7\u30ED\u30F3\u30D7\u30C8\u3092\u8868\u793A\u3057\u306A\u3044"}, //-noprompt
         {"password.through.protected.mechanism",
                 "\u4FDD\u8B77\u30E1\u30AB\u30CB\u30BA\u30E0\u306B\u3088\u308B\u30D1\u30B9\u30EF\u30FC\u30C9"}, //-protected
-        {"provider.argument",
-                "\u30D7\u30ED\u30D0\u30A4\u30C0\u5F15\u6570"}, //-providerarg
-        {"provider.class.name",
-                "\u30D7\u30ED\u30D0\u30A4\u30C0\u30FB\u30AF\u30E9\u30B9\u540D"}, //-providerclass
+
+        // The following 2 values should span 2 lines, the first for the
+        // option itself, the second for its -providerArg value.
+        {"addprovider.option",
+                "\u540D\u524D\u3067\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30D7\u30ED\u30D0\u30A4\u30C0\u3092\u8FFD\u52A0\u3059\u308B(SunPKCS11\u306A\u3069)\n-addprovider\u306E\u5F15\u6570\u3092\u69CB\u6210\u3059\u308B"}, //-addprovider
+        {"provider.class.option",
+                "\u5B8C\u5168\u4FEE\u98FE\u30AF\u30E9\u30B9\u540D\u3067\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30D7\u30ED\u30D0\u30A4\u30C0\u3092\u8FFD\u52A0\u3059\u308B\n-providerclass\u306E\u5F15\u6570\u3092\u69CB\u6210\u3059\u308B"}, //-providerclass
+
         {"provider.name",
                 "\u30D7\u30ED\u30D0\u30A4\u30C0\u540D"}, //-providername
         {"provider.classpath",
@@ -187,6 +195,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "\u30B3\u30DE\u30F3\u30C9\u30FB\u30AA\u30D7\u30B7\u30E7\u30F3{0}\u306B\u306F\u5F15\u6570\u304C\u5FC5\u8981\u3067\u3059\u3002"},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "\u8B66\u544A: PKCS12\u30AD\u30FC\u30B9\u30C8\u30A2\u3067\u306F\u3001\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3068\u9375\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u304C\u7570\u306A\u308B\u72B6\u6CC1\u306F\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u307E\u305B\u3093\u3002\u30E6\u30FC\u30B6\u30FC\u304C\u6307\u5B9A\u3057\u305F{0}\u306E\u5024\u306F\u7121\u8996\u3057\u307E\u3059\u3002"},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "-keystore\u307E\u305F\u306F-storetype\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u3001-cacerts\u30AA\u30D7\u30B7\u30E7\u30F3\u3068\u3068\u3082\u306B\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-storetype\u304C{0}\u306E\u5834\u5408\u3001-keystore\u306FNONE\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
         {"Too.many.retries.program.terminated",
@@ -208,7 +218,9 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Illegal.startdate.value", "startdate\u5024\u304C\u7121\u52B9\u3067\u3059"},
         {"Validity.must.be.greater.than.zero",
                 "\u59A5\u5F53\u6027\u306F\u30BC\u30ED\u3088\u308A\u5927\u304D\u3044\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
-        {"provName.not.a.provider", "{0}\u306F\u30D7\u30ED\u30D0\u30A4\u30C0\u3067\u306F\u3042\u308A\u307E\u305B\u3093"},
+        {"provclass.not.a.provider", "%s\u306F\u30D7\u30ED\u30D0\u30A4\u30C0\u3067\u306F\u3042\u308A\u307E\u305B\u3093"},
+        {"provider.name.not.found", "\u30D7\u30ED\u30D0\u30A4\u30C0\u540D\"%s\"\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"},
+        {"provider.class.not.found", "\u30D7\u30ED\u30D0\u30A4\u30C0\"%s\"\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"},
         {"Usage.error.no.command.provided", "\u4F7F\u7528\u30A8\u30E9\u30FC: \u30B3\u30DE\u30F3\u30C9\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093"},
         {"Source.keystore.file.exists.but.is.empty.", "\u30BD\u30FC\u30B9\u30FB\u30AD\u30FC\u30B9\u30C8\u30A2\u30FB\u30D5\u30A1\u30A4\u30EB\u306F\u3001\u5B58\u5728\u3057\u307E\u3059\u304C\u7A7A\u3067\u3059: "},
         {"Please.specify.srckeystore", "-srckeystore\u3092\u6307\u5B9A\u3057\u3066\u304F\u3060\u3055\u3044"},

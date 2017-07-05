@@ -21,14 +21,16 @@
  * questions.
  */
 
-//package javaapplication16;
 
 import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpResponse;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 
 /**
  * @test
@@ -71,29 +73,34 @@ public class SplitResponse {
         URI uri = new URI(server.getURL());
         server.start();
 
-        HttpRequest request;
-        HttpResponse r;
-        CompletableFuture<HttpResponse> cf1;
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(uri).build();
+        HttpResponse<String> r;
+        CompletableFuture<HttpResponse<String>> cf1;
 
-        for (int i=0; i<responses.length; i++) {
-            cf1 = HttpRequest.create(uri)
-                    .GET()
-                    .responseAsync();
-            String body = responses[i];
+        try {
+            for (int i=0; i<responses.length; i++) {
+                cf1 = client.sendAsync(request, asString());
+                String body = responses[i];
 
-            Server.Connection c = server.activity();
-            sendSplitResponse(response(body), c);
-            r = cf1.get();
-            if (r.statusCode()!= 200)
-                throw new RuntimeException("Failed");
+                Server.Connection c = server.activity();
+                sendSplitResponse(response(body), c);
+                r = cf1.get();
+                if (r.statusCode()!= 200)
+                    throw new RuntimeException("Failed");
 
-            String rxbody = r.body(HttpResponse.asString());
-            System.out.println("received " + rxbody);
-            if (!rxbody.equals(body))
-                throw new RuntimeException("Failed");
-            c.close();
+                String rxbody = r.body();
+                System.out.println("received " + rxbody);
+                if (!rxbody.equals(body))
+                    throw new RuntimeException("Failed");
+                c.close();
+            }
+        } finally {
+            Executor def = client.executor();
+            if (def instanceof ExecutorService) {
+                ((ExecutorService)def).shutdownNow();
+            }
         }
-        HttpClient.getDefault().executorService().shutdownNow();
         System.out.println("OK");
     }
 

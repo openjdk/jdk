@@ -21,3 +21,27 @@ grant codebase "file:${test.classes}/proxydir/-" {
     permission java.net.SocketPermission "localhost:1024-", "accept,listen,connect";
     permission java.net.SocketPermission "127.0.0.1:1024-", "connect,resolve";
 };
+
+grant codeBase "jrt:/jdk.incubator.httpclient" {
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+
+    // ## why is SP not good enough. Check API @throws signatures and impl
+    permission java.net.SocketPermission "*","connect,resolve";
+    permission java.net.URLPermission "http:*","*:*";
+    permission java.net.URLPermission "https:*","*:*";
+    permission java.net.URLPermission "ws:*","*:*";
+    permission java.net.URLPermission "wss:*","*:*";
+    permission java.net.URLPermission "socket:*","CONNECT";  // proxy
+
+    // For request/response body processors, fromFile, asFile
+    permission java.io.FilePermission "<<ALL FILES>>","read,write";  // delete???
+
+    permission java.util.PropertyPermission "jdk.httpclient.*","read";
+
+    // ## these permissions do not appear in the NetPermission spec!!! JDK bug?
+    permission java.net.NetPermission "getSSLContext";
+    permission java.net.NetPermission "setSSLContext";
+};
+

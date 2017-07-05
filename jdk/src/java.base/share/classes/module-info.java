@@ -156,6 +156,7 @@ module java.base {
     exports jdk.internal.misc to
         java.corba,
         java.desktop,
+        jdk.incubator.httpclient,
         java.logging,
         java.management,
         java.naming,
@@ -199,7 +200,7 @@ module java.base {
         java.management,
         jdk.jvmstat;
     exports sun.net to
-        java.httpclient;
+        jdk.incubator.httpclient;
     exports sun.net.ext to
         jdk.net;
     exports sun.net.dns to
@@ -210,6 +211,7 @@ module java.base {
         jdk.jconsole,
         jdk.naming.dns;
     exports sun.net.www to
+        jdk.incubator.httpclient,
         java.desktop,
         jdk.jartool;
     exports sun.net.www.protocol.http to

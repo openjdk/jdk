@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,11 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     int truncate(FileDescriptor fd, long size) throws IOException {
+        return truncate0(fd, size);
+    }
+
+    int allocate(FileDescriptor fd, long size) throws IOException {
+        // truncate0() works for extending and truncating file size
         return truncate0(fd, size);
     }
 

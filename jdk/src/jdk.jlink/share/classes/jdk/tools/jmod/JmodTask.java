@@ -138,6 +138,8 @@ public class JmodTask {
     private static final String PROGNAME = "jmod";
     private static final String MODULE_INFO = "module-info.class";
 
+    private static final Path CWD = Paths.get("");
+
     private Options options;
     private PrintWriter out = new PrintWriter(System.out, true);
     void setLog(PrintWriter out, PrintWriter err) {
@@ -153,6 +155,7 @@ public class JmodTask {
 
     enum Mode {
         CREATE,
+        EXTRACT,
         LIST,
         DESCRIBE,
         HASH
@@ -178,6 +181,7 @@ public class JmodTask {
         Pattern modulesToHash;
         boolean dryrun;
         List<PathMatcher> excludes;
+        Path extractDir;
     }
 
     public int run(String[] args) {
@@ -201,6 +205,9 @@ public class JmodTask {
             switch (options.mode) {
                 case CREATE:
                     ok = create();
+                    break;
+                case EXTRACT:
+                    ok = extract();
                     break;
                 case LIST:
                     ok = list();
@@ -245,6 +252,32 @@ public class JmodTask {
         } finally {
             if (zip != null)
                 zip.close();
+        }
+    }
+
+    private boolean extract() throws IOException {
+        Path dir = options.extractDir != null ? options.extractDir : CWD;
+        try (JmodFile jf = new JmodFile(options.jmodFile)) {
+            jf.stream().forEach(e -> {
+                try {
+                    ZipEntry entry = e.zipEntry();
+                    String name = entry.getName();
+                    int index = name.lastIndexOf("/");
+                    if (index != -1) {
+                        Path p = dir.resolve(name.substring(0, index));
+                        if (Files.notExists(p))
+                            Files.createDirectories(p);
+                    }
+
+                    try (OutputStream os = Files.newOutputStream(dir.resolve(name))) {
+                        jf.getInputStream(e).transferTo(os);
+                    }
+                } catch (IOException x) {
+                    throw new UncheckedIOException(x);
+                }
+            });
+
+            return true;
         }
     }
 
@@ -1019,8 +1052,6 @@ public class JmodTask {
     static class ClassPathConverter implements ValueConverter<Path> {
         static final ValueConverter<Path> INSTANCE = new ClassPathConverter();
 
-        private static final Path CWD = Paths.get("");
-
         @Override
         public Path convert(String value) {
             try {
@@ -1044,8 +1075,6 @@ public class JmodTask {
     static class DirPathConverter implements ValueConverter<Path> {
         static final ValueConverter<Path> INSTANCE = new DirPathConverter();
 
-        private static final Path CWD = Paths.get("");
-
         @Override
         public Path convert(String value) {
             try {
@@ -1054,6 +1083,33 @@ public class JmodTask {
                     throw new CommandException("err.path.not.found", path);
                 if (!Files.isDirectory(path))
                     throw new CommandException("err.path.not.a.dir", path);
+                return path;
+            } catch (InvalidPathException x) {
+                throw new CommandException("err.path.not.valid", value);
+            }
+        }
+
+        @Override  public Class<Path> valueType() { return Path.class; }
+
+        @Override  public String valuePattern() { return "path"; }
+    }
+
+    static class ExtractDirPathConverter implements ValueConverter<Path> {
+
+        @Override
+        public Path convert(String value) {
+            try {
+                Path path = CWD.resolve(value);
+                if (Files.exists(path)) {
+                    if (!Files.isDirectory(path))
+                        throw new CommandException("err.cannot.create.dir", path);
+                } else {
+                    try {
+                        Files.createDirectories(path);
+                    } catch (IOException ioe) {
+                        throw new CommandException("err.cannot.create.dir", path);
+                    }
+                }
                 return path;
             } catch (InvalidPathException x) {
                 throw new CommandException("err.path.not.valid", value);
@@ -1158,6 +1214,7 @@ public class JmodTask {
 
             builder.append(getMessage("main.opt.mode")).append("\n  ");
             builder.append(getMessage("main.opt.mode.create")).append("\n  ");
+            builder.append(getMessage("main.opt.mode.extract")).append("\n  ");
             builder.append(getMessage("main.opt.mode.list")).append("\n  ");
             builder.append(getMessage("main.opt.mode.describe")).append("\n  ");
             builder.append(getMessage("main.opt.mode.hash")).append("\n\n");
@@ -1202,6 +1259,11 @@ public class JmodTask {
                         .withRequiredArg()
                         .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
+
+        OptionSpec<Path> dir
+                = parser.accepts("dir", getMessage("main.opt.extractDir"))
+                        .withRequiredArg()
+                        .withValuesConvertedBy(new ExtractDirPathConverter());
 
         OptionSpec<Void> dryrun
             = parser.accepts("dry-run", getMessage("main.opt.dry-run"));
@@ -1303,6 +1365,8 @@ public class JmodTask {
                 options.cmds = opts.valuesOf(cmds);
             if (opts.has(config))
                 options.configs = opts.valuesOf(config);
+            if (opts.has(dir))
+                options.extractDir = opts.valueOf(dir);
             if (opts.has(dryrun))
                 options.dryrun = true;
             if (opts.has(excludes))
@@ -1347,7 +1411,8 @@ public class JmodTask {
                 if (options.mode.equals(Mode.CREATE) && Files.exists(path))
                     throw new CommandException("err.file.already.exists", path);
                 else if ((options.mode.equals(Mode.LIST) ||
-                            options.mode.equals(Mode.DESCRIBE))
+                            options.mode.equals(Mode.DESCRIBE) ||
+                            options.mode.equals((Mode.EXTRACT)))
                          && Files.notExists(path))
                     throw new CommandException("err.jmod.not.found", path);
 

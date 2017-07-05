@@ -126,16 +126,24 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                 "\u91D1\u9470\u4F4D\u5143\u5927\u5C0F"}, //-keysize
         {"keystore.name",
                 "\u91D1\u9470\u5132\u5B58\u5EAB\u540D\u7A31"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "\u5B58\u53D6 cacerts \u91D1\u9470\u5132\u5B58\u5EAB"}, // -cacerts
+        {"warning.cacerts.option",
+                "\u8B66\u544A: \u4F7F\u7528 -cacerts \u9078\u9805\u5B58\u53D6 cacerts \u91D1\u9470\u5132\u5B58\u5EAB"},
         {"new.password",
                 "\u65B0\u5BC6\u78BC"}, //-new
         {"do.not.prompt",
                 "\u4E0D\u8981\u63D0\u793A"}, //-noprompt
         {"password.through.protected.mechanism",
                 "\u7D93\u7531\u4FDD\u8B77\u6A5F\u5236\u7684\u5BC6\u78BC"}, //-protected
-        {"provider.argument",
-                "\u63D0\u4F9B\u8005\u5F15\u6578"}, //-providerarg
-        {"provider.class.name",
-                "\u63D0\u4F9B\u8005\u985E\u5225\u540D\u7A31"}, //-providerclass
+
+        // The following 2 values should span 2 lines, the first for the
+        // option itself, the second for its -providerArg value.
+        {"addprovider.option",
+                "\u4F7F\u7528\u540D\u7A31\u65B0\u589E\u5B89\u5168\u63D0\u4F9B\u8005 (\u4F8B\u5982 SunPKCS11)\n\u8A2D\u5B9A -addprovider \u5F15\u6578"}, //-addprovider
+        {"provider.class.option",
+                "\u4F7F\u7528\u5B8C\u6574\u985E\u5225\u540D\u7A31\u65B0\u589E\u5B89\u5168\u63D0\u4F9B\u8005\n\u8A2D\u5B9A -providerclass \u5F15\u6578"}, //-providerclass
+
         {"provider.name",
                 "\u63D0\u4F9B\u8005\u540D\u7A31"}, //-providername
         {"provider.classpath",
@@ -187,6 +195,8 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "\u547D\u4EE4\u9078\u9805 {0} \u9700\u8981\u5F15\u6578\u3002"},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "\u8B66\u544A: PKCS12 \u91D1\u9470\u5132\u5B58\u5EAB\u4E0D\u652F\u63F4\u4E0D\u540C\u7684\u5132\u5B58\u5EAB\u548C\u91D1\u9470\u5BC6\u78BC\u3002\u5FFD\u7565\u4F7F\u7528\u8005\u6307\u5B9A\u7684 {0} \u503C\u3002"},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "-keystore \u6216 -storetype \u9078\u9805\u4E0D\u80FD\u8207 -cacerts \u9078\u9805\u4E00\u8D77\u4F7F\u7528"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "\u5982\u679C -storetype \u70BA {0}\uFF0C\u5247 -keystore \u5FC5\u9808\u70BA NONE"},
         {"Too.many.retries.program.terminated",
@@ -208,7 +218,9 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"Illegal.startdate.value", "\u7121\u6548\u7684 startdate \u503C"},
         {"Validity.must.be.greater.than.zero",
                 "\u6709\u6548\u6027\u5FC5\u9808\u5927\u65BC\u96F6"},
-        {"provName.not.a.provider", "{0} \u4E0D\u662F\u4E00\u500B\u63D0\u4F9B\u8005"},
+        {"provclass.not.a.provider", "%s \u4E0D\u662F\u4E00\u500B\u63D0\u4F9B\u8005"},
+        {"provider.name.not.found", "\u627E\u4E0D\u5230\u540D\u7A31\u70BA \"%s\" \u7684\u63D0\u4F9B\u8005"},
+        {"provider.class.not.found", "\u627E\u4E0D\u5230\u63D0\u4F9B\u8005 \"%s\""},
         {"Usage.error.no.command.provided", "\u7528\u6CD5\u932F\u8AA4: \u672A\u63D0\u4F9B\u547D\u4EE4"},
         {"Source.keystore.file.exists.but.is.empty.", "\u4F86\u6E90\u91D1\u9470\u5132\u5B58\u5EAB\u6A94\u6848\u5B58\u5728\uFF0C\u4F46\u70BA\u7A7A: "},
         {"Please.specify.srckeystore", "\u8ACB\u6307\u5B9A -srckeystore"},
