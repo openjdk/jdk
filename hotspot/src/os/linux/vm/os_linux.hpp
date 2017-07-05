@@ -32,6 +32,7 @@ typedef int (*pthread_getattr_func_type) (pthread_t, pthread_attr_t *);
 
 class Linux {
   friend class os;
+  friend class TestReserveMemorySpecial;
 
   // For signal-chaining
 #define MAXSIGNUM 32
@@ -92,7 +93,20 @@ class Linux {
   static void rebuild_cpu_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
 
+  static size_t find_large_page_size();
+  static size_t setup_large_page_size();
+
+  static bool setup_large_page_type(size_t page_size);
+  static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
+
+  static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
+  static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, char* req_addr, bool exec);
+  static char* reserve_memory_special_huge_tlbfs_only(size_t bytes, char* req_addr, bool exec);
+  static char* reserve_memory_special_huge_tlbfs_mixed(size_t bytes, size_t alignment, char* req_addr, bool exec);
+
+  static bool release_memory_special_shm(char* base, size_t bytes);
+  static bool release_memory_special_huge_tlbfs(char* base, size_t bytes);
 
   static void print_full_memory_info(outputStream* st);
   static void print_distro_info(outputStream* st);

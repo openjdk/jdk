@@ -681,17 +681,23 @@ static const uint64_t NarrowOopHeapMax = (uint64_t(max_juint) + 1);
 // 32Gb
 // OopEncodingHeapMax == NarrowOopHeapMax << LogMinObjAlignmentInBytes;
 
-char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
+char* Universe::preferred_heap_base(size_t heap_size, size_t alignment, NARROW_OOP_MODE mode) {
+  assert(is_size_aligned((size_t)OopEncodingHeapMax, alignment), "Must be");
+  assert(is_size_aligned((size_t)NarrowOopHeapMax, alignment), "Must be");
+  assert(is_size_aligned(heap_size, alignment), "Must be");
+
+  uintx heap_base_min_address_aligned = align_size_up(HeapBaseMinAddress, alignment);
+
   size_t base = 0;
 #ifdef _LP64
   if (UseCompressedOops) {
     assert(mode == UnscaledNarrowOop  ||
            mode == ZeroBasedNarrowOop ||
            mode == HeapBasedNarrowOop, "mode is invalid");
-    const size_t total_size = heap_size + HeapBaseMinAddress;
+    const size_t total_size = heap_size + heap_base_min_address_aligned;
     // Return specified base for the first request.
     if (!FLAG_IS_DEFAULT(HeapBaseMinAddress) && (mode == UnscaledNarrowOop)) {
-      base = HeapBaseMinAddress;
+      base = heap_base_min_address_aligned;
 
     // If the total size is small enough to allow UnscaledNarrowOop then
     // just use UnscaledNarrowOop.
@@ -742,6 +748,8 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
     }
   }
 #endif
+
+  assert(is_ptr_aligned((char*)base, alignment), "Must be");
   return (char*)base; // also return NULL (don't care) for 32-bit VM
 }
 
@@ -867,27 +875,33 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   size_t total_reserved = align_size_up(heap_size, alignment);
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
-  char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
-  ReservedHeapSpace total_rs(total_reserved, alignment, UseLargePages, addr);
+  bool use_large_pages = UseLargePages && is_size_aligned(alignment, os::large_page_size());
+  assert(!UseLargePages
+      || UseParallelOldGC
+      || use_large_pages, "Wrong alignment to use large pages");
+
+  char* addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::UnscaledNarrowOop);
+
+  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages, addr);
 
   if (UseCompressedOops) {
     if (addr != NULL && !total_rs.is_reserved()) {
       // Failed to reserve at specified address - the requested memory
       // region is taken already, for example, by 'java' launcher.
       // Try again to reserver heap higher.
-      addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
+      addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::ZeroBasedNarrowOop);
 
       ReservedHeapSpace total_rs0(total_reserved, alignment,
-                                  UseLargePages, addr);
+          use_large_pages, addr);
 
       if (addr != NULL && !total_rs0.is_reserved()) {
         // Failed to reserve at specified address again - give up.
-        addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
+        addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::HeapBasedNarrowOop);
         assert(addr == NULL, "");
 
         ReservedHeapSpace total_rs1(total_reserved, alignment,
-                                    UseLargePages, addr);
+            use_large_pages, addr);
         total_rs = total_rs1;
       } else {
         total_rs = total_rs0;

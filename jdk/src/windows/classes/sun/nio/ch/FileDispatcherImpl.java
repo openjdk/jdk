@@ -32,7 +32,7 @@ import sun.misc.JavaIOFileDescriptorAccess;
 class FileDispatcherImpl extends FileDispatcher
 {
     static {
-        Util.load();
+        IOUtil.load();
     }
 
     /**
