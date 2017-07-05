@@ -77,10 +77,8 @@ ifeq ($(BOOT_JDK_MODULAR), true)
   NASGEN_OPTIONS := \
       -cp $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
       -Xpatch:$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
-      -XaddExports:$(subst $(SPACE),$(COMMA),$(strip \
-          java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
-          java.base/jdk.internal.org.objectweb.asm.util=ALL-UNNAMED \
-      ))
+      -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+      -XaddExports:java.base/jdk.internal.org.objectweb.asm.util=ALL-UNNAMED
 else
   NASGEN_OPTIONS := \
       -Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes

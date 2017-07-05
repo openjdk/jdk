@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
  * Signature: (Ljava/lang/String;Ljava/util/Collection;)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_loadKeysOrCertificateChains
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jobject jCollections)
+  (JNIEnv *env, jobject obj, jstring jCertStoreName)
 {
     /**
      * Certificate in cert store has enhanced key usage extension
@@ -331,7 +331,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_loadKeysOrCertificateCh
         // Determine method ID to generate certificate chain
         jmethodID mGenCertChain = env->GetMethodID(clazzOfThis,
                                                    "generateCertificateChain",
-                                                   "(Ljava/lang/String;Ljava/util/Collection;Ljava/util/Collection;)V");
+                                                   "(Ljava/lang/String;Ljava/util/Collection;)V");
         if (mGenCertChain == NULL) {
             __leave;
         }
@@ -339,7 +339,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_loadKeysOrCertificateCh
         // Determine method ID to generate RSA certificate chain
         jmethodID mGenRSAKeyAndCertChain = env->GetMethodID(clazzOfThis,
                                                    "generateRSAKeyAndCertificateChain",
-                                                   "(Ljava/lang/String;JJILjava/util/Collection;Ljava/util/Collection;)V");
+                                                   "(Ljava/lang/String;JJILjava/util/Collection;)V");
         if (mGenRSAKeyAndCertChain == NULL) {
             __leave;
         }
@@ -366,38 +366,37 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_loadKeysOrCertificateCh
             } else {
                 // Private key is available
 
-            BOOL bGetUserKey = ::CryptGetUserKey(hCryptProv, dwKeySpec, &hUserKey);
+                BOOL bGetUserKey = ::CryptGetUserKey(hCryptProv, dwKeySpec, &hUserKey);
 
-            // Skip certificate if cannot find private key
-            if (bGetUserKey == FALSE)
-            {
-                if (bCallerFreeProv)
-                    ::CryptReleaseContext(hCryptProv, NULL);
+                // Skip certificate if cannot find private key
+                if (bGetUserKey == FALSE)
+                {
+                    if (bCallerFreeProv)
+                        ::CryptReleaseContext(hCryptProv, NULL);
 
-                continue;
+                    continue;
+                }
+
+                // Set cipher mode to ECB
+                DWORD dwCipherMode = CRYPT_MODE_ECB;
+                ::CryptSetKeyParam(hUserKey, KP_MODE, (BYTE*)&dwCipherMode, NULL);
+
+
+                // If the private key is present in smart card, we may not be able to
+                // determine the key length by using the private key handle. However,
+                // since public/private key pairs must have the same length, we could
+                // determine the key length of the private key by using the public key
+                // in the certificate.
+                dwPublicKeyLength = ::CertGetPublicKeyLength(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                        &(pCertContext->pCertInfo->SubjectPublicKeyInfo));
+
             }
-
-            // Set cipher mode to ECB
-            DWORD dwCipherMode = CRYPT_MODE_ECB;
-            ::CryptSetKeyParam(hUserKey, KP_MODE, (BYTE*)&dwCipherMode, NULL);
-
-
-            // If the private key is present in smart card, we may not be able to
-            // determine the key length by using the private key handle. However,
-            // since public/private key pairs must have the same length, we could
-            // determine the key length of the private key by using the public key
-            // in the certificate.
-            dwPublicKeyLength = ::CertGetPublicKeyLength(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                                               &(pCertContext->pCertInfo->SubjectPublicKeyInfo));
-
-}
             PCCERT_CHAIN_CONTEXT pCertChainContext = NULL;
 
             // Build certificate chain by using system certificate store.
             // Add cert chain into collection for any key usage.
             //
-            if (GetCertificateChain(OID_EKU_ANY, pCertContext,
-                &pCertChainContext))
+            if (GetCertificateChain(OID_EKU_ANY, pCertContext, &pCertChainContext))
             {
 
                 for (unsigned int i=0; i < pCertChainContext->cChain; i++)
@@ -456,26 +455,26 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_loadKeysOrCertificateCh
                         // collection
                         env->CallVoidMethod(obj, mGenCertChain,
                             env->NewStringUTF(pszNameString),
-                            jArrayList, jCollections);
+                            jArrayList);
                     }
                     else
                     {
-                    // Determine key type: RSA or DSA
-                    DWORD dwData = CALG_RSA_KEYX;
-                    DWORD dwSize = sizeof(DWORD);
-                    ::CryptGetKeyParam(hUserKey, KP_ALGID, (BYTE*)&dwData,
-                        &dwSize, NULL);
+                        // Determine key type: RSA or DSA
+                        DWORD dwData = CALG_RSA_KEYX;
+                        DWORD dwSize = sizeof(DWORD);
+                        ::CryptGetKeyParam(hUserKey, KP_ALGID, (BYTE*)&dwData,
+                                &dwSize, NULL);
 
-                    if ((dwData & ALG_TYPE_RSA) == ALG_TYPE_RSA)
-                    {
-                        // Generate RSA certificate chain and store into cert
-                        // chain collection
-                        env->CallVoidMethod(obj, mGenRSAKeyAndCertChain,
-                            env->NewStringUTF(pszNameString),
-                            (jlong) hCryptProv, (jlong) hUserKey,
-                            dwPublicKeyLength, jArrayList, jCollections);
+                        if ((dwData & ALG_TYPE_RSA) == ALG_TYPE_RSA)
+                        {
+                            // Generate RSA certificate chain and store into cert
+                            // chain collection
+                            env->CallVoidMethod(obj, mGenRSAKeyAndCertChain,
+                                    env->NewStringUTF(pszNameString),
+                                    (jlong) hCryptProv, (jlong) hUserKey,
+                                    dwPublicKeyLength, jArrayList);
+                        }
                     }
-}
                 }
 
                 // Free cert chain

@@ -23,4 +23,6 @@
 #
 ###########################################################################
 
-# No jaxp tests are on the problem list.
+# 8147431 
+javax/xml/jaxp/isolatedjdk/catalog/PropertiesTest.sh            generic-all
+
