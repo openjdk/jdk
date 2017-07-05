@@ -1694,6 +1694,13 @@ public final class URI
         return c;
     }
 
+    // US-ASCII only
+    private static int toUpper(char c) {
+        if ((c >= 'a') && (c <= 'z'))
+            return c - ('a' - 'A');
+        return c;
+    }
+
     private static boolean equal(String s, String t) {
         if (s == t) return true;
         if ((s != null) && (t != null)) {
@@ -1744,7 +1751,26 @@ public final class URI
 
     private static int hash(int hash, String s) {
         if (s == null) return hash;
-        return hash * 127 + s.hashCode();
+        return s.indexOf('%') < 0 ? hash * 127 + s.hashCode()
+                                  : normalizedHash(hash, s);
+    }
+
+
+    private static int normalizedHash(int hash, String s) {
+        int h = 0;
+        for (int index = 0; index < s.length(); index++) {
+            char ch = s.charAt(index);
+            h = 31 * h + ch;
+            if (ch == '%') {
+                /*
+                 * Process the next two encoded characters
+                 */
+                for (int i = index + 1; i < index + 3; i++)
+                    h = 31 * h + toUpper(s.charAt(i));
+                index += 2;
+            }
+        }
+        return hash * 127 + h;
     }
 
     // US-ASCII only

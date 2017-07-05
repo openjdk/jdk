@@ -63,7 +63,7 @@ mkdir jars
 
 cp ${TESTSRC}${FS}test.jar  jars
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}Test.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}Test.java
 
 WD=`pwd`
 ulimit -H -n 300

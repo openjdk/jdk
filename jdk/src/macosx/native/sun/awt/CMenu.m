@@ -55,12 +55,10 @@ AWT_ASSERT_APPKIT_THREAD;
 //- (void)finalize { [super finalize]; }
 
 - (void)addJavaSubmenu:(CMenu *)submenu {
-AWT_ASSERT_NOT_APPKIT_THREAD;
     [ThreadUtilities performOnMainThread:@selector(addNativeItem_OnAppKitThread:) onObject:self withObject:submenu waitUntilDone:YES awtMode:YES];
 }
 
 - (void)addJavaMenuItem:(CMenuItem *)theMenuItem {
-AWT_ASSERT_NOT_APPKIT_THREAD;
     [ThreadUtilities performOnMainThread:@selector(addNativeItem_OnAppKitThread:) onObject:self withObject:theMenuItem waitUntilDone:YES awtMode:YES];
 }
 
@@ -70,7 +68,6 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void)setJavaMenuTitle:(NSString *)title {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     if (title) {
         [ThreadUtilities performOnMainThread:@selector(setNativeMenuTitle_OnAppKitThread:) onObject:self withObject:title waitUntilDone:YES awtMode:YES];
@@ -95,7 +92,6 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void)deleteJavaItem:(jint)index {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     [ThreadUtilities performOnMainThread:@selector(deleteNativeJavaItem_OnAppKitThread:) onObject:self withObject:[NSNumber numberWithInt:index] waitUntilDone:YES awtMode:YES];
 }

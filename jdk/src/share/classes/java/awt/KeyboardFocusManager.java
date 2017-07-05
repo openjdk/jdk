@@ -416,7 +416,7 @@ public abstract class KeyboardFocusManager
         }
     }
 
-    static Set initFocusTraversalKeysSet(String value, Set targetSet) {
+    static Set<AWTKeyStroke> initFocusTraversalKeysSet(String value, Set<AWTKeyStroke> targetSet) {
         StringTokenizer tokens = new StringTokenizer(value, ",");
         while (tokens.hasMoreTokens()) {
             targetSet.add(AWTKeyStroke.getAWTKeyStroke(tokens.nextToken()));

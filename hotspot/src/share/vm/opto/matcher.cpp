@@ -919,6 +919,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_AryEq:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
+    case Op_EncodeISOArray:
       nidx = Compile::AliasIdxTop;
       nat = NULL;
       break;
@@ -1982,6 +1983,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_StrEquals:
       case Op_StrIndexOf:
       case Op_AryEq:
+      case Op_EncodeISOArray:
         set_shared(n); // Force result into register (it will be anyways)
         break;
       case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2180,6 +2182,13 @@ void Matcher::find_shared( Node *n ) {
         Node *pair2 = new (C) BinaryNode(n->in(4),n->in(5));
         n->set_req(3,pair2);
         n->del_req(5);
+        n->del_req(4);
+        break;
+      }
+      case Op_EncodeISOArray: {
+        // Restructure into a binary tree for Matching.
+        Node* pair = new (C) BinaryNode(n->in(3), n->in(4));
+        n->set_req(3, pair);
         n->del_req(4);
         break;
       }

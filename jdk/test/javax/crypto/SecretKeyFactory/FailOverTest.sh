@@ -35,6 +35,11 @@ then
 fi
 echo "TESTJAVA=${TESTJAVA}"
 
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTSRC}" = "" ]
 then
     TESTSRC="."
@@ -72,7 +77,7 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
     -d . \
     -classpath "${TESTSRC}${FS}P1.jar${PS}${TESTSRC}${FS}P2.jar" \
     ${TESTSRC}${FS}FailOverTest.java

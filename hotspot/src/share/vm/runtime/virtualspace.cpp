@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -868,8 +868,8 @@ void VirtualSpace::print() {
   tty->print   ("Virtual space:");
   if (special()) tty->print(" (pinned in memory)");
   tty->cr();
-  tty->print_cr(" - committed: %ld", committed_size());
-  tty->print_cr(" - reserved:  %ld", reserved_size());
+  tty->print_cr(" - committed: " SIZE_FORMAT, committed_size());
+  tty->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
   tty->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low(), high());
   tty->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low_boundary(), high_boundary());
 }

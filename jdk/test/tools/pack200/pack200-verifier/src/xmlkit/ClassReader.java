@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.LocalVariableTable_attribute;
 import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
 import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.MethodParameters_attribute;
 import com.sun.tools.classfile.Opcode;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
@@ -1067,6 +1068,19 @@ class AttributeVisitor implements Attribute.Visitor<Element, Element> {
             l.setAttr("name", x.getCpString(e.name_index));
             l.setAttr("type", x.getCpString(e.signature_index));
             l.setAttr("slot", "" + e.index);
+            l.trimToSize();
+            p.add(l);
+        }
+        return null; // already added to parent
+    }
+
+    @Override
+    public Element visitMethodParameters(MethodParameters_attribute mp, Element p) {
+        String name = x.getCpString(mp.attribute_name_index);
+        for (MethodParameters_attribute.Entry e : mp.method_parameter_table) {
+            Element l = new Element(name);
+            l.setAttr("name", x.getCpString(e.name_index));
+            l.setAttr("flag", "" + e.flags);
             l.trimToSize();
             p.add(l);
         }

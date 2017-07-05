@@ -63,16 +63,12 @@ public class NumberFormatProviderTest extends ProviderTest {
     void objectValidityTest() {
 
         for (Locale target: availloc) {
-            // pure JRE implementation
-            ResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getNumberFormatData(target);
             boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // JRE string arrays
             String[] jreNumberPatterns = null;
             if (jreSupportsLocale) {
-                try {
-                    jreNumberPatterns = rb.getStringArray("NumberPatterns");
-                } catch (MissingResourceException mre) {}
+                jreNumberPatterns = LocaleProviderAdapter.forJRE().getLocaleResources(target).getNumberPatterns();
             }
 
             // result object

@@ -34,7 +34,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.peer.TextFieldPeer;
 
-import javax.swing.JPasswordField;
+import javax.swing.*;
 import javax.swing.text.JTextComponent;
 
 final class LWTextFieldPeer
@@ -48,7 +48,7 @@ final class LWTextFieldPeer
 
     @Override
     protected JPasswordField createDelegate() {
-        return new JTextAreaDelegate();
+        return new JPasswordFieldDelegate();
     }
 
     @Override
@@ -69,9 +69,18 @@ final class LWTextFieldPeer
     public void setEchoChar(final char echoChar) {
         synchronized (getDelegateLock()) {
             getDelegate().setEchoChar(echoChar);
-            getDelegate().putClientProperty("JPasswordField.cutCopyAllowed",
-                                            getDelegate().echoCharIsSet()
-                                            ? Boolean.FALSE : Boolean.TRUE);
+            final boolean cutCopyAllowed;
+            final String focusInputMapKey;
+            if (echoChar != 0) {
+                cutCopyAllowed = false;
+                focusInputMapKey = "PasswordField.focusInputMap";
+            } else {
+                cutCopyAllowed = true;
+                focusInputMapKey = "TextField.focusInputMap";
+            }
+            getDelegate().putClientProperty("JPasswordField.cutCopyAllowed", cutCopyAllowed);
+            InputMap inputMap = (InputMap) UIManager.get(focusInputMapKey);
+            SwingUtilities.replaceUIInputMap(getDelegate(), JComponent.WHEN_FOCUSED, inputMap);
         }
     }
 
@@ -106,11 +115,11 @@ final class LWTextFieldPeer
         super.handleJavaFocusEvent(e);
     }
 
-    private final class JTextAreaDelegate extends JPasswordField {
+    private final class JPasswordFieldDelegate extends JPasswordField {
 
         // Empty non private constructor was added because access to this
         // class shouldn't be emulated by a synthetic accessor method.
-        JTextAreaDelegate() {
+        JPasswordFieldDelegate() {
             super();
         }
 

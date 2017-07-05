@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6014,6 +6014,9 @@ void os::PlatformEvent::park() {           // AKA: down()
      _Event = 0 ;
      status = os::Solaris::mutex_unlock(_mutex);
      assert_status(status == 0, status, "mutex_unlock");
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other.
+    OrderAccess::fence();
   }
 }
 
@@ -6055,51 +6058,43 @@ int os::PlatformEvent::park(jlong millis) {
   _Event = 0 ;
   status = os::Solaris::mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
+  // Paranoia to ensure our locked and lock-free paths interact
+  // correctly with each other.
+  OrderAccess::fence();
   return ret;
 }
 
 void os::PlatformEvent::unpark() {
-  int v, AnyWaiters;
+  // Transitions for _Event:
+  //    0 :=> 1
+  //    1 :=> 1
+  //   -1 :=> either 0 or 1; must signal target thread
+  //          That is, we can safely transition _Event from -1 to either
+  //          0 or 1. Forcing 1 is slightly more efficient for back-to-back
+  //          unpark() calls.
+  // See also: "Semaphores in Plan 9" by Mullender & Cox
+  //
+  // Note: Forcing a transition from "-1" to "1" on an unpark() means
+  // that it will take two back-to-back park() calls for the owning
+  // thread to block. This has the benefit of forcing a spurious return
+  // from the first park() call after an unpark() call which will help
+  // shake out uses of park() and unpark() without condition variables.
 
-  // Increment _Event.
-  // Another acceptable implementation would be to simply swap 1
-  // into _Event:
-  //   if (Swap (&_Event, 1) < 0) {
-  //      mutex_lock (_mutex) ; AnyWaiters = nParked; mutex_unlock (_mutex) ;
-  //      if (AnyWaiters) cond_signal (_cond) ;
-  //   }
-
-  for (;;) {
-    v = _Event ;
-    if (v > 0) {
-       // The LD of _Event could have reordered or be satisfied
-       // by a read-aside from this processor's write buffer.
-       // To avoid problems execute a barrier and then
-       // ratify the value.  A degenerate CAS() would also work.
-       // Viz., CAS (v+0, &_Event, v) == v).
-       OrderAccess::fence() ;
-       if (_Event == v) return ;
-       continue ;
-    }
-    if (Atomic::cmpxchg (v+1, &_Event, v) == v) break ;
-  }
+  if (Atomic::xchg(1, &_Event) >= 0) return;
 
   // If the thread associated with the event was parked, wake it.
-  if (v < 0) {
-     int status ;
-     // Wait for the thread assoc with the PlatformEvent to vacate.
-     status = os::Solaris::mutex_lock(_mutex);
-     assert_status(status == 0, status, "mutex_lock");
-     AnyWaiters = _nParked ;
-     status = os::Solaris::mutex_unlock(_mutex);
-     assert_status(status == 0, status, "mutex_unlock");
-     guarantee (AnyWaiters == 0 || AnyWaiters == 1, "invariant") ;
-     if (AnyWaiters != 0) {
-       // We intentional signal *after* dropping the lock
-       // to avoid a common class of futile wakeups.
-       status = os::Solaris::cond_signal(_cond);
-       assert_status(status == 0, status, "cond_signal");
-     }
+  // Wait for the thread assoc with the PlatformEvent to vacate.
+  int status = os::Solaris::mutex_lock(_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+  int AnyWaiters = _nParked;
+  status = os::Solaris::mutex_unlock(_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+  guarantee(AnyWaiters == 0 || AnyWaiters == 1, "invariant");
+  if (AnyWaiters != 0) {
+    // We intentional signal *after* dropping the lock
+    // to avoid a common class of futile wakeups.
+    status = os::Solaris::cond_signal(_cond);
+    assert_status(status == 0, status, "cond_signal");
   }
 }
 
@@ -6177,14 +6172,14 @@ static void unpackTime(timespec* absTime, bool isAbsolute, jlong time) {
 }
 
 void Parker::park(bool isAbsolute, jlong time) {
+  // Ideally we'd do something useful while spinning, such
+  // as calling unpackTime().
 
   // Optional fast-path check:
   // Return immediately if a permit is available.
-  if (_counter > 0) {
-      _counter = 0 ;
-      OrderAccess::fence();
-      return ;
-  }
+  // We depend on Atomic::xchg() having full barrier semantics
+  // since we are doing a lock-free update to _counter.
+  if (Atomic::xchg(0, &_counter) > 0) return;
 
   // Optional fast-exit: Check interrupt before trying to wait
   Thread* thread = Thread::current();
@@ -6226,6 +6221,8 @@ void Parker::park(bool isAbsolute, jlong time) {
     _counter = 0;
     status = os::Solaris::mutex_unlock(_mutex);
     assert (status == 0, "invariant") ;
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other and Java-level accesses.
     OrderAccess::fence();
     return;
   }
@@ -6267,12 +6264,14 @@ void Parker::park(bool isAbsolute, jlong time) {
   _counter = 0 ;
   status = os::Solaris::mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock") ;
+  // Paranoia to ensure our locked and lock-free paths interact
+  // correctly with each other and Java-level accesses.
+  OrderAccess::fence();
 
   // If externally suspended while waiting, re-suspend
   if (jt->handle_special_suspend_equivalent_condition()) {
     jt->java_suspend_self();
   }
-  OrderAccess::fence();
 }
 
 void Parker::unpark() {

@@ -43,7 +43,8 @@ case "$OS" in
     exit 1;
     ;;
 esac
-${TESTJAVA}${FS}bin${FS}javac -d . -classpath "${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest" ${TESTSRC}${FS}B4933582.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+    -classpath "${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest" ${TESTSRC}${FS}B4933582.java
 rm -f cache.ser auth.save
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath "${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest${PS}." B4933582 first
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath "${TESTSRC}${FS}..${FS}..${FS}..${FS}sun${FS}net${FS}www${FS}httptest${PS}." B4933582 second

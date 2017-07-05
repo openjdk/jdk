@@ -40,6 +40,9 @@ if [ "${TESTJAVA}" = "" ] ; then
   echo "FAILED!!!"
   exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 
 find_one() {
   for TARGET_FILE in $@; do
@@ -82,7 +85,7 @@ if [ "$LIBNAME" = "" ]; then
   exit 1
 fi
 
-${TESTJAVA}${FS}bin${FS}javac -d . -XDignore.symbol.file \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . -XDignore.symbol.file \
         ${TESTSRC}${FS}KeyToolTest.java || exit 10
 
 NSS=${TESTSRC}${FS}..${FS}..${FS}pkcs11${FS}nss

@@ -127,6 +127,11 @@ CORE_PKGS =                                      \
   java.sql                                       \
   java.text                                      \
   java.text.spi                                  \
+  java.time                                      \
+  java.time.temporal                             \
+  java.time.calendar                             \
+  java.time.format                               \
+  java.time.zone                                 \
   java.util                                      \
   java.util.concurrent                           \
   java.util.concurrent.atomic                    \

@@ -34,6 +34,11 @@ then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]
+then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+
 . ${TESTSRC}/CommonSetup.sh
 
 # Setup to create circularity condition
@@ -44,9 +49,9 @@ rm -f "${TESTCLASSES}"/A.java "${TESTCLASSES}"/B.java
 cp "${TESTSRC}"/A.1 "${TESTCLASSES}"/A.java
 cp "${TESTSRC}"/B.1 "${TESTCLASSES}"/B.java
 (cd "${TESTCLASSES}"; \
-    $JAVAC A.java B.java; \
-    $JAVAC -d . "${TESTSRC}"/CircularityErrorTest.java; \
-    $JAR cf A.jar A.class; \
+    $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} A.java B.java; \
+    $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . "${TESTSRC}"/CircularityErrorTest.java; \
+    $JAR ${TESTTOOLVMOPTS} cf A.jar A.class; \
     rm -f A.class; mv B.class B.keep)
 
 # A extends B
@@ -55,7 +60,7 @@ rm -f "${TESTCLASSES}"/A.java "${TESTCLASSES}"/B.java
 cp "${TESTSRC}"/A.2 "${TESTCLASSES}"/A.java
 cp "${TESTSRC}"/B.2 "${TESTCLASSES}"/B.java
 (cd "${TESTCLASSES}"; \
-     $JAVAC A.java B.java; rm -f B.class A.java B.java)
+     $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} A.java B.java; rm -f B.class A.java B.java)
 
 # Move B.keep to B.class creates the A extends B and
 # B extends A condition.
@@ -67,7 +72,7 @@ rm -f "${MANIFEST}"
 echo "Premain-Class: CircularityErrorTest" > "${MANIFEST}"
 
 # Setup test case as an agent
-$JAR -cfm "${TESTCLASSES}"/CircularityErrorTest.jar "${MANIFEST}" \
+$JAR ${TESTTOOLVMOPTS} -cfm "${TESTCLASSES}"/CircularityErrorTest.jar "${MANIFEST}" \
   -C "${TESTCLASSES}" CircularityErrorTest.class
 
 # Finally we run the test

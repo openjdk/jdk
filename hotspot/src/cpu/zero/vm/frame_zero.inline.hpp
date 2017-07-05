@@ -45,27 +45,36 @@ inline frame::frame(ZeroFrame* zf, intptr_t* sp) {
   case ZeroFrame::ENTRY_FRAME:
     _pc = StubRoutines::call_stub_return_pc();
     _cb = NULL;
+    _deopt_state = not_deoptimized;
     break;
 
   case ZeroFrame::INTERPRETER_FRAME:
     _pc = NULL;
     _cb = NULL;
+    _deopt_state = not_deoptimized;
     break;
 
-  case ZeroFrame::SHARK_FRAME:
+  case ZeroFrame::SHARK_FRAME: {
     _pc = zero_sharkframe()->pc();
     _cb = CodeCache::find_blob_unsafe(pc());
+    address original_pc = nmethod::get_deopt_original_pc(this);
+    if (original_pc != NULL) {
+      _pc = original_pc;
+      _deopt_state = is_deoptimized;
+    } else {
+      _deopt_state = not_deoptimized;
+    }
     break;
-
+  }
   case ZeroFrame::FAKE_STUB_FRAME:
     _pc = NULL;
     _cb = NULL;
+    _deopt_state = not_deoptimized;
     break;
 
   default:
     ShouldNotReachHere();
   }
-  _deopt_state = not_deoptimized;
 }
 
 // Accessors

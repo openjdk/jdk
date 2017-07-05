@@ -67,7 +67,7 @@ public class CollatorProviderTest extends ProviderTest {
             for (String tag : ((AvailableLanguageTags)LocaleProviderAdapter.forJRE().getCollatorProvider()).getAvailableLanguageTags()) {
                 jreimplloc.add(Locale.forLanguageTag(tag));
             }
-            ResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getCollationData(target);
+            ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getCollationData(target);
             boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // result object
