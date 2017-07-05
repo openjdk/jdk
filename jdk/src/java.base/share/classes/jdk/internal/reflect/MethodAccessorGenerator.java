@@ -437,17 +437,6 @@ class MethodAccessorGenerator extends AccessorGenerator {
             cb.opc_new(targetClass);
             cb.opc_dup();
         } else {
-            // Setup before iterating down argument list
-            if (isPrimitive(returnType)) {
-                // new <boxing type for primitive type>
-                // dup
-                // ... (see below:)
-                // invokespecial <constructor for boxing type for primitive type>
-                // areturn
-                cb.opc_new(indexForPrimitiveType(returnType));
-                cb.opc_dup();
-            }
-
             // Get target object on operand stack if necessary.
 
             // We need to do an explicit null check here; we won't see

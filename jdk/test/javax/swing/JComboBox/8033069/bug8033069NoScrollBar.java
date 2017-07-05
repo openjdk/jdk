@@ -35,7 +35,9 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8033069
  * @summary Checks that JComboBox popup does not close when mouse wheel is
  *          rotated over combo box and over its popup. The case where popup

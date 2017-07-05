@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,13 @@ public class TestNewSizeFlags {
 
         // Test NewSize and MaxNewSize
         testNewSizeFlags(20 * M, 10 * M, 30 * M, 40 * M, options, false);
-        testNewSizeFlags(10 * M, 20 * M, 30 * M, 40 * M, options, false);
+        testNewSizeFlags(10 * M, 20 * M, 30 * M, 80 * M, options, false);
         testNewSizeFlags(-1, 20 * M, 30 * M, 40 * M, options, false);
         testNewSizeFlags(10 * M, -1, 30 * M, 40 * M, options, false);
         testNewSizeFlags(20 * M, 20 * M, 30 * M, 40 * M, options, false);
         testNewSizeFlags(20 * M, 30 * M, 40 * M, 50 * M, options, false);
         testNewSizeFlags(30 * M, 100 * M, 150 * M, 200 * M, options, false);
-        testNewSizeFlags(0, -1, 30 * M, 40 * M, options, false);
+        testNewSizeFlags(20 * M, 30 * M, 128 * M, 128 * M, options, false);
 
         // Test -Xmn
         testXmnFlags(0, 30 * M, 40 * M, options, true);
@@ -88,9 +88,11 @@ public class TestNewSizeFlags {
             long heapSize, long maxHeapSize,
             LinkedList<String> options,
             boolean failureExpected) throws Exception {
+        long expectedNewSize = newSize;
+        long expectedMaxNewSize = (maxNewSize >= 0 ? Math.max(maxNewSize, newSize) : maxNewSize);
         testVMOptions(newSize, maxNewSize,
                 heapSize, maxHeapSize,
-                newSize, (maxNewSize >= 0 ? Math.max(maxNewSize, newSize) : maxNewSize),
+                expectedNewSize, expectedMaxNewSize,
                 options, failureExpected);
     }
 
@@ -159,7 +161,9 @@ public class TestNewSizeFlags {
                 "-XX:-UseLargePages",
                 NewSizeVerifier.class.getName(),
                 Long.toString(expectedNewSize),
-                Long.toString(expectedMaxNewSize)
+                Long.toString(expectedMaxNewSize),
+                Long.toString(heapSize),
+                Long.toString(maxHeapSize)
         );
         vmOptions.removeIf(String::isEmpty);
         ProcessBuilder procBuilder = ProcessTools.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));
@@ -177,7 +181,12 @@ public class TestNewSizeFlags {
      */
     public static class NewSizeVerifier {
 
-        static WhiteBox wb = WhiteBox.getWhiteBox();
+        private static final WhiteBox WB = WhiteBox.getWhiteBox();
+        private static final GCTypes.YoungGCType YOUNG_GC_TYPE = GCTypes.YoungGCType.getYoungGCType();
+        private static final long HEAP_SPACE_ALIGNMENT = WB.getHeapSpaceAlignment();
+        private static final long HEAP_ALIGNMENT = WB.getHeapAlignment();
+        private static final long PS_VIRTUAL_SPACE_ALIGNMENT =
+                (YOUNG_GC_TYPE == GCTypes.YoungGCType.PSNew) ? WB.psVirtualSpaceAlignment() : 0;
 
         public static final int ARRAY_LENGTH = 100;
         public static final int CHUNK_SIZE = 1024;
@@ -185,63 +194,79 @@ public class TestNewSizeFlags {
         public static byte garbage[][] = new byte[ARRAY_LENGTH][];
 
         public static void main(String args[]) throws Exception {
-            if (args.length != 2) {
-                throw new IllegalArgumentException("Expected 2 args: <expectedNewSize> <expectedMaxNewSize>");
+            if (args.length != 4) {
+                throw new IllegalArgumentException("Expected 4 args: <expectedNewSize> <expectedMaxNewSize> <initialHeapSize> <maxHeapSize>");
             }
             final long newSize = Long.valueOf(args[0]);
             final long maxNewSize = Long.valueOf(args[1]);
+            final long initialHeapSize = Long.valueOf(args[2]);
+            final long maxHeapSize = Long.valueOf(args[3]);
 
             // verify initial size
-            verifyNewSize(newSize, maxNewSize);
+            verifyNewSize(newSize, maxNewSize, initialHeapSize, maxHeapSize);
 
             // force GC and verify that size is still correct
-            AllocationHelper allocator = new AllocationHelper(MAX_ITERATIONS, ARRAY_LENGTH, CHUNK_SIZE, () -> (verifyNewSize(newSize, maxNewSize)));
+            AllocationHelper allocator = new AllocationHelper(MAX_ITERATIONS, ARRAY_LENGTH, CHUNK_SIZE, () -> (verifyNewSize(newSize, maxNewSize, initialHeapSize, maxHeapSize)));
             allocator.allocateMemoryAndVerifyNoOOME();
         }
 
         /**
          * Verify that actual young gen size conforms NewSize and MaxNewSize values.
          */
-        public static Void verifyNewSize(long newSize, long maxNewSize) {
-            long alignedNewSize = alignNewSize(newSize);
-            long alignedMaxNewSize = alignNewSize(maxNewSize);
+        public static Void verifyNewSize(long newSize, long maxNewSize,
+                long initialHeapSize, long maxHeapSize) {
+            long alignedNewSize = alignGenSize(newSize);
+            long alignedMaxNewSize = alignGenSize(maxNewSize);
+            long alignedXms = alignHeapSize(initialHeapSize);
+            long alignedXmx = alignHeapSize(maxHeapSize);
 
             MemoryUsage youngGenUsage = getYoungGenUsage();
+            long initSize = youngGenUsage.getInit();
+            long commitedSize = youngGenUsage.getCommitted();
+            long maxSize = youngGenUsage.getMax();
 
             if (newSize != -1) {
-                if (youngGenUsage.getInit() < alignedNewSize) {
+                if (initSize < alignedNewSize) {
                     throw new RuntimeException("initial new size < NewSize value: "
-                            + youngGenUsage.getInit() + " < " + alignedNewSize);
+                            + initSize + " < " + alignedNewSize);
                 }
 
-                if (youngGenUsage.getCommitted() < alignedNewSize) {
+                if (commitedSize < alignedNewSize) {
                     throw new RuntimeException("actual new size < NewSize value: "
-                            + youngGenUsage.getCommitted() + " < " + alignedNewSize);
+                            + commitedSize + " < " + alignedNewSize);
                 }
 
                 // for G1 max new size == committed new size
-                if (GCTypes.YoungGCType.getYoungGCType() != GCTypes.YoungGCType.G1
-                        && youngGenUsage.getMax() < alignedNewSize) {
+                if (YOUNG_GC_TYPE != GCTypes.YoungGCType.G1
+                        && maxSize < alignedNewSize) {
                     throw new RuntimeException("max new size < NewSize value: "
-                            + youngGenUsage.getMax() + " < " + alignedNewSize);
+                            + maxSize + " < " + alignedNewSize);
                 }
             }
 
             if (maxNewSize != -1) {
-                if (youngGenUsage.getInit() > alignedMaxNewSize) {
+                if (initSize > alignedMaxNewSize) {
                     throw new RuntimeException("initial new size > MaxNewSize value: "
-                            + youngGenUsage.getInit() + " > " + alignedMaxNewSize);
+                            + initSize + " > " + alignedMaxNewSize);
                 }
 
-                if (youngGenUsage.getCommitted() > alignedMaxNewSize) {
+                if (commitedSize > alignedMaxNewSize) {
                     throw new RuntimeException("actual new size > MaxNewSize value: "
-                            + youngGenUsage.getCommitted() + " > " + alignedMaxNewSize);
+                            + commitedSize + " > " + alignedMaxNewSize);
                 }
 
-                if (GCTypes.YoungGCType.getYoungGCType() != GCTypes.YoungGCType.G1
-                        && youngGenUsage.getMax() != alignedMaxNewSize) {
-                    throw new RuntimeException("max new size != MaxNewSize value: "
-                            + youngGenUsage.getMax() + " != " + alignedMaxNewSize);
+                if (alignedXms != alignedXmx) {
+                    if (YOUNG_GC_TYPE != GCTypes.YoungGCType.G1
+                            && maxSize != alignedMaxNewSize) {
+                        throw new RuntimeException("max new size != MaxNewSize value: "
+                                + maxSize + " != " + alignedMaxNewSize);
+                    }
+                } else {
+                    if (YOUNG_GC_TYPE != GCTypes.YoungGCType.G1
+                            && maxSize != alignedNewSize) {
+                        throw new RuntimeException("max new size != NewSize for case InitialHeapSize == MaxHeapSize value: "
+                                + maxSize + " != " + alignedNewSize + " HeapSize == " + alignedXms);
+                    }
                 }
             }
             return null;
@@ -256,41 +281,47 @@ public class TestNewSizeFlags {
          *  For all GCs used value is 0.
          */
         private static MemoryUsage getYoungGenUsage() {
-            if (GCTypes.YoungGCType.getYoungGCType() == GCTypes.YoungGCType.G1) {
-                return new MemoryUsage(HeapRegionUsageTool.getEdenUsage().getInit()
-                        + HeapRegionUsageTool.getSurvivorUsage().getInit(),
-                        0,
-                        HeapRegionUsageTool.getEdenUsage().getCommitted()
-                        + HeapRegionUsageTool.getSurvivorUsage().getCommitted(),
-                        Long.MAX_VALUE);
+            MemoryUsage edenUsage = HeapRegionUsageTool.getEdenUsage();
+            MemoryUsage survivorUsage = HeapRegionUsageTool.getSurvivorUsage();
+            long edenUsageInit = edenUsage.getInit();
+            long edenUsageCommited = edenUsage.getCommitted();
+            long survivorUsageInit = survivorUsage.getInit();
+            long survivorUsageCommited = survivorUsage.getCommitted();
+
+            if (YOUNG_GC_TYPE == GCTypes.YoungGCType.G1) {
+                return new MemoryUsage(edenUsageInit + survivorUsageInit, 0,
+                        edenUsageCommited + survivorUsageCommited, Long.MAX_VALUE);
             } else {
-                return new MemoryUsage(HeapRegionUsageTool.getEdenUsage().getInit()
-                        + HeapRegionUsageTool.getSurvivorUsage().getInit() * 2,
-                        0,
-                        HeapRegionUsageTool.getEdenUsage().getCommitted()
-                        + HeapRegionUsageTool.getSurvivorUsage().getCommitted() * 2,
-                        HeapRegionUsageTool.getEdenUsage().getMax()
-                        + HeapRegionUsageTool.getSurvivorUsage().getMax() * 2);
+                return new MemoryUsage(edenUsageInit + survivorUsageInit * 2, 0,
+                        edenUsageCommited + survivorUsageCommited * 2,
+                        edenUsage.getMax() + survivorUsage.getMax() * 2);
             }
         }
 
         /**
-         * Align value regardful to used young GC.
+         * Align generation size regardful to used young GC.
          */
-        public static long alignNewSize(long value) {
-            switch (GCTypes.YoungGCType.getYoungGCType()) {
+        public static long alignGenSize(long value) {
+            switch (YOUNG_GC_TYPE) {
                 case DefNew:
                 case ParNew:
-                    return HeapRegionUsageTool.alignDown(value, wb.getHeapSpaceAlignment());
+                    return HeapRegionUsageTool.alignDown(value, HEAP_SPACE_ALIGNMENT);
                 case PSNew:
                     return HeapRegionUsageTool.alignUp(HeapRegionUsageTool.alignDown(value,
-                            wb.getHeapSpaceAlignment()),
-                            wb.psVirtualSpaceAlignment());
+                            HEAP_SPACE_ALIGNMENT),
+                            PS_VIRTUAL_SPACE_ALIGNMENT);
                 case G1:
-                    return HeapRegionUsageTool.alignUp(value, wb.g1RegionSize());
+                    return HeapRegionUsageTool.alignUp(value, WB.g1RegionSize());
                 default:
                     throw new RuntimeException("Unexpected young GC type");
             }
+        }
+
+        /**
+         * Align heap size.
+         */
+        public static long alignHeapSize(long value){
+            return HeapRegionUsageTool.alignUp(value,HEAP_ALIGNMENT);
         }
     }
 }

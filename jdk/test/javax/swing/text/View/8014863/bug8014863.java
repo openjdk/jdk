@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8014863
  * @bug 8024395
  * @summary  Tests the calculation of the line breaks when a text is inserted

@@ -34,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm_aix.h"
 #include "memory/allocation.inline.hpp"
-#include "mutex_aix.inline.hpp"
 #include "nativeInst_ppc.hpp"
 #include "os_share_aix.hpp"
 #include "prims/jniFastGetField.hpp"

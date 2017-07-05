@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8049617
  * @summary Check whether a modeless Dialog receives focus; check
  *          if its components receive focus and respond to key events

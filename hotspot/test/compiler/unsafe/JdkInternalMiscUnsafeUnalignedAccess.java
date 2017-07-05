@@ -26,13 +26,18 @@
  * @bug 8158260
  * @summary Test unaligned Unsafe accesses
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -Diters=20000 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation JdkInternalMiscUnsafeUnalignedAccess
+ *
+ * @run main/othervm -Diters=20000 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *      compiler.unsafe.JdkInternalMiscUnsafeUnalignedAccess
  * @author volker.simonis@gmail.com
  */
 
+package compiler.unsafe;
+
+import jdk.internal.misc.Unsafe;
+
 import java.lang.reflect.Field;
 import java.nio.ByteOrder;
-import jdk.internal.misc.Unsafe;
 
 public class JdkInternalMiscUnsafeUnalignedAccess {
     static final int ITERS = Integer.getInteger("iters", 20_000);

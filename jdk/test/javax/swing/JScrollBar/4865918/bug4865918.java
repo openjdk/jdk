@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4865918
  * @summary REGRESSION:JCK1.4a-runtime api/javax_swing/interactive/JScrollBarTests.html#JScrollBar
  * @author Andrey Pikalev

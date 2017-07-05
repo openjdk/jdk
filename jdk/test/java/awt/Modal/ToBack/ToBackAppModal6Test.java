@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8054143
  * @summary Check whether an application modal dialog having a visible Dialog
  *          constructor still stays on top of the blocked windows even

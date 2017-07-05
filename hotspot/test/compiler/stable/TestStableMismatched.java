@@ -26,13 +26,17 @@
  * @test TestStableMismatched
  * @bug 8158228
  * @summary Tests if mismatched char load from stable byte[] returns correct result
+ *
  * @run main/othervm -XX:-CompactStrings -XX:TieredStopAtLevel=1 -Xcomp
- *                   -XX:CompileOnly=TestStableMismatched::test,::charAt
- *                   TestStableMismatched
+ *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,::charAt
+ *                   compiler.stable.TestStableMismatched
  * @run main/othervm -XX:-CompactStrings -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileOnly=TestStableMismatched::test,::charAt
- *                   TestStableMismatched
+ *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,::charAt
+ *                   compiler.stable.TestStableMismatched
  */
+
+package compiler.stable;
+
 public class TestStableMismatched {
     public static void main(String args[]) {
         test();

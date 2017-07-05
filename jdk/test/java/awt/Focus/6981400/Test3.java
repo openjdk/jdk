@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug     6981400
  * @summary Tabbing between textfiled do not work properly when ALT+TAB
  * @author  anton.tarasov

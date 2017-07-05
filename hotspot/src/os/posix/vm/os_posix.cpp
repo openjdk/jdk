@@ -28,6 +28,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
 #include <signal.h>
@@ -214,7 +215,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
   else st->print("%luk", rlim.rlim_cur >> 10);
 
   // Isn't there on solaris
-#if !defined(TARGET_OS_FAMILY_solaris) && !defined(TARGET_OS_FAMILY_aix)
+#if !defined(SOLARIS) && !defined(AIX)
   st->print(", NPROC ");
   getrlimit(RLIMIT_NPROC, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
@@ -1062,28 +1063,28 @@ int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
 }
 
 address os::Posix::ucontext_get_pc(const ucontext_t* ctx) {
-#ifdef TARGET_OS_FAMILY_linux
-   return Linux::ucontext_get_pc(ctx);
-#elif defined(TARGET_OS_FAMILY_solaris)
-   return Solaris::ucontext_get_pc(ctx);
-#elif defined(TARGET_OS_FAMILY_aix)
+#if defined(AIX)
    return Aix::ucontext_get_pc(ctx);
-#elif defined(TARGET_OS_FAMILY_bsd)
+#elif defined(BSD)
    return Bsd::ucontext_get_pc(ctx);
+#elif defined(LINUX)
+   return Linux::ucontext_get_pc(ctx);
+#elif defined(SOLARIS)
+   return Solaris::ucontext_get_pc(ctx);
 #else
    VMError::report_and_die("unimplemented ucontext_get_pc");
 #endif
 }
 
 void os::Posix::ucontext_set_pc(ucontext_t* ctx, address pc) {
-#ifdef TARGET_OS_FAMILY_linux
-   Linux::ucontext_set_pc(ctx, pc);
-#elif defined(TARGET_OS_FAMILY_solaris)
-   Solaris::ucontext_set_pc(ctx, pc);
-#elif defined(TARGET_OS_FAMILY_aix)
+#if defined(AIX)
    Aix::ucontext_set_pc(ctx, pc);
-#elif defined(TARGET_OS_FAMILY_bsd)
+#elif defined(BSD)
    Bsd::ucontext_set_pc(ctx, pc);
+#elif defined(LINUX)
+   Linux::ucontext_set_pc(ctx, pc);
+#elif defined(SOLARIS)
+   Solaris::ucontext_set_pc(ctx, pc);
 #else
    VMError::report_and_die("unimplemented ucontext_get_pc");
 #endif

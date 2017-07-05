@@ -22,6 +22,7 @@
  */
 /*
   @test
+  @key headful
   @bug 6322625
   @summary REG:Choice does not trigger MouseReleased when dragging and releasing the mouse outside choice, XAWT
   @author andrei.dmitriev area=awt.choice

@@ -891,14 +891,15 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
   if (result == OS_ERR) {
     if (errno == ENOENT) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Process not found", OS_ERR);
+                 "Process not found", OS_ERR);
     }
     else if (errno == EACCES) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Permission denied", OS_ERR);
+                 "Permission denied", OS_ERR);
     }
     else {
-      THROW_MSG_(vmSymbols::java_io_IOException(), os::strerror(errno), OS_ERR);
+      THROW_MSG_(vmSymbols::java_io_IOException(),
+                 os::strerror(errno), OS_ERR);
     }
   }
   int fd = result;
@@ -916,7 +917,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 // memory region on success or NULL on failure. A return value of
 // NULL will ultimately disable the shared memory feature.
 //
-// On Solaris and Linux, the name space for shared memory objects
+// On Linux, the name space for shared memory objects
 // is the file system name space.
 //
 // A monitoring application attaching to a JVM does not need to know
@@ -940,6 +941,7 @@ static char* mmap_create_shared(size_t size) {
 
   char* dirname = get_user_tmp_dir(user_name);
   char* filename = get_sharedmem_filename(dirname, vmid);
+
   // get the short filename
   char* short_filename = strrchr(filename, '/');
   if (short_filename == NULL) {

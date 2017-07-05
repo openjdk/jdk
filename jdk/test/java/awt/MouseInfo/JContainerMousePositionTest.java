@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @summary unit test for a new method in Container class: getMousePosition(boolean)
   @author dav@sparc.spb.su: area=
   @bug 4009555

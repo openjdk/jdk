@@ -21,32 +21,34 @@
  * questions.
  */
 
-import java.lang.reflect.Executable;
-import java.util.function.BiFunction;
+/*
+ * @test
+ * @bug 8074980
+ * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @build sun.hotspot.WhiteBox jdk.test.lib.Asserts compiler.oracle.GetMethodOptionTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstrlist,MyListOption,_foo,_bar
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstr,MyStrOption,_foo
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,MyBoolOption,false
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,intx,MyIntxOption,-1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,uintx,MyUintxOption,1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,MyFlag
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,double,MyDoubleOption1,1.123
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,double,MyDoubleOption2,1.123
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,MyBoolOptionX,false,intx,MyIntxOptionX,-1,uintx,MyUintxOptionX,1,MyFlagX,double,MyDoubleOptionX,1.123
+ *                   compiler.oracle.GetMethodOptionTest
+ */
+
+package compiler.oracle;
 
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
-/*
- * @test
- * @bug 8074980
- * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox jdk.test.lib.Asserts GetMethodOptionTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,ccstrlist,MyListOption,_foo,_bar
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,ccstr,MyStrOption,_foo
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,bool,MyBoolOption,false
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,intx,MyIntxOption,-1
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,uintx,MyUintxOption,1
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,MyFlag
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,double,MyDoubleOption1,1.123
- *                   -XX:CompileCommand=option,GetMethodOptionTest.test,double,MyDoubleOption2,1.123
- *                   -XX:CompileCommand=option,GetMethodOptionTest::test,bool,MyBoolOptionX,false,intx,MyIntxOptionX,-1,uintx,MyUintxOptionX,1,MyFlagX,double,MyDoubleOptionX,1.123
- *                   GetMethodOptionTest
- */
+import java.lang.reflect.Executable;
+import java.util.function.BiFunction;
 
 public class GetMethodOptionTest {
     private static final  WhiteBox WB = WhiteBox.getWhiteBox();

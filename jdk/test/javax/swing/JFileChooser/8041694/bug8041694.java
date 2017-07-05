@@ -21,13 +21,15 @@
  * questions.
  */
 
-/* @test
-   @bug 8041694
-   @summary JFileChooser removes trailing spaces in the selected directory name
-   @author Anton Litvinov
-   @library ../../../../lib/testlibrary
-   @build jdk.testlibrary.OSInfo
-   @run main bug8041694
+/*
+ * @test
+ * @key headful
+ * @bug 8041694
+ * @summary JFileChooser removes trailing spaces in the selected directory name
+ * @author Anton Litvinov
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run main bug8041694
  */
 
 import java.awt.AWTException;

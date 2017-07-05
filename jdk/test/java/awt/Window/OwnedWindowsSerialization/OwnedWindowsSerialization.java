@@ -28,7 +28,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8027152
  * @summary Checks that ownedWindowList is serialized and deserialized properly and alwaysOnTop works after deserialization
  * @author Petr Pchelko

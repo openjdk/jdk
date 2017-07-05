@@ -23,20 +23,23 @@
 
 /*
  * @test MethodMatcherTest
- * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MethodMatcherTest
  * @summary Testing of compiler/MethodMatcher
  * @bug 8135068
+ * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   compiler.oracle.MethodMatcherTest
  */
+
+package compiler.oracle;
+
+import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-
-import sun.hotspot.WhiteBox;
 
 public class MethodMatcherTest {
 
@@ -83,14 +86,14 @@ public class MethodMatcherTest {
         testCases.add(helper, "_pool,sub,Klass*,met@%hod,(0)V", PARSING_FAILURE);
 
         testCases.add(helper, "*.*", MATCH);
-        testCases.add(helper, "MethodMatcherTest.*", MATCH);
-        testCases.add(helper, "MethodMatcherTest.helper", MATCH);
-        testCases.add(helper, "MethodMatcherTest.helper()", MATCH);
-        testCases.add(helper, "MethodMatcherTest.helper()V", MATCH);
-        testCases.add(helper, "MethodMatcherTest.helper()V;", NO_MATCH);
-        testCases.add(helper, "MethodMatcherTest.helper()I", NO_MATCH);
-        testCases.add(helper, "MethodMatcherTest.helperX", NO_MATCH);
-        testCases.add(helper, "MethodMatcherTestX.helper;", NO_MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.*", MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.helper", MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.helper()", MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.helper()V", MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.helper()V;", NO_MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.helper()I", NO_MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.helperX", NO_MATCH);
+        testCases.add(helper, "compiler/oracle/MethodMatcherTest.helper;", NO_MATCH);
         testCases.add(helper, "abc.*", NO_MATCH);
         testCases.add(helper, "*.abc", NO_MATCH);
 
@@ -100,13 +103,13 @@ public class MethodMatcherTest {
         testCases.add(getDate, "java/util/Date.*", MATCH);
 
         testCases.add(inner, "*.*", MATCH);
-        testCases.add(inner, "MethodMatcherTest$TestCases.innerHelper", MATCH);
-        testCases.add(inner, "MethodMatcherTest*.innerHelper", MATCH);
-        testCases.add(inner, "MethodMatcherTest$*.innerHelper", MATCH);
+        testCases.add(inner, "compiler/oracle/MethodMatcherTest$TestCases.innerHelper", MATCH);
+        testCases.add(inner, "compiler/oracle/MethodMatcherTest*.innerHelper", MATCH);
+        testCases.add(inner, "compiler/oracle/MethodMatcherTest$*.innerHelper", MATCH);
         testCases.add(inner, "*$TestCases.innerHelper", MATCH);
         testCases.add(inner, "*TestCases.innerHelper", MATCH);
         testCases.add(inner, "TestCases.innerHelper", NO_MATCH);
-        testCases.add(inner, "MethodMatcherTest.innerHelper", NO_MATCH);
+        testCases.add(inner, "compiler/oracle/MethodMatcherTest.innerHelper", NO_MATCH);
 
         testCases.add(toString, "*.*", MATCH);
         testCases.add(toString, "java/lang/String.toString", MATCH);

@@ -38,7 +38,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm_bsd.h"
 #include "memory/allocation.inline.hpp"
-#include "mutex_bsd.inline.hpp"
 #include "nativeInst_zero.hpp"
 #include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"

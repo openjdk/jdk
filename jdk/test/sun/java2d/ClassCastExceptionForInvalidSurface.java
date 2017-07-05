@@ -40,6 +40,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
 /**
  * @test
+ * @key headful
  * @bug 8158072 7172749
  */
 public final class ClassCastExceptionForInvalidSurface {

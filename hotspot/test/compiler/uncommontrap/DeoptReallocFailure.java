@@ -25,30 +25,37 @@
  * @test
  * @bug 8146416
  * @library /test/lib /testlibrary /
+ *
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:CompileCommand=exclude,DeoptReallocFailure::main -Xmx100m DeoptReallocFailure
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -Xbatch -Xmx100m
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.DeoptReallocFailure::main
+ *      compiler.uncommontrap.DeoptReallocFailure
  *
  */
-import java.lang.reflect.Method;
+
+package compiler.uncommontrap;
+
 import sun.hotspot.WhiteBox;
 
-class MemoryChunk {
-    MemoryChunk other;
-    Object[][] array;
-
-    MemoryChunk(MemoryChunk other) {
-        this.other = other;
-        array = new Object[1024 * 256][];
-    }
-}
-
-class NoEscape {
-    long f1;
-}
+import java.lang.reflect.Method;
 
 public class DeoptReallocFailure {
+    static class MemoryChunk {
+        MemoryChunk other;
+        Object[][] array;
+
+        MemoryChunk(MemoryChunk other) {
+            this.other = other;
+            array = new Object[1024 * 256][];
+        }
+    }
+
+    static class NoEscape {
+        long f1;
+    }
 
     static MemoryChunk root;
     private static final WhiteBox WB = WhiteBox.getWhiteBox();

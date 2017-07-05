@@ -25,7 +25,9 @@
  * Portions Copyright (c) 2012 IBM Corporation
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 7188612
  * @summary AccessibleTableHeader and AccessibleJTableCell should stick to
  *    AccessibleComponent.getLocationOnScreen api.

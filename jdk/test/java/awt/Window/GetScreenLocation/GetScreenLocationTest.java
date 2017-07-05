@@ -23,8 +23,9 @@
 
 /**
  * @test @summary setLocationRelativeTo stopped working in Ubuntu 13.10 (Unity)
- * @bug 8036915
- * @run main GetScreenLocationTest
+ * @bug 8036915 8161273
+ * @run main/othervm -Dsun.java2d.uiScale=1 GetScreenLocationTest
+ * @run main/othervm -Dsun.java2d.uiScale=2 GetScreenLocationTest
  */
 import java.awt.*;
 
@@ -33,28 +34,28 @@ public class GetScreenLocationTest {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         Window frame = null;
-        for(int i = 0; i < 50; i++) {
+        for(int i = 0; i < 30; i++) {
             if(frame != null) frame.dispose();
             frame = new Dialog((Frame)null);
-            frame.setBounds(0, 0, 200, 200);
+            frame.setBounds(0, 0, 200, 100);
             frame.setVisible(true);
             robot.waitForIdle();
             robot.delay(200);
-            frame.setLocation(321, 321);
+            frame.setLocation(321, 121);
             robot.waitForIdle();
             robot.delay(200);
             Dimension size = frame.getSize();
-            if(size.width != 200 || size.height != 200) {
+            if(size.width != 200 || size.height != 100) {
                 frame.dispose();
                 throw new RuntimeException("getSize() is wrong " + size);
             }
             Rectangle r = frame.getBounds();
             frame.dispose();
-            if(r.x != 321 || r.y != 321) {
+            if(r.x != 321 || r.y != 121) {
                 throw new RuntimeException("getLocation() returns " +
                         "wrong coordinates " + r.getLocation());
             }
-            if(r.width != 200 || r.height != 200) {
+            if(r.width != 200 || r.height != 100) {
                 throw new RuntimeException("getSize() is wrong " + r.getSize());
             }
         }

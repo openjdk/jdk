@@ -22,26 +22,34 @@
  *
  */
 
-import java.util.ArrayList;
+/*
+ * @test RandomAllocationTest
+ * @summary stressing code cache by allocating randomly sized "dummy" code blobs
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @build compiler.codecache.stress.RandomAllocationTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:-SegmentedCodeCache
+ *                   compiler.codecache.stress.RandomAllocationTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:+SegmentedCodeCache
+ *                   compiler.codecache.stress.RandomAllocationTest
+ */
+
+package compiler.codecache.stress;
 
 import sun.hotspot.code.BlobType;
 
-/*
- * @test RandomAllocationTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build RandomAllocationTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
- *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache RandomAllocationTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileCommand=dontinline,Helper$TestCase::method
- *                   -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache RandomAllocationTest
- * @summary stressing code cache by allocating randomly sized "dummy" code blobs
- */
+import java.util.ArrayList;
+
 public class RandomAllocationTest implements Runnable {
     private static final long CODE_CACHE_SIZE
             = Helper.WHITE_BOX.getUintxVMFlag("ReservedCodeCacheSize");

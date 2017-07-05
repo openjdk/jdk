@@ -1,4 +1,6 @@
-import java.lang.reflect.*;
+package compiler.profiling.spectrapredefineclass_classloaders;
+
+import java.lang.reflect.Method;
 
 public class Test {
 
@@ -19,11 +21,12 @@ public class Test {
     }
 
     public void m3(ClassLoader loader) throws Exception {
-        Class Test_class = loader.loadClass("Test");
+        String packageName = Test.class.getPackage().getName();
+        Class Test_class = loader.loadClass(packageName + ".Test");
         Object test = Test_class.newInstance();
-        Class A_class = loader.loadClass("A");
+        Class A_class = loader.loadClass(packageName + ".A");
         Object a = A_class.newInstance();
-        Class B_class = loader.loadClass("B");
+        Class B_class = loader.loadClass(packageName + ".B");
         Object b = B_class.newInstance();
         Method m1 = Test_class.getMethod("m1", A_class, Boolean.class);
 

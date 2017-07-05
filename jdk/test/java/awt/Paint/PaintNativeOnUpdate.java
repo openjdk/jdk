@@ -31,6 +31,7 @@ import java.awt.Point;
 
 /**
  * @test
+ * @key headful
  * @bug 7157680
  * @library ../../../lib/testlibrary
  * @build ExtendedRobot

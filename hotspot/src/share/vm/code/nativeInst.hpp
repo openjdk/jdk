@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,8 @@
 #ifndef SHARE_VM_CODE_NATIVEINST_HPP
 #define SHARE_VM_CODE_NATIVEINST_HPP
 
-#ifdef TARGET_ARCH_x86
-# include "nativeInst_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "nativeInst_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "nativeInst_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "nativeInst_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "nativeInst_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "nativeInst_aarch64.hpp"
-#endif
+#include "utilities/macros.hpp"
+
+#include CPU_HEADER(nativeInst)
 
 #endif // SHARE_VM_CODE_NATIVEINST_HPP

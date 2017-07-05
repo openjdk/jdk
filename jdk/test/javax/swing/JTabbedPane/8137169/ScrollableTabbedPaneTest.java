@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8137169
  * @summary verifies TabbedScrollPane minimum height for all Look and Feels
  * @library ../../regtesthelpers

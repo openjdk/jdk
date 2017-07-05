@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8054359
  *
  * @summary Check whether FileDialog blocks a non-modal Dialog

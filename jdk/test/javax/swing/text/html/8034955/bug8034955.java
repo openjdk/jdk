@@ -27,6 +27,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8034955
  * @author Alexander Scherbatiy
  * @summary JLabel/JToolTip throw ClassCastException for "<html>a<title>"

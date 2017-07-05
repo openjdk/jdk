@@ -104,40 +104,47 @@ Java_sun_java2d_loops_GraphicsPrimitiveMgr_initIDs
     {
         return;
     }
-    RegisterID = (*env)->GetStaticMethodID(env, GPMgr,
-                                           RegisterName, RegisterSig);
-    pNativePrimID = (*env)->GetFieldID(env, GP, "pNativePrim", "J");
-    pixelID = (*env)->GetFieldID(env, SG2D, "pixel", "I");
-    eargbID = (*env)->GetFieldID(env, SG2D, "eargb", "I");
-    clipRegionID = (*env)->GetFieldID(env, SG2D, "clipRegion",
-                                      "Lsun/java2d/pipe/Region;");
-    compositeID = (*env)->GetFieldID(env, SG2D, "composite",
-                                     "Ljava/awt/Composite;");
-    lcdTextContrastID =
-        (*env)->GetFieldID(env, SG2D, "lcdTextContrast", "I");
-    getRgbID = (*env)->GetMethodID(env, Color, "getRGB", "()I");
-    xorPixelID = (*env)->GetFieldID(env, XORComp, "xorPixel", "I");
-    xorColorID = (*env)->GetFieldID(env, XORComp, "xorColor",
-                                    "Ljava/awt/Color;");
-    alphaMaskID = (*env)->GetFieldID(env, XORComp, "alphaMask", "I");
-    ruleID = (*env)->GetFieldID(env, AlphaComp, "rule", "I");
-    extraAlphaID = (*env)->GetFieldID(env, AlphaComp, "extraAlpha", "F");
+    CHECK_NULL(RegisterID =
+        (*env)->GetStaticMethodID(env, GPMgr, RegisterName, RegisterSig));
+    CHECK_NULL(pNativePrimID = (*env)->GetFieldID(env, GP, "pNativePrim", "J"));
+    CHECK_NULL(pixelID = (*env)->GetFieldID(env, SG2D, "pixel", "I"));
+    CHECK_NULL(eargbID = (*env)->GetFieldID(env, SG2D, "eargb", "I"));
+    CHECK_NULL(clipRegionID =
+        (*env)->GetFieldID(env, SG2D, "clipRegion", "Lsun/java2d/pipe/Region;"));
+    CHECK_NULL(compositeID =
+        (*env)->GetFieldID(env, SG2D, "composite", "Ljava/awt/Composite;"));
+    CHECK_NULL(lcdTextContrastID =
+        (*env)->GetFieldID(env, SG2D, "lcdTextContrast", "I"));
+    CHECK_NULL(getRgbID = (*env)->GetMethodID(env, Color, "getRGB", "()I"));
+    CHECK_NULL(xorPixelID = (*env)->GetFieldID(env, XORComp, "xorPixel", "I"));
+    CHECK_NULL(xorColorID =
+        (*env)->GetFieldID(env, XORComp, "xorColor", "Ljava/awt/Color;"));
+    CHECK_NULL(alphaMaskID =
+        (*env)->GetFieldID(env, XORComp, "alphaMask", "I"));
+    CHECK_NULL(ruleID = (*env)->GetFieldID(env, AlphaComp, "rule", "I"));
+    CHECK_NULL(extraAlphaID =
+        (*env)->GetFieldID(env, AlphaComp, "extraAlpha", "F"));
 
 
-    m00ID = (*env)->GetFieldID(env, AT, "m00", "D");
-    m01ID = (*env)->GetFieldID(env, AT, "m01", "D");
-    m02ID = (*env)->GetFieldID(env, AT, "m02", "D");
-    m10ID = (*env)->GetFieldID(env, AT, "m10", "D");
-    m11ID = (*env)->GetFieldID(env, AT, "m11", "D");
-    m12ID = (*env)->GetFieldID(env, AT, "m12", "D");
+    CHECK_NULL(m00ID = (*env)->GetFieldID(env, AT, "m00", "D"));
+    CHECK_NULL(m01ID = (*env)->GetFieldID(env, AT, "m01", "D"));
+    CHECK_NULL(m02ID = (*env)->GetFieldID(env, AT, "m02", "D"));
+    CHECK_NULL(m10ID = (*env)->GetFieldID(env, AT, "m10", "D"));
+    CHECK_NULL(m11ID = (*env)->GetFieldID(env, AT, "m11", "D"));
+    CHECK_NULL(m12ID = (*env)->GetFieldID(env, AT, "m12", "D"));
 
-    path2DTypesID = (*env)->GetFieldID(env, Path2D, "pointTypes", "[B");
-    path2DNumTypesID = (*env)->GetFieldID(env, Path2D, "numTypes", "I");
-    path2DWindingRuleID = (*env)->GetFieldID(env, Path2D, "windingRule", "I");
-    path2DFloatCoordsID = (*env)->GetFieldID(env, Path2DFloat,
-                                             "floatCoords", "[F");
-    sg2dStrokeHintID = (*env)->GetFieldID(env, SG2D, "strokeHint", "I");
-    fid = (*env)->GetStaticFieldID(env, SHints, "INTVAL_STROKE_PURE", "I");
+    CHECK_NULL(path2DTypesID =
+        (*env)->GetFieldID(env, Path2D, "pointTypes", "[B"));
+    CHECK_NULL(path2DNumTypesID =
+        (*env)->GetFieldID(env, Path2D, "numTypes", "I"));
+    CHECK_NULL(path2DWindingRuleID =
+        (*env)->GetFieldID(env, Path2D, "windingRule", "I"));
+    CHECK_NULL(path2DFloatCoordsID =
+        (*env)->GetFieldID(env, Path2DFloat, "floatCoords", "[F"));
+    CHECK_NULL(sg2dStrokeHintID =
+        (*env)->GetFieldID(env, SG2D, "strokeHint", "I"));
+    CHECK_NULL(fid =
+        (*env)->GetStaticFieldID(env, SHints, "INTVAL_STROKE_PURE", "I"));
     sunHints_INTVAL_STROKE_PURE = (*env)->GetStaticIntField(env, SHints, fid);
 }
 

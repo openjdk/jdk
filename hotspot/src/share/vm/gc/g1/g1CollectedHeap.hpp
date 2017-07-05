@@ -118,6 +118,7 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
 };
 
 class G1CollectedHeap : public CollectedHeap {
+  friend class G1FreeCollectionSetTask;
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
@@ -642,13 +643,15 @@ public:
   // adding it to the free list that's passed as a parameter (this is
   // usually a local list which will be appended to the master free
   // list later). The used bytes of freed regions are accumulated in
-  // pre_used. If par is true, the region's RSet will not be freed
-  // up. The assumption is that this will be done later.
+  // pre_used. If skip_remset is true, the region's RSet will not be freed
+  // up. If skip_hot_card_cache is true, the region's hot card cache will not
+  // be freed up. The assumption is that this will be done later.
   // The locked parameter indicates if the caller has already taken
   // care of proper synchronization. This may allow some optimizations.
   void free_region(HeapRegion* hr,
                    FreeRegionList* free_list,
-                   bool par,
+                   bool skip_remset,
+                   bool skip_hot_card_cache = false,
                    bool locked = false);
 
   // It dirties the cards that cover the block so that the post
@@ -662,11 +665,11 @@ public:
   // will be added to the free list that's passed as a parameter (this
   // is usually a local list which will be appended to the master free
   // list later). The used bytes of freed regions are accumulated in
-  // pre_used. If par is true, the region's RSet will not be freed
+  // pre_used. If skip_remset is true, the region's RSet will not be freed
   // up. The assumption is that this will be done later.
   void free_humongous_region(HeapRegion* hr,
                              FreeRegionList* free_list,
-                             bool par);
+                             bool skip_remset);
 
   // Facility for allocating in 'archive' regions in high heap memory and
   // recording the allocated ranges. These should all be called from the

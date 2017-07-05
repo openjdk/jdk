@@ -20,12 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 4816114
-   @summary REGRESSION: Regression in divider location behavior when JSplitPane is resized
-   @author Andrey Pikalev
-   @run main bug4816114
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 4816114
+ * @summary REGRESSION: Regression in divider location behavior when JSplitPane is resized
+ * @author Andrey Pikalev
+ * @run main bug4816114
+ */
 
 import javax.swing.*;
 import java.awt.*;

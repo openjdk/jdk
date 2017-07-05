@@ -25,11 +25,22 @@
  * @test
  * @bug 6700100 8156760
  * @summary small instance clone as loads/stores
- * @compile TestInstanceCloneAsLoadsStores.java TestInstanceCloneUtils.java
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestInstanceCloneAsLoadsStores::m* TestInstanceCloneAsLoadsStores
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestInstanceCloneAsLoadsStores::m* -XX:+IgnoreUnrecognizedVMOptions -XX:+StressArrayCopyMacroNode TestInstanceCloneAsLoadsStores
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestInstanceCloneAsLoadsStores::m* -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks TestInstanceCloneAsLoadsStores
+ * @library /
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestInstanceCloneAsLoadsStores::m*
+ *                   compiler.arraycopy.TestInstanceCloneAsLoadsStores
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestInstanceCloneAsLoadsStores::m*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressArrayCopyMacroNode
+ *                   compiler.arraycopy.TestInstanceCloneAsLoadsStores
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestInstanceCloneAsLoadsStores::m*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks
+ *                   compiler.arraycopy.TestInstanceCloneAsLoadsStores
  */
+
+package compiler.arraycopy;
 
 public class TestInstanceCloneAsLoadsStores extends TestInstanceCloneUtils {
 

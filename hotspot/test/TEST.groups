@@ -130,8 +130,8 @@ jre = \
 # Tests that require the full JRE
 #
 needs_jre = \
-  compiler/c2/6852078/Test6852078.java \
-  compiler/c2/7047069/Test7047069.java \
+  compiler/c2/Test6852078.java \
+  compiler/c2/Test7047069.java \
   runtime/6294277/SourceDebugExtension.java \
   runtime/ClassFile/JsrRewriting.java \
   runtime/ClassFile/OomWhileParsingRepeatedJsr.java \
@@ -277,16 +277,16 @@ hotspot_fast_compiler_1 = \
   compiler/arraycopy/ \
   compiler/c1/ \
   compiler/c2/ \
-  -compiler/c2/5091921/Test6850611.java \
-  -compiler/c2/5091921/Test6890943.java \
-  -compiler/c2/5091921/Test6905845.java \
-  -compiler/c2/6340864 \
-  -compiler/c2/6589834 \
-  -compiler/c2/6603011 \
-  -compiler/c2/6912517 \
-  -compiler/c2/6792161 \
-  -compiler/c2/7070134 \
-  -compiler/c2/8004867
+  -compiler/c2/Test6850611.java \
+  -compiler/c2/cr6890943/Test6890943.java \
+  -compiler/c2/Test6905845.java \
+  -compiler/c2/cr6340864 \
+  -compiler/c2/cr6589834 \
+  -compiler/c2/cr8004867
+  -compiler/c2/stemmer \
+  -compiler/c2/Test6792161.java \
+  -compiler/c2/Test6603011.java \
+  -compiler/c2/Test6912517.java \
 
 hotspot_fast_compiler_2 = \
   compiler/classUnloading/ \
@@ -303,7 +303,7 @@ hotspot_fast_compiler_2 = \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
   compiler/jvmci/ \
-  -compiler/codegen/7184394 \
+  -compiler/codegen/aes \
   -compiler/codecache/stress \
   -compiler/gcbarriers/PreserveFPRegistersTest.java
 
@@ -320,13 +320,13 @@ hotspot_fast_compiler_3 = \
   compiler/types/ \
   compiler/uncommontrap/ \
   compiler/unsafe/ \
-  -compiler/intrinsics/adler32 \
   -compiler/intrinsics/bmi \
   -compiler/intrinsics/mathexact \
-  -compiler/intrinsics/multiplytolen \
   -compiler/intrinsics/sha \
-  -compiler/loopopts/7052494 \
-  -compiler/runtime/6826736
+  -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
+  -compiler/intrinsics/zip/TestAdler32.java \
+  -compiler/loopopts/Test7052494.java \
+  -compiler/runtime/Test6826736.java
 
 hotspot_fast_compiler_closed = \
   sanity/ExecuteInternalVMTests.java

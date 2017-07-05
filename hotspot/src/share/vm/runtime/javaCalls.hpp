@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,9 @@
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
-#ifdef TARGET_ARCH_x86
-# include "jniTypes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "jniTypes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "jniTypes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "jniTypes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "jniTypes_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "jniTypes_aarch64.hpp"
-#endif
+#include "utilities/macros.hpp"
+
+#include CPU_HEADER(jniTypes)
 
 // A JavaCallWrapper is constructed before each JavaCall and destructed after the call.
 // Its purpose is to allocate/deallocate a new handle block and to save/restore the last
