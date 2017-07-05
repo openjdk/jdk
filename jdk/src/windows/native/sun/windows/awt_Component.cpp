@@ -302,6 +302,7 @@ void AwtComponent::Dispose()
         delete m_childList;
 
     DestroyDropTarget();
+    ReleaseDragCapture(0);
 
     if (m_myControlID != 0) {
         AwtComponent* parent = GetParent();

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ setup
 JSTAT="${TESTJAVA}/bin/jstat"
 
 rm -f jstat.out1 jstat.out2 2>/dev/null
-${JSTAT} -J-XX:+UsePerfData -options > jstat.out1 2>&1
-${JSTAT} -J-XX:+UsePerfData -options -J-Djstat.showUnsupported=true > jstat.out2 2>&1
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -options > jstat.out1 2>&1
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -options -J-Djstat.showUnsupported=true > jstat.out2 2>&1
 
 diff -w jstat.out1 ${TESTSRC}/options1.out
 diff -w jstat.out2 ${TESTSRC}/options2.out

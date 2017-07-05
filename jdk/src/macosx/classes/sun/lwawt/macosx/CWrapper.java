@@ -47,6 +47,7 @@ public final class CWrapper {
         public static native void setLevel(long window, int level);
 
         public static native void makeKeyAndOrderFront(long window);
+        public static native void makeKeyWindow(long window);
         public static native void makeMainWindow(long window);
         public static native boolean canBecomeMainWindow(long window);
         public static native boolean isKeyWindow(long window);

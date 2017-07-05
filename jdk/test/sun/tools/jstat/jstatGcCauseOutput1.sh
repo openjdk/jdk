@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,4 +37,4 @@ JSTAT="${TESTJAVA}/bin/jstat"
 # class machine, ergonomics will automatically use UseParallelGC.
 # The UseParallelGC collector does not currently update the gc cause counters.
 
-${JSTAT} -J-XX:+UsePerfData -J-XX:+UseSerialGC -gccause 0 2>&1 | awk -f ${TESTSRC}/gcCauseOutput1.awk
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -J-XX:+UseSerialGC -gccause 0 2>&1 | awk -f ${TESTSRC}/gcCauseOutput1.awk

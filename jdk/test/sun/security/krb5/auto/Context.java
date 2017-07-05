@@ -96,6 +96,15 @@ public class Context {
     }
 
     /**
+     * No JAAS login at all, can be used to test JGSS without JAAS
+     */
+    public static Context fromThinAir() throws Exception {
+        Context out = new Context();
+        out.s = new Subject();
+        return out;
+    }
+
+    /**
      * Logins with a JAAS login config entry name
      */
     public static Context fromJAAS(final String name) throws Exception {
@@ -111,8 +120,10 @@ public class Context {
             String user, char[] pass, boolean storeKey) throws Exception {
         return fromUserPass(null, user, pass, storeKey);
     }
+
     /**
      * Logins with a username and a password, using Krb5LoginModule directly
+     * @param s existing subject, test multiple princ & creds for single subj
      * @param storeKey true if key should be saved, used on acceptor side
      */
     public static Context fromUserPass(Subject s,
