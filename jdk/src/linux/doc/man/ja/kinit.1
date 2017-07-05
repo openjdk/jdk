@@ -1,0 +1,159 @@
+'\" t
+.\"
+.\" Copyright 2002-2004 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\"
+.\" 
+.TH kinit 1 "2004 年 6 月 22 日"
+.SH "名前"
+kinit \- kinit は Kerberos チケット許可チケットを取得およびキャッシュ
+するときに使用します。このツールはほかの一般的な Kerberos 実装 
+(SEAM や MIT のリファレンス実装など) の kinit ツールと機能的に似ています。
+.LP
+kinit を使用するためには、kinit を実行する前に Key Distribution Center 
+(KDC) を使用してプリンシパルとして登録する必要があります。
+.SH "形式"
+.B kinit
+[
+.IR commands " ]" 
+<principal name>
+.SH "機能説明"
+デフォルトでは、UNIX プラットフォームの場合、/tmp/krb5cc_<uid> という
+名前のキャッシュファイルが生成されます。<uid> は、システムにログイン
+したユーザのユーザ識別番号です。その他のプラットフォームの場合、
+<USER_HOME>/krb5cc_<USER_NAME> という名前のキャッシュファイル
+が生成されます。
+.LP
+<USER_HOME> は 
+.BR java.lang.System 
+プロパティの 
+.BR user.home
+から取得されます。<USER_NAME> は 
+.BR java.lang.System 
+プロパティの 
+.BR user.name
+から取得されます。<USER_HOME> が null である場合、
+キャッシュファイルはプログラムを実行した現在のディレクトリに格納され
+ます。<USER_NAME> はオペレーティングシステムのログインユーザ名
+です。このユーザ名はユーザのプリンシパル名とは異なる場合があります。
+たとえば Solaris では、<USER_NAME> が duke であり、<USER_HOME> 
+が /home/duke である場合、ユーザのプリンシパル名は /home/duke/krb5cc_duke 
+になります。
+.LP
+デフォルトでは、キータブ名は Kerberos 構成ファイルから取得されます。
+キータブ名が Kerberos 構成ファイルに指定されていない場合、キータブ名は <USER_HOME>/krb5.keytab になります。
+.LP
+コマンド行の password オプションでパスワードを指定しない場合、
+kinit はパスワードの入力を求めます。
+.LP
+.B 注:
+コマンド行の password オプションはテストの目的だけに提供されます。
+パスワードをスクリプト内に指定したり、コマンド行に指定したりしないで
+ください。そうすることによって、パスワードが漏れる可能性があります。
+.LP
+詳細については、kinit 関連のマニュアルページを参照してください。
+.SH "コマンド"
+.B kinit \-fp
+[
+\-c <cache_name> ]
+[
+\-k ]
+[
+\-t <keytab_filename> ]
+[
+<principal> ]
+[
+<password> ]
+[
+\-help ]
+.TP
+.BI \-f
+転送可能なチケットを発行します。
+.TP
+.BI \-p
+プロキシ可能なチケットを発行します。
+.TP
+.BI \-c 
+<cache_name>
+キャッシュ名 (たとえば、FILE:/temp/mykrb5cc)。
+.TP
+.BI \-k
+キータブを使用します。
+.TP
+.BI \-t 
+<keytab_filename>
+キータブ名 (たとえば、/home/duke/krb5.keytab)。
+.TP
+.BI <principal>
+プリンシパル名 (たとえば、duke@java.sun.com)。
+.TP
+.BI <password>
+プリンシパルの Kerberos パスワード (コマンド行やスクリプトにパスワード
+を指定しないでください)。
+.TP
+.BI \-help
+ヘルプを表示します。
+.SH "使用例"
+認証に有効な資格を現在のクライアントホストから要求して、
+デフォルトサービスのために資格のキャッシュをデフォルトの場所 
+(/home/duke/krb5cc_duke) に格納します。
+.LP
+.ft 3
+.nf
+kinit duke@JAVA.SUN.COM
+.fi
+.ft 1
+.LP
+異なるプリンシパルのためにプロキシ可能な資格を要求して、これらの資格を
+指定したファイルキャッシュに格納します。
+.LP
+.ft 3
+.nf
+kinit \-p \-c FILE:/home/duke/credentials/krb5cc_cafebeef cafebeef@JAVA.SUN.COM
+.fi
+.ft 1
+.LP
+異なるプリンシパルのためにプロキシ可能で転送可能な資格を要求して、
+これらの資格を指定したファイルキャッシュに格納します。
+.LP
+.ft 3
+.nf
+kinit \-f \-p \-c
+FILE:/home/duke/credentials/krb5cc_cafebeef cafebeef@JAVA.SUN.COM
+.fi
+.ft 1
+.LP
+kinit のヘルプメニューを表示します。
+.LP
+.ft 3
+.nf
+kinit \-help
+.fi
+.ft 1
+.LP
+.SH "セキュリティに関する警告"
+コマンド行の 
+.BR password
+オプションはテストの目的だけに提供されます。パスワードをコマンド行に指定しないでください。
+これはセキュリティホールになります。たとえば、UNIX の 
+.BR ps
+コマンドの実行中に、攻撃者はパスワードを検出することができてしまいます。

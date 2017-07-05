@@ -1,0 +1,61 @@
+package @PKGNAME@ ;
+
+import org.omg.CORBA.OMGVMCID ;
+import org.omg.CORBA.CompletionStatus ;
+
+import org.omg.CORBA.@SYSEX@ ; 
+
+public abstract class StandardException {
+    // @SYSEX@ BAD_CONTEXT
+
+    public void IdlContextNotFound( CompletionStatus completed )
+    {
+	throw new BAD_CONTEXT( "IDL context not found", 
+	    OMGVMCID.value + 1, completed ) ;
+    }
+
+    public void IdlContextNotFound( )
+    {
+	IdlContextNotFound( CompletionStatus.COMPLETED_NO ) ;
+    }
+
+Data structures: list[ ... ] vector[ ... ] ( record )
+
+list[ ( string{exception name} list[ ( string{code name} int{value} string{description} ] ) ]
+			    
+Processing:
+    
+
+    open file (fname)
+	fr = new FileReader( fname )
+	br = new BufferedReader( fr )
+	br.readLine() returns null at EOF
+
+    want a BufferedReader
+    
+    while not eol read line
+	if (line start with spaces)
+	    add to current index
+	else
+	    new exception
+
+    create StandardException class
+
+    foreach ( excname vec ) in data
+	add import statement for execname to output 
+
+	foreach ( codename value descr ) in vec 
+	    generate full method
+	    generate short method
+	
+	   
+(define (read-file fname)
+    (begin
+	(let port (open-input-port fname))
+	(let obj  (read port))
+	obj
+    )
+)
+
+    
+    

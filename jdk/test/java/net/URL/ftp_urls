@@ -1,0 +1,27 @@
+URL: null
+spec: ftp://ftp.foo.com/dir1/entry.txt
+expected: ftp://ftp.foo.com/dir1/entry.txt
+
+URL: null
+spec: ftp://br:pwd@ftp.foo.com/dir1/jar.jar
+expected: ftp://br:pwd@ftp.foo.com/dir1/jar.jar
+
+URL: ftp://ftp.foo.com/dir1/foo.txt
+spec: bar.txt
+expected: ftp://ftp.foo.com/dir1/bar.txt
+
+URL: ftp://ftp.foo.com/dir1/jar.jar
+spec: /entry.txt
+expected: ftp://ftp.foo.com/entry.txt
+
+URL: ftp://ftp.foo.com/dir1/jar.jar
+spec: dir1/entry.txt
+expected: ftp://ftp.foo.com/dir1/dir1/entry.txt
+
+URL: ftp://ftp.foo.com/dir1/jar.jar
+spec: /dir1/entry.txt
+expected: ftp://ftp.foo.com/dir1/entry.txt
+
+URL: ftp://br:pwd@ftp.foo.com/dir1/jar.jar
+spec: /dir1/entry.txt
+expected: ftp://br:pwd@ftp.foo.com/dir1/entry.txt

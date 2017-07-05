@@ -1,0 +1,13 @@
+/*
+ * security policy used by activation groups
+ */
+
+grant {
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
+
+  // allow remote objects to be exported on arbitrary ports.
+  permission java.net.SocketPermission "*:1024-", "connect,accept";
+
+  // allow exporting object with non-public remote interface
+  permission java.rmi.RMIPermission "exportRemoteInterface.ActivateMe";
+};

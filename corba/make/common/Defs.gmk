@@ -1,0 +1,511 @@
+#
+# Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# Common variables used by all the Java makefiles.  This file should
+# not contain rules.
+#
+
+#
+# On Solaris, the 'make' utility from Sun will not work with these makefiles.
+#    This little rule is only understood by Sun's make, and is harmless
+#    when seen by the GNU make tool. If using Sun's make, this causes the
+#    make command to fail.
+#
+SUN_MAKE_TEST:sh = echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
+
+include $(BUILDDIR)/common/shared/Platform.gmk
+
+TOPDIR=$(BUILDDIR)/..
+
+include $(TOPDIR)/make/common/CancelImplicits.gmk
+
+# Historically PLATFORM_SRC used to be src/$(PLATFORM), but we switched it to
+# src/solaris so if you want to build on Linux you didn't need a src/linux
+# directory.  In an ideal world it would be called src/genunix but we are not
+# there yet.
+#
+ifndef SHARE_SRC
+  SHARE_SRC    = $(TOPDIR)/src/share
+endif
+
+_OUTPUTDIR=$(TOPDIR)/build/$(PLATFORM)-$(ARCH)
+
+#
+# Get platform definitions
+#
+
+include $(TOPDIR)/make/common/Defs-$(PLATFORM).gmk
+
+#
+# Localizations for the different parts of the product beyond English
+#
+
+JRE_LOCALES   = de es fr it ja ko sv zh_CN zh_TW zh_HK
+PLUGIN_LOCALES = de es fr it ja ko sv zh_CN zh_TW zh_HK
+JDK_LOCALES  = ja zh_CN
+
+#
+# A list of locales we support but don't have resource files.
+# This is defined to optimize the search of resource bundles.
+#
+JRE_NONEXIST_LOCALES = en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
+
+#
+# All libraries except libjava and libjvm itself link against libjvm and
+# libjava, the latter for its exported common utilities.  libjava only links
+# against libjvm.  Programs' makefiles take their own responsibility for
+# adding other libs.
+#
+ifdef PACKAGE
+# put JAVALIB first, but do not lose any platform specific values....
+  LDLIBS_COMMON = $(JAVALIB)
+endif # PACKAGE
+
+#
+# Libraries that must appear ahead of libc.so on the link command line
+#
+ifdef PROGRAM
+
+  ifeq ($(PLATFORM), solaris)
+    LDLIBS_COMMON = -lthread -ldl
+  endif
+
+  ifeq ($(PLATFORM), linux)
+    LDLIBS_COMMON = -ldl
+  endif
+
+endif # PROGRAM
+
+LDLIBS_COMMON += $(EXTRA_LIBS)
+
+#
+# Default is to build, not import native binaries
+#
+ifndef IMPORT_NATIVE_BINARIES
+  IMPORT_NATIVE_BINARIES=false
+endif
+# If importing libraries in, no incremental builds
+ifeq ($(IMPORT_NATIVE_BINARIES),true)
+ INCREMENTAL_BUILD=false
+endif
+
+# for generated libraries
+LIBDIR              = $(OUTPUTDIR)/lib
+ABS_LIBDIR          = $(ABS_OUTPUTDIR)/lib
+# Optional place to save the windows .lib files
+LIBFILES_DIR        = $(OUTPUTDIR)/libfiles
+# for ext jre files
+EXTDIR              = $(LIBDIR)/ext
+# for generated include files
+INCLUDEDIR          = $(OUTPUTDIR)/include
+# for generated class files
+CLASSBINDIR         = $(OUTPUTDIR)/classes
+DEMOCLASSDIR        = $(OUTPUTDIR)/democlasses
+# for generated tool class files
+BUILDTOOLCLASSDIR   = $(OUTPUTDIR)/btclasses
+# for build tool jar files
+BUILDTOOLJARDIR     = $(OUTPUTDIR)/btjars
+ABS_BUILDTOOLJARDIR = $(ABS_OUTPUTDIR)/btjars
+# for generated java source files
+GENSRCDIR           = $(OUTPUTDIR)/gensrc
+# for generated C source files (not javah)
+GENNATIVESRCDIR     = $(OUTPUTDIR)/gennativesrc
+# for imported source files
+IMPORTSRCDIR        = $(OUTPUTDIR)/impsrc
+# for imported documents
+IMPORTDOCDIR        = $(OUTPUTDIR)/impdoc
+# for generated demo
+DEMODIR             = $(OUTPUTDIR)/demo
+# for sample code
+SAMPLEDIR           = $(OUTPUTDIR)/sample
+# for generated documentation
+DOCSDIR             = $(OUTPUTDIR)/docs$(DOCSDIRSUFFIX)
+DOCSDIRSUFFIX       =
+
+# An attempt is made to generate unique enough directories for the
+# generated files to not have name collisisons. Most build units
+# defines PRODUCT (except Release.gmk), but then they may or may 
+# not define PACKAGE, THREADIR (only HPI uses this), PROGRAM, and 
+# LIBRARY. This code chunk attempts to generate a unique 
+# OBJDIR/CLASSHDRDIR for each build unit based on which of those 
+# values are set within each build unit.
+
+UNIQUE_LOCATION_STRING = tmp
+
+ifneq ($(PRODUCT),)
+  UNIQUE_LOCATION_STRING += /$(PRODUCT)
+endif
+
+ifneq ($(PACKAGE),)
+  UNIQUE_LOCATION_STRING += /$(PACKAGE)
+endif
+
+ifneq ($(PROGRAM),)
+  UNIQUE_LOCATION_STRING += /$(PROGRAM)
+endif
+
+ifneq ($(LIBRARY),)
+  ifneq ($(LIBRARY_OUTPUT),)
+    UNIQUE_LOCATION_STRING += /$(LIBRARY_OUTPUT)
+  else
+    UNIQUE_LOCATION_STRING += /$(LIBRARY)
+  endif
+endif
+
+ifneq ($(THREADDIR),)
+  UNIQUE_LOCATION_STRING += /$(THREADDIR)
+endif
+
+# the use of += above makes a space separated list which we need to 
+# remove for filespecs.
+#
+NULLSTRING :=
+ONESPACE := $(NULLSTRING) # space before this comment is required.
+UNIQUE_PATH = $(subst $(ONESPACE),,$(UNIQUE_LOCATION_STRING))
+
+# TEMPDIR is a unique general purpose directory
+# need to use 'override' because GNU Make on Linux exports the wrong
+# value.
+override TEMPDIR      = $(OUTPUTDIR)/$(UNIQUE_PATH)
+override ABS_TEMPDIR  = $(ABS_OUTPUTDIR)/$(UNIQUE_PATH)
+
+# This must be created right away for pattern rules in Sanity.gmk to work.
+dummy1:=$(shell $(MKDIR) -p $(TEMPDIR))
+dummy2:=$(shell $(MKDIR) -p $(TEMP_DISK))
+
+# OBJDIRNAME is the name of the directory where the object code is to
+#   be placed. It's name depends on whether the data model architecture 
+#   is 32-bit or not.
+ifneq ($(ARCH_DATA_MODEL), 32)
+  OBJDIRNAME  = obj$(ARCH_DATA_MODEL)$(OBJDIRNAME_SUFFIX)
+else
+  OBJDIRNAME  = obj$(OBJDIRNAME_SUFFIX)
+endif
+OBJDIR      = $(TEMPDIR)/$(OBJDIRNAME)
+
+# CLASSHDRDIR is where the generated C Class Header files go.
+CLASSHDRDIR = $(TEMPDIR)/CClassHeaders
+
+#
+# CLASSDESTDIR can be used to specify the directory where generated classes
+# are to be placed. The default is CLASSBINDIR.
+#
+ifndef CLASSDESTDIR
+CLASSDESTDIR = $(CLASSBINDIR)
+endif
+
+INCLUDES = -I. -I$(CLASSHDRDIR) \
+	$(patsubst %,-I%,$(subst $(CLASSPATH_SEPARATOR), ,$(VPATH.h))) $(OTHER_INCLUDES)
+OTHER_CPPFLAGS = $(INCLUDES)
+
+
+#
+# vpaths.  These are the default locations searched for source files.
+# GNUmakefiles of individual areas often override the default settings.
+# There are no longer default vpath entries for C and assembler files
+# so we can ensure that libraries don't get their hands on JVM files.
+#
+# We define an intermediate variable for Java files because
+# we use its value later to help define $SOURCEPATH
+
+VPATH0.java = $(GENSRCDIR)$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/classes$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/classes
+VPATH.java = $(VPATH0.java)
+vpath %.java $(VPATH.java)
+vpath %.class $(CLASSBINDIR)
+vpath %.$(OBJECT_SUFFIX) $(OBJDIR)
+
+#
+# VPATH.h is used elsewhere to generate include flags.  By default, 
+# anyone has access to the include files that the JVM area exports,
+# namely jni.h, jvm.h, and jni_utils.h, plus their platform-specific
+# relatives.
+#
+ifeq ($(PLATFORM), windows)
+  VPATH.h = $(BOOTDIR)/include;$(BOOTDIR)/include/$(PLATFORM_INCLUDE_NAME)
+else
+  VPATH.h = $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/include$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/javavm/include
+endif
+vpath %.h   $(VPATH.h)
+
+#
+# Used in two ways: helps link against libjava.so. Also if overridden
+# determines where your shared library is installed.
+#
+ifndef LIB_LOCATION
+  LIB_LOCATION    =  $(LIBDIR)/$(LIBARCH)
+endif
+
+#
+# Java header and stub variables
+#
+CLASSHDRS     = $(patsubst %,$(CLASSHDRDIR)/%.h,$(subst .,_,$(CLASSES.export)))
+CLASSSTUBOBJS = classstubs.$(OBJECT_SUFFIX)
+STUBPREAMBLE  = $(INCLUDEDIR)/StubPreamble.h
+
+#
+# Classpath seen by javac (different from the one seen by the VM
+# running javac), and useful variables.
+#
+SOURCEPATH	= $(VPATH.java)
+PKG		= $(shell $(EXPR) $(PACKAGE) : '\([a-z]*\)')
+PKGDIR		= $(subst .,/,$(PACKAGE))
+
+#
+# The java/javac/jdk variables (JAVAC_CMD, JAVA_CMD, etc.)
+#
+include $(BUILDDIR)/common/shared/Defs-java.gmk
+
+#
+# Set opt level to ALT_OPT if set otherwise _OPT
+#
+POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
+
+#
+# Convenient macros
+#
+
+# Prepare $@ target, remove old one and making sure directory exists
+define prep-target
+$(MKDIR) -p $(@D)
+$(RM) $@
+endef
+
+# Simple install of $< file to $@
+define install-file
+$(prep-target)
+$(CP) $< $@
+endef
+
+# Cleanup rule for after debug java run (hotspot.log file is left around)
+#   (This could be an old leftover file in a read-only area, use the @- prefix)
+HOTSPOT_LOG_NAME = hotspot.log
+define java-vm-cleanup
+if [ -w $(HOTSPOT_LOG_NAME) ] ; then $(RM) $(HOTSPOT_LOG_NAME); fi
+endef
+
+# Default make settings for processing SUBDIRS with clobber or clean names
+SUBDIRS_MAKEFLAGS-clobber = INCREMENTAL_BUILD=false
+SUBDIRS_MAKEFLAGS-clean   = INCREMENTAL_BUILD=false
+
+# Current directory
+CURRENT_DIRECTORY := $(shell $(PWD))
+
+# If no timing wanted, we need to define these as empty
+ifdef NO_TIMING
+
+TIMING_ID:=NA
+
+define TIMING_start
+t=0:0:0:0
+endef
+
+define TIMING_end
+time_used=0
+endef
+
+else # NO_TIMING
+
+# Default timing id
+TIMING_ID:=$(shell $(BASENAME) $(CURRENT_DIRECTORY))
+
+# Timing start (must be used in same shell, e.g. same command line)
+#    Defines the shell variable $1 to have the start time.
+define TIMING_start
+$1=`$(DATE) +%j:%H:%M:%S`
+endef
+
+# Timing end (must be used in same shell, e.g. same command line)
+#    Expects shell variable $1 to have been defined as the start time.
+#    Expects shell variable $2 to have timing id string
+#    Sets total_seconds shell variable as the total seconds used.
+#    Sets time_used shell variable to contain format "%dh%dm%ds"
+define TIMING_end
+begTime="$${$1}"; \
+timing_id="$${$2}"; \
+endTime=`$(DATE) +%j:%H:%M:%S`; \
+d1=`$(ECHO) $${begTime} | $(CUT) -d':' -f1 | $(SED) -e 's@^0*@@'`; \
+if [ "$${d1}" = "" ] ; then d1=0; fi; \
+h1=`$(ECHO) $${begTime} | $(CUT) -d':' -f2 | $(SED) -e 's@^0*@@'`; \
+if [ "$${h1}" = "" ] ; then h1=0; fi; \
+m1=`$(ECHO) $${begTime} | $(CUT) -d':' -f3 | $(SED) -e 's@^0*@@'`; \
+if [ "$${m1}" = "" ] ; then m1=0; fi; \
+s1=`$(ECHO) $${begTime} | $(CUT) -d':' -f4 | $(SED) -e 's@^0*@@'`; \
+if [ "$${s1}" = "" ] ; then s1=0; fi; \
+d2=`$(ECHO) $${endTime} | $(CUT) -d':' -f1 | $(SED) -e 's@^0*@@'`; \
+if [ "$${d2}" = "" ] ; then d2=0; fi; \
+h2=`$(ECHO) $${endTime} | $(CUT) -d':' -f2 | $(SED) -e 's@^0*@@'`; \
+if [ "$${h2}" = "" ] ; then h2=0; fi; \
+m2=`$(ECHO) $${endTime} | $(CUT) -d':' -f3 | $(SED) -e 's@^0*@@'`; \
+if [ "$${m2}" = "" ] ; then m2=0; fi; \
+s2=`$(ECHO) $${endTime} | $(CUT) -d':' -f4 | $(SED) -e 's@^0*@@'`; \
+if [ "$${s2}" = "" ] ; then s2=0; fi; \
+t1_secs=`$(EXPR) $${d1} '*' 60 '*' 60 '*' 24 '+' $${h1} '*' 60 '*' 60 \
+		 '+' $${m1} '*' 60 '+' $${s1}`; \
+t2_secs=`$(EXPR) $${d2} '*' 60 '*' 60 '*' 24 '+' $${h2} '*' 60 '*' 60 \
+		 '+' $${m2} '*' 60 '+' $${s2}`; \
+total_seconds=`$(EXPR) $${t2_secs} '-' $${t1_secs}`; \
+if [ "$${total_seconds}" -lt 0 ] ; then total_seconds=0; fi; \
+t_hour=`$(EXPR) $${total_seconds} '/' '(' 60 '*' 60 ')'`h; \
+t_min=`$(EXPR) '(' $${total_seconds} '%' '(' 60 '*' 60 ')' ')' '/' 60`m; \
+t_sec=`$(EXPR) $${total_seconds} '%' 60`s; \
+time_used=$${t_sec}; \
+if [ "$${t_hour}" != "0h" ] ; then \
+time_used=$${t_hour}$${t_min}$${t_sec}; \
+elif [ "$${t_min}" != "0m" ] ; then \
+time_used=$${t_min}$${t_sec}; \
+else \
+time_used=$${t_sec}; \
+fi; \
+$(PRINTF) "  Timing: %05d seconds or %s for %s\n" \
+    $${total_seconds} $${time_used} $${timing_id}
+endef
+
+endif # NO_TIMING
+
+# Given a SUBDIRS list, cd into them and make them
+#   SUBDIRS_MAKEFLAGS      Make settings for a subdir make
+#   SUBDIRS_MAKEFLAGS-$@   Make settings specific to this target
+define SUBDIRS-loop
+@$(ECHO) "Begin Processing SUBDIRS: $(SUBDIRS)"
+@for i in DUMMY $(SUBDIRS) ; do \
+  if [ "$$i" != "DUMMY" ] ; then \
+    $(ECHO) ">>>Recursively making "$$i" "$@" @ `$(DATE)` ..."; \
+    timing_id="$(TIMING_ID)-`$(BASENAME) $${i}`"; \
+    $(call TIMING_start,startTime); \
+    curDir=$(CURRENT_DIRECTORY); \
+    $(CD) $$i; $(MAKE) $@ TIMING_ID=$${timing_id} \
+			  $(SUBDIRS_MAKEFLAGS) \
+			  $(SUBDIRS_MAKEFLAGS-$@) \
+			  FULL_VERSION=$(FULL_VERSION) \
+			  RELEASE=$(RELEASE) || exit 1; \
+	       $(CD) $${curDir}; \
+    $(call TIMING_end,startTime,timing_id); \
+    $(ECHO) "<<<Finished Recursively making "$$i" "$@" @ `$(DATE)`." ; \
+  fi ; \
+done
+@$(ECHO) "Done Processing SUBDIRS: $(SUBDIRS)"
+endef
+
+# Given a OTHERSUBDIRS list, cd into them and make them (extra loop define)
+#   OTHERSUBDIRS_MAKEFLAGS      Make settings for a subdir make
+define OTHERSUBDIRS-loop
+@$(ECHO) "Begin Processing OTHERSUBDIRS: $(OTHERSUBDIRS)"
+@for i in DUMMY $(OTHERSUBDIRS) ; do \
+  if [ "$$i" != "DUMMY" ] ; then \
+    $(ECHO) ">>>Recursively making "$$i" "$@" @ `$(DATE)` ..."; \
+    timing_id="$(TIMING_ID)-`$(BASENAME) $${i}`"; \
+    $(call TIMING_start,startTime); \
+    curDir=$(CURRENT_DIRECTORY); \
+    $(CD) $$i; $(MAKE) $@ TIMING_ID=$${timing_id} \
+		          $(OTHERSUBDIRS_MAKEFLAGS) \
+			  FULL_VERSION=$(FULL_VERSION) \
+			  RELEASE=$(RELEASE) || exit 1; \
+	       $(CD) $${curDir}; \
+    $(call TIMING_end,startTime,timing_id); \
+    $(ECHO) "<<<Finished Recursively making "$$i" "$@" @ `$(DATE)`." ; \
+  fi ; \
+done
+@$(ECHO) "Done Processing OTHERSUBDIRS: $(OTHERSUBDIRS)"
+endef
+
+#
+# Create BYFILE OPT and DBG settings, if CFLAGS_OPT/foobar.o is set then it is
+#    used for this file, otherwise the default settings are used.
+#
+CFLAGS_$(VARIANT)/BYFILE    = $(CFLAGS_$(VARIANT)/$(@F)) \
+                              $(CFLAGS_$(VARIANT)$(CFLAGS_$(VARIANT)/$(@F)))
+CXXFLAGS_$(VARIANT)/BYFILE  = $(CXXFLAGS_$(VARIANT)/$(@F)) \
+                              $(CXXFLAGS_$(VARIANT)$(CXXFLAGS_$(VARIANT)/$(@F)))
+
+#
+# Tool flags
+#
+ASFLAGS         = $(ASFLAGS_$(VARIANT)) $(ASFLAGS_COMMON) $(OTHER_ASFLAGS)
+CFLAGS          = $(CFLAGS_$(VARIANT)/BYFILE)   $(CFLAGS_COMMON) $(OTHER_CFLAGS)
+CXXFLAGS        = $(CXXFLAGS_$(VARIANT)/BYFILE) $(CXXFLAGS_COMMON) $(OTHER_CXXFLAGS)
+CPPFLAGS        = $(CPPFLAGS_$(VARIANT)) $(CPPFLAGS_COMMON) $(OTHER_CPPFLAGS) \
+		  $(DEFINES) $(OPTIONS:%=-D%)
+LDFLAGS         = $(LDFLAGS_$(VARIANT)) $(LDFLAGS_COMMON) $(OTHER_LDFLAGS)
+LDLIBS          = $(OTHER_LDLIBS) $(LDLIBS_$(VARIANT)) $(LDLIBS_COMMON)
+LINTFLAGS       = $(LINTFLAGS_$(VARIANT)) $(LINTFLAGS_COMMON) \
+		  $(OTHER_LINTFLAGS)
+
+# this should be moved into Defs-<platform>.gmk.....
+ifeq ($(PLATFORM), windows)
+  VERSION_DEFINES = -DRELEASE="\"$(RELEASE)\""
+else
+  VERSION_DEFINES = -DRELEASE='"$(RELEASE)"'
+endif
+
+# Note: As a rule, GNU Make rules should not appear in any of the 
+# Defs*.gmk files. These were added for Kestrel-Solaris and do address
+# a TeamWare bug. They should be moved elsewhere for Merlin.
+# 
+#  Override gnumake built-in rules which do sccs get operations badly.
+#  (They put the checked out code in the current directory, not in the
+#  directory of the original file.) 
+# Since this is a symptom of a teamware failure, complain and die on the spot.
+
+# This message immediately goes to stdout and the build terminates.
+define SCCS-trouble
+$(error  \
+"ERROR: File $@ referenced while building in $(CURRENT_DIRECTORY) \
+ is out of date with respect to its SCCS file $<. \
+ This can happen from an unresolved Teamware conflict, a file movement, or \
+ a failure in which SCCS files are updated but the 'sccs get' was not done. \
+ You should double check for other out of date files in your workspace. \
+ Or run: cd $(TOPDIR) && $(MAKE) sccs_get")
+endef
+
+%:: s.%
+	@$(SCCS-trouble)
+%:: SCCS/s.%
+	@$(SCCS-trouble)
+	@$(ECHO) "         is out of date with respect to its SCCS file." >> $(WARNING_FILE)
+	@$(ECHO) "         This file may be from an unresolved Teamware conflict." >> $(WARNING_FILE)
+	@$(ECHO) "         This is also a symptom of a Teamware bringover/putback failure" >> $(WARNING_FILE)
+	@$(ECHO) "         in which SCCS files are updated but not checked out." >> $(WARNING_FILE)
+	@$(ECHO) "         Check for other out of date files in your workspace." >> $(WARNING_FILE)
+	@$(ECHO) "" >> $(WARNING_FILE)
+	@#exit 666
+
+ifdef INSANE
+  export INSANE
+endif
+
+ifdef ALT_COPYRIGHT_YEAR
+  COPYRIGHT_YEAR = $(ALT_COPYRIGHT_YEAR)
+else
+  COPYRIGHT_YEAR = $(shell $(DATE) '+%Y')
+endif
+
+# Install of imported file (JDK_IMPORT_PATH, or some other external location)
+define install-import-file
+@$(ECHO) "ASSEMBLY_IMPORT: $@"
+$(install-file)
+endef
+
+.PHONY: all build clean clobber

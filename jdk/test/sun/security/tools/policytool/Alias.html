@@ -1,0 +1,36 @@
+<html>
+<body>
+
+<applet width=100 height=100 code=Alias.class>
+</applet>
+
+This is a multi-stage test.  Click on "done" when you have completed
+reading these instructions.<br><br>
+
+<ol>
+<li> PolicyTool will be invoked
+<li> Click on "Add Policy Entry"
+<li> Click on "Add Principal"
+<li> Type "myalias" in the "Principal Name" field
+     (leave "Principal Type" empty)
+<li> Click on "OK"
+<li> Confirm there is a message:
+	'myalias' will be interpreted as a key store alias. ...
+     Click on "OK"
+<li> Click on "Done"
+<li> Open the "File" menu, and "View Warning Log"
+<li> Confirm there is a warning:
+	Warning: Principal name 'myalias' specified without a Principal class.
+<li> Click on "OK"
+<li> Open the "File" menu, and "Save As"
+<li> Enter "p1" as the file name
+<li> Click on "OK"
+<li> Click on "OK" in the message window
+<li> Open the "File" menu and "Open Policy"
+<li> Enter "p1" as the file name
+<li> Click on "OK"
+<li> If the file opens successfully, the test passed.
+     Otherwise, the test failed.
+</ol>
+</body>
+</html>

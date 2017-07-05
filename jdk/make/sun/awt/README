@@ -1,0 +1,28 @@
+README:
+
+This directory builds the new version of the Windows AWT.  It's been built
+successfully with Visual C++ 4.1, but since it uses very little of VC++'s
+runtime, it will probably work with other versions of that compiler.
+
+Included in this project is a generated file, make.depend, which lists
+all interdependencies of the source files.  This file is generated *on
+Solaris* with the following commands:
+
+	% sccs edit make.depend
+	% gnumake -f Depend.mak
+	% sccs delget make.depend
+
+This step only needs to be run when new files are added to the project,
+or include statements are changed.
+
+Also, if new CClassHeader dependencies are added for Java class files
+that are not built from a Java source file listed in java_awt.jmk or
+windows_awt.jmk then you need to update the FILES_java list in the
+"else" part of the "ifdef JFILES" branch in Depend.mak.
+At some point we should look at a way to share the explicit list of
+exported files between Depend.mak and GNUmakefile.
+
+****NOTE****
+ In order to run this command, the executable 
+/usr/openwin/bin/makedepend is required to be in your $PATH.
+****NOTE****

@@ -1,0 +1,396 @@
+#
+# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+########################################################################
+
+# Definitions for openjdk plugs (used by both import and export)
+
+# Names of native shared libraries
+
+PLUG_JSOUND_LIBRARY=$(LIB_PREFIX)jsoundhs.$(LIBRARY_SUFFIX)
+PLUG_LIBRARY_NAMES = \
+    $(PLUG_JSOUND_LIBRARY)
+
+# Sub-directory where native shared libraries are located (e.g. jre/bin or...)
+
+PLUG_LOCATION_SUBDIR=$(ARCH_VM_SUBDIR)
+
+# Explicit classfile lists
+
+# WARNING: These classlists will not work with pattern rules, only used in 
+#          shell commands.
+#          The \$$ patterns will fail in pattern rules, which want $$, 
+#          but the $$ fails in shell commands. 
+#          The shell commands are more important.
+#          Also, the $1 pattern in these names causes problems with the 
+#          GNU make define feature, so you can't use these in define's.
+
+PLUG_JMF_CLASS_NAMES = \
+com/sun/jmx/snmp/SnmpDataTypeEnums.class \
+com/sun/jmx/snmp/SnmpDefinitions.class \
+com/sun/jmx/snmp/SnmpOid.class \
+com/sun/jmx/snmp/SnmpOidDatabase.class \
+com/sun/jmx/snmp/SnmpOidDatabaseSupport.class \
+com/sun/jmx/snmp/SnmpOidRecord.class \
+com/sun/jmx/snmp/SnmpOidTable.class \
+com/sun/jmx/snmp/SnmpOidTableSupport.class \
+com/sun/jmx/snmp/SnmpParameters.class \
+com/sun/jmx/snmp/SnmpPduPacket.class \
+com/sun/jmx/snmp/SnmpPeer.class \
+com/sun/jmx/snmp/SnmpTimeticks.class \
+com/sun/jmx/snmp/SnmpVarBind.class \
+com/sun/jmx/snmp/SnmpVarBindList.class \
+com/sun/jmx/snmp/Timestamp.class \
+com/sun/jmx/snmp/daemon/SendQ.class \
+com/sun/jmx/snmp/daemon/SnmpInformRequest.class \
+com/sun/jmx/snmp/daemon/SnmpQManager.class \
+com/sun/jmx/snmp/daemon/SnmpRequestCounter.class \
+com/sun/jmx/snmp/daemon/SnmpResponseHandler.class \
+com/sun/jmx/snmp/daemon/SnmpSendServer.class \
+com/sun/jmx/snmp/daemon/SnmpSession.class \
+com/sun/jmx/snmp/daemon/SnmpSocket.class \
+com/sun/jmx/snmp/daemon/SnmpTimerServer.class \
+com/sun/jmx/snmp/daemon/WaitQ.class
+
+PLUG_SOUND_CLASS_NAMES = \
+com/sun/media/sound/AbstractPlayer.class \
+com/sun/media/sound/CircularBuffer.class \
+com/sun/media/sound/HeadspaceInstrument.class \
+com/sun/media/sound/HeadspaceMixer\$$1.class \
+com/sun/media/sound/HeadspaceMixer\$$MidiLine.class \
+com/sun/media/sound/HeadspaceMixer\$$MidiLineInfo.class \
+com/sun/media/sound/HeadspaceMixer\$$MixerInfo.class \
+com/sun/media/sound/HeadspaceMixer\$$MixerReverbControl\$$MixerReverbType.class \
+com/sun/media/sound/HeadspaceMixer\$$MixerReverbControl.class \
+com/sun/media/sound/HeadspaceMixer.class \
+com/sun/media/sound/HeadspaceMixerProvider.class \
+com/sun/media/sound/HeadspaceSample.class \
+com/sun/media/sound/HeadspaceSoundbank.class \
+com/sun/media/sound/HsbParser.class \
+com/sun/media/sound/MixerClip\$$1.class \
+com/sun/media/sound/MixerClip\$$MixerClipApplyReverbControl.class \
+com/sun/media/sound/MixerClip\$$MixerClipGainControl.class \
+com/sun/media/sound/MixerClip\$$MixerClipMuteControl.class \
+com/sun/media/sound/MixerClip\$$MixerClipPanControl.class \
+com/sun/media/sound/MixerClip\$$MixerClipSampleRateControl.class \
+com/sun/media/sound/MixerClip.class \
+com/sun/media/sound/MixerMidiChannel.class \
+com/sun/media/sound/MixerSequencer\$$1.class \
+com/sun/media/sound/MixerSequencer\$$ControllerVectorElement.class \
+com/sun/media/sound/MixerSequencer\$$MixerSequencerInfo.class \
+com/sun/media/sound/MixerSequencer\$$RecordingTrack.class \
+com/sun/media/sound/MixerSequencer.class \
+com/sun/media/sound/MixerSequencerProvider.class \
+com/sun/media/sound/MixerSourceLine\$$1.class \
+com/sun/media/sound/MixerSourceLine\$$MixerSourceLineApplyReverbControl.class \
+com/sun/media/sound/MixerSourceLine\$$MixerSourceLineGainControl.class \
+com/sun/media/sound/MixerSourceLine\$$MixerSourceLineMuteControl.class \
+com/sun/media/sound/MixerSourceLine\$$MixerSourceLinePanControl.class \
+com/sun/media/sound/MixerSourceLine\$$MixerSourceLineSampleRateControl.class \
+com/sun/media/sound/MixerSourceLine.class \
+com/sun/media/sound/MixerSynth\$$1.class \
+com/sun/media/sound/MixerSynth\$$MixerSynthInfo.class \
+com/sun/media/sound/MixerSynth\$$SynthReceiver.class \
+com/sun/media/sound/MixerSynth.class \
+com/sun/media/sound/MixerSynthProvider.class \
+com/sun/media/sound/MixerThread.class \
+com/sun/media/sound/RmfFileReader.class \
+com/sun/media/sound/SimpleInputDevice\$$1.class \
+com/sun/media/sound/SimpleInputDevice\$$InputDeviceDataLine.class \
+com/sun/media/sound/SimpleInputDevice\$$InputDevicePort.class \
+com/sun/media/sound/SimpleInputDevice\$$InputDevicePortInfo.class \
+com/sun/media/sound/SimpleInputDevice.class \
+com/sun/media/sound/SimpleInputDeviceProvider\$$1.class \
+com/sun/media/sound/SimpleInputDeviceProvider\$$InputDeviceInfo.class \
+com/sun/media/sound/SimpleInputDeviceProvider.class
+
+PLUG_AWT_CLASS_NAMES = \
+java/awt/color/CMMException.class \
+java/awt/color/ColorSpace.class \
+java/awt/color/ICC_ColorSpace.class \
+java/awt/color/ICC_Profile\$$1.class \
+java/awt/color/ICC_Profile\$$2.class \
+java/awt/color/ICC_Profile\$$3.class \
+java/awt/color/ICC_Profile.class \
+java/awt/color/ICC_ProfileGray.class \
+java/awt/color/ICC_ProfileRGB.class \
+java/awt/image/BandedSampleModel.class \
+java/awt/image/ColorConvertOp.class \
+java/awt/image/ComponentSampleModel.class \
+java/awt/image/DataBuffer\$$1.class \
+java/awt/image/DataBuffer.class \
+java/awt/image/DataBufferByte.class \
+java/awt/image/DataBufferInt.class \
+java/awt/image/DataBufferShort.class \
+java/awt/image/DataBufferUShort.class \
+java/awt/image/MultiPixelPackedSampleModel.class \
+java/awt/image/Raster.class \
+java/awt/image/RenderedImage.class \
+java/awt/image/SampleModel.class \
+java/awt/image/SinglePixelPackedSampleModel.class \
+java/awt/image/WritableRaster.class \
+java/awt/image/WritableRenderedImage.class \
+java/awt/image/renderable/ContextualRenderedImageFactory.class \
+java/awt/image/renderable/ParameterBlock.class \
+java/awt/image/renderable/RenderContext.class \
+java/awt/image/renderable/RenderableImage.class \
+java/awt/image/renderable/RenderableImageOp.class \
+java/awt/image/renderable/RenderableImageProducer.class \
+java/awt/image/renderable/RenderedImageFactory.class
+
+# Class list temp files (used by both import and export of plugs)
+
+PLUG_TEMPDIR=$(ABS_TEMPDIR)/plugs
+PLUG_CLASS_AREAS = jmf sound awt
+PLUG_CLISTS = $(PLUG_CLASS_AREAS:%=$(PLUG_TEMPDIR)/%.clist)
+
+# Create jargs file command
+
+define plug-create-jargs
+@$(prep-target)
+$(SED) -e "s@^@-C $(CLASSDESTDIR) @" $< > $@
+endef # plug-create-clist-jargs
+
+# Create clist (class name list) and jargs file (input to jar)
+#   Need these files to avoid long command lines which fail on some systems.
+
+$(PLUG_TEMPDIR)/jmf.clist:
+	@$(prep-target)
+	@for i in $(PLUG_JMF_CLASS_NAMES) ; do \
+	  $(ECHO) "$$i" >> $@; \
+	done
+$(PLUG_TEMPDIR)/sound.clist:
+	@$(prep-target)
+	@for i in $(PLUG_SOUND_CLASS_NAMES) ; do \
+	  $(ECHO) "$$i" >> $@ ; \
+	done
+$(PLUG_TEMPDIR)/awt.clist:
+	@$(prep-target)
+	@for i in $(PLUG_AWT_CLASS_NAMES) ; do \
+	  $(ECHO) "$$i" >> $@ ; \
+	done
+$(PLUG_TEMPDIR)/all.clist: $(PLUG_CLISTS)
+	@$(prep-target)
+	$(CAT) $(PLUG_CLISTS) > $@
+$(PLUG_TEMPDIR)/jmf.jargs: $(PLUG_TEMPDIR)/jmf.clist
+	$(plug-create-jargs)
+$(PLUG_TEMPDIR)/sound.jargs: $(PLUG_TEMPDIR)/sound.clist
+	$(plug-create-jargs)
+$(PLUG_TEMPDIR)/awt.jargs: $(PLUG_TEMPDIR)/awt.clist
+	$(plug-create-jargs)
+$(PLUG_TEMPDIR)/all.jargs: $(PLUG_TEMPDIR)/all.clist
+	$(plug-create-jargs)
+
+#
+# Specific to OPENJDK import of binary plugs
+#
+
+ifdef OPENJDK
+
+# Import 
+
+PLUG_IMPORT_DIR=$(BINARY_PLUGS_PATH)
+PLUG_IMPORT_JARFILE=$(BINARY_PLUGS_JARFILE)
+
+# Import file command
+
+define import-binary-plug-file
+@$(ECHO) "PLUG IMPORT: $(@F)"
+$(install-file)
+endef # import-binary-plug-file
+
+# Import classes command
+
+define import-binary-plug-classes
+@$(MKDIR) -p $(CLASSDESTDIR)
+@$(CAT) $1 | $(SED) -e 's/^/PLUG IMPORT: /'
+($(CD) $(CLASSDESTDIR) && $(BOOT_JAR_CMD) xf $(PLUG_IMPORT_JARFILE) @$1)
+endef # import-binary-plug-classes
+
+# Import specific area classes (the classes are always created)
+
+import-binary-plug-jmf-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/jmf.clist
+	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/jmf.clist)
+import-binary-plug-sound-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/sound.clist
+	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/sound.clist)
+import-binary-plug-awt-classes: $(PLUG_IMPORT_JARFILE) $(PLUG_TEMPDIR)/awt.clist
+	$(call import-binary-plug-classes,$(PLUG_TEMPDIR)/awt.clist)
+
+# Import all classes from the jar file
+
+import-binary-plug-jar: \
+	     import-binary-plug-jmf-classes \
+	     import-binary-plug-sound-classes \
+	     import-binary-plug-awt-classes
+
+# Import native libraries
+
+$(LIB_LOCATION)/$(PLUG_JSOUND_LIBRARY): \
+    $(PLUG_IMPORT_DIR)/$(PLUG_LOCATION_SUBDIR)/$(PLUG_JSOUND_LIBRARY)
+	$(import-binary-plug-file)
+
+# Rules only used by lower level makefiles
+
+import-binary-plug-jsound-library: \
+    $(LIB_LOCATION)/$(PLUG_JSOUND_LIBRARY)
+
+# Binary plug start/complete messages
+
+import-binary-plugs-started:
+	@$(ECHO) "BinaryPlugs import started: `date`"
+	@$(ECHO) "BINARY_PLUGS_PATH=$(BINARY_PLUGS_PATH)"
+import-binary-plugs-completed:
+	@$(ECHO) "BinaryPlugs import completed: `date`"
+
+# Import lib files (only if they don't exist already)
+
+import-binary-plugs-libs: \
+    $(PLUG_LIBRARY_NAMES:%=$(LIB_LOCATION)/%)
+
+# Import everything
+
+import-binary-plugs: \
+    import-binary-plugs-started \
+    import-binary-plugs-libs \
+    import-binary-plug-jar \
+    import-binary-plugs-completed
+
+# All these targets are phony (no filenames)
+
+.PHONY: import-binary-plugs-started  \
+	import-binary-plugs-completed \
+	import-binary-plugs-libs \
+	import-binary-plugs \
+	import-binary-plug-jar \
+        import-binary-plug-jmf-classes \
+        import-binary-plug-sound-classes \
+	import-binary-plug-awt-classes \
+        import-binary-plug-jsound-library
+
+else # !OPENJDK
+
+#
+# Specific to exporting binary plugs for OPENJDK (e.g. OPENJDK is NOT defined)
+#
+
+# Export names (See make/common/Defs.gmk for BINARY_PLUGS_JARNAME definition)
+
+PLUG_EXPORT_DIRNAME=openjdk-binary-plugs-image
+PLUG_EXPORT_DIR=$(OUTPUTDIR)/$(PLUG_EXPORT_DIRNAME)
+PLUG_EXPORT_JARFILE=$(PLUG_EXPORT_DIR)/jre/lib/$(BINARY_PLUGS_JARNAME)
+
+# Export file command
+
+define export-binary-plug-file
+@$(ECHO) "PLUG EXPORT: $(@F)"
+$(install-file)
+endef # export-binary-plug-file
+
+# OpenJDK Binary Plug License
+
+$(PLUG_EXPORT_DIR)/LICENSE: $(CLOSED_SHARE_SRC)/doc/openjdk/binary-plugs/LICENSE
+	$(export-binary-plug-file)
+export-binary-plugs-license: $(PLUG_EXPORT_DIR)/LICENSE
+
+# Create jar file of plug classes (always created)
+
+$(PLUG_EXPORT_JARFILE): $(PLUG_TEMPDIR)/all.clist $(PLUG_TEMPDIR)/all.jargs
+	@$(prep-target)
+	@$(ECHO) "PLUG EXPORT: $(@F)"
+	@$(CAT) $(PLUG_TEMPDIR)/all.clist | $(SED) -e 's/^/PLUG EXPORT: /'
+	$(BOOT_JAR_CMD) cf $@ @$(PLUG_TEMPDIR)/all.jargs
+export-binary-plugs-jar: $(PLUG_EXPORT_JARFILE)
+
+# Export native libraries
+
+$(PLUG_EXPORT_DIR)/$(PLUG_LOCATION_SUBDIR)/$(PLUG_JSOUND_LIBRARY): \
+    $(LIB_LOCATION)/$(PLUG_JSOUND_LIBRARY)
+	$(export-binary-plug-file)
+
+# Export binary plug start/complete messages
+
+export-binary-plugs-started:
+	@$(ECHO) "BinaryPlugs export started: `date`"
+	@$(ECHO) "PLUG_EXPORT_DIR=$(PLUG_EXPORT_DIR)"
+	$(RM) -r $(PLUG_EXPORT_DIR)
+	@$(MKDIR) -p $(PLUG_EXPORT_DIR)
+	@$(MKDIR) -p $(PLUG_TEMPDIR)
+export-binary-plugs-completed:
+	@$(RM) -r $(PLUG_TEMPDIR)
+	@$(ECHO) "BinaryPlugs export completed: `date`"
+
+# Export lib files (only if they don't exist already)
+
+export-binary-plugs-libs: \
+    $(PLUG_LIBRARY_NAMES:%=$(PLUG_EXPORT_DIR)/$(PLUG_LOCATION_SUBDIR)/%)
+
+# Export everything
+
+export-binary-plugs: \
+    export-binary-plugs-started \
+    export-binary-plugs-libs \
+    export-binary-plugs-license \
+    export-binary-plugs-jar \
+    export-binary-plugs-completed
+
+# All these targets are phony (no filenames)
+
+.PHONY: export-binary-plugs-started \
+        export-binary-plugs-license \
+        export-binary-plugs-jar \
+        export-binary-plugs-libs \
+        export-binary-plugs-completed \
+        export-binary-plugs
+
+# Rules that test the export and import of plugs (only when you can export)
+
+TEST_OUTPUTDIR=$(ABS_OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-testing-plugs
+TEST_PLUG_COPY=$(TEST_OUTPUTDIR)/$(PLUG_EXPORT_DIRNAME)-testcopy
+
+# Run export-binary-plugs first, then use this rule to test an import
+
+test-binary-plugs: $(TEST_PLUG_COPY)
+	$(RM) -r $(TEST_OUTPUTDIR)/$(PLUG_EXPORT_DIRNAME)
+	$(MKDIR) -p $(TEST_OUTPUTDIR)
+	@$(ECHO) "Testing import of plugs"
+	($(CD) $(JDK_TOPDIR)/make && \
+	    $(MAKE) OPENJDK=true \
+		ALT_OUTPUTDIR=$(TEST_OUTPUTDIR) \
+		ALT_JDK_IMPORT_PATH=$(JDK_IMPORT_PATH) \
+		ALT_BINARY_PLUGS_PATH=$(TEST_PLUG_COPY) \
+		import-binary-plugs )
+	$(RM) -r $(TEST_OUTPUTDIR)
+	@$(ECHO) "Testing of plugs was successful"
+
+$(TEST_PLUG_COPY):
+	@$(ECHO) "Creating test plug copy"
+	$(RM) -r $@
+	$(MKDIR) -p $(@D)
+	$(CP) -r -p $(PLUG_EXPORT_DIR) $@
+
+.PHONY: test-binary-plugs
+
+endif # !OPENJDK
+

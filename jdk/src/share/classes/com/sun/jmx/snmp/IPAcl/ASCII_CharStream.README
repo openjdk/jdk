@@ -1,0 +1,23 @@
+WARNING : ASCII_CharStream.java must be PATCHED.
+
+The following methods should be removed after javacc generation.
+The goal is to simplify 100%-pure testing (see bug 4127719).
+
+
+  /**
+   * @deprecated 
+   * @see #getEndColumn
+   */
+
+  public final int getColumn() {
+     return bufcolumn[bufpos];
+  }
+
+  /**
+   * @deprecated 
+   * @see #getEndLine
+   */
+
+  public final int getLine() {
+     return bufline[bufpos];
+  }

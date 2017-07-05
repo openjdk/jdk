@@ -1,0 +1,166 @@
+'\" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH jmap 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH 名前
+jmap \- メモリマップ
+.\"
+.SH 形式
+.B jmap 
+.BI [ option ] " pid" 
+.br
+.B jmap
+.BI [ option ] " executable core" 
+.br
+.B jmap
+.BI [ option ] " [server-id@]remote-hostname-or-IP"
+.SH パラメータ
+.if t .TP 20
+.if n .TP 15
+.BI option
+オプションは相互に排他的です。オプションを使用する場合は、コマンド名の直後に指定する必要があります。
+.if t .TP 20
+.if n .TP 15
+.I pid
+メモリマップを表示するプロセス ID。プロセスは Java プロセスでなければなりません。マシン上で実行している Java プロセスのリストを取得するには、
+.B jps 
+を使用します。
+.if t .TP 20
+.if n .TP 15
+.I executable
+コアダンプが生成された Java 実行可能ファイル。
+.if t .TP 20
+.if n .TP 15
+.I core
+メモリマップを表示するコアファイル。
+.if t .TP 20
+.if n .TP 15
+.I remote-hostname-or-IP
+リモートデバッグサーバ (
+.B jsadebugd
+を参照) のホスト名または IP アドレス。
+.if t .TP 20
+.if n .TP 15
+.I server-id
+同じリモートホスト上で複数のデバッグサーバが実行している場合、オプションの一意 ID。
+.SH 機能説明
+.B jmap
+は、指定されたプロセスまたはコアファイルまたはリモートデバッグサーバの、共有オブジェクトメモリマップまたはヒープメモリの詳細を表示します。
+指定されたプロセスが 64 ビット VM 上で実行されている場合、\f2\-J\-d64\fP オプションを指定しなければならない場合があります。次に例を示します。
+.LP
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+jmap \-J\-d64 \-heap pid
+.fl
+\fP
+.fi
+.RE
+
+.LP
+注 - このユーティリティはサポートされていないため、JDK の将来のバージョンでは使用できない可能性があります。
+.br
+
+.LP
+Windows プラットフォーム上で使用可能な唯一の jmap 形式は、次のとおりです。
+.RS 3
+
+.LP
+jmap \-dump:<\f2dump\-options\fP> pid
+.RE
+および 
+.RS 3
+
+.LP
+jmap \-histo[:live] pid
+.RE
+.SH オプション
+.if t .TP 20
+.if n .TP 15
+.BI " <no option>"
+オプションが使用されなかった場合、
+.B jmap 
+は共有オブジェクトマッピングを表示します。ターゲット VM に読み込まれた各共有オブジェクトについて、開始アドレス、マッピングのサイズ、および共有オブジェクトファイルのフルパスが表示されます。これは、Solaris の
+.B pmap 
+ユーティリティと同様です。
+.TP 3
+\-dump:[live,]format=b,file=<filename> 
+Java ヒープを hprof バイナリ形式で filename にダンプします。\f2live\fP サブオプションは省略可能です。これが指定された場合、ヒープ内で生存中のオブジェクトのみがダンプされます。ヒープダンプを参照するには、生成されたファイルを jhat (Java Heap Analysis Tool) を使って読み取ります。
+.TP 3
+\-finalizerinfo 
+ファイナライズを待っているオブジェクトに関する情報を出力します。
+.if t .TP 20
+.if n .TP 15
+.B \-heap
+ヒープのサマリを表示します。使用された GC アルゴリズム、ヒープ構成、および生成規模のヒープ使用率が表示されます。
+.if t .TP 20
+.if n .TP 15
+.B \-histo[:live] 
+ヒープのヒストグラムを表示します。各 Java クラスについて、オブジェクト数、メモリサイズ（バイト数）、および完全修飾クラス名が表示されます。VM 内部クラス名の前には '*' が表示されます。\f2live\fP サブオプションが指定された場合、生存中のオブジェクトのみがカウントされます。
+.if t .TP 20
+.if n .TP 15
+.B \-permstat
+Java ヒープの永続的生成のクラスローダ規模の統計を表示します。各クラスローダについて、名前、活動性、アドレス、親クラスローダ、および読み込まれたクラスのサイズが表示されます。
+さらに、intern された文字列の数とサイズも出力されます。
+.TP 3
+\-F 
+強制 (Force)。pid が応答しない場合に、jmap \-dump または jmap \-histo オプションとともに使用します。このモードでは、\f2live\fP サブオプションはサポートされません。
+.if t .TP 20
+.if n .TP 15
+.B \-h
+ヘルプメッセージを表示します。
+.if t .TP 20
+.if n .TP 15
+.B \-help
+ヘルプメッセージを表示します。
+.br
+.TP 3
+\-J<flag> 
+jmap が実行されている Java 仮想マシンに <flag> を渡します。
+
+.LP
+.SH 関連項目
+.LP
+.RS 3
+.TP 2
+*
+pmap (1) 
+.TP 2
+*
+jhat 
+.TP 2
+*
+jps 
+.TP 2
+*
+jsadebugd 
+.RE
+
+.LP
+
+.LP
+ 

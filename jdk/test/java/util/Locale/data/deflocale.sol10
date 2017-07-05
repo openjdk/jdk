@@ -1,0 +1,1450 @@
+                         Solaris 10 3/05 s10_74L2a SPARC
+           Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+                        Use is subject to license terms.
+                            Assembled 22 January 2005
+SunOS deltas4 5.10 Generic_118833-03 sun4u sparc SUNW,Sun-Blade-2500
+
+OS Locale:  C
+en
+English
+US-ASCII
+
+OS Locale:  POSIX
+en
+English
+US-ASCII
+
+OS Locale:  ar
+ar_EG
+Arabic (Egypt)
+ISO-8859-6
+
+OS Locale:  ar_EG.UTF-8
+ar_EG
+Arabic (Egypt)
+UTF-8
+
+OS Locale:  ar_SA.UTF-8
+ar_SA
+Arabic (Saudi Arabia)
+UTF-8
+
+OS Locale:  bg_BG
+bg_BG
+Bulgarian (Bulgaria)
+ISO-8859-5
+
+OS Locale:  bg_BG.ISO8859-5
+bg_BG
+Bulgarian (Bulgaria)
+ISO-8859-5
+
+OS Locale:  ca
+ca_ES
+Catalan (Spain)
+ISO-8859-1
+
+OS Locale:  ca_ES
+ca_ES
+Catalan (Spain)
+ISO-8859-1
+
+OS Locale:  ca_ES.ISO8859-1
+ca_ES
+Catalan (Spain)
+ISO-8859-1
+
+OS Locale:  ca_ES.ISO8859-15
+ca_ES
+Catalan (Spain)
+ISO-8859-15
+
+OS Locale:  ca_ES.ISO8859-15@euro
+ca_ES
+Catalan (Spain)
+ISO-8859-15
+
+OS Locale:  common
+en
+English
+ISO-8859-1
+
+OS Locale:  cs_CZ
+cs_CZ
+Czech (Czech Republic)
+ISO-8859-2
+
+OS Locale:  cs_CZ.ISO8859-2
+cs_CZ
+Czech (Czech Republic)
+ISO-8859-2
+
+OS Locale:  cs_CZ.UTF-8
+cs_CZ
+Czech (Czech Republic)
+UTF-8
+
+OS Locale:  cs_CZ.UTF-8@euro
+cs_CZ
+Czech (Czech Republic)
+UTF-8
+
+OS Locale:  cz
+cs_CZ
+Czech (Czech Republic)
+ISO-8859-2
+
+OS Locale:  da
+da_DK
+Danish (Denmark)
+ISO-8859-1
+
+OS Locale:  da.ISO8859-15
+da_DK
+Danish (Denmark)
+ISO-8859-15
+
+OS Locale:  da_DK
+da_DK
+Danish (Denmark)
+ISO-8859-1
+
+OS Locale:  da_DK.ISO8859-1
+da_DK
+Danish (Denmark)
+ISO-8859-1
+
+OS Locale:  da_DK.ISO8859-15
+da_DK
+Danish (Denmark)
+ISO-8859-15
+
+OS Locale:  da_DK.ISO8859-15@euro
+da_DK
+Danish (Denmark)
+ISO-8859-15
+
+OS Locale:  de
+de_DE
+German (Germany)
+ISO-8859-1
+
+OS Locale:  de.ISO8859-15
+de_DE
+German (Germany)
+ISO-8859-15
+
+OS Locale:  de.UTF-8
+de_DE
+German (Germany)
+UTF-8
+
+OS Locale:  de_AT
+de_AT
+German (Austria)
+ISO-8859-1
+
+OS Locale:  de_AT.ISO8859-1
+de_AT
+German (Austria)
+ISO-8859-1
+
+OS Locale:  de_AT.ISO8859-15
+de_AT
+German (Austria)
+ISO-8859-15
+
+OS Locale:  de_AT.ISO8859-15@euro
+de_AT
+German (Austria)
+ISO-8859-15
+
+OS Locale:  de_CH
+de_CH
+German (Switzerland)
+ISO-8859-1
+
+OS Locale:  de_CH.ISO8859-1
+de_CH
+German (Switzerland)
+ISO-8859-1
+
+OS Locale:  de_DE
+de_DE
+German (Germany)
+ISO-8859-1
+
+OS Locale:  de_DE.ISO8859-1
+de_DE
+German (Germany)
+ISO-8859-1
+
+OS Locale:  de_DE.ISO8859-15
+de_DE
+German (Germany)
+ISO-8859-15
+
+OS Locale:  de_DE.ISO8859-15@euro
+de_DE
+German (Germany)
+ISO-8859-15
+
+OS Locale:  de_DE.UTF-8
+de_DE
+German (Germany)
+UTF-8
+
+OS Locale:  de_DE.UTF-8@euro
+de_DE
+German (Germany)
+UTF-8
+
+OS Locale:  el
+el_GR
+Greek (Greece)
+ISO-8859-7
+
+OS Locale:  el.sun_eu_greek
+el_GR
+Greek (Greece)
+ISO-8859-7
+
+OS Locale:  el_GR
+el_GR
+Greek (Greece)
+ISO-8859-7
+
+OS Locale:  el_GR.ISO8859-7
+el_GR
+Greek (Greece)
+ISO-8859-7
+
+OS Locale:  el_GR.ISO8859-7@euro
+el_GR
+Greek (Greece)
+ISO-8859-7
+
+OS Locale:  en_AU
+en_AU
+English (Australia)
+ISO-8859-1
+
+OS Locale:  en_AU.ISO8859-1
+en_AU
+English (Australia)
+ISO-8859-1
+
+OS Locale:  en_CA
+en_CA
+English (Canada)
+ISO-8859-1
+
+OS Locale:  en_CA.ISO8859-1
+en_CA
+English (Canada)
+ISO-8859-1
+
+OS Locale:  en_GB
+en_GB
+English (United Kingdom)
+ISO-8859-1
+
+OS Locale:  en_GB.ISO8859-1
+en_GB
+English (United Kingdom)
+ISO-8859-1
+
+OS Locale:  en_GB.ISO8859-15
+en_GB
+English (United Kingdom)
+ISO-8859-15
+
+OS Locale:  en_GB.ISO8859-15@euro
+en_GB
+English (United Kingdom)
+ISO-8859-15
+
+OS Locale:  en_IE
+en_IE
+English (Ireland)
+ISO-8859-1
+
+OS Locale:  en_IE.ISO8859-1
+en_IE
+English (Ireland)
+ISO-8859-1
+
+OS Locale:  en_IE.ISO8859-15
+en_IE
+English (Ireland)
+ISO-8859-15
+
+OS Locale:  en_IE.ISO8859-15@euro
+en_IE
+English (Ireland)
+ISO-8859-15
+
+OS Locale:  en_NZ
+en_NZ
+English (New Zealand)
+ISO-8859-1
+
+OS Locale:  en_NZ.ISO8859-1
+en_NZ
+English (New Zealand)
+ISO-8859-1
+
+OS Locale:  en_US
+en_US
+English (United States)
+ISO-8859-1
+
+OS Locale:  en_US.ISO8859-1
+en_US
+English (United States)
+ISO-8859-1
+
+OS Locale:  en_US.ISO8859-15
+en_US
+English (United States)
+ISO-8859-15
+
+OS Locale:  en_US.ISO8859-15@euro
+en_US
+English (United States)
+ISO-8859-15
+
+OS Locale:  en_US.UTF-8
+en_US
+English (United States)
+UTF-8
+
+OS Locale:  es
+es_ES
+Spanish (Spain)
+ISO-8859-1
+
+OS Locale:  es.ISO8859-15
+es_ES
+Spanish (Spain)
+ISO-8859-15
+
+OS Locale:  es.UTF-8
+es_ES
+Spanish (Spain)
+UTF-8
+
+OS Locale:  es_AR
+es_AR
+Spanish (Argentina)
+ISO-8859-1
+
+OS Locale:  es_AR.ISO8859-1
+es_AR
+Spanish (Argentina)
+ISO-8859-1
+
+OS Locale:  es_BO
+es_BO
+Spanish (Bolivia)
+ISO-8859-1
+
+OS Locale:  es_BO.ISO8859-1
+es_BO
+Spanish (Bolivia)
+ISO-8859-1
+
+OS Locale:  es_CL
+es_CL
+Spanish (Chile)
+ISO-8859-1
+
+OS Locale:  es_CL.ISO8859-1
+es_CL
+Spanish (Chile)
+ISO-8859-1
+
+OS Locale:  es_CO
+es_CO
+Spanish (Colombia)
+ISO-8859-1
+
+OS Locale:  es_CO.ISO8859-1
+es_CO
+Spanish (Colombia)
+ISO-8859-1
+
+OS Locale:  es_CR
+es_CR
+Spanish (Costa Rica)
+ISO-8859-1
+
+OS Locale:  es_CR.ISO8859-1
+es_CR
+Spanish (Costa Rica)
+ISO-8859-1
+
+OS Locale:  es_EC
+es_EC
+Spanish (Ecuador)
+ISO-8859-1
+
+OS Locale:  es_EC.ISO8859-1
+es_EC
+Spanish (Ecuador)
+ISO-8859-1
+
+OS Locale:  es_ES
+es_ES
+Spanish (Spain)
+ISO-8859-1
+
+OS Locale:  es_ES.ISO8859-1
+es_ES
+Spanish (Spain)
+ISO-8859-1
+
+OS Locale:  es_ES.ISO8859-15
+es_ES
+Spanish (Spain)
+ISO-8859-15
+
+OS Locale:  es_ES.ISO8859-15@euro
+es_ES
+Spanish (Spain)
+ISO-8859-15
+
+OS Locale:  es_ES.UTF-8
+es_ES
+Spanish (Spain)
+UTF-8
+
+OS Locale:  es_ES.UTF-8@euro
+es_ES
+Spanish (Spain)
+UTF-8
+
+OS Locale:  es_GT
+es_GT
+Spanish (Guatemala)
+ISO-8859-1
+
+OS Locale:  es_GT.ISO8859-1
+es_GT
+Spanish (Guatemala)
+ISO-8859-1
+
+OS Locale:  es_MX
+es_MX
+Spanish (Mexico)
+ISO-8859-1
+
+OS Locale:  es_MX.ISO8859-1
+es_MX
+Spanish (Mexico)
+ISO-8859-1
+
+OS Locale:  es_NI
+es_NI
+Spanish (Nicaragua)
+ISO-8859-1
+
+OS Locale:  es_NI.ISO8859-1
+es_NI
+Spanish (Nicaragua)
+ISO-8859-1
+
+OS Locale:  es_PA
+es_PA
+Spanish (Panama)
+ISO-8859-1
+
+OS Locale:  es_PA.ISO8859-1
+es_PA
+Spanish (Panama)
+ISO-8859-1
+
+OS Locale:  es_PE
+es_PE
+Spanish (Peru)
+ISO-8859-1
+
+OS Locale:  es_PE.ISO8859-1
+es_PE
+Spanish (Peru)
+ISO-8859-1
+
+OS Locale:  es_PY
+es_PY
+Spanish (Paraguay)
+ISO-8859-1
+
+OS Locale:  es_PY.ISO8859-1
+es_PY
+Spanish (Paraguay)
+ISO-8859-1
+
+OS Locale:  es_SV
+es_SV
+Spanish (El Salvador)
+ISO-8859-1
+
+OS Locale:  es_SV.ISO8859-1
+es_SV
+Spanish (El Salvador)
+ISO-8859-1
+
+OS Locale:  es_UY
+es_UY
+Spanish (Uruguay)
+ISO-8859-1
+
+OS Locale:  es_UY.ISO8859-1
+es_UY
+Spanish (Uruguay)
+ISO-8859-1
+
+OS Locale:  es_VE
+es_VE
+Spanish (Venezuela)
+ISO-8859-1
+
+OS Locale:  es_VE.ISO8859-1
+es_VE
+Spanish (Venezuela)
+ISO-8859-1
+
+OS Locale:  et
+et_EE
+Estonian (Estonia)
+ISO-8859-15
+
+OS Locale:  et_EE
+et_EE
+Estonian (Estonia)
+ISO-8859-15
+
+OS Locale:  et_EE.ISO8859-15
+et_EE
+Estonian (Estonia)
+ISO-8859-15
+
+OS Locale:  fi
+fi_FI
+Finnish (Finland)
+ISO-8859-1
+
+OS Locale:  fi.ISO8859-15
+fi_FI
+Finnish (Finland)
+ISO-8859-15
+
+OS Locale:  fi_FI
+fi_FI
+Finnish (Finland)
+ISO-8859-1
+
+OS Locale:  fi_FI.ISO8859-1
+fi_FI
+Finnish (Finland)
+ISO-8859-1
+
+OS Locale:  fi_FI.ISO8859-15
+fi_FI
+Finnish (Finland)
+ISO-8859-15
+
+OS Locale:  fi_FI.ISO8859-15@euro
+fi_FI
+Finnish (Finland)
+ISO-8859-15
+
+OS Locale:  fi_FI.UTF-8
+fi_FI
+Finnish (Finland)
+UTF-8
+
+OS Locale:  fr
+fr_FR
+French (France)
+ISO-8859-1
+
+OS Locale:  fr.ISO8859-15
+fr_FR
+French (France)
+ISO-8859-15
+
+OS Locale:  fr.UTF-8
+fr_FR
+French (France)
+UTF-8
+
+OS Locale:  fr_BE
+fr_BE
+French (Belgium)
+ISO-8859-1
+
+OS Locale:  fr_BE.ISO8859-1
+fr_BE
+French (Belgium)
+ISO-8859-1
+
+OS Locale:  fr_BE.ISO8859-15
+fr_BE
+French (Belgium)
+ISO-8859-15
+
+OS Locale:  fr_BE.ISO8859-15@euro
+fr_BE
+French (Belgium)
+ISO-8859-15
+
+OS Locale:  fr_BE.UTF-8
+fr_BE
+French (Belgium)
+UTF-8
+
+OS Locale:  fr_BE.UTF-8@euro
+fr_BE
+French (Belgium)
+UTF-8
+
+OS Locale:  fr_CA
+fr_CA
+French (Canada)
+ISO-8859-1
+
+OS Locale:  fr_CA.ISO8859-1
+fr_CA
+French (Canada)
+ISO-8859-1
+
+OS Locale:  fr_CH
+fr_CH
+French (Switzerland)
+ISO-8859-1
+
+OS Locale:  fr_CH.ISO8859-1
+fr_CH
+French (Switzerland)
+ISO-8859-1
+
+OS Locale:  fr_FR
+fr_FR
+French (France)
+ISO-8859-1
+
+OS Locale:  fr_FR.ISO8859-1
+fr_FR
+French (France)
+ISO-8859-1
+
+OS Locale:  fr_FR.ISO8859-15
+fr_FR
+French (France)
+ISO-8859-15
+
+OS Locale:  fr_FR.ISO8859-15@euro
+fr_FR
+French (France)
+ISO-8859-15
+
+OS Locale:  fr_FR.UTF-8
+fr_FR
+French (France)
+UTF-8
+
+OS Locale:  fr_FR.UTF-8@euro
+fr_FR
+French (France)
+UTF-8
+
+OS Locale:  geo
+en
+English
+ISO-8859-1
+
+OS Locale:  he
+iw_IL
+Hebrew (Israel)
+ISO-8859-8
+
+OS Locale:  he_IL
+iw_IL
+Hebrew (Israel)
+ISO-8859-8
+
+OS Locale:  he_IL.UTF-8
+iw_IL
+Hebrew (Israel)
+UTF-8
+
+OS Locale:  hi_IN.UTF-8
+hi_IN
+Hindi (India)
+UTF-8
+
+OS Locale:  hr_HR
+hr_HR
+Croatian (Croatia)
+ISO-8859-2
+
+OS Locale:  hr_HR.ISO8859-2
+hr_HR
+Croatian (Croatia)
+ISO-8859-2
+
+OS Locale:  hu
+hu_HU
+Hungarian (Hungary)
+ISO-8859-2
+
+OS Locale:  hu_HU
+hu_HU
+Hungarian (Hungary)
+ISO-8859-2
+
+OS Locale:  hu_HU.ISO8859-2
+hu_HU
+Hungarian (Hungary)
+ISO-8859-2
+
+OS Locale:  hu_HU.UTF-8
+hu_HU
+Hungarian (Hungary)
+UTF-8
+
+OS Locale:  is_IS
+is_IS
+Icelandic (Iceland)
+ISO-8859-1
+
+OS Locale:  is_IS.ISO8859-1
+is_IS
+Icelandic (Iceland)
+ISO-8859-1
+
+OS Locale:  iso_8859_1
+en_8859_1
+English (8859_1)
+ISO-8859-1
+
+OS Locale:  iso_8859_13
+en
+English
+ISO-8859-1
+
+OS Locale:  iso_8859_15
+en
+English
+ISO-8859-1
+
+OS Locale:  iso_8859_2
+en
+English
+ISO-8859-1
+
+OS Locale:  iso_8859_5
+en
+English
+ISO-8859-1
+
+OS Locale:  iso_8859_7
+en
+English
+ISO-8859-1
+
+OS Locale:  iso_8859_9
+en
+English
+ISO-8859-1
+
+OS Locale:  it
+it_IT
+Italian (Italy)
+ISO-8859-1
+
+OS Locale:  it.ISO8859-15
+it_IT
+Italian (Italy)
+ISO-8859-15
+
+OS Locale:  it.UTF-8
+it_IT
+Italian (Italy)
+UTF-8
+
+OS Locale:  it_IT
+it_IT
+Italian (Italy)
+ISO-8859-1
+
+OS Locale:  it_IT.ISO8859-1
+it_IT
+Italian (Italy)
+ISO-8859-1
+
+OS Locale:  it_IT.ISO8859-15
+it_IT
+Italian (Italy)
+ISO-8859-15
+
+OS Locale:  it_IT.ISO8859-15@euro
+it_IT
+Italian (Italy)
+ISO-8859-15
+
+OS Locale:  it_IT.UTF-8
+it_IT
+Italian (Italy)
+UTF-8
+
+OS Locale:  it_IT.UTF-8@euro
+it_IT
+Italian (Italy)
+UTF-8
+
+OS Locale:  ja
+ja_JP
+Japanese (Japan)
+x-eucJP-Open
+
+OS Locale:  ja_JP.PCK
+ja_JP
+Japanese (Japan)
+x-PCK
+
+OS Locale:  ja_JP.UTF-8
+ja_JP
+Japanese (Japan)
+UTF-8
+
+OS Locale:  ja_JP.eucJP
+ja_JP
+Japanese (Japan)
+x-eucJP-Open
+
+OS Locale:  ko
+ko_KR
+Korean (South Korea)
+EUC-KR
+
+OS Locale:  ko.UTF-8
+ko_KR
+Korean (South Korea)
+UTF-8
+
+OS Locale:  ko_KR.EUC
+ko_KR
+Korean (South Korea)
+EUC-KR
+
+OS Locale:  ko_KR.EUC@dict
+ko_KR
+Korean (South Korea)
+EUC-KR
+
+OS Locale:  ko_KR.UTF-8
+ko_KR
+Korean (South Korea)
+UTF-8
+
+OS Locale:  ko_KR.UTF-8@dict
+ko_KR
+Korean (South Korea)
+UTF-8
+
+OS Locale:  lcttab
+en
+English
+ISO-8859-1
+
+OS Locale:  lt
+lt_LT
+Lithuanian (Lithuania)
+ISO-8859-13
+
+OS Locale:  lt_LT
+lt_LT
+Lithuanian (Lithuania)
+ISO-8859-13
+
+OS Locale:  lt_LT.ISO8859-13
+lt_LT
+Lithuanian (Lithuania)
+ISO-8859-13
+
+OS Locale:  lv
+lv_LV
+Latvian (Latvia)
+ISO-8859-13
+
+OS Locale:  lv_LV
+lv_LV
+Latvian (Latvia)
+ISO-8859-13
+
+OS Locale:  lv_LV.ISO8859-13
+lv_LV
+Latvian (Latvia)
+ISO-8859-13
+
+OS Locale:  mk_MK
+mk_MK
+Macedonian (Macedonia)
+ISO-8859-5
+
+OS Locale:  mk_MK.ISO8859-5
+mk_MK
+Macedonian (Macedonia)
+ISO-8859-5
+
+OS Locale:  nl
+nl_NL
+Dutch (Netherlands)
+ISO-8859-1
+
+OS Locale:  nl.ISO8859-15
+nl_NL
+Dutch (Netherlands)
+ISO-8859-15
+
+OS Locale:  nl_BE
+nl_BE
+Dutch (Belgium)
+ISO-8859-1
+
+OS Locale:  nl_BE.ISO8859-1
+nl_BE
+Dutch (Belgium)
+ISO-8859-1
+
+OS Locale:  nl_BE.ISO8859-15
+nl_BE
+Dutch (Belgium)
+ISO-8859-15
+
+OS Locale:  nl_BE.ISO8859-15@euro
+nl_BE
+Dutch (Belgium)
+ISO-8859-15
+
+OS Locale:  nl_NL
+nl_NL
+Dutch (Netherlands)
+ISO-8859-1
+
+OS Locale:  nl_NL.ISO8859-1
+nl_NL
+Dutch (Netherlands)
+ISO-8859-1
+
+OS Locale:  nl_NL.ISO8859-15
+nl_NL
+Dutch (Netherlands)
+ISO-8859-15
+
+OS Locale:  nl_NL.ISO8859-15@euro
+nl_NL
+Dutch (Netherlands)
+ISO-8859-15
+
+OS Locale:  no
+no_NO
+Norwegian (Norway)
+ISO-8859-1
+
+OS Locale:  no_NO
+no_NO
+Norwegian (Norway)
+ISO-8859-1
+
+OS Locale:  no_NO.ISO8859-1@bokmal
+no_NO
+Norwegian (Norway)
+ISO-8859-1
+
+OS Locale:  no_NO.ISO8859-1@nynorsk
+no_NO_NY
+Norwegian (Norway,Nynorsk)
+ISO-8859-1
+
+OS Locale:  no_NY
+no_NY
+Norwegian (NY)
+ISO-8859-1
+
+OS Locale:  nr
+nr
+South Ndebele
+ISO-8859-2
+
+OS Locale:  pl
+pl_PL
+Polish (Poland)
+ISO-8859-2
+
+OS Locale:  pl.UTF-8
+pl_PL
+Polish (Poland)
+UTF-8
+
+OS Locale:  pl_PL
+pl_PL
+Polish (Poland)
+ISO-8859-2
+
+OS Locale:  pl_PL.ISO8859-2
+pl_PL
+Polish (Poland)
+ISO-8859-2
+
+OS Locale:  pl_PL.UTF-8
+pl_PL
+Polish (Poland)
+UTF-8
+
+OS Locale:  pt
+pt_PT
+Portuguese (Portugal)
+ISO-8859-1
+
+OS Locale:  pt.ISO8859-15
+pt_PT
+Portuguese (Portugal)
+ISO-8859-15
+
+OS Locale:  pt_BR
+pt_BR
+Portuguese (Brazil)
+ISO-8859-1
+
+OS Locale:  pt_BR.ISO8859-1
+pt_BR
+Portuguese (Brazil)
+ISO-8859-1
+
+OS Locale:  pt_BR.UTF-8
+pt_BR
+Portuguese (Brazil)
+UTF-8
+
+OS Locale:  pt_PT
+pt_PT
+Portuguese (Portugal)
+ISO-8859-1
+
+OS Locale:  pt_PT.ISO8859-1
+pt_PT
+Portuguese (Portugal)
+ISO-8859-1
+
+OS Locale:  pt_PT.ISO8859-15
+pt_PT
+Portuguese (Portugal)
+ISO-8859-15
+
+OS Locale:  pt_PT.ISO8859-15@euro
+pt_PT
+Portuguese (Portugal)
+ISO-8859-15
+
+OS Locale:  ro_RO
+ro_RO
+Romanian (Romania)
+ISO-8859-2
+
+OS Locale:  ro_RO.ISO8859-2
+ro_RO
+Romanian (Romania)
+ISO-8859-2
+
+OS Locale:  ru
+ru_RU
+Russian (Russia)
+ISO-8859-5
+
+OS Locale:  ru.UTF-8
+ru_RU
+Russian (Russia)
+UTF-8
+
+OS Locale:  ru.koi8-r
+ru_RU
+Russian (Russia)
+KOI8-R
+
+OS Locale:  ru_RU
+ru_RU
+Russian (Russia)
+ISO-8859-5
+
+OS Locale:  ru_RU.ANSI1251
+ru_RU
+Russian (Russia)
+windows-1251
+
+OS Locale:  ru_RU.ISO8859-5
+ru_RU
+Russian (Russia)
+ISO-8859-5
+
+OS Locale:  ru_RU.KOI8-R
+ru_RU
+Russian (Russia)
+KOI8-R
+
+OS Locale:  ru_RU.UTF-8
+ru_RU
+Russian (Russia)
+UTF-8
+
+OS Locale:  sh_BA
+sr_BA
+Serbian (Bosnia and Herzegovina)
+ISO-8859-2
+
+OS Locale:  sh_BA.ISO8859-2@bosnia
+sr_BA
+Serbian (Bosnia and Herzegovina)
+ISO-8859-2
+
+OS Locale:  sk_SK
+sk_SK
+Slovak (Slovakia)
+ISO-8859-2
+
+OS Locale:  sk_SK.ISO8859-2
+sk_SK
+Slovak (Slovakia)
+ISO-8859-2
+
+OS Locale:  sl_SI
+sl_SI
+Slovenian (Slovenia)
+ISO-8859-2
+
+OS Locale:  sl_SI.ISO8859-2
+sl_SI
+Slovenian (Slovenia)
+ISO-8859-2
+
+OS Locale:  sq_AL
+sq_AL
+Albanian (Albania)
+ISO-8859-2
+
+OS Locale:  sq_AL.ISO8859-2
+sq_AL
+Albanian (Albania)
+ISO-8859-2
+
+OS Locale:  sr_SP
+sr_SP
+Serbian (SP)
+ISO-8859-5
+
+OS Locale:  sr_YU
+sr_CS
+Serbian (Serbia and Montenegro)
+ISO-8859-5
+
+OS Locale:  sr_YU.ISO8859-5
+sr_CS
+Serbian (Serbia and Montenegro)
+ISO-8859-5
+
+OS Locale:  sv
+sv_SE
+Swedish (Sweden)
+ISO-8859-1
+
+OS Locale:  sv.ISO8859-15
+sv_SE
+Swedish (Sweden)
+ISO-8859-15
+
+OS Locale:  sv.UTF-8
+sv_SE
+Swedish (Sweden)
+UTF-8
+
+OS Locale:  sv_SE
+sv_SE
+Swedish (Sweden)
+ISO-8859-1
+
+OS Locale:  sv_SE.ISO8859-1
+sv_SE
+Swedish (Sweden)
+ISO-8859-1
+
+OS Locale:  sv_SE.ISO8859-15
+sv_SE
+Swedish (Sweden)
+ISO-8859-15
+
+OS Locale:  sv_SE.ISO8859-15@euro
+sv_SE
+Swedish (Sweden)
+ISO-8859-15
+
+OS Locale:  sv_SE.UTF-8
+sv_SE
+Swedish (Sweden)
+UTF-8
+
+OS Locale:  sv_SE.UTF-8@euro
+sv_SE
+Swedish (Sweden)
+UTF-8
+
+OS Locale:  th
+th_TH
+Thai (Thailand)
+TIS-620
+
+OS Locale:  th_TH
+th_TH
+Thai (Thailand)
+TIS-620
+
+OS Locale:  th_TH.ISO8859-11
+th_TH
+Thai (Thailand)
+TIS-620
+
+OS Locale:  th_TH.TIS620
+th_TH
+Thai (Thailand)
+TIS-620
+
+OS Locale:  th_TH.UTF-8
+th_TH
+Thai (Thailand)
+UTF-8
+
+OS Locale:  tr
+tr_TR
+Turkish (Turkey)
+ISO-8859-9
+
+OS Locale:  tr_TR
+tr_TR
+Turkish (Turkey)
+ISO-8859-9
+
+OS Locale:  tr_TR.ISO8859-9
+tr_TR
+Turkish (Turkey)
+ISO-8859-9
+
+OS Locale:  tr_TR.UTF-8
+tr_TR
+Turkish (Turkey)
+UTF-8
+
+OS Locale:  zh
+zh_CN
+Chinese (China)
+GB2312
+
+OS Locale:  zh.GBK
+zh_CN
+Chinese (China)
+GBK
+
+OS Locale:  zh.UTF-8
+zh_CN
+Chinese (China)
+UTF-8
+
+OS Locale:  zh_CN.EUC
+zh_CN
+Chinese (China)
+GB2312
+
+OS Locale:  zh_CN.EUC@pinyin
+zh_CN
+Chinese (China)
+GB2312
+
+OS Locale:  zh_CN.EUC@radical
+zh_CN
+Chinese (China)
+GB2312
+
+OS Locale:  zh_CN.EUC@stroke
+zh_CN
+Chinese (China)
+GB2312
+
+OS Locale:  zh_CN.GB18030
+zh_CN
+Chinese (China)
+GB18030
+
+OS Locale:  zh_CN.GB18030@pinyin
+zh_CN
+Chinese (China)
+GB18030
+
+OS Locale:  zh_CN.GB18030@radical
+zh_CN
+Chinese (China)
+GB18030
+
+OS Locale:  zh_CN.GB18030@stroke
+zh_CN
+Chinese (China)
+GB18030
+
+OS Locale:  zh_CN.GBK
+zh_CN
+Chinese (China)
+GBK
+
+OS Locale:  zh_CN.GBK@pinyin
+zh_CN
+Chinese (China)
+GBK
+
+OS Locale:  zh_CN.GBK@radical
+zh_CN
+Chinese (China)
+GBK
+
+OS Locale:  zh_CN.GBK@stroke
+zh_CN
+Chinese (China)
+GBK
+
+OS Locale:  zh_CN.UTF-8
+zh_CN
+Chinese (China)
+UTF-8
+
+OS Locale:  zh_CN.UTF-8@pinyin
+zh_CN
+Chinese (China)
+UTF-8
+
+OS Locale:  zh_CN.UTF-8@radical
+zh_CN
+Chinese (China)
+UTF-8
+
+OS Locale:  zh_CN.UTF-8@stroke
+zh_CN
+Chinese (China)
+UTF-8
+
+OS Locale:  zh_HK.BIG5HK
+zh_HK
+Chinese (Hong Kong)
+Big5-HKSCS
+
+OS Locale:  zh_HK.BIG5HK@radical
+zh_HK
+Chinese (Hong Kong)
+Big5-HKSCS
+
+OS Locale:  zh_HK.BIG5HK@stroke
+zh_HK
+Chinese (Hong Kong)
+Big5-HKSCS
+
+OS Locale:  zh_HK.UTF-8
+zh_HK
+Chinese (Hong Kong)
+UTF-8
+
+OS Locale:  zh_HK.UTF-8@radical
+zh_HK
+Chinese (Hong Kong)
+UTF-8
+
+OS Locale:  zh_HK.UTF-8@stroke
+zh_HK
+Chinese (Hong Kong)
+UTF-8
+
+OS Locale:  zh_TW
+zh_TW
+Chinese (Taiwan)
+x-EUC-TW
+
+OS Locale:  zh_TW.BIG5
+zh_TW
+Chinese (Taiwan)
+Big5
+
+OS Locale:  zh_TW.BIG5@pinyin
+zh_TW
+Chinese (Taiwan)
+Big5
+
+OS Locale:  zh_TW.BIG5@radical
+zh_TW
+Chinese (Taiwan)
+Big5
+
+OS Locale:  zh_TW.BIG5@stroke
+zh_TW
+Chinese (Taiwan)
+Big5
+
+OS Locale:  zh_TW.BIG5@zhuyin
+zh_TW
+Chinese (Taiwan)
+Big5
+
+OS Locale:  zh_TW.EUC
+zh_TW
+Chinese (Taiwan)
+x-EUC-TW
+
+OS Locale:  zh_TW.EUC@pinyin
+zh_TW
+Chinese (Taiwan)
+x-EUC-TW
+
+OS Locale:  zh_TW.EUC@radical
+zh_TW
+Chinese (Taiwan)
+x-EUC-TW
+
+OS Locale:  zh_TW.EUC@stroke
+zh_TW
+Chinese (Taiwan)
+x-EUC-TW
+
+OS Locale:  zh_TW.EUC@zhuyin
+zh_TW
+Chinese (Taiwan)
+x-EUC-TW
+
+OS Locale:  zh_TW.UTF-8
+zh_TW
+Chinese (Taiwan)
+UTF-8
+
+OS Locale:  zh_TW.UTF-8@pinyin
+zh_TW
+Chinese (Taiwan)
+UTF-8
+
+OS Locale:  zh_TW.UTF-8@radical
+zh_TW
+Chinese (Taiwan)
+UTF-8
+
+OS Locale:  zh_TW.UTF-8@stroke
+zh_TW
+Chinese (Taiwan)
+UTF-8
+
+OS Locale:  zh_TW.UTF-8@zhuyin
+zh_TW
+Chinese (Taiwan)
+UTF-8

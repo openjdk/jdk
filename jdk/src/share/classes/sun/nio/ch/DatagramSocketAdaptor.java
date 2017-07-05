@@ -1,0 +1,380 @@
+/*
+ * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package sun.nio.ch;
+
+import java.io.*;
+import java.net.*;
+import java.nio.*;
+import java.nio.channels.*;
+
+
+// Make a datagram-socket channel look like a datagram socket.
+//
+// The methods in this class are defined in exactly the same order as in
+// java.net.DatagramSocket so as to simplify tracking future changes to that
+// class.
+//
+
+public class DatagramSocketAdaptor
+    extends DatagramSocket
+{
+
+    // The channel being adapted
+    private final DatagramChannelImpl dc;
+
+    // Option adaptor object, created on demand
+    private volatile OptionAdaptor opts = null;
+
+    // Timeout "option" value for receives
+    private volatile int timeout = 0;
+
+    // Traffic-class/Type-of-service
+    private volatile int trafficClass = 0;
+
+
+    // ## super will create a useless impl
+    private DatagramSocketAdaptor(DatagramChannelImpl dc) throws IOException {
+        // Invoke the DatagramSocketAdaptor(SocketAddress) constructor,
+        // passing a dummy DatagramSocketImpl object to aovid any native
+        // resource allocation in super class and invoking our bind method
+        // before the dc field is initialized.
+        super(dummyDatagramSocket);
+        this.dc = dc;
+    }
+
+    public static DatagramSocket create(DatagramChannelImpl dc) {
+        try {
+            return new DatagramSocketAdaptor(dc);
+        } catch (IOException x) {
+            throw new Error(x);
+        }
+    }
+
+    private void connectInternal(SocketAddress remote)
+        throws SocketException
+    {
+        InetSocketAddress isa = Net.asInetSocketAddress(remote);
+        int port = isa.getPort();
+        if (port < 0 || port > 0xFFFF)
+            throw new IllegalArgumentException("connect: " + port);
+        if (remote == null)
+            throw new IllegalArgumentException("connect: null address");
+        if (!isClosed())
+            return;
+        try {
+            dc.connect(remote);
+        } catch (Exception x) {
+            Net.translateToSocketException(x);
+        }
+    }
+
+    public void bind(SocketAddress local) throws SocketException {
+        try {
+            if (local == null)
+                local = new InetSocketAddress(0);
+            dc.bind(local);
+        } catch (Exception x) {
+            Net.translateToSocketException(x);
+        }
+    }
+
+    public void connect(InetAddress address, int port) {
+        try {
+            connectInternal(new InetSocketAddress(address, port));
+        } catch (SocketException x) {
+            // Yes, j.n.DatagramSocket really does this
+        }
+    }
+
+    public void connect(SocketAddress remote) throws SocketException {
+        if (remote == null)
+            throw new IllegalArgumentException("Address can't be null");
+        connectInternal(remote);
+    }
+
+    public void disconnect() {
+        try {
+            dc.disconnect();
+        } catch (IOException x) {
+            throw new Error(x);
+        }
+    }
+
+    public boolean isBound() {
+        return dc.isBound();
+    }
+
+    public boolean isConnected() {
+        return dc.isConnected();
+    }
+
+    public InetAddress getInetAddress() {
+        return (isConnected()
+                ? Net.asInetSocketAddress(dc.remoteAddress()).getAddress()
+                : null);
+    }
+
+    public int getPort() {
+        return (isConnected()
+                ? Net.asInetSocketAddress(dc.remoteAddress()).getPort()
+                : -1);
+    }
+
+    public void send(DatagramPacket p) throws IOException {
+        synchronized (dc.blockingLock()) {
+            if (!dc.isBlocking())
+                throw new IllegalBlockingModeException();
+            try {
+                synchronized (p) {
+                    ByteBuffer bb = ByteBuffer.wrap(p.getData(),
+                                                    p.getOffset(),
+                                                    p.getLength());
+                    if (dc.isConnected()) {
+                        if (p.getAddress() == null) {
+                            // Legacy DatagramSocket will send in this case
+                            // and set address and port of the packet
+                            InetSocketAddress isa = (InetSocketAddress)
+                                                    dc.remoteAddress;
+                            p.setPort(isa.getPort());
+                            p.setAddress(isa.getAddress());
+                            dc.write(bb);
+                        } else {
+                            // Target address may not match connected address
+                            dc.send(bb, p.getSocketAddress());
+                        }
+                    } else {
+                        // Not connected so address must be valid or throw
+                        dc.send(bb, p.getSocketAddress());
+                    }
+                }
+            } catch (IOException x) {
+                Net.translateException(x);
+            }
+        }
+    }
+
+    // Must hold dc.blockingLock()
+    //
+    private void receive(ByteBuffer bb) throws IOException {
+        if (timeout == 0) {
+            dc.receive(bb);
+            return;
+        }
+
+        // Implement timeout with a selector
+        SelectionKey sk = null;
+        Selector sel = null;
+        dc.configureBlocking(false);
+        try {
+            int n;
+            if (dc.receive(bb) != null)
+                return;
+            sel = Util.getTemporarySelector(dc);
+            sk = dc.register(sel, SelectionKey.OP_READ);
+            long to = timeout;
+            for (;;) {
+                if (!dc.isOpen())
+                     throw new ClosedChannelException();
+                long st = System.currentTimeMillis();
+                int ns = sel.select(to);
+                if (ns > 0 && sk.isReadable()) {
+                    if (dc.receive(bb) != null)
+                        return;
+                }
+                sel.selectedKeys().remove(sk);
+                to -= System.currentTimeMillis() - st;
+                if (to <= 0)
+                    throw new SocketTimeoutException();
+
+            }
+        } finally {
+            if (sk != null)
+                sk.cancel();
+            if (dc.isOpen())
+                dc.configureBlocking(true);
+            if (sel != null)
+                Util.releaseTemporarySelector(sel);
+        }
+    }
+
+    public void receive(DatagramPacket p) throws IOException {
+        synchronized (dc.blockingLock()) {
+            if (!dc.isBlocking())
+                throw new IllegalBlockingModeException();
+            try {
+                synchronized (p) {
+                    ByteBuffer bb = ByteBuffer.wrap(p.getData(),
+                                                    p.getOffset(),
+                                                    p.getLength());
+                    receive(bb);
+                    p.setLength(bb.position() - p.getOffset());
+                }
+            } catch (IOException x) {
+                Net.translateException(x);
+            }
+        }
+    }
+
+    public InetAddress getLocalAddress() {
+        if (isClosed())
+            return null;
+        try {
+            return Net.asInetSocketAddress(dc.localAddress()).getAddress();
+        } catch (Exception x) {
+            return new InetSocketAddress(0).getAddress();
+        }
+    }
+
+    public int getLocalPort() {
+        if (isClosed())
+            return -1;
+        try {
+            return Net.asInetSocketAddress(dc.localAddress()).getPort();
+        } catch (Exception x) {
+            return 0;
+        }
+    }
+
+    public void setSoTimeout(int timeout) throws SocketException {
+        this.timeout = timeout;
+    }
+
+    public int getSoTimeout() throws SocketException {
+        return timeout;
+    }
+
+    private OptionAdaptor opts() {
+        if (opts == null)
+            opts = new OptionAdaptor(dc);
+        return opts;
+    }
+
+    public void setSendBufferSize(int size) throws SocketException {
+        opts().setSendBufferSize(size);
+    }
+
+    public int getSendBufferSize() throws SocketException {
+        return opts().getSendBufferSize();
+    }
+
+    public void setReceiveBufferSize(int size) throws SocketException {
+        opts().setReceiveBufferSize(size);
+    }
+
+    public int getReceiveBufferSize() throws SocketException {
+        return opts().getReceiveBufferSize();
+    }
+
+    public void setReuseAddress(boolean on) throws SocketException {
+        opts().setReuseAddress(on);
+    }
+
+    public boolean getReuseAddress() throws SocketException {
+        return opts().getReuseAddress();
+    }
+
+    public void setBroadcast(boolean on) throws SocketException {
+        opts().setBroadcast(on);
+    }
+
+    public boolean getBroadcast() throws SocketException {
+        return opts().getBroadcast();
+    }
+
+    public void setTrafficClass(int tc) throws SocketException {
+        opts().setTrafficClass(tc);
+        trafficClass = tc;
+    }
+
+    public int getTrafficClass() throws SocketException {
+        int tc = opts().getTrafficClass();
+        if (tc < 0) {
+            tc = trafficClass;
+        }
+        return tc;
+    }
+
+    public void close() {
+        try {
+            dc.close();
+        } catch (IOException x) {
+            throw new Error(x);
+        }
+    }
+
+    public boolean isClosed() {
+        return !dc.isOpen();
+    }
+
+    public DatagramChannel getChannel() {
+        return dc;
+    }
+
+   /*
+    * A dummy implementation of DatagramSocketImpl that can be passed to the
+    * DatagramSocket constructor so that no native resources are allocated in
+    * super class.
+    */
+   private static final DatagramSocketImpl dummyDatagramSocket
+       = new DatagramSocketImpl()
+   {
+       protected void create() throws SocketException {}
+
+       protected void bind(int lport, InetAddress laddr) throws SocketException {}
+
+       protected void send(DatagramPacket p) throws IOException {}
+
+       protected int peek(InetAddress i) throws IOException { return 0; }
+
+       protected int peekData(DatagramPacket p) throws IOException { return 0; }
+
+       protected void receive(DatagramPacket p) throws IOException {}
+
+       protected void setTTL(byte ttl) throws IOException {}
+
+       protected byte getTTL() throws IOException { return 0; }
+
+       protected void setTimeToLive(int ttl) throws IOException {}
+
+       protected int getTimeToLive() throws IOException { return 0;}
+
+       protected void join(InetAddress inetaddr) throws IOException {}
+
+       protected void leave(InetAddress inetaddr) throws IOException {}
+
+       protected void joinGroup(SocketAddress mcastaddr,
+                                 NetworkInterface netIf) throws IOException {}
+
+       protected void leaveGroup(SocketAddress mcastaddr,
+                                 NetworkInterface netIf) throws IOException {}
+
+       protected void close() {}
+
+       public Object getOption(int optID) throws SocketException { return null;}
+
+       public void setOption(int optID, Object value) throws SocketException {}
+   };
+}
