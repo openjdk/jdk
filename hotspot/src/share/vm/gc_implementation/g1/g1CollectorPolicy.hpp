@@ -940,10 +940,9 @@ public:
     return _bytes_copied_during_gc;
   }
 
-  // Determine whether the next GC should be mixed. Called to determine
-  // whether to start mixed GCs or whether to carry on doing mixed
-  // GCs. The two action strings are used in the ergo output when the
-  // method returns true or false.
+  // Determine whether there are candidate regions so that the
+  // next GC should be mixed. The two action strings are used
+  // in the ergo output when the method returns true or false.
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str);
 

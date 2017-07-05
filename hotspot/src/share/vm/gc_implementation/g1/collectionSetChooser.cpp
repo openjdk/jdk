@@ -285,7 +285,7 @@ size_t CollectionSetChooser::calcMinOldCSetLength() {
   // that the result is the same during all mixed GCs that follow a cycle.
 
   const size_t region_num = (size_t) _length;
-  const size_t gc_num = (size_t) G1MaxMixedGCNum;
+  const size_t gc_num = (size_t) G1MixedGCCountTarget;
   size_t result = region_num / gc_num;
   // emulate ceiling
   if (result * gc_num < region_num) {
