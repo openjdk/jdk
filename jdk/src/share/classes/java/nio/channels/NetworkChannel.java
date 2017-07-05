@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,9 +95,10 @@ public interface NetworkChannel
      * java.net.InetSocketAddress}.
      *
      * @return  The socket address that the socket is bound to, or {@code null}
-     *          if the channel is not {@link #isOpen open} or the channel's socket
-     *          is not bound
+     *          if the channel's socket is not bound
      *
+     * @throws  ClosedChannelException
+     *          If the channel is closed
      * @throws  IOException
      *          If an I/O error occurs
      */
@@ -114,9 +115,10 @@ public interface NetworkChannel
      *
      * @return  This channel
      *
+     * @throws  UnsupportedOperationException
+     *          If the socket option is not supported by this channel
      * @throws  IllegalArgumentException
-     *          If the socket option is not supported by this channel, or
-     *          the value is not a valid value for this socket option
+     *          If the value is not a valid value for this socket option
      * @throws  ClosedChannelException
      *          If this channel is closed
      * @throws  IOException
@@ -135,7 +137,7 @@ public interface NetworkChannel
      * @return  The value of the socket option. A value of {@code null} may be
      *          a valid value for some socket options.
      *
-     * @throws  IllegalArgumentException
+     * @throws  UnsupportedOperationException
      *          If the socket option is not supported by this channel
      * @throws  ClosedChannelException
      *          If this channel is closed
@@ -154,5 +156,5 @@ public interface NetworkChannel
      *
      * @return  A set of the socket options supported by this channel
      */
-    Set<SocketOption<?>> options();
+    Set<SocketOption<?>> supportedOptions();
 }

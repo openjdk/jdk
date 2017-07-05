@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
 
 
 /**
@@ -47,7 +44,6 @@ class IOUtil {
      */
     private static int remaining(ByteBuffer[] bufs) {
         int numBufs = bufs.length;
-        boolean remaining = false;
         for (int i=0; i<numBufs; i++) {
             if (bufs[i].hasRemaining()) {
                 return i;
@@ -138,74 +134,82 @@ class IOUtil {
             bufs = skipBufs(bufs, nextWithRemaining);
 
         int numBufs = bufs.length;
-        int bytesReadyToWrite = 0;
 
         // Create shadow to ensure DirectByteBuffers are used
         ByteBuffer[] shadow = new ByteBuffer[numBufs];
-        for (int i=0; i<numBufs; i++) {
-            if (!(bufs[i] instanceof DirectBuffer)) {
-                int pos = bufs[i].position();
-                int lim = bufs[i].limit();
-                assert (pos <= lim);
-                int rem = (pos <= lim ? lim - pos : 0);
-
-                ByteBuffer bb = ByteBuffer.allocateDirect(rem);
-                shadow[i] = bb;
-                // Leave slow buffer position untouched; it will be updated
-                // after we see how many bytes were really written out
-                bb.put(bufs[i]);
-                bufs[i].position(pos);
-                bb.flip();
-            } else {
-                shadow[i] = bufs[i];
-            }
-        }
-
-        IOVecWrapper vec = null;
-        long bytesWritten = 0;
         try {
-            // Create a native iovec array
-            vec= new IOVecWrapper(numBufs);
-
-            // Fill in the iovec array with appropriate data
             for (int i=0; i<numBufs; i++) {
-                ByteBuffer nextBuffer = shadow[i];
-                // put in the buffer addresses
-                long pos = nextBuffer.position();
-                long len = nextBuffer.limit() - pos;
-                bytesReadyToWrite += len;
-                vec.putBase(i, ((DirectBuffer)nextBuffer).address() + pos);
-                vec.putLen(i, len);
-            }
+                if (!(bufs[i] instanceof DirectBuffer)) {
+                    int pos = bufs[i].position();
+                    int lim = bufs[i].limit();
+                    assert (pos <= lim);
+                    int rem = (pos <= lim ? lim - pos : 0);
 
-            // Invoke native call to fill the buffers
-            bytesWritten = nd.writev(fd, vec.address, numBufs);
-        } finally {
-            vec.free();
-        }
-        long returnVal = bytesWritten;
-
-        // Notify the buffers how many bytes were taken
-        for (int i=0; i<numBufs; i++) {
-            ByteBuffer nextBuffer = bufs[i];
-            int pos = nextBuffer.position();
-            int lim = nextBuffer.limit();
-            assert (pos <= lim);
-            int len = (pos <= lim ? lim - pos : lim);
-            if (bytesWritten >= len) {
-                bytesWritten -= len;
-                int newPosition = pos + len;
-                nextBuffer.position(newPosition);
-            } else { // Buffers not completely filled
-                if (bytesWritten > 0) {
-                    assert(pos + bytesWritten < (long)Integer.MAX_VALUE);
-                    int newPosition = (int)(pos + bytesWritten);
-                    nextBuffer.position(newPosition);
+                    ByteBuffer bb = Util.getTemporaryDirectBuffer(rem);
+                    shadow[i] = bb;
+                    // Leave slow buffer position untouched; it will be updated
+                    // after we see how many bytes were really written out
+                    bb.put(bufs[i]);
+                    bufs[i].position(pos);
+                    bb.flip();
+                } else {
+                    shadow[i] = bufs[i];
                 }
-                break;
+            }
+
+            IOVecWrapper vec = null;
+            long bytesWritten = 0;
+            try {
+                // Create a native iovec array
+                vec= new IOVecWrapper(numBufs);
+
+                // Fill in the iovec array with appropriate data
+                for (int i=0; i<numBufs; i++) {
+                    ByteBuffer nextBuffer = shadow[i];
+                    // put in the buffer addresses
+                    long pos = nextBuffer.position();
+                    long len = nextBuffer.limit() - pos;
+                    vec.putBase(i, ((DirectBuffer)nextBuffer).address() + pos);
+                    vec.putLen(i, len);
+                }
+
+                // Invoke native call to fill the buffers
+                bytesWritten = nd.writev(fd, vec.address, numBufs);
+            } finally {
+                vec.free();
+            }
+            long returnVal = bytesWritten;
+
+            // Notify the buffers how many bytes were taken
+            for (int i=0; i<numBufs; i++) {
+                ByteBuffer nextBuffer = bufs[i];
+                int pos = nextBuffer.position();
+                int lim = nextBuffer.limit();
+                assert (pos <= lim);
+                int len = (pos <= lim ? lim - pos : lim);
+                if (bytesWritten >= len) {
+                    bytesWritten -= len;
+                    int newPosition = pos + len;
+                    nextBuffer.position(newPosition);
+                } else { // Buffers not completely filled
+                    if (bytesWritten > 0) {
+                        assert(pos + bytesWritten < (long)Integer.MAX_VALUE);
+                        int newPosition = (int)(pos + bytesWritten);
+                        nextBuffer.position(newPosition);
+                    }
+                    break;
+                }
+            }
+            return returnVal;
+        } finally {
+            // return any substituted buffers to cache
+            for (int i=0; i<numBufs; i++) {
+                ByteBuffer bb = shadow[i];
+                if (bb != null && bb != bufs[i]) {
+                    Util.releaseTemporaryDirectBuffer(bb);
+                }
             }
         }
-        return returnVal;
     }
 
     static int read(FileDescriptor fd, ByteBuffer dst, long position,
@@ -270,68 +274,83 @@ class IOUtil {
 
         // Read into the shadow to ensure DirectByteBuffers are used
         ByteBuffer[] shadow = new ByteBuffer[numBufs];
-        for (int i=0; i<numBufs; i++) {
-            if (bufs[i].isReadOnly())
-                throw new IllegalArgumentException("Read-only buffer");
-            if (!(bufs[i] instanceof DirectBuffer)) {
-                shadow[i] = ByteBuffer.allocateDirect(bufs[i].remaining());
-            } else {
-                shadow[i] = bufs[i];
-            }
-        }
-
-        IOVecWrapper vec = null;
-        long bytesRead = 0;
+        boolean usingSlowBuffers = false;
         try {
-            // Create a native iovec array
-            vec = new IOVecWrapper(numBufs);
+            for (int i=0; i<numBufs; i++) {
+                if (bufs[i].isReadOnly())
+                    throw new IllegalArgumentException("Read-only buffer");
+                if (!(bufs[i] instanceof DirectBuffer)) {
+                    shadow[i] = Util.getTemporaryDirectBuffer(bufs[i].remaining());
+                    usingSlowBuffers = true;
+                } else {
+                    shadow[i] = bufs[i];
+                }
+            }
 
-            // Fill in the iovec array with appropriate data
+            IOVecWrapper vec = null;
+            long bytesRead = 0;
+            try {
+                // Create a native iovec array
+                vec = new IOVecWrapper(numBufs);
+
+                // Fill in the iovec array with appropriate data
+                for (int i=0; i<numBufs; i++) {
+                    ByteBuffer nextBuffer = shadow[i];
+                    // put in the buffer addresses
+                    long pos = nextBuffer.position();
+                    long len = nextBuffer.remaining();
+                    vec.putBase(i, ((DirectBuffer)nextBuffer).address() + pos);
+                    vec.putLen(i, len);
+                }
+
+                // Invoke native call to fill the buffers
+                bytesRead = nd.readv(fd, vec.address, numBufs);
+            } finally {
+                vec.free();
+            }
+            long returnVal = bytesRead;
+
+            // Notify the buffers how many bytes were read
             for (int i=0; i<numBufs; i++) {
                 ByteBuffer nextBuffer = shadow[i];
-                // put in the buffer addresses
-                long pos = nextBuffer.position();
-                long len = nextBuffer.remaining();
-                vec.putBase(i, ((DirectBuffer)nextBuffer).address() + pos);
-                vec.putLen(i, len);
-            }
-
-            // Invoke native call to fill the buffers
-            bytesRead = nd.readv(fd, vec.address, numBufs);
-        } finally {
-            vec.free();
-        }
-        long returnVal = bytesRead;
-
-        // Notify the buffers how many bytes were read
-        for (int i=0; i<numBufs; i++) {
-            ByteBuffer nextBuffer = shadow[i];
-            // Note: should this have been cached from above?
-            int pos = nextBuffer.position();
-            int len = nextBuffer.remaining();
-            if (bytesRead >= len) {
-                bytesRead -= len;
-                int newPosition = pos + len;
-                nextBuffer.position(newPosition);
-            } else { // Buffers not completely filled
-                if (bytesRead > 0) {
-                    assert(pos + bytesRead < (long)Integer.MAX_VALUE);
-                    int newPosition = (int)(pos + bytesRead);
+                // Note: should this have been cached from above?
+                int pos = nextBuffer.position();
+                int len = nextBuffer.remaining();
+                if (bytesRead >= len) {
+                    bytesRead -= len;
+                    int newPosition = pos + len;
                     nextBuffer.position(newPosition);
+                } else { // Buffers not completely filled
+                    if (bytesRead > 0) {
+                        assert(pos + bytesRead < (long)Integer.MAX_VALUE);
+                        int newPosition = (int)(pos + bytesRead);
+                        nextBuffer.position(newPosition);
+                    }
+                    break;
                 }
-                break;
+            }
+
+            // Put results from shadow into the slow buffers
+            if (usingSlowBuffers) {
+                for (int i=0; i<numBufs; i++) {
+                    if (!(bufs[i] instanceof DirectBuffer)) {
+                        shadow[i].flip();
+                        bufs[i].put(shadow[i]);
+                    }
+                }
+            }
+            return returnVal;
+        } finally {
+            // return any substituted buffers to cache
+            if (usingSlowBuffers) {
+                for (int i=0; i<numBufs; i++) {
+                    ByteBuffer bb = shadow[i];
+                    if (bb != null && bb != bufs[i]) {
+                        Util.releaseTemporaryDirectBuffer(bb);
+                    }
+                }
             }
         }
-
-        // Put results from shadow into the slow buffers
-        for (int i=0; i<numBufs; i++) {
-            if (!(bufs[i] instanceof DirectBuffer)) {
-                shadow[i].flip();
-                bufs[i].put(shadow[i]);
-            }
-        }
-
-        return returnVal;
     }
 
     static FileDescriptor newFD(int i) {

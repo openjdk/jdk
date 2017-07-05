@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class Resources extends java.util.ListResourceBundle {
         // keytool
         {"keytool error: ", "keytool error: "},
         {"Illegal option:  ", "Illegal option:  "},
+        {"Illegal value: ", "Illegal value: "},
         {"Try keytool -help","Try keytool -help"},
         {"Command option <flag> needs an argument.", "Command option {0} needs an argument."},
         {"Warning:  Different store and key passwords not supported for PKCS12 KeyStores. Ignoring user-specified <command> value.",
@@ -281,6 +282,20 @@ public class Resources extends java.util.ListResourceBundle {
         {"keytool usage:\n", "keytool usage:\n"},
 
         {"Extensions: ", "Extensions: "},
+        {"(Empty value)", "(Empty value)"},
+        {"Extension Request:", "Extension Request:"},
+        {"PKCS #10 Certificate Request (Version 1.0)\n" +
+                "Subject: %s\nPublic Key: %s format %s key\n",
+                "PKCS #10 Certificate Request (Version 1.0)\n" +
+                "Subject: %s\nPublic Key: %s format %s key\n"},
+        {"Unknown keyUsage type: ", "Unknown keyUsage type: "},
+        {"Unknown extendedkeyUsage type: ", "Unknown extendedkeyUsage type: "},
+        {"Unknown AccessDescription type: ", "Unknown AccessDescription type: "},
+        {"Unrecognized GeneralName type: ", "Unrecognized GeneralName type: "},
+        {"This extension cannot be marked as critical. ",
+                 "This extension cannot be marked as critical. "},
+        {"Odd number of hex digits found: ", "Odd number of hex digits found: "},
+        {"command {0} is ambiguous:", "command {0} is ambiguous:"},
 
         {"-certreq     [-v] [-protected]",
                 "-certreq     [-v] [-protected]"},
@@ -322,6 +337,14 @@ public class Resources extends java.util.ListResourceBundle {
         {"\t     [-validity <valDays>] [-keypass <keypass>]",
                 "\t     [-validity <valDays>] [-keypass <keypass>]"},
         /** rest is same as -certreq starting from -keystore **/
+        {"-gencert     [-v] [-rfc] [-protected]",
+                "-gencert     [-v] [-rfc] [-protected]"},
+        {"\t     [-infile <infile>] [-outfile <outfile>]",
+                 "\t     [-infile <infile>] [-outfile <outfile>]"},
+        {"\t     [-sigalg <sigalg>]",
+                "\t     [-sigalg <sigalg>]"},
+        {"\t     [-ext <key>[:critical][=<value>]]...",
+                "\t     [-ext <key>[:critical][=<value>]]..."},
 
         {"-genseckey   [-v] [-protected]",
                 "-genseckey   [-v] [-protected]"},
@@ -388,6 +411,8 @@ public class Resources extends java.util.ListResourceBundle {
 
         {"-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]",
                 "-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]"},
+        {"-printcertreq   [-v] [-file <cert_file>]",
+                 "-printcertreq   [-v] [-file <cert_file>]"},
         {"No certificate from the SSL server",
                 "No certificate from the SSL server"},
 

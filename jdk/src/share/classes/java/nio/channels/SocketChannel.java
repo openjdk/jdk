@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@ import java.net.Socket;
 import java.net.SocketOption;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.spi.*;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.SelectorProvider;
 
 /**
  * A selectable channel for stream-oriented connecting sockets.
@@ -212,7 +213,7 @@ public abstract class SocketChannel
 
     /**
      * @throws  ConnectionPendingException
-     *          If a non-blocking connection operation is already in progress on
+     *          If a non-blocking connect operation is already in progress on
      *          this channel
      * @throws  AlreadyBoundException               {@inheritDoc}
      * @throws  UnsupportedAddressTypeException     {@inheritDoc}
@@ -226,6 +227,7 @@ public abstract class SocketChannel
         throws IOException;
 
     /**
+     * @throws  UnsupportedOperationException           {@inheritDoc}
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}
@@ -432,15 +434,17 @@ public abstract class SocketChannel
      * socket address then the return value from this method is of type {@link
      * java.net.InetSocketAddress}.
      *
-     * @return  The remote address; {@code null} if the channel is not {@link
-     *          #isOpen open} or the channel's socket is not connected
+     * @return  The remote address; {@code null} if the channel's socket is not
+     *          connected
      *
+     * @throws  ClosedChannelException
+     *          If the channel is closed
      * @throws  IOException
      *          If an I/O error occurs
      *
      * @since 1.7
      */
-    public abstract SocketAddress getConnectedAddress() throws IOException;
+    public abstract SocketAddress getRemoteAddress() throws IOException;
 
     // -- ByteChannel operations --
 

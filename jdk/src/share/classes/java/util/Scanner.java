@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.util;
 
+import java.nio.file.FileRef;
 import java.util.regex.*;
 import java.io.*;
 import java.math.*;
@@ -670,6 +671,49 @@ public final class Scanner implements Iterator<String> {
     {
         this((ReadableByteChannel)(new FileInputStream(source).getChannel()),
              charsetName);
+    }
+
+    /**
+     * {@note new}
+     * Constructs a new <code>Scanner</code> that produces values scanned
+     * from the specified file. Bytes from the file are converted into
+     * characters using the underlying platform's
+     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
+     *
+     * @param   source
+     *          A file to be scanned
+     * @throws  IOException
+     *          if an I/O error occurs opening source
+     *
+     * @since   1.7
+     */
+    public Scanner(FileRef source)
+        throws IOException
+    {
+        this(source.newByteChannel());
+    }
+
+    /**
+     * {@note new}
+     * Constructs a new <code>Scanner</code> that produces values scanned
+     * from the specified file. Bytes from the file are converted into
+     * characters using the specified charset.
+     *
+     * @param   source
+     *          A file to be scanned
+     * @param   charsetName
+     *          The encoding type used to convert bytes from the file
+     *          into characters to be scanned
+     * @throws  IOException
+     *          if an I/O error occurs opening source
+     * @throws  IllegalArgumentException
+     *          if the specified encoding is not found
+     * @since   1.7
+     */
+    public Scanner(FileRef source, String charsetName)
+        throws IOException
+    {
+        this(source.newByteChannel(), charsetName);
     }
 
     /**

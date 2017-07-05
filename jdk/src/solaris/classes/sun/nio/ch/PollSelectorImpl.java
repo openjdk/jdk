@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,8 @@ class PollSelectorImpl
         synchronized (interruptLock) {
             interruptTriggered = true;
         }
-        FileDispatcher.closeIntFD(fd0);
-        FileDispatcher.closeIntFD(fd1);
+        FileDispatcherImpl.closeIntFD(fd0);
+        FileDispatcherImpl.closeIntFD(fd1);
         fd0 = -1;
         fd1 = -1;
         pollWrapper.release(0);

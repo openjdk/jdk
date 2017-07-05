@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,21 @@ public abstract class Cache {
     public abstract void remove(Object key);
 
     /**
+     * Set the maximum size.
+     */
+    public abstract void setCapacity(int size);
+
+    /**
+     * Set the timeout(in seconds).
+     */
+    public abstract void setTimeout(int timeout);
+
+    /**
+     * accept a visitor
+     */
+    public abstract void accept(CacheVisitor visitor);
+
+    /**
      * Return a new memory cache with the specified maximum size, unlimited
      * lifetime for entries, with the values held by SoftReferences.
      */
@@ -178,6 +193,10 @@ public abstract class Cache {
         }
     }
 
+    public interface CacheVisitor {
+        public void visit(Map<Object, Object> map);
+    }
+
 }
 
 class NullCache extends Cache {
@@ -208,6 +227,18 @@ class NullCache extends Cache {
         // empty
     }
 
+    public void setCapacity(int size) {
+        // empty
+    }
+
+    public void setTimeout(int timeout) {
+        // empty
+    }
+
+    public void accept(CacheVisitor visitor) {
+        // empty
+    }
+
 }
 
 class MemoryCache extends Cache {
@@ -218,8 +249,8 @@ class MemoryCache extends Cache {
     private final static boolean DEBUG = false;
 
     private final Map<Object, CacheEntry> cacheMap;
-    private final int maxSize;
-    private final int lifetime;
+    private int maxSize;
+    private long lifetime;
     private final ReferenceQueue queue;
 
     public MemoryCache(boolean soft, int maxSize) {
@@ -328,7 +359,7 @@ class MemoryCache extends Cache {
             oldEntry.invalidate();
             return;
         }
-        if (cacheMap.size() > maxSize) {
+        if (maxSize > 0 && cacheMap.size() > maxSize) {
             expungeExpiredEntries();
             if (cacheMap.size() > maxSize) { // still too large?
                 Iterator<CacheEntry> t = cacheMap.values().iterator();
@@ -366,6 +397,55 @@ class MemoryCache extends Cache {
         if (entry != null) {
             entry.invalidate();
         }
+    }
+
+    public synchronized void setCapacity(int size) {
+        expungeExpiredEntries();
+        if (size > 0 && cacheMap.size() > size) {
+            Iterator<CacheEntry> t = cacheMap.values().iterator();
+            for (int i = cacheMap.size() - size; i > 0; i--) {
+                CacheEntry lruEntry = t.next();
+                if (DEBUG) {
+                    System.out.println("** capacity reset removal "
+                        + lruEntry.getKey() + " | " + lruEntry.getValue());
+                }
+                t.remove();
+                lruEntry.invalidate();
+            }
+        }
+
+        maxSize = size > 0 ? size : 0;
+
+        if (DEBUG) {
+            System.out.println("** capacity reset to " + size);
+        }
+    }
+
+    public synchronized void setTimeout(int timeout) {
+        emptyQueue();
+        lifetime = timeout > 0 ? timeout * 1000L : 0L;
+
+        if (DEBUG) {
+            System.out.println("** lifetime reset to " + timeout);
+        }
+    }
+
+    // it is a heavyweight method.
+    public synchronized void accept(CacheVisitor visitor) {
+        expungeExpiredEntries();
+        Map<Object, Object> cached = getCachedEntries();
+
+        visitor.visit(cached);
+    }
+
+    private Map<Object, Object> getCachedEntries() {
+        Map<Object,Object> kvmap = new HashMap<Object,Object>(cacheMap.size());
+
+        for (CacheEntry entry : cacheMap.values()) {
+            kvmap.put(entry.getKey(), entry.getValue());
+        }
+
+        return kvmap;
     }
 
     protected CacheEntry newEntry(Object key, Object value,
