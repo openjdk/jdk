@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,6 @@
  * @bug     4093617
  * @summary Object has no superclass
  * @author  Peter von der Ah\u00e9
- * @compile/module=java.base/fail/ref=T4093617.out -XDrawDiagnostics Object.java
+ * @compile/module=java.base/fail/ref=T4093617.out -XDrawDiagnostics java/lang/Object.java
  */
 
