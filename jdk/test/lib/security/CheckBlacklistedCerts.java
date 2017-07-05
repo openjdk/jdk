@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,9 @@ public class CheckBlacklistedCerts {
         };
 
         // Is this an OPENJDK build?
-        if (!new File(home, "lib/security/local_policy.jar").exists()) {
+        String prop = System.getProperty("java.runtime.name");
+        if (prop != null && prop.startsWith("OpenJDK")) {
+            System.out.println("This is a OpenJDK build.");
             blacklists = Arrays.copyOf(blacklists, 1);
         }
 

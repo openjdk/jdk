@@ -126,10 +126,42 @@ public final class ScriptClassInfo {
         return Collections.unmodifiableList(res);
     }
 
+    boolean isConstructorNeeded() {
+        // Constructor class generation is needed if we one or
+        // more constructor properties are defined or @Constructor
+        // is defined in the class.
+        for (final MemberInfo memInfo : members) {
+            if (memInfo.getKind() == Kind.CONSTRUCTOR ||
+                memInfo.getWhere() == Where.CONSTRUCTOR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean isPrototypeNeeded() {
+        // Prototype class generation is needed if we have atleast one
+        // prototype property or @Constructor defined in the class.
+        for (final MemberInfo memInfo : members) {
+            if (memInfo.getWhere() == Where.PROTOTYPE || memInfo.isConstructor()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     int getPrototypeMemberCount() {
         int count = 0;
         for (final MemberInfo memInfo : members) {
-            if (memInfo.getWhere() == Where.PROTOTYPE || memInfo.isConstructor()) {
+            switch (memInfo.getKind()) {
+                case SETTER:
+                case SPECIALIZED_FUNCTION:
+                    // SETTER was counted when GETTER was encountered.
+                    // SPECIALIZED_FUNCTION was counted as FUNCTION already.
+                    continue;
+            }
+
+            if (memInfo.getWhere() == Where.PROTOTYPE) {
                 count++;
             }
         }
@@ -139,6 +171,16 @@ public final class ScriptClassInfo {
     int getConstructorMemberCount() {
         int count = 0;
         for (final MemberInfo memInfo : members) {
+            switch (memInfo.getKind()) {
+                case CONSTRUCTOR:
+                case SETTER:
+                case SPECIALIZED_FUNCTION:
+                    // SETTER was counted when GETTER was encountered.
+                    // Constructor and constructor SpecializedFunctions
+                    // are not added as members and so not counted.
+                    continue;
+            }
+
             if (memInfo.getWhere() == Where.CONSTRUCTOR) {
                 count++;
             }
@@ -149,6 +191,14 @@ public final class ScriptClassInfo {
     int getInstancePropertyCount() {
         int count = 0;
         for (final MemberInfo memInfo : members) {
+            switch (memInfo.getKind()) {
+                case SETTER:
+                case SPECIALIZED_FUNCTION:
+                    // SETTER was counted when GETTER was encountered.
+                    // SPECIALIZED_FUNCTION was counted as FUNCTION already.
+                    continue;
+            }
+
             if (memInfo.getWhere() == Where.INSTANCE) {
                 count++;
             }

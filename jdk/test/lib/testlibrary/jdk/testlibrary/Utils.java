@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@ package jdk.testlibrary;
 
 import static jdk.testlibrary.Asserts.assertTrue;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -40,6 +37,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 /**
  * Common library for various test helper functions.
@@ -325,5 +323,39 @@ public final class Utils {
             }
         }
         return condition.getAsBoolean();
+    }
+
+    /**
+     * Interface same as java.lang.Runnable but with
+     * method {@code run()} able to throw any Throwable.
+     */
+    public static interface ThrowingRunnable {
+        void run() throws Throwable;
+    }
+
+    /**
+     * Filters out an exception that may be thrown by the given
+     * test according to the given filter.
+     *
+     * @param test - method that is invoked and checked for exception.
+     * @param filter - function that checks if the thrown exception matches
+     *                 criteria given in the filter's implementation.
+     * @return - exception that matches the filter if it has been thrown or
+     *           {@code null} otherwise.
+     * @throws Throwable - if test has thrown an exception that does not
+     *                     match the filter.
+     */
+    public static Throwable filterException(ThrowingRunnable test,
+            Function<Throwable, Boolean> filter) throws Throwable {
+        try {
+            test.run();
+        } catch (Throwable t) {
+            if (filter.apply(t)) {
+                return t;
+            } else {
+                throw t;
+            }
+        }
+        return null;
     }
 }

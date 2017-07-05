@@ -831,6 +831,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \
+     static_field(StubRoutines,                _squareToLen,                                  address)                               \
+     static_field(StubRoutines,                _mulAdd,                                       address)                               \
                                                                                                                                      \
   /*****************/                                                                                                                \
   /* SharedRuntime */                                                                                                                \

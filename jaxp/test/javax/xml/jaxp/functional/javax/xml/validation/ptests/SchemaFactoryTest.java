@@ -27,6 +27,7 @@ import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -39,9 +40,12 @@ import java.nio.file.Paths;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -60,6 +64,7 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 
 /*
+ * @bug 8080907
  * @summary Class containing the test cases for SchemaFactory
  */
 @Test(singleThreaded = true)
@@ -68,8 +73,9 @@ public class SchemaFactoryTest {
     @BeforeClass
     public void setup() throws SAXException, IOException, ParserConfigurationException {
         sf = newSchemaFactory();
-
         assertNotNull(sf);
+
+        ifac = XMLInputFactory.newInstance();
 
         xsd1 = Files.readAllBytes(Paths.get(XML_DIR + "test.xsd"));
         xsd2 = Files.readAllBytes(Paths.get(XML_DIR + "test1.xsd"));
@@ -152,11 +158,13 @@ public class SchemaFactoryTest {
     }
 
     @DataProvider(name = "valid-source")
-    public Object[][] getValidSource() {
+    public Object[][] getValidSource() throws XMLStreamException {
         return new Object[][] {
                 { streamSource(xsd1) },
                 { saxSource(xsd1) },
-                { domSource(xsdDoc1) } };
+                { domSource(xsdDoc1) },
+                { staxStreamSource(xsd1) },
+                { staxEventSource(xsd1) } };
 
     }
 
@@ -299,6 +307,34 @@ public class SchemaFactoryTest {
         sf.setFeature(null, true);
     }
 
+    @DataProvider(name = "source-feature")
+    public Object[][] getSourceFeature() {
+        return new Object[][] {
+                { StreamSource.FEATURE },
+                { SAXSource.FEATURE },
+                { DOMSource.FEATURE },
+                { DOMSource.FEATURE } };
+
+    }
+
+    /*
+     * Return true for each of the JAXP Source features to indicate that this
+     * SchemaFactory supports all of the built-in JAXP Source types.
+     */
+    @Test(dataProvider = "source-feature")
+    public void testSourceFeatureGet(String sourceFeature) throws Exception {
+        assertTrue(newSchemaFactory().getFeature(sourceFeature));
+    }
+
+    /*
+     * JAXP Source features are read-only because this SchemaFactory always
+     * supports all JAXP Source types.
+     */
+    @Test(dataProvider = "source-feature", expectedExceptions = SAXNotSupportedException.class)
+    public void testSourceFeatureSet(String sourceFeature) throws Exception {
+        newSchemaFactory().setFeature(sourceFeature, false);
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidSchemaLanguage() {
         final String INVALID_SCHEMA_LANGUAGE = "http://relaxng.org/ns/structure/1.0";
@@ -337,6 +373,15 @@ public class SchemaFactoryTest {
         return new DOMSource(xsdDoc);
     }
 
+    private Source staxStreamSource(byte[] xsd) throws XMLStreamException {
+        return new StAXSource(ifac.createXMLStreamReader(newInputStream(xsd)));
+    }
+
+    private Source staxEventSource(byte[] xsd) throws XMLStreamException {
+        return new StAXSource(ifac.createXMLEventReader(newInputStream(xsd)));
+    }
+
+
     private SchemaFactory newSchemaFactory() {
         return SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
     }
@@ -346,6 +391,7 @@ public class SchemaFactoryTest {
     private static final String SCHEMA_FACTORY_CLASSNAME = "com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory";
 
     private SchemaFactory sf;
+    private XMLInputFactory ifac;
     private byte[] xsd1;
     private byte[] xsd2;
     private Document xsdDoc1;
