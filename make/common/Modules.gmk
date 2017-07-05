@@ -72,7 +72,6 @@ BOOT_MODULES += \
 
 # to be deprivileged
 BOOT_MODULES += \
-    java.scripting \
     java.sql.rowset \
     java.smartcardio \
     jdk.naming.rmi \
@@ -86,6 +85,10 @@ UPGRADEABLE_MODULES += \
     java.xml.bind \
     java.xml.ws \
     #
+
+# Modules explicitly declared as not being upgradeable even though they require
+# an upgradeable module.
+NON_UPGRADEABLE_MODULES +=
 
 AGGREGATOR_MODULES += \
     java.compact1 \
@@ -102,6 +105,7 @@ PLATFORM_MODULES += \
 
 PLATFORM_MODULES += \
     java.compiler \
+    java.scripting \
     jdk.accessibility \
     jdk.charsets \
     jdk.crypto.ec \
@@ -244,6 +248,19 @@ FindTransitiveDepsForModule = \
             $(call FindDepsForModule, $m) \
             $(foreach n, $(call FindDepsForModule, $m), \
                  $(call FindDepsForModule, $n))))
+
+# Upgradeable modules are those that are either defined as upgradeable or that
+# require an upradeable module.
+FindAllUpgradeableModules = \
+    $(filter-out $(MODULES_FILTER) $(NON_UPGRADEABLE_MODULES), \
+        $(sort $(UPGRADEABLE_MODULES) $(foreach m, \
+            $(filter-out $(UPGRADEABLE_MODULES), $(call FindAllModules)), \
+          $(if $(filter $(UPGRADEABLE_MODULES), \
+              $(call FindTransitiveDepsForModule, $m)), \
+            $m \
+          ) \
+        )) \
+    )
 
 ################################################################################
 
