@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -974,8 +974,11 @@ public class Attr extends JCTree.Visitor {
 
             ClassSymbol owner = env.enclClass.sym;
             if ((owner.flags() & ANNOTATION) != 0 &&
-                    tree.params.nonEmpty())
-                log.error(tree.params.head.pos(),
+                    (tree.params.nonEmpty() ||
+                    tree.recvparam != null))
+                log.error(tree.params.nonEmpty() ?
+                        tree.params.head.pos() :
+                        tree.recvparam.pos(),
                         "intf.annotation.members.cant.have.params");
 
             // Attribute all value parameters.
@@ -3058,7 +3061,8 @@ public class Attr extends JCTree.Visitor {
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
             if (resType.isErroneous() ||
-                    new FunctionalReturnContext(checkContext).compatible(resType, returnType, types.noWarnings)) {
+                    new FunctionalReturnContext(checkContext).compatible(resType, returnType,
+                            checkContext.checkWarner(tree, resType, returnType))) {
                 incompatibleReturnType = null;
             }
         }
@@ -3994,10 +3998,16 @@ public class Attr extends JCTree.Visitor {
                         rs.methodArguments(argtypes.map(checkDeferredMap)),
                         kindName(sym.location()),
                         sym.location());
-               owntype = new MethodType(owntype.getParameterTypes(),
-                       types.erasure(owntype.getReturnType()),
-                       types.erasure(owntype.getThrownTypes()),
-                       syms.methodClass);
+                if (resultInfo.pt != Infer.anyPoly ||
+                        !owntype.hasTag(METHOD) ||
+                        !owntype.isPartial()) {
+                    //if this is not a partially inferred method type, erase return type. Otherwise,
+                    //erasure is carried out in PartiallyInferredMethodType.check().
+                    owntype = new MethodType(owntype.getParameterTypes(),
+                            types.erasure(owntype.getReturnType()),
+                            types.erasure(owntype.getThrownTypes()),
+                            syms.methodClass);
+                }
             }
 
             PolyKind pkind = (sym.type.hasTag(FORALL) &&
@@ -4958,6 +4968,9 @@ public class Attr extends JCTree.Visitor {
             if (that.sym == null) {
                 that.sym = new VarSymbol(0, that.name, that.type, syms.noSymbol);
                 that.sym.adr = 0;
+            }
+            if (that.vartype == null) {
+                that.vartype = make.Erroneous();
             }
             super.visitVarDef(that);
         }

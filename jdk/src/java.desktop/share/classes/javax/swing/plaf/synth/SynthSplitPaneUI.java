@@ -80,6 +80,7 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
      * Installs the UI defaults.
      */
     @Override
+    @SuppressWarnings("deprecation")
     protected void installDefaults() {
         updateStyle(splitPane);
 
