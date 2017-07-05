@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -743,7 +743,7 @@ public class XMLDocumentScannerImpl
             // scan XMLDecl
             try {
                 if (fEntityScanner.skipString(XMLDECL)) {
-                    if (fEntityScanner.peekChar() == ' ') {
+                    if (XMLChar.isSpace(fEntityScanner.peekChar())) {
                         fMarkupDepth++;
                         scanXMLDeclOrTextDecl(false);
                     } else {

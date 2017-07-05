@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,26 @@
  * @library /test/lib ..
  * @compile p2/c2.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckJavaBase
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 public class AccessCheckJavaBase {
 
-    // Test that a class defined to module2 always can read java.base.
+    // Test that a class defined to module_two always can read java.base.
     public static void main(String args[]) throws Throwable {
         // Get the class loader for AccessCheckJavaBase and assume it's also used to
         // load class p2.c2.
         ClassLoader this_cldr = AccessCheckJavaBase.class.getClassLoader();
 
         // Define a module for p2.
-        Object m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
+        Object m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
 
         // p2.c2 can read its superclass java.lang.Object defined within java.base
         try {

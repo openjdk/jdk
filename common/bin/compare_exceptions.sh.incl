@@ -38,25 +38,9 @@ fi
 if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
 
   STRIP_BEFORE_COMPARE="
-      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-      ./demo/jvmti/gctest/lib/libgctest.so
-      ./demo/jvmti/heapTracker/lib/libheapTracker.so
-      ./demo/jvmti/heapViewer/lib/libheapViewer.so
-      ./demo/jvmti/minst/lib/libminst.so
-      ./demo/jvmti/mtrace/lib/libmtrace.so
-      ./demo/jvmti/versionCheck/lib/libversionCheck.so
-      ./demo/jvmti/waiters/lib/libwaiters.so
       "
 
   ACCEPTED_BIN_DIFF="
-      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-      ./demo/jvmti/gctest/lib/libgctest.so
-      ./demo/jvmti/heapTracker/lib/libheapTracker.so
-      ./demo/jvmti/heapViewer/lib/libheapViewer.so
-      ./demo/jvmti/minst/lib/libminst.so
-      ./demo/jvmti/mtrace/lib/libmtrace.so
-      ./demo/jvmti/versionCheck/lib/libversionCheck.so
-      ./demo/jvmti/waiters/lib/libwaiters.so
       ./lib/client/libjsig.so
       ./lib/client/libjvm.so
       ./lib/libattach.so
@@ -151,15 +135,6 @@ fi
 if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
 
   STRIP_BEFORE_COMPARE="
-      ./demo/jni/Poller/lib/libPoller.so
-      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-      ./demo/jvmti/gctest/lib/libgctest.so
-      ./demo/jvmti/heapTracker/lib/libheapTracker.so
-      ./demo/jvmti/heapViewer/lib/libheapViewer.so
-      ./demo/jvmti/minst/lib/libminst.so
-      ./demo/jvmti/mtrace/lib/libmtrace.so
-      ./demo/jvmti/versionCheck/lib/libversionCheck.so
-      ./demo/jvmti/waiters/lib/libwaiters.so
       "
 
   SORT_SYMBOLS="
@@ -174,15 +149,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
   SKIP_BIN_DIFF="true"
 
   ACCEPTED_SMALL_SIZE_DIFF="
-      ./demo/jni/Poller/lib/libPoller.so
-      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-      ./demo/jvmti/gctest/lib/libgctest.so
-      ./demo/jvmti/heapTracker/lib/libheapTracker.so
-      ./demo/jvmti/heapViewer/lib/libheapViewer.so
-      ./demo/jvmti/minst/lib/libminst.so
-      ./demo/jvmti/mtrace/lib/libmtrace.so
-      ./demo/jvmti/versionCheck/lib/libversionCheck.so
-      ./demo/jvmti/waiters/lib/libwaiters.so
       ./lib/jli/libjli.so
       ./lib/jspawnhelper
       ./lib/libJdbcOdbc.so
@@ -279,19 +245,9 @@ fi
 if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]; then
 
   STRIP_BEFORE_COMPARE="
-      ./demo/jni/Poller/lib/libPoller.so
-      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-      ./demo/jvmti/gctest/lib/libgctest.so
-      ./demo/jvmti/heapTracker/lib/libheapTracker.so
-      ./demo/jvmti/heapViewer/lib/libheapViewer.so
-      ./demo/jvmti/minst/lib/libminst.so
-      ./demo/jvmti/mtrace/lib/libmtrace.so
-      ./demo/jvmti/versionCheck/lib/libversionCheck.so
-      ./demo/jvmti/waiters/lib/libwaiters.so
       "
 
   SORT_SYMBOLS="
-      ./demo/jvmti/waiters/lib/libwaiters.so
       ./lib/libjsig.so
       ./lib/libfontmanager.so
       ./lib/libjimage.so
@@ -305,15 +261,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
   SKIP_BIN_DIFF="true"
 
   ACCEPTED_SMALL_SIZE_DIFF="
-      ./demo/jni/Poller/lib/libPoller.so
-      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-      ./demo/jvmti/gctest/lib/libgctest.so
-      ./demo/jvmti/heapTracker/lib/libheapTracker.so
-      ./demo/jvmti/heapViewer/lib/libheapViewer.so
-      ./demo/jvmti/minst/lib/libminst.so
-      ./demo/jvmti/mtrace/lib/libmtrace.so
-      ./demo/jvmti/versionCheck/lib/libversionCheck.so
-      ./demo/jvmti/waiters/lib/libwaiters.so
       ./lib/client/libjvm.so
       ./lib/jli/libjli.so
       ./lib/jspawnhelper
@@ -438,9 +385,6 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 
   # Probably should add all libs here
   ACCEPTED_SMALL_SIZE_DIFF="
-      ./demo/jvmti/gctest/lib/gctest.dll
-      ./demo/jvmti/heapTracker/lib/heapTracker.dll
-      ./demo/jvmti/minst/lib/minst.dll
       ./bin/attach.dll
       ./bin/jsoundds.dll
       ./bin/client/jvm.dll
@@ -579,14 +523,6 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
       ./bin/wsgen
       ./bin/wsimport
       ./bin/xjc
-      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.dylib
-      ./demo/jvmti/gctest/lib/libgctest.dylib
-      ./demo/jvmti/heapTracker/lib/libheapTracker.dylib
-      ./demo/jvmti/heapViewer/lib/libheapViewer.dylib
-      ./demo/jvmti/minst/lib/libminst.dylib
-      ./demo/jvmti/mtrace/lib/libmtrace.dylib
-      ./demo/jvmti/versionCheck/lib/libversionCheck.dylib
-      ./demo/jvmti/waiters/lib/libwaiters.dylib
       ./Contents/Home/bin/_javaws
       ./Contents/Home/bin/javaws
       ./Contents/Home/bin/idlj
