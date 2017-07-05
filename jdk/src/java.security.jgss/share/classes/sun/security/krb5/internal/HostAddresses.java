@@ -98,8 +98,8 @@ public class HostAddresses implements Cloneable {
             throw new KrbException(Krb5.KRB_ERR_GENERIC, "Bad name");
 
         String host = components[1];
-        InetAddress addr[] = InetAddress.getAllByName(host);
-        HostAddress hAddrs[] = new HostAddress[addr.length];
+        InetAddress[] addr = InetAddress.getAllByName(host);
+        HostAddress[] hAddrs = new HostAddress[addr.length];
 
         for (int i = 0; i < addr.length; i++) {
             hAddrs[i] = new HostAddress(addr[i]);

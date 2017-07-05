@@ -507,7 +507,7 @@ public class PKCS7 {
         // certificates (optional)
         if (certificates != null && certificates.length != 0) {
             // cast to X509CertImpl[] since X509CertImpl implements DerEncoder
-            X509CertImpl implCerts[] = new X509CertImpl[certificates.length];
+            X509CertImpl[] implCerts = new X509CertImpl[certificates.length];
             for (int i = 0; i < certificates.length; i++) {
                 if (certificates[i] instanceof X509CertImpl)
                     implCerts[i] = (X509CertImpl) certificates[i];

@@ -54,7 +54,7 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec {
     private final BigInteger primeExponentP;
     private final BigInteger primeExponentQ;
     private final BigInteger crtCoefficient;
-    private final RSAOtherPrimeInfo otherPrimeInfo[];
+    private final RSAOtherPrimeInfo[] otherPrimeInfo;
 
    /**
     * Creates a new {@code RSAMultiPrimePrivateCrtKeySpec}

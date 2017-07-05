@@ -729,8 +729,8 @@ public class JndiLoginModule implements LoginModule {
 
         Crypt c = new Crypt();
         try {
-            byte oldCrypt[] = encryptedPassword.getBytes("UTF8");
-            byte newCrypt[] = c.crypt(password.getBytes("UTF8"),
+            byte[] oldCrypt = encryptedPassword.getBytes("UTF8");
+            byte[] newCrypt = c.crypt(password.getBytes("UTF8"),
                                       oldCrypt);
             if (newCrypt.length != oldCrypt.length)
                 return false;

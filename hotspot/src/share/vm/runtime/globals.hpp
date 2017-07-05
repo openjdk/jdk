@@ -848,6 +848,9 @@ public:
   product(bool, UseCRC32Intrinsics, false,                                  \
           "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \
+  product(bool, UseCRC32CIntrinsics, false,                                 \
+          "use intrinsics for java.util.zip.CRC32C")                        \
+                                                                            \
   develop(bool, TraceCallFixup, false,                                      \
           "Trace all call fixups")                                          \
                                                                             \

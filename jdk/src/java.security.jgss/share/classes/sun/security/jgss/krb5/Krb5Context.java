@@ -159,7 +159,7 @@ class Krb5Context implements GSSContextSpi {
     /**
      * Constructor for Krb5Context to import a previously exported context.
      */
-    public Krb5Context(GSSCaller caller, byte [] interProcessToken)
+    public Krb5Context(GSSCaller caller, byte[] interProcessToken)
         throws GSSException {
         throw new GSSException(GSSException.UNAVAILABLE,
                                -1, "GSS Import Context not available");
@@ -905,7 +905,7 @@ class Krb5Context implements GSSContextSpi {
      * and verifyMIC care about the remote sequence number (peerSeqNumber).
      */
 
-    public final byte[] wrap(byte inBuf[], int offset, int len,
+    public final byte[] wrap(byte[] inBuf, int offset, int len,
                              MessageProp msgProp) throws GSSException {
         if (DEBUG) {
             System.out.println("Krb5Context.wrap: data=["
@@ -943,7 +943,7 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    public final int wrap(byte inBuf[], int inOffset, int len,
+    public final int wrap(byte[] inBuf, int inOffset, int len,
                           byte[] outBuf, int outOffset,
                           MessageProp msgProp) throws GSSException {
 
@@ -977,7 +977,7 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    public final void wrap(byte inBuf[], int offset, int len,
+    public final void wrap(byte[] inBuf, int offset, int len,
                            OutputStream os, MessageProp msgProp)
         throws GSSException {
 
@@ -1032,7 +1032,7 @@ class Krb5Context implements GSSContextSpi {
         wrap(data, 0, data.length, os, msgProp);
     }
 
-    public final byte[] unwrap(byte inBuf[], int offset, int len,
+    public final byte[] unwrap(byte[] inBuf, int offset, int len,
                                MessageProp msgProp)
         throws GSSException {
 
@@ -1069,7 +1069,7 @@ class Krb5Context implements GSSContextSpi {
             return data;
         }
 
-    public final int unwrap(byte inBuf[], int inOffset, int len,
+    public final int unwrap(byte[] inBuf, int inOffset, int len,
                              byte[] outBuf, int outOffset,
                              MessageProp msgProp) throws GSSException {
 
@@ -1141,7 +1141,7 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    public final byte[] getMIC(byte []inMsg, int offset, int len,
+    public final byte[] getMIC(byte[] inMsg, int offset, int len,
                                MessageProp msgProp)
         throws GSSException {
 
@@ -1166,7 +1166,7 @@ class Krb5Context implements GSSContextSpi {
             }
         }
 
-    private int getMIC(byte []inMsg, int offset, int len,
+    private int getMIC(byte[] inMsg, int offset, int len,
                        byte[] outBuf, int outOffset,
                        MessageProp msgProp)
         throws GSSException {
@@ -1236,7 +1236,7 @@ class Krb5Context implements GSSContextSpi {
         getMIC(data, 0, data.length, os, msgProp);
     }
 
-    public final void verifyMIC(byte []inTok, int tokOffset, int tokLen,
+    public final void verifyMIC(byte[] inTok, int tokOffset, int tokLen,
                                 byte[] inMsg, int msgOffset, int msgLen,
                                 MessageProp msgProp)
         throws GSSException {
@@ -1293,7 +1293,7 @@ class Krb5Context implements GSSContextSpi {
      * @param os the output token will be written to this stream
      * @exception GSSException
      */
-    public final byte [] export() throws GSSException {
+    public final byte[] export() throws GSSException {
         throw new GSSException(GSSException.UNAVAILABLE, -1,
                                "GSS Export Context not available");
     }
