@@ -380,7 +380,9 @@ public abstract class PKCS11Test {
     }
 
     static double getNSSInfo(String library) {
-        String nssHeader = "$Header: NSS";
+        // look for two types of headers in NSS libraries
+        String nssHeader1 = "$Header: NSS";
+        String nssHeader2 = "Version: NSS";
         boolean found = false;
         String s = null;
         int i = 0;
@@ -408,7 +410,8 @@ public abstract class PKCS11Test {
                     }
 
                     s = new String(data, 0, read);
-                    if ((i = s.indexOf(nssHeader)) > 0) {
+                    i = s.indexOf(nssHeader1);
+                    if (i > 0 || (i = s.indexOf(nssHeader2)) > 0) {
                         found = true;
                         // If the nssHeader is before 920 we can break, otherwise
                         // we may not have the whole header so do another read.  If
