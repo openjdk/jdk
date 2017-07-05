@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.LinkedList;
@@ -44,8 +43,6 @@ import static jdk.internal.jimage.ImageHeader.MAJOR_VERSION;
 import static jdk.internal.jimage.ImageHeader.MINOR_VERSION;
 import jdk.internal.jimage.ImageLocation;
 import jdk.tools.jlink.internal.ImageResourcesTree;
-import jdk.tools.jlink.internal.ImagePluginConfiguration;
-import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import static jdk.tools.jlink.internal.TaskHelper.JIMAGE_BUNDLE;
@@ -97,7 +94,6 @@ class JImageTask {
         EXTRACT,
         INFO,
         LIST,
-        RECREATE,
         SET,
         VERIFY
     };
@@ -152,20 +148,27 @@ class JImageTask {
             setLog(new PrintWriter(System.out));
         }
 
+        if (args.length == 0) {
+            log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
+            return EXIT_ABNORMAL;
+        }
+
         try {
             List<String> unhandled = optionsHelper.handleOptions(this, args);
             if(!unhandled.isEmpty()) {
-                options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
+                try {
+                    options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
+                } catch (IllegalArgumentException ex) {
+                    throw taskHelper.newBadArgs("err.not.a.task", unhandled.get(0));
+                }
                 for(int i = 1; i < unhandled.size(); i++) {
                     options.jimages.add(new File(unhandled.get(i)));
                 }
+            } else {
+                throw taskHelper.newBadArgs("err.not.a.task", "<unspecified>");
             }
             if (options.help) {
                 optionsHelper.showHelp(PROGNAME);
-            }
-            if(optionsHelper.listPlugins()) {
-                optionsHelper.listPlugins(true);
-                return EXIT_OK;
             }
             if (options.version || options.fullVersion) {
                 taskHelper.showVersion(options.fullVersion);
@@ -186,47 +189,17 @@ class JImageTask {
         }
     }
 
-    private void recreate() throws Exception, BadArgs {
-        File directory = new File(options.directory);
-        if (!directory.isDirectory()) {
-            throw taskHelper.newBadArgs("err.not.a.dir", directory.getAbsolutePath());
-        }
-        Path dirPath = directory.toPath();
-        if (options.jimages.isEmpty()) {
-            throw taskHelper.newBadArgs("err.jimage.not.specified");
-        } else if (options.jimages.size() != 1) {
-            throw taskHelper.newBadArgs("err.only.one.jimage");
-        }
-
-        Path jimage = options.jimages.get(0).toPath();
-
-        if (jimage.toFile().createNewFile()) {
-            ImagePluginStack pc = ImagePluginConfiguration.parseConfiguration(taskHelper.
-                    getPluginsConfig(null, false));
-            ExtractedImage img = new ExtractedImage(dirPath, pc, log, options.verbose);
-            img.recreateJImage(jimage);
-        } else {
-            throw taskHelper.newBadArgs("err.jimage.already.exists", jimage.getFileName());
-        }
-    }
-
-    private void title(File file, BasicImageReader reader) {
-        log.println("jimage: " + file.getName());
-    }
-
     private void listTitle(File file, BasicImageReader reader) {
-        title(file, reader);
-
-        if (options.verbose) {
-            log.print(pad("Offset", OFFSET_WIDTH + 1));
-            log.print(pad("Size", SIZE_WIDTH + 1));
-            log.print(pad("Compressed", COMPRESSEDSIZE_WIDTH + 1));
-            log.println(" Entry");
-        }
+        log.println("jimage: " + file);
     }
 
     private interface JImageAction {
         public void apply(File file, BasicImageReader reader) throws IOException, BadArgs;
+    }
+
+    private interface ModuleAction {
+         public void apply(BasicImageReader reader,
+                 String oldModule, String newModule) throws IOException, BadArgs;
     }
 
     private interface ResourceAction {
@@ -254,23 +227,32 @@ class JImageTask {
         }
     }
 
-    private static final int NUMBER_WIDTH = 12;
-    private static final int OFFSET_WIDTH = NUMBER_WIDTH;
-    private static final int SIZE_WIDTH = NUMBER_WIDTH;
-    private static final int COMPRESSEDSIZE_WIDTH = NUMBER_WIDTH;
+    private static final int OFFSET_WIDTH = 12;
+    private static final int SIZE_WIDTH = 10;
+    private static final int COMPRESSEDSIZE_WIDTH = 10;
 
-    private void print(String entry, ImageLocation location) {
+    private String trimModule(String name) {
+        int offset = name.indexOf('/', 1);
+
+        if (offset != -1 && offset + 1 < name.length()) {
+            return name.substring(offset + 1);
+        }
+
+        return name;
+    }
+
+    private void print(String name, ImageLocation location) {
         log.print(pad(location.getContentOffset(), OFFSET_WIDTH) + " ");
         log.print(pad(location.getUncompressedSize(), SIZE_WIDTH) + " ");
         log.print(pad(location.getCompressedSize(), COMPRESSEDSIZE_WIDTH) + " ");
-        log.println(entry);
+        log.println(trimModule(name));
     }
 
-    private void print(BasicImageReader reader, String entry) {
+    private void print(BasicImageReader reader, String name) {
         if (options.verbose) {
-            print(entry, reader.findLocation(entry));
+            print(name, reader.findLocation(name));
         } else {
-            log.println(entry);
+            log.println("    " + trimModule(name));
         }
     }
 
@@ -287,6 +269,18 @@ class JImageTask {
         log.println(" Locations Size: " + header.getLocationsSize());
         log.println(" Strings Size:   " + header.getStringsSize());
         log.println(" Index Size:     " + header.getIndexSize());
+    }
+
+    private void listModule(BasicImageReader reader, String oldModule, String newModule) {
+        log.println();
+        log.println("Module: " + newModule);
+
+        if (options.verbose) {
+            log.print(pad("Offset", OFFSET_WIDTH) + " ");
+            log.print(pad("Size", SIZE_WIDTH) + " ");
+            log.print(pad("Compressed", COMPRESSEDSIZE_WIDTH) + " ");
+            log.println("Entry");
+        }
     }
 
     private void list(BasicImageReader reader, String name, ImageLocation location) {
@@ -338,7 +332,12 @@ class JImageTask {
     }
 
     private void iterate(JImageAction jimageAction,
+            ModuleAction moduleAction,
             ResourceAction resourceAction) throws IOException, BadArgs {
+        if (options.jimages.isEmpty()) {
+            throw taskHelper.newBadArgs("err.no.jimage");
+        }
+
         for (File file : options.jimages) {
             if (!file.exists() || !file.isFile()) {
                 throw taskHelper.newBadArgs("err.not.a.jimage", file.getName());
@@ -351,9 +350,23 @@ class JImageTask {
 
                 if (resourceAction != null) {
                     String[] entryNames = reader.getEntryNames();
+                    String oldModule = "";
 
                     for (String name : entryNames) {
                         if (!ImageResourcesTree.isTreeInfoResource(name)) {
+                            if (moduleAction != null) {
+                                int offset = name.indexOf('/', 1);
+
+                                String newModule = offset != -1 ?
+                                        name.substring(1, offset) :
+                                        "<unknown>";
+
+                                if (!oldModule.equals(newModule)) {
+                                    moduleAction.apply(reader, oldModule, newModule);
+                                    oldModule = newModule;
+                                }
+                            }
+
                             ImageLocation location = reader.findLocation(name);
                             resourceAction.apply(reader, name, location);
                         }
@@ -366,22 +379,19 @@ class JImageTask {
     private boolean run() throws Exception, BadArgs {
         switch (options.task) {
             case EXTRACT:
-                iterate(null, this::extract);
+                iterate(null, null, this::extract);
                 break;
             case INFO:
-                iterate(this::info, null);
+                iterate(this::info, null, null);
                 break;
             case LIST:
-                iterate(this::listTitle, this::list);
-                break;
-            case RECREATE:
-                recreate();
+                iterate(this::listTitle, this::listModule, this::list);
                 break;
             case SET:
-                iterate(this::set, null);
+                iterate(this::set, null, null);
                 break;
             case VERIFY:
-                iterate(this::title, this::verify);
+                iterate(this::listTitle, null, this::verify);
                 break;
             default:
                 throw taskHelper.newBadArgs("err.invalid.task", options.task.name()).showUsage(true);

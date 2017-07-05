@@ -344,7 +344,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     length.set_instruction(x->length());
     length.load_item();
   }
-  if (needs_store_check) {
+  if (needs_store_check || x->check_boolean()) {
     value.load_item();
   } else {
     value.load_for_store(x->elt_type());
@@ -389,7 +389,8 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     pre_barrier(LIR_OprFact::address(array_addr), LIR_OprFact::illegalOpr /* pre_val */,
                 true /* do_load */, false /* patch */, NULL);
   }
-  __ move(value.result(), array_addr, null_check_info);
+  LIR_Opr result = maybe_mask_boolean(x, array.result(), value.result(), null_check_info);
+  __ move(result, array_addr, null_check_info);
   if (obj_store) {
     // Precise card mark
     post_barrier(LIR_OprFact::address(array_addr), value.result());

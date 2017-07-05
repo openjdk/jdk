@@ -31,6 +31,7 @@ import java.security.AccessController;
 
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import sun.security.action.GetPropertyAction;
 
 
 /**
@@ -39,8 +40,7 @@ import jdk.internal.misc.JavaIOFileDescriptorAccess;
  */
 
 public final class SdpSupport {
-    private static final String os = AccessController
-        .doPrivileged(new sun.security.action.GetPropertyAction("os.name"));
+    private static final String os = GetPropertyAction.getProperty("os.name");
     private static final boolean isSupported = (os.equals("SunOS") || (os.equals("Linux")));
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();

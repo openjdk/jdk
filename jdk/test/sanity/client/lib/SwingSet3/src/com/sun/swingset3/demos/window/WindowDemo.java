@@ -150,7 +150,6 @@ public final class WindowDemo extends JPanel {
             JFrame frame = new JFrame();
             WindowDemo demo = new WindowDemo();
             frame.add(demo);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.pack();
             frame.setVisible(true);
             demo.start();

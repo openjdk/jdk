@@ -38,7 +38,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.awt.SunToolkit;
 import sun.awt.AppContext;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * A frame to show the applet tag in.
@@ -854,7 +853,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
         //
         final AppletPanel p = panel;
 
-        new ManagedLocalsThread(new Runnable()
+        new Thread(null, new Runnable()
         {
             @Override
             public void run()
@@ -867,7 +866,8 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
                     appletSystemExit();
                 }
             }
-        }).start();
+        },
+        "AppletCloser", 0, false).start();
     }
 
     /**
@@ -890,7 +890,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
         // spawn a new thread to avoid blocking the event queue
         // when calling appletShutdown.
         //
-        new ManagedLocalsThread(new Runnable()
+        new Thread(null, new Runnable()
         {
             @Override
             public void run()
@@ -901,7 +901,8 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
                 }
                 appletSystemExit();
             }
-        }).start();
+        },
+         "AppletQuit", 0, false).start();
     }
 
     /**

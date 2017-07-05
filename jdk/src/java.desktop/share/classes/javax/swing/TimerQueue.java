@@ -36,7 +36,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicLong;
 import sun.awt.AppContext;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * Internal class to manage all Timers using one thread.
@@ -101,8 +100,8 @@ class TimerQueue implements Runnable
                 final ThreadGroup threadGroup = AppContext.getAppContext().getThreadGroup();
                 AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
                     String name = "TimerQueue";
-                    Thread timerThread = new ManagedLocalsThread(threadGroup,
-                                                                 this, name);
+                    Thread timerThread =
+                        new Thread(threadGroup, this, name, 0, false);
                     timerThread.setDaemon(true);
                     timerThread.setPriority(Thread.NORM_PRIORITY);
                     timerThread.start();

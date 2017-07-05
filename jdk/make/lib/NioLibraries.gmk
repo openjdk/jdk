@@ -70,6 +70,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     SRC := $(BUILD_LIBNIO_SRC), \
     EXCLUDE_FILES := $(BUILD_LIBNIO_EXFILES), \
     OPTIMIZATION := HIGH, \
+    WARNINGS_AS_ERRORS_xlc := false, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBNIO_CFLAGS), \
     MAPFILE := $(BUILD_LIBNIO_MAPFILE), \

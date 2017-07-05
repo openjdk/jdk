@@ -151,12 +151,11 @@ public class VersionCheck extends TestHelper {
      * of the -version output as they are inconsistent.
      */
     static boolean testToolVersion() {
-        TestResult tr = null;
         TestHelper.testExitValue = 0;
         for (File f : new File(JAVA_BIN).listFiles(new ToolFilter(BLACKLIST_VERSION))) {
             String x = f.getAbsolutePath();
             System.out.println("Testing (-version): " + x);
-            tr = doExec(x, "-version");
+            TestResult tr = doExec(x, "-version");
             tr.checkPositive();
         }
         return TestHelper.testExitValue == 0;

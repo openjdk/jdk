@@ -1750,7 +1750,7 @@ class ProxyGenerator {
          * Get or assign the index for a CONSTANT_Float entry.
          */
         public short getFloat(float f) {
-            return getValue(new Float(f));
+            return getValue(f);
         }
 
         /**

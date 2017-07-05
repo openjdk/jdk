@@ -1,0 +1,217 @@
+#
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Support for dtrace integration with libjvm, and stand-alone dtrace library
+# compilation.
+
+ifeq ($(call check-jvm-feature, dtrace), true)
+  ##############################################################################
+
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
+    ############################################################################
+    # Integrate with libjvm. Here we generate three object files which are
+    # linked with libjvm.so. This step is complicated from a dependency
+    # perspective, since it needs the rest of the compiled object files from the
+    # libjvm compilation, but the output is object files that are to be included
+    # when linking libjvm.so. So this generation must happen as a part of the
+    # libjvm compilation.
+
+    # First we need to generate the dtraceGenOffsets tool. When run, this will
+    # produce more header files and a C++ file.
+
+    # Note that generateJvmOffsets.cpp must be compiled as if it were a file
+    # in the libjvm.so, using JVM_CFLAGS as setup in CompileJvm.gmk. Otherwise
+    # this would preferrably have been done as a part of GensrcDtrace.gmk.
+    $(eval $(call SetupNativeCompilation, BUILD_DTRACE_GEN_OFFSETS, \
+        SRC := $(HOTSPOT_TOPDIR)/src/os/$(OPENJDK_TARGET_OS)/dtrace, \
+        INCLUDE_FILES := generateJvmOffsets.cpp generateJvmOffsetsMain.c, \
+        CC := $(BUILD_CXX), \
+        CXX := $(BUILD_CXX), \
+        LDEXE := $(BUILD_CXX), \
+        generateJvmOffsets.cpp_CXXFLAGS := $(JVM_CFLAGS) -mt -xnolib -norunpath, \
+        generateJvmOffsetsMain.c_CFLAGS := -library=%none -mt -m64 -norunpath -z nodefs, \
+        LDFLAGS := -m64, \
+        LIBS := -lc, \
+        OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets/objs, \
+        OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets, \
+        PROGRAM := dtraceGenOffsets, \
+    ))
+
+    DTRACE_GEN_OFFSETS_TOOL := $(BUILD_DTRACE_GEN_OFFSETS_TARGET)
+
+    # Argument 1: Output filename
+    # Argument 2: dtrace-gen-offset tool command line option
+    define SetupDtraceOffsetsGeneration
+      $1: $$(BUILD_DTRACE_GEN_OFFSETS)
+	$$(call LogInfo, Generating dtrace $2 file $$(@F))
+	$$(call MakeDir, $$(@D))
+	$$(call ExecuteWithLog, $$@, $$(DTRACE_GEN_OFFSETS_TOOL) -$$(strip $2) > $$@)
+
+      TARGETS += $1
+    endef
+
+    JVM_OFFSETS_H := $(DTRACE_SUPPORT_DIR)/JvmOffsets.h
+    JVM_OFFSETS_CPP := $(DTRACE_SUPPORT_DIR)/JvmOffsets.cpp
+    JVM_OFFSETS_INDEX_H := $(DTRACE_SUPPORT_DIR)/JvmOffsetsIndex.h
+
+    # Run the dtrace-gen-offset tool to generate these three files.
+    $(eval $(call SetupDtraceOffsetsGeneration, $(JVM_OFFSETS_H), header))
+    $(eval $(call SetupDtraceOffsetsGeneration, $(JVM_OFFSETS_INDEX_H), index))
+    $(eval $(call SetupDtraceOffsetsGeneration, $(JVM_OFFSETS_CPP), table))
+
+    ############################################################################
+    # Compile JVM_OFFSETS_OBJ which is linked with libjvm.so.
+
+    # JvmOffsets.cpp is compiled without the common JVM_CFLAGS. Otherwise, the
+    # natural way would have been to included this source code in BUILD_LIBJVM.
+    JVM_OFFSETS_CFLAGS := -m64
+    ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
+      JVM_OFFSETS_CFLAGS += -xarch=sparc
+    endif
+
+    $(JVM_OFFSETS_OBJ): $(JVM_OFFSETS_CPP) $(JVM_OFFSETS_H)
+	$(call LogInfo, Compiling dtrace file JvmOffsets.cpp (for libjvm.so))
+	$(call ExecuteWithLog, $@, $(CXX) -c -I$(<D) -o $@ $(JVM_OFFSETS_CFLAGS) $<)
+
+    ############################################################################
+    # Generate DTRACE_OBJ which is linked with libjvm.so.
+
+    # Concatenate all *.d files into a single file
+    DTRACE_SOURCE_FILES := $(addprefix $(HOTSPOT_TOPDIR)/src/os/posix/dtrace/, \
+        hotspot_jni.d \
+        hotspot.d \
+        hs_private.d \
+    )
+
+    $(JVM_OUTPUTDIR)/objs/dtrace.d: $(DTRACE_SOURCE_FILES)
+	$(call LogInfo, Generating $(@F))
+	$(call MakeDir, $(@D))
+	$(CAT) $^ > $@
+
+    DTRACE_INSTRUMENTED_OBJS := $(addprefix $(JVM_OUTPUTDIR)/objs/, \
+        ciEnv.o \
+        classLoadingService.o \
+        compileBroker.o \
+        hashtable.o \
+        instanceKlass.o \
+        java.o \
+        jni.o \
+        jvm.o \
+        memoryManager.o \
+        nmethod.o \
+        objectMonitor.o \
+        runtimeService.o \
+        sharedRuntime.o \
+        synchronizer.o \
+        thread.o \
+        unsafe.o \
+        vmThread.o \
+        vmGCOperations.o \
+    )
+
+    ifeq ($(call check-jvm-feature, all-gcs), true)
+      DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
+          vmCMSOperations.o \
+          vmPSOperations.o \
+      )
+    endif
+
+    DTRACE_FLAGS := -64 -G
+    DTRACE_CPP_FLAGS := -D_LP64
+
+    # Make sure we run our selected compiler for preprocessing instead of letting
+    # the dtrace tool pick it on it's own.
+    $(DTRACE_OBJ): $(JVM_OUTPUTDIR)/objs/dtrace.d $(DTRACE_INSTRUMENTED_OBJS)
+	$(call LogInfo, Generating $(@F) from $(<F) and object files)
+	$(call MakeDir, $(DTRACE_SUPPORT_DIR))
+	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, $(CC) -E \
+	    $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d)
+	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -xlazyload -o $@ \
+	    -s $(DTRACE_SUPPORT_DIR)/$(@F).d $(sort $(DTRACE_INSTRUMENTED_OBJS)))
+
+    ############################################################################
+    # Generate DTRACE_JHELPER_OBJ which is linked with libjvm.so.
+
+    # Unfortunately dtrace generates incorrect types for some symbols in
+    # dtrace_jhelper.o, resulting in "warning: symbol X has differing types"
+    # This is tracked in JDK-6890703.
+    $(DTRACE_JHELPER_OBJ): $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace/jhelper.d \
+        $(JVM_OFFSETS_INDEX_H)
+	$(call LogInfo, Running dtrace for $(<F))
+	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) $(DTRACE_CPP_FLAGS) -C \
+	    -I$(DTRACE_SUPPORT_DIR) -o $@ -s $<)
+
+    # NOTE: We should really do something like this, but unfortunately this
+    # results in a compilation error. :-(
+    # $(call MakeDir, $(DTRACE_SUPPORT_DIR))
+    # $(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, $(CC) -E \
+    #     $(DTRACE_CPP_FLAGS) -I$(DTRACE_SUPPORT_DIR) $^ \
+    #     > $(DTRACE_SUPPORT_DIR)/$(@F).d)
+    # $(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -o $@ \
+    #     -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
+
+    ############################################################################
+    # Build the stand-alone dtrace libraries
+
+    LIBJVM_DTRACE_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/libjvm_dtrace
+
+    $(eval $(call SetupNativeCompilation, BUILD_LIBJVM_DTRACE, \
+        LIBRARY := jvm_dtrace, \
+        OUTPUT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR), \
+        SRC := $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace, \
+        INCLUDE_FILES := jvm_dtrace.c, \
+        CFLAGS := -m64 -G -mt -KPIC, \
+        LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
+        LIBS := $(LIBDL) -lc -lthread -ldoor, \
+        MAPFILE := $(HOTSPOT_TOPDIR)/makefiles/mapfiles/libjvm_dtrace/mapfile-vers, \
+        OBJECT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR)/objs, \
+        STRIP_SYMBOLS := true, \
+    ))
+
+    LIBJVM_DB_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/libjvm_db
+
+    # Note that libjvm_db.c has tests for COMPILER2, but this was never set by
+    # the old build.
+    $(eval $(call SetupNativeCompilation, BUILD_LIBJVM_DB, \
+        LIBRARY := jvm_db, \
+        OUTPUT_DIR := $(LIBJVM_DB_OUTPUTDIR), \
+        SRC := $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace, \
+        INCLUDE_FILES := libjvm_db.c, \
+        CFLAGS := -I$(JVM_VARIANT_OUTPUTDIR)/gensrc -I$(DTRACE_SUPPORT_DIR) \
+            -m64 -G -mt -KPIC, \
+        LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
+        LIBS := -lc, \
+        MAPFILE := $(HOTSPOT_TOPDIR)/makefiles/mapfiles/libjvm_db/mapfile-vers, \
+        OBJECT_DIR := $(LIBJVM_DB_OUTPUTDIR)/objs, \
+        STRIP_SYMBOLS := true, \
+    ))
+
+    # We need the generated JvmOffsets.h before we can compile the libjvm_db source code.
+    $(BUILD_LIBJVM_DB_ALL_OBJS): $(JVM_OFFSETS_H)
+
+    TARGETS += $(BUILD_LIBJVM_DTRACE) $(BUILD_LIBJVM_DB)
+  endif
+endif

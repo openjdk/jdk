@@ -151,7 +151,6 @@ public class ToggleButtonDemo extends JPanel implements ChangeListener {
     public static void main(String[] args) {
         JFrame frame = new JFrame(ToggleButtonDemo.class.getAnnotation(DemoProperties.class).value());
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(new ToggleButtonDemo());
         frame.setPreferredSize(new Dimension(800, 600));
         frame.pack();

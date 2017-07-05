@@ -67,13 +67,13 @@ public:
 // This can be used to pass a Log instance as a parameter without
 // polluting the surrounding API with template functions.
 class LogTargetHandle {
-  friend class LogStream;
-
 private:
   const LogLevelType _level;
   LogTagSet*         _tagset;
 
 public:
+  LogTargetHandle(LogLevelType level, LogTagSet* tagset) : _level(level), _tagset(tagset) {}
+
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogTargetHandle(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier) :
       _level(level),

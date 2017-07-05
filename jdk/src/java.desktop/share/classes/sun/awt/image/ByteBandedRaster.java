@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.image.WritableRaster;
 import java.awt.image.RasterFormatException;
 import java.awt.image.SampleModel;
 import java.awt.image.BandedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -74,10 +73,9 @@ public class ByteBandedRaster extends SunWritableRaster {
      *  @param sampleModel     The SampleModel that specifies the layout.
      *  @param origin          The Point that specifies the origin.
      */
-    public ByteBandedRaster(SampleModel sampleModel,
-                               Point origin) {
+    public ByteBandedRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferByte) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -93,12 +91,13 @@ public class ByteBandedRaster extends SunWritableRaster {
      *  initialized and must be a DataBufferShort compatible with SampleModel.
      *  SampleModel must be of type BandedSampleModel.
      *  @param sampleModel     The SampleModel that specifies the layout.
-     *  @param dataBuffer      The DataBufferShort that contains the image data.
+     *  @param dataBuffer      The DataBufferByte that contains the image data.
      *  @param origin          The Point that specifies the origin.
      */
     public ByteBandedRaster(SampleModel sampleModel,
-                               DataBuffer dataBuffer,
-                               Point origin) {
+                            DataBufferByte dataBuffer,
+                            Point origin)
+    {
         this(sampleModel, dataBuffer,
              new Rectangle(origin.x , origin.y,
                            sampleModel.getWidth(),
@@ -119,39 +118,33 @@ public class ByteBandedRaster extends SunWritableRaster {
      *  Note that this constructor should generally be called by other
      *  constructors or create methods, it should not be used directly.
      *  @param sampleModel     The SampleModel that specifies the layout.
-     *  @param dataBuffer      The DataBufferShort that contains the image data.
+     *  @param dataBuffer      The DataBufferByte that contains the image data.
      *  @param aRegion         The Rectangle that specifies the image area.
      *  @param origin          The Point that specifies the origin.
      *  @param parent          The parent (if any) of this raster.
      */
     public ByteBandedRaster(SampleModel sampleModel,
-                            DataBuffer dataBuffer,
+                            DataBufferByte dataBuffer,
                             Rectangle aRegion,
                             Point origin,
-                            ByteBandedRaster parent) {
-
+                            ByteBandedRaster parent)
+    {
         super(sampleModel, dataBuffer, aRegion, origin, parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
-
-        if (!(dataBuffer instanceof DataBufferByte)) {
-           throw new RasterFormatException("ByteBandedRaster must have" +
-                "byte DataBuffers");
-        }
-        DataBufferByte dbb = (DataBufferByte)dataBuffer;
 
         if (sampleModel instanceof BandedSampleModel) {
             BandedSampleModel bsm = (BandedSampleModel)sampleModel;
             this.scanlineStride = bsm.getScanlineStride();
             int bankIndices[] = bsm.getBankIndices();
             int bandOffsets[] = bsm.getBandOffsets();
-            int dOffsets[] = dbb.getOffsets();
+            int dOffsets[] = dataBuffer.getOffsets();
             dataOffsets = new int[bankIndices.length];
             data = new byte[bankIndices.length][];
             int xOffset = aRegion.x - origin.x;
             int yOffset = aRegion.y - origin.y;
             for (int i = 0; i < bankIndices.length; i++) {
-               data[i] = stealData(dbb, bankIndices[i]);
+               data[i] = stealData(dataBuffer, bankIndices[i]);
                dataOffsets[i] = dOffsets[bankIndices[i]] +
                    xOffset + yOffset*scanlineStride + bandOffsets[i];
             }
@@ -672,7 +665,7 @@ public class ByteBandedRaster extends SunWritableRaster {
         int deltaY = y0 - y;
 
         return new ByteBandedRaster(sm,
-                                    dataBuffer,
+                                    (DataBufferByte) dataBuffer,
                                     new Rectangle(x0,y0,width,height),
                                     new Point(sampleModelTranslateX+deltaX,
                                               sampleModelTranslateY+deltaY),

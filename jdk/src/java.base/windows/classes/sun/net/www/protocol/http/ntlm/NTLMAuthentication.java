@@ -34,6 +34,7 @@ import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
 import sun.net.www.protocol.http.AuthScheme;
 import sun.net.www.protocol.http.HttpURLConnection;
+import sun.security.action.GetPropertyAction;
 
 /**
  * NTLMAuthentication:
@@ -52,9 +53,8 @@ public class NTLMAuthentication extends AuthenticationInfo {
     private static String defaultDomain; /* Domain to use if not specified by user */
 
     static {
-        defaultDomain = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("http.auth.ntlm.domain",
-                                                      "domain"));
+        defaultDomain = GetPropertyAction.getProperty("http.auth.ntlm.domain",
+                                                      "domain");
     };
 
     private void init0() {

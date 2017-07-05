@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,13 +88,25 @@ AC_DEFUN_ONCE([LIB_SETUP_STD_LIBS],
     # If dynamic was requested, it's available since it would fail above otherwise.
     # If dynamic wasn't requested, go with static unless it isn't available.
     AC_MSG_CHECKING([how to link with libstdc++])
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
       LIBCXX="$LIBCXX -lstdc++"
+      # To help comparisons with old build, put stdc++ first in JVM_LIBS
+      JVM_LIBS="-lstdc++ $JVM_LIBS"
+      # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
+      # just use the same setting as for the TARGET toolchain.
+      OPENJDK_BUILD_JVM_LIBS="-lstdc++ $OPENJDK_BUILD_JVM_LIBS"
       LDCXX="$CXX"
       STATIC_CXX_SETTING="STATIC_CXX=false"
       AC_MSG_RESULT([dynamic])
     else
       LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+      JVM_LDFLAGS="$JVM_LDFLAGS -static-libgcc"
+      # To help comparisons with old build, put stdc++ first in JVM_LIBS
+      JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $JVM_LIBS"
+      # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
+      # just use the same setting as for the TARGET toolchain.
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -static-libgcc"
+      OPENJDK_BUILD_JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $OPENJDK_BUILD_JVM_LIBS"
       LDCXX="$CC"
       STATIC_CXX_SETTING="STATIC_CXX=true"
       AC_MSG_RESULT([static])

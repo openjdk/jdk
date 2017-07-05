@@ -26,7 +26,6 @@
 #define SHARE_VM_UTILITIES_PAIR_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/top.hpp"
 
 template<typename T, typename V,  typename ALLOC_BASE = ResourceObj>
 class Pair : public ALLOC_BASE {

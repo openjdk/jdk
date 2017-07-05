@@ -132,6 +132,15 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return generate_empty_runtime_stub("resolve_blob");
 }
 
+size_t SharedRuntime::trampoline_size() {
+  ShouldNotCallThis();
+  return 0;
+}
+
+void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
+  ShouldNotCallThis();
+  return;
+}
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,

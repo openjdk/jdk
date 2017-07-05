@@ -34,7 +34,6 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.security.AccessController;
 
 import sun.net.sdp.SdpSupport;
 import sun.security.action.GetPropertyAction;
@@ -57,8 +56,7 @@ public class SdpProvider extends NetHooks.Provider {
 
     public SdpProvider() {
         // if this property is not defined then there is nothing to do.
-        String file = AccessController.doPrivileged(
-            new GetPropertyAction("com.sun.sdp.conf"));
+        String file = GetPropertyAction.getProperty("com.sun.sdp.conf");
         if (file == null) {
             this.enabled = false;
             this.rules = null;
@@ -77,8 +75,7 @@ public class SdpProvider extends NetHooks.Provider {
 
         // check if debugging is enabled
         PrintStream out = null;
-        String logfile = AccessController.doPrivileged(
-            new GetPropertyAction("com.sun.sdp.debug"));
+        String logfile = GetPropertyAction.getProperty("com.sun.sdp.debug");
         if (logfile != null) {
             out = System.out;
             if (logfile.length() > 0) {
