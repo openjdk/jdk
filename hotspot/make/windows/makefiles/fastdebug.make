@@ -61,6 +61,12 @@ $(AOUT): $(Res_Files) $(Obj_Files) vm.def
 # separately.  Use ";#2" for .dll and ";#1" for .exe:
 	$(MT) /manifest $@.manifest /outputresource:$@;#2
 !endif
+!if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
+!if "$(ZIP_DEBUGINFO_FILES)" == "1"
+	$(ZIPEXE) -q $*.diz $*.map $*.pdb
+	$(RM) $*.map $*.pdb
+!endif
+!endif
 
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make

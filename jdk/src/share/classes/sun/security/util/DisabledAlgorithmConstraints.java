@@ -59,10 +59,10 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
     public final static String PROPERTY_TLS_DISABLED_ALGS =
             "jdk.tls.disabledAlgorithms";
 
-    private static Map<String, String[]> disabledAlgorithmsMap =
-            Collections.synchronizedMap(new HashMap<String, String[]>());
-    private static Map<String, KeySizeConstraints> keySizeConstraintsMap =
-        Collections.synchronizedMap(new HashMap<String, KeySizeConstraints>());
+    private final static Map<String, String[]> disabledAlgorithmsMap =
+                                                            new HashMap<>();
+    private final static Map<String, KeySizeConstraints> keySizeConstraintsMap =
+                                                            new HashMap<>();
 
     private String[] disabledAlgorithms;
     private KeySizeConstraints keySizeConstraints;
@@ -74,6 +74,8 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
      *        algorithm constraints
      */
     public DisabledAlgorithmConstraints(String propertyName) {
+        // Both disabledAlgorithmsMap and keySizeConstraintsMap are
+        // synchronized with the lock of disabledAlgorithmsMap.
         synchronized (disabledAlgorithmsMap) {
             if(!disabledAlgorithmsMap.containsKey(propertyName)) {
                 loadDisabledAlgorithmsMap(propertyName);

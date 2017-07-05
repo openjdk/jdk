@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class InvokeGenericTest {
         String name = properties.getProperty("java.vm.name");
         String arch = properties.getProperty("os.arch");
         if ((arch.equals("amd64") || arch.equals("i386") || arch.equals("x86") ||
-             arch.equals("sparc") || arch.equals("sparcv9")) &&
+             arch.equals("x86_64") || arch.equals("sparc") || arch.equals("sparcv9")) &&
             (name.contains("Client") || name.contains("Server"))
             ) {
             platformOK = true;
