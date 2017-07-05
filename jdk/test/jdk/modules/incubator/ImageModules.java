@@ -28,7 +28,9 @@
  * @library /lib/testlibrary /test/lib
  * @key intermittent
  * @modules jdk.compiler jdk.jartool jdk.jlink
- * @build jdk.test.lib.compiler.CompilerUtils
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm ImageModules
  */
 

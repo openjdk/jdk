@@ -32,6 +32,8 @@ import java.security.cert.Certificate;
 
 /**
  * This class is used to represent a JAR file entry.
+ *
+ * @since 1.2
  */
 public
 class JarEntry extends ZipEntry {

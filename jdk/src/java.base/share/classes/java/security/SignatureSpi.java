@@ -44,6 +44,7 @@ import sun.security.jca.JCAUtil;
  * of a particular signature algorithm.
  *
  * @author Benjamin Renaud
+ * @since 1.2
  *
  *
  * @see Signature

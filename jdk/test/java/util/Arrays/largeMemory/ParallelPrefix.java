@@ -25,9 +25,11 @@
  * @test 8014076 8025067
  * @summary unit test for Arrays.ParallelPrefix().
  * @author Tristan Yan
- * @run testng ParallelPrefix
+ * @modules java.management jdk.management
+ * @run testng/othervm -Xms256m -Xmx1024m ParallelPrefix
  */
 
+import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.function.BinaryOperator;
 import java.util.function.DoubleBinaryOperator;
@@ -36,9 +38,11 @@ import java.util.function.IntBinaryOperator;
 import java.util.function.LongBinaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import com.sun.management.OperatingSystemMXBean;
 import static org.testng.Assert.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.annotations.BeforeSuite;
 
 public class ParallelPrefix {
     //Array size less than MIN_PARTITION
@@ -53,12 +57,37 @@ public class ParallelPrefix {
     //Array size much greater than MIN_PARTITION
     private static final int LARGE_ARRAY_SIZE = 1 << 14;
 
-    private static final int[] ARRAY_SIZE_COLLECTION  = new int[]{
-        SMALL_ARRAY_SIZE,
-        THRESHOLD_ARRAY_SIZE,
-        MEDIUM_ARRAY_SIZE,
-        LARGE_ARRAY_SIZE
-    };
+    private static int[] arraySizeCollection;
+
+    @BeforeSuite
+    public static void setup() {
+        java.lang.management.OperatingSystemMXBean bean =
+                ManagementFactory.getOperatingSystemMXBean();
+        if (bean instanceof OperatingSystemMXBean) {
+            OperatingSystemMXBean os = (OperatingSystemMXBean)bean;
+            long physicalMemorySize = os.getTotalPhysicalMemorySize() / (1024 * 1024);
+            System.out.println("System memory size: " + physicalMemorySize + "M");
+            // when we can get system memory size, and it's larger than 2G,
+            // then we enable large array size test below,
+            // else disable large array size test below.
+            if (physicalMemorySize > (2 * 1024)) {
+                arraySizeCollection  = new int[]{
+                        SMALL_ARRAY_SIZE,
+                        THRESHOLD_ARRAY_SIZE,
+                        MEDIUM_ARRAY_SIZE,
+                        LARGE_ARRAY_SIZE
+                    };
+                System.out.println("System memory is large enough, add large array size test");
+                return;
+            }
+        }
+        arraySizeCollection  = new int[]{
+                SMALL_ARRAY_SIZE,
+                THRESHOLD_ARRAY_SIZE,
+                MEDIUM_ARRAY_SIZE
+            };
+        System.out.println("System memory is not large enough, remove large array size test");
+    }
 
     @DataProvider(name = "intSet")
     public static Object[][] intSet(){
@@ -96,10 +125,10 @@ public class ParallelPrefix {
 
     private static <T, OPS> Object[][] genericData(Function<Integer, T> generateFunc, OPS[] ops) {
         //test arrays which size is equals n-1, n, n+1, test random data
-        Object[][] data = new Object[ARRAY_SIZE_COLLECTION.length * 3 * ops.length][4];
-        for(int n = 0; n < ARRAY_SIZE_COLLECTION.length; n++ ) {
+        Object[][] data = new Object[arraySizeCollection.length * 3 * ops.length][4];
+        for(int n = 0; n < arraySizeCollection.length; n++ ) {
             for(int testValue = -1 ; testValue <= 1; testValue++) {
-                int array_size = ARRAY_SIZE_COLLECTION[n] + testValue;
+                int array_size = arraySizeCollection[n] + testValue;
                 for(int opsN = 0; opsN < ops.length; opsN++) {
                     int index = n * 3 * ops.length + (testValue + 1) * ops.length + opsN;
                     data[index][0] = generateFunc.apply(array_size);

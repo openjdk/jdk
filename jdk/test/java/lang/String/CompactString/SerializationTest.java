@@ -31,6 +31,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @library /test/lib
+ * @build jdk.test.lib.util.SerializationUtils
  * @summary Tests Compact String. This one is testing String serialization
  *          among -XX:+CompactStrings/-XX:-CompactStrings/LegacyString
  * @run testng/othervm -XX:+CompactStrings SerializationTest

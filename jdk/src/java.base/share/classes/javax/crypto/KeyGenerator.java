@@ -83,6 +83,15 @@ import sun.security.util.Debug;
  * <p>In case the client does not explicitly initialize the KeyGenerator
  * (via a call to an {@code init} method), each provider must
  * supply (and document) a default initialization.
+ * See the Keysize Restriction sections of the
+ * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
+ * JDK Providers</a>
+ * document for information on the KeyGenerator defaults used by
+ * JDK providers.
+ * However, note that defaults may vary across different providers.
+ * Additionally, the default value for a provider may change in a future
+ * version. Therefore, it is recommended to explicitly initialize the
+ * KeyGenerator instead of relying on provider-specific defaults.
  *
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code KeyGenerator} algorithms with the keysizes in

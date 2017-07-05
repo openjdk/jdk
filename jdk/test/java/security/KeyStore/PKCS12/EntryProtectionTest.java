@@ -42,6 +42,8 @@ import java.util.Arrays;
  * specified by different PBE algorithms (use -Dseed=X to set PRNG seed)
  * @library /test/lib /lib/testlibrary ../
  * @key randomness
+ * @build jdk.test.lib.RandomFactory
+ * @run main EntryProtectionTest
  */
 public class EntryProtectionTest {
     private static final char[] PASSWORD = "passwd".toCharArray();

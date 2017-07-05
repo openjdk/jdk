@@ -32,6 +32,7 @@ package java.security.acl;
  * @see java.security.acl.Owner#deleteOwner
  *
  * @author Satish Dharmaraj
+ * @since 1.1
  *
  * @deprecated This package has been replaced by {@code java.security.Policy}
  *      and related classes since 1.2.
