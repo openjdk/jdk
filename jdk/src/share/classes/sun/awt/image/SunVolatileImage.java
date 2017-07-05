@@ -29,19 +29,18 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.ImageCapabilities;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.VolatileImage;
-import java.awt.image.WritableRaster;
 import sun.java2d.SunGraphics2D;
-import sun.java2d.SurfaceData;
 import sun.java2d.SurfaceManagerFactory;
+import sun.java2d.DestSurfaceProvider;
+import sun.java2d.Surface;
+import static sun.java2d.pipe.hw.AccelSurface.*;
 
 /**
  * This class is the base implementation of the VolatileImage
@@ -52,23 +51,28 @@ import sun.java2d.SurfaceManagerFactory;
  * appropriate VolatileSurfaceManager for the GraphicsConfiguration
  * under which this SunVolatileImage was created.
  */
-public class SunVolatileImage extends VolatileImage {
+public class SunVolatileImage extends VolatileImage
+    implements DestSurfaceProvider
+{
 
     protected VolatileSurfaceManager volSurfaceManager;
     protected Component comp;
     private GraphicsConfiguration graphicsConfig;
     private Font defaultFont;
     private int width, height;
+    private int forcedAccelSurfaceType;
 
-    private SunVolatileImage(Component comp,
-                             GraphicsConfiguration graphicsConfig,
-                             int width, int height, Object context,
-                             int transparency, ImageCapabilities caps)
+    protected SunVolatileImage(Component comp,
+                               GraphicsConfiguration graphicsConfig,
+                               int width, int height, Object context,
+                               int transparency, ImageCapabilities caps,
+                               int accType)
     {
         this.comp = comp;
         this.graphicsConfig = graphicsConfig;
         this.width = width;
         this.height = height;
+        this.forcedAccelSurfaceType = accType;
         if (!(transparency == Transparency.OPAQUE ||
             transparency == Transparency.BITMASK ||
             transparency == Transparency.TRANSLUCENT))
@@ -92,7 +96,7 @@ public class SunVolatileImage extends VolatileImage {
                              ImageCapabilities caps)
     {
         this(comp, graphicsConfig,
-             width, height, context, Transparency.OPAQUE, caps);
+             width, height, context, Transparency.OPAQUE, caps, UNDEFINED);
     }
 
     public SunVolatileImage(Component comp, int width, int height) {
@@ -110,7 +114,8 @@ public class SunVolatileImage extends VolatileImage {
                             int width, int height, int transparency,
                             ImageCapabilities caps)
     {
-        this(null, graphicsConfig, width, height, null, transparency, caps);
+        this(null, graphicsConfig, width, height, null, transparency,
+             caps, UNDEFINED);
     }
 
     public int getWidth() {
@@ -142,6 +147,10 @@ public class SunVolatileImage extends VolatileImage {
 
     public Component getComponent() {
         return comp;
+    }
+
+    public int getForcedAccelSurfaceType() {
+        return forcedAccelSurfaceType;
     }
 
     protected VolatileSurfaceManager createSurfaceManager(Object context,
@@ -247,5 +256,15 @@ public class SunVolatileImage extends VolatileImage {
 
     public ImageCapabilities getCapabilities() {
         return volSurfaceManager.getCapabilities(graphicsConfig);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see sun.java2d.DestSurfaceProvider#getDestSurface
+     */
+    @Override
+    public Surface getDestSurface() {
+        return volSurfaceManager.getPrimarySurfaceData();
     }
 }

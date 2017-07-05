@@ -143,7 +143,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     const char *hostname;
     jobjectArray ret = 0;
     int retLen = 0;
-    jclass byteArrayCls;
     jboolean preferIPv6Address;
 
     int error=0;
@@ -219,7 +218,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         } else {
             int i = 0;
             int inetCount = 0, inet6Count = 0, inetIndex, inet6Index;
-            struct addrinfo *itr, *last, *iterator = res;
+            struct addrinfo *itr, *last = NULL, *iterator = res;
             while (iterator != NULL) {
                 int skip = 0;
                 itr = resNew;
@@ -393,10 +392,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
 
 #ifdef AF_INET6
     char host[NI_MAXHOST+1];
-    jfieldID fid;
     int error = 0;
-    jint family;
-    struct sockaddr *him ;
     int len = 0;
     jbyte caddr[16];
 
@@ -459,11 +455,10 @@ static jboolean
 ping6(JNIEnv *env, jint fd, struct sockaddr_in6* him, jint timeout,
       struct sockaddr_in6* netif, jint ttl) {
     jint size;
-    jint n, len, hlen1, icmplen;
+    jint n, len;
     char sendbuf[1500];
     unsigned char recvbuf[1500];
     struct icmp6_hdr *icmp6;
-    struct ip6_hdr *ip6;
     struct sockaddr_in6 sa_recv;
     jbyte *caddr, *recv_caddr;
     jchar pid;
@@ -561,7 +556,6 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
                                            jbyteArray ifArray,
                                            jint ttl, jint if_scope) {
 #ifdef AF_INET6
-    jint addr;
     jbyte caddr[16];
     jint fd, sz;
     struct sockaddr_in6 him6;

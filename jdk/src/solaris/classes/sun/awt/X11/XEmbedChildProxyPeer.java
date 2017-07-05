@@ -257,7 +257,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     public void createBuffers(int numBuffers, BufferCapabilities caps)
       throws AWTException { }
     public Image getBackBuffer() { return null; }
-    public void flip(BufferCapabilities.FlipContents flipAction) {  }
+    public void flip(int x1, int y1, int x2, int y2, BufferCapabilities.FlipContents flipAction) {  }
     public void destroyBuffers() { }
 
     /**

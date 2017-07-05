@@ -170,7 +170,7 @@ mkpackaging:
 	$(BOOT_JAR_CMD) cf $(TEMPDIR)/tmp.jar \
 	     -C $(BEANCLASSDIR) javax \
 	     -C $(BEANCLASSDIR) sun \
-	     $(JAR_JFLAGS)
+	     $(BOOT_JAR_JFLAGS)
 	$(MV) $(TEMPDIR)/tmp.jar $(JDK_IMAGE_DIR)/lib/dt.jar
 	@$(java-vm-cleanup)
 

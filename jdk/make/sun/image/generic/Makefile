@@ -31,12 +31,11 @@ BUILDDIR = ../../..
 PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image
 PRODUCT = sun
-include $(BUILDDIR)/common/Defs.gmk
 
-#
 # Use highest level of optimization on this library
-#
-_OPT = $(CC_HIGHEST_OPT)
+OPTIMIZATION_LEVEL = HIGHEST
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Use mapfile
