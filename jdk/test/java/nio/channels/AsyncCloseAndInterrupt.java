@@ -644,9 +644,9 @@ public class AsyncCloseAndInterrupt {
         initPipes();
         initFile();
 
-        if (TestUtil.onME()) {
+        if (TestUtil.onWindows()) {
             log.println("WARNING: Cannot test FileChannel transfer operations"
-                        + " on Windows 95/98/ME");
+                        + " on Windows");
         } else {
             test(diskFileChannelFactory, TRANSFER_TO);
             test(diskFileChannelFactory, TRANSFER_FROM);

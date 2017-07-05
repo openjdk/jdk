@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLStreamHandlerFactory;
+import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -1160,8 +1161,9 @@ public class MLet extends java.net.URLClassLoader
                  try {
                      File directory = new File(libraryDirectory);
                      directory.mkdirs();
-                     File file = File.createTempFile(libname + ".", null,
-                             directory);
+                     File file = Files.createTempFile(directory.toPath(),
+                                                      libname + ".", null)
+                                      .toFile();
                      file.deleteOnExit();
                      FileOutputStream fileOutput = new FileOutputStream(file);
                      try {

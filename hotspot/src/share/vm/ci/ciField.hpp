@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ private:
   ciType*          _type;
   int              _offset;
   bool             _is_constant;
-  ciInstanceKlass* _known_to_link_with;
+  ciInstanceKlass* _known_to_link_with_put;
+  ciInstanceKlass* _known_to_link_with_get;
   ciConstant       _constant_value;
 
   // Used for will_link
