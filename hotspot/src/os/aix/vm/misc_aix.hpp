@@ -29,6 +29,8 @@
 // misc_aix.hpp, misc_aix.cpp: convenience functions needed for the OpenJDK AIX
 // port.
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/debug.hpp"
 
 #include <pthread.h>
 
@@ -40,7 +42,6 @@
   } \
 }
 #define ERRBYE(s) { trcVerbose(s); return -1; }
-#define trc(fmt, ...)
 
 #define assert0(b) assert((b), "")
 #define guarantee0(b) guarantee((b), "")

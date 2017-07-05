@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_CLASSFILE_CLASSLOADER_HPP
 #define SHARE_VM_CLASSFILE_CLASSLOADER_HPP
 
-#include "classfile/classFileParser.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
 // The VM class loader.
@@ -35,41 +36,39 @@
 // Name of boot module image
 #define  BOOT_IMAGE_NAME "bootmodules.jimage"
 
-// Class path entry (directory or zip file)
-
 class JImageFile;
+class ClassFileStream;
 
-class ClassPathEntry: public CHeapObj<mtClass> {
- private:
+class ClassPathEntry : public CHeapObj<mtClass> {
+private:
   ClassPathEntry* _next;
- public:
+public:
   // Next entry in class path
-  ClassPathEntry* next()              { return _next; }
+  ClassPathEntry* next() const { return _next; }
   void set_next(ClassPathEntry* next) {
     // may have unlocked readers, so write atomically.
     OrderAccess::release_store_ptr(&_next, next);
   }
-  virtual bool is_jar_file() = 0;
-  virtual const char* name() = 0;
-  virtual JImageFile* jimage() = 0;
+  virtual bool is_jar_file() const = 0;
+  virtual const char* name() const = 0;
+  virtual JImageFile* jimage() const = 0;
   // Constructor
-  ClassPathEntry();
+  ClassPathEntry() : _next(NULL) {}
   // Attempt to locate file_name through this class path entry.
   // Returns a class file parsing stream if successfull.
   virtual ClassFileStream* open_stream(const char* name, TRAPS) = 0;
   // Debugging
   NOT_PRODUCT(virtual void compile_the_world(Handle loader, TRAPS) = 0;)
-  NOT_PRODUCT(virtual bool is_jrt() = 0;)
+    NOT_PRODUCT(virtual bool is_jrt() = 0;)
 };
-
 
 class ClassPathDirEntry: public ClassPathEntry {
  private:
   const char* _dir;           // Name of directory
  public:
-  bool is_jar_file()       { return false;  }
-  const char* name()       { return _dir; }
-  JImageFile* jimage()     { return NULL; }
+  bool is_jar_file() const { return false;  }
+  const char* name() const { return _dir; }
+  JImageFile* jimage() const { return NULL; }
   ClassPathDirEntry(const char* dir);
   ClassFileStream* open_stream(const char* name, TRAPS);
   // Debugging
@@ -97,9 +96,9 @@ class ClassPathZipEntry: public ClassPathEntry {
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
  public:
-  bool is_jar_file()       { return true;  }
-  const char* name()       { return _zip_name; }
-  JImageFile* jimage()     { return NULL; }
+  bool is_jar_file() const { return true;  }
+  const char* name() const { return _zip_name; }
+  JImageFile* jimage() const { return NULL; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name);
   ~ClassPathZipEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
@@ -117,10 +116,10 @@ private:
   JImageFile* _jimage;
   const char* _name;
 public:
-  bool is_jar_file()  { return false;  }
-  bool is_open()  { return _jimage != NULL; }
-  const char* name() { return _name == NULL ? "" : _name; }
-  JImageFile* jimage() { return _jimage; }
+  bool is_jar_file() const { return false; }
+  bool is_open() const { return _jimage != NULL; }
+  const char* name() const { return _name == NULL ? "" : _name; }
+  JImageFile* jimage() const { return _jimage; }
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   ~ClassPathImageEntry();
   static void name_to_package(const char* name, char* buffer, int length);
@@ -212,6 +211,10 @@ class ClassLoader: AllStatic {
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
   static bool get_canonical_path(const char* orig, char* out, int len);
+
+  static const char* file_name_for_class_name(const char* class_name,
+                                              int class_name_len);
+
  public:
   static jboolean decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg);
   static int crc32(int crc, const char* buf, int len);
@@ -282,7 +285,7 @@ class ClassLoader: AllStatic {
   }
 
   // Load individual .class file
-  static instanceKlassHandle load_classfile(Symbol* h_name, TRAPS);
+  static instanceKlassHandle load_class(Symbol* class_name, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.

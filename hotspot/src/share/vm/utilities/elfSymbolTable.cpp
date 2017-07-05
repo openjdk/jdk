@@ -69,6 +69,26 @@ ElfSymbolTable::~ElfSymbolTable() {
   }
 }
 
+bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable) {
+  if (STT_FUNC == ELF_ST_TYPE(sym->st_info)) {
+    Elf_Word st_size = sym->st_size;
+    address sym_addr;
+    if (funcDescTable != NULL && funcDescTable->get_index() == sym->st_shndx) {
+      // We need to go another step trough the function descriptor table (currently PPC64 only)
+      sym_addr = funcDescTable->lookup(sym->st_value);
+    } else {
+      sym_addr = (address)sym->st_value;
+    }
+    if (sym_addr <= addr && (Elf_Word)(addr - sym_addr) < st_size) {
+      *offset = (int)(addr - sym_addr);
+      *posIndex = sym->st_name;
+      *stringtableIndex = m_shdr.sh_link;
+      return true;
+    }
+  }
+  return false;
+}
+
 bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable) {
   assert(stringtableIndex, "null string table index pointer");
   assert(posIndex, "null string table offset pointer");
@@ -83,21 +103,8 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
   int count = m_shdr.sh_size / sym_size;
   if (m_symbols != NULL) {
     for (int index = 0; index < count; index ++) {
-      if (STT_FUNC == ELF_ST_TYPE(m_symbols[index].st_info)) {
-        Elf_Word st_size = m_symbols[index].st_size;
-        address sym_addr;
-        if (funcDescTable != NULL && funcDescTable->get_index() == m_symbols[index].st_shndx) {
-          // We need to go another step trough the function descriptor table (currently PPC64 only)
-          sym_addr = funcDescTable->lookup(m_symbols[index].st_value);
-        } else {
-          sym_addr = (address)m_symbols[index].st_value;
-        }
-        if (sym_addr <= addr && (Elf_Word)(addr - sym_addr) < st_size) {
-          *offset = (int)(addr - sym_addr);
-          *posIndex = m_symbols[index].st_name;
-          *stringtableIndex = m_shdr.sh_link;
-          return true;
-        }
+      if (compare(&m_symbols[index], addr, stringtableIndex, posIndex, offset, funcDescTable)) {
+        return true;
       }
     }
   } else {
@@ -111,21 +118,8 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
     Elf_Sym sym;
     for (int index = 0; index < count; index ++) {
       if (fread(&sym, sym_size, 1, m_file) == 1) {
-        if (STT_FUNC == ELF_ST_TYPE(sym.st_info)) {
-          Elf_Word st_size = sym.st_size;
-          address sym_addr;
-          if (funcDescTable != NULL && funcDescTable->get_index() == sym.st_shndx) {
-            // We need to go another step trough the function descriptor table (currently PPC64 only)
-            sym_addr = funcDescTable->lookup(sym.st_value);
-          } else {
-            sym_addr = (address)sym.st_value;
-          }
-          if (sym_addr <= addr && (Elf_Word)(addr - sym_addr) < st_size) {
-            *offset = (int)(addr - sym_addr);
-            *posIndex = sym.st_name;
-            *stringtableIndex = m_shdr.sh_link;
-            return true;
-          }
+        if (compare(&sym, addr, stringtableIndex, posIndex, offset, funcDescTable)) {
+          return true;
         }
       } else {
         m_status = NullDecoder::file_invalid;
@@ -134,7 +128,7 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
     }
     fseek(m_file, cur_pos, SEEK_SET);
   }
-  return true;
+  return false;
 }
 
 #endif // !_WINDOWS && !__APPLE__

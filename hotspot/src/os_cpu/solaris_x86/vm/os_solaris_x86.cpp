@@ -27,6 +27,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -346,7 +347,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   }
 #endif // !AMD64
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();  // slow & steady
+  Thread* t = Thread::current_or_null_safe();
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)

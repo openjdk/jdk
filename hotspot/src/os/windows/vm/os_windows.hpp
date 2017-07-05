@@ -117,6 +117,17 @@ class win32 {
 
   // filter function to ignore faults on serializations page
   static LONG WINAPI serialize_fault_filter(struct _EXCEPTION_POINTERS* e);
+
+  // Fast access to current thread
+protected:
+  static int _thread_ptr_offset;
+private:
+  static void initialize_thread_ptr_offset();
+public:
+  static inline void set_thread_ptr_offset(int offset) {
+    _thread_ptr_offset = offset;
+  }
+  static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
 };
 
 /*

@@ -1367,7 +1367,7 @@ class vmSymbols: AllStatic {
     return _type_signatures[t];
   }
   // inverse of type_signature; returns T_OBJECT if s is not recognized
-  static BasicType signature_type(Symbol* s);
+  static BasicType signature_type(const Symbol* s);
 
   static Symbol* symbol_at(SID id) {
     assert(id >= FIRST_SID && id < SID_LIMIT, "oob");
@@ -1376,7 +1376,7 @@ class vmSymbols: AllStatic {
   }
 
   // Returns symbol's SID if one is assigned, else NO_SID.
-  static SID find_sid(Symbol* symbol);
+  static SID find_sid(const Symbol* symbol);
   static SID find_sid(const char* symbol_name);
 
 #ifndef PRODUCT

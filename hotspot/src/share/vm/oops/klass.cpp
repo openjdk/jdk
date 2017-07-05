@@ -136,7 +136,7 @@ Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   return NULL;
 }
 
-Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const {
+Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signature, OverpassLookupMode overpass_mode) const {
 #ifdef ASSERT
   tty->print_cr("Error: uncached_lookup_method called on a klass oop."
                 " Likely error: reflection method does not correctly"
@@ -151,45 +151,18 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
                              MetaspaceObj::ClassType, THREAD);
 }
 
-Klass::Klass() {
-  Klass* k = this;
+// "Normal" instantiation is preceeded by a MetaspaceObj allocation
+// which zeros out memory - calloc equivalent.
+// The constructor is also used from init_self_patching_vtbl_list,
+// which doesn't zero out the memory before calling the constructor.
+// Need to set the _java_mirror field explicitly to not hit an assert that the field
+// should be NULL before setting it.
+Klass::Klass() : _prototype_header(markOopDesc::prototype()),
+                 _shared_class_path_index(-1),
+                 _java_mirror(NULL) {
 
-  // Preinitialize supertype information.
-  // A later call to initialize_supers() may update these settings:
-  set_super(NULL);
-  for (juint i = 0; i < Klass::primary_super_limit(); i++) {
-    _primary_supers[i] = NULL;
-  }
-  set_secondary_supers(NULL);
-  set_secondary_super_cache(NULL);
-  _primary_supers[0] = k;
+  _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
-
-  // The constructor is used from init_self_patching_vtbl_list,
-  // which doesn't zero out the memory before calling the constructor.
-  // Need to set the field explicitly to not hit an assert that the field
-  // should be NULL before setting it.
-  _java_mirror = NULL;
-
-  set_modifier_flags(0);
-  set_layout_helper(Klass::_lh_neutral_value);
-  set_name(NULL);
-  AccessFlags af;
-  af.set_flags(0);
-  set_access_flags(af);
-  set_subklass(NULL);
-  set_next_sibling(NULL);
-  set_next_link(NULL);
-  TRACE_INIT_ID(this);
-
-  set_prototype_header(markOopDesc::prototype());
-  set_biased_lock_revocation_count(0);
-  set_last_biased_lock_bulk_revocation_time(0);
-
-  // The klass doesn't have any references at this point.
-  clear_modified_oops();
-  clear_accumulated_modified_oops();
-  _shared_class_path_index = -1;
 }
 
 jint Klass::array_layout_helper(BasicType etype) {
