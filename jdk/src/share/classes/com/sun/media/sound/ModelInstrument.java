@@ -56,7 +56,7 @@ public abstract class ModelInstrument extends Instrument {
 
     public ModelDirector getDirector(ModelPerformer[] performers,
             MidiChannel channel, ModelDirectedPlayer player) {
-        return new ModelStandardDirector(performers, player);
+        return new ModelStandardIndexedDirector(performers, player);
     }
 
     public ModelPerformer[] getPerformers() {

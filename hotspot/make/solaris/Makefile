@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # This makefile creates a build tree and lights off a build.
@@ -36,13 +36,13 @@
 # or BOOTDIR has to be set. We do *not* search javac, javah, rmic etc.
 # from the PATH.
 
-# Along with VM, Serviceability Agent (SA) is built for SA/JDI binding. 
-# JDI binding on SA produces two binaries: 
+# Along with VM, Serviceability Agent (SA) is built for SA/JDI binding.
+# JDI binding on SA produces two binaries:
 #  1. sa-jdi.jar       - This is build before building libjvm[_g].so
 #                        Please refer to ./makefiles/sa.make
 #  2. libsaproc[_g].so - Native library for SA - This is built after
 #                        libjsig[_g].so (signal interposition library)
-#                        Please refer to ./makefiles/vm.make 
+#                        Please refer to ./makefiles/vm.make
 # If $(GAMMADIR)/agent dir is not present, SA components are not built.
 
 ifeq ($(GAMMADIR),)
@@ -52,10 +52,8 @@ include $(GAMMADIR)/make/defs.make
 endif
 include $(GAMMADIR)/make/$(OSNAME)/makefiles/rules.make
 
-ifndef LP64
 ifndef CC_INTERP
 FORCE_TIERED=1
-endif
 endif
 
 ifdef LP64

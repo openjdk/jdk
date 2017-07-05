@@ -74,13 +74,19 @@ class G1CollectedHeap;
 // in the future.
 //
 // 3) Another decision that is again not straightforward is what is
-// the max size that each memory pool can grow to. Right now, we set
-// that the committed size for the eden and the survivors and
-// calculate the old gen max as follows (basically, it's a similar
-// pattern to what we use for the committed space, as described
-// above):
+// the max size that each memory pool can grow to. One way to do this
+// would be to use the committed size for the max for the eden and
+// survivors and calculate the old gen max as follows (basically, it's
+// a similar pattern to what we use for the committed space, as
+// described above):
 //
 //  old_gen_max = overall_max - eden_max - survivor_max
+//
+// Unfortunately, the above makes the max of each pool fluctuate over
+// time and, even though this is allowed according to the spec, it
+// broke several assumptions in the M&M framework (there were cases
+// where used would reach a value greater than max). So, for max we
+// use -1, which means "undefined" according to the spec.
 //
 // 4) Now, there is a very subtle issue with all the above. The
 // framework will call get_memory_usage() on the three pools
@@ -125,11 +131,14 @@ protected:
   G1MemoryPoolSuper(G1CollectedHeap* g1h,
                     const char* name,
                     size_t init_size,
-                    size_t max_size,
                     bool support_usage_threshold);
 
   // The reason why all the code is in static methods is so that it
   // can be safely called from the constructors of the subclasses.
+
+  static size_t undefined_max() {
+    return (size_t) -1;
+  }
 
   static size_t overall_committed(G1CollectedHeap* g1h) {
     return g1h->capacity();
@@ -137,21 +146,15 @@ protected:
   static size_t overall_used(G1CollectedHeap* g1h) {
     return g1h->used_unlocked();
   }
-  static size_t overall_max(G1CollectedHeap* g1h) {
-    return g1h->g1_reserved_obj_bytes();
-  }
 
   static size_t eden_space_committed(G1CollectedHeap* g1h);
   static size_t eden_space_used(G1CollectedHeap* g1h);
-  static size_t eden_space_max(G1CollectedHeap* g1h);
 
   static size_t survivor_space_committed(G1CollectedHeap* g1h);
   static size_t survivor_space_used(G1CollectedHeap* g1h);
-  static size_t survivor_space_max(G1CollectedHeap* g1h);
 
   static size_t old_space_committed(G1CollectedHeap* g1h);
   static size_t old_space_used(G1CollectedHeap* g1h);
-  static size_t old_space_max(G1CollectedHeap* g1h);
 };
 
 // Memory pool that represents the G1 eden.
@@ -163,7 +166,7 @@ public:
     return eden_space_used(_g1h);
   }
   size_t max_size() const {
-    return eden_space_max(_g1h);
+    return undefined_max();
   }
   MemoryUsage get_memory_usage();
 };
@@ -177,7 +180,7 @@ public:
     return survivor_space_used(_g1h);
   }
   size_t max_size() const {
-    return survivor_space_max(_g1h);
+    return undefined_max();
   }
   MemoryUsage get_memory_usage();
 };
@@ -191,7 +194,7 @@ public:
     return old_space_used(_g1h);
   }
   size_t max_size() const {
-    return old_space_max(_g1h);
+    return undefined_max();
   }
   MemoryUsage get_memory_usage();
 };

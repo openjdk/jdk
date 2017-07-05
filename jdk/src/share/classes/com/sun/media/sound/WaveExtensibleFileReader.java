@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ public class WaveExtensibleFileReader extends AudioFileReader {
                         bits, channels, framesize, samplerate, false, p);
             }
         } else if (subFormat.equals(SUBTYPE_IEEE_FLOAT)) {
-            audioformat = new AudioFormat(AudioFloatConverter.PCM_FLOAT,
+            audioformat = new AudioFormat(Encoding.PCM_FLOAT,
                     samplerate, bits, channels, framesize, samplerate, false, p);
         } else
             throw new UnsupportedAudioFileException();

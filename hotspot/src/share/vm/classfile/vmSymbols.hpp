@@ -246,6 +246,8 @@
   /* internal up-calls made only by the JVM, via class sun.dyn.MethodHandleNatives: */            \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature, "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/dyn/MethodType;") \
+  template(notifyGenericMethodType_name,              "notifyGenericMethodType")                  \
+  template(notifyGenericMethodType_signature,         "(Ljava/dyn/MethodType;)V")                 \
   template(linkMethodHandleConstant_name,             "linkMethodHandleConstant")                 \
   template(linkMethodHandleConstant_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;)Ljava/dyn/MethodHandle;") \
   template(makeDynamicCallSite_name,                  "makeDynamicCallSite")                      \
@@ -345,6 +347,7 @@
   template(ptypes_name,                               "ptypes")                                   \
   template(form_name,                                 "form")                                     \
   template(erasedType_name,                           "erasedType")                               \
+  template(genericInvoker_name,                       "genericInvoker")                           \
   template(append_name,                               "append")                                   \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \

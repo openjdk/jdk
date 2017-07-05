@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,13 @@
 package java.sql;
 
 /**
- * The subclass of {@link SQLException} thrown when the SQLState class value is '<i>28</i>'. This indicated that the
- * authorization credentials presented during connection establishment are not valid.
- *
+ * The subclass of {@link SQLException} thrown when the SQLState class value
+ * is '<i>28</i>', or under vendor-specified conditions. This indicates that
+ * the authorization credentials presented during connection establishment
+ * are not valid.
+ * <p>
+ * Please consult your driver vendor documentation for the vendor-specified
+ * conditions for which this <code>Exception</code> may be thrown.
  * @since 1.6
  */
 public class SQLInvalidAuthorizationSpecException extends SQLNonTransientException {

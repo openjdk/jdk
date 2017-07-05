@@ -278,6 +278,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void increment_mdp_data_at(Register reg, int constant,
                              Register bumped_count, Register scratch2,
                              bool decrement = false);
+  void increment_mask_and_jump(Address counter_addr,
+                               int increment, int mask,
+                               Register scratch1, Register scratch2,
+                               Condition cond, Label *where);
   void set_mdp_flag_at(int flag_constant, Register scratch);
   void test_mdp_data_at(int offset, Register value, Label& not_equal_continue,
                         Register scratch);
@@ -321,4 +325,5 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void save_return_value(TosState state, bool is_native_call);
   void restore_return_value(TosState state, bool is_native_call);
+
 };

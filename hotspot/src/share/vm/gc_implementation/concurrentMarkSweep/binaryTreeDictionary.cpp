@@ -256,7 +256,7 @@ TreeChunk* TreeList::head_as_TreeChunk() {
 }
 
 TreeChunk* TreeList::first_available() {
-  guarantee(head() != NULL, "The head of the list cannot be NULL");
+  assert(head() != NULL, "The head of the list cannot be NULL");
   FreeChunk* fc = head()->next();
   TreeChunk* retTC;
   if (fc == NULL) {
@@ -272,7 +272,7 @@ TreeChunk* TreeList::first_available() {
 // those in the list for this size; potentially slow and expensive,
 // use with caution!
 TreeChunk* TreeList::largest_address() {
-  guarantee(head() != NULL, "The head of the list cannot be NULL");
+  assert(head() != NULL, "The head of the list cannot be NULL");
   FreeChunk* fc = head()->next();
   TreeChunk* retTC;
   if (fc == NULL) {

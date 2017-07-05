@@ -27,7 +27,6 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.util.Iterator;
-import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.*;
 import java.io.IOException;
@@ -139,9 +138,6 @@ class UnixDirectoryStream
         // next entry to return
         private Path nextEntry;
 
-        // previous entry returned by next method (needed by remove method)
-        private Path prevEntry;
-
         UnixDirectoryIterator(DirectoryStream<Path> stream) {
             atEof = false;
             this.stream = stream;
@@ -168,24 +164,19 @@ class UnixDirectoryStream
                 // prevent close while reading
                 readLock().lock();
                 try {
-                    if (isClosed)
-                        throwAsConcurrentModificationException(new
-                            ClosedDirectoryStreamException());
-                    try {
+                    if (isOpen()) {
                         nameAsBytes = readdir(dp);
-                    } catch (UnixException x) {
-                        try {
-                            x.rethrowAsIOException(dir);
-                        } catch (IOException ioe) {
-                            throwAsConcurrentModificationException(ioe);
-                        }
                     }
+                } catch (UnixException x) {
+                    IOException ioe = x.asIOException(dir);
+                    throw new DirectoryIteratorException(ioe);
                 } finally {
                     readLock().unlock();
                 }
 
                 // EOF
                 if (nameAsBytes == null) {
+                    atEof = true;
                     return null;
                 }
 
@@ -198,7 +189,7 @@ class UnixDirectoryStream
                         if (filter == null || filter.accept(entry))
                             return entry;
                     } catch (IOException ioe) {
-                        throwAsConcurrentModificationException(ioe);
+                        throw new DirectoryIteratorException(ioe);
                     }
                 }
             }
@@ -206,66 +197,28 @@ class UnixDirectoryStream
 
         @Override
         public synchronized boolean hasNext() {
-            if (nextEntry == null && !atEof) {
+            if (nextEntry == null && !atEof)
                 nextEntry = readNextEntry();
-
-                // at EOF?
-                if (nextEntry == null)
-                    atEof = true;
-            }
             return nextEntry != null;
         }
 
         @Override
         public synchronized Path next() {
-            if (nextEntry == null) {
-                if (!atEof) {
-                    nextEntry = readNextEntry();
-                }
-                if (nextEntry == null) {
-                    atEof = true;
-                    throw new NoSuchElementException();
-                }
+            Path result;
+            if (nextEntry == null && !atEof) {
+                result = readNextEntry();
+            } else {
+                result = nextEntry;
+                nextEntry = null;
             }
-            prevEntry = nextEntry;
-            nextEntry = null;
-            return prevEntry;
+            if (result == null)
+                throw new NoSuchElementException();
+            return result;
         }
 
         @Override
         public void remove() {
-            if (isClosed) {
-                throwAsConcurrentModificationException(new
-                    ClosedDirectoryStreamException());
-            }
-            Path entry;
-            synchronized (this) {
-                if (prevEntry == null)
-                    throw new IllegalStateException("No previous entry to remove");
-                entry = prevEntry;
-                prevEntry = null;
-            }
-
-            // use (race-free) unlinkat if available
-            try {
-                if (stream instanceof UnixSecureDirectoryStream) {
-                    ((UnixSecureDirectoryStream)stream)
-                        .implDelete(entry.getName(), false, 0);
-                } else {
-                    entry.delete();
-                }
-            } catch (IOException ioe) {
-                throwAsConcurrentModificationException(ioe);
-            } catch (SecurityException se) {
-                throwAsConcurrentModificationException(se);
-            }
+            throw new UnsupportedOperationException();
         }
     }
-
-    private static void throwAsConcurrentModificationException(Throwable t) {
-        ConcurrentModificationException cme = new ConcurrentModificationException();
-        cme.initCause(t);
-        throw cme;
-    }
-
 }

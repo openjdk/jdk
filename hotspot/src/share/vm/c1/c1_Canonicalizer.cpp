@@ -652,10 +652,20 @@ void Canonicalizer::do_If(If* x) {
         else if (lss_sux == gtr_sux) { cond = If::neq; tsux = lss_sux; fsux = eql_sux; }
         else if (eql_sux == gtr_sux) { cond = If::geq; tsux = eql_sux; fsux = lss_sux; }
         else                         { ShouldNotReachHere();                           }
-           If* canon = new If(cmp->x(), cond, nan_sux == tsux, cmp->y(), tsux, fsux, cmp->state_before(), x->is_safepoint());
+        If* canon = new If(cmp->x(), cond, nan_sux == tsux, cmp->y(), tsux, fsux, cmp->state_before(), x->is_safepoint());
         if (cmp->x() == cmp->y()) {
           do_If(canon);
         } else {
+          if (compilation()->profile_branches()) {
+            // TODO: If profiling, leave floating point comparisons unoptimized.
+            // We currently do not support profiling of the unordered case.
+            switch(cmp->op()) {
+              case Bytecodes::_fcmpl: case Bytecodes::_fcmpg:
+              case Bytecodes::_dcmpl: case Bytecodes::_dcmpg:
+                set_canonical(x);
+                return;
+            }
+          }
           set_canonical(canon);
           set_bci(cmp->bci());
         }
@@ -663,6 +673,8 @@ void Canonicalizer::do_If(If* x) {
     } else if (l->as_InstanceOf() != NULL) {
       // NOTE: Code permanently disabled for now since it leaves the old InstanceOf
       //       instruction in the graph (it is pinned). Need to fix this at some point.
+      //       It should also be left in the graph when generating a profiled method version or Goto
+      //       has to know that it was an InstanceOf.
       return;
       // pattern: If ((obj instanceof klass) cond rc) => simplify to: IfInstanceOf or: Goto
       InstanceOf* inst = l->as_InstanceOf();
@@ -881,4 +893,5 @@ void Canonicalizer::do_UnsafePutObject(UnsafePutObject* x) {}
 void Canonicalizer::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void Canonicalizer::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void Canonicalizer::do_ProfileCall(ProfileCall* x) {}
-void Canonicalizer::do_ProfileCounter(ProfileCounter* x) {}
+void Canonicalizer::do_ProfileInvoke(ProfileInvoke* x) {}
+

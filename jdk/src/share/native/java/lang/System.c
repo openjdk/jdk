@@ -80,6 +80,21 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
         (*env)->DeleteLocalRef(env, jval); \
         (*env)->DeleteLocalRef(env, r); \
     } else ((void) 0)
+#define REMOVEPROP(props, key) \
+    if (1) { \
+        jstring jkey = JNU_NewStringPlatform(env, key); \
+        jobject r = (*env)->CallObjectMethod(env, props, removeID, jkey); \
+        if ((*env)->ExceptionOccurred(env)) return NULL; \
+        (*env)->DeleteLocalRef(env, jkey); \
+        (*env)->DeleteLocalRef(env, r); \
+    } else ((void) 0)
+#define GETPROP(props, key, jret) \
+    if (1) { \
+        jstring jkey = JNU_NewStringPlatform(env, key); \
+        jret = (*env)->CallObjectMethod(env, props, getPropID, jkey); \
+        if ((*env)->ExceptionOccurred(env)) return NULL; \
+        (*env)->DeleteLocalRef(env, jkey); \
+    } else ((void) 0)
 
 #ifndef VENDOR /* Third party may overwrite this. */
 #define VENDOR "Sun Microsystems Inc."
@@ -90,6 +105,60 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 #define JAVA_MAX_SUPPORTED_VERSION 51
 #define JAVA_MAX_SUPPORTED_MINOR_VERSION 0
 
+static int fmtdefault; // boolean value
+jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,
+                      char *platformDispVal, char *platformFmtVal,
+                      jmethodID putID, jmethodID getPropID) {
+    jstring jVMBaseVal = NULL;
+
+    GETPROP(props, baseKey, jVMBaseVal);
+    if (jVMBaseVal) {
+        // user specified the base property.  there's nothing to do here.
+        (*env)->DeleteLocalRef(env, jVMBaseVal);
+    } else {
+        char buf[64];
+        jstring jVMVal = NULL;
+        const char *baseVal = "";
+
+        /* user.xxx base property */
+        if (fmtdefault) {
+            if (platformFmtVal) {
+                PUTPROP(props, baseKey, platformFmtVal);
+                baseVal = platformFmtVal;
+            }
+        } else {
+            if (platformDispVal) {
+                PUTPROP(props, baseKey, platformDispVal);
+                baseVal = platformDispVal;
+            }
+        }
+
+        /* user.xxx.display property */
+        jio_snprintf(buf, sizeof(buf), "%s.display", baseKey);
+        GETPROP(props, buf, jVMVal);
+        if (jVMVal == NULL) {
+            if (platformDispVal && (strcmp(baseVal, platformDispVal) != 0)) {
+                PUTPROP(props, buf, platformDispVal);
+            }
+        } else {
+            (*env)->DeleteLocalRef(env, jVMVal);
+        }
+
+        /* user.xxx.format property */
+        jio_snprintf(buf, sizeof(buf), "%s.format", baseKey);
+        GETPROP(props, buf, jVMVal);
+        if (jVMVal == NULL) {
+            if (platformFmtVal && (strcmp(baseVal, platformFmtVal) != 0)) {
+                PUTPROP(props, buf, platformFmtVal);
+            }
+        } else {
+            (*env)->DeleteLocalRef(env, jVMVal);
+        }
+    }
+
+    return NULL;
+}
+
 JNIEXPORT jobject JNICALL
 Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
 {
@@ -99,6 +168,16 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
                                           (*env)->GetObjectClass(env, props),
                                           "put",
             "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+    jmethodID removeID = (*env)->GetMethodID(env,
+                                          (*env)->GetObjectClass(env, props),
+                                          "remove",
+            "(Ljava/lang/Object;)Ljava/lang/Object;");
+    jmethodID getPropID = (*env)->GetMethodID(env,
+                                          (*env)->GetObjectClass(env, props),
+                                          "getProperty",
+            "(Ljava/lang/String;)Ljava/lang/String;");
+    jobject ret = NULL;
+    jstring jVMVal = NULL;
 
     if (sprops == NULL || putID == NULL ) return NULL;
 
@@ -218,7 +297,46 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
         PUTPROP(props, "sun.desktop", sprops->desktop);
     }
 
-    return JVM_InitProperties(env, props);
+    /*
+     * unset "user.language", "user.country", and "user.variant"
+     * in order to tell whether the command line option "-DXXXX=YYYY" is
+     * specified or not.  They will be reset in fillI18nProps() below.
+     */
+    REMOVEPROP(props, "user.language");
+    REMOVEPROP(props, "user.country");
+    REMOVEPROP(props, "user.variant");
+    REMOVEPROP(props, "file.encoding");
+
+    ret = JVM_InitProperties(env, props);
+
+    /* Check the compatibility flag */
+    GETPROP(props, "sun.locale.formatasdefault", jVMVal);
+    if (jVMVal) {
+        const char * val = (*env)->GetStringUTFChars(env, jVMVal, 0);
+        fmtdefault = !strcmp(val, "true");
+        (*env)->ReleaseStringUTFChars(env, jVMVal, val);
+        (*env)->DeleteLocalRef(env, jVMVal);
+    }
+
+    /* reconstruct i18n related properties */
+    fillI18nProps(env, props, "user.language", sprops->display_language,
+        sprops->format_language, putID, getPropID);
+    fillI18nProps(env, props, "user.country",
+        sprops->display_country, sprops->format_country, putID, getPropID);
+    fillI18nProps(env, props, "user.variant",
+        sprops->display_variant, sprops->format_variant, putID, getPropID);
+    GETPROP(props, "file.encoding", jVMVal);
+    if (jVMVal == NULL) {
+        if (fmtdefault) {
+            PUTPROP(props, "file.encoding", sprops->encoding);
+        } else {
+            PUTPROP(props, "file.encoding", sprops->sun_jnu_encoding);
+        }
+    } else {
+        (*env)->DeleteLocalRef(env, jVMVal);
+    }
+
+    return ret;
 }
 
 /*

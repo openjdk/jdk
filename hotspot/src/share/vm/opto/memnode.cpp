@@ -1547,8 +1547,8 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
         adr->is_AddP() && off != Type::OffsetBot) {
       // For constant Strings treat the fields as compile time constants.
       Node* base = adr->in(AddPNode::Base);
-      if (base->Opcode() == Op_ConP) {
-        const TypeOopPtr* t = phase->type(base)->isa_oopptr();
+      const TypeOopPtr* t = phase->type(base)->isa_oopptr();
+      if (t != NULL && t->singleton()) {
         ciObject* string = t->const_oop();
         ciConstant constant = string->as_instance()->field_value_by_offset(off);
         if (constant.basic_type() == T_INT) {

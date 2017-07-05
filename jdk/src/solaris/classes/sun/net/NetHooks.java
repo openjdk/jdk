@@ -73,28 +73,7 @@ public final class NetHooks {
      * be changed to use the ServiceLoader facility to allow the deployment of
      * other providers.
      */
-    private static Provider loadProvider(final String cn) {
-        return AccessController
-            .doPrivileged(new PrivilegedAction<Provider>() {
-                @Override public Provider run() {
-                    Class<Provider> c;
-                    try {
-                        c = (Class<Provider>)Class.forName(cn, true, null);
-                    } catch (ClassNotFoundException x) {
-                        return null;
-                    }
-                    try {
-                        return c.newInstance();
-                    } catch (IllegalAccessException x) {
-                        throw new AssertionError(x);
-                    } catch (InstantiationException x) {
-                        throw new AssertionError(x);
-                    }
-            }});
-    }
-    private static final Provider provider = AccessController
-        .doPrivileged(new GetPropertyAction("os.name")).equals("SunOS") ?
-            loadProvider("sun.net.spi.SdpProvider") : null;
+    private static final Provider provider = new sun.net.sdp.SdpProvider();
 
     /**
      * Invoke prior to binding a TCP socket.
@@ -104,8 +83,7 @@ public final class NetHooks {
                                      int port)
         throws IOException
     {
-        if (provider != null)
-            provider.implBeforeTcpBind(fdObj, address, port);
+        provider.implBeforeTcpBind(fdObj, address, port);
     }
 
     /**
@@ -116,7 +94,6 @@ public final class NetHooks {
                                         int port)
         throws IOException
     {
-        if (provider != null)
-            provider.implBeforeTcpConnect(fdObj, address, port);
+        provider.implBeforeTcpConnect(fdObj, address, port);
     }
 }

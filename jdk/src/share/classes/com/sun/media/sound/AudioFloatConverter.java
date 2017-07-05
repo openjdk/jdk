@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import javax.sound.sampled.AudioFormat.Encoding;
  * @author Karl Helgason
  */
 public abstract class AudioFloatConverter {
-
-    public static final Encoding PCM_FLOAT = new Encoding("PCM_FLOAT");
 
     /***************************************************************************
      *
@@ -982,7 +980,7 @@ public abstract class AudioFloatConverter {
                             format.getSampleSizeInBits() + 7) / 8) - 4);
                 }
             }
-        } else if (format.getEncoding().equals(PCM_FLOAT)) {
+        } else if (format.getEncoding().equals(Encoding.PCM_FLOAT)) {
             if (format.getSampleSizeInBits() == 32) {
                 if (format.isBigEndian())
                     conv = new AudioFloatConversion32B();

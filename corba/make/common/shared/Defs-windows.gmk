@@ -31,7 +31,6 @@
 #    Level: Default is 3, 0 means none, 4 is the most but may be unreliable
 #    Some makefiles may have set this to 0 to turn off warnings completely,
 #    which also effectively creates a COMPILER_WARNINGS_FATAL=false situation.
-#    Program.gmk may turn this down to 2 (building .exe's).
 #    Windows 64bit platforms are less likely to be warning free.
 #    Historically, Windows 32bit builds should be mostly warning free.
 ifndef COMPILER_WARNING_LEVEL
@@ -74,7 +73,7 @@ override INCREMENTAL_BUILD = false
 #   The ALT values should never really have spaces or use \.
 #   Suspect these environment variables to have spaces and/or \ characters:
 #     SYSTEMROOT, SystemRoot, WINDIR, windir, PROGRAMFILES, ProgramFiles,
-#     MSTOOLS, Mstools, MSSDK, MSSdk, VC71COMNTOOLS, 
+#     VC71COMNTOOLS, 
 #     MSVCDIR, MSVCDir.
 #     So use $(subst \,/,) on them first adding quotes and placing them in
 #         their own variable assigned with :=, then use FullPath.
@@ -201,124 +200,6 @@ ifndef SHORTPROGRAMFILES
   export SHORTPROGRAMFILES
 endif
 
-# Compilers, SDK, and Visual Studio (MSDEV) [32bit is different from 64bit]
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifndef SHORTMSVCDIR
-    # Try looking in MSVCDIR or MSVCDir area first (set by vcvars32.bat)
-    ifdef MSVCDIR
-      xMSVCDIR         :="$(subst \,/,$(MSVCDIR))"
-      SHORTMSVCDIR     :=$(call FullPath,$(xMSVCDIR))
-    else
-      ifdef MSVCDir
-        xMSVCDIR       :="$(subst \,/,$(MSVCDir))"
-        SHORTMSVCDIR   :=$(call FullPath,$(xMSVCDIR))
-      else
-        ifneq ($(SHORTPROGRAMFILES),)
-          xMSVCDIR     :="$(SHORTPROGRAMFILES)/Microsoft Visual Studio .NET 2003/Vc7"
-          SHORTMSVCDIR :=$(call FullPath,$(xMSVCDIR))
-        endif
-      endif
-    endif
-    ifneq ($(subst MSDev98,OLDOLDOLD,$(SHORTMSVCDIR)),$(SHORTMSVCDIR))
-      SHORTMSVCDIR     :=
-    endif
-    # If we still don't have it, look for VS100COMNTOOLS, setup by installer?
-    ifeq ($(SHORTMSVCDIR),)
-      ifdef VS100COMNTOOLS  # /Common/Tools directory, use ../../Vc
-        xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
-        _vs100tools     :=$(call FullPath,$(xVS100COMNTOOLS))
-      endif
-      ifneq ($(_vs100tools),)
-        SHORTMSVCDIR   :=$(_vs100tools)/../../Vc
-      endif
-    endif
-    export SHORTMSVCDIR
-    # If we still don't have it, look for VS71COMNTOOLS, setup by installer?
-    ifeq ($(SHORTMSVCDIR),)
-      ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
-        xVS71COMNTOOLS :="$(subst \,/,$(VS71COMNTOOLS))"
-        _vs71tools     :=$(call FullPath,$(xVS71COMNTOOLS))
-      endif
-      ifneq ($(_vs71tools),)
-        SHORTMSVCDIR   :=$(_vs71tools)/../../Vc7
-      endif
-    endif
-    export SHORTMSVCDIR
-  endif
-  ifneq ($(SHORTMSVCDIR),)
-    SHORTCOMPILERBIN   :=$(SHORTMSVCDIR)/Bin
-    SHORTPSDK          :=$(SHORTMSVCDIR)/PlatformSDK
-    export SHORTCOMPILERBIN
-    export SHORTPSDK
-  endif
-endif
-
-# The Microsoft Platform SDK installed by itself
-ifneq ($(SHORTPROGRAMFILES),)
-  ifndef SHORTPSDK
-    xPSDK       :="$(SHORTPROGRAMFILES)/Microsoft Platform SDK"
-    SHORTPSDK   :=$(call FullPath,$(xPSDK))
-    ifeq ($(SHORTPSDK),)
-      xPSDK     :="$(SHORTPROGRAMFILES)/Microsoft SDK"
-      SHORTPSDK :=$(call FullPath,$(xMSSDK))
-    endif
-    export SHORTPSDK
-  endif
-endif
-
-# If no SDK found yet, look in other places
-ifndef SHORTPSDK
-  ifdef MSSDK
-    xMSSDK      :="$(subst \,/,$(MSSDK))"
-    SHORTPSDK   :=$(call FullPath,$(xMSSDK))
-  else
-    ifdef MSSdk
-      xMSSDK    :="$(subst \,/,$(MSSdk))"
-      SHORTPSDK :=$(call FullPath,$(xMSSDK))
-    endif
-  endif
-  export SHORTPSDK
-endif
-
-# Compilers for 64bit are from SDK
-ifeq ($(ARCH_DATA_MODEL), 64)
-  ifndef SHORTCOMPILERBIN
-    ifdef VS100COMNTOOLS  # /Common7/Tools directory, use ../../Vc
-      xVS100COMNTOOLS :="$(subst \,/,$(VS100COMNTOOLS))"
-      _vs100tools     :=$(call FullPath,$(xVS100COMNTOOLS))
-    endif
-    ifneq ($(_vs100tools),)
-      SHORTCOMPILERBIN :=$(_vs100tools)/../../Vc/bin/amd64
-      xMSSDK70      :="C:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A/"
-      MSSDK7        :=$(call FullPath,$(xMSSDK70))
-      export MSSDK7
-    else
-      xMSSDK61 :="C:/Program Files/Microsoft SDKs/Windows/v6.1/"
-      MSSDK61 :=$(call FullPath,$(xMSSDK61))
-      xVS2008 :="C:/Program Files (x86)/Microsoft Visual Studio 9.0/"
-      _vs2008 :=$(call FullPath,$(xVS2008))
-      ifneq ($(_vs2008),)
-        ifeq ($(ARCH), ia64)
-          SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/x86_ia64
-        endif
-        ifeq ($(ARCH), amd64)
-          SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/$(ARCH)
-        endif
-      else
-        ifneq ($(SHORTPSDK),)
-          ifeq ($(ARCH), ia64)
-            SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64
-          endif
-          ifeq ($(ARCH), amd64)
-            SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64/x86/$(ARCH)
-          endif
-        endif
-      endif
-    endif
-    export SHORTCOMPILERBIN
-  endif
-endif
-
 # Location on system where jdk installs might be
 ifneq ($(SHORTPROGRAMFILES),)
   USRJDKINSTANCES_PATH =$(SHORTPROGRAMFILES)/Java
@@ -354,55 +235,6 @@ ifndef JDK_DEVTOOLS_DIR
   JDK_DEVTOOLS_DIR:=$(call AltCheckSpaces,JDK_DEVTOOLS_DIR)
   JDK_DEVTOOLS_DIR:=$(call AltCheckValue,JDK_DEVTOOLS_DIR)
   export JDK_DEVTOOLS_DIR
-endif
-
-# COMPILER_PATH: path to where the compiler and tools are installed.
-#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifndef COMPILER_PATH
-  ifdef ALT_COMPILER_PATH
-    xALT_COMPILER_PATH  :="$(subst \,/,$(ALT_COMPILER_PATH))"
-    fxALT_COMPILER_PATH :=$(call FullPath,$(xALT_COMPILER_PATH))
-    COMPILER_PATH       :=$(call PrefixPath,$(fxALT_COMPILER_PATH))
-  else
-    COMPILER_PATH :=$(call PrefixPath,$(SHORTCOMPILERBIN))
-  endif
-  COMPILER_PATH :=$(call AltCheckSpaces,COMPILER_PATH)
-  export COMPILER_PATH
-endif
-
-# MSDEVTOOLS_PATH: path to where the additional MS Compiler tools are.
-#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifndef MSDEVTOOLS_PATH
-  ifdef ALT_MSDEVTOOLS_PATH
-    xALT_MSDEVTOOLS_PATH  :="$(subst \,/,$(ALT_MSDEVTOOLS_PATH))"
-    fxALT_MSDEVTOOLS_PATH :=$(call FullPath,$(xALT_MSDEVTOOLS_PATH))
-    MSDEVTOOLS_PATH       :=$(call PrefixPath,$(fxALT_MSDEVTOOLS_PATH))
-  else
-    ifeq ($(ARCH_DATA_MODEL), 64)
-      ifdef MSTOOLS
-        xMSTOOLS  :="$(subst \,/,$(MSTOOLS))"
-        _ms_tools :=$(call FullPath,$(xMSTOOLS))
-      else
-        ifdef Mstools
-          xMSTOOLS  :="$(subst \,/,$(Mstools))"
-          _ms_tools :=$(call FullPath,$(xMSTOOLS))
-        else
-          _ms_tools :=
-        endif
-      endif
-      ifneq ($(_ms_tools),)
-        _ms_tools_bin :=$(_ms_tools)/Bin
-      else
-        # Assumes compiler bin is .../Bin/win64/x86/AMD64, rc.exe is 3 levels up
-        _ms_tools_bin :=$(SHORTCOMPILERBIN)/../../..
-      endif
-    else
-      _ms_tools_bin :=$(SHORTCOMPILERBIN)
-    endif
-    MSDEVTOOLS_PATH :=$(call PrefixPath,$(_ms_tools_bin))
-  endif
-  MSDEVTOOLS_PATH:=$(call AltCheckSpaces,MSDEVTOOLS_PATH)
-  export MSDEVTOOLS_PATH
 endif
 
 # DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)

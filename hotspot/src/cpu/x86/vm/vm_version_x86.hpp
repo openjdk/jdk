@@ -296,14 +296,14 @@ protected:
       result |= CPU_CX8;
     if (_cpuid_info.std_cpuid1_edx.bits.cmov != 0)
       result |= CPU_CMOV;
-    if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || is_amd() &&
-        _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0)
+    if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || (is_amd() &&
+        _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0))
       result |= CPU_FXSR;
     // HT flag is set for multi-core processors also.
     if (threads_per_core() > 1)
       result |= CPU_HT;
-    if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || is_amd() &&
-        _cpuid_info.ext_cpuid1_edx.bits.mmx != 0)
+    if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || (is_amd() &&
+        _cpuid_info.ext_cpuid1_edx.bits.mmx != 0))
       result |= CPU_MMX;
     if (_cpuid_info.std_cpuid1_edx.bits.sse != 0)
       result |= CPU_SSE;
