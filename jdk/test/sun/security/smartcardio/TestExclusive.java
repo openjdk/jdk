@@ -31,10 +31,11 @@
 
 // This test requires special hardware.
 
-import java.io.*;
-import java.util.*;
-
-import javax.smartcardio.*;
+import javax.smartcardio.Card;
+import javax.smartcardio.CardChannel;
+import javax.smartcardio.CardException;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
 
 public class TestExclusive extends Utils {
 
@@ -84,9 +85,9 @@ public class TestExclusive extends Utils {
         Thread.sleep(1000);
 
         // disconnect
-        card.disconnect(false);
+        card.disconnect(true);
 
-        if (otherOK == false) {
+        if (! otherOK) {
             throw new Exception("Secondary thread failed");
         }
 
