@@ -23,11 +23,11 @@
  */
 
 /* @test
-   @bug 6427244 8144240
+   @bug 6427244 8144240 8166003
    @summary Test that pressing HOME correctly moves caret in I18N document.
    @author Sergey Groznyh
    @library ../../../regtesthelpers
-   @build JRobot Util TestCase
+   @build JRobot
    @run main bug6427244
 */
 
@@ -36,12 +36,13 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Position;
 
-public class bug6427244 extends TestCase {
+public class bug6427244 {
     private static final JRobot ROBOT = JRobot.getRobot();
 
     final static int TP_SIZE = 200;
@@ -105,10 +106,22 @@ public class bug6427244 extends TestCase {
                     dim = c.getSize();
                 }
             });
-            Util.blockTillDisplayed(tp);
+            blockTillDisplayed(tp);
             ROBOT.waitForIdle();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    void blockTillDisplayed(JComponent comp) {
+        if(comp != null) {
+            while (!comp.isVisible()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                    /* No-op */
+                }
+            }
         }
     }
 
@@ -122,7 +135,9 @@ public class bug6427244 extends TestCase {
         ROBOT.hitKey(KeyEvent.VK_HOME);
         ROBOT.waitForIdle();
         // this will fail if caret moves out of the 1st line.
-        assertEquals(0, getCaretOrdinate());
+        if (getCaretOrdinate() != 0) {
+            throw new RuntimeException("Test Failed.");
+        }
     }
 
     int getCaretOrdinate() {

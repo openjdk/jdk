@@ -84,6 +84,7 @@ public class PasswordView extends FieldView {
         return drawUnselectedTextImpl(g, x, y, p0, p1, true);
     }
 
+    @SuppressWarnings("deprecation")
     private float drawUnselectedTextImpl(Graphics g, float x, float y,
                                          int p0, int p1,
                                          boolean useFPAPI)
@@ -152,6 +153,7 @@ public class PasswordView extends FieldView {
         return drawSelectedTextImpl(g, x, y, p0, p1, true);
     }
 
+    @SuppressWarnings("deprecation")
     private float drawSelectedTextImpl(Graphics g, float x, float y,
                                        int p0, int p1,
                                        boolean useFPAPI)

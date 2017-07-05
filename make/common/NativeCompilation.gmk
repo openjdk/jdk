@@ -875,7 +875,7 @@ define SetupNativeCompilationBody
           # to be rebuilt properly.
           $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
 		$(CD) $$($1_OUTPUT_DIR) && \
-		    $(ZIP) -q -r $$@ $$(subst $$($1_OUTPUT_DIR)/,, $$($1_DEBUGINFO_FILES))
+		    $(ZIPEXE) -q -r $$@ $$(subst $$($1_OUTPUT_DIR)/,, $$($1_DEBUGINFO_FILES))
 
         endif
        endif # !STATIC_LIBRARY

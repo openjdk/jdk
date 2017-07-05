@@ -226,12 +226,9 @@ public abstract class ShellFolder extends File {
         }
         try {
             shellFolderManager =
-                (ShellFolderManager)managerClass.newInstance();
-        } catch (InstantiationException e) {
+                (ShellFolderManager)managerClass.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new Error("Could not instantiate Shell Folder Manager: "
-            + managerClass.getName());
-        } catch (IllegalAccessException e) {
-            throw new Error ("Could not access Shell Folder Manager: "
             + managerClass.getName());
         }
 

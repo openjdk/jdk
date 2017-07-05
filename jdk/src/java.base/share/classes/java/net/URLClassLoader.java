@@ -42,6 +42,7 @@ import java.security.SecureClassLoader;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.jar.Attributes;
@@ -301,9 +302,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @return  An input stream for reading the resource, or {@code null}
      *          if the resource could not be found
      *
+     * @throws  NullPointerException If {@code name} is {@code null}
+     *
      * @since  1.7
      */
     public InputStream getResourceAsStream(String name) {
+        Objects.requireNonNull(name);
         URL url = getResource(name);
         try {
             if (url == null) {

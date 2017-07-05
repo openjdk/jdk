@@ -27,14 +27,17 @@
  * @modules jdk.localedata
  */
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class HashCodeTest {
+
     public static void main(String[] args) {
         Locale[] locales = Locale.getAvailableLocales();
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
-        Map map = new HashMap(locales.length);
+        Map<Integer, Locale> map = new HashMap<>(locales.length);
         int conflicts = 0;
 
         for (int i = 0; i < locales.length; i++) {
@@ -42,19 +45,19 @@ public class HashCodeTest {
             int hc = loc.hashCode();
             min = Math.min(hc, min);
             max = Math.max(hc, max);
-            Integer key = new Integer(hc);
+            Integer key = hc;
             if (map.containsKey(key)) {
                 conflicts++;
-                System.out.println("conflict: " + (Locale) map.get(key) + ", " + loc);
+                System.out.println("conflict: " + map.get(key) + ", " + loc);
             } else {
                 map.put(key, loc);
             }
         }
-        System.out.println(locales.length+" locales: conflicts="+conflicts
-                           +", min="+min+", max="+max +", diff="+(max-min));
+        System.out.println(locales.length + " locales: conflicts=" + conflicts
+                + ", min=" + min + ", max=" + max + ", diff=" + (max - min));
         if (conflicts >= (locales.length / 10)) {
             throw new RuntimeException("too many conflicts: " + conflicts
-                                       + " per " + locales.length + " locales");
+                    + " per " + locales.length + " locales");
         }
     }
 }

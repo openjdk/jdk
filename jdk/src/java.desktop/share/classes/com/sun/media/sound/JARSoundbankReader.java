@@ -70,6 +70,7 @@ public final class JARSoundbankReader extends SoundbankReader {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException {
         if (!isZIP(url))
@@ -93,9 +94,7 @@ public final class JARSoundbankReader extends SoundbankReader {
                             Object o = c.newInstance();
                             soundbanks.add((Soundbank) o);
                         }
-                    } catch (ClassNotFoundException ignored) {
-                    } catch (InstantiationException ignored) {
-                    } catch (IllegalAccessException ignored) {
+                    } catch (ReflectiveOperationException ignored) {
                     }
                 }
                 line = r.readLine();
