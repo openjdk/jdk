@@ -185,7 +185,6 @@ public abstract class LocaleProviderAdapter {
                 LocaleServiceProviderPool.config(LocaleProviderAdapter.class, e.toString());
             }
             typeList.add(Type.JRE);
-            typeList.add(Type.SPI);
             defaultLocaleProviderAdapter = Type.JRE;
         }
 

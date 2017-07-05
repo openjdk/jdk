@@ -46,7 +46,7 @@ public class BasicToggleButtonUI extends BasicButtonUI {
 
     private static final Object BASIC_TOGGLE_BUTTON_UI_KEY = new Object();
 
-    private final static String propertyPrefix = "ToggleButton" + ".";
+    private static final String propertyPrefix = "ToggleButton" + ".";
 
     // ********************************
     //          Create PLAF

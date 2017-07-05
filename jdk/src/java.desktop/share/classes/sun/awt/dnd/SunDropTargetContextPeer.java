@@ -137,10 +137,10 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
      * constants used by dropAccept() or dropReject()
      */
 
-    protected final static int STATUS_NONE   =  0; // none pending
-    protected final static int STATUS_WAIT   =  1; // drop pending
-    protected final static int STATUS_ACCEPT =  2;
-    protected final static int STATUS_REJECT = -1;
+    protected static final int STATUS_NONE   =  0; // none pending
+    protected static final int STATUS_WAIT   =  1; // drop pending
+    protected static final int STATUS_ACCEPT =  2;
+    protected static final int STATUS_REJECT = -1;
 
     /**
      * create the peer

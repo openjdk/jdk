@@ -180,7 +180,7 @@ class Map implements Serializable {
      * % the returned value with be negative. If a parse error results
      * from trying to parse one of the numbers null is returned.
      */
-    static protected int[] extractCoords(Object stringCoords) {
+    protected static int[] extractCoords(Object stringCoords) {
         if (stringCoords == null || !(stringCoords instanceof String)) {
             return null;
         }

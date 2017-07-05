@@ -35,7 +35,7 @@ import java.util.Arrays;
  */
 public final class SoftReverb implements SoftAudioProcessor {
 
-    private final static class Delay {
+    private static final class Delay {
 
         private float[] delaybuffer;
         private int rovepos = 0;
@@ -70,7 +70,7 @@ public final class SoftReverb implements SoftAudioProcessor {
         }
     }
 
-    private final static class AllPass {
+    private static final class AllPass {
 
         private final float[] delaybuffer;
         private final int delaybuffersize;
@@ -117,7 +117,7 @@ public final class SoftReverb implements SoftAudioProcessor {
         }
     }
 
-    private final static class Comb {
+    private static final class Comb {
 
         private final float[] delaybuffer;
         private final int delaybuffersize;

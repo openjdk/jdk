@@ -26,5 +26,6 @@
 include LauncherCommon.gmk
 
 $(eval $(call SetupLauncher,jjs, \
+    -DENABLE_ARG_FILES \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "jdk.nashorn.tools.jjs.Main"$(COMMA) }'))
 

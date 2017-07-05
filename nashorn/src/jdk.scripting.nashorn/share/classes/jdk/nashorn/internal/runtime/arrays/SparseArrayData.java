@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Handle arrays where the index is very large.
  */
 class SparseArrayData extends ArrayData {
-    static final int MAX_DENSE_LENGTH = 8 * 1024 * 1024;
+    static final int MAX_DENSE_LENGTH = 1024 * 1024;
 
     /** Underlying array. */
     private ArrayData underlying;
@@ -48,7 +48,7 @@ class SparseArrayData extends ArrayData {
     private TreeMap<Long, Object> sparseMap;
 
     SparseArrayData(final ArrayData underlying, final long length) {
-        this(underlying, length, new TreeMap<Long, Object>());
+        this(underlying, length, new TreeMap<>());
     }
 
     SparseArrayData(final ArrayData underlying, final long length, final TreeMap<Long, Object> sparseMap) {
@@ -166,8 +166,9 @@ class SparseArrayData extends ArrayData {
     @Override
     public ArrayData set(final int index, final Object value, final boolean strict) {
         if (index >= 0 && index < maxDenseLength) {
+            final long oldLength = underlying.length();
             ensure(index);
-            underlying = underlying.set(index, value, strict);
+            underlying = underlying.set(index, value, strict).safeDelete(oldLength, index - 1, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
             final Long longIndex = indexToKey(index);
@@ -181,8 +182,9 @@ class SparseArrayData extends ArrayData {
     @Override
     public ArrayData set(final int index, final int value, final boolean strict) {
         if (index >= 0 && index < maxDenseLength) {
+            final long oldLength = underlying.length();
             ensure(index);
-            underlying = underlying.set(index, value, strict);
+            underlying = underlying.set(index, value, strict).safeDelete(oldLength, index - 1, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
             final Long longIndex = indexToKey(index);
@@ -195,8 +197,9 @@ class SparseArrayData extends ArrayData {
     @Override
     public ArrayData set(final int index, final long value, final boolean strict) {
         if (index >= 0 && index < maxDenseLength) {
+            final long oldLength = underlying.length();
             ensure(index);
-            underlying = underlying.set(index, value, strict);
+            underlying = underlying.set(index, value, strict).safeDelete(oldLength, index - 1, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
             final Long longIndex = indexToKey(index);
@@ -209,8 +212,9 @@ class SparseArrayData extends ArrayData {
     @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         if (index >= 0 && index < maxDenseLength) {
+            final long oldLength = underlying.length();
             ensure(index);
-            underlying = underlying.set(index, value, strict);
+            underlying = underlying.set(index, value, strict).safeDelete(oldLength, index - 1, strict);
             setLength(Math.max(underlying.length(), length()));
         } else {
             final Long longIndex = indexToKey(index);

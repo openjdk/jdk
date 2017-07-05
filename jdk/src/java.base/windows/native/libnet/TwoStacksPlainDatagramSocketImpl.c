@@ -2211,8 +2211,11 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobj
 
     optlen = sizeof(optval.i);
     if (NET_GetSockOpt(fd, level, optname, (void *)&optval, &optlen) < 0) {
-        char errmsg[255];
-        sprintf(errmsg, "error getting socket option: %s\n", strerror(errno));
+        char tmpbuf[255];
+        int size = 0;
+        char errmsg[255 + 31];
+        getErrorString(errno, tmpbuf, sizeof(tmpbuf));
+        sprintf(errmsg, "error getting socket option: %s", tmpbuf);
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", errmsg);
         return NULL;
     }

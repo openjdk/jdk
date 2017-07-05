@@ -34,9 +34,9 @@
  */
 
 package java.util.concurrent.atomic;
-import java.util.function.IntUnaryOperator;
+
 import java.util.function.IntBinaryOperator;
-import sun.misc.Unsafe;
+import java.util.function.IntUnaryOperator;
 
 /**
  * An {@code int} array in which elements may be updated atomically.
@@ -49,16 +49,17 @@ import sun.misc.Unsafe;
 public class AtomicIntegerArray implements java.io.Serializable {
     private static final long serialVersionUID = 2862133569453604235L;
 
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final int base = unsafe.arrayBaseOffset(int[].class);
-    private static final int shift;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final int ABASE;
+    private static final int ASHIFT;
     private final int[] array;
 
     static {
-        int scale = unsafe.arrayIndexScale(int[].class);
+        ABASE = U.arrayBaseOffset(int[].class);
+        int scale = U.arrayIndexScale(int[].class);
         if ((scale & (scale - 1)) != 0)
-            throw new Error("data type scale not a power of two");
-        shift = 31 - Integer.numberOfLeadingZeros(scale);
+            throw new Error("array index scale not a power of two");
+        ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
     }
 
     private long checkedByteOffset(int i) {
@@ -69,7 +70,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
     }
 
     private static long byteOffset(int i) {
-        return ((long) i << shift) + base;
+        return ((long) i << ASHIFT) + ABASE;
     }
 
     /**
@@ -114,7 +115,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
     }
 
     private int getRaw(long offset) {
-        return unsafe.getIntVolatile(array, offset);
+        return U.getIntVolatile(array, offset);
     }
 
     /**
@@ -124,7 +125,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param newValue the new value
      */
     public final void set(int i, int newValue) {
-        unsafe.putIntVolatile(array, checkedByteOffset(i), newValue);
+        U.putIntVolatile(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -135,7 +136,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int i, int newValue) {
-        unsafe.putOrderedInt(array, checkedByteOffset(i), newValue);
+        U.putOrderedInt(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -147,7 +148,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndSet(int i, int newValue) {
-        return unsafe.getAndSetInt(array, checkedByteOffset(i), newValue);
+        return U.getAndSetInt(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -165,7 +166,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
     }
 
     private boolean compareAndSetRaw(long offset, int expect, int update) {
-        return unsafe.compareAndSwapInt(array, offset, expect, update);
+        return U.compareAndSwapInt(array, offset, expect, update);
     }
 
     /**
@@ -213,7 +214,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndAdd(int i, int delta) {
-        return unsafe.getAndAddInt(array, checkedByteOffset(i), delta);
+        return U.getAndAddInt(array, checkedByteOffset(i), delta);
     }
 
     /**
@@ -246,7 +247,6 @@ public class AtomicIntegerArray implements java.io.Serializable {
     public final int addAndGet(int i, int delta) {
         return getAndAdd(i, delta) + delta;
     }
-
 
     /**
      * Atomically updates the element at index {@code i} with the results

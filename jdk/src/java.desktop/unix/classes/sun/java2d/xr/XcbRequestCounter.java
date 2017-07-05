@@ -32,7 +32,7 @@ package sun.java2d.xr;
  */
 
 public class XcbRequestCounter {
-    private final static long MAX_UINT = 4294967295L;
+    private static final long MAX_UINT = 4294967295L;
 
     long value;
 

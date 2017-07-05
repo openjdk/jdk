@@ -120,7 +120,7 @@ public class NavigationFilter {
      * not callback into the NavigationFilter.
      * @since 1.4
      */
-    public static abstract class FilterBypass {
+    public abstract static class FilterBypass {
         /**
          * Returns the Caret that is changing.
          *

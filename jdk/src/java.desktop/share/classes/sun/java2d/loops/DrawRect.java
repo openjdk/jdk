@@ -44,9 +44,9 @@ import sun.java2d.SurfaceData;
  */
 public class DrawRect extends GraphicsPrimitive
 {
-    public final static String methodSignature = "DrawRect(...)".toString();
+    public static final String methodSignature = "DrawRect(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static DrawRect locate(SurfaceType srctype,
                                   CompositeType comptype,

@@ -278,8 +278,9 @@ public final class EncodingHelper {
                     case 0x0d:
                         return true;
                     default:
-                        // true if Unicode separator or BOM
-                        return (1 << Character.getType(code) & CharacterType.SPACE_MASK) != 0 || code == 0xfeff;
+                        // true if Unicode separator or BOM or U+180E (see JDK-8138758)
+                        return (1 << Character.getType(code) & CharacterType.SPACE_MASK) != 0
+                                || code == 0xfeff || code == 0x180e;
                 }
             case CharacterType.UPPER:
                 return Character.isUpperCase(code);

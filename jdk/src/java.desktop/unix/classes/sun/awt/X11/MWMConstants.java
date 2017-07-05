@@ -26,7 +26,7 @@
 
 package sun.awt.X11;
 
-final public class MWMConstants {
+public final class MWMConstants {
 
     private MWMConstants(){}
 
@@ -62,8 +62,8 @@ final public class MWMConstants {
 /* number of elements of size 32 in _MWM_HINTS */
     static final int PROP_MWM_HINTS_ELEMENTS          = 5;
 /* number of elements of size 32 in _MWM_INFO */
-    final static int PROP_MOTIF_WM_INFO_ELEMENTS=       2;
-    final static int PROP_MWM_INFO_ELEMENTS=            PROP_MOTIF_WM_INFO_ELEMENTS;
+    static final int PROP_MOTIF_WM_INFO_ELEMENTS=       2;
+    static final int PROP_MWM_INFO_ELEMENTS=            PROP_MOTIF_WM_INFO_ELEMENTS;
 
     static final String MWM_HINTS_ATOM_NAME = "_MOTIF_WM_HINTS";
 }

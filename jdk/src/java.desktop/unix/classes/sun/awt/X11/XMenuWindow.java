@@ -52,16 +52,16 @@ public class XMenuWindow extends XBaseMenuWindow {
     /*
      * dimension constants
      */
-    private final static int WINDOW_SPACING_LEFT = 2;
-    private final static int WINDOW_SPACING_RIGHT = 2;
-    private final static int WINDOW_SPACING_TOP = 2;
-    private final static int WINDOW_SPACING_BOTTOM = 2;
-    private final static int WINDOW_ITEM_INDENT = 15;
-    private final static int WINDOW_ITEM_MARGIN_LEFT = 2;
-    private final static int WINDOW_ITEM_MARGIN_RIGHT = 2;
-    private final static int WINDOW_ITEM_MARGIN_TOP = 2;
-    private final static int WINDOW_ITEM_MARGIN_BOTTOM = 2;
-    private final static int WINDOW_SHORTCUT_SPACING = 10;
+    private static final int WINDOW_SPACING_LEFT = 2;
+    private static final int WINDOW_SPACING_RIGHT = 2;
+    private static final int WINDOW_SPACING_TOP = 2;
+    private static final int WINDOW_SPACING_BOTTOM = 2;
+    private static final int WINDOW_ITEM_INDENT = 15;
+    private static final int WINDOW_ITEM_MARGIN_LEFT = 2;
+    private static final int WINDOW_ITEM_MARGIN_RIGHT = 2;
+    private static final int WINDOW_ITEM_MARGIN_TOP = 2;
+    private static final int WINDOW_ITEM_MARGIN_BOTTOM = 2;
+    private static final int WINDOW_SHORTCUT_SPACING = 10;
 
     /*
      * Checkmark

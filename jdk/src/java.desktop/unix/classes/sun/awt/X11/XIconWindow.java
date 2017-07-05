@@ -34,7 +34,7 @@ import sun.awt.image.ImageRepresentation;
 import sun.util.logging.PlatformLogger;
 
 public class XIconWindow extends XBaseWindow {
-    private final static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XIconWindow");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XIconWindow");
     XDecoratedPeer parent;
     Dimension size;
     long iconPixmap = 0;

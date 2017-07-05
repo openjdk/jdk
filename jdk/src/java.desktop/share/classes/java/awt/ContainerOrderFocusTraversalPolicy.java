@@ -62,8 +62,8 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
 {
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.ContainerOrderFocusTraversalPolicy");
 
-    final private int FORWARD_TRAVERSAL = 0;
-    final private int BACKWARD_TRAVERSAL = 1;
+    private final int FORWARD_TRAVERSAL = 0;
+    private final int BACKWARD_TRAVERSAL = 1;
 
     /*
      * JDK 1.4 serialVersionUID
@@ -84,8 +84,8 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      * that they need to invoke getFirstComponent or getLastComponent, the
      * list should be reused if possible.
      */
-    transient private Container cachedRoot;
-    transient private List<Component> cachedCycle;
+    private transient Container cachedRoot;
+    private transient List<Component> cachedCycle;
 
     /*
      * We suppose to use getFocusTraversalCycle & getComponentIndex methods in order

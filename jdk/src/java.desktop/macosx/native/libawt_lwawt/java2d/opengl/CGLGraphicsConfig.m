@@ -23,19 +23,16 @@
  * questions.
  */
 
+#import "sun_java2d_opengl_CGLGraphicsConfig.h"
+
+#import "CGLGraphicsConfig.h"
+#import "CGLSurfaceData.h"
+#import "ThreadUtilities.h"
+
 #import <stdlib.h>
 #import <string.h>
 #import <ApplicationServices/ApplicationServices.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
-
-#import "sun_java2d_opengl_CGLGraphicsConfig.h"
-
-#import "jni.h"
-#import "jni_util.h"
-#import "CGLGraphicsConfig.h"
-#import "CGLSurfaceData.h"
-#import "LWCToolkit.h"
-#import "ThreadUtilities.h"
 
 #pragma mark -
 #pragma mark "--- Mac OS X specific methods for GL pipeline ---"

@@ -198,31 +198,31 @@ public class JInternalFrame extends JComponent implements
     private Component lastFocusOwner;
 
     /** Bound property name. */
-    public final static String CONTENT_PANE_PROPERTY = "contentPane";
+    public static final String CONTENT_PANE_PROPERTY = "contentPane";
     /** Bound property name. */
-    public final static String MENU_BAR_PROPERTY = "JMenuBar";
+    public static final String MENU_BAR_PROPERTY = "JMenuBar";
     /** Bound property name. */
-    public final static String TITLE_PROPERTY = "title";
+    public static final String TITLE_PROPERTY = "title";
     /** Bound property name. */
-    public final static String LAYERED_PANE_PROPERTY = "layeredPane";
+    public static final String LAYERED_PANE_PROPERTY = "layeredPane";
     /** Bound property name. */
-    public final static String ROOT_PANE_PROPERTY = "rootPane";
+    public static final String ROOT_PANE_PROPERTY = "rootPane";
     /** Bound property name. */
-    public final static String GLASS_PANE_PROPERTY = "glassPane";
+    public static final String GLASS_PANE_PROPERTY = "glassPane";
     /** Bound property name. */
-    public final static String FRAME_ICON_PROPERTY = "frameIcon";
+    public static final String FRAME_ICON_PROPERTY = "frameIcon";
 
     /**
      * Constrained property name indicated that this frame has
      * selected status.
      */
-    public final static String IS_SELECTED_PROPERTY = "selected";
+    public static final String IS_SELECTED_PROPERTY = "selected";
     /** Constrained property name indicating that the internal frame is closed. */
-    public final static String IS_CLOSED_PROPERTY = "closed";
+    public static final String IS_CLOSED_PROPERTY = "closed";
     /** Constrained property name indicating that the internal frame is maximized. */
-    public final static String IS_MAXIMUM_PROPERTY = "maximum";
+    public static final String IS_MAXIMUM_PROPERTY = "maximum";
     /** Constrained property name indicating that the internal frame is iconified. */
-    public final static String IS_ICON_PROPERTY = "icon";
+    public static final String IS_ICON_PROPERTY = "icon";
 
     private static final Object PROPERTY_CHANGE_LISTENER_KEY =
         new StringBuilder("InternalFramePropertyChangeListener");
@@ -2159,7 +2159,7 @@ public class JInternalFrame extends JComponent implements
      * @author David Kloba
      */
     @SuppressWarnings("serial") // Same-version serialization only
-    static public class JDesktopIcon extends JComponent implements Accessible
+    public static class JDesktopIcon extends JComponent implements Accessible
     {
         JInternalFrame internalFrame;
 

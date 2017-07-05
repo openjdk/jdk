@@ -247,7 +247,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   DiscoveredList* _discoveredCleanerRefs;
 
  public:
-  static int number_of_subclasses_of_ref() { return REF_LISTS_COUNT; }
+  static int number_of_subclasses_of_ref() { return (REF_CLEANER - REF_OTHER); }
 
   uint num_q()                             { return _num_q; }
   uint max_num_q()                         { return _max_num_q; }
@@ -271,9 +271,9 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                                     VoidClosure*                 complete_gc,
                                     AbstractRefProcTaskExecutor* task_executor);
 
-  size_t process_phaseJNI(BoolObjectClosure* is_alive,
-                          OopClosure*        keep_alive,
-                          VoidClosure*       complete_gc);
+  void process_phaseJNI(BoolObjectClosure* is_alive,
+                        OopClosure*        keep_alive,
+                        VoidClosure*       complete_gc);
 
   // Work methods used by the method process_discovered_reflist
   // Phase1: keep alive all those referents that are otherwise
