@@ -3180,17 +3180,15 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
       jclass MH_class = env->FindClass(MH_name);
       status = env->RegisterNatives(MH_class, invoke_methods, sizeof(invoke_methods)/sizeof(JNINativeMethod));
     }
+    if (!env->ExceptionOccurred()) {
+      status = env->RegisterNatives(MHN_class, call_site_methods, sizeof(call_site_methods)/sizeof(JNINativeMethod));
+    }
     if (env->ExceptionOccurred()) {
       warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
       enable_MH = false;
       env->ExceptionClear();
     }
 
-    status = env->RegisterNatives(MHN_class, call_site_methods, sizeof(call_site_methods)/sizeof(JNINativeMethod));
-    if (env->ExceptionOccurred()) {
-      // Exception is okay until 7087357
-      env->ExceptionClear();
-    }
   }
 
   if (enable_MH) {
