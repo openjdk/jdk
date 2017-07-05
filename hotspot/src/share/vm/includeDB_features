@@ -57,7 +57,7 @@ dump.cpp                                systemDictionary.hpp
 dump.cpp                                vmThread.hpp
 dump.cpp                                vm_operations.hpp
 
-dump_<arch_model>.cpp                   assembler_<arch_model>.inline.hpp
+dump_<arch_model>.cpp                   assembler_<arch>.inline.hpp
 dump_<arch_model>.cpp                   compactingPermGenGen.hpp
 
 forte.cpp                               collectedHeap.inline.hpp

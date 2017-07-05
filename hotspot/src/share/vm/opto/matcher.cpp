@@ -1450,6 +1450,8 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   Node *leaf = s->_leaf;
   // Check for instruction or instruction chain rule
   if( rule >= _END_INST_CHAIN_RULE || rule < _BEGIN_INST_CHAIN_RULE ) {
+    assert(C->node_arena()->contains(s->_leaf) || !has_new_node(s->_leaf),
+           "duplicating node that's already been matched");
     // Instruction
     mach->add_req( leaf->in(0) ); // Set initial control
     // Reduce interior of complex instruction
@@ -1872,6 +1874,12 @@ void Matcher::find_shared( Node *n ) {
 
         // Clone addressing expressions as they are "free" in most instructions
         if( mem_op && i == MemNode::Address && mop == Op_AddP ) {
+          if (m->in(AddPNode::Base)->Opcode() == Op_DecodeN) {
+            // Bases used in addresses must be shared but since
+            // they are shared through a DecodeN they may appear
+            // to have a single use so force sharing here.
+            set_shared(m->in(AddPNode::Base)->in(1));
+          }
           Node *off = m->in(AddPNode::Offset);
           if( off->is_Con() ) {
             set_visited(m);  // Flag as visited now

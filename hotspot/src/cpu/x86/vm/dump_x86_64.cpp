@@ -90,22 +90,22 @@ void CompactingPermGenGen::generate_vtable_methods(void** vtbl_list,
   // are on the stack and the "this" pointer is in c_rarg0. In addition, rax
   // was set (above) to the offset of the method in the table.
 
-  __ pushq(c_rarg1);                    // save & free register
-  __ pushq(c_rarg0);                    // save "this"
-  __ movq(c_rarg0, rax);
-  __ shrq(c_rarg0, 8);                  // isolate vtable identifier.
-  __ shlq(c_rarg0, LogBytesPerWord);
+  __ push(c_rarg1);                     // save & free register
+  __ push(c_rarg0);                     // save "this"
+  __ mov(c_rarg0, rax);
+  __ shrptr(c_rarg0, 8);                // isolate vtable identifier.
+  __ shlptr(c_rarg0, LogBytesPerWord);
   __ lea(c_rarg1, ExternalAddress((address)vtbl_list)); // ptr to correct vtable list.
-  __ addq(c_rarg1, c_rarg0);            // ptr to list entry.
-  __ movq(c_rarg1, Address(c_rarg1, 0));        // get correct vtable address.
-  __ popq(c_rarg0);                     // restore "this"
-  __ movq(Address(c_rarg0, 0), c_rarg1);        // update vtable pointer.
+  __ addptr(c_rarg1, c_rarg0);          // ptr to list entry.
+  __ movptr(c_rarg1, Address(c_rarg1, 0));      // get correct vtable address.
+  __ pop(c_rarg0);                      // restore "this"
+  __ movptr(Address(c_rarg0, 0), c_rarg1);      // update vtable pointer.
 
-  __ andq(rax, 0x00ff);                 // isolate vtable method index
-  __ shlq(rax, LogBytesPerWord);
-  __ addq(rax, c_rarg1);                // address of real method pointer.
-  __ popq(c_rarg1);                     // restore register.
-  __ movq(rax, Address(rax, 0));        // get real method pointer.
+  __ andptr(rax, 0x00ff);                       // isolate vtable method index
+  __ shlptr(rax, LogBytesPerWord);
+  __ addptr(rax, c_rarg1);              // address of real method pointer.
+  __ pop(c_rarg1);                      // restore register.
+  __ movptr(rax, Address(rax, 0));      // get real method pointer.
   __ jmp(rax);                          // jump to the real method.
 
   __ flush();
