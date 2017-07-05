@@ -25,9 +25,9 @@
 
 package sun.management;
 
-import java.util.*;
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import javax.management.ObjectName;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -117,6 +117,6 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
     }
 
     public ObjectName getObjectName() {
-        return ObjectName.valueOf("com.sun.management:type=HotSpotDiagnostic");
+        return Util.newObjectName("com.sun.management:type=HotSpotDiagnostic");
     }
 }

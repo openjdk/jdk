@@ -310,44 +310,10 @@ public class RepaintManager
             delegate.addInvalidComponent(invalidComponent);
             return;
         }
-        Component validateRoot = null;
+        Component validateRoot =
+            SwingUtilities.getValidateRoot(invalidComponent, true);
 
-        /* Find the first JComponent ancestor of this component whose
-         * isValidateRoot() method returns true.
-         */
-        for(Component c = invalidComponent; c != null; c = c.getParent()) {
-            if ((c instanceof CellRendererPane) || (c.getPeer() == null)) {
-                return;
-            }
-            if ((c instanceof JComponent) && (((JComponent)c).isValidateRoot())) {
-                validateRoot = c;
-                break;
-            }
-        }
-
-        /* There's no validateRoot to apply validate to, so we're done.
-         */
         if (validateRoot == null) {
-            return;
-        }
-
-        /* If the validateRoot and all of its ancestors aren't visible
-         * then we don't do anything.  While we're walking up the tree
-         * we find the root Window or Applet.
-         */
-        Component root = null;
-
-        for(Component c = validateRoot; c != null; c = c.getParent()) {
-            if (!c.isVisible() || (c.getPeer() == null)) {
-                return;
-            }
-            if ((c instanceof Window) || (c instanceof Applet)) {
-                root = c;
-                break;
-            }
-        }
-
-        if (root == null) {
             return;
         }
 

@@ -25,6 +25,8 @@
 
 package javax.swing.plaf.metal;
 
+import sun.awt.AppContext;
+
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicCheckBoxUI;
 
@@ -55,7 +57,7 @@ public class MetalCheckBoxUI extends MetalRadioButtonUI {
     // of BasicCheckBoxUI because we want to pick up all the
     // painting changes made in MetalRadioButtonUI.
 
-    private final static MetalCheckBoxUI checkboxUI = new MetalCheckBoxUI();
+    private static final Object METAL_CHECK_BOX_UI_KEY = new Object();
 
     private final static String propertyPrefix = "CheckBox" + ".";
 
@@ -65,6 +67,13 @@ public class MetalCheckBoxUI extends MetalRadioButtonUI {
     //         Create PlAF
     // ********************************
     public static ComponentUI createUI(JComponent b) {
+        AppContext appContext = AppContext.getAppContext();
+        MetalCheckBoxUI checkboxUI =
+                (MetalCheckBoxUI) appContext.get(METAL_CHECK_BOX_UI_KEY);
+        if (checkboxUI == null) {
+            checkboxUI = new MetalCheckBoxUI();
+            appContext.put(METAL_CHECK_BOX_UI_KEY, checkboxUI);
+        }
         return checkboxUI;
     }
 

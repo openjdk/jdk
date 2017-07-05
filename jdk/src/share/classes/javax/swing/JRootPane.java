@@ -725,8 +725,10 @@ public class JRootPane extends JComponent implements Accessible {
      * because both classes override <code>isValidateRoot</code> to return true.
      *
      * @see JComponent#isValidateRoot
+     * @see java.awt.Container#isValidateRoot
      * @return true
      */
+    @Override
     public boolean isValidateRoot() {
         return true;
     }

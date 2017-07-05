@@ -146,4 +146,6 @@ public class AgentConfigurationError extends Error {
     public String[] getParams() {
         return params;
     }
+
+    private static final long serialVersionUID = 1211605593516195475L;
 }

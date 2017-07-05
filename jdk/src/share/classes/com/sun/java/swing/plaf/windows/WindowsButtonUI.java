@@ -35,6 +35,7 @@ import java.awt.*;
 import static com.sun.java.swing.plaf.windows.TMSchema.*;
 import static com.sun.java.swing.plaf.windows.TMSchema.Part.*;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
+import sun.awt.AppContext;
 
 
 /**
@@ -52,8 +53,6 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  */
 public class WindowsButtonUI extends BasicButtonUI
 {
-    private final static WindowsButtonUI windowsButtonUI = new WindowsButtonUI();
-
     protected int dashedRectGapX;
     protected int dashedRectGapY;
     protected int dashedRectGapWidth;
@@ -63,11 +62,19 @@ public class WindowsButtonUI extends BasicButtonUI
 
     private boolean defaults_initialized = false;
 
+    private static final Object WINDOWS_BUTTON_UI_KEY = new Object();
 
     // ********************************
     //          Create PLAF
     // ********************************
-    public static ComponentUI createUI(JComponent c){
+    public static ComponentUI createUI(JComponent c) {
+        AppContext appContext = AppContext.getAppContext();
+        WindowsButtonUI windowsButtonUI =
+                (WindowsButtonUI) appContext.get(WINDOWS_BUTTON_UI_KEY);
+        if (windowsButtonUI == null) {
+            windowsButtonUI = new WindowsButtonUI();
+            appContext.put(WINDOWS_BUTTON_UI_KEY, windowsButtonUI);
+        }
         return windowsButtonUI;
     }
 
@@ -151,7 +158,7 @@ public class WindowsButtonUI extends BasicButtonUI
      * allocating them in each paint call substantially reduced the time
      * it took paint to run.  Obviously, this method can't be re-entered.
      */
-    private static Rectangle viewRect = new Rectangle();
+    private Rectangle viewRect = new Rectangle();
 
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {

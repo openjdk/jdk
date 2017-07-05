@@ -53,4 +53,6 @@ class ByteArrayCounterSnapshot extends AbstractCounter
     public byte byteAt(int index) {
         return value[index];
     }
+
+    private static final long serialVersionUID = 1444793459838438979L;
 }

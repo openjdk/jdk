@@ -25,6 +25,8 @@
 
 package javax.swing.plaf.basic;
 
+import sun.awt.AppContext;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -43,7 +45,7 @@ import javax.swing.text.View;
  */
 public class BasicToggleButtonUI extends BasicButtonUI {
 
-    private final static BasicToggleButtonUI toggleButtonUI = new BasicToggleButtonUI();
+    private static final Object BASIC_TOGGLE_BUTTON_UI_KEY = new Object();
 
     private final static String propertyPrefix = "ToggleButton" + ".";
 
@@ -51,6 +53,13 @@ public class BasicToggleButtonUI extends BasicButtonUI {
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent b) {
+        AppContext appContext = AppContext.getAppContext();
+        BasicToggleButtonUI toggleButtonUI =
+                (BasicToggleButtonUI) appContext.get(BASIC_TOGGLE_BUTTON_UI_KEY);
+        if (toggleButtonUI == null) {
+            toggleButtonUI = new BasicToggleButtonUI();
+            appContext.put(BASIC_TOGGLE_BUTTON_UI_KEY, toggleButtonUI);
+        }
         return toggleButtonUI;
     }
 

@@ -65,7 +65,9 @@ public abstract class SpanShapeRenderer implements ShapeDrawPipe {
         }
     }
 
-    public static class Simple extends SpanShapeRenderer {
+    public static class Simple extends SpanShapeRenderer
+        implements  LoopBasedPipe
+    {
         public Object startSequence(SunGraphics2D sg, Shape s,
                                     Rectangle devR, int[] bbox) {
             return sg;

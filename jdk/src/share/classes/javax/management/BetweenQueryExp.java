@@ -139,9 +139,4 @@ class BetweenQueryExp extends QueryEval implements QueryExp {
     public String toString()  {
         return "(" + exp1 + ") between (" + exp2 + ") and (" + exp3 + ")";
     }
-
-    @Override
-    String toQueryString() {
-        return exp1 + " between " + exp2 + " and " + exp3;
-    }
 }

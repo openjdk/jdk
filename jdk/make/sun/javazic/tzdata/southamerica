@@ -237,9 +237,23 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # http://www.jujuy.gov.ar/index2/partes_prensa/18_10_08/235-181008.doc
 # </a>
 
+# From fullinet (2009-10-18):
+# As announced in
+# <a hef="http://www.argentina.gob.ar/argentina/portal/paginas.dhtml?pagina=356">
+# http://www.argentina.gob.ar/argentina/portal/paginas.dhtml?pagina=356
+# </a>
+# (an official .gob.ar) under title: "Sin Cambio de Hora" (english: "No hour change")
+#
+# "Por el momento, el Gobierno Nacional resolvio no modificar la hora
+# oficial, decision que estaba en estudio para su implementacion el
+# domingo 18 de octubre. Desde el Ministerio de Planificacion se anuncio
+# que la Argentina hoy, en estas condiciones meteorologicas, no necesita
+# la modificacion del huso horario, ya que 2009 nos encuentra con
+# crecimiento en la produccion y distribucion energetica."
+
 Rule	Arg	2007	only	-	Dec	30	0:00	1:00	S
-Rule	Arg	2008	max	-	Mar	Sun>=15	0:00	0	-
-Rule	Arg	2008	max	-	Oct	Sun>=15	0:00	1:00	S
+Rule	Arg	2008	2009	-	Mar	Sun>=15	0:00	0	-
+Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
  
 # From Mariano Absatz (2004-05-21):
 # Today it was officially published that the Province of Mendoza is changing
@@ -411,15 +425,40 @@ Rule	Arg	2008	max	-	Oct	Sun>=15	0:00	1:00	S
 # during 2009, this timezone change will run from 00:00 the third Sunday
 # in March until 24:00 of the second Saturday in October.
 
-# From Arthur David Olson (2009-03-16):
-# The unofficial claim at
-# <a href="http://www.timeanddate.com/news/time/san-luis-new-time-zone.html">
-# http://www.timeanddate.com/news/time/san-luis-new-time-zone.html
-# </a>
-# is that "The province will most likely follow the next daylight saving schedule,
-# which is planned for the second Sunday in October."
-
+# From Mariano Absatz (2009-10-16):
+# ...the Province of San Luis is a case in itself.
 #
+# The Law at
+# <a href="http://www.diputadossanluis.gov.ar/diputadosasp/paginas/verNorma.asp?NormaID=276>"
+# http://www.diputadossanluis.gov.ar/diputadosasp/paginas/verNorma.asp?NormaID=276
+# </a>
+# is ambiguous because establishes a calendar from the 2nd Sunday in
+# October at 0:00 thru the 2nd Saturday in March at 24:00 and the
+# complement of that starting on the 2nd Sunday of March at 0:00 and
+# ending on the 2nd Saturday of March at 24:00.
+#
+# This clearly breaks every time the 1st of March or October is a Sunday.
+#
+# IMHO, the "spirit of the Law" is to make the changes at 0:00 on the 2nd
+# Sunday of October and March.
+#
+# The problem is that the changes in the rest of the Provinces that did
+# change in 2007/2008, were made according to the Federal Law and Decrees
+# that did so on the 3rd Sunday of October and March.
+#
+# In fact, San Luis actually switched from UTC-4 to UTC-3 last Sunday
+# (October 11th) at 0:00.
+#
+# So I guess a new set of rules, besides "Arg", must be made and the last
+# America/Argentina/San_Luis entries should change to use these...
+#
+# I'm enclosing a patch that does what I say... regretfully, the San Luis
+# timezone must be called "WART/WARST" even when most of the time (like,
+# right now) WARST == ART... that is, since last Sunday, all the country
+# is using UTC-3, but in my patch, San Luis calls it "WARST" and the rest
+# of the country calls it "ART".
+# ...
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
 # Buenos Aires (BA), Capital Federal (CF),
@@ -552,6 +591,10 @@ Zone America/Argentina/Mendoza -4:35:16 - LMT	1894 Oct 31
 			-3:00	-	ART
 #
 # San Luis (SL)
+
+Rule	SanLuis	2008	max	-	Mar	Sun>=8	0:00	0	-
+Rule	SanLuis	2007	max	-	Oct	Sun>=8	0:00	1:00	S
+
 Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	ART	1930 Dec
@@ -566,8 +609,7 @@ Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 			-3:00	-	ART	2004 May 31
 			-4:00	-	WART	2004 Jul 25
 			-3:00	Arg	AR%sT	2008 Jan 21
-			-3:00	-	ART	2009 Mar 15
-			-4:00	Arg	WAR%sT
+			-4:00	SanLuis	WAR%sT
 #
 # Santa Cruz (SC)
 Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT 1894 Oct 31

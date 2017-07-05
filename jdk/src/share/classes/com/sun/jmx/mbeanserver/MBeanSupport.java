@@ -37,7 +37,7 @@ import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
-import javax.management.openmbean.MXBeanMappingFactory;
+import com.sun.jmx.mbeanserver.MXBeanMappingFactory;
 
 /**
  * Base class for MBeans.  There is one instance of this class for
@@ -121,8 +121,7 @@ import javax.management.openmbean.MXBeanMappingFactory;
 public abstract class MBeanSupport<M>
         implements DynamicMBean2, MBeanRegistration {
 
-    <T> MBeanSupport(T resource, Class<T> mbeanInterfaceType,
-                     MXBeanMappingFactory mappingFactory)
+    <T> MBeanSupport(T resource, Class<T> mbeanInterfaceType)
             throws NotCompliantMBeanException {
         if (mbeanInterfaceType == null)
             throw new NotCompliantMBeanException("Null MBean interface");
@@ -133,14 +132,13 @@ public abstract class MBeanSupport<M>
             throw new NotCompliantMBeanException(msg);
         }
         this.resource = resource;
-        MBeanIntrospector<M> introspector = getMBeanIntrospector(mappingFactory);
+        MBeanIntrospector<M> introspector = getMBeanIntrospector();
         this.perInterface = introspector.getPerInterface(mbeanInterfaceType);
         this.mbeanInfo = introspector.getMBeanInfo(resource, perInterface);
     }
 
     /** Return the appropriate introspector for this type of MBean. */
-    abstract MBeanIntrospector<M>
-            getMBeanIntrospector(MXBeanMappingFactory mappingFactory);
+    abstract MBeanIntrospector<M> getMBeanIntrospector();
 
     /**
      * Return a cookie for this MBean.  This cookie will be passed to
@@ -262,12 +260,8 @@ public abstract class MBeanSupport<M>
         return resource.getClass().getName();
     }
 
-    public final Object getWrappedObject() {
+    public final Object getResource() {
         return resource;
-    }
-
-    public final ClassLoader getWrappedClassLoader() {
-        return resource.getClass().getClassLoader();
     }
 
     public final Class<?> getMBeanInterface() {

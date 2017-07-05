@@ -25,8 +25,6 @@
 
 package javax.management;
 
-import javax.management.openmbean.CompositeData;
-
 
 /**
  * Represents "user defined" exceptions thrown by MBean methods
@@ -43,26 +41,6 @@ public class MBeanException extends JMException   {
     private static final long serialVersionUID = 4066342430588744142L;
 
     /**
-     * @serial This field is null for instances of this class that were
-     * produced by its public constructors.  It is non-null for instances
-     * of this class that represent serialized instances of {@link
-     * GenericMBeanException}.
-     *
-     * @see GenericMBeanException#getErrorCode()
-     */
-    final String errorCode;
-
-    /**
-     * @serial This field is null for instances of this class that were
-     * produced by its public constructors.  It may be non-null for instances
-     * of this class that represent serialized instances of {@link
-     * GenericMBeanException}.
-     *
-     * @see GenericMBeanException#getUserData()
-     */
-    final CompositeData userData;
-
-    /**
      * @serial Encapsulated {@link Exception}
      */
     private java.lang.Exception exception ;
@@ -73,8 +51,9 @@ public class MBeanException extends JMException   {
      *
      * @param e the wrapped exception.
      */
-    public MBeanException(Exception e) {
-        this(null, null, null, e);
+    public MBeanException(java.lang.Exception e) {
+        super() ;
+        exception = e ;
     }
 
     /**
@@ -84,19 +63,11 @@ public class MBeanException extends JMException   {
      * @param e the wrapped exception.
      * @param message the detail message.
      */
-    public MBeanException(Exception e, String message) {
-        this(message, null, null, e);
+    public MBeanException(java.lang.Exception e, String message) {
+        super(message) ;
+        exception = e ;
     }
 
-    MBeanException(
-            String message, String errorCode, CompositeData userData, Throwable cause) {
-        super(message);
-        initCause(cause);
-        if (cause instanceof Exception)
-            this.exception = (Exception) cause;
-        this.errorCode = errorCode;
-        this.userData = userData;
-    }
 
     /**
      * Return the actual {@link Exception} thrown.
@@ -108,24 +79,11 @@ public class MBeanException extends JMException   {
     }
 
     /**
-     * This method is invoked when deserializing instances of this class.
-     * If the {@code errorCode} field of the deserialized instance is not
-     * null, this method returns an instance of {@link GenericMBeanException}
-     * instead.  Otherwise it returns {@code this}.
-     * @return {@code this}, or a {@code GenericMBeanException}.
+     * Return the actual {@link Exception} thrown.
+     *
+     * @return the wrapped exception.
      */
-    Object readResolve() {
-        if (errorCode == null) {
-            // serial compatibility: earlier versions did not set
-            // Throwable.cause because they overrode getCause().
-            if (getCause() == null && exception != null)
-                initCause(exception);
-            return this;
-        } else {
-            Throwable t = new GenericMBeanException(
-                    getMessage(), errorCode, userData, getCause());
-            t.setStackTrace(this.getStackTrace());
-            return t;
-        }
+    public Throwable getCause() {
+        return exception;
     }
 }

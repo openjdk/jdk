@@ -27,6 +27,7 @@ package javax.management.remote.rmi;
 
 
 import com.sun.jmx.remote.security.MBeanServerFileAccessController;
+import com.sun.jmx.remote.internal.IIOPHelper;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
@@ -230,8 +231,6 @@ public class RMIConnectorServer extends JMXConnectorServer {
 
         this.address = url;
         this.rmiServerImpl = rmiServerImpl;
-
-        installStandardForwarders(this.attributes);
     }
 
     /**
@@ -383,7 +382,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         try {
             if (tracing) logger.trace("start", "setting default class loader");
             defaultClassLoader = EnvHelp.resolveServerClassLoader(
-                    attributes, getSystemMBeanServerForwarder());
+                    attributes, getMBeanServer());
         } catch (InstanceNotFoundException infc) {
             IllegalArgumentException x = new
                 IllegalArgumentException("ClassLoader not found: "+infc);
@@ -398,7 +397,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         else
             rmiServer = newServer();
 
-        rmiServer.setMBeanServer(getSystemMBeanServerForwarder());
+        rmiServer.setMBeanServer(getMBeanServer());
         rmiServer.setDefaultClassLoader(defaultClassLoader);
         rmiServer.setRMIConnectorServer(this);
         rmiServer.export();
@@ -592,34 +591,12 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return Collections.unmodifiableMap(map);
     }
 
-    /**
-     * {@inheritDoc}
-     * @return true, since this connector server does support a system chain
-     * of forwarders.
-     */
     @Override
-    public boolean supportsSystemMBeanServerForwarder() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <P>The {@code RMIConnectorServer} class does support closing a specified
-     * client connection.
-     * @throws IllegalStateException if the server is not started or is closed.
-     * @throws IllegalArgumentException if {@code connectionId} is null or is
-     * not the id of any open connection.
-     * @since 1.7
-     */
-    @Override
-    public void closeConnection(String connectionId)
-            throws IOException {
-        if (isActive()) {
-            rmiServerImpl.closeConnection(connectionId);
-        } else {
-            throw new IllegalStateException(
-                    "The server is not started or is closed.");
-        }
+    public synchronized
+        void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
+        super.setMBeanServerForwarder(mbsf);
+        if (rmiServerImpl != null)
+            rmiServerImpl.setMBeanServer(getMBeanServer());
     }
 
     /* We repeat the definitions of connection{Opened,Closed,Failed}
@@ -698,7 +675,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         final int port;
 
         if (address == null) {
-            if (rmiServer instanceof javax.rmi.CORBA.Stub)
+            if (IIOPHelper.isStub(rmiServer))
                 protocol = "iiop";
             else
                 protocol = "rmi";
@@ -736,7 +713,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      **/
     static String encodeStub(
             RMIServer rmiServer, Map<String, ?> env) throws IOException {
-        if (rmiServer instanceof javax.rmi.CORBA.Stub)
+        if (IIOPHelper.isStub(rmiServer))
             return "/ior/" + encodeIIOPStub(rmiServer, env);
         else
             return "/stub/" + encodeJRMPStub(rmiServer, env);
@@ -757,10 +734,9 @@ public class RMIConnectorServer extends JMXConnectorServer {
             RMIServer rmiServer, Map<String, ?> env)
             throws IOException {
         try {
-            javax.rmi.CORBA.Stub stub =
-                (javax.rmi.CORBA.Stub) rmiServer;
-            return stub._orb().object_to_string(stub);
-        } catch (org.omg.CORBA.BAD_OPERATION x) {
+            Object orb = IIOPHelper.getOrb(rmiServer);
+            return IIOPHelper.objectToString(orb, rmiServer);
+        } catch (RuntimeException x) {
             throw newIOException(x.getMessage(), x);
         }
     }
