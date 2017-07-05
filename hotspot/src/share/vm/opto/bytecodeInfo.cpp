@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -75,13 +76,6 @@ InlineTree::InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvm
   assert(!UseOldInlining, "do not use for old stuff");
 }
 
-
-
-static void print_indent(int depth) {
-  tty->print("      ");
-  for (int i = depth; i != 0; --i) tty->print("  ");
-}
-
 static bool is_init_with_ea(ciMethod* callee_method,
                             ciMethod* caller_method, Compile* C) {
   // True when EA is ON and a java constructor is called or
@@ -100,7 +94,7 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
   if(callee_method->should_inline()) {
     *wci_result = *(WarmCallInfo::always_hot());
     if (PrintInlining && Verbose) {
-      print_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_depth());
       tty->print_cr("Inlined method is hot: ");
     }
     return NULL;
@@ -116,7 +110,7 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
      size < InlineThrowMaxSize ) {
     wci_result->set_profit(wci_result->profit() * 100);
     if (PrintInlining && Verbose) {
-      print_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_depth());
       tty->print_cr("Inlined method with many throws (throws=%d):", callee_method->interpreter_throwout_count());
     }
     return NULL;
@@ -138,9 +132,9 @@ const char* InlineTree::shouldInline(ciMethod* callee_method, ciMethod* caller_m
 
     max_size = C->freq_inline_size();
     if (size <= max_size && TraceFrequencyInlining) {
-      print_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_depth());
       tty->print_cr("Inlined frequent method (freq=%d count=%d):", freq, call_site_count);
-      print_indent(inline_depth());
+      CompileTask::print_inline_indent(inline_depth());
       callee_method->print();
       tty->cr();
     }
@@ -315,8 +309,25 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
   if( inline_depth() > MaxInlineLevel ) {
     return "inlining too deep";
   }
-  if( method() == callee_method &&
-      inline_depth() > MaxRecursiveInlineLevel ) {
+
+  // We need to detect recursive inlining of method handle targets: if
+  // the current method is a method handle adapter and one of the
+  // callers is the same method as the callee, we bail out if
+  // MaxRecursiveInlineLevel is hit.
+  if (method()->is_method_handle_adapter()) {
+    JVMState* jvms = caller_jvms();
+    int inline_level = 0;
+    while (jvms != NULL && jvms->has_method()) {
+      if (jvms->method() == callee_method) {
+        inline_level++;
+        if (inline_level > MaxRecursiveInlineLevel)
+          return "recursively inlining too deep";
+      }
+      jvms = jvms->caller();
+    }
+  }
+
+  if (method() == callee_method && inline_depth() > MaxRecursiveInlineLevel) {
     return "recursively inlining too deep";
   }
 
@@ -368,18 +379,14 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
 #ifndef PRODUCT
 //------------------------------print_inlining---------------------------------
 // Really, the failure_msg can be a success message also.
-void InlineTree::print_inlining(ciMethod *callee_method, int caller_bci, const char *failure_msg) const {
-  print_indent(inline_depth());
-  tty->print("@ %d  ", caller_bci);
-  if( callee_method ) callee_method->print_short_name();
-  else                tty->print(" callee not monotonic or profiled");
-  tty->print("  %s", (failure_msg ? failure_msg : "inline"));
-  if( Verbose && callee_method ) {
+void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci, const char* failure_msg) const {
+  CompileTask::print_inlining(callee_method, inline_depth(), caller_bci, failure_msg ? failure_msg : "inline");
+  if (callee_method == NULL)  tty->print(" callee not monotonic or profiled");
+  if (Verbose && callee_method) {
     const InlineTree *top = this;
     while( top->caller_tree() != NULL ) { top = top->caller_tree(); }
     tty->print("  bcs: %d+%d  invoked: %d", top->count_inline_bcs(), callee_method->code_size(), callee_method->interpreter_invocation_count());
   }
-  tty->cr();
 }
 #endif
 

@@ -1188,8 +1188,8 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   __ st_ptr(O2, XXX_STATE(_stack));                // PREPUSH
 
   __ lduh(max_stack, O3);                      // Full size expression stack
-  guarantee(!EnableMethodHandles, "no support yet for java.lang.invoke.MethodHandle"); //6815692
-  //6815692//if (EnableMethodHandles)
+  guarantee(!EnableInvokeDynamic, "no support yet for java.lang.invoke.MethodHandle"); //6815692
+  //6815692//if (EnableInvokeDynamic)
   //6815692//  __ inc(O3, methodOopDesc::extra_stack_entries());
   __ sll(O3, LogBytesPerWord, O3);
   __ sub(O2, O3, O3);

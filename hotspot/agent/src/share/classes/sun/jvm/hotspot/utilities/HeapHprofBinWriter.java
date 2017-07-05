@@ -455,7 +455,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     protected void writeClass(Instance instance) throws IOException {
-        Klass reflectedKlass = OopUtilities.classOopToKlass(instance);
+        Klass reflectedKlass = java_lang_Class.asKlass(instance);
         // dump instance record only for primitive type Class objects.
         // all other Class objects are covered by writeClassDumpRecords.
         if (reflectedKlass == null) {

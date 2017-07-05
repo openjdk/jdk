@@ -743,12 +743,12 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register cache, Register 
   if (index_size == sizeof(u2)) {
     get_2_byte_integer_at_bcp(bcp_offset, cache, tmp, Unsigned);
   } else if (index_size == sizeof(u4)) {
-    assert(EnableInvokeDynamic, "giant index used only for EnableInvokeDynamic");
+    assert(EnableInvokeDynamic, "giant index used only for JSR 292");
     get_4_byte_integer_at_bcp(bcp_offset, cache, tmp);
     assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
     xor3(tmp, -1, tmp);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
-    assert(EnableMethodHandles, "tiny index used only for EnableMethodHandles");
+    assert(EnableInvokeDynamic, "tiny index used only for JSR 292");
     ldub(Lbcp, bcp_offset, tmp);
   } else {
     ShouldNotReachHere();
