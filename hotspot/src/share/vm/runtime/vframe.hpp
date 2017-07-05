@@ -336,6 +336,7 @@ class vframeStreamCommon : StackObj {
       _frame = _frame.sender(&_reg_map);
     } while (!fill_from_frame());
   }
+  void security_next();
 
   bool at_end() const { return _mode == at_end_mode; }
 

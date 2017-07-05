@@ -2065,6 +2065,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ call(RuntimeAddress(native_func));
 
+  // Verify or restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni();
+
   // WARNING - on Windows Java Natives use pascal calling convention and pop the
   // arguments off of the stack. We could just re-adjust the stack pointer here
   // and continue to do SP relative addressing but we instead switch to FP

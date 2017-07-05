@@ -101,6 +101,15 @@ RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  if (_info->deoptimize_on_exception()) {
+    address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+    __ call(RuntimeAddress(a));
+    ce->add_call_info_here(_info);
+    ce->verify_oop_map(_info);
+    debug_only(__ should_not_reach_here());
+    return;
+  }
+
   // pass the array index on stack because all registers must be preserved
   if (_index->is_cpu_register()) {
     ce->store_parameter(_index->as_register(), 0);
@@ -115,9 +124,22 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   }
   __ call(RuntimeAddress(Runtime1::entry_for(stub_id)));
   ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
   debug_only(__ should_not_reach_here());
 }
 
+PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
+  _info = new CodeEmitInfo(info);
+}
+
+void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+  __ call(RuntimeAddress(a));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  debug_only(__ should_not_reach_here());
+}
 
 void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   if (_offset != -1) {
@@ -414,10 +436,19 @@ void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
 
 
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
+  address a;
+  if (_info->deoptimize_on_exception()) {
+    // Deoptimize, do not throw the exception, because it is probably wrong to do it here.
+    a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+  } else {
+    a = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
+  }
+
   ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   __ bind(_entry);
-  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id)));
+  __ call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
   debug_only(__ should_not_reach_here());
 }
 
