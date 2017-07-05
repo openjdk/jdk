@@ -81,7 +81,6 @@ import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -379,7 +378,7 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
 
     @Override
     public List<Era> eras() {
-        return Arrays.<Era>asList(JapaneseEra.values());
+        return List.of(JapaneseEra.values());
     }
 
     JapaneseEra getCurrentEra() {
