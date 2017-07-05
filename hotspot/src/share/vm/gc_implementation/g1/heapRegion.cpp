@@ -351,6 +351,7 @@ HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
     _young_type(NotYoung), _next_young_region(NULL),
+    _next_dirty_cards_region(NULL),
     _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
     _rem_set(NULL), _zfs(NotZeroFilled)
 {

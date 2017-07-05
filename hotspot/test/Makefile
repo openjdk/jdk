@@ -172,6 +172,33 @@ PHONY_LIST += jtreg_tests
 
 ################################################################
 
+# clienttest (make sure various basic java client options work)
+
+clienttest: prep $(PRODUCT_HOME)
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
+	$(RM) $(PRODUCT_HOME)/jre/lib/*/client/classes.jsa
+	$(RM) $(PRODUCT_HOME)/jre/lib/*/client/classes_g.jsa
+	$(RM) $(PRODUCT_HOME)/jre/bin/client/classes.jsa
+	$(RM) $(PRODUCT_HOME)/jre/bin/client/classes_g.jsa
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -Xshare:dump
+
+PHONY_LIST += clienttest
+
+################################################################
+
+# servertest (make sure various basic java server options work)
+
+servertest: prep $(PRODUCT_HOME)
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
+
+PHONY_LIST += servertest
+
+################################################################
+
 # packtest
 
 # Expect JPRT to set JPRT_PACKTEST_HOME.

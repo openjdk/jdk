@@ -2189,6 +2189,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintIntrinsics, false,                                  \
           "prints attempted and successful inlining of intrinsics")         \
                                                                             \
+  product(bool, UseCountLeadingZerosInstruction, false,                     \
+          "Use count leading zeros instruction")                            \
+                                                                            \
   product(bool, UsePopCountInstruction, false,                              \
           "Use population count instruction")                               \
                                                                             \
