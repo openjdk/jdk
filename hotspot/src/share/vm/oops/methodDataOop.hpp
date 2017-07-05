@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -545,6 +545,10 @@ public:
     return cell_offset(counter_cell_count);
   }
 
+  void set_count(uint count) {
+    set_uint_at(count_off, count);
+  }
+
 #ifndef PRODUCT
   void print_data_on(outputStream* st);
 #endif
@@ -692,6 +696,23 @@ public:
 
   void clear_row(uint row) {
     assert(row < row_limit(), "oob");
+    // Clear total count - indicator of polymorphic call site.
+    // The site may look like as monomorphic after that but
+    // it allow to have more accurate profiling information because
+    // there was execution phase change since klasses were unloaded.
+    // If the site is still polymorphic then MDO will be updated
+    // to reflect it. But it could be the case that the site becomes
+    // only bimorphic. Then keeping total count not 0 will be wrong.
+    // Even if we use monomorphic (when it is not) for compilation
+    // we will only have trap, deoptimization and recompile again
+    // with updated MDO after executing method in Interpreter.
+    // An additional receiver will be recorded in the cleaned row
+    // during next call execution.
+    //
+    // Note: our profiling logic works with empty rows in any slot.
+    // We do sorting a profiling info (ciCallProfile) for compilation.
+    //
+    set_count(0);
     set_receiver(row, NULL);
     set_receiver_count(row, 0);
   }

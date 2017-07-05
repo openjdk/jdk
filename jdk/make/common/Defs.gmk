@@ -576,17 +576,17 @@ endef
 define install-file
 $(prep-target)
 $(CP) $< $@
-$(install-module-file)
+@$(install-module-file)
 endef
 
 define chmod-file
 $(CHMOD) $1 $@
-$(call chmod-module-file, $1)
+@$(call chmod-module-file, $1)
 endef
 
 define install-sym-link
 $(LN) -s $1 $@
-$(call install-module-sym-link, $1)
+@$(call install-module-sym-link, $1)
 endef
 
 #
@@ -607,130 +607,8 @@ define java-vm-cleanup
 if [ -w $(HOTSPOT_LOG_NAME) ] ; then $(RM) $(HOTSPOT_LOG_NAME); fi
 endef
 
-# Default make settings for processing SUBDIRS with clobber or clean names
-SUBDIRS_MAKEFLAGS-clobber = INCREMENTAL_BUILD=false
-SUBDIRS_MAKEFLAGS-clean   = INCREMENTAL_BUILD=false
-
 # Current directory
 CURRENT_DIRECTORY := $(shell $(PWD))
-
-# If no timing wanted, we need to define these as empty
-ifdef NO_TIMING
-
-TIMING_ID:=NA
-
-define TIMING_start
-t=0:0:0:0
-endef
-
-define TIMING_end
-time_used=0
-endef
-
-else # NO_TIMING
-
-# Default timing id
-TIMING_ID:=$(shell $(BASENAME) $(CURRENT_DIRECTORY))
-
-# Timing start (must be used in same shell, e.g. same command line)
-#    Defines the shell variable $1 to have the start time.
-define TIMING_start
-$1=`$(DATE) +%j:%H:%M:%S`
-endef
-
-# Timing end (must be used in same shell, e.g. same command line)
-#    Expects shell variable $1 to have been defined as the start time.
-#    Expects shell variable $2 to have timing id string
-#    Sets total_seconds shell variable as the total seconds used.
-#    Sets time_used shell variable to contain format "%dh%dm%ds"
-define TIMING_end
-begTime="$${$1}"; \
-timing_id="$${$2}"; \
-endTime=`$(DATE) +%j:%H:%M:%S`; \
-d1=`$(ECHO) $${begTime} | $(CUT) -d':' -f1 | $(SED) -e 's@^0*@@'`; \
-if [ "$${d1}" = "" ] ; then d1=0; fi; \
-h1=`$(ECHO) $${begTime} | $(CUT) -d':' -f2 | $(SED) -e 's@^0*@@'`; \
-if [ "$${h1}" = "" ] ; then h1=0; fi; \
-m1=`$(ECHO) $${begTime} | $(CUT) -d':' -f3 | $(SED) -e 's@^0*@@'`; \
-if [ "$${m1}" = "" ] ; then m1=0; fi; \
-s1=`$(ECHO) $${begTime} | $(CUT) -d':' -f4 | $(SED) -e 's@^0*@@'`; \
-if [ "$${s1}" = "" ] ; then s1=0; fi; \
-d2=`$(ECHO) $${endTime} | $(CUT) -d':' -f1 | $(SED) -e 's@^0*@@'`; \
-if [ "$${d2}" = "" ] ; then d2=0; fi; \
-h2=`$(ECHO) $${endTime} | $(CUT) -d':' -f2 | $(SED) -e 's@^0*@@'`; \
-if [ "$${h2}" = "" ] ; then h2=0; fi; \
-m2=`$(ECHO) $${endTime} | $(CUT) -d':' -f3 | $(SED) -e 's@^0*@@'`; \
-if [ "$${m2}" = "" ] ; then m2=0; fi; \
-s2=`$(ECHO) $${endTime} | $(CUT) -d':' -f4 | $(SED) -e 's@^0*@@'`; \
-if [ "$${s2}" = "" ] ; then s2=0; fi; \
-t1_secs=`$(EXPR) $${d1} '*' 60 '*' 60 '*' 24 '+' $${h1} '*' 60 '*' 60 \
-		 '+' $${m1} '*' 60 '+' $${s1}`; \
-t2_secs=`$(EXPR) $${d2} '*' 60 '*' 60 '*' 24 '+' $${h2} '*' 60 '*' 60 \
-		 '+' $${m2} '*' 60 '+' $${s2}`; \
-total_seconds=`$(EXPR) $${t2_secs} '-' $${t1_secs}`; \
-if [ "$${total_seconds}" -lt 0 ] ; then total_seconds=0; fi; \
-t_hour=`$(EXPR) $${total_seconds} '/' '(' 60 '*' 60 ')'`h; \
-t_min=`$(EXPR) '(' $${total_seconds} '%' '(' 60 '*' 60 ')' ')' '/' 60`m; \
-t_sec=`$(EXPR) $${total_seconds} '%' 60`s; \
-time_used=$${t_sec}; \
-if [ "$${t_hour}" != "0h" ] ; then \
-time_used=$${t_hour}$${t_min}$${t_sec}; \
-elif [ "$${t_min}" != "0m" ] ; then \
-time_used=$${t_min}$${t_sec}; \
-else \
-time_used=$${t_sec}; \
-fi; \
-$(PRINTF) "  Timing: %05d seconds or %s for %s\n" \
-    $${total_seconds} $${time_used} $${timing_id}
-endef
-
-endif # NO_TIMING
-
-# Given a SUBDIRS list, cd into them and make them
-#   SUBDIRS_MAKEFLAGS      Make settings for a subdir make
-#   SUBDIRS_MAKEFLAGS-$@   Make settings specific to this target
-define SUBDIRS-loop
-@$(ECHO) "Begin Processing SUBDIRS: $(SUBDIRS)"
-@for i in DUMMY $(SUBDIRS) ; do \
-  if [ "$$i" != "DUMMY" ] ; then \
-    $(ECHO) ">>>Recursively making "$$i" "$@" @ `$(DATE)` ..."; \
-    timing_id="$(TIMING_ID)-`$(BASENAME) $${i}`"; \
-    $(call TIMING_start,startTime); \
-    curDir=$(CURRENT_DIRECTORY); \
-    $(CD) $$i; $(MAKE) $@ TIMING_ID=$${timing_id} \
-			  $(SUBDIRS_MAKEFLAGS) \
-			  $(SUBDIRS_MAKEFLAGS-$@) \
-			  FULL_VERSION=$(FULL_VERSION) \
-			  RELEASE=$(RELEASE) || exit 1; \
-	       $(CD) $${curDir}; \
-    $(call TIMING_end,startTime,timing_id); \
-    $(ECHO) "<<<Finished Recursively making "$$i" "$@" @ `$(DATE)`." ; \
-  fi ; \
-done
-@$(ECHO) "Done Processing SUBDIRS: $(SUBDIRS)"
-endef
-
-# Given a OTHERSUBDIRS list, cd into them and make them (extra loop define)
-#   OTHERSUBDIRS_MAKEFLAGS      Make settings for a subdir make
-define OTHERSUBDIRS-loop
-@$(ECHO) "Begin Processing OTHERSUBDIRS: $(OTHERSUBDIRS)"
-@for i in DUMMY $(OTHERSUBDIRS) ; do \
-  if [ "$$i" != "DUMMY" ] ; then \
-    $(ECHO) ">>>Recursively making "$$i" "$@" @ `$(DATE)` ..."; \
-    timing_id="$(TIMING_ID)-`$(BASENAME) $${i}`"; \
-    $(call TIMING_start,startTime); \
-    curDir=$(CURRENT_DIRECTORY); \
-    $(CD) $$i; $(MAKE) $@ TIMING_ID=$${timing_id} \
-		          $(OTHERSUBDIRS_MAKEFLAGS) \
-			  FULL_VERSION=$(FULL_VERSION) \
-			  RELEASE=$(RELEASE) || exit 1; \
-	       $(CD) $${curDir}; \
-    $(call TIMING_end,startTime,timing_id); \
-    $(ECHO) "<<<Finished Recursively making "$$i" "$@" @ `$(DATE)`." ; \
-  fi ; \
-done
-@$(ECHO) "Done Processing OTHERSUBDIRS: $(OTHERSUBDIRS)"
-endef
 
 #
 # Create BYFILE OPT and DBG settings, if CFLAGS_OPT/foobar.o is set then it is
@@ -819,7 +697,7 @@ endef
 
 define install-import-file
 $(install-importonly-file)
-$(install-module-file)
+@$(install-module-file)
 endef
 
 .PHONY: all build clean clobber

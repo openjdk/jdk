@@ -26,9 +26,12 @@
  * @bug 4769350
  * @library ../../../sun/net/www/httptest/
  * @build HttpCallback HttpServer ClosedChannelList HttpTransaction AbstractCallback
- * @run main B4769350 server
- * @run main B4769350 proxy
+ * @run main/othervm B4769350 server
+ * @run main/othervm B4769350 proxy
  * @summary proxy authentication username and password caching only works in serial case
+ * Run in othervm since the test sets system properties that are read by the
+ * networking stack and cached when the HTTP handler is invoked, and previous
+ * tests may already have invoked the HTTP handler.
  */
 
 import java.io.*;

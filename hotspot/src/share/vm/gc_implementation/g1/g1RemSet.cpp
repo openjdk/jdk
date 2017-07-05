@@ -155,8 +155,8 @@ class ScanRSClosure : public HeapRegionClosure {
   G1BlockOffsetSharedArray* _bot_shared;
   CardTableModRefBS *_ct_bs;
   int _worker_i;
+  int _block_size;
   bool _try_claimed;
-  size_t _min_skip_distance, _max_skip_distance;
 public:
   ScanRSClosure(OopsInHeapRegionClosure* oc, int worker_i) :
     _oc(oc),
@@ -168,8 +168,7 @@ public:
     _g1h = G1CollectedHeap::heap();
     _bot_shared = _g1h->bot_shared();
     _ct_bs = (CardTableModRefBS*) (_g1h->barrier_set());
-    _min_skip_distance = 16;
-    _max_skip_distance = 2 * _g1h->n_par_threads() * _min_skip_distance;
+    _block_size = MAX2<int>(G1RSetScanBlockSize, 1);
   }
 
   void set_try_claimed() { _try_claimed = true; }
@@ -225,12 +224,15 @@ public:
     HeapRegionRemSetIterator* iter = _g1h->rem_set_iterator(_worker_i);
     hrrs->init_iterator(iter);
     size_t card_index;
-    size_t skip_distance = 0, current_card = 0, jump_to_card = 0;
-    while (iter->has_next(card_index)) {
-      if (current_card < jump_to_card) {
-        ++current_card;
-        continue;
+
+    // We claim cards in block so as to recude the contention. The block size is determined by
+    // the G1RSetScanBlockSize parameter.
+    size_t jump_to_card = hrrs->iter_claimed_next(_block_size);
+    for (size_t current_card = 0; iter->has_next(card_index); current_card++) {
+      if (current_card >= jump_to_card + _block_size) {
+        jump_to_card = hrrs->iter_claimed_next(_block_size);
       }
+      if (current_card < jump_to_card) continue;
       HeapWord* card_start = _g1h->bot_shared()->address_for_index(card_index);
 #if 0
       gclog_or_tty->print("Rem set iteration yielded card [" PTR_FORMAT ", " PTR_FORMAT ").\n",
@@ -247,22 +249,14 @@ public:
 
        // If the card is dirty, then we will scan it during updateRS.
       if (!card_region->in_collection_set() && !_ct_bs->is_card_dirty(card_index)) {
-          if (!_ct_bs->is_card_claimed(card_index) && _ct_bs->claim_card(card_index)) {
-            scanCard(card_index, card_region);
-          } else if (_try_claimed) {
-            if (jump_to_card == 0 || jump_to_card != current_card) {
-              // We did some useful work in the previous iteration.
-              // Decrease the distance.
-              skip_distance = MAX2(skip_distance >> 1, _min_skip_distance);
-            } else {
-              // Previous iteration resulted in a claim failure.
-              // Increase the distance.
-              skip_distance = MIN2(skip_distance << 1, _max_skip_distance);
-            }
-            jump_to_card = current_card + skip_distance;
-          }
+        // We make the card as "claimed" lazily (so races are possible but they're benign),
+        // which reduces the number of duplicate scans (the rsets of the regions in the cset
+        // can intersect).
+        if (!_ct_bs->is_card_claimed(card_index)) {
+          _ct_bs->set_card_claimed(card_index);
+          scanCard(card_index, card_region);
+        }
       }
-      ++current_card;
     }
     if (!_try_claimed) {
       hrrs->set_iter_complete();
@@ -299,30 +293,18 @@ void HRInto_G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   double rs_time_start = os::elapsedTime();
   HeapRegion *startRegion = calculateStartRegion(worker_i);
 
-  BufferingOopsInHeapRegionClosure boc(oc);
-  ScanRSClosure scanRScl(&boc, worker_i);
+  ScanRSClosure scanRScl(oc, worker_i);
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
   scanRScl.set_try_claimed();
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
 
-  boc.done();
-  double closure_app_time_sec = boc.closure_app_seconds();
-  double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
-    closure_app_time_sec;
-  double closure_app_time_ms = closure_app_time_sec * 1000.0;
+  double scan_rs_time_sec = os::elapsedTime() - rs_time_start;
 
   assert( _cards_scanned != NULL, "invariant" );
   _cards_scanned[worker_i] = scanRScl.cards_done();
 
   _g1p->record_scan_rs_start_time(worker_i, rs_time_start * 1000.0);
   _g1p->record_scan_rs_time(worker_i, scan_rs_time_sec * 1000.0);
-
-  double scan_new_refs_time_ms = _g1p->get_scan_new_refs_time(worker_i);
-  if (scan_new_refs_time_ms > 0.0) {
-    closure_app_time_ms += scan_new_refs_time_ms;
-  }
-
-  _g1p->record_obj_copy_time(worker_i, closure_app_time_ms);
 }
 
 void HRInto_G1RemSet::updateRS(int worker_i) {
@@ -449,9 +431,8 @@ HRInto_G1RemSet::scanNewRefsRS_work(OopsInHeapRegionClosure* oc,
       oc->do_oop(p);
     }
   }
-  _g1p->record_scan_new_refs_time(worker_i,
-                                  (os::elapsedTime() - scan_new_refs_start_sec)
-                                  * 1000.0);
+  double scan_new_refs_time_ms = (os::elapsedTime() - scan_new_refs_start_sec) * 1000.0;
+  _g1p->record_scan_new_refs_time(worker_i, scan_new_refs_time_ms);
 }
 
 void HRInto_G1RemSet::cleanupHRRS() {

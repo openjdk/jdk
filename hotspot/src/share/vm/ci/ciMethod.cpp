@@ -445,7 +445,8 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
                (morphism == ciCallProfile::MorphismLimit && count == 0)) {
 #ifdef ASSERT
              if (count > 0) {
-               tty->print_cr("bci: %d", bci);
+               this->print_short_name(tty);
+               tty->print_cr(" @ bci:%d", bci);
                this->print_codes();
                assert(false, "this call site should not be polymorphic");
              }

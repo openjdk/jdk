@@ -37,12 +37,17 @@ else
   WEBSERVICES_SUBDIR = webservices
 endif
 
-SUBDIRS = nio jmx scripting $(WEBSERVICES_SUBDIR) nbproject
+SUBDIRS =
+SUBDIRS_misc = nio scripting nbproject
+SUBDIRS_enterprise = $(WEBSERVICES_SUBDIR)
+SUBDIRS_management = jmx
 
 # include dtrace samples in Solaris builds
 ifeq ($(PLATFORM), solaris) 
 	SUBDIRS += dtrace
 endif
+
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)

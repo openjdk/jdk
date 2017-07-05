@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,13 @@ void RuntimeService::init() {
 
 void RuntimeService::record_safepoint_begin() {
   HS_DTRACE_PROBE(hs_private, safepoint__begin);
+
+  // Print the time interval in which the app was executing
+  if (PrintGCApplicationConcurrentTime) {
+    gclog_or_tty->print_cr("Application time: %3.7f seconds",
+                                last_application_time_sec());
+  }
+
   // update the time stamp to begin recording safepoint time
   _safepoint_timer.update();
   if (UsePerfData) {
@@ -122,6 +129,15 @@ void RuntimeService::record_safepoint_synchronized() {
 
 void RuntimeService::record_safepoint_end() {
   HS_DTRACE_PROBE(hs_private, safepoint__end);
+
+  // Print the time interval for which the app was stopped
+  // during the current safepoint operation.
+  if (PrintGCApplicationStoppedTime) {
+    gclog_or_tty->print_cr("Total time for which application threads "
+                           "were stopped: %3.7f seconds",
+                           last_safepoint_time_sec());
+  }
+
   // update the time stamp to begin recording app time
   _app_timer.update();
   if (UsePerfData) {
