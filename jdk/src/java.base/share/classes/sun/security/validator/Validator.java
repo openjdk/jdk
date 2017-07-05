@@ -166,7 +166,7 @@ public abstract class Validator {
      */
     public static Validator getInstance(String type, String variant,
             KeyStore ks) {
-        return getInstance(type, variant, KeyStores.getTrustedCerts(ks));
+        return getInstance(type, variant, TrustStoreUtil.getTrustedCerts(ks));
     }
 
     /**
