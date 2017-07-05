@@ -276,10 +276,7 @@ final class ModuleInfo {
         throws IOException
     {
         int requires_count = in.readUnsignedShort();
-        if (requires_count == 0 && !mn.equals("java.base")) {
-            throw invalidModuleDescriptor("The requires table must have"
-                                          + " at least one entry");
-        }
+        boolean requiresJavaBase = false;
         for (int i=0; i<requires_count; i++) {
             int index = in.readUnsignedShort();
             int flags = in.readUnsignedShort();
@@ -297,6 +294,17 @@ final class ModuleInfo {
                     mods.add(Modifier.MANDATED);
             }
             builder.requires(mods, dn);
+            if (dn.equals("java.base"))
+                requiresJavaBase = true;
+        }
+        if (mn.equals("java.base")) {
+            if (requires_count > 0) {
+                throw invalidModuleDescriptor("The requires table for java.base"
+                                              + " must be 0 length");
+            }
+        } else if (!requiresJavaBase) {
+            throw invalidModuleDescriptor("The requires table must have"
+                                          + " an entry for java.base");
         }
 
         int exports_count = in.readUnsignedShort();

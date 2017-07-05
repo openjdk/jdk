@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,37 +62,21 @@ import sun.java2d.loops.TransformHelper;
  * bands[rowstart+3+N*2] = ...    // start of next Y row
  * </pre>
  */
-public class Region {
-    static final int INIT_SIZE = 50;
-    static final int GROW_SIZE = 50;
+public final class Region {
+    private static final int INIT_SIZE = 50;
+    private static final int GROW_SIZE = 50;
 
-    /**
-     * Immutable Region.
-     */
-    private static final class ImmutableRegion extends Region {
-        protected ImmutableRegion(int lox, int loy, int hix, int hiy) {
-            super(lox, loy, hix, hiy);
-        }
-
-        // Override all the methods that mutate the object
-        public void appendSpans(sun.java2d.pipe.SpanIterator si) {}
-        public void setOutputArea(java.awt.Rectangle r) {}
-        public void setOutputAreaXYWH(int x, int y, int w, int h) {}
-        public void setOutputArea(int[] box) {}
-        public void setOutputAreaXYXY(int lox, int loy, int hix, int hiy) {}
-    }
-
-    public static final Region EMPTY_REGION = new ImmutableRegion(0, 0, 0, 0);
-    public static final Region WHOLE_REGION = new ImmutableRegion(
+    public static final Region EMPTY_REGION = new Region(0, 0, 0, 0);
+    public static final Region WHOLE_REGION = new Region(
             Integer.MIN_VALUE,
             Integer.MIN_VALUE,
             Integer.MAX_VALUE,
             Integer.MAX_VALUE);
 
-    int lox;
-    int loy;
-    int hix;
-    int hiy;
+    private int lox;
+    private int loy;
+    private int hix;
+    private int hiy;
 
     int endIndex;
     int[] bands;
@@ -155,7 +139,7 @@ public class Region {
         return (int) Math.round(newv);
     }
 
-    protected Region(int lox, int loy, int hix, int hiy) {
+    private Region(int lox, int loy, int hix, int hiy) {
         this.lox = lox;
         this.loy = loy;
         this.hix = hix;
@@ -258,9 +242,7 @@ public class Region {
             sr.setOutputArea(devBounds);
             sr.appendPath(s.getPathIterator(at));
             sr.getPathBox(box);
-            Region r = Region.getInstance(box);
-            r.appendSpans(sr);
-            return r;
+            return Region.getInstance(box, sr);
         } finally {
             sr.dispose();
         }
@@ -349,56 +331,18 @@ public class Region {
     }
 
     /**
-     * Sets the rectangle of interest for storing and returning
-     * region bands.
-     * <p>
-     * This method can also be used to initialize a simple rectangular
-     * region.
+     * Returns a Region object with a rectangle of interest specified by the
+     * indicated rectangular area in lox, loy, hix, hiy format.
+     * <p/>
+     * Appends the list of spans returned from the indicated SpanIterator. Each
+     * span must be at a higher starting Y coordinate than the previous data or
+     * it must have a Y range equal to the highest Y band in the region and a
+     * higher X coordinate than any of the spans in that band.
      */
-    public void setOutputArea(Rectangle r) {
-        setOutputAreaXYWH(r.x, r.y, r.width, r.height);
-    }
-
-    /**
-     * Sets the rectangle of interest for storing and returning
-     * region bands.  The rectangle is specified in x, y, width, height
-     * format and appropriate clipping is performed as per the method
-     * {@code dimAdd}.
-     * <p>
-     * This method can also be used to initialize a simple rectangular
-     * region.
-     */
-    public void setOutputAreaXYWH(int x, int y, int w, int h) {
-        setOutputAreaXYXY(x, y, dimAdd(x, w), dimAdd(y, h));
-    }
-
-    /**
-     * Sets the rectangle of interest for storing and returning
-     * region bands.  The rectangle is specified as a span array.
-     * <p>
-     * This method can also be used to initialize a simple rectangular
-     * region.
-     */
-    public void setOutputArea(int box[]) {
-        this.lox = box[0];
-        this.loy = box[1];
-        this.hix = box[2];
-        this.hiy = box[3];
-    }
-
-    /**
-     * Sets the rectangle of interest for storing and returning
-     * region bands.  The rectangle is specified in lox, loy,
-     * hix, hiy format.
-     * <p>
-     * This method can also be used to initialize a simple rectangular
-     * region.
-     */
-    public void setOutputAreaXYXY(int lox, int loy, int hix, int hiy) {
-        this.lox = lox;
-        this.loy = loy;
-        this.hix = hix;
-        this.hiy = hiy;
+    public static Region getInstance(int box[], SpanIterator si) {
+        Region ret = new Region(box[0], box[1], box[2], box[3]);
+        ret.appendSpans(si);
+        return ret;
     }
 
     /**
@@ -408,7 +352,7 @@ public class Region {
      * Y range equal to the highest Y band in the region and a
      * higher X coordinate than any of the spans in that band.
      */
-    public void appendSpans(SpanIterator si) {
+    private void appendSpans(SpanIterator si) {
         int[] box = new int[6];
 
         while (si.nextSpan(box)) {
@@ -739,9 +683,9 @@ public class Region {
         return ret;
     }
 
-    static final int INCLUDE_A      = 1;
-    static final int INCLUDE_B      = 2;
-    static final int INCLUDE_COMMON = 4;
+    private static final int INCLUDE_A      = 1;
+    private static final int INCLUDE_B      = 2;
+    private static final int INCLUDE_COMMON = 4;
 
     private void filterSpans(Region ra, Region rb, int flags) {
         int abands[] = ra.bands;
@@ -1080,35 +1024,35 @@ public class Region {
     /**
      * Returns the lowest X coordinate in the Region.
      */
-    public final int getLoX() {
+    public int getLoX() {
         return lox;
     }
 
     /**
      * Returns the lowest Y coordinate in the Region.
      */
-    public final int getLoY() {
+    public int getLoY() {
         return loy;
     }
 
     /**
      * Returns the highest X coordinate in the Region.
      */
-    public final int getHiX() {
+    public int getHiX() {
         return hix;
     }
 
     /**
      * Returns the highest Y coordinate in the Region.
      */
-    public final int getHiY() {
+    public int getHiY() {
         return hiy;
     }
 
     /**
      * Returns the width of this Region clipped to the range (0 - MAX_INT).
      */
-    public final int getWidth() {
+    public int getWidth() {
         if (hix < lox) return 0;
         int w;
         if ((w = hix - lox) < 0) {
@@ -1120,7 +1064,7 @@ public class Region {
     /**
      * Returns the height of this Region clipped to the range (0 - MAX_INT).
      */
-    public final int getHeight() {
+    public int getHeight() {
         if (hiy < loy) return 0;
         int h;
         if ((h = hiy - loy) < 0) {
@@ -1325,6 +1269,7 @@ public class Region {
         return si;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Region[[");
@@ -1335,13 +1280,13 @@ public class Region {
         sb.append(hix);
         sb.append(", ");
         sb.append(hiy);
-        sb.append("]");
+        sb.append(']');
         if (bands != null) {
             int col = 0;
             while (col < endIndex) {
                 sb.append("y{");
                 sb.append(bands[col++]);
-                sb.append(",");
+                sb.append(',');
                 sb.append(bands[col++]);
                 sb.append("}[");
                 int end = bands[col++];
@@ -1351,20 +1296,25 @@ public class Region {
                     sb.append(bands[col++]);
                     sb.append(", ");
                     sb.append(bands[col++]);
-                    sb.append(")");
+                    sb.append(')');
                 }
-                sb.append("]");
+                sb.append(']');
             }
         }
-        sb.append("]");
+        sb.append(']');
         return sb.toString();
     }
 
+    @Override
     public int hashCode() {
         return (isEmpty() ? 0 : (lox * 3 + loy * 5 + hix * 7 + hiy * 9));
     }
 
+    @Override
     public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
         if (!(o instanceof Region)) {
             return false;
         }

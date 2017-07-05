@@ -1087,6 +1087,8 @@ public final class Global extends Scope {
     private ThreadLocal<ScriptContext> scontext;
     // current ScriptEngine associated - can be null.
     private ScriptEngine engine;
+    // initial ScriptContext - usually null and only used for special case
+    private volatile ScriptContext initscontext;
 
     // ES6 global lexical scope.
     private final LexicalScope lexicalScope;
@@ -1112,9 +1114,22 @@ public final class Global extends Scope {
         return scontext.get();
     }
 
+    /**
+     * Set the initial script context
+     * @param ctxt initial script context
+     */
+    public void setInitScriptContext(final ScriptContext ctxt) {
+        this.initscontext = ctxt;
+    }
+
     private ScriptContext currentContext() {
         final ScriptContext sc = scontext != null? scontext.get() : null;
-        return (sc != null)? sc : (engine != null? engine.getContext() : null);
+        if (sc != null) {
+            return sc;
+        } else if (initscontext != null) {
+            return initscontext;
+        }
+        return engine != null? engine.getContext() : null;
     }
 
     @Override

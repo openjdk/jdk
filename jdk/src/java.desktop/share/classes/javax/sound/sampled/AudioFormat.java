@@ -633,7 +633,7 @@ public class AudioFormat {
          * {@code String} is the same name that was passed to the constructor.
          * For the predefined encodings, the name is similar to the encoding's
          * variable (field) name. For example, {@code PCM_SIGNED.toString()}
-         * returns the name "pcm_signed".
+         * returns the name "PCM_SIGNED".
          *
          * @return the encoding name
          */

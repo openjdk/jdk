@@ -22,12 +22,14 @@
  */
 
 /* @test
-   @bug 8129830
-   @summary JTree drag/drop on lower half of last child of container incorrect
-   @author Semyon Sadetsky
-  */
+ * @bug 8129830 8132771
+ * @summary JTree drag/drop on lower half of last child of container incorrect
+ * @run main LastNodeLowerHalfDrop
+ */
 
-import java.awt.*;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -35,7 +37,13 @@ import java.awt.event.InputEvent;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import javax.swing.*;
+import javax.swing.DropMode;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
@@ -74,24 +82,31 @@ public class LastNodeLowerHalfDrop {
         testCase(b2, a1, +0.4f);
         if (!"b2".equals(jTree.getModel().
                 getChild(a, a.getChildCount() - 1).toString())) {
-            throw new RuntimeException("b1 was not inserted in the last position in a");
+            cleanUp();
+            throw new RuntimeException("b1 was not inserted "
+                    +"in the last position in a");
         }
         testCase(c1, c, -0.4f);
         if (!"c1".equals(jTree.getModel().getChild(root, 2).toString())) {
-            throw new RuntimeException("c1 was not inserted beetween c and b nodes");
+            cleanUp();
+            throw new RuntimeException("c1 was not inserted "
+                    +"between c and b nodes");
         }
+        cleanUp();
+    }
 
-        SwingUtilities.invokeLater(new Runnable() {
+    private static void cleanUp() throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 f.dispose();
             }
         });
-        System.out.printf("ok");
     }
 
-    static void testCase(DefaultMutableTreeNode drag,
-                         DefaultMutableTreeNode drop, float shift) throws Exception {
+    private static void testCase(final DefaultMutableTreeNode drag,
+            final DefaultMutableTreeNode drop, final float shift)
+            throws Exception {
         Robot robot = new Robot();
         robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -112,11 +127,11 @@ public class LastNodeLowerHalfDrop {
 
         robot.mouseMove(dragPoint.x, dragPoint.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(400);
+        robot.delay(1000);
         robot.mouseMove(dropPoint.x, dropPoint.y);
-        robot.delay(400);
+        robot.delay(1000);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-
+        robot.delay(1000);
         robot.waitForIdle();
     }
 

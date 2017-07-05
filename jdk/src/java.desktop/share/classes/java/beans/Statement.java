@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import com.sun.beans.finder.ClassFinder;
 import com.sun.beans.finder.ConstructorFinder;
 import com.sun.beans.finder.MethodFinder;
 import sun.reflect.misc.MethodUtil;
+
+import static sun.reflect.misc.ReflectUtil.checkPackageAccess;
 
 /**
  * A {@code Statement} object represents a primitive statement
@@ -205,12 +207,22 @@ public class Statement {
         Object[] arguments = getArguments();
         if (arguments == null) {
             arguments = emptyArray;
+        } else {
+            arguments = arguments.clone();
         }
-        // Class.forName() won't load classes outside
-        // of core from a class inside core. Special
-        // case this method.
         if (target == Class.class && methodName.equals("forName")) {
-            return ClassFinder.resolveClass((String)arguments[0], this.loader);
+            final String name = (String) arguments[0];
+            if (arguments.length == 1) {
+                // Class.forName(String className) won't load classes outside
+                // of core from a class inside core. Special
+                // case this method.
+                // checkPackageAccess(name) will be called by ClassFinder
+                return ClassFinder.resolveClass(name, this.loader);
+            }
+            // The 3 args Class.forName(String className, boolean, classloader)
+            // requires getClassLoader permission, but we will be stricter and
+            // will require access to the package as well.
+            checkPackageAccess(name);
         }
         Class<?>[] argClasses = new Class<?>[arguments.length];
         for(int i = 0; i < arguments.length; i++) {

@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -266,6 +267,13 @@ public interface ModuleFinder {
      *     ModuleDescriptor#mainClass() main class}. </p></li>
      *
      * </ul>
+     *
+     * <p> If a {@code ModuleDescriptor} cannot be created (by means of the
+     * {@link ModuleDescriptor.Builder ModuleDescriptor.Builder} API) for an
+     * automatic module then {@code FindException} is thrown. This can arise,
+     * for example, when a legal Java identifier name cannot be derived from
+     * the file name of the JAR file or where a package name derived from an
+     * entry ending with {@code .class} is not a legal Java identifier. </p>
      *
      * <p> In addition to JAR files, an implementation may also support modules
      * that are packaged in other implementation specific module formats. When

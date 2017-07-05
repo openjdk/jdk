@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 8129116
   @summary Deadlock with multimonitor fullscreen windows.
   @run main/timeout=20 MultimonDeadlockTest
