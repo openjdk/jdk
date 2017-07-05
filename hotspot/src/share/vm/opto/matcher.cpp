@@ -1365,31 +1365,36 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
 
   const Type *t = m->bottom_type();
 
-  if( t->singleton() ) {
+  if (t->singleton()) {
     // Never force constants into registers.  Allow them to match as
     // constants or registers.  Copies of the same value will share
     // the same register.  See find_shared_node.
     return false;
   } else {                      // Not a constant
     // Stop recursion if they have different Controls.
-    // Slot 0 of constants is not really a Control.
-    if( control && m->in(0) && control != m->in(0) ) {
+    Node* m_control = m->in(0);
+    // Control of load's memory can post-dominates load's control.
+    // So use it since load can't float above its memory.
+    Node* mem_control = (m->is_Load()) ? m->in(MemNode::Memory)->in(0) : NULL;
+    if (control && m_control && control != m_control && control != mem_control) {
 
       // Actually, we can live with the most conservative control we
       // find, if it post-dominates the others.  This allows us to
       // pick up load/op/store trees where the load can float a little
       // above the store.
       Node *x = control;
-      const uint max_scan = 6;   // Arbitrary scan cutoff
+      const uint max_scan = 6;  // Arbitrary scan cutoff
       uint j;
-      for( j=0; j<max_scan; j++ ) {
-        if( x->is_Region() )    // Bail out at merge points
+      for (j=0; j<max_scan; j++) {
+        if (x->is_Region())     // Bail out at merge points
           return true;
         x = x->in(0);
-        if( x == m->in(0) )     // Does 'control' post-dominate
+        if (x == m_control)     // Does 'control' post-dominate
           break;                // m->in(0)?  If so, we can use it
+        if (x == mem_control)   // Does 'control' post-dominate
+          break;                // mem_control?  If so, we can use it
       }
-      if( j == max_scan )       // No post-domination before scan end?
+      if (j == max_scan)        // No post-domination before scan end?
         return true;            // Then break the match tree up
     }
     if (m->is_DecodeN() && Matcher::narrow_oop_use_complex_address()) {

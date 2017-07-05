@@ -287,6 +287,9 @@ class NativeMovRegMem: public NativeInstruction {
     instruction_code_xmm_store          = 0x11,
     instruction_code_xmm_lpd            = 0x12,
 
+    instruction_VEX_prefix_2bytes       = Assembler::VEX_2bytes,
+    instruction_VEX_prefix_3bytes       = Assembler::VEX_3bytes,
+
     instruction_size                    = 4,
     instruction_offset                  = 0,
     data_offset                         = 2,
