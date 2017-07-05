@@ -43,7 +43,7 @@ typedef uintptr_t TraceAddress;
 void GCTracer::send_garbage_collection_event() const {
   EventGCGarbageCollection event(UNTIMED);
   if (event.should_commit()) {
-    event.set_gcId(_shared_gc_info.id());
+    event.set_gcId(_shared_gc_info.gc_id().id());
     event.set_name(_shared_gc_info.name());
     event.set_cause((u2) _shared_gc_info.cause());
     event.set_sumOfPauses(_shared_gc_info.sum_of_pauses());
@@ -57,7 +57,7 @@ void GCTracer::send_garbage_collection_event() const {
 void GCTracer::send_reference_stats_event(ReferenceType type, size_t count) const {
   EventGCReferenceStatistics e;
   if (e.should_commit()) {
-      e.set_gcId(_shared_gc_info.id());
+      e.set_gcId(_shared_gc_info.gc_id().id());
       e.set_type((u1)type);
       e.set_count(count);
       e.commit();
@@ -68,7 +68,7 @@ void GCTracer::send_metaspace_chunk_free_list_summary(GCWhen::Type when, Metaspa
                                                       const MetaspaceChunkFreeListSummary& summary) const {
   EventMetaspaceChunkFreeListSummary e;
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_when(when);
     e.set_metadataType(mdtype);
 
@@ -91,7 +91,7 @@ void GCTracer::send_metaspace_chunk_free_list_summary(GCWhen::Type when, Metaspa
 void ParallelOldTracer::send_parallel_old_event() const {
   EventGCParallelOld e(UNTIMED);
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_densePrefix((TraceAddress)_parallel_old_gc_info.dense_prefix());
     e.set_starttime(_shared_gc_info.start_timestamp());
     e.set_endtime(_shared_gc_info.end_timestamp());
@@ -102,7 +102,7 @@ void ParallelOldTracer::send_parallel_old_event() const {
 void YoungGCTracer::send_young_gc_event() const {
   EventGCYoungGarbageCollection e(UNTIMED);
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_tenuringThreshold(_tenuring_threshold);
     e.set_starttime(_shared_gc_info.start_timestamp());
     e.set_endtime(_shared_gc_info.end_timestamp());
@@ -113,7 +113,7 @@ void YoungGCTracer::send_young_gc_event() const {
 void OldGCTracer::send_old_gc_event() const {
   EventGCOldGarbageCollection e(UNTIMED);
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_starttime(_shared_gc_info.start_timestamp());
     e.set_endtime(_shared_gc_info.end_timestamp());
     e.commit();
@@ -132,7 +132,7 @@ static TraceStructCopyFailed to_trace_struct(const CopyFailedInfo& cf_info) {
 void YoungGCTracer::send_promotion_failed_event(const PromotionFailedInfo& pf_info) const {
   EventPromotionFailed e;
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_data(to_trace_struct(pf_info));
     e.set_thread(pf_info.thread()->thread_id());
     e.commit();
@@ -143,7 +143,7 @@ void YoungGCTracer::send_promotion_failed_event(const PromotionFailedInfo& pf_in
 void OldGCTracer::send_concurrent_mode_failure_event() {
   EventConcurrentModeFailure e;
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.commit();
   }
 }
@@ -152,7 +152,7 @@ void OldGCTracer::send_concurrent_mode_failure_event() {
 void G1NewTracer::send_g1_young_gc_event() {
   EventGCG1GarbageCollection e(UNTIMED);
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_type(_g1_young_gc_info.type());
     e.set_starttime(_shared_gc_info.start_timestamp());
     e.set_endtime(_shared_gc_info.end_timestamp());
@@ -163,7 +163,7 @@ void G1NewTracer::send_g1_young_gc_event() {
 void G1NewTracer::send_evacuation_info_event(EvacuationInfo* info) {
   EventEvacuationInfo e;
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_cSetRegions(info->collectionset_regions());
     e.set_cSetUsedBefore(info->collectionset_used_before());
     e.set_cSetUsedAfter(info->collectionset_used_after());
@@ -179,7 +179,7 @@ void G1NewTracer::send_evacuation_info_event(EvacuationInfo* info) {
 void G1NewTracer::send_evacuation_failed_event(const EvacuationFailedInfo& ef_info) const {
   EventEvacuationFailed e;
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_data(to_trace_struct(ef_info));
     e.commit();
   }
@@ -206,17 +206,17 @@ static TraceStructObjectSpace to_trace_struct(const SpaceSummary& summary) {
 }
 
 class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
-  GCId _id;
+  GCId _gc_id;
   GCWhen::Type _when;
  public:
-  GCHeapSummaryEventSender(GCId id, GCWhen::Type when) : _id(id), _when(when) {}
+  GCHeapSummaryEventSender(GCId gc_id, GCWhen::Type when) : _gc_id(gc_id), _when(when) {}
 
   void visit(const GCHeapSummary* heap_summary) const {
     const VirtualSpaceSummary& heap_space = heap_summary->heap();
 
     EventGCHeapSummary e;
     if (e.should_commit()) {
-      e.set_gcId(_id);
+      e.set_gcId(_gc_id.id());
       e.set_when((u1)_when);
       e.set_heapSpace(to_trace_struct(heap_space));
       e.set_heapUsed(heap_summary->used());
@@ -236,7 +236,7 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
 
     EventPSHeapSummary e;
     if (e.should_commit()) {
-      e.set_gcId(_id);
+      e.set_gcId(_gc_id.id());
       e.set_when((u1)_when);
 
       e.set_oldSpace(to_trace_struct(ps_heap_summary->old()));
@@ -251,7 +251,7 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
 };
 
 void GCTracer::send_gc_heap_summary_event(GCWhen::Type when, const GCHeapSummary& heap_summary) const {
-  GCHeapSummaryEventSender visitor(_shared_gc_info.id(), when);
+  GCHeapSummaryEventSender visitor(_shared_gc_info.gc_id(), when);
   heap_summary.accept(&visitor);
 }
 
@@ -268,7 +268,7 @@ static TraceStructMetaspaceSizes to_trace_struct(const MetaspaceSizes& sizes) {
 void GCTracer::send_meta_space_summary_event(GCWhen::Type when, const MetaspaceSummary& meta_space_summary) const {
   EventMetaspaceSummary e;
   if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
+    e.set_gcId(_shared_gc_info.gc_id().id());
     e.set_when((u1) when);
     e.set_gcThreshold(meta_space_summary.capacity_until_GC());
     e.set_metaspace(to_trace_struct(meta_space_summary.meta_space()));
@@ -287,7 +287,7 @@ class PhaseSender : public PhaseVisitor {
   void send_phase(PausePhase* pause) {
     T event(UNTIMED);
     if (event.should_commit()) {
-      event.set_gcId(_gc_id);
+      event.set_gcId(_gc_id.id());
       event.set_name(pause->name());
       event.set_starttime(pause->start());
       event.set_endtime(pause->end());
@@ -311,7 +311,7 @@ class PhaseSender : public PhaseVisitor {
 };
 
 void GCTracer::send_phase_events(TimePartitions* time_partitions) const {
-  PhaseSender phase_reporter(_shared_gc_info.id());
+  PhaseSender phase_reporter(_shared_gc_info.gc_id());
 
   TimePartitionPhasesIterator iter(time_partitions);
   while (iter.has_next()) {

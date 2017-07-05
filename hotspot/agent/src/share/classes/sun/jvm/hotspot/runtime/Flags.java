@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,27 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "interpreter/bytecodes.hpp"
+package sun.jvm.hotspot.runtime;
 
+//These definitions should be kept in sync with the definitions in the HotSpot code.
 
-void Bytecodes::pd_initialize() {
-  // (nothing)
-}
+public enum Flags {
+  // value origin
+  DEFAULT ("Default"),
+  COMMAND_LINE ("Command line"),
+  ENVIRON_VAR ("Environment variable"),
+  CONFIG_FILE ("Config file"),
+  MANAGEMENT ("Management"),
+  ERGONOMIC ("Ergonomic"),
+  ATTACH_ON_DEMAND ("Attach on demand"),
+  INTERNAL ("Internal");
 
-Bytecodes::Code Bytecodes::pd_base_code_for(Code code) {
-  return code;
+  private final String value;
+
+  Flags(String val) {
+    this.value = val;
+  }
+  public String value() {
+    return value;
+  }
 }

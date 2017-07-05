@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,29 @@
 
 /*
  * @test
- * @bug 7051769
+ * @bug 7051769 8038092
  * @summary verify that Bidi.toString() returns the corect result.
+ *     The second run is intended to test lazy SharedSectets init for 8038092
+ * @run main Bug7051769
+ * @run main/othervm -DpreloadBidi=true Bug7051769
  */
 import java.awt.font.*;
 import java.text.*;
 import java.util.*;
 
 public class Bug7051769 {
+
+    static {
+        if (System.getProperty("preloadBidi", "").equals("true")) {
+            // Make sure the SharedSecret is lazily initialized correctly
+            try {
+                Class.forName("sun.text.bidi.BidiBase");
+                System.out.println("BidiBase class has been pre-loaded.");
+            } catch (ClassNotFoundException e) {
+                System.out.println("BidiBase class could not be pre-loaded.");
+            }
+        }
+    }
 
     private static boolean err = false;
 

@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 
 #include "oops/instanceKlass.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"

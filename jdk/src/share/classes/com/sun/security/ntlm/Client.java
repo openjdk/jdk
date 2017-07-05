@@ -46,7 +46,7 @@ public final class Client extends NTLM {
     final private String hostname;
     final private String username;
 
-    private String domain;    // might be updated by Type 2 msg
+    private String domain;
     private byte[] pw1, pw2;
 
     /**
@@ -82,7 +82,7 @@ public final class Client extends NTLM {
         }
         this.hostname = hostname;
         this.username = username;
-        this.domain = domain;
+        this.domain = domain == null ? "" : domain;
         this.pw1 = getP1(password);
         this.pw2 = getP2(password);
         debug("NTLM Client: (h,u,t,version(v)) = (%s,%s,%s,%s(%s))\n",
@@ -95,19 +95,13 @@ public final class Client extends NTLM {
      */
     public byte[] type1() {
         Writer p = new Writer(1, 32);
-        int flags = 0x8203;
-        if (hostname != null) {
-            flags |= 0x2000;
-        }
-        if (domain != null) {
-            flags |= 0x1000;
-        }
+        // Negotiate always sign, Negotiate NTLM,
+        // Request Target, Negotiate OEM, Negotiate unicode
+        int flags = 0x8207;
         if (v != Version.NTLM) {
             flags |= 0x80000;
         }
         p.writeInt(12, flags);
-        p.writeSecurityBuffer(24, hostname, false);
-        p.writeSecurityBuffer(16, domain, false);
         debug("NTLM Client: Type 1 created\n");
         debug(p.getBytes());
         return p.getBytes();
@@ -133,13 +127,10 @@ public final class Client extends NTLM {
         byte[] challenge = r.readBytes(24, 8);
         int inputFlags = r.readInt(20);
         boolean unicode = (inputFlags & 1) == 1;
-        String domainFromServer = r.readSecurityBuffer(12, unicode);
-        if (domainFromServer != null) {
-            domain = domainFromServer;
-        }
-        if (domain == null) {
-            domain = "";
-        }
+
+        // IE uses domainFromServer to generate an alist if server has not
+        // provided one. Firefox/WebKit do not. Neither do we.
+        //String domainFromServer = r.readSecurityBuffer(12, unicode);
 
         int flags = 0x88200 | (inputFlags & 3);
         Writer p = new Writer(3, 64);
@@ -163,7 +154,9 @@ public final class Client extends NTLM {
             if (writeLM) lm = calcV2(nthash,
                     username.toUpperCase(Locale.US)+domain, nonce, challenge);
             if (writeNTLM) {
-                byte[] alist = type2.length > 48 ?
+                // Some client create a alist even if server does not send
+                // one: (i16)2 (i16)len target_in_unicode (i16)0 (i16) 0
+                byte[] alist = ((inputFlags & 0x800000) != 0) ?
                     r.readSecurityBuffer(40) : new byte[0];
                 byte[] blob = new byte[32+alist.length];
                 System.arraycopy(new byte[]{1,1,0,0,0,0,0,0}, 0, blob, 0, 8);

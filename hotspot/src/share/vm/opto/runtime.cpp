@@ -55,6 +55,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"

@@ -1,6 +1,3 @@
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
-};
 
 grant {
   // standard test activation permissions
