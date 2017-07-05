@@ -51,11 +51,16 @@ import java.io.File;
 public abstract class FileFilter {
     /**
      * Whether the given file is accepted by this filter.
+     *
+     * @param f the File to test
+     * @return true if the file is to be accepted
      */
     public abstract boolean accept(File f);
 
     /**
      * The description of this filter. For example: "JPG and GIF Images"
+     *
+     * @return the description of this filter
      * @see FileView#getName
      */
     public abstract String getDescription();

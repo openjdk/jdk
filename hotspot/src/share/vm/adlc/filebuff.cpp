@@ -25,8 +25,6 @@
 // FILEBUFF.CPP - Routines for handling a parser file buffer
 #include "adlc.hpp"
 
-using namespace std;
-
 //------------------------------FileBuff---------------------------------------
 // Create a new parsing buffer
 FileBuff::FileBuff( BufferedFile *fptr, ArchDesc& archDesc) : _fp(fptr), _AD(archDesc) {

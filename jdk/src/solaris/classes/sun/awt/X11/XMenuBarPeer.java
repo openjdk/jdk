@@ -195,10 +195,10 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
         // Get menus from the target.
-        Vector targetMenuVector = AWTAccessor.getMenuBarAccessor()
-                                      .getMenus(menuBarTarget);
+        Vector<Menu> targetMenuVector = AWTAccessor.getMenuBarAccessor()
+                                                   .getMenus(menuBarTarget);
         Menu targetHelpMenu = AWTAccessor.getMenuBarAccessor()
-                                  .getHelpMenu(menuBarTarget);
+                                         .getHelpMenu(menuBarTarget);
         reloadItems(targetMenuVector);
         if (targetHelpMenu != null) {
             addHelpMenu(targetHelpMenu);

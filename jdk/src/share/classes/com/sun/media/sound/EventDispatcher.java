@@ -57,7 +57,7 @@ final class EventDispatcher implements Runnable {
     /**
      * List of events
      */
-    private final ArrayList eventQueue = new ArrayList();
+    private final ArrayList<EventInfo> eventQueue = new ArrayList<>();
 
 
     /**
@@ -186,7 +186,7 @@ final class EventDispatcher implements Runnable {
             }
             if (eventQueue.size() > 0) {
                 // Remove the event from the queue and dispatch it to the listeners.
-                eventInfo = (EventInfo) eventQueue.remove(0);
+                eventInfo = eventQueue.remove(0);
             }
 
         } // end of synchronized
@@ -230,7 +230,7 @@ final class EventDispatcher implements Runnable {
     /**
      * Send audio and MIDI events.
      */
-    void sendAudioEvents(Object event, List listeners) {
+    void sendAudioEvents(Object event, List<Object> listeners) {
         if ((listeners == null)
             || (listeners.size() == 0)) {
             // nothing to do
@@ -392,7 +392,7 @@ final class EventDispatcher implements Runnable {
          * @param event the event to be dispatched
          * @param listeners listener list; will be copied
          */
-        EventInfo(Object event, List listeners) {
+        EventInfo(Object event, List<Object> listeners) {
             this.event = event;
             this.listeners = listeners.toArray();
         }

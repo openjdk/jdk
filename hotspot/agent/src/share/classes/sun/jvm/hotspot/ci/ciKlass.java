@@ -55,4 +55,9 @@ public class ciKlass extends ciType {
   public ciKlass(Address addr) {
     super(addr);
   }
+
+  public void printValueOn(PrintStream tty) {
+    Klass k = (Klass)getMetadata();
+    k.printValueOn(tty);
+  }
 }

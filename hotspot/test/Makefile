@@ -147,6 +147,11 @@ BUNDLE_UP_FAILED = ( exitCode=$$? && $(BUNDLE_UP) && exit $${exitCode} )
 all: jtreg_tests
 	@$(ECHO) "Testing completed successfully"
 
+# Support "hotspot_" prefixed test make targets too
+# The hotspot_% targets are for example invoked by the top level Makefile
+hotspot_%:
+	$(MAKE) $*
+
 # Prep for output
 prep: clean
 	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)

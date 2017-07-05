@@ -26,7 +26,7 @@
 package java.lang.invoke;
 
 import sun.invoke.util.VerifyAccess;
-import java.lang.invoke.LambdaForm.Name;
+import static java.lang.invoke.LambdaForm.*;
 
 import sun.invoke.util.Wrapper;
 
@@ -38,6 +38,7 @@ import jdk.internal.org.objectweb.asm.*;
 import java.lang.reflect.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.LambdaForm.BasicType.*;
 import sun.invoke.util.VerifyType;
 
 /**
@@ -115,7 +116,7 @@ class InvokerBytecodeGenerator {
         Name[] names = form.names;
         for (int i = 0, index = 0; i < localsMap.length; i++) {
             localsMap[i] = index;
-            index += Wrapper.forBasicType(names[i].type).stackSlots();
+            index += names[i].type.basicTypeSlots();
         }
     }
 
@@ -358,47 +359,52 @@ class InvokerBytecodeGenerator {
     /*
      * NOTE: These load/store methods use the localsMap to find the correct index!
      */
-    private void emitLoadInsn(char type, int index) {
-        int opcode;
-        switch (type) {
-        case 'I':  opcode = Opcodes.ILOAD;  break;
-        case 'J':  opcode = Opcodes.LLOAD;  break;
-        case 'F':  opcode = Opcodes.FLOAD;  break;
-        case 'D':  opcode = Opcodes.DLOAD;  break;
-        case 'L':  opcode = Opcodes.ALOAD;  break;
-        default:
-            throw new InternalError("unknown type: " + type);
-        }
+    private void emitLoadInsn(BasicType type, int index) {
+        int opcode = loadInsnOpcode(type);
         mv.visitVarInsn(opcode, localsMap[index]);
-    }
-    private void emitAloadInsn(int index) {
-        emitLoadInsn('L', index);
     }
 
-    private void emitStoreInsn(char type, int index) {
-        int opcode;
+    private int loadInsnOpcode(BasicType type) throws InternalError {
         switch (type) {
-        case 'I':  opcode = Opcodes.ISTORE;  break;
-        case 'J':  opcode = Opcodes.LSTORE;  break;
-        case 'F':  opcode = Opcodes.FSTORE;  break;
-        case 'D':  opcode = Opcodes.DSTORE;  break;
-        case 'L':  opcode = Opcodes.ASTORE;  break;
-        default:
-            throw new InternalError("unknown type: " + type);
+            case I_TYPE: return Opcodes.ILOAD;
+            case J_TYPE: return Opcodes.LLOAD;
+            case F_TYPE: return Opcodes.FLOAD;
+            case D_TYPE: return Opcodes.DLOAD;
+            case L_TYPE: return Opcodes.ALOAD;
+            default:
+                throw new InternalError("unknown type: " + type);
         }
+    }
+    private void emitAloadInsn(int index) {
+        emitLoadInsn(L_TYPE, index);
+    }
+
+    private void emitStoreInsn(BasicType type, int index) {
+        int opcode = storeInsnOpcode(type);
         mv.visitVarInsn(opcode, localsMap[index]);
     }
+
+    private int storeInsnOpcode(BasicType type) throws InternalError {
+        switch (type) {
+            case I_TYPE: return Opcodes.ISTORE;
+            case J_TYPE: return Opcodes.LSTORE;
+            case F_TYPE: return Opcodes.FSTORE;
+            case D_TYPE: return Opcodes.DSTORE;
+            case L_TYPE: return Opcodes.ASTORE;
+            default:
+                throw new InternalError("unknown type: " + type);
+        }
+    }
     private void emitAstoreInsn(int index) {
-        emitStoreInsn('L', index);
+        emitStoreInsn(L_TYPE, index);
     }
 
     /**
      * Emit a boxing call.
      *
-     * @param type primitive type class to box.
+     * @param wrapper primitive type class to box.
      */
-    private void emitBoxing(Class<?> type) {
-        Wrapper wrapper = Wrapper.forPrimitiveType(type);
+    private void emitBoxing(Wrapper wrapper) {
         String owner = "java/lang/" + wrapper.wrapperType().getSimpleName();
         String name  = "valueOf";
         String desc  = "(" + wrapper.basicTypeChar() + ")L" + owner + ";";
@@ -408,10 +414,9 @@ class InvokerBytecodeGenerator {
     /**
      * Emit an unboxing call (plus preceding checkcast).
      *
-     * @param type wrapper type class to unbox.
+     * @param wrapper wrapper type class to unbox.
      */
-    private void emitUnboxing(Class<?> type) {
-        Wrapper wrapper = Wrapper.forWrapperType(type);
+    private void emitUnboxing(Wrapper wrapper) {
         String owner = "java/lang/" + wrapper.wrapperType().getSimpleName();
         String name  = wrapper.primitiveSimpleName() + "Value";
         String desc  = "()" + wrapper.basicTypeChar();
@@ -425,9 +430,12 @@ class InvokerBytecodeGenerator {
      * @param ptype type of value present on stack
      * @param pclass type of value required on stack
      */
-    private void emitImplicitConversion(char ptype, Class<?> pclass) {
+    private void emitImplicitConversion(BasicType ptype, Class<?> pclass) {
+        assert(basicType(pclass) == ptype);  // boxing/unboxing handled by caller
+        if (pclass == ptype.basicTypeClass() && ptype != L_TYPE)
+            return;   // nothing to do
         switch (ptype) {
-        case 'L':
+        case L_TYPE:
             if (VerifyType.isNullConversion(Object.class, pclass))
                 return;
             if (isStaticallyNameable(pclass)) {
@@ -441,18 +449,9 @@ class InvokerBytecodeGenerator {
                     mv.visitTypeInsn(Opcodes.CHECKCAST, OBJARY);
             }
             return;
-        case 'I':
+        case I_TYPE:
             if (!VerifyType.isNullConversion(int.class, pclass))
-                emitPrimCast(ptype, Wrapper.basicTypeChar(pclass));
-            return;
-        case 'J':
-            assert(pclass == long.class);
-            return;
-        case 'F':
-            assert(pclass == float.class);
-            return;
-        case 'D':
-            assert(pclass == double.class);
+                emitPrimCast(ptype.basicTypeWrapper(), Wrapper.forPrimitiveType(pclass));
             return;
         }
         throw new InternalError("bad implicit conversion: tc="+ptype+": "+pclass);
@@ -461,15 +460,15 @@ class InvokerBytecodeGenerator {
     /**
      * Emits an actual return instruction conforming to the given return type.
      */
-    private void emitReturnInsn(Class<?> type) {
+    private void emitReturnInsn(BasicType type) {
         int opcode;
-        switch (Wrapper.basicTypeChar(type)) {
-        case 'I':  opcode = Opcodes.IRETURN;  break;
-        case 'J':  opcode = Opcodes.LRETURN;  break;
-        case 'F':  opcode = Opcodes.FRETURN;  break;
-        case 'D':  opcode = Opcodes.DRETURN;  break;
-        case 'L':  opcode = Opcodes.ARETURN;  break;
-        case 'V':  opcode = Opcodes.RETURN;   break;
+        switch (type) {
+        case I_TYPE:  opcode = Opcodes.IRETURN;  break;
+        case J_TYPE:  opcode = Opcodes.LRETURN;  break;
+        case F_TYPE:  opcode = Opcodes.FRETURN;  break;
+        case D_TYPE:  opcode = Opcodes.DRETURN;  break;
+        case L_TYPE:  opcode = Opcodes.ARETURN;  break;
+        case V_TYPE:  opcode = Opcodes.RETURN;   break;
         default:
             throw new InternalError("unknown return type: " + type);
         }
@@ -531,7 +530,7 @@ class InvokerBytecodeGenerator {
             // avoid store/load/return and just return)
             if (i == lambdaForm.names.length - 1 && i == lambdaForm.result) {
                 // return value - do nothing
-            } else if (name.type != 'V') {
+            } else if (name.type != V_TYPE) {
                 // non-void: actually assign
                 emitStoreInsn(name.type, name.index());
             }
@@ -865,20 +864,24 @@ class InvokerBytecodeGenerator {
 
     private void emitPushArgument(Name name, int paramIndex) {
         Object arg = name.arguments[paramIndex];
-        char ptype = name.function.parameterType(paramIndex);
-        MethodType mtype = name.function.methodType();
+        Class<?> ptype = name.function.methodType().parameterType(paramIndex);
+        emitPushArgument(ptype, arg);
+    }
+
+    private void emitPushArgument(Class<?> ptype, Object arg) {
+        BasicType bptype = basicType(ptype);
         if (arg instanceof Name) {
             Name n = (Name) arg;
             emitLoadInsn(n.type, n.index());
-            emitImplicitConversion(n.type, mtype.parameterType(paramIndex));
-        } else if ((arg == null || arg instanceof String) && ptype == 'L') {
+            emitImplicitConversion(n.type, ptype);
+        } else if ((arg == null || arg instanceof String) && bptype == L_TYPE) {
             emitConst(arg);
         } else {
-            if (Wrapper.isWrapperType(arg.getClass()) && ptype != 'L') {
+            if (Wrapper.isWrapperType(arg.getClass()) && bptype != L_TYPE) {
                 emitConst(arg);
             } else {
                 mv.visitLdcInsn(constantPlaceholder(arg));
-                emitImplicitConversion('L', mtype.parameterType(paramIndex));
+                emitImplicitConversion(L_TYPE, ptype);
             }
         }
     }
@@ -888,52 +891,33 @@ class InvokerBytecodeGenerator {
      */
     private void emitReturn() {
         // return statement
-        if (lambdaForm.result == -1) {
+        Class<?> rclass = invokerType.returnType();
+        BasicType rtype = lambdaForm.returnType();
+        assert(rtype == basicType(rclass));  // must agree
+        if (rtype == V_TYPE) {
             // void
             mv.visitInsn(Opcodes.RETURN);
+            // it doesn't matter what rclass is; the JVM will discard any value
         } else {
             LambdaForm.Name rn = lambdaForm.names[lambdaForm.result];
-            char rtype = Wrapper.basicTypeChar(invokerType.returnType());
 
             // put return value on the stack if it is not already there
-            if (lambdaForm.result != lambdaForm.names.length - 1) {
+            if (lambdaForm.result != lambdaForm.names.length - 1 ||
+                    lambdaForm.result < lambdaForm.arity) {
                 emitLoadInsn(rn.type, lambdaForm.result);
             }
 
-            // potentially generate cast
-            // rtype is the return type of the invoker - generated code must conform to this
-            // rn.type is the type of the result Name in the LF
-            if (rtype != rn.type) {
-                // need cast
-                if (rtype == 'L') {
-                    // possibly cast the primitive to the correct type for boxing
-                    char boxedType = Wrapper.forWrapperType(invokerType.returnType()).basicTypeChar();
-                    if (boxedType != rn.type) {
-                        emitPrimCast(rn.type, boxedType);
-                    }
-                    // cast primitive to reference ("boxing")
-                    emitBoxing(invokerType.returnType());
-                } else {
-                    // to-primitive cast
-                    if (rn.type != 'L') {
-                        // prim-to-prim cast
-                        emitPrimCast(rn.type, rtype);
-                    } else {
-                        // ref-to-prim cast ("unboxing")
-                        throw new InternalError("no ref-to-prim (unboxing) casts supported right now");
-                    }
-                }
-            }
+            emitImplicitConversion(rtype, rclass);
 
             // generate actual return statement
-            emitReturnInsn(invokerType.returnType());
+            emitReturnInsn(rtype);
         }
     }
 
     /**
      * Emit a type conversion bytecode casting from "from" to "to".
      */
-    private void emitPrimCast(char from, char to) {
+    private void emitPrimCast(Wrapper from, Wrapper to) {
         // Here's how.
         // -   indicates forbidden
         // <-> indicates implicit
@@ -950,17 +934,15 @@ class InvokerBytecodeGenerator {
             // no cast required, should be dead code anyway
             return;
         }
-        Wrapper wfrom = Wrapper.forBasicType(from);
-        Wrapper wto   = Wrapper.forBasicType(to);
-        if (wfrom.isSubwordOrInt()) {
+        if (from.isSubwordOrInt()) {
             // cast from {byte,short,char,int} to anything
             emitI2X(to);
         } else {
             // cast from {long,float,double} to anything
-            if (wto.isSubwordOrInt()) {
+            if (to.isSubwordOrInt()) {
                 // cast to {byte,short,char,int}
                 emitX2I(from);
-                if (wto.bitWidth() < 32) {
+                if (to.bitWidth() < 32) {
                     // targets other than int require another conversion
                     emitI2X(to);
                 }
@@ -968,20 +950,26 @@ class InvokerBytecodeGenerator {
                 // cast to {long,float,double} - this is verbose
                 boolean error = false;
                 switch (from) {
-                case 'J':
-                         if (to == 'F') { mv.visitInsn(Opcodes.L2F); }
-                    else if (to == 'D') { mv.visitInsn(Opcodes.L2D); }
-                    else error = true;
+                case LONG:
+                    switch (to) {
+                    case FLOAT:   mv.visitInsn(Opcodes.L2F);  break;
+                    case DOUBLE:  mv.visitInsn(Opcodes.L2D);  break;
+                    default:      error = true;               break;
+                    }
                     break;
-                case 'F':
-                         if (to == 'J') { mv.visitInsn(Opcodes.F2L); }
-                    else if (to == 'D') { mv.visitInsn(Opcodes.F2D); }
-                    else error = true;
+                case FLOAT:
+                    switch (to) {
+                    case LONG :   mv.visitInsn(Opcodes.F2L);  break;
+                    case DOUBLE:  mv.visitInsn(Opcodes.F2D);  break;
+                    default:      error = true;               break;
+                    }
                     break;
-                case 'D':
-                         if (to == 'J') { mv.visitInsn(Opcodes.D2L); }
-                    else if (to == 'F') { mv.visitInsn(Opcodes.D2F); }
-                    else error = true;
+                case DOUBLE:
+                    switch (to) {
+                    case LONG :   mv.visitInsn(Opcodes.D2L);  break;
+                    case FLOAT:   mv.visitInsn(Opcodes.D2F);  break;
+                    default:      error = true;               break;
+                    }
                     break;
                 default:
                     error = true;
@@ -994,16 +982,16 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    private void emitI2X(char type) {
+    private void emitI2X(Wrapper type) {
         switch (type) {
-        case 'B':  mv.visitInsn(Opcodes.I2B);  break;
-        case 'S':  mv.visitInsn(Opcodes.I2S);  break;
-        case 'C':  mv.visitInsn(Opcodes.I2C);  break;
-        case 'I':  /* naught */                break;
-        case 'J':  mv.visitInsn(Opcodes.I2L);  break;
-        case 'F':  mv.visitInsn(Opcodes.I2F);  break;
-        case 'D':  mv.visitInsn(Opcodes.I2D);  break;
-        case 'Z':
+        case BYTE:    mv.visitInsn(Opcodes.I2B);  break;
+        case SHORT:   mv.visitInsn(Opcodes.I2S);  break;
+        case CHAR:    mv.visitInsn(Opcodes.I2C);  break;
+        case INT:     /* naught */                break;
+        case LONG:    mv.visitInsn(Opcodes.I2L);  break;
+        case FLOAT:   mv.visitInsn(Opcodes.I2F);  break;
+        case DOUBLE:  mv.visitInsn(Opcodes.I2D);  break;
+        case BOOLEAN:
             // For compatibility with ValueConversions and explicitCastArguments:
             mv.visitInsn(Opcodes.ICONST_1);
             mv.visitInsn(Opcodes.IAND);
@@ -1012,39 +1000,24 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    private void emitX2I(char type) {
+    private void emitX2I(Wrapper type) {
         switch (type) {
-        case 'J':  mv.visitInsn(Opcodes.L2I);  break;
-        case 'F':  mv.visitInsn(Opcodes.F2I);  break;
-        case 'D':  mv.visitInsn(Opcodes.D2I);  break;
-        default:   throw new InternalError("unknown type: " + type);
+        case LONG:    mv.visitInsn(Opcodes.L2I);  break;
+        case FLOAT:   mv.visitInsn(Opcodes.F2I);  break;
+        case DOUBLE:  mv.visitInsn(Opcodes.D2I);  break;
+        default:      throw new InternalError("unknown type: " + type);
         }
-    }
-
-    private static String basicTypeCharSignature(String prefix, MethodType type) {
-        StringBuilder buf = new StringBuilder(prefix);
-        for (Class<?> ptype : type.parameterList())
-            buf.append(Wrapper.forBasicType(ptype).basicTypeChar());
-        buf.append('_').append(Wrapper.forBasicType(type.returnType()).basicTypeChar());
-        return buf.toString();
     }
 
     /**
      * Generate bytecode for a LambdaForm.vmentry which calls interpretWithArguments.
      */
     static MemberName generateLambdaFormInterpreterEntryPoint(String sig) {
-        assert(LambdaForm.isValidSignature(sig));
-        //System.out.println("generateExactInvoker "+sig);
-        // compute method type
-        // first parameter and return type
-        char tret = LambdaForm.signatureReturn(sig);
-        MethodType type = MethodType.methodType(LambdaForm.typeClass(tret), MethodHandle.class);
-        // other parameter types
-        int arity = LambdaForm.signatureArity(sig);
-        for (int i = 1; i < arity; i++) {
-            type = type.appendParameterTypes(LambdaForm.typeClass(sig.charAt(i)));
-        }
-        InvokerBytecodeGenerator g = new InvokerBytecodeGenerator("LFI", "interpret_"+tret, type);
+        assert(isValidSignature(sig));
+        String name = "interpret_"+signatureReturn(sig).basicTypeChar();
+        MethodType type = signatureType(sig);  // sig includes leading argument
+        type = type.changeParameterType(0, MethodHandle.class);
+        InvokerBytecodeGenerator g = new InvokerBytecodeGenerator("LFI", name, type);
         return g.loadMethod(g.generateLambdaFormInterpreterEntryPointBytes());
     }
 
@@ -1066,10 +1039,10 @@ class InvokerBytecodeGenerator {
             Class<?> ptype = invokerType.parameterType(i);
             mv.visitInsn(Opcodes.DUP);
             emitIconstInsn(i);
-            emitLoadInsn(Wrapper.basicTypeChar(ptype), i);
+            emitLoadInsn(basicType(ptype), i);
             // box if primitive type
             if (ptype.isPrimitive()) {
-                emitBoxing(ptype);
+                emitBoxing(Wrapper.forPrimitiveType(ptype));
             }
             mv.visitInsn(Opcodes.AASTORE);
         }
@@ -1082,11 +1055,11 @@ class InvokerBytecodeGenerator {
         // maybe unbox
         Class<?> rtype = invokerType.returnType();
         if (rtype.isPrimitive() && rtype != void.class) {
-            emitUnboxing(Wrapper.asWrapperType(rtype));
+            emitUnboxing(Wrapper.forPrimitiveType(rtype));
         }
 
         // return statement
-        emitReturnInsn(rtype);
+        emitReturnInsn(basicType(rtype));
 
         classFileEpilogue();
         bogusMethod(invokerType);
@@ -1100,13 +1073,11 @@ class InvokerBytecodeGenerator {
      * Generate bytecode for a NamedFunction invoker.
      */
     static MemberName generateNamedFunctionInvoker(MethodTypeForm typeForm) {
-        MethodType invokerType = LambdaForm.NamedFunction.INVOKER_METHOD_TYPE;
-        String invokerName = basicTypeCharSignature("invoke_", typeForm.erasedType());
+        MethodType invokerType = NamedFunction.INVOKER_METHOD_TYPE;
+        String invokerName = "invoke_" + shortenSignature(basicTypeSignature(typeForm.erasedType()));
         InvokerBytecodeGenerator g = new InvokerBytecodeGenerator("NFI", invokerName, invokerType);
         return g.loadMethod(g.generateNamedFunctionInvokerImpl(typeForm));
     }
-
-    static int nfi = 0;
 
     private byte[] generateNamedFunctionInvokerImpl(MethodTypeForm typeForm) {
         MethodType dstType = typeForm.erasedType();
@@ -1133,8 +1104,8 @@ class InvokerBytecodeGenerator {
                 Class<?> sptype = dstType.basicType().wrap().parameterType(i);
                 Wrapper dstWrapper = Wrapper.forBasicType(dptype);
                 Wrapper srcWrapper = dstWrapper.isSubwordOrInt() ? Wrapper.INT : dstWrapper;  // narrow subword from int
-                emitUnboxing(srcWrapper.wrapperType());
-                emitPrimCast(srcWrapper.basicTypeChar(), dstWrapper.basicTypeChar());
+                emitUnboxing(srcWrapper);
+                emitPrimCast(srcWrapper, dstWrapper);
             }
         }
 
@@ -1148,15 +1119,15 @@ class InvokerBytecodeGenerator {
             Wrapper srcWrapper = Wrapper.forBasicType(rtype);
             Wrapper dstWrapper = srcWrapper.isSubwordOrInt() ? Wrapper.INT : srcWrapper;  // widen subword to int
             // boolean casts not allowed
-            emitPrimCast(srcWrapper.basicTypeChar(), dstWrapper.basicTypeChar());
-            emitBoxing(dstWrapper.primitiveType());
+            emitPrimCast(srcWrapper, dstWrapper);
+            emitBoxing(dstWrapper);
         }
 
         // If the return type is void we return a null reference.
         if (rtype == void.class) {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
-        emitReturnInsn(Object.class);  // NOTE: NamedFunction invokers always return a reference value.
+        emitReturnInsn(L_TYPE);  // NOTE: NamedFunction invokers always return a reference value.
 
         classFileEpilogue();
         bogusMethod(dstType);

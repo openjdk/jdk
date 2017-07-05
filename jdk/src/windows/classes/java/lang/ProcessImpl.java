@@ -25,15 +25,15 @@
 
 package java.lang;
 
-import java.io.IOException;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileDescriptor;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -481,6 +481,14 @@ final class ProcessImpl extends Process {
     }
 
     private static native void terminateProcess(long handle);
+
+    @Override
+    public long getPid() {
+        int pid = getProcessId0(handle);
+        return pid;
+    }
+
+    private static native int getProcessId0(long handle);
 
     @Override
     public boolean isAlive() {

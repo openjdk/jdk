@@ -41,7 +41,7 @@ import jdk.testlibrary.Utils;
  * @bug 7104647 7154822
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
- * @run main TestJcmdSanity
+ * @run main/othervm -XX:+UsePerfData TestJcmdSanity
  */
 public class TestJcmdSanity {
 

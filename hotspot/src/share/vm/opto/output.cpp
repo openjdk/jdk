@@ -366,8 +366,8 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
   // third inserts nops where needed.
 
   // Step one, perform a pessimistic sizing pass.
-  uint last_call_adr = max_uint;
-  uint last_avoid_back_to_back_adr = max_uint;
+  uint last_call_adr = max_juint;
+  uint last_avoid_back_to_back_adr = max_juint;
   uint nop_size = (new (this) MachNopNode())->size(_regalloc);
   for (uint i = 0; i < nblocks; i++) { // For all blocks
     Block* block = _cfg->get_block(i);
@@ -479,7 +479,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
 
   // Step two, replace eligible long jumps.
   bool progress = true;
-  uint last_may_be_short_branch_adr = max_uint;
+  uint last_may_be_short_branch_adr = max_juint;
   while (has_short_branch_candidate && progress) {
     progress = false;
     has_short_branch_candidate = false;

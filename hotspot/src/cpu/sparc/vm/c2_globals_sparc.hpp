@@ -44,7 +44,6 @@ define_pd_global(bool, ProfileInterpreter,           true);
 #endif // CC_INTERP
 define_pd_global(bool, TieredCompilation,            trueInTiered);
 define_pd_global(intx, CompileThreshold,             10000);
-define_pd_global(intx, BackEdgeThreshold,            140000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         4);

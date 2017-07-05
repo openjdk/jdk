@@ -29,6 +29,7 @@ import java.awt.*;
 import java.awt.dnd.*;
 import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.event.*;
+import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.image.*;
 import java.awt.datatransfer.Clipboard;
@@ -224,7 +225,7 @@ public class HeadlessToolkit extends Toolkit
         throw new HeadlessException();
     }
 
-    public Map mapInputMethodHighlight(InputMethodHighlight highlight)
+    public Map<TextAttribute, ?> mapInputMethodHighlight(InputMethodHighlight highlight)
         throws HeadlessException {
         throw new HeadlessException();
     }

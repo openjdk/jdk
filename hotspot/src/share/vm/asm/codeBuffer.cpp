@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -988,7 +988,7 @@ void CodeSection::dump() {
   for (csize_t step; ptr < end(); ptr += step) {
     step = end() - ptr;
     if (step > jintSize * 4)  step = jintSize * 4;
-    tty->print(PTR_FORMAT ": ", ptr);
+    tty->print(INTPTR_FORMAT ": ", p2i(ptr));
     while (step > 0) {
       tty->print(" " PTR32_FORMAT, *(jint*)ptr);
       ptr += jintSize;
@@ -1098,7 +1098,7 @@ void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) con
     while (c && c->offset() == offset) {
       stream->bol();
       stream->print("  ;; ");
-      stream->print_cr(c->string());
+      stream->print_cr("%s", c->string());
       c = c->next_comment();
     }
   }
@@ -1154,10 +1154,10 @@ void CodeBuffer::decode_all() {
 void CodeSection::print(const char* name) {
   csize_t locs_size = locs_end() - locs_start();
   tty->print_cr(" %7s.code = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d)%s",
-                name, start(), end(), limit(), size(), capacity(),
+                name, p2i(start()), p2i(end()), p2i(limit()), size(), capacity(),
                 is_frozen()? " [frozen]": "");
   tty->print_cr(" %7s.locs = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d) point=%d",
-                name, locs_start(), locs_end(), locs_limit(), locs_size, locs_capacity(), locs_point_off());
+                name, p2i(locs_start()), p2i(locs_end()), p2i(locs_limit()), locs_size, locs_capacity(), locs_point_off());
   if (PrintRelocations) {
     RelocIterator iter(this);
     iter.print();

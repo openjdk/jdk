@@ -27,8 +27,7 @@
  *          at the same time.
  * @library /lib/testlibrary
  *
- * @build jdk.testlibrary.ProcessTools jdk.testlibrary.JDKToolLauncher jdk.testlibrary.Utils
- * @build VMConnection ExclusiveBind HelloWorld
+ * @build jdk.testlibrary.* VMConnection ExclusiveBind HelloWorld
  * @run main ExclusiveBind
  */
 import java.net.ServerSocket;

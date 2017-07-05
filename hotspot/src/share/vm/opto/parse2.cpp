@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,9 +405,9 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 
   bool needs_guard = false;
   int default_dest;
-  int64 total_outlier_size = 0;
-  int64 hi_size = ((int64)hi->hi()) - ((int64)hi->lo()) + 1;
-  int64 lo_size = ((int64)lo->hi()) - ((int64)lo->lo()) + 1;
+  int64_t total_outlier_size = 0;
+  int64_t hi_size = ((int64_t)hi->hi()) - ((int64_t)hi->lo()) + 1;
+  int64_t lo_size = ((int64_t)lo->hi()) - ((int64_t)lo->lo()) + 1;
 
   if (lo->dest() == hi->dest()) {
     total_outlier_size = hi_size + lo_size;
@@ -429,7 +429,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   }
 
   // Find the total number of cases and ranges
-  int64 num_cases = ((int64)hi->hi()) - ((int64)lo->lo()) + 1;
+  int64_t num_cases = ((int64_t)hi->hi()) - ((int64_t)lo->lo()) + 1;
   int num_range = hi - lo + 1;
 
   // Don't create table if: too large, too small, or too sparse.
@@ -473,7 +473,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // These are the switch destinations hanging off the jumpnode
   int i = 0;
   for (SwitchRange* r = lo; r <= hi; r++) {
-    for (int64 j = r->lo(); j <= r->hi(); j++, i++) {
+    for (int64_t j = r->lo(); j <= r->hi(); j++, i++) {
       Node* input = _gvn.transform(new (C) JumpProjNode(jtn, i, r->dest(), (int)(j - lowval)));
       {
         PreserveJVMState pjvms(this);
@@ -628,7 +628,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     _method->print_short_name();
     tty->print_cr(" switch decision tree");
     tty->print_cr("    %d ranges (%d singletons), max_depth=%d, est_depth=%d",
-                  hi-lo+1, nsing, _max_switch_depth, _est_switch_depth);
+                  (int) (hi-lo+1), nsing, _max_switch_depth, _est_switch_depth);
     if (_max_switch_depth > _est_switch_depth) {
       tty->print_cr("******** BAD SWITCH DEPTH ********");
     }
@@ -636,7 +636,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     for( r = lo; r <= hi; r++ ) {
       r->print();
     }
-    tty->print_cr("");
+    tty->cr();
   }
 #endif
 }

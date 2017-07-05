@@ -534,6 +534,7 @@ public class DefaultMutableTreeNode implements Cloneable,
      * Returns true if and only if <code>aNode</code> is in the same tree
      * as this node.  Returns false if <code>aNode</code> is null.
      *
+     * @param   aNode node to find common ancestor with
      * @see     #getSharedAncestor
      * @see     #getRoot
      * @return  true if <code>aNode</code> is in the same tree as this node;
@@ -638,6 +639,8 @@ public class DefaultMutableTreeNode implements Cloneable,
       * Returns the user object path, from the root, to get to this node.
       * If some of the TreeNodes in the path have null user objects, the
       * returned path will contain nulls.
+      *
+      * @return the user object path, from the root, to get to this node
       */
     public Object[] getUserObjectPath() {
         TreeNode[]          realPath = getPath();
@@ -828,6 +831,7 @@ public class DefaultMutableTreeNode implements Cloneable,
      * Modifying the tree by inserting, removing, or moving a node invalidates
      * any enumerations created before the modification.
      *
+     * @param           ancestor the node to start enumeration from
      * @see             #isNodeAncestor
      * @see             #isNodeDescendant
      * @exception       IllegalArgumentException if <code>ancestor</code> is
@@ -848,6 +852,7 @@ public class DefaultMutableTreeNode implements Cloneable,
      * Returns true if <code>aNode</code> is a child of this node.  If
      * <code>aNode</code> is null, this method returns false.
      *
+     * @param   aNode the node to determinate whether it is a child
      * @return  true if <code>aNode</code> is a child of this node; false if
      *                  <code>aNode</code> is null
      */
@@ -906,6 +911,7 @@ public class DefaultMutableTreeNode implements Cloneable,
      * <code>aChild</code> and is O(n) where n is the number of children; to
      * traverse the entire array of children, use an enumeration instead.
      *
+     * @param           aChild the child node to look for next child after it
      * @see             #children
      * @exception       IllegalArgumentException if <code>aChild</code> is
      *                                  null or is not a child of this node
@@ -938,6 +944,7 @@ public class DefaultMutableTreeNode implements Cloneable,
      * performs a linear search of this node's children for <code>aChild</code>
      * and is O(n) where n is the number of children.
      *
+     * @param           aChild the child node to look for previous child before it
      * @exception       IllegalArgumentException if <code>aChild</code> is null
      *                                          or is not a child of this node
      * @return  the child of this node that immediately precedes

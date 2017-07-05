@@ -96,6 +96,8 @@ public class UndoableEditSupport {
      * Called only from <code>postEdit</code> and <code>endUpdate</code>. Calls
      * <code>undoableEditHappened</code> in all listeners. No synchronization
      * is performed here, since the two calling methods are synchronized.
+     *
+     * @param e edit to be verified
      */
     protected void _postEdit(UndoableEdit e) {
         UndoableEditEvent ev = new UndoableEditEvent(realSource, e);
@@ -110,6 +112,8 @@ public class UndoableEditSupport {
      * DEADLOCK WARNING: Calling this method may call
      * <code>undoableEditHappened</code> in all listeners.
      * It is unwise to call this method from one of its listeners.
+     *
+     * @param e edit to be posted
      */
     public synchronized void postEdit(UndoableEdit e) {
         if (updateLevel == 0) {
@@ -142,6 +146,8 @@ public class UndoableEditSupport {
     /**
      * Called only from <code>beginUpdate</code>.
      * Exposed here for subclasses' use.
+     *
+     * @return new created {@code CompoundEdit} object
      */
     protected CompoundEdit createCompoundEdit() {
         return new CompoundEdit();

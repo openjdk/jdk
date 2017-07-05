@@ -26,7 +26,6 @@
 #define SHARE_VM_OPTO_REGMASK_HPP
 
 #include "code/vmreg.hpp"
-#include "libadt/port.hpp"
 #include "opto/optoreg.hpp"
 #ifdef TARGET_ARCH_MODEL_x86_32
 # include "adfiles/adGlobals_x86_32.hpp"
@@ -68,9 +67,9 @@
 
 //-------------Non-zero bit search methods used by RegMask---------------------
 // Find lowest 1, or return 32 if empty
-int find_lowest_bit( uint32 mask );
+int find_lowest_bit( uint32_t mask );
 // Find highest 1, or return 32 if empty
-int find_hihghest_bit( uint32 mask );
+int find_hihghest_bit( uint32_t mask );
 
 //------------------------------RegMask----------------------------------------
 // The ADL file describes how to print the machine-specific registers, as well

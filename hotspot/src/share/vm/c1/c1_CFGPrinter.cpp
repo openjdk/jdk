@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class CFGPrinterOutput : public CHeapObj<mtCompiler> {
 
   void inc_indent();
   void dec_indent();
-  void print(const char* format, ...);
+  void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
   void print_begin(const char* tag);
   void print_end(const char* tag);
 
@@ -161,7 +161,7 @@ void CFGPrinterOutput::print_compilation() {
 
   print("name \"%s\"", method_name(_compilation->method(), true));
   print("method \"%s\"", method_name(_compilation->method()));
-  print("date "INT64_FORMAT, os::javaTimeMillis());
+  print("date "INT64_FORMAT, (int64_t) os::javaTimeMillis());
 
   print_end("compilation");
 }

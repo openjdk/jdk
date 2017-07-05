@@ -31,10 +31,6 @@ SUNWprivate_1.1 {
 
 		Java_sun_awt_image_JPEGImageDecoder_initIDs;
 		Java_sun_awt_image_JPEGImageDecoder_readImage;
-		Java_sun_awt_image_codec_JPEGImageDecoderImpl_initDecoder;
-		Java_sun_awt_image_codec_JPEGImageDecoderImpl_readJPEGStream;
-		Java_sun_awt_image_codec_JPEGImageEncoderImpl_initEncoder;
-		Java_sun_awt_image_codec_JPEGImageEncoderImpl_writeJPEGStream;
 
                 Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_initReaderIDs;
                 Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_initJPEGImageReader;

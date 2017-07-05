@@ -32,24 +32,28 @@
  *   was very slow (VisualMust debugger people reported this).
  */
 
+import java.awt.GraphicsEnvironment;
 import javax.swing.*;
 
 public class JFrameCreateTime {
     public static void main(String[] args) {
         JFrame f;
         long start, end;
+        if (GraphicsEnvironment.isHeadless()) {
+            System.out.println("JFrameCreateTime test was skipped due to headless mode");
+        } else {
+            start = System.currentTimeMillis();
+            f = new JFrame("JFrame");
+            end = System.currentTimeMillis();
 
-        start = System.currentTimeMillis();
-        f = new JFrame("JFrame");
-        end = System.currentTimeMillis();
+            System.out.println("JFrame first creation took " + (end - start) + " ms");
 
-        System.out.println("JFrame first creation took " + (end - start) + " ms");
+            start = System.currentTimeMillis();
+            f = new JFrame("JFrame");
+            end = System.currentTimeMillis();
 
-        start = System.currentTimeMillis();
-        f = new JFrame("JFrame");
-        end = System.currentTimeMillis();
-
-        System.out.println("JFrame second creation took " + (end - start) + " ms");
-        System.exit(0);
+            System.out.println("JFrame second creation took " + (end - start) + " ms");
+            System.exit(0);
+        }
     }
 }
