@@ -30,6 +30,7 @@
  * This module also contains SASL mechanisms including DIGEST-MD5,
  * CRAM-MD5, and NTLM.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.security.sasl {

@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Defines the JMX graphical tool, jconsole, for monitoring and managing
+ * a running application.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.jconsole {
     requires transitive java.desktop;
     requires transitive java.management;

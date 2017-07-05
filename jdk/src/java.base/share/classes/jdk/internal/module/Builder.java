@@ -145,9 +145,6 @@ final class Builder {
     Set<Provides> provides;
     Version version;
     String mainClass;
-    String osName;
-    String osArch;
-    String osVersion;
 
     Builder(String name) {
         this.name = name;
@@ -248,30 +245,6 @@ final class Builder {
     }
 
     /**
-     * Sets the OS name.
-     */
-    public Builder osName(String name) {
-        this.osName = name;
-        return this;
-    }
-
-    /**
-     * Sets the OS arch.
-     */
-    public Builder osArch(String arch) {
-        this.osArch = arch;
-        return this;
-    }
-
-    /**
-     * Sets the OS version.
-     */
-    public Builder osVersion(String version) {
-        this.osVersion = version;
-        return this;
-    }
-
-    /**
      * Returns an immutable set of the module modifiers derived from the flags.
      */
     private Set<ModuleDescriptor.Modifier> modifiers() {
@@ -305,9 +278,6 @@ final class Builder {
                                         provides,
                                         packages,
                                         mainClass,
-                                        osName,
-                                        osArch,
-                                        osVersion,
                                         hashCode);
     }
 }

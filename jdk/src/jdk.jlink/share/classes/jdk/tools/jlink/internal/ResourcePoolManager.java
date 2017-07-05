@@ -35,7 +35,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.internal.jimage.decompressor.CompressedResourceHeader;
-import jdk.internal.loader.ResourceHelper;
+import jdk.internal.module.Resources;
+import jdk.internal.module.ModuleInfo;
+import jdk.internal.module.ModuleInfo.Attributes;
+import jdk.internal.module.ModuleTarget;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -47,8 +50,8 @@ import jdk.tools.jlink.plugin.PluginException;
  * A manager for pool of resources.
  */
 public class ResourcePoolManager {
-    // utility to read ModuleDescriptor of the given ResourcePoolModule
-    static ModuleDescriptor readModuleDescriptor(ResourcePoolModule mod) {
+    // utility to read Module Attributes of the given ResourcePoolModule
+    static Attributes readModuleAttributes(ResourcePoolModule mod) {
         String p = "/" + mod.name() + "/module-info.class";
         Optional<ResourcePoolEntry> content = mod.findEntry(p);
         if (!content.isPresent()) {
@@ -57,9 +60,9 @@ public class ResourcePoolManager {
         }
         ByteBuffer bb = ByteBuffer.wrap(content.get().contentBytes());
         try {
-            return ModuleDescriptor.read(bb);
+            return ModuleInfo.read(bb, null);
         } catch (RuntimeException re) {
-            throw new RuntimeException("module descriptor cannot be read for " + mod.name(), re);
+            throw new RuntimeException("module info cannot be read for " + mod.name(), re);
         }
     }
 
@@ -68,7 +71,7 @@ public class ResourcePoolManager {
      */
     public static boolean isNamedPackageResource(String path) {
         return (path.endsWith(".class") && !path.endsWith("module-info.class")) ||
-                !ResourceHelper.isSimpleResource(path);
+                Resources.canEncapsulate(path);
     }
 
     class ResourcePoolModuleImpl implements ResourcePoolModule {
@@ -76,6 +79,8 @@ public class ResourcePoolManager {
         final Map<String, ResourcePoolEntry> moduleContent = new LinkedHashMap<>();
         // lazily initialized
         private ModuleDescriptor descriptor;
+        private ModuleTarget target;
+
         final String name;
 
         private ResourcePoolModuleImpl(String name) {
@@ -100,10 +105,28 @@ public class ResourcePoolManager {
 
         @Override
         public ModuleDescriptor descriptor() {
-            if (descriptor == null) {
-                descriptor = readModuleDescriptor(this);
-            }
+            initModuleAttributes();
             return descriptor;
+        }
+
+        @Override
+        public String osName() {
+            initModuleAttributes();
+            return target != null? target.osName() : null;
+        }
+
+        @Override
+        public String osArch() {
+            initModuleAttributes();
+            return target != null? target.osArch() : null;
+        }
+
+        private void initModuleAttributes() {
+            if (this.descriptor == null) {
+                Attributes attr = readModuleAttributes(this);
+                this.descriptor = attr.descriptor();
+                this.target = attr.target();
+            }
         }
 
         @Override

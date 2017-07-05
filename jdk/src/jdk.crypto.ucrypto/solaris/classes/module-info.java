@@ -26,6 +26,7 @@
 /**
  * The OracleUCrypto security provider.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.crypto.ucrypto {

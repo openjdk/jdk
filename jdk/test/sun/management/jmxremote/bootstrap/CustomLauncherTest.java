@@ -40,12 +40,16 @@ import jdk.testlibrary.ProcessTools;
 /**
  * @test
  * @bug 6434402 8004926
+ * @author Jaroslav Bachorik
+ *
  * @library /lib/testlibrary
- * @modules jdk.management.agent/jdk.internal.agent
+ * @modules java.management
+ *          jdk.attach
+ *          jdk.management.agent/jdk.internal.agent
+ *
  * @build jdk.testlibrary.*
  * @build TestManager TestApplication CustomLauncherTest
  * @run main/othervm CustomLauncherTest
- * @author Jaroslav Bachorik
  */
 public class CustomLauncherTest {
     private static final  String TEST_CLASSPATH = System.getProperty("test.class.path");
