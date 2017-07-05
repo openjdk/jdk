@@ -55,7 +55,6 @@ GENSRC_JAVA_BASE += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
 # copied to zh_HK locale.
 $(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
     $(addprefix $(JDK_TOPDIR)/src/java.base/share/classes/, \
-        sun/misc/resources/Messages_zh_TW.java \
         sun/security/util/AuthResources_zh_TW.java \
         sun/security/util/Resources_zh_TW.java)))
 
