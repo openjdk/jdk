@@ -24,6 +24,7 @@
 #ifndef SHARE_VM_MEMORY_METASPACE_SHARED_HPP
 #define SHARE_VM_MEMORY_METASPACE_SHARED_HPP
 
+#include "classfile/compactHashtable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/virtualspace.hpp"
@@ -45,12 +46,21 @@
 
 class FileMapInfo;
 
+class MetaspaceSharedStats VALUE_OBJ_CLASS_SPEC {
+public:
+  MetaspaceSharedStats() {
+    memset(this, 0, sizeof(*this));
+  }
+  CompactHashtableStats symbol;
+};
+
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
 
   // CDS support
   static ReservedSpace* _shared_rs;
   static int _max_alignment;
+  static MetaspaceSharedStats _stats;
   static bool _link_classes_made_progress;
   static bool _check_classes_made_progress;
   static bool _has_error_classes;
@@ -122,6 +132,10 @@ class MetaspaceShared : AllStatic {
                                       char** md_top, char* md_end,
                                       char** mc_top, char* mc_end);
   static void serialize(SerializeClosure* sc);
+
+  static MetaspaceSharedStats* stats() {
+    return &_stats;
+  }
 
   // JVM/TI RedefineClasses() support:
   // Remap the shared readonly space to shared readwrite, private if
