@@ -74,6 +74,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
 LIR_Assembler::LIR_Assembler(Compilation* c):
    _compilation(c)
  , _masm(c->masm())
+ , _bs(Universe::heap()->barrier_set())
  , _frame_map(c->frame_map())
  , _current_block(NULL)
  , _pending_non_safepoint(NULL)

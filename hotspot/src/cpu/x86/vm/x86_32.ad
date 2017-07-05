@@ -4810,6 +4810,16 @@ operand immL0() %{
   interface(CONST_INTER);
 %}
 
+// Long Immediate zero
+operand immL_M1() %{
+  predicate( n->get_long() == -1L );
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long immediate from 0 to 127.
 // Used for a shorter form of long mul by 10.
 operand immL_127() %{
@@ -8621,6 +8631,18 @@ instruct xorI_eReg(eRegI dst, eRegI src, eFlagsReg cr) %{
   ins_pipe( ialu_reg_reg );
 %}
 
+// Xor Register with Immediate -1
+instruct xorI_eReg_im1(eRegI dst, immI_M1 imm) %{
+  match(Set dst (XorI dst imm));  
+
+  size(2);
+  format %{ "NOT    $dst" %}  
+  ins_encode %{
+     __ notl($dst$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
 // Xor Register with Immediate
 instruct xorI_eReg_imm(eRegI dst, immI src, eFlagsReg cr) %{
   match(Set dst (XorI dst src));
@@ -8936,6 +8958,18 @@ instruct xorl_eReg(eRegL dst, eRegL src, eFlagsReg cr) %{
   opcode(0x33,0x33);
   ins_encode( RegReg_Lo( dst, src), RegReg_Hi( dst, src) );
   ins_pipe( ialu_reg_reg_long );
+%}
+
+// Xor Long Register with Immediate -1
+instruct xorl_eReg_im1(eRegL dst, immL_M1 imm) %{
+  match(Set dst (XorL dst imm));  
+  format %{ "NOT    $dst.lo\n\t"
+            "NOT    $dst.hi" %}
+  ins_encode %{
+     __ notl($dst$$Register);
+     __ notl(HIGH_FROM_LOW($dst$$Register));
+  %}
+  ins_pipe( ialu_reg_long );
 %}
 
 // Xor Long Register with Immediate

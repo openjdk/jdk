@@ -184,7 +184,7 @@ BlockOffsetArray::set_remainder_to_point_to_start_incl(size_t start_card, size_t
     "Offset card has an unexpected value");
   size_t start_card_for_region = start_card;
   u_char offset = max_jubyte;
-  for (int i = 0; i <= N_powers-1; i++) {
+  for (int i = 0; i < N_powers; i++) {
     // -1 so that the the card with the actual offset is counted.  Another -1
     // so that the reach ends in this region and not at the start
     // of the next.
