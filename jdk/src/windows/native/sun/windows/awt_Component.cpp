@@ -3464,6 +3464,21 @@ UINT AwtComponent::WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers)
     return java_awt_event_KeyEvent_VK_UNDEFINED;
 }
 
+BOOL AwtComponent::IsNavigationKey(UINT wkey) {
+    switch (wkey) {
+      case VK_END:
+      case VK_PRIOR:  // PageUp
+      case VK_NEXT:  // PageDown
+      case VK_HOME:
+      case VK_LEFT:
+      case VK_UP:
+      case VK_RIGHT:
+      case VK_DOWN:
+          return TRUE;
+    }
+    return FALSE;
+}
+
 // determine if a key is a numpad key (distinguishes the numpad
 // arrow keys from the non-numpad arrow keys, for example).
 BOOL AwtComponent::IsNumPadKey(UINT vkey, BOOL extended)
@@ -3563,7 +3578,10 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops)
         // fix for 4623376,4737679,4501485,4740906,4708221 (4173679/4122715)
         // Here we try to resolve a conflict with ::ToAsciiEx's translating
         // ALT+number key combinations. kdm@sarc.spb.su
-        keyboardState[VK_MENU] &= ~KEY_STATE_DOWN;
+        // yan: Do it for navigation keys only, otherwise some AltGr deadkeys fail.
+        if( IsNavigationKey(wkey) ) {
+            keyboardState[VK_MENU] &= ~KEY_STATE_DOWN;
+        }
 
         if (ctrlIsDown)
         {

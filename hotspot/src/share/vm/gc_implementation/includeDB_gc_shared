@@ -54,6 +54,7 @@ isGCActiveMark.hpp                      parallelScavengeHeap.hpp
 markSweep.inline.hpp                    psParallelCompact.hpp
 
 mutableNUMASpace.cpp                    mutableNUMASpace.hpp
+mutableNUMASpace.cpp                    oop.inline.hpp
 mutableNUMASpace.cpp                    sharedHeap.hpp
 mutableNUMASpace.cpp                    thread_<os_family>.inline.hpp
 
