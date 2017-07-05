@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 /*
- * $Id: SerializerMessages_de.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 04:56:10 gmolloy Exp $
+ * $Id: SerializerMessages_de.java /st_wptg_1.9.0.0.0jdk/2 2016/04/13 06:43:54 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
@@ -203,79 +203,79 @@ public class SerializerMessages_de extends ListResourceBundle {
                 "Warnung: Die Codierung \"{0}\" wird nicht von der Java-Laufzeit unterst\u00FCtzt." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
-             "Der Parameter ''{0}'' wird nicht erkannt."},
+             "Parameter \"{0}\" nicht erkannt."},
 
              {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-             "Der Parameter ''{0}'' wird erkannt, der angeforderte Wert kann jedoch nicht festgelegt werden."},
+             "Parameter \"{0}\" wird erkannt, aber der angeforderte Wert kann nicht festgelegt werden."},
 
              {MsgKey.ER_STRING_TOO_LONG,
-             "Die Ergebniszeichenfolge ist zu lang f\u00fcr eine DOM-Zeichenfolge: ''{0}''."},
+             "Die resultierende Zeichenfolge ist zu lang, um in eine DOMString zupassen: \"{0}\"."},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "Der Werttyp f\u00fcr diesen Parameternamen ist nicht kompatibel mit dem erwarteten Werttyp."},
+             "Der Werttyp f\u00FCr diesen Parameternamen ist nicht mit dem erwarteten Werttyp kompatibel. "},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
-             "Das Ausgabeziel f\u00fcr die zu schreibenden Daten war leer."},
+             "Ausgabeziel, in das Daten geschrieben werden sollen, war nicht angegeben."},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "Eine nicht unterst\u00fctzte Codierung wurde festgestellt."},
+             "Nicht unterst\u00FCtzte Codierung gefunden."},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
-             "Der Knoten konnte nicht serialisiert werden."},
+             "Knoten konnte nicht serialisiert werden."},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "Der Abschnitt CDATA enth\u00e4lt mindestens eine Beendigungsmarkierung ']]>'."},
+             "Der CDATA-Abschnitt enth\u00E4lt mindestens eine Endmarkierung \"]]>\"."},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "Eine Instanz des Pr\u00fcfprogramms f\u00fcr korrekte Formatierung konnte nicht erstellt werden.  F\u00fcr den korrekt formatierten Parameter wurde der Wert 'True' festgelegt, die Pr\u00fcfung auf korrekte Formatierung kann jedoch nicht durchgef\u00fchrt werden."
+                 "Eine Instanz der Pr\u00FCfung f\u00FCr ordnungsgem\u00E4\u00DFe Formatierung konnte nicht erstellt werden. Der ordnungsgem\u00E4\u00DF formatierte Parameter wurde auf \"True\" gesetzt, aber die Pr\u00FCfung auf ordnungsgem\u00E4\u00DFe Formatierung kann nicht ausgef\u00FChrt werden."
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
-                 "Der Knoten ''{0}'' enth\u00e4lt ung\u00fcltige XML-Zeichen."
+                 "Der Knoten \"{0}\" enth\u00E4lt ung\u00FCltige XML-Zeichen."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-                 "Im Kommentar wurde ein ung\u00fcltiges XML-Zeichen (Unicode: 0x{0}) gefunden."
+                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde im Kommentar gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-                 "In der Verarbeitungsanweisung wurde ein ung\u00fcltiges XML-Zeichen (Unicode: 0x{0}) gefunden."
+                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde in den Verarbeitungsanweisungsdaten gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "Im Inhalt von CDATASection wurde ein ung\u00fcltiges XML-Zeichen (Unicode: 0x{0}) gefunden."
+                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde im Inhalt des CDATA-Abschnitts gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "Ein ung\u00fcltiges XML-Zeichen  (Unicode: 0x{0}) wurde im Inhalt der Zeichendaten des Knotens gefunden."
+                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde in den Zeichendaten des Knotens gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-                 "Ung\u00fcltige XML-Zeichen wurden gefunden in {0} im Knoten ''{1}''."
+                 "Ung\u00FCltige(s) XML-Zeichen wurde(n) im {0}-Knoten mit Namen \"{1}\" gefunden."
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "Die Zeichenfolge \"--\" ist innerhalb von Kommentaren nicht zul\u00e4ssig."
+                 "Zeichenfolge \"--\" ist in Kommentaren nicht zul\u00E4ssig."
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
-                 "Der Wert des Attributs \"{1}\" mit einem Elementtyp \"{0}\" darf nicht das Zeichen ''<'' enthalten."
+                 "Wert des Attributs \"{1}\", das mit Elementtyp \"{0}\" verkn\u00FCpft ist, darf nicht das Zeichen \"<\" enthalten."
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "Der syntaktisch nicht analysierte Entit\u00e4tenverweis \"&{0};\" ist nicht zul\u00e4ssig."
+                 "Nicht geparste Entityreferenz \"&{0};\" ist nicht zul\u00E4ssig."
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "Der externe Entit\u00e4tenverweis \"&{0};\" ist in einem Attributwert nicht zul\u00e4ssig."
+                 "Externe Entityreferenz \"&{0};\" ist in einem Attributwert nicht zul\u00E4ssig."
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
-                 "Das Pr\u00e4fix \"{0}\" kann nicht an den Namensbereich \"{1}\" gebunden werden."
+                 "Pr\u00E4fix \"{0}\" kann nicht an den Namespace \"{1}\" gebunden werden."
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-                 "Der lokale Name von Element \"{0}\" ist nicht angegeben."
+                 "Der lokale Name des Elements \"{0}\" ist nicht angegeben."
              },
 
              {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
@@ -283,11 +283,15 @@ public class SerializerMessages_de extends ListResourceBundle {
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "Der Ersatztext des Entit\u00e4tenknotens \"{0}\" enth\u00e4lt einen Elementknoten \"{1}\" mit einem nicht gebundenen Pr\u00e4fix \"{2}\"."
+                 "Der Ersatztext des Entityknotens \"{0}\" enth\u00E4lt einen Elementknoten \"{1}\" mit nicht gebundenem Pr\u00E4fix \"{2}\"."
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "Der Ersatztext des Entit\u00e4tenknotens \"{0}\" enth\u00e4lt einen Attributknoten \"{1}\" mit einem nicht gebundenen Pr\u00e4fix \"{2}\"."
+                 "Der Ersatztext des Entityknotens \"{0}\" enth\u00E4lt einen Attributknoten \"{1}\" mit nicht gebundenem Pr\u00E4fix \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Beim Schreiben der internen Teilmenge ist ein Fehler aufgetreten."
              },
 
         };

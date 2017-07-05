@@ -30,6 +30,7 @@ import sun.hotspot.WhiteBox;
  * @bug 8146984 8147087
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires os.maxMemory > 3G
+ * @requires vm.opt.MaxGCPauseMillis == "null"
  *
  * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @modules java.base/jdk.internal.misc

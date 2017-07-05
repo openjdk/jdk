@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import sun.java2d.SunGraphics2D;
 
 /**
  * @test
+ * @key headful
  * @bug 8043869 8075244 8078082 8145173
  * @summary Tests the HiDPI splash screen support for windows and MAC
  * @modules java.desktop/sun.java2d
@@ -103,6 +104,16 @@ public class MultiResolutionSplashTest {
         Rectangle splashBounds = splashScreen.getBounds();
         int screenX = (int) splashBounds.getCenterX();
         int screenY = (int) splashBounds.getCenterY();
+
+        if (splashBounds.width != IMAGE_WIDTH) {
+            throw new RuntimeException(
+                    "SplashScreen#getBounds has wrong width");
+        }
+
+        if (splashBounds.height != IMAGE_HEIGHT) {
+            throw new RuntimeException(
+                    "SplashScreen#getBounds has wrong height");
+        }
 
         Robot robot = new Robot();
         Color splashScreenColor = robot.getPixelColor(screenX, screenY);

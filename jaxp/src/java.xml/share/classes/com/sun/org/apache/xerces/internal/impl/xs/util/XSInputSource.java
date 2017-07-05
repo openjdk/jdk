@@ -36,13 +36,13 @@ public final class XSInputSource extends XMLInputSource {
     private XSObject[] fComponents;
 
     public XSInputSource(SchemaGrammar[] grammars) {
-        super(null, null, null);
+        super(null, null, null, false);
         fGrammars = grammars;
         fComponents = null;
     }
 
     public XSInputSource(XSObject[] component) {
-        super(null, null, null);
+        super(null, null, null, false);
         fGrammars = null;
         fComponents = component;
     }

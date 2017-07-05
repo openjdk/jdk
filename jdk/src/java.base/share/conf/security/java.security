@@ -33,9 +33,9 @@
 #
 # Each provider must implement a subclass of the Provider class.
 # To register a provider in this master security properties file,
-# specify the Provider subclass name and priority in the format
+# specify the provider and priority in the format
 #
-#    security.provider.<n>=<className>
+#    security.provider.<n>=<provName | className>
 #
 # This declares a provider, and specifies its preference
 # order n. The preference order is the order in which providers are
@@ -43,20 +43,15 @@
 # requested). The order is 1-based; 1 is the most preferred, followed
 # by 2, and so on.
 #
+# <provName> must specify the name of the Provider as passed to its super
+# class java.security.Provider constructor. This is for providers loaded
+# through the ServiceLoader mechanism.
+#
 # <className> must specify the subclass of the Provider class whose
 # constructor sets the values of various properties that are required
 # for the Java Security API to look up the algorithms or other
-# facilities implemented by the provider.
-#
-# There must be at least one provider specification in java.security.
-# There is a default provider that comes standard with the JDK. It
-# is called the "SUN" provider, and its Provider subclass
-# named Sun appears in the sun.security.provider package. Thus, the
-# "SUN" provider is registered via the following:
-#
-#    security.provider.1=sun.security.provider.Sun
-#
-# (The number 1 is used for the default provider.)
+# facilities implemented by the provider. This is for providers loaded
+# through classpath.
 #
 # Note: Providers can be dynamically registered instead by calls to
 # either the addProvider or insertProviderAt method in the Security

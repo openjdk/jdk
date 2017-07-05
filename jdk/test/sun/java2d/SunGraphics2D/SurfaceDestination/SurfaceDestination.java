@@ -41,6 +41,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
 /**
  * @test
+ * @key headful
  * @bug 8134603
  * @modules java.desktop/sun.java2d
  * @run main/othervm SurfaceDestination

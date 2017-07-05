@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,9 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     // current buffer size in bytes
     protected int bufferSize;
 
-    protected boolean running = false;
-    private boolean started = false;
-    private boolean active = false;
-
+    private volatile boolean running;
+    private volatile boolean started;
+    private volatile boolean active;
 
     /**
      * Constructs a new AbstractLine.

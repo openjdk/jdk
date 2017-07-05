@@ -24,8 +24,6 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,7 +35,6 @@ import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.ImagePluginStack;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
-import jdk.tools.jlink.internal.Utils;
 
 /**
  *
@@ -103,33 +100,26 @@ public final class DefaultCompressPlugin implements TransformerPlugin, ResourceP
 
     @Override
     public void configure(Map<String, String> config) {
-        try {
-            String filter = config.get(FILTER);
-            String[] patterns = filter == null ? null
-                    : Utils.listParser.apply(filter);
-            ResourceFilter resFilter = new ResourceFilter(patterns);
-            String level = config.get(NAME);
-            if (level != null) {
-                switch (level) {
-                    case LEVEL_0:
-                        ss = new StringSharingPlugin(resFilter);
-                        break;
-                    case LEVEL_1:
-                        zip = new ZipPlugin(resFilter);
-                        break;
-                    case LEVEL_2:
-                        ss = new StringSharingPlugin(resFilter);
-                        zip = new ZipPlugin(resFilter);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid compression level " + level);
-                }
-            } else {
-                ss = new StringSharingPlugin(resFilter);
-                zip = new ZipPlugin(resFilter);
+        ResourceFilter resFilter = ResourceFilter.includeFilter(config.get(FILTER));
+        String level = config.get(NAME);
+        if (level != null) {
+            switch (level) {
+                case LEVEL_0:
+                    ss = new StringSharingPlugin(resFilter);
+                    break;
+                case LEVEL_1:
+                    zip = new ZipPlugin(resFilter);
+                    break;
+                case LEVEL_2:
+                    ss = new StringSharingPlugin(resFilter);
+                    zip = new ZipPlugin(resFilter);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid compression level " + level);
             }
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+        } else {
+            ss = new StringSharingPlugin(resFilter);
+            zip = new ZipPlugin(resFilter);
         }
     }
 }

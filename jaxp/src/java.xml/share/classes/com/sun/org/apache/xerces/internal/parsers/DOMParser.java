@@ -175,7 +175,7 @@ public class DOMParser
     public void parse(String systemId) throws SAXException, IOException {
 
         // parse document
-        XMLInputSource source = new XMLInputSource(null, systemId, null);
+        XMLInputSource source = new XMLInputSource(null, systemId, null, false);
         try {
             parse(source);
         }
@@ -235,7 +235,7 @@ public class DOMParser
             XMLInputSource xmlInputSource =
                 new XMLInputSource(inputSource.getPublicId(),
                                    inputSource.getSystemId(),
-                                   null);
+                                   null, false);
             xmlInputSource.setByteStream(inputSource.getByteStream());
             xmlInputSource.setCharacterStream(inputSource.getCharacterStream());
             xmlInputSource.setEncoding(inputSource.getEncoding());
