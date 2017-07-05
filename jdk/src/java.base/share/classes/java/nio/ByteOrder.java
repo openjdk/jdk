@@ -75,9 +75,9 @@ public final class ByteOrder {
     /**
      * Constructs a string describing this object.
      *
-     * <p> This method returns the string <tt>"BIG_ENDIAN"</tt> for {@link
-     * #BIG_ENDIAN} and <tt>"LITTLE_ENDIAN"</tt> for {@link #LITTLE_ENDIAN}.
-     * </p>
+     * <p> This method returns the string
+     * {@code "BIG_ENDIAN"} for {@link #BIG_ENDIAN} and
+     * {@code "LITTLE_ENDIAN"} for {@link #LITTLE_ENDIAN}.
      *
      * @return  The specified string
      */

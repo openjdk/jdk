@@ -357,15 +357,6 @@ public abstract class EmbeddedFrame extends Frame
     public void synthesizeWindowActivation(boolean doActivate) {}
 
     /**
-     * Requests the focus to the embedder.
-     *
-     * @return {@code true} if focus request was successful, and {@code false} otherwise.
-     */
-    public boolean requestFocusToEmbedder() {
-        return false;
-    }
-
-    /**
      * Moves this embedded frame to a new location. The top-left corner of
      * the new location is specified by the <code>x</code> and <code>y</code>
      * parameters relative to the native parent component.

@@ -102,7 +102,7 @@ public abstract class TimerTask implements Runnable {
      * will never run again.  (If the task is running when this call occurs,
      * the task will run to completion, but will never run again.)
      *
-     * <p>Note that calling this method from within the <tt>run</tt> method of
+     * <p>Note that calling this method from within the {@code run} method of
      * a repeating timer task absolutely guarantees that the timer task will
      * not run again.
      *
@@ -114,7 +114,7 @@ public abstract class TimerTask implements Runnable {
      *         Returns false if the task was scheduled for one-time execution
      *         and has already run, or if the task was never scheduled, or if
      *         the task was already cancelled.  (Loosely speaking, this method
-     *         returns <tt>true</tt> if it prevents one or more scheduled
+     *         returns {@code true} if it prevents one or more scheduled
      *         executions from taking place.)
      */
     public boolean cancel() {

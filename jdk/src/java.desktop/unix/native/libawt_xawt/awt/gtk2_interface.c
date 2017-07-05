@@ -576,6 +576,7 @@ void gtk2_file_chooser_load()
     fp_gtk_file_chooser_get_filenames = dl_symbol(
             "gtk_file_chooser_get_filenames");
     fp_gtk_g_slist_length = dl_symbol("g_slist_length");
+    fp_gdk_x11_drawable_get_xid = dl_symbol("gdk_x11_drawable_get_xid");
 }
 
 gboolean gtk2_load(JNIEnv *env)
@@ -904,6 +905,10 @@ gboolean gtk2_load(JNIEnv *env)
 
         // Init the thread system to use GLib in a thread-safe mode
         (*env)->CallStaticVoidMethod(env, clazz, mid_lock);
+        if ((*env)->ExceptionCheck(env)) {
+            AWT_UNLOCK();
+            return FALSE;
+        }
 
         // Calling g_thread_init() multiple times leads to crash on GLib < 2.24
         // We can use g_thread_get_initialized () but it is available only for
@@ -922,7 +927,22 @@ gboolean gtk2_load(JNIEnv *env)
             //called before gtk_init() or gtk_init_check()
             fp_gdk_threads_init();
         }
+        jthrowable pendExcpn = NULL;
+        // Exception raised during mid_getAndSetInitializationNeededFlag
+        // call is saved and error handling is done
+        // after unlock method is called
+        if ((pendExcpn = (*env)->ExceptionOccurred(env)) != NULL) {
+            (*env)->ExceptionClear(env);
+        }
         (*env)->CallStaticVoidMethod(env, clazz, mid_unlock);
+        if (pendExcpn != NULL) {
+            (*env)->Throw(env, pendExcpn);
+        }
+        // check if any exception occured during mid_unlock call
+        if ((*env)->ExceptionCheck(env)) {
+            AWT_UNLOCK();
+            return FALSE;
+        }
     }
     result = (*fp_gtk_init_check)(NULL, NULL);
 

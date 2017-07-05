@@ -58,7 +58,7 @@ performance, or use of this material.
 
 #ifndef _HPKEYSYM_H
 
-#define _HPKEYSYM
+#define _HPKEYSYM_H
 
 #define hpXK_ClearLine          0x1000FF6F
 #define hpXK_InsertLine         0x1000FF70

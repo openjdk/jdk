@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,13 @@ package com.sun.media.sound;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-
-
 
 /**
  * WAVE file reader.
@@ -50,170 +44,12 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public final class WaveFileReader extends SunFileReader {
 
-    private static final int MAX_READ_LENGTH = 12;
-
-    /**
-     * Obtains the audio file format of the input stream provided.  The stream must
-     * point to valid audio file data.  In general, audio file providers may
-     * need to read some data from the stream before determining whether they
-     * support it.  These parsers must
-     * be able to mark the stream, read enough data to determine whether they
-     * support the stream, and, if not, reset the stream's read pointer to its original
-     * position.  If the input stream does not support this, this method may fail
-     * with an IOException.
-     * @param stream the input stream from which file format information should be
-     * extracted
-     * @return an <code>AudioFileFormat</code> object describing the audio file format
-     * @throws UnsupportedAudioFileException if the stream does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     * @see InputStream#markSupported
-     * @see InputStream#mark
-     */
-    public AudioFileFormat getAudioFileFormat(InputStream stream) throws UnsupportedAudioFileException, IOException {
-        // fix for 4489272: AudioSystem.getAudioFileFormat() fails for InputStream, but works for URL
-        AudioFileFormat aff = getFMT(stream, true);
-        // the following is not strictly necessary - but was implemented like that in 1.3.0 - 1.4.1
-        // so I leave it as it was. May remove this for 1.5.0
-        stream.reset();
-        return aff;
-    }
-
-
-    /**
-     * Obtains the audio file format of the URL provided.  The URL must
-     * point to valid audio file data.
-     * @param url the URL from which file format information should be
-     * extracted
-     * @return an <code>AudioFileFormat</code> object describing the audio file format
-     * @throws UnsupportedAudioFileException if the URL does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioFileFormat getAudioFileFormat(URL url) throws UnsupportedAudioFileException, IOException {
-        InputStream urlStream = url.openStream(); // throws IOException
-        AudioFileFormat fileFormat = null;
-        try {
-            fileFormat = getFMT(urlStream, false);
-        } finally {
-            urlStream.close();
-        }
-        return fileFormat;
-    }
-
-
-    /**
-     * Obtains the audio file format of the File provided.  The File must
-     * point to valid audio file data.
-     * @param file the File from which file format information should be
-     * extracted
-     * @return an <code>AudioFileFormat</code> object describing the audio file format
-     * @throws UnsupportedAudioFileException if the File does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioFileFormat getAudioFileFormat(File file) throws UnsupportedAudioFileException, IOException {
-        AudioFileFormat fileFormat = null;
-        FileInputStream fis = new FileInputStream(file);       // throws IOException
-        // part of fix for 4325421
-        try {
-            fileFormat = getFMT(fis, false);
-        } finally {
-            fis.close();
-        }
-
-        return fileFormat;
-    }
-
-
-    /**
-     * Obtains an audio stream from the input stream provided.  The stream must
-     * point to valid audio file data.  In general, audio file providers may
-     * need to read some data from the stream before determining whether they
-     * support it.  These parsers must
-     * be able to mark the stream, read enough data to determine whether they
-     * support the stream, and, if not, reset the stream's read pointer to its original
-     * position.  If the input stream does not support this, this method may fail
-     * with an IOException.
-     * @param stream the input stream from which the <code>AudioInputStream</code> should be
-     * constructed
-     * @return an <code>AudioInputStream</code> object based on the audio file data contained
-     * in the input stream.
-     * @throws UnsupportedAudioFileException if the stream does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     * @see InputStream#markSupported
-     * @see InputStream#mark
-     */
-    public AudioInputStream getAudioInputStream(InputStream stream) throws UnsupportedAudioFileException, IOException {
-        // getFMT leaves the input stream at the beginning of the audio data
-        AudioFileFormat fileFormat = getFMT(stream, true); // throws UnsupportedAudioFileException, IOException
-
-        // we've got everything, and the stream is at the
-        // beginning of the audio data, so return an AudioInputStream.
-        return new AudioInputStream(stream, fileFormat.getFormat(), fileFormat.getFrameLength());
-    }
-
-
-    /**
-     * Obtains an audio stream from the URL provided.  The URL must
-     * point to valid audio file data.
-     * @param url the URL for which the <code>AudioInputStream</code> should be
-     * constructed
-     * @return an <code>AudioInputStream</code> object based on the audio file data pointed
-     * to by the URL
-     * @throws UnsupportedAudioFileException if the URL does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioInputStream getAudioInputStream(URL url) throws UnsupportedAudioFileException, IOException {
-        InputStream urlStream = url.openStream();  // throws IOException
-        AudioFileFormat fileFormat = null;
-        try {
-            fileFormat = getFMT(urlStream, false);
-        } finally {
-            if (fileFormat == null) {
-                urlStream.close();
-            }
-        }
-        return new AudioInputStream(urlStream, fileFormat.getFormat(), fileFormat.getFrameLength());
-    }
-
-
-    /**
-     * Obtains an audio stream from the File provided.  The File must
-     * point to valid audio file data.
-     * @param file the File for which the <code>AudioInputStream</code> should be
-     * constructed
-     * @return an <code>AudioInputStream</code> object based on the audio file data pointed
-     * to by the File
-     * @throws UnsupportedAudioFileException if the File does not point to valid audio
-     * file data recognized by the system
-     * @throws IOException if an I/O exception occurs
-     */
-    public AudioInputStream getAudioInputStream(File file) throws UnsupportedAudioFileException, IOException {
-        FileInputStream fis = new FileInputStream(file); // throws IOException
-        AudioFileFormat fileFormat = null;
-        // part of fix for 4325421
-        try {
-            fileFormat = getFMT(fis, false);
-        } finally {
-            if (fileFormat == null) {
-                fis.close();
-            }
-        }
-        return new AudioInputStream(fis, fileFormat.getFormat(), fileFormat.getFrameLength());
-    }
-
-
-    //--------------------------------------------------------------------
-
-
-    private AudioFileFormat getFMT(InputStream stream, boolean doReset) throws UnsupportedAudioFileException, IOException {
+    @Override
+    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
+            throws UnsupportedAudioFileException, IOException {
 
         // assumes sream is rewound
 
-        int bytesRead;
         int nread = 0;
         int fmt;
         int length = 0;
@@ -226,10 +62,6 @@ public final class WaveFileReader extends SunFileReader {
         AudioFormat.Encoding encoding = null;
 
         DataInputStream dis = new DataInputStream( stream );
-
-        if (doReset) {
-            dis.mark(MAX_READ_LENGTH);
-        }
 
         int magic = dis.readInt();
         int fileLength = rllong(dis);
@@ -244,9 +76,6 @@ public final class WaveFileReader extends SunFileReader {
 
         if ((magic != WaveFileFormat.RIFF_MAGIC) || (waveMagic != WaveFileFormat.WAVE_MAGIC)) {
             // not WAVE, throw UnsupportedAudioFileException
-            if (doReset) {
-                dis.reset();
-            }
             throw new UnsupportedAudioFileException("not a WAVE file");
         }
 

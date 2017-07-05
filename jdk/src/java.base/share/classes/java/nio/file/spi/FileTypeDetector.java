@@ -62,7 +62,7 @@ public abstract class FileTypeDetector {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}<tt>("fileTypeDetector")</tt>
+     *          {@link RuntimePermission}{@code ("fileTypeDetector")}
      */
     protected FileTypeDetector() {
         this(checkPermission());

@@ -35,30 +35,30 @@ import java.util.stream.StreamSupport;
  * collections allow duplicate elements and others do not.  Some are ordered
  * and others unordered.  The JDK does not provide any <i>direct</i>
  * implementations of this interface: it provides implementations of more
- * specific subinterfaces like <tt>Set</tt> and <tt>List</tt>.  This interface
+ * specific subinterfaces like {@code Set} and {@code List}.  This interface
  * is typically used to pass collections around and manipulate them where
  * maximum generality is desired.
  *
  * <p><i>Bags</i> or <i>multisets</i> (unordered collections that may contain
  * duplicate elements) should implement this interface directly.
  *
- * <p>All general-purpose <tt>Collection</tt> implementation classes (which
- * typically implement <tt>Collection</tt> indirectly through one of its
+ * <p>All general-purpose {@code Collection} implementation classes (which
+ * typically implement {@code Collection} indirectly through one of its
  * subinterfaces) should provide two "standard" constructors: a void (no
  * arguments) constructor, which creates an empty collection, and a
- * constructor with a single argument of type <tt>Collection</tt>, which
+ * constructor with a single argument of type {@code Collection}, which
  * creates a new collection with the same elements as its argument.  In
  * effect, the latter constructor allows the user to copy any collection,
  * producing an equivalent collection of the desired implementation type.
  * There is no way to enforce this convention (as interfaces cannot contain
- * constructors) but all of the general-purpose <tt>Collection</tt>
+ * constructors) but all of the general-purpose {@code Collection}
  * implementations in the Java platform libraries comply.
  *
  * <p>The "destructive" methods contained in this interface, that is, the
  * methods that modify the collection on which they operate, are specified to
- * throw <tt>UnsupportedOperationException</tt> if this collection does not
+ * throw {@code UnsupportedOperationException} if this collection does not
  * support the operation.  If this is the case, these methods may, but are not
- * required to, throw an <tt>UnsupportedOperationException</tt> if the
+ * required to, throw an {@code UnsupportedOperationException} if the
  * invocation would have no effect on the collection.  For example, invoking
  * the {@link #addAll(Collection)} method on an unmodifiable collection may,
  * but is not required to, throw the exception if the collection to be added
@@ -69,7 +69,7 @@ import java.util.stream.StreamSupport;
  * they may contain.</a>  For example, some implementations prohibit null elements,
  * and some have restrictions on the types of their elements.  Attempting to
  * add an ineligible element throws an unchecked exception, typically
- * <tt>NullPointerException</tt> or <tt>ClassCastException</tt>.  Attempting
+ * {@code NullPointerException} or {@code ClassCastException}.  Attempting
  * to query the presence of an ineligible element may throw an exception,
  * or it may simply return false; some implementations will exhibit the former
  * behavior and some will exhibit the latter.  More generally, attempting an
@@ -90,13 +90,13 @@ import java.util.stream.StreamSupport;
  * <p>Many methods in Collections Framework interfaces are defined in
  * terms of the {@link Object#equals(Object) equals} method.  For example,
  * the specification for the {@link #contains(Object) contains(Object o)}
- * method says: "returns <tt>true</tt> if and only if this collection
- * contains at least one element <tt>e</tt> such that
- * <tt>(o==null ? e==null : o.equals(e))</tt>."  This specification should
- * <i>not</i> be construed to imply that invoking <tt>Collection.contains</tt>
- * with a non-null argument <tt>o</tt> will cause <tt>o.equals(e)</tt> to be
- * invoked for any element <tt>e</tt>.  Implementations are free to implement
- * optimizations whereby the <tt>equals</tt> invocation is avoided, for
+ * method says: "returns {@code true} if and only if this collection
+ * contains at least one element {@code e} such that
+ * {@code (o==null ? e==null : o.equals(e))}."  This specification should
+ * <i>not</i> be construed to imply that invoking {@code Collection.contains}
+ * with a non-null argument {@code o} will cause {@code o.equals(e)} to be
+ * invoked for any element {@code e}.  Implementations are free to implement
+ * optimizations whereby the {@code equals} invocation is avoided, for
  * example, by first comparing the hash codes of the two elements.  (The
  * {@link Object#hashCode()} specification guarantees that two objects with
  * unequal hash codes cannot be equal.)  More generally, implementations of
@@ -146,28 +146,28 @@ public interface Collection<E> extends Iterable<E> {
 
     /**
      * Returns the number of elements in this collection.  If this collection
-     * contains more than <tt>Integer.MAX_VALUE</tt> elements, returns
-     * <tt>Integer.MAX_VALUE</tt>.
+     * contains more than {@code Integer.MAX_VALUE} elements, returns
+     * {@code Integer.MAX_VALUE}.
      *
      * @return the number of elements in this collection
      */
     int size();
 
     /**
-     * Returns <tt>true</tt> if this collection contains no elements.
+     * Returns {@code true} if this collection contains no elements.
      *
-     * @return <tt>true</tt> if this collection contains no elements
+     * @return {@code true} if this collection contains no elements
      */
     boolean isEmpty();
 
     /**
-     * Returns <tt>true</tt> if this collection contains the specified element.
-     * More formally, returns <tt>true</tt> if and only if this collection
-     * contains at least one element <tt>e</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
+     * Returns {@code true} if this collection contains the specified element.
+     * More formally, returns {@code true} if and only if this collection
+     * contains at least one element {@code e} such that
+     * {@code Objects.equals(o, e)}.
      *
      * @param o element whose presence in this collection is to be tested
-     * @return <tt>true</tt> if this collection contains the specified
+     * @return {@code true} if this collection contains the specified
      *         element
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this collection
@@ -184,7 +184,7 @@ public interface Collection<E> extends Iterable<E> {
      * (unless this collection is an instance of some class that provides a
      * guarantee).
      *
-     * @return an <tt>Iterator</tt> over the elements in this collection
+     * @return an {@code Iterator} over the elements in this collection
      */
     Iterator<E> iterator();
 
@@ -216,9 +216,9 @@ public interface Collection<E> extends Iterable<E> {
      * <p>If this collection fits in the specified array with room to spare
      * (i.e., the array has more elements than this collection), the element
      * in the array immediately following the end of the collection is set to
-     * <tt>null</tt>.  (This is useful in determining the length of this
+     * {@code null}.  (This is useful in determining the length of this
      * collection <i>only</i> if the caller knows that this collection does
-     * not contain any <tt>null</tt> elements.)
+     * not contain any {@code null} elements.)
      *
      * <p>If this collection makes any guarantees as to what order its elements
      * are returned by its iterator, this method must return the elements in
@@ -229,15 +229,15 @@ public interface Collection<E> extends Iterable<E> {
      * precise control over the runtime type of the output array, and may,
      * under certain circumstances, be used to save allocation costs.
      *
-     * <p>Suppose <tt>x</tt> is a collection known to contain only strings.
+     * <p>Suppose {@code x} is a collection known to contain only strings.
      * The following code can be used to dump the collection into a newly
-     * allocated array of <tt>String</tt>:
+     * allocated array of {@code String}:
      *
      * <pre>
      *     String[] y = x.toArray(new String[0]);</pre>
      *
-     * Note that <tt>toArray(new Object[0])</tt> is identical in function to
-     * <tt>toArray()</tt>.
+     * Note that {@code toArray(new Object[0])} is identical in function to
+     * {@code toArray()}.
      *
      * @param <T> the runtime type of the array to contain the collection
      * @param a the array into which the elements of this collection are to be
@@ -255,27 +255,27 @@ public interface Collection<E> extends Iterable<E> {
 
     /**
      * Ensures that this collection contains the specified element (optional
-     * operation).  Returns <tt>true</tt> if this collection changed as a
-     * result of the call.  (Returns <tt>false</tt> if this collection does
+     * operation).  Returns {@code true} if this collection changed as a
+     * result of the call.  (Returns {@code false} if this collection does
      * not permit duplicates and already contains the specified element.)<p>
      *
      * Collections that support this operation may place limitations on what
      * elements may be added to this collection.  In particular, some
-     * collections will refuse to add <tt>null</tt> elements, and others will
+     * collections will refuse to add {@code null} elements, and others will
      * impose restrictions on the type of elements that may be added.
      * Collection classes should clearly specify in their documentation any
      * restrictions on what elements may be added.<p>
      *
      * If a collection refuses to add a particular element for any reason
      * other than that it already contains the element, it <i>must</i> throw
-     * an exception (rather than returning <tt>false</tt>).  This preserves
+     * an exception (rather than returning {@code false}).  This preserves
      * the invariant that a collection always contains the specified element
      * after this call returns.
      *
      * @param e element whose presence in this collection is to be ensured
-     * @return <tt>true</tt> if this collection changed as a result of the
+     * @return {@code true} if this collection changed as a result of the
      *         call
-     * @throws UnsupportedOperationException if the <tt>add</tt> operation
+     * @throws UnsupportedOperationException if the {@code add} operation
      *         is not supported by this collection
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this collection
@@ -291,21 +291,21 @@ public interface Collection<E> extends Iterable<E> {
     /**
      * Removes a single instance of the specified element from this
      * collection, if it is present (optional operation).  More formally,
-     * removes an element <tt>e</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>, if
+     * removes an element {@code e} such that
+     * {@code Objects.equals(o, e)}, if
      * this collection contains one or more such elements.  Returns
-     * <tt>true</tt> if this collection contained the specified element (or
+     * {@code true} if this collection contained the specified element (or
      * equivalently, if this collection changed as a result of the call).
      *
      * @param o element to be removed from this collection, if present
-     * @return <tt>true</tt> if an element was removed as a result of this call
+     * @return {@code true} if an element was removed as a result of this call
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this collection
      *         (<a href="#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
      *         (<a href="#optional-restrictions">optional</a>)
-     * @throws UnsupportedOperationException if the <tt>remove</tt> operation
+     * @throws UnsupportedOperationException if the {@code remove} operation
      *         is not supported by this collection
      */
     boolean remove(Object o);
@@ -314,11 +314,11 @@ public interface Collection<E> extends Iterable<E> {
     // Bulk Operations
 
     /**
-     * Returns <tt>true</tt> if this collection contains all of the elements
+     * Returns {@code true} if this collection contains all of the elements
      * in the specified collection.
      *
      * @param  c collection to be checked for containment in this collection
-     * @return <tt>true</tt> if this collection contains all of the elements
+     * @return {@code true} if this collection contains all of the elements
      *         in the specified collection
      * @throws ClassCastException if the types of one or more elements
      *         in the specified collection are incompatible with this
@@ -342,8 +342,8 @@ public interface Collection<E> extends Iterable<E> {
      * nonempty.)
      *
      * @param c collection containing elements to be added to this collection
-     * @return <tt>true</tt> if this collection changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>addAll</tt> operation
+     * @return {@code true} if this collection changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code addAll} operation
      *         is not supported by this collection
      * @throws ClassCastException if the class of an element of the specified
      *         collection prevents it from being added to this collection
@@ -366,9 +366,9 @@ public interface Collection<E> extends Iterable<E> {
      * collection.
      *
      * @param c collection containing elements to be removed from this collection
-     * @return <tt>true</tt> if this collection changed as a result of the
+     * @return {@code true} if this collection changed as a result of the
      *         call
-     * @throws UnsupportedOperationException if the <tt>removeAll</tt> method
+     * @throws UnsupportedOperationException if the {@code removeAll} method
      *         is not supported by this collection
      * @throws ClassCastException if the types of one or more elements
      *         in this collection are incompatible with the specified
@@ -426,8 +426,8 @@ public interface Collection<E> extends Iterable<E> {
      * specified collection.
      *
      * @param c collection containing elements to be retained in this collection
-     * @return <tt>true</tt> if this collection changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>retainAll</tt> operation
+     * @return {@code true} if this collection changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code retainAll} operation
      *         is not supported by this collection
      * @throws ClassCastException if the types of one or more elements
      *         in this collection are incompatible with the specified
@@ -447,7 +447,7 @@ public interface Collection<E> extends Iterable<E> {
      * Removes all of the elements from this collection (optional operation).
      * The collection will be empty after this method returns.
      *
-     * @throws UnsupportedOperationException if the <tt>clear</tt> operation
+     * @throws UnsupportedOperationException if the {@code clear} operation
      *         is not supported by this collection
      */
     void clear();
@@ -458,30 +458,30 @@ public interface Collection<E> extends Iterable<E> {
     /**
      * Compares the specified object with this collection for equality. <p>
      *
-     * While the <tt>Collection</tt> interface adds no stipulations to the
-     * general contract for the <tt>Object.equals</tt>, programmers who
-     * implement the <tt>Collection</tt> interface "directly" (in other words,
-     * create a class that is a <tt>Collection</tt> but is not a <tt>Set</tt>
-     * or a <tt>List</tt>) must exercise care if they choose to override the
-     * <tt>Object.equals</tt>.  It is not necessary to do so, and the simplest
-     * course of action is to rely on <tt>Object</tt>'s implementation, but
+     * While the {@code Collection} interface adds no stipulations to the
+     * general contract for the {@code Object.equals}, programmers who
+     * implement the {@code Collection} interface "directly" (in other words,
+     * create a class that is a {@code Collection} but is not a {@code Set}
+     * or a {@code List}) must exercise care if they choose to override the
+     * {@code Object.equals}.  It is not necessary to do so, and the simplest
+     * course of action is to rely on {@code Object}'s implementation, but
      * the implementor may wish to implement a "value comparison" in place of
-     * the default "reference comparison."  (The <tt>List</tt> and
-     * <tt>Set</tt> interfaces mandate such value comparisons.)<p>
+     * the default "reference comparison."  (The {@code List} and
+     * {@code Set} interfaces mandate such value comparisons.)<p>
      *
-     * The general contract for the <tt>Object.equals</tt> method states that
-     * equals must be symmetric (in other words, <tt>a.equals(b)</tt> if and
-     * only if <tt>b.equals(a)</tt>).  The contracts for <tt>List.equals</tt>
-     * and <tt>Set.equals</tt> state that lists are only equal to other lists,
-     * and sets to other sets.  Thus, a custom <tt>equals</tt> method for a
-     * collection class that implements neither the <tt>List</tt> nor
-     * <tt>Set</tt> interface must return <tt>false</tt> when this collection
+     * The general contract for the {@code Object.equals} method states that
+     * equals must be symmetric (in other words, {@code a.equals(b)} if and
+     * only if {@code b.equals(a)}).  The contracts for {@code List.equals}
+     * and {@code Set.equals} state that lists are only equal to other lists,
+     * and sets to other sets.  Thus, a custom {@code equals} method for a
+     * collection class that implements neither the {@code List} nor
+     * {@code Set} interface must return {@code false} when this collection
      * is compared to any list or set.  (By the same logic, it is not possible
-     * to write a class that correctly implements both the <tt>Set</tt> and
-     * <tt>List</tt> interfaces.)
+     * to write a class that correctly implements both the {@code Set} and
+     * {@code List} interfaces.)
      *
      * @param o object to be compared for equality with this collection
-     * @return <tt>true</tt> if the specified object is equal to this
+     * @return {@code true} if the specified object is equal to this
      * collection
      *
      * @see Object#equals(Object)
@@ -492,13 +492,13 @@ public interface Collection<E> extends Iterable<E> {
 
     /**
      * Returns the hash code value for this collection.  While the
-     * <tt>Collection</tt> interface adds no stipulations to the general
-     * contract for the <tt>Object.hashCode</tt> method, programmers should
-     * take note that any class that overrides the <tt>Object.equals</tt>
-     * method must also override the <tt>Object.hashCode</tt> method in order
-     * to satisfy the general contract for the <tt>Object.hashCode</tt> method.
-     * In particular, <tt>c1.equals(c2)</tt> implies that
-     * <tt>c1.hashCode()==c2.hashCode()</tt>.
+     * {@code Collection} interface adds no stipulations to the general
+     * contract for the {@code Object.hashCode} method, programmers should
+     * take note that any class that overrides the {@code Object.equals}
+     * method must also override the {@code Object.hashCode} method in order
+     * to satisfy the general contract for the {@code Object.hashCode} method.
+     * In particular, {@code c1.equals(c2)} implies that
+     * {@code c1.hashCode()==c2.hashCode()}.
      *
      * @return the hash code value for this collection
      *

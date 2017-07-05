@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * after, respectively, invoking an I/O operation that might block
  * indefinitely.  In order to ensure that the {@link #end end} method is always
  * invoked, these methods should be used within a
- * <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block:
+ * {@code try}&nbsp;...&nbsp;{@code finally} block:
  *
  * <blockquote><pre>
  * try {
@@ -197,7 +197,7 @@ public abstract class AbstractSelector
      * Marks the beginning of an I/O operation that might block indefinitely.
      *
      * <p> This method should be invoked in tandem with the {@link #end end}
-     * method, using a <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block as
+     * method, using a {@code try}&nbsp;...&nbsp;{@code finally} block as
      * shown <a href="#be">above</a>, in order to implement interruption for
      * this selector.
      *
@@ -223,7 +223,7 @@ public abstract class AbstractSelector
      * Marks the end of an I/O operation that might block indefinitely.
      *
      * <p> This method should be invoked in tandem with the {@link #begin begin}
-     * method, using a <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block as
+     * method, using a {@code try}&nbsp;...&nbsp;{@code finally} block as
      * shown <a href="#be">above</a>, in order to implement interruption for
      * this selector.  </p>
      */

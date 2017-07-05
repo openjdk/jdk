@@ -109,9 +109,6 @@ public class CLDRDisplayNamesTest {
             fmtROOT.parse("Thu Nov 13 04:35:51 AKST 2008");
             fmtUS.parse("Thu Nov 13 04:35:51 AKST 2008");
             fmtUK.parse("Thu Nov 13 04:35:51 GMT-09:00 2008");
-            String dateString = new Date().toString();
-            System.out.println("Date: "+dateString);
-            System.out.println("Parsed Date: "+new Date(Date.parse(dateString)).toString());
         } catch (ParseException pe) {
             System.err.println(pe);
             errors++;

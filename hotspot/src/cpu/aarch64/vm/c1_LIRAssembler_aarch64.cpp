@@ -1996,13 +1996,21 @@ void LIR_Assembler::align_call(LIR_Code code) {  }
 
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  __ trampoline_call(Address(op->addr(), rtype));
+  address call = __ trampoline_call(Address(op->addr(), rtype));
+  if (call == NULL) {
+    bailout("trampoline stub overflow");
+    return;
+  }
   add_call_info(code_offset(), op->info());
 }
 
 
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
-  __ ic_call(op->addr());
+  address call = __ ic_call(op->addr());
+  if (call == NULL) {
+    bailout("trampoline stub overflow");
+    return;
+  }
   add_call_info(code_offset(), op->info());
 }
 
