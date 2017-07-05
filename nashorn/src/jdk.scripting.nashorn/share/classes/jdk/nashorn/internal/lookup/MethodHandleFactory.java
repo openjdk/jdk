@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.lookup;
 
+import static jdk.nashorn.internal.runtime.JSType.isString;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandle;
@@ -36,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
-import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -343,7 +344,7 @@ public final class MethodHandleFactory {
                 final Object d = data[i];
                 if (d == null) {
                     sb.append("<null> ");
-                } else if (d instanceof String || d instanceof ConsString) {
+                } else if (isString(d)) {
                     sb.append(d.toString());
                     sb.append(' ');
                 } else if (d.getClass().isArray()) {

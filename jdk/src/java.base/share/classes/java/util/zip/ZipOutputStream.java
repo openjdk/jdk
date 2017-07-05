@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     private static class XEntry {
         final ZipEntry entry;
         final long offset;
-        long dostime;    // last modification time in msdos format
         public XEntry(ZipEntry entry, long offset) {
             this.entry = entry;
             this.offset = offset;
@@ -192,7 +191,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         if (current != null) {
             closeEntry();       // close previous entry
         }
-        if (e.time == -1) {
+        if (e.xdostime == -1) {
             // by default, do NOT use extended timestamps in extra
             // data, for now.
             e.setTime(System.currentTimeMillis());
@@ -389,18 +388,12 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         boolean hasZip64 = false;
         int elen = getExtraLen(e.extra);
 
-        // keep a copy of dostime for writeCEN(), otherwise the tz
-        // sensitive local time entries in loc and cen might be
-        // different if the default tz get changed during writeLOC()
-        // and writeCEN()
-        xentry.dostime = javaToDosTime(e.time);
-
         writeInt(LOCSIG);               // LOC header signature
         if ((flag & 8) == 8) {
             writeShort(version(e));     // version needed to extract
             writeShort(flag);           // general purpose bit flag
             writeShort(e.method);       // compression method
-            writeInt(xentry.dostime);   // last modification time
+            writeInt(e.xdostime);       // last modification time
             // store size, uncompressed size, and crc-32 in data descriptor
             // immediately following compressed entry data
             writeInt(0);
@@ -415,7 +408,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
             }
             writeShort(flag);           // general purpose bit flag
             writeShort(e.method);       // compression method
-            writeInt(xentry.dostime);   // last modification time
+            writeInt(e.xdostime);       // last modification time
             writeInt(e.crc);            // crc-32
             if (hasZip64) {
                 writeInt(ZIP64_MAGICVAL);
@@ -522,9 +515,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         }
         writeShort(flag);           // general purpose bit flag
         writeShort(e.method);       // compression method
-        // use the copy in xentry, which has been converted
-        // from e.time in writeLOC()
-        writeInt(xentry.dostime);   // last modification time
+        writeInt(e.xdostime);       // last modification time
         writeInt(e.crc);            // crc-32
         writeInt(csize);            // compressed size
         writeInt(size);             // uncompressed size

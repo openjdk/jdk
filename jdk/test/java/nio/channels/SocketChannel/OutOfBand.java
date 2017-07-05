@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ public class OutOfBand {
             test1(sc1, sc2);
             test2(sc1, sc2);
             test3(sc1, sc2);
-            test4(sc1);
-
         } finally {
             if (sc1 != null) sc1.close();
             if (sc2 != null) sc2.close();
@@ -174,18 +172,5 @@ public class OutOfBand {
             throw new RuntimeException("Unexpected reply");
 
         thr.join();
-    }
-
-    static void test4(SocketChannel sc) throws IOException {
-        boolean blocking = sc.isBlocking();
-        sc.configureBlocking(false);
-        try {
-            sc.socket().sendUrgentData(0);
-            throw new RuntimeException("IllegalBlockingModeException expected");
-        } catch (IllegalBlockingModeException x) {
-            // expected
-        } finally {
-            sc.configureBlocking(blocking);
-        }
     }
 }

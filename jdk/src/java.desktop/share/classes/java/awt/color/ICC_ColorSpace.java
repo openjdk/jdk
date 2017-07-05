@@ -546,7 +546,7 @@ public class ICC_ColorSpace extends ColorSpace {
     public float getMinValue(int component) {
         if ((component < 0) || (component > this.getNumComponents() - 1)) {
             throw new IllegalArgumentException(
-                "Component index out of range: + component");
+                "Component index out of range: " + component);
         }
         return minVal[component];
     }
@@ -571,7 +571,7 @@ public class ICC_ColorSpace extends ColorSpace {
     public float getMaxValue(int component) {
         if ((component < 0) || (component > this.getNumComponents() - 1)) {
             throw new IllegalArgumentException(
-                "Component index out of range: + component");
+                "Component index out of range: " + component);
         }
         return maxVal[component];
     }

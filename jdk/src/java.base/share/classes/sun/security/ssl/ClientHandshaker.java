@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,10 @@ import static sun.security.ssl.CipherSuite.KeyExchange.*;
  * @author David Brownell
  */
 final class ClientHandshaker extends Handshaker {
+
+    // constants for subject alt names of type DNS and IP
+    private final static int ALTNAME_DNS = 2;
+    private final static int ALTNAME_IP  = 7;
 
     // the server's public key from its certificate.
     private PublicKey serverKey;
@@ -818,6 +822,11 @@ final class ClientHandshaker extends Handshaker {
                 } else {
                     warningSE(Alerts.alert_no_certificate);
                 }
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println(
+                        "Warning: no suitable certificate found - " +
+                        "continuing without client authentication");
+                }
             }
 
             //
@@ -1497,20 +1506,49 @@ final class ClientHandshaker extends Handshaker {
             return true;
         }
 
-        // check the iPAddress field in subjectAltName extension
-        Object thisIPAddress = getSubjectAltName(thisCert, 7);  // 7: iPAddress
-        Object prevIPAddress = getSubjectAltName(prevCert, 7);
-        if (thisIPAddress != null && prevIPAddress!= null) {
-            // only allow the exactly match
-            return Objects.equals(thisIPAddress, prevIPAddress);
+        // check subject alternative names
+        Collection<List<?>> thisSubjectAltNames = null;
+        try {
+            thisSubjectAltNames = thisCert.getSubjectAlternativeNames();
+        } catch (CertificateParsingException cpe) {
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println(
+                        "Attempt to obtain subjectAltNames extension failed!");
+            }
         }
 
-        // check the dNSName field in subjectAltName extension
-        Object thisDNSName = getSubjectAltName(thisCert, 2);    // 2: dNSName
-        Object prevDNSName = getSubjectAltName(prevCert, 2);
-        if (thisDNSName != null && prevDNSName!= null) {
-            // only allow the exactly match
-            return Objects.equals(thisDNSName, prevDNSName);
+        Collection<List<?>> prevSubjectAltNames = null;
+        try {
+            prevSubjectAltNames = prevCert.getSubjectAlternativeNames();
+        } catch (CertificateParsingException cpe) {
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println(
+                        "Attempt to obtain subjectAltNames extension failed!");
+            }
+        }
+
+        if ((thisSubjectAltNames != null) && (prevSubjectAltNames != null)) {
+            // check the iPAddress field in subjectAltName extension
+            Collection<String> thisSubAltIPAddrs =
+                        getSubjectAltNames(thisSubjectAltNames, ALTNAME_IP);
+            Collection<String> prevSubAltIPAddrs =
+                        getSubjectAltNames(prevSubjectAltNames, ALTNAME_IP);
+            if ((thisSubAltIPAddrs != null) && (prevSubAltIPAddrs != null) &&
+                (isEquivalent(thisSubAltIPAddrs, prevSubAltIPAddrs))) {
+
+                return true;
+            }
+
+            // check the dNSName field in subjectAltName extension
+            Collection<String> thisSubAltDnsNames =
+                        getSubjectAltNames(thisSubjectAltNames, ALTNAME_DNS);
+            Collection<String> prevSubAltDnsNames =
+                        getSubjectAltNames(prevSubjectAltNames, ALTNAME_DNS);
+            if ((thisSubAltDnsNames != null) && (prevSubAltDnsNames != null) &&
+                (isEquivalent(thisSubAltDnsNames, prevSubAltDnsNames))) {
+
+                return true;
+            }
         }
 
         // check the certificate subject and issuer
@@ -1532,28 +1570,39 @@ final class ClientHandshaker extends Handshaker {
      * Returns the subject alternative name of the specified type in the
      * subjectAltNames extension of a certificate.
      */
-    private static Object getSubjectAltName(X509Certificate cert, int type) {
-        Collection<List<?>> subjectAltNames;
+    private static Collection<String> getSubjectAltNames(
+            Collection<List<?>> subjectAltNames, int type) {
 
-        try {
-            subjectAltNames = cert.getSubjectAlternativeNames();
-        } catch (CertificateParsingException cpe) {
-            if (debug != null && Debug.isOn("handshake")) {
-                System.out.println(
-                        "Attempt to obtain subjectAltNames extension failed!");
-            }
-            return null;
-        }
-
-        if (subjectAltNames != null) {
-            for (List<?> subjectAltName : subjectAltNames) {
-                int subjectAltNameType = (Integer)subjectAltName.get(0);
-                if (subjectAltNameType == type) {
-                    return subjectAltName.get(1);
+        HashSet<String> subAltDnsNames = null;
+        for (List<?> subjectAltName : subjectAltNames) {
+            int subjectAltNameType = (Integer)subjectAltName.get(0);
+            if (subjectAltNameType == type) {
+                String subAltDnsName = (String)subjectAltName.get(1);
+                if ((subAltDnsName != null) && !subAltDnsName.isEmpty()) {
+                    if (subAltDnsNames == null) {
+                        subAltDnsNames =
+                                new HashSet<>(subjectAltNames.size());
+                    }
+                    subAltDnsNames.add(subAltDnsName);
                 }
             }
         }
 
-        return null;
+        return subAltDnsNames;
+    }
+
+    private static boolean isEquivalent(Collection<String> thisSubAltNames,
+            Collection<String> prevSubAltNames) {
+
+        for (String thisSubAltName : thisSubAltNames) {
+            for (String prevSubAltName : prevSubAltNames) {
+                // Only allow the exactly match.  Check no wildcard character.
+                if (thisSubAltName.equalsIgnoreCase(prevSubAltName)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
