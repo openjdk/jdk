@@ -368,9 +368,9 @@ const char *getStrFor(JNIEnv *env, jstring val)
     if (length > CONV_BUFFER_SIZE-1)
     {
         length = CONV_BUFFER_SIZE-1;
-#ifdef INTERNAL_BUILD
+#ifdef DEBUG
         fprintf(stderr, "Note: Detail is too long: %d chars\n", length);
-#endif /* INTERNAL_BUILD */
+#endif /* DEBUG */
     }
 
     (*env)->GetStringUTFRegion(env, val, 0, length, convertionBuffer);
@@ -507,9 +507,9 @@ void update_supported_actions(JNIEnv *env) {
             }
         }
     } else {
-#ifdef INTERNAL_BUILD
+#ifdef DEBUG
         fprintf(stderr, "Cannot load g_vfs_get_supported_uri_schemes\n");
-#endif /* INTERNAL_BUILD */
+#endif /* DEBUG */
     }
 
 }
@@ -522,23 +522,23 @@ gboolean gtk2_show_uri_load(JNIEnv *env) {
      const char *gtk_version = fp_gtk_check_version(2, 14, 0);
      if (gtk_version != NULL) {
          // The gtk_show_uri is available from GTK+ 2.14
-#ifdef INTERNAL_BUILD
+#ifdef DEBUG
          fprintf (stderr, "The version of GTK is %s. "
              "The gtk_show_uri function is supported "
              "since GTK+ 2.14.\n", gtk_version);
-#endif /* INTERNAL_BUILD */
+#endif /* DEBUG */
      } else {
          // Loading symbols only if the GTK version is 2.14 and higher
          fp_gtk_show_uri = dl_symbol("gtk_show_uri");
          const char *dlsym_error = dlerror();
          if (dlsym_error) {
-#ifdef INTERNAL_BUILD
+#ifdef DEBUG
              fprintf (stderr, "Cannot load symbol: %s \n", dlsym_error);
-#endif /* INTERNAL_BUILD */
+#endif /* DEBUG */
          } else if (fp_gtk_show_uri == NULL) {
-#ifdef INTERNAL_BUILD
+#ifdef DEBUG
              fprintf(stderr, "dlsym(gtk_show_uri) returned NULL\n");
-#endif /* INTERNAL_BUILD */
+#endif /* DEBUG */
         } else {
             update_supported_actions(env);
             success = TRUE;

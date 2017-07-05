@@ -44,7 +44,6 @@ import sun.awt.util.ThreadGroupUtils;
 import sun.lwawt.macosx.*;
 
 public final class CFontManager extends SunFontManager {
-    private FontConfigManager fcManager = null;
     private static Hashtable<String, Font2D> genericFonts = new Hashtable<String, Font2D>();
 
     @Override
@@ -230,15 +229,6 @@ public final class CFontManager extends SunFontManager {
         }
         return font2D;
     }
-
-    /*
-    public synchronized FontConfigManager getFontConfigManager() {
-        if (fcManager  == null) {
-            fcManager = new FontConfigManager();
-        }
-        return fcManager;
-    }
-    */
 
     protected void registerFontsInDir(String dirName, boolean useJavaRasterizer, int fontRank, boolean defer, boolean resolveSymLinks) {
         loadNativeDirFonts(dirName);

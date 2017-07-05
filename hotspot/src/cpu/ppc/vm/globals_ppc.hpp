@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,7 +56,7 @@ define_pd_global(bool, RewriteFrequentPairs,  true);
 define_pd_global(bool, UseMembar,             false);
 
 // GC Ergo Flags
-define_pd_global(uintx, CMSYoungGenPerWorker, 16*M);  // Default max size of CMS young gen, per GC worker thread.
+define_pd_global(size_t, CMSYoungGenPerWorker, 16*M);  // Default max size of CMS young gen, per GC worker thread.
 
 define_pd_global(uintx, TypeProfileLevel, 0);
 

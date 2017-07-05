@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_HPP
 #define SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_HPP
 
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/instanceKlass.hpp"
 #include "utilities/macros.hpp"
 

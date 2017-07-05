@@ -32,6 +32,53 @@
 ifndef _MAKEBASE_GMK
 _MAKEBASE_GMK := 1
 
+ifeq ($(wildcard $(SPEC)),)
+  $(error MakeBase.gmk needs SPEC set to a proper spec.gmk)
+endif
+
+
+##############################
+# Functions
+##############################
+
+
+### Functions for timers
+
+# Store the build times in this directory.
+BUILDTIMESDIR=$(OUTPUT_ROOT)/make-support/build-times
+
+# Record starting time for build of a sub repository.
+define RecordStartTime
+	$(MKDIR) -p $(BUILDTIMESDIR)
+	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$(strip $1)
+	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_start_$(strip $1)_human_readable
+endef
+
+# Record ending time and calculate the difference and store it in a
+# easy to read format. Handles builds that cross midnight. Expects
+# that a build will never take 24 hours or more.
+define RecordEndTime
+	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_end_$(strip $1)
+	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_end_$(strip $1)_human_readable
+	$(ECHO) `$(CAT) $(BUILDTIMESDIR)/build_time_start_$(strip $1)` `$(CAT) $(BUILDTIMESDIR)/build_time_end_$(strip $1)` $1 | \
+	    $(NAWK) '{ F=$$7; T=$$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); \
+	    M=int((D-H*3600)/60); S=D-H*3600-M*60; printf("%02d:%02d:%02d %s\n",H,M,S,$$15); }' \
+	    > $(BUILDTIMESDIR)/build_time_diff_$(strip $1)
+endef
+
+# Hook to be called when starting to execute a top-level target
+define TargetEnter
+	$(PRINTF) "## Starting $(patsubst %-only,%,$@)\n"
+	$(call RecordStartTime,$(patsubst %-only,%,$@))
+endef
+
+# Hook to be called when finish executing a top-level target
+define TargetExit
+	$(call RecordEndTime,$(patsubst %-only,%,$@))
+	$(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
+endef
+
 ################################################################################
 # This macro translates $ into \$ to protect the $ from expansion in the shell.
 # To make this macro resilient against already escaped strings, first remove
@@ -341,7 +388,7 @@ define CreateHgTip
 endef
 
 define SetupLogging
-  ifeq ($$(LOG_LEVEL),trace)
+  ifeq ($$(LOG_LEVEL), trace)
     # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
     # For each target executed, will print
     # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
@@ -349,25 +396,25 @@ define SetupLogging
     # (and causing a crash on Cygwin).
     # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
     # Only use time if it's GNU time which supports format and output file.
-    WRAPPER_SHELL:=$$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(SHELL)
-    SHELL=$$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
+    WRAPPER_SHELL := $$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(SHELL)
+    SHELL := $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
   endif
   # Never remove warning messages; this is just for completeness
-  LOG_WARN=
-  ifneq ($$(findstring $$(LOG_LEVEL),info debug trace),)
-    LOG_INFO=
+  LOG_WARN :=
+  ifneq ($$(findstring $$(LOG_LEVEL), info debug trace),)
+    LOG_INFO :=
   else
-    LOG_INFO=> /dev/null
+    LOG_INFO := > /dev/null
   endif
-  ifneq ($$(findstring $$(LOG_LEVEL),debug trace),)
-    LOG_DEBUG=
+  ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+    LOG_DEBUG :=
   else
-    LOG_DEBUG=> /dev/null
+    LOG_DEBUG := > /dev/null
   endif
-  ifneq ($$(findstring $$(LOG_LEVEL),trace),)
-    LOG_TRACE=
+  ifneq ($$(findstring $$(LOG_LEVEL), trace),)
+    LOG_TRACE :=
   else
-    LOG_TRACE=> /dev/null
+    LOG_TRACE := > /dev/null
   endif
 endef
 

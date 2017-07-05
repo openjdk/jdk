@@ -730,7 +730,7 @@ SetJvmEnvironment(int argc, char **argv) {
 static int
 parse_size(const char *s, jlong *result) {
   jlong n = 0;
-  int args_read = sscanf(s, jlong_format_specifier(), &n);
+  int args_read = sscanf(s, JLONG_FORMAT_SPECIFIER, &n);
   if (args_read != 1) {
     return 0;
   }
@@ -798,7 +798,7 @@ AddOption(char *str, void *info)
              * overflow before the JVM startup code can check to make sure the stack
              * is big enough.
              */
-            if (threadStackSize < STACK_SIZE_MINIMUM) {
+            if (threadStackSize < (jlong)STACK_SIZE_MINIMUM) {
                 threadStackSize = STACK_SIZE_MINIMUM;
             }
         }
