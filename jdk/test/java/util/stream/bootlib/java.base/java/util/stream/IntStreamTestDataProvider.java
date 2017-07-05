@@ -136,6 +136,8 @@ public class IntStreamTestDataProvider {
                                             () -> IntStream.range(0, ints.length).spliterator()));
                 spliterators.add(splitDescr("IntStream.intRangeClosed(0,l):" + name,
                                             () -> IntStream.rangeClosed(0, ints.length).spliterator()));
+                spliterators.add(splitDescr("IntStream.iterate(0,x->x<l,x->x+1): " + name,
+                                            () -> IntStream.iterate(0, x -> x < ints.length, x -> x + 1).spliterator()));
                 // Need more!
             }
             spliteratorTestData = spliterators.toArray(new Object[0][]);

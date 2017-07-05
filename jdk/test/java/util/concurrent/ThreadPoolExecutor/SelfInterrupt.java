@@ -25,14 +25,20 @@
  * @test
  * @bug 6576792
  * @summary non-idle worker threads should not be interrupted
+ * @library /lib/testlibrary/
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import jdk.testlibrary.Utils;
 
 public class SelfInterrupt {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
     void test(String[] args) throws Throwable {
         final int n = 100;
         final ThreadPoolExecutor pool =
@@ -58,7 +64,7 @@ public class SelfInterrupt {
                 } catch (Throwable t) { unexpected(t); }}});
         finishLine.await();
         pool.shutdown();
-        check(pool.awaitTermination(1000L, TimeUnit.SECONDS));
+        check(pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
     }
 
     //--------------------- Infrastructure ---------------------------
