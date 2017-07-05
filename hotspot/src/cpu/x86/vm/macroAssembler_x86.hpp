@@ -126,25 +126,6 @@ class MacroAssembler: public Assembler {
     }
   }
 
-#ifndef PRODUCT
-  static void pd_print_patched_instruction(address branch) {
-    const char* s;
-    unsigned char op = branch[0];
-    if (op == 0xE8) {
-      s = "call";
-    } else if (op == 0xE9 || op == 0xEB) {
-      s = "jmp";
-    } else if ((op & 0xF0) == 0x70) {
-      s = "jcc";
-    } else if (op == 0x0F) {
-      s = "jcc";
-    } else {
-      s = "????";
-    }
-    tty->print("%s (unresolved)", s);
-  }
-#endif
-
   // The following 4 methods return the offset of the appropriate move instruction
 
   // Support for fast byte/short loading with zero extension (depending on particular CPU)

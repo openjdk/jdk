@@ -78,6 +78,5 @@ endif
 # and this macro is not used.
 # LINK_LIB.CXX/POST_HOOK += $(STRIP_LIB.CXX/POST_HOOK)
 
-G_SUFFIX =
 SYSDEFS += -DPRODUCT
 VERSION = optimized

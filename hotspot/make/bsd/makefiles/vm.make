@@ -138,11 +138,9 @@ include $(MAKEFILES_DIR)/dtrace.make
 JVM    = jvm
 ifeq ($(OS_VENDOR), Darwin)
   LIBJVM   = lib$(JVM).dylib
-  LIBJVM_G = lib$(JVM)$(G_SUFFIX).dylib
   CFLAGS  += -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE
 else
   LIBJVM   = lib$(JVM).so
-  LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 endif
 
 SPECIAL_PATHS:=adlc c1 gc_implementation opto shark libadt
@@ -314,7 +312,6 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 		       $(LFLAGS_VM) -o $@ $(sort $(LIBJVM.o)) $(LIBS_VM); \
 	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
-	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
 	}
 
 DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)
