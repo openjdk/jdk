@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 4984057
+ * @key randomness
  * @summary Test that monitors can sample a large number of attributes
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean MultiMonitorTest
  * @run build MultiMonitorTest
  * @run main MultiMonitorTest
- * @key randomness
  */
 
 import java.util.*;

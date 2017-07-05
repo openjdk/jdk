@@ -25,6 +25,9 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.IllegalAccessLogger;
+import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -43,6 +46,9 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Module;
 import java.lang.reflect.ReflectPermission;
 import java.nio.ByteOrder;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -191,6 +197,12 @@ public class MethodHandles {
         }
         if ((lookup.lookupModes() & Lookup.MODULE) == 0)
             throw new IllegalAccessException("lookup does not have MODULE lookup mode");
+        if (!callerModule.isNamed() && targetModule.isNamed()) {
+            IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
+            if (logger != null) {
+                logger.logIfOpenedByBackdoor(lookup, targetClass);
+            }
+        }
         return new Lookup(targetClass);
     }
 
@@ -854,6 +866,112 @@ public class MethodHandles {
             if (newModes == oldModes) return this;  // return self if no change
             return new Lookup(lookupClass(), newModes);
         }
+
+        /**
+         * Defines a class to the same class loader and in the same runtime package and
+         * {@linkplain java.security.ProtectionDomain protection domain} as this lookup's
+         * {@linkplain #lookupClass() lookup class}.
+         *
+         * <p> The {@linkplain #lookupModes() lookup modes} for this lookup must include
+         * {@link #PACKAGE PACKAGE} access as default (package) members will be
+         * accessible to the class. The {@code PACKAGE} lookup mode serves to authenticate
+         * that the lookup object was created by a caller in the runtime package (or derived
+         * from a lookup originally created by suitably privileged code to a target class in
+         * the runtime package). The lookup modes cannot include {@link #PRIVATE PRIVATE}
+         * access. A lookup with {@code PRIVATE} access can be downgraded to drop this lookup
+         * mode with the {@linkplain #dropLookupMode(int) dropLookupMode} method. </p>
+         *
+         * <p> The {@code bytes} parameter is the class bytes of a valid class file (as defined
+         * by the <em>The Java Virtual Machine Specification</em>) with a class name in the
+         * same package as the lookup class. </p>
+         *
+         * <p> This method does not run the class initializer. The class initializer may
+         * run at a later time, as detailed in section 12.4 of the <em>The Java Language
+         * Specification</em>. </p>
+         *
+         * <p> If there is a security manager, its {@code checkPermission} method is first called
+         * to check {@code RuntimePermission("defineClass")}. </p>
+         *
+         * @param bytes the class bytes
+         * @return the {@code Class} object for the class
+         * @throws IllegalArgumentException the bytes are for a class in a different package
+         * to the lookup class
+         * @throws IllegalAccessException if this lookup does not have {@code PACKAGE} access
+         * @throws UnsupportedOperationException if the lookup class has {@code PRIVATE} access
+         * @throws LinkageError if the class is malformed ({@code ClassFormatError}), cannot be
+         * verified ({@code VerifyError}), is already defined, or another linkage error occurs
+         * @throws SecurityException if denied by the security manager
+         * @throws NullPointerException if {@code bytes} is {@code null}
+         * @since 9
+         * @spec JPMS
+         * @see Lookup#privateLookupIn
+         * @see Lookup#dropLookupMode
+         * @see ClassLoader#defineClass(String,byte[],int,int,ProtectionDomain)
+         */
+        public Class<?> defineClass(byte[] bytes) throws IllegalAccessException {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+                sm.checkPermission(new RuntimePermission("defineClass"));
+            if (hasPrivateAccess())
+                throw new UnsupportedOperationException("PRIVATE access not supported");
+            if ((lookupModes() & PACKAGE) == 0)
+                throw new IllegalAccessException("Lookup does not have PACKAGE access");
+            assert (lookupModes() & (MODULE|PUBLIC)) != 0;
+
+            // parse class bytes to get class name (in internal form)
+            bytes = bytes.clone();
+            String name;
+            try {
+                ClassReader reader = new ClassReader(bytes);
+                name = reader.getClassName();
+            } catch (RuntimeException e) {
+                // ASM exceptions are poorly specified
+                ClassFormatError cfe = new ClassFormatError();
+                cfe.initCause(e);
+                throw cfe;
+            }
+
+            // get package and class name in binary form
+            String cn, pn;
+            int index = name.lastIndexOf('/');
+            if (index == -1) {
+                cn = name;
+                pn = "";
+            } else {
+                cn = name.replace('/', '.');
+                pn = cn.substring(0, index);
+            }
+            if (!pn.equals(lookupClass.getPackageName())) {
+                throw new IllegalArgumentException("Class not in same package as lookup class");
+            }
+
+            // invoke the class loader's defineClass method
+            ClassLoader loader = lookupClass.getClassLoader();
+            ProtectionDomain pd = (loader != null) ? lookupClassProtectionDomain() : null;
+            String source = "__Lookup_defineClass__";
+            Class<?> clazz = SharedSecrets.getJavaLangAccess().defineClass(loader, cn, bytes, pd, source);
+            assert clazz.getClassLoader() == lookupClass.getClassLoader()
+                    && clazz.getPackageName().equals(lookupClass.getPackageName())
+                    && protectionDomain(clazz) == lookupClassProtectionDomain();
+            return clazz;
+        }
+
+        private ProtectionDomain lookupClassProtectionDomain() {
+            ProtectionDomain pd = cachedProtectionDomain;
+            if (pd == null) {
+                cachedProtectionDomain = pd = protectionDomain(lookupClass);
+            }
+            return pd;
+        }
+
+        private ProtectionDomain protectionDomain(Class<?> clazz) {
+            PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
+            return AccessController.doPrivileged(pa);
+        }
+
+        // cached protection domain
+        private volatile ProtectionDomain cachedProtectionDomain;
+
 
         // Make sure outer class is initialized first.
         static { IMPL_NAMES.getClass(); }
@@ -1948,7 +2066,7 @@ return mh1;
 
         /**
          * Returns {@code true} if this lookup has {@code PRIVATE} access.
-         * @return {@code true} if this lookup has {@code PRIVATE} acesss.
+         * @return {@code true} if this lookup has {@code PRIVATE} access.
          * @since 9
          */
         public boolean hasPrivateAccess() {

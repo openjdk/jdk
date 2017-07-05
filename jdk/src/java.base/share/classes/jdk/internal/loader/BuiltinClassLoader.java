@@ -60,6 +60,7 @@ import java.util.stream.Stream;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModulePatcher.PatchedModuleReader;
 import jdk.internal.module.SystemModules;
+import jdk.internal.module.Resources;
 
 
 /**
@@ -163,6 +164,14 @@ public class BuiltinClassLoader
     }
 
     /**
+     * Returns {@code true} if there is a class path associated with this
+     * class loader.
+     */
+    boolean hasClassPath() {
+        return ucp != null;
+    }
+
+    /**
      * Register a module this this class loader. This has the effect of making
      * the types in the module visible.
      */
@@ -248,17 +257,23 @@ public class BuiltinClassLoader
      */
     @Override
     public URL findResource(String name) {
-        String pn = ResourceHelper.getPackageName(name);
+        String pn = Resources.toPackageName(name);
         LoadedModule module = packageToModule.get(pn);
         if (module != null) {
 
             // resource is in a package of a module defined to this loader
-            if (module.loader() == this
-                && (name.endsWith(".class") || isOpen(module.mref(), pn))) {
+            if (module.loader() == this) {
+                URL url;
                 try {
-                    return findResource(module.name(), name); // checks URL
+                    url = findResource(module.name(), name); // checks URL
                 } catch (IOException ioe) {
                     return null;
+                }
+                if (url != null
+                    && (name.endsWith(".class")
+                        || url.toString().endsWith("/")
+                        || isOpen(module.mref(), pn))) {
+                    return url;
                 }
             }
 
@@ -293,15 +308,17 @@ public class BuiltinClassLoader
     public Enumeration<URL> findResources(String name) throws IOException {
         List<URL> checked = new ArrayList<>();  // list of checked URLs
 
-        String pn = ResourceHelper.getPackageName(name);
+        String pn = Resources.toPackageName(name);
         LoadedModule module = packageToModule.get(pn);
         if (module != null) {
 
             // resource is in a package of a module defined to this loader
-            if (module.loader() == this
-                && (name.endsWith(".class") || isOpen(module.mref(), pn))) {
-                URL url = findResource(module.name(), name);  // checks URL
-                if (url != null) {
+            if (module.loader() == this) {
+                URL url = findResource(module.name(), name); // checks URL
+                if (url != null
+                    && (name.endsWith(".class")
+                        || url.toString().endsWith("/")
+                        || isOpen(module.mref(), pn))) {
                     checked.add(url);
                 }
             }
@@ -351,11 +368,13 @@ public class BuiltinClassLoader
                 new PrivilegedExceptionAction<>() {
                     @Override
                     public List<URL> run() throws IOException {
-                        List<URL> result = new ArrayList<>();
+                        List<URL> result = null;
                         for (ModuleReference mref : nameToModule.values()) {
                             URI u = moduleReaderFor(mref).find(name).orElse(null);
                             if (u != null) {
                                 try {
+                                    if (result == null)
+                                        result = new ArrayList<>();
                                     result.add(u.toURL());
                                 } catch (MalformedURLException |
                                          IllegalArgumentException e) {
@@ -375,7 +394,7 @@ public class BuiltinClassLoader
                 map = new ConcurrentHashMap<>();
                 this.resourceCache = new SoftReference<>(map);
             }
-            if (urls.isEmpty())
+            if (urls == null)
                 urls = Collections.emptyList();
             map.putIfAbsent(name, urls);
         }
@@ -870,14 +889,6 @@ public class BuiltinClassLoader
     }
 
     /**
-     * Returns {@code true} if there is a class path associated with this
-     * class loader.
-     */
-    boolean hasClassPath() {
-        return ucp != null;
-    }
-
-    /**
      * Returns {@code true} if the specified package name is sealed according to
      * the given manifest.
      */
@@ -975,7 +986,7 @@ public class BuiltinClassLoader
      */
     private boolean isOpen(ModuleReference mref, String pn) {
         ModuleDescriptor descriptor = mref.descriptor();
-        if (descriptor.isOpen())
+        if (descriptor.isOpen() || descriptor.isAutomatic())
             return true;
         for (ModuleDescriptor.Opens opens : descriptor.opens()) {
             String source = opens.source();

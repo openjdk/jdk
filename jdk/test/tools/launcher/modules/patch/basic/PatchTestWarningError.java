@@ -179,7 +179,7 @@ public class PatchTestWarningError {
                             "-m", "test/jdk.test.Main", arg)
                 .outputTo(System.out)
                 .errorTo(System.out)
-                .shouldContain("WARNING: Unknown module: DoesNotExist specified in --patch-module")
+                .shouldContain("WARNING: Unknown module: DoesNotExist specified to --patch-module")
                 .getExitValue();
 
         assertTrue(exitValue == 0);

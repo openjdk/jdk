@@ -73,7 +73,7 @@ public interface JavaLangModuleAccess {
     void requires(ModuleDescriptor.Builder builder,
                   Set<Requires.Modifier> ms,
                   String mn,
-                  String compiledVersion);
+                  String rawCompiledVersion);
 
     /**
      * Returns a {@code ModuleDescriptor.Requires} of the given modifiers
@@ -127,9 +127,6 @@ public interface JavaLangModuleAccess {
                                          Set<Provides> provides,
                                          Set<String> packages,
                                          String mainClass,
-                                         String osName,
-                                         String osArch,
-                                         String osVersion,
                                          int hashCode);
 
     /**

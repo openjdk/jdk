@@ -32,12 +32,13 @@
  * @summary Basic Test for MemoryPool.resetPeakUsage()
  * @author  Mandy Chung
  *
- * @library /lib/testlibrary/
- * @modules jdk.management
- * @build jdk.testlibrary.* ResetPeakMemoryUsage MemoryUtil RunUtil
- * @run main ResetPeakMemoryUsage
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
+ * @library /lib/testlibrary/
+ * @modules jdk.management
+ *
+ * @build jdk.testlibrary.* ResetPeakMemoryUsage MemoryUtil RunUtil
+ * @run main ResetPeakMemoryUsage
  */
 
 import java.lang.management.*;

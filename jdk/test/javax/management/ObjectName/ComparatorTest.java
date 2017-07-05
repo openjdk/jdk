@@ -26,7 +26,7 @@
  * @bug 5036680
  * @summary Test the ObjectName.compareTo() method.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ComparatorTest
  * @run build ComparatorTest
  * @run main ComparatorTest

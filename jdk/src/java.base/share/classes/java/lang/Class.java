@@ -64,9 +64,9 @@ import java.util.StringJoiner;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.loader.ResourceHelper;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
@@ -2563,11 +2563,11 @@ public final class Class<T> implements java.io.Serializable,
 
         Module module = getModule();
         if (module.isNamed()) {
-            if (!ResourceHelper.isSimpleResource(name)) {
+            if (Resources.canEncapsulate(name)) {
                 Module caller = Reflection.getCallerClass().getModule();
                 if (caller != module) {
                     Set<String> packages = module.getDescriptor().packages();
-                    String pn = ResourceHelper.getPackageName(name);
+                    String pn = Resources.toPackageName(name);
                     if (packages.contains(pn) && !module.isOpen(pn, caller)) {
                         // resource is in package not open to caller
                         return null;
@@ -2665,11 +2665,11 @@ public final class Class<T> implements java.io.Serializable,
 
         Module module = getModule();
         if (module.isNamed()) {
-            if (!ResourceHelper.isSimpleResource(name)) {
+            if (Resources.canEncapsulate(name)) {
                 Module caller = Reflection.getCallerClass().getModule();
                 if (caller != module) {
                     Set<String> packages = module.getDescriptor().packages();
-                    String pn = ResourceHelper.getPackageName(name);
+                    String pn = Resources.toPackageName(name);
                     if (packages.contains(pn) && !module.isOpen(pn, caller)) {
                         // resource is in package not open to caller
                         return null;
@@ -2771,7 +2771,7 @@ public final class Class<T> implements java.io.Serializable,
          * In all other cases, it requires RuntimePermission("accessDeclaredMembers")
          * permission.
          */
-        final ClassLoader ccl = caller.getClassLoader0();
+        final ClassLoader ccl = ClassLoader.getClassLoader(caller);
         if (which != Member.PUBLIC) {
             final ClassLoader cl = getClassLoader0();
             if (ccl != cl) {
