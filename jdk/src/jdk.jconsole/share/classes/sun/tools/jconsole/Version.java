@@ -30,7 +30,7 @@ import sun.tools.jconsole.Messages;
 
 public class Version {
     private static final String jconsole_version =
-        "@@jconsole_version@@";
+        System.getProperty("java.runtime.version");
 
     public static void print(PrintStream ps) {
         printFullVersion(ps);

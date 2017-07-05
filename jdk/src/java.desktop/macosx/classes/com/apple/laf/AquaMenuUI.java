@@ -148,11 +148,15 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
 
             // In Aqua, we always have a menu delay, regardless of where the menu is.
             if (!(selectedPath.length > 0 && selectedPath[selectedPath.length - 1] == menu.getPopupMenu())) {
-                if (menu.getDelay() == 0) {
-                    appendPath(getPath(), menu.getPopupMenu());
-                } else {
-                    manager.setSelectedPath(getPath());
-                    setupPostTimer(menu);
+                // the condition below prevents from activating menu in other frame
+                if (!menu.isTopLevelMenu() || (selectedPath.length > 0 &&
+                        selectedPath[0] == menu.getParent())) {
+                    if (menu.getDelay() == 0) {
+                        appendPath(getPath(), menu.getPopupMenu());
+                    } else {
+                        manager.setSelectedPath(getPath());
+                        setupPostTimer(menu);
+                    }
                 }
             }
         }

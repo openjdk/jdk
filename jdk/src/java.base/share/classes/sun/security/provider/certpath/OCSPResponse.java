@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -670,6 +670,38 @@ public final class OCSPResponse {
         return signerCert; // set in verify()
     }
 
+    /**
+     * Build a String-Extension map from DER encoded data.
+     * @param derVal A {@code DerValue} object built from a SEQUENCE of
+     *      extensions
+     *
+     * @return A {@code Map} using the OID in string form as the keys.  If no
+     *      extensions are found or an empty SEQUENCE is passed in, then
+     *      an empty {@code Map} will be returned.
+     *
+     * @throws IOException if any decoding errors occur.
+     */
+    private static Map<String, java.security.cert.Extension>
+        parseExtensions(DerValue derVal) throws IOException {
+        DerValue[] extDer = derVal.data.getSequence(3);
+        Map<String, java.security.cert.Extension> extMap =
+                new HashMap<>(extDer.length);
+
+        for (DerValue extDerVal : extDer) {
+            Extension ext = new Extension(extDerVal);
+            // We don't support any extensions yet. Therefore, if it
+            // is critical we must throw an exception because we
+            // don't know how to process it.
+            if (ext.isCritical()) {
+                throw new IOException("Unsupported OCSP critical extension: " +
+                        ext.getExtensionId());
+            }
+            extMap.put(ext.getId(), ext);
+        }
+
+        return extMap;
+    }
+
     /*
      * A class representing a single OCSP response.
      */
@@ -718,7 +750,7 @@ public final class OCSPResponse {
                 }
             } else {
                 revocationTime = null;
-                revocationReason = CRLReason.UNSPECIFIED;
+                revocationReason = null;
                 if (tag == CERT_STATUS_GOOD) {
                     certStatus = CertStatus.GOOD;
                 } else if (tag == CERT_STATUS_UNKNOWN) {
@@ -729,55 +761,59 @@ public final class OCSPResponse {
             }
 
             thisUpdate = tmp.getGeneralizedTime();
-
-            if (tmp.available() == 0)  {
-                // we are done
-                nextUpdate = null;
-            } else {
-                derVal = tmp.getDerValue();
-                tag = (byte)(derVal.tag & 0x1f);
-                if (tag == 0) {
-                    // next update
-                    nextUpdate = derVal.data.getGeneralizedTime();
-
-                    if (tmp.available() == 0)  {
-                        // we are done
-                    } else {
-                        derVal = tmp.getDerValue();
-                        tag = (byte)(derVal.tag & 0x1f);
-                    }
-                } else {
-                    nextUpdate = null;
-                }
+            if (debug != null) {
+                debug.println("thisUpdate: " + thisUpdate);
             }
-            // singleExtensions
+
+            // Parse optional fields like nextUpdate and singleExtensions
+            Date tmpNextUpdate = null;
+            Map<String, java.security.cert.Extension> tmpMap = null;
+
+            // Check for the first optional item, it could be nextUpdate
+            // [CONTEXT 0] or singleExtensions [CONTEXT 1]
             if (tmp.available() > 0) {
                 derVal = tmp.getDerValue();
-                if (derVal.isContextSpecific((byte)1)) {
-                    DerValue[] singleExtDer = derVal.data.getSequence(3);
-                    singleExtensions =
-                        new HashMap<String, java.security.cert.Extension>
-                            (singleExtDer.length);
-                    for (int i = 0; i < singleExtDer.length; i++) {
-                        Extension ext = new Extension(singleExtDer[i]);
-                        if (debug != null) {
-                            debug.println("OCSP single extension: " + ext);
-                        }
-                        // We don't support any extensions yet. Therefore, if it
-                        // is critical we must throw an exception because we
-                        // don't know how to process it.
-                        if (ext.isCritical()) {
-                            throw new IOException(
-                                "Unsupported OCSP critical extension: " +
-                                ext.getExtensionId());
-                        }
-                        singleExtensions.put(ext.getId(), ext);
+
+                // nextUpdate processing
+                if (derVal.isContextSpecific((byte)0)) {
+                    tmpNextUpdate = derVal.data.getGeneralizedTime();
+                    if (debug != null) {
+                        debug.println("nextUpdate: " + tmpNextUpdate);
                     }
-                } else {
-                    singleExtensions = Collections.emptyMap();
+
+                    // If more data exists in the singleResponse, it
+                    // can only be singleExtensions.  Get this DER value
+                    // for processing in the next block
+                    derVal = tmp.available() > 0 ? tmp.getDerValue() : null;
                 }
-            } else {
-                singleExtensions = Collections.emptyMap();
+
+                // singleExtensions processing
+                if (derVal != null) {
+                    if (derVal.isContextSpecific((byte)1)) {
+                        tmpMap = parseExtensions(derVal);
+
+                        // There should not be any other items in the
+                        // singleResponse at this point.
+                        if (tmp.available() > 0) {
+                            throw new IOException(tmp.available() +
+                                " bytes of additional data in singleResponse");
+                        }
+                    } else {
+                        // Unknown item in the singleResponse
+                        throw new IOException("Unsupported singleResponse " +
+                            "item, tag = " + String.format("%02X", derVal.tag));
+                    }
+                }
+            }
+
+            nextUpdate = tmpNextUpdate;
+            singleExtensions = (tmpMap != null) ? tmpMap :
+                    Collections.emptyMap();
+            if (debug != null) {
+                for (java.security.cert.Extension ext :
+                        singleExtensions.values()) {
+                   debug.println("singleExtension: " + ext);
+                }
             }
         }
 
@@ -793,7 +829,8 @@ public final class OCSPResponse {
         }
 
         @Override public Date getRevocationTime() {
-            return (Date) revocationTime.clone();
+            return (revocationTime != null ? (Date) revocationTime.clone() :
+                    null);
         }
 
         @Override public CRLReason getRevocationReason() {
@@ -820,6 +857,9 @@ public final class OCSPResponse {
             sb.append("thisUpdate is " + thisUpdate + "\n");
             if (nextUpdate != null) {
                 sb.append("nextUpdate is " + nextUpdate + "\n");
+            }
+            for (java.security.cert.Extension ext : singleExtensions.values()) {
+                sb.append("singleExtension: " + ext + "\n");
             }
             return sb.toString();
         }

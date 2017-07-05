@@ -330,12 +330,15 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * Indicate that proto itself has changed in hierarchy somewhere.
      */
     synchronized void invalidateAllProtoGetSwitchPoints() {
-        if (protoGetSwitches != null && !protoGetSwitches.isEmpty()) {
-            if (Context.DEBUG) {
-                protoInvalidations += protoGetSwitches.size();
+        if (protoGetSwitches != null) {
+            final int size = protoGetSwitches.size();
+            if (size > 0) {
+                if (Context.DEBUG) {
+                    protoInvalidations += size;
+                }
+                SwitchPoint.invalidateAll(protoGetSwitches.values().toArray(new SwitchPoint[size]));
+                protoGetSwitches.clear();
             }
-            SwitchPoint.invalidateAll(protoGetSwitches.values().toArray(new SwitchPoint[protoGetSwitches.values().size()]));
-            protoGetSwitches.clear();
         }
     }
 
@@ -375,7 +378,8 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         }
     }
 
-    // Update the free slots bitmap for a property that has been deleted and/or added.
+    // Update the free slots bitmap for a property that has been deleted and/or added. This method is not synchronized
+    // as it is always invoked on a newly created instance.
     private void updateFreeSlots(final Property oldProperty, final Property newProperty) {
         // Free slots bitset is possibly shared with parent map, so we must clone it before making modifications.
         boolean freeSlotsCloned = false;
@@ -425,7 +429,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return New {@link PropertyMap} with {@link Property} added.
      */
-    public PropertyMap addProperty(final Property property) {
+    public synchronized PropertyMap addProperty(final Property property) {
         if (listeners != null) {
             listeners.propertyAdded(property);
         }
@@ -434,9 +438,9 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         if (newMap == null) {
             final PropertyHashMap newProperties = properties.immutableAdd(property);
             newMap = new PropertyMap(this, newProperties);
-            addToHistory(property, newMap);
             newMap.updateFlagsAndBoundaries(property);
             newMap.updateFreeSlots(null, property);
+            addToHistory(property, newMap);
         }
 
         return newMap;
@@ -449,7 +453,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return New {@link PropertyMap} with {@link Property} removed or {@code null} if not found.
      */
-    public PropertyMap deleteProperty(final Property property) {
+    public synchronized PropertyMap deleteProperty(final Property property) {
         if (listeners != null) {
             listeners.propertyDeleted(property);
         }
@@ -881,8 +885,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @param newProto New prototype object to replace oldProto.
      * @return New {@link PropertyMap} with prototype changed.
      */
-    public PropertyMap changeProto(final ScriptObject newProto) {
-
+    public synchronized PropertyMap changeProto(final ScriptObject newProto) {
         final PropertyMap nextMap = checkProtoHistory(newProto);
         if (nextMap != null) {
             return nextMap;

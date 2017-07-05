@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -847,7 +847,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         case Op_RegD:
           lrg.set_num_regs(2);
           // Define platform specific register pressure
-#if defined(SPARC) || defined(ARM)
+#if defined(SPARC) || defined(ARM32)
           lrg.set_reg_pressure(2);
 #elif defined(IA32)
           if( ireg == Op_RegL ) {

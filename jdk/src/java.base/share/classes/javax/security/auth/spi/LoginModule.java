@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,15 +139,13 @@ public interface LoginModule {
      * any of the data stored in {@code sharedState} or
      * {@code options} parameters, they can be ignored.
      *
-     * <p>
-     *
-     * @param subject the {@code Subject} to be authenticated. <p>
+     * @param subject the {@code Subject} to be authenticated.
      *
      * @param callbackHandler a {@code CallbackHandler} for communicating
      *                  with the end user (prompting for usernames and
-     *                  passwords, for example). <p>
+     *                  passwords, for example).
      *
-     * @param sharedState state shared with other configured LoginModules. <p>
+     * @param sharedState state shared with other configured LoginModules.
      *
      * @param options options specified in the login
      *                  {@code Configuration} for this particular
@@ -166,8 +164,6 @@ public interface LoginModule {
      * as a username and password and then attempt to verify the password.
      * This method saves the result of the authentication attempt
      * as private state within the LoginModule.
-     *
-     * <p>
      *
      * @exception LoginException if the authentication fails
      *
@@ -192,8 +188,6 @@ public interface LoginModule {
      * authentication attempted failed, then this method removes/destroys
      * any state that was originally saved.
      *
-     * <p>
-     *
      * @exception LoginException if the commit fails
      *
      * @return true if this method succeeded, or false if this
@@ -214,8 +208,6 @@ public interface LoginModule {
      * {@code login} method), then this method cleans up any state
      * that was originally saved.
      *
-     * <p>
-     *
      * @exception LoginException if the abort fails
      *
      * @return true if this method succeeded, or false if this
@@ -228,8 +220,6 @@ public interface LoginModule {
      *
      * <p>An implementation of this method might remove/destroy a Subject's
      * Principals and Credentials.
-     *
-     * <p>
      *
      * @exception LoginException if the logout fails
      *

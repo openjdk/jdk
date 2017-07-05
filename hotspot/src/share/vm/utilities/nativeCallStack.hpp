@@ -56,8 +56,8 @@ class NativeCallStack : public StackObj {
   static const NativeCallStack EMPTY_STACK;
 
  private:
-  address   _stack[NMT_TrackingStackDepth];
-  int       _hash_value;
+  address       _stack[NMT_TrackingStackDepth];
+  unsigned int  _hash_value;
 
  public:
   NativeCallStack(int toSkip = 0, bool fillStack = false);
@@ -89,7 +89,7 @@ class NativeCallStack : public StackObj {
   }
 
   // Hash code. Any better algorithm?
-  int hash() const;
+  unsigned int hash() const;
 
   void print_on(outputStream* out) const;
   void print_on(outputStream* out, int indent) const;

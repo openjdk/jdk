@@ -27,6 +27,8 @@
   @summary REG: Menu does not disappear when clicked, keeping Choice's drop-down open, XToolkit
   @author andrei.dmitriev: area=awt.menu
   @library ../../regtesthelpers
+  @library ../../../../lib/testlibrary
+  @build jdk.testlibrary.OSInfo
   @build Util
   @run main OpensWithNoGrab
 */
@@ -34,7 +36,7 @@
 import java.awt.*;
 import java.awt.event.*;
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 import test.java.awt.regtesthelpers.Util;
 
 public class OpensWithNoGrab

@@ -276,7 +276,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @since 1.4
      * @spec JSR-51
      */
-    public FileChannel getChannel() {
+    public final FileChannel getChannel() {
         FileChannel fc = this.channel;
         if (fc == null) {
             synchronized (this) {
