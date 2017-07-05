@@ -1387,6 +1387,21 @@ public class LogManager {
         }
     }
 
+    // Package private method to get a long property.
+    // If the property is not defined or cannot be parsed
+    // we return the given default value.
+    long getLongProperty(String name, long defaultValue) {
+        String val = getProperty(name);
+        if (val == null) {
+            return defaultValue;
+        }
+        try {
+            return Long.parseLong(val.trim());
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+
     // Package private method to get a boolean property.
     // If the property is not defined or cannot be parsed
     // we return the given default value.

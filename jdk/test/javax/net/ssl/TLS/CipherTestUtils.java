@@ -261,20 +261,20 @@ public class CipherTestUtils {
         }
     }
 
-    private static volatile CipherTestUtils instnace = null;
+    private static volatile CipherTestUtils instance = null;
 
     public static CipherTestUtils getInstance() throws IOException,
             FileNotFoundException, KeyStoreException,
             NoSuchAlgorithmException, CertificateException,
             UnrecoverableKeyException, InvalidKeySpecException {
-        if (instnace == null) {
+        if (instance == null) {
             synchronized (CipherTestUtils.class) {
-                if (instnace == null) {
-                    instnace = new CipherTestUtils();
+                if (instance == null) {
+                    instance = new CipherTestUtils();
                 }
             }
         }
-        return instnace;
+        return instance;
     }
 
     public static void setTestedArguments(String testedProtocol,

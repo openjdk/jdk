@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,16 +176,15 @@ public abstract class AbstractFilePermissionTest {
                     command.toArray(new String[command.size()]));
 
             System.out.println("test cmdline: " + Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
-            Process p = processBuilder.start();
-            OutputAnalyzer output = new OutputAnalyzer(p);
+            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
 
             System.out.println("test output:");
             System.out.println(output.getOutput());
 
-            if ((p.exitValue() == 0)  ||
+            if ((output.getExitValue() == 0)  ||
                 !output.getOutput().contains("Exception thrown by the agent : " +
                         "java.rmi.server.ExportException: Port already in use")) {
-                return p.exitValue();
+                return output.getExitValue();
             }
         }
 

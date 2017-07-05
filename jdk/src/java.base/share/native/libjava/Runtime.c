@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,18 +63,6 @@ JNIEXPORT void JNICALL
 Java_java_lang_Runtime_gc(JNIEnv *env, jobject this)
 {
     JVM_GC();
-}
-
-JNIEXPORT void JNICALL
-Java_java_lang_Runtime_traceInstructions(JNIEnv *env, jobject this, jboolean on)
-{
-    JVM_TraceInstructions(on);
-}
-
-JNIEXPORT void JNICALL
-Java_java_lang_Runtime_traceMethodCalls(JNIEnv *env, jobject this, jboolean on)
-{
-    JVM_TraceMethodCalls(on);
 }
 
 JNIEXPORT void JNICALL

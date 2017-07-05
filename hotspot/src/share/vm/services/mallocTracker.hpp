@@ -51,14 +51,6 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
     DEBUG_ONLY(_peak_size  = 0;)
   }
 
-  // Reset counters
-  void reset() {
-    _size  = 0;
-    _count = 0;
-    DEBUG_ONLY(_peak_size = 0;)
-    DEBUG_ONLY(_peak_count = 0;)
-  }
-
   inline void allocate(size_t sz) {
     Atomic::add(1, (volatile MemoryCounterType*)&_count);
     if (sz > 0) {
@@ -124,11 +116,6 @@ class MallocMemory VALUE_OBJ_CLASS_SPEC {
     _arena.resize(sz);
   }
 
-  void reset() {
-    _malloc.reset();
-    _arena.reset();
-  }
-
   inline size_t malloc_size()  const { return _malloc.size(); }
   inline size_t malloc_count() const { return _malloc.count();}
   inline size_t arena_size()   const { return _arena.size();  }
@@ -175,8 +162,6 @@ class MallocMemorySnapshot : public ResourceObj {
     MallocMemorySnapshot* s = const_cast<MallocMemorySnapshot*>(this);
     return s->by_type(mtThreadStack)->malloc_count();
   }
-
-  void reset();
 
   void copy_to(MallocMemorySnapshot* s) {
     s->_tracking_header = _tracking_header;
@@ -238,11 +223,6 @@ class MallocMemorySummary : AllStatic {
    // The memory used by malloc tracking headers
    static inline size_t tracking_overhead() {
      return as_snapshot()->malloc_overhead()->size();
-   }
-
-   // Reset all counters to zero
-   static void reset() {
-     as_snapshot()->reset();
    }
 
   static MallocMemorySnapshot* as_snapshot() {

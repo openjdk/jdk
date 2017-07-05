@@ -70,6 +70,7 @@ class MemTracker : AllStatic {
   static inline void release_thread_stack(void* addr, size_t size) { }
 
   static void final_report(outputStream*) { }
+  static void error_report(outputStream*) { }
 };
 
 #else
@@ -270,13 +271,20 @@ class MemTracker : AllStatic {
   // other tools.
   static inline Mutex* query_lock() { return _query_lock; }
 
-  // Make a final report and shutdown.
-  // This function generates summary report without creating snapshots,
-  // to avoid additional memory allocation. It uses native memory summary
-  // counters, and makes adjustment to them, once the adjustment is made,
-  // the counters are no longer accurate. As the result, this function
-  // should only be used for final reporting before shutting down.
-  static void final_report(outputStream*);
+  // Make a final report or report for hs_err file.
+  static void error_report(outputStream* output) {
+    if (tracking_level() >= NMT_summary) {
+      report(true, output);  // just print summary for error case.
+    }
+   }
+
+  static void final_report(outputStream* output) {
+    NMT_TrackingLevel level = tracking_level();
+    if (level >= NMT_summary) {
+      report(level == NMT_summary, output);
+    }
+  }
+
 
   // Stored baseline
   static inline MemBaseline& get_baseline() {
@@ -291,6 +299,7 @@ class MemTracker : AllStatic {
 
  private:
   static NMT_TrackingLevel init_tracking_level();
+  static void report(bool summary_only, outputStream* output);
 
  private:
   // Tracking level

@@ -96,20 +96,6 @@ class MemSummaryReporter : public MemReporterBase {
   size_t                  _class_count;
 
  public:
-  // Report summary tracking data from global snapshots directly.
-  // This constructor is used for final reporting and hs_err reporting.
-  MemSummaryReporter(MallocMemorySnapshot* malloc_snapshot,
-    VirtualMemorySnapshot* vm_snapshot, outputStream* output,
-    size_t class_count = 0, size_t scale = K) :
-    MemReporterBase(output, scale),
-    _malloc_snapshot(malloc_snapshot),
-    _vm_snapshot(vm_snapshot) {
-    if (class_count == 0) {
-      _class_count = InstanceKlass::number_of_instance_classes();
-    } else {
-      _class_count = class_count;
-    }
-  }
   // This constructor is for normal reporting from a recent baseline.
   MemSummaryReporter(MemBaseline& baseline, outputStream* output,
     size_t scale = K) : MemReporterBase(output, scale),
