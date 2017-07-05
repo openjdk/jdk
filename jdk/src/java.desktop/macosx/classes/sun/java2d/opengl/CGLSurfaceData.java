@@ -365,7 +365,7 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     // Mac OS X specific APIs for JOGL/Java2D bridge...
 
     // given a surface create and attach GL context, then return it
-    private native static long createCGLContextOnSurface(CGLSurfaceData sd,
+    private static native long createCGLContextOnSurface(CGLSurfaceData sd,
             long sharedContext);
 
     public static long createOGLContextOnSurface(Graphics g, long sharedContext) {
@@ -379,7 +379,7 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     }
 
     // returns whether or not the makeCurrent operation succeeded
-    native static boolean makeCGLContextCurrentOnSurface(CGLSurfaceData sd,
+    static native boolean makeCGLContextCurrentOnSurface(CGLSurfaceData sd,
             long ctx);
 
     public static boolean makeOGLContextCurrentOnSurface(Graphics g, long ctx) {
@@ -393,7 +393,7 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     }
 
     // additional cleanup
-    private native static void destroyCGLContext(long ctx);
+    private static native void destroyCGLContext(long ctx);
 
     public static void destroyOGLContext(long ctx) {
         if (ctx != 0L) {

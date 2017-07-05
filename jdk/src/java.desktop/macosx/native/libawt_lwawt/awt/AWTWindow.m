@@ -25,7 +25,6 @@
 
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import "sun_lwawt_macosx_CPlatformWindow.h"
 #import "com_apple_eawt_event_GestureHandler.h"
@@ -34,12 +33,8 @@
 
 #import "AWTWindow.h"
 #import "AWTView.h"
-#import "CMenu.h"
-#import "CMenuBar.h"
-#import "LWCToolkit.h"
 #import "GeomUtilities.h"
 #import "ThreadUtilities.h"
-#import "OSVersion.h"
 
 #define MASK(KEY) \
     (sun_lwawt_macosx_CPlatformWindow_ ## KEY)

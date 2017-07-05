@@ -129,7 +129,7 @@ public class DocumentFilter {
      * are invoked from the DocumentFilter.
      * @since 1.4
      */
-    public static abstract class FilterBypass {
+    public abstract static class FilterBypass {
         /**
          * Returns the Document the mutation is occurring on.
          *

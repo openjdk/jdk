@@ -26,6 +26,8 @@
 #import "LWCToolkit.h"
 #import "ThreadUtilities.h"
 
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
+
 /*
  * Convert the mode string to the more convinient bits per pixel value
  */
@@ -200,7 +202,7 @@ JNF_COCOA_ENTER(env);
         for (NSScreen *screen in screens) {
             NSDictionary *screenInfo = [screen deviceDescription];
             NSNumber *screenID = [screenInfo objectForKey:@"NSScreenNumber"];
-            if ([screenID pointerValue] == displayID){
+            if ([screenID unsignedIntValue] == displayID){
                 frame = [screen frame];
                 visibleFrame = [screen visibleFrame];
                 break;
@@ -333,7 +335,7 @@ JNF_COCOA_ENTER(env);
         for (NSScreen *screen in screens) {
             NSDictionary *screenInfo = [screen deviceDescription];
             NSNumber *screenID = [screenInfo objectForKey:@"NSScreenNumber"];
-            if ([screenID pointerValue] == displayID){
+            if ([screenID unsignedIntValue] == displayID){
                 if ([screen respondsToSelector:@selector(backingScaleFactor)]) {
                     ret = [screen backingScaleFactor];
                 }

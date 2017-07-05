@@ -30,7 +30,7 @@ import sun.util.logging.PlatformLogger;
 import java.util.*;
 
 class XProtocol {
-    private final static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XProtocol");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XProtocol");
 
     private Map<XAtom, XAtomList> atomToList = new HashMap<XAtom, XAtomList>();
     private Map<XAtom, Long> atomToAnchor = new HashMap<XAtom, Long>();

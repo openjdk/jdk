@@ -28,8 +28,8 @@ package sun.java2d.jules;
 import java.util.*;
 
 public class IdleTileCache {
-    final static int IDLE_TILE_SYNC_GRANULARITY = 16;
-    final static ArrayList<JulesTile> idleBuffers = new ArrayList<JulesTile>();
+    static final int IDLE_TILE_SYNC_GRANULARITY = 16;
+    static final ArrayList<JulesTile> idleBuffers = new ArrayList<JulesTile>();
 
     ArrayList<JulesTile> idleTileWorkerCacheList = new ArrayList<JulesTile>();
     ArrayList<JulesTile> idleTileConsumerCacheList =

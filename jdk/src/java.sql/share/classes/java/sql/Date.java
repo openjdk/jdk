@@ -27,8 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around a millisecond value that allows

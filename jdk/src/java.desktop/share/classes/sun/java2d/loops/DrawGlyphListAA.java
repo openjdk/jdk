@@ -39,9 +39,9 @@ import sun.font.GlyphList;
  */
 public class DrawGlyphListAA extends GraphicsPrimitive {
 
-    public final static String methodSignature = "DrawGlyphListAA(...)".toString();
+    public static final String methodSignature = "DrawGlyphListAA(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static DrawGlyphListAA locate(SurfaceType srctype,
                                    CompositeType comptype,

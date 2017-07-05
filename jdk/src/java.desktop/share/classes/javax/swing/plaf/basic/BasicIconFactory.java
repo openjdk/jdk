@@ -167,7 +167,7 @@ public class BasicIconFactory implements Serializable
 
     private static class CheckBoxIcon implements Icon, Serializable
     {
-        final static int csize = 13;
+        static final int csize = 13;
         public void paintIcon(Component c, Graphics g, int x, int y) {
         }
 

@@ -67,7 +67,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     //There is 400 ms is set by default on Windows and 500 by default on KDE and GNOME.
     //We use the same hardcoded constant.
-    private final static int AWT_MULTICLICK_DEFAULT_TIME = 500;
+    private static final int AWT_MULTICLICK_DEFAULT_TIME = 500;
 
     static final boolean PRIMARY_LOOP = false;
     static final boolean SECONDARY_LOOP = true;
@@ -140,8 +140,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      */
     static native long getTrayIconDisplayTimeout();
 
-    private native static void initIDs();
-    native static void waitForEvents(long nextTaskTime);
+    private static native void initIDs();
+    static native void waitForEvents(long nextTaskTime);
     static Thread toolkitThread;
     static boolean isToolkitThread() {
         return Thread.currentThread() == toolkitThread;
@@ -1102,7 +1102,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * Returns the value of "sun.awt.disableGtkFileDialogs" property. Default
      * value is {@code false}.
      */
-    public synchronized static boolean getSunAwtDisableGtkFileDialogs() {
+    public static synchronized boolean getSunAwtDisableGtkFileDialogs() {
         if (sunAwtDisableGtkFileDialogs == null) {
             sunAwtDisableGtkFileDialogs = AccessController.doPrivileged(
                                               new GetBooleanAction("sun.awt.disableGtkFileDialogs"));
@@ -1579,8 +1579,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return Math.min(XConstants.MAX_BUTTONS, ((SunToolkit) (Toolkit.getDefaultToolkit())).getNumberOfButtons());
     }
 
-    private final static String prefix  = "DnD.Cursor.";
-    private final static String postfix = ".32x32";
+    private static final String prefix  = "DnD.Cursor.";
+    private static final String postfix = ".32x32";
     private static final String dndPrefix  = "DnD.";
 
     @Override

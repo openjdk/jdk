@@ -422,7 +422,7 @@ public class CInputMethod extends InputMethodAdapter {
      * Tell the component to commit all of the characters in the string to the current
      * text view. This effectively wipes out any text in progress.
      */
-    synchronized private void insertText(String aString) {
+    private synchronized void insertText(String aString) {
         AttributedString attribString = new AttributedString(aString);
 
         // Set locale information on the new string.
@@ -447,11 +447,11 @@ public class CInputMethod extends InputMethodAdapter {
         fCurrentTextLength = rawText.length();
     }
 
-    static private final int kCaretPosition = 0;
-    static private final int kRawText = 1;
-    static private final int kSelectedRawText = 2;
-    static private final int kConvertedText = 3;
-    static private final int kSelectedConvertedText = 4;
+    private static final int kCaretPosition = 0;
+    private static final int kRawText = 1;
+    private static final int kSelectedRawText = 2;
+    private static final int kConvertedText = 3;
+    private static final int kSelectedConvertedText = 4;
 
     /**
      * Convert Cocoa text highlight attributes into Java input method highlighting.
@@ -556,7 +556,7 @@ public class CInputMethod extends InputMethodAdapter {
     /**
      * Frequent callbacks from NSTextInput.  I think we're supposed to commit it here?
      */
-    synchronized private void unmarkText() {
+    private synchronized void unmarkText() {
         if (fCurrentText == null)
             return;
 
@@ -574,7 +574,7 @@ public class CInputMethod extends InputMethodAdapter {
         fCurrentTextLength = 0;
     }
 
-    synchronized private boolean hasMarkedText() {
+    private synchronized boolean hasMarkedText() {
         return fCurrentText != null;
     }
 
@@ -583,7 +583,7 @@ public class CInputMethod extends InputMethodAdapter {
      * Java does not.  So, we have to see where the request is and based on that return the right
      * substring.
      */
-    synchronized private String attributedSubstringFromRange(final int locationIn, final int lengthIn) {
+    private synchronized String attributedSubstringFromRange(final int locationIn, final int lengthIn) {
         final String[] retString = new String[1];
 
         try {
@@ -635,7 +635,7 @@ public class CInputMethod extends InputMethodAdapter {
      * for the fact that the insert point in Swing can come AFTER the selected text, making this
      * potentially incorrect.
      */
-    synchronized private int[] selectedRange() {
+    private synchronized int[] selectedRange() {
         final int[] returnValue = new int[2];
 
         try {
@@ -683,7 +683,7 @@ public class CInputMethod extends InputMethodAdapter {
      * inserted, so we can return that position, and the length of the text in progress.  If there is no marked text
      * return null.
      */
-    synchronized private int[] markedRange() {
+    private synchronized int[] markedRange() {
         if (fCurrentText == null)
             return null;
 
@@ -710,7 +710,7 @@ public class CInputMethod extends InputMethodAdapter {
      * which is always in front of the in-progress text, we get the offset into the composed text, and we get
      * that location from the input method context.
      */
-    synchronized private int[] firstRectForCharacterRange(final int absoluteTextOffset) {
+    private synchronized int[] firstRectForCharacterRange(final int absoluteTextOffset) {
         final int[] rect = new int[4];
 
         try {
@@ -753,7 +753,7 @@ public class CInputMethod extends InputMethodAdapter {
      * The coordinates are in Java screen coordinates.  If no character in the composed text was hit, we return -1, indicating
      * not found.
      */
-    synchronized private int characterIndexForPoint(final int screenX, final int screenY) {
+    private synchronized int characterIndexForPoint(final int screenX, final int screenY) {
         final TextHitInfo[] offsetInfo = new TextHitInfo[1];
         final int[] insertPositionOffset = new int[1];
 

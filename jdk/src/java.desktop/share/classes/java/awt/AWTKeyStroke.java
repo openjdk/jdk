@@ -32,12 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
+import sun.swing.SwingAccessor;
 
 /**
  * An <code>AWTKeyStroke</code> represents a key action on the
@@ -79,21 +76,6 @@ public class AWTKeyStroke implements Serializable {
     private static Object APP_CONTEXT_CACHE_KEY = new Object();
     //A key withing the cache
     private static AWTKeyStroke APP_CONTEXT_KEYSTROKE_KEY = new AWTKeyStroke();
-
-    /*
-     * Reads keystroke class from AppContext and if null, puts there the
-     * AWTKeyStroke class.
-     * Must be called under locked AWTKeyStroke
-     */
-    private static Class<AWTKeyStroke> getAWTKeyStrokeClass() {
-        @SuppressWarnings("unchecked")
-        Class<AWTKeyStroke> clazz = (Class<AWTKeyStroke>)AppContext.getAppContext().get(AWTKeyStroke.class);
-        if (clazz == null) {
-            clazz = AWTKeyStroke.class;
-            AppContext.getAppContext().put(AWTKeyStroke.class, AWTKeyStroke.class);
-        }
-        return clazz;
-    }
 
     private char keyChar = KeyEvent.CHAR_UNDEFINED;
     private int keyCode = KeyEvent.VK_UNDEFINED;
@@ -160,92 +142,15 @@ public class AWTKeyStroke implements Serializable {
     }
 
     /**
-     * Registers a new class which the factory methods in
-     * <code>AWTKeyStroke</code> will use when generating new
-     * instances of <code>AWTKeyStroke</code>s. After invoking this
-     * method, the factory methods will return instances of the specified
-     * Class. The specified Class must be either <code>AWTKeyStroke</code>
-     * or derived from <code>AWTKeyStroke</code>, and it must have a
-     * no-arg constructor. The constructor can be of any accessibility,
-     * including <code>private</code>. This operation
-     * flushes the current <code>AWTKeyStroke</code> cache.
+     * The method has no effect and is only left present to avoid introducing
+     * a binary incompatibility.
      *
      * @param subclass the new Class of which the factory methods should create
      *        instances
-     * @throws IllegalArgumentException if subclass is <code>null</code>,
-     *         or if subclass does not have a no-arg constructor
-     * @throws ClassCastException if subclass is not
-     *         <code>AWTKeyStroke</code>, or a class derived from
-     *         <code>AWTKeyStroke</code>
+     * @deprecated
      */
+    @Deprecated
     protected static void registerSubclass(Class<?> subclass) {
-        if (subclass == null) {
-            throw new IllegalArgumentException("subclass cannot be null");
-        }
-        synchronized (AWTKeyStroke.class) {
-            @SuppressWarnings("unchecked")
-            Class<AWTKeyStroke> keyStrokeClass = (Class)AppContext.getAppContext().get(AWTKeyStroke.class);
-            if (keyStrokeClass != null && keyStrokeClass.equals(subclass)){
-                // Already registered
-                return;
-            }
-        }
-        if (!AWTKeyStroke.class.isAssignableFrom(subclass)) {
-            throw new ClassCastException("subclass is not derived from AWTKeyStroke");
-        }
-
-        Constructor<?> ctor = getCtor(subclass);
-
-        String couldNotInstantiate = "subclass could not be instantiated";
-
-        if (ctor == null) {
-            throw new IllegalArgumentException(couldNotInstantiate);
-        }
-        try {
-            AWTKeyStroke stroke = (AWTKeyStroke)ctor.newInstance((Object[]) null);
-            if (stroke == null) {
-                throw new IllegalArgumentException(couldNotInstantiate);
-            }
-        } catch (NoSuchMethodError e) {
-            throw new IllegalArgumentException(couldNotInstantiate);
-        } catch (ExceptionInInitializerError e) {
-            throw new IllegalArgumentException(couldNotInstantiate);
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException(couldNotInstantiate);
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException(couldNotInstantiate);
-        } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException(couldNotInstantiate);
-        }
-
-        synchronized (AWTKeyStroke.class) {
-            AppContext.getAppContext().put(AWTKeyStroke.class, subclass);
-            AppContext.getAppContext().remove(APP_CONTEXT_CACHE_KEY);
-            AppContext.getAppContext().remove(APP_CONTEXT_KEYSTROKE_KEY);
-        }
-    }
-
-    /* returns no-arg Constructor for class with accessible flag. No security
-       threat as accessible flag is set only for this Constructor object,
-       not for Class constructor.
-     */
-    private static Constructor<?> getCtor(final Class<?> clazz)
-    {
-        Constructor<?> ctor = AccessController.doPrivileged(new PrivilegedAction<Constructor<?>>() {
-            public Constructor<?> run() {
-                try {
-                    Constructor<?> ctor = clazz.getDeclaredConstructor((Class<?>[]) null);
-                    if (ctor != null) {
-                        ctor.setAccessible(true);
-                    }
-                    return ctor;
-                } catch (SecurityException e) {
-                } catch (NoSuchMethodException e) {
-                }
-                return null;
-            }
-        });
-        return ctor;
     }
 
     private static synchronized AWTKeyStroke getCachedStroke
@@ -261,18 +166,10 @@ public class AWTKeyStroke implements Serializable {
         }
 
         if (cacheKey == null) {
-            try {
-                Class<AWTKeyStroke> clazz = getAWTKeyStrokeClass();
-                cacheKey = (AWTKeyStroke)getCtor(clazz).newInstance((Object[]) null);
-                AppContext.getAppContext().put(APP_CONTEXT_KEYSTROKE_KEY, cacheKey);
-            } catch (InstantiationException e) {
-                assert(false);
-            } catch (IllegalAccessException e) {
-                assert(false);
-            } catch (InvocationTargetException e) {
-                assert(false);
-            }
+            cacheKey = SwingAccessor.getKeyStrokeAccessor().create();
+            AppContext.getAppContext().put(APP_CONTEXT_KEYSTROKE_KEY, cacheKey);
         }
+
         cacheKey.keyChar = keyChar;
         cacheKey.keyCode = keyCode;
         cacheKey.modifiers = mapNewModifiers(mapOldModifiers(modifiers));
@@ -806,11 +703,9 @@ public class AWTKeyStroke implements Serializable {
      */
     protected Object readResolve() throws java.io.ObjectStreamException {
         synchronized (AWTKeyStroke.class) {
-            if (getClass().equals(getAWTKeyStrokeClass())) {
-                return  getCachedStroke(keyChar, keyCode, modifiers, onKeyRelease);
-            }
+
+            return getCachedStroke(keyChar, keyCode, modifiers, onKeyRelease);
         }
-        return this;
     }
 
     private static int mapOldModifiers(int modifiers) {

@@ -124,7 +124,7 @@ public class Cursor implements java.io.Serializable {
     /**
      * This field is a private replacement for 'predefined' array.
      */
-    private final static Cursor[] predefinedPrivate = new Cursor[14];
+    private static final Cursor[] predefinedPrivate = new Cursor[14];
 
     /* Localization names and default values */
     static final String[][] cursorProperties = {
@@ -449,5 +449,5 @@ public class Cursor implements java.io.Serializable {
         }
     }
 
-    private native static void finalizeImpl(long pData);
+    private static native void finalizeImpl(long pData);
 }

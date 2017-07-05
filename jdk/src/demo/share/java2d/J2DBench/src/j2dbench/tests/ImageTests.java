@@ -771,7 +771,7 @@ public abstract class ImageTests extends GraphicsTests {
         }
     }
 
-    private static abstract class ImageOpTests extends ImageTests {
+    private abstract static class ImageOpTests extends ImageTests {
         ImageOpTests(Group parent, String nodeName, String desc) {
             super(parent, nodeName, desc,
                   new Modifier.Filter() {

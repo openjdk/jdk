@@ -377,8 +377,8 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * AA text hints.
      */
-    transient private Object aaHint;
-    transient private Object lcdRenderingHint;
+    private transient Object aaHint;
+    private transient Object lcdRenderingHint;
 
     static Graphics safelyGetGraphics(Component c) {
         return safelyGetGraphics(c, SwingUtilities.getRoot(c));
@@ -2805,7 +2805,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setLocale
      * @since 1.4
      */
-    static public Locale getDefaultLocale() {
+    public static Locale getDefaultLocale() {
         Locale l = (Locale) SwingUtilities.appContextGet(defaultLocale);
         if( l == null ) {
             //REMIND(bcb) choosing the default value is more complicated
@@ -2832,7 +2832,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setLocale
      * @since 1.4
      */
-    static public void setDefaultLocale( Locale l ) {
+    public static void setDefaultLocale( Locale l ) {
         SwingUtilities.appContextPut(defaultLocale, l);
     }
 
@@ -3714,7 +3714,7 @@ public abstract class JComponent extends Container implements Serializable,
          * to add/remove ContainerListener and FocusListener to track
          * target JComponent's state
          */
-        private volatile transient int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount = 0;
 
         /**
          * This field duplicates the function of the accessibleAWTFocusHandler field
@@ -4064,8 +4064,6 @@ public abstract class JComponent extends Container implements Serializable,
             return aaHint;
         } else if (key == RenderingHints.KEY_TEXT_LCD_CONTRAST) {
             return lcdRenderingHint;
-        } else if (key == SwingUtilities2.COMPONENT_UI_PROPERTY_KEY) {
-            return ui;
         }
          if(clientProperties == null) {
             return null;

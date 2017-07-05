@@ -266,7 +266,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the mask, which indicates which bits of the <code>int</code>
      *         pixel representation contain the red color sample.
      */
-    final public int getRedMask() {
+    public final int getRedMask() {
         return maskArray[0];
     }
 
@@ -276,7 +276,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the mask, which indicates which bits of the <code>int</code>
      *         pixel representation contain the green color sample.
      */
-    final public int getGreenMask() {
+    public final int getGreenMask() {
         return maskArray[1];
     }
 
@@ -286,7 +286,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the mask, which indicates which bits of the <code>int</code>
      *         pixel representation contain the blue color sample.
      */
-    final public int getBlueMask() {
+    public final int getBlueMask() {
         return maskArray[2];
     }
 
@@ -296,7 +296,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the mask, which indicates which bits of the <code>int</code>
      *         pixel representation contain the alpha sample.
      */
-    final public int getAlphaMask() {
+    public final int getAlphaMask() {
         if (supportsAlpha) {
             return maskArray[3];
         } else {
@@ -365,7 +365,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the red color component for the specified pixel, from
      *         0 to 255 in the sRGB <code>ColorSpace</code>.
      */
-    final public int getRed(int pixel) {
+    public final int getRed(int pixel) {
         if (is_sRGB) {
             return getsRGBComponentFromsRGB(pixel, 0);
         } else if (is_LinearRGB) {
@@ -388,7 +388,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the green color component for the specified pixel, from
      *         0 to 255 in the sRGB <code>ColorSpace</code>.
      */
-    final public int getGreen(int pixel) {
+    public final int getGreen(int pixel) {
         if (is_sRGB) {
             return getsRGBComponentFromsRGB(pixel, 1);
         } else if (is_LinearRGB) {
@@ -411,7 +411,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the blue color component for the specified pixel, from
      *         0 to 255 in the sRGB <code>ColorSpace</code>.
      */
-    final public int getBlue(int pixel) {
+    public final int getBlue(int pixel) {
         if (is_sRGB) {
             return getsRGBComponentFromsRGB(pixel, 2);
         } else if (is_LinearRGB) {
@@ -428,7 +428,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return the value of the alpha component of <code>pixel</code>
      *         from 0 to 255.
      */
-    final public int getAlpha(int pixel) {
+    public final int getAlpha(int pixel) {
         if (!supportsAlpha) return 255;
         int a = ((pixel & maskArray[3]) >>> maskOffsets[3]);
         if (scaleFactors[3] != 1.0f) {
@@ -450,7 +450,7 @@ public class DirectColorModel extends PackedColorModel {
      *         pixel.
      * @see ColorModel#getRGBdefault
      */
-    final public int getRGB(int pixel) {
+    public final int getRGB(int pixel) {
         if (is_sRGB || is_LinearRGB) {
             return (getAlpha(pixel) << 24)
                 | (getRed(pixel) << 16)
@@ -923,7 +923,7 @@ public class DirectColorModel extends PackedColorModel {
      * @return an array containing the color and alpha components of the
      * specified pixel starting at the specified offset.
      */
-    final public int[] getComponents(int pixel, int[] components, int offset) {
+    public final int[] getComponents(int pixel, int[] components, int offset) {
         if (components == null) {
             components = new int[offset+numComponents];
         }
@@ -974,7 +974,7 @@ public class DirectColorModel extends PackedColorModel {
      *            <code>transferType</code> is not supported by this
      *            color model
      */
-    final public int[] getComponents(Object pixel, int[] components,
+    public final int[] getComponents(Object pixel, int[] components,
                                      int offset) {
         int intpixel=0;
         switch (transferType) {
@@ -1010,7 +1010,7 @@ public class DirectColorModel extends PackedColorModel {
      * @see WritableRaster
      * @see SampleModel
      */
-    final public WritableRaster createCompatibleWritableRaster (int w,
+    public final WritableRaster createCompatibleWritableRaster (int w,
                                                                 int h) {
         if ((w <= 0) || (h <= 0)) {
             throw new IllegalArgumentException("Width (" + w + ") and height (" + h +
@@ -1173,7 +1173,7 @@ public class DirectColorModel extends PackedColorModel {
      *            <code>transferType</code> is not supported by this
      *            color model
      */
-    final public ColorModel coerceData (WritableRaster raster,
+    public final ColorModel coerceData (WritableRaster raster,
                                         boolean isAlphaPremultiplied)
     {
         if (!supportsAlpha ||

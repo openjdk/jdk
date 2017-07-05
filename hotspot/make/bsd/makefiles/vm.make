@@ -234,10 +234,29 @@ JVM_OBJ_FILES = $(Obj_Files)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) vm.def mapfile_ext
+MAPFILE_SHARE  := $(GAMMADIR)/make/share/makefiles/mapfile-vers
+
+MAPFILE_EXT_SRC := $(HS_ALT_MAKE)/share/makefiles/mapfile-ext
+ifneq ("$(wildcard $(MAPFILE_EXT_SRC))","")
+MAPFILE_EXT     := $(MAPFILE_EXT_SRC)
+endif
+
+# For Darwin: add _ prefix and remove trailing ;
+mapfile_extra: $(MAPFILE_SHARE) $(MAPFILE_EXT)
+	rm -f $@
+ifeq ($(OS_VENDOR), Darwin)
+	cat $(MAPFILE_SHARE) $(MAPFILE_EXT) | \
+	    sed -e 's/#.*//g' -e 's/[ ]*//g' -e 's/;//g' | \
+	    awk '{ if ($$0 ~ ".") { print "\t\t_" $$0 } }' \
+	 > $@
+else
+	cat $(MAPFILE_SHARE) $(MAPFILE_EXT) > $@
+endif
+
+mapfile : $(MAPFILE) mapfile_extra vm.def
 	rm -f $@
 	awk '{ if ($$0 ~ "INSERT VTABLE SYMBOLS HERE")	\
-                 { system ("cat mapfile_ext"); system ("cat vm.def"); } \
+                 { system ("cat mapfile_extra vm.def"); } \
                else					\
                  { print $$0 }				\
              }' > $@ < $(MAPFILE)

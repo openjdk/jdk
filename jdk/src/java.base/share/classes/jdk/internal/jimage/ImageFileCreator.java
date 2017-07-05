@@ -261,6 +261,7 @@ public final class ImageFileCreator {
             Map<String, List<Entry>> entriesForModule,
             ByteOrder byteOrder) throws IOException {
         ResourcePoolImpl resources = new ResourcePoolImpl(byteOrder);
+        // Doesn't contain META-INF
         Set<String> mods = modulePackagesMap.keySet();
         for (String mn : mods) {
             for (Entry entry : entriesForModule.get(mn)) {
@@ -285,6 +286,31 @@ public final class ImageFileCreator {
             // Done with this archive, close it.
             Archive archive = nameToArchive.get(mn);
             archive.close();
+        }
+        // Fix for 8136365. Do we have an archive with module name "META-INF"?
+        // If yes, we are recreating a jimage.
+        // This is a workaround for META-INF being at the top level of resource path
+        String mn = "META-INF";
+        Archive archive = nameToArchive.get(mn);
+        if (archive != null) {
+            try {
+                for (Entry entry : entriesForModule.get(mn)) {
+                    String path = entry.name();
+                    try (InputStream stream = entry.stream()) {
+                        byte[] bytes = readAllBytes(stream);
+                        path = mn + "/" + path;
+                        try {
+                            resources.addResource(new ResourcePool.Resource(path,
+                                    ByteBuffer.wrap(bytes)));
+                        } catch (Exception ex) {
+                            throw new IOException(ex);
+                        }
+                    }
+                }
+            } finally {
+                // Done with this archive, close it.
+                archive.close();
+            }
         }
         return resources;
     }

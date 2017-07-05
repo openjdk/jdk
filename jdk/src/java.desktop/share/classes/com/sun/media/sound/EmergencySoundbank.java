@@ -37,7 +37,7 @@ import javax.sound.sampled.AudioFormat;
  */
 public final class EmergencySoundbank {
 
-    private final static String[] general_midi_instruments = {
+    private static final String[] general_midi_instruments = {
         "Acoustic Grand Piano",
         "Bright Acoustic Piano",
         "Electric Grand Piano",
@@ -2564,11 +2564,11 @@ public final class EmergencySoundbank {
         return ins;
     }
 
-    static public void ifft(double[] data) {
+    public static void ifft(double[] data) {
         new FFT(data.length / 2, 1).transform(data);
     }
 
-    static public void fft(double[] data) {
+    public static void fft(double[] data) {
         new FFT(data.length / 2, -1).transform(data);
     }
 
@@ -2580,7 +2580,7 @@ public final class EmergencySoundbank {
         }
     }
 
-    static public void randomPhase(double[] data) {
+    public static void randomPhase(double[] data) {
         for (int i = 0; i < data.length; i += 2) {
             double phase = Math.random() * 2 * Math.PI;
             double d = data[i];
@@ -2589,7 +2589,7 @@ public final class EmergencySoundbank {
         }
     }
 
-    static public void randomPhase(double[] data, Random random) {
+    public static void randomPhase(double[] data, Random random) {
         for (int i = 0; i < data.length; i += 2) {
             double phase = random.nextDouble() * 2 * Math.PI;
             double d = data[i];
@@ -2598,7 +2598,7 @@ public final class EmergencySoundbank {
         }
     }
 
-    static public void normalize(double[] data, double target) {
+    public static void normalize(double[] data, double target) {
         double maxvalue = 0;
         for (int i = 0; i < data.length; i++) {
             if (data[i] > maxvalue)
@@ -2613,7 +2613,7 @@ public final class EmergencySoundbank {
             data[i] *= gain;
     }
 
-    static public void normalize(float[] data, double target) {
+    public static void normalize(float[] data, double target) {
         double maxvalue = 0.5;
         for (int i = 0; i < data.length; i++) {
             if (data[i * 2] > maxvalue)
@@ -2626,7 +2626,7 @@ public final class EmergencySoundbank {
             data[i * 2] *= gain;
     }
 
-    static public double[] realPart(double[] in) {
+    public static double[] realPart(double[] in) {
         double[] out = new double[in.length / 2];
         for (int i = 0; i < out.length; i++) {
             out[i] = in[i * 2];
@@ -2634,7 +2634,7 @@ public final class EmergencySoundbank {
         return out;
     }
 
-    static public double[] imgPart(double[] in) {
+    public static double[] imgPart(double[] in) {
         double[] out = new double[in.length / 2];
         for (int i = 0; i < out.length; i++) {
             out[i] = in[i * 2];
@@ -2642,7 +2642,7 @@ public final class EmergencySoundbank {
         return out;
     }
 
-    static public float[] toFloat(double[] in) {
+    public static float[] toFloat(double[] in) {
         float[] out = new float[in.length];
         for (int i = 0; i < out.length; i++) {
             out[i] = (float) in[i];
@@ -2650,24 +2650,24 @@ public final class EmergencySoundbank {
         return out;
     }
 
-    static public byte[] toBytes(float[] in, AudioFormat format) {
+    public static byte[] toBytes(float[] in, AudioFormat format) {
         byte[] out = new byte[in.length * format.getFrameSize()];
         return AudioFloatConverter.getConverter(format).toByteArray(in, out);
     }
 
-    static public void fadeUp(double[] data, int samples) {
+    public static void fadeUp(double[] data, int samples) {
         double dsamples = samples;
         for (int i = 0; i < samples; i++)
             data[i] *= i / dsamples;
     }
 
-    static public void fadeUp(float[] data, int samples) {
+    public static void fadeUp(float[] data, int samples) {
         double dsamples = samples;
         for (int i = 0; i < samples; i++)
             data[i] *= i / dsamples;
     }
 
-    static public double[] loopExtend(double[] data, int newsize) {
+    public static double[] loopExtend(double[] data, int newsize) {
         double[] outdata = new double[newsize];
         int p_len = data.length;
         int p_ps = 0;
@@ -2680,7 +2680,7 @@ public final class EmergencySoundbank {
         return outdata;
     }
 
-    static public float[] loopExtend(float[] data, int newsize) {
+    public static float[] loopExtend(float[] data, int newsize) {
         float[] outdata = new float[newsize];
         int p_len = data.length;
         int p_ps = 0;

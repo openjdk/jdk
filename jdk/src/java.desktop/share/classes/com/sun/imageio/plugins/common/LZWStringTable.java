@@ -37,16 +37,16 @@ import java.io.PrintStream;
  **/
 public class LZWStringTable {
     /** codesize + Reserved Codes */
-    private final static int RES_CODES = 2;
+    private static final int RES_CODES = 2;
 
-    private final static short HASH_FREE = (short)0xFFFF;
-    private final static short NEXT_FIRST = (short)0xFFFF;
+    private static final short HASH_FREE = (short)0xFFFF;
+    private static final short NEXT_FIRST = (short)0xFFFF;
 
-    private final static int MAXBITS = 12;
-    private final static int MAXSTR = (1 << MAXBITS);
+    private static final int MAXBITS = 12;
+    private static final int MAXSTR = (1 << MAXBITS);
 
-    private final static short HASHSIZE = 9973;
-    private final static short HASHSTEP = 2039;
+    private static final short HASHSIZE = 9973;
+    private static final short HASHSTEP = 2039;
 
     byte[]  strChr;  // after predecessor character
     short[] strNxt;  // predecessor string
@@ -142,7 +142,7 @@ public class LZWStringTable {
         }
     }
 
-    static public int hash(short index, byte lastbyte) {
+    public static int hash(short index, byte lastbyte) {
         return (((short)(lastbyte << 8) ^ index) & 0xFFFF) % HASHSIZE;
     }
 

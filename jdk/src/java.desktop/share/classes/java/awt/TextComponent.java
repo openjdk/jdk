@@ -110,7 +110,7 @@ public class TextComponent extends Component implements Accessible {
     /**
      * A list of listeners that will receive events from this object.
      */
-    transient protected TextListener textListener;
+    protected transient TextListener textListener;
 
     /*
      * JDK 1.1 serialVersionUID

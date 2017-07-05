@@ -232,7 +232,7 @@ public abstract class TextMeasureTests extends TextTests {
         }
     }
 
-    public static abstract class GVMeasureTest extends TextMeasureTests {
+    public abstract static class GVMeasureTest extends TextMeasureTests {
         protected GVMeasureTest(Group parent, String nodeName, String description) {
             super(parent, nodeName, description);
         }
@@ -431,7 +431,7 @@ public abstract class TextMeasureTests extends TextTests {
         }
     }
 
-    public static abstract class TLMeasureTest extends TextMeasureTests {
+    public abstract static class TLMeasureTest extends TextMeasureTests {
         protected TLMeasureTest(Group parent, String nodeName, String description) {
             super(parent, nodeName, description);
         }
@@ -506,7 +506,7 @@ public abstract class TextMeasureTests extends TextTests {
         }
     }
 
-    public static abstract class TLExtendedMeasureTest extends TLMeasureTest {
+    public abstract static class TLExtendedMeasureTest extends TLMeasureTest {
         protected TLExtendedMeasureTest(Group parent, String nodeName, String description) {
             super(parent, nodeName, description);
         }

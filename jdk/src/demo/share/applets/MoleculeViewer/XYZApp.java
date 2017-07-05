@@ -504,11 +504,11 @@ class Atom {
 
     private static Applet applet;
     private static byte[] data;
-    private final static int R = 40;
-    private final static int hx = 15;
-    private final static int hy = 15;
-    private final static int bgGrey = 192;
-    private final static int nBalls = 16;
+    private static final int R = 40;
+    private static final int hx = 15;
+    private static final int hy = 15;
+    private static final int bgGrey = 192;
+    private static final int nBalls = 16;
     private static int maxr;
     private int Rl;
     private int Gl;

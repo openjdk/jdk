@@ -159,20 +159,20 @@ public interface BeanInfo {
     /**
      * Constant to indicate a 16 x 16 color icon.
      */
-    final static int ICON_COLOR_16x16 = 1;
+    static final int ICON_COLOR_16x16 = 1;
 
     /**
      * Constant to indicate a 32 x 32 color icon.
      */
-    final static int ICON_COLOR_32x32 = 2;
+    static final int ICON_COLOR_32x32 = 2;
 
     /**
      * Constant to indicate a 16 x 16 monochrome icon.
      */
-    final static int ICON_MONO_16x16 = 3;
+    static final int ICON_MONO_16x16 = 3;
 
     /**
      * Constant to indicate a 32 x 32 monochrome icon.
      */
-    final static int ICON_MONO_32x32 = 4;
+    static final int ICON_MONO_32x32 = 4;
 }

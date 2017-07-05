@@ -288,7 +288,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * Class MediaSize.ISO includes {@link MediaSize MediaSize} values for ISO
      * media.
      */
-    public final static class ISO {
+    public static final class ISO {
         /**
          * Specifies the ISO A0 size, 841 mm by 1189 mm.
          */
@@ -437,7 +437,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * Class MediaSize.JIS includes {@link MediaSize MediaSize} values for JIS
      * (Japanese) media.      *
      */
-    public final static class JIS {
+    public static final class JIS {
 
         /**
          * Specifies the JIS B0 size, 1030 mm by 1456 mm.
@@ -601,7 +601,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * Class MediaSize.NA includes {@link MediaSize MediaSize} values for North
      * American media.
      */
-    public final static class NA {
+    public static final class NA {
 
         /**
          * Specifies the North American letter size, 8.5 inches by 11 inches.
@@ -721,7 +721,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * Class MediaSize.Engineering includes {@link MediaSize MediaSize} values
      * for engineering media.
      */
-    public final static class Engineering {
+    public static final class Engineering {
 
         /**
          * Specifies the engineering A size, 8.5 inch by 11 inch.
@@ -764,7 +764,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * Class MediaSize.Other includes {@link MediaSize MediaSize} values for
      * miscellaneous media.
      */
-    public final static class Other {
+    public static final class Other {
         /**
          * Specifies the executive size, 7.25 inches by 10.5 inches.
          */
