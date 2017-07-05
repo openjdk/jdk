@@ -2698,6 +2698,14 @@ void os::free_memory(char* addr, size_t bytes) {
   }
 }
 
+bool os::create_stack_guard_pages(char* addr, size_t size) {
+  return os::commit_memory(addr, size);
+}
+
+bool os::remove_stack_guard_pages(char* addr, size_t size) {
+  return os::uncommit_memory(addr, size);
+}
+
 // Change the page size in a given range.
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   assert((intptr_t)addr % alignment_hint == 0, "Address should be aligned.");

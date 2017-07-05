@@ -25,9 +25,20 @@
 provider hotspot {
   probe class__loaded(char*, uintptr_t, void*, uintptr_t);
   probe class__unloaded(char*, uintptr_t, void*, uintptr_t);
+  probe class__initialization__required(char*, uintptr_t, void*, intptr_t,int);
+  probe class__initialization__recursive(char*, uintptr_t, void*, intptr_t,int);
+  probe class__initialization__concurrent(char*, uintptr_t, void*, intptr_t,int);
+  probe class__initialization__erroneous(char*, uintptr_t, void*, intptr_t, int);
+  probe class__initialization__super__failed(char*, uintptr_t, void*, intptr_t,int);
+  probe class__initialization__clinit(char*, uintptr_t, void*, intptr_t,int);
+  probe class__initialization__error(char*, uintptr_t, void*, intptr_t,int);
+  probe class__initialization__end(char*, uintptr_t, void*, intptr_t,int);
   probe vm__init__begin();
   probe vm__init__end();
   probe vm__shutdown();
+  probe vmops__request(char*, uintptr_t, int);
+  probe vmops__begin(char*, uintptr_t, int);
+  probe vmops__end(char*, uintptr_t, int);
   probe gc__begin(uintptr_t);
   probe gc__end();
   probe mem__pool__gc__begin(
@@ -38,6 +49,12 @@ provider hotspot {
     uintptr_t, uintptr_t, uintptr_t, uintptr_t);
   probe thread__start(char*, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
   probe thread__stop(char*, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+  probe thread__sleep__begin(long long);
+  probe thread__sleep__end(int);
+  probe thread__yield();
+  probe thread__park__begin(uintptr_t, int, long long);
+  probe thread__park__end(uintptr_t);
+  probe thread__unpark(uintptr_t);
   probe method__compile__begin(
     char*, uintptr_t, char*, uintptr_t, char*, uintptr_t, char*, uintptr_t); 
   probe method__compile__end(
