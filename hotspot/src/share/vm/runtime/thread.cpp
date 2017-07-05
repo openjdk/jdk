@@ -31,6 +31,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
@@ -2856,6 +2857,25 @@ void JavaThread::trace_frames() {
     tty->print("  %d. ", frame_no++);
     fst.current()->print_value_on(tty,this);
     tty->cr();
+  }
+}
+
+
+// Print or validate the layout of stack frames
+void JavaThread::print_frame_layout(int depth, bool validate_only) {
+  ResourceMark rm;
+  PRESERVE_EXCEPTION_MARK;
+  FrameValues values;
+  int frame_no = 0;
+  for(StackFrameStream fst(this, false); !fst.is_done(); fst.next()) {
+    fst.current()->describe(values, ++frame_no);
+    if (depth == frame_no) break;
+  }
+  if (validate_only) {
+    values.validate();
+  } else {
+    tty->print_cr("[Describe stack layout]");
+    values.print();
   }
 }
 
