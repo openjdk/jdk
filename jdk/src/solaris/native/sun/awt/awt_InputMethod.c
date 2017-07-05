@@ -1458,7 +1458,6 @@ static void CommitStringCallback(XIC ic, XPointer client_data, XPointer call_dat
 }
 
 static void OpenXIMCallback(Display *display, XPointer client_data, XPointer call_data) {
-    extern int xerror_handler();
     XIMCallback ximCallback;
 
     X11im = XOpenIM(display, NULL, NULL, NULL);
@@ -1469,13 +1468,6 @@ static void OpenXIMCallback(Display *display, XPointer client_data, XPointer cal
     ximCallback.callback = (XIMProc)DestroyXIMCallback;
     ximCallback.client_data = NULL;
     XSetIMValues(X11im, XNDestroyCallback, &ximCallback, NULL);
-
-    /* Workaround for Solaris 2.6 bug 4097754. We're affected by this problem
-     * because Motif also calls XOpenIM for us. Re-registering the error handler
-     * that MToolkit has registered already after calling XOpenIM avoids the
-     * problem.
-     */
-    XSetErrorHandler(xerror_handler);
 }
 
 static void DestroyXIMCallback(XIM im, XPointer client_data, XPointer call_data) {

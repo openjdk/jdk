@@ -39,13 +39,6 @@ ifeq ($(PLATFORM), solaris)
   LINT           = $(COMPILER_PATH)lint
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -G
-  # But gcc is still needed no matter what on 32bit
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    REQUIRED_GCC_VER = 2.95
-    GCC =$(GCC_COMPILER_PATH)gcc
-    _GCC_VER :=$(shell $(GCC) -dumpversion 2>&1 )
-    GCC_VER  :=$(call GetVersion,"$(_GCC_VER)")
-  endif
 endif
 
 # Sun Studio Compiler settings specific to Linux

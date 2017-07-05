@@ -301,7 +301,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         try {
             XWindowAttributes wattr = new XWindowAttributes();
             try {
-                XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                               xembed.handle, wattr.pData);
 

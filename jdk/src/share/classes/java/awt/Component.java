@@ -1038,13 +1038,23 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     void setGraphicsConfiguration(GraphicsConfiguration gc) {
         synchronized(getTreeLock()) {
-            graphicsConfig = gc;
-
-            ComponentPeer peer = getPeer();
-            if (peer != null) {
-                peer.updateGraphicsData(gc);
+            if (updateGraphicsData(gc)) {
+                removeNotify();
+                addNotify();
             }
         }
+    }
+
+    boolean updateGraphicsData(GraphicsConfiguration gc) {
+        checkTreeLock();
+
+        graphicsConfig = gc;
+
+        ComponentPeer peer = getPeer();
+        if (peer != null) {
+            return peer.updateGraphicsData(gc);
+        }
+        return false;
     }
 
     /**

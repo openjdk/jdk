@@ -373,6 +373,50 @@ Rule	Arg	2008	max	-	Oct	Sun>=15	0:00	1:00	S
 # keep America/Cordoba a single region rather than splitting it into the
 # other 5 subregions.
 
+# From Mariano Absatz (2009-03-13):
+# Yesterday (with our usual 2-day notice) the Province of San Luis
+# decided that next Sunday instead of "staying" @utc-03:00 they will go
+# to utc-04:00 until the second Saturday in October...
+#
+# The press release is at
+# <a href="http://www.sanluis.gov.ar/SL/Paginas/NoticiaDetalle.asp?TemaId=1&InfoPrensaId=3102">
+# http://www.sanluis.gov.ar/SL/Paginas/NoticiaDetalle.asp?TemaId=1&InfoPrensaId=3102
+# </a>
+# (I couldn't find the decree, but
+# <a href="http://www.sanluis.gov.ar">
+# www.sanluis.gov.ar
+# <a/>
+# is the official page for the Province Government).
+#
+# There's also a note in only one of the major national papers (La Nación) at
+# <a href="http://www.lanacion.com.ar/nota.asp?nota_id=1107912">
+# http://www.lanacion.com.ar/nota.asp?nota_id=1107912
+# </a>
+# 
+# The press release says:
+#  (...) anunció que el próximo domingo a las 00:00 los puntanos deberán
+# atrasar una hora sus relojes.
+#
+# A partir de entonces, San Luis establecerá el huso horario propio de
+# la Provincia. De esta manera, durante el periodo del calendario anual
+# 2009, el cambio horario quedará comprendido entre las 00:00 del tercer
+# domingo de marzo y las 24:00 del segundo sábado de octubre.
+# Quick&dirty translation
+# (...) announced that next Sunday, at 00:00, Puntanos (the San Luis
+# inhabitants) will have to turn back one hour their clocks
+#
+# Since then, San Luis will establish its own Province timezone. Thus,
+# during 2009, this timezone change will run from 00:00 the third Sunday
+# in March until 24:00 of the second Saturday in October.
+
+# From Arthur David Olson (2009-03-16):
+# The unofficial claim at
+# <a href="http://www.timeanddate.com/news/time/san-luis-new-time-zone.html">
+# http://www.timeanddate.com/news/time/san-luis-new-time-zone.html
+# </a>
+# is that "The province will most likely follow the next daylight saving schedule,
+# which is planned for the second Sunday in October."
+
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
@@ -520,7 +564,8 @@ Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 			-3:00	-	ART	2004 May 31
 			-4:00	-	WART	2004 Jul 25
 			-3:00	Arg	AR%sT	2008 Jan 21
-			-3:00	-	ART
+			-3:00	-	ART	2009 Mar 15
+			-4:00	Arg	WAR%sT
 #
 # Santa Cruz (SC)
 Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT 1894 Oct 31
