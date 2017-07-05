@@ -1,5 +1,5 @@
 #
-# Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ SIGNING_PASSPHRASE = $(SIGNING_KEY_DIR)/passphrase.txt
 SIGNING_ALIAS      = jce_rsa
 
 #
-# Defines for signing/obfuscating the various jar files.
+# Defines for signing the various jar files.
 #
 
 define presign
@@ -98,21 +98,6 @@ define sign-file
 	$(prep-target)
 	$(CP) $1 $@
 	$(sign-target)
-endef
-
-#
-# Location for the Obfuscation product.  JDK currently has
-# the requirement that we obfuscate our JCE jars.
-#
-OBFUSCATOR = /security/tools/bin/obfus
-OBFUS_DIR = $(TEMPDIR)/obfus
-
-define preobfus
-    @if [ ! -f $(OBFUSCATOR) ]; then \
-	$(ECHO) "\n$(OBFUSCATOR): Obfuscator *NOT* available..." \
-	    $(README-MAKEFILE_WARNING); \
-	exit 2; \
-    fi
 endef
 
 endif  # !OPENJDK

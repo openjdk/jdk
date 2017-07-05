@@ -718,10 +718,10 @@ public class MenuItemLayoutHelper {
     }
 
     private void alignRect(Rectangle rect, int alignment, int origWidth) {
-        if (alignment != SwingUtilities.LEFT) {
+        if (alignment == SwingConstants.RIGHT) {
             rect.x = rect.x + rect.width - origWidth;
-            rect.width = origWidth;
         }
+        rect.width = origWidth;
     }
 
     protected void layoutIconAndTextInLabelRect(LayoutResult lr) {

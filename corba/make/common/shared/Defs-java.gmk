@@ -107,12 +107,12 @@ endif
 NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true
 JAVACFLAGS  += $(NO_PROPRIETARY_API_WARNINGS)
 
-# Add the source level (currently all source is 1.5, should this be 1.6?)
-LANGUAGE_VERSION = -source 1.5
+# Add the source level
+LANGUAGE_VERSION = -source 7
 JAVACFLAGS  += $(LANGUAGE_VERSION)
 
-# Add the class version we want (currently this is 5, should it be 6 or even 7?)
-TARGET_CLASS_VERSION = 5
+# Add the class version we want
+TARGET_CLASS_VERSION = 7
 CLASS_VERSION = -target $(TARGET_CLASS_VERSION)
 JAVACFLAGS  += $(CLASS_VERSION)
 JAVACFLAGS  += -encoding ascii
