@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1765,7 +1765,7 @@ void LIRGenerator::do_Throw(Throw* x) {
     __ null_check(exception_opr, new CodeEmitInfo(info, true));
   }
 
-  if (compilation()->env()->jvmti_can_post_exceptions() &&
+  if (compilation()->env()->jvmti_can_post_on_exceptions() &&
       !block()->is_set(BlockBegin::default_exception_handler_flag)) {
     // we need to go through the exception lookup path to get JVMTI
     // notification done
