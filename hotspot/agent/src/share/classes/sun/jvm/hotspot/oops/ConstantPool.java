@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,7 +469,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
     case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
     case JVM_CONSTANT_MethodHandleInError:return "JVM_CONSTANT_MethodHandleInError";
     case JVM_CONSTANT_MethodTypeInError:  return "JVM_CONSTANT_MethodTypeInError";
-    case JVM_CONSTANT_Object:             return "JVM_CONSTANT_Object";
     }
     throw new InternalError("Unknown tag: " + tag);
   }

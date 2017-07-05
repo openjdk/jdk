@@ -33,7 +33,7 @@ GENERATED=../generated
 BUILD_PCH_FILE=_build_pch_file.obj
 !endif
 
-default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA wb
+default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
 
 !include ../local.make
 !include compile.make
@@ -71,4 +71,3 @@ $(AOUT): $(Res_Files) $(Obj_Files) vm.def
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make
 !include $(WorkSpace)/make/windows/makefiles/launcher.make
-!include $(WorkSpace)/make/windows/makefiles/wb.make
