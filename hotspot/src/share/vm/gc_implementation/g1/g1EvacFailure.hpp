@@ -41,11 +41,11 @@ class UpdateRSetDeferred : public OopsInHeapRegionClosure {
 private:
   G1CollectedHeap* _g1;
   DirtyCardQueue *_dcq;
-  CardTableModRefBS* _ct_bs;
+  G1SATBCardTableModRefBS* _ct_bs;
 
 public:
   UpdateRSetDeferred(G1CollectedHeap* g1, DirtyCardQueue* dcq) :
-    _g1(g1), _ct_bs((CardTableModRefBS*)_g1->barrier_set()), _dcq(dcq) {}
+    _g1(g1), _ct_bs(_g1->g1_barrier_set()), _dcq(dcq) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ void specialized_oop_follow_contents(InstanceRefKlass* ref, oop obj) {
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
   debug_only(
     if(TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print_cr("InstanceRefKlass::oop_follow_contents " INTPTR_FORMAT, obj);
+      gclog_or_tty->print_cr("InstanceRefKlass::oop_follow_contents " INTPTR_FORMAT, (void *)obj);
     }
   )
   if (!oopDesc::is_null(heap_oop)) {
@@ -62,7 +62,7 @@ void specialized_oop_follow_contents(InstanceRefKlass* ref, oop obj) {
       ref->InstanceKlass::oop_follow_contents(obj);
       debug_only(
         if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL enqueued " INTPTR_FORMAT, obj);
+          gclog_or_tty->print_cr("       Non NULL enqueued " INTPTR_FORMAT, (void *)obj);
         }
       )
       return;
@@ -70,7 +70,7 @@ void specialized_oop_follow_contents(InstanceRefKlass* ref, oop obj) {
       // treat referent as normal oop
       debug_only(
         if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL normal " INTPTR_FORMAT, obj);
+          gclog_or_tty->print_cr("       Non NULL normal " INTPTR_FORMAT, (void *)obj);
         }
       )
       MarkSweep::mark_and_push(referent_addr);
@@ -130,7 +130,7 @@ void specialized_oop_follow_contents(InstanceRefKlass* ref,
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
   debug_only(
     if(TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print_cr("InstanceRefKlass::oop_follow_contents " INTPTR_FORMAT, obj);
+      gclog_or_tty->print_cr("InstanceRefKlass::oop_follow_contents " INTPTR_FORMAT, (void *)obj);
     }
   )
   if (!oopDesc::is_null(heap_oop)) {
@@ -142,7 +142,7 @@ void specialized_oop_follow_contents(InstanceRefKlass* ref,
       ref->InstanceKlass::oop_follow_contents(cm, obj);
       debug_only(
         if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL enqueued " INTPTR_FORMAT, obj);
+          gclog_or_tty->print_cr("       Non NULL enqueued " INTPTR_FORMAT, (void *)obj);
         }
       )
       return;
@@ -150,7 +150,7 @@ void specialized_oop_follow_contents(InstanceRefKlass* ref,
       // treat referent as normal oop
       debug_only(
         if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL normal " INTPTR_FORMAT, obj);
+          gclog_or_tty->print_cr("       Non NULL normal " INTPTR_FORMAT, (void *)obj);
         }
       )
       PSParallelCompact::mark_and_push(cm, referent_addr);

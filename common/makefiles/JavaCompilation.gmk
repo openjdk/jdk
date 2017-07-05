@@ -159,7 +159,7 @@ define SetupArchive
         endif
     endif
 
-    # Utility macros, to make the shell script receipt somewhat easier to dechipher.
+    # Utility macros, to make the shell script receipt somewhat easier to decipher.
 
     # The capture contents macro finds all files (matching the patterns, typically
     # .class and .prp) that are newer than the jar-file, ie the new content to be put into the jar.
@@ -520,7 +520,7 @@ define SetupJavaCompilation
         # Using plain javac to batch compile everything.
         $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_BIN)/_the.batch
 
-        # When buliding in batch, put headers in a temp dir to filter out those that actually
+        # When building in batch, put headers in a temp dir to filter out those that actually
         # changed before copying them to the real header dir.
         ifneq (,$$($1_HEADERS))
             $1_HEADERS_ARG := -h $$($1_HEADERS).tmp

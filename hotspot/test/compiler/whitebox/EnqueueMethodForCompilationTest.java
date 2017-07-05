@@ -70,12 +70,10 @@ public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
 
         int compLevel = getCompLevel();
         int bci = WHITE_BOX.getMethodEntryBci(method);
-        System.out.println("bci = " + bci);
-        printInfo();
         deoptimize();
-        printInfo();
         checkNotCompiled();
-        printInfo();
+        WHITE_BOX.clearMethodState(method);
+
         WHITE_BOX.enqueueMethodForCompilation(method, compLevel, bci);
         checkCompiled();
         deoptimize();

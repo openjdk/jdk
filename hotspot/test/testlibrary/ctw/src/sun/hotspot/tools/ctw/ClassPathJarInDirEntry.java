@@ -31,8 +31,6 @@ import java.util.concurrent.Executor;
 
 /**
  * Handler for dirs containing jar-files with classes to compile.
- *
- * @author igor.ignatyev@oracle.com
  */
 public class ClassPathJarInDirEntry extends PathHandler {
 
