@@ -310,6 +310,8 @@ class ConsoleIOContext extends IOContext {
                         int firstLine = 0;
 
                         PRINT_PAGE: while (true) {
+                            in.print(lastNote.replaceAll(".", " ") + ConsoleReader.RESET_LINE);
+
                             int toPrint = height - 1;
 
                             while (toPrint > 0 && firstLine < lines.length) {

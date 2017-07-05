@@ -26,6 +26,8 @@
 /** Defines the implementation of the
  *  {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
  *  and its command line equivalent, <em>javadoc</em>.
+ *
+ *  @since 9
  */
 module jdk.javadoc {
     requires transitive java.compiler;
