@@ -97,7 +97,7 @@ void os_init_globals() {
 // except that on Windows the %z behaves badly, so we do it ourselves.
 // Also, people wanted milliseconds on there,
 // and strftime doesn't do milliseconds.
-char* os::iso8601_time(char* buffer, size_t buffer_length) {
+char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
   // Output will be of the form "YYYY-MM-DDThh:mm:ss.mmm+zzzz\0"
   //                                      1         2
   //                             12345678901234567890123456789
@@ -122,9 +122,16 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
     milliseconds_since_19700101 % milliseconds_per_microsecond;
   // Convert the time value to a tm and timezone variable
   struct tm time_struct;
-  if (localtime_pd(&seconds_since_19700101, &time_struct) == NULL) {
-    assert(false, "Failed localtime_pd");
-    return NULL;
+  if (utc) {
+    if (gmtime_pd(&seconds_since_19700101, &time_struct) == NULL) {
+      assert(false, "Failed gmtime_pd");
+      return NULL;
+    }
+  } else {
+    if (localtime_pd(&seconds_since_19700101, &time_struct) == NULL) {
+      assert(false, "Failed localtime_pd");
+      return NULL;
+    }
   }
 #if defined(_ALLBSD_SOURCE)
   const time_t zone = (time_t) time_struct.tm_gmtoff;
@@ -141,6 +148,12 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
   if (time_struct.tm_isdst > 0) {
     UTC_to_local = UTC_to_local - seconds_per_hour;
   }
+
+  // No offset when dealing with UTC
+  if (utc) {
+    UTC_to_local = 0;
+  }
+
   // Compute the time zone offset.
   //    localtime_pd() sets timezone to the difference (in seconds)
   //    between UTC and and local time.
@@ -1766,95 +1779,3 @@ os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::Stat
   return result;
 }
 #endif
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-#define assert_eq(a,b) assert(a == b, SIZE_FORMAT " != " SIZE_FORMAT, a, b)
-
-class TestOS : AllStatic {
-  static size_t small_page_size() {
-    return os::vm_page_size();
-  }
-
-  static size_t large_page_size() {
-    const size_t large_page_size_example = 4 * M;
-    return os::page_size_for_region_aligned(large_page_size_example, 1);
-  }
-
-  static void test_page_size_for_region_aligned() {
-    if (UseLargePages) {
-      const size_t small_page = small_page_size();
-      const size_t large_page = large_page_size();
-
-      if (large_page > small_page) {
-        size_t num_small_pages_in_large = large_page / small_page;
-        size_t page = os::page_size_for_region_aligned(large_page, num_small_pages_in_large);
-
-        assert_eq(page, small_page);
-      }
-    }
-  }
-
-  static void test_page_size_for_region_alignment() {
-    if (UseLargePages) {
-      const size_t small_page = small_page_size();
-      const size_t large_page = large_page_size();
-      if (large_page > small_page) {
-        const size_t unaligned_region = large_page + 17;
-        size_t page = os::page_size_for_region_aligned(unaligned_region, 1);
-        assert_eq(page, small_page);
-
-        const size_t num_pages = 5;
-        const size_t aligned_region = large_page * num_pages;
-        page = os::page_size_for_region_aligned(aligned_region, num_pages);
-        assert_eq(page, large_page);
-      }
-    }
-  }
-
-  static void test_page_size_for_region_unaligned() {
-    if (UseLargePages) {
-      // Given exact page size, should return that page size.
-      for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
-        size_t expected = os::_page_sizes[i];
-        size_t actual = os::page_size_for_region_unaligned(expected, 1);
-        assert_eq(expected, actual);
-      }
-
-      // Given slightly larger size than a page size, return the page size.
-      for (size_t i = 0; os::_page_sizes[i] != 0; i++) {
-        size_t expected = os::_page_sizes[i];
-        size_t actual = os::page_size_for_region_unaligned(expected + 17, 1);
-        assert_eq(expected, actual);
-      }
-
-      // Given a slightly smaller size than a page size,
-      // return the next smaller page size.
-      if (os::_page_sizes[1] > os::_page_sizes[0]) {
-        size_t expected = os::_page_sizes[0];
-        size_t actual = os::page_size_for_region_unaligned(os::_page_sizes[1] - 17, 1);
-        assert_eq(actual, expected);
-      }
-
-      // Return small page size for values less than a small page.
-      size_t small_page = small_page_size();
-      size_t actual = os::page_size_for_region_unaligned(small_page - 17, 1);
-      assert_eq(small_page, actual);
-    }
-  }
-
- public:
-  static void run_tests() {
-    test_page_size_for_region_aligned();
-    test_page_size_for_region_alignment();
-    test_page_size_for_region_unaligned();
-  }
-};
-
-void TestOS_test() {
-  TestOS::run_tests();
-}
-
-#endif // PRODUCT

@@ -476,6 +476,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     }
 #endif
   }
+#endif
   // handle exceptions
   {
     Label L;

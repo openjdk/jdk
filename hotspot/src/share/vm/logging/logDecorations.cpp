@@ -72,6 +72,12 @@ char* LogDecorations::create_time_decoration(char* pos) {
   ASSERT_AND_RETURN(written, pos)
 }
 
+char* LogDecorations::create_utctime_decoration(char* pos) {
+  char* buf = os::iso8601_time(pos, 29, true);
+  int written = buf == NULL ? -1 : 29;
+  ASSERT_AND_RETURN(written, pos)
+}
+
 char * LogDecorations::create_uptime_decoration(char* pos) {
   int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%.3fs", os::elapsedTime());
   ASSERT_AND_RETURN(written, pos)
