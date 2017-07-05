@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,16 +99,16 @@ final class Stroker implements PathConsumer2D {
     private final PolyStack reverse = new PolyStack();
 
     /**
-     * Constructs a <code>Stroker</code>.
+     * Constructs a {@code Stroker}.
      *
-     * @param pc2d an output <code>PathConsumer2D</code>.
+     * @param pc2d an output {@code PathConsumer2D}.
      * @param lineWidth the desired line width in pixels
      * @param capStyle the desired end cap style, one of
-     * <code>CAP_BUTT</code>, <code>CAP_ROUND</code> or
-     * <code>CAP_SQUARE</code>.
+     * {@code CAP_BUTT}, {@code CAP_ROUND} or
+     * {@code CAP_SQUARE}.
      * @param joinStyle the desired line join style, one of
-     * <code>JOIN_MITER</code>, <code>JOIN_ROUND</code> or
-     * <code>JOIN_BEVEL</code>.
+     * {@code JOIN_MITER}, {@code JOIN_ROUND} or
+     * {@code JOIN_BEVEL}.
      * @param miterLimit the desired miter limit
      */
     public Stroker(PathConsumer2D pc2d,
@@ -193,11 +193,11 @@ final class Stroker implements PathConsumer2D {
         // The sign of the dot product of mx,my and omx,omy is equal to the
         // the sign of the cosine of ext
         // (ext is the angle between omx,omy and mx,my).
-        double cosext = omx * mx + omy * my;
+        final float cosext = omx * mx + omy * my;
         // If it is >=0, we know that abs(ext) is <= 90 degrees, so we only
         // need 1 curve to approximate the circle section that joins omx,omy
         // and mx,my.
-        final int numCurves = cosext >= 0 ? 1 : 2;
+        final int numCurves = (cosext >= 0f) ? 1 : 2;
 
         switch (numCurves) {
         case 1:
@@ -242,14 +242,22 @@ final class Stroker implements PathConsumer2D {
                                      final float mx, final float my,
                                      boolean rev)
     {
-        float cosext2 = (omx * mx + omy * my) / (2 * lineWidth2 * lineWidth2);
+        final float cosext2 = (omx * mx + omy * my) / (2f * lineWidth2 * lineWidth2);
+
+        // check round off errors producing cos(ext) > 1 and a NaN below
+        // cos(ext) == 1 implies colinear segments and an empty join anyway
+        if (cosext2 >= 0.5f) {
+            // just return to avoid generating a flat curve:
+            return;
+        }
+
         // cv is the length of P1-P0 and P2-P3 divided by the radius of the arc
         // (so, cv assumes the arc has radius 1). P0, P1, P2, P3 are the points that
         // define the bezier curve we're computing.
         // It is computed using the constraints that P1-P0 and P3-P2 are parallel
         // to the arc tangents at the endpoints, and that |P1-P0|=|P3-P2|.
-        float cv = (float) ((4.0 / 3.0) * sqrt(0.5-cosext2) /
-                            (1.0 + sqrt(cosext2+0.5)));
+        float cv = (float) ((4.0 / 3.0) * sqrt(0.5 - cosext2) /
+                            (1.0 + sqrt(cosext2 + 0.5)));
         // if clockwise, we need to negate cv.
         if (rev) { // rev is equivalent to isCW(omx, omy, mx, my)
             cv = -cv;

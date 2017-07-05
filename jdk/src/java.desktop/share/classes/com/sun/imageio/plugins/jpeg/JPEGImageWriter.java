@@ -1130,10 +1130,10 @@ public class JPEGImageWriter extends ImageWriter {
         /*
          * from jpeg_metadata.html:
          * If no stream metadata is supplied to
-         * <code>ImageWriter.prepareWriteSequence</code>, then no
+         * {@code ImageWriter.prepareWriteSequence}, then no
          * tables-only image is written.  If stream metadata containing
          * no tables is supplied to
-         * <code>ImageWriter.prepareWriteSequence</code>, then a tables-only
+         * {@code ImageWriter.prepareWriteSequence}, then a tables-only
          * image containing default visually lossless tables is written.
          */
         if (streamMetadata != null) {
@@ -1699,7 +1699,7 @@ public class JPEGImageWriter extends ImageWriter {
     private native void setDest(long structPointer);
 
     /**
-     * Returns <code>true</code> if the write was aborted.
+     * Returns {@code true} if the write was aborted.
      */
     private native boolean writeImage(long structPointer,
                                       byte [] data,

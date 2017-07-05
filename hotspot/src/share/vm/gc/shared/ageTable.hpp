@@ -38,7 +38,7 @@ class GCPolicyCounters;
 //
 // Note: all sizes are in oops
 
-class ageTable VALUE_OBJ_CLASS_SPEC {
+class AgeTable VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 
  public:
@@ -50,7 +50,7 @@ class ageTable VALUE_OBJ_CLASS_SPEC {
 
   // constructor.  "global" indicates that this is the global age table
   // (as opposed to gc-thread-local)
-  ageTable(bool global = true);
+  AgeTable(bool global = true);
 
   // clear table
   void clear();
@@ -67,7 +67,7 @@ class ageTable VALUE_OBJ_CLASS_SPEC {
 
   // Merge another age table with the current one.  Used
   // for parallel young generation gc.
-  void merge(ageTable* subTable);
+  void merge(AgeTable* subTable);
 
   // calculate new tenuring threshold based on age information
   uint compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters);

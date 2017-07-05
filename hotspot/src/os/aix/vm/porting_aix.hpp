@@ -1,5 +1,5 @@
 /*
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,24 +61,37 @@ extern "C"
 #endif
 int dladdr(void *addr, Dl_info *info);
 
-typedef unsigned int* codeptr_t;
-
 struct tbtable;
 
-// helper function - given a program counter, tries to locate the traceback table and
-// returns info from it (like, most importantly, function name, displacement of the
-// pc inside the function, and the traceback table itself.
-#ifdef __cplusplus
-extern "C"
-#endif
-int getFuncName(
-      codeptr_t pc,                    // [in] program counter
-      char* p_name, size_t namelen,    // [out] optional: user provided buffer for the function name
-      int* p_displacement,             // [out] optional: displacement
-      const struct tbtable** p_tb,     // [out] optional: ptr to traceback table to get further information
-      char* p_errmsg, size_t errmsglen, // [out] optional: user provided buffer for error messages
-      bool demangle                    // [in] whether to demangle the name
-    );
+class AixSymbols {
+ public:
+
+  // Given a program counter, tries to locate the traceback table and returns info from
+  // it - e.g. function name, displacement of the pc inside the function, and the traceback
+  // table itself.
+  static bool get_function_name (
+    address pc,                      // [in] program counter
+    char* p_name, size_t namelen,    // [out] optional: user provided buffer for the function name
+    int* p_displacement,             // [out] optional: displacement
+    const struct tbtable** p_tb,     // [out] optional: ptr to traceback table to get further information
+    bool demangle                    // [in] whether to demangle the name
+  );
+
+  // Given a program counter, returns the name of the module (library and module) the pc points to
+  static bool get_module_name (
+    address pc,                      // [in] program counter
+    char* p_name, size_t namelen     // [out] module name
+  );
+
+};
+
+class AixNativeCallstack {
+ public:
+  static void print_callstack_for_context(outputStream* st, const ucontext_t* uc,
+                                          bool demangle,
+                                          char* buf, size_t buf_size);
+};
+
 
 #endif // OS_AIX_VM_PORTING_AIX_HPP
 

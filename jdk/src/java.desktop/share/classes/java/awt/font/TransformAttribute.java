@@ -45,15 +45,15 @@ import java.io.Serializable;
 import java.io.ObjectStreamException;
 
 /**
- * The <code>TransformAttribute</code> class provides an immutable
+ * The {@code TransformAttribute} class provides an immutable
  * wrapper for a transform so that it is safe to use as an attribute.
  */
 public final class TransformAttribute implements Serializable {
 
     /**
-     * The <code>AffineTransform</code> for this
-     * <code>TransformAttribute</code>, or <code>null</code>
-     * if <code>AffineTransform</code> is the identity transform.
+     * The {@code AffineTransform} for this
+     * {@code TransformAttribute}, or {@code null}
+     * if {@code AffineTransform} is the identity transform.
      */
     private AffineTransform transform;
 
@@ -74,8 +74,8 @@ public final class TransformAttribute implements Serializable {
 
     /**
      * Returns a copy of the wrapped transform.
-     * @return a <code>AffineTransform</code> that is a copy of the wrapped
-     * transform of this <code>TransformAttribute</code>.
+     * @return a {@code AffineTransform} that is a copy of the wrapped
+     * transform of this {@code TransformAttribute}.
      */
     public AffineTransform getTransform() {
         AffineTransform at = transform;
@@ -83,10 +83,10 @@ public final class TransformAttribute implements Serializable {
     }
 
     /**
-     * Returns <code>true</code> if the wrapped transform is
+     * Returns {@code true} if the wrapped transform is
      * an identity transform.
-     * @return <code>true</code> if the wrapped transform is
-     * an identity transform; <code>false</code> otherwise.
+     * @return {@code true} if the wrapped transform is
+     * an identity transform; {@code false} otherwise.
      * @since 1.4
      */
     public boolean isIdentity() {
@@ -94,7 +94,7 @@ public final class TransformAttribute implements Serializable {
     }
 
     /**
-     * A <code>TransformAttribute</code> representing the identity transform.
+     * A {@code TransformAttribute} representing the identity transform.
      * @since 1.6
      */
     public static final TransformAttribute IDENTITY = new TransformAttribute(null);
@@ -131,12 +131,12 @@ public final class TransformAttribute implements Serializable {
     }
 
     /**
-     * Returns <code>true</code> if rhs is a <code>TransformAttribute</code>
-     * whose transform is equal to this <code>TransformAttribute</code>'s
+     * Returns {@code true} if rhs is a {@code TransformAttribute}
+     * whose transform is equal to this {@code TransformAttribute}'s
      * transform.
      * @param rhs the object to compare to
-     * @return <code>true</code> if the argument is a <code>TransformAttribute</code>
-     * whose transform is equal to this <code>TransformAttribute</code>'s
+     * @return {@code true} if the argument is a {@code TransformAttribute}
+     * whose transform is equal to this {@code TransformAttribute}'s
      * transform.
      * @since 1.6
      */

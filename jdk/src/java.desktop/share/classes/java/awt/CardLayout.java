@@ -36,15 +36,15 @@ import java.io.ObjectStreamField;
 import java.io.IOException;
 
 /**
- * A <code>CardLayout</code> object is a layout manager for a
+ * A {@code CardLayout} object is a layout manager for a
  * container. It treats each component in the container as a card.
  * Only one card is visible at a time, and the container acts as
  * a stack of cards. The first component added to a
- * <code>CardLayout</code> object is the visible component when the
+ * {@code CardLayout} object is the visible component when the
  * container is first displayed.
  * <p>
  * The ordering of cards is determined by the container's own internal
- * ordering of its component objects. <code>CardLayout</code>
+ * ordering of its component objects. {@code CardLayout}
  * defines a set of methods that allow an application to flip
  * through these cards sequentially, or to show a specified card.
  * The {@link CardLayout#addLayoutComponent}
@@ -188,10 +188,10 @@ public class CardLayout implements LayoutManager2,
 
     /**
      * Adds the specified component to this card layout's internal
-     * table of names. The object specified by <code>constraints</code>
+     * table of names. The object specified by {@code constraints}
      * must be a string. The card layout stores this string as a key-value
      * pair that can be used for random access to a particular card.
-     * By calling the <code>show</code> method, an application can
+     * By calling the {@code show} method, an application can
      * display the component with the specified name.
      * @param     comp          the component to be added.
      * @param     constraints   a tag that identifies a particular
@@ -214,7 +214,7 @@ public class CardLayout implements LayoutManager2,
 
     /**
      * @deprecated   replaced by
-     *      <code>addLayoutComponent(Component, Object)</code>.
+     *      {@code addLayoutComponent(Component, Object)}.
      */
     @Deprecated
     public void addLayoutComponent(String name, Component comp) {
@@ -365,7 +365,7 @@ public class CardLayout implements LayoutManager2,
     /**
      * Lays out the specified container using this card layout.
      * <p>
-     * Each component in the <code>parent</code> container is reshaped
+     * Each component in the {@code parent} container is reshaped
      * to be the size of the container, minus space for surrounding
      * insets, horizontal gaps, and vertical gaps.
      *
@@ -515,7 +515,7 @@ public class CardLayout implements LayoutManager2,
 
     /**
      * Flips to the component that was added to this layout with the
-     * specified <code>name</code>, using <code>addLayoutComponent</code>.
+     * specified {@code name}, using {@code addLayoutComponent}.
      * If no such component exists, then nothing happens.
      * @param     parent   the parent container in which to do the layout
      * @param     name     the component name

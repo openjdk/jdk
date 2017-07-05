@@ -30,7 +30,7 @@ public interface XStateProtocol {
 
     /**
      * Returns whether or not the protocol supports the transition to the state
-     * represented by <code>state</code>. <code>State</code> contains encoded state
+     * represented by {@code state}. {@code State} contains encoded state
      * as a bit mask of state defined in java.awt.Frame
      */
     boolean supportsState(int state);

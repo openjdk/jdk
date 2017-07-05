@@ -37,10 +37,10 @@ public final class DataBufferNIOInt extends DataBuffer {
     IntBuffer bankdata[];
 
     /**
-     * Constructs an integer-based <CODE>DataBuffer</CODE> with a single bank
+     * Constructs an integer-based {@code DataBuffer} with a single bank
      * and the specified size.
      *
-     * @param size The size of the <CODE>DataBuffer</CODE>.
+     * @param size The size of the {@code DataBuffer}.
      */
     public DataBufferNIOInt(int size) {
         super(TYPE_INT,size);
@@ -51,7 +51,7 @@ public final class DataBufferNIOInt extends DataBuffer {
     }
 
     /**
-     * Returns the default (first) IntBuffer in <CODE>DataBuffer</CODE>.
+     * Returns the default (first) IntBuffer in {@code DataBuffer}.
      *
      * @return The first IntBuffer.
      */
@@ -70,7 +70,7 @@ public final class DataBufferNIOInt extends DataBuffer {
     }
 
     /**
-     * Returns the default (first) int data array in <CODE>DataBuffer</CODE>.
+     * Returns the default (first) int data array in {@code DataBuffer}.
      *
      * @return The first integer data array.
      */
@@ -137,7 +137,7 @@ public final class DataBufferNIOInt extends DataBuffer {
 
     /**
      * Sets the requested data array element in the specified bank
-     * to the integer value <CODE>i</CODE>.
+     * to the integer value {@code i}.
      * @param bank The bank in which you want to set the data array element.
      * @param i The data array element you want to set.
      * @param val The integer value to which you want to set the specified data array element.

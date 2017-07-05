@@ -646,7 +646,8 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
             }
         }
 
-        public boolean isEnabled(Object sender) {
+        @Override
+        public boolean accept(Object sender) {
             if (sender instanceof JDesktopPane) {
                 JDesktopPane dp = (JDesktopPane)sender;
                 String action = getName();

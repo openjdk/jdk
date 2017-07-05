@@ -88,12 +88,12 @@ public interface InputMethodContext extends InputMethodRequests {
      *
      * @param title the title to be displayed in the window's title bar,
      *              if there is such a title bar.
-     *              A <code>null</code> value is treated as an empty string, "".
+     *              A {@code null} value is treated as an empty string, "".
      * @param attachToInputContext whether this window should share the input context
      *              that corresponds to this input method context
      * @return a window with special characteristics for use by input methods
-     * @exception HeadlessException if <code>GraphicsEnvironment.isHeadless
-     *              </code> returns <code>true</code>
+     * @exception HeadlessException if {@code GraphicsEnvironment.isHeadless}
+     *            returns {@code true}
      */
     public Window createInputMethodWindow(String title, boolean attachToInputContext);
 
@@ -120,12 +120,12 @@ public interface InputMethodContext extends InputMethodRequests {
      *
      * @param title the title to be displayed in the window's title bar,
      *              if there is such a title bar.
-     *              A <code>null</code> value is treated as an empty string, "".
+     *              A {@code null} value is treated as an empty string, "".
      * @param attachToInputContext whether this window should share the input context
      *              that corresponds to this input method context
      * @return a JFrame with special characteristics for use by input methods
-     * @exception HeadlessException if <code>GraphicsEnvironment.isHeadless
-     *              </code> returns <code>true</code>
+     * @exception HeadlessException if {@code GraphicsEnvironment.isHeadless}
+     *            returns {@code true}
      *
      * @since 1.4
      */

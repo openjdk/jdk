@@ -38,8 +38,8 @@ import javax.print.attribute.PrintServiceAttribute;
  * <P>
  * <B>IPP Compatibility:</B>  This implements the
  * IPP printer-uri attribute. The string form returned by
- * <CODE>toString()</CODE>  gives the IPP printer-uri value.
- * The category name returned by <CODE>getName()</CODE>
+ * {@code toString()}  gives the IPP printer-uri value.
+ * The category name returned by {@code getName()}
  * gives the IPP attribute name.
  *
  * @author  Robert Herriot
@@ -56,7 +56,7 @@ public final class PrinterURI extends URISyntax
      * @param  uri  URI of the printer
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>uri</CODE> is null.
+     *     (unchecked exception) Thrown if {@code uri} is null.
      */
     public PrinterURI(URI uri) {
         super (uri);
@@ -68,17 +68,17 @@ public final class PrinterURI extends URISyntax
      * true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class PrinterURI.
+     * {@code object} is an instance of class PrinterURI.
      * <LI>
      * This PrinterURI attribute's underlying URI and
-     * <CODE>object</CODE>'s underlying URI are equal.
+     * {@code object}'s underlying URI are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this PrinterURI
+     * @return  True if {@code object} is equivalent to this PrinterURI
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -104,7 +104,7 @@ public final class PrinterURI extends URISyntax
      * instance.
      * <P>
      * For class PrinterURI and any vendor-defined subclasses, the category
-     * name is <CODE>"printer-uri"</CODE>.
+     * name is {@code "printer-uri"}.
      *
      * @return  Attribute category name.
      */

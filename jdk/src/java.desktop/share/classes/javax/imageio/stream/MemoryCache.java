@@ -32,13 +32,13 @@ import java.io.IOException;
 
 /**
  * Package-visible class consolidating common code for
- * <code>MemoryCacheImageInputStream</code> and
- * <code>MemoryCacheImageOutputStream</code>.
- * This class keeps an <code>ArrayList</code> of 8K blocks,
+ * {@code MemoryCacheImageInputStream} and
+ * {@code MemoryCacheImageOutputStream}.
+ * This class keeps an {@code ArrayList} of 8K blocks,
  * loaded sequentially.  Blocks may only be disposed of
  * from the index 0 forward.  As blocks are freed, the
  * corresponding entries in the array list are set to
- * <code>null</code>, but no compacting is performed.
+ * {@code null}, but no compacting is performed.
  * This allows the index for each block to never change,
  * and the length of the cache is always the same as the
  * total amount of data ever cached.  Cached data is
@@ -46,13 +46,13 @@ import java.io.IOException;
  * disposal to the current length.
  *
  * <p> The total number of blocks resident in the cache must not
- * exceed <code>Integer.MAX_VALUE</code>.  In practice, the limit of
+ * exceed {@code Integer.MAX_VALUE}.  In practice, the limit of
  * available memory will be exceeded long before this becomes an
  * issue, since a full cache would contain 8192*2^31 = 16 terabytes of
  * data.
  *
- * A <code>MemoryCache</code> may be reused after a call
- * to <code>reset()</code>.
+ * A {@code MemoryCache} may be reused after a call
+ * to {@code reset()}.
  */
 class MemoryCache {
 
@@ -78,9 +78,9 @@ class MemoryCache {
     }
 
     /**
-     * Ensures that at least <code>pos</code> bytes are cached,
+     * Ensures that at least {@code pos} bytes are cached,
      * or the end of the source is reached.  The return value
-     * is equal to the smaller of <code>pos</code> and the
+     * is equal to the smaller of {@code pos} and the
      * length of the source.
      *
      * @throws IOException if there is no more memory for cache
@@ -136,15 +136,15 @@ class MemoryCache {
     }
 
     /**
-     * Writes out a portion of the cache to an <code>OutputStream</code>.
+     * Writes out a portion of the cache to an {@code OutputStream}.
      * This method preserves no state about the output stream, and does
      * not dispose of any blocks containing bytes written.  To dispose
-     * blocks, use {@link #disposeBefore <code>disposeBefore()</code>}.
+     * blocks, use {@link #disposeBefore disposeBefore()}.
      *
      * @exception IndexOutOfBoundsException if any portion of
-     * the requested data is not in the cache (including if <code>pos</code>
-     * is in a block already disposed), or if either <code>pos</code> or
-     * <code>len</code> is < 0.
+     * the requested data is not in the cache (including if {@code pos}
+     * is in a block already disposed), or if either {@code pos} or
+     * {@code len} is < 0.
      * @throws IOException if there is an I/O exception while writing to the
      * stream
      */
@@ -207,10 +207,10 @@ class MemoryCache {
      * @param len the number of bytes to be written.
      * @param pos the cache position at which to begin writing.
      *
-     * @exception NullPointerException if <code>b</code> is <code>null</code>.
-     * @exception IndexOutOfBoundsException if <code>off</code>,
-     * <code>len</code>, or <code>pos</code> are negative,
-     * or if <code>off+len > b.length</code>.
+     * @exception NullPointerException if {@code b} is {@code null}.
+     * @exception IndexOutOfBoundsException if {@code off},
+     * {@code len}, or {@code pos} are negative,
+     * or if {@code off+len > b.length}.
      * @throws IOException if there is an I/O error while writing to the cache
      */
     public void write(byte[] b, int off, int len, long pos)
@@ -250,11 +250,11 @@ class MemoryCache {
      * The length of the cache will be extended as needed to hold
      * the incoming data.
      *
-     * @param b an <code>int</code> whose 8 least significant bits
+     * @param b an {@code int} whose 8 least significant bits
      * will be written.
      * @param pos the cache position at which to begin writing.
      *
-     * @exception IndexOutOfBoundsException if <code>pos</code> is negative.
+     * @exception IndexOutOfBoundsException if {@code pos} is negative.
      * @throws IOException if there is an I/O error while writing to the cache
      */
     public void write(int b, long pos) throws IOException {
@@ -285,7 +285,7 @@ class MemoryCache {
 
     /**
      * Returns the single byte at the given position, as an
-     * <code>int</code>.  Returns -1 if this position has
+     * {@code int}.  Returns -1 if this position has
      * not been cached or has been disposed.
      *
      * @throws IOException if an I/O error occurs while reading from the byte
@@ -305,16 +305,16 @@ class MemoryCache {
     }
 
     /**
-     * Copy <code>len</code> bytes from the cache, starting
-     * at cache position <code>pos</code>, into the array
-     * <code>b</code> at offset <code>off</code>.
+     * Copy {@code len} bytes from the cache, starting
+     * at cache position {@code pos}, into the array
+     * {@code b} at offset {@code off}.
      *
-     * @exception NullPointerException if b is <code>null</code>
-     * @exception IndexOutOfBoundsException if <code>off</code>,
-     * <code>len</code> or <code>pos</code> are negative or if
-     * <code>off + len > b.length</code> or if any portion of the
+     * @exception NullPointerException if b is {@code null}
+     * @exception IndexOutOfBoundsException if {@code off},
+     * {@code len} or {@code pos} are negative or if
+     * {@code off + len > b.length} or if any portion of the
      * requested data is not in the cache (including if
-     * <code>pos</code> is in a block that has already been disposed).
+     * {@code pos} is in a block that has already been disposed).
      * @throws IOException if an I/O exception occurs while reading from the
      * byte array
      */
@@ -346,10 +346,10 @@ class MemoryCache {
     }
 
     /**
-     * Free the blocks up to the position <code>pos</code>.
-     * The byte at <code>pos</code> remains available.
+     * Free the blocks up to the position {@code pos}.
+     * The byte at {@code pos} remains available.
      *
-     * @exception IndexOutOfBoundsException if <code>pos</code>
+     * @exception IndexOutOfBoundsException if {@code pos}
      * is in a block that has already been disposed.
      */
     public void disposeBefore(long pos) {

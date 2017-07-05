@@ -110,7 +110,7 @@ public final class MarlinCache implements MarlinConst {
     MarlinCache(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
 
-        rowAAChunk = new OffHeapArray(rdrCtx, INITIAL_CHUNK_ARRAY);
+        rowAAChunk = new OffHeapArray(rdrCtx.cleanerObj, INITIAL_CHUNK_ARRAY); // 64K
 
         touchedTile = touchedTile_initial;
 

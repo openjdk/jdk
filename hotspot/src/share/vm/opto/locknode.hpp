@@ -96,7 +96,7 @@ public:
   virtual uint size_of() const;
   virtual uint cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const { return TypeInt::CC; }
+  virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
   void create_lock_counter(JVMState* s);
@@ -123,7 +123,7 @@ public:
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const { return TypeInt::CC; }
+  virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
 };

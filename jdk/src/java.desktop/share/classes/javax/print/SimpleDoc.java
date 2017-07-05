@@ -35,7 +35,7 @@ import javax.print.attribute.AttributeSetUtilities;
 import javax.print.attribute.DocAttributeSet;
 
 /**
- * This class is an implementation of interface <code>Doc</code> that can
+ * This class is an implementation of interface {@code Doc} that can
  * be used in many common printing requests.
  * It can handle all of the presently defined "pre-defined" doc flavors
  * defined as static variables in the DocFlavor class.
@@ -52,7 +52,7 @@ import javax.print.attribute.DocAttributeSet;
  * or need a MultiDoc will not want to use this class.
  * <p>
  * If the print data is a stream, or a print job requests data as a
- * stream, then <code>SimpleDoc</code> does not monitor if the service
+ * stream, then {@code SimpleDoc} does not monitor if the service
  * properly closes the stream after data transfer completion or job
  * termination.
  * Clients may prefer to use provide their own implementation of doc that
@@ -69,18 +69,18 @@ public final class SimpleDoc implements Doc {
     private InputStream inStream;
 
     /**
-     * Constructs a <code>SimpleDoc</code> with the specified
+     * Constructs a {@code SimpleDoc} with the specified
      * print data, doc flavor and doc attribute set.
      * @param printData the print data object
-     * @param flavor the <code>DocFlavor</code> object
-     * @param attributes a <code>DocAttributeSet</code>, which can
-     *                   be <code>null</code>
-     * @throws IllegalArgumentException if <code>flavor</code> or
-     *         <code>printData</code> is <code>null</code>, or the
-     *         <code>printData</code> does not correspond
+     * @param flavor the {@code DocFlavor} object
+     * @param attributes a {@code DocAttributeSet}, which can
+     *                   be {@code null}
+     * @throws IllegalArgumentException if {@code flavor} or
+     *         {@code printData} is {@code null}, or the
+     *         {@code printData} does not correspond
      *         to the specified doc flavor--for example, the data is
      *         not of the type specified as the representation in the
-     *         <code>DocFlavor</code>.
+     *         {@code DocFlavor}.
      */
     public SimpleDoc(Object printData,
                      DocFlavor flavor, DocAttributeSet attributes) {
@@ -144,7 +144,7 @@ public final class SimpleDoc implements Doc {
      * Obtains the print data representation object that contains this doc
      * object's piece of print data in the format corresponding to the
      * supported doc flavor.
-     * The <CODE>getPrintData()</CODE> method returns an instance of
+     * The {@code getPrintData()} method returns an instance of
      * the representation class whose name is given by
      * {@link DocFlavor#getRepresentationClassName() getRepresentationClassName},
      * and the return value can be cast
@@ -161,26 +161,26 @@ public final class SimpleDoc implements Doc {
 
     /**
      * Obtains a reader for extracting character print data from this doc.
-     * The <code>Doc</code> implementation is required to support this
-     * method if the <code>DocFlavor</code> has one of the following print
-     * data representation classes, and return <code>null</code>
+     * The {@code Doc} implementation is required to support this
+     * method if the {@code DocFlavor} has one of the following print
+     * data representation classes, and return {@code null}
      * otherwise:
      * <UL>
-     * <LI> <code>char[]</code>
-     * <LI> <code>java.lang.String</code>
-     * <LI> <code>java.io.Reader</code>
+     * <LI> {@code char[]}
+     * <LI> {@code java.lang.String}
+     * <LI> {@code java.io.Reader}
      * </UL>
      * The doc's print data representation object is used to construct and
-     * return a <code>Reader</code> for reading the print data as a stream
+     * return a {@code Reader} for reading the print data as a stream
      * of characters from the print data representation object.
      * However, if the print data representation object is itself a
-     * <code>Reader</code> then the print data representation object is
+     * {@code Reader} then the print data representation object is
      * simply returned.
      *
-     * @return  a <code>Reader</code> for reading the print data
+     * @return  a {@code Reader} for reading the print data
      *          characters from this doc.
      *          If a reader cannot be provided because this doc does not meet
-     *          the criteria stated above, <code>null</code> is returned.
+     *          the criteria stated above, {@code null} is returned.
      *
      * @exception  IOException if there was an I/O error while creating
      *             the reader.
@@ -209,13 +209,13 @@ public final class SimpleDoc implements Doc {
     /**
      * Obtains an input stream for extracting byte print data from
      * this doc.
-     * The <code>Doc</code> implementation is required to support this
-     * method if the <code>DocFlavor</code> has one of the following print
+     * The {@code Doc} implementation is required to support this
+     * method if the {@code DocFlavor} has one of the following print
      * data representation classes; otherwise this method
-     * returns <code>null</code>:
+     * returns {@code null}:
      * <UL>
-     * <LI> <code>byte[]</code>
-     * <LI> <code>java.io.InputStream</code>
+     * <LI> {@code byte[]}
+     * <LI> {@code java.io.InputStream}
      * </UL>
      * The doc's print data representation object is obtained.  Then, an
      * input stream for reading the print data
@@ -225,10 +225,10 @@ public final class SimpleDoc implements Doc {
      * input stream then the print data representation object is simply
      * returned.
      *
-     * @return  an <code>InputStream</code> for reading the print data
+     * @return  an {@code InputStream} for reading the print data
      *          bytes from this doc.  If an input stream cannot be
      *          provided because this doc does not meet
-     *          the criteria stated above, <code>null</code> is returned.
+     *          the criteria stated above, {@code null} is returned.
      *
      * @exception  IOException
      *     if there was an I/O error while creating the input stream.

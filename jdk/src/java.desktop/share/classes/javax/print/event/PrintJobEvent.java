@@ -29,7 +29,7 @@ import javax.print.DocPrintJob;
 
 /**
  *
- * Class <code>PrintJobEvent</code> encapsulates common events a print job
+ * Class {@code PrintJobEvent} encapsulates common events a print job
  * reports to let a listener know of progress in the processing of the
  * {@link DocPrintJob}.
  *
@@ -86,12 +86,12 @@ public class PrintJobEvent extends PrintEvent {
    public static final int DATA_TRANSFER_COMPLETE    = 106;
 
    /**
-     * Constructs a <code>PrintJobEvent</code> object.
+     * Constructs a {@code PrintJobEvent} object.
      *
-     * @param source  a <code>DocPrintJob</code> object
+     * @param source  a {@code DocPrintJob} object
      * @param reason  an int specifying the reason.
-     * @throws IllegalArgumentException if <code>source</code> is
-     *         <code>null</code>.
+     * @throws IllegalArgumentException if {@code source} is
+     *         {@code null}.
      */
 
     public PrintJobEvent( DocPrintJob source, int reason) {
@@ -109,12 +109,12 @@ public class PrintJobEvent extends PrintEvent {
     }
 
     /**
-     * Determines the <code>DocPrintJob</code> to which this print job
+     * Determines the {@code DocPrintJob} to which this print job
      * event pertains.
      *
-     * @return  the <code>DocPrintJob</code> object that represents the
+     * @return  the {@code DocPrintJob} object that represents the
      *          print job that reports the events encapsulated by this
-     *          <code>PrintJobEvent</code>.
+     *          {@code PrintJobEvent}.
      *
      */
     public DocPrintJob getPrintJob() {

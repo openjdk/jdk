@@ -47,7 +47,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
  */
@@ -63,10 +63,10 @@ public final class RequestingUserName   extends TextSyntax
      * @param  userName  User name.
      * @param  locale    Natural language of the text string. null
      * is interpreted to mean the default locale as returned
-     * by <code>Locale.getDefault()</code>
+     * by {@code Locale.getDefault()}
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>userName</CODE> is null.
+     *     (unchecked exception) Thrown if {@code userName} is null.
      */
     public RequestingUserName(String userName, Locale locale) {
         super (userName, locale);
@@ -78,20 +78,20 @@ public final class RequestingUserName   extends TextSyntax
      * conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class RequestingUserName.
+     * {@code object} is an instance of class RequestingUserName.
      * <LI>
      * This requesting user name attribute's underlying string and
-     * <CODE>object</CODE>'s underlying string are equal.
+     * {@code object}'s underlying string are equal.
      * <LI>
      * This requesting user name attribute's locale and
-     * <CODE>object</CODE>'s locale are equal.
+     * {@code object}'s locale are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this requesting
+     * @return  True if {@code object} is equivalent to this requesting
      *          user name attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -118,7 +118,7 @@ public final class RequestingUserName   extends TextSyntax
      * instance.
      * <P>
      * For class RequestingUserName, the
-     * category name is <CODE>"requesting-user-name"</CODE>.
+     * category name is {@code "requesting-user-name"}.
      *
      * @return  Attribute category name.
      */

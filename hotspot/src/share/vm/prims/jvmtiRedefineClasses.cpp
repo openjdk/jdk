@@ -1674,10 +1674,10 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
 
   // We cache a pointer to the bytecodes here in code_base. If GC
   // moves the Method*, then the bytecodes will also move which
-  // will likely cause a crash. We create a No_Safepoint_Verifier
+  // will likely cause a crash. We create a NoSafepointVerifier
   // object to detect whether we pass a possible safepoint in this
   // code block.
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // Bytecodes and their length
   address code_base = method->code_base();
@@ -1735,7 +1735,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
             Relocator rc(method, NULL /* no RelocatorListener needed */);
             methodHandle m;
             {
-              Pause_No_Safepoint_Verifier pnsv(&nsv);
+              PauseNoSafepointVerifier pnsv(&nsv);
 
               // ldc is 2 bytes and ldc_w is 3 bytes
               m = rc.insert_space_at(bci, 3, inst_buffer, CHECK);

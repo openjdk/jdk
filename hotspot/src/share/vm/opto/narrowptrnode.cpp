@@ -26,7 +26,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 
-Node* DecodeNNode::Identity(PhaseTransform* phase) {
+Node* DecodeNNode::Identity(PhaseGVN* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
@@ -37,7 +37,7 @@ Node* DecodeNNode::Identity(PhaseTransform* phase) {
   return this;
 }
 
-const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
+const Type* DecodeNNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
   if (t == TypeNarrowOop::NULL_PTR) return TypePtr::NULL_PTR;
@@ -46,7 +46,7 @@ const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
   return t->make_ptr();
 }
 
-Node* EncodePNode::Identity(PhaseTransform* phase) {
+Node* EncodePNode::Identity(PhaseGVN* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
@@ -57,7 +57,7 @@ Node* EncodePNode::Identity(PhaseTransform* phase) {
   return this;
 }
 
-const Type *EncodePNode::Value( PhaseTransform *phase ) const {
+const Type* EncodePNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
   if (t == TypePtr::NULL_PTR) return TypeNarrowOop::NULL_PTR;
@@ -67,7 +67,7 @@ const Type *EncodePNode::Value( PhaseTransform *phase ) const {
 }
 
 
-Node* DecodeNKlassNode::Identity(PhaseTransform* phase) {
+Node* DecodeNKlassNode::Identity(PhaseGVN* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
@@ -78,7 +78,7 @@ Node* DecodeNKlassNode::Identity(PhaseTransform* phase) {
   return this;
 }
 
-const Type *DecodeNKlassNode::Value( PhaseTransform *phase ) const {
+const Type* DecodeNKlassNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
   assert(t != TypeNarrowKlass::NULL_PTR, "null klass?");
@@ -87,7 +87,7 @@ const Type *DecodeNKlassNode::Value( PhaseTransform *phase ) const {
   return t->make_ptr();
 }
 
-Node* EncodePKlassNode::Identity(PhaseTransform* phase) {
+Node* EncodePKlassNode::Identity(PhaseGVN* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
@@ -98,7 +98,7 @@ Node* EncodePKlassNode::Identity(PhaseTransform* phase) {
   return this;
 }
 
-const Type *EncodePKlassNode::Value( PhaseTransform *phase ) const {
+const Type* EncodePKlassNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
   assert (t != TypePtr::NULL_PTR, "null klass?");

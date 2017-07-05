@@ -30,13 +30,13 @@ import java.awt.Graphics;
 import java.awt.Image;
 
 /**
- * The <code>BufferStrategy</code> class represents the mechanism with which
- * to organize complex memory on a particular <code>Canvas</code> or
- * <code>Window</code>.  Hardware and software limitations determine whether and
+ * The {@code BufferStrategy} class represents the mechanism with which
+ * to organize complex memory on a particular {@code Canvas} or
+ * {@code Window}.  Hardware and software limitations determine whether and
  * how a particular buffer strategy can be implemented.  These limitations
  * are detectable through the capabilities of the
- * <code>GraphicsConfiguration</code> used when creating the
- * <code>Canvas</code> or <code>Window</code>.
+ * {@code GraphicsConfiguration} used when creating the
+ * {@code Canvas} or {@code Window}.
  * <p>
  * It is worth noting that the terms <i>buffer</i> and <i>surface</i> are meant
  * to be synonymous: an area of contiguous memory, either in video device
@@ -135,8 +135,8 @@ import java.awt.Image;
 public abstract class BufferStrategy {
 
     /**
-     * Returns the <code>BufferCapabilities</code> for this
-     * <code>BufferStrategy</code>.
+     * Returns the {@code BufferCapabilities} for this
+     * {@code BufferStrategy}.
      *
      * @return the buffering capabilities of this strategy
      */
@@ -154,12 +154,12 @@ public abstract class BufferStrategy {
 
     /**
      * Returns whether the drawing buffer was lost since the last call to
-     * <code>getDrawGraphics</code>.  Since the buffers in a buffer strategy
-     * are usually type <code>VolatileImage</code>, they may become lost.
-     * For a discussion on lost buffers, see <code>VolatileImage</code>.
+     * {@code getDrawGraphics}.  Since the buffers in a buffer strategy
+     * are usually type {@code VolatileImage}, they may become lost.
+     * For a discussion on lost buffers, see {@code VolatileImage}.
      *
      * @return Whether or not the drawing buffer was lost since the last call
-     * to <code>getDrawGraphics</code>.
+     * to {@code getDrawGraphics}.
      * @see java.awt.image.VolatileImage
      */
     public abstract boolean contentsLost();
@@ -168,13 +168,13 @@ public abstract class BufferStrategy {
      * Returns whether the drawing buffer was recently restored from a lost
      * state and reinitialized to the default background color (white).
      * Since the buffers in a buffer strategy are usually type
-     * <code>VolatileImage</code>, they may become lost.  If a surface has
+     * {@code VolatileImage}, they may become lost.  If a surface has
      * been recently restored from a lost state since the last call to
-     * <code>getDrawGraphics</code>, it may require repainting.
-     * For a discussion on lost buffers, see <code>VolatileImage</code>.
+     * {@code getDrawGraphics}, it may require repainting.
+     * For a discussion on lost buffers, see {@code VolatileImage}.
      *
      * @return Whether or not the drawing buffer was restored since the last
-     *         call to <code>getDrawGraphics</code>.
+     *         call to {@code getDrawGraphics}.
      * @see java.awt.image.VolatileImage
      */
     public abstract boolean contentsRestored();
@@ -187,10 +187,10 @@ public abstract class BufferStrategy {
 
     /**
      * Releases system resources currently consumed by this
-     * <code>BufferStrategy</code> and
+     * {@code BufferStrategy} and
      * removes it from the associated Component.  After invoking this
-     * method, <code>getBufferStrategy</code> will return null.  Trying
-     * to use a <code>BufferStrategy</code> after it has been disposed will
+     * method, {@code getBufferStrategy} will return null.  Trying
+     * to use a {@code BufferStrategy} after it has been disposed will
      * result in undefined behavior.
      *
      * @see java.awt.Window#createBufferStrategy

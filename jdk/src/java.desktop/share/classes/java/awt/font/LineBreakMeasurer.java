@@ -46,16 +46,16 @@ import java.text.AttributedCharacterIterator;
 import java.awt.font.FontRenderContext;
 
 /**
- * The <code>LineBreakMeasurer</code> class allows styled text to be
+ * The {@code LineBreakMeasurer} class allows styled text to be
  * broken into lines (or segments) that fit within a particular visual
  * advance.  This is useful for clients who wish to display a paragraph of
  * text that fits within a specific width, called the <b>wrapping
  * width</b>.
  * <p>
- * <code>LineBreakMeasurer</code> is constructed with an iterator over
+ * {@code LineBreakMeasurer} is constructed with an iterator over
  * styled text.  The iterator's range should be a single paragraph in the
  * text.
- * <code>LineBreakMeasurer</code> maintains a position in the text for the
+ * {@code LineBreakMeasurer} maintains a position in the text for the
  * start of the next text segment.  Initially, this position is the
  * start of text.  Paragraphs are assigned an overall direction (either
  * left-to-right or right-to-left) according to the bidirectional
@@ -63,24 +63,24 @@ import java.awt.font.FontRenderContext;
  * same direction as the paragraph.
  * <p>
  * Segments of text are obtained by calling the method
- * <code>nextLayout</code>, which returns a {@link TextLayout}
+ * {@code nextLayout}, which returns a {@link TextLayout}
  * representing the text that fits within the wrapping width.
- * The <code>nextLayout</code> method moves the current position
- * to the end of the layout returned from <code>nextLayout</code>.
+ * The {@code nextLayout} method moves the current position
+ * to the end of the layout returned from {@code nextLayout}.
  * <p>
- * <code>LineBreakMeasurer</code> implements the most commonly used
+ * {@code LineBreakMeasurer} implements the most commonly used
  * line-breaking policy: Every word that fits within the wrapping
  * width is placed on the line. If the first word does not fit, then all
  * of the characters that fit within the wrapping width are placed on the
  * line.  At least one character is placed on each line.
  * <p>
- * The <code>TextLayout</code> instances returned by
- * <code>LineBreakMeasurer</code> treat tabs like 0-width spaces.  Clients
+ * The {@code TextLayout} instances returned by
+ * {@code LineBreakMeasurer} treat tabs like 0-width spaces.  Clients
  * who wish to obtain tab-delimited segments for positioning should use
- * the overload of <code>nextLayout</code> which takes a limiting offset
+ * the overload of {@code nextLayout} which takes a limiting offset
  * in the text.
  * The limiting offset should be the first character after the tab.
- * The <code>TextLayout</code> objects returned from this method end
+ * The {@code TextLayout} objects returned from this method end
  * at the limit provided (or before, if the text between the current
  * position and the limit won't fit entirely within the  wrapping
  * width).
@@ -90,22 +90,22 @@ import java.awt.font.FontRenderContext;
  * placed on a line.  Instead of fitting partial words in the
  * remaining space, they should place words which don't fit in the
  * remaining space entirely on the next line.  This change of policy
- * can be requested in the overload of <code>nextLayout</code> which
- * takes a <code>boolean</code> parameter.  If this parameter is
- * <code>true</code>, <code>nextLayout</code> returns
- * <code>null</code> if the first word won't fit in
+ * can be requested in the overload of {@code nextLayout} which
+ * takes a {@code boolean} parameter.  If this parameter is
+ * {@code true}, {@code nextLayout} returns
+ * {@code null} if the first word won't fit in
  * the given space.  See the tab sample below.
  * <p>
  * In general, if the text used to construct the
- * <code>LineBreakMeasurer</code> changes, a new
- * <code>LineBreakMeasurer</code> must be constructed to reflect
- * the change.  (The old <code>LineBreakMeasurer</code> continues to
+ * {@code LineBreakMeasurer} changes, a new
+ * {@code LineBreakMeasurer} must be constructed to reflect
+ * the change.  (The old {@code LineBreakMeasurer} continues to
  * function properly, but it won't be aware of the text change.)
  * Nevertheless, if the text change is the insertion or deletion of a
- * single character, an existing <code>LineBreakMeasurer</code> can be
- * 'updated' by calling <code>insertChar</code> or
- * <code>deleteChar</code>. Updating an existing
- * <code>LineBreakMeasurer</code> is much faster than creating a new one.
+ * single character, an existing {@code LineBreakMeasurer} can be
+ * 'updated' by calling {@code insertChar} or
+ * {@code deleteChar}. Updating an existing
+ * {@code LineBreakMeasurer} is much faster than creating a new one.
  * Clients who modify text based on user typing should take advantage
  * of these methods.
  * <p>
@@ -255,21 +255,21 @@ public final class LineBreakMeasurer {
     private CharArrayIterator charIter;
 
     /**
-     * Constructs a <code>LineBreakMeasurer</code> for the specified text.
+     * Constructs a {@code LineBreakMeasurer} for the specified text.
      *
-     * @param text the text for which this <code>LineBreakMeasurer</code>
-     *       produces <code>TextLayout</code> objects; the text must contain
+     * @param text the text for which this {@code LineBreakMeasurer}
+     *       produces {@code TextLayout} objects; the text must contain
      *       at least one character; if the text available through
-     *       <code>iter</code> changes, further calls to this
-     *       <code>LineBreakMeasurer</code> instance are undefined (except,
-     *       in some cases, when <code>insertChar</code> or
-     *       <code>deleteChar</code> are invoked afterward - see below)
+     *       {@code iter} changes, further calls to this
+     *       {@code LineBreakMeasurer} instance are undefined (except,
+     *       in some cases, when {@code insertChar} or
+     *       {@code deleteChar} are invoked afterward - see below)
      * @param frc contains information about a graphics device which is
      *       needed to measure the text correctly;
      *       text measurements can vary slightly depending on the
      *       device resolution, and attributes such as antialiasing; this
      *       parameter does not specify a translation between the
-     *       <code>LineBreakMeasurer</code> and user space
+     *       {@code LineBreakMeasurer} and user space
      * @see LineBreakMeasurer#insertChar
      * @see LineBreakMeasurer#deleteChar
      */
@@ -278,15 +278,15 @@ public final class LineBreakMeasurer {
     }
 
     /**
-     * Constructs a <code>LineBreakMeasurer</code> for the specified text.
+     * Constructs a {@code LineBreakMeasurer} for the specified text.
      *
-     * @param text the text for which this <code>LineBreakMeasurer</code>
-     *     produces <code>TextLayout</code> objects; the text must contain
+     * @param text the text for which this {@code LineBreakMeasurer}
+     *     produces {@code TextLayout} objects; the text must contain
      *     at least one character; if the text available through
-     *     <code>iter</code> changes, further calls to this
-     *     <code>LineBreakMeasurer</code> instance are undefined (except,
-     *     in some cases, when <code>insertChar</code> or
-     *     <code>deleteChar</code> are invoked afterward - see below)
+     *     {@code iter} changes, further calls to this
+     *     {@code LineBreakMeasurer} instance are undefined (except,
+     *     in some cases, when {@code insertChar} or
+     *     {@code deleteChar} are invoked afterward - see below)
      * @param breakIter the {@link BreakIterator} which defines line
      *     breaks
      * @param frc contains information about a graphics device which is
@@ -294,7 +294,7 @@ public final class LineBreakMeasurer {
      *       text measurements can vary slightly depending on the
      *       device resolution, and attributes such as antialiasing; this
      *       parameter does not specify a translation between the
-     *       <code>LineBreakMeasurer</code> and user space
+     *       {@code LineBreakMeasurer} and user space
      * @throws IllegalArgumentException if the text has less than one character
      * @see LineBreakMeasurer#insertChar
      * @see LineBreakMeasurer#deleteChar
@@ -317,12 +317,12 @@ public final class LineBreakMeasurer {
 
     /**
      * Returns the position at the end of the next layout.  Does NOT
-     * update the current position of this <code>LineBreakMeasurer</code>.
+     * update the current position of this {@code LineBreakMeasurer}.
      *
      * @param wrappingWidth the maximum visible advance permitted for
      *    the text in the next layout
      * @return an offset in the text representing the limit of the
-     *    next <code>TextLayout</code>.
+     *    next {@code TextLayout}.
      */
     public int nextOffset(float wrappingWidth) {
         return nextOffset(wrappingWidth, limit, false);
@@ -330,20 +330,20 @@ public final class LineBreakMeasurer {
 
     /**
      * Returns the position at the end of the next layout.  Does NOT
-     * update the current position of this <code>LineBreakMeasurer</code>.
+     * update the current position of this {@code LineBreakMeasurer}.
      *
      * @param wrappingWidth the maximum visible advance permitted for
      *    the text in the next layout
      * @param offsetLimit the first character that can not be included
      *    in the next layout, even if the text after the limit would fit
-     *    within the wrapping width; <code>offsetLimit</code> must be
+     *    within the wrapping width; {@code offsetLimit} must be
      *    greater than the current position
-     * @param requireNextWord if <code>true</code>, the current position
+     * @param requireNextWord if {@code true}, the current position
      *    that is returned if the entire next word does not fit within
-     *    <code>wrappingWidth</code>; if <code>false</code>, the offset
+     *    {@code wrappingWidth}; if {@code false}, the offset
      *    returned is at least one greater than the current position
      * @return an offset in the text representing the limit of the
-     *    next <code>TextLayout</code>
+     *    next {@code TextLayout}
      */
     public int nextOffset(float wrappingWidth, int offsetLimit,
                           boolean requireNextWord) {
@@ -405,9 +405,9 @@ public final class LineBreakMeasurer {
      *
      * @param wrappingWidth the maximum visible advance permitted for
      *     the text in the next layout
-     * @return a <code>TextLayout</code>, beginning at the current
+     * @return a {@code TextLayout}, beginning at the current
      *     position, which represents the next line fitting within
-     *     <code>wrappingWidth</code>
+     *     {@code wrappingWidth}
      */
     public TextLayout nextLayout(float wrappingWidth) {
         return nextLayout(wrappingWidth, limit, false);
@@ -420,18 +420,18 @@ public final class LineBreakMeasurer {
      *    for the text in the next layout
      * @param offsetLimit the first character that can not be
      *    included in the next layout, even if the text after the limit
-     *    would fit within the wrapping width; <code>offsetLimit</code>
+     *    would fit within the wrapping width; {@code offsetLimit}
      *    must be greater than the current position
-     * @param requireNextWord if <code>true</code>, and if the entire word
+     * @param requireNextWord if {@code true}, and if the entire word
      *    at the current position does not fit within the wrapping width,
-     *    <code>null</code> is returned. If <code>false</code>, a valid
+     *    {@code null} is returned. If {@code false}, a valid
      *    layout is returned that includes at least the character at the
      *    current position
-     * @return a <code>TextLayout</code>, beginning at the current
+     * @return a {@code TextLayout}, beginning at the current
      *    position, that represents the next line fitting within
-     *    <code>wrappingWidth</code>.  If the current position is at the end
-     *    of the text used by this <code>LineBreakMeasurer</code>,
-     *    <code>null</code> is returned
+     *    {@code wrappingWidth}.  If the current position is at the end
+     *    of the text used by this {@code LineBreakMeasurer},
+     *    {@code null} is returned
      */
     public TextLayout nextLayout(float wrappingWidth, int offsetLimit,
                                  boolean requireNextWord) {
@@ -452,9 +452,9 @@ public final class LineBreakMeasurer {
     }
 
     /**
-     * Returns the current position of this <code>LineBreakMeasurer</code>.
+     * Returns the current position of this {@code LineBreakMeasurer}.
      *
-     * @return the current position of this <code>LineBreakMeasurer</code>
+     * @return the current position of this {@code LineBreakMeasurer}
      * @see #setPosition
      */
     public int getPosition() {
@@ -462,13 +462,13 @@ public final class LineBreakMeasurer {
     }
 
     /**
-     * Sets the current position of this <code>LineBreakMeasurer</code>.
+     * Sets the current position of this {@code LineBreakMeasurer}.
      *
      * @param newPosition the current position of this
-     *    <code>LineBreakMeasurer</code>; the position should be within the
-     *    text used to construct this <code>LineBreakMeasurer</code> (or in
-     *    the text most recently passed to <code>insertChar</code>
-     *    or <code>deleteChar</code>
+     *    {@code LineBreakMeasurer}; the position should be within the
+     *    text used to construct this {@code LineBreakMeasurer} (or in
+     *    the text most recently passed to {@code insertChar}
+     *    or {@code deleteChar}
      * @see #getPosition
      */
     public void setPosition(int newPosition) {
@@ -479,18 +479,18 @@ public final class LineBreakMeasurer {
     }
 
     /**
-     * Updates this <code>LineBreakMeasurer</code> after a single
+     * Updates this {@code LineBreakMeasurer} after a single
      * character is inserted into the text, and sets the current
      * position to the beginning of the paragraph.
      *
      * @param newParagraph the text after the insertion
      * @param insertPos the position in the text at which the character
      *    is inserted
-     * @throws IndexOutOfBoundsException if <code>insertPos</code> is less
-     *         than the start of <code>newParagraph</code> or greater than
-     *         or equal to the end of <code>newParagraph</code>
-     * @throws NullPointerException if <code>newParagraph</code> is
-     *         <code>null</code>
+     * @throws IndexOutOfBoundsException if {@code insertPos} is less
+     *         than the start of {@code newParagraph} or greater than
+     *         or equal to the end of {@code newParagraph}
+     * @throws NullPointerException if {@code newParagraph} is
+     *         {@code null}
      * @see #deleteChar
      */
     public void insertChar(AttributedCharacterIterator newParagraph,
@@ -506,17 +506,17 @@ public final class LineBreakMeasurer {
     }
 
     /**
-     * Updates this <code>LineBreakMeasurer</code> after a single
+     * Updates this {@code LineBreakMeasurer} after a single
      * character is deleted from the text, and sets the current
      * position to the beginning of the paragraph.
      * @param newParagraph the text after the deletion
      * @param deletePos the position in the text at which the character
      *    is deleted
-     * @throws IndexOutOfBoundsException if <code>deletePos</code> is
-     *         less than the start of <code>newParagraph</code> or greater
-     *         than the end of <code>newParagraph</code>
-     * @throws NullPointerException if <code>newParagraph</code> is
-     *         <code>null</code>
+     * @throws IndexOutOfBoundsException if {@code deletePos} is
+     *         less than the start of {@code newParagraph} or greater
+     *         than the end of {@code newParagraph}
+     * @throws NullPointerException if {@code newParagraph} is
+     *         {@code null}
      * @see #insertChar
      */
     public void deleteChar(AttributedCharacterIterator newParagraph,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -498,6 +499,15 @@ void Dictionary::reorder_dictionary() {
     p->set_next(bucket(index));
     set_entry(index, p);
   }
+}
+
+
+unsigned int ProtectionDomainCacheTable::compute_hash(oop protection_domain) {
+  return (unsigned int)(protection_domain->identity_hash());
+}
+
+int ProtectionDomainCacheTable::index_for(oop protection_domain) {
+  return hash_to_index(compute_hash(protection_domain));
 }
 
 ProtectionDomainCacheTable::ProtectionDomainCacheTable(int table_size)

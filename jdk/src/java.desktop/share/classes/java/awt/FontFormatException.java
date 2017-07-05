@@ -26,7 +26,7 @@
 package java.awt;
 
 /**
- * Thrown by method createFont in the <code>Font</code> class to indicate
+ * Thrown by method createFont in the {@code Font} class to indicate
  * that the specified font is bad.
  *
  * @author  Parry Kejriwal
@@ -42,7 +42,7 @@ class FontFormatException extends Exception {
 
     /**
      * Report a FontFormatException for the reason specified.
-     * @param reason a <code>String</code> message indicating why
+     * @param reason a {@code String} message indicating why
      *        the font is not accepted.
      */
     public FontFormatException(String reason) {

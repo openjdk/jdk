@@ -180,10 +180,19 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         final int width = progressBar.getWidth() - (i.right + i.left);
         final int height = progressBar.getHeight() - (i.bottom + i.top);
 
+        Graphics2D g2 = (Graphics2D) g;
+        final AffineTransform savedAT = g2.getTransform();
+        if (!progressBar.getComponentOrientation().isLeftToRight()) {
+            //Scale operation: Flips component about pivot
+            //Translate operation: Moves component back into original position
+            g2.scale(-1, 1);
+            g2.translate(-progressBar.getWidth(), 0);
+        }
         painter.paint(g, progressBar, i.left, i.top, width, height);
 
+        g2.setTransform(savedAT);
         if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
-            paintString(g, i.left, i.top, width, height);
+                paintString(g, i.left, i.top, width, height);
         }
     }
 

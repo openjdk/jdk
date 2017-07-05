@@ -2624,7 +2624,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 bool InstanceKlass::add_member_name(Handle mem_name) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
-  DEBUG_ONLY(No_Safepoint_Verifier nsv);
+  DEBUG_ONLY(NoSafepointVerifier nsv);
 
   // Check if method has been redefined while taking out MemberNameTable_lock, if so
   // return false.  We cannot cache obsolete methods. They will crash when the function

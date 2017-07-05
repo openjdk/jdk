@@ -41,19 +41,19 @@ import java.util.Map;
 * If no concrete style is provided, a renderer should use
 * {@link java.awt.Toolkit#mapInputMethodHighlight} to map to a concrete style.
 * <p>
-* The abstract description consists of three fields: <code>selected</code>,
-* <code>state</code>, and <code>variation</code>.
-* <code>selected</code> indicates whether the text range is the one that the
+* The abstract description consists of three fields: {@code selected},
+* {@code state}, and {@code variation}.
+* {@code selected} indicates whether the text range is the one that the
 * input method is currently working on, for example, the segment for which
 * conversion candidates are currently shown in a menu.
-* <code>state</code> represents the conversion state. State values are defined
+* {@code state} represents the conversion state. State values are defined
 * by the input method framework and should be distinguished in all
 * mappings from abstract to concrete styles. Currently defined state values
 * are raw (unconverted) and converted.
 * These state values are recommended for use before and after the
 * main conversion step of text composition, say, before and after kana-&gt;kanji
 * or pinyin-&gt;hanzi conversion.
-* The <code>variation</code> field allows input methods to express additional
+* The {@code variation} field allows input methods to express additional
 * information about the conversion results.
 * <p>
 *

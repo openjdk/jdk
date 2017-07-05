@@ -34,7 +34,7 @@
 /* Copyright (c) 1992, 2015, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
-ageTable::ageTable(bool global) {
+AgeTable::AgeTable(bool global) {
 
   clear();
 
@@ -61,19 +61,19 @@ ageTable::ageTable(bool global) {
   }
 }
 
-void ageTable::clear() {
+void AgeTable::clear() {
   for (size_t* p = sizes; p < sizes + table_size; ++p) {
     *p = 0;
   }
 }
 
-void ageTable::merge(ageTable* subTable) {
+void AgeTable::merge(AgeTable* subTable) {
   for (int i = 0; i < table_size; i++) {
     sizes[i]+= subTable->sizes[i];
   }
 }
 
-uint ageTable::compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters) {
+uint AgeTable::compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters) {
   size_t desired_survivor_size = (size_t)((((double) survivor_capacity)*TargetSurvivorRatio)/100);
   uint result;
 

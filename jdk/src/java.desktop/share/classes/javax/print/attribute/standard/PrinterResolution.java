@@ -61,9 +61,9 @@ import javax.print.attribute.PrintJobAttribute;
  * PrintQuality attribute which often controls resolution.
  * <P>
  * <B>IPP Compatibility:</B> The information needed to construct an IPP
- * <CODE>"printer-resolution"</CODE> attribute can be obtained by calling
+ * {@code "printer-resolution"} attribute can be obtained by calling
  * methods on the PrinterResolution object. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  David Mendenhall
  * @author  Alan Kaminsky
@@ -81,8 +81,8 @@ public final class PrinterResolution    extends ResolutionSyntax
      * @param  feedResolution
      *     Feed direction resolution.
      * @param  units
-     *    Unit conversion factor, e.g. <code>ResolutionSyntax.DPI</CODE>
-     * or <code>ResolutionSyntax.DPCM</CODE>.
+     *    Unit conversion factor, e.g. {@code ResolutionSyntax.DPI}
+     * or {@code ResolutionSyntax.DPCM}.
      *
      * @exception  IllegalArgumentException
      *     (unchecked exception) Thrown if {@code crossFeedResolution < 1} or
@@ -99,20 +99,20 @@ public final class PrinterResolution    extends ResolutionSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class PrinterResolution.
+     * {@code object} is an instance of class PrinterResolution.
      * <LI>
      * This attribute's cross feed direction resolution is equal to
-     * <CODE>object</CODE>'s cross feed direction resolution.
+     * {@code object}'s cross feed direction resolution.
      * <LI>
      * This attribute's feed direction resolution is equal to
-     * <CODE>object</CODE>'s feed direction resolution.
+     * {@code object}'s feed direction resolution.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this printer
+     * @return  True if {@code object} is equivalent to this printer
      *          resolution attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -138,7 +138,7 @@ public final class PrinterResolution    extends ResolutionSyntax
      * instance.
      * <P>
      * For class PrinterResolution, the
-     * category name is <CODE>"printer-resolution"</CODE>.
+     * category name is {@code "printer-resolution"}.
      *
      * @return  Attribute category name.
      */

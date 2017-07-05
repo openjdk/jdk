@@ -2104,6 +2104,56 @@ JVM_ENTRY(jobjectArray, JVM_ConstantPoolGetMemberRefInfoAt(JNIEnv *env, jobject 
 }
 JVM_END
 
+JVM_ENTRY(jint, JVM_ConstantPoolGetClassRefIndexAt(JNIEnv *env, jobject obj, jobject unused, jint index))
+{
+  JVMWrapper("JVM_ConstantPoolGetClassRefIndexAt");
+  JvmtiVMObjectAllocEventCollector oam;
+  constantPoolHandle cp(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  bounds_check(cp, index, CHECK_0);
+  constantTag tag = cp->tag_at(index);
+  if (!tag.is_field_or_method()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
+  }
+  return (jint) cp->uncached_klass_ref_index_at(index);
+}
+JVM_END
+
+JVM_ENTRY(jint, JVM_ConstantPoolGetNameAndTypeRefIndexAt(JNIEnv *env, jobject obj, jobject unused, jint index))
+{
+  JVMWrapper("JVM_ConstantPoolGetNameAndTypeRefIndexAt");
+  JvmtiVMObjectAllocEventCollector oam;
+  constantPoolHandle cp(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  bounds_check(cp, index, CHECK_0);
+  constantTag tag = cp->tag_at(index);
+  if (!tag.is_invoke_dynamic() && !tag.is_field_or_method()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
+  }
+  return (jint) cp->uncached_name_and_type_ref_index_at(index);
+}
+JVM_END
+
+JVM_ENTRY(jobjectArray, JVM_ConstantPoolGetNameAndTypeRefInfoAt(JNIEnv *env, jobject obj, jobject unused, jint index))
+{
+  JVMWrapper("JVM_ConstantPoolGetNameAndTypeRefInfoAt");
+  JvmtiVMObjectAllocEventCollector oam;
+  constantPoolHandle cp(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  bounds_check(cp, index, CHECK_NULL);
+  constantTag tag = cp->tag_at(index);
+  if (!tag.is_name_and_type()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
+  }
+  Symbol* member_name = cp->symbol_at(cp->name_ref_index_at(index));
+  Symbol* member_sig = cp->symbol_at(cp->signature_ref_index_at(index));
+  objArrayOop dest_o = oopFactory::new_objArray(SystemDictionary::String_klass(), 2, CHECK_NULL);
+  objArrayHandle dest(THREAD, dest_o);
+  Handle str = java_lang_String::create_from_symbol(member_name, CHECK_NULL);
+  dest->obj_at_put(0, str());
+  str = java_lang_String::create_from_symbol(member_sig, CHECK_NULL);
+  dest->obj_at_put(1, str());
+  return (jobjectArray) JNIHandles::make_local(dest());
+}
+JVM_END
+
 JVM_ENTRY(jint, JVM_ConstantPoolGetIntAt(JNIEnv *env, jobject obj, jobject unused, jint index))
 {
   JVMWrapper("JVM_ConstantPoolGetIntAt");
@@ -2186,6 +2236,28 @@ JVM_ENTRY(jstring, JVM_ConstantPoolGetUTF8At(JNIEnv *env, jobject obj, jobject u
 }
 JVM_END
 
+JVM_ENTRY(jbyte, JVM_ConstantPoolGetTagAt(JNIEnv *env, jobject obj, jobject unused, jint index))
+{
+  JVMWrapper("JVM_ConstantPoolGetTagAt");
+  constantPoolHandle cp = constantPoolHandle(THREAD, sun_reflect_ConstantPool::get_cp(JNIHandles::resolve_non_null(obj)));
+  bounds_check(cp, index, CHECK_0);
+  constantTag tag = cp->tag_at(index);
+  jbyte result = tag.value();
+  // If returned tag values are not from the JVM spec, e.g. tags from 100 to 105,
+  // they are changed to the corresponding tags from the JVM spec, so that java code in
+  // sun.reflect.ConstantPool will return only tags from the JVM spec, not internal ones.
+  if (tag.is_klass_or_reference()) {
+      result = JVM_CONSTANT_Class;
+  } else if (tag.is_string_index()) {
+      result = JVM_CONSTANT_String;
+  } else if (tag.is_method_type_in_error()) {
+      result = JVM_CONSTANT_MethodType;
+  } else if (tag.is_method_handle_in_error()) {
+      result = JVM_CONSTANT_MethodHandle;
+  }
+  return result;
+}
+JVM_END
 
 // Assertion support. //////////////////////////////////////////////////////////
 

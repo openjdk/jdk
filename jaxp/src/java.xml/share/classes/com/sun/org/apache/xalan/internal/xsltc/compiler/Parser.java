@@ -489,18 +489,20 @@ public class Parser implements Constants, ContentHandler {
             }
 
             final XMLReader reader = parser.getXMLReader();
+            String lastProperty = "";
             try {
                 XMLSecurityManager securityManager =
                         (XMLSecurityManager)_xsltc.getProperty(XalanConstants.SECURITY_MANAGER);
                 for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
-                    reader.setProperty(limit.apiProperty(), securityManager.getLimitValueAsString(limit));
+                    lastProperty = limit.apiProperty();
+                    reader.setProperty(lastProperty, securityManager.getLimitValueAsString(limit));
                 }
                 if (securityManager.printEntityCountInfo()) {
+                    lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
                     parser.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
                 }
             } catch (SAXException se) {
-                System.err.println("Warning:  " + reader.getClass().getName() + ": "
-                            + se.getMessage());
+                XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
             }
 
             return(parse(reader, input));

@@ -89,7 +89,6 @@ private:
   static const TypePtr* get_address_type(PhaseGVN *phase, Node* n);
 
   Node* try_clone_instance(PhaseGVN *phase, bool can_reshape, int count);
-  Node* conv_I2X_offset(PhaseGVN *phase, Node* offset, const TypeAryPtr* ary_t);
   bool prepare_array_copy(PhaseGVN *phase, bool can_reshape,
                           Node*& adr_src, Node*& base_src, Node*& adr_dest, Node*& base_dest,
                           BasicType& copy_type, const Type*& value_type, bool& disjoint_bases);

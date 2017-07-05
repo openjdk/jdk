@@ -29,11 +29,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * An implementation of <code>ImageOutputStream</code> that writes its
- * output to a regular <code>OutputStream</code>.  A memory buffer is
+ * An implementation of {@code ImageOutputStream} that writes its
+ * output to a regular {@code OutputStream}.  A memory buffer is
  * used to cache at least the data between the discard position and
  * the current write position.  The only constructor takes an
- * <code>OutputStream</code>, so this class may not be used for
+ * {@code OutputStream}, so this class may not be used for
  * read/modify/write operations.  Reading can occur only on parts of
  * the stream that have already been written to the cache and not
  * yet flushed.
@@ -46,13 +46,13 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
     private MemoryCache cache = new MemoryCache();
 
     /**
-     * Constructs a <code>MemoryCacheImageOutputStream</code> that will write
-     * to a given <code>OutputStream</code>.
+     * Constructs a {@code MemoryCacheImageOutputStream} that will write
+     * to a given {@code OutputStream}.
      *
-     * @param stream an <code>OutputStream</code> to write to.
+     * @param stream an {@code OutputStream} to write to.
      *
-     * @exception IllegalArgumentException if <code>stream</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code stream} is
+     * {@code null}.
      */
     public MemoryCacheImageOutputStream(OutputStream stream) {
         if (stream == null) {
@@ -129,11 +129,11 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
     }
 
     /**
-     * Returns <code>true</code> since this
-     * <code>ImageOutputStream</code> caches data in order to allow
+     * Returns {@code true} since this
+     * {@code ImageOutputStream} caches data in order to allow
      * seeking backwards.
      *
-     * @return <code>true</code>.
+     * @return {@code true}.
      *
      * @see #isCachedMemory
      * @see #isCachedFile
@@ -143,10 +143,10 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
     }
 
     /**
-     * Returns <code>false</code> since this
-     * <code>ImageOutputStream</code> does not maintain a file cache.
+     * Returns {@code false} since this
+     * {@code ImageOutputStream} does not maintain a file cache.
      *
-     * @return <code>false</code>.
+     * @return {@code false}.
      *
      * @see #isCached
      * @see #isCachedMemory
@@ -156,10 +156,10 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
     }
 
     /**
-     * Returns <code>true</code> since this
-     * <code>ImageOutputStream</code> maintains a main memory cache.
+     * Returns {@code true} since this
+     * {@code ImageOutputStream} maintains a main memory cache.
      *
-     * @return <code>true</code>.
+     * @return {@code true}.
      *
      * @see #isCached
      * @see #isCachedFile
@@ -169,9 +169,9 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
     }
 
     /**
-     * Closes this <code>MemoryCacheImageOutputStream</code>.  All
+     * Closes this {@code MemoryCacheImageOutputStream}.  All
      * pending data is flushed to the output, and the cache
-     * is released.  The destination <code>OutputStream</code>
+     * is released.  The destination {@code OutputStream}
      * is not closed.
      */
     public void close() throws IOException {

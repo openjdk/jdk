@@ -62,7 +62,7 @@ import javax.print.attribute.PrintJobAttribute;
  * </UL>
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @author  David Mendenhall
@@ -79,7 +79,7 @@ public final class Copies extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *  (Unchecked exception) Thrown if <CODE>value</CODE> is less than 1.
+     *  (Unchecked exception) Thrown if {@code value} is less than 1.
      */
     public Copies(int value) {
         super (value, 1, Integer.MAX_VALUE);
@@ -90,17 +90,17 @@ public final class Copies extends IntegerSyntax
      * object. To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class Copies.
+     * {@code object} is an instance of class Copies.
      * <LI>
-     * This copies attribute's value and <CODE>object</CODE>'s value are
+     * This copies attribute's value and {@code object}'s value are
      * equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this copies
+     * @return  True if {@code object} is equivalent to this copies
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -124,7 +124,7 @@ public final class Copies extends IntegerSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class Copies, the category name is <CODE>"copies"</CODE>.
+     * For class Copies, the category name is {@code "copies"}.
      *
      * @return  Attribute category name.
      */
