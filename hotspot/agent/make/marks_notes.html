@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Hotspot SA User Interface Notes</title>
+  </head>
+
+  <body>
+    <h1>Hotspot SA User Interface Notes</h1>
+
+    <h2>Workspace and Building</h2>
+
+    <p>
+      All the source code for the Serviceability Agent is in 
+      <code>src/share/vm/agent</code> in the HotSport workspace 
+      <code>/net/jano.sfbay/export/disk05/hotspot/ws/1.4/sa_baseline</code>
+    <p>
+      You can build the project by typing <code>gnumake</code> in the
+      <code>src/share/vm/agent</code> directory.
+    <p>
+      You can also use the default build target using the Ant build file (build.xml). You can download Ant from
+      <a href="http://jakarta.apache.org/ant">http://jakarta.apache.org/ant</a>. Documentation for Ant can be
+      found at <a href="http://jakarta.apache.org/ant/manual/index.html">http://jakarta.apache.org/ant/manual/index.html</a>
+
+      
+    <h2>Running the project</h2>
+
+    <ul>
+      <li><code>java -cp classes sun.jvm.hotspot.HSDB</code>
+      <li><code>java -cp classes sun.jvm.hotspot.bugspot.Main</code>
+    </ul>
+
+    <h2>Feedback</h2>
+    <p>
+      Refactoring of package hierarchy. All user interface components should be in
+      the ui package. Perhaps: sun.jvm.hotspot.ui.hsdb.Main for the HSDB and
+      sun.jvm.hotspot.ui.bugspot.Main for BugSpot.
+    <p>
+      The src\share\vm\agent area seems like a workspace so it should be organized like
+      one. In particular, I'd like to suggest the following directory layout:<br>
+      
+    <ul>
+      <li>src: All sources that are curently under the sun directory.
+      <li>classes: compiled class files.
+      <li>lib: Resources like images, icons and jar files.
+      <li>docs: Documentation 
+      <li>deploy: distribution bundles for Java Web Start.
+    </ul>
+
+    <p>
+      Seems like there is a lot of redundant functionality. Between the HSDB and BugSpot. Perhaps
+      this can be consolidated with a <code>javax.swing.Actions</code> architecture.
+
+    <h2>Tasklist</h2>
+    
+    <p>
+      <b>Stack memory pane</b>: 
+      It's one of the more useful JVM debugging tools in the SA. However, it
+      doesn't support any interaction with the text; the Memory Panel in BugSpot
+      was written afterward (with help from Shannon) and implements proper
+      selection, scrolling, and drag-and-drop, but no annotations. I'm not sure how
+      to integrate the annotations with the JTable that's being used for the memory
+      view; if you have suggestions here please let me know.
+    <p>
+      <b>Integrations with the NetBeans architecture (plug in).</b> See the
+      <a href="http://openide.netbeans.org">Netbeans Open APIs homepage</a>
+
+      
+    <p>
+      HSDB: Object Histogram. Column sizes should be sized according the the
+      contents. i.e, The size and count columns should be narrow enought to
+      handle the largest window. Since there is a lot of data, sorting
+      and searching should be implemented.
+    <p>
+
+    <h2>Log</h2>
+
+    <i>Last modified: Tue Feb 05 19:15:12 Pacific Standard Time 2002</i>
+    <p>
+      sun.jvm.hotspot.oops.ObjectHistogram should be the underlying data
+      structure for the TableModels. It shouldnt bother with sorting the data - 
+      the table model should do that. It should implement these methods:
+
+    <pre>
+      public int getSize()
+      public ObjectHistogramElement getElementAt(int row);
+    </pre>
+    <p>
+      ObjectHistogramElement should return the String that represents
+      the third column
+    
+
+    <hr>
+    <address><a href="mailto:mark.davidson@sun.com">Mark Davidson</a></address>
+<!-- Created: Mon Jan 28 14:33:47 Pacific Standard Time 2002 -->
+<!-- hhmts start -->
+Last modified: Tue Feb 05 20:05:13 Pacific Standard Time 2002
+<!-- hhmts end -->
+  </body>
+</html>

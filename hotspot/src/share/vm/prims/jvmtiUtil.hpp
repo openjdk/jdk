@@ -1,0 +1,86 @@
+/*
+ * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+///////////////////////////////////////////////////////////////
+//
+// class JvmtiUtil
+//
+// class for miscellaneous jvmti utility static methods
+//
+
+class JvmtiUtil : AllStatic {
+
+  static ResourceArea* _single_threaded_resource_area;
+
+  static const char* _error_names[];
+  static const bool  _event_threaded[];
+
+public:
+
+  static ResourceArea* single_threaded_resource_area();
+
+  static const char* error_name(int num)    { return _error_names[num]; }    // To Do: add range checking
+
+  static const bool has_event_capability(jvmtiEvent event_type, const jvmtiCapabilities* capabilities_ptr);
+
+  static const bool  event_threaded(int num) {
+    if (num >= JVMTI_MIN_EVENT_TYPE_VAL && num <= JVMTI_MAX_EVENT_TYPE_VAL) {
+      return _event_threaded[num];
+    }
+    if (num >= EXT_MIN_EVENT_TYPE_VAL && num <= EXT_MAX_EVENT_TYPE_VAL) {
+      return false;
+    }
+    ShouldNotReachHere();
+    return false;
+  }
+};
+
+
+///////////////////////////////////////////////////////////////
+//
+// class SafeResourceMark
+//
+// ResourceMarks that work before threads exist
+//
+
+class SafeResourceMark : public ResourceMark {
+
+  ResourceArea* safe_resource_area() {
+    Thread* thread;
+
+    if (Threads::number_of_threads() == 0) {
+      return JvmtiUtil::single_threaded_resource_area();
+    }
+    thread = ThreadLocalStorage::thread();
+    if (thread == NULL) {
+      return JvmtiUtil::single_threaded_resource_area();
+    }
+    return thread->resource_area();
+  }
+
+ public:
+
+  SafeResourceMark() : ResourceMark(safe_resource_area()) {}
+
+};

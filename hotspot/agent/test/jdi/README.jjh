@@ -1,0 +1,39 @@
+
+This dir contains a test for the JDI-SA implementation.
+
+sagtest.java, sagtarg.java are a normal JDI regression test
+that uses TargetAdapter.java, TargetListener.java,  TestScaffold.java,
+and VMConnection.java.
+
+This test starts the debuggee, sagtarg.java, which just does a wait.
+The test then calls sagdoit.java which calls all the JDJI interface
+functions.  Well, it doesn't call them all yet, but that is the plan.
+At least all that are interesting to the JDI-SA client. The result of
+each call is sent to stdout
+
+The script runjpda.sh runs this test.  It then runs the targ part of
+the test and calls gcore on it to get a core dump into file sagcore.
+Do
+        runjpda.sh >& kk
+
+to run this.  
+
+        NOTE that this produces 1000s of lines of output
+        so be sure to redirect to a file.
+
+File sagclient.java is a test program that uses the JDI-SA
+client to connect to a core file or pid and then calls sagdoit
+which calls the JDI methods.
+
+The script runsa.sh can be used to run sagclient on sagcore:
+        runsa.sh sagcore >& kk1
+
+You can then look at the differences between the runjpda.sh 
+and the runsa.sh run to see if there are bugs.  Note that the
+order of things might be different.
+
+
+-----------------------------------------
+
+runjdb.sh contains a script that will run jdb on a core file
+using the JDI-sa binding.
