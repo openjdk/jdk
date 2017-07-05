@@ -113,7 +113,7 @@ public class JImageGenerator {
 
     private static final String CMDS_OPTION = "--cmds";
     private static final String CONFIG_OPTION = "--config";
-    private static final String HASH_DEPENDENCIES_OPTION = "--hash-dependencies";
+    private static final String HASH_MODULES_OPTION = "--hash-modules";
     private static final String LIBS_OPTION = "--libs";
     private static final String MODULE_VERSION_OPTION = "--module-version";
 
@@ -347,7 +347,7 @@ public class JImageGenerator {
         private final List<Path> jmods = new ArrayList<>();
         private final List<String> options = new ArrayList<>();
         private Path output;
-        private String hashDependencies;
+        private String hashModules;
         private String mainClass;
         private String moduleVersion;
 
@@ -356,8 +356,8 @@ public class JImageGenerator {
             return this;
         }
 
-        public JModTask hashDependencies(String hash) {
-            this.hashDependencies = hash;
+        public JModTask hashModules(String hash) {
+            this.hashModules = hash;
             return this;
         }
 
@@ -430,9 +430,9 @@ public class JImageGenerator {
                 options.add(CONFIG_OPTION);
                 options.add(toPath(config));
             }
-            if (hashDependencies != null) {
-                options.add(HASH_DEPENDENCIES_OPTION);
-                options.add(hashDependencies);
+            if (hashModules != null) {
+                options.add(HASH_MODULES_OPTION);
+                options.add(hashModules);
             }
             if (mainClass != null) {
                 options.add(MAIN_CLASS_OPTION);

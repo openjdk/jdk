@@ -27,7 +27,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @library patches
  * @build java.base/java.lang.invoke.MethodHandleHelper
- * @run main/bootclasspath -Xbatch -XX:+IgnoreUnrecognizedVMOptions -Xlog:classunload
+ * @run main/bootclasspath/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -Xlog:classunload
  *                         -XX:+PrintCompilation -XX:+TraceDependencies -XX:+TraceReferenceGC
  *                         -verbose:gc compiler.jsr292.CallSiteDepContextTest
  */

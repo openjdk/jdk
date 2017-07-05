@@ -102,7 +102,7 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
 
     @Override
     FileTypeDetector getFileTypeDetector() {
-        String userHome = GetPropertyAction.getProperty("user.home");
+        String userHome = GetPropertyAction.privilegedGetProperty("user.home");
         Path userMimeTypes = Paths.get(userHome, ".mime.types");
         Path etcMimeTypes = Paths.get("/etc/mime.types");
 

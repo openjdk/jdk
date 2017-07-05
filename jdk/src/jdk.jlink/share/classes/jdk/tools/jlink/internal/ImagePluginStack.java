@@ -167,28 +167,25 @@ public final class ImagePluginStack {
 
     private final ImageBuilder imageBuilder;
     private final Properties release;
-    private final String bom;
 
-    public ImagePluginStack(String bom) {
+    public ImagePluginStack() {
         this(null, Collections.emptyList(), null,
-                Collections.emptyList(), null, bom);
+                Collections.emptyList(), null);
     }
 
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<TransformerPlugin> contentPlugins,
             Plugin lastSorter,
-            List<PostProcessorPlugin> postprocessingPlugins,
-            String bom) {
+            List<PostProcessorPlugin> postprocessingPlugins) {
         this(imageBuilder, contentPlugins, lastSorter,
-            postprocessingPlugins, null, bom);
+            postprocessingPlugins, null);
     }
 
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<TransformerPlugin> contentPlugins,
             Plugin lastSorter,
             List<PostProcessorPlugin> postprocessingPlugins,
-            PluginContext ctxt,
-            String bom) {
+            PluginContext ctxt) {
         Objects.requireNonNull(contentPlugins);
         this.lastSorter = lastSorter;
         for (TransformerPlugin p : contentPlugins) {
@@ -204,7 +201,6 @@ public final class ImagePluginStack {
         }
         this.imageBuilder = imageBuilder;
         this.release = ctxt != null? ctxt.getReleaseProperties() : new Properties();
-        this.bom = bom;
     }
 
     public void operate(ImageProvider provider) throws Exception {
@@ -479,7 +475,7 @@ public final class ImagePluginStack {
         } catch (Exception ignored) {
         }
 
-        imageBuilder.storeFiles(new LastPool(transformed), bom, release);
+        imageBuilder.storeFiles(new LastPool(transformed), release);
     }
 
     public ExecutableImage getExecutableImage() throws IOException {

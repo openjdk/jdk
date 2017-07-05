@@ -36,7 +36,7 @@ class UnixFileSystem extends FileSystem {
     private final String javaHome;
 
     public UnixFileSystem() {
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         slash = props.getProperty("file.separator").charAt(0);
         colon = props.getProperty("path.separator").charAt(0);
         javaHome = props.getProperty("java.home");

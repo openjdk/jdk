@@ -66,8 +66,6 @@ public class JLink2Test {
 
         // This test case must be first one, the JlinkTask is clean
         // and reveals possible bug related to plugin options in defaults
-        // e. g.: --genbom
-        testBomFile(helper);
         testSameNames(helper);
         testModulePath(helper);
         testOptions();
@@ -134,35 +132,6 @@ public class JLink2Test {
         JImageValidator validator = new JImageValidator("amodule", okLocations,
                 image.toFile(), Collections.emptyList(), Collections.emptyList());
         validator.validate();
-    }
-
-    private static void testBomFile(Helper helper) throws Exception {
-        String[] userOptions = {
-            "--compress",
-            "2",
-            "--addmods",
-            "bomzip",
-            "--strip-debug",
-            "--genbom",
-            "--exclude-resources",
-            "*.jcov,*/META-INF/*"};
-        String moduleName = "bomzip";
-        helper.generateDefaultJModule(moduleName, "composite2");
-        Path imgDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
-        helper.checkImage(imgDir, moduleName, userOptions, null, null);
-        File bom = new File(imgDir.toFile(), "bom");
-        if (!bom.exists()) {
-            throw new RuntimeException(bom.getAbsolutePath() + " not generated");
-        }
-        String bomcontent = new String(Files.readAllBytes(bom.toPath()));
-        if (!bomcontent.contains("--strip-debug")
-                || !bomcontent.contains("--compress")
-                || !bomcontent.contains("--genbom")
-                || !bomcontent.contains("--exclude-resources *.jcov,"
-                        + "*/META-INF/*")
-                || !bomcontent.contains("--addmods bomzip")) {
-            throw new Exception("Not expected content in " + bom);
-        }
     }
 
     private static void testOptions() throws Exception {

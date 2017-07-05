@@ -1896,7 +1896,7 @@ public class File
 
         // temporary directory location
         private static final File tmpdir = new File(
-                GetPropertyAction.getProperty("java.io.tmpdir"));
+                GetPropertyAction.privilegedGetProperty("java.io.tmpdir"));
         static File location() {
             return tmpdir;
         }

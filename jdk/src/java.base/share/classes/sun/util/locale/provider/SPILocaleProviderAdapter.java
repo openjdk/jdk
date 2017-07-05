@@ -73,7 +73,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<P>() {
                 @Override
-                @SuppressWarnings("unchecked")
+                @SuppressWarnings(value={"unchecked", "deprecation"})
                 public P run() {
                     P delegate = null;
 

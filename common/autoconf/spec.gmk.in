@@ -283,6 +283,7 @@ BOOT_JDK:=@BOOT_JDK@
 
 BUILD_JDK:=@BUILD_JDK@
 CREATE_BUILDJDK:=@CREATE_BUILDJDK@
+EXTERNAL_BUILDJDK:=@EXTERNAL_BUILDJDK@
 
 # When compiling Java source to be run by the boot jdk
 # use these extra flags, eg -source 6 -target 6
@@ -542,6 +543,8 @@ JAVA_CMD:=@JAVA@
 JAVAC_CMD:=@JAVAC@
 JAVAH_CMD:=@JAVAH@
 JAR_CMD:=@JAR@
+JLINK_CMD := @JLINK@
+JMOD_CMD := @JMOD@
 JARSIGNER_CMD:=@JARSIGNER@
 SJAVAC_SERVER_JAVA_CMD:=@SJAVAC_SERVER_JAVA@
 # These variables are meant to be used. They are defined with = instead of := to make
@@ -552,6 +555,8 @@ JAVA_JAVAC=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_JAVAC) $(JAVA_FLAGS)
 JAVAC=@FIXPATH@ $(JAVAC_CMD)
 JAVAH=@FIXPATH@ $(JAVAH_CMD)
 JAR=@FIXPATH@ $(JAR_CMD)
+JLINK = @FIXPATH@ $(JLINK_CMD) $(JAVA_TOOL_FLAGS_SMALL)
+JMOD = @FIXPATH@ $(JMOD_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
 # A specific java binary with specific options can be used to run
 # the long running background sjavac servers and other long running tasks.
@@ -569,14 +574,15 @@ BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 # Use ?= as this can be overridden from bootcycle-spec.gmk
 BOOT_JDK_MODULAR ?= @BOOT_JDK_MODULAR@
 
+INTERIM_OVERRIDE_MODULES := java.compiler jdk.compiler \
+    jdk.jdeps jdk.javadoc jdk.rmic
 ifeq ($(BOOT_JDK_MODULAR), true)
-  INTERIM_OVERRIDE_MODULES_ARGS = -Xpatch:$(BUILDTOOLS_OUTPUTDIR)/override_modules
+  INTERIM_OVERRIDE_MODULES_ARGS = $(foreach m, $(INTERIM_OVERRIDE_MODULES), \
+      -Xpatch:$m=$(BUILDTOOLS_OUTPUTDIR)/override_modules/$m)
   INTERIM_LANGTOOLS_ARGS = $(INTERIM_OVERRIDE_MODULES_ARGS)
   JAVAC_MAIN_CLASS = -m jdk.compiler/com.sun.tools.javac.Main
   JAVADOC_MAIN_CLASS = -m jdk.javadoc/jdk.javadoc.internal.tool.Main
 else
-  INTERIM_OVERRIDE_MODULES := java.compiler jdk.compiler \
-      jdk.jdeps jdk.javadoc jdk.rmic
   INTERIM_OVERRIDE_MODULES_ARGS = \
       -Xbootclasspath/p:$(call PathList, \
           $(addprefix $(BUILDTOOLS_OUTPUTDIR)/override_modules/, \
@@ -591,11 +597,7 @@ endif
 NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
 NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
 
-# JLink/Jmod are run using the BUILD_JDK, which is normally the jdk output dir.
 JLINK_KEEP_PACKAGED_MODULES:=@JLINK_KEEP_PACKAGED_MODULES@
-
-JLINK = @FIXPATH@ $(BUILD_JDK)/bin/jlink $(JAVA_TOOL_FLAGS_SMALL)
-JMOD = @FIXPATH@ $(BUILD_JDK)/bin/jmod $(JAVA_TOOL_FLAGS_SMALL)
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
@@ -775,6 +777,9 @@ TEST_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(TEST_IMAGE_SUBDIR)
 # Symbols image
 SYMBOLS_IMAGE_SUBDIR:=symbols
 SYMBOLS_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(SYMBOLS_IMAGE_SUBDIR)
+
+# Interim image
+INTERIM_IMAGE_DIR := $(SUPPORT_OUTPUTDIR)/interim-image
 
 # Macosx bundles directory definitions
 JDK_MACOSX_BUNDLE_SUBDIR=jdk-bundle/jdk-$(VERSION_NUMBER).jdk/Contents

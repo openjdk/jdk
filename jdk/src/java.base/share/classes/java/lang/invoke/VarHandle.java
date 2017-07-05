@@ -27,10 +27,9 @@ package java.lang.invoke;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -406,42 +405,10 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * @since 9
  */
 public abstract class VarHandle {
-    // Use explicit final fields rather than an @Stable array as
-    // this can reduce the memory per handle
-    // e.g. by 24 bytes on 64 bit architectures
-    final MethodType typeGet;
-    final MethodType typeSet;
-    final MethodType typeCompareSwap;
-    final MethodType typeCompareExchange;
-    final MethodType typeGetAndUpdate;
-
     final VarForm vform;
 
-    VarHandle(VarForm vform, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
+    VarHandle(VarForm vform) {
         this.vform = vform;
-
-        // (Receiver, <Intermediates>)
-        List<Class<?>> l = new ArrayList<>();
-        if (receiver != null)
-            l.add(receiver);
-        l.addAll(Arrays.asList(intermediate));
-
-        // (Receiver, <Intermediates>)Value
-        this.typeGet = MethodType.methodType(value, l);
-
-        // (Receiver, <Intermediates>, Value)void
-        l.add(value);
-        this.typeSet = MethodType.methodType(void.class, l);
-
-        // (Receiver, <Intermediates>, Value)Value
-        this.typeGetAndUpdate = MethodType.methodType(value, l);
-
-        // (Receiver, <Intermediates>, Value, Value)boolean
-        l.add(value);
-        this.typeCompareSwap = MethodType.methodType(boolean.class, l);
-
-        // (Receiver, <Intermediates>, Value, Value)Value
-        this.typeCompareExchange = MethodType.methodType(value, l);
     }
 
     RuntimeException unsupported() {
@@ -1090,36 +1057,83 @@ public abstract class VarHandle {
     Object addAndGet(Object... args);
 
     enum AccessType {
-        GET,                    // 0
-        SET,                    // 1
-        COMPARE_AND_SWAP,       // 2
-        COMPARE_AND_EXCHANGE,   // 3
-        GET_AND_UPDATE;         // 4
+        GET(Object.class) {
+            @Override
+            MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                      Class<?>... intermediate) {
+                Class<?>[] ps =  allocateParameters(0, receiver, intermediate);
+                fillParameters(ps, receiver, intermediate);
+                return MethodType.methodType(value, ps);
+            }
+        },
+        SET(void.class) {
+            @Override
+            MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                      Class<?>... intermediate) {
+                Class<?>[] ps =  allocateParameters(1, receiver, intermediate);
+                int i = fillParameters(ps, receiver, intermediate);
+                ps[i] = value;
+                return MethodType.methodType(void.class, ps);
+            }
+        },
+        COMPARE_AND_SWAP(boolean.class) {
+            @Override
+            MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                      Class<?>... intermediate) {
+                Class<?>[] ps =  allocateParameters(2, receiver, intermediate);
+                int i = fillParameters(ps, receiver, intermediate);
+                ps[i++] = value;
+                ps[i] = value;
+                return MethodType.methodType(boolean.class, ps);
+            }
+        },
+        COMPARE_AND_EXCHANGE(Object.class) {
+            @Override
+            MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                      Class<?>... intermediate) {
+                Class<?>[] ps =  allocateParameters(2, receiver, intermediate);
+                int i = fillParameters(ps, receiver, intermediate);
+                ps[i++] = value;
+                ps[i] = value;
+                return MethodType.methodType(value, ps);
+            }
+        },
+        GET_AND_UPDATE(Object.class) {
+            @Override
+            MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                      Class<?>... intermediate) {
+                Class<?>[] ps =  allocateParameters(1, receiver, intermediate);
+                int i = fillParameters(ps, receiver, intermediate);
+                ps[i] = value;
+                return MethodType.methodType(value, ps);
+            }
+        };
 
-        MethodType getMethodType(VarHandle vh) {
-            return getMethodType(this.ordinal(), vh);
+        final Class<?> returnType;
+        final boolean isMonomorphicInReturnType;
+
+        AccessType(Class<?> returnType) {
+            this.returnType = returnType;
+            isMonomorphicInReturnType = returnType != Object.class;
         }
 
-        @ForceInline
-        static MethodType getMethodType(int ordinal, VarHandle vh) {
-            if (ordinal == 0) {
-                return vh.typeGet;
-            }
-            else if (ordinal == 1) {
-                return vh.typeSet;
-            }
-            else if (ordinal == 2) {
-                return vh.typeCompareSwap;
-            }
-            else if (ordinal == 3) {
-                return vh.typeCompareExchange;
-            }
-            else if (ordinal == 4) {
-                return vh.typeGetAndUpdate;
-            }
-            else {
-                throw new IllegalStateException("Illegal access type: " + ordinal);
-            }
+        abstract MethodType accessModeType(Class<?> receiver, Class<?> value,
+                                           Class<?>... intermediate);
+
+        private static Class<?>[] allocateParameters(int values,
+                                                     Class<?> receiver, Class<?>... intermediate) {
+            int size = ((receiver != null) ? 1 : 0) + intermediate.length + values;
+            return new Class<?>[size];
+        }
+
+        private static int fillParameters(Class<?>[] ps,
+                                          Class<?> receiver, Class<?>... intermediate) {
+            int i = 0;
+            if (receiver != null)
+                ps[i++] = receiver;
+            for (int j = 0; j < intermediate.length; j++)
+                ps[i++] = intermediate[j];
+            return i;
         }
     }
 
@@ -1133,115 +1147,115 @@ public abstract class VarHandle {
          * method
          * {@link VarHandle#get VarHandle.get}
          */
-        GET("get", AccessType.GET, Object.class),
+        GET("get", AccessType.GET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#set VarHandle.set}
          */
-        SET("set", AccessType.SET, void.class),
+        SET("set", AccessType.SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getVolatile VarHandle.getVolatile}
          */
-        GET_VOLATILE("getVolatile", AccessType.GET, Object.class),
+        GET_VOLATILE("getVolatile", AccessType.GET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setVolatile VarHandle.setVolatile}
          */
-        SET_VOLATILE("setVolatile", AccessType.SET, void.class),
+        SET_VOLATILE("setVolatile", AccessType.SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAcquire VarHandle.getAcquire}
          */
-        GET_ACQUIRE("getAcquire", AccessType.GET, Object.class),
+        GET_ACQUIRE("getAcquire", AccessType.GET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setRelease VarHandle.setRelease}
          */
-        SET_RELEASE("setRelease", AccessType.SET, void.class),
+        SET_RELEASE("setRelease", AccessType.SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getOpaque VarHandle.getOpaque}
          */
-        GET_OPAQUE("getOpaque", AccessType.GET, Object.class),
+        GET_OPAQUE("getOpaque", AccessType.GET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setOpaque VarHandle.setOpaque}
          */
-        SET_OPAQUE("setOpaque", AccessType.SET, void.class),
+        SET_OPAQUE("setOpaque", AccessType.SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndSet VarHandle.compareAndSet}
          */
-        COMPARE_AND_SET("compareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),
+        COMPARE_AND_SET("compareAndSet", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeVolatile VarHandle.compareAndExchangeVolatile}
          */
-        COMPARE_AND_EXCHANGE_VOLATILE("compareAndExchangeVolatile", AccessType.COMPARE_AND_EXCHANGE, Object.class),
+        COMPARE_AND_EXCHANGE_VOLATILE("compareAndExchangeVolatile", AccessType.COMPARE_AND_EXCHANGE),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeAcquire VarHandle.compareAndExchangeAcquire}
          */
-        COMPARE_AND_EXCHANGE_ACQUIRE("compareAndExchangeAcquire", AccessType.COMPARE_AND_EXCHANGE, Object.class),
+        COMPARE_AND_EXCHANGE_ACQUIRE("compareAndExchangeAcquire", AccessType.COMPARE_AND_EXCHANGE),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeRelease VarHandle.compareAndExchangeRelease}
          */
-        COMPARE_AND_EXCHANGE_RELEASE("compareAndExchangeRelease", AccessType.COMPARE_AND_EXCHANGE, Object.class),
+        COMPARE_AND_EXCHANGE_RELEASE("compareAndExchangeRelease", AccessType.COMPARE_AND_EXCHANGE),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
          */
-        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),
+        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetVolatile VarHandle.weakCompareAndSetVolatile}
          */
-        WEAK_COMPARE_AND_SET_VOLATILE("weakCompareAndSetVolatile", AccessType.COMPARE_AND_SWAP, boolean.class),
+        WEAK_COMPARE_AND_SET_VOLATILE("weakCompareAndSetVolatile", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetAcquire VarHandle.weakCompareAndSetAcquire}
          */
-        WEAK_COMPARE_AND_SET_ACQUIRE("weakCompareAndSetAcquire", AccessType.COMPARE_AND_SWAP, boolean.class),
+        WEAK_COMPARE_AND_SET_ACQUIRE("weakCompareAndSetAcquire", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetRelease VarHandle.weakCompareAndSetRelease}
          */
-        WEAK_COMPARE_AND_SET_RELEASE("weakCompareAndSetRelease", AccessType.COMPARE_AND_SWAP, boolean.class),
+        WEAK_COMPARE_AND_SET_RELEASE("weakCompareAndSetRelease", AccessType.COMPARE_AND_SWAP),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAndSet VarHandle.getAndSet}
          */
-        GET_AND_SET("getAndSet", AccessType.GET_AND_UPDATE, Object.class),
+        GET_AND_SET("getAndSet", AccessType.GET_AND_UPDATE),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAndAdd VarHandle.getAndAdd}
          */
-        GET_AND_ADD("getAndAdd", AccessType.GET_AND_UPDATE, Object.class),
+        GET_AND_ADD("getAndAdd", AccessType.GET_AND_UPDATE),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#addAndGet VarHandle.addAndGet}
          */
-        ADD_AND_GET("addAndGet", AccessType.GET_AND_UPDATE, Object.class),
+        ADD_AND_GET("addAndGet", AccessType.GET_AND_UPDATE),
         ;
 
         static final Map<String, AccessMode> methodNameToAccessMode;
@@ -1256,10 +1270,8 @@ public abstract class VarHandle {
 
         final String methodName;
         final AccessType at;
-        final boolean isPolyMorphicInReturnType;
-        final Class<?> returnType;
 
-        AccessMode(final String methodName, AccessType at, Class<?> returnType) {
+        AccessMode(final String methodName, AccessType at) {
             this.methodName = methodName;
             this.at = at;
 
@@ -1267,10 +1279,7 @@ public abstract class VarHandle {
             assert methodName.equals(toMethodName(name()));
             // Assert that return type is correct
             // Otherwise, when disabled avoid using reflection
-            assert returnType == getReturnType(methodName);
-
-            this.returnType = returnType;
-            isPolyMorphicInReturnType = returnType != Object.class;
+            assert at.returnType == getReturnType(methodName);
         }
 
         /**
@@ -1324,17 +1333,21 @@ public abstract class VarHandle {
 
         @ForceInline
         static MemberName getMemberName(int ordinal, VarForm vform) {
-            return vform.table[ordinal];
+            return vform.memberName_table[ordinal];
         }
     }
 
     static final class AccessDescriptor {
-        final MethodType symbolicMethodType;
+        final MethodType symbolicMethodTypeErased;
+        final MethodType symbolicMethodTypeInvoker;
+        final Class<?> returnType;
         final int type;
         final int mode;
 
         public AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
-            this.symbolicMethodType = symbolicMethodType;
+            this.symbolicMethodTypeErased = symbolicMethodType.erase();
+            this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
+            this.returnType = symbolicMethodType.returnType();
             this.type = type;
             this.mode = mode;
         }
@@ -1346,6 +1359,7 @@ public abstract class VarHandle {
      * @return the variable type of variables referenced by this VarHandle
      */
     public final Class<?> varType() {
+        MethodType typeSet = accessModeType(AccessMode.SET);
         return typeSet.parameterType(typeSet.parameterCount() - 1);
     }
 
@@ -1356,6 +1370,7 @@ public abstract class VarHandle {
      * list is unmodifiable
      */
     public final List<Class<?>> coordinateTypes() {
+        MethodType typeGet = accessModeType(AccessMode.GET);
         return typeGet.parameterList();
     }
 
@@ -1374,9 +1389,15 @@ public abstract class VarHandle {
      * @return the access mode type for the given access mode
      */
     public final MethodType accessModeType(AccessMode accessMode) {
-        return accessMode.at.getMethodType(this);
+        TypesAndInvokers tis = getTypesAndInvokers();
+        MethodType mt = tis.methodType_table[accessMode.at.ordinal()];
+        if (mt == null) {
+            mt = tis.methodType_table[accessMode.at.ordinal()] =
+                    accessModeTypeUncached(accessMode);
+        }
+        return mt;
     }
-
+    abstract MethodType accessModeTypeUncached(AccessMode accessMode);
 
     /**
      * Returns {@code true} if the given access mode is supported, otherwise
@@ -1417,9 +1438,8 @@ public abstract class VarHandle {
     public final MethodHandle toMethodHandle(AccessMode accessMode) {
         MemberName mn = AccessMode.getMemberName(accessMode.ordinal(), vform);
         if (mn != null) {
-            return DirectMethodHandle.make(mn).
-                    bindTo(this).
-                    asType(accessMode.at.getMethodType(this));
+            MethodHandle mh = getMethodHandle(accessMode.ordinal());
+            return mh.bindTo(this);
         }
         else {
             // Ensure an UnsupportedOperationException is thrown
@@ -1427,6 +1447,51 @@ public abstract class VarHandle {
                     bindTo(this);
         }
     }
+
+    @Stable
+    TypesAndInvokers typesAndInvokers;
+
+    static class TypesAndInvokers {
+        final @Stable
+        MethodType[] methodType_table =
+                new MethodType[VarHandle.AccessType.values().length];
+
+        final @Stable
+        MethodHandle[] methodHandle_table =
+                new MethodHandle[AccessMode.values().length];
+    }
+
+    @ForceInline
+    private final TypesAndInvokers getTypesAndInvokers() {
+        TypesAndInvokers tis = typesAndInvokers;
+        if (tis == null) {
+            tis = typesAndInvokers = new TypesAndInvokers();
+        }
+        return tis;
+    }
+
+    @ForceInline
+    final MethodHandle getMethodHandle(int mode) {
+        TypesAndInvokers tis = getTypesAndInvokers();
+        MethodHandle mh = tis.methodHandle_table[mode];
+        if (mh == null) {
+            mh = tis.methodHandle_table[mode] = getMethodHandleUncached(tis, mode);
+        }
+        return mh;
+    }
+    private final MethodHandle getMethodHandleUncached(TypesAndInvokers tis, int mode) {
+        MethodType mt = accessModeType(AccessMode.values()[mode]).
+                insertParameterTypes(0, VarHandle.class);
+        MemberName mn = vform.getMemberName(mode);
+        DirectMethodHandle dmh = DirectMethodHandle.make(mn);
+        // Such a method handle must not be publically exposed directly
+        // otherwise it can be cracked, it must be transformed or rebound
+        // before exposure
+        MethodHandle mh = dmh.copyWith(mt, dmh.form);
+        assert mh.type().erase() == mn.getMethodType().erase();
+        return mh;
+    }
+
 
     /*non-public*/
     final void updateVarForm(VarForm newVForm) {
@@ -1453,6 +1518,10 @@ public abstract class VarHandle {
         catch (ReflectiveOperationException e) {
             throw newInternalError(e);
         }
+
+        // The VarHandleGuards must be initialized to ensure correct
+        // compilation of the guard methods
+        UNSAFE.ensureClassInitialized(VarHandleGuards.class);
     }
 
 

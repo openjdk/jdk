@@ -197,7 +197,7 @@ public final class StringConcatFactory {
         // DEBUG = false;        // implied
         // DUMPER = null;        // implied
 
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         final String strategy =
                 props.getProperty("java.lang.invoke.stringConcat");
         CACHE_ENABLE = Boolean.parseBoolean(

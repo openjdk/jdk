@@ -125,7 +125,7 @@ public final class DefaultCompressPlugin implements TransformerPlugin, ResourceP
                         zip = new ZipPlugin(resFilter);
                         break;
                     default:
-                        throw new PluginException("Invalid level " + level);
+                        throw new IllegalArgumentException("Invalid compression level " + level);
                 }
             } else {
                 ss = new StringSharingPlugin(resFilter);

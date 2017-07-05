@@ -55,7 +55,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      */
     private static final boolean inhibitZip64 =
         Boolean.parseBoolean(
-            GetPropertyAction.getProperty("jdk.util.zip.inhibitZip64"));
+            GetPropertyAction.privilegedGetProperty("jdk.util.zip.inhibitZip64"));
 
     private static class XEntry {
         final ZipEntry entry;

@@ -26,21 +26,25 @@
 package sun.tools.jar;
 
 import java.io.*;
+import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Method;
+import java.lang.module.ResolutionException;
+import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -49,9 +53,12 @@ import java.util.jar.Pack200.*;
 import java.util.jar.Manifest;
 import java.text.MessageFormat;
 
-import jdk.internal.module.Hasher;
+import jdk.internal.misc.JavaLangModuleAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.util.jar.JarIndex;
+
 import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
@@ -117,7 +124,7 @@ class Main {
     /* Modular jar related options */
     boolean printModuleDescriptor;
     Version moduleVersion;
-    Pattern dependenciesToHash;
+    Pattern modulesToHash;
     ModuleFinder moduleFinder = ModuleFinder.empty();
 
     private static final String MODULE_INFO = "module-info.class";
@@ -241,7 +248,7 @@ class Main {
                 if (isModularJar()) {
                     moduleInfoBytes = addExtendedModuleAttributes(
                             readModuleInfo(moduleInfo));
-                } else if (moduleVersion != null || dependenciesToHash != null) {
+                } else if (moduleVersion != null || modulesToHash != null) {
                     error(getMsg("error.module.options.without.info"));
                     return false;
                 }
@@ -801,7 +808,7 @@ class Main {
                 }
             } else if (isModuleInfoEntry
                        && ((newModuleInfoBytes != null) || (ename != null)
-                           || moduleVersion != null || dependenciesToHash != null)) {
+                           || moduleVersion != null || modulesToHash != null)) {
                 if (newModuleInfoBytes == null) {
                     // Update existing module-info.class
                     newModuleInfoBytes = readModuleInfo(zis);
@@ -861,7 +868,7 @@ class Main {
             if (!updateModuleInfo(newModuleInfoBytes, zos)) {
                 updateOk = false;
             }
-        } else if (moduleVersion != null || dependenciesToHash != null) {
+        } else if (moduleVersion != null || modulesToHash != null) {
             error(getMsg("error.module.options.without.info"));
             updateOk = false;
         }
@@ -1642,70 +1649,60 @@ class Main {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
+    static <T> String toString(Set<T> set) {
+        if (set.isEmpty()) { return ""; }
+        return set.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
+                  .collect(joining(" "));
+    }
+
+    private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
+
     private void printModuleDescriptor(InputStream entryInputStream)
         throws IOException
     {
         ModuleDescriptor md = ModuleDescriptor.read(entryInputStream);
         StringBuilder sb = new StringBuilder();
-        sb.append("\nName:\n  " + md.toNameAndVersion());
+        sb.append("\n").append(md.toNameAndVersion());
 
-        Set<Requires> requires = md.requires();
-        if (!requires.isEmpty()) {
-            sb.append("\nRequires:");
-            requires.forEach(r ->
-                    sb.append("\n  ").append(r.name())
-                            .append(toString(r.modifiers(), " [ ", " ]")));
-        }
+        md.requires().stream()
+            .sorted(Comparator.comparing(Requires::name))
+            .forEach(r -> {
+                sb.append("\n  requires ");
+                if (!r.modifiers().isEmpty())
+                    sb.append(toString(r.modifiers())).append(" ");
+                sb.append(r.name());
+            });
 
-        Set<String> s = md.uses();
-        if (!s.isEmpty()) {
-            sb.append("\nUses: ");
-            s.forEach(sv -> sb.append("\n  ").append(sv));
-        }
+        md.uses().stream().sorted()
+            .forEach(p -> sb.append("\n  uses ").append(p));
 
-        Set<Exports> exports = md.exports();
-        if (!exports.isEmpty()) {
-            sb.append("\nExports:");
-            exports.forEach(sv -> sb.append("\n  ").append(sv));
-        }
+        md.exports().stream()
+            .sorted(Comparator.comparing(Exports::source))
+            .forEach(p -> sb.append("\n  exports ").append(p));
 
-        Map<String,Provides> provides = md.provides();
-        if (!provides.isEmpty()) {
-            sb.append("\nProvides: ");
-            provides.values().forEach(p ->
-                    sb.append("\n  ").append(p.service())
-                      .append(" with ")
-                      .append(toString(p.providers(), "", "")));
-        }
+        md.conceals().stream().sorted()
+            .forEach(p -> sb.append("\n  conceals ").append(p));
 
-        Optional<String> mc = md.mainClass();
-        if (mc.isPresent())
-            sb.append("\nMain class:\n  " + mc.get());
+        md.provides().values().stream()
+            .sorted(Comparator.comparing(Provides::service))
+            .forEach(p -> sb.append("\n  provides ").append(p.service())
+                            .append(" with ")
+                            .append(toString(p.providers())));
 
-        s = md.conceals();
-        if (!s.isEmpty()) {
-            sb.append("\nConceals:");
-            s.forEach(p -> sb.append("\n  ").append(p));
-        }
+        md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
 
-        try {
-            Method m = ModuleDescriptor.class.getDeclaredMethod("hashes");
-            m.setAccessible(true);
-            Optional<Hasher.DependencyHashes> optHashes =
-                    (Optional<Hasher.DependencyHashes>) m.invoke(md);
+        md.osName().ifPresent(v -> sb.append("\n  operating-system-name " + v));
 
-            if (optHashes.isPresent()) {
-                Hasher.DependencyHashes hashes = optHashes.get();
-                sb.append("\nHashes:");
-                sb.append("\n  Algorithm: " + hashes.algorithm());
-                hashes.names().stream().forEach(mod ->
-                        sb.append("\n  ").append(mod)
-                          .append(": ").append(hashes.hashFor(mod)));
-            }
-        } catch (ReflectiveOperationException x) {
-            throw new InternalError(x);
-        }
+        md.osArch().ifPresent(v -> sb.append("\n  operating-system-architecture " + v));
+
+        md.osVersion().ifPresent(v -> sb.append("\n  operating-system-version " + v));
+
+        JLMA.hashes(md).ifPresent(hashes ->
+                hashes.names().stream().sorted().forEach(
+                    mod -> sb.append("\n  hashes ").append(mod).append(" ")
+                             .append(hashes.algorithm()).append(" ")
+                             .append(hashes.hashFor(mod))));
+
         output(sb.toString());
     }
 
@@ -1751,7 +1748,6 @@ class Main {
             md = ModuleDescriptor.read(in);
         }
         String name = md.name();
-        Set<ModuleDescriptor.Requires> dependences = md.requires();
         Set<String> exported = md.exports()
                                  .stream()
                                  .map(ModuleDescriptor.Exports::source)
@@ -1778,9 +1774,17 @@ class Main {
             if (moduleVersion != null)
                 extender.version(moduleVersion);
 
-            // --hash-dependencies
-            if (dependenciesToHash != null)
-                extender.hashes(hashDependences(name, dependences));
+            // --hash-modules
+            if (modulesToHash != null) {
+                Hasher hasher = new Hasher(md, fname);
+                ModuleHashes moduleHashes = hasher.computeHashes(name);
+                if (moduleHashes != null) {
+                    extender.hashes(moduleHashes);
+                } else {
+                    // should it issue warning or silent?
+                    System.out.println("warning: no module is recorded in hash in " + name);
+                }
+            }
 
             extender.write(baos);
             return baos.toByteArray();
@@ -1788,36 +1792,156 @@ class Main {
     }
 
     /**
-     * Examines the module dependences of the given module and computes the
-     * hash of any module that matches the pattern {@code dependenciesToHash}.
+     * Compute and record hashes
      */
-    private Hasher.DependencyHashes
-    hashDependences(String name,
-                    Set<ModuleDescriptor.Requires> moduleDependences)
-        throws IOException
-    {
-        Map<String, Path> map = new HashMap<>();
-        Matcher matcher = dependenciesToHash.matcher("");
-        for (ModuleDescriptor.Requires md: moduleDependences) {
-            String dn = md.name();
-            if (matcher.reset(dn).find()) {
-                Optional<ModuleReference> omref = moduleFinder.find(dn);
-                if (!omref.isPresent()) {
-                    throw new IOException(formatMsg2("error.hash.dep", name , dn));
-                }
-                map.put(dn, modRefToPath(omref.get()));
+    private class Hasher {
+        final ModuleFinder finder;
+        final Map<String, Path> moduleNameToPath;
+        final Set<String> modules;
+        final Configuration configuration;
+        Hasher(ModuleDescriptor descriptor, String fname) throws IOException {
+            // Create a module finder that finds the modular JAR
+            // being created/updated
+            URI uri = Paths.get(fname).toUri();
+            ModuleReference mref = new ModuleReference(descriptor, uri,
+                new Supplier<>() {
+                    @Override
+                    public ModuleReader get() {
+                        throw new UnsupportedOperationException("should not reach here");
+                    }
+                });
+
+            // Compose a module finder with the module path and
+            // the modular JAR being created or updated
+            this.finder = ModuleFinder.compose(moduleFinder,
+                new ModuleFinder() {
+                    @Override
+                    public Optional<ModuleReference> find(String name) {
+                        if (descriptor.name().equals(name))
+                            return Optional.of(mref);
+                        else
+                            return Optional.empty();
+                    }
+
+                    @Override
+                    public Set<ModuleReference> findAll() {
+                        return Collections.singleton(mref);
+                    }
+                });
+
+            // Determine the modules that matches the modulesToHash pattern
+            this.modules = moduleFinder.findAll().stream()
+                .map(moduleReference -> moduleReference.descriptor().name())
+                .filter(mn -> modulesToHash.matcher(mn).find())
+                .collect(Collectors.toSet());
+
+            // a map from a module name to Path of the modular JAR
+            this.moduleNameToPath = moduleFinder.findAll().stream()
+                .map(ModuleReference::descriptor)
+                .map(ModuleDescriptor::name)
+                .collect(Collectors.toMap(Function.identity(), mn -> moduleToPath(mn)));
+
+            Configuration config = null;
+            try {
+                config = Configuration.empty()
+                    .resolveRequires(ModuleFinder.ofSystem(), finder, modules);
+            } catch (ResolutionException e) {
+                // should it throw an error?  or emit a warning
+                System.out.println("warning: " + e.getMessage());
             }
+            this.configuration = config;
         }
 
-        if (map.size() == 0) {
-            return null;
-        } else {
-            return Hasher.generate(map, "SHA-256");
-        }
-    }
+        /**
+         * Compute hashes of the modules that depend upon the specified
+         * module directly or indirectly.
+         */
+        ModuleHashes computeHashes(String name) {
+            // the transposed graph includes all modules in the resolved graph
+            Map<String, Set<String>> graph = transpose();
 
-    private static Path modRefToPath(ModuleReference mref) {
-        URI location = mref.location().get();
-        return Paths.get(location);
+            // find the modules that transitively depend upon the specified name
+            Deque<String> deque = new ArrayDeque<>();
+            deque.add(name);
+            Set<String> mods = visitNodes(graph, deque);
+
+            // filter modules matching the pattern specified --hash-modules
+            // as well as itself as the jmod file is being generated
+            Map<String, Path> modulesForHash = mods.stream()
+                .filter(mn -> !mn.equals(name) && modules.contains(mn))
+                .collect(Collectors.toMap(Function.identity(), moduleNameToPath::get));
+
+            if (modulesForHash.isEmpty())
+                return null;
+
+            return ModuleHashes.generate(modulesForHash, "SHA-256");
+        }
+
+        /**
+         * Returns all nodes traversed from the given roots.
+         */
+        private Set<String> visitNodes(Map<String, Set<String>> graph,
+                                       Deque<String> roots) {
+            Set<String> visited = new HashSet<>();
+            while (!roots.isEmpty()) {
+                String mn = roots.pop();
+                if (!visited.contains(mn)) {
+                    visited.add(mn);
+
+                    // the given roots may not be part of the graph
+                    if (graph.containsKey(mn)) {
+                        for (String dm : graph.get(mn)) {
+                            if (!visited.contains(dm))
+                                roots.push(dm);
+                        }
+                    }
+                }
+            }
+            return visited;
+        }
+
+        /**
+         * Returns a transposed graph from the resolved module graph.
+         */
+        private Map<String, Set<String>> transpose() {
+            Map<String, Set<String>> transposedGraph = new HashMap<>();
+            Deque<String> deque = new ArrayDeque<>(modules);
+
+            Set<String> visited = new HashSet<>();
+            while (!deque.isEmpty()) {
+                String mn = deque.pop();
+                if (!visited.contains(mn)) {
+                    visited.add(mn);
+
+                    // add an empty set
+                    transposedGraph.computeIfAbsent(mn, _k -> new HashSet<>());
+
+                    ResolvedModule resolvedModule = configuration.findModule(mn).get();
+                    for (ResolvedModule dm : resolvedModule.reads()) {
+                        String name = dm.name();
+                        if (!visited.contains(name)) {
+                            deque.push(name);
+                        }
+                        // reverse edge
+                        transposedGraph.computeIfAbsent(name, _k -> new HashSet<>())
+                                       .add(mn);
+                    }
+                }
+            }
+            return transposedGraph;
+        }
+
+        private Path moduleToPath(String name) {
+            ModuleReference mref = moduleFinder.find(name).orElseThrow(
+                () -> new InternalError(formatMsg2("error.hash.dep",name , name)));
+
+            URI uri = mref.location().get();
+            Path path = Paths.get(uri);
+            String fn = path.getFileName().toString();
+            if (!fn.endsWith(".jar")) {
+                throw new UnsupportedOperationException(path + " is not a modular JAR");
+            }
+            return path;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,10 @@ public class Debug {
     private static String args;
 
     static {
-        args = GetPropertyAction.getProperty("java.security.debug");
+        args = GetPropertyAction.privilegedGetProperty("java.security.debug");
 
-        String args2 =
-                GetPropertyAction.getProperty("java.security.auth.debug");
+        String args2 = GetPropertyAction
+                .privilegedGetProperty("java.security.auth.debug");
 
         if (args == null) {
             args = args2;
@@ -87,6 +87,7 @@ public class Debug {
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
         System.err.println("scl           permissions SecureClassLoader assigns");
+        System.err.println("securerandom  SecureRandom");
         System.err.println("ts            timestamping");
         System.err.println();
         System.err.println("The following can be used with access:");
@@ -172,6 +173,16 @@ public class Debug {
     public void println(String message)
     {
         System.err.println(prefix + ": "+message);
+    }
+
+    /**
+     * print a message to stderr that is prefixed with the prefix
+     * created from the call to getInstance and obj.
+     */
+    public void println(Object obj, String message)
+    {
+        System.err.println(prefix + " [" + obj.getClass().getSimpleName() +
+                "@" + System.identityHashCode(obj) + "]: "+message);
     }
 
     /**

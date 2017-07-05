@@ -62,10 +62,13 @@ $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_LD, \
     BIN := $(BREAK_ITERATOR_CLASSES)/jdk.localedata))
 
 ifeq ($(BOOT_JDK_MODULAR), true)
-  BREAK_ITERATOR_BOOTCLASSPATH := -Xpatch:$(BREAK_ITERATOR_CLASSES) \
-        -XaddExports:java.base/sun.text=ALL-UNNAMED \
-        -XaddExports:java.base/sun.text.resources=ALL-UNNAMED \
-        -XaddExports:jdk.localedata/sun.text.resources.ext=ALL-UNNAMED
+  BREAK_ITERATOR_BOOTCLASSPATH := \
+      -Xpatch:java.base=$(BREAK_ITERATOR_CLASSES)/java.base \
+      -Xpatch:jdk.localedata=$(BREAK_ITERATOR_CLASSES)/jdk.localedata \
+      -XaddExports:java.base/sun.text=ALL-UNNAMED \
+      -XaddExports:java.base/sun.text.resources=ALL-UNNAMED \
+      -XaddExports:jdk.localedata/sun.text.resources.ext=ALL-UNNAMED \
+      #
 else
   BREAK_ITERATOR_BOOTCLASSPATH := -Xbootclasspath/p:$(call PathList, \
       $(BREAK_ITERATOR_CLASSES)/java.base \

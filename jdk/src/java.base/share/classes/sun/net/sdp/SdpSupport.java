@@ -40,7 +40,7 @@ import sun.security.action.GetPropertyAction;
  */
 
 public final class SdpSupport {
-    private static final String os = GetPropertyAction.getProperty("os.name");
+    private static final String os = GetPropertyAction.privilegedGetProperty("os.name");
     private static final boolean isSupported = (os.equals("SunOS") || (os.equals("Linux")));
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
