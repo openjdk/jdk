@@ -26,15 +26,15 @@
 ##########################################################################################
 #
 # Workhorse makefile for creating ONE cross compiler
-# Needs either to be from BUILD -> BUILD OR have 
+# Needs either to be from BUILD -> BUILD OR have
 # BUILD -> HOST prebuilt
 #
-# NOTE: There is a bug here. We don't limit the 
-# PATH when building BUILD -> BUILD, which means that 
+# NOTE: There is a bug here. We don't limit the
+# PATH when building BUILD -> BUILD, which means that
 # if you configure after you've once build the BUILD->BUILD
 # compiler THAT one will be picked up as the compiler for itself.
 # This is not so great, especially if you did a partial delete
-# of the target tree. 
+# of the target tree.
 #
 # Fix this...
 #
@@ -43,45 +43,45 @@ $(info TARGET=$(TARGET))
 $(info HOST=$(HOST))
 $(info BUILD=$(BUILD))
 
-ARCH		:= $(word 1,$(subst -, ,$(TARGET)))
+ARCH := $(word 1,$(subst -, ,$(TARGET)))
 
 ##########################################################################################
 # Define external dependencies
 
 # Latest that could be made to work.
-gcc_ver		:= gcc-4.7.3
-binutils_ver	:= binutils-2.22
-ccache_ver	:= ccache-3.1.9
-mpfr_ver        := mpfr-3.0.1
-gmp_ver         := gmp-4.3.2
-mpc_ver		:= mpc-1.0.1
+gcc_ver := gcc-4.7.3
+binutils_ver := binutils-2.22
+ccache_ver := ccache-3.1.9
+mpfr_ver := mpfr-3.0.1
+gmp_ver := gmp-4.3.2
+mpc_ver := mpc-1.0.1
 
-GCC		:= http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.bz2
-BINUTILS	:= http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.bz2
-CCACHE		:= http://samba.org/ftp/ccache/$(ccache_ver).tar.gz
-MPFR		:= http://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
-GMP 		:= http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
-MPC		:= http://www.multiprecision.org/mpc/download/${mpc_ver}.tar.gz
+GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.bz2
+BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.bz2
+CCACHE := http://samba.org/ftp/ccache/$(ccache_ver).tar.gz
+MPFR := http://www.mpfr.org/${mpfr_ver}/${mpfr_ver}.tar.bz2
+GMP := http://ftp.gnu.org/pub/gnu/gmp/${gmp_ver}.tar.bz2
+MPC := http://www.multiprecision.org/mpc/download/${mpc_ver}.tar.gz
 
 # RPMs in OEL5.5
-RPM_LIST 	:= \
-		kernel-headers \
-		glibc-2 glibc-headers glibc-devel \
-		cups-libs cups-devel \
-		libX11 libX11-devel \
-		xorg-x11-proto-devel \
-		alsa-lib alsa-lib-devel \
-		libXext libXext-devel \
-		libXtst libXtst-devel \
-		libXrender libXrender-devel \
-		freetype freetype-devel \
-		libXt libXt-devel \
-		libSM libSM-devel \
-		libICE libICE-devel \
-		libXi libXi-devel \
-		libXdmcp libXdmcp-devel \
-		libXau libXau-devel \
-		libgcc
+RPM_LIST := \
+    kernel-headers \
+    glibc-2 glibc-headers glibc-devel \
+    cups-libs cups-devel \
+    libX11 libX11-devel \
+    xorg-x11-proto-devel \
+    alsa-lib alsa-lib-devel \
+    libXext libXext-devel \
+    libXtst libXtst-devel \
+    libXrender libXrender-devel \
+    freetype freetype-devel \
+    libXt libXt-devel \
+    libSM libSM-devel \
+    libICE libICE-devel \
+    libXi libXi-devel \
+    libXdmcp libXdmcp-devel \
+    libXau libXau-devel \
+    libgcc
 
 
 ifeq ($(ARCH),x86_64)
@@ -90,7 +90,7 @@ ifeq ($(ARCH),x86_64)
   ifeq ($(BUILD),$(HOST))
     ifeq ($(TARGET),$(HOST))
       # When building the native compiler for x86_64, enable mixed mode.
-      RPM_ARCHS	+= i386 i686
+      RPM_ARCHS += i386 i686
     endif
   endif
 else
@@ -110,47 +110,47 @@ endif
 
 # Ensure we have 32-bit libs also for x64. We enable mixed-mode.
 ifeq (x86_64,$(ARCH))
-  LIBDIRS	:= lib64 lib
-  CFLAGS_lib	:= -m32
+  LIBDIRS := lib64 lib
+  CFLAGS_lib := -m32
 else
-  LIBDIRS 	:= lib
+  LIBDIRS := lib
 endif
 
 # Define directories
-RESULT		:= $(OUTPUT_ROOT)/result
-BUILDDIR	:= $(OUTPUT_ROOT)/$(HOST)/$(TARGET)
-PREFIX		:= $(RESULT)/$(HOST)
-TARGETDIR	:= $(PREFIX)/$(TARGET)
-SYSROOT		:= $(TARGETDIR)/sys-root
-DOWNLOAD	:= $(OUTPUT_ROOT)/download
-SRCDIR		:= $(OUTPUT_ROOT)/src
+RESULT := $(OUTPUT_ROOT)/result
+BUILDDIR := $(OUTPUT_ROOT)/$(HOST)/$(TARGET)
+PREFIX := $(RESULT)/$(HOST)
+TARGETDIR := $(PREFIX)/$(TARGET)
+SYSROOT := $(TARGETDIR)/sys-root
+DOWNLOAD := $(OUTPUT_ROOT)/download
+SRCDIR := $(OUTPUT_ROOT)/src
 
 # Marker file for unpacking rpms
-rpms		:= $(SYSROOT)/rpms_unpacked
+rpms := $(SYSROOT)/rpms_unpacked
 
-# Need to patch libs that are linker scripts to use non-absolute paths 
-libs		:= $(SYSROOT)/libs_patched
+# Need to patch libs that are linker scripts to use non-absolute paths
+libs := $(SYSROOT)/libs_patched
 
 ##########################################################################################
 # Unpack source packages
 
-# Generate downloading + unpacking of sources. 
+# Generate downloading + unpacking of sources.
 define Download
-$(1)_DIR	= $(abspath $(SRCDIR)/$(basename $(basename $(notdir $($(1))))))
-$(1)_CFG	= $$($(1)_DIR)/configure
-$(1)_FILE	= $(DOWNLOAD)/$(notdir $($(1)))
+  $(1)_DIR = $(abspath $(SRCDIR)/$(basename $(basename $(notdir $($(1))))))
+  $(1)_CFG = $$($(1)_DIR)/configure
+  $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)))
 
-$$($(1)_CFG)	: $$($(1)_FILE)
-		mkdir -p $$(SRCDIR)
-		tar -C $$(SRCDIR) -x$$(if $$(findstring .gz, $$<),z,j)f $$<
-		$$(foreach p,$$(abspath $$(wildcard $$(notdir $$($(1)_DIR)).patch)),	\
-			echo PATCHING $$(p) ;						\
-			patch -d $$($(1)_DIR) -p1 -i $$(p) ; 				\
-			)
-		touch $$@
+  $$($(1)_CFG) : $$($(1)_FILE)
+	mkdir -p $$(SRCDIR)
+	tar -C $$(SRCDIR) -x$$(if $$(findstring .gz, $$<),z,j)f $$<
+	$$(foreach p,$$(abspath $$(wildcard $$(notdir $$($(1)_DIR)).patch)), \
+	  echo PATCHING $$(p) ; \
+	  patch -d $$($(1)_DIR) -p1 -i $$(p) ; \
+	)
+	touch $$@
 
-$$($(1)_FILE)	:
-		wget -P $(DOWNLOAD) $$($(1))
+  $$($(1)_FILE) :
+	wget -P $(DOWNLOAD) $$($(1))
 endef
 
 # Download and unpack all source packages
@@ -159,48 +159,48 @@ $(foreach p,GCC BINUTILS CCACHE MPFR GMP MPC,$(eval $(call Download,$(p))))
 ##########################################################################################
 # Unpack RPMS
 
-# Note. For building linux you should install rpm2cpio. 
+# Note. For building linux you should install rpm2cpio.
 define unrpm
-$(SYSROOT)/$(notdir $(1)).unpacked	\
-		: $(1)
-$$(rpms)	: $(SYSROOT)/$(notdir $(1)).unpacked
+  $(SYSROOT)/$(notdir $(1)).unpacked \
+    : $(1)
+  $$(rpms) : $(SYSROOT)/$(notdir $(1)).unpacked
 endef
 
-%.unpacked	:
-		$(info Unpacking target rpms and libraries from $<)
-		@(mkdir -p $(@D);					\
-		cd $(@D);						\
-		rpm2cpio $< | 						\
-			cpio --extract --make-directories 		\
-				-f 					\
-				"./usr/share/doc/*" 			\
-				"./usr/share/man/*"			\
-				"./usr/X11R6/man/*" 			\
-				"*/X11/locale/*"			\
-				|| die ; )
-		touch $@
+%.unpacked :
+	$(info Unpacking target rpms and libraries from $<)
+	@(mkdir -p $(@D); \
+	cd $(@D); \
+	rpm2cpio $< | \
+	    cpio --extract --make-directories \
+	        -f \
+	        "./usr/share/doc/*" \
+	        "./usr/share/man/*" \
+	        "./usr/X11R6/man/*" \
+	        "*/X11/locale/*" \
+	    || die ; )
+	touch $@
 
 $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
 
 ##########################################################################################
 
-# Note: MUST create a <sys-root>/usr/lib even if not really needed. 
-# gcc will use a path relative to it to resolve lib64. (x86_64). 
-# we're creating multi-lib compiler with 32bit libc as well, so we should 
+# Note: MUST create a <sys-root>/usr/lib even if not really needed.
+# gcc will use a path relative to it to resolve lib64. (x86_64).
+# we're creating multi-lib compiler with 32bit libc as well, so we should
 # have it anyway, but just to make sure...
 # Patch libc.so and libpthread.so to force linking against libraries in sysroot
 # and not the ones installed on the build machine.
-$(libs)		: $(rpms)
-		@echo Patching libc and pthreads
-		@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-			(cat $$f | sed -e 's|/usr/lib64/||g' 		\
-				       -e 's|/usr/lib/||g'		\
-				       -e 's|/lib64/||g'		\
-				       -e 's|/lib/||g' ) > $$f.tmp ;	\
-			mv $$f.tmp $$f				;	\
-		done)
-		@mkdir -p $(SYSROOT)/usr/lib
-		@touch $@
+$(libs) : $(rpms)
+	@echo Patching libc and pthreads
+	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
+	  (cat $$f | sed -e 's|/usr/lib64/||g' \
+	      -e 's|/usr/lib/||g' \
+	      -e 's|/lib64/||g' \
+	      -e 's|/lib/||g' ) > $$f.tmp ; \
+	  mv $$f.tmp $$f ; \
+	done)
+	@mkdir -p $(SYSROOT)/usr/lib
+	@touch $@
 
 ##########################################################################################
 
@@ -210,264 +210,264 @@ $(foreach t,binutils mpfr gmp mpc gcc ccache,$(eval $(t) = $(TARGETDIR)/$($(t)_v
 ##########################################################################################
 
 # Default base config
-CONFIG		= --target=$(TARGET) 					\
-			--host=$(HOST) --build=$(BUILD)			\
-			--prefix=$(PREFIX)
+CONFIG = --target=$(TARGET) \
+    --host=$(HOST) --build=$(BUILD) \
+    --prefix=$(PREFIX)
 
-PATHEXT 	= $(RESULT)/$(BUILD)/bin:
+PATHEXT = $(RESULT)/$(BUILD)/bin:
 
-PATHPRE		= PATH=$(PATHEXT)$(PATH)
-BUILDPAR	= -j16
+PATHPRE = PATH=$(PATHEXT)$(PATH)
+BUILDPAR = -j16
 
 # Default commands to when making
-MAKECMD		=
-INSTALLCMD	= install
+MAKECMD =
+INSTALLCMD = install
 
 
-declare_tools   = CC$(1)=$(2)gcc LD$(1)=$(2)ld AR$(1)=$(2)ar AS$(1)=$(2)as RANLIB$(1)=$(2)ranlib CXX$(1)=$(2)g++ OBJDUMP$(1)=$(2)objdump
+declare_tools = CC$(1)=$(2)gcc LD$(1)=$(2)ld AR$(1)=$(2)ar AS$(1)=$(2)as RANLIB$(1)=$(2)ranlib CXX$(1)=$(2)g++ OBJDUMP$(1)=$(2)objdump
 
 ifeq ($(HOST),$(BUILD))
-ifeq ($(HOST),$(TARGET))
-TOOLS		= $(call declare_tools,_FOR_TARGET,)
-endif
+  ifeq ($(HOST),$(TARGET))
+    TOOLS = $(call declare_tools,_FOR_TARGET,)
+  endif
 endif
 
-TOOLS		?=  $(call declare_tools,_FOR_TARGET,$(TARGET)-)
+TOOLS ?= $(call declare_tools,_FOR_TARGET,$(TARGET)-)
 
 ##########################################################################################
 
-# Create a TARGET bfd + libiberty only. 
+# Create a TARGET bfd + libiberty only.
 # Configure one or two times depending on mulitlib arch.
-# If multilib, the second should be 32-bit, and we resolve 
+# If multilib, the second should be 32-bit, and we resolve
 # CFLAG_<name> to most likely -m32.
 define mk_bfd
-$$(info Libs for $(1)) 
-$$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile \
-		: CFLAGS += $$(CFLAGS_$(1))
-$$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile \
-		: LIBDIRS = --libdir=$(TARGETDIR)/$(1)
+  $$(info Libs for $(1))
+  $$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile \
+      : CFLAGS += $$(CFLAGS_$(1))
+  $$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile \
+      : LIBDIRS = --libdir=$(TARGETDIR)/$(1)
 
-bfdlib		+= $$(TARGETDIR)/$$(binutils_ver)-$(subst /,-,$(1)).done
-bfdmakes	+= $$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile
+  bfdlib += $$(TARGETDIR)/$$(binutils_ver)-$(subst /,-,$(1)).done
+  bfdmakes += $$(BUILDDIR)/$$(binutils_ver)-$(subst /,-,$(1))/Makefile
 endef
 
 # Create one set of bfds etc for each multilib arch
 $(foreach l,$(LIBDIRS),$(eval $(call mk_bfd,$(l))))
 
 # Only build these two libs.
-$(bfdlib)	: MAKECMD 	= all-libiberty all-bfd
-$(bfdlib)	: INSTALLCMD 	= install-libiberty install-bfd
+$(bfdlib) : MAKECMD = all-libiberty all-bfd
+$(bfdlib) : INSTALLCMD = install-libiberty install-bfd
 
-# Building targets libbfd + libiberty. HOST==TARGET, i.e not 
-# for a cross env. 
-$(bfdmakes)	: CONFIG = --target=$(TARGET) 				\
-			--host=$(TARGET) --build=$(BUILD)		\
-			--prefix=$(TARGETDIR) 				\
-			--with-sysroot=$(SYSROOT) 			\
-			$(LIBDIRS)
+# Building targets libbfd + libiberty. HOST==TARGET, i.e not
+# for a cross env.
+$(bfdmakes) : CONFIG = --target=$(TARGET) \
+    --host=$(TARGET) --build=$(BUILD) \
+    --prefix=$(TARGETDIR) \
+    --with-sysroot=$(SYSROOT) \
+    $(LIBDIRS)
 
-$(bfdmakes)	: TOOLS = $(call declare_tools,_FOR_TARGET,$(TARGET)-) $(call declare_tools,,$(TARGET)-)
+$(bfdmakes) : TOOLS = $(call declare_tools,_FOR_TARGET,$(TARGET)-) $(call declare_tools,,$(TARGET)-)
 
 ##########################################################################################
 
-$(gcc)		\
-$(binutils)	\
-$(gmp)		\
-$(mpfr)		\
-$(mpc)		\
-$(bfdmakes)	\
-$(ccache)	: ENVS += $(TOOLS)
+$(gcc) \
+    $(binutils) \
+    $(gmp) \
+    $(mpfr) \
+    $(mpc) \
+    $(bfdmakes) \
+    $(ccache) : ENVS += $(TOOLS)
 
 # libdir to work around hateful bfd stuff installing into wrong dirs...
-# ensure we have 64 bit bfd support in the HOST library. I.e our 
+# ensure we have 64 bit bfd support in the HOST library. I.e our
 # compiler on i686 will know 64 bit symbols, BUT later
-# we build just the libs again for TARGET, then with whatever the arch 
+# we build just the libs again for TARGET, then with whatever the arch
 # wants.
 $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
 
 # Makefile creation. Simply run configure in build dir.
-$(bfdmakes)				\
-$(BUILDDIR)/$(binutils_ver)/Makefile	\
-		: $(BINUTILS_CFG)
-		$(info Configuring $@. Log in $(@D)/log.config)
-		@mkdir -p $(@D)
-		(						\
-			cd $(@D) ;				\
-			$(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)"	\
-				$(BINUTILS_CFG) 		\
-				$(CONFIG) 			\
-				--with-sysroot=$(SYSROOT)	\
-				--disable-nls			\
-				--program-prefix=$(TARGET)-	\
-				--enable-multilib		\
-		) > $(@D)/log.config 2>&1
-		@echo 'done'
+$(bfdmakes) \
+$(BUILDDIR)/$(binutils_ver)/Makefile \
+    : $(BINUTILS_CFG)
+	$(info Configuring $@. Log in $(@D)/log.config)
+	@mkdir -p $(@D)
+	( \
+	  cd $(@D) ; \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(BINUTILS_CFG) \
+	      $(CONFIG) \
+	      --with-sysroot=$(SYSROOT) \
+	      --disable-nls \
+	      --program-prefix=$(TARGET)- \
+	      --enable-multilib \
+	) > $(@D)/log.config 2>&1
+	@echo 'done'
 
-$(BUILDDIR)/$(mpfr_ver)/Makefile	\
-		: $(MPFR_CFG)
-		$(info Configuring $@. Log in $(@D)/log.config)
-		@mkdir -p $(@D)
-		(						\
-			cd $(@D) ;				\
-			$(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)"	\
-				$(MPFR_CFG) 			\
-				$(CONFIG) 			\
-				--program-prefix=$(TARGET)-	\
-				--enable-shared=no		\
-				--with-gmp=$(PREFIX)	\
-		) > $(@D)/log.config 2>&1
-		@echo 'done'
+$(BUILDDIR)/$(mpfr_ver)/Makefile \
+    : $(MPFR_CFG)
+	$(info Configuring $@. Log in $(@D)/log.config)
+	@mkdir -p $(@D)
+	( \
+	  cd $(@D) ; \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(MPFR_CFG) \
+	      $(CONFIG) \
+	      --program-prefix=$(TARGET)- \
+	      --enable-shared=no \
+	      --with-gmp=$(PREFIX) \
+	) > $(@D)/log.config 2>&1
+	@echo 'done'
 
-$(BUILDDIR)/$(gmp_ver)/Makefile	\
-		: $(GMP_CFG)
-		$(info Configuring $@. Log in $(@D)/log.config)
-		@mkdir -p $(@D)
-		(						\
-			cd $(@D) ;				\
-			$(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)"	\
-				$(GMP_CFG) 			\
-				--host=$(HOST) --build=$(BUILD)	\
-				--prefix=$(PREFIX)		\
-				--disable-nls			\
-				--program-prefix=$(TARGET)-	\
-				--enable-shared=no		\
-				--with-mpfr=$(PREFIX)	\
-		) > $(@D)/log.config 2>&1
-		@echo 'done'
+$(BUILDDIR)/$(gmp_ver)/Makefile \
+    : $(GMP_CFG)
+	$(info Configuring $@. Log in $(@D)/log.config)
+	@mkdir -p $(@D)
+	( \
+	  cd $(@D) ; \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(GMP_CFG) \
+	      --host=$(HOST) --build=$(BUILD) \
+	      --prefix=$(PREFIX) \
+	      --disable-nls \
+	      --program-prefix=$(TARGET)- \
+	      --enable-shared=no \
+	      --with-mpfr=$(PREFIX) \
+	) > $(@D)/log.config 2>&1
+	@echo 'done'
 
-$(BUILDDIR)/$(mpc_ver)/Makefile	\
-		: $(MPC_CFG)
-		$(info Configuring $@. Log in $(@D)/log.config)
-		@mkdir -p $(@D)
-		(						\
-			cd $(@D) ;				\
-			$(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)"	\
-				$(MPC_CFG) 			\
-				$(CONFIG) 			\
-				--program-prefix=$(TARGET)-	\
-				--enable-shared=no		\
-				--with-mpfr=$(PREFIX)	\
-				--with-gmp=$(PREFIX)	\
-		) > $(@D)/log.config 2>&1
-		@echo 'done'
+$(BUILDDIR)/$(mpc_ver)/Makefile \
+    : $(MPC_CFG)
+	$(info Configuring $@. Log in $(@D)/log.config)
+	@mkdir -p $(@D)
+	( \
+	  cd $(@D) ; \
+	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" \
+	      $(MPC_CFG) \
+	      $(CONFIG) \
+	      --program-prefix=$(TARGET)- \
+	      --enable-shared=no \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
+	) > $(@D)/log.config 2>&1
+	@echo 'done'
 
 # Only valid if glibc target -> linux
 # proper destructor handling for c++
 ifneq (,$(findstring linux,$(TARGET)))
-$(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG += --enable-__cxa_atexit 
+  $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG += --enable-__cxa_atexit
 endif
 
 # Want:
-# 	c,c++
-# 	shared libs
-#	multilib (-m32/-m64 on x64)
-# 	skip native language. 
-#	and link and assemble with the binutils we created 
-#	earlier, so --with-gnu*
-$(BUILDDIR)/$(gcc_ver)/Makefile	\
-		: $(GCC_CFG) 
-		$(info Configuring $@. Log in $(@D)/log.config)
-		mkdir -p $(@D)
-		(						\
-			cd $(@D) ;				\
-			$(PATHPRE) $(ENVS) $(GCC_CFG) $(EXTRA_CFLAGS) \
-				$(CONFIG) 			\
-				--with-sysroot=$(SYSROOT)	\
-				--enable-languages=c,c++ 	\
-				--enable-shared			\
-				--enable-multilib		\
-				--disable-nls			\
-				--with-gnu-as 			\
-				--with-gnu-ld			\
-				--with-mpfr=$(PREFIX)		\
-				--with-gmp=$(PREFIX)		\
-				--with-mpc=$(PREFIX)		\
-		) > $(@D)/log.config 2>&1
-		@echo 'done'
+# c,c++
+# shared libs
+# multilib (-m32/-m64 on x64)
+# skip native language.
+# and link and assemble with the binutils we created
+# earlier, so --with-gnu*
+$(BUILDDIR)/$(gcc_ver)/Makefile \
+    : $(GCC_CFG)
+	$(info Configuring $@. Log in $(@D)/log.config)
+	mkdir -p $(@D)
+	( \
+	  cd $(@D) ; \
+	  $(PATHPRE) $(ENVS) $(GCC_CFG) $(EXTRA_CFLAGS) \
+	      $(CONFIG) \
+	      --with-sysroot=$(SYSROOT) \
+	      --enable-languages=c,c++ \
+	      --enable-shared \
+	      --enable-multilib \
+	      --disable-nls \
+	      --with-gnu-as \
+	      --with-gnu-ld \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
+	      --with-mpc=$(PREFIX) \
+	) > $(@D)/log.config 2>&1
+	@echo 'done'
 
 # need binutils for gcc
-$(gcc)		: $(binutils) 
+$(gcc) : $(binutils)
 
 # as of 4.3 or so need these for doing config
 $(BUILDDIR)/$(gcc_ver)/Makefile : $(gmp) $(mpfr) $(mpc)
-$(mpfr)		: $(gmp)
-$(mpc)		: $(gmp) $(mpfr)
+$(mpfr) : $(gmp)
+$(mpc) : $(gmp) $(mpfr)
 
 ##########################################################################################
-# very straightforward. just build a ccache. it is only for host. 
-$(BUILDDIR)/$(ccache_ver)/Makefile	\
-		: $(CCACHE_CFG)
-		$(info Configuring $@. Log in $(@D)/log.config)
-		@mkdir -p $(@D)
-		@(						\
-			cd $(@D) ;				\
-			$(PATHPRE) $(ENVS) $(CCACHE_CFG)	\
-				$(CONFIG) 			\
-		) > $(@D)/log.config 2>&1
-		@echo 'done'
+# very straightforward. just build a ccache. it is only for host.
+$(BUILDDIR)/$(ccache_ver)/Makefile \
+    : $(CCACHE_CFG)
+	$(info Configuring $@. Log in $(@D)/log.config)
+	@mkdir -p $(@D)
+	@( \
+	  cd $(@D) ; \
+	  $(PATHPRE) $(ENVS) $(CCACHE_CFG) \
+	      $(CONFIG) \
+	) > $(@D)/log.config 2>&1
+	@echo 'done'
 
-gccpatch	= $(TARGETDIR)/gcc-patched
+gccpatch = $(TARGETDIR)/gcc-patched
 
 ##########################################################################################
-# For some reason cpp is not created as a target-compiler 
+# For some reason cpp is not created as a target-compiler
 ifeq ($(HOST),$(TARGET))
-$(gccpatch)	: $(gcc) link_libs
-		@echo -n 'Creating compiler symlinks...'
-		@for f in cpp; do 				\
-			if [ ! -e $(PREFIX)/bin/$(TARGET)-$$f ];\
-			then					\
-			cd $(PREFIX)/bin && 			\
-				ln -s $$f $(TARGET)-$$f ;	\
-			fi					\
-		done
-		@touch $@
-		@echo 'done'
+  $(gccpatch) : $(gcc) link_libs
+	@echo -n 'Creating compiler symlinks...'
+	@for f in cpp; do \
+	  if [ ! -e $(PREFIX)/bin/$(TARGET)-$$f ]; \
+	  then \
+	    cd $(PREFIX)/bin && \
+	    ln -s $$f $(TARGET)-$$f ; \
+	  fi \
+	done
+	@touch $@
+	@echo 'done'
 
-##########################################################################################
-# Ugly at best. Seems that when we compile host->host compiler, that are NOT
-# the BUILD compiler, the result will not try searching for libs in package root.
-# "Solve" this by create links from the target libdirs to where they are. 
-link_libs:
-		@echo -n 'Creating library symlinks...'
-		@$(foreach l,$(LIBDIRS),							\
-		for f in `cd $(PREFIX)/$(l) && ls`; do 						\
-			if [ ! -e $(TARGETDIR)/$(l)/$$f ]; then					\
-				mkdir -p $(TARGETDIR)/$(l) &&					\
-				cd $(TARGETDIR)/$(l)/ && 					\
-				ln -s $(if $(findstring /,$(l)),../,)../../$(l)/$$f $$f;	\
-			fi									\
-		done;) 
-		@echo 'done'
+  ##########################################################################################
+  # Ugly at best. Seems that when we compile host->host compiler, that are NOT
+  # the BUILD compiler, the result will not try searching for libs in package root.
+  # "Solve" this by create links from the target libdirs to where they are.
+  link_libs:
+	@echo -n 'Creating library symlinks...'
+	@$(foreach l,$(LIBDIRS), \
+	for f in `cd $(PREFIX)/$(l) && ls`; do \
+	  if [ ! -e $(TARGETDIR)/$(l)/$$f ]; then \
+	    mkdir -p $(TARGETDIR)/$(l) && \
+	    cd $(TARGETDIR)/$(l)/ && \
+	    ln -s $(if $(findstring /,$(l)),../,)../../$(l)/$$f $$f; \
+	  fi \
+	done;)
+	@echo 'done'
 else
-$(gccpatch)	:
-		@echo 'done'
+  $(gccpatch) :
+	@echo 'done'
 endif
 
 ##########################################################################################
-# Build in two steps. 
+# Build in two steps.
 # make <default>
-# make install. 
+# make install.
 # Use path to our build hosts cross tools
-# Always need to build cross tools for build host self. 
-$(TARGETDIR)/%.done : $(BUILDDIR)/%/Makefile 
-		$(info Building $(basename $@). Log in $(<D)/log.build)
-		$(PATHPRE) $(ENVS) $(MAKE) $(BUILDPAR) -f $< -C $(<D) $(MAKECMD) $(MAKECMD.$(notdir $@)) > $(<D)/log.build 2>&1
-		@echo -n 'installing...'
-		$(PATHPRE) $(MAKE) $(INSTALLPAR) -f $< -C $(<D) $(INSTALLCMD) $(MAKECMD.$(notdir $@))  > $(<D)/log.install 2>&1
-		@touch $@
-		@echo 'done'
+# Always need to build cross tools for build host self.
+$(TARGETDIR)/%.done : $(BUILDDIR)/%/Makefile
+	$(info Building $(basename $@). Log in $(<D)/log.build)
+	$(PATHPRE) $(ENVS) $(MAKE) $(BUILDPAR) -f $< -C $(<D) $(MAKECMD) $(MAKECMD.$(notdir $@)) > $(<D)/log.build 2>&1
+	@echo -n 'installing...'
+	$(PATHPRE) $(MAKE) $(INSTALLPAR) -f $< -C $(<D) $(INSTALLCMD) $(MAKECMD.$(notdir $@)) > $(<D)/log.install 2>&1
+	@touch $@
+	@echo 'done'
 
 ##########################################################################################
 
-bfdlib		: $(bfdlib)
-binutils	: $(binutils)
-rpms		: $(rpms)
-libs		: $(libs)
-sysroot		: rpms libs
-gcc		: sysroot $(gcc) $(gccpatch)
-all		: binutils gcc bfdlib
+bfdlib : $(bfdlib)
+binutils : $(binutils)
+rpms : $(rpms)
+libs : $(libs)
+sysroot : rpms libs
+gcc : sysroot $(gcc) $(gccpatch)
+all : binutils gcc bfdlib
 
-# this is only built for host. so separate. 
-ccache		: $(ccache)
+# this is only built for host. so separate.
+ccache : $(ccache)
 
-.PHONY		: gcc all binutils bfdlib link_libs rpms libs sysroot
+.PHONY : gcc all binutils bfdlib link_libs rpms libs sysroot

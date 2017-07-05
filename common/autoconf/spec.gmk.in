@@ -30,8 +30,8 @@
 #   (called @OPENJDK_BUILD_AUTOCONF_NAME@ by autoconf)
 # using 'configure @CONFIGURE_COMMAND_LINE@'
 
-# When calling macros, the spaces between arguments are 
-# often semantically important! Sometimes we need to subst 
+# When calling macros, the spaces between arguments are
+# often semantically important! Sometimes we need to subst
 # spaces and commas, therefore we need the following macros.
 X:=
 SPACE:=$(X) $(X)
@@ -56,17 +56,17 @@ MAKE:=@MAKE@
 
 # Pass along the verbosity and log level settings.
 ifeq (,$(findstring VERBOSE=,$(MAKE)))
-    MAKE:=$(MAKE) $(VERBOSE) VERBOSE="$(VERBOSE)" LOG_LEVEL="$(LOG_LEVEL)"
+  MAKE:=$(MAKE) $(VERBOSE) VERBOSE="$(VERBOSE)" LOG_LEVEL="$(LOG_LEVEL)"
 endif
 
 # No implicit variables or rules!
 ifeq (,$(findstring -R,$(MAKE)))
-    MAKE:=$(MAKE) -R
+  MAKE:=$(MAKE) -R
 endif
 
 # Specify where the common include directory for makefiles is.
 ifeq (,$(findstring -I @SRC_ROOT@/common/makefiles,$(MAKE)))
-    MAKE:=$(MAKE) -I @SRC_ROOT@/common/makefiles
+  MAKE:=$(MAKE) -I @SRC_ROOT@/common/makefiles
 endif
 
 # The "human readable" name of this configuration
@@ -175,7 +175,7 @@ else
   RELEASE=$(JDK_VERSION)-$(MILESTONE)$(BUILD_VARIANT_RELEASE)
 endif
 
-ifneq ($(USER_RELEASE_SUFFIX),)
+ifneq ($(USER_RELEASE_SUFFIX), )
   FULL_VERSION=$(RELEASE)-$(USER_RELEASE_SUFFIX)-$(JDK_BUILD_NUMBER)
 else
   FULL_VERSION=$(RELEASE)-$(JDK_BUILD_NUMBER)
@@ -287,7 +287,7 @@ CACERTS_FILE=@CACERTS_FILE@
 # Enable unlimited crypto policy
 UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
 
-# Necessary additional compiler flags to compile X11 
+# Necessary additional compiler flags to compile X11
 X_CFLAGS:=@X_CFLAGS@
 X_LIBS:=@X_LIBS@
 OPENWIN_HOME:=@OPENWIN_HOME@
@@ -388,7 +388,7 @@ LIPO:=@LIPO@
 # Command to create a shared library
 SHARED_LIBRARY_FLAGS:=@SHARED_LIBRARY_FLAGS@
 
-# Options to linker to specify a mapfile. 
+# Options to linker to specify a mapfile.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_MAPFILE=@SET_SHARED_LIBRARY_MAPFILE@
 
@@ -461,7 +461,7 @@ NEW_JAVADOC = $(BOOTSTRAP_JAVAC_ARGS) com.sun.tools.javadoc.Main
 # Guarding this against resetting value. Legacy make files include spec multiple
 # times.
 ifndef RC_FLAGS
-RC_FLAGS:=@RC_FLAGS@
+  RC_FLAGS:=@RC_FLAGS@
 endif
 
 # A specific java binary with specific options can be used to run
@@ -541,9 +541,9 @@ BUILD_LOG_PREVIOUS:=@BUILD_LOG_PREVIOUS@
 # we have solved how to prevent the log wrapper to wait
 # for the background sjavac server process.
 ifeq (@ENABLE_SJAVAC@X@OPENJDK_BUILD_OS_API@,yesXwinapi)
-    BUILD_LOG_WRAPPER:=
+  BUILD_LOG_WRAPPER:=
 else
-    BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
+  BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
 endif
 
 # Build setup
@@ -563,12 +563,12 @@ MSVCR_DLL:=@MSVCR_DLL@
 # of the next macro to get rid of superfluous files.
 ADD_SRCS=$1
 ifneq (,$(ADD_SRC_ROOT))
-    # Append wildcard rule to pickup any matching source roots found below ADD_SRC_ROOT 
-    ADD_SRCS+=$(wildcard $(subst $(SRC_ROOT),$(ADD_SRC_ROOT),$1))
+  # Append wildcard rule to pickup any matching source roots found below ADD_SRC_ROOT
+  ADD_SRCS+=$(wildcard $(subst $(SRC_ROOT),$(ADD_SRC_ROOT),$1))
 endif
 ifneq (,$(OVERRIDE_SRC_ROOT))
-    # Append wildcard rule to pickup any matching source roots found below OVERRIDE_SRC_ROOT 
-    ADD_SRCS+=$(wildcard $(subst $(SRC_ROOT),$(OVERRIDE_SRC_ROOT),$1))
+  # Append wildcard rule to pickup any matching source roots found below OVERRIDE_SRC_ROOT
+  ADD_SRCS+=$(wildcard $(subst $(SRC_ROOT),$(OVERRIDE_SRC_ROOT),$1))
 endif
 
 # OVR_SRCS creates a filter expression to filter out sources in
@@ -578,9 +578,9 @@ endif
 # We cannot do the scan in configure, since that would force us to rerun configure when
 # we add overridden sources.
 ifneq (,$(OVERRIDE_SRC_ROOT))
-    OVR_SRCS:=$(addsuffix %,$(subst $(OVERRIDE_SRC_ROOT),$(SRC_ROOT),$(sort $(dir $(shell $(FIND) $(OVERRIDE_SRC_ROOT) -type f)))))
+  OVR_SRCS:=$(addsuffix %,$(subst $(OVERRIDE_SRC_ROOT),$(SRC_ROOT),$(sort $(dir $(shell $(FIND) $(OVERRIDE_SRC_ROOT) -type f)))))
 else
-    OVR_SRCS:=
+  OVR_SRCS:=
 endif
 
 ####################################################
@@ -589,7 +589,7 @@ endif
 #
 
 # Common prefix for all installed files. Defaults to /usr/local,
-# but /opt/myjdk is another common version. 
+# but /opt/myjdk is another common version.
 INSTALL_PREFIX=@prefix@
 
 # Directories containing architecture-dependent files should be relative to exec_prefix
@@ -619,7 +619,7 @@ INSTALL_INCLUDEDIR=@libdir@
 # Executables that other programs run.
 INSTALL_LIBEXECDIR=@libexecdir@
 
-# Locale-dependent but architecture-independent data, such as message catalogs. 
+# Locale-dependent but architecture-independent data, such as message catalogs.
 INSTALL_LOCALEDIR=@localedir@
 
 # Modifiable single-machine data
