@@ -66,8 +66,21 @@ void MacroAssembler::get_thread(Register thread) {
    }
 }
 
-// NOTE: since the linux kernel resides at the low end of
-// user address space, no null pointer check is needed.
-bool MacroAssembler::needs_explicit_null_check(int offset) {
-  return offset < 0 || offset >= 0x100000;
+bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
+  // Exception handler checks the nmethod's implicit null checks table
+  // only when this method returns false.
+  if (UseCompressedOops) {
+    // The first page after heap_base is unmapped and
+    // the 'offset' is equal to [heap_base + offset] for
+    // narrow oop implicit null checks.
+    uintptr_t heap_base = (uintptr_t)Universe::heap_base();
+    if ((uintptr_t)offset >= heap_base) {
+      // Normalize offset for the next check.
+      offset = (intptr_t)(pointer_delta((void*)offset, (void*)heap_base, 1));
+    }
+  }
+  // Linux kernel guarantees that the first page is always unmapped. Don't
+  // assume anything more than that.
+  bool offset_in_first_page =   0 <= offset  &&  offset < os::vm_page_size();
+  return !offset_in_first_page;
 }

@@ -119,7 +119,7 @@ if [ "${osname}" = SunOS ] ; then
   # System place where JDK installed images are stored?
   jdk_instances=/usr/jdk/instances
 
-  # Get the SS11 compilers (and latest patches for them too)
+  # Get the Sun Studio compilers (and latest patches for them too)
   if [ "${ALT_COMPILER_PATH}" = "" ] ; then
     ALT_COMPILER_PATH=/opt/SUNWspro/bin
     export ALT_COMPILER_PATH

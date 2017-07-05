@@ -87,6 +87,17 @@ void Relocation::pd_set_data_value(address x, intptr_t o) {
 #ifdef _LP64
     jint inst2;
     guarantee(Assembler::inv_op2(inst)==Assembler::sethi_op2, "must be sethi");
+    if (format() != 0) {
+      assert(type() == relocInfo::oop_type, "only narrow oops case");
+      jint np = oopDesc::encode_heap_oop((oop)x);
+      inst &= ~Assembler::hi22(-1);
+      inst |=  Assembler::hi22((intptr_t)np);
+      ip->set_long_at(0, inst);
+      inst2 = ip->long_at( NativeInstruction::nop_instruction_size );
+      guarantee(Assembler::inv_op(inst2)==Assembler::arith_op, "arith op");
+      ip->set_long_at(NativeInstruction::nop_instruction_size, ip->set_data32_simm13( inst2, (intptr_t)np));
+      break;
+    }
     ip->set_data64_sethi( ip->addr_at(0), (intptr_t)x );
 #ifdef COMPILER2
     // [RGV] Someone must have missed putting in a reloc entry for the

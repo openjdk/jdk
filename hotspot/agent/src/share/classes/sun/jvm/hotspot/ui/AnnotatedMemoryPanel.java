@@ -648,6 +648,6 @@ public class AnnotatedMemoryPanel extends JPanel {
           System.exit(0);
         }
       });
-    frame.show();
+    frame.setVisible(true);
   }
 }
