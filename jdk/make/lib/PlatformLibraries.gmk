@@ -23,43 +23,20 @@
 # questions.
 #
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-
-  $(eval $(call SetupNativeCompilation,BUILD_LIBAPPLESCRIPTENGINE, \
-      LIBRARY := AppleScriptEngine, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-      SRC := $(JDK_TOPDIR)/src/macosx/native/apple/applescript, \
-      LANG := C, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          -I$(JDK_TOPDIR)/src/macosx/native/apple/applescript, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := -framework Cocoa \
-          -framework Carbon \
-          -framework JavaNativeFoundation \
-          $(LDFLAGS_JDKLIB_SUFFIX), \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libAppleScriptEngine, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
-
-  $(BUILD_LIBAPPLESCRIPTENGINE): $(BUILD_LIBJAVA)
-
-  BUILD_LIBRARIES += $(BUILD_LIBAPPLESCRIPTENGINE)
-
-endif
-
 ##########################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
+  LIBOSXAPP_SRC := $(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxapp
+
   $(eval $(call SetupNativeCompilation,BUILD_LIBOSXAPP, \
       LIBRARY := osxapp, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-      SRC := $(JDK_TOPDIR)/src/macosx/native/sun/osxapp, \
+      SRC := $(LIBOSXAPP_SRC), \
       LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
-          -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
+          $(addprefix -I, $(LIBOSXAPP_SRC)) \
           -I$(JDK_OUTPUTDIR)/gensrc_headers_icons, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -79,149 +56,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libosxapp, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  BUILD_LIBRARIES += $(BUILD_LIBOSXAPP)
+  DESKTOP_LIBRARIES += $(BUILD_LIBOSXAPP)
 
 endif
 
-##########################################################################################
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-
-  LIBOSX_DIRS := \
-      $(JDK_TOPDIR)/src/macosx/native/com/apple/concurrent \
-      $(JDK_TOPDIR)/src/macosx/native/com/apple/eio \
-      $(JDK_TOPDIR)/src/macosx/native/apple/security
-
-  $(eval $(call SetupNativeCompilation,BUILD_LIBOSX, \
-      LIBRARY := osx, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-      SRC := $(LIBOSX_DIRS), \
-      LANG := C, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(foreach dir, $(LIBOSX_DIRS), -I$(dir)) \
-          -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX_macosx := \
-          -losxapp \
-          -framework Cocoa \
-          -framework ApplicationServices \
-          -framework JavaNativeFoundation \
-          -framework JavaRuntimeSupport \
-          -framework Security \
-          -framework SystemConfiguration \
-          $(LDFLAGS_JDKLIB_SUFFIX), \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libosx, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
-
-  BUILD_LIBRARIES += $(BUILD_LIBOSX)
-
-  $(BUILD_LIBOSX): $(BUILD_LIBOSXAPP)
-
-  $(BUILD_LIBOSX): $(BUILD_LIBJAVA)
-
-endif
-
-##########################################################################################
-
-ifndef OPENJDK
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-
-    ACCESSBRIDGE_SRCDIR := $(JDK_TOPDIR)/src/closed/windows/native/sun/bridge
-
-    define SetupAccessBridge
-      # Parameter 1 Suffix
-      # Parameter 2 Machine
-      # Parameter 3 ACCESSBRIDGE_ARCH_ suffix and name of directory where gensrc headers
-      #             are found.
-
-      $(call SetupNativeCompilation,BUILD_JAWTACCESSBRIDGE$1, \
-          LIBRARY = JAWTAccessBridge$1, \
-          OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-          SRC := $(ACCESSBRIDGE_SRCDIR), \
-          INCLUDE_FILES := JAWTAccessBridge.cpp, \
-          LANG := C++, \
-          OPTIMIZATION := LOW, \
-          CFLAGS := $(CFLAGS_JDKLIB) \
-              -DACCESSBRIDGE_ARCH_$3 \
-              -I$(JDK_OUTPUTDIR)/gensrc_headers_ab/$3, \
-          LDFLAGS := $(LDFLAGS_JDKLIB) kernel32.lib user32.lib gdi32.lib \
-              winspool.lib jawt.lib comdlg32.lib advapi32.lib shell32.lib \
-              ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
-              -subsystem:windows -machine:$2 \
-              -def:$(ACCESSBRIDGE_SRCDIR)/JAWTAccessBridge.DEF, \
-          VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
-          RC_FLAGS := $(RC_FLAGS) \
-              -D "JDK_FNAME=JAWTAccessBridge$1.dll" \
-              -D "JDK_INTERNAL_NAME=JAWTAccessBridge$1" \
-              -D "JDK_FTYPE=0x02L", \
-          OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjawtaccessbridge$1, \
-          DEBUG_SYMBOLS := true)
-
-      $$(BUILD_JAWTACCESSBRIDGE$1): $(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX)
-
-      $(call SetupNativeCompilation,BUILD_JAVAACCESSBRIDGE$1, \
-          LIBRARY = JavaAccessBridge$1, \
-          OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-          SRC := $(ACCESSBRIDGE_SRCDIR), \
-          INCLUDE_FILES := AccessBridgeATInstance.cpp AccessBridgeDebug.cpp \
-              AccessBridgeJavaEntryPoints.cpp \
-              AccessBridgeMessages.cpp JavaAccessBridge.cpp, \
-          LANG := C++, \
-          OPTIMIZATION := LOW, \
-          CFLAGS := $(CFLAGS_JDKLIB) \
-              -DACCESSBRIDGE_ARCH_$3 \
-              -I$(JDK_OUTPUTDIR)/gensrc_headers_ab/$3, \
-          LDFLAGS := $(LDFLAGS_JDKLIB) kernel32.lib user32.lib gdi32.lib \
-              winspool.lib comdlg32.lib advapi32.lib shell32.lib \
-              ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
-              -subsystem:windows -machine:$2 \
-              -def:$(ACCESSBRIDGE_SRCDIR)/JavaAccessBridge.DEF, \
-          VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
-          RC_FLAGS := $(RC_FLAGS) \
-              -D "JDK_FNAME=JavaAccessBridge$1.dll" \
-              -D "JDK_INTERNAL_NAME=JavaAccessBridge$1" \
-              -D "JDK_FTYPE=0x02L", \
-          OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjavaaccessbridge$1, \
-          DEBUG_SYMBOLS := true)
-
-      $(call SetupNativeCompilation,BUILD_WINDOWSACCESSBRIDGE$1, \
-          LIBRARY = WindowsAccessBridge$1, \
-          OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-          SRC := $(ACCESSBRIDGE_SRCDIR), \
-          INCLUDE_FILES := AccessBridgeJavaVMInstance.cpp AccessBridgeMessageQueue.cpp \
-              AccessBridgeMessages.cpp AccessBridgeWindowsEntryPoints.cpp \
-              WinAccessBridge.cpp AccessBridgeDebug.cpp \
-              AccessBridgeEventHandler.cpp, \
-          LANG := C++, \
-          OPTIMIZATION := LOW, \
-          CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT \
-              -DACCESSBRIDGE_ARCH_$3 \
-              -I$(JDK_OUTPUTDIR)/gensrc_headers_ab/$3, \
-          LDFLAGS := $(LDFLAGS_JDKLIB) kernel32.lib user32.lib gdi32.lib \
-              winspool.lib comdlg32.lib advapi32.lib shell32.lib \
-              ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
-              -subsystem:windows -machine:$2 \
-              -def:$(ACCESSBRIDGE_SRCDIR)/WinAccessBridge.DEF, \
-          VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
-          RC_FLAGS := $(RC_FLAGS) \
-              -D "JDK_FNAME=WindowsAccessBridge$1.dll" \
-              -D "JDK_INTERNAL_NAME=WindowsAccessBridge$1" \
-              -D "JDK_FTYPE=0x02L", \
-          OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libwindowsaccessbridge$1, \
-          DEBUG_SYMBOLS := true)
-
-      BUILD_LIBRARIES += $$(BUILD_JAWTACCESSBRIDGE$1) $$(BUILD_JAVAACCESSBRIDGE$1) \
-          $$(BUILD_WINDOWSACCESSBRIDGE$1)
-
-    endef
-
-    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
-      $(eval $(call SetupAccessBridge,-32,I386,32))
-      $(eval $(call SetupAccessBridge,,I386,legacy))
-    else
-      $(eval $(call SetupAccessBridge,-64,X64,64))
-    endif
-  endif
-endif
