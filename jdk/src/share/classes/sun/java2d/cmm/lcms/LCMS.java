@@ -148,22 +148,32 @@ public class LCMS implements PCMM {
 
     public static native void initLCMS(Class Trans, Class IL, Class Pf);
 
-    /* the class initializer which loads the CMM */
-    static {
+    private LCMS() {};
+
+    private static LCMS theLcms = null;
+
+    static synchronized PCMM getModule() {
+        if (theLcms != null) {
+            return theLcms;
+        }
+
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
-                    /* We need to load awt here because of usage trace and
-                     * disposer frameworks
-                     */
-                    System.loadLibrary("awt");
-                    System.loadLibrary("lcms");
-                    return null;
-                }
-            }
-        );
+                new java.security.PrivilegedAction() {
+                    public Object run() {
+                        /* We need to load awt here because of usage trace and
+                         * disposer frameworks
+                         */
+                        System.loadLibrary("awt");
+                        System.loadLibrary("lcms");
+                        return null;
+                    }
+                });
 
         initLCMS(LCMSTransform.class, LCMSImageLayout.class, ICC_Profile.class);
+
+        theLcms = new LCMS();
+
+        return theLcms;
     }
 
     private static class TagData {

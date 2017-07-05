@@ -315,3 +315,34 @@ Java_sun_awt_CGraphicsDevice_nativeGetDisplayModes
 
     return jreturnArray;
 }
+
+/*
+ * Class:     sun_awt_CGraphicsDevice
+ * Method:    nativeGetScaleFactor
+ * Signature: (I)D
+ */
+JNIEXPORT jdouble JNICALL
+Java_sun_awt_CGraphicsDevice_nativeGetScaleFactor
+(JNIEnv *env, jclass class, jint displayID)
+{
+    __block jdouble ret = 1.0f;
+
+JNF_COCOA_ENTER(env);
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        NSArray *screens = [NSScreen screens];
+        for (NSScreen *screen in screens) {
+            NSDictionary *screenInfo = [screen deviceDescription];
+            NSNumber *screenID = [screenInfo objectForKey:@"NSScreenNumber"];
+            if ([screenID pointerValue] == displayID){
+                if ([screen respondsToSelector:@selector(backingScaleFactor)]) {
+                    ret = [screen backingScaleFactor];
+                }
+                break;
+            }
+        }
+    }];
+
+JNF_COCOA_EXIT(env);
+    return ret;
+}

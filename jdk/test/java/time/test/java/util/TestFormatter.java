@@ -35,7 +35,7 @@ import static org.testng.Assert.assertEquals;
 /* @test
  * @summary Unit test for j.u.Formatter threeten date/time support
  */
-@Test(groups={"implementation"})
+@Test
 public class TestFormatter {
 
     // time

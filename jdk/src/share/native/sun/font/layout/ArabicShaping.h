@@ -93,6 +93,8 @@ private:
     static ShapeType getShapeType(LEUnicode c);
 
     static const le_uint8 shapingTypeTable[];
+    static const size_t   shapingTypeTableLen;
+
     static const ShapeType shapeTypes[];
 
     static void adjustTags(le_int32 outIndex, le_int32 shapeOffset, LEGlyphStorage &glyphStorage);

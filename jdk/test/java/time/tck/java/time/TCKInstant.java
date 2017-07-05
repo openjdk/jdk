@@ -75,6 +75,7 @@ import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -84,18 +85,20 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -113,6 +116,8 @@ public class TCKInstant extends AbstractDateTimeTest {
 
     private static final long MIN_SECOND = Instant.MIN.getEpochSecond();
     private static final long MAX_SECOND = Instant.MAX.getEpochSecond();
+    private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");
+    private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
 
     private Instant TEST_12345_123456789;
 
@@ -411,13 +416,13 @@ public class TCKInstant extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_12345_123456789, Queries.chronology(), null},
-                {TEST_12345_123456789, Queries.zoneId(), null},
-                {TEST_12345_123456789, Queries.precision(), NANOS},
-                {TEST_12345_123456789, Queries.zone(), null},
-                {TEST_12345_123456789, Queries.offset(), null},
-                {TEST_12345_123456789, Queries.localDate(), null},
-                {TEST_12345_123456789, Queries.localTime(), null},
+                {TEST_12345_123456789, TemporalQuery.chronology(), null},
+                {TEST_12345_123456789, TemporalQuery.zoneId(), null},
+                {TEST_12345_123456789, TemporalQuery.precision(), NANOS},
+                {TEST_12345_123456789, TemporalQuery.zone(), null},
+                {TEST_12345_123456789, TemporalQuery.offset(), null},
+                {TEST_12345_123456789, TemporalQuery.localDate(), null},
+                {TEST_12345_123456789, TemporalQuery.localTime(), null},
         };
     }
 
@@ -434,6 +439,128 @@ public class TCKInstant extends AbstractDateTimeTest {
     @Test(expectedExceptions=NullPointerException.class)
     public void test_query_null() {
         TEST_12345_123456789.query(null);
+    }
+
+    //-----------------------------------------------------------------------
+    // adjustInto(Temporal)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="adjustInto")
+    Object[][] data_adjustInto() {
+        return new Object[][]{
+                {Instant.ofEpochSecond(10, 200), Instant.ofEpochSecond(20), Instant.ofEpochSecond(10, 200), null},
+                {Instant.ofEpochSecond(10, -200), Instant.now(), Instant.ofEpochSecond(10, -200), null},
+                {Instant.ofEpochSecond(-10), Instant.EPOCH, Instant.ofEpochSecond(-10), null},
+                {Instant.ofEpochSecond(10), Instant.MIN, Instant.ofEpochSecond(10), null},
+                {Instant.ofEpochSecond(10), Instant.MAX, Instant.ofEpochSecond(10), null},
+
+                {Instant.ofEpochSecond(10, 200), LocalDateTime.of(1970, 1, 1, 0, 0, 20).toInstant(ZoneOffset.UTC), Instant.ofEpochSecond(10, 200), null},
+                {Instant.ofEpochSecond(10, 200), OffsetDateTime.of(1970, 1, 1, 0, 0, 20, 10, ZoneOffset.UTC), OffsetDateTime.of(1970, 1, 1, 0, 0, 10, 200, ZoneOffset.UTC), null},
+                {Instant.ofEpochSecond(10, 200), OffsetDateTime.of(1970, 1, 1, 0, 0, 20, 10, OFFSET_PTWO), OffsetDateTime.of(1970, 1, 1, 2, 0, 10, 200, OFFSET_PTWO), null},
+                {Instant.ofEpochSecond(10, 200), ZonedDateTime.of(1970, 1, 1, 0, 0, 20, 10, ZONE_PARIS), ZonedDateTime.of(1970, 1, 1, 1, 0, 10, 200, ZONE_PARIS), null},
+
+                {Instant.ofEpochSecond(10, 200), LocalDateTime.of(1970, 1, 1, 0, 0, 20), null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), null, null, NullPointerException.class},
+
+        };
+    }
+
+    @Test(dataProvider="adjustInto")
+    public void test_adjustInto(Instant test, Temporal temporal, Temporal expected, Class<?> expectedEx) {
+        if (expectedEx == null) {
+            Temporal result = test.adjustInto(temporal);
+            assertEquals(result, expected);
+        } else {
+            try {
+                Temporal result = test.adjustInto(temporal);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    // with(TemporalAdjuster)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="with")
+    Object[][] data_with() {
+        return new Object[][]{
+                {Instant.ofEpochSecond(10, 200), Instant.ofEpochSecond(20), Instant.ofEpochSecond(20), null},
+                {Instant.ofEpochSecond(10), Instant.ofEpochSecond(20, -100), Instant.ofEpochSecond(20, -100), null},
+                {Instant.ofEpochSecond(-10), Instant.EPOCH, Instant.ofEpochSecond(0), null},
+                {Instant.ofEpochSecond(10), Instant.MIN, Instant.MIN, null},
+                {Instant.ofEpochSecond(10), Instant.MAX, Instant.MAX, null},
+
+                {Instant.ofEpochSecond(10, 200), LocalDateTime.of(1970, 1, 1, 0, 0, 20).toInstant(ZoneOffset.UTC), Instant.ofEpochSecond(20), null},
+
+                {Instant.ofEpochSecond(10, 200), LocalDateTime.of(1970, 1, 1, 0, 0, 20), null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), null, null, NullPointerException.class},
+
+        };
+    }
+
+
+    @Test(dataProvider="with")
+    public void test_with_temporalAdjuster(Instant test, TemporalAdjuster adjuster, Instant expected, Class<?> expectedEx) {
+        if (expectedEx == null) {
+            Instant result = test.with(adjuster);
+            assertEquals(result, expected);
+        } else {
+            try {
+                Instant result = test.with(adjuster);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    // with(TemporalField, long)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="with_longTemporalField")
+    Object[][] data_with_longTemporalField() {
+        return new Object[][]{
+                {Instant.ofEpochSecond(10, 200), ChronoField.INSTANT_SECONDS, 100, Instant.ofEpochSecond(100, 200), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.INSTANT_SECONDS, 0, Instant.ofEpochSecond(0, 200), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.INSTANT_SECONDS, -100, Instant.ofEpochSecond(-100, 200), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.NANO_OF_SECOND, 100, Instant.ofEpochSecond(10, 100), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.NANO_OF_SECOND, 0, Instant.ofEpochSecond(10), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MICRO_OF_SECOND, 100, Instant.ofEpochSecond(10, 100*1000), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MICRO_OF_SECOND, 0, Instant.ofEpochSecond(10), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MILLI_OF_SECOND, 100, Instant.ofEpochSecond(10, 100*1000*1000), null},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MILLI_OF_SECOND, 0, Instant.ofEpochSecond(10), null},
+
+                {Instant.ofEpochSecond(10, 200), ChronoField.NANO_OF_SECOND, 1000000000L, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MICRO_OF_SECOND, 1000000, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MILLI_OF_SECOND, 1000, null, DateTimeException.class},
+
+                {Instant.ofEpochSecond(10, 200), ChronoField.SECOND_OF_MINUTE, 1, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.SECOND_OF_DAY, 1, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.OFFSET_SECONDS, 1, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.NANO_OF_DAY, 1, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MINUTE_OF_HOUR, 1, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MINUTE_OF_DAY, 1, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MILLI_OF_DAY, 1, null, DateTimeException.class},
+                {Instant.ofEpochSecond(10, 200), ChronoField.MICRO_OF_DAY, 1, null, DateTimeException.class},
+
+
+        };
+    }
+
+    @Test(dataProvider="with_longTemporalField")
+    public void test_with_longTemporalField(Instant test, TemporalField field, long value, Instant expected, Class<?> expectedEx) {
+        if (expectedEx == null) {
+            Instant result = test.with(field, value);
+            assertEquals(result, expected);
+        } else {
+            try {
+                Instant result = test.with(field, value);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -509,7 +636,7 @@ public class TCKInstant extends AbstractDateTimeTest {
                 {Instant.ofEpochSecond(86400 + 10800 + 60 + 1, 123_456_789), NINETY_MINS, Instant.ofEpochSecond(86400 + 10800, 0)},
         };
     }
-    @Test(groups={"tck"}, dataProvider="truncatedToValid")
+    @Test(dataProvider="truncatedToValid")
     public void test_truncatedTo_valid(Instant input, TemporalUnit unit, Instant expected) {
         assertEquals(input.truncatedTo(unit), expected);
     }
@@ -524,12 +651,12 @@ public class TCKInstant extends AbstractDateTimeTest {
         };
     }
 
-    @Test(groups={"tck"}, dataProvider="truncatedToInvalid", expectedExceptions=DateTimeException.class)
+    @Test(dataProvider="truncatedToInvalid", expectedExceptions=DateTimeException.class)
     public void test_truncatedTo_invalid(Instant input, TemporalUnit unit) {
         input.truncatedTo(unit);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_truncatedTo_null() {
         TEST_12345_123456789.truncatedTo(null);
     }
@@ -1577,6 +1704,130 @@ public class TCKInstant extends AbstractDateTimeTest {
     public void minusNanos_long_overflowTooSmall() {
         Instant i = Instant.ofEpochSecond(MIN_SECOND, 0);
         i.minusNanos(1);
+    }
+
+    //-----------------------------------------------------------------------
+    // periodUntil(Temporal, TemporalUnit)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="periodUntilUnit")
+    Object[][] data_periodUntilUnit() {
+        return new Object[][] {
+                {5, 650, -1, 650, SECONDS, -6},
+                {5, 650, 0, 650, SECONDS, -5},
+                {5, 650, 3, 650, SECONDS, -2},
+                {5, 650, 4, 650, SECONDS, -1},
+                {5, 650, 5, 650, SECONDS, 0},
+                {5, 650, 6, 650, SECONDS, 1},
+                {5, 650, 7, 650, SECONDS, 2},
+
+                {5, 650, -1, 0, SECONDS, -6},
+                {5, 650, 0, 0, SECONDS, -5},
+                {5, 650, 3, 0, SECONDS, -2},
+                {5, 650, 4, 0, SECONDS, -1},
+                {5, 650, 5, 0, SECONDS, 0},
+                {5, 650, 6, 0, SECONDS, 0},
+                {5, 650, 7, 0, SECONDS, 1},
+
+                {5, 650, -1, 950, SECONDS, -5},
+                {5, 650, 0, 950, SECONDS, -4},
+                {5, 650, 3, 950, SECONDS, -1},
+                {5, 650, 4, 950, SECONDS, 0},
+                {5, 650, 5, 950, SECONDS, 0},
+                {5, 650, 6, 950, SECONDS, 1},
+                {5, 650, 7, 950, SECONDS, 2},
+
+                {5, 650, -1, 50, SECONDS, -6},
+                {5, 650, 0, 50, SECONDS, -5},
+                {5, 650, 4, 50, SECONDS, -1},
+                {5, 650, 5, 50, SECONDS, 0},
+                {5, 650, 6, 50, SECONDS, 0},
+                {5, 650, 7, 50, SECONDS, 1},
+                {5, 650, 8, 50, SECONDS, 2},
+
+                {5, 650_000_000, -1, 650_000_000, NANOS, -6_000_000_000L},
+                {5, 650_000_000, 0, 650_000_000, NANOS, -5_000_000_000L},
+                {5, 650_000_000, 3, 650_000_000, NANOS, -2_000_000_000L},
+                {5, 650_000_000, 4, 650_000_000, NANOS, -1_000_000_000L},
+                {5, 650_000_000, 5, 650_000_000, NANOS, 0},
+                {5, 650_000_000, 6, 650_000_000, NANOS, 1_000_000_000L},
+                {5, 650_000_000, 7, 650_000_000, NANOS, 2_000_000_000L},
+
+                {5, 650_000_000, -1, 0, NANOS, -6_650_000_000L},
+                {5, 650_000_000, 0, 0, NANOS, -5_650_000_000L},
+                {5, 650_000_000, 3, 0, NANOS, -2_650_000_000L},
+                {5, 650_000_000, 4, 0, NANOS, -1_650_000_000L},
+                {5, 650_000_000, 5, 0, NANOS, -650_000_000L},
+                {5, 650_000_000, 6, 0, NANOS, 350_000_000L},
+                {5, 650_000_000, 7, 0, NANOS, 1_350_000_000L},
+
+                {5, 650_000_000, -1, 950_000_000, NANOS, -5_700_000_000L},
+                {5, 650_000_000, 0, 950_000_000, NANOS, -4_700_000_000L},
+                {5, 650_000_000, 3, 950_000_000, NANOS, -1_700_000_000L},
+                {5, 650_000_000, 4, 950_000_000, NANOS, -700_000_000L},
+                {5, 650_000_000, 5, 950_000_000, NANOS, 300_000_000L},
+                {5, 650_000_000, 6, 950_000_000, NANOS, 1_300_000_000L},
+                {5, 650_000_000, 7, 950_000_000, NANOS, 2_300_000_000L},
+
+                {5, 650_000_000, -1, 50_000_000, NANOS, -6_600_000_000L},
+                {5, 650_000_000, 0, 50_000_000, NANOS, -5_600_000_000L},
+                {5, 650_000_000, 4, 50_000_000, NANOS, -1_600_000_000L},
+                {5, 650_000_000, 5, 50_000_000, NANOS, -600_000_000L},
+                {5, 650_000_000, 6, 50_000_000, NANOS, 400_000_000L},
+                {5, 650_000_000, 7, 50_000_000, NANOS, 1_400_000_000L},
+                {5, 650_000_000, 8, 50_000_000, NANOS, 2_400_000_000L},
+
+                {0, 0, -60, 0, MINUTES, -1L},
+                {0, 0, -1, 999_999_999, MINUTES, 0L},
+                {0, 0, 59, 0, MINUTES, 0L},
+                {0, 0, 59, 999_999_999, MINUTES, 0L},
+                {0, 0, 60, 0, MINUTES, 1L},
+                {0, 0, 61, 0, MINUTES, 1L},
+
+                {0, 0, -3600, 0, HOURS, -1L},
+                {0, 0, -1, 999_999_999, HOURS, 0L},
+                {0, 0, 3599, 0, HOURS, 0L},
+                {0, 0, 3599, 999_999_999, HOURS, 0L},
+                {0, 0, 3600, 0, HOURS, 1L},
+                {0, 0, 3601, 0, HOURS, 1L},
+
+                {0, 0, -86400, 0, DAYS, -1L},
+                {0, 0, -1, 999_999_999, DAYS, 0L},
+                {0, 0, 86399, 0, DAYS, 0L},
+                {0, 0, 86399, 999_999_999, DAYS, 0L},
+                {0, 0, 86400, 0, DAYS, 1L},
+                {0, 0, 86401, 0, DAYS, 1L},
+        };
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
+        Instant i1 = Instant.ofEpochSecond(seconds1, nanos1);
+        Instant i2 = Instant.ofEpochSecond(seconds2, nanos2);
+        long amount = i1.periodUntil(i2, unit);
+        assertEquals(amount, expected);
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit_negated(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
+        Instant i1 = Instant.ofEpochSecond(seconds1, nanos1);
+        Instant i2 = Instant.ofEpochSecond(seconds2, nanos2);
+        long amount = i2.periodUntil(i1, unit);
+        assertEquals(amount, -expected);
+    }
+
+    @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
+    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+        TEST_12345_123456789.periodUntil(TEST_12345_123456789, MONTHS);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_periodUntil_TemporalUnit_nullEnd() {
+        TEST_12345_123456789.periodUntil(null, HOURS);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_periodUntil_TemporalUnit_nullUnit() {
+        TEST_12345_123456789.periodUntil(TEST_12345_123456789, null);
     }
 
     //-----------------------------------------------------------------------

@@ -62,7 +62,6 @@ package test.java.time;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -82,7 +81,6 @@ import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
@@ -121,7 +119,6 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().isFixedOffset(), true);
         assertEquals(test.getRules().getOffset(Instant.ofEpochSecond(0L)), ZoneOffset.UTC);
         checkOffset(test.getRules(), createLDT(2008, 6, 30), ZoneOffset.UTC, 1);
-        assertSame(test, ZoneId.of("UTC+00"));
     }
 
     //-----------------------------------------------------------------------
@@ -129,9 +126,7 @@ public class TestZoneId extends AbstractTest {
     //-----------------------------------------------------------------------
     public void test_systemDefault() {
         ZoneId test = ZoneId.systemDefault();
-        assertEquals(test.getId(), TimeZone.getDefault()
-                                           .getID()
-                                           .replaceAll("GMT|UTC|UT", "Z"));
+        assertEquals(test.getId(), TimeZone.getDefault().getID());
     }
 
     @Test(expectedExceptions = DateTimeException.class)
@@ -154,58 +149,6 @@ public class TestZoneId extends AbstractTest {
         } finally {
             TimeZone.setDefault(current);
         }
-    }
-
-    //-----------------------------------------------------------------------
-    @DataProvider(name="String_Fixed")
-    Object[][] data_of_string_Fixed() {
-        return new Object[][] {
-            {"+0", "Z"},
-            {"+5", "+05:00"},
-            {"+01", "+01:00"},
-            {"+0100", "+01:00"},{"+01:00", "+01:00"},
-            {"+010000", "+01:00"},{"+01:00:00", "+01:00"},
-            {"+12", "+12:00"},
-            {"+1234", "+12:34"},{"+12:34", "+12:34"},
-            {"+123456", "+12:34:56"},{"+12:34:56", "+12:34:56"},
-            {"-02", "-02:00"},
-            {"-5", "-05:00"},
-            {"-0200", "-02:00"},{"-02:00", "-02:00"},
-            {"-020000", "-02:00"},{"-02:00:00", "-02:00"},
-        };
-    }
-
-    @Test(dataProvider="String_Fixed")
-    public void test_of_string_offset(String input, String id) {
-        ZoneId test = ZoneId.of(input);
-        assertEquals(test.getId(), id);
-        assertEquals(test.getDisplayName(TextStyle.FULL, Locale.UK), id);
-        assertEquals(test.getRules().isFixedOffset(), true);
-        ZoneOffset offset = ZoneOffset.of(id);
-        assertEquals(test.getRules().getOffset(Instant.ofEpochSecond(0L)), offset);
-        checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
-    }
-
-    @Test(dataProvider="String_Fixed")
-    public void test_of_string_FixedUTC(String input, String id) {
-        ZoneId test = ZoneId.of("UTC" + input);
-        assertEquals(test.getId(), id);
-        assertEquals(test.getDisplayName(TextStyle.FULL, Locale.UK), id);
-        assertEquals(test.getRules().isFixedOffset(), true);
-        ZoneOffset offset = ZoneOffset.of(id);
-        assertEquals(test.getRules().getOffset(Instant.ofEpochSecond(0L)), offset);
-        checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
-    }
-
-    @Test(dataProvider="String_Fixed")
-    public void test_of_string_FixedGMT(String input, String id) {
-        ZoneId test = ZoneId.of("GMT" + input);
-        assertEquals(test.getId(), id);
-        assertEquals(test.getDisplayName(TextStyle.FULL, Locale.UK), id);
-        assertEquals(test.getRules().isFixedOffset(), true);
-        ZoneOffset offset = ZoneOffset.of(id);
-        assertEquals(test.getRules().getOffset(Instant.ofEpochSecond(0L)), offset);
-        checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
     }
 
     //-----------------------------------------------------------------------

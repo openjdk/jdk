@@ -802,6 +802,15 @@ public class ShortComponentRaster extends SunWritableRaster {
      * or if data buffer has not enough capacity.
      */
     protected final void verify() {
+        /* Need to re-verify the dimensions since a sample model may be
+         * specified to the constructor
+         */
+        if (width <= 0 || height <= 0 ||
+            height > (Integer.MAX_VALUE / width))
+        {
+            throw new RasterFormatException("Invalid raster dimension");
+        }
+
         for (int i = 0; i < dataOffsets.length; i++) {
             if (dataOffsets[i] < 0) {
                 throw new RasterFormatException("Data offsets for band " + i
@@ -839,11 +848,12 @@ public class ShortComponentRaster extends SunWritableRaster {
         lastPixelOffset += lastScanOffset;
 
         for (int i = 0; i < numDataElements; i++) {
-            size = lastPixelOffset + dataOffsets[i];
             if (dataOffsets[i] > (Integer.MAX_VALUE - lastPixelOffset)) {
                 throw new RasterFormatException("Incorrect band offset: "
                             + dataOffsets[i]);
             }
+
+            size = lastPixelOffset + dataOffsets[i];
 
             if (size > maxSize) {
                 maxSize = size;

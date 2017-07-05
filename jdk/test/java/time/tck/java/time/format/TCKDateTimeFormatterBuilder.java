@@ -98,7 +98,36 @@ public class TCKDateTimeFormatterBuilder {
     @Test
     public void test_toFormatter_empty() throws Exception {
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "");
+        assertEquals(f.format(LocalDate.of(2012, 6, 30)), "");
+    }
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_parseDefaulting_entireDate() {
+        DateTimeFormatter f = builder
+            .parseDefaulting(YEAR, 2012).parseDefaulting(MONTH_OF_YEAR, 6)
+            .parseDefaulting(DAY_OF_MONTH, 30).toFormatter();
+        LocalDate parsed = f.parse("", LocalDate::from);  // blank string can be parsed
+        assertEquals(parsed, LocalDate.of(2012, 6, 30));
+    }
+
+    @Test
+    public void test_parseDefaulting_yearOptionalMonthOptionalDay() {
+        DateTimeFormatter f = builder
+                .appendValue(YEAR)
+                .optionalStart().appendLiteral('-').appendValue(MONTH_OF_YEAR)
+                .optionalStart().appendLiteral('-').appendValue(DAY_OF_MONTH)
+                .optionalEnd().optionalEnd()
+                .parseDefaulting(MONTH_OF_YEAR, 1)
+                .parseDefaulting(DAY_OF_MONTH, 1).toFormatter();
+        assertEquals(f.parse("2012", LocalDate::from), LocalDate.of(2012, 1, 1));
+        assertEquals(f.parse("2012-6", LocalDate::from), LocalDate.of(2012, 6, 1));
+        assertEquals(f.parse("2012-6-30", LocalDate::from), LocalDate.of(2012, 6, 30));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_parseDefaulting_null() {
+        builder.parseDefaulting(null, 1);
     }
 
     //-----------------------------------------------------------------------
@@ -393,6 +422,7 @@ public class TCKDateTimeFormatterBuilder {
             {"''"},
             {"'!'"},
             {"!"},
+            {"'#'"},
 
             {"'hello_people,][)('"},
             {"'hi'"},
@@ -418,17 +448,20 @@ public class TCKDateTimeFormatterBuilder {
             {"MMMM"},
             {"MMMMM"},
 
+            {"L"},
+            {"LL"},
+            {"LLL"},
+            {"LLLL"},
+            {"LLLLL"},
+
             {"D"},
             {"DD"},
             {"DDD"},
 
             {"d"},
             {"dd"},
-            {"ddd"},
 
             {"F"},
-            {"FF"},
-            {"FFF"},
 
             {"Q"},
             {"QQ"},
@@ -436,41 +469,48 @@ public class TCKDateTimeFormatterBuilder {
             {"QQQQ"},
             {"QQQQQ"},
 
+            {"q"},
+            {"qq"},
+            {"qqq"},
+            {"qqqq"},
+            {"qqqqq"},
+
             {"E"},
             {"EE"},
             {"EEE"},
             {"EEEE"},
             {"EEEEE"},
 
+            {"e"},
+            {"ee"},
+            {"eee"},
+            {"eeee"},
+            {"eeeee"},
+
+            {"c"},
+            {"ccc"},
+            {"cccc"},
+            {"ccccc"},
+
             {"a"},
-            {"aa"},
-            {"aaa"},
-            {"aaaa"},
-            {"aaaaa"},
 
             {"H"},
             {"HH"},
-            {"HHH"},
 
             {"K"},
             {"KK"},
-            {"KKK"},
 
             {"k"},
             {"kk"},
-            {"kkk"},
 
             {"h"},
             {"hh"},
-            {"hhh"},
 
             {"m"},
             {"mm"},
-            {"mmm"},
 
             {"s"},
             {"ss"},
-            {"sss"},
 
             {"S"},
             {"SS"},
@@ -523,8 +563,9 @@ public class TCKDateTimeFormatterBuilder {
 
             {"e"},
             {"w"},
+            {"ww"},
             {"W"},
-            {"WW"},
+            {"W"},
 
         };
     }
@@ -545,18 +586,40 @@ public class TCKDateTimeFormatterBuilder {
             {"{"},
             {"}"},
             {"{}"},
+            {"#"},
             {"]"},
             {"yyyy]"},
             {"yyyy]MM"},
             {"yyyy[MM]]"},
 
+            {"aa"},
+            {"aaa"},
+            {"aaaa"},
+            {"aaaaa"},
+            {"aaaaaa"},
             {"MMMMMM"},
             {"QQQQQQ"},
+            {"qqqqqq"},
             {"EEEEEE"},
-            {"aaaaaa"},
-            {"ZZZZ"},
+            {"eeeeee"},
+            {"cc"},
+            {"cccccc"},
+            {"ddd"},
+            {"DDDD"},
+            {"FF"},
+            {"FFF"},
+            {"hhh"},
+            {"HHH"},
+            {"kkk"},
+            {"KKK"},
+            {"mmm"},
+            {"sss"},
+            {"OO"},
+            {"OOO"},
+            {"OOOOO"},
             {"XXXXXX"},
             {"zzzzz"},
+            {"ZZZZZZ"},
 
             {"RO"},
 
@@ -571,9 +634,8 @@ public class TCKDateTimeFormatterBuilder {
             {"fa"},
             {"fM"},
 
-            {"ww"},
-            {"ee"},
-            {"WWW"},
+            {"www"},
+            {"WW"},
         };
     }
 
@@ -588,9 +650,9 @@ public class TCKDateTimeFormatterBuilder {
         return new Object[][] {
             {"Q", date(2012, 2, 10), "1"},
             {"QQ", date(2012, 2, 10), "01"},
-//            {"QQQ", date(2012, 2, 10), "Q1"},  // TODO: data for quarters?
-//            {"QQQQ", date(2012, 2, 10), "Q1"},
-//            {"QQQQQ", date(2012, 2, 10), "Q1"},
+            {"QQQ", date(2012, 2, 10), "Q1"},
+            {"QQQQ", date(2012, 2, 10), "1st quarter"},
+            {"QQQQQ", date(2012, 2, 10), "1"},
         };
     }
 

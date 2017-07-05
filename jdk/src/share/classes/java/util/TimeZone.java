@@ -559,7 +559,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @since 1.8
      */
     public ZoneId toZoneId() {
-        return ZoneId.of(getID(), ZoneId.OLD_IDS_POST_2005);
+        return ZoneId.of(getID(), ZoneId.SHORT_IDS);
     }
 
     private static TimeZone getTimeZone(String ID, boolean fallback) {

@@ -65,7 +65,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
 import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalField;
 
@@ -125,6 +127,17 @@ public class TCKJulianFields extends AbstractTCKTest {
         assertSerializable(field);
     }
 
+    public void test_basics() {
+        assertEquals(JulianFields.JULIAN_DAY.isDateBased(), true);
+        assertEquals(JulianFields.JULIAN_DAY.isTimeBased(), false);
+
+        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.isDateBased(), true);
+        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.isTimeBased(), false);
+
+        assertEquals(JulianFields.RATA_DIE.isDateBased(), true);
+        assertEquals(JulianFields.RATA_DIE.isTimeBased(), false);
+    }
+
     //-----------------------------------------------------------------------
     @Test(dataProvider="samples")
     public void test_samples_get(TemporalField field, LocalDate date, long expected) {
@@ -142,8 +155,25 @@ public class TCKJulianFields extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
     @Test(dataProvider="samples")
-    public void test_samples_parse(TemporalField field, LocalDate date, long value) {
-        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field).toFormatter();
+    public void test_samples_parse_STRICT(TemporalField field, LocalDate date, long value) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field)
+                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
+        LocalDate parsed = LocalDate.parse(Long.toString(value), f);
+        assertEquals(parsed, date);
+    }
+
+    @Test(dataProvider="samples")
+    public void test_samples_parse_SMART(TemporalField field, LocalDate date, long value) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field)
+                .toFormatter().withResolverStyle(ResolverStyle.SMART);
+        LocalDate parsed = LocalDate.parse(Long.toString(value), f);
+        assertEquals(parsed, date);
+    }
+
+    @Test(dataProvider="samples")
+    public void test_samples_parse_LENIENT(TemporalField field, LocalDate date, long value) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field)
+                .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
         LocalDate parsed = LocalDate.parse(Long.toString(value), f);
         assertEquals(parsed, date);
     }

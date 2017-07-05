@@ -161,7 +161,8 @@ public class PKCS7 {
             } catch (IOException ioe1) {
                 ParsingException pe = new ParsingException(
                     ioe1.getMessage());
-                pe.initCause(ioe1);
+                pe.initCause(ioe);
+                pe.addSuppressed(ioe1);
                 throw pe;
             }
         }
@@ -310,19 +311,26 @@ public class PKCS7 {
 
             len = certVals.length;
             certificates = new X509Certificate[len];
+            int count = 0;
 
             for (int i = 0; i < len; i++) {
                 ByteArrayInputStream bais = null;
                 try {
-                    if (certfac == null)
-                        certificates[i] = new X509CertImpl(certVals[i]);
-                    else {
-                        byte[] encoded = certVals[i].toByteArray();
-                        bais = new ByteArrayInputStream(encoded);
-                        certificates[i] =
-                            (X509Certificate)certfac.generateCertificate(bais);
-                        bais.close();
-                        bais = null;
+                    byte tag = certVals[i].getTag();
+                    // We only parse the normal certificate. Other types of
+                    // CertificateChoices ignored.
+                    if (tag == DerValue.tag_Sequence) {
+                        if (certfac == null) {
+                            certificates[count] = new X509CertImpl(certVals[i]);
+                        } else {
+                            byte[] encoded = certVals[i].toByteArray();
+                            bais = new ByteArrayInputStream(encoded);
+                            certificates[count] =
+                                (X509Certificate)certfac.generateCertificate(bais);
+                            bais.close();
+                            bais = null;
+                        }
+                        count++;
                     }
                 } catch (CertificateException ce) {
                     ParsingException pe = new ParsingException(ce.getMessage());
@@ -336,6 +344,9 @@ public class PKCS7 {
                     if (bais != null)
                         bais.close();
                 }
+            }
+            if (count != len) {
+                certificates = Arrays.copyOf(certificates, count);
             }
         }
 

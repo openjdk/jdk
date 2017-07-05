@@ -26,12 +26,7 @@
 package java.lang.reflect;
 
 /**
- * The Permission class for reflective operations.  A
- * ReflectPermission is a <em>named permission</em> and has no
- * actions.  The only name currently defined is {@code suppressAccessChecks},
- * which allows suppressing the standard Java language access checks
- * -- for public, default (package) access, protected, and private
- * members -- performed by reflected objects at their point of use.
+ * The Permission class for reflective operations.
  * <P>
  * The following table
  * provides a summary description of what the permission allows,
@@ -47,11 +42,21 @@ package java.lang.reflect;
  *
  * <tr>
  *   <td>suppressAccessChecks</td>
- *   <td>ability to access
- * fields and invoke methods in a class. Note that this includes
- * not only public, but protected and private fields and methods as well.</td>
+ *   <td>ability to suppress the standard Java language access checks
+ *       on fields and methods in a class; allow access not only public members
+ *       but also allow access to default (package) access, protected,
+ *       and private members.</td>
  *   <td>This is dangerous in that information (possibly confidential) and
- * methods normally unavailable would be accessible to malicious code.</td>
+ *       methods normally unavailable would be accessible to malicious code.</td>
+ * </tr>
+ * <tr>
+ *   <td>newProxyInPackage.{package name}</td>
+ *   <td>ability to create a proxy instance in the specified package of which
+ *       the non-public interface that the proxy class implements.</td>
+ *   <td>This gives code access to classes in packages to which it normally
+ *       does not have access and the dynamic proxy class is in the system
+ *       protection domain. Malicious code may use these classes to
+ *       help in its attempt to compromise security in the system.</td>
  * </tr>
  *
  * </table>
@@ -63,6 +68,7 @@ package java.lang.reflect;
  * @see Field#set
  * @see Method#invoke
  * @see Constructor#newInstance
+ * @see Proxy#newProxyInstance
  *
  * @since 1.2
  */

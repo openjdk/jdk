@@ -391,10 +391,11 @@ import java.util.Objects;
 
     // private flags, not part of RECOGNIZED_MODIFIERS:
     static final int
-            IS_METHOD      = MN_IS_METHOD,      // method (not constructor)
-            IS_CONSTRUCTOR = MN_IS_CONSTRUCTOR, // constructor
-            IS_FIELD       = MN_IS_FIELD,       // field
-            IS_TYPE        = MN_IS_TYPE;        // nested type
+            IS_METHOD        = MN_IS_METHOD,        // method (not constructor)
+            IS_CONSTRUCTOR   = MN_IS_CONSTRUCTOR,   // constructor
+            IS_FIELD         = MN_IS_FIELD,         // field
+            IS_TYPE          = MN_IS_TYPE,          // nested type
+            CALLER_SENSITIVE = MN_CALLER_SENSITIVE; // @CallerSensitive annotation detected
 
     static final int ALL_ACCESS = Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED;
     static final int ALL_KINDS = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE;
@@ -429,6 +430,10 @@ import java.util.Objects;
     /** Utility method to query whether this member is neither public, private, nor protected. */
     public boolean isPackage() {
         return !testAnyFlags(ALL_ACCESS);
+    }
+    /** Query whether this member has a CallerSensitive annotation. */
+    public boolean isCallerSensitive() {
+        return testAllFlags(CALLER_SENSITIVE);
     }
 
     /** Utility method to query whether this member is accessible from a given lookup class. */

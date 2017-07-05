@@ -40,7 +40,7 @@
 
 U_NAMESPACE_BEGIN
 
-le_uint32 SinglePositioningSubtable::process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const
+le_uint32 SinglePositioningSubtable::process(const LEReferenceTo<SinglePositioningSubtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const
 {
     switch(SWAPW(subtableFormat))
     {
@@ -49,16 +49,16 @@ le_uint32 SinglePositioningSubtable::process(GlyphIterator *glyphIterator, const
 
     case 1:
     {
-        const SinglePositioningFormat1Subtable *subtable = (const SinglePositioningFormat1Subtable *) this;
+      const LEReferenceTo<SinglePositioningFormat1Subtable> subtable(base, success, (const SinglePositioningFormat1Subtable *) this);
 
-        return subtable->process(glyphIterator, fontInstance);
+      return subtable->process(subtable, glyphIterator, fontInstance, success);
     }
 
     case 2:
     {
-        const SinglePositioningFormat2Subtable *subtable = (const SinglePositioningFormat2Subtable *) this;
+      const LEReferenceTo<SinglePositioningFormat2Subtable> subtable(base, success, (const SinglePositioningFormat2Subtable *) this);
 
-        return subtable->process(glyphIterator, fontInstance);
+      return subtable->process(subtable, glyphIterator, fontInstance, success);
     }
 
     default:
@@ -66,10 +66,10 @@ le_uint32 SinglePositioningSubtable::process(GlyphIterator *glyphIterator, const
     }
 }
 
-le_uint32 SinglePositioningFormat1Subtable::process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const
+le_uint32 SinglePositioningFormat1Subtable::process(const LEReferenceTo<SinglePositioningFormat1Subtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const
 {
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
-    le_int32 coverageIndex = getGlyphCoverage(glyph);
+    le_int32 coverageIndex = getGlyphCoverage(base, glyph, success);
 
     if (coverageIndex >= 0) {
         valueRecord.adjustPosition(SWAPW(valueFormat), (const char *) this, *glyphIterator, fontInstance);
@@ -80,10 +80,10 @@ le_uint32 SinglePositioningFormat1Subtable::process(GlyphIterator *glyphIterator
     return 0;
 }
 
-le_uint32 SinglePositioningFormat2Subtable::process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const
+le_uint32 SinglePositioningFormat2Subtable::process(const LEReferenceTo<SinglePositioningFormat2Subtable> &base, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode &success) const
 {
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
-    le_int16 coverageIndex = (le_int16) getGlyphCoverage(glyph);
+    le_int16 coverageIndex = (le_int16) getGlyphCoverage(base, glyph, success);
 
     if (coverageIndex >= 0) {
         valueRecordArray[0].adjustPosition(coverageIndex, SWAPW(valueFormat), (const char *) this, *glyphIterator, fontInstance);

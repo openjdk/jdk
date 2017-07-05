@@ -73,11 +73,6 @@ $(eval $(call SetupArchive,BUILD_DNS_JAR,,\
 
 ##########################################################################################
 
-$(IMAGES_OUTPUTDIR)/lib/tzdb.jar: $(JDK_OUTPUTDIR)/lib/tzdb.jar
-	$(install-file)
-
-##########################################################################################
-
 LOCALEDATA_INCLUDE_LOCALES := ar be bg ca cs da de el es et fi fr ga hi hr hu in is it \
                               iw ja ko lt lv mk ms mt nl no pl pt ro ru sk sl sq sr sv \
                               th tr uk vi zh

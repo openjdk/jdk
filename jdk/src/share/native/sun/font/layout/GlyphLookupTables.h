@@ -49,8 +49,8 @@ struct GlyphLookupTableHeader
     Offset  featureListOffset;
     Offset  lookupListOffset;
 
-    le_bool coversScript(LETag scriptTag) const;
-    le_bool coversScriptAndLanguage(LETag scriptTag, LETag languageTag, le_bool exactMatch = FALSE) const;
+  le_bool coversScript(const LETableReference &base, LETag scriptTag, LEErrorCode &success) const;
+  le_bool coversScriptAndLanguage(const LETableReference &base, LETag scriptTag, LETag languageTag, LEErrorCode &success, le_bool exactMatch = FALSE) const;
 };
 
 U_NAMESPACE_END

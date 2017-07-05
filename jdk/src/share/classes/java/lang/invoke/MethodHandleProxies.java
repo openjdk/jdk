@@ -30,6 +30,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.invoke.WrapperInstance;
 import java.util.ArrayList;
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
 
@@ -137,14 +138,14 @@ public class MethodHandleProxies {
     // entry points, must be covered by hand-written or automatically
     // generated adapter classes.
     //
+    @CallerSensitive
     public static
     <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw new IllegalArgumentException("not a public interface: "+intfc.getName());
         final MethodHandle mh;
         if (System.getSecurityManager() != null) {
-            final int CALLER_FRAME = 2; // 0: Reflection, 1: asInterfaceInstance, 2: caller
-            final Class<?> caller = Reflection.getCallerClass(CALLER_FRAME);
+            final Class<?> caller = Reflection.getCallerClass();
             final ClassLoader ccl = caller != null ? caller.getClassLoader() : null;
             ReflectUtil.checkProxyPackageAccess(ccl, intfc);
             mh = ccl != null ? bindCaller(target, caller) : target;
