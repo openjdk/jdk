@@ -288,12 +288,11 @@ public class HashMap<K,V>
      * in lower bits.
      */
     final int hash(Object k) {
-        int h = hashSeed;
         if (k instanceof String) {
-            return ((String)k).hash32();
+            return ((String) k).hash32();
         }
 
-        h ^= k.hashCode();
+        int  h = hashSeed ^ k.hashCode();
 
         // This function ensures that hashCodes that differ only by
         // constant multiples at each bit position have a bounded

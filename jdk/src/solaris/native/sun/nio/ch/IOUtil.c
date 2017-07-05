@@ -136,6 +136,16 @@ Java_sun_nio_ch_IOUtil_fdLimit(JNIEnv *env, jclass this)
     }
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
+{
+    jlong iov_max = sysconf(_SC_IOV_MAX);
+    if (iov_max == -1)
+        iov_max = 16;
+    return (jint)iov_max;
+}
+
+
 /* Declared in nio_util.h for use elsewhere in NIO */
 
 jint

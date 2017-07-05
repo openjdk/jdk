@@ -90,6 +90,7 @@ class BasicChecker extends PKIXCertPathChecker {
         this.date = date;
         this.sigProvider = sigProvider;
         this.sigOnly = sigOnly;
+        this.prevPubKey = trustedPubKey;
     }
 
     /**

@@ -896,7 +896,8 @@ static void report_null_exception_in_code_cache(address exception_pc) {
       methodOop method = ((nmethod*)n)->method();
       tty->print_cr("# Method where it happened %s.%s ", Klass::cast(method->method_holder())->name()->as_C_string(), method->name()->as_C_string());
       tty->print_cr("#");
-      if (ShowMessageBoxOnError && UpdateHotSpotCompilerFileOnError) {
+      if (ShowMessageBoxOnError && UpdateHotSpotCompilerFileOnError &&
+          CompilerOracle::has_command_file()) {
         const char* title    = "HotSpot Runtime Error";
         const char* question = "Do you want to exclude compilation of this method in future runs?";
         if (os::message_box(title, question)) {

@@ -95,6 +95,10 @@ le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdj
 
         if (selectMask != 0) {
             const LookupTable *lookupTable = lookupListTable->getLookupTable(lookup);
+
+            if (!lookupTable)
+                continue;
+
             le_uint16 lookupFlags = SWAPW(lookupTable->lookupFlags);
 
             glyphIterator.reset(lookupFlags, selectMask);
@@ -136,6 +140,9 @@ le_int32 LookupProcessor::selectLookups(const FeatureTable *featureTable, Featur
     for (le_uint16 lookup = 0; lookup < lookupCount; lookup += 1) {
         le_uint16 lookupListIndex = SWAPW(featureTable->lookupListIndexArray[lookup]);
 
+        if (lookupListIndex >= lookupSelectCount)
+            continue;
+
         lookupSelectArray[lookupListIndex] |= featureMask;
         lookupOrderArray[store++] = lookupListIndex;
     }
@@ -147,7 +154,7 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
         Offset scriptListOffset, Offset featureListOffset, Offset lookupListOffset,
         LETag scriptTag, LETag languageTag, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool orderFeatures,
         LEErrorCode& success)
-    : lookupListTable(NULL), featureListTable(NULL), lookupSelectArray(NULL),
+    : lookupListTable(NULL), featureListTable(NULL), lookupSelectArray(NULL), lookupSelectCount(0),
       lookupOrderArray(NULL), lookupOrderCount(0)
 {
     const ScriptListTable *scriptListTable = NULL;
@@ -195,6 +202,8 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
         lookupSelectArray[i] = 0;
     }
 
+    lookupSelectCount = lookupListCount;
+
     le_int32 count, order = 0;
     le_int32 featureReferences = 0;
     const FeatureTable *featureTable = NULL;
@@ -211,6 +220,10 @@ LookupProcessor::LookupProcessor(const char *baseAddress,
         le_uint16 featureIndex = SWAPW(langSysTable->featureIndexArray[feature]);
 
         featureTable = featureListTable->getFeatureTable(featureIndex, &featureTag);
+
+        if (!featureTable)
+            continue;
+
         featureReferences += SWAPW(featureTable->lookupCount);
     }
 

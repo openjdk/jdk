@@ -120,7 +120,7 @@ typedef struct LookupTable {
     TableIndex     table_incr;          /* Suggested increment size. */
     TableIndex     hash_bucket_count;   /* Number of hash buckets. */
     int            elem_size;           /* Size of element. */
-    int            info_size;           /* Size of info structure. */
+    int            info_size;           /* Size of info structure (can be 0). */
     void          *freed_bv;            /* Freed element bit vector */
     int            freed_count;         /* Count of freed'd elements */
     TableIndex     freed_start;         /* First freed in table */
@@ -208,9 +208,6 @@ get_info(LookupTable *ltable, TableIndex index)
 {
     TableElement *element;
 
-    if ( ltable->info_size == 0 ) {
-        return NULL;
-    }
     element = (TableElement*)ELEMENT_PTR(ltable,index);
     return element->info;
 }
@@ -760,7 +757,11 @@ table_walk_items(LookupTable *ltable, LookupTableIterator func, void* arg)
                 void *info;
 
                 get_key(ltable, index, &key_ptr, &key_len);
-                info = get_info(ltable, index);
+                if ( ltable->info_size == 0 ) {
+                    info = NULL;
+                } else {
+                    info = get_info(ltable, index);
+                }
                 (*func)(SANITY_ADD_HARE(index, ltable->hare), key_ptr, key_len, info, arg);
                 if ( is_freed_entry(ltable, index) ) {
                     fcount++;

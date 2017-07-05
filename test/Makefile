@@ -74,7 +74,8 @@ JDK_NONDEFAULT_TEST_LIST = \
 	jdk_rmi \
 	jdk_sound \
 	jdk_swing \
-	jdk_tools1 jdk_tools2
+	jdk_tools1 jdk_tools2 \
+	jdk_jfr
 
 # All jdk tests
 JDK_ALL_TEST_LIST = $(JDK_DEFAULT_TEST_LIST) $(JDK_NONDEFAULT_TEST_LIST)
