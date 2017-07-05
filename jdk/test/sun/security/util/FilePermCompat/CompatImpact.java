@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 8164705
+ * @bug 8164705 8168410
  * @summary check compatibility after FilePermission change
  * @library /java/security/testlibrary/
  * @modules java.base/jdk.internal.misc
  * @run main CompatImpact prepare
  * @run main CompatImpact builtin
- * @run main CompatImpact mine
+ * @run main/othervm -Djdk.security.filePermCompat=true CompatImpact mine
+ * @run main/fail CompatImpact mine
  * @run main CompatImpact dopriv
  */
 
@@ -72,7 +73,8 @@ public class CompatImpact {
                 Files.copy(Paths.get(cp, "CompatImpact$DoPrivInner.class"),
                         Paths.get("inner", "CompatImpact$DoPrivInner.class"));
                 break;
-            // run tests with different policy impls
+            // default policy always covered, user-defined depends on
+            // system property jdk.security.filePermCompact.
             case "builtin":
             case "mine":
                 cp = System.getProperty("test.classes");
@@ -222,7 +224,8 @@ public class CompatImpact {
     // Return a Proc object for different policy types
     private static Proc p(String type, String f) throws Exception {
         Proc p = Proc.create("CompatImpact")
-                .prop("java.security.manager", "");
+                .prop("java.security.manager", "")
+                .inheritProp("jdk.security.filePermCompat");
         p.args("test", type);
         switch (type) {
             case "builtin":

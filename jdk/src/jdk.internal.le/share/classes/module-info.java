@@ -25,6 +25,8 @@
 
 /**
  * Internal API for line editing
+ *
+ * @since 9
  */
 module jdk.internal.le {
     exports jdk.internal.jline to

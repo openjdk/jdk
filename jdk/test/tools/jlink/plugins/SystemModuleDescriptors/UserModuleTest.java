@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @bug 8142968 8173381
+ * @bug 8142968 8173381 8174740
  * @library /lib/testlibrary
  * @modules jdk.compiler jdk.jlink
  * @build UserModuleTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
@@ -64,7 +64,7 @@ public class UserModuleTest {
     private static final String MAIN_MID = "m1/p1.Main";
 
     // the names of the modules in this test
-    private static String[] modules = new String[] {"m1", "m2", "m3", "m4"};
+    private static String[] modules = new String[] {"m1", "m2", "m3", "m4", "m5"};
 
 
     private static boolean hasJmods() {
@@ -155,6 +155,50 @@ public class UserModuleTest {
         createImage(dir, "m1", "m2", "m3", "m4");
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(), "-m", MAIN_MID)
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+    }
+
+    @Test
+    public void testRequiresStatic() throws Throwable {
+        if (!hasJmods()) return;
+
+        Path dir = Paths.get("requiresStatic");
+        createImage(dir, "m5");
+        Path java = dir.resolve("bin").resolve("java");
+        assertTrue(executeProcess(java.toString(), "-m", "m5/p5.Main")
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+
+        // run with m3 present
+        assertTrue(executeProcess(java.toString(),
+                                  "--module-path", MODS_DIR.toString(),
+                                  "--add-modules", "m3",
+                                  "-m", "m5/p5.Main")
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+    }
+
+    @Test
+    public void testRequiresStatic2() throws Throwable {
+        if (!hasJmods()) return;
+
+        Path dir = Paths.get("requiresStatic2");
+        createImage(dir, "m3", "m5");
+
+        Path java = dir.resolve("bin").resolve("java");
+        assertTrue(executeProcess(java.toString(), "-m", "m5/p5.Main")
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+
+        // boot layer with m3 and m5
+        assertTrue(executeProcess(java.toString(),
+                                  "--add-modules", "m3",
+                                  "-m", "m5/p5.Main")
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);

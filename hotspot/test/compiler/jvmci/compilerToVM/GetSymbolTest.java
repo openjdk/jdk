@@ -30,10 +30,10 @@
  * @modules java.base/jdk.internal.misc:+open
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
- * @modules         jdk.vm.ci/jdk.vm.ci.hotspot:+open
- *          jdk.vm.ci/jdk.vm.ci.code
- *          jdk.vm.ci/jdk.vm.ci.meta
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                  compiler.jvmci.compilerToVM.GetSymbolTest
  */

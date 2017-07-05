@@ -101,6 +101,7 @@ ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter)
   _debug_info = NULL;
   _dependencies = NULL;
   _failure_reason = NULL;
+  _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
   _compiler_data = NULL;
@@ -161,6 +162,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _debug_info = NULL;
   _dependencies = NULL;
   _failure_reason = NULL;
+  _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
   _compiler_data = NULL;
@@ -702,16 +704,17 @@ ciField* ciEnv::get_field_by_index(ciInstanceKlass* accessor,
 //
 // Perform an appropriate method lookup based on accessor, holder,
 // name, signature, and bytecode.
-Method* ciEnv::lookup_method(InstanceKlass*  accessor,
-                               InstanceKlass*  holder,
-                               Symbol*       name,
-                               Symbol*       sig,
-                               Bytecodes::Code bc,
-                               constantTag    tag) {
-  EXCEPTION_CONTEXT;
-  KlassHandle h_accessor(THREAD, accessor);
-  KlassHandle h_holder(THREAD, holder);
-  LinkResolver::check_klass_accessability(h_accessor, h_holder, KILL_COMPILE_ON_FATAL_(NULL));
+Method* ciEnv::lookup_method(ciInstanceKlass* accessor,
+                             ciKlass*         holder,
+                             Symbol*          name,
+                             Symbol*          sig,
+                             Bytecodes::Code  bc,
+                             constantTag      tag) {
+  // Accessibility checks are performed in ciEnv::get_method_by_index_impl.
+  assert(check_klass_accessibility(accessor, holder->get_Klass()), "holder not accessible");
+
+  KlassHandle h_accessor(accessor->get_instanceKlass());
+  KlassHandle h_holder(holder->get_Klass());
   methodHandle dest_method;
   LinkInfo link_info(h_holder, name, sig, h_accessor, LinkInfo::needs_access_check, tag);
   switch (bc) {
@@ -770,7 +773,6 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     const int holder_index = cpool->klass_ref_index_at(index);
     bool holder_is_accessible;
     ciKlass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
-    ciInstanceKlass* declared_holder = get_instance_klass_for_declared_method_holder(holder);
 
     // Get the method's name and signature.
     Symbol* name_sym = cpool->name_ref_at(index);
@@ -798,10 +800,9 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     if (holder_is_accessible) {  // Our declared holder is loaded.
-      InstanceKlass* lookup = declared_holder->get_instanceKlass();
       constantTag tag = cpool->tag_ref_at(index);
       assert(accessor->get_instanceKlass() == cpool->pool_holder(), "not the pool holder?");
-      Method* m = lookup_method(accessor->get_instanceKlass(), lookup, name_sym, sig_sym, bc, tag);
+      Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
       if (m != NULL &&
           (bc == Bytecodes::_invokestatic
            ?  m->method_holder()->is_not_initialized()
@@ -824,7 +825,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // lookup.
     ciSymbol* name      = get_symbol(name_sym);
     ciSymbol* signature = get_symbol(sig_sym);
-    return get_unloaded_method(declared_holder, name, signature, accessor);
+    return get_unloaded_method(holder, name, signature, accessor);
   }
 }
 
@@ -902,7 +903,12 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
     if (deps.is_klass_type())  continue;  // skip klass dependencies
     Klass* witness = deps.check_dependency();
     if (witness != NULL) {
-      record_failure("invalid non-klass dependency");
+      if (deps.type() == Dependencies::call_site_target_value) {
+        _inc_decompile_count_on_failure = false;
+        record_failure("call site target change");
+      } else {
+        record_failure("invalid non-klass dependency");
+      }
       return;
     }
   }
@@ -1017,7 +1023,7 @@ void ciEnv::register_method(ciMethod* target,
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdo = method()->method_data();
-      if (mdo != NULL) {
+      if (mdo != NULL && _inc_decompile_count_on_failure) {
         mdo->inc_decompile_count();
       }
 
