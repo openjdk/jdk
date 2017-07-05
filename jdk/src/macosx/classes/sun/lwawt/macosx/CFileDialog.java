@@ -34,6 +34,7 @@ import java.util.List;
 import java.io.*;
 
 import sun.awt.CausedFocusEvent.Cause;
+import sun.awt.AWTAccessor;
 import sun.java2d.pipe.Region;
 
 class CFileDialog implements FileDialogPeer {
@@ -53,33 +54,40 @@ class CFileDialog implements FileDialogPeer {
                     title = " ";
                 }
 
-                String userFileName = nativeRunFileDialog(title,
-                        dialogMode, navigateApps,
+                String[] userFileNames = nativeRunFileDialog(title,
+                        dialogMode,
+                        target.isMultipleMode(),
+                        navigateApps,
                         target.getFilenameFilter() != null,
                         target.getDirectory(),
                         target.getFile());
 
-                File file = null;
-                if (userFileName != null) {
-                    // the dialog wasn't cancelled
-                    file = new File(userFileName);
-                }
+                String directory = null;
+                String file = null;
+                File[] files = null;
 
-                if (file != null) {
-                    // make sure directory always ends in '/'
-                    String parent = file.getParent();
-                    if (!parent.endsWith(File.separator)) {
-                        parent = parent + File.separator;
+                if (userFileNames != null) {
+                    // the dialog wasn't cancelled
+                    int filesNumber = userFileNames.length;
+                    files = new File[filesNumber];
+                    for (int i = 0; i < filesNumber; i++) {
+                        files[i] = new File(userFileNames[i]);
                     }
 
-                    // store results back in component
-                    target.setDirectory(parent);
-                    target.setFile(file.getName());
-                } else {
-                    // setting file name to null is how we tell
-                    // java client that user hit the cancel button
-                    target.setFile(null);
+                    directory = files[0].getParent();
+                    // make sure directory always ends in '/'
+                    if (!directory.endsWith(File.separator)) {
+                        directory = directory + File.separator;
+                    }
+
+                    file = files[0].getName(); // pick any file
                 }
+
+                // store results back in component
+                AWTAccessor.FileDialogAccessor accessor = AWTAccessor.getFileDialogAccessor();
+                accessor.setDirectory(target, directory);
+                accessor.setFile(target, file);
+                accessor.setFiles(target, files);
             } finally {
                 // Java2 Dialog waits for hide to let show() return
                 target.dispose();
@@ -133,8 +141,8 @@ class CFileDialog implements FileDialogPeer {
         return ret;
     }
 
-    private native String nativeRunFileDialog(String title, int mode,
-            boolean shouldNavigateApps, boolean hasFilenameFilter,
+    private native String[] nativeRunFileDialog(String title, int mode,
+            boolean multipleMode, boolean shouldNavigateApps, boolean hasFilenameFilter,
             String directory, String file);
 
     @Override

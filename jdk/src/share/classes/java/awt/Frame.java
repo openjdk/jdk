@@ -449,7 +449,7 @@ public class Frame extends Window implements MenuContainer {
 
     private void init(String title, GraphicsConfiguration gc) {
         this.title = title;
-        SunToolkit.checkAndSetPolicy(this, false);
+        SunToolkit.checkAndSetPolicy(this);
     }
 
     /**

@@ -480,26 +480,15 @@ void GenCollectedHeap::do_collection(bool  full,
   const size_t perm_prev_used = perm_gen()->used();
 
   print_heap_before_gc();
-  if (Verbose) {
-    gclog_or_tty->print_cr("GC Cause: %s", GCCause::to_string(gc_cause()));
-  }
 
   {
     FlagSetting fl(_is_gc_active, true);
 
     bool complete = full && (max_level == (n_gens()-1));
-    const char* gc_cause_str = "GC ";
-    if (complete) {
-      GCCause::Cause cause = gc_cause();
-      if (cause == GCCause::_java_lang_system_gc) {
-        gc_cause_str = "Full GC (System) ";
-      } else {
-        gc_cause_str = "Full GC ";
-      }
-    }
+    const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    TraceTime t(gc_cause_str, PrintGCDetails, false, gclog_or_tty);
+    TraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, gclog_or_tty);
 
     gc_prologue(complete);
     increment_total_collections(complete);

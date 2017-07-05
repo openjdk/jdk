@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@
 package java.util;
 
 /**
- * Thrown by the <code>nextElement</code> method of an
- * <code>Enumeration</code> to indicate that there are no more
- * elements in the enumeration.
+ * Thrown by various accessor methods to indicate that the element being requested
+ * does not exist.
  *
  * @author  unascribed
- * @see     java.util.Enumeration
  * @see     java.util.Enumeration#nextElement()
+ * @see     java.util.Iterator#next()
  * @since   JDK1.0
  */
 public

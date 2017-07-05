@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4819771 4834179 5008306
+ * @bug 4819771 4834179 5008306 4963723
  * @summary Basic known-answer-test for all our MessageDigest algorithms
  * @author Andreas Sterbenz
  */
@@ -189,6 +189,12 @@ public class DigestKAT {
         t("SHA1", s("12345678901234567890123456789012345678901234567890123456789012345678901234567890"), "50:ab:f5:70:6a:15:09:90:a0:8b:2c:5e:a4:0f:a0:e5:85:55:47:32"),
         t("SHA1", ALONG, "ce:56:53:59:08:04:ba:a9:36:9f:72:d4:83:ed:9e:ba:72:f0:4d:29"),
         t("SHA1", BLONG, "1d:a8:1a:de:8d:1e:d0:82:ba:12:13:e2:56:26:30:fc:05:b8:8d:a6"),
+
+        t("SHA-224", s(""), "d1:4a:02:8c:2a:3a:2b:c9:47:61:02:bb:28:82:34:c4:15:a2:b0:1f:82:8e:a6:2a:c5:b3:e4:2f"),
+        t("SHA-224", s("abc"), "23:09:7d:22:34:05:d8:22:86:42:a4:77:bd:a2:55:b3:2a:ad:bc:e4:bd:a0:b3:f7:e3:6c:9d:a7"),
+        t("SHA-224", s("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"), "75:38:8b:16:51:27:76:cc:5d:ba:5d:a1:fd:89:01:50:b0:c6:45:5c:b4:f5:8b:19:52:52:25:25"),
+        t("SHA-224", s("The quick brown fox jumps over the lazy dog"), "73:0e:10:9b:d7:a8:a3:2b:1c:b9:d9:a0:9a:a2:32:5d:24:30:58:7d:db:c0:c3:8b:ad:91:15:25"),
+        t("SHA-224", s("The quick brown fox jumps over the lazy dog."), "61:9c:ba:8e:8e:05:82:6e:9b:8c:51:9c:0a:5c:68:f4:fb:65:3e:8a:3d:8a:a0:4b:b2:c8:cd:4c"),
 
         t("SHA-256", s(""), "e3:b0:c4:42:98:fc:1c:14:9a:fb:f4:c8:99:6f:b9:24:27:ae:41:e4:64:9b:93:4c:a4:95:99:1b:78:52:b8:55"),
         t("SHA-256", s("a"), "ca:97:81:12:ca:1b:bd:ca:fa:c2:31:b3:9a:23:dc:4d:a7:86:ef:f8:14:7c:4e:72:b9:80:77:85:af:ee:48:bb"),

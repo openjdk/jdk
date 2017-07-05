@@ -78,8 +78,8 @@ public:
   void do_oop(oop* p) {
     if (p != NULL) {
       oop obj = *p;
-      if (obj->klass() == SystemDictionary::String_klass()) {
-
+      if (obj->klass() == SystemDictionary::String_klass() &&
+          java_lang_String::has_hash_field()) {
         int hash = java_lang_String::hash_string(obj);
         obj->int_field_put(hash_offset, hash);
       }

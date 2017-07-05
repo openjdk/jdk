@@ -65,7 +65,7 @@
 /**
  * Exported methods.
  */
-jboolean OGLVertexCache_InitVertexCache();
+jboolean OGLVertexCache_InitVertexCache(OGLContext *oglc);
 void OGLVertexCache_FlushVertexCache();
 void OGLVertexCache_RestoreColorState(OGLContext *oglc);
 
