@@ -27,6 +27,24 @@
  * Defines the AWT and Swing user interface toolkits, plus APIs for
  * accessibility, audio, imaging, printing, and JavaBeans.
  *
+ * @uses java.awt.im.spi.InputMethodDescriptor
+ * @uses javax.accessibility.AccessibilityProvider
+ * @uses javax.imageio.spi.ImageInputStreamSpi
+ * @uses javax.imageio.spi.ImageOutputStreamSpi
+ * @uses javax.imageio.spi.ImageReaderSpi
+ * @uses javax.imageio.spi.ImageTranscoderSpi
+ * @uses javax.imageio.spi.ImageWriterSpi
+ * @uses javax.print.PrintServiceLookup
+ * @uses javax.print.StreamPrintServiceFactory
+ * @uses javax.sound.midi.spi.MidiDeviceProvider
+ * @uses javax.sound.midi.spi.MidiFileReader
+ * @uses javax.sound.midi.spi.MidiFileWriter
+ * @uses javax.sound.midi.spi.SoundbankReader
+ * @uses javax.sound.sampled.spi.AudioFileReader
+ * @uses javax.sound.sampled.spi.AudioFileWriter
+ * @uses javax.sound.sampled.spi.FormatConversionProvider
+ * @uses javax.sound.sampled.spi.MixerProvider
+ *
  * @moduleGraph
  * @since 9
  */

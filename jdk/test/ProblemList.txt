@@ -126,6 +126,8 @@ java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-
 
 jdk/internal/misc/JavaLangAccess/NewUnsafeString.java           8176188 generic-all
 
+java/lang/String/nativeEncoding/StringPlatformChars.java        8182569 windows-all,solaris-all
+
 ############################################################################
 
 # jdk_instrument
