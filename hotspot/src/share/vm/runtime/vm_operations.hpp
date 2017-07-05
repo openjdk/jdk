@@ -41,6 +41,7 @@
   template(DeoptimizeFrame)                       \
   template(DeoptimizeAll)                         \
   template(ZombieAll)                             \
+  template(HandleFullCodeCache)                   \
   template(Verify)                                \
   template(PrintJNI)                              \
   template(HeapDumper)                            \
@@ -239,6 +240,16 @@ class VM_DeoptimizeFrame: public VM_Operation {
   VMOp_Type type() const                         { return VMOp_DeoptimizeFrame; }
   void doit();
   bool allow_nested_vm_operations() const        { return true;  }
+};
+
+class VM_HandleFullCodeCache: public VM_Operation {
+ private:
+  bool  _is_full;
+ public:
+  VM_HandleFullCodeCache(bool is_full)           { _is_full = is_full; }
+  VMOp_Type type() const                         { return VMOp_HandleFullCodeCache; }
+  void doit();
+  bool allow_nested_vm_operations() const        { return true; }
 };
 
 #ifndef PRODUCT
