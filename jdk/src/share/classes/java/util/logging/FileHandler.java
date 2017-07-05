@@ -243,7 +243,7 @@ public class FileHandler extends StreamHandler {
     /**
      * Construct a default <tt>FileHandler</tt>.  This will be configured
      * entirely from <tt>LogManager</tt> properties (or their default values).
-     * <p>
+     *
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control"))</tt>.

@@ -247,7 +247,7 @@ public final class JavaAdapterFactory {
     }
 
     private static class AdapterInfo {
-        private static final ClassAndLoader SCRIPT_OBJECT_LOADER = new ClassAndLoader(ScriptObject.class, true);
+        private static final ClassAndLoader SCRIPT_OBJECT_LOADER = new ClassAndLoader(ScriptFunction.class, true);
 
         private final ClassLoader commonLoader;
         // TODO: soft reference the JavaAdapterClassLoader objects. They can be recreated when needed.

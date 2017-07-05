@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,13 +320,18 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
     // current language ID (returned from 'getJavaIDFromLangID') is in
     // ASCII encoding, so we use 'GetStringUTFChars' to retrieve requested
     // language ID from the 'localeString' object.
-    const char * current = getJavaIDFromLangID(AwtComponent::GetInputLanguage());
     jboolean isCopy;
     const char * requested = env->GetStringUTFChars(localeString, &isCopy);
-    if ((current != NULL) && (strcmp(current, requested) == 0)) {
-        env->ReleaseStringUTFChars(localeString, requested);
+    CHECK_NULL_RETURN(requested, JNI_FALSE);
+
+    const char * current = getJavaIDFromLangID(AwtComponent::GetInputLanguage());
+    if (current != NULL) {
+        if (strcmp(current, requested) == 0) {
+            env->ReleaseStringUTFChars(localeString, requested);
+            free((void *)current);
+            return JNI_TRUE;
+        }
         free((void *)current);
-        return JNI_TRUE;
     }
 
     // get list of available HKLs.  Adding the user's preferred layout on top of the layout
@@ -334,7 +339,10 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
     // looking up suitable layout.
     int layoutCount = ::GetKeyboardLayoutList(0, NULL) + 1;  // +1 for user's preferred HKL
     HKL FAR * hKLList = (HKL FAR *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(HKL), layoutCount);
-    DASSERT(!safe_ExceptionOccurred(env));
+    if (hKLList == NULL) {
+        env->ReleaseStringUTFChars(localeString, requested);
+        return JNI_FALSE;
+    }
     ::GetKeyboardLayoutList(layoutCount - 1, &(hKLList[1]));
     hKLList[0] = getDefaultKeyboardLayout(); // put user's preferred layout on top of the list
 
@@ -342,20 +350,23 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
     jboolean retValue = JNI_FALSE;
     for (int i = 0; i < layoutCount; i++) {
         const char * supported = getJavaIDFromLangID(LOWORD(hKLList[i]));
-        if ((supported != NULL) && (strcmp(supported, requested) == 0)) {
-            // use special message to call ActivateKeyboardLayout() in main thread.
-            if (AwtToolkit::GetInstance().SendMessage(WM_AWT_ACTIVATEKEYBOARDLAYOUT, (WPARAM)onActivate, (LPARAM)hKLList[i])) {
-                //also need to change the same keyboard layout for the Java AWT-EventQueue thread
-                AwtToolkit::activateKeyboardLayout(hKLList[i]);
-                retValue = JNI_TRUE;
+        if (supported != NULL) {
+            if (strcmp(supported, requested) == 0) {
+                // use special message to call ActivateKeyboardLayout() in main thread.
+                if (AwtToolkit::GetInstance().SendMessage(WM_AWT_ACTIVATEKEYBOARDLAYOUT, (WPARAM)onActivate, (LPARAM)hKLList[i])) {
+                    //also need to change the same keyboard layout for the Java AWT-EventQueue thread
+                    AwtToolkit::activateKeyboardLayout(hKLList[i]);
+                    retValue = JNI_TRUE;
+                }
+                free((void *)supported);
+                break;
             }
-            break;
+            free((void *)supported);
         }
     }
 
     env->ReleaseStringUTFChars(localeString, requested);
     free(hKLList);
-    free((void *)current);
     return retValue;
 
     CATCH_BAD_ALLOC_RET(JNI_FALSE);
@@ -445,7 +456,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
     // get list of available HKLs
     int layoutCount = ::GetKeyboardLayoutList(0, NULL);
     HKL FAR * hKLList = (HKL FAR *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(HKL), layoutCount);
-    DASSERT(!safe_ExceptionOccurred(env));
+    CHECK_NULL_RETURN(hKLList, NULL);
     ::GetKeyboardLayoutList(layoutCount, hKLList);
 
     // get list of Java locale names while getting rid of duplicates
@@ -453,8 +464,13 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
     int destIndex = 0;
     int javaLocaleNameCount = 0;
     int current = 0;
+
     const char ** javaLocaleNames = (const char **)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(char *), layoutCount);
-    DASSERT(!safe_ExceptionOccurred(env));
+    if (javaLocaleNames == NULL) {
+        free(hKLList);
+        return NULL;
+    }
+
     for (; srcIndex < layoutCount; srcIndex++) {
         const char * srcLocaleName = getJavaIDFromLangID(LOWORD(hKLList[srcIndex]));
 
@@ -477,18 +493,33 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
         }
     }
 
+    jobjectArray locales = NULL;
     // convert it to an array of Java locale objects
     jclass localeClass = env->FindClass("java/util/Locale");
-    jobjectArray locales = env->NewObjectArray(javaLocaleNameCount, localeClass, NULL);
+    if (localeClass != NULL) {
+        locales = env->NewObjectArray(javaLocaleNameCount, localeClass, NULL);
+        if (locales != NULL) {
+
+            for (current = 0; current < javaLocaleNameCount; current++) {
+                jobject obj = CreateLocaleObject(env, javaLocaleNames[current]);
+                if (env->ExceptionCheck()) {
+                    env->DeleteLocalRef(locales);
+                    locales = NULL;
+                    break;
+                }
+                env->SetObjectArrayElement(locales,
+                                           current,
+                                           obj);
+            }
+
+        }
+        env->DeleteLocalRef(localeClass);
+    }
+
     for (current = 0; current < javaLocaleNameCount; current++) {
-        env->SetObjectArrayElement(locales,
-                                   current,
-                                   CreateLocaleObject(env, javaLocaleNames[current]));
         free((void *)javaLocaleNames[current]);
     }
-    DASSERT(!safe_ExceptionOccurred(env));
 
-    env->DeleteLocalRef(localeClass);
     free(hKLList);
     free(javaLocaleNames);
     return locales;
@@ -542,6 +573,7 @@ jobject CreateLocaleObject(JNIEnv *env, const char * name)
 
     // create Locale object
     jobject langtagObj = env->NewStringUTF(name);
+    CHECK_NULL_RETURN(langtagObj, NULL);
     jobject localeObj = JNU_CallStaticMethodByName(env,
                                                    NULL,
                                                    "java/util/Locale",

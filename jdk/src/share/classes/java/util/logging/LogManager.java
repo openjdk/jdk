@@ -1130,7 +1130,7 @@ public class LogManager {
      * is no strong reference to the Logger. The caller of this method
      * must check the return value for null in order to properly handle
      * the case where the Logger has been garbage collected.
-     * <p>
+     *
      * @param name name of the logger
      * @return  matching logger or null if none is found
      */
@@ -1151,7 +1151,7 @@ public class LogManager {
      * return value from {@code LogManager.getLogger()} for null to properly
      * handle the case where the Logger has been garbage collected in the
      * time since its name was returned by this method.
-     * <p>
+     *
      * @return  enumeration of logger name strings
      */
     public Enumeration<String> getLoggerNames() {

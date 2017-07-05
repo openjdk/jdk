@@ -1,14 +1,14 @@
 <!DOCTYPE doctype PUBLIC "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
-                    
+
   <meta http-equiv="Content-Type"
  content="text/html; charset=iso-8859-1">
-                    
+
   <meta name="GENERATOR"
  content="Mozilla/4.79 [en] (Windows NT 5.0; U) [Netscape]">
 <!--
-Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ or visit www.oracle.com if you need additional information or have any
 questions.
 -->
   <title>javax.sql.rowset.spi</title>
-   
+
 </head>
   <body bgcolor="#ffffff">
 
@@ -46,7 +46,7 @@ for a <code>RowSet</code> object to use an implementation, the vendor must regis
 it with the <code>SyncFactory</code> singleton. (See the class comment for
 <code>SyncProvider</code> for a full explanation of the registration process and 
 the naming convention to be used.)
-<P>
+
 <h2>Table of Contents</h2>
 <ul>
 <li><a href="#pkgspec">1.0 Package Specification</a>
@@ -57,7 +57,7 @@ the naming convention to be used.)
 <li><a href="#reldocs">6.0 Related Documentation</a>
 </ul>
 
-<h3><a name="pkgspec">1.0 Package Specification</h3>
+<h3><a name="pkgspec">1.0 Package Specification</a></h3>
 <P>
 The following classes and interfaces make up the <code>javax.sql.rowset.spi</code>
 package:
@@ -155,7 +155,7 @@ The reference implementation (RI) provides two synchronization providers.
            using locks; rather, it checks to see if there is a conflict
            before trying to synchronize the <code>RowSet</code> object and the
            data source. If there is a conflict, it does nothing, meaning that
-		   changes to the <code>RowSet</code> object are not persisted to the data
+           changes to the <code>RowSet</code> object are not persisted to the data
            source.
        <LI><B><tt>RIXMLProvider</tt></B> <BR>
             A synchronization provider that can be used with a
@@ -201,10 +201,8 @@ levels of synchronization, thus giving <code>RowSet</code> objects a choice of
 synchronization mechanisms.  A vendor can make its implementation available by 
 registering the fully qualified class name with Oracle Corporation at
 <code>jdbc@sun.com</code>. This process is discussed in further detail below. 
-<P>
 
-<a name="arch"><h3>2.0 Service Provider Interface Architecture</h3>
-<ul>
+<h3><a name="arch">2.0 Service Provider Interface Architecture</a></h3>
 <b>2.1 Overview</b>
 <p>
 The Service Provider Interface provides a pluggable mechanism by which
@@ -229,13 +227,13 @@ implementations. The following registration mechanisms are available to all
 properties are set at run time and apply system-wide per invocation of the Java
 application. See the section <a href="#reldocs">"Related Documentation"</a>
 further related information.
-<p>
+
 <li><b>Property Files</b> - Properties specified in a standard property file.
 This can be specified using a System Property or by modifying a standard
 property file located in the platform run-time. The
 reference implementation of this technology includes a standard property
 file than can be edited to add additional <code>SyncProvider</code> objects.
-<p> 
+
 <li><b>JNDI Context</b> - Available providers can be registered on a JNDI
 context. The <tt>SyncFactory</tt> will attempt to load <tt>SyncProvider</tt>
 objects bound to the context and register them with the factory. This
@@ -258,20 +256,19 @@ reconfigured at runtime with an alternative <code>SyncProvider</code> object.
 <li> If a <code>SyncProvider</code> object is specified and the <code>SyncFactory</code>
 contains <i>no</i> reference to the provider, a <code>SyncFactoryException</code> is 
 thrown.
-<p>
+
 <li> If a <code>SyncProvider</code> object is specified and the <code>SyncFactory</code>
 contains a reference to the provider, the requested provider is supplied.
-<p>
+
 <li> If no <code>SyncProvider</code> object is specified, the reference
 implementation provider <code>RIOptimisticProvider</code> is supplied.
 </ul>
 <p>
 These policies are explored in more detail in the <a href="SyncFactory.html">
 <code>SyncFactory</code></a> class.
-</ul>
 
-<li><a name="impl"><h3>3.0 SyncProvider Implementer's Guide</h3>
-<ul>
+<h3><a name="impl">3.0 SyncProvider Implementer's Guide</a></h3>
+
 <b>3.1 Requirements</b>
 <p>
 A compliant <code>SyncProvider</code> implementation that is fully pluggable
@@ -300,7 +297,7 @@ attempt to write any data that has changed in the <code>RowSet</code> object to 
 underlying data source, overwriting whatever is there. No attempt is made to compare 
 original values with current values to see if there is a conflict. The 
 <code>RIXMLProvider</code> is implemented with this grade.
-<p>
+
 <li><b>GRADE_CHECK_MODIFIED_AT_COMMIT</b> - A low grade of optimistic synchronization.
 A <code>SyncProvider</code> implementation returning this grade
 will check for conflicts in rows that have changed between the last synchronization 
@@ -309,20 +306,20 @@ that have been modified will not be reflected in the disconnected <code>RowSet</
 object. If there are no conflicts, changes in the <code>RowSet</code> object will be
 written to the data source. If there are conflicts, no changes are written.
 The <code>RIOptimisticProvider</code> implementation uses this grade.
-<p>
+
 <li><b>GRADE_CHECK_ALL_AT_COMMIT</b> - A high grade of optimistic synchronization.
 A <code>SyncProvider</code> implementation   returning this grade
 will check all rows, including rows that have not changed in the disconnected
 <code>RowSet</code> object. In this way, any changes to rows in the underlying
 data source will be reflected in the disconnected <code>RowSet</code> object
 when the synchronization finishes successfully.
-<p>
+
 <li><b>GRADE_LOCK_WHEN_MODIFIED</b> - A pessimistic grade of synchronization.
 <code>SyncProvider</code> implementations returning this grade will lock
 the row in the originating  data source that corresponds to the row being changed
 in the <code>RowSet</code> object to reduce the possibility of other
 processes modifying the same data in the data source.
-<p>
+
 <li><b>GRADE_LOCK_WHEN_LOADED</b> - A higher pessimistic synchronization grade.
 A <code>SyncProvider</code> implementation returning this grade will lock
 the entire view and/or  table affected by the original query used to
@@ -347,13 +344,13 @@ to have a fine-grained control over the degree of locking.
 <li><b>DATASOURCE_NO_LOCK</b> - No locks remain on the originating data source. 
 This is the default lock setting for all <code>SyncProvider</code> implementations 
 unless otherwise directed by a <code>RowSet</code> object.
-<p>
+
 <li><b>DATASOURCE_ROW_LOCK</b> - A lock is placed on the rows that are touched by
 the original SQL query used to populate the <code>RowSet</code> object.
-<p> 
+
 <li><b>DATASOURCE_TABLE_LOCK</b> - A lock is placed on all tables that are touched
 by the query that was used to populate the <code>RowSet</code> object.
-<p>
+
 <li><b>DATASOURCE_DB_LOCK</b>
 A lock is placed on the entire data source that is used by the <code>RowSet</code>
 object.
@@ -369,7 +366,7 @@ update data in the table or tables from which the <code>VIEW</code> was derived.
 Indicates that a <code>SyncProvider</code> implementation  supports synchronization
 to the table or tables from which the SQL <code>VIEW</code> used to populate  a
 a <code>RowSet</code> object is derived.
-<p>
+
 <li><b>NONUPDATABLE_VIEW_SYNC</b>
 Indicates that a <code>SyncProvider</code> implementation  does <b>not</b> support
 synchronization to the table or tables from which the SQL <code>VIEW</code> 
@@ -381,7 +378,7 @@ used to populate  a <code>RowSet</code> object is derived.
 In the example below, the reference <tt>CachedRowSetImpl</tt> implementation
 reconfigures its current <tt>SyncProvider</tt> object by calling the 
 <tt>setSyncProvider</tt> method.<br>
-       
+
 <PRE>
     CachedRowSetImpl crs = new CachedRowSetImpl();
     crs.setSyncProvider("com.foo.bar.HASyncProvider");
@@ -412,7 +409,7 @@ synchronization.  These operation are shown in the following code fragment.
       // No synchronization with the originating data source provided
     break;
     }
-	  
+
     switch (sync.getDataSourcLock() {
       case: SyncProvider.DATASOURCE_DB_LOCK
        // A lock is placed on the entire datasource that is used by the
@@ -439,14 +436,13 @@ synchronization.  These operation are shown in the following code fragment.
     It is also possible using the static utility method in the
 <code>SyncFactory</code> class to determine the list of <code>SyncProvider</code>
 implementations currently registered with the <code>SyncFactory</code>.
-       
+
 <pre>
-	Enumeration e = SyncFactory.getRegisteredProviders();
-</pre>    
+       Enumeration e = SyncFactory.getRegisteredProviders();
+</pre>
 
-</ul>
 
-<h3><a name="resolving">4.0 Resolving Synchronization Conflicts</h3>
+<h3><a name="resolving">4.0 Resolving Synchronization Conflicts</a></h3>
 
 The interface <code>SyncResolver</code> provides a way for an application to
 decide manually what to do when a conflict occurs. When the <code>CachedRowSet</code>
@@ -491,18 +487,18 @@ persist, the application or user can overwrite the data source value with it.
 <P>
 The comment for the <code>SyncResolver</code> interface has more detail.
 
-<a name="relspec"><h3>5.0 Related Specifications</h3>
+<h3><a name="relspec">5.0 Related Specifications</a></h3>
 <ul>
-<li><a href="http://java.sun.com/products/jndi">JNDI 1.3</a>
+<li><a href="http://docs.oracle.com/javase/jndi/tutorial/index.html">JNDI</a>
 <li><a href="{@docRoot}/../technotes/guides/logging/index.html">Java Logging
 APIs</a>
 </ul>
-<a name="reldocs"><h3>6.0 Related Documentation</h3>
+<h3><a name="reldocs">6.0 Related Documentation</a></h3>
 <ul>
 <li><a href="{@docRoot}/../technotes/tools/index.html#basic">System
 properties</a>
 <li>Resource Files
-<li><a href="http://java.sun.com/tutorial/jdbc">DataSource for JDBC
+<li><a href="http://docs.oracle.com/javase/tutorial/jdbc/">DataSource for JDBC
 Connections</a>
 </ul>
 

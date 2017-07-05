@@ -49,9 +49,12 @@ extern jboolean IsMultiFont(JNIEnv *env, jobject obj)
     if (obj == NULL) {
         return JNI_FALSE;
     }
-    if (env->EnsureLocalCapacity(2))
+    if (env->EnsureLocalCapacity(2)) {
+        env->ExceptionClear();
         return JNI_FALSE;
+    }
     jobject peer = env->CallObjectMethod(obj, AwtFont::peerMID);
+    env->ExceptionClear();
     if (peer == NULL) {
         return JNI_FALSE;
     }
@@ -66,10 +69,12 @@ extern jstring GetTextComponentFontName(JNIEnv *env, jobject font)
 {
     DASSERT(font != NULL);
     if (env->EnsureLocalCapacity(2)) {
+        env->ExceptionClear();
         return NULL;
     }
     jobject peer = env->CallObjectMethod(font, AwtFont::peerMID);
     DASSERT(peer != NULL);
+    if (peer == NULL) return NULL;
     jstring textComponentFontName =
             (jstring) env->GetObjectField(peer, AwtFont::textComponentFontNameID);
     env->DeleteLocalRef(peer);
@@ -191,6 +196,9 @@ AwtFont* AwtFont::GetFont(JNIEnv *env, jobject font,
     }
 
     awtFont = Create(env, font, angle, awScale);
+    if (awtFont == NULL) {
+        return NULL;
+    }
 
     env->SetLongField(font, AwtFont::pDataID,
         reinterpret_cast<jlong>(awtFont));
@@ -272,6 +280,9 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
         if (cfnum > 0) {
             // Ask peer class for the text component font name
             jstring jTextComponentFontName = GetTextComponentFontName(env, font);
+            if (jTextComponentFontName == NULL) {
+                return NULL;
+            }
             LPCWSTR textComponentFontName = JNU_GetStringPlatformChars(env, jTextComponentFontName, NULL);
 
             awtFont->m_textInput = -1;
@@ -285,6 +296,9 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
                                                  AwtFont::nativeNameID);
                 wName = JNU_GetStringPlatformChars(env, nativeName, NULL);
                 DASSERT(wName);
+                if (wName == NULL) {
+                    wName = L"Arial";
+                }
 
                 //On NT platforms, if the font is not Symbol or Dingbats
                 //use "W" version of Win32 APIs directly, info the FontDescription
@@ -321,7 +335,12 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
             // Instantiation for English version.
             jstring fontName = (jstring)env->GetObjectField(font,
                                                             AwtFont::nameID);
-            wName = JNU_GetStringPlatformChars(env, fontName, NULL);
+            if (fontName != NULL) {
+                wName = JNU_GetStringPlatformChars(env, fontName, NULL);
+            }
+            if (wName == NULL) {
+                wName = L"Arial";
+            }
 
             WCHAR* wEName;
             if (!wcscmp(wName, L"Helvetica") || !wcscmp(wName, L"SansSerif")) {
@@ -647,6 +666,9 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
     //"useUnicode" field might not be initialized correctly (font in Menu Component,
     //for example").
     AwtFont* awtFont = AwtFont::GetFont(env, font);
+    if (awtFont == NULL) {
+        return size;
+    }
 
     if (IsMultiFont(env, font)) {
         jobject peer = env->CallObjectMethod(font, AwtFont::peerMID);
@@ -668,6 +690,9 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
     if (arrayLength == 0) {
         int length = env->GetStringLength(str);
         LPCWSTR strW = JNU_GetStringPlatformChars(env, str, NULL);
+        if (strW == NULL) {
+            return size;
+        }
         VERIFY(::SelectObject(hDC, awtFont->GetHFont()));
         if (AwtComponent::GetRTLReadingOrder()){
             VERIFY(!draw || ::ExtTextOut(hDC, x, y, ETO_RTLREADING, NULL,
@@ -692,6 +717,9 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
             }
 
             int fdIndex = getFontDescriptorNumber(env, font, fontDescriptor);
+            if (env->ExceptionCheck()) {
+                return size;  //fdIndex==0 return could be exception or not.
+            }
             VERIFY(::SelectObject(hDC, awtFont->GetHFont(fdIndex)));
 
             /*
@@ -705,10 +733,14 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
              * extend buflen and bad things will happen.
              */
             unsigned char* buffer = NULL;
-            jboolean unicodeUsed = env->GetBooleanField(fontDescriptor, AwtFont::useUnicodeID);
+            jboolean unicodeUsed =
+                env->GetBooleanField(fontDescriptor, AwtFont::useUnicodeID);
             try {
                 buffer = (unsigned char *)
                     env->GetPrimitiveArrayCritical(convertedBytes, 0);
+                if (buffer == NULL) {
+                    return size;
+                }
                 int buflen = (buffer[0] << 24) | (buffer[1] << 16) |
                     (buffer[2] << 8) | buffer[3];
 
@@ -816,8 +848,11 @@ Java_sun_awt_windows_WFontMetrics_charsWidth(JNIEnv *env, jobject self,
     jchar *strp = new jchar[len];
     env->GetCharArrayRegion(str, off, len, strp);
     jstring jstr = env->NewString(strp, len);
-    jint result = Java_sun_awt_windows_WFontMetrics_stringWidth(env, self,
-                                                                jstr);
+    jint result = 0;
+    if (jstr != NULL) {
+        result = Java_sun_awt_windows_WFontMetrics_stringWidth(env, self,
+                                                               jstr);
+    }
     delete [] strp;
     return result;
 
@@ -850,13 +885,25 @@ Java_sun_awt_windows_WFontMetrics_bytesWidth(JNIEnv *env, jobject self,
     try {
         jintArray array = (jintArray)env->GetObjectField(self,
                                                          AwtFont::widthsID);
+        if (array == NULL) {
+            JNU_ThrowNullPointerException(env, "Can't access widths array.");
+            return NULL;
+        }
         pStrBody = (char *)env->GetPrimitiveArrayCritical(str, 0);
+        if (pStrBody == NULL) {
+            JNU_ThrowNullPointerException(env, "Can't access str bytes.");
+            return NULL;
+        }
         char *pStr = pStrBody + off;
 
         jint *widths = NULL;
         try {
             widths = (jint *)env->GetPrimitiveArrayCritical(array, 0);
-
+            if (widths == NULL) {
+                env->ReleasePrimitiveArrayCritical(str, pStrBody, 0);
+                JNU_ThrowNullPointerException(env, "Can't access widths.");
+                return NULL;
+            }
             for (; len; len--) {
                 result += widths[*pStr++];
             }
@@ -915,29 +962,15 @@ Java_sun_awt_windows_WFontMetrics_init(JNIEnv *env, jobject self)
 JNIEXPORT void JNICALL
 Java_sun_awt_windows_WFontMetrics_initIDs(JNIEnv *env, jclass cls)
 {
-    TRY;
-
-    AwtFont::widthsID = env->GetFieldID(cls, "widths", "[I");
-    AwtFont::ascentID = env->GetFieldID(cls, "ascent", "I");
-    AwtFont::descentID = env->GetFieldID(cls, "descent", "I");
-    AwtFont::leadingID = env->GetFieldID(cls, "leading", "I");
-    AwtFont::heightID = env->GetFieldID(cls, "height", "I");
-    AwtFont::maxAscentID = env->GetFieldID(cls, "maxAscent", "I");
-    AwtFont::maxDescentID = env->GetFieldID(cls, "maxDescent", "I");
-    AwtFont::maxHeightID = env->GetFieldID(cls, "maxHeight", "I");
-    AwtFont::maxAdvanceID = env->GetFieldID(cls, "maxAdvance", "I");
-
-    DASSERT(AwtFont::widthsID != NULL);
-    DASSERT(AwtFont::ascentID != NULL);
-    DASSERT(AwtFont::descentID != NULL);
-    DASSERT(AwtFont::leadingID != NULL);
-    DASSERT(AwtFont::heightID != NULL);
-    DASSERT(AwtFont::maxAscentID != NULL);
-    DASSERT(AwtFont::maxDescentID != NULL);
-    DASSERT(AwtFont::maxHeightID != NULL);
-    DASSERT(AwtFont::maxAdvanceID != NULL);
-
-    CATCH_BAD_ALLOC;
+   CHECK_NULL(AwtFont::widthsID = env->GetFieldID(cls, "widths", "[I"));
+   CHECK_NULL(AwtFont::ascentID = env->GetFieldID(cls, "ascent", "I"));
+   CHECK_NULL(AwtFont::descentID = env->GetFieldID(cls, "descent", "I"));
+   CHECK_NULL(AwtFont::leadingID = env->GetFieldID(cls, "leading", "I"));
+   CHECK_NULL(AwtFont::heightID = env->GetFieldID(cls, "height", "I"));
+   CHECK_NULL(AwtFont::maxAscentID = env->GetFieldID(cls, "maxAscent", "I"));
+   CHECK_NULL(AwtFont::maxDescentID = env->GetFieldID(cls, "maxDescent", "I"));
+   CHECK_NULL(AwtFont::maxHeightID = env->GetFieldID(cls, "maxHeight", "I"));
+   AwtFont::maxAdvanceID = env->GetFieldID(cls, "maxAdvance", "I");
 }
 
 } /* extern "C" */
@@ -952,28 +985,16 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_java_awt_Font_initIDs(JNIEnv *env, jclass cls)
 {
-    TRY;
-
-    AwtFont::peerMID = env->GetMethodID(cls, "getPeer",
-                                        "()Ljava/awt/peer/FontPeer;");
-    AwtFont::pDataID = env->GetFieldID(cls, "pData", "J");
-    AwtFont::nameID = env->GetFieldID(cls, "name", "Ljava/lang/String;");
-    AwtFont::sizeID = env->GetFieldID(cls, "size", "I");
-    AwtFont::styleID = env->GetFieldID(cls, "style", "I");
-
+    CHECK_NULL(AwtFont::peerMID = env->GetMethodID(cls, "getPeer",
+         "()Ljava/awt/peer/FontPeer;"));
+    CHECK_NULL(AwtFont::pDataID = env->GetFieldID(cls, "pData", "J"));
+    CHECK_NULL(AwtFont::nameID =
+         env->GetFieldID(cls, "name", "Ljava/lang/String;"));
+    CHECK_NULL(AwtFont::sizeID = env->GetFieldID(cls, "size", "I"));
+    CHECK_NULL(AwtFont::styleID = env->GetFieldID(cls, "style", "I"));
     AwtFont::getFontMID =
       env->GetStaticMethodID(cls, "getFont",
                              "(Ljava/lang/String;)Ljava/awt/Font;");
-
-    DASSERT(AwtFont::peerMID != NULL);
-    DASSERT(AwtFont::pDataID != NULL);
-    DASSERT(AwtFont::nameID != NULL);
-    DASSERT(AwtFont::sizeID != NULL);
-    DASSERT(AwtFont::styleID != NULL);
-
-    DASSERT(AwtFont::getFontMID != NULL);
-
-    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */
@@ -988,15 +1009,9 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_java_awt_FontMetrics_initIDs(JNIEnv *env, jclass cls)
 {
-    TRY;
-
-    AwtFont::fontID = env->GetFieldID(cls, "font", "Ljava/awt/Font;");
+    CHECK_NULL(AwtFont::fontID =
+          env->GetFieldID(cls, "font", "Ljava/awt/Font;"));
     AwtFont::getHeightMID = env->GetMethodID(cls, "getHeight", "()I");
-
-    DASSERT(AwtFont::fontID);
-    DASSERT(AwtFont::getHeightMID);
-
-    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */
@@ -1010,16 +1025,10 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_sun_awt_FontDescriptor_initIDs(JNIEnv *env, jclass cls)
 {
-    TRY;
-
-    AwtFont::nativeNameID = env->GetFieldID(cls, "nativeName",
-                                            "Ljava/lang/String;");
+    CHECK_NULL(AwtFont::nativeNameID =
+               env->GetFieldID(cls, "nativeName", "Ljava/lang/String;"));
     AwtFont::useUnicodeID = env->GetFieldID(cls, "useUnicode", "Z");
 
-    DASSERT(AwtFont::nativeNameID != NULL);
-    DASSERT(AwtFont::useUnicodeID != NULL);
-
-    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */
@@ -1034,20 +1043,13 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_sun_awt_PlatformFont_initIDs(JNIEnv *env, jclass cls)
 {
-    TRY;
-
-    AwtFont::fontConfigID = env->GetFieldID(cls, "fontConfig", "Lsun/awt/FontConfiguration;");
-    AwtFont::componentFontsID =
-        env->GetFieldID(cls, "componentFonts", "[Lsun/awt/FontDescriptor;");
+    CHECK_NULL(AwtFont::fontConfigID =
+        env->GetFieldID(cls, "fontConfig", "Lsun/awt/FontConfiguration;"));
+    CHECK_NULL(AwtFont::componentFontsID =
+        env->GetFieldID(cls, "componentFonts", "[Lsun/awt/FontDescriptor;"));
     AwtFont::makeConvertedMultiFontStringMID =
         env->GetMethodID(cls, "makeConvertedMultiFontString",
                          "(Ljava/lang/String;)[Ljava/lang/Object;");
-
-    DASSERT(AwtFont::makeConvertedMultiFontStringMID != NULL);
-    DASSERT(AwtFont::componentFontsID != NULL);
-    DASSERT(AwtFont::fontConfigID != NULL);
-
-    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */
@@ -1862,8 +1864,10 @@ Java_sun_awt_windows_WDefaultFontCharset_canConvert(JNIEnv *env, jobject self,
     static CCombinedSegTableManager tableManager;
 
     jstring fontName = (jstring)env->GetObjectField(self, AwtFont::fontNameID);
-    DASSERT(fontName != NULL);
+    DASSERT(fontName != NULL); // leave in for debug mode.
+    CHECK_NULL_RETURN(fontName, FALSE);  // in production, just return
     LPCWSTR fontNameW = JNU_GetStringPlatformChars(env, fontName, NULL);
+    CHECK_NULL_RETURN(fontNameW, FALSE);
     CCombinedSegTable* pTable = tableManager.GetTable(fontNameW);
     JNU_ReleaseStringPlatformChars(env, fontName, fontNameW);
     return (pTable->In((USHORT) ch) ? JNI_TRUE : JNI_FALSE);
