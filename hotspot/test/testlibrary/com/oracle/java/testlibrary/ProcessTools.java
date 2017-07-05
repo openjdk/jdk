@@ -31,6 +31,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import sun.management.VMManagement;
 
@@ -107,6 +108,22 @@ public final class ProcessTools {
   }
 
   /**
+   * Get the string containing input arguments passed to the VM
+   *
+   * @return arguments
+   */
+  public static String getVmInputArguments() {
+    RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+
+    List<String> args = runtime.getInputArguments();
+    StringBuilder result = new StringBuilder();
+    for (String arg : args)
+        result.append(arg).append(' ');
+
+    return result.toString();
+  }
+
+  /**
    * Get platform specific VM arguments (e.g. -d64 on 64bit Solaris)
    *
    * @return String[] with platform specific arguments, empty if there are none
@@ -132,8 +149,13 @@ public final class ProcessTools {
     Collections.addAll(args, getPlatformSpecificVMArgs());
     Collections.addAll(args, command);
 
-    return new ProcessBuilder(args.toArray(new String[args.size()]));
+    // Reporting
+    StringBuilder cmdLine = new StringBuilder();
+    for (String cmd : args)
+        cmdLine.append(cmd).append(' ');
+    System.out.println("Command line: [" + cmdLine.toString() + "]");
 
+    return new ProcessBuilder(args.toArray(new String[args.size()]));
   }
 
 }
