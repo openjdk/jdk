@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4770745 6234507
+ * @bug 4770745 6234507 6303183
  * @summary test a variety of zip file entries
  * @author Martin Buchholz
  */
@@ -52,6 +52,44 @@ public class Assortment {
 
     static void check(boolean condition) {
         check(condition, "Something's wrong");
+    }
+
+    static final int get16(byte b[], int off) {
+        return Byte.toUnsignedInt(b[off]) | (Byte.toUnsignedInt(b[off+1]) << 8);
+    }
+
+    // check if all "expected" extra fields equal to their
+    // corresponding fields in "extra". The "extra" might have
+    // timestamp fields added by ZOS.
+    static boolean equalsExtraData(byte[] expected, byte[] extra) {
+        if (expected == null)
+            return true;
+        int off = 0;
+        int len = expected.length;
+        while (off + 4 < len) {
+            int tag = get16(expected, off);
+            int sz = get16(expected, off + 2);
+            int off0 = 0;
+            int len0 = extra.length;
+            boolean matched = false;
+            while (off0 + 4 < len0) {
+                int tag0 = get16(extra, off0);
+                int sz0 = get16(extra, off0 + 2);
+                if (tag == tag0 && sz == sz0) {
+                    matched = true;
+                    for (int i = 0; i < sz; i++) {
+                        if (expected[off + i] != extra[off0 +i])
+                            matched = false;
+                    }
+                    break;
+                }
+                off0 += (4 + sz0);
+            }
+            if (!matched)
+                return false;
+            off += (4 + sz);
+        }
+        return true;
     }
 
     private static class Entry {
@@ -109,7 +147,7 @@ public class Assortment {
             check((((comment == null) || comment.equals(""))
                    && (e.getComment() == null))
                   || comment.equals(e.getComment()));
-            check(Arrays.equals(extra, e.getExtra()));
+            check(equalsExtraData(extra, e.getExtra()));
             check(Arrays.equals(data, getData(f, e)));
             check(e.getSize() == data.length);
             check((method == ZipEntry.DEFLATED) ||
@@ -129,8 +167,7 @@ public class Assortment {
 
             byte[] extra = (this.extra != null && this.extra.length == 0) ?
                 null : this.extra;
-            check(Arrays.equals(extra, e.getExtra()));
-
+            check(equalsExtraData(extra, e.getExtra()));
             check(name.equals(e.getName()));
             check(method == e.getMethod());
             check(e.getSize() == -1 || e.getSize() == data.length);

@@ -114,6 +114,14 @@ void ConcurrentG1Refine::threads_do(ThreadClosure *tc) {
   }
 }
 
+void ConcurrentG1Refine::worker_threads_do(ThreadClosure * tc) {
+  if (_threads != NULL) {
+    for (int i = 0; i < worker_thread_num(); i++) {
+      tc->do_thread(_threads[i]);
+    }
+  }
+}
+
 int ConcurrentG1Refine::thread_num() {
   int n_threads = (G1ConcRefinementThreads > 0) ? G1ConcRefinementThreads
                                                 : ParallelGCThreads;
@@ -125,4 +133,8 @@ void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
     _threads[i]->print_on(st);
     st->cr();
   }
+}
+
+ConcurrentG1RefineThread * ConcurrentG1Refine::sampling_thread() const {
+  return _threads[worker_thread_num()];
 }

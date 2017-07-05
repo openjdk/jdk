@@ -42,12 +42,10 @@ import java.security.spec.*;
  */
 abstract class PBMAC1Core extends HmacCore {
 
-    private static final int DEFAULT_SALT_LENGTH = 20;
-    private static final int DEFAULT_COUNT = 4096;
-
+    // NOTE: this class inherits the Cloneable interface from HmacCore
+    // Need to override clone() if mutable fields are added.
     private final String kdfAlgo;
     private final String hashAlgo;
-    private final PBKDF2Core kdf;
     private final int blockLength; // in octets
 
     /**
@@ -56,13 +54,15 @@ abstract class PBMAC1Core extends HmacCore {
      */
     PBMAC1Core(String kdfAlgo, String hashAlgo, int blockLength)
         throws NoSuchAlgorithmException {
-
         super(hashAlgo, blockLength);
         this.kdfAlgo = kdfAlgo;
         this.hashAlgo = hashAlgo;
         this.blockLength = blockLength;
+    }
 
-        switch(kdfAlgo) {
+    private static PBKDF2Core getKDFImpl(String algo) {
+        PBKDF2Core kdf = null;
+        switch(algo) {
         case "HmacSHA1":
                 kdf = new PBKDF2Core.HmacSHA1();
                 break;
@@ -79,9 +79,10 @@ abstract class PBMAC1Core extends HmacCore {
                 kdf = new PBKDF2Core.HmacSHA512();
                 break;
         default:
-                throw new NoSuchAlgorithmException(
-                    "No MAC implementation for " + kdfAlgo);
+                throw new ProviderException(
+                    "No MAC implementation for " + algo);
         }
+        return kdf;
     }
 
     /**
@@ -120,12 +121,13 @@ abstract class PBMAC1Core extends HmacCore {
             throw new InvalidKeyException("SecretKey of PBE type required");
         }
         if (params == null) {
-            // generate default for salt and iteration count if necessary
-            if (salt == null) {
-                salt = new byte[DEFAULT_SALT_LENGTH];
-                SunJCE.getRandom().nextBytes(salt);
+            // should not auto-generate default values since current
+            // javax.crypto.Mac api does not have any method for caller to
+            // retrieve the generated defaults.
+            if ((salt == null) || (iCount == 0)) {
+                throw new InvalidAlgorithmParameterException
+                    ("PBEParameterSpec required for salt and iteration count");
             }
-            if (iCount == 0) iCount = DEFAULT_COUNT;
         } else if (!(params instanceof PBEParameterSpec)) {
             throw new InvalidAlgorithmParameterException
                 ("PBEParameterSpec type required");
@@ -168,7 +170,7 @@ abstract class PBMAC1Core extends HmacCore {
         java.util.Arrays.fill(passwdChars, ' ');
 
         SecretKey s = null;
-
+        PBKDF2Core kdf = getKDFImpl(kdfAlgo);
         try {
             s = kdf.engineGenerateSecret(pbeSpec);
 

@@ -476,15 +476,25 @@ public class StreamTest {
     }
 
     public void testSecurityException() throws IOException {
-        Path triggerFile = testFolder.resolve(Paths.get("dir", "SecurityException"));
-        Files.createFile(triggerFile);
-        Path sampleFile = testFolder.resolve(Paths.get("dir", "sample"));
-        Files.createFile(sampleFile);
-        Path triggerDir = testFolder.resolve(Paths.get("dir2", "SecurityException"));
-        Files.createDirectories(triggerDir);
+        Path empty = testFolder.resolve("empty");
+        Path triggerFile = Files.createFile(empty.resolve("SecurityException"));
+        Path sampleFile = Files.createDirectories(empty.resolve("sample"));
+
+        Path dir2 = testFolder.resolve("dir2");
+        Path triggerDir = Files.createDirectories(dir2.resolve("SecurityException"));
         Files.createFile(triggerDir.resolve("fileInSE"));
-        Path sample = testFolder.resolve(Paths.get("dir2", "file"));
-        Files.createFile(sample);
+        Path sample = Files.createFile(dir2.resolve("file"));
+
+        Path triggerLink = null;
+        Path linkTriggerDir = null;
+        Path linkTriggerFile = null;
+        if (supportsLinks) {
+            Path dir = testFolder.resolve("dir");
+            triggerLink = Files.createSymbolicLink(dir.resolve("SecurityException"), empty);
+            linkTriggerDir = Files.createSymbolicLink(dir.resolve("lnDirSE"), triggerDir);
+            linkTriggerFile = Files.createSymbolicLink(dir.resolve("lnFileSE"), triggerFile);
+        }
+
         FaultyFileSystem.FaultyFSProvider fsp = FaultyFileSystem.FaultyFSProvider.getInstance();
         FaultyFileSystem fs = (FaultyFileSystem) fsp.newFileSystem(testFolder, null);
 
@@ -492,10 +502,10 @@ public class StreamTest {
             fsp.setFaultyMode(false);
             Path fakeRoot = fs.getRoot();
             // validate setting
-            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir"))) {
+            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "d1","f1", "lnDir2", "SecurityException", "sample" });
+                assertEqualsNoOrder(result, new String[] { "SecurityException", "sample" });
             }
 
             try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
@@ -504,13 +514,21 @@ public class StreamTest {
                 assertEqualsNoOrder(result, new String[] { "dir2", "SecurityException", "fileInSE", "file" });
             }
 
+            if (supportsLinks) {
+                try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir"))) {
+                    String[] result = s.map(path -> path.getFileName().toString())
+                                       .toArray(String[]::new);
+                    assertEqualsNoOrder(result, new String[] { "d1", "f1", "lnDir2", "SecurityException", "lnDirSE", "lnFileSE" });
+                }
+            }
+
             // execute test
             fsp.setFaultyMode(true);
             // ignore file cause SecurityException
-            try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir"))) {
+            try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "dir", "d1","f1", "lnDir2", "sample" });
+                assertEqualsNoOrder(result, new String[] { "empty", "sample" });
             }
             // skip folder cause SecurityException
             try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
@@ -519,11 +537,29 @@ public class StreamTest {
                 assertEqualsNoOrder(result, new String[] { "dir2", "file" });
             }
 
+            if (supportsLinks) {
+                // not following links
+                try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir"))) {
+                    String[] result = s.map(path -> path.getFileName().toString())
+                                       .toArray(String[]::new);
+                    assertEqualsNoOrder(result, new String[] { "dir", "d1", "f1", "lnDir2", "lnDirSE", "lnFileSE" });
+                }
+
+                // following links
+                try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir"), FileVisitOption.FOLLOW_LINKS)) {
+                    String[] result = s.map(path -> path.getFileName().toString())
+                                       .toArray(String[]::new);
+                    // ?? Should fileInSE show up?
+                    // With FaultyFS, it does as no exception thrown for link to "SecurityException" with read on "lnXxxSE"
+                    assertEqualsNoOrder(result, new String[] { "dir", "d1", "f1", "lnDir2", "file", "lnDirSE", "lnFileSE", "fileInSE" });
+                }
+            }
+
             // list instead of walk
-            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir"))) {
+            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
-                assertEqualsNoOrder(result, new String[] { "d1","f1", "lnDir2", "sample" });
+                assertEqualsNoOrder(result, new String[] { "sample" });
             }
             try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
@@ -578,6 +614,11 @@ public class StreamTest {
             if (fs != null) {
                 fs.close();
             }
+            if (supportsLinks) {
+                Files.delete(triggerLink);
+                Files.delete(linkTriggerDir);
+                Files.delete(linkTriggerFile);
+            }
             Files.delete(triggerFile);
             Files.delete(sampleFile);
             Files.delete(sample);
@@ -589,7 +630,6 @@ public class StreamTest {
         try (CloseableStream<String> s = Files.lines(testFolder.resolve("notExist"), Charset.forName("UTF-8"))) {
             s.forEach(l -> fail("File is not even exist!"));
         } catch (IOException ioe) {
-            ioe.printStackTrace(System.err);
             assertTrue(ioe instanceof NoSuchFileException);
         }
     }

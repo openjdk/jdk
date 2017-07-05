@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 4893959
- * @summary basic test for HmacPBESHA1
+ * @bug 4893959 8013069
+ * @summary basic test for PBE MAC algorithms.
  * @author Valerie Peng
  */
 import java.io.PrintStream;
@@ -68,8 +68,9 @@ public class HmacPBESHA1 {
         }
         Mac mac = Mac.getInstance(algo, PROVIDER);
         byte[] plainText = new byte[30];
-
-        mac.init(key);
+        PBEParameterSpec spec =
+            new PBEParameterSpec("saltValue".getBytes(), 250);
+        mac.init(key, spec);
         mac.update(plainText);
         byte[] value1 = mac.doFinal();
         if (value1.length != length) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.management;
 
 import java.lang.management.*;
 
+import javax.management.DynamicMBean;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -42,7 +43,9 @@ import sun.util.logging.LoggingSupport;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import com.sun.management.DiagnosticCommandMBean;
 import com.sun.management.OSMBeanFactory;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
@@ -263,6 +266,7 @@ public class ManagementFactoryHelper {
     private static HotspotThread hsThreadMBean = null;
     private static HotspotCompilation hsCompileMBean = null;
     private static HotspotMemory hsMemoryMBean = null;
+    private static DiagnosticCommandImpl hsDiagCommandMBean = null;
 
     public static synchronized HotSpotDiagnosticMXBean getDiagnosticMXBean() {
         if (hsDiagMBean == null) {
@@ -309,6 +313,14 @@ public class ManagementFactoryHelper {
             hsMemoryMBean = new HotspotMemory(jvm);
         }
         return hsMemoryMBean;
+    }
+
+    public static synchronized DiagnosticCommandMBean getDiagnosticCommandMBean() {
+        // Remote Diagnostic Commands may not be supported
+        if (hsDiagCommandMBean == null && jvm.isRemoteDiagnosticCommandsSupported()) {
+            hsDiagCommandMBean = new DiagnosticCommandImpl(jvm);
+        }
+        return hsDiagCommandMBean;
     }
 
     /**
@@ -364,6 +376,18 @@ public class ManagementFactoryHelper {
 
     private final static String HOTSPOT_THREAD_MBEAN_NAME =
         "sun.management:type=HotspotThreading";
+
+    final static String HOTSPOT_DIAGNOSTIC_COMMAND_MBEAN_NAME =
+        "com.sun.management:type=DiagnosticCommand";
+
+    public static HashMap<ObjectName, DynamicMBean> getPlatformDynamicMBeans() {
+        HashMap<ObjectName, DynamicMBean> map = new HashMap<>();
+        DiagnosticCommandMBean diagMBean = getDiagnosticCommandMBean();
+        if (diagMBean != null) {
+            map.put(Util.newObjectName(HOTSPOT_DIAGNOSTIC_COMMAND_MBEAN_NAME), diagMBean);
+        }
+        return map;
+    }
 
     static void registerInternalMBeans(MBeanServer mbs) {
         // register all internal MBeans if not registered

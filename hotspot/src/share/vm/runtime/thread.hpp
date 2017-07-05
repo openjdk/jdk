@@ -638,9 +638,6 @@ public:
   jint _hashStateZ ;
   void * _schedctl ;
 
-  intptr_t _ScratchA, _ScratchB ;              // Scratch locations for fast-path sync code
-  static ByteSize ScratchA_offset()            { return byte_offset_of(Thread, _ScratchA ); }
-  static ByteSize ScratchB_offset()            { return byte_offset_of(Thread, _ScratchB ); }
 
   volatile jint rng [4] ;                      // RNG for spin loop
 
