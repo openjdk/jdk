@@ -78,6 +78,7 @@ import jdk.internal.reflect.Reflection;
  *
  * @see Driver
  * @see Connection
+ * @since 1.1
  */
 public class DriverManager {
 

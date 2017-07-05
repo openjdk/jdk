@@ -31,7 +31,7 @@
  * @run main/othervm XbootcpNoVisibility
  */
 
-import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 

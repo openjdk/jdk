@@ -553,20 +553,47 @@ public class ClassFinder {
 
         Location classLocn = msym.classLocation;
         Location sourceLocn = msym.sourceLocation;
+        Location patchLocn = msym.patchLocation;
+        Location patchOutLocn = msym.patchOutputLocation;
 
-        if (wantClassFiles && (classLocn != null)) {
-            fillIn(p, classLocn,
-                   list(classLocn,
-                        p,
-                        packageName,
-                        classKinds));
-        }
-        if (wantSourceFiles && (sourceLocn != null)) {
-            fillIn(p, sourceLocn,
-                   list(sourceLocn,
-                        p,
-                        packageName,
-                        sourceKinds));
+        boolean prevPreferCurrent = preferCurrent;
+
+        try {
+            preferCurrent = false;
+            if (wantClassFiles && (patchOutLocn != null)) {
+                fillIn(p, patchOutLocn,
+                       list(patchOutLocn,
+                            p,
+                            packageName,
+                            classKinds));
+            }
+            if ((wantClassFiles || wantSourceFiles) && (patchLocn != null)) {
+                Set<JavaFileObject.Kind> combined = EnumSet.noneOf(JavaFileObject.Kind.class);
+                combined.addAll(classKinds);
+                combined.addAll(sourceKinds);
+                fillIn(p, patchLocn,
+                       list(patchLocn,
+                            p,
+                            packageName,
+                            combined));
+            }
+            preferCurrent = true;
+            if (wantClassFiles && (classLocn != null)) {
+                fillIn(p, classLocn,
+                       list(classLocn,
+                            p,
+                            packageName,
+                            classKinds));
+            }
+            if (wantSourceFiles && (sourceLocn != null)) {
+                fillIn(p, sourceLocn,
+                       list(sourceLocn,
+                            p,
+                            packageName,
+                            sourceKinds));
+            }
+        } finally {
+            preferCurrent = prevPreferCurrent;
         }
     }
 
