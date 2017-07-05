@@ -264,6 +264,7 @@ void PICL::close_library() {
 
 // We need to keep these here as long as we have to build on Solaris
 // versions before 10.
+
 #ifndef SI_ARCHITECTURE_32
 #define SI_ARCHITECTURE_32      516     /* basic 32-bit SI_ARCHITECTURE */
 #endif
@@ -272,36 +273,87 @@ void PICL::close_library() {
 #define SI_ARCHITECTURE_64      517     /* basic 64-bit SI_ARCHITECTURE */
 #endif
 
-static void do_sysinfo(int si, const char* string, int* features, int mask) {
-  char   tmp;
-  size_t bufsize = sysinfo(si, &tmp, 1);
+#ifndef SI_CPUBRAND
+#define SI_CPUBRAND             523     /* return cpu brand string */
+#endif
 
-  // All SI defines used below must be supported.
-  guarantee(bufsize != -1, "must be supported");
+class Sysinfo {
+  char* _string;
+public:
+  Sysinfo(int si) : _string(NULL) {
+    char   tmp;
+    size_t bufsize = sysinfo(si, &tmp, 1);
 
-  char* buf = (char*) os::malloc(bufsize, mtInternal);
-
-  if (buf == NULL)
-    return;
-
-  if (sysinfo(si, buf, bufsize) == bufsize) {
-    // Compare the string.
-    if (strcmp(buf, string) == 0) {
-      *features |= mask;
+    if (bufsize != -1) {
+      char* buf = (char*) os::malloc(bufsize, mtInternal);
+      if (buf != NULL) {
+        if (sysinfo(si, buf, bufsize) == bufsize) {
+          _string = buf;
+        } else {
+          os::free(buf);
+        }
+      }
     }
   }
 
-  os::free(buf);
-}
+  ~Sysinfo() {
+    if (_string != NULL) {
+      os::free(_string);
+    }
+  }
+
+  const char* value() const {
+    return _string;
+  }
+
+  bool valid() const {
+    return _string != NULL;
+  }
+
+  bool match(const char* s) const {
+    return valid() ? strcmp(_string, s) == 0 : false;
+  }
+
+  bool match_substring(const char* s) const {
+    return valid() ? strstr(_string, s) != NULL : false;
+  }
+};
+
+class Sysconf {
+  int _value;
+public:
+  Sysconf(int sc) : _value(-1) {
+    _value = sysconf(sc);
+  }
+  bool valid() const {
+    return _value != -1;
+  }
+  int value() const {
+    return _value;
+  }
+};
+
+
+#ifndef _SC_DCACHE_LINESZ
+#define _SC_DCACHE_LINESZ       508     /* Data cache line size */
+#endif
+
+#ifndef _SC_L2CACHE_LINESZ
+#define _SC_L2CACHE_LINESZ      527     /* Size of L2 cache line */
+#endif
 
 int VM_Version::platform_features(int features) {
   assert(os::Solaris::supports_getisax(), "getisax() must be available");
 
   // Check 32-bit architecture.
-  do_sysinfo(SI_ARCHITECTURE_32, "sparc", &features, v8_instructions_m);
+  if (Sysinfo(SI_ARCHITECTURE_32).match("sparc")) {
+    features |= v8_instructions_m;
+  }
 
   // Check 64-bit architecture.
-  do_sysinfo(SI_ARCHITECTURE_64, "sparcv9", &features, generic_v9_m);
+  if (Sysinfo(SI_ARCHITECTURE_64).match("sparcv9")) {
+    features |= generic_v9_m;
+  }
 
   // Extract valid instruction set extensions.
   uint_t avs[2];
@@ -388,67 +440,63 @@ int VM_Version::platform_features(int features) {
   if (av & AV_SPARC_SHA512)       features |= sha512_instruction_m;
 
   // Determine the machine type.
-  do_sysinfo(SI_MACHINE, "sun4v", &features, sun4v_m);
+  if (Sysinfo(SI_MACHINE).match("sun4v")) {
+    features |= sun4v_m;
+  }
 
-  {
-    // Using kstat to determine the machine type.
+  bool use_solaris_12_api = false;
+  Sysinfo impl(SI_CPUBRAND);
+  if (impl.valid()) {
+    // If SI_CPUBRAND works, that means Solaris 12 API to get the cache line sizes
+    // is available to us as well
+    use_solaris_12_api = true;
+    features |= parse_features(impl.value());
+  } else {
+    // Otherwise use kstat to determine the machine type.
     kstat_ctl_t* kc = kstat_open();
     kstat_t* ksp = kstat_lookup(kc, (char*)"cpu_info", -1, NULL);
-    const char* implementation = "UNKNOWN";
+    const char* implementation;
+    bool has_implementation = false;
     if (ksp != NULL) {
       if (kstat_read(kc, ksp, NULL) != -1 && ksp->ks_data != NULL) {
         kstat_named_t* knm = (kstat_named_t *)ksp->ks_data;
         for (int i = 0; i < ksp->ks_ndata; i++) {
           if (strcmp((const char*)&(knm[i].name),"implementation") == 0) {
             implementation = KSTAT_NAMED_STR_PTR(&knm[i]);
+            has_implementation = true;
 #ifndef PRODUCT
             if (PrintMiscellaneous && Verbose) {
               tty->print_cr("cpu_info.implementation: %s", implementation);
             }
 #endif
-            // Convert to UPPER case before compare.
-            char* impl = os::strdup_check_oom(implementation);
-
-            for (int i = 0; impl[i] != 0; i++)
-              impl[i] = (char)toupper((uint)impl[i]);
-
-            if (strstr(impl, "SPARC64") != NULL) {
-              features |= sparc64_family_m;
-            } else if (strstr(impl, "SPARC-M") != NULL) {
-              // M-series SPARC is based on T-series.
-              features |= (M_family_m | T_family_m);
-            } else if (strstr(impl, "SPARC-T") != NULL) {
-              features |= T_family_m;
-              if (strstr(impl, "SPARC-T1") != NULL) {
-                features |= T1_model_m;
-              }
-            } else {
-              if (strstr(impl, "SPARC") == NULL) {
-#ifndef PRODUCT
-                // kstat on Solaris 8 virtual machines (branded zones)
-                // returns "(unsupported)" implementation. Solaris 8 is not
-                // supported anymore, but include this check to be on the
-                // safe side.
-                warning("kstat cpu_info implementation = '%s', assume generic SPARC", impl);
-#endif
-                implementation = "SPARC";
-              }
-            }
-            os::free((void*)impl);
+            features |= parse_features(implementation);
             break;
           }
         } // for(
       }
     }
-    assert(strcmp(implementation, "UNKNOWN") != 0,
-           "unknown cpu info (changed kstat interface?)");
+    assert(has_implementation, "unknown cpu info (changed kstat interface?)");
     kstat_close(kc);
   }
 
-  // Figure out cache line sizes using PICL
-  PICL picl((features & sparc64_family_m) != 0, (features & sun4v_m) != 0);
-  _L1_data_cache_line_size = picl.L1_data_cache_line_size();
-  _L2_data_cache_line_size = picl.L2_data_cache_line_size();
+  bool is_sun4v = (features & sun4v_m) != 0;
+  if (use_solaris_12_api && is_sun4v) {
+    // If Solaris 12 API is supported and it's sun4v use sysconf() to get the cache line sizes
+    Sysconf l1_dcache_line_size(_SC_DCACHE_LINESZ);
+    if (l1_dcache_line_size.valid()) {
+      _L1_data_cache_line_size =  l1_dcache_line_size.value();
+    }
 
+    Sysconf l2_dcache_line_size(_SC_L2CACHE_LINESZ);
+    if (l2_dcache_line_size.valid()) {
+      _L2_data_cache_line_size = l2_dcache_line_size.value();
+    }
+  } else {
+    // Otherwise figure out the cache line sizes using PICL
+    bool is_fujitsu = (features & sparc64_family_m) != 0;
+    PICL picl(is_fujitsu, is_sun4v);
+    _L1_data_cache_line_size = picl.L1_data_cache_line_size();
+    _L2_data_cache_line_size = picl.L2_data_cache_line_size();
+  }
   return features;
 }

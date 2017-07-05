@@ -39,13 +39,11 @@
 class StubCodeDesc: public CHeapObj<mtCode> {
  private:
   static StubCodeDesc* _list;                  // the list of all descriptors
-  static int           _count;                 // length of list
   static bool          _frozen;                // determines whether _list modifications are allowed
 
   StubCodeDesc*        _next;                  // the next element in the linked list
   const char*          _group;                 // the group to which the stub code belongs
   const char*          _name;                  // the name assigned to the stub code
-  int                  _index;                 // serial number assigned to the stub
   address              _begin;                 // points to the first byte of the stub code    (included)
   address              _end;                   // points to the first byte after the stub code (excluded)
 
@@ -64,8 +62,10 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   friend class StubCodeGenerator;
 
  public:
+  static StubCodeDesc* first() { return _list; }
+  static StubCodeDesc* next(StubCodeDesc* desc)  { return desc->_next; }
+
   static StubCodeDesc* desc_for(address pc);     // returns the code descriptor for the code containing pc or NULL
-  static StubCodeDesc* desc_for_index(int);      // returns the code descriptor for the index or NULL
   static const char*   name_for(address pc);     // returns the name of the code containing pc or NULL
 
   StubCodeDesc(const char* group, const char* name, address begin, address end = NULL) {
@@ -74,7 +74,6 @@ class StubCodeDesc: public CHeapObj<mtCode> {
     _next           = _list;
     _group          = group;
     _name           = name;
-    _index          = ++_count; // (never zero)
     _begin          = begin;
     _end            = end;
     _list           = this;
@@ -84,7 +83,6 @@ class StubCodeDesc: public CHeapObj<mtCode> {
 
   const char* group() const                      { return _group; }
   const char* name() const                       { return _name; }
-  int         index() const                      { return _index; }
   address     begin() const                      { return _begin; }
   address     end() const                        { return _end; }
   int         size_in_bytes() const              { return _end - _begin; }
@@ -97,12 +95,11 @@ class StubCodeDesc: public CHeapObj<mtCode> {
 // Provides utility functions.
 
 class StubCodeGenerator: public StackObj {
+ private:
+  bool _print_code;
+
  protected:
   MacroAssembler*  _masm;
-
-  StubCodeDesc* _first_stub;
-  StubCodeDesc* _last_stub;
-  bool _print_code;
 
  public:
   StubCodeGenerator(CodeBuffer* code, bool print_code = false);

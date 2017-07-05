@@ -25,9 +25,9 @@
 /* @test
  * @summary Test chat server chatserver test
  *
- * @library ../../../src/sample/share/nio/chatserver
+ * @library /src/sample/share/nio/chatserver
  * @build ChatTest ChatServer Client ClientReader DataReader MessageReader NameReader
- * @run main ChatTest
+ * @run testng ChatTest
  */
 
 import java.io.*;
@@ -38,10 +38,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 
+import org.testng.annotations.Test;
+
 public class ChatTest {
     public static int listeningPort = 0;
 
-    public static void main(String[] args) throws Throwable {
+    @Test
+    public static void doTest() throws Throwable {
         testStartStop();
         testPortOpen();
         testAsksForName();

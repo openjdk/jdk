@@ -51,11 +51,8 @@ void MacroAssembler::int3() {
 // movl reg, [reg + thread_ptr_offset]     Load thread
 //
 void MacroAssembler::get_thread(Register thread) {
-  // can't use ExternalAddress because it can't take NULL
-  AddressLiteral null(0, relocInfo::none);
-
   prefix(FS_segment);
-  movptr(thread, null);
+  movptr(thread, ExternalAddress(NULL));
   assert(os::win32::get_thread_ptr_offset() != 0,
          "Thread Pointer Offset has not been initialized");
   movl(thread, Address(thread, os::win32::get_thread_ptr_offset()));

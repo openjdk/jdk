@@ -1041,10 +1041,8 @@ class HandlerImpl {
   bool is_card_mark_membar(const MemBarNode *barrier);
   bool is_CAS(int opcode);
 
-  MemBarNode *leading_to_normal(MemBarNode *leading);
-  MemBarNode *normal_to_leading(const MemBarNode *barrier);
-  MemBarNode *card_mark_to_trailing(const MemBarNode *barrier);
-  MemBarNode *trailing_to_card_mark(const MemBarNode *trailing);
+  MemBarNode *leading_to_trailing(MemBarNode *leading);
+  MemBarNode *card_mark_to_leading(const MemBarNode *barrier);
   MemBarNode *trailing_to_leading(const MemBarNode *trailing);
 
   // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
@@ -1418,23 +1416,28 @@ source %{
   // leading MemBarRelease and a trailing MemBarVolatile as follows
   //
   //   MemBarRelease
-  //  {      ||      } -- optional
+  //  {    ||        } -- optional
   //  {MemBarCPUOrder}
-  //         ||     \\
-  //         ||     StoreX[mo_release]
-  //         | \     /
-  //         | MergeMem
-  //         | /
+  //       ||       \\
+  //       ||     StoreX[mo_release]
+  //       | \ Bot    / ???
+  //       | MergeMem
+  //       | /
   //   MemBarVolatile
   //
   // where
   //  || and \\ represent Ctl and Mem feeds via Proj nodes
   //  | \ and / indicate further routing of the Ctl and Mem feeds
   //
-  // this is the graph we see for non-object stores. however, for a
-  // volatile Object store (StoreN/P) we may see other nodes below the
-  // leading membar because of the need for a GC pre- or post-write
-  // barrier.
+  // Note that the memory feed from the CPUOrder membar to the
+  // MergeMem node is an AliasIdxBot slice while the feed from the
+  // StoreX is for a slice determined by the type of value being
+  // written.
+  //
+  // the diagram above shows the graph we see for non-object stores.
+  // for a volatile Object store (StoreN/P) we may see other nodes
+  // below the leading membar because of the need for a GC pre- or
+  // post-write barrier.
   //
   // with most GC configurations we with see this simple variant which
   // includes a post-write barrier card mark.
@@ -1442,7 +1445,7 @@ source %{
   //   MemBarRelease______________________________
   //         ||    \\               Ctl \        \\
   //         ||    StoreN/P[mo_release] CastP2X  StoreB/CM
-  //         | \     /                       . . .  /
+  //         | \ Bot  / oop                 . . .  /
   //         | MergeMem
   //         | /
   //         ||      /
@@ -1452,152 +1455,142 @@ source %{
   // the object address to an int used to compute the card offset) and
   // Ctl+Mem to a StoreB node (which does the actual card mark).
   //
-  // n.b. a StoreCM node will only appear in this configuration when
-  // using CMS. StoreCM differs from a normal card mark write (StoreB)
-  // because it implies a requirement to order visibility of the card
-  // mark (StoreCM) relative to the object put (StoreP/N) using a
-  // StoreStore memory barrier (arguably this ought to be represented
-  // explicitly in the ideal graph but that is not how it works). This
-  // ordering is required for both non-volatile and volatile
-  // puts. Normally that means we need to translate a StoreCM using
-  // the sequence
+  // n.b. a StoreCM node is only ever used when CMS (with or without
+  // CondCardMark) or G1 is configured. This abstract instruction
+  // differs from a normal card mark write (StoreB) because it implies
+  // a requirement to order visibility of the card mark (StoreCM)
+  // after that of the object put (StoreP/N) using a StoreStore memory
+  // barrier. Note that this is /not/ a requirement to order the
+  // instructions in the generated code (that is already guaranteed by
+  // the order of memory dependencies). Rather it is a requirement to
+  // ensure visibility order which only applies on architectures like
+  // AArch64 which do not implement TSO. This ordering is required for
+  // both non-volatile and volatile puts.
+  //
+  // That implies that we need to translate a StoreCM using the
+  // sequence
   //
   //   dmb ishst
   //   stlrb
   //
-  // However, in the case of a volatile put if we can recognise this
-  // configuration and plant an stlr for the object write then we can
-  // omit the dmb and just plant an strb since visibility of the stlr
-  // is ordered before visibility of subsequent stores. StoreCM nodes
-  // also arise when using G1 or using CMS with conditional card
-  // marking. In these cases (as we shall see) we don't need to insert
-  // the dmb when translating StoreCM because there is already an
-  // intervening StoreLoad barrier between it and the StoreP/N.
-  //
-  // It is also possible to perform the card mark conditionally on it
-  // currently being unmarked in which case the volatile put graph
-  // will look slightly different
+  // This dmb cannot be omitted even when the associated StoreX or
+  // CompareAndSwapX is implemented using stlr. However, as described
+  // below there are circumstances where a specific GC configuration
+  // requires a stronger barrier in which case it can be omitted.
+  // 
+  // With the Serial or Parallel GC using +CondCardMark the card mark
+  // is performed conditionally on it currently being unmarked in
+  // which case the volatile put graph looks slightly different
   //
   //   MemBarRelease____________________________________________
   //         ||    \\               Ctl \     Ctl \     \\  Mem \
   //         ||    StoreN/P[mo_release] CastP2X   If   LoadB     |
-  //         | \     /                              \            |
+  //         | \ Bot / oop                          \            |
   //         | MergeMem                            . . .      StoreB
   //         | /                                                /
   //         ||     /
   //   MemBarVolatile
   //
-  // It is worth noting at this stage that both the above
+  // It is worth noting at this stage that all the above
   // configurations can be uniquely identified by checking that the
   // memory flow includes the following subgraph:
   //
   //   MemBarRelease
   //  {MemBarCPUOrder}
-  //          |  \      . . .
-  //          |  StoreX[mo_release]  . . .
-  //          |   /
-  //         MergeMem
-  //          |
+  //      |  \      . . .
+  //      |  StoreX[mo_release]  . . .
+  //  Bot |   / oop
+  //     MergeMem
+  //      |
   //   MemBarVolatile
   //
-  // This is referred to as a *normal* subgraph. It can easily be
-  // detected starting from any candidate MemBarRelease,
-  // StoreX[mo_release] or MemBarVolatile.
+  // This is referred to as a *normal* volatile store subgraph. It can
+  // easily be detected starting from any candidate MemBarRelease,
+  // StoreX[mo_release] or MemBarVolatile node.
   //
-  // A simple variation on this normal case occurs for an unsafe CAS
-  // operation. The basic graph for a non-object CAS is
+  // A small variation on this normal case occurs for an unsafe CAS
+  // operation. The basic memory flow subgraph for a non-object CAS is
+  // as follows
   //
   //   MemBarRelease
   //         ||
   //   MemBarCPUOrder
-  //         ||     \\   . . .
-  //         ||     CompareAndSwapX
-  //         ||       |
-  //         ||     SCMemProj
-  //         | \     /
-  //         | MergeMem
-  //         | /
+  //          |     \\   . . .
+  //          |     CompareAndSwapX
+  //          |       |
+  //      Bot |     SCMemProj
+  //           \     / Bot
+  //           MergeMem
+  //           /
   //   MemBarCPUOrder
   //         ||
   //   MemBarAcquire
   //
   // The same basic variations on this arrangement (mutatis mutandis)
-  // occur when a card mark is introduced. i.e. we se the same basic
-  // shape but the StoreP/N is replaced with CompareAndSawpP/N and the
-  // tail of the graph is a pair comprising a MemBarCPUOrder +
-  // MemBarAcquire.
+  // occur when a card mark is introduced. i.e. the CPUOrder MemBar
+  // feeds the extra CastP2X, LoadB etc nodes but the above memory
+  // flow subgraph is still present.
+  // 
+  // This is referred to as a *normal* CAS subgraph. It can easily be
+  // detected starting from any candidate MemBarRelease,
+  // StoreX[mo_release] or MemBarAcquire node.
   //
-  // So, in the case of a CAS the normal graph has the variant form
+  // The code below uses two helper predicates, leading_to_trailing
+  // and trailing_to_leading to identify these normal graphs, one
+  // validating the layout starting from the top membar and searching
+  // down and the other validating the layout starting from the lower
+  // membar and searching up.
   //
-  //   MemBarRelease
-  //   MemBarCPUOrder
-  //          |   \      . . .
-  //          |  CompareAndSwapX  . . .
-  //          |    |
-  //          |   SCMemProj
-  //          |   /  . . .
-  //         MergeMem
-  //          |
-  //   MemBarCPUOrder
-  //   MemBarAcquire
+  // There are two special case GC configurations when the simple
+  // normal graphs above may not be generated: when using G1 (which
+  // always employs a conditional card mark); and when using CMS with
+  // conditional card marking (+CondCardMark) configured. These GCs
+  // are both concurrent rather than stop-the world GCs. So they
+  // introduce extra Ctl+Mem flow into the graph between the leading
+  // and trailing membar nodes, in particular enforcing stronger
+  // memory serialisation beween the object put and the corresponding
+  // conditional card mark. CMS employs a post-write GC barrier while
+  // G1 employs both a pre- and post-write GC barrier.
   //
-  // This graph can also easily be detected starting from any
-  // candidate MemBarRelease, CompareAndSwapX or MemBarAcquire.
+  // The post-write barrier subgraph for these configurations includes
+  // a MemBarVolatile node -- referred to as a card mark membar --
+  // which is needed to order the card write (StoreCM) operation in
+  // the barrier, the preceding StoreX (or CompareAndSwapX) and Store
+  // operations performed by GC threads i.e. a card mark membar
+  // constitutes a StoreLoad barrier hence must be translated to a dmb
+  // ish (whether or not it sits inside a volatile store sequence).
   //
-  // the code below uses two helper predicates, leading_to_normal and
-  // normal_to_leading to identify these normal graphs, one validating
-  // the layout starting from the top membar and searching down and
-  // the other validating the layout starting from the lower membar
-  // and searching up.
+  // Of course, the use of the dmb ish for the card mark membar also
+  // implies theat the StoreCM which follows can omit the dmb ishst
+  // instruction. The necessary visibility ordering will already be
+  // guaranteed by the dmb ish. In sum, the dmb ishst instruction only
+  // needs to be generated for as part of the StoreCM sequence with GC
+  // configuration +CMS -CondCardMark.
+  // 
+  // Of course all these extra barrier nodes may well be absent --
+  // they are only inserted for object puts. Their potential presence
+  // significantly complicates the task of identifying whether a
+  // MemBarRelease, StoreX[mo_release], MemBarVolatile or
+  // MemBarAcquire forms part of a volatile put or CAS when using
+  // these GC configurations (see below) and also complicates the
+  // decision as to how to translate a MemBarVolatile and StoreCM.
   //
-  // There are two special case GC configurations when a normal graph
-  // may not be generated: when using G1 (which always employs a
-  // conditional card mark); and when using CMS with conditional card
-  // marking configured. These GCs are both concurrent rather than
-  // stop-the world GCs. So they introduce extra Ctl+Mem flow into the
-  // graph between the leading and trailing membar nodes, in
-  // particular enforcing stronger memory serialisation beween the
-  // object put and the corresponding conditional card mark. CMS
-  // employs a post-write GC barrier while G1 employs both a pre- and
-  // post-write GC barrier. Of course the extra nodes may be absent --
-  // they are only inserted for object puts. This significantly
-  // complicates the task of identifying whether a MemBarRelease,
-  // StoreX[mo_release] or MemBarVolatile forms part of a volatile put
-  // when using these GC configurations (see below). It adds similar
-  // complexity to the task of identifying whether a MemBarRelease,
-  // CompareAndSwapX or MemBarAcquire forms part of a CAS.
-  //
-  // In both cases the post-write subtree includes an auxiliary
-  // MemBarVolatile (StoreLoad barrier) separating the object put and
-  // the read of the corresponding card. This poses two additional
-  // problems.
-  //
-  // Firstly, a card mark MemBarVolatile needs to be distinguished
-  // from a normal trailing MemBarVolatile. Resolving this first
-  // problem is straightforward: a card mark MemBarVolatile always
-  // projects a Mem feed to a StoreCM node and that is a unique marker
+  // So, thjis means that a card mark MemBarVolatile occurring in the
+  // post-barrier graph it needs to be distinguished from a normal
+  // trailing MemBarVolatile. Resolving this is straightforward: a
+  // card mark MemBarVolatile always projects a Mem feed to a StoreCM
+  // node and that is a unique marker
   //
   //      MemBarVolatile (card mark)
   //       C |    \     . . .
   //         |   StoreCM   . . .
   //       . . .
   //
-  // The second problem is how the code generator is to translate the
-  // card mark barrier? It always needs to be translated to a "dmb
-  // ish" instruction whether or not it occurs as part of a volatile
-  // put. A StoreLoad barrier is needed after the object put to ensure
-  // i) visibility to GC threads of the object put and ii) visibility
-  // to the mutator thread of any card clearing write by a GC
-  // thread. Clearly a normal store (str) will not guarantee this
-  // ordering but neither will a releasing store (stlr). The latter
-  // guarantees that the object put is visible but does not guarantee
-  // that writes by other threads have also been observed.
-  //
-  // So, returning to the task of translating the object put and the
-  // leading/trailing membar nodes: what do the non-normal node graph
-  // look like for these 2 special cases? and how can we determine the
-  // status of a MemBarRelease, StoreX[mo_release] or MemBarVolatile
-  // in both normal and non-normal cases?
+  // Returning to the task of translating the object put and the
+  // leading/trailing membar nodes: what do the node graphs look like
+  // for these 2 special cases? and how can we determine the status of
+  // a MemBarRelease, StoreX[mo_release] or MemBarVolatile in both
+  // normal and non-normal cases?
   //
   // A CMS GC post-barrier wraps its card write (StoreCM) inside an If
   // which selects conditonal execution based on the value loaded
@@ -1608,91 +1601,117 @@ source %{
   // which looks like this
   //
   //   MemBarRelease
-  //   MemBarCPUOrder_(leading)__________________
-  //     C |    M \       \\                   C \
-  //       |       \    StoreN/P[mo_release]  CastP2X
-  //       |    Bot \    /
-  //       |       MergeMem
-  //       |         /
-  //      MemBarVolatile (card mark)
-  //     C |  ||    M |
-  //       | LoadB    |
-  //       |   |      |
-  //       | Cmp      |\
-  //       | /        | \
-  //       If         |  \
-  //       | \        |   \
-  // IfFalse  IfTrue  |    \
-  //       \     / \  |     \
-  //        \   / StoreCM    |
-  //         \ /      |      |
-  //        Region   . . .   |
-  //          | \           /
-  //          |  . . .  \  / Bot
+  //   MemBarCPUOrder_(leading)____________________
+  //     C |  | M \       \\               M |   C \
+  //       |  |    \    StoreN/P[mo_release] |  CastP2X
+  //       |  | Bot \    / oop      \        |
+  //       |  |    MergeMem          \      / 
+  //       |  |      /                |    /
+  //     MemBarVolatile (card mark)   |   /
+  //     C |  ||    M |               |  /
+  //       | LoadB    | Bot       oop | / Bot
+  //       |   |      |              / /
+  //       | Cmp      |\            / /
+  //       | /        | \          / /
+  //       If         |  \        / /
+  //       | \        |   \      / /
+  // IfFalse  IfTrue  |    \    / /
+  //       \     / \  |    |   / /
+  //        \   / StoreCM  |  / /
+  //         \ /      \   /  / /
+  //        Region     Phi  / /
+  //          | \   Raw |  / /
+  //          |  . . .  | / /
   //          |       MergeMem
-  //          |          |
+  //          |           |
   //        MemBarVolatile (trailing)
   //
-  // The first MergeMem merges the AliasIdxBot Mem slice from the
-  // leading membar and the oopptr Mem slice from the Store into the
-  // card mark membar. The trailing MergeMem merges the AliasIdxBot
-  // Mem slice from the card mark membar and the AliasIdxRaw slice
-  // from the StoreCM into the trailing membar (n.b. the latter
-  // proceeds via a Phi associated with the If region).
+  // Notice that there are two MergeMem nodes below the leading
+  // membar. The first MergeMem merges the AliasIdxBot Mem slice from
+  // the leading membar and the oopptr Mem slice from the Store into
+  // the card mark membar. The trailing MergeMem merges the
+  // AliasIdxBot Mem slice from the leading membar, the AliasIdxRaw
+  // slice from the StoreCM and an oop slice from the StoreN/P node
+  // into the trailing membar (n.b. the raw slice proceeds via a Phi
+  // associated with the If region).
   //
-  // The graph for a CAS varies slightly, the obvious difference being
-  // that the StoreN/P node is replaced by a CompareAndSwapP/N node
-  // and the trailing MemBarVolatile by a MemBarCPUOrder +
-  // MemBarAcquire pair. The other important difference is that the
-  // CompareAndSwap node's SCMemProj is not merged into the card mark
-  // membar - it still feeds the trailing MergeMem. This also means
-  // that the card mark membar receives its Mem feed directly from the
-  // leading membar rather than via a MergeMem.
+  // So, in the case of CMS + CondCardMark the volatile object store
+  // graph still includes a normal volatile store subgraph from the
+  // leading membar to the trailing membar. However, it also contains
+  // the same shape memory flow to the card mark membar. The two flows
+  // can be distinguished by testing whether or not the downstream
+  // membar is a card mark membar.
+  //
+  // The graph for a CAS also varies with CMS + CondCardMark, in
+  // particular employing a control feed from the CompareAndSwapX node
+  // through a CmpI and If to the card mark membar and StoreCM which
+  // updates the associated card. This avoids executing the card mark
+  // if the CAS fails. However, it can be seen from the diagram below
+  // that the presence of the barrier does not alter the normal CAS
+  // memory subgraph where the leading membar feeds a CompareAndSwapX,
+  // an SCMemProj, a MergeMem then a final trailing MemBarCPUOrder and
+  // MemBarAcquire pair.
   //
   //   MemBarRelease
-  //   MemBarCPUOrder__(leading)_________________________
-  //       ||                       \\                 C \
-  //   MemBarVolatile (card mark)  CompareAndSwapN/P  CastP2X
-  //     C |  ||    M |              |
-  //       | LoadB    |       ______/|
-  //       |   |      |      /       |
-  //       | Cmp      |     /      SCMemProj
-  //       | /        |    /         |
-  //       If         |   /         /
-  //       | \        |  /         /
-  // IfFalse  IfTrue  | /         /
-  //       \     / \  |/ prec    /
-  //        \   / StoreCM       /
-  //         \ /      |        /
-  //        Region   . . .    /
-  //          | \            /
-  //          |  . . .  \   / Bot
-  //          |       MergeMem
-  //          |          |
-  //        MemBarCPUOrder
-  //        MemBarAcquire (trailing)
+  //   MemBarCPUOrder__(leading)_______________________
+  //   C /  M |                        \\            C \
+  //  . . .   | Bot                CompareAndSwapN/P   CastP2X
+  //          |                  C /  M |
+  //          |                 CmpI    |
+  //          |                  /      |
+  //          |               . . .     |
+  //          |              IfTrue     |
+  //          |              /          |
+  //       MemBarVolatile (card mark)   |
+  //        C |  ||    M |              |
+  //          | LoadB    | Bot   ______/|
+  //          |   |      |      /       |
+  //          | Cmp      |     /      SCMemProj
+  //          | /        |    /         |
+  //          If         |   /         /
+  //          | \        |  /         / Bot
+  //     IfFalse  IfTrue | /         /
+  //          |   / \   / / prec    /
+  //   . . .  |  /  StoreCM        /
+  //        \ | /      | raw      /
+  //        Region    . . .      /
+  //           | \              /
+  //           |   . . .   \    / Bot
+  //           |        MergeMem
+  //           |          /
+  //         MemBarCPUOrder
+  //         MemBarAcquire (trailing)
   //
   // This has a slightly different memory subgraph to the one seen
-  // previously but the core of it is the same as for the CAS normal
-  // sungraph
+  // previously but the core of it has a similar memory flow to the
+  // CAS normal subgraph:
   //
   //   MemBarRelease
   //   MemBarCPUOrder____
-  //      ||             \      . . .
-  //   MemBarVolatile  CompareAndSwapX  . . .
-  //      |  \            |
-  //        . . .   SCMemProj
-  //          |     /  . . .
-  //         MergeMem
-  //          |
+  //         |          \      . . .
+  //         |       CompareAndSwapX  . . .
+  //         |       C /  M |
+  //         |      CmpI    |
+  //         |       /      |
+  //         |      . .    /
+  //     Bot |   IfTrue   /
+  //         |   /       /
+  //    MemBarVolatile  /
+  //         | ...     /
+  //      StoreCM ... /
+  //         |       / 
+  //       . . .  SCMemProj
+  //      Raw \    / Bot
+  //        MergeMem
+  //           |
   //   MemBarCPUOrder
   //   MemBarAcquire
   //
-  //
-  // G1 is quite a lot more complicated. The nodes inserted on behalf
-  // of G1 may comprise: a pre-write graph which adds the old value to
-  // the SATB queue; the releasing store itself; and, finally, a
-  // post-write graph which performs a card mark.
+  // The G1 graph for a volatile object put is a lot more complicated.
+  // Nodes inserted on behalf of G1 may comprise: a pre-write graph
+  // which adds the old value to the SATB queue; the releasing store
+  // itself; and, finally, a post-write graph which performs a card
+  // mark.
   //
   // The pre-write graph may be omitted, but only when the put is
   // writing to a newly allocated (young gen) object and then only if
@@ -1730,25 +1749,60 @@ source %{
   //       | CastP2X | StoreN/P[mo_release] |
   //       |         |         |            |
   //     C |       M |       M |          M |
-  //        \        |         |           /
+  //        \        | Raw     | oop       / Bot
   //                  . . .
   //          (post write subtree elided)
   //                    . . .
   //             C \         M /
   //         MemBarVolatile (trailing)
   //
+  // Note that the three memory feeds into the post-write tree are an
+  // AliasRawIdx slice associated with the writes in the pre-write
+  // tree, an oop type slice from the StoreX specific to the type of
+  // the volatile field and the AliasBotIdx slice emanating from the
+  // leading membar.
+  //
   // n.b. the LoadB in this subgraph is not the card read -- it's a
   // read of the SATB queue active flag.
   //
-  // Once again the CAS graph is a minor variant on the above with the
-  // expected substitutions of CompareAndSawpX for StoreN/P and
-  // MemBarCPUOrder + MemBarAcquire for trailing MemBarVolatile.
+  // The CAS graph is once again a variant of the above with a
+  // CompareAndSwapX node and SCMemProj in place of the StoreX.  The
+  // value from the CompareAndSwapX node is fed into the post-write
+  // graph aling with the AliasIdxRaw feed from the pre-barrier and
+  // the AliasIdxBot feeds from the leading membar and the ScMemProj.
+  //
+  //  MemBarRelease (leading)____________
+  //     C |  ||  M \   M \    M \  M \ . . .
+  //       | LoadB   \  LoadL  LoadN   \
+  //       | /        \                 \
+  //       If         |\                 \
+  //       | \        | \                 \
+  //  IfFalse  IfTrue |  \                 \
+  //       |     |    |   \                 \
+  //       |     If   |    \                 |
+  //       |     |          \                |
+  //       |                 \               |
+  //       |    . . .         \              |
+  //       | /       | /       \             |
+  //      Region  Phi[M]        \            |
+  //       | \       |           \           |
+  //       |  \_____ |            |          |
+  //     C | C \     |            |          |
+  //       | CastP2X |     CompareAndSwapX   |
+  //       |         |   res |     |         |
+  //     C |       M |       |  SCMemProj  M |
+  //        \        | Raw   |     | Bot    / Bot
+  //                  . . .
+  //          (post write subtree elided)
+  //                    . . .
+  //             C \         M /
+  //         MemBarVolatile (trailing)
   //
   // The G1 post-write subtree is also optional, this time when the
   // new value being written is either null or can be identified as a
   // newly allocated (young gen) object with no intervening control
   // flow. The latter cannot happen but the former may, in which case
-  // the card mark membar is omitted and the memory feeds form the
+  // the card mark membar is omitted and the memory feeds from the
   // leading membar and the SToreN/P are merged direct into the
   // trailing membar as per the normal subgraph. So, the only special
   // case which arises is when the post-write subgraph is generated.
@@ -1770,94 +1824,106 @@ source %{
   //
   //                (pre-write subtree elided)
   //        . . .                  . . .    . . .  . . .
-  //        C |                    M |     M |    M |
-  //       Region                  Phi[M] StoreN    |
-  //          |                     / \      |      |
-  //         / \_______            /   \     |      |
-  //      C / C \      . . .            \    |      |
-  //       If   CastP2X . . .            |   |      |
-  //       / \                           |   |      |
-  //      /   \                          |   |      |
-  // IfFalse IfTrue                      |   |      |
-  //   |       |                         |   |     /|
-  //   |       If                        |   |    / |
-  //   |      / \                        |   |   /  |
-  //   |     /   \                        \  |  /   |
-  //   | IfFalse IfTrue                   MergeMem  |
-  //   |  . . .    / \                       /      |
-  //   |          /   \                     /       |
-  //   |     IfFalse IfTrue                /        |
-  //   |      . . .    |                  /         |
-  //   |               If                /          |
-  //   |               / \              /           |
-  //   |              /   \            /            |
-  //   |         IfFalse IfTrue       /             |
-  //   |           . . .   |         /              |
-  //   |                    \       /               |
-  //   |                     \     /                |
-  //   |             MemBarVolatile__(card mark)    |
-  //   |                ||   C |  M \  M \          |
-  //   |               LoadB   If    |    |         |
-  //   |                      / \    |    |         |
-  //   |                     . . .   |    |         |
-  //   |                          \  |    |        /
-  //   |                        StoreCM   |       /
-  //   |                          . . .   |      /
-  //   |                        _________/      /
-  //   |                       /  _____________/
-  //   |   . . .       . . .  |  /            /
-  //   |    |                 | /   _________/
-  //   |    |               Phi[M] /        /
-  //   |    |                 |   /        /
-  //   |    |                 |  /        /
-  //   |  Region  . . .     Phi[M]  _____/
-  //   |    /                 |    /
-  //   |                      |   /
-  //   | . . .   . . .        |  /
-  //   | /                    | /
-  // Region           |  |  Phi[M]
-  //   |              |  |  / Bot
-  //    \            MergeMem
-  //     \            /
-  //     MemBarVolatile
+  //        C |               M |    M |    M |
+  //       Region            Phi[M] StoreN    |
+  //          |            Raw  |  oop |  Bot |
+  //         / \_______         |\     |\     |\
+  //      C / C \      . . .    | \    | \    | \
+  //       If   CastP2X . . .   |  \   |  \   |  \
+  //       / \                  |   \  |   \  |   \
+  //      /   \                 |    \ |    \ |    \
+  // IfFalse IfTrue             |      |      |     \
+  //   |       |                 \     |     /       |
+  //   |       If                 \    | \  /   \    |
+  //   |      / \                  \   |   /     \   |
+  //   |     /   \                  \  |  / \     |  |
+  //   | IfFalse IfTrue           MergeMem   \    |  |
+  //   |  . . .    / \                 |      \   |  |
+  //   |          /   \                |       |  |  |
+  //   |     IfFalse IfTrue            |       |  |  |
+  //   |      . . .    |               |       |  |  |
+  //   |               If             /        |  |  |
+  //   |               / \           /         |  |  |
+  //   |              /   \         /          |  |  |
+  //   |         IfFalse IfTrue    /           |  |  |
+  //   |           . . .   |      /            |  |  |
+  //   |                    \    /             |  |  |
+  //   |                     \  /              |  |  |
+  //   |         MemBarVolatile__(card mark  ) |  |  |
+  //   |              ||   C |     \           |  |  |
+  //   |             LoadB   If     |         /   |  |
+  //   |                    / \ Raw |        /   /  /
+  //   |                   . . .    |       /   /  /
+  //   |                        \   |      /   /  /
+  //   |                        StoreCM   /   /  /
+  //   |                           |     /   /  /
+  //   |                            . . .   /  /
+  //   |                                   /  /
+  //   |   . . .                          /  /
+  //   |    |             | /            /  /
+  //   |    |           Phi[M] /        /  /
+  //   |    |             |   /        /  /
+  //   |    |             |  /        /  /
+  //   |  Region  . . .  Phi[M]      /  /
+  //   |    |             |         /  /
+  //    \   |             |        /  /
+  //     \  | . . .       |       /  /
+  //      \ |             |      /  /
+  //      Region         Phi[M] /  /
+  //        |               \  /  /
+  //         \             MergeMem
+  //          \            /
+  //          MemBarVolatile
   //
-  // As with CMS the initial MergeMem merges the AliasIdxBot Mem slice
-  // from the leading membar and the oopptr Mem slice from the Store
-  // into the card mark membar i.e. the memory flow to the card mark
-  // membar still looks like a normal graph.
+  // As with CMS + CondCardMark the first MergeMem merges the
+  // AliasIdxBot Mem slice from the leading membar and the oopptr Mem
+  // slice from the Store into the card mark membar. However, in this
+  // case it may also merge an AliasRawIdx mem slice from the pre
+  // barrier write.
   //
-  // The trailing MergeMem merges an AliasIdxBot Mem slice with other
-  // Mem slices (from the StoreCM and other card mark queue stores).
-  // However in this case the AliasIdxBot Mem slice does not come
-  // direct from the card mark membar. It is merged through a series
-  // of Phi nodes. These are needed to merge the AliasIdxBot Mem flow
-  // from the leading membar with the Mem feed from the card mark
-  // membar. Each Phi corresponds to one of the Ifs which may skip
-  // around the card mark membar. So when the If implementing the NULL
-  // value check has been elided the total number of Phis is 2
-  // otherwise it is 3.
+  // The trailing MergeMem merges an AliasIdxBot Mem slice from the
+  // leading membar with an oop slice from the StoreN and an
+  // AliasRawIdx slice from the post barrier writes. In this case the
+  // AliasIdxRaw Mem slice is merged through a series of Phi nodes
+  // which combine feeds from the If regions in the post barrier
+  // subgraph.
   //
-  // The CAS graph when using G1GC also includes a pre-write subgraph
-  // and an optional post-write subgraph. Teh sam evarioations are
-  // introduced as for CMS with conditional card marking i.e. the
-  // StoreP/N is swapped for a CompareAndSwapP/N, the tariling
-  // MemBarVolatile for a MemBarCPUOrder + MemBarAcquire pair and the
-  // Mem feed from the CompareAndSwapP/N includes a precedence
-  // dependency feed to the StoreCM and a feed via an SCMemProj to the
-  // trailing membar. So, as before the configuration includes the
-  // normal CAS graph as a subgraph of the memory flow.
+  // So, for G1 the same characteristic subgraph arises as for CMS +
+  // CondCardMark. There is a normal subgraph feeding the card mark
+  // membar and a normal subgraph feeding the trailing membar.
   //
-  // So, the upshot is that in all cases the volatile put graph will
-  // include a *normal* memory subgraph betwen the leading membar and
-  // its child membar, either a volatile put graph (including a
-  // releasing StoreX) or a CAS graph (including a CompareAndSwapX).
-  // When that child is not a card mark membar then it marks the end
-  // of the volatile put or CAS subgraph. If the child is a card mark
-  // membar then the normal subgraph will form part of a volatile put
-  // subgraph if and only if the child feeds an AliasIdxBot Mem feed
-  // to a trailing barrier via a MergeMem. That feed is either direct
-  // (for CMS) or via 2 or 3 Phi nodes merging the leading barrier
-  // memory flow (for G1).
+  // The CAS graph when using G1GC also includes an optional
+  // post-write subgraph. It is very similar to the above graph except
+  // for a few details.
+  // 
+  // - The control flow is gated by an additonal If which tests the
+  // result from the CompareAndSwapX node
+  // 
+  //  - The MergeMem which feeds the card mark membar only merges the
+  // AliasIdxBot slice from the leading membar and the AliasIdxRaw
+  // slice from the pre-barrier. It does not merge the SCMemProj
+  // AliasIdxBot slice. So, this subgraph does not look like the
+  // normal CAS subgraph.
+  //
+  // - The MergeMem which feeds the trailing membar merges the
+  // AliasIdxBot slice from the leading membar, the AliasIdxRaw slice
+  // from the post-barrier and the SCMemProj AliasIdxBot slice i.e. it
+  // has two AliasIdxBot input slices. However, this subgraph does
+  // still look like the normal CAS subgraph.
+  //
+  // So, the upshot is:
+  //
+  // In all cases a volatile put graph will include a *normal*
+  // volatile store subgraph betwen the leading membar and the
+  // trailing membar. It may also include a normal volatile store
+  // subgraph betwen the leading membar and the card mark membar.
+  //
+  // In all cases a CAS graph will contain a unique normal CAS graph
+  // feeding the trailing membar.
+  //
+  // In all cases where there is a card mark membar (either as part of
+  // a volatile object put or CAS) it will be fed by a MergeMem whose
+  // AliasIdxBot slice feed will be a leading membar.
   //
   // The predicates controlling generation of instructions for store
   // and barrier nodes employ a few simple helper functions (described
@@ -1878,24 +1944,24 @@ source %{
 	    opcode == Op_CompareAndSwapP);
   }
 
-  // leading_to_normal
+  // leading_to_trailing
   //
   //graph traversal helper which detects the normal case Mem feed from
   // a release membar (or, optionally, its cpuorder child) to a
   // dependent volatile membar i.e. it ensures that one or other of
   // the following Mem flow subgraph is present.
   //
-  //   MemBarRelease
-  //   MemBarCPUOrder {leading}
-  //          |  \      . . .
-  //          |  StoreN/P[mo_release]  . . .
-  //          |   /
-  //         MergeMem
-  //          |
-  //   MemBarVolatile {trailing or card mark}
+  //   MemBarRelease {leading}
+  //   {MemBarCPUOrder} {optional}
+  //     Bot |  \      . . .
+  //         |  StoreN/P[mo_release]  . . .
+  //         |   /
+  //        MergeMem
+  //         |
+  //   MemBarVolatile {not card mark}
   //
-  //   MemBarRelease
-  //   MemBarCPUOrder {leading}
+  //   MemBarRelease {leading}
+  //   {MemBarCPUOrder} {optional}
   //      |       \      . . .
   //      |     CompareAndSwapX  . . .
   //               |
@@ -1905,6 +1971,23 @@ source %{
   //      |       /
   //    MemBarCPUOrder
   //    MemBarAcquire {trailing}
+  //
+  // the predicate needs to be capable of distinguishing the following
+  // volatile put graph which may arises when a GC post barrier
+  // inserts a card mark membar
+  //
+  //   MemBarRelease {leading}
+  //   {MemBarCPUOrder}__
+  //     Bot |   \       \
+  //         |   StoreN/P \
+  //         |    / \     |
+  //        MergeMem \    |
+  //         |        \   |
+  //   MemBarVolatile  \  |
+  //    {card mark}     \ |
+  //                  MergeMem
+  //                      |
+  // {not card mark} MemBarVolatile
   //
   // if the correct configuration is present returns the trailing
   // membar otherwise NULL.
@@ -1916,7 +1999,7 @@ source %{
   // the returned value may be a card mark or trailing membar
   //
 
-  MemBarNode *leading_to_normal(MemBarNode *leading)
+  MemBarNode *leading_to_trailing(MemBarNode *leading)
   {
     assert((leading->Opcode() == Op_MemBarRelease ||
 	    leading->Opcode() == Op_MemBarCPUOrder),
@@ -1933,15 +2016,21 @@ source %{
     StoreNode * st = NULL;
     LoadStoreNode *cas = NULL;
     MergeMemNode *mm = NULL;
+    MergeMemNode *mm2 = NULL;
 
     for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
       x = mem->fast_out(i);
       if (x->is_MergeMem()) {
 	if (mm != NULL) {
-	  return NULL;
+	  if (mm2 != NULL) {
+	  // should not see more than 2 merge mems
+	    return NULL;
+	  } else {
+	    mm2 = x->as_MergeMem();
+	  }
+	} else {
+	  mm = x->as_MergeMem();
 	}
-	// two merge mems is one too many
-	mm = x->as_MergeMem();
       } else if (x->is_Store() && x->as_Store()->is_release() && x->Opcode() != Op_StoreCM) {
 	// two releasing stores/CAS nodes is one too many
 	if (st != NULL || cas != NULL) {
@@ -1961,13 +2050,13 @@ source %{
       return NULL;
     }
 
-    // must have a merge if we also have st
+    // must have at least one merge if we also have st
     if (st && !mm) {
       return NULL;
     }
 
-    Node *y = NULL;
     if (cas) {
+      Node *y = NULL;
       // look for an SCMemProj
       for (DUIterator_Fast imax, i = cas->fast_outs(imax); i < imax; i++) {
 	x = cas->fast_out(i);
@@ -1987,10 +2076,29 @@ source %{
 	  break;
 	}
       }
-      if (mm == NULL)
+      if (mm == NULL) {
 	return NULL;
+      }
+      MemBarNode *mbar = NULL;
+      // ensure the merge feeds a trailing membar cpuorder + acquire pair
+      for (DUIterator_Fast imax, i = mm->fast_outs(imax); i < imax; i++) {
+	x = mm->fast_out(i);
+	if (x->is_MemBar()) {
+	  int opcode = x->Opcode();
+	  if (opcode == Op_MemBarCPUOrder) {
+	    MemBarNode *z =  x->as_MemBar();
+	    z = child_membar(z);
+	    if (z != NULL && z->Opcode() == Op_MemBarAcquire) {
+	      mbar = z;
+	    }
+	  }
+	  break;
+	}
+      }
+      return mbar;
     } else {
-      // ensure the store feeds the existing mergemem;
+      Node *y = NULL;
+      // ensure the store feeds the first mergemem;
       for (DUIterator_Fast imax, i = st->fast_outs(imax); i < imax; i++) {
 	if (st->fast_out(i) == mm) {
 	  y = st;
@@ -2000,55 +2108,89 @@ source %{
       if (y == NULL) {
 	return NULL;
       }
-    }
-
-    MemBarNode *mbar = NULL;
-    // ensure the merge feeds to the expected type of membar
-    for (DUIterator_Fast imax, i = mm->fast_outs(imax); i < imax; i++) {
-      x = mm->fast_out(i);
-      if (x->is_MemBar()) {
-	int opcode = x->Opcode();
-	if (opcode == Op_MemBarVolatile && st) {
-	  mbar = x->as_MemBar();
-	} else if (cas && opcode == Op_MemBarCPUOrder) {
-	  MemBarNode *y =  x->as_MemBar();
-	  y = child_membar(y);
-	  if (y != NULL && y->Opcode() == Op_MemBarAcquire) {
-	    mbar = y;
+      if (mm2 != NULL) {
+	// ensure the store feeds the second mergemem;
+	y = NULL;
+	for (DUIterator_Fast imax, i = st->fast_outs(imax); i < imax; i++) {
+	  if (st->fast_out(i) == mm2) {
+	    y = st;
 	  }
 	}
-	break;
+	if (y == NULL) {
+	  return NULL;
+	}
+      }
+
+      MemBarNode *mbar = NULL;
+      // ensure the first mergemem feeds a volatile membar
+      for (DUIterator_Fast imax, i = mm->fast_outs(imax); i < imax; i++) {
+	x = mm->fast_out(i);
+	if (x->is_MemBar()) {
+	  int opcode = x->Opcode();
+	  if (opcode == Op_MemBarVolatile) {
+	    mbar = x->as_MemBar();
+	  }
+	  break;
+	}
+      }
+      if (mm2 == NULL) {
+	// this is our only option for a trailing membar
+	return mbar;
+      }
+      // ensure the second mergemem feeds a volatile membar
+      MemBarNode *mbar2 = NULL;
+      for (DUIterator_Fast imax, i = mm2->fast_outs(imax); i < imax; i++) {
+	x = mm2->fast_out(i);
+	if (x->is_MemBar()) {
+	  int opcode = x->Opcode();
+	  if (opcode == Op_MemBarVolatile) {
+	    mbar2 = x->as_MemBar();
+	  }
+	  break;
+	}
+      }
+      // if we have two merge mems we must have two volatile membars
+      if (mbar == NULL || mbar2 == NULL) {
+	return NULL;
+      }
+      // return the trailing membar
+      if (is_card_mark_membar(mbar2)) {
+	return mbar;
+      } else {
+	if (is_card_mark_membar(mbar)) {
+	  return mbar2;
+	} else {
+	  return NULL;
+	}
       }
     }
-
-    return mbar;
   }
 
-  // normal_to_leading
+  // trailing_to_leading
   //
   // graph traversal helper which detects the normal case Mem feed
-  // from either a card mark or a trailing membar to a preceding
-  // release membar (optionally its cpuorder child) i.e. it ensures
-  // that one or other of the following Mem flow subgraphs is present.
+  // from a trailing membar to a preceding release membar (optionally
+  // its cpuorder child) i.e. it ensures that one or other of the
+  // following Mem flow subgraphs is present.
   //
-  //   MemBarRelease
-  //   MemBarCPUOrder {leading}
-  //          |  \      . . .
-  //          |  StoreN/P[mo_release]  . . .
-  //          |   /
-  //         MergeMem
-  //          |
-  //   MemBarVolatile {card mark or trailing}
+  //   MemBarRelease {leading}
+  //   MemBarCPUOrder {optional}
+  //    | Bot |  \      . . .
+  //    |     |  StoreN/P[mo_release]  . . .
+  //    |     |   /
+  //    |    MergeMem
+  //    |     |
+  //   MemBarVolatile {not card mark}
   //
-  //   MemBarRelease
-  //   MemBarCPUOrder {leading}
+  //   MemBarRelease {leading}
+  //   MemBarCPUOrder {optional}
   //      |       \      . . .
   //      |     CompareAndSwapX  . . .
   //               |
   //     . . .    SCMemProj
   //           \   |
   //      |    MergeMem
-  //      |        /
+  //      |       |
   //    MemBarCPUOrder
   //    MemBarAcquire {trailing}
   //
@@ -2058,15 +2200,20 @@ source %{
   // if the configuration is present returns the cpuorder member for
   // preference or when absent the release membar otherwise NULL.
   //
-  // n.b. the input membar is expected to be a MemBarVolatile but
-  // need not be a card mark membar.
+  // n.b. the input membar is expected to be a MemBarVolatile or
+  // MemBarAcquire. if it is a MemBarVolatile it must *not* be a card
+  // mark membar.
 
-  MemBarNode *normal_to_leading(const MemBarNode *barrier)
+  MemBarNode *trailing_to_leading(const MemBarNode *barrier)
   {
     // input must be a volatile membar
     assert((barrier->Opcode() == Op_MemBarVolatile ||
 	    barrier->Opcode() == Op_MemBarAcquire),
 	   "expecting a volatile or an acquire membar");
+
+    assert((barrier->Opcode() != Op_MemBarVolatile) ||
+	   !is_card_mark_membar(barrier),
+	   "not expecting a card mark membar");
     Node *x;
     bool is_cas = barrier->Opcode() == Op_MemBarAcquire;
 
@@ -2179,169 +2326,35 @@ source %{
     return NULL;
   }
 
-  // card_mark_to_trailing
+  // card_mark_to_leading
   //
-  // graph traversal helper which detects extra, non-normal Mem feed
-  // from a card mark volatile membar to a trailing membar i.e. it
-  // ensures that one of the following three GC post-write Mem flow
-  // subgraphs is present.
+  // graph traversal helper which traverses from a card mark volatile
+  // membar to a leading membar i.e. it ensures that the following Mem
+  // flow subgraph is present.
   //
-  // 1)
-  //     . . .
-  //       |
-  //   MemBarVolatile (card mark)
-  //      |          |
-  //      |        StoreCM
-  //      |          |
-  //      |        . . .
-  //  Bot |  /
-  //   MergeMem
-  //      |
-  //      |
-  //    MemBarVolatile {trailing}
-  //
-  // 2)
-  //   MemBarRelease/CPUOrder (leading)
-  //    |
-  //    |
-  //    |\       . . .
-  //    | \        |
-  //    |  \  MemBarVolatile (card mark)
-  //    |   \   |     |
-  //     \   \  |   StoreCM    . . .
-  //      \   \ |
-  //       \  Phi
-  //        \ /
-  //        Phi  . . .
+  //    MemBarRelease {leading}
+  //   {MemBarCPUOrder} {optional}
+  //         |   . . .
   //     Bot |   /
-  //       MergeMem
+  //      MergeMem
   //         |
-  //    MemBarVolatile {trailing}
+  //     MemBarVolatile (card mark)
+  //        |     \
+  //      . . .   StoreCM
   //
+  // if the configuration is present returns the cpuorder member for
+  // preference or when absent the release membar otherwise NULL.
   //
-  // 3)
-  //   MemBarRelease/CPUOrder (leading)
-  //    |
-  //    |\
-  //    | \
-  //    |  \      . . .
-  //    |   \       |
-  //    |\   \  MemBarVolatile (card mark)
-  //    | \   \   |     |
-  //    |  \   \  |   StoreCM    . . .
-  //    |   \   \ |
-  //     \   \  Phi
-  //      \   \ /
-  //       \  Phi
-  //        \ /
-  //        Phi  . . .
-  //     Bot |   /
-  //       MergeMem
-  //         |
-  //         |
-  //    MemBarVolatile {trailing}
-  //
-  // configuration 1 is only valid if UseConcMarkSweepGC &&
-  // UseCondCardMark
-  //
-  // configurations 2 and 3 are only valid if UseG1GC.
-  //
-  // if a valid configuration is present returns the trailing membar
-  // otherwise NULL.
-  //
-  // n.b. the supplied membar is expected to be a card mark
-  // MemBarVolatile i.e. the caller must ensure the input node has the
-  // correct operand and feeds Mem to a StoreCM node
+  // n.b. the input membar is expected to be a MemBarVolatile amd must
+  // be a card mark membar.
 
-  MemBarNode *card_mark_to_trailing(const MemBarNode *barrier)
+  MemBarNode *card_mark_to_leading(const MemBarNode *barrier)
   {
     // input must be a card mark volatile membar
     assert(is_card_mark_membar(barrier), "expecting a card mark membar");
 
-    Node *feed = barrier->proj_out(TypeFunc::Memory);
-    Node *x;
-    MergeMemNode *mm = NULL;
-
-    const int MAX_PHIS = 3;	// max phis we will search through
-    int phicount = 0; 		// current search count
-
-    bool retry_feed = true;
-    while (retry_feed) {
-      // see if we have a direct MergeMem feed
-      for (DUIterator_Fast imax, i = feed->fast_outs(imax); i < imax; i++) {
-	x = feed->fast_out(i);
-	// the correct Phi will be merging a Bot memory slice
-	if (x->is_MergeMem()) {
-	  mm = x->as_MergeMem();
-	  break;
-	}
-      }
-      if (mm) {
-	retry_feed = false;
-      } else if (UseG1GC & phicount++ < MAX_PHIS) {
-	// the barrier may feed indirectly via one or two Phi nodes
-	PhiNode *phi = NULL;
-	for (DUIterator_Fast imax, i = feed->fast_outs(imax); i < imax; i++) {
-	  x = feed->fast_out(i);
-	  // the correct Phi will be merging a Bot memory slice
-	  if (x->is_Phi() && x->adr_type() == TypePtr::BOTTOM) {
-	    phi = x->as_Phi();
-	    break;
-	  }
-	}
-	if (!phi) {
-	  return NULL;
-	}
-	// look for another merge below this phi
-	feed = phi;
-      } else {
-	// couldn't find a merge
-	return NULL;
-      }
-    }
-
-    // sanity check this feed turns up as the expected slice
-    assert(mm->as_MergeMem()->in(Compile::AliasIdxBot) == feed, "expecting membar to feed AliasIdxBot slice to Merge");
-
-    MemBarNode *trailing = NULL;
-    // be sure we have a trailing membar the merge
-    for (DUIterator_Fast imax, i = mm->fast_outs(imax); i < imax; i++) {
-      x = mm->fast_out(i);
-      if (x->is_MemBar() && x->Opcode() == Op_MemBarVolatile) {
-	trailing = x->as_MemBar();
-	break;
-      }
-    }
-
-    return trailing;
-  }
-
-  // trailing_to_card_mark
-  //
-  // graph traversal helper which detects extra, non-normal Mem feed
-  // from a trailing volatile membar to a preceding card mark volatile
-  // membar i.e. it identifies whether one of the three possible extra
-  // GC post-write Mem flow subgraphs is present
-  //
-  // this predicate checks for the same flow as the previous predicate
-  // but starting from the bottom rather than the top.
-  //
-  // if the configuration is present returns the card mark membar
-  // otherwise NULL
-  //
-  // n.b. the supplied membar is expected to be a trailing
-  // MemBarVolatile i.e. the caller must ensure the input node has the
-  // correct opcode
-
-  MemBarNode *trailing_to_card_mark(const MemBarNode *trailing)
-  {
-    assert(trailing->Opcode() == Op_MemBarVolatile,
-	   "expecting a volatile membar");
-    assert(!is_card_mark_membar(trailing),
-	   "not expecting a card mark membar");
-
     // the Mem feed to the membar should be a merge
-    Node *x = trailing->in(TypeFunc::Memory);
+    Node *x = barrier->in(TypeFunc::Memory);
     if (!x->is_MergeMem()) {
       return NULL;
     }
@@ -2349,117 +2362,19 @@ source %{
     MergeMemNode *mm = x->as_MergeMem();
 
     x = mm->in(Compile::AliasIdxBot);
-    // with G1 we may possibly see a Phi or two before we see a Memory
-    // Proj from the card mark membar
 
-    const int MAX_PHIS = 3;	// max phis we will search through
-    int phicount = 0; 		// current search count
-
-    bool retry_feed = !x->is_Proj();
-
-    while (retry_feed) {
-      if (UseG1GC && x->is_Phi() && phicount++ < MAX_PHIS) {
-	PhiNode *phi = x->as_Phi();
-	ProjNode *proj = NULL;
-	PhiNode *nextphi = NULL;
-	bool found_leading = false;
-	for (uint i = 1; i < phi->req(); i++) {
-	  x = phi->in(i);
-	  if (x->is_Phi()) {
-	    nextphi = x->as_Phi();
-	  } else if (x->is_Proj()) {
-	    int opcode = x->in(0)->Opcode();
-	    if (opcode == Op_MemBarVolatile) {
-	      proj = x->as_Proj();
-	    } else if (opcode == Op_MemBarRelease ||
-		       opcode == Op_MemBarCPUOrder) {
-	      // probably a leading membar
-	      found_leading = true;
-	    }
-	  }
-	}
-	// if we found a correct looking proj then retry from there
-	// otherwise we must see a leading and a phi or this the
-	// wrong config
-	if (proj != NULL) {
-	  x = proj;
-	  retry_feed = false;
-	} else if (found_leading && nextphi != NULL) {
-	  // retry from this phi to check phi2
-	  x = nextphi;
-	} else {
-	  // not what we were looking for
-	  return NULL;
-	}
-      } else {
-	return NULL;
-      }
-    }
-    // the proj has to come from the card mark membar
-    x = x->in(0);
     if (!x->is_MemBar()) {
       return NULL;
     }
 
-    MemBarNode *card_mark_membar = x->as_MemBar();
+    MemBarNode *leading = x->as_MemBar();
 
-    if (!is_card_mark_membar(card_mark_membar)) {
-      return NULL;
-    }
-
-    return card_mark_membar;
-  }
-
-  // trailing_to_leading
-  //
-  // graph traversal helper which checks the Mem flow up the graph
-  // from a (non-card mark) trailing membar attempting to locate and
-  // return an associated leading membar. it first looks for a
-  // subgraph in the normal configuration (relying on helper
-  // normal_to_leading). failing that it then looks for one of the
-  // possible post-write card mark subgraphs linking the trailing node
-  // to a the card mark membar (relying on helper
-  // trailing_to_card_mark), and then checks that the card mark membar
-  // is fed by a leading membar (once again relying on auxiliary
-  // predicate normal_to_leading).
-  //
-  // if the configuration is valid returns the cpuorder member for
-  // preference or when absent the release membar otherwise NULL.
-  //
-  // n.b. the input membar is expected to be either a volatile or
-  // acquire membar but in the former case must *not* be a card mark
-  // membar.
-
-  MemBarNode *trailing_to_leading(const MemBarNode *trailing)
-  {
-    assert((trailing->Opcode() == Op_MemBarAcquire ||
-	    trailing->Opcode() == Op_MemBarVolatile),
-	   "expecting an acquire or volatile membar");
-    assert((trailing->Opcode() != Op_MemBarVolatile ||
-	    !is_card_mark_membar(trailing)),
-	   "not expecting a card mark membar");
-
-    MemBarNode *leading = normal_to_leading(trailing);
-
-    if (leading) {
+    if (leading_membar(leading)) {
       return leading;
     }
 
-    // nothing more to do if this is an acquire
-    if (trailing->Opcode() == Op_MemBarAcquire) {
-      return NULL;
-    }
-
-    MemBarNode *card_mark_membar = trailing_to_card_mark(trailing);
-
-    if (!card_mark_membar) {
-      return NULL;
-    }
-
-    return normal_to_leading(card_mark_membar);
+    return NULL;
   }
-
-  // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
 
 bool unnecessary_acquire(const Node *barrier)
 {
@@ -2675,19 +2590,8 @@ bool unnecessary_release(const Node *n)
   }
 
   // must start with a normal feed
-  MemBarNode *child_barrier = leading_to_normal(barrier);
+  MemBarNode *trailing = leading_to_trailing(barrier);
 
-  if (!child_barrier) {
-    return false;
-  }
-
-  if (!is_card_mark_membar(child_barrier)) {
-    // this is the trailing membar and we are done
-    return true;
-  }
-
-  // must be sure this card mark feeds a trailing membar
-  MemBarNode *trailing = card_mark_to_trailing(child_barrier);
   return (trailing != NULL);
 }
 
@@ -2709,7 +2613,7 @@ bool unnecessary_volatile(const Node *n)
   }
 
   // ok, if it's not a card mark then we still need to check if it is
-  // a trailing membar of a volatile put hgraph.
+  // a trailing membar of a volatile put graph.
 
   return (trailing_to_leading(mbvol) != NULL);
 }
@@ -2759,20 +2663,9 @@ bool needs_releasing_store(const Node *n)
   }
 
   // does this lead a normal subgraph?
-  MemBarNode *mbvol = leading_to_normal(barrier);
+  MemBarNode *trailing = leading_to_trailing(barrier);
 
-  if (!mbvol) {
-    return false;
-  }
-
-  // all done unless this is a card mark
-  if (!is_card_mark_membar(mbvol)) {
-    return true;
-  }
-
-  // we found a card mark -- just make sure we have a trailing barrier
-
-  return (card_mark_to_trailing(mbvol) != NULL);
+  return (trailing != NULL);
 }
 
 // predicate controlling translation of CAS
@@ -2814,7 +2707,7 @@ bool needs_acquiring_load_exclusive(const Node *n)
 	  "CAS not fed by cpuorder+release membar pair!");
 
   // does this lead a normal subgraph?
-  MemBarNode *mbar = leading_to_normal(barrier);
+  MemBarNode *mbar = leading_to_trailing(barrier);
 
   assert(mbar != NULL, "CAS not embedded in normal graph!");
 
@@ -2835,48 +2728,27 @@ bool unnecessary_storestore(const Node *storecm)
 
   // we only ever need to generate a dmb ishst between an object put
   // and the associated card mark when we are using CMS without
-  // conditional card marking
+  // conditional card marking. Any other occurence will happen when
+  // performing a card mark using CMS with conditional card marking or
+  // G1. In those cases the preceding MamBarVolatile will be
+  // translated to a dmb ish which guarantes visibility of the
+  // preceding StoreN/P before this StoreCM
 
   if (!UseConcMarkSweepGC || UseCondCardMark) {
     return true;
   }
 
-  // if we are implementing volatile puts using barriers then the
-  // object put as an str so we must insert the dmb ishst
+  // if we are implementing volatile puts using barriers then we must
+  // insert the dmb ishst
 
   if (UseBarriersForVolatile) {
     return false;
   }
 
-  // we can omit the dmb ishst if this StoreCM is part of a volatile
-  // put because in thta case the put will be implemented by stlr
-  //
-  // we need to check for a normal subgraph feeding this StoreCM.
-  // that means the StoreCM must be fed Memory from a leading membar,
-  // either a MemBarRelease or its dependent MemBarCPUOrder, and the
-  // leading membar must be part of a normal subgraph
+  // we must be using CMS with conditional card marking so we ahve to
+  // generate the StoreStore
 
-  Node *x = storecm->in(StoreNode::Memory);
-
-  if (!x->is_Proj()) {
-    return false;
-  }
-
-  x = x->in(0);
-
-  if (!x->is_MemBar()) {
-    return false;
-  }
-
-  MemBarNode *leading = x->as_MemBar();
-
-  // reject invalid candidates
-  if (!leading_membar(leading)) {
-    return false;
-  }
-
-  // we can omit the StoreStore if it is the head of a normal subgraph
-  return (leading_to_normal(leading) != NULL);
+  return false;
 }
 
 
@@ -13409,7 +13281,7 @@ instruct MoveF2I_reg_reg(iRegINoSp dst, vRegF src) %{
     __ fmovs($dst$$Register, as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_f2i);
 
 %}
 
@@ -13427,7 +13299,7 @@ instruct MoveI2F_reg_reg(vRegF dst, iRegI src) %{
     __ fmovs(as_FloatRegister($dst$$reg), $src$$Register);
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_i2f);
 
 %}
 
@@ -13445,7 +13317,7 @@ instruct MoveD2L_reg_reg(iRegLNoSp dst, vRegD src) %{
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_d2l);
 
 %}
 
@@ -13463,7 +13335,7 @@ instruct MoveL2D_reg_reg(vRegD dst, iRegL src) %{
     __ fmovd(as_FloatRegister($dst$$reg), $src$$Register);
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_l2d);
 
 %}
 
@@ -14319,6 +14191,25 @@ instruct cmpP_imm0_branch(cmpOp cmp, iRegP op1, immP0 op2, label labl, rFlagsReg
   ins_pipe(pipe_cmp_branch);
 %}
 
+instruct cmpN_imm0_branch(cmpOp cmp, iRegN op1, immN0 op2, label labl, rFlagsReg cr) %{
+  match(If cmp (CmpN op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::ne
+	    || n->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cbw$cmp   $op1, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    if (cond == Assembler::EQ)
+      __ cbzw($op1$$Register, *L);
+    else
+      __ cbnzw($op1$$Register, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
 instruct cmpP_narrowOop_imm0_branch(cmpOp cmp, iRegN oop, immP0 zero, label labl, rFlagsReg cr) %{
   match(If cmp (CmpP (DecodeN oop) zero));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::ne
@@ -14911,19 +14802,19 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
-                        iRegI_R0 result, iRegP_R10 tmp, rFlagsReg cr)
+                        iRegI_R0 result, rFlagsReg cr)
 %{
   predicate(!CompactStrings);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(KILL tmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
 
-  format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp" %}
+  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ asrw($cnt$$Register, $cnt$$Register, 1);
-    __ string_equals($str1$$Register, $str2$$Register,
-                      $cnt$$Register, $result$$Register,
-                      $tmp$$Register);
+    __ arrays_equals($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register,
+                     2, /*is_string*/true);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -14937,9 +14828,10 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ byte_arrays_equals($ary1$$Register, $ary2$$Register,
-                          $result$$Register, $tmp$$Register);
-  %}
+    __ arrays_equals($ary1$$Register, $ary2$$Register,
+                     $result$$Register, $tmp$$Register,
+                     1, /*is_string*/false);
+    %}
   ins_pipe(pipe_class_memory);
 %}
 
@@ -14952,11 +14844,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ char_arrays_equals($ary1$$Register, $ary2$$Register,
-                          $result$$Register, $tmp$$Register);
+    __ arrays_equals($ary1$$Register, $ary2$$Register,
+                     $result$$Register, $tmp$$Register,
+                     2, /*is_string*/false);
   %}
   ins_pipe(pipe_class_memory);
 %}
+
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
@@ -16608,7 +16502,7 @@ instruct vsll2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift64_imm);
+  ins_pipe(vshift64);
 %}
 
 instruct vsll4I(vecX dst, vecX src, vecX shift) %{
@@ -16622,7 +16516,7 @@ instruct vsll4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift128_imm);
+  ins_pipe(vshift128);
 %}
 
 instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
@@ -16635,7 +16529,7 @@ instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift64_imm);
+  ins_pipe(vshift64);
 %}
 
 instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
@@ -16648,7 +16542,7 @@ instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift128_imm);
+  ins_pipe(vshift128);
 %}
 
 instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
@@ -16766,7 +16660,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
            as_FloatRegister($src$$reg),
            (int)$shift$$constant & 63);
   %}
-  ins_pipe(vshift128);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{

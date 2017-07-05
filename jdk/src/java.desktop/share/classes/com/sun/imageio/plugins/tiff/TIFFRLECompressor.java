@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ public class TIFFRLECompressor extends TIFFFaxCompressor {
      * CCITT RLE (Run Lenth Encoding).
      *
      * @param data        The row of data to compress.
-     * @param rowOffset   Starting index in <code>data</code>.
-     * @param colOffset   Bit offset within first <code>data[rowOffset]</code>.
+     * @param rowOffset   Starting index in {@code data}.
+     * @param colOffset   Bit offset within first {@code data[rowOffset]}.
      * @param rowLength   Number of bits in the row.
      * @param compData    The compressed data.
      *
