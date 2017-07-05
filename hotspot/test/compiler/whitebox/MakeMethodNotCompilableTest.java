@@ -132,14 +132,15 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
             throw new RuntimeException(method
                     + " is not compilable after clearMethodState()");
         }
-
+        // Make method not (OSR-)compilable (depending on testCase.isOsr())
         makeNotCompilable();
         if (isCompilable()) {
             throw new RuntimeException(method + " must be not compilable");
         }
-
+        // Try to (OSR-)compile method
         compile();
-        checkNotOsrCompiled();
+        // Method should not be (OSR-)compiled
+        checkNotCompiled(testCase.isOsr());
         if (isCompilable()) {
             throw new RuntimeException(method + " must be not compilable");
         }
