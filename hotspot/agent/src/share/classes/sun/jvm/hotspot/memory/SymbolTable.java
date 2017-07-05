@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,22 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("SymbolTable");
     theTableField  = type.getAddressField("_the_table");
+    sharedTableField = type.getAddressField("_shared_table");
   }
 
   // Fields
   private static AddressField theTableField;
+  private static AddressField sharedTableField;
+
+  private CompactHashTable sharedTable;
 
   // Accessors
   public static SymbolTable getTheTable() {
     Address tmp = theTableField.getValue();
-    return (SymbolTable) VMObjectFactory.newObject(SymbolTable.class, tmp);
+    SymbolTable table = (SymbolTable) VMObjectFactory.newObject(SymbolTable.class, tmp);
+    Address shared = sharedTableField.getStaticFieldAddress();
+    table.sharedTable = (CompactHashTable)VMObjectFactory.newObject(CompactHashTable.class, shared);
+    return table;
   }
 
   public SymbolTable(Address addr) {
@@ -73,8 +80,9 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
 
   /** Clone of VM's "temporary" probe routine, as the SA currently
       does not support mutation so lookup() would have no effect
-      anyway. Returns null if the given string is not in the symbol
-      table. */
+      anyway. Searches the regular symbol table and the shared symbol
+      table. Null is returned if the given name is not found in both
+      tables. */
   public Symbol probe(byte[] name) {
     long hashValue = hashSymbol(name);
     for (HashtableEntry e = (HashtableEntry) bucket(hashToIndex(hashValue)); e != null; e = (HashtableEntry) e.next()) {
@@ -85,7 +93,8 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
          }
       }
     }
-    return null;
+
+    return sharedTable.probe(name, hashValue);
   }
 
   public interface SymbolVisitor {
