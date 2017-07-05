@@ -237,6 +237,9 @@ Java_java_lang_ClassLoader_resolveClass0(JNIEnv *env, jobject this,
     JVM_ResolveClass(env, cls);
 }
 
+/*
+ * Returns NULL if class not found.
+ */
 JNIEXPORT jclass JNICALL
 Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
                                               jstring classname)
@@ -246,7 +249,6 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
     char buf[128];
 
     if (classname == NULL) {
-        JNU_ThrowClassNotFoundException(env, 0);
         return 0;
     }
 
@@ -258,11 +260,10 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
     VerifyFixClassname(clname);
 
     if (!VerifyClassname(clname, JNI_TRUE)) {  /* expects slashed name */
-        JNU_ThrowClassNotFoundException(env, clname);
         goto done;
     }
 
-    cls = JVM_FindClassFromClassLoader(env, clname, JNI_FALSE, 0, JNI_FALSE);
+    cls = JVM_FindClassFromBootLoader(env, clname);
 
  done:
     if (clname != buf) {

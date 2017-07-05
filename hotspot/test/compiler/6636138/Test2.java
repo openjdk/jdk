@@ -51,7 +51,7 @@ public class Test2 {
             int value = (i-1 + src.length)%src.length; // correct value after shifting
                 if (src[i] != value) {
                     System.out.println("Error: src["+i+"] should be "+ value + " instead of " + src[i]);
-                    System.exit(-1);
+                    System.exit(97);
                 }
         }
     }

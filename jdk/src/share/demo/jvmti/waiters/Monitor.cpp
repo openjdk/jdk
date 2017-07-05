@@ -73,6 +73,16 @@ Monitor::~Monitor()
         name, contends, waits, timeouts);
 }
 
+int Monitor::get_slot()
+{
+    return slot;
+}
+
+void Monitor::set_slot(int aslot)
+{
+    slot = aslot;
+}
+
 void Monitor::contended()
 {
     contends++;

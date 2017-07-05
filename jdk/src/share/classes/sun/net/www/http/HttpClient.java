@@ -35,6 +35,7 @@ import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
 import sun.net.www.ParseUtil;
 import sun.net.www.protocol.http.HttpURLConnection;
+import sun.util.logging.PlatformLogger;
 
 /**
  * @author Herb Jellinek
@@ -804,8 +805,9 @@ public class HttpClient extends NetworkClient {
 
             if (isKeepingAlive())   {
                 // Wrap KeepAliveStream if keep alive is enabled.
-                if (HttpCapture.isLoggable("FINEST")) {
-                    HttpCapture.finest("KeepAlive stream used: " + url);
+                PlatformLogger logger = HttpURLConnection.getHttpLogger();
+                if (logger.isLoggable(PlatformLogger.FINEST)) {
+                    logger.finest("KeepAlive stream used: " + url);
                 }
                 serverInput = new KeepAliveStream(serverInput, pi, cl, this);
                 failedOnce = false;

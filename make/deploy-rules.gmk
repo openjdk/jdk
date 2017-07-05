@@ -121,14 +121,18 @@ endif
 
 deploy-build:
 ifeq ($(BUILD_DEPLOY), true)
+	@$(call MakeStart, deploy, $(DEPLOY_BUILD_TARGETS))
 	($(CD) $(DEPLOY_TOPDIR)/make && \
-	$(MAKE) $(DEPLOY_BUILD_TARGETS) $(DEPLOY_BUILD_ARGUMENTS))
+	  $(MAKE) $(DEPLOY_BUILD_TARGETS) $(DEPLOY_BUILD_ARGUMENTS))
+	@$(call MakeFinish, deploy, $(DEPLOY_BUILD_TARGETS))
 endif
 
 deploy-clobber::
 ifeq ($(BUILD_DEPLOY), true)
+	@$(call MakeStart, deploy, clobber)
 	($(CD) $(DEPLOY_TOPDIR)/make && \
-	$(MAKE) clobber $(DEPLOY_BUILD_ARGUMENTS))
+	  $(MAKE) clobber $(DEPLOY_BUILD_ARGUMENTS))
+	@$(call MakeFinish, deploy, clobber)
 endif 
 
 deploy-sanity::

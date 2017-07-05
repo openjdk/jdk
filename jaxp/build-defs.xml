@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<!--
+ Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Sun designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Sun in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ CA 95054 USA or visit www.sun.com if you need additional information or
+ have any questions.
+-->
+
+<project name="jaxp_defs" default="all" basedir=".">
+
+    <!-- Specific build properties. -->
+    <property file="jaxp.properties"/>
+
+    <!-- Where generated xml files will stay. -->
+    <property name="xml.gen.dir" value="${build.dir}/xml_generated"/>
+    <property name="xml.template" value="build-drop-template.xml"/>
+
+    <!--  ############### -->
+    <!--  Begin Macrodefs -->
+
+    <!-- Copies template file, replaces @DROP@ pattern, and imports it. -->
+    <macrodef name="drop-import">
+        <attribute name="name"/>
+        <sequential>
+            <property name="xml.gen.@{name}" value="${xml.gen.dir}/build-drop-@{name}.xml"/>
+            <mkdir dir="${xml.gen.dir}"/>
+            <copy file="${xml.template}" tofile="${xml.gen.@{name}}"/>
+            <replace file="${xml.gen.@{name}}" token="@DROP@" value="@{name}"/>
+            <import file="${xml.gen.@{name}}"/>
+        </sequential>
+    </macrodef>
+
+    <!--  End of Macrodefs -->
+    <!--  ############### -->
+
+    <!-- Create xml file and import it for these drops. -->
+    <drop-import name="jaxp_src"/>
+    <!-- <drop-import name="jaxp_tests"/> -->
+
+
+    <!-- Special build area preparation. -->
+    <target name="-drop-build-prep" depends="init, -init-src-dirs">
+        <mkdir dir="${build.classes.dir}"/>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${primary.src.dir}"
+                     includes="**/*.properties"/>
+        </copy>
+        <replaceregexp match="#(.*)$" replace="#" flags="gm">
+            <fileset dir="${build.classes.dir}" includes="**/*.properties"/>
+        </replaceregexp>
+    </target>
+
+    <!-- Try to get drop sources, set property use.orig.src.dir if no drops. -->
+    <target name="-set-props"
+	    depends="init,
+                     jaxp_src-update">
+        <condition property="use.orig.src.dir">
+            <and>
+                <available file="${orig.src.dir}" type="dir"/>
+                <not>
+                    <and>
+                        <available file="${jaxp_src.src.dir}" type="dir"/>
+                    </and>
+                </not>
+            </and>
+        </condition>
+    </target>
+
+    <!-- Set up source to use orig.src.dir, if use.orig.src.dir defined. -->
+    <target name="-use-orig" depends="-set-props" if="use.orig.src.dir">
+        <property name="primary.src.dir" value="${orig.src.dir}"/>
+        <path id="src.dir.id">
+            <pathelement path="${primary.src.dir}"/>
+        </path>
+    </target>
+
+    <!-- Set up source to use drop.dir, if use.orig.src.dir not defined. -->
+    <target name="-use-drop" depends="-set-props" unless="use.orig.src.dir">
+        <property name="primary.src.dir" value="${jaxp_src.src.dir}"/>
+        <path id="src.dir.id">
+            <pathelement path="${primary.src.dir}"/>
+        </path>
+    </target>
+
+    <!-- Source directory selection. -->
+    <target name="-init-src-dirs"
+	    depends="init, -use-orig, -use-drop">
+        <echo message="Using primary.src.dir=${primary.src.dir}"/>
+        <pathconvert property="src.list.id" refid="src.dir.id"/>
+        <echo message="Using src.dir.id=${src.list.id}"/>
+    </target>
+
+    <!-- Create orig src.zip. -->
+    <target name="-orig-src-zip" depends="init, -set-props" if="use.orig.src.dir">
+        <zip file="${dist.src.zip}" basedir="${primary.src.dir}"/>
+    </target>
+
+    <!-- Create drop src.zip. -->
+    <target name="-drop-src-zip" depends="init, -set-props" unless="use.orig.src.dir">
+        <zip file="${dist.src.zip}" basedir="${primary.src.dir}"/>
+    </target>
+
+    <!-- Create src.zip. -->
+    <target name="-dist-src-zip" depends="init, -orig-src-zip, -drop-src-zip">
+    </target>
+    
+</project>

@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<!--
+ Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Sun designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Sun in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ CA 95054 USA or visit www.sun.com if you need additional information or
+ have any questions.
+-->
+
+<project name="jaxws" default="all" basedir=".">
+   
+    <!-- For 'ant -p' or 'ant -projecthelp' -->
+    
+    <description>
+    Ant build script for the ${ant.project.name} part of the jdk.
+
+    Input Properties: (see build.properties for the ant defaults)
+      bootstrap.dir        - dir with lib/javac.jar, added to javac bootclasspath
+      javac.debug          - true or false for debug classfiles
+      javac.target         - classfile version target
+      javac.source         - source version
+    </description>
+
+    <!-- Mac is special, need to downgrade these before build.properties. -->
+    <condition property="javac.source" value="1.5">
+        <os family="mac"/>
+    </condition>
+    <condition property="javac.target" value="1.5">
+        <os family="mac"/>
+    </condition>
+
+    <!-- Project build properties. -->
+    <property file="build.properties"/>
+
+    <!-- Get shared targets. -->
+    <import file="build-defs.xml"/>
+
+    <!-- Initialization of directories needed for build. -->
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+        <mkdir dir="${dist.lib.dir}"/>
+    </target>
+    
+    <!-- Sanity checks and settings -->
+    <target name="sanity"
+	    depends="-javac-jar-exists"
+            description="Display settings of configuration values">
+        <echo message="${sanity.info}"/>
+    </target>
+
+     <!-- Check for bootstrap javac.jar file, warn if missing. -->
+    <condition property="javac.jar.exists">
+        <available file="${javac.jar}" type="file"/>
+    </condition>
+    <target name="-javac-jar-exists"
+            unless="javac.jar.exists">
+        <echo message="WARNING: Cannot find ${javac.jar}"/>
+    </target>
+
+    <!-- Creation of distribution files to jdk build process. -->
+    <target name="dist"
+	    depends="init, -init-src-dirs, build, -dist-classes-jar, -dist-src-zip"
+            description="Create all built distribution files.">
+    </target>
+    <target name="-dist-classes-jar-uptodate"
+	    depends="init, -init-src-dirs">
+        <condition property="dist.classes.jar.uptodate">
+            <and>
+                <available file="${dist.classes.jar}" type="file"/>
+                <uptodate targetfile="${dist.classes.jar}">
+                    <srcfiles dir="${build.classes.dir}" includes="**"/>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
+    <target name="-dist-classes-jar"
+	    depends="init, -init-src-dirs, -dist-classes-jar-uptodate"
+            unless="dist.classes.jar.uptodate">
+        <delete file="${dist.classes.jar}"/>
+        <jar file="${dist.classes.jar}" basedir="${build.classes.dir}"/>
+    </target>
+
+    <target name="-build-prep"
+	    depends="init, -init-src-dirs, -drop-build-prep">
+    </target>
+
+    <!-- Build (compilation) of sources to class files. -->
+    <target name="build"
+	    depends="init, -init-src-dirs, -build-prep">
+        <javac fork="true"
+             destdir="${build.classes.dir}"
+             memoryInitialSize="${javac.memoryInitialSize}"
+             memoryMaximumSize="${javac.memoryMaximumSize}"
+             source="${javac.source}"
+	     debug="${javac.debug}"
+             target="${javac.target}">
+            <compilerarg value="-J-Xbootclasspath/p:${javac.jar}"/>
+            <compilerarg line="${javac.version.opt} ${javac.lint.opts} ${javac.no.jdk.warnings}"/>
+            <src refid="src.dir.id"/>
+        </javac>
+    </target>
+
+    <!-- Test. (FIXME: Need to know how to run tests.) -->
+    <target name="test"
+	    depends="init, -init-src-dirs, dist">
+        <echo message="FIXME: How do you run the tests"/>
+    </target>
+    
+    <!-- Populate source area if needed. -->
+    <target name="source"
+            depends="init, -init-src-dirs"
+            description="Populate all source file directories">
+    </target>
+
+    <!-- Clean up compiled files. -->
+    <target name="clean"
+            description="Delete all generated files">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!-- Clean up compiled files and all imported source files. -->
+    <target name="clobber"
+	    depends="clean"
+            description="Delete all generated files, including imported sources">
+        <delete dir="${drop.dir}"/>
+    </target>
+
+    <target name="-banner">
+        <echo message="+---------------------------------------+"/>
+        <echo message="+ Starting ant project ${ant.project.name} +"/>
+        <echo message="+---------------------------------------+"/>
+    </target>
+   
+    <!-- Do everything but test. -->
+    <target name="all"
+	    depends="-banner, sanity, dist"
+            description="Build everything.">
+        <echo message="+---------------------------------------+"/>
+        <echo message="+ Finishing ant project ${ant.project.name}"/>
+        <echo message="+---------------------------------------+"/>
+    </target>
+
+</project>

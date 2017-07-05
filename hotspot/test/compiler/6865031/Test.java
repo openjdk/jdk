@@ -26,7 +26,7 @@
  * @test
  * @bug 6865031
  * @summary Application gives bad result (throws bad exception) with compressed oops
- * @run main/othervm -XX:+UseCompressedOops -XX:HeapBaseMinAddress=32g -XX:-LoopUnswitching -XX:CompileCommand=inline,AbstractMemoryEfficientList.equals Test hello goodbye
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:HeapBaseMinAddress=32g -XX:-LoopUnswitching -XX:CompileCommand=inline,AbstractMemoryEfficientList.equals Test hello goodbye
  */
 
 import java.lang.ref.ReferenceQueue;
