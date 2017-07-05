@@ -30,8 +30,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -53,8 +51,8 @@ public abstract class JarArchive implements Archive {
 
         JarEntry(String path, String name, EntryType type, ZipFile file, ZipEntry entry) {
             super(JarArchive.this, path, name, type);
-            this.entry = entry;
-            this.file = file;
+            this.entry = Objects.requireNonNull(entry);
+            this.file = Objects.requireNonNull(file);
             size = entry.getSize();
         }
 

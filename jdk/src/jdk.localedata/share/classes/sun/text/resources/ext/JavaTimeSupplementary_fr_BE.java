@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -72,6 +72,20 @@ import sun.util.resources.OpenListResourceBundle;
 public class JavaTimeSupplementary_fr_BE extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
+        final String[] sharedTimePatterns = {
+            "H 'h' mm 'min' ss 's' zzzz",
+            "HH:mm:ss z",
+            "HH:mm:ss",
+            "HH:mm",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "EEEE d MMMM y G",
+            "d MMMM y G",
+            "d MMM y G",
+            "d/MM/yy GGGGG",
+        };
+
         return new Object[][] {
             { "islamic.DatePatterns",
                 new String[] {
@@ -82,37 +96,13 @@ public class JavaTimeSupplementary_fr_BE extends OpenListResourceBundle {
                 }
             },
             { "islamic.TimePatterns",
-                new String[] {
-                    "H 'h' mm 'min' ss 's' zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
-                }
-            },
+                sharedTimePatterns },
             { "java.time.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "d/MM/yy GGGGG",
-                }
-            },
+                sharedJavaTimeDatePatterns },
             { "java.time.roc.DatePatterns",
                 new String[] {
                     "G y MMMM d, EEEE",
@@ -130,13 +120,7 @@ public class JavaTimeSupplementary_fr_BE extends OpenListResourceBundle {
                 }
             },
             { "roc.TimePatterns",
-                new String[] {
-                    "H 'h' mm 'min' ss 's' zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
-                }
-            },
+                sharedTimePatterns },
         };
     }
 }

@@ -93,7 +93,7 @@ import sun.security.jca.*;
  * provide authenticity assurances for both confidential data and
  * Additional Associated Data (AAD) that is not encrypted.  (Please see
  * <a href="http://www.ietf.org/rfc/rfc5116.txt"> RFC 5116 </a> for more
- * information on AEAD and AEAD algorithms such as GCM/CCM.) Both
+ * information on AEAD and AAD algorithms such as GCM/CCM.) Both
  * confidential and AAD data can be used when calculating the
  * authentication tag (similar to a {@link Mac}).  This tag is appended
  * to the ciphertext during encryption, and is verified on decryption.
@@ -1186,7 +1186,7 @@ public class Cipher {
      * determined from the given key, or if the given key has a keysize that
      * exceeds the maximum allowable keysize (as determined from the
      * configured jurisdiction policy files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */
@@ -1239,7 +1239,7 @@ public class Cipher {
      * determined from the given key, or if the given key has a keysize that
      * exceeds the maximum allowable keysize (as determined from the
      * configured jurisdiction policy files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */
@@ -1325,7 +1325,7 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */
@@ -1386,7 +1386,7 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */
@@ -1468,7 +1468,7 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */
@@ -1529,7 +1529,7 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */
@@ -1616,7 +1616,7 @@ public class Cipher {
      * in the given certificate has a keysize that exceeds the maximum
      * allowable keysize (as determined by the configured jurisdiction policy
      * files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */
@@ -1686,7 +1686,7 @@ public class Cipher {
      * in the given certificate has a keysize that exceeds the maximum
      * allowable keysize (as determined by the configured jurisdiction policy
      * files).
-     * @throws UnsupportedOperationException if (@code opmode} is
+     * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}.
      */

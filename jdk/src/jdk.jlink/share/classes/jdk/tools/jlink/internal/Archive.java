@@ -42,7 +42,6 @@ public interface Archive {
     public abstract class Entry {
 
         public static enum EntryType {
-
             MODULE_NAME,
             CLASS_OR_RESOURCE,
             NATIVE_LIB,
@@ -57,14 +56,10 @@ public interface Archive {
         private final String path;
 
         public Entry(Archive archive, String path, String name, EntryType type) {
-            Objects.requireNonNull(archive);
-            Objects.requireNonNull(path);
-            Objects.requireNonNull(name);
-            Objects.requireNonNull(type);
-            this.archive = archive;
-            this.path = path;
-            this.name = name;
-            this.type = type;
+            this.archive = Objects.requireNonNull(archive);
+            this.path = Objects.requireNonNull(path);
+            this.name = Objects.requireNonNull(name);
+            this.type = Objects.requireNonNull(type);
         }
 
         public Archive archive() {
@@ -79,7 +74,7 @@ public interface Archive {
             return type;
         }
 
-        /**
+        /*
          * Returns the name of this entry.
          */
         public String name() {
@@ -91,7 +86,7 @@ public interface Archive {
             return "type " + type.name() + " path " + path;
         }
 
-        /**
+        /*
          * Returns the number of uncompressed bytes for this entry.
          */
         public abstract long size();
@@ -99,17 +94,17 @@ public interface Archive {
         public abstract InputStream stream() throws IOException;
     }
 
-    /**
+    /*
      * The module name.
      */
     String moduleName();
 
-    /**
+    /*
      * Returns the path to this module's content
      */
     Path getPath();
 
-    /**
+    /*
      * Stream of Entry.
      * The stream of entries needs to be closed after use
      * since it might cover lazy I/O based resources.
@@ -117,12 +112,12 @@ public interface Archive {
      */
     Stream<Entry> entries();
 
-    /**
+    /*
      * Open the archive
      */
     void open() throws IOException;
 
-    /**
+    /*
      * Close the archive
      */
     void close() throws IOException;
