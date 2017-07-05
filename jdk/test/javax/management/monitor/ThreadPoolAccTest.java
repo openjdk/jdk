@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@
  */
 
 import java.security.AccessController;
-import java.security.Principal;
 import java.security.PrivilegedAction;
+import java.util.Date;
 import java.util.Set;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -49,8 +49,8 @@ import javax.security.auth.Subject;
 public class ThreadPoolAccTest {
 
     // MBean class
-    public class ObservedObject implements ObservedObjectMBean {
-        public String principal;
+    public static class ObservedObject implements ObservedObjectMBean {
+        public volatile String principal;
         public Integer getInteger() {
             setPrincipal();
             return 0;
@@ -65,8 +65,8 @@ public class ThreadPoolAccTest {
         }
         private void setPrincipal() {
             Subject subject = Subject.getSubject(AccessController.getContext());
-            Set principals = subject.getPrincipals(JMXPrincipal.class);
-            principal = ((Principal) principals.iterator().next()).getName();
+            Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
+            principal = principals.iterator().next().getName();
         }
     }
 
@@ -77,10 +77,7 @@ public class ThreadPoolAccTest {
         public String getString();
     }
 
-    /**
-     * Run test
-     */
-    public int runTest() throws Exception {
+    public static void main (String args[]) throws Exception {
 
         ObjectName[] mbeanNames = new ObjectName[6];
         ObservedObject[] monitored = new ObservedObject[6];
@@ -92,8 +89,6 @@ public class ThreadPoolAccTest {
         try {
             echo(">>> CREATE MBeanServer");
             MBeanServer server = MBeanServerFactory.newMBeanServer();
-
-            String domain = server.getDefaultDomain();
 
             for (int i = 0; i < 6; i++) {
                 mbeanNames[i] =
@@ -132,8 +127,8 @@ public class ThreadPoolAccTest {
                 Subject subject = new Subject();
                 echo(">>> RUN Principal = " + principals[i / 3]);
                 subject.getPrincipals().add(new JMXPrincipal(principals[i / 3]));
-                PrivilegedAction action = new PrivilegedAction() {
-                    public Object run() {
+                PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+                    public Void run() {
                         m.start();
                         return null;
                     }
@@ -141,61 +136,39 @@ public class ThreadPoolAccTest {
                 Subject.doAs(subject, action);
             }
 
-            // Wait for all tasks to be submitted
-            //
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                echo("I fell asleep but someone woke me up");
-                return 1;
-            }
+            while(!testPrincipals(monitored, monitorNames, monitor, principals));
 
-            // Check if task principal is correct
-            //
-            for (int i = 0; i < 6; i++) {
-                echo(">>> Monitor = " + monitorNames[i]);
-                echo(">>> ObservedObject = " +
-                     monitor[i].getObservedObject());
-                echo(">>> ObservedAttribute = " +
-                     monitor[i].getObservedAttribute());
-                echo(">>> Principal = " + monitored[i].principal);
-                if (monitored[i].principal.equals(principals[i / 3])) {
-                    echo("\tOK: Got Expected Principal");
-                } else {
-                    echo("\tKO: Got Unexpected Principal");
-                    return 1;
-                }
-            }
         } finally {
             for (int i = 0; i < 6; i++)
                 if (monitor[i] != null)
                     monitor[i].stop();
         }
-
-        return 0;
     }
 
-    /*
-     * Print message
-     */
+    private static boolean testPrincipals(ObservedObject[] monitored, ObjectName[] monitorNames,
+            Monitor[] monitor, String[] principals) throws Exception {
+        for (int i = 0; i < 6; i++) {
+            String principal =  monitored[i].principal;
+            String expected = principals[i / 3];
+            if (principal == null) {
+                echo("Task not submitted " + new Date() + ". RETRY");
+                return false;
+            }
+            echo(">>> Monitor = " + monitorNames[i]);
+            echo(">>> ObservedObject = " + monitor[i].getObservedObject());
+            echo(">>> ObservedAttribute = " + monitor[i].getObservedAttribute());
+            echo(">>> Principal = " + principal);
+
+            if (expected.equals(principal)) {
+                echo("\tOK: Got Expected principal");
+            } else {
+                throw new Exception("Unexpected principal. Got: " + principal + " Expected: " + expected);
+            }
+        }
+        return true;
+    }
+
     private static void echo(String message) {
         System.out.println(message);
-    }
-
-    /*
-     * Standalone entry point.
-     *
-     * Run the test and report to stdout.
-     */
-    public static void main (String args[]) throws Exception {
-        ThreadPoolAccTest test = new ThreadPoolAccTest();
-        int error = test.runTest();
-        if (error > 0) {
-            echo(">>> Unhappy Bye, Bye!");
-            throw new IllegalStateException(
-                "Test FAILED: Monitor task ran on wrong security context!");
-        } else {
-            echo(">>> Happy Bye, Bye!");
-        }
     }
 }

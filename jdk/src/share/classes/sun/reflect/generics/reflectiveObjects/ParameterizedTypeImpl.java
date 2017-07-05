@@ -52,7 +52,7 @@ public class ParameterizedTypeImpl implements ParameterizedType {
     }
 
     private void validateConstructorArguments() {
-        TypeVariable/*<?>*/[] formals = rawType.getTypeParameters();
+        TypeVariable<?>[] formals = rawType.getTypeParameters();
         // check correct arity of actual type args
         if (formals.length != actualTypeArguments.length){
             throw new MalformedParameterizedTypeException();

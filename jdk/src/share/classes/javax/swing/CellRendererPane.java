@@ -96,7 +96,7 @@ public class CellRendererPane extends Container implements Accessible
     /**
      * If the specified component is already a child of this then we don't
      * bother doing anything - stacking order doesn't matter for cell
-     * renderer components (CellRendererPane doesn't paint anyway).<
+     * renderer components (CellRendererPane doesn't paint anyway).
      */
     protected void addImpl(Component x, Object constraints, int index) {
         if (x.getParent() == this) {

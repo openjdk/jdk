@@ -55,17 +55,23 @@ static jclass ni_iacls;
 static jclass ni_ia4cls;
 static jmethodID ni_ia4ctrID;
 
-static void initializeInetClasses(JNIEnv *env)
+static jboolean initializeInetClasses(JNIEnv *env)
 {
     static int initialized = 0;
     if (!initialized) {
         ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
+        CHECK_NULL_RETURN(ni_iacls, JNI_FALSE);
         ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
+        CHECK_NULL_RETURN(ni_iacls, JNI_FALSE);
         ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
+        CHECK_NULL_RETURN(ni_ia4cls, JNI_FALSE);
         ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
+        CHECK_NULL_RETURN(ni_ia4cls, JNI_FALSE);
         ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
+        CHECK_NULL_RETURN(ni_ia4ctrID, JNI_FALSE);
         initialized = 1;
     }
+    return JNI_TRUE;
 }
 
 
@@ -141,7 +147,8 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     int error=0;
     struct addrinfo hints, *res, *resNew = NULL;
 
-    initializeInetClasses(env);
+    if (!initializeInetClasses(env))
+        return NULL;
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");
@@ -400,7 +407,8 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     int error = 0;
     struct addrinfo hints, *res, *resNew = NULL;
 
-    initializeInetClasses(env);
+    if (!initializeInetClasses(env))
+        return NULL;
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");
