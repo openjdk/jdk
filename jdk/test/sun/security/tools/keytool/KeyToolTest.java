@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -453,12 +453,17 @@ public class KeyToolTest {
         assertTrue(err.indexOf("not imported") != -1, "Not imported");
         assertTrue(err.indexOf("Cannot store non-PrivateKeys") != -1, "Not imported");
 
+        // Importing a JCEKS keystore to a JKS one. Will warn for the 2 SecretKey entries
+
         remove("x.jks");
+        // Two "no" answers to bypass warnings
         testOK("\n\n", "-srcstorepass changeit -deststorepass changeit -importkeystore -srckeystore x.jceks -srcstoretype JCEKS -destkeystore x.jks -deststoretype JKS"); // normal
         assertTrue(err.indexOf("s1 not") != -1, "s1 not");
         assertTrue(err.indexOf("s2 not") != -1, "s2 not");
         assertTrue(err.indexOf("c1 success") != -1, "c1 success");
         assertTrue(err.indexOf("p1 success") != -1, "p1 success");
+        remove("x.jks");
+        // One "yes" to stop
         testOK("yes\n", "-srcstorepass changeit -deststorepass changeit -importkeystore -srckeystore x.jceks -srcstoretype JCEKS -destkeystore x.jks -deststoretype JKS"); // normal
         // maybe c1 or p1 has been imported before s1 or s2 is touched, anyway we know yesNo is only asked once.
 

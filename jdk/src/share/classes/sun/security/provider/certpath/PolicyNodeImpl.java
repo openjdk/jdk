@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,30 +134,37 @@ final class PolicyNodeImpl implements PolicyNode {
              node.mCriticalityIndicator, node.mExpectedPolicySet, false);
     }
 
+    @Override
     public PolicyNode getParent() {
         return mParent;
     }
 
+    @Override
     public Iterator<PolicyNodeImpl> getChildren() {
         return Collections.unmodifiableSet(mChildren).iterator();
     }
 
+    @Override
     public int getDepth() {
         return mDepth;
     }
 
+    @Override
     public String getValidPolicy() {
         return mValidPolicy;
     }
 
+    @Override
     public Set<PolicyQualifierInfo> getPolicyQualifiers() {
         return Collections.unmodifiableSet(mQualifierSet);
     }
 
+    @Override
     public Set<String> getExpectedPolicies() {
         return Collections.unmodifiableSet(mExpectedPolicySet);
     }
 
+    @Override
     public boolean isCritical() {
         return mCriticalityIndicator;
     }
@@ -169,12 +176,12 @@ final class PolicyNodeImpl implements PolicyNode {
      *
      * @return a String describing the contents of the Policy Node
      */
+    @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer(this.asString());
+        StringBuilder buffer = new StringBuilder(this.asString());
 
-        Iterator<PolicyNodeImpl> it = getChildren();
-        while (it.hasNext()) {
-            buffer.append(it.next());
+        for (PolicyNodeImpl node : mChildren) {
+            buffer.append(node);
         }
         return buffer.toString();
     }
@@ -293,7 +300,7 @@ final class PolicyNodeImpl implements PolicyNode {
      * @return a <code>Set</code> of all nodes at the specified depth
      */
     Set<PolicyNodeImpl> getPolicyNodes(int depth) {
-        Set<PolicyNodeImpl> set = new HashSet<PolicyNodeImpl>();
+        Set<PolicyNodeImpl> set = new HashSet<>();
         getPolicyNodes(depth, set);
         return set;
     }
@@ -337,7 +344,7 @@ final class PolicyNodeImpl implements PolicyNode {
     private Set<PolicyNodeImpl> getPolicyNodesExpectedHelper(int depth,
         String expectedOID, boolean matchAny) {
 
-        HashSet<PolicyNodeImpl> set = new HashSet<PolicyNodeImpl>();
+        HashSet<PolicyNodeImpl> set = new HashSet<>();
 
         if (mDepth < depth) {
             for (PolicyNodeImpl node : mChildren) {
@@ -367,7 +374,7 @@ final class PolicyNodeImpl implements PolicyNode {
      * @return a Set of matched <code>PolicyNode</code>s
      */
     Set<PolicyNodeImpl> getPolicyNodesValid(int depth, String validOID) {
-        HashSet<PolicyNodeImpl> set = new HashSet<PolicyNodeImpl>();
+        HashSet<PolicyNodeImpl> set = new HashSet<>();
 
         if (mDepth < depth) {
             for (PolicyNodeImpl node : mChildren) {
@@ -396,7 +403,7 @@ final class PolicyNodeImpl implements PolicyNode {
         if (mParent == null) {
             return "anyPolicy  ROOT\n";
         } else {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int i = 0, n = getDepth(); i < n; i++) {
                 sb.append("  ");
             }

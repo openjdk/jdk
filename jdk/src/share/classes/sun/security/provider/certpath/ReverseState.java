@@ -40,6 +40,7 @@ import java.util.ListIterator;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 import sun.security.x509.NameConstraintsExtension;
 import sun.security.x509.SubjectKeyIdentifierExtension;
@@ -94,7 +95,7 @@ class ReverseState implements State {
     private boolean init = true;
 
     /* the checker used for revocation status */
-    public CrlRevocationChecker crlChecker;
+    RevocationChecker revChecker;
 
     /* the algorithm checker */
     AlgorithmChecker algorithmChecker;
@@ -108,7 +109,7 @@ class ReverseState implements State {
     /* Flag indicating if current cert can vouch for the CRL for
      * the next cert
      */
-    public boolean crlSign = true;
+    boolean crlSign = true;
 
     /**
      * Returns a boolean flag indicating if the state is initial
@@ -116,6 +117,7 @@ class ReverseState implements State {
      *
      * @return boolean flag indicating if the state is initial (just starting)
      */
+    @Override
     public boolean isInitial() {
         return init;
     }
@@ -123,44 +125,32 @@ class ReverseState implements State {
     /**
      * Display state for debugging purposes
      */
+    @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        try {
-            sb.append("State [");
-            sb.append("\n  subjectDN of last cert: " + subjectDN);
-            sb.append("\n  subjectKeyIdentifier: " + String.valueOf(subjKeyId));
-            sb.append("\n  nameConstraints: " + String.valueOf(nc));
-            sb.append("\n  certIndex: " + certIndex);
-            sb.append("\n  explicitPolicy: " + explicitPolicy);
-            sb.append("\n  policyMapping:  " + policyMapping);
-            sb.append("\n  inhibitAnyPolicy:  " + inhibitAnyPolicy);
-            sb.append("\n  rootNode: " + rootNode);
-            sb.append("\n  remainingCACerts: " + remainingCACerts);
-            sb.append("\n  crlSign: " + crlSign);
-            sb.append("\n  init: " + init);
-            sb.append("\n]\n");
-        } catch (Exception e) {
-            if (debug != null) {
-                debug.println("ReverseState.toString() unexpected exception");
-                e.printStackTrace();
-            }
-        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("State [");
+        sb.append("\n  subjectDN of last cert: ").append(subjectDN);
+        sb.append("\n  subjectKeyIdentifier: ").append
+                 (String.valueOf(subjKeyId));
+        sb.append("\n  nameConstraints: ").append(String.valueOf(nc));
+        sb.append("\n  certIndex: ").append(certIndex);
+        sb.append("\n  explicitPolicy: ").append(explicitPolicy);
+        sb.append("\n  policyMapping:  ").append(policyMapping);
+        sb.append("\n  inhibitAnyPolicy:  ").append(inhibitAnyPolicy);
+        sb.append("\n  rootNode: ").append(rootNode);
+        sb.append("\n  remainingCACerts: ").append(remainingCACerts);
+        sb.append("\n  crlSign: ").append(crlSign);
+        sb.append("\n  init: ").append(init);
+        sb.append("\n]\n");
         return sb.toString();
     }
 
     /**
      * Initialize the state.
      *
-     * @param maxPathLen The maximum number of CA certs in a path, where -1
-     * means unlimited and 0 means only a single EE cert is allowed.
-     * @param explicitPolicyRequired True, if explicit policy is required.
-     * @param policyMappingInhibited True, if policy mapping is inhibited.
-     * @param anyPolicyInhibited True, if any policy is inhibited.
-     * @param certPathCheckers the list of user-defined PKIXCertPathCheckers
+     * @param buildParams builder parameters
      */
-    public void initState(int maxPathLen, boolean explicitPolicyRequired,
-        boolean policyMappingInhibited, boolean anyPolicyInhibited,
-        List<PKIXCertPathChecker> certPathCheckers)
+    public void initState(BuilderParams buildParams)
         throws CertPathValidatorException
     {
         /*
@@ -168,60 +158,52 @@ class ReverseState implements State {
          * Note that -1 maxPathLen implies unlimited.
          * 0 implies only an EE cert is acceptable.
          */
-        remainingCACerts = (maxPathLen == -1 ? Integer.MAX_VALUE : maxPathLen);
+        int maxPathLen = buildParams.maxPathLength();
+        remainingCACerts = (maxPathLen == -1) ? Integer.MAX_VALUE
+                                              : maxPathLen;
 
         /* Initialize explicit policy state variable */
-        if (explicitPolicyRequired) {
+        if (buildParams.explicitPolicyRequired()) {
             explicitPolicy = 0;
         } else {
             // unconstrained if maxPathLen is -1,
             // otherwise, we want to initialize this to the value of the
             // longest possible path + 1 (i.e. maxpathlen + finalcert + 1)
-            explicitPolicy = (maxPathLen == -1)
-                ? maxPathLen
-                : maxPathLen + 2;
+            explicitPolicy = (maxPathLen == -1) ? maxPathLen : maxPathLen + 2;
         }
 
         /* Initialize policy mapping state variable */
-        if (policyMappingInhibited) {
+        if (buildParams.policyMappingInhibited()) {
             policyMapping = 0;
         } else {
-            policyMapping = (maxPathLen == -1)
-                ? maxPathLen
-                : maxPathLen + 2;
+            policyMapping = (maxPathLen == -1) ? maxPathLen : maxPathLen + 2;
         }
 
         /* Initialize inhibit any policy state variable */
-        if (anyPolicyInhibited) {
+        if (buildParams.anyPolicyInhibited()) {
             inhibitAnyPolicy = 0;
         } else {
-            inhibitAnyPolicy = (maxPathLen == -1)
-                ? maxPathLen
-                : maxPathLen + 2;
+            inhibitAnyPolicy = (maxPathLen == -1) ? maxPathLen : maxPathLen + 2;
         }
 
         /* Initialize certIndex */
         certIndex = 1;
 
         /* Initialize policy tree */
-        Set<String> initExpPolSet = new HashSet<String>(1);
+        Set<String> initExpPolSet = new HashSet<>(1);
         initExpPolSet.add(PolicyChecker.ANY_POLICY);
 
-        rootNode = new PolicyNodeImpl
-            (null, PolicyChecker.ANY_POLICY, null, false, initExpPolSet, false);
+        rootNode = new PolicyNodeImpl(null, PolicyChecker.ANY_POLICY, null,
+                                      false, initExpPolSet, false);
 
         /*
          * Initialize each user-defined checker
+         * Shallow copy the checkers
          */
-        if (certPathCheckers != null) {
-            /* Shallow copy the checkers */
-            userCheckers = new ArrayList<PKIXCertPathChecker>(certPathCheckers);
-            /* initialize each checker (just in case) */
-            for (PKIXCertPathChecker checker : certPathCheckers) {
-                checker.init(false);
-            }
-        } else {
-            userCheckers = new ArrayList<PKIXCertPathChecker>();
+        userCheckers = new ArrayList<>(buildParams.certPathCheckers());
+        /* initialize each checker (just in case) */
+        for (PKIXCertPathChecker checker : userCheckers) {
+            checker.init(false);
         }
 
         /* Start by trusting the cert to sign CRLs */
@@ -234,8 +216,9 @@ class ReverseState implements State {
      * Update the state with the specified trust anchor.
      *
      * @param anchor the most-trusted CA
+     * @param buildParams builder parameters
      */
-    public void updateState(TrustAnchor anchor)
+    public void updateState(TrustAnchor anchor, BuilderParams buildParams)
         throws CertificateException, IOException, CertPathValidatorException
     {
         trustAnchor = anchor;
@@ -247,12 +230,24 @@ class ReverseState implements State {
             updateState(anchor.getCAPublicKey(), caName);
         }
 
-        // The user specified AlgorithmChecker may not be
+        // The user specified AlgorithmChecker and RevocationChecker may not be
         // able to set the trust anchor until now.
+        boolean revCheckerAdded = false;
         for (PKIXCertPathChecker checker : userCheckers) {
             if (checker instanceof AlgorithmChecker) {
                 ((AlgorithmChecker)checker).trySetTrustAnchor(anchor);
+            } else if (checker instanceof RevocationChecker) {
+                ((RevocationChecker)checker).init(anchor, buildParams);
+                ((RevocationChecker)checker).init(false);
+                revCheckerAdded = true;
             }
+        }
+
+        // only create a RevocationChecker if revocation is enabled and
+        // a PKIXRevocationChecker has not already been added
+        if (buildParams.revocationEnabled() && !revCheckerAdded) {
+            revChecker = new RevocationChecker(anchor, buildParams);
+            revChecker.init(false);
         }
 
         init = false;
@@ -313,7 +308,7 @@ class ReverseState implements State {
         subjKeyId = icert.getSubjectKeyIdentifierExtension();
 
         /* update crlSign */
-        crlSign = CrlRevocationChecker.certCanSignCrl(cert);
+        crlSign = RevocationChecker.certCanSignCrl(cert);
 
         /* update current name constraints */
         if (nc != null) {
@@ -352,6 +347,7 @@ class ReverseState implements State {
      *
      * @return boolean flag indicating if key lacking parameters encountered.
      */
+    @Override
     public boolean keyParamsNeeded() {
         /* when building in reverse, we immediately get parameters needed
          * or else throw an exception
@@ -368,6 +364,7 @@ class ReverseState implements State {
      * because some of them (e.g., subjKeyId) will
      * not have their contents modified by subsequent calls to updateState.
      */
+    @Override
     @SuppressWarnings("unchecked") // Safe casts assuming clone() works correctly
     public Object clone() {
         try {

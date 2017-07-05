@@ -132,44 +132,31 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
             this.setDefaultDragImage(component);
 
         // Get drag image (if any) as BufferedImage and convert that to CImage:
-        long  dragImage;
         Point dragImageOffset;
 
         if (fDragImage != null) {
-            BufferedImage bi = (fDragImage instanceof BufferedImage ? (BufferedImage) fDragImage : null);
-
-            if (bi == null) {
-                // Create a new buffered image:
-                int width  = fDragImage.getWidth(null);
-                int height = fDragImage.getHeight(null);
-                bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-
-                // Draw drag image into the buffered image:
-                Graphics g = bi.getGraphics();
-                g.drawImage(fDragImage, 0, 0, null);
-                g.dispose();
+            try {
+                fDragCImage = CImage.getCreator().createFromImageImmediately(fDragImage);
+            } catch(Exception e) {
+                // image creation may fail for any reason
+                throw new InvalidDnDOperationException("Drag image can not be created.");
             }
-            /*   TODO:BG
-            fDragCImage = CImage.getCreator().createImage(bi);
-            dragImage = fDragCImage.getNSImage(); */
-            fDragCImage = null;
-            dragImage = 0L;
+            if (fDragCImage == null) {
+                throw new InvalidDnDOperationException("Drag image is not ready.");
+            }
+
             dragImageOffset = fDragImageOffset;
         } else {
 
             fDragCImage = null;
-            dragImage = 0L;
             dragImageOffset = new Point(0, 0);
         }
-
-        // Get NS drag image instance if we have a drag image:
-        long nsDragImage = 0L; //TODO:BG (fDragCImage != null ? fDragCImage.getNSImage() : 0L);
 
         try {
             // Create native dragging source:
             final long nativeDragSource = createNativeDragSource(component, peer, nativeWindowPtr, transferable, triggerEvent,
                 (int) (dragOrigin.getX() + componentOffset.x), (int) (dragOrigin.getY() + componentOffset.y), extModifiers,
-                clickCount, timestamp, cursor, dragImage, dragImageOffset.x, dragImageOffset.y,
+                clickCount, timestamp, cursor, fDragCImage, dragImageOffset.x, dragImageOffset.y,
                 getDragSourceContext().getSourceActions(), formats, formatMap);
 
             if (nativeDragSource == 0)
@@ -495,7 +482,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     // Native support:
     private native long createNativeDragSource(Component component, ComponentPeer peer, long nativePeer, Transferable transferable,
         InputEvent triggerEvent, int dragPosX, int dragPosY, int extModifiers, int clickCount, long timestamp,
-        Cursor cursor, long nsDragImage, int dragImageOffsetX, int dragImageOffsetY,
+        Cursor cursor, CImage nsDragImage, int dragImageOffsetX, int dragImageOffsetY,
         int sourceActions, long[] formats, Map formatMap);
 
     private native void doDragging(long nativeDragSource);

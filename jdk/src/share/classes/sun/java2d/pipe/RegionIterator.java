@@ -27,10 +27,14 @@ package sun.java2d.pipe;
 
 import java.awt.Rectangle;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * This class defines the API for iterating through the bands
  * of a region object.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class RegionIterator {
     Region region;
     int curIndex;

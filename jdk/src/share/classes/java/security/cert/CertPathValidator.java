@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,29 @@ import sun.security.jca.GetInstance.Instance;
  * call one of the static <code>getInstance</code> methods, passing in the
  * algorithm name of the <code>CertPathValidator</code> desired and
  * optionally the name of the provider desired.
- * <p>
- * Once a <code>CertPathValidator</code> object has been created, it can
+ *
+ * <p>Once a <code>CertPathValidator</code> object has been created, it can
  * be used to validate certification paths by calling the {@link #validate
  * validate} method and passing it the <code>CertPath</code> to be validated
  * and an algorithm-specific set of parameters. If successful, the result is
  * returned in an object that implements the
  * <code>CertPathValidatorResult</code> interface.
  *
- * <p> Every implementation of the Java platform is required to support the
+ * <p>The {@link #getRevocationChecker} method allows an application to specify
+ * additional algorithm-specific parameters and options used by the
+ * {@code CertPathValidator} when checking the revocation status of
+ * certificates. Here is an example demonstrating how it is used with the PKIX
+ * algorithm:
+ *
+ * <pre>
+ * CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
+ * PKIXRevocationChecker rc = (PKIXRevocationChecker)cpv.getRevocationChecker();
+ * rc.setOptions(EnumSet.of(Option.SOFT_FAIL));
+ * params.addCertPathChecker(rc);
+ * CertPathValidatorResult cpvr = cpv.validate(path, params);
+ * </pre>
+ *
+ * <p>Every implementation of the Java platform is required to support the
  * following standard <code>CertPathValidator</code> algorithm:
  * <ul>
  * <li><tt>PKIX</tt></li>
@@ -96,10 +110,9 @@ public class CertPathValidator {
      * </pre>
      */
     private static final String CPV_TYPE = "certpathvalidator.type";
-    private static final Debug debug = Debug.getInstance("certpath");
-    private CertPathValidatorSpi validatorSpi;
-    private Provider provider;
-    private String algorithm;
+    private final CertPathValidatorSpi validatorSpi;
+    private final Provider provider;
+    private final String algorithm;
 
     /**
      * Creates a <code>CertPathValidator</code> object of the given algorithm,
@@ -301,15 +314,30 @@ public class CertPathValidator {
      * if no such property exists.
      */
     public final static String getDefaultType() {
-        String cpvtype;
-        cpvtype = AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                return Security.getProperty(CPV_TYPE);
-            }
-        });
-        if (cpvtype == null) {
-            cpvtype = "PKIX";
-        }
-        return cpvtype;
+        String cpvtype =
+            AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
+                    return Security.getProperty(CPV_TYPE);
+                }
+            });
+        return (cpvtype == null) ? "PKIX" : cpvtype;
+    }
+
+    /**
+     * Returns a {@code CertPathChecker} that the encapsulated
+     * {@code CertPathValidatorSpi} implementation uses to check the revocation
+     * status of certificates. A PKIX implementation returns objects of
+     * type {@code PKIXRevocationChecker}.
+     *
+     * <p>The primary purpose of this method is to allow callers to specify
+     * additional input parameters and options specific to revocation checking.
+     * See the class description for an example.
+     *
+     * @throws UnsupportedOperationException if the service provider does not
+     *         support this method
+     * @since 1.8
+     */
+    public final CertPathChecker getRevocationChecker() {
+        return validatorSpi.engineGetRevocationChecker();
     }
 }

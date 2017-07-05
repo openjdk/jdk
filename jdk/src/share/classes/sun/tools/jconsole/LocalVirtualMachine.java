@@ -39,7 +39,6 @@ import com.sun.tools.attach.AttachNotSupportedException;
 // Sun private
 import sun.management.ConnectorAddressLink;
 import sun.jvmstat.monitor.HostIdentifier;
-import sun.jvmstat.monitor.Monitor;
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitoredVm;
 import sun.jvmstat.monitor.MonitoredVmUtil;
@@ -131,7 +130,7 @@ public class LocalVirtualMachine {
 
     private static void getMonitoredVMs(Map<Integer, LocalVirtualMachine> map) {
         MonitoredHost host;
-        Set vms;
+        Set<Integer> vms;
         try {
             host = MonitoredHost.getMonitoredHost(new HostIdentifier((String)null));
             vms = host.activeVms();

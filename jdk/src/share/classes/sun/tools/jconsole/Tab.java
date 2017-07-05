@@ -26,9 +26,6 @@
 package sun.tools.jconsole;
 
 import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-
 import javax.swing.*;
 
 public abstract class Tab extends JPanel {

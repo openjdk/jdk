@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,7 @@ class URICertStore extends CertStoreSpi {
      *         match the specified selector
      * @throws CertStoreException if an exception occurs
      */
+    @Override
     @SuppressWarnings("unchecked")
     public synchronized Collection<X509Certificate> engineGetCertificates
         (CertSelector selector) throws CertStoreException {
@@ -322,6 +323,7 @@ class URICertStore extends CertStoreSpi {
      *         match the specified selector
      * @throws CertStoreException if an exception occurs
      */
+    @Override
     @SuppressWarnings("unchecked")
     public synchronized Collection<X509CRL> engineGetCRLs(CRLSelector selector)
         throws CertStoreException {
@@ -418,14 +420,14 @@ class URICertStore extends CertStoreSpi {
         URICertStoreParameters(URI uri) {
             this.uri = uri;
         }
-        public boolean equals(Object obj) {
+        @Override public boolean equals(Object obj) {
             if (!(obj instanceof URICertStoreParameters)) {
                 return false;
             }
             URICertStoreParameters params = (URICertStoreParameters) obj;
             return uri.equals(params.uri);
         }
-        public int hashCode() {
+        @Override public int hashCode() {
             if (hashCode == 0) {
                 int result = 17;
                 result = 37*result + uri.hashCode();
@@ -433,7 +435,7 @@ class URICertStore extends CertStoreSpi {
             }
             return hashCode;
         }
-        public Object clone() {
+        @Override public Object clone() {
             try {
                 return super.clone();
             } catch (CloneNotSupportedException e) {

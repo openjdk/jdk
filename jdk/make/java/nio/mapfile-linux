@@ -39,7 +39,6 @@ SUNWprivate_1.1 {
                 Java_sun_nio_ch_EPollArrayWrapper_epollCreate;
                 Java_sun_nio_ch_EPollArrayWrapper_epollCtl;
                 Java_sun_nio_ch_EPollArrayWrapper_epollWait;
-		Java_sun_nio_ch_EPollArrayWrapper_fdLimit;
 		Java_sun_nio_ch_EPollArrayWrapper_init;
 		Java_sun_nio_ch_EPollArrayWrapper_interrupt;
 		Java_sun_nio_ch_EPollArrayWrapper_offsetofData;
@@ -87,6 +86,7 @@ SUNWprivate_1.1 {
                 Java_sun_nio_ch_IOUtil_configureBlocking;
                 Java_sun_nio_ch_IOUtil_drain;
                 Java_sun_nio_ch_IOUtil_fdVal;
+		Java_sun_nio_ch_IOUtil_fdLimit;
                 Java_sun_nio_ch_IOUtil_initIDs;
                 Java_sun_nio_ch_IOUtil_makePipe;
                 Java_sun_nio_ch_IOUtil_randomBytes;

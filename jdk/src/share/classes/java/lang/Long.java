@@ -373,7 +373,7 @@ public final class Long extends Number implements Comparable<Long> {
         int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
         char[] buf = new char[size];
         getChars(i, size, buf);
-        return new String(0, size, buf);
+        return new String(buf, true);
     }
 
     /**

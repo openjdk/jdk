@@ -62,7 +62,7 @@ $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR,\
 UNICODEDATA  = $(JDK_TOPDIR)/make/tools/UnicodeData/UnicodeData.txt
 
 # output
-DATA_PKG_DIR = $(JDK_OUTPUTDIR)/newclasses/sun/text/resources
+DATA_PKG_DIR = $(JDK_OUTPUTDIR)/classes/sun/text/resources
 BIFILES	= 	$(DATA_PKG_DIR)/CharacterBreakIteratorData \
 		$(DATA_PKG_DIR)/WordBreakIteratorData \
 		$(DATA_PKG_DIR)/LineBreakIteratorData \
@@ -75,23 +75,23 @@ $(BREAK_ITERATOR_DIR)/_the.bifiles: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITER
 $(BREAK_ITERATOR_DIR)/_the.bifiles: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
 	$(ECHO) "Generating BreakIteratorData"
 	$(MKDIR) -p  $(DATA_PKG_DIR)
-	rm -f $(BIFILES)
+	$(RM) -f $(BIFILES)
 	$(TOOL_GENERATEBREAKITERATORDATA) \
 		-o $(DATA_PKG_DIR) \
 		-spec $(UNICODEDATA)
-	touch $@
+	$(TOUCH) $@
 
 $(BIFILES_TH): $(BREAK_ITERATOR_DIR)/_the.bifiles_th
 $(BREAK_ITERATOR_DIR)/_the.bifiles_th: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
 $(BREAK_ITERATOR_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
 	$(ECHO) "Generating BreakIteratorData_th"
 	$(MKDIR) -p  $(DATA_PKG_DIR)
-	rm -f $(BIFILES_TH)
+	$(RM) -f $(BIFILES_TH)
 	$(TOOL_GENERATEBREAKITERATORDATA) \
 		-o $(DATA_PKG_DIR) \
 		-spec $(UNICODEDATA) \
 		-language th
-	touch $@
+	$(TOUCH) $@
 
 
 BREAK_ITERATOR += $(BIFILES) $(BIFILES_TH)

@@ -34,7 +34,7 @@ package sun.security.krb5.internal;
 import java.io.*;
 import java.net.*;
 
-public abstract class NetClient {
+public abstract class NetClient implements AutoCloseable {
     public static NetClient getInstance(String protocol, String hostname, int port,
             int timeout) throws IOException {
         if (protocol.equals("TCP")) {
@@ -45,9 +45,7 @@ public abstract class NetClient {
     }
 
     abstract public void send(byte[] data) throws IOException;
-
     abstract public byte[] receive() throws IOException;
-
     abstract public void close() throws IOException;
 }
 
@@ -190,6 +188,7 @@ class UDPClient extends NetClient {
         iport = port;
         dgSocket = new DatagramSocket();
         dgSocket.setSoTimeout(timeout);
+        dgSocket.connect(iaddr, iport);
     }
 
     @Override
@@ -207,6 +206,9 @@ class UDPClient extends NetClient {
             dgSocket.receive(dgPacketIn);
         }
         catch (SocketException e) {
+            if (e instanceof PortUnreachableException) {
+                throw e;
+            }
             dgSocket.receive(dgPacketIn);
         }
         byte[] data = new byte[dgPacketIn.getLength()];
