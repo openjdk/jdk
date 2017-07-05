@@ -138,6 +138,13 @@ SurrogateLockerThread* SurrogateLockerThread::make(TRAPS) {
   return res;
 }
 
+void SurrogateLockerThread::report_missing_slt() {
+  vm_exit_during_initialization(
+    "GC before GC support fully initialized: "
+    "SLT is needed but has not yet been created.");
+  ShouldNotReachHere();
+}
+
 void SurrogateLockerThread::manipulatePLL(SLT_msg_type msg) {
   MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
   assert(_buffer == empty, "Should be empty");

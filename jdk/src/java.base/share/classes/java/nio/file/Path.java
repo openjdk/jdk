@@ -325,7 +325,7 @@ public interface Path
      *
      * @return  the resulting path or this path if it does not contain
      *          redundant name elements; an empty path is returned if this path
-     *          does have a root component and all name elements are redundant
+     *          does not have a root component and all name elements are redundant
      *
      * @see #getParent
      * @see #toRealPath

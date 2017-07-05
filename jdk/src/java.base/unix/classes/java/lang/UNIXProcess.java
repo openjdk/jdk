@@ -406,14 +406,17 @@ final class UNIXProcess extends Process {
         if (hasExited) return true;
         if (timeout <= 0) return false;
 
-        long timeoutAsNanos = unit.toNanos(timeout);
-        long startTime = System.nanoTime();
-        long rem = timeoutAsNanos;
+        long remainingNanos = unit.toNanos(timeout);
+        long deadline = System.nanoTime() + remainingNanos;
 
-        while (!hasExited && (rem > 0)) {
-            wait(Math.max(TimeUnit.NANOSECONDS.toMillis(rem), 1));
-            rem = timeoutAsNanos - (System.nanoTime() - startTime);
-        }
+        do {
+            // Round up to next millisecond
+            wait(TimeUnit.NANOSECONDS.toMillis(remainingNanos + 999_999L));
+            if (hasExited) {
+                return true;
+            }
+            remainingNanos = deadline - System.nanoTime();
+        } while (remainingNanos > 0);
         return hasExited;
     }
 

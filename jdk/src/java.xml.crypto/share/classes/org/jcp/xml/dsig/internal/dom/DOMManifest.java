@@ -67,17 +67,14 @@ public final class DOMManifest extends DOMStructure implements Manifest {
         if (references == null) {
             throw new NullPointerException("references cannot be null");
         }
-        this.references =
-            Collections.unmodifiableList(new ArrayList<Reference>(references));
+        List<Reference> tempList =
+            Collections.checkedList(new ArrayList<Reference>(),
+                                    Reference.class);
+        tempList.addAll(references);
+        this.references = Collections.unmodifiableList(tempList);
         if (this.references.isEmpty()) {
             throw new IllegalArgumentException("list of references must " +
                 "contain at least one entry");
-        }
-        for (int i = 0, size = this.references.size(); i < size; i++) {
-            if (!(this.references.get(i) instanceof Reference)) {
-                throw new ClassCastException
-                    ("references["+i+"] is not a valid type");
-            }
         }
         this.id = id;
     }
@@ -127,7 +124,6 @@ public final class DOMManifest extends DOMStructure implements Manifest {
         return id;
     }
 
-    @SuppressWarnings("unchecked")
     static List<Reference> getManifestReferences(Manifest mf) {
         return mf.getReferences();
     }

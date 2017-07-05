@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.xml.crypto.XMLCryptoContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import org.w3c.dom.Element;
 
 /**
@@ -219,8 +220,7 @@ public class DOMCryptoContext implements XMLCryptoContext {
      *
      * @return a read-only iterator over the set of mappings
      */
-    @SuppressWarnings("rawtypes")
-    public Iterator iterator() {
+    public Iterator<Map.Entry<String, Element>> iterator() {
         return Collections.unmodifiableMap(idMap).entrySet().iterator();
     }
 

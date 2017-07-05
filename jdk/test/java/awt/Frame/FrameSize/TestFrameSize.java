@@ -77,7 +77,13 @@ public class TestFrameSize {
 
         mainWindow.setVisible(true);
 
-        ((sun.awt.SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure.");
+        }
 
         Dimension clientSize2 = getClientSize(mainWindow);
         System.out.println("Client size after showing: " + clientSize2);

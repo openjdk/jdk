@@ -24,49 +24,48 @@
 
 #include "precompiled.hpp"
 
+#include <new>
+
+#include "classfile/classLoaderData.hpp"
+#include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-
-#include "classfile/stringTable.hpp"
-#include "classfile/classLoaderData.hpp"
-
-#include "prims/whitebox.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
-
-#include "runtime/thread.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
+#include "runtime/sweeper.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vm_version.hpp"
-
 #include "utilities/array.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/exceptions.hpp"
-
+#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
-
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
 
-#include "compiler/compileBroker.hpp"
-#include "runtime/compilationPolicy.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
 bool WhiteBox::_used = false;
+volatile bool WhiteBox::compilation_locked = false;
 
 WB_ENTRY(jlong, WB_GetObjectAddress(JNIEnv* env, jobject o, jobject obj))
   return (jlong)(void*)JNIHandles::resolve(obj);
@@ -107,6 +106,29 @@ WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
 
   return closure.found();
 WB_END
+
+WB_ENTRY(void, WB_AddToBootstrapClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
+#if INCLUDE_JVMTI
+  ResourceMark rm;
+  const char* seg = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(segment));
+  JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
+  jvmtiError err = jvmti_env->AddToBootstrapClassLoaderSearch(seg);
+  assert(err == JVMTI_ERROR_NONE, "must not fail");
+#endif
+}
+WB_END
+
+WB_ENTRY(void, WB_AddToSystemClassLoaderSearch(JNIEnv* env, jobject o, jstring segment)) {
+#if INCLUDE_JVMTI
+  ResourceMark rm;
+  const char* seg = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(segment));
+  JvmtiEnv* jvmti_env = JvmtiEnv::create_a_jvmti(JVMTI_VERSION);
+  jvmtiError err = jvmti_env->AddToSystemClassLoaderSearch(seg);
+  assert(err == JVMTI_ERROR_NONE, "must not fail");
+#endif
+}
+WB_END
+
 
 WB_ENTRY(jlong, WB_GetCompressedOopsMaxHeapSize(JNIEnv* env, jobject o)) {
   return (jlong)Arguments::max_heap_for_compressed_oops();
@@ -302,12 +324,11 @@ WB_END
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
 
-    addr = (jlong)(uintptr_t)os::reserve_memory(size);
-    MemTracker::record_virtual_memory_type((address)addr, mtTest);
+  addr = (jlong)(uintptr_t)os::reserve_memory(size);
+  MemTracker::record_virtual_memory_type((address)addr, mtTest);
 
   return addr;
 WB_END
-
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
   os::commit_memory((char *)(uintptr_t)addr, size, !ExecMem);
@@ -728,6 +749,29 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
 WB_END
 
 
+WB_ENTRY(void, WB_LockCompilation(JNIEnv* env, jobject o, jlong timeout))
+  WhiteBox::compilation_locked = true;
+WB_END
+
+WB_ENTRY(void, WB_UnlockCompilation(JNIEnv* env, jobject o))
+  MonitorLockerEx mo(Compilation_lock, Mutex::_no_safepoint_check_flag);
+  WhiteBox::compilation_locked = false;
+  mo.notify_all();
+WB_END
+
+void WhiteBox::force_sweep() {
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    NMethodSweeper::_should_sweep = true;
+  }
+  NMethodSweeper::possibly_sweep();
+}
+
+WB_ENTRY(void, WB_ForceNMethodSweep(JNIEnv* env, jobject o))
+  WhiteBox::force_sweep();
+WB_END
+
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
   ResourceMark rm(THREAD);
   int len;
@@ -774,6 +818,46 @@ WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
   return features_string;
 WB_END
 
+int WhiteBox::get_blob_type(const CodeBlob* code) {
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+  return CodeCache::get_code_heap(code)->code_blob_type();
+}
+
+CodeHeap* WhiteBox::get_code_heap(int blob_type) {
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+  return CodeCache::get_code_heap(blob_type);
+}
+
+struct CodeBlobStub {
+  CodeBlobStub(const CodeBlob* blob) :
+      name(os::strdup(blob->name())),
+      size(blob->size()),
+      blob_type(WhiteBox::get_blob_type(blob)) { }
+  ~CodeBlobStub() { os::free((void*) name); }
+  const char* const name;
+  const int         size;
+  const int         blob_type;
+};
+
+static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBlobStub* cb) {
+  jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  jobjectArray result = env->NewObjectArray(3, clazz, NULL);
+
+  jstring name = env->NewStringUTF(cb->name);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 0, name);
+
+  jobject obj = integerBox(thread, env, cb->size);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 1, obj);
+
+  obj = integerBox(thread, env, cb->blob_type);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 2, obj);
+
+  return result;
+}
 
 WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   ResourceMark rm(THREAD);
@@ -790,25 +874,101 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(3, clazz, NULL);
+  result = env->NewObjectArray(4, clazz, NULL);
   if (result == NULL) {
     return result;
   }
 
+  CodeBlobStub stub(code);
+  jobjectArray codeBlob = codeBlob2objectArray(thread, env, &stub);
+  env->SetObjectArrayElement(result, 0, codeBlob);
+
   jobject level = integerBox(thread, env, code->comp_level());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  env->SetObjectArrayElement(result, 0, level);
+  env->SetObjectArrayElement(result, 1, level);
 
   jbyteArray insts = env->NewByteArray(insts_size);
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetByteArrayRegion(insts, 0, insts_size, (jbyte*) code->insts_begin());
-  env->SetObjectArrayElement(result, 1, insts);
+  env->SetObjectArrayElement(result, 2, insts);
 
   jobject id = integerBox(thread, env, code->compile_id());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  env->SetObjectArrayElement(result, 2, id);
+  env->SetObjectArrayElement(result, 3, id);
 
   return result;
+WB_END
+
+CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
+  guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to enabled");
+  BufferBlob* blob;
+  int full_size = CodeBlob::align_code_offset(sizeof(BufferBlob));
+  if (full_size < size) {
+    full_size += round_to(size - full_size, oopSize);
+  }
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+  ::new (blob) BufferBlob("WB::DummyBlob", full_size);
+  return blob;
+}
+
+WB_ENTRY(jlong, WB_AllocateCodeBlob(JNIEnv* env, jobject o, jint size, jint blob_type))
+    return (jlong) WhiteBox::allocate_code_blob(size, blob_type);
+WB_END
+
+WB_ENTRY(void, WB_FreeCodeBlob(JNIEnv* env, jobject o, jlong addr))
+    BufferBlob::free((BufferBlob*) addr);
+WB_END
+
+WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_type))
+  ResourceMark rm;
+  GrowableArray<CodeBlobStub*> blobs;
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeHeap* heap = WhiteBox::get_code_heap(blob_type);
+    if (heap == NULL) {
+      return NULL;
+    }
+    for (CodeBlob* cb = (CodeBlob*) heap->first();
+         cb != NULL; cb = (CodeBlob*) heap->next(cb)) {
+      CodeBlobStub* stub = NEW_RESOURCE_OBJ(CodeBlobStub);
+      new (stub) CodeBlobStub(cb);
+      blobs.append(stub);
+    }
+  }
+  if (blobs.length() == 0) {
+    return NULL;
+  }
+  ThreadToNativeFromVM ttn(thread);
+  jobjectArray result = NULL;
+  jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  result = env->NewObjectArray(blobs.length(), clazz, NULL);
+  if (result == NULL) {
+    return result;
+  }
+  int i = 0;
+  for (GrowableArrayIterator<CodeBlobStub*> it = blobs.begin();
+       it != blobs.end(); ++it) {
+    jobjectArray obj = codeBlob2objectArray(thread, env, *it);
+    env->SetObjectArrayElement(result, i, obj);
+    ++i;
+  }
+  return result;
+WB_END
+
+WB_ENTRY(jint, WB_GetCompilationActivityMode(JNIEnv* env, jobject o))
+  return CompileBroker::get_compilation_activity_mode();
+WB_END
+
+WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
+    ThreadToNativeFromVM ttn(thread);
+    CodeBlobStub stub((CodeBlob*) addr);
+    return codeBlob2objectArray(thread, env, &stub);
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
@@ -969,6 +1129,10 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
+  {CC"addToBootstrapClassLoaderSearch", CC"(Ljava/lang/String;)V",
+                                                      (void*)&WB_AddToBootstrapClassLoaderSearch},
+  {CC"addToSystemClassLoaderSearch",    CC"(Ljava/lang/String;)V",
+                                                      (void*)&WB_AddToSystemClassLoaderSearch},
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
@@ -1018,6 +1182,8 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;II)Z",        (void*)&WB_EnqueueMethodForCompilation},
   {CC"clearMethodState",
       CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
+  {CC"lockCompilation",    CC"()V",                   (void*)&WB_LockCompilation},
+  {CC"unlockCompilation",  CC"()V",                   (void*)&WB_UnlockCompilation},
   {CC"isConstantVMFlag",   CC"(Ljava/lang/String;)Z", (void*)&WB_IsConstantVMFlag},
   {CC"isLockedVMFlag",     CC"(Ljava/lang/String;)Z", (void*)&WB_IsLockedVMFlag},
   {CC"setBooleanVMFlag",   CC"(Ljava/lang/String;Z)V",(void*)&WB_SetBooleanVMFlag},
@@ -1055,6 +1221,13 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
+  {CC"forceNMethodSweep",  CC"()V",                   (void*)&WB_ForceNMethodSweep  },
+  {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
+  {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
+  {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
+  {CC"getCompilationActivityMode",
+                           CC"()I",                   (void*)&WB_GetCompilationActivityMode},
+  {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
 };

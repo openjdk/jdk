@@ -416,7 +416,8 @@ public class KeyStore {
 
         /**
          * Retrieves the attributes associated with an entry.
-         * <p>
+         *
+         * @implSpec
          * The default implementation returns an empty {@code Set}.
          *
          * @return an unmodifiable {@code Set} of attributes, possibly empty

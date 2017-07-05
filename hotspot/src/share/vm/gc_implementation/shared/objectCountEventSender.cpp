@@ -29,8 +29,8 @@
 #include "memory/heapInspection.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-
 #if INCLUDE_SERVICES
 
 void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id, const Ticks& timestamp) {

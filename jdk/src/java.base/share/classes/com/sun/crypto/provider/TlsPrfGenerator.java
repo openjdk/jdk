@@ -112,6 +112,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
     private final static String MSG = "TlsPrfGenerator must be "
         + "initialized using a TlsPrfParameterSpec";
 
+    @SuppressWarnings("deprecation")
     private TlsPrfParameterSpec spec;
 
     public TlsPrfGenerator() {
@@ -121,6 +122,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
         if (params instanceof TlsPrfParameterSpec == false) {

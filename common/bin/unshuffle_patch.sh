@@ -80,7 +80,7 @@ for r in $repos ; do
   if [ $repo = "$r" ] ; then
     found="true"
     break;
-  fi 
+  fi
 done
 if [ $found = "false" ] ; then
   echo "ERROR: Unknown repo: $repo. Should be one of [$repos]." >&2
@@ -200,4 +200,3 @@ do
     printf "%s\n" "$line" >> $output
   fi
 done < "$input"
-

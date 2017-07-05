@@ -94,7 +94,7 @@ jdouble fieldDescriptor::double_initial_value() const {
 }
 
 oop fieldDescriptor::string_initial_value(TRAPS) const {
-  return constants()->uncached_string_at(initial_value_index(), CHECK_0);
+  return constants()->uncached_string_at(initial_value_index(), THREAD);
 }
 
 void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {

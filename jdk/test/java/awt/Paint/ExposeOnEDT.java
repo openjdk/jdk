@@ -22,18 +22,19 @@
  */
 
 
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 
 /**
  * @test
  * @bug 7090424
  * @author Sergey Bylokhov
+ * @library ../../../lib/testlibrary/
+ * @build ExtendedRobot
  * @run main ExposeOnEDT
  */
 public final class ExposeOnEDT {
 
+    private static ExtendedRobot robot = null;
     private static final Button buttonStub = new Button() {
         @Override
         public void paint(final Graphics g) {
@@ -275,11 +276,15 @@ public final class ExposeOnEDT {
     }
 
     private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-        try {
-            Thread.sleep(1000L);
-        } catch (InterruptedException ignored) {
+        if(robot == null) {
+            try {
+                robot = new ExtendedRobot();
+            }catch(Exception ex) {
+                ex.printStackTrace();
+                throw new RuntimeException("Unexpected failure");
+            }
         }
+        robot.waitForIdle(1000);
     }
 
     private static void fail(final String message) {

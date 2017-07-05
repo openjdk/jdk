@@ -135,15 +135,11 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
             functionNode.compilerConstant(SCOPE).setNeedsSlot(false);
         }
         // Named function expressions that end up not referencing themselves won't need a local slot for the self symbol.
-        if(!functionNode.isDeclared() && !functionNode.usesSelfSymbol() && !functionNode.isAnonymous()) {
+        if(functionNode.isNamedFunctionExpression() && !functionNode.usesSelfSymbol()) {
             final Symbol selfSymbol = functionNode.getBody().getExistingSymbol(functionNode.getIdent().getName());
-            if(selfSymbol != null) {
-                if(selfSymbol.isFunctionSelf()) {
-                    selfSymbol.setNeedsSlot(false);
-                    selfSymbol.clearFlag(Symbol.IS_VAR);
-                }
-            } else {
-                assert functionNode.isProgram();
+            if(selfSymbol != null && selfSymbol.isFunctionSelf()) {
+                selfSymbol.setNeedsSlot(false);
+                selfSymbol.clearFlag(Symbol.IS_VAR);
             }
         }
         return functionNode;
@@ -189,7 +185,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
      * @param body the body of the FunctionNode we are entering
      */
     private void acceptDeclarations(final FunctionNode functionNode, final Block body) {
-        // This visitor will assign symbol to all declared variables, except "var" declarations in for loop initializers.
+        // This visitor will assign symbol to all declared variables.
         body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             protected boolean enterDefault(final Node node) {
@@ -200,16 +196,17 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
             @Override
             public Node leaveVarNode(final VarNode varNode) {
-                if (varNode.isStatement()) {
-                    final IdentNode ident  = varNode.getName();
-                    final Block block = varNode.isBlockScoped() ? getLexicalContext().getCurrentBlock() : body;
-                    final Symbol symbol = defineSymbol(block, ident.getName(), ident, varNode.getSymbolFlags());
-                    if (varNode.isFunctionDeclaration()) {
-                        symbol.setIsFunctionDeclaration();
-                    }
-                    return varNode.setName(ident.setSymbol(symbol));
+                final IdentNode ident  = varNode.getName();
+                final boolean blockScoped = varNode.isBlockScoped();
+                if (blockScoped && lc.inUnprotectedSwitchContext()) {
+                    throwUnprotectedSwitchError(varNode);
                 }
-                return varNode;
+                final Block block = blockScoped ? lc.getCurrentBlock() : body;
+                final Symbol symbol = defineSymbol(block, ident.getName(), ident, varNode.getSymbolFlags());
+                if (varNode.isFunctionDeclaration()) {
+                    symbol.setIsFunctionDeclaration();
+                }
+                return varNode.setName(ident.setSymbol(symbol));
             }
         });
     }
@@ -356,6 +353,10 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
                         throwParserException(ECMAErrors.getMessage("syntax.error.redeclare.variable", name), origin);
                     } else {
                         symbol.setHasBeenDeclared();
+                        // Set scope flag on top-level block scoped symbols
+                        if (function.isProgram() && function.getBody() == block) {
+                            symbol.setIsScope();
+                        }
                     }
                 } else if ((flags & IS_INTERNAL) != 0) {
                     // Always create a new definition.
@@ -485,20 +486,31 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         final Block body = lc.getCurrentBlock();
 
         initFunctionWideVariables(functionNode, body);
+        acceptDeclarations(functionNode, body);
+        defineFunctionSelfSymbol(functionNode, body);
+    }
 
-        if (!functionNode.isProgram() && !functionNode.isDeclared() && !functionNode.isAnonymous()) {
-            // It's neither declared nor program - it's a function expression then; assign it a self-symbol unless it's
-            // anonymous.
-            final String name = functionNode.getIdent().getName();
-            assert name != null;
-            assert body.getExistingSymbol(name) == null;
-            defineSymbol(body, name, functionNode, IS_VAR | IS_FUNCTION_SELF | HAS_OBJECT_VALUE);
-            if(functionNode.allVarsInScope()) { // basically, has deep eval
-                lc.setFlag(functionNode, FunctionNode.USES_SELF_SYMBOL);
-            }
+    private void defineFunctionSelfSymbol(final FunctionNode functionNode, final Block body) {
+        // Function self-symbol is only declared as a local variable for named function expressions. Declared functions
+        // don't need it as they are local variables in their declaring scope.
+        if (!functionNode.isNamedFunctionExpression()) {
+            return;
         }
 
-        acceptDeclarations(functionNode, body);
+        final String name = functionNode.getIdent().getName();
+        assert name != null; // As it's a named function expression.
+
+        if (body.getExistingSymbol(name) != null) {
+            // Body already has a declaration for the name. It's either a parameter "function x(x)" or a
+            // top-level variable "function x() { ... var x; ... }".
+            return;
+        }
+
+        defineSymbol(body, name, functionNode, IS_VAR | IS_FUNCTION_SELF | HAS_OBJECT_VALUE);
+        if(functionNode.allVarsInScope()) { // basically, has deep eval
+            // We must conservatively presume that eval'd code can dynamically use the function symbol.
+            lc.setFlag(functionNode, FunctionNode.USES_SELF_SYMBOL);
+        }
     }
 
     @Override
@@ -540,7 +552,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         final int flags;
         if (varNode.isAnonymousFunctionDeclaration()) {
             flags = IS_INTERNAL;
-        } else if (lc.getCurrentFunction().isProgram()) {
+        } else if (!varNode.isBlockScoped() && lc.getCurrentFunction().isProgram()) {
             flags = IS_SCOPE;
         } else {
             flags = 0;
@@ -1042,6 +1054,15 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         }
         final List<ArrayUnit> units = ((ArrayLiteralNode)expr).getUnits();
         return !(units == null || units.isEmpty());
+    }
+
+    private void throwUnprotectedSwitchError(final VarNode varNode) {
+        // Block scoped declarations in switch statements without explicit blocks should be declared
+        // in a common block that contains all the case clauses. We cannot support this without a
+        // fundamental rewrite of how switch statements are handled (case nodes contain blocks and are
+        // directly contained by switch node). As a temporary solution we throw a reference error here.
+        final String msg = ECMAErrors.getMessage("syntax.error.unprotected.switch.declaration", varNode.isLet() ? "let" : "const");
+        throwParserException(msg, varNode);
     }
 
     private void throwParserException(final String message, final Node origin) {

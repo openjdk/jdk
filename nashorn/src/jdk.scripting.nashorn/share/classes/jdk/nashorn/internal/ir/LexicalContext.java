@@ -597,6 +597,20 @@ public class LexicalContext {
         throw new AssertionError(target + " was expected in lexical context " + LexicalContext.this + " but wasn't");
     }
 
+    /**
+     * Checks whether the current context is inside a switch statement without explicit blocks (curly braces).
+     * @return true if in unprotected switch statement
+     */
+    public boolean inUnprotectedSwitchContext() {
+        for (int i = sp; i > 0; i--) {
+            final LexicalContextNode next = stack[i];
+            if (next instanceof Block) {
+                return stack[i - 1] instanceof SwitchNode;
+            }
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer();

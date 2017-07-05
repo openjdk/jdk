@@ -1,0 +1,23 @@
+<html>
+<!--  
+  @test
+  @bug 6260648
+  @summary Tests that WINDOW_DESTROY event can be handled by overriding handleEvent(). Also,
+tests that handleEvent() is not called by AWT if any listener is added to the component
+(i. e. when post-1.1 events schema is used)
+  @author artem.ananiev: area=awt.event
+  @run applet HandleWindowDestroyTest.html
+  -->
+<head>
+<title>  </title>
+</head>
+<body>
+
+<h1>HandleWindowDestroyTest<br>Bug ID: 6260648</h1>
+
+<p> This is an AUTOMATIC test, simply wait for completion </p>
+
+<APPLET CODE="HandleWindowDestroyTest.class" WIDTH=200 HEIGHT=200></APPLET>
+</body>
+</html>
+

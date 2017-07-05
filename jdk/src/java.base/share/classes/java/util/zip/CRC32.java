@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,8 @@ import sun.nio.ch.DirectBuffer;
  * A class that can be used to compute the CRC-32 of a data stream.
  *
  * <p> Passing a {@code null} argument to a method in this class will cause
- * a {@link NullPointerException} to be thrown.
+ * a {@link NullPointerException} to be thrown.</p>
  *
- * @see         Checksum
  * @author      David Connelly
  */
 public
@@ -51,9 +50,8 @@ class CRC32 implements Checksum {
     /**
      * Updates the CRC-32 checksum with the specified byte (the low
      * eight bits of the argument b).
-     *
-     * @param b the byte to update the checksum with
      */
+    @Override
     public void update(int b) {
         crc = update(crc, b);
     }
@@ -61,11 +59,12 @@ class CRC32 implements Checksum {
     /**
      * Updates the CRC-32 checksum with the specified array of bytes.
      *
-     * @throws  ArrayIndexOutOfBoundsException
-     *          if {@code off} is negative, or {@code len} is negative,
-     *          or {@code off+len} is greater than the length of the
-     *          array {@code b}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code off} is negative, or {@code len} is negative, or
+     *         {@code off+len} is negative or greater than the length of
+     *         the array {@code b}.
      */
+    @Override
     public void update(byte[] b, int off, int len) {
         if (b == null) {
             throw new NullPointerException();
@@ -77,27 +76,15 @@ class CRC32 implements Checksum {
     }
 
     /**
-     * Updates the CRC-32 checksum with the specified array of bytes.
+     * Updates the CRC-32 checksum with the bytes from the specified buffer.
      *
-     * @param b the array of bytes to update the checksum with
-     */
-    public void update(byte[] b) {
-        crc = updateBytes(crc, b, 0, b.length);
-    }
-
-    /**
-     * Updates the checksum with the bytes from the specified buffer.
+     * The checksum is updated with the remaining bytes in the buffer, starting
+     * at the buffer's position. Upon return, the buffer's position will be
+     * updated to its limit; its limit will not have been changed.
      *
-     * The checksum is updated using
-     * buffer.{@link java.nio.Buffer#remaining() remaining()}
-     * bytes starting at
-     * buffer.{@link java.nio.Buffer#position() position()}
-     * Upon return, the buffer's position will
-     * be updated to its limit; its limit will not have been changed.
-     *
-     * @param buffer the ByteBuffer to update the checksum with
      * @since 1.8
      */
+    @Override
     public void update(ByteBuffer buffer) {
         int pos = buffer.position();
         int limit = buffer.limit();
@@ -110,9 +97,12 @@ class CRC32 implements Checksum {
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(), rem);
         } else {
-            byte[] b = new byte[rem];
-            buffer.get(b);
-            crc = updateBytes(crc, b, 0, b.length);
+            byte[] b = new byte[Math.min(buffer.remaining(), 4096)];
+            while (buffer.hasRemaining()) {
+                int length = Math.min(buffer.remaining(), b.length);
+                buffer.get(b, 0, length);
+                update(b, 0, length);
+            }
         }
         buffer.position(limit);
     }
@@ -120,6 +110,7 @@ class CRC32 implements Checksum {
     /**
      * Resets CRC-32 to initial value.
      */
+    @Override
     public void reset() {
         crc = 0;
     }
@@ -127,6 +118,7 @@ class CRC32 implements Checksum {
     /**
      * Returns CRC-32 value.
      */
+    @Override
     public long getValue() {
         return (long)crc & 0xffffffffL;
     }

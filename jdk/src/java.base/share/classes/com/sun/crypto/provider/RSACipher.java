@@ -243,6 +243,7 @@ public final class RSACipher extends CipherSpi {
     }
 
     // initialize this cipher
+    @SuppressWarnings("deprecation")
     private void init(int opmode, Key key, SecureRandom random,
             AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -424,6 +425,7 @@ public final class RSACipher extends CipherSpi {
     }
 
     // see JCE spec
+    @SuppressWarnings("deprecation")
     protected Key engineUnwrap(byte[] wrappedKey, String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {
         if (wrappedKey.length > buffer.length) {

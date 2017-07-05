@@ -712,12 +712,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
       [HAS_CFLAG_OPTIMIZE_DEBUG=true],
       [HAS_CFLAG_OPTIMIZE_DEBUG=false])
 
-    # "-fsanitize=undefined" supported for GCC 4.9 and later
-    CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG="-fsanitize=undefined -fsanitize-recover"
-    FLAGS_COMPILER_CHECK_ARGUMENTS([$CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG],
-      [HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=true],
-      [HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=false])
-
     # "-z relro" supported in GNU binutils 2.17 and later
     LINKER_RELRO_FLAG="-Xlinker -z -Xlinker relro"
     FLAGS_LINKER_CHECK_ARGUMENTS([$LINKER_RELRO_FLAG],

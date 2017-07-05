@@ -177,4 +177,10 @@ public abstract class LoopNode extends BreakableStatement {
      * @return new loop node if changed otherwise the same
      */
     public abstract LoopNode setControlFlowEscapes(final LexicalContext lc, final boolean controlFlowEscapes);
+
+    /**
+     * Does this loop have a LET declaration and hence require a per-iteration scope?
+     * @return true if a per-iteration scope is required.
+     */
+    public abstract boolean hasPerIterationScope();
 }

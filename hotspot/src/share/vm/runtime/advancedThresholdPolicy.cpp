@@ -317,8 +317,8 @@ void AdvancedThresholdPolicy::create_mdo(methodHandle mh, JavaThread* THREAD) {
  * c. 0 -> (3->2) -> 4.
  *    In this case we enqueue a method for compilation at level 3, but the C1 queue is long enough
  *    to enable the profiling to fully occur at level 0. In this case we change the compilation level
- *    of the method to 2, because it'll allow it to run much faster without full profiling while c2
- *    is compiling.
+ *    of the method to 2 while the request is still in-queue, because it'll allow it to run much faster
+ *    without full profiling while c2 is compiling.
  *
  * d. 0 -> 3 -> 1 or 0 -> 2 -> 1.
  *    After a method was once compiled with C1 it can be identified as trivial and be compiled to

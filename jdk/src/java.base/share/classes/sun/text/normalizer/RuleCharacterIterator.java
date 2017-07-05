@@ -54,6 +54,7 @@ import java.text.ParsePosition;
  * @author Alan Liu
  * @since ICU 2.8
  */
+@SuppressWarnings("deprecation")
 public class RuleCharacterIterator {
 
     // TODO: Ideas for later.  (Do not implement if not needed, lest the

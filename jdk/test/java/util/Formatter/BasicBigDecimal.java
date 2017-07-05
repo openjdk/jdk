@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,10 @@ public class BasicBigDecimal extends Basic {
         Formatter f = new Formatter(new StringBuilder(), Locale.US);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), Locale.US);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(Locale l, String fs, String exp, Object ... args)
@@ -58,6 +62,10 @@ public class BasicBigDecimal extends Basic {
         Formatter f = new Formatter(new StringBuilder(), l);
         f.format(fs, args);
         ck(fs, exp, f.toString());
+
+        f = new Formatter(new StringBuilder(), l);
+        f.format("foo " + fs + " bar", args);
+        ck(fs, "foo " + exp + " bar", f.toString());
     }
 
     private static void test(String fs, Object ... args) {
@@ -831,6 +839,32 @@ public class BasicBigDecimal extends Basic {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         //---------------------------------------------------------------------
         // %s - BigDecimal
         //---------------------------------------------------------------------
@@ -1039,6 +1073,14 @@ public class BasicBigDecimal extends Basic {
         test("%3.0f", "1000000",   1000000.00);
         test("%3.0f", "10000000",  10000000.00);
         test("%3.0f", "100000000", 100000000.00);
+        test("%10.0f", "   1000000",   1000000.00);
+        test("%,10.0f", " 1,000,000",   1000000.00);
+        test("%,10.1f", "1,000,000.0",   1000000.00);
+        test("%,3.0f", "1,000,000",   1000000.00);
+        test("%,3.0f", "10,000,000",  10000000.00);
+        test("%,3.0f", "100,000,000", 100000000.00);
+        test("%,3.0f", "10,000,000",  10000000.00);
+        test("%,3.0f", "100,000,000", 100000000.00);
 
         //---------------------------------------------------------------------
         // %f - BigDecimal
@@ -1291,6 +1333,35 @@ public class BasicBigDecimal extends Basic {
 
         test("%,.11g", "3,141,592.6536", mult(pi, 1000000.0));
         test("%(,.11g", "(3,141,592.6536)", mult(pi, -1000000.0));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
