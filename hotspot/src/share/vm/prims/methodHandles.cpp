@@ -194,9 +194,6 @@ bool MethodHandles::spot_check_entry_names() {
 // MethodHandles::generate_adapters
 //
 void MethodHandles::generate_adapters() {
-#ifdef TARGET_ARCH_NYI_6939861
-  if (FLAG_IS_DEFAULT(UseRicochetFrames))  UseRicochetFrames = false;
-#endif
   if (!EnableInvokeDynamic || SystemDictionary::MethodHandle_klass() == NULL)  return;
 
   assert(_adapter_code == NULL, "generate only once");
@@ -230,18 +227,6 @@ void MethodHandlesAdapterGenerator::generate() {
 }
 
 
-#ifdef TARGET_ARCH_NYI_6939861
-// these defs belong in methodHandles_<arch>.cpp
-frame MethodHandles::ricochet_frame_sender(const frame& fr, RegisterMap *map) {
-  ShouldNotCallThis();
-  return fr;
-}
-void MethodHandles::ricochet_frame_oops_do(const frame& fr, OopClosure* f, const RegisterMap* reg_map) {
-  ShouldNotCallThis();
-}
-#endif //TARGET_ARCH_NYI_6939861
-
-
 //------------------------------------------------------------------------------
 // MethodHandles::ek_supported
 //
@@ -251,28 +236,11 @@ bool MethodHandles::ek_supported(MethodHandles::EntryKind ek) {
   case _adapter_unused_13:
     return false;  // not defined yet
   case _adapter_prim_to_ref:
-    return UseRicochetFrames && conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF);
+    return conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF);
   case _adapter_collect_args:
-    return UseRicochetFrames && conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS);
+    return conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS);
   case _adapter_fold_args:
-    return UseRicochetFrames && conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS);
-  case _adapter_opt_return_any:
-    return UseRicochetFrames;
-#ifdef TARGET_ARCH_NYI_6939861
-  // ports before 6939861 supported only three kinds of spread ops
-  case _adapter_spread_args:
-    // restrict spreads to three kinds:
-    switch (ek) {
-    case _adapter_opt_spread_0:
-    case _adapter_opt_spread_1:
-    case _adapter_opt_spread_more:
-      break;
-    default:
-      return false;
-      break;
-    }
-    break;
-#endif //TARGET_ARCH_NYI_6939861
+    return conv_op_supported(java_lang_invoke_AdapterMethodHandle::OP_FOLD_ARGS);
   }
   return true;
 }
@@ -1988,9 +1956,6 @@ void MethodHandles::verify_AdapterMethodHandle(Handle mh, int argnum, TRAPS) {
     case _adapter_prim_to_ref:    // boxer MH to use
     case _adapter_collect_args:   // method handle which collects the args
     case _adapter_fold_args:      // method handle which collects the args
-      if (!UseRicochetFrames) {
-        { err = "box/collect/fold operators are not supported"; break; }
-      }
       if (!java_lang_invoke_MethodHandle::is_instance(argument()))
         { err = "MethodHandle adapter argument required"; break; }
       arg_mtype = Handle(THREAD, java_lang_invoke_MethodHandle::type(argument()));
@@ -2370,7 +2335,6 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
 
   case _adapter_prim_to_ref:
     {
-      assert(UseRicochetFrames, "else don't come here");
       // vminfo will be the location to insert the return value
       vminfo = argslot;
       ek_opt = _adapter_opt_collect_ref;
@@ -2436,20 +2400,6 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
 
   case _adapter_spread_args:
     {
-#ifdef TARGET_ARCH_NYI_6939861
-      // ports before 6939861 supported only three kinds of spread ops
-      if (!UseRicochetFrames) {
-        int array_size   = slots_pushed + 1;
-        assert(array_size >= 0, "");
-        vminfo = array_size;
-        switch (array_size) {
-        case 0:   ek_opt = _adapter_opt_spread_0;       break;
-        case 1:   ek_opt = _adapter_opt_spread_1;       break;
-        default:  ek_opt = _adapter_opt_spread_more;    break;
-        }
-        break;
-      }
-#endif //TARGET_ARCH_NYI_6939861
       // vminfo will be the required length of the array
       int array_size = (slots_pushed + 1) / (type2size[dest] == 2 ? 2 : 1);
       vminfo = array_size;
@@ -2494,7 +2444,6 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
 
   case _adapter_collect_args:
     {
-      assert(UseRicochetFrames, "else don't come here");
       int elem_slots = argument_slot_count(java_lang_invoke_MethodHandle::type(argument()));
       // vminfo will be the location to insert the return value
       vminfo = argslot;
@@ -2563,7 +2512,6 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
 
   case _adapter_fold_args:
     {
-      assert(UseRicochetFrames, "else don't come here");
       int elem_slots = argument_slot_count(java_lang_invoke_MethodHandle::type(argument()));
       // vminfo will be the location to insert the return value
       vminfo = argslot + elem_slots;

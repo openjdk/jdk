@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,21 @@
  *
  */
 
+#ifndef OS_BSD_VM_DECODER_MACHO_HPP
+#define OS_BSD_VM_DECODER_MACHO_HPP
 
-// Adapters
-enum /* platform_dependent_constants */ {
-  adapter_code_size = 0
+#ifdef __APPLE__
+
+#include "utilities/decoder.hpp"
+
+// Just a placehold for now
+class MachODecoder: public NullDecoder {
+public:
+  MachODecoder() { }
+  ~MachODecoder() { }
 };
+
+#endif
+
+#endif // OS_BSD_VM_DECODER_MACHO_HPP
 

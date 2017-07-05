@@ -204,6 +204,24 @@ Symbol* SymbolTable::lookup_only(const char* name, int len,
   return s;
 }
 
+// Look up the address of the literal in the SymbolTable for this Symbol*
+// Do not create any new symbols
+// Do not increment the reference count to keep this alive
+Symbol** SymbolTable::lookup_symbol_addr(Symbol* sym){
+  unsigned int hash = hash_symbol((char*)sym->bytes(), sym->utf8_length());
+  int index = the_table()->hash_to_index(hash);
+
+  for (HashtableEntry<Symbol*>* e = the_table()->bucket(index); e != NULL; e = e->next()) {
+    if (e->hash() == hash) {
+      Symbol* literal_sym = e->literal();
+      if (sym == literal_sym) {
+        return e->literal_addr();
+      }
+    }
+  }
+  return NULL;
+}
+
 // Suggestion: Push unicode-based lookup all the way into the hashing
 // and probing logic, so there is no need for convert_to_utf8 until
 // an actual new Symbol* is created.
