@@ -546,7 +546,7 @@ class Klass : public Klass_vtbl {
   // For arrays, this returns the name of the element with a leading '['.
   // For classes, this returns the name with a leading 'L' and a trailing ';'
   //     and the package separators as '/'.
-  virtual char* signature_name() const;
+  virtual const char* signature_name() const;
 
   // garbage collection support
   virtual void oop_follow_contents(oop obj) = 0;
