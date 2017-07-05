@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,16 +118,12 @@ public class SctpNet {
         return set;
     }
 
-    static void setSocketOption(int fd,
-                                SctpSocketOption name,
-                                Object value,
-                                int assocId)
+    static <T> void setSocketOption(int fd,
+                                    SctpSocketOption<T> name,
+                                    T value,
+                                    int assocId)
             throws IOException {
         if (value == null)
-            throw new IllegalArgumentException("Invalid option value");
-
-        Class<?> type = name.type();
-        if (!type.isInstance(value))
             throw new IllegalArgumentException("Invalid option value");
 
         if (name.equals(SCTP_INIT_MAXSTREAMS)) {
@@ -169,7 +165,7 @@ public class SctpNet {
         }
     }
 
-    static Object getSocketOption(int fd, SctpSocketOption name, int assocId)
+    static Object getSocketOption(int fd, SctpSocketOption<?> name, int assocId)
              throws IOException {
          if (name.equals(SCTP_SET_PEER_PRIMARY_ADDR)) {
             throw new IllegalArgumentException(
@@ -194,7 +190,7 @@ public class SctpNet {
         }
     }
 
-    static void setIntOption(int fd, SctpSocketOption name, Object value)
+    static void setIntOption(int fd, SctpSocketOption<?> name, Object value)
             throws IOException {
         if (value == null)
             throw new IllegalArgumentException("Invalid option value");
@@ -234,7 +230,7 @@ public class SctpNet {
         setIntOption0(fd, ((SctpStdSocketOption)name).constValue(), arg);
     }
 
-    static Object getIntOption(int fd, SctpSocketOption name)
+    static Object getIntOption(int fd, SctpSocketOption<?> name)
             throws IOException {
         Class<?> type = name.type();
 

@@ -511,6 +511,11 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
   NMethodSweeper::scan_stacks();
+
+  // rotate log files?
+  if (UseGCLogFileRotation) {
+    gclog_or_tty->rotate_log();
+  }
 }
 
 

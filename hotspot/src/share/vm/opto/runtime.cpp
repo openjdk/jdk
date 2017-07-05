@@ -106,6 +106,7 @@ address OptoRuntime::_multianewarray2_Java                        = NULL;
 address OptoRuntime::_multianewarray3_Java                        = NULL;
 address OptoRuntime::_multianewarray4_Java                        = NULL;
 address OptoRuntime::_multianewarray5_Java                        = NULL;
+address OptoRuntime::_multianewarrayN_Java                        = NULL;
 address OptoRuntime::_g1_wb_pre_Java                              = NULL;
 address OptoRuntime::_g1_wb_post_Java                             = NULL;
 address OptoRuntime::_vtable_must_compile_Java                    = NULL;
@@ -120,6 +121,7 @@ address OptoRuntime::_zap_dead_Java_locals_Java                   = NULL;
 address OptoRuntime::_zap_dead_native_locals_Java                 = NULL;
 # endif
 
+ExceptionBlob* OptoRuntime::_exception_blob;
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -153,6 +155,7 @@ void OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true , false, false);
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true , false, false);
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true , false, false);
+  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true , false, false);
   gen(env, _g1_wb_pre_Java                 , g1_wb_pre_Type               , SharedRuntime::g1_wb_pre        ,    0 , false, false, false);
   gen(env, _g1_wb_post_Java                , g1_wb_post_Type              , SharedRuntime::g1_wb_post       ,    0 , false, false, false);
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C      ,    0 , false, false, false);
@@ -373,6 +376,24 @@ JRT_ENTRY(void, OptoRuntime::multianewarray5_C(klassOopDesc* elem_type, int len1
   thread->set_vm_result(obj);
 JRT_END
 
+JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(klassOopDesc* elem_type, arrayOopDesc* dims, JavaThread *thread))
+  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(oop(elem_type)->is_klass(), "not a class");
+  assert(oop(dims)->is_typeArray(), "not an array");
+
+  ResourceMark rm;
+  jint len = dims->length();
+  assert(len > 0, "Dimensions array should contain data");
+  jint *j_dims = typeArrayOop(dims)->int_at_addr(0);
+  jint *c_dims = NEW_RESOURCE_ARRAY(jint, len);
+  Copy::conjoint_jints_atomic(j_dims, c_dims, len);
+
+  oop obj = arrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
+  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
+  thread->set_vm_result(obj);
+JRT_END
+
+
 const TypeFunc *OptoRuntime::new_instance_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -451,6 +472,21 @@ const TypeFunc *OptoRuntime::multianewarray4_Type() {
 
 const TypeFunc *OptoRuntime::multianewarray5_Type() {
   return multianewarray_Type(5);
+}
+
+const TypeFunc *OptoRuntime::multianewarrayN_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;   // element klass
+  fields[TypeFunc::Parms+1] = TypeInstPtr::NOTNULL;   // array of dim sizes
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Returned oop
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  return TypeFunc::make(domain, range);
 }
 
 const TypeFunc *OptoRuntime::g1_wb_pre_Type() {

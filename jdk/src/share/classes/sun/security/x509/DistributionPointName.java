@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,8 +201,8 @@ public class DistributionPointName {
         }
         DistributionPointName other = (DistributionPointName)obj;
 
-        return equals(this.fullName, other.fullName) &&
-               equals(this.relativeName, other.relativeName);
+        return Objects.equals(this.fullName, other.fullName) &&
+               Objects.equals(this.relativeName, other.relativeName);
     }
 
     /**
@@ -238,12 +238,5 @@ public class DistributionPointName {
         }
 
         return sb.toString();
-    }
-
-    /*
-     * Utility function for a.equals(b) where both a and b may be null.
-     */
-    private static boolean equals(Object a, Object b) {
-        return (a == null) ? (b == null) : a.equals(b);
     }
 }

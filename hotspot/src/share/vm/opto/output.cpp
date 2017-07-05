@@ -911,7 +911,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
         }
       } else {
         const TypePtr *tp = obj_node->bottom_type()->make_ptr();
-        scval = new ConstantOopWriteValue(tp->is_instptr()->const_oop()->constant_encoding());
+        scval = new ConstantOopWriteValue(tp->is_oopptr()->const_oop()->constant_encoding());
       }
 
       OptoReg::Name box_reg = BoxLockNode::stack_slot(box_node);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,8 @@ import  java.io.File;
 import  java.io.FileReader;
 import  java.io.FileWriter;
 import  java.io.IOException;
-import  java.util.ArrayList;
-import  java.util.Calendar;
 import  java.util.Date;
 import  java.util.HashMap;
-import  java.util.Iterator;
-import  java.util.LinkedList;
 import  java.util.List;
 import  java.util.Map;
 import  java.util.Set;
@@ -189,7 +185,7 @@ class GenDoc extends BackEnd {
 
             out.write(header1 + new Date() + header3 + zonename + header4);
             out.write(body1 + "<FONT size=\"+2\"><B>" + zonename + "</B></FONT>");
-            LatitudeAndLongitude location = (LatitudeAndLongitude)mapList.get(zonename);
+            LatitudeAndLongitude location = mapList.get(zonename);
             if (location != null) {
                 int deg, min, sec;
 
@@ -608,12 +604,12 @@ class GenDoc extends BackEnd {
                        "<BR>\n\n" + "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n" +
                        "<TR>\n<TD NOWRAP>\n");
 
-            Set aliasSet = a.keySet();
+            Set<String> aliasSet = a.keySet();
             len = aliasSet.size();
-            Object aliasNames[] = aliasSet.toArray();
+            String aliasNames[] = aliasSet.toArray(new String[0]);
             for (int i = 0; i < len; i++) {
-                displayNameList.put(transform((String)aliasNames[i]),
-                                    (String)aliasNames[i]);
+                displayNameList.put(transform(aliasNames[i]),
+                                    aliasNames[i]);
             }
 
             o = displayNameList.keySet().toArray();

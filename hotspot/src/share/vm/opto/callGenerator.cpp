@@ -698,6 +698,46 @@ CallGenerator* CallGenerator::for_predicted_dynamic_call(ciMethodHandle* predict
 }
 
 
+CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMState* jvms,
+                                                       ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
+  if (method_handle->Opcode() == Op_ConP) {
+    const TypeOopPtr* oop_ptr = method_handle->bottom_type()->is_oopptr();
+    ciObject* const_oop = oop_ptr->const_oop();
+    ciMethodHandle* method_handle = const_oop->as_method_handle();
+
+    // Set the callee to have access to the class and signature in
+    // the MethodHandleCompiler.
+    method_handle->set_callee(callee);
+    method_handle->set_caller(caller);
+    method_handle->set_call_profile(profile);
+
+    // Get an adapter for the MethodHandle.
+    ciMethod* target_method = method_handle->get_method_handle_adapter();
+    if (target_method != NULL) {
+      CallGenerator* hit_cg = Compile::current()->call_generator(target_method, -1, false, jvms, true, 1);
+      if (hit_cg != NULL && hit_cg->is_inline())
+        return hit_cg;
+    }
+  } else if (method_handle->Opcode() == Op_Phi && method_handle->req() == 3 &&
+             method_handle->in(1)->Opcode() == Op_ConP && method_handle->in(2)->Opcode() == Op_ConP) {
+    // selectAlternative idiom merging two constant MethodHandles.
+    // Generate a guard so that each can be inlined.  We might want to
+    // do more inputs at later point but this gets the most common
+    // case.
+    const TypeOopPtr* oop_ptr = method_handle->in(1)->bottom_type()->is_oopptr();
+    ciObject* const_oop = oop_ptr->const_oop();
+    ciMethodHandle* mh = const_oop->as_method_handle();
+
+    CallGenerator* cg1 = for_method_handle_inline(method_handle->in(1), jvms, caller, callee, profile);
+    CallGenerator* cg2 = for_method_handle_inline(method_handle->in(2), jvms, caller, callee, profile);
+    if (cg1 != NULL && cg2 != NULL) {
+      return new PredictedDynamicCallGenerator(mh, cg2, cg1, PROB_FAIR);
+    }
+  }
+  return NULL;
+}
+
+
 JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
@@ -707,33 +747,45 @@ JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
     log->elem("predicted_dynamic_call bci='%d'", jvms->bci());
   }
 
-  // Get the constant pool cache from the caller class.
-  ciMethod* caller_method = jvms->method();
-  ciBytecodeStream str(caller_method);
-  str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
-  ciCPCache* cpcache = str.get_cpcache();
-
-  // Get the offset of the CallSite from the constant pool cache
-  // pointer.
-  int index = str.get_method_index();
-  size_t call_site_offset = cpcache->get_f1_offset(index);
-
-  // Load the CallSite object from the constant pool cache.
-  const TypeOopPtr* cpcache_ptr = TypeOopPtr::make_from_constant(cpcache);
-  Node* cpcache_adr   = kit.makecon(cpcache_ptr);
-  Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, cpcache_adr, call_site_offset);
-  Node* call_site     = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
-
-  // Load the target MethodHandle from the CallSite object.
-  Node* target_adr = kit.basic_plus_adr(call_site, call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
-  Node* target_mh  = kit.make_load(kit.control(), target_adr, TypeInstPtr::BOTTOM, T_OBJECT);
-
-  // Check if the MethodHandle is still the same.
   const TypeOopPtr* predicted_mh_ptr = TypeOopPtr::make_from_constant(_predicted_method_handle, true);
   Node* predicted_mh = kit.makecon(predicted_mh_ptr);
 
-  Node* cmp = gvn.transform(new(kit.C, 3) CmpPNode(target_mh, predicted_mh));
-  Node* bol = gvn.transform(new(kit.C, 2) BoolNode(cmp, BoolTest::eq) );
+  Node* bol = NULL;
+  int bc = jvms->method()->java_code_at_bci(jvms->bci());
+  if (bc == Bytecodes::_invokespecial) {
+    // This is the selectAlternative idiom for guardWithTest
+    Node* receiver = kit.argument(0);
+
+    // Check if the MethodHandle is the expected one
+    Node* cmp = gvn.transform(new(kit.C, 3) CmpPNode(receiver, predicted_mh));
+    bol = gvn.transform(new(kit.C, 2) BoolNode(cmp, BoolTest::eq) );
+  } else {
+    assert(bc == Bytecodes::_invokedynamic, "must be");
+    // Get the constant pool cache from the caller class.
+    ciMethod* caller_method = jvms->method();
+    ciBytecodeStream str(caller_method);
+    str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
+    ciCPCache* cpcache = str.get_cpcache();
+
+    // Get the offset of the CallSite from the constant pool cache
+    // pointer.
+    int index = str.get_method_index();
+    size_t call_site_offset = cpcache->get_f1_offset(index);
+
+    // Load the CallSite object from the constant pool cache.
+    const TypeOopPtr* cpcache_ptr = TypeOopPtr::make_from_constant(cpcache);
+    Node* cpcache_adr   = kit.makecon(cpcache_ptr);
+    Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, cpcache_adr, call_site_offset);
+    Node* call_site     = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
+
+    // Load the target MethodHandle from the CallSite object.
+    Node* target_adr = kit.basic_plus_adr(call_site, call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
+    Node* target_mh  = kit.make_load(kit.control(), target_adr, TypeInstPtr::BOTTOM, T_OBJECT);
+
+    // Check if the MethodHandle is still the same.
+    Node* cmp = gvn.transform(new(kit.C, 3) CmpPNode(target_mh, predicted_mh));
+    bol = gvn.transform(new(kit.C, 2) BoolNode(cmp, BoolTest::eq) );
+  }
   IfNode* iff = kit.create_and_xform_if(kit.control(), bol, _hit_prob, COUNT_UNKNOWN);
   kit.set_control( gvn.transform(new(kit.C, 1) IfTrueNode (iff)));
   Node* slow_ctl = gvn.transform(new(kit.C, 1) IfFalseNode(iff));

@@ -118,6 +118,7 @@ class OptoRuntime : public AllStatic {
   static address _multianewarray3_Java;
   static address _multianewarray4_Java;
   static address _multianewarray5_Java;
+  static address _multianewarrayN_Java;
   static address _g1_wb_pre_Java;
   static address _g1_wb_post_Java;
   static address _vtable_must_compile_Java;
@@ -153,6 +154,7 @@ class OptoRuntime : public AllStatic {
   static void multianewarray3_C(klassOopDesc* klass, int len1, int len2, int len3, JavaThread *thread);
   static void multianewarray4_C(klassOopDesc* klass, int len1, int len2, int len3, int len4, JavaThread *thread);
   static void multianewarray5_C(klassOopDesc* klass, int len1, int len2, int len3, int len4, int len5, JavaThread *thread);
+  static void multianewarrayN_C(klassOopDesc* klass, arrayOopDesc* dims, JavaThread *thread);
   static void g1_wb_pre_C(oopDesc* orig, JavaThread* thread);
   static void g1_wb_post_C(void* card_addr, JavaThread* thread);
 
@@ -210,6 +212,7 @@ private:
   static address multianewarray3_Java()                  { return _multianewarray3_Java; }
   static address multianewarray4_Java()                  { return _multianewarray4_Java; }
   static address multianewarray5_Java()                  { return _multianewarray5_Java; }
+  static address multianewarrayN_Java()                  { return _multianewarrayN_Java; }
   static address g1_wb_pre_Java()                        { return _g1_wb_pre_Java; }
   static address g1_wb_post_Java()                       { return _g1_wb_post_Java; }
   static address vtable_must_compile_stub()              { return _vtable_must_compile_Java; }
@@ -249,6 +252,7 @@ private:
   static const TypeFunc* multianewarray3_Type(); // multianewarray
   static const TypeFunc* multianewarray4_Type(); // multianewarray
   static const TypeFunc* multianewarray5_Type(); // multianewarray
+  static const TypeFunc* multianewarrayN_Type(); // multianewarray
   static const TypeFunc* g1_wb_pre_Type();
   static const TypeFunc* g1_wb_post_Type();
   static const TypeFunc* complete_monitor_enter_Type();
