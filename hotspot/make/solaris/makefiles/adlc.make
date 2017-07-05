@@ -147,6 +147,9 @@ $(GENERATEDFILES): refresh_adfiles
 # Note that product files are updated via "mv", which is atomic.
 TEMPDIR := $(OUTDIR)/mktmp$(shell echo $$$$)
 
+# Debuggable by default
+CFLAGS += -g
+
 # Pass -D flags into ADLC.
 ADLCFLAGS += $(SYSDEFS)
 
@@ -155,7 +158,7 @@ ADLCFLAGS += -q -T
 
 # Normally, debugging is done directly on the ad_<arch>*.cpp files.
 # But -g will put #line directives in those files pointing back to <arch>.ad.
-#ADLCFLAGS += -g
+ADLCFLAGS += -g
 
 ifdef LP64
 ADLCFLAGS += -D_LP64

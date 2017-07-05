@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,37 +60,42 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Allocate and initialize our frame
-    thread->push_zero_frame(
-      EntryFrame::build(stack, parameters, parameter_words, call_wrapper));
+    EntryFrame *frame =
+      EntryFrame::build(parameters, parameter_words, call_wrapper, THREAD);
 
-    // Make the call
-    Interpreter::invoke_method(method, entry_point, THREAD);
-
-    // Store result depending on type
     if (!HAS_PENDING_EXCEPTION) {
-      switch (result_type) {
-      case T_INT:
-        *(jint *) result = *(jint *) stack->sp();
-        break;
-      case T_LONG:
-        *(jlong *) result = *(jlong *) stack->sp();
-        break;
-      case T_FLOAT:
-        *(jfloat *) result = *(jfloat *) stack->sp();
-        break;
-      case T_DOUBLE:
-        *(jdouble *) result = *(jdouble *) stack->sp();
-        break;
-      case T_OBJECT:
-        *(oop *) result = *(oop *) stack->sp();
-        break;
-      default:
-        ShouldNotReachHere();
-      }
-    }
+      // Push the frame
+      thread->push_zero_frame(frame);
 
-    // Unwind our frame
-    thread->pop_zero_frame();
+      // Make the call
+      Interpreter::invoke_method(method, entry_point, THREAD);
+
+      // Store the result
+      if (!HAS_PENDING_EXCEPTION) {
+        switch (result_type) {
+        case T_INT:
+          *(jint *) result = *(jint *) stack->sp();
+          break;
+        case T_LONG:
+          *(jlong *) result = *(jlong *) stack->sp();
+          break;
+        case T_FLOAT:
+          *(jfloat *) result = *(jfloat *) stack->sp();
+          break;
+        case T_DOUBLE:
+          *(jdouble *) result = *(jdouble *) stack->sp();
+          break;
+        case T_OBJECT:
+          *(oop *) result = *(oop *) stack->sp();
+          break;
+        default:
+          ShouldNotReachHere();
+        }
+      }
+
+      // Unwind the frame
+      thread->pop_zero_frame();
+    }
 
     // Tear down the stack if necessary
     if (stack_needs_teardown)
@@ -226,13 +231,13 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
   StubGenerator g(code, all);
 }
 
-EntryFrame *EntryFrame::build(ZeroStack*       stack,
-                              const intptr_t*  parameters,
+EntryFrame *EntryFrame::build(const intptr_t*  parameters,
                               int              parameter_words,
-                              JavaCallWrapper* call_wrapper) {
-  if (header_words + parameter_words > stack->available_words()) {
-    Unimplemented();
-  }
+                              JavaCallWrapper* call_wrapper,
+                              TRAPS) {
+
+  ZeroStack *stack = ((JavaThread *) THREAD)->zero_stack();
+  stack->overflow_check(header_words + parameter_words, CHECK_NULL);
 
   stack->push(0); // next_frame, filled in later
   intptr_t *fp = stack->sp();
