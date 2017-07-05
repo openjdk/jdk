@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package sun.security.provider.certpath;
+package sun.security.provider.certpath.ldap;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -46,6 +46,7 @@ import java.security.cert.*;
 import javax.security.auth.x500.X500Principal;
 
 import sun.misc.HexDumpEncoder;
+import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
 import sun.security.x509.X500Name;

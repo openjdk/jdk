@@ -3186,6 +3186,15 @@ void GraphKit::write_barrier_post(Node* oop_store,
       return;
   }
 
+  if (use_ReduceInitialCardMarks()
+      && obj == just_allocated_object(control())) {
+    // We can skip marks on a freshly-allocated object in Eden.
+    // Keep this code in sync with maybe_defer_card_mark() in runtime.cpp.
+    // That routine informs GC to take appropriate compensating steps
+    // so as to make this card-mark elision safe.
+    return;
+  }
+
   if (!use_precise) {
     // All card marks for a (non-array) instance are in one place:
     adr = obj;
