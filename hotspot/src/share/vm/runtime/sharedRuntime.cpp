@@ -1776,7 +1776,14 @@ const char* AdapterHandlerEntry::name = "I2C/C2I adapters";
 GrowableArray<uint64_t>* AdapterHandlerLibrary::_fingerprints = NULL;
 GrowableArray<AdapterHandlerEntry* >* AdapterHandlerLibrary::_handlers = NULL;
 const int AdapterHandlerLibrary_size = 16*K;
-u_char                   AdapterHandlerLibrary::_buffer[AdapterHandlerLibrary_size + 32];
+BufferBlob* AdapterHandlerLibrary::_buffer = NULL;
+
+BufferBlob* AdapterHandlerLibrary::buffer_blob() {
+  // Should be called only when AdapterHandlerLibrary_lock is active.
+  if (_buffer == NULL) // Initialize lazily
+      _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
+  return _buffer;
+}
 
 void AdapterHandlerLibrary::initialize() {
   if (_fingerprints != NULL) return;
@@ -1812,7 +1819,9 @@ int AdapterHandlerLibrary::get_create_adapter_index(methodHandle method) {
   assert(ic_miss != NULL, "must have handler");
 
   int result;
+  NOT_PRODUCT(int code_size);
   BufferBlob *B = NULL;
+  AdapterHandlerEntry* entry = NULL;
   uint64_t fingerprint;
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
@@ -1850,42 +1859,45 @@ int AdapterHandlerLibrary::get_create_adapter_index(methodHandle method) {
 
     // Create I2C & C2I handlers
     ResourceMark rm;
-    // Improve alignment slightly
-    u_char *buf = (u_char*)(((intptr_t)_buffer + CodeEntryAlignment-1) & ~(CodeEntryAlignment-1));
-    CodeBuffer buffer(buf, AdapterHandlerLibrary_size);
-    short buffer_locs[20];
-    buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
-                                           sizeof(buffer_locs)/sizeof(relocInfo));
-    MacroAssembler _masm(&buffer);
 
-    // Fill in the signature array, for the calling-convention call.
-    int total_args_passed = method->size_of_parameters(); // All args on stack
+    BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
+    if (buf != NULL) {
+      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      short buffer_locs[20];
+      buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
+                                             sizeof(buffer_locs)/sizeof(relocInfo));
+      MacroAssembler _masm(&buffer);
 
-    BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType,total_args_passed);
-    VMRegPair  * regs   = NEW_RESOURCE_ARRAY(VMRegPair  ,total_args_passed);
-    int i=0;
-    if( !method->is_static() )  // Pass in receiver first
-      sig_bt[i++] = T_OBJECT;
-    for( SignatureStream ss(method->signature()); !ss.at_return_type(); ss.next()) {
-      sig_bt[i++] = ss.type();  // Collect remaining bits of signature
-      if( ss.type() == T_LONG || ss.type() == T_DOUBLE )
-        sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
+      // Fill in the signature array, for the calling-convention call.
+      int total_args_passed = method->size_of_parameters(); // All args on stack
+
+      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType,total_args_passed);
+      VMRegPair  * regs   = NEW_RESOURCE_ARRAY(VMRegPair  ,total_args_passed);
+      int i=0;
+      if( !method->is_static() )  // Pass in receiver first
+        sig_bt[i++] = T_OBJECT;
+      for( SignatureStream ss(method->signature()); !ss.at_return_type(); ss.next()) {
+        sig_bt[i++] = ss.type();  // Collect remaining bits of signature
+        if( ss.type() == T_LONG || ss.type() == T_DOUBLE )
+          sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
+      }
+      assert( i==total_args_passed, "" );
+
+      // Now get the re-packed compiled-Java layout.
+      int comp_args_on_stack;
+
+      // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
+      comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
+
+      entry = SharedRuntime::generate_i2c2i_adapters(&_masm,
+                                                     total_args_passed,
+                                                     comp_args_on_stack,
+                                                     sig_bt,
+                                                     regs);
+
+      B = BufferBlob::create(AdapterHandlerEntry::name, &buffer);
+      NOT_PRODUCT(code_size = buffer.code_size());
     }
-    assert( i==total_args_passed, "" );
-
-    // Now get the re-packed compiled-Java layout.
-    int comp_args_on_stack;
-
-    // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
-    comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
-
-    AdapterHandlerEntry* entry = SharedRuntime::generate_i2c2i_adapters(&_masm,
-                                                                        total_args_passed,
-                                                                        comp_args_on_stack,
-                                                                        sig_bt,
-                                                                        regs);
-
-    B = BufferBlob::create(AdapterHandlerEntry::name, &buffer);
     if (B == NULL) {
       // CodeCache is full, disable compilation
       // Ought to log this but compile log is only per compile thread
@@ -1912,9 +1924,9 @@ int AdapterHandlerLibrary::get_create_adapter_index(methodHandle method) {
       tty->cr();
       tty->print_cr("i2c argument handler #%d for: %s %s (fingerprint = 0x%llx, %d bytes generated)",
                     _handlers->length(), (method->is_static() ? "static" : "receiver"),
-                    method->signature()->as_C_string(), fingerprint, buffer.code_size() );
+                    method->signature()->as_C_string(), fingerprint, code_size );
       tty->print_cr("c2i argument handler starts at %p",entry->get_c2i_entry());
-      Disassembler::decode(entry->get_i2c_entry(), entry->get_i2c_entry() + buffer.code_size());
+      Disassembler::decode(entry->get_i2c_entry(), entry->get_i2c_entry() + code_size);
     }
 #endif
 
@@ -1982,42 +1994,44 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
       return nm;
     }
 
-    // Improve alignment slightly
-    u_char* buf = (u_char*)(((intptr_t)_buffer + CodeEntryAlignment-1) & ~(CodeEntryAlignment-1));
-    CodeBuffer buffer(buf, AdapterHandlerLibrary_size);
-    // Need a few relocation entries
-    double locs_buf[20];
-    buffer.insts()->initialize_shared_locs((relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-    MacroAssembler _masm(&buffer);
+    ResourceMark rm;
 
-    // Fill in the signature array, for the calling-convention call.
-    int total_args_passed = method->size_of_parameters();
+    BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
+    if (buf != NULL) {
+      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      double locs_buf[20];
+      buffer.insts()->initialize_shared_locs((relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
+      MacroAssembler _masm(&buffer);
 
-    BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType,total_args_passed);
-    VMRegPair  * regs   = NEW_RESOURCE_ARRAY(VMRegPair  ,total_args_passed);
-    int i=0;
-    if( !method->is_static() )  // Pass in receiver first
-      sig_bt[i++] = T_OBJECT;
-    SignatureStream ss(method->signature());
-    for( ; !ss.at_return_type(); ss.next()) {
-      sig_bt[i++] = ss.type();  // Collect remaining bits of signature
-      if( ss.type() == T_LONG || ss.type() == T_DOUBLE )
-        sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
+      // Fill in the signature array, for the calling-convention call.
+      int total_args_passed = method->size_of_parameters();
+
+      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType,total_args_passed);
+      VMRegPair*   regs = NEW_RESOURCE_ARRAY(VMRegPair,total_args_passed);
+      int i=0;
+      if( !method->is_static() )  // Pass in receiver first
+        sig_bt[i++] = T_OBJECT;
+      SignatureStream ss(method->signature());
+      for( ; !ss.at_return_type(); ss.next()) {
+        sig_bt[i++] = ss.type();  // Collect remaining bits of signature
+        if( ss.type() == T_LONG || ss.type() == T_DOUBLE )
+          sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
+      }
+      assert( i==total_args_passed, "" );
+      BasicType ret_type = ss.type();
+
+      // Now get the compiled-Java layout as input arguments
+      int comp_args_on_stack;
+      comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
+
+      // Generate the compiled-to-native wrapper code
+      nm = SharedRuntime::generate_native_wrapper(&_masm,
+                                                  method,
+                                                  total_args_passed,
+                                                  comp_args_on_stack,
+                                                  sig_bt,regs,
+                                                  ret_type);
     }
-    assert( i==total_args_passed, "" );
-    BasicType ret_type = ss.type();
-
-    // Now get the compiled-Java layout as input arguments
-    int comp_args_on_stack;
-    comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
-
-    // Generate the compiled-to-native wrapper code
-    nm = SharedRuntime::generate_native_wrapper(&_masm,
-                                                method,
-                                                total_args_passed,
-                                                comp_args_on_stack,
-                                                sig_bt,regs,
-                                                ret_type);
   }
 
   // Must unlock before calling set_code
@@ -2077,18 +2091,20 @@ nmethod *AdapterHandlerLibrary::create_dtrace_nmethod(methodHandle method) {
       return nm;
     }
 
-    // Improve alignment slightly
-    u_char* buf = (u_char*)
-        (((intptr_t)_buffer + CodeEntryAlignment-1) & ~(CodeEntryAlignment-1));
-    CodeBuffer buffer(buf, AdapterHandlerLibrary_size);
-    // Need a few relocation entries
-    double locs_buf[20];
-    buffer.insts()->initialize_shared_locs(
-        (relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-    MacroAssembler _masm(&buffer);
+    ResourceMark rm;
 
-    // Generate the compiled-to-native wrapper code
-    nm = SharedRuntime::generate_dtrace_nmethod(&_masm, method);
+    BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
+    if (buf != NULL) {
+      CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
+      // Need a few relocation entries
+      double locs_buf[20];
+      buffer.insts()->initialize_shared_locs(
+        (relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
+      MacroAssembler _masm(&buffer);
+
+      // Generate the compiled-to-native wrapper code
+      nm = SharedRuntime::generate_dtrace_nmethod(&_masm, method);
+    }
   }
   return nm;
 }

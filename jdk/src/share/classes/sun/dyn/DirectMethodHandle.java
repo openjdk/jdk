@@ -45,8 +45,6 @@ class DirectMethodHandle extends MethodHandle {
         if (!m.isResolved())
             throw new InternalError();
 
-        // Null check and replace privilege token (as passed to JVM) with null.
-        if (lookupClass.equals(Access.class))  lookupClass = null;
         MethodHandleNatives.init(this, (Object) m, doDispatch, lookupClass);
     }
 

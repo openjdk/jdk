@@ -95,7 +95,7 @@ public abstract class MethodHandleImpl {
 
     public static void initLookup(Access token, Lookup lookup) {
         Access.check(token);
-        if (IMPL_LOOKUP_INIT != null || lookup.lookupClass() != Access.class)
+        if (IMPL_LOOKUP_INIT != null || lookup.lookupClass() != null)
             throw new InternalError();
         IMPL_LOOKUP_INIT = lookup;
     }
@@ -144,19 +144,28 @@ public abstract class MethodHandleImpl {
             boolean doDispatch, Class<?> lookupClass) {
         Access.check(token);  // only trusted calls
         MethodType mtype = method.getMethodType();
+        MethodType rtype = mtype;
         if (method.isStatic()) {
             doDispatch = false;
         } else {
             // adjust the advertised receiver type to be exactly the one requested
             // (in the case of invokespecial, this will be the calling class)
-            mtype = mtype.insertParameterType(0, method.getDeclaringClass());
+            Class<?> recvType = method.getDeclaringClass();
+            mtype = mtype.insertParameterType(0, recvType);
             if (method.isConstructor())
                 doDispatch = true;
+            // FIXME: JVM has trouble building MH.invoke sites for
+            // classes off the boot class path
+            rtype = mtype;
+            if (recvType.getClassLoader() != null)
+                rtype = rtype.changeParameterType(0, Object.class);
         }
         DirectMethodHandle mh = new DirectMethodHandle(mtype, method, doDispatch, lookupClass);
         if (!mh.isValid())
             throw newNoAccessException(method, lookupClass);
-        return mh;
+        MethodHandle rmh = AdapterMethodHandle.makePairwiseConvert(token, rtype, mh);
+        if (rmh == null)  throw new InternalError();
+        return rmh;
     }
 
     public static
@@ -189,6 +198,15 @@ public abstract class MethodHandleImpl {
     MethodHandle bindReceiver(Access token,
                               MethodHandle target, Object receiver) {
         Access.check(token);
+        if (target instanceof AdapterMethodHandle) {
+            Object info = MethodHandleNatives.getTargetInfo(target);
+            if (info instanceof DirectMethodHandle) {
+                DirectMethodHandle dmh = (DirectMethodHandle) info;
+                if (receiver == null ||
+                    dmh.type().parameterType(0).isAssignableFrom(receiver.getClass()))
+                    target = dmh;
+            }
+        }
         if (target instanceof DirectMethodHandle)
             return new BoundMethodHandle((DirectMethodHandle)target, receiver, 0);
         return null;   // let caller try something else

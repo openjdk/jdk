@@ -37,8 +37,9 @@ G1CollectedHeap::heap_region_containing(const void* addr) const {
 inline HeapRegion*
 G1CollectedHeap::heap_region_containing_raw(const void* addr) const {
   assert(_g1_reserved.contains(addr), "invariant");
-  size_t index = ((intptr_t) addr - (intptr_t) _g1_reserved.start())
-                                              >> HeapRegion::LogOfHRGrainBytes;
+  size_t index = pointer_delta(addr, _g1_reserved.start(), 1)
+                                        >> HeapRegion::LogOfHRGrainBytes;
+
   HeapRegion* res = _hrs->at(index);
   assert(res == _hrs->addr_to_region(addr), "sanity");
   return res;
