@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -187,25 +187,30 @@ define add_native_source
   # param 6 = the c++ flags to the compiler
   # param 7 = the c++ compiler
   # param 8 = the flags to the assembler
+  # param 9 = set to disable THIS_FILE
+
+  ifeq ($9, )
+    $1_$2_THIS_FILE = -DTHIS_FILE='"$$(<F)"'
+  endif
 
   ifneq (,$$(filter %.c,$2))
     # Compile as a C file
-    $1_$2_FLAGS=$(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
     $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.m,$2))
     # Compile as an Objective-C file
-    $1_$2_FLAGS=-x objective-c $(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=-x objective-c $(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
     $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.s %.S,$2))
     # Compile as assembler file
-    $1_$2_FLAGS=$8 -DTHIS_FILE='"$$(<F)"'
+    $1_$2_FLAGS=$8
     $1_$2_COMP=$(AS)
     $1_$2_DEP_FLAG:=
   else ifneq (,$$(filter %.cpp,$2)$$(filter %.cc,$2)$$(filter %.mm,$2))
     # Compile as a C++ or Objective-C++ file
-    $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) $$($1_$2_THIS_FILE) -c
     $1_$2_COMP=$7
     $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
   else
@@ -304,8 +309,11 @@ endef
 #   EXTRA_OBJECT_FILES List of extra object files to include when linking
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RC_FLAGS flags for RC.
+#   EMBED_MANIFEST if true, embed manifest on Windows.
 #   MAPFILE mapfile
 #   REORDER reorder file
+#   USE_MAPFILE_FOR_SYMBOLS if true and this is a STATIC_BUILD, just copy the
+#       mapfile for the output symbols file
 #   CC the compiler to use, default is $(CC)
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
@@ -643,8 +651,9 @@ define SetupNativeCompilationBody
 
       $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
 		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET))))
-		$$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
-		    $$($1_VERSIONINFO_RESOURCE)
+		$$(call ExecuteWithLog, $$@, \
+		    $$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
+		    $$($1_VERSIONINFO_RESOURCE))
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
 		$$($1_CC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
 		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || true ; \
@@ -654,12 +663,11 @@ define SetupNativeCompilationBody
     endif
   endif
 
-  # mapfile doesnt seem to be implemented on macosx (yet??)
-  ifneq ($(OPENJDK_TARGET_OS),macosx)
+  ifneq ($(DISABLE_MAPFILES),true)
+    $1_REAL_MAPFILE := $$($1_MAPFILE)
     ifneq ($(OPENJDK_TARGET_OS),windows)
-      $1_REAL_MAPFILE:=$$($1_MAPFILE)
       ifneq (,$$($1_REORDER))
-        $1_REAL_MAPFILE:=$$($1_OBJECT_DIR)/mapfile
+        $1_REAL_MAPFILE := $$($1_OBJECT_DIR)/mapfile
 
         $$($1_REAL_MAPFILE) : $$($1_MAPFILE) $$($1_REORDER)
 		$$(MKDIR) -p $$(@D)
@@ -689,7 +697,8 @@ define SetupNativeCompilationBody
           # The dependency on TARGET is needed on windows for debuginfo files
           # to be rebuilt properly.
           $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/% $$($1_TARGET)
-		$(CP) $$< $$@
+                # Use cp -r since on macosx, the dSYM is a directory
+		$(CP) -r $$< $$@
         endif
 
         # Generate debuginfo files.
@@ -815,13 +824,23 @@ define SetupNativeCompilationBody
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
     # Generating a static library, ie object file archive.
-    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE)
+    ifeq ($(STATIC_BUILD), true)
+      ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
+        STATIC_MAPFILE_DEP := $$($1_MAPFILE)
+      endif
+    endif
+
+    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) $$(STATIC_MAPFILE_DEP)
 	$$(call LogInfo, Archiving $$($1_STATIC_LIBRARY))
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
 	        $$($1_RES))
         ifeq ($(STATIC_BUILD), true)
-	  $(GetSymbols)
+          ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
+	    $(CP) $$($1_MAPFILE) $$(@D)/$$(basename $$(@F)).symbols
+          else
+	    $(GetSymbols)
+          endif
         endif
   endif
 
@@ -835,6 +854,12 @@ define SetupNativeCompilationBody
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+    ifeq ($(OPENJDK_TARGET_OS), windows)
+      ifeq ($$($1_EMBED_MANIFEST), true)
+        $1_EXTRA_LDFLAGS += -manifest:embed
+      endif
+    endif
 
     $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_VARDEPS_FILE)

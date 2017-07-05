@@ -118,27 +118,46 @@ Flag::Error AllocatePrefetchInstrConstraintFunc(intx value, bool verbose) {
 }
 
 Flag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
-  if (value < 1 || value > max_jint) {
+  intx max_value = 512;
+  if (value < 1 || value > max_value) {
     CommandLineError::print(verbose,
                             "AllocatePrefetchStepSize (" INTX_FORMAT ") "
                             "must be between 1 and %d\n",
                             AllocatePrefetchStepSize,
-                            max_jint);
+                            max_value);
     return Flag::VIOLATES_CONSTRAINT;
   }
 
   if (AllocatePrefetchDistance % AllocatePrefetchStepSize != 0) {
-     CommandLineError::print(verbose,
-                             "AllocatePrefetchDistance (" INTX_FORMAT ") "
-                             "%% AllocatePrefetchStepSize (" INTX_FORMAT ") "
-                             "= " INTX_FORMAT " "
-                             "must be 0\n",
-                             AllocatePrefetchDistance, AllocatePrefetchStepSize,
-                             AllocatePrefetchDistance % AllocatePrefetchStepSize);
-     return Flag::VIOLATES_CONSTRAINT;
-   }
+    CommandLineError::print(verbose,
+                            "AllocatePrefetchDistance (" INTX_FORMAT ") "
+                            "%% AllocatePrefetchStepSize (" INTX_FORMAT ") "
+                            "= " INTX_FORMAT " "
+                            "must be 0\n",
+                            AllocatePrefetchDistance, AllocatePrefetchStepSize,
+                            AllocatePrefetchDistance % AllocatePrefetchStepSize);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
 
-   return Flag::SUCCESS;
+  /* The limit of 64 for the quotient of AllocatePrefetchDistance and AllocatePrefetchSize
+   * originates from the limit of 64 for AllocatePrefetchLines/AllocateInstancePrefetchLines.
+   * If AllocatePrefetchStyle == 2, the quotient from above is used in PhaseMacroExpand::prefetch_allocation()
+   * to determine the number of lines to prefetch. For other values of AllocatePrefetchStyle,
+   * AllocatePrefetchDistance and AllocatePrefetchSize is used. For consistency, all these
+   * quantities must have the same limit (64 in this case).
+   */
+  if (AllocatePrefetchDistance / AllocatePrefetchStepSize > 64) {
+    CommandLineError::print(verbose,
+                            "AllocatePrefetchDistance (" INTX_FORMAT ") too large or "
+                            "AllocatePrefetchStepSize (" INTX_FORMAT ") too small; "
+                            "try decreasing/increasing values so that "
+                            "AllocatePrefetchDistance / AllocatePrefetchStepSize <= 64\n",
+                            AllocatePrefetchDistance, AllocatePrefetchStepSize,
+                            AllocatePrefetchDistance % AllocatePrefetchStepSize);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
 }
 
 Flag::Error CompileThresholdConstraintFunc(intx value, bool verbose) {
