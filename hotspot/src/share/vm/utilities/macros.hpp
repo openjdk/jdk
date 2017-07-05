@@ -144,6 +144,14 @@
 #define NOT_WINDOWS(code) code
 #endif
 
+#if defined(IA32) || defined(AMD64)
+#define X86
+#define X86_ONLY(code) code
+#else
+#undef X86
+#define X86_ONLY(code)
+#endif
+
 #ifdef IA32
 #define IA32_ONLY(code) code
 #define NOT_IA32(code)

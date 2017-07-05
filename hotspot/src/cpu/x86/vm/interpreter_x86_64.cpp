@@ -35,9 +35,9 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   // rbx: method
   // r14: pointer to locals
   // c_rarg3: first stack arg - wordSize
-  __ movq(c_rarg3, rsp);
+  __ mov(c_rarg3, rsp);
   // adjust rsp
-  __ subq(rsp, 4 * wordSize);
+  __ subptr(rsp, 4 * wordSize);
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address,
                               InterpreterRuntime::slow_signature_handler),
@@ -70,13 +70,13 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
       case 0:
         __ movl(rscratch1, Address(rbx, methodOopDesc::access_flags_offset()));
         __ testl(rscratch1, JVM_ACC_STATIC);
-        __ cmovq(Assembler::zero, c_rarg1, Address(rsp, 0));
+        __ cmovptr(Assembler::zero, c_rarg1, Address(rsp, 0));
         break;
       case 1:
-        __ movq(c_rarg2, Address(rsp, wordSize));
+        __ movptr(c_rarg2, Address(rsp, wordSize));
         break;
       case 2:
-        __ movq(c_rarg3, Address(rsp, 2 * wordSize));
+        __ movptr(c_rarg3, Address(rsp, 2 * wordSize));
         break;
       default:
         break;
@@ -101,7 +101,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
 
 
   // restore rsp
-  __ addq(rsp, 4 * wordSize);
+  __ addptr(rsp, 4 * wordSize);
 
   __ ret(0);
 
@@ -114,9 +114,9 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   // rbx: method
   // r14: pointer to locals
   // c_rarg3: first stack arg - wordSize
-  __ movq(c_rarg3, rsp);
+  __ mov(c_rarg3, rsp);
   // adjust rsp
-  __ subq(rsp, 14 * wordSize);
+  __ subptr(rsp, 14 * wordSize);
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address,
                               InterpreterRuntime::slow_signature_handler),
@@ -155,15 +155,15 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   // Now handle integrals.  Only do c_rarg1 if not static.
   __ movl(c_rarg3, Address(rbx, methodOopDesc::access_flags_offset()));
   __ testl(c_rarg3, JVM_ACC_STATIC);
-  __ cmovq(Assembler::zero, c_rarg1, Address(rsp, 0));
+  __ cmovptr(Assembler::zero, c_rarg1, Address(rsp, 0));
 
-  __ movq(c_rarg2, Address(rsp, wordSize));
-  __ movq(c_rarg3, Address(rsp, 2 * wordSize));
-  __ movq(c_rarg4, Address(rsp, 3 * wordSize));
-  __ movq(c_rarg5, Address(rsp, 4 * wordSize));
+  __ movptr(c_rarg2, Address(rsp, wordSize));
+  __ movptr(c_rarg3, Address(rsp, 2 * wordSize));
+  __ movptr(c_rarg4, Address(rsp, 3 * wordSize));
+  __ movptr(c_rarg5, Address(rsp, 4 * wordSize));
 
   // restore rsp
-  __ addq(rsp, 14 * wordSize);
+  __ addptr(rsp, 14 * wordSize);
 
   __ ret(0);
 
@@ -176,14 +176,13 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
 // Various method entries
 //
 
-address InterpreterGenerator::generate_math_entry(
-  AbstractInterpreter::MethodKind kind) {
-  // rbx: methodOop
+address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
+
+  // rbx,: methodOop
+  // rcx: scratrch
+  // r13: sender sp
 
   if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
-
-  assert(kind == Interpreter::java_lang_math_sqrt,
-         "Other intrinsics are not special");
 
   address entry_point = __ pc();
 
@@ -197,6 +196,11 @@ address InterpreterGenerator::generate_math_entry(
   // in order to avoid monotonicity bugs when switching
   // from interpreter to compiler in the middle of some
   // computation)
+  //
+  // stack: [ ret adr ] <-- rsp
+  //        [ lo(arg) ]
+  //        [ hi(arg) ]
+  //
 
   // Note: For JDK 1.2 StrictMath doesn't exist and Math.sin/cos/sqrt are
   //       native methods. Interpreter::method_kind(...) does a check for
@@ -218,10 +222,46 @@ address InterpreterGenerator::generate_math_entry(
   // Note: For JDK 1.3 StrictMath exists and Math.sin/cos/sqrt are
   //       java methods.  Interpreter::method_kind(...) will select
   //       this entry point for the corresponding methods in JDK 1.3.
-  __ sqrtsd(xmm0, Address(rsp, wordSize));
+  // get argument
 
-  __ popq(rax);
-  __ movq(rsp, r13);
+  if (kind == Interpreter::java_lang_math_sqrt) {
+    __ sqrtsd(xmm0, Address(rsp, wordSize));
+  } else {
+    __ fld_d(Address(rsp, wordSize));
+    switch (kind) {
+      case Interpreter::java_lang_math_sin :
+          __ trigfunc('s');
+          break;
+      case Interpreter::java_lang_math_cos :
+          __ trigfunc('c');
+          break;
+      case Interpreter::java_lang_math_tan :
+          __ trigfunc('t');
+          break;
+      case Interpreter::java_lang_math_abs:
+          __ fabs();
+          break;
+      case Interpreter::java_lang_math_log:
+          __ flog();
+          break;
+      case Interpreter::java_lang_math_log10:
+          __ flog10();
+          break;
+      default                              :
+          ShouldNotReachHere();
+    }
+
+    // return double result in xmm0 for interpreter and compilers.
+    __ subptr(rsp, 2*wordSize);
+    // Round to 64bit precision
+    __ fstp_d(Address(rsp, 0));
+    __ movdbl(xmm0, Address(rsp, 0));
+    __ addptr(rsp, 2*wordSize);
+  }
+
+
+  __ pop(rax);
+  __ mov(rsp, r13);
   __ jmp(rax);
 
   return entry_point;
@@ -239,10 +279,10 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   // abstract method entry
   // remove return address. Not really needed, since exception
   // handling throws away expression stack
-  __ popq(rbx);
+  __ pop(rbx);
 
   // adjust stack to what a normal return would do
-  __ movq(rsp, r13);
+  __ mov(rsp, r13);
 
   // throw exception
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -276,156 +316,14 @@ address InterpreterGenerator::generate_empty_entry(void) {
   // Code: _return
   // _return
   // return w/o popping parameters
-  __ popq(rax);
-  __ movq(rsp, r13);
+  __ pop(rax);
+  __ mov(rsp, r13);
   __ jmp(rax);
 
   __ bind(slow_path);
   (void) generate_normal_entry(false);
   return entry_point;
 
-}
-
-// Call an accessor method (assuming it is resolved, otherwise drop
-// into vanilla (slow path) entry
-address InterpreterGenerator::generate_accessor_entry(void) {
-  // rbx: methodOop
-
-  // r13: senderSP must preserver for slow path, set SP to it on fast path
-
-  address entry_point = __ pc();
-  Label xreturn_path;
-
-  // do fastpath for resolved accessor methods
-  if (UseFastAccessorMethods) {
-    // Code: _aload_0, _(i|a)getfield, _(i|a)return or any rewrites
-    //       thereof; parameter size = 1
-    // Note: We can only use this code if the getfield has been resolved
-    //       and if we don't have a null-pointer exception => check for
-    //       these conditions first and use slow path if necessary.
-    Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
-
-    __ jcc(Assembler::notEqual, slow_path);
-    // rbx: method
-    __ movq(rax, Address(rsp, wordSize));
-
-    // check if local 0 != NULL and read field
-    __ testq(rax, rax);
-    __ jcc(Assembler::zero, slow_path);
-
-    __ movq(rdi, Address(rbx, methodOopDesc::constants_offset()));
-    // read first instruction word and extract bytecode @ 1 and index @ 2
-    __ movq(rdx, Address(rbx, methodOopDesc::const_offset()));
-    __ movl(rdx, Address(rdx, constMethodOopDesc::codes_offset()));
-    // Shift codes right to get the index on the right.
-    // The bytecode fetched looks like <index><0xb4><0x2a>
-    __ shrl(rdx, 2 * BitsPerByte);
-    __ shll(rdx, exact_log2(in_words(ConstantPoolCacheEntry::size())));
-    __ movq(rdi, Address(rdi, constantPoolOopDesc::cache_offset_in_bytes()));
-
-    // rax: local 0
-    // rbx: method
-    // rdx: constant pool cache index
-    // rdi: constant pool cache
-
-    // check if getfield has been resolved and read constant pool cache entry
-    // check the validity of the cache entry by testing whether _indices field
-    // contains Bytecode::_getfield in b1 byte.
-    assert(in_words(ConstantPoolCacheEntry::size()) == 4,
-           "adjust shift below");
-    __ movl(rcx,
-            Address(rdi,
-                    rdx,
-                    Address::times_8,
-                    constantPoolCacheOopDesc::base_offset() +
-                    ConstantPoolCacheEntry::indices_offset()));
-    __ shrl(rcx, 2 * BitsPerByte);
-    __ andl(rcx, 0xFF);
-    __ cmpl(rcx, Bytecodes::_getfield);
-    __ jcc(Assembler::notEqual, slow_path);
-
-    // Note: constant pool entry is not valid before bytecode is resolved
-    __ movq(rcx,
-            Address(rdi,
-                    rdx,
-                    Address::times_8,
-                    constantPoolCacheOopDesc::base_offset() +
-                    ConstantPoolCacheEntry::f2_offset()));
-    // edx: flags
-    __ movl(rdx,
-            Address(rdi,
-                    rdx,
-                    Address::times_8,
-                    constantPoolCacheOopDesc::base_offset() +
-                    ConstantPoolCacheEntry::flags_offset()));
-
-    Label notObj, notInt, notByte, notShort;
-    const Address field_address(rax, rcx, Address::times_1);
-
-    // Need to differentiate between igetfield, agetfield, bgetfield etc.
-    // because they are different sizes.
-    // Use the type from the constant pool cache
-    __ shrl(rdx, ConstantPoolCacheEntry::tosBits);
-    // Make sure we don't need to mask edx for tosBits after the above shift
-    ConstantPoolCacheEntry::verify_tosBits();
-
-    __ cmpl(rdx, atos);
-    __ jcc(Assembler::notEqual, notObj);
-    // atos
-    __ load_heap_oop(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notObj);
-    __ cmpl(rdx, itos);
-    __ jcc(Assembler::notEqual, notInt);
-    // itos
-    __ movl(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notInt);
-    __ cmpl(rdx, btos);
-    __ jcc(Assembler::notEqual, notByte);
-    // btos
-    __ load_signed_byte(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notByte);
-    __ cmpl(rdx, stos);
-    __ jcc(Assembler::notEqual, notShort);
-    // stos
-    __ load_signed_word(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notShort);
-#ifdef ASSERT
-    Label okay;
-    __ cmpl(rdx, ctos);
-    __ jcc(Assembler::equal, okay);
-    __ stop("what type is this?");
-    __ bind(okay);
-#endif
-    // ctos
-    __ load_unsigned_word(rax, field_address);
-
-    __ bind(xreturn_path);
-
-    // _ireturn/_areturn
-    __ popq(rdi);
-    __ movq(rsp, r13);
-    __ jmp(rdi);
-    __ ret(0);
-
-    // generate a vanilla interpreter entry as the slow path
-    __ bind(slow_path);
-    (void) generate_normal_entry(false);
-  } else {
-    (void) generate_normal_entry(false);
-  }
-
-  return entry_point;
 }
 
 // This method tells the deoptimizer how big an interpreted frame must be:

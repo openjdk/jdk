@@ -2111,6 +2111,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         n->subsume_by( cmpN );
       }
     }
+    break;
 #endif
 
   case Op_ModI:

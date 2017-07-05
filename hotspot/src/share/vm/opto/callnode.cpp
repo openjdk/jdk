@@ -829,9 +829,7 @@ SafePointNode* SafePointNode::next_exception() const {
 //------------------------------Ideal------------------------------------------
 // Skip over any collapsed Regions
 Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape))  return this;
-
-  return NULL;
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
 //------------------------------Identity---------------------------------------

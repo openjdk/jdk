@@ -369,7 +369,7 @@ frame os::current_frame() {
   // apparently _asm not supported on windows amd64
   typedef intptr_t*      get_fp_func           ();
   get_fp_func* func = CAST_TO_FN_PTR(get_fp_func*,
-                                     StubRoutines::amd64::get_previous_fp_entry());
+                                     StubRoutines::x86::get_previous_fp_entry());
   if (func == NULL) return frame(NULL, NULL, NULL);
   intptr_t* fp = (*func)();
 #else

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ class DerIndefLenConverter {
 
     private byte[] data, newData;
     private int newDataPos, dataPos, dataSize, index;
+    private int unresolved = 0;
 
     private ArrayList<Object> ndefsList = new ArrayList<Object>();
 
@@ -113,6 +114,7 @@ class DerIndefLenConverter {
                              numOfEncapsulatedLenBytes;
             byte[] sectionLenBytes = getLengthBytes(sectionLen);
             ndefsList.set(index, sectionLenBytes);
+            unresolved--;
 
             // Add the number of bytes required to represent this section
             // to the total number of length bytes,
@@ -149,6 +151,7 @@ class DerIndefLenConverter {
         int lenByte = data[dataPos++] & 0xff;
         if (isIndefinite(lenByte)) {
             ndefsList.add(new Integer(dataPos));
+            unresolved++;
             return curLen;
         }
         if (isLongForm(lenByte)) {
@@ -308,15 +311,21 @@ class DerIndefLenConverter {
         dataPos=0; index=0;
         dataSize = data.length;
         int len=0;
+        int unused = 0;
 
         // parse and set up the vectors of all the indefinite-lengths
         while (dataPos < dataSize) {
             parseTag();
             len = parseLength();
             parseValue(len);
+            if (unresolved == 0) {
+                unused = dataSize - dataPos;
+                dataSize = dataPos;
+                break;
+            }
         }
 
-        newData = new byte[dataSize + numOfTotalLenBytes];
+        newData = new byte[dataSize + numOfTotalLenBytes + unused];
         dataPos=0; newDataPos=0; index=0;
 
         // write out the new byte array replacing all the indefinite-lengths
@@ -325,6 +334,8 @@ class DerIndefLenConverter {
            writeTag();
            writeLengthAndValue();
         }
+        System.arraycopy(indefData, dataSize,
+                         newData, dataSize + numOfTotalLenBytes, unused);
 
         return newData;
     }
