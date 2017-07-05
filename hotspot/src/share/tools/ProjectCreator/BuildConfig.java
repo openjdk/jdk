@@ -512,7 +512,9 @@ abstract class GenericDebugConfig extends BuildConfig {
 abstract class GenericDebugNonKernelConfig extends GenericDebugConfig {
     protected void init(Vector includes, Vector defines) {
         super.init(includes, defines);
-        getCI().getAdditionalNonKernelLinkerFlags(getV("LinkerFlags"));
+        if (get("PlatformName").equals("Win32")) {
+            getCI().getAdditionalNonKernelLinkerFlags(getV("LinkerFlags"));
+        }
    }
 }
 

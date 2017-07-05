@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 # @bug     4530538
 # @summary 
 # @author  Mandy Chung
-#
+# @requires vm.gc=="Parallel" | vm.gc=="null"
 # @run compile MemoryTest.java
 # @run shell MemoryTestAllGC.sh
 #
@@ -52,7 +52,5 @@ runOne MemoryTest 2
 # Test MemoryTest with parallel scavenger collector
 runOne -XX:+UseParallelGC MemoryTest 2
 
-# Test MemoryTest with concurrent collector
-#runOne -XX:+UseConcMarkSweepGC MemoryTest 3
 
 exit 0

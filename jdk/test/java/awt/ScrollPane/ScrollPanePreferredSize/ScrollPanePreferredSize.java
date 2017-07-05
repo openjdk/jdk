@@ -26,12 +26,13 @@ import java.awt.Frame;
 import java.awt.ScrollPane;
 import java.awt.Toolkit;
 
-import sun.awt.SunToolkit;
-
 /**
  * @test
  * @bug 7124213
  * @author Sergey Bylokhov
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
+ * @run main ScrollPanePreferredSize
  */
 public final class ScrollPanePreferredSize {
 
@@ -54,10 +55,12 @@ public final class ScrollPanePreferredSize {
     }
 
     private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
         try {
-            Thread.sleep(500L);
-        } catch (InterruptedException ignored) {
+            ExtendedRobot robot = new ExtendedRobot();
+            robot.waitForIdle(500);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
         }
     }
 }

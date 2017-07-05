@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test TestRegionAlignment.java
  * @bug 8013791
+ * @requires vm.gc=="G1" | vm.gc=="null"
  * @summary Make sure that G1 ergonomics pick a heap size that is aligned with the region size
  * @run main/othervm -XX:+UseG1GC -XX:G1HeapRegionSize=32m -XX:MaxRAM=555m TestRegionAlignment
  *

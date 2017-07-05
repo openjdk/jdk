@@ -22,12 +22,12 @@
  */
 import java.awt.BorderLayout;
 import java.awt.Toolkit;
+import java.awt.Robot;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.plaf.metal.MetalLookAndFeel;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -45,6 +45,7 @@ public class bug8017284 {
 
     public static void main(String[] args) throws Exception {
 
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(() -> {
             frame = new JFrame();
             frame.setSize(500, 500);
@@ -61,7 +62,7 @@ public class bug8017284 {
             frame.setVisible(true);
         });
 
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> {
             for (int j = 0; j < ITERATIONS; j++) {
@@ -70,7 +71,7 @@ public class bug8017284 {
                 }
             }
         });
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> frame.dispose());
     }

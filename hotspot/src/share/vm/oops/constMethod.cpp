@@ -116,7 +116,11 @@ int ConstMethod::size(int code_size,
   if (sizes->generic_signature_index() != 0) {
     extra_bytes += sizeof(u2);
   }
-  if (sizes->method_parameters_length() > 0) {
+  // This has to be a less-than-or-equal check, because we might be
+  // storing information from a zero-length MethodParameters
+  // attribute.  We have to store these, because in some cases, they
+  // cause the reflection API to throw a MalformedParametersException.
+  if (sizes->method_parameters_length() >= 0) {
     extra_bytes += sizeof(u2);
     extra_bytes += sizes->method_parameters_length() * sizeof(MethodParametersElement);
   }
@@ -237,7 +241,7 @@ void ConstMethod::set_inlined_tables_length(InlineTableSizes* sizes) {
     _flags |= _has_linenumber_table;
   if (sizes->generic_signature_index() != 0)
     _flags |= _has_generic_signature;
-  if (sizes->method_parameters_length() > 0)
+  if (sizes->method_parameters_length() >= 0)
     _flags |= _has_method_parameters;
   if (sizes->checked_exceptions_length() > 0)
     _flags |= _has_checked_exceptions;
@@ -272,7 +276,7 @@ void ConstMethod::set_inlined_tables_length(InlineTableSizes* sizes) {
   if (sizes->generic_signature_index() != 0)
     *(generic_signature_index_addr()) = sizes->generic_signature_index();
   // New data should probably go here.
-  if (sizes->method_parameters_length() > 0)
+  if (sizes->method_parameters_length() >= 0)
     *(method_parameters_length_addr()) = sizes->method_parameters_length();
   if (sizes->checked_exceptions_length() > 0)
     *(checked_exceptions_length_addr()) = sizes->checked_exceptions_length();
@@ -283,13 +287,12 @@ void ConstMethod::set_inlined_tables_length(InlineTableSizes* sizes) {
 }
 
 int ConstMethod::method_parameters_length() const {
-  return has_method_parameters() ? *(method_parameters_length_addr()) : 0;
+  return has_method_parameters() ? *(method_parameters_length_addr()) : -1;
 }
 
 MethodParametersElement* ConstMethod::method_parameters_start() const {
   u2* addr = method_parameters_length_addr();
   u2 length = *addr;
-  assert(length > 0, "should only be called if table is present");
   addr -= length * sizeof(MethodParametersElement) / sizeof(u2);
   return (MethodParametersElement*) addr;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import com.sun.xml.internal.ws.spi.db.TypeInfo;
 import com.sun.xml.internal.ws.spi.db.WrapperComposite;
 
 import static com.sun.xml.internal.ws.binding.WebServiceFeatureList.getSoapVersion;
+import static com.sun.xml.internal.ws.model.Utils.REFLECTION_NAVIGATOR;
 
 import javax.jws.*;
 import javax.jws.WebParam.Mode;
@@ -381,6 +382,7 @@ public class RuntimeModeler {
         try {
             return loader.loadClass(className);
         } catch (ClassNotFoundException e) {
+            if (noWrapperGen()) return exception;
             logger.fine("Dynamically creating exception bean Class " + className);
             return WrapperBeanGenerator.createExceptionBean(className, exception, targetNamespace, name, namespace, loader, decapitalizeExceptionBeanProperties);
         }
@@ -885,7 +887,7 @@ public class RuntimeModeler {
             //set the actual type argument of Holder in the TypeReference
             if (isHolder) {
                 if(clazzType==Holder.class){
-                    clazzType = (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
+                    clazzType = erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
                 }
             }
             Mode paramMode = isHolder ? Mode.INOUT : Mode.IN;
@@ -1100,7 +1102,7 @@ public class RuntimeModeler {
             //set the actual type argument of Holder in the TypeReference
             if (isHolder) {
                 if (clazzType==Holder.class)
-                    clazzType = (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
+                    clazzType = erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
             }
             Mode paramMode = isHolder ? Mode.INOUT : Mode.IN;
             for (Annotation annotation : pannotations[pos]) {
@@ -1210,7 +1212,8 @@ public class RuntimeModeler {
                 continue;
             if (RUNTIME_EXCEPTION_CLASS.isAssignableFrom(exception) || REMOTE_EXCEPTION_CLASS.isAssignableFrom(exception))
                 continue;
-
+            if (getAnnotation(exception, javax.xml.bind.annotation.XmlTransient.class) != null)
+                continue;
             Class exceptionBean;
             Annotation[] anns;
             WebFault webFault = getAnnotation(exception, WebFault.class);
@@ -1246,6 +1249,7 @@ public class RuntimeModeler {
             CheckedExceptionImpl checkedException =
                 new CheckedExceptionImpl(javaMethod, exception, typeRef, exceptionType);
             checkedException.setMessageName(messageName);
+            checkedException.setFaultInfoGetter(faultInfoMethod);
             for(FaultAction fa: faultActions) {
                 if(fa.className().equals(exception) && !fa.value().equals("")) {
                     checkedException.setFaultAction(fa.value());
@@ -1346,7 +1350,7 @@ public class RuntimeModeler {
             //set the actual type argument of Holder in the TypeReference
             if (isHolder) {
                 if (clazzType==Holder.class)
-                    clazzType = (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
+                    clazzType = erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
             }
 
             Mode paramMode = isHolder ? Mode.INOUT : Mode.IN;
@@ -1434,14 +1438,14 @@ public class RuntimeModeler {
     private Class getAsyncReturnType(Method method, Class returnType) {
         if(Response.class.isAssignableFrom(returnType)){
             Type ret = method.getGenericReturnType();
-            return (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)ret).getActualTypeArguments()[0]);
+            return erasure(((ParameterizedType)ret).getActualTypeArguments()[0]);
         }else{
             Type[] types = method.getGenericParameterTypes();
             Class[] params = method.getParameterTypes();
             int i = 0;
             for(Class cls : params){
                 if(AsyncHandler.class.isAssignableFrom(cls)){
-                    return (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)types[i]).getActualTypeArguments()[0]);
+                    return erasure(((ParameterizedType)types[i]).getActualTypeArguments()[0]);
                 }
                 i++;
             }
@@ -1733,5 +1737,7 @@ public class RuntimeModeler {
         return new QName(ns, localPart);
     }
 
-
+    static public Class erasure(Type type) {
+        return (Class)REFLECTION_NAVIGATOR.erasure(type);
+    }
 }

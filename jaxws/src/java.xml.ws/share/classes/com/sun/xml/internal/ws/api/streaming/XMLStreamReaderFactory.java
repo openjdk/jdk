@@ -482,6 +482,7 @@ public abstract class XMLStreamReaderFactory {
         private static final java.lang.String P_MAX_ELEMENT_DEPTH = "com.ctc.wstx.maxElementDepth";
         private static final java.lang.String P_MAX_CHARACTERS = "com.ctc.wstx.maxCharacters";
         private static final java.lang.String P_INTERN_NSURIS = "org.codehaus.stax2.internNsUris";
+        private static final java.lang.String P_RETURN_NULL_FOR_DEFAULT_NAMESPACE = "com.ctc.wstx.returnNullForDefaultNamespace";
 
         public Woodstox(XMLInputFactory xif) {
             super(xif);
@@ -551,6 +552,19 @@ public abstract class XMLStreamReaderFactory {
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.log(Level.FINE, P_MAX_CHARACTERS + " is {0}", maxCharacters);
                 }
+            }
+            //Using try/catch instead of isPropertySupported because Woodstox
+            //isPropertySupported is not always reliable
+            try {
+                //this is needed to make sure Woodstox behavior is spec compliant for
+                //calls to XMLStreamReader.getNamespacePrefix
+                xif.setProperty(P_RETURN_NULL_FOR_DEFAULT_NAMESPACE, Boolean.TRUE);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_RETURN_NULL_FOR_DEFAULT_NAMESPACE + " is {0}", xif.getProperty(P_RETURN_NULL_FOR_DEFAULT_NAMESPACE));
+                }
+            } catch (Throwable t) {
+                //ignore - this should not happen Woodstox 4.1.2 or later (maybe older version of Woodstox).
+                LOGGER.log(Level.WARNING, "Expected property not found in Woodstox input factory: '{0}'", P_RETURN_NULL_FOR_DEFAULT_NAMESPACE);
             }
         }
 

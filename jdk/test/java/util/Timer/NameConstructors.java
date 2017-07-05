@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,42 @@
 
 /*
  * @test
- * @bug 4279061
+ * @bug 4279061 8056313
  * @summary Basic test for constructors with thread name
  */
 
-import java.util.*;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.LinkedTransferQueue;
 
 public class NameConstructors {
     private static final String NAME1 = "Norm D. Plume";
     private static final String NAME2 = "Ann Onymous";
 
-    public static void main (String[] args) throws Exception  {
-        Random rnd = new Random();
+    public static void main (String[] args) throws InterruptedException {
         test(new Timer(NAME1), NAME1);
         test(new Timer(NAME2, true), NAME2);
     }
 
-    private static boolean done, passed;
+    public static void test(Timer timer, String expected) throws InterruptedException {
+        try {
+            LinkedTransferQueue<String> queue = new LinkedTransferQueue<>();
 
-    public static void test(Timer timer, final String name) throws Exception {
-        done = passed = false;
+            TimerTask task = new TimerTask() {
+                public void run() {
+                    queue.put(Thread.currentThread().getName());
+                }
+            };
 
-        TimerTask task = new TimerTask() {
-            public void run() {
-                passed = Thread.currentThread().getName().equals(name);
-                done = true;
+            timer.schedule(task, 0L); // immediately
+            String actual = queue.take();
+
+            if (!expected.equals(actual)) {
+                throw new AssertionError(
+                    String.format("expected='%s', actual='%s'", expected, actual));
             }
-        };
-        timer.schedule(task, 0); // Immediate
-        Thread.sleep(500);
-        if (!(done && passed))
-            throw new RuntimeException(done + " : " + passed);
-        timer.cancel();
+        } finally {
+            timer.cancel();
+        }
     }
 }

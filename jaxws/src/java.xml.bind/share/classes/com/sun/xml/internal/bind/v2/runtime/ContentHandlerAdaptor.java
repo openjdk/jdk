@@ -27,7 +27,6 @@ package com.sun.xml.internal.bind.v2.runtime;
 
 import com.sun.istack.internal.FinalArrayList;
 import com.sun.istack.internal.SAXException2;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -69,14 +68,14 @@ final class ContentHandlerAdaptor extends DefaultHandler {
     private boolean containsPrefixMapping(String prefix, String uri) {
         for( int i=0; i<prefixMap.size(); i+=2 ) {
             if(prefixMap.get(i).equals(prefix)
-                    && prefixMap.get(i+1).equals(uri))
+            && prefixMap.get(i+1).equals(uri))
                 return true;
         }
         return false;
     }
 
     public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
-            throws SAXException {
+        throws SAXException {
         try {
             flushText();
 
@@ -99,6 +98,7 @@ final class ContentHandlerAdaptor extends DefaultHandler {
                 serializer.getNamespaceContext().force(
                         prefixMap.get(i + 1), prefixMap.get(i));
             }
+
             // make sure namespaces needed by attributes are bound
             for( int i=0; i<len; i++ ) {
                 String qname = atts.getQName(i);
@@ -107,7 +107,7 @@ final class ContentHandlerAdaptor extends DefaultHandler {
                 String prefix = getPrefix(qname);
 
                 serializer.getNamespaceContext().declareNamespace(
-                        atts.getURI(i), prefix, true );
+                    atts.getURI(i), prefix, true );
             }
 
             serializer.endNamespaceDecls(null);
@@ -127,7 +127,6 @@ final class ContentHandlerAdaptor extends DefaultHandler {
         }
     }
 
-    // make sure namespaces needed by attributes are bound
     private String getPrefix(String qname) {
         int idx = qname.indexOf(':');
         String prefix = (idx == -1) ? "" : qname.substring(0, idx);

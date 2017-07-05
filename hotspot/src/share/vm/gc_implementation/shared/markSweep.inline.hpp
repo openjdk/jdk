@@ -27,6 +27,7 @@
 
 #include "gc_implementation/shared/markSweep.hpp"
 #include "gc_interface/collectedHeap.hpp"
+#include "oops/markOop.inline.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS

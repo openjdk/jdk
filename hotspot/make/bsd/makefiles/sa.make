@@ -40,6 +40,8 @@ AGENT_DIR = $(GAMMADIR)/agent
 
 include $(GAMMADIR)/make/sa.files
 
+-include $(HS_ALT_MAKE)/bsd/makefiles/sa.make
+
 TOPDIR    = $(shell echo `pwd`)
 GENERATED = $(TOPDIR)/../generated
 

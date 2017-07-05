@@ -53,6 +53,7 @@ if (! new File(jdepsPath).isFile()) {
 }
 
 // run jdep on nashorn.jar - only summary but print profile info
+$ENV.PWD=System.getProperty("user.dir") // to avoid RE on Cygwin
 `${jdepsPath} -s -P ${nashornJar.absolutePath}`
 
 // check for "(compact1)" in output from jdep tool

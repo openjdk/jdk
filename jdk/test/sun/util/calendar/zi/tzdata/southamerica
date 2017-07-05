@@ -29,23 +29,23 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2006-03-22):
-# A good source for time zone historical data outside the U.S. is
+# From Paul Eggert (2014-10-31):
+#
+# Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
-#
-# For data circa 1899, a common source is:
-# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
-# http://www.jstor.org/stable/1774359
+# Unfortunately this book contains many errors and cites no sources.
 #
 # Gwillim Law writes that a good source
 # for recent time zone data is the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
-# of the IATA's data after 1990.
+# of the IATA's data after 1990.  Except where otherwise noted,
+# IATA SSIM is the source for entries after 1990.
 #
-# Except where otherwise noted, Shanks & Pottenger is the source for
-# entries through 1990, and IATA SSIM is the source for entries afterwards.
+# For data circa 1899, a common source is:
+# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
+# http://www.jstor.org/stable/1774359
 #
 # Earlier editions of these tables used the North American style (e.g. ARST and
 # ARDT for Argentine Standard and Daylight Time), but the following quote

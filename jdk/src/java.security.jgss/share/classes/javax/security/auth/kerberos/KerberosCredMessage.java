@@ -130,6 +130,11 @@ public final class KerberosCredMessage implements Destroyable {
         return destroyed;
     }
 
+    /**
+     * Returns an informative textual representation of this {@code KerberosCredMessage}.
+     *
+     * @return an informative textual representation of this {@code KerberosCredMessage}.
+     */
     @Override
     public String toString() {
         if (destroyed) {
@@ -140,6 +145,11 @@ public final class KerberosCredMessage implements Destroyable {
         }
     }
 
+    /**
+     * Returns a hash code for this {@code KerberosCredMessage}.
+     *
+     * @return a hash code for this {@code KerberosCredMessage}.
+     */
     @Override
     public int hashCode() {
         if (isDestroyed()) {
@@ -149,6 +159,19 @@ public final class KerberosCredMessage implements Destroyable {
         }
     }
 
+    /**
+     * Compares the specified object with this {@code KerberosCredMessage}
+     * for equality. Returns true if the given object is also a
+     * {@code KerberosCredMessage} and the two {@code KerberosCredMessage}
+     * instances are equivalent. More formally two {@code KerberosCredMessage}
+     * instances are equal if they have equal sender, recipient, and encoded
+     * KRB_CRED messages.
+     * A destroyed {@code KerberosCredMessage} object is only equal to itself.
+     *
+     * @param other the object to compare to
+     * @return true if the specified object is equal to this
+     * {@code KerberosCredMessage}, false otherwise.
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {

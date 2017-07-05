@@ -41,7 +41,7 @@ public interface Destroyable {
      * on this {@code Object} will result in an
      * {@code IllegalStateException} being thrown.
      *
-     * <p>
+     * @implSpec
      * The default implementation throws {@code DestroyFailedException}.
      *
      * @exception DestroyFailedException if the destroy operation fails. <p>
@@ -56,7 +56,7 @@ public interface Destroyable {
     /**
      * Determine if this {@code Object} has been destroyed.
      *
-     * <p>
+     * @implSpec
      * The default implementation returns false.
      *
      * @return true if this {@code Object} has been destroyed,

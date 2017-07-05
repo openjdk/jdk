@@ -3309,7 +3309,7 @@ void TemplateTable::_new() {
   // (creates a new TLAB, etc.)
 
   const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc() && !CMSIncrementalMode;
+    Universe::heap()->supports_inline_contig_alloc();
 
   if(UseTLAB) {
     Register RoldTopValue = RallocatedObject;

@@ -35,13 +35,11 @@
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.TextArea;
-import java.awt.Toolkit;
+import java.awt.Robot;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-
-import sun.awt.SunToolkit;
 
 public class TestDispose {
 
@@ -51,7 +49,14 @@ public class TestDispose {
 
     public void testDispose() throws InvocationTargetException,
             InterruptedException {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Robot robot;
+        try {
+            robot = new Robot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
+
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -69,7 +74,7 @@ public class TestDispose {
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -77,7 +82,7 @@ public class TestDispose {
                 frame.dispose();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 
     public static void main(String[] args) throws Exception{

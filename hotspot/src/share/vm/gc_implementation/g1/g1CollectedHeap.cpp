@@ -1888,7 +1888,7 @@ jint G1CollectedHeap::initialize() {
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   // Create the gen rem set (and barrier set) for the entire reserved region.
-  _rem_set = collector_policy()->create_rem_set(reserved_region(), 2);
+  _rem_set = collector_policy()->create_rem_set(reserved_region());
   set_barrier_set(rem_set()->bs());
   if (!barrier_set()->is_a(BarrierSet::G1SATBCTLogging)) {
     vm_exit_during_initialization("G1 requires a G1SATBLoggingCardTableModRefBS");
@@ -4270,10 +4270,11 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 
   if (state == G1CollectedHeap::InCSet) {
     oop forwardee;
-    if (obj->is_forwarded()) {
-      forwardee = obj->forwardee();
+    markOop m = obj->mark();
+    if (m->is_marked()) {
+      forwardee = (oop) m->decode_pointer();
     } else {
-      forwardee = _par_scan_state->copy_to_survivor_space(obj);
+      forwardee = _par_scan_state->copy_to_survivor_space(obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
     oopDesc::encode_store_heap_oop(p, forwardee);

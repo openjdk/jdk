@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -125,7 +126,7 @@ public class SchemaImpl implements XSSchema
         return atts.values().iterator();
     }
 
-    private final Map<String,XSElementDecl> elems = new HashMap<String,XSElementDecl>();
+    private final Map<String, XSElementDecl> elems = new LinkedHashMap<String, XSElementDecl>();
     private final Map<String,XSElementDecl> elemsView = Collections.unmodifiableMap(elems);
     public void addElementDecl(XSElementDecl newDecl) {
         elems.put(newDecl.getName(), newDecl);
@@ -204,7 +205,7 @@ public class SchemaImpl implements XSSchema
         return idConstraints.get(localName);
     }
 
-    private final Map<String,XSType> allTypes = new HashMap<String,XSType>();
+    private final Map<String, XSType> allTypes = new LinkedHashMap<String, XSType>();
     private final Map<String,XSType> allTypesView = Collections.unmodifiableMap(allTypes);
 
     private final Map<String,XSSimpleType> simpleTypes = new HashMap<String,XSSimpleType>();

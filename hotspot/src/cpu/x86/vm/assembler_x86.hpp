@@ -1006,6 +1006,7 @@ private:
 
   void cmpxchg8 (Address adr);
 
+  void cmpxchgb(Register reg, Address adr);
   void cmpxchgl(Register reg, Address adr);
 
   void cmpxchgq(Register reg, Address adr);

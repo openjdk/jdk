@@ -158,6 +158,11 @@ public final class EncryptionKey implements SecretKey {
         return destroyed;
     }
 
+    /**
+     * Returns an informative textual representation of this {@code EncryptionKey}.
+     *
+     * @return an informative textual representation of this {@code EncryptionKey}.
+     */
     @Override
     public String toString() {
         if (destroyed) {
@@ -166,6 +171,11 @@ public final class EncryptionKey implements SecretKey {
         return "key "  + key.toString();
     }
 
+    /**
+     * Returns a hash code for this {@code EncryptionKey}.
+     *
+     * @return a hash code for this {@code EncryptionKey}.
+     */
     @Override
     public int hashCode() {
         int result = 17;
@@ -177,15 +187,17 @@ public final class EncryptionKey implements SecretKey {
     }
 
     /**
-     * Compares the specified Object with this key for equality.
-     * Returns true if the given object is also a
+     * Compares the specified object with this key for equality.
+     * Returns true if the given object is also an
      * {@code EncryptionKey} and the two
-     * {@code EncryptionKey} instances are equivalent.
+     * {@code EncryptionKey} instances are equivalent. More formally two
+     * {@code EncryptionKey} instances are equal if they have equal key types
+     * and key material.
+     * A destroyed {@code EncryptionKey} object is only equal to itself.
      *
-     * @param other the Object to compare to
-     * @return true if the specified object is equal to this EncryptionKey,
-     * false otherwise. NOTE: Returns false if either of the EncryptionKey
-     * objects has been destroyed.
+     * @param other the object to compare to
+     * @return true if the specified object is equal to this
+     * {@code EncryptionKey}, false otherwise.
      */
     @Override
     public boolean equals(Object other) {

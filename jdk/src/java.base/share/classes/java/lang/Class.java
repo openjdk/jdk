@@ -691,6 +691,8 @@ public final class Class<T> implements java.io.Serializable,
     ClassLoader getClassLoader0() { return classLoader; }
 
     // Initialized in JVM not by private constructor
+    // This field is filtered from reflection access, i.e. getDeclaredField
+    // will throw NoSuchFieldException
     private final ClassLoader classLoader;
 
     /**
@@ -719,15 +721,15 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Returns the {@code Class} representing the superclass of the entity
-     * (class, interface, primitive type or void) represented by this
-     * {@code Class}.  If this {@code Class} represents either the
+     * Returns the {@code Class} representing the direct superclass of the
+     * entity (class, interface, primitive type or void) represented by
+     * this {@code Class}.  If this {@code Class} represents either the
      * {@code Object} class, an interface, a primitive type, or void, then
      * null is returned.  If this object represents an array class then the
      * {@code Class} object representing the {@code Object} class is
      * returned.
      *
-     * @return the superclass of the class represented by this object.
+     * @return the direct superclass of the class represented by this object
      */
     public native Class<? super T> getSuperclass();
 
@@ -758,7 +760,7 @@ public final class Class<T> implements java.io.Serializable,
      * @throws java.lang.reflect.MalformedParameterizedTypeException if the
      *     generic superclass refers to a parameterized type that cannot be
      *     instantiated  for any reason
-     * @return the superclass of the class represented by this object
+     * @return the direct superclass of the class represented by this object
      * @since 1.5
      */
     public Type getGenericSuperclass() {
@@ -798,15 +800,15 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Determines the interfaces implemented by the class or interface
+     * Returns the interfaces directly implemented by the class or interface
      * represented by this object.
      *
-     * <p> If this object represents a class, the return value is an array
-     * containing objects representing all interfaces implemented by the
-     * class. The order of the interface objects in the array corresponds to
-     * the order of the interface names in the {@code implements} clause
-     * of the declaration of the class represented by this object. For
-     * example, given the declaration:
+     * <p>If this object represents a class, the return value is an array
+     * containing objects representing all interfaces directly implemented by
+     * the class.  The order of the interface objects in the array corresponds
+     * to the order of the interface names in the {@code implements} clause of
+     * the declaration of the class represented by this object.  For example,
+     * given the declaration:
      * <blockquote>
      * {@code class Shimmer implements FloorWax, DessertTopping { ... }}
      * </blockquote>
@@ -823,23 +825,23 @@ public final class Class<T> implements java.io.Serializable,
      * is the {@code Class} object that represents interface
      * {@code DessertTopping}.
      *
-     * <p> If this object represents an interface, the array contains objects
-     * representing all interfaces extended by the interface. The order of the
-     * interface objects in the array corresponds to the order of the interface
-     * names in the {@code extends} clause of the declaration of the
-     * interface represented by this object.
+     * <p>If this object represents an interface, the array contains objects
+     * representing all interfaces directly extended by the interface.  The
+     * order of the interface objects in the array corresponds to the order of
+     * the interface names in the {@code extends} clause of the declaration of
+     * the interface represented by this object.
      *
-     * <p> If this object represents a class or interface that implements no
+     * <p>If this object represents a class or interface that implements no
      * interfaces, the method returns an array of length 0.
      *
-     * <p> If this object represents a primitive type or void, the method
+     * <p>If this object represents a primitive type or void, the method
      * returns an array of length 0.
      *
-     * <p> If this {@code Class} object represents an array type, the
+     * <p>If this {@code Class} object represents an array type, the
      * interfaces {@code Cloneable} and {@code java.io.Serializable} are
      * returned in that order.
      *
-     * @return an array of interfaces implemented by this class.
+     * @return an array of interfaces directly implemented by this class
      */
     public Class<?>[] getInterfaces() {
         ReflectionData<T> rd = reflectionData();
@@ -873,28 +875,27 @@ public final class Class<T> implements java.io.Serializable,
      * for the semantics of the creation process for parameterized
      * types.
      *
-     * <p> If this object represents a class, the return value is an
-     * array containing objects representing all interfaces
-     * implemented by the class. The order of the interface objects in
-     * the array corresponds to the order of the interface names in
-     * the {@code implements} clause of the declaration of the class
-     * represented by this object.  In the case of an array class, the
-     * interfaces {@code Cloneable} and {@code Serializable} are
+     * <p>If this object represents a class, the return value is an array
+     * containing objects representing all interfaces directly implemented by
+     * the class.  The order of the interface objects in the array corresponds
+     * to the order of the interface names in the {@code implements} clause of
+     * the declaration of the class represented by this object.
+     *
+     * <p>If this object represents an interface, the array contains objects
+     * representing all interfaces directly extended by the interface.  The
+     * order of the interface objects in the array corresponds to the order of
+     * the interface names in the {@code extends} clause of the declaration of
+     * the interface represented by this object.
+     *
+     * <p>If this object represents a class or interface that implements no
+     * interfaces, the method returns an array of length 0.
+     *
+     * <p>If this object represents a primitive type or void, the method
+     * returns an array of length 0.
+     *
+     * <p>If this {@code Class} object represents an array type, the
+     * interfaces {@code Cloneable} and {@code java.io.Serializable} are
      * returned in that order.
-     *
-     * <p>If this object represents an interface, the array contains
-     * objects representing all interfaces directly extended by the
-     * interface.  The order of the interface objects in the array
-     * corresponds to the order of the interface names in the
-     * {@code extends} clause of the declaration of the interface
-     * represented by this object.
-     *
-     * <p>If this object represents a class or interface that
-     * implements no interfaces, the method returns an array of length
-     * 0.
-     *
-     * <p>If this object represents a primitive type or void, the
-     * method returns an array of length 0.
      *
      * @throws java.lang.reflect.GenericSignatureFormatError
      *     if the generic class signature does not conform to the format
@@ -905,7 +906,7 @@ public final class Class<T> implements java.io.Serializable,
      * @throws java.lang.reflect.MalformedParameterizedTypeException
      *     if any of the generic superinterfaces refer to a parameterized
      *     type that cannot be instantiated for any reason
-     * @return an array of interfaces implemented by this class
+     * @return an array of interfaces directly implemented by this class
      * @since 1.5
      */
     public Type[] getGenericInterfaces() {
@@ -1533,7 +1534,8 @@ public final class Class<T> implements java.io.Serializable,
      * 0.
      *
      * <p> If this {@code Class} object represents a class, then this method
-     * returns the public fields of the class and of all its superclasses.
+     * returns the public fields of the class and of all its superclasses and
+     * superinterfaces.
      *
      * <p> If this {@code Class} object represents an interface, then this
      * method returns the fields of the interface and of all its

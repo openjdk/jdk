@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ public class MarshalOutputStream extends ObjectOutputStream
      * Checks for objects that are instances of java.rmi.Remote
      * that need to be serialized as proxy objects.
      */
+    @SuppressWarnings("deprecation")
     protected final Object replaceObject(Object obj) throws IOException {
         if ((obj instanceof Remote) && !(obj instanceof RemoteStub)) {
             Target target = ObjectTable.getTarget((Remote) obj);

@@ -84,6 +84,10 @@ public class WhiteBox {
   }
   private native boolean isClassAlive0(String name);
 
+  // JVMTI
+  public native void addToBootstrapClassLoaderSearch(String segment);
+  public native void addToSystemClassLoaderSearch(String segment);
+
   // G1
   public native boolean g1InConcurrentMark();
   public native boolean g1IsHumongous(Object o);
@@ -143,8 +147,16 @@ public class WhiteBox {
   }
   public native boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci);
   public native void    clearMethodState(Executable method);
+  public native void    lockCompilation();
+  public native void    unlockCompilation();
   public native int     getMethodEntryBci(Executable method);
   public native Object[] getNMethod(Executable method, boolean isOsr);
+  public native long    allocateCodeBlob(int size, int type);
+  public native void    freeCodeBlob(long addr);
+  public native void    forceNMethodSweep();
+  public native Object[] getCodeHeapEntries(int type);
+  public native int     getCompilationActivityMode();
+  public native Object[] getCodeBlob(long addr);
 
   // Intered strings
   public native boolean isInStringTable(String str);
@@ -207,4 +219,13 @@ public class WhiteBox {
                        .findAny()
                        .orElse(null);
   }
+  public native int getOffsetForName0(String name);
+  public int getOffsetForName(String name) throws Exception {
+    int offset = getOffsetForName0(name);
+    if (offset == -1) {
+      throw new RuntimeException(name + " not found");
+    }
+    return offset;
+  }
+
 }

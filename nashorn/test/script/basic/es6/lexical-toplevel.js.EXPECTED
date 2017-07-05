@@ -1,0 +1,32 @@
+VAR
+LET
+CONST
+function FUNC() {}
+GLOBAL
+VAR
+undefined
+undefined
+function FUNC() {}
+GLOBAL
+true
+false
+false
+true
+true
+TypeError: Assignment to constant "CONST"
+VAR
+LETLET
+CONST
+function FUNC() {}
+GLOBAL
+VAR
+undefined
+undefined
+function FUNC() {}
+GLOBAL
+true
+false
+false
+true
+true
+TypeError: Assignment to constant "CONST"

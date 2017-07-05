@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import com.sun.tools.internal.xjc.model.CTypeRef;
 import com.sun.tools.internal.xjc.model.CValuePropertyInfo;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.outline.PackageOutline;
-import com.sun.tools.internal.xjc.outline.Aspect;
+import com.sun.tools.internal.xjc.model.Aspect;
 
 /**
  * {@link PackageOutline} enhanced with schema2java specific

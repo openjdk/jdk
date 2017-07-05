@@ -187,8 +187,6 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   HeapWord* block_start(const void* p);
   HeapWord* block_start_const(const void* p) const;
 
-  void prepare_for_compaction(CompactPoint* cp);
-
   // Add offset table update.
   virtual HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
@@ -210,6 +208,9 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
 
 class HeapRegion: public G1OffsetTableContigSpace {
   friend class VMStructs;
+  // Allow scan_and_forward to call (private) overrides for auxiliary functions on this class
+  template <typename SpaceType>
+  friend void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* cp);
  private:
 
   // The remembered set for this region.
@@ -218,6 +219,20 @@ class HeapRegion: public G1OffsetTableContigSpace {
   HeapRegionRemSet* _rem_set;
 
   G1BlockOffsetArrayContigSpace* offsets() { return &_offsets; }
+
+  // Auxiliary functions for scan_and_forward support.
+  // See comments for CompactibleSpace for more information.
+  inline HeapWord* scan_limit() const {
+    return top();
+  }
+
+  inline bool scanned_block_is_obj(const HeapWord* addr) const {
+    return true; // Always true, since scan_limit is top
+  }
+
+  inline size_t scanned_block_size(const HeapWord* addr) const {
+    return HeapRegion::block_size(addr); // Avoid virtual call
+  }
 
  protected:
   // The index of this region in the heap region sequence.
@@ -339,6 +354,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Returns the object size for all valid block starts
   // and the amount of unallocated words if called on top()
   size_t block_size(const HeapWord* p) const;
+
+  // Override for scan_and_forward support.
+  void prepare_for_compaction(CompactPoint* cp);
 
   inline HeapWord* par_allocate_no_bot_updates(size_t word_size);
   inline HeapWord* allocate_no_bot_updates(size_t word_size);

@@ -71,7 +71,14 @@ public class GridBagLayoutIpadXYTest extends Applet
         frame.pack();
         frame.setVisible(true);
 
-        ((sun.awt.SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        Robot robot;
+        try {
+            robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
 
         Dimension minSize = jtf.getMinimumSize();
         if ( minSize.width + customIpadx != jtf.getSize().width ||

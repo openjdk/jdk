@@ -70,7 +70,7 @@ class StAXStreamConnector extends StAXConnector {
         // Quick hack until SJSXP fixes 6270116
         boolean isZephyr = readerClass.getName().equals("com.sun.xml.internal.stream.XMLReaderImpl");
         if (getBoolProp(reader,"org.codehaus.stax2.internNames") &&
-                getBoolProp(reader,"org.codehaus.stax2.internNsUris"))
+            getBoolProp(reader,"org.codehaus.stax2.internNsUris"))
             ; // no need for interning
         else
         if (isZephyr)
@@ -219,8 +219,8 @@ class StAXStreamConnector extends StAXConnector {
         int nsCount = staxStreamReader.getNamespaceCount();
         for (int i = 0; i < nsCount; i++) {
             visitor.startPrefixMapping(
-                    fixNull(staxStreamReader.getNamespacePrefix(i)),
-                    fixNull(staxStreamReader.getNamespaceURI(i)));
+                fixNull(staxStreamReader.getNamespacePrefix(i)),
+                fixNull(staxStreamReader.getNamespaceURI(i)));
         }
 
         // fire startElement
@@ -310,9 +310,9 @@ class StAXStreamConnector extends StAXConnector {
     protected void handleCharacters() throws XMLStreamException, SAXException {
         if( predictor.expectText() )
             buffer.append(
-                    staxStreamReader.getTextCharacters(),
-                    staxStreamReader.getTextStart(),
-                    staxStreamReader.getTextLength() );
+                staxStreamReader.getTextCharacters(),
+                staxStreamReader.getTextStart(),
+                staxStreamReader.getTextLength() );
     }
 
     private void processText( boolean ignorable ) throws SAXException {

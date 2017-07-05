@@ -25,11 +25,12 @@
  * @test
  * @summary Checks that JLayer inside JViewport works is correctly laid out
  * @author Alexander Potochkin
+ * @library ../../../../lib/testlibrary/
+ * @build ExtendedRobot
  * @run main bug6824395
  */
 
 
-import sun.awt.SunToolkit;
 
 import javax.swing.*;
 import javax.swing.plaf.LayerUI;
@@ -40,7 +41,6 @@ public class bug6824395 {
     static JScrollPane scrollPane;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 JFrame frame = new JFrame("testing");
@@ -68,7 +68,13 @@ public class bug6824395 {
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        try {
+             ExtendedRobot robot = new ExtendedRobot();
+             robot.waitForIdle(300);
+         }catch(Exception ex) {
+             ex.printStackTrace();
+             throw new Error("Unexpected Failure");
+         }
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 if (scrollPane.getViewportBorderBounds().width != scrollPane.getViewport().getView().getWidth()) {

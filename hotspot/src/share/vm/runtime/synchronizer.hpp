@@ -169,7 +169,7 @@ class ObjectLocker : public StackObj {
   void waitUninterruptibly(TRAPS) { ObjectSynchronizer::waitUninterruptibly(_obj, 0, CHECK); }
   // complete_exit gives up lock completely, returning recursion count
   // reenter reclaims lock with original recursion count
-  intptr_t complete_exit(TRAPS)  { return ObjectSynchronizer::complete_exit(_obj, CHECK_0); }
+  intptr_t complete_exit(TRAPS)  { return ObjectSynchronizer::complete_exit(_obj, THREAD); }
   void reenter(intptr_t recursion, TRAPS)  { ObjectSynchronizer::reenter(_obj, recursion, CHECK); }
 };
 

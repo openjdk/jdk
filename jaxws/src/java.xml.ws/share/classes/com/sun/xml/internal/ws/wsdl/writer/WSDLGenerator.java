@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,18 +71,11 @@ import com.sun.xml.internal.ws.wsdl.writer.document.soap.BodyType;
 import com.sun.xml.internal.ws.wsdl.writer.document.soap.Header;
 import com.sun.xml.internal.ws.wsdl.writer.document.soap.SOAPAddress;
 import com.sun.xml.internal.ws.wsdl.writer.document.soap.SOAPFault;
-import com.sun.xml.internal.ws.wsdl.writer.document.xsd.Schema;
 import com.sun.xml.internal.ws.spi.db.BindingContext;
 import com.sun.xml.internal.ws.spi.db.BindingHelper;
-import com.sun.xml.internal.ws.spi.db.TypeInfo;
-import com.sun.xml.internal.ws.spi.db.WrapperComposite;
 import com.sun.xml.internal.ws.util.RuntimeVersion;
 import com.sun.xml.internal.ws.policy.jaxws.PolicyWSDLGeneratorExtension;
 import com.sun.xml.internal.ws.encoding.soap.streaming.SOAPNamespaceConstants;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Element;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.ComplexType;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.ExplicitGroup;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.LocalElement;
 
 import javax.jws.soap.SOAPBinding.Style;
 import javax.jws.soap.SOAPBinding.Use;
@@ -100,12 +93,12 @@ import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceException;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -128,22 +121,6 @@ public class WSDLGenerator {
      * Constant String for ".wsdl"
      */
     private static final String DOT_WSDL = ".wsdl";
-    /**
-     * Constant String appended to response message names
-     */
-    private static final String RESPONSE = "Response";
-    /**
-     * constant String used for part name for wrapped request messages
-     */
-    private static final String PARAMETERS = "parameters";
-    /**
-     * the part name for unwrappable response messages
-     */
-    private static final String RESULT = "parameters";
-    /**
-     * the part name for response messages that are not unwrappable
-     */
-    private static final String UNWRAPPABLE_RESULT = "result";
     /**
      * The WSDL namespace
      */
@@ -196,6 +173,9 @@ public class WSDLGenerator {
      * Constant String to flag the URL to replace at runtime for the endpoint
      */
     private static final String REPLACE_WITH_ACTUAL_URL = "REPLACE_WITH_ACTUAL_URL";
+
+    static public final String XsdNs = "http://www.w3.org/2001/XMLSchema";
+
     private Set<QName> processedExceptions = new HashSet<QName>();
     private WSBinding binding;
     private String wsdlLocation;
@@ -468,6 +448,13 @@ public class WSDLGenerator {
                 Transformer t = tf.newTransformer();
                 for (DOMResult xsd : resolver.nonGlassfishSchemas) {
                     Document doc = (Document) xsd.getNode();
+                    if (inlineSchemas) {
+                        NodeList importList = doc.getDocumentElement().getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "import");
+                        for(int i = 0; i < importList.getLength(); i++) {
+                            org.w3c.dom.Element impElem = (org.w3c.dom.Element)importList.item(i);
+                            impElem.removeAttribute("schemaLocation");
+                        }
+                    }
                     SAXResult sax = new SAXResult(new TXWContentHandler(types));
                     t.transform(new DOMSource(doc.getDocumentElement()), sax);
                 }
@@ -475,64 +462,6 @@ public class WSDLGenerator {
                 throw new WebServiceException(e.getMessage(), e);
             } catch (TransformerException e) {
                 throw new WebServiceException(e.getMessage(), e);
-            }
-        }
-        generateWrappers();
-    }
-
-    void generateWrappers() {
-        List<WrapperParameter> wrappers = new ArrayList<WrapperParameter>();
-        for (JavaMethodImpl method : model.getJavaMethods()) {
-            if(method.getBinding().isRpcLit()) continue;
-            for (ParameterImpl p : method.getRequestParameters()) {
-                if (p instanceof WrapperParameter) {
-                    if (WrapperComposite.class.equals((((WrapperParameter)p).getTypeInfo().type))) {
-                        wrappers.add((WrapperParameter)p);
-                    }
-                }
-            }
-            for (ParameterImpl p : method.getResponseParameters()) {
-                if (p instanceof WrapperParameter) {
-                    if (WrapperComposite.class.equals((((WrapperParameter)p).getTypeInfo().type))) {
-                        wrappers.add((WrapperParameter)p);
-                    }
-                }
-            }
-        }
-        if (wrappers.isEmpty()) return;
-        HashMap<String, Schema> xsds = new HashMap<String, Schema>();
-        for(WrapperParameter wp : wrappers) {
-            String tns = wp.getName().getNamespaceURI();
-            Schema xsd = xsds.get(tns);
-            if (xsd == null) {
-                xsd = types.schema();
-                xsd.targetNamespace(tns);
-                xsds.put(tns, xsd);
-            }
-            Element e =  xsd._element(Element.class);
-            e._attribute("name", wp.getName().getLocalPart());
-            e.type(wp.getName());
-            ComplexType ct =  xsd._element(ComplexType.class);
-            ct._attribute("name", wp.getName().getLocalPart());
-            ExplicitGroup sq = ct.sequence();
-            for (ParameterImpl p : wp.getWrapperChildren() ) {
-                if (p.getBinding().isBody()) {
-                    LocalElement le = sq.element();
-                    le._attribute("name", p.getName().getLocalPart());
-                    TypeInfo typeInfo = p.getItemType();
-                    boolean repeatedElement = false;
-                    if (typeInfo == null) {
-                        typeInfo = p.getTypeInfo();
-                    } else {
-                        repeatedElement = true;
-                    }
-                    QName type = model.getBindingContext().getTypeName(typeInfo);
-                    le.type(type);
-                    if (repeatedElement) {
-                        le.minOccurs(0);
-                        le.maxOccurs("unbounded");
-                    }
-                }
             }
         }
     }

@@ -48,6 +48,7 @@ import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * ECMA 15.3 Function Objects
@@ -204,11 +205,7 @@ public final class NativeFunction {
      * @return function with bound arguments
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static ScriptFunction bind(final Object self, final Object... args) {
-        if (!(self instanceof ScriptFunction)) {
-            throw typeError("not.a.function", ScriptRuntime.safeToString(self));
-        }
-
+    public static Object bind(final Object self, final Object... args) {
         final Object thiz = (args.length == 0) ? UNDEFINED : args[0];
 
         Object[] arguments;
@@ -219,7 +216,7 @@ public final class NativeFunction {
             arguments = ScriptRuntime.EMPTY_ARRAY;
         }
 
-        return ((ScriptFunctionImpl)self).makeBoundFunction(thiz, arguments);
+        return Bootstrap.bindCallable(self, thiz, arguments);
     }
 
     /**

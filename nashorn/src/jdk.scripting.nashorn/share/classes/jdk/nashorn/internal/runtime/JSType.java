@@ -714,6 +714,9 @@ public enum JSType {
      * @return a number
      */
     public static double toNumber(final Object obj) {
+        if (obj instanceof Double) {
+            return (Double)obj;
+        }
         if (obj instanceof Number) {
             return ((Number)obj).doubleValue();
         }
