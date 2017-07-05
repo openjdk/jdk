@@ -445,7 +445,7 @@ void FileMapInfo::write_bytes(const void* buffer, int nbytes) {
       // close and remove the file. See bug 6372906.
       close();
       remove(_full_path);
-      fail_stop("Unable to write to shared archive file.", NULL);
+      fail_stop("Unable to write to shared archive file.");
     }
   }
   _file_offset += nbytes;
@@ -463,7 +463,7 @@ void FileMapInfo::align_file_position() {
       // that the written file is the correct length.
       _file_offset -= 1;
       if (lseek(_fd, _file_offset, SEEK_SET) < 0) {
-        fail_stop("Unable to seek.", NULL);
+        fail_stop("Unable to seek.");
       }
       char zero = 0;
       write_bytes(&zero, 1);
@@ -534,7 +534,7 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
   // other reserved memory (like the code cache).
   ReservedSpace rs(size, os::vm_allocation_granularity(), false, requested_addr);
   if (!rs.is_reserved()) {
-    fail_continue(err_msg("Unable to reserve shared space at required address " INTPTR_FORMAT, requested_addr));
+    fail_continue("Unable to reserve shared space at required address " INTPTR_FORMAT, requested_addr);
     return rs;
   }
   // the reserved virtual memory is for mapping class data sharing archive
@@ -558,7 +558,7 @@ char* FileMapInfo::map_region(int i) {
                               requested_addr, size, si->_read_only,
                               si->_allow_exec);
   if (base == NULL || base != si->_base) {
-    fail_continue(err_msg("Unable to map %s shared space at required address.", shared_region_name[i]));
+    fail_continue("Unable to map %s shared space at required address.", shared_region_name[i]);
     return NULL;
   }
 #ifdef _WINDOWS
@@ -584,7 +584,7 @@ void FileMapInfo::unmap_region(int i) {
 
 void FileMapInfo::assert_mark(bool check) {
   if (!check) {
-    fail_stop("Mark mismatch while restoring from shared file.", NULL);
+    fail_stop("Mark mismatch while restoring from shared file.");
   }
 }
 
@@ -709,7 +709,7 @@ void FileMapInfo::print_shared_spaces() {
 void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
   FileMapInfo *map_info = FileMapInfo::current_info();
   if (map_info) {
-    map_info->fail_continue(msg);
+    map_info->fail_continue("%s", msg);
     for (int i = 0; i < MetaspaceShared::n_regions; i++) {
       if (map_info->_header->_space[i]._base != NULL) {
         map_info->unmap_region(i);
@@ -717,6 +717,6 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
       }
     }
   } else if (DumpSharedSpaces) {
-    fail_stop(msg, NULL);
+    fail_stop("%s", msg);
   }
 }

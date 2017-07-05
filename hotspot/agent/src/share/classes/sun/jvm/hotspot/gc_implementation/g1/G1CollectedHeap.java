@@ -43,8 +43,8 @@ import sun.jvm.hotspot.types.TypeDataBase;
 // Mirror class for G1CollectedHeap.
 
 public class G1CollectedHeap extends SharedHeap {
-    // HeapRegionSeq _seq;
-    static private long hrsFieldOffset;
+    // HeapRegionManager _hrm;
+    static private long hrmFieldOffset;
     // MemRegion _g1_reserved;
     static private long g1ReservedFieldOffset;
     // size_t _summary_bytes_used;
@@ -67,7 +67,7 @@ public class G1CollectedHeap extends SharedHeap {
     static private synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("G1CollectedHeap");
 
-        hrsFieldOffset = type.getField("_hrs").getOffset();
+        hrmFieldOffset = type.getField("_hrm").getOffset();
         summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
         g1mmField = type.getAddressField("_g1mm");
         oldSetFieldOffset = type.getField("_old_set").getOffset();
@@ -75,7 +75,7 @@ public class G1CollectedHeap extends SharedHeap {
     }
 
     public long capacity() {
-        return hrs().capacity();
+        return hrm().capacity();
     }
 
     public long used() {
@@ -83,13 +83,13 @@ public class G1CollectedHeap extends SharedHeap {
     }
 
     public long n_regions() {
-        return hrs().length();
+        return hrm().length();
     }
 
-    private HeapRegionSeq hrs() {
-        Address hrsAddr = addr.addOffsetTo(hrsFieldOffset);
-        return (HeapRegionSeq) VMObjectFactory.newObject(HeapRegionSeq.class,
-                                                         hrsAddr);
+    private HeapRegionManager hrm() {
+        Address hrmAddr = addr.addOffsetTo(hrmFieldOffset);
+        return (HeapRegionManager) VMObjectFactory.newObject(HeapRegionManager.class,
+                                                         hrmAddr);
     }
 
     public G1MonitoringSupport g1mm() {
@@ -110,7 +110,7 @@ public class G1CollectedHeap extends SharedHeap {
     }
 
     private Iterator<HeapRegion> heapRegionIterator() {
-        return hrs().heapRegionIterator();
+        return hrm().heapRegionIterator();
     }
 
     public void heapRegionIterate(SpaceClosure scl) {
