@@ -24,7 +24,7 @@
  */
 
 
-package sun.security.pkcs;
+package sun.security.pkcs10;
 
 import java.io.PrintStream;
 import java.io.IOException;

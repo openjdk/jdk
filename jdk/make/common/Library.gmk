@@ -165,7 +165,7 @@ $(ACTUAL_LIBRARY):: $(OBJDIR)/$(LIBRARY).lcf
 	$(LINK) -dll -out:$(OBJDIR)/$(@F) \
 	  -map:$(OBJDIR)/$(LIBRARY).map \
 	  $(LFLAGS) @$(OBJDIR)/$(LIBRARY).lcf \
-	  $(OTHER_LCF) $(JAVALIB) $(LDLIBS)
+	  $(OTHER_LCF) $(LDLIBS)
 	$(CP) $(OBJDIR)/$(@F) $@
 	@$(call binary_file_verification,$@)
 	$(CP) $(OBJDIR)/$(LIBRARY).map $(@D)

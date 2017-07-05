@@ -258,7 +258,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
         ckpAttributes[i].pValue = (void *) malloc(ckBufferLength);
         if (ckpAttributes[i].pValue == NULL) {
             freeCKAttributeArray(ckpAttributes, i);
-            JNU_ThrowOutOfMemoryError(env, 0);
+            throwOutOfMemoryError(env, 0);
             return;
         }
         ckpAttributes[i].ulValueLen = ckBufferLength;
@@ -390,7 +390,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1FindObje
     ckMaxObjectLength = jLongToCKULong(jMaxObjectCount);
     ckpObjectHandleArray = (CK_OBJECT_HANDLE_PTR) malloc(sizeof(CK_OBJECT_HANDLE) * ckMaxObjectLength);
     if (ckpObjectHandleArray == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
 

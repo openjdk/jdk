@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@ package sun.security.timestamp;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Extension;
 import sun.security.util.DerValue;
 import sun.security.util.DerOutputStream;
 import sun.security.util.ObjectIdentifier;
+import sun.security.x509.AlgorithmId;
 
 /**
  * This class provides a timestamp request, as defined in
@@ -64,24 +67,9 @@ import sun.security.util.ObjectIdentifier;
 
 public class TSRequest {
 
-    private static final ObjectIdentifier SHA1_OID;
-    private static final ObjectIdentifier MD5_OID;
-    static {
-        ObjectIdentifier sha1 = null;
-        ObjectIdentifier md5 = null;
-        try {
-            sha1 = new ObjectIdentifier("1.3.14.3.2.26");
-            md5 = new ObjectIdentifier("1.2.840.113549.2.5");
-        } catch (IOException ioe) {
-            // should not happen
-        }
-        SHA1_OID = sha1;
-        MD5_OID = md5;
-    }
-
     private int version = 1;
 
-    private ObjectIdentifier hashAlgorithmId = null;
+    private AlgorithmId hashAlgorithmId = null;
 
     private byte[] hashValue;
 
@@ -94,30 +82,21 @@ public class TSRequest {
     private X509Extension[] extensions = null;
 
     /**
-     * Constructs a timestamp request for the supplied hash value..
+     * Constructs a timestamp request for the supplied data.
      *
-     * @param hashValue     The hash value. This is the data to be timestamped.
-     * @param hashAlgorithm The name of the hash algorithm.
+     * @param toBeTimeStamped  The data to be timestamped.
+     * @param messageDigest The MessageDigest of the hash algorithm to use.
+     * @throws NoSuchAlgorithmException if the hash algorithm is not supported
      */
-    public TSRequest(byte[] hashValue, String hashAlgorithm) {
+    public TSRequest(byte[] toBeTimeStamped, MessageDigest messageDigest)
+        throws NoSuchAlgorithmException {
 
-        // Check the common hash algorithms
-        if ("MD5".equalsIgnoreCase(hashAlgorithm)) {
-            hashAlgorithmId = MD5_OID;
-            // Check that the hash value matches the hash algorithm
-            assert hashValue.length == 16;
+        this.hashAlgorithmId = AlgorithmId.get(messageDigest.getAlgorithm());
+        this.hashValue = messageDigest.digest(toBeTimeStamped);
+    }
 
-        } else if ("SHA-1".equalsIgnoreCase(hashAlgorithm) ||
-            "SHA".equalsIgnoreCase(hashAlgorithm) ||
-            "SHA1".equalsIgnoreCase(hashAlgorithm)) {
-            hashAlgorithmId = SHA1_OID;
-            // Check that the hash value matches the hash algorithm
-            assert hashValue.length == 20;
-
-        }
-        // Clone the hash value
-        this.hashValue = new byte[hashValue.length];
-        System.arraycopy(hashValue, 0, this.hashValue, 0, hashValue.length);
+    public byte[] getHashedMessage() {
+        return hashValue.clone();
     }
 
     /**
@@ -176,9 +155,7 @@ public class TSRequest {
 
         // encode messageImprint
         DerOutputStream messageImprint = new DerOutputStream();
-        DerOutputStream hashAlgorithm = new DerOutputStream();
-        hashAlgorithm.putOID(hashAlgorithmId);
-        messageImprint.write(DerValue.tag_Sequence, hashAlgorithm);
+        hashAlgorithmId.encode(messageImprint);
         messageImprint.putOctetString(hashValue);
         request.write(DerValue.tag_Sequence, messageImprint);
 

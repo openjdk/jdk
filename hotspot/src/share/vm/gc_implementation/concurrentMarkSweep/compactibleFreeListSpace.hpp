@@ -502,10 +502,14 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void verifyFreeLists()                  const PRODUCT_RETURN;
   void verifyIndexedFreeLists()           const;
   void verifyIndexedFreeList(size_t size) const;
-  // verify that the given chunk is in the free lists.
+  // Verify that the given chunk is in the free lists:
+  // i.e. either the binary tree dictionary, the indexed free lists
+  // or the linear allocation block.
   bool verifyChunkInFreeLists(FreeChunk* fc) const;
+  // Verify that the given chunk is the linear allocation block
+  bool verify_chunk_is_linear_alloc_block(FreeChunk* fc) const;
   // Do some basic checks on the the free lists.
-  void checkFreeListConsistency()         const PRODUCT_RETURN;
+  void check_free_list_consistency()      const PRODUCT_RETURN;
 
   // Printing support
   void dump_at_safepoint_with_locks(CMSCollector* c, outputStream* st);
