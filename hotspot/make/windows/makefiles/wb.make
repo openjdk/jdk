@@ -40,7 +40,7 @@ wb_java_srcs: $(WorkSpace)\src\share\tools\whitebox\sun\hotspot\*.java $(WB_CLAS
 
 
 {$(WorkSpace)\src\share\tools\whitebox\sun\hotspot}.java.class::
-	$(COMPILE_JAVAC) -d $(WB_CLASSES) $<
+	$(COMPILE_JAVAC) -sourcepath $(WBSRCDIR) -d $(WB_CLASSES) $<
 
 $(WB_JAR): wb_java_srcs
 	$(RUN_JAR) cf $@ -C $(WB_CLASSES) .

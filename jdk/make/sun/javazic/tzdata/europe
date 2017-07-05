@@ -233,8 +233,14 @@
 # the history of summer time legislation in the United Kingdom.
 # Since 1998 Joseph S. Myers has been updating
 # and extending this list, which can be found in
-# <a href="http://student.cusu.cam.ac.uk/~jsm28/british-time/">
+# http://student.cusu.cam.ac.uk/~jsm28/british-time/
+# <a href="http://www.polyomino.org.uk/british-time/">
 # History of legal time in Britain
+# </a>
+# Rob Crowther (2012-01-04) reports that that URL no longer
+# exists, and the article can now be found at:
+# <a href="http://www.polyomino.org.uk/british-time/">
+# http://www.polyomino.org.uk/british-time/
 # </a>
 
 # From Joseph S. Myers (1998-01-06):
@@ -1173,10 +1179,10 @@ Rule	France	1940	only	-	Feb	25	 2:00	1:00	S
 # write that they were used in Monaco and in many French locations.
 # Le Corre writes that the upper limit of the free zone was Arneguy, Orthez,
 # Mont-de-Marsan, Bazas, Langon, Lamotte-Montravel, Marouil, La
-# Rochefoucault, Champagne-Mouton, La Roche-Posay, La Haye-Decartes,
+# Rochefoucault, Champagne-Mouton, La Roche-Posay, La Haye-Descartes,
 # Loches, Montrichard, Vierzon, Bourges, Moulins, Digoin,
 # Paray-le-Monial, Montceau-les-Mines, Chalons-sur-Saone, Arbois,
-# Dole, Morez, St-Claude, and Collognes (Haute-Savioe).
+# Dole, Morez, St-Claude, and Collonges (Haute-Savoie).
 Rule	France	1941	only	-	May	 5	 0:00	2:00	M # Midsummer
 # Shanks & Pottenger say this transition occurred at Oct 6 1:00,
 # but go with Denis Excoffier (1997-12-12),
@@ -1677,6 +1683,41 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2 0:00s # Valletta
 # But [two people] separately reported via
 # Jesper Norgaard that as of 2001-01-24 Tiraspol was like Chisinau.
 # The Tiraspol entry has therefore been removed for now.
+#
+# From Alexander Krivenyshev (2011-10-17):
+# Pridnestrovian Moldavian Republic (PMR, also known as
+# "Pridnestrovie") has abolished seasonal clock change (no transition
+# to the Winter Time).
+#
+# News (in Russian):
+# <a href="http://www.kyivpost.ua/russia/news/pridnestrove-otkazalos-ot-perehoda-na-zimnee-vremya-30954.html">
+# http://www.kyivpost.ua/russia/news/pridnestrove-otkazalos-ot-perehoda-na-zimnee-vremya-30954.html
+# </a>
+#
+# <a href="http://www.allmoldova.com/moldova-news/1249064116.html">
+# http://www.allmoldova.com/moldova-news/1249064116.html
+# </a>
+#
+# The substance of this change (reinstatement of the Tiraspol entry)
+# is from a patch from Petr Machata (2011-10-17)
+#
+# From Tim Parenti (2011-10-19)
+# In addition, being situated at +4651+2938 would give Tiraspol
+# a pre-1880 LMT offset of 1:58:32.
+#
+# (which agrees with the earlier entry that had been removed)
+#
+# From Alexander Krivenyshev (2011-10-26)
+# NO need to divide Moldova into two timezones at this point.
+# As of today, Transnistria (Pridnestrovie)- Tiraspol reversed its own
+# decision to abolish DST this winter. 
+# Following Moldova and neighboring Ukraine- Transnistria (Pridnestrovie)-
+# Tiraspol will go back to winter time on October 30, 2011.
+# News from Moldova (in russian):
+# <a href="http://ru.publika.md/link_317061.html">
+# http://ru.publika.md/link_317061.html
+# </a>
+
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Chisinau	1:55:20 -	LMT	1880
@@ -2673,6 +2714,28 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # <a href="http://www.pravda.com.ua/rus/news/2011/09/20/6600616/">
 # http://www.pravda.com.ua/rus/news/2011/09/20/6600616/
 # </a>
+#
+# From Philip Pizzey (2011-10-18):
+# Today my Ukrainian colleagues have informed me that the
+# Ukrainian parliament have decided that they will go to winter
+# time this year after all.
+#
+# From Udo Schwedt (2011-10-18):
+# As far as I understand, the recent change to the Ukranian time zone 
+# (Europe/Kiev) to introduce permanent daylight saving time (similar
+# to Russia) was reverted today:
+#
+# <a href="http://portal.rada.gov.ua/rada/control/en/publish/article/info_left?art_id=287324&cat_id=105995">
+# http://portal.rada.gov.ua/rada/control/en/publish/article/info_left?art_id=287324&cat_id=105995
+# </a>
+#
+# Also reported by Alexander Bokovoy (2011-10-18) who also noted:
+# The law documents themselves are at
+#
+# <a href="http://w1.c1.rada.gov.ua/pls/zweb_n/webproc4_1?id=&pf3511=41484">
+# http://w1.c1.rada.gov.ua/pls/zweb_n/webproc4_1?id=&pf3511=41484
+# </a>
+
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # Most of Ukraine since 1970 has been like Kiev.
@@ -2687,8 +2750,7 @@ Zone Europe/Kiev	2:02:04 -	LMT	1880
 			3:00	-	MSK	1990 Jul  1 2:00
 			2:00	-	EET	1992
 			2:00	E-Eur	EE%sT	1995
-			2:00	EU	EE%sT	2011 Mar lastSun 1:00u
-			3:00	-	FET # Further-eastern European Time
+			2:00	EU	EE%sT
 # Ruthenia used CET 1990/1991.
 # "Uzhhorod" is the transliteration of the Ukrainian name, but
 # "Uzhgorod" is more common in English.
@@ -2702,8 +2764,7 @@ Zone Europe/Uzhgorod	1:29:12 -	LMT	1890 Oct
 			1:00	-	CET	1991 Mar 31 3:00
 			2:00	-	EET	1992
 			2:00	E-Eur	EE%sT	1995
-			2:00	EU	EE%sT	2011 Mar lastSun 1:00u
-			3:00	-	FET # Further-eastern European Time
+			2:00	EU	EE%sT
 # Zaporozh'ye and eastern Lugansk oblasts observed DST 1990/1991.
 # "Zaporizhia" is the transliteration of the Ukrainian name, but
 # "Zaporozh'ye" is more common in English.  Use the common English
@@ -2716,8 +2777,7 @@ Zone Europe/Zaporozhye	2:20:40 -	LMT	1880
 			1:00	C-Eur	CE%sT	1943 Oct 25
 			3:00	Russia	MSK/MSD	1991 Mar 31 2:00
 			2:00	E-Eur	EE%sT	1995
-			2:00	EU	EE%sT	2011 Mar lastSun 1:00u
-			3:00	-	FET # Further-eastern European Time
+			2:00	EU	EE%sT
 # Central Crimea used Moscow time 1994/1997.
 Zone Europe/Simferopol	2:16:24 -	LMT	1880
 			2:16	-	SMT	1924 May  2 # Simferopol Mean T
@@ -2742,8 +2802,7 @@ Zone Europe/Simferopol	2:16:24 -	LMT	1880
 # Assume it happened in March by not changing the clocks.
 			3:00	Russia	MSK/MSD	1997
 			3:00	-	MSK	1997 Mar lastSun 1:00u
-			2:00	EU	EE%sT	2011 Mar lastSun 1:00u
-			3:00	-	FET # Further-eastern European Time
+			2:00	EU	EE%sT
 
 ###############################################################################
 

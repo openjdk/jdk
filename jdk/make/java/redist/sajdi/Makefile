@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,26 @@ IMPORT_LIST =
 ifeq ($(INCLUDE_SA), true)
   IMPORT_LIST += $(LIBDIR)/sa-jdi.jar \
                  $(LIB_LOCATION)/$(SALIB_NAME)
-  ifeq ($(PLATFORM), windows)
-    IMPORT_LIST += $(LIB_LOCATION)/$(SAMAP_NAME) \
-                   $(LIB_LOCATION)/$(SAPDB_NAME)
-  endif
-  ifneq ($(OBJCOPY),)
-    # the import JDK may not contain .debuginfo files
-    ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(SA_DEBUGINFO_NAME)),)
-      IMPORT_LIST += $(LIB_LOCATION)/$(SA_DEBUGINFO_NAME)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      # the import JDK may not contain .diz files
+      ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(SA_DIZ_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(SA_DIZ_NAME)
+      endif
+    else
+      ifeq ($(PLATFORM), windows)
+        # the import JDK may not contain .pdb files
+        ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(SAPDB_NAME)),)
+          # assume .map file is present if .pdb is present
+          IMPORT_LIST += $(LIB_LOCATION)/$(SAMAP_NAME) \
+                         $(LIB_LOCATION)/$(SAPDB_NAME)
+        endif
+      else
+        # the import JDK may not contain .debuginfo files
+        ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(SA_DEBUGINFO_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(SA_DEBUGINFO_NAME)
+        endif
+      endif
     endif
   endif
 endif # INCLUDE_SA
@@ -80,17 +92,22 @@ $(LIBDIR)/sa-jdi.jar: $(HOTSPOT_IMPORT_PATH)/lib/sa-jdi.jar
 $(LIB_LOCATION)/$(SALIB_NAME): $(HOTSPOT_SALIB_PATH)/$(SALIB_NAME)
 	$(install-import-file)
 
-ifeq ($(PLATFORM), windows)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(SA_DIZ_NAME): $(HOTSPOT_SALIB_PATH)/$(SA_DIZ_NAME)
+	$(install-import-file)
+    else
+      ifeq ($(PLATFORM), windows)
 $(LIB_LOCATION)/$(SAPDB_NAME): $(HOTSPOT_SALIB_PATH)/$(SAPDB_NAME)
 	$(install-import-file)
 
 $(LIB_LOCATION)/$(SAMAP_NAME): $(HOTSPOT_SALIB_PATH)/$(SAMAP_NAME)
 	$(install-import-file)
-endif # windows
-
-  ifneq ($(OBJCOPY),)
+      else
 $(LIB_LOCATION)/$(SA_DEBUGINFO_NAME): $(HOTSPOT_SALIB_PATH)/$(SA_DEBUGINFO_NAME)
 	$(install-import-file)
+      endif
+    endif
   endif
 endif # INCLUDE_SA
 

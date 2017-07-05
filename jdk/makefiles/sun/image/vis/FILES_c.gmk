@@ -1,0 +1,162 @@
+#
+# Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+REQUIRED_NATIVE_FILES = \
+	mlib_v_ImageLookUp.c \
+
+REQUIRED_SHARE_FILES = \
+	mlib_ImageCreate.c \
+	mlib_ImageAffine.c \
+	mlib_ImageConvMxN.c \
+	mlib_ImageConvKernelConvert.c \
+
+SYS_SHARE_FILES = \
+	mlib_sys.c \
+
+RADIO_SHARE_FILES = \
+	mlib_ImageLookUp_64.c \
+	mlib_ImageLookUp_Bit.c \
+	mlib_ImageColorTrue2Index.c \
+	mlib_c_ImageThresh1_U8.c \
+
+
+RADIO_NATIVE_FILES = \
+	mlib_v_ImageLookUpS16S16Func.c \
+	mlib_v_ImageLookUpS16S32Func.c \
+	mlib_v_ImageLookUpS16U16Func.c \
+	mlib_v_ImageLookUpS16U8Func.c \
+	mlib_v_ImageLookUpS32S16Func.c \
+	mlib_v_ImageLookUpS32S32Func.c \
+	mlib_v_ImageLookUpS32U16Func.c \
+	mlib_v_ImageLookUpS32U8Func.c \
+	mlib_v_ImageLookUpSIS16S16Func.c \
+	mlib_v_ImageLookUpSIS16S32Func.c \
+	mlib_v_ImageLookUpSIS16U16Func.c \
+	mlib_v_ImageLookUpSIS16U8Func.c \
+	mlib_v_ImageLookUpSIS32S16Func.c \
+	mlib_v_ImageLookUpSIS32S32Func.c \
+	mlib_v_ImageLookUpSIS32U16Func.c \
+	mlib_v_ImageLookUpSIS32U8Func.c \
+	mlib_v_ImageLookUpSIU16S16Func.c \
+	mlib_v_ImageLookUpSIU16S32Func.c \
+	mlib_v_ImageLookUpSIU16U16Func.c \
+	mlib_v_ImageLookUpSIU16U8Func.c \
+	mlib_v_ImageLookUpSIU8S16Func.c \
+	mlib_v_ImageLookUpSIU8S32Func.c \
+	mlib_v_ImageLookUpSIU8U16Func.c \
+	mlib_v_ImageLookUpSIU8U8Func.c \
+	mlib_v_ImageLookUpU16S16Func.c \
+	mlib_v_ImageLookUpU16S32Func.c \
+	mlib_v_ImageLookUpU16U16Func.c \
+	mlib_v_ImageLookUpU16U8Func.c \
+	mlib_v_ImageLookUpU8S16Func.c \
+	mlib_v_ImageLookUpU8S32Func.c \
+	mlib_v_ImageLookUpU8U16Func.c \
+	mlib_v_ImageLookUpU8U8Func.c \
+
+GEOM_NATIVE_FILES = \
+	mlib_v_ImageAffineIndex_BC.c \
+	mlib_v_ImageAffine_BC.c \
+	mlib_v_ImageAffine_BC_S16.c \
+	mlib_v_ImageAffine_BC_U16.c \
+	mlib_v_ImageAffine_BL.c \
+	mlib_v_ImageAffine_BL_S16.c \
+	mlib_v_ImageAffine_BL_U16.c \
+	mlib_v_ImageAffine_NN.c \
+	mlib_v_ImageFilters.c \
+
+GEOM_SHARE_FILES = \
+	mlib_ImageAffineEdge.c \
+	mlib_ImageAffine_BC_D64.c \
+	mlib_ImageAffine_BC_F32.c \
+	mlib_ImageAffine_BC_S32.c \
+	mlib_ImageAffine_BL_D64.c \
+	mlib_ImageAffine_BL_F32.c \
+	mlib_ImageAffine_BL_S32.c \
+	mlib_ImageAffine_NN.c \
+	mlib_ImageAffine_NN_Bit.c \
+	mlib_ImageFilters.c \
+	mlib_ImageScanPoly.c \
+
+SPATIAL_SHARED_FILES = \
+	mlib_ImageConv_8nw.c \
+	mlib_ImageConv_8ext.c \
+	mlib_ImageConv_16nw.c \
+	mlib_ImageConv_16ext.c \
+	mlib_ImageConv_u16nw.c \
+	mlib_ImageConv_u16ext.c \
+	mlib_ImageConv_32nw.c \
+	mlib_ImageConv_F32nw.c \
+	mlib_ImageConvMxN_Fp.c \
+	mlib_ImageConvMxN_ext.c \
+	mlib_ImageConv_D64nw.c \
+	mlib_ImageClipping.c \
+	mlib_ImageConvCopyEdge_Bit.c \
+	mlib_ImageConvClearEdge_Bit.c \
+	mlib_ImageConv2x2_f.c \
+	mlib_ImageConvClearEdge_Fp.c \
+
+SPATIAL_NATIVE_FILES = \
+	mlib_v_ImageConvMxN_8.c \
+	mlib_v_ImageConvClearEdge.c \
+	mlib_v_ImageConvCopyEdge.c \
+	mlib_v_ImageConvMxN_8ext.c \
+	mlib_v_ImageConvVersion.c \
+	mlib_v_ImageConv_8nw.c \
+	mlib_ImageConvCopyEdge_Fp.c \
+
+FORMAT_NATIVE_FILES = \
+	mlib_v_ImageChannelInsert_1.c \
+	mlib_v_ImageChannelExtract_43.c \
+	mlib_v_ImageChannelExtract_1.c \
+
+COPY_SHARED_FILES = \
+	mlib_ImageCopy_Bit.c \
+
+COPY_NATIVE_FILES = \
+	mlib_v_ImageCopy_f.c \
+
+COMMON_SHARED_FILES = \
+	mlib_ImageUtils.c \
+	mlib_ImageDivTables.c \
+
+NATIVE_FILES = \
+	$(REQUIRED_NATIVE_FILES) \
+
+FILES_c = \
+	$(REQUIRED_NATIVE_FILES) \
+	$(REQUIRED_SHARE_FILES) \
+	$(RADIO_SHARE_FILES) \
+	$(RADIO_NATIVE_FILES) \
+	$(GEOM_NATIVE_FILES) \
+	$(GEOM_SHARE_FILES) \
+	$(SPATIAL_SHARED_FILES) \
+	$(SPATIAL_NATIVE_FILES) \
+	$(FORMAT_NATIVE_FILES) \
+	$(SYS_SHARE_FILES) \
+	$(COPY_SHARED_FILES) \
+	$(COPY_NATIVE_FILES) \
+	$(COMMON_SHARED_FILES) \
+

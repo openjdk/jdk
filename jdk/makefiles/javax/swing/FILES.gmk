@@ -1,0 +1,235 @@
+#
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+MISC_FILES = \
+        $(CLASSBINDIR)/javax/swing/text/html/default.css 			\
+        $(CLASSBINDIR)/javax/swing/text/rtf/charsets/NeXT.txt 			\
+        $(CLASSBINDIR)/javax/swing/text/rtf/charsets/ansi.txt 			\
+        $(CLASSBINDIR)/javax/swing/text/rtf/charsets/cpg437.txt 		\
+        $(CLASSBINDIR)/javax/swing/text/rtf/charsets/cpg850.txt 		\
+        $(CLASSBINDIR)/javax/swing/text/rtf/charsets/mac.txt
+
+BEANINFO_DOC = \
+	$(BUILDDIR)/tools/swing-beans/SwingBeanInfo.template
+
+BEANIMAGES   = $(BUILDDIR)/tools/swing-beans/beaninfo/images
+BEANINFO_IMG = \
+	$(BEANIMAGES)/AbstractButtonColor16.gif \
+	$(BEANIMAGES)/BorderColor16.gif \
+	$(BEANIMAGES)/JAppletColor16.gif \
+	$(BEANIMAGES)/JAppletColor32.gif \
+	$(BEANIMAGES)/JAppletMono16.gif \
+	$(BEANIMAGES)/JAppletMono32.gif \
+	$(BEANIMAGES)/JButtonColor32.gif \
+	$(BEANIMAGES)/JButtonColor16.gif \
+	$(BEANIMAGES)/JButtonMono32.gif \
+	$(BEANIMAGES)/JButtonMono16.gif \
+	$(BEANIMAGES)/JCheckBoxColor32.gif \
+	$(BEANIMAGES)/JCheckBoxColor16.gif \
+	$(BEANIMAGES)/JCheckBoxMono32.gif \
+	$(BEANIMAGES)/JCheckBoxMono16.gif \
+	$(BEANIMAGES)/JCheckBoxMenuItemColor32.gif \
+	$(BEANIMAGES)/JCheckBoxMenuItemColor16.gif \
+	$(BEANIMAGES)/JCheckBoxMenuItemMono32.gif \
+	$(BEANIMAGES)/JCheckBoxMenuItemMono16.gif \
+	$(BEANIMAGES)/JComboBoxColor32.gif \
+	$(BEANIMAGES)/JComboBoxColor16.gif \
+	$(BEANIMAGES)/JComboBoxMono32.gif \
+	$(BEANIMAGES)/JComboBoxMono16.gif \
+	$(BEANIMAGES)/JComponentColor16.gif \
+	$(BEANIMAGES)/JDesktopPaneColor32.gif \
+	$(BEANIMAGES)/JDesktopPaneColor16.gif \
+	$(BEANIMAGES)/JDesktopPaneMono32.gif \
+	$(BEANIMAGES)/JDesktopPaneMono16.gif \
+	$(BEANIMAGES)/JDialogColor32.gif \
+	$(BEANIMAGES)/JDialogColor16.gif \
+	$(BEANIMAGES)/JDialogMono16.gif \
+	$(BEANIMAGES)/JDialogMono32.gif \
+	$(BEANIMAGES)/JEditorPaneColor32.gif \
+	$(BEANIMAGES)/JEditorPaneColor16.gif \
+	$(BEANIMAGES)/JEditorPaneMono32.gif \
+	$(BEANIMAGES)/JEditorPaneMono16.gif \
+	$(BEANIMAGES)/JFrameColor32.gif \
+	$(BEANIMAGES)/JFrameColor16.gif \
+	$(BEANIMAGES)/JFrameMono32.gif \
+	$(BEANIMAGES)/JFrameMono16.gif \
+	$(BEANIMAGES)/JInternalFrameColor32.gif \
+	$(BEANIMAGES)/JInternalFrameColor16.gif \
+	$(BEANIMAGES)/JInternalFrameMono32.gif \
+	$(BEANIMAGES)/JInternalFrameMono16.gif \
+	$(BEANIMAGES)/JLabelColor32.gif \
+	$(BEANIMAGES)/JLabelColor16.gif \
+	$(BEANIMAGES)/JLabelMono32.gif \
+	$(BEANIMAGES)/JLabelMono16.gif \
+	$(BEANIMAGES)/JLayeredPaneColor32.gif \
+	$(BEANIMAGES)/JLayeredPaneColor16.gif \
+	$(BEANIMAGES)/JLayeredPaneMono32.gif \
+	$(BEANIMAGES)/JLayeredPaneMono16.gif \
+	$(BEANIMAGES)/JListColor32.gif \
+	$(BEANIMAGES)/JListColor16.gif \
+	$(BEANIMAGES)/JListMono32.gif \
+	$(BEANIMAGES)/JListMono16.gif \
+        $(BEANIMAGES)/JMenuBarColor32.gif \
+        $(BEANIMAGES)/JMenuBarColor16.gif \
+        $(BEANIMAGES)/JMenuBarMono32.gif \
+        $(BEANIMAGES)/JMenuBarMono16.gif \
+        $(BEANIMAGES)/JMenuColor32.gif \
+        $(BEANIMAGES)/JMenuColor16.gif \
+        $(BEANIMAGES)/JMenuMono32.gif \
+        $(BEANIMAGES)/JMenuMono16.gif \
+        $(BEANIMAGES)/JMenuItemColor32.gif \
+        $(BEANIMAGES)/JMenuItemColor16.gif \
+        $(BEANIMAGES)/JMenuItemMono32.gif \
+        $(BEANIMAGES)/JMenuItemMono16.gif \
+        $(BEANIMAGES)/JPanelColor32.gif \
+        $(BEANIMAGES)/JPanelColor16.gif \
+        $(BEANIMAGES)/JPanelMono32.gif \
+        $(BEANIMAGES)/JPanelMono16.gif \
+        $(BEANIMAGES)/JPasswordFieldColor32.gif \
+        $(BEANIMAGES)/JPasswordFieldColor16.gif \
+        $(BEANIMAGES)/JPasswordFieldMono32.gif \
+        $(BEANIMAGES)/JPasswordFieldMono16.gif \
+	$(BEANIMAGES)/JPopupMenuColor32.gif \
+	$(BEANIMAGES)/JPopupMenuColor16.gif \
+	$(BEANIMAGES)/JPopupMenuMono32.gif \
+	$(BEANIMAGES)/JPopupMenuMono16.gif \
+	$(BEANIMAGES)/JProgressBarColor32.gif \
+	$(BEANIMAGES)/JProgressBarColor16.gif \
+	$(BEANIMAGES)/JProgressBarMono32.gif \
+	$(BEANIMAGES)/JProgressBarMono16.gif \
+	$(BEANIMAGES)/JRadioButtonColor32.gif \
+	$(BEANIMAGES)/JRadioButtonColor16.gif \
+	$(BEANIMAGES)/JRadioButtonMono32.gif \
+	$(BEANIMAGES)/JRadioButtonMono16.gif \
+	$(BEANIMAGES)/JRadioButtonMenuItemColor32.gif \
+	$(BEANIMAGES)/JRadioButtonMenuItemColor16.gif \
+	$(BEANIMAGES)/JRadioButtonMenuItemMono32.gif \
+	$(BEANIMAGES)/JRadioButtonMenuItemMono16.gif \
+	$(BEANIMAGES)/JRootPaneColor32.gif \
+	$(BEANIMAGES)/JRootPaneColor16.gif \
+	$(BEANIMAGES)/JRootPaneMono32.gif \
+	$(BEANIMAGES)/JRootPaneMono16.gif \
+	$(BEANIMAGES)/JScrollPaneColor32.gif \
+	$(BEANIMAGES)/JScrollPaneColor16.gif \
+	$(BEANIMAGES)/JScrollPaneMono32.gif \
+	$(BEANIMAGES)/JScrollPaneMono16.gif \
+	$(BEANIMAGES)/JScrollBarColor32.gif \
+	$(BEANIMAGES)/JScrollBarColor16.gif \
+	$(BEANIMAGES)/JScrollBarMono32.gif \
+	$(BEANIMAGES)/JScrollBarMono16.gif \
+	$(BEANIMAGES)/JSeparatorColor32.gif \
+	$(BEANIMAGES)/JSeparatorColor16.gif \
+	$(BEANIMAGES)/JSeparatorMono32.gif \
+	$(BEANIMAGES)/JSeparatorMono16.gif \
+	$(BEANIMAGES)/JSliderColor32.gif \
+	$(BEANIMAGES)/JSliderColor16.gif \
+	$(BEANIMAGES)/JSliderMono32.gif \
+	$(BEANIMAGES)/JSliderMono16.gif \
+	$(BEANIMAGES)/JTextPaneColor32.gif \
+	$(BEANIMAGES)/JTextPaneColor16.gif \
+	$(BEANIMAGES)/JTextPaneMono32.gif \
+	$(BEANIMAGES)/JTextPaneMono16.gif \
+	$(BEANIMAGES)/JToggleButtonColor32.gif \
+	$(BEANIMAGES)/JToggleButtonColor16.gif \
+	$(BEANIMAGES)/JToggleButtonMono32.gif \
+	$(BEANIMAGES)/JToggleButtonMono16.gif \
+        $(BEANIMAGES)/JToolBarColor32.gif \
+        $(BEANIMAGES)/JToolBarColor16.gif \
+        $(BEANIMAGES)/JToolBarMono32.gif \
+        $(BEANIMAGES)/JToolBarMono16.gif \
+        $(BEANIMAGES)/JTabbedPaneColor32.gif \
+        $(BEANIMAGES)/JTabbedPaneColor16.gif \
+        $(BEANIMAGES)/JTabbedPaneMono32.gif \
+        $(BEANIMAGES)/JTabbedPaneMono16.gif \
+        $(BEANIMAGES)/JTreeColor32.gif \
+        $(BEANIMAGES)/JTreeColor16.gif \
+        $(BEANIMAGES)/JTreeMono32.gif \
+        $(BEANIMAGES)/JTreeMono16.gif \
+	$(BEANIMAGES)/JTextAreaColor32.gif \
+	$(BEANIMAGES)/JTextAreaColor16.gif \
+	$(BEANIMAGES)/JTextAreaMono32.gif \
+	$(BEANIMAGES)/JTextAreaMono16.gif \
+        $(BEANIMAGES)/JTextFieldColor32.gif \
+        $(BEANIMAGES)/JTextFieldColor16.gif \
+        $(BEANIMAGES)/JTextFieldMono32.gif \
+        $(BEANIMAGES)/JTextFieldMono16.gif \
+        $(BEANIMAGES)/JViewportColor32.gif \
+        $(BEANIMAGES)/JViewportColor16.gif \
+        $(BEANIMAGES)/JViewportMono32.gif \
+        $(BEANIMAGES)/JViewportMono16.gif \
+        $(BEANIMAGES)/JWindowColor32.gif \
+        $(BEANIMAGES)/JWindowColor16.gif \
+        $(BEANIMAGES)/JWindowMono32.gif \
+        $(BEANIMAGES)/JWindowMono16.gif \
+	$(BEANIMAGES)/JTableColor32.gif \
+	$(BEANIMAGES)/JTableColor16.gif \
+	$(BEANIMAGES)/JTableMono32.gif \
+	$(BEANIMAGES)/JTableMono16.gif
+
+BEANS = \
+	AbstractButton \
+	JComponent
+
+# These classes get listed in the swingall.jar manifest file and are
+# used during BeanInfo source generation.
+BEANS_MANIFEST = \
+	JApplet \
+	JButton \
+	JCheckBox \
+	JCheckBoxMenuItem \
+	JComboBox \
+	JDialog \
+	JEditorPane \
+	JFrame \
+	JInternalFrame \
+	JLabel \
+	JList \
+	JMenu \
+	JMenuBar \
+	JMenuItem \
+	JOptionPane \
+	JPanel \
+	JPasswordField \
+	JPopupMenu \
+	JProgressBar \
+	JRadioButton \
+	JRadioButtonMenuItem \
+	JRootPane \
+	JScrollBar \
+	JScrollPane \
+	JSeparator \
+	JSlider \
+	JSpinner \
+	JSplitPane \
+	JTabbedPane \
+	JTable \
+	JTextArea \
+	JTextField \
+	JTextPane \
+	JToggleButton \
+	JToolBar \
+	JTree \
+	JViewport \
+	JWindow
