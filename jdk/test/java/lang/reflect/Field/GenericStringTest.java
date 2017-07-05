@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5033583
+ * @bug 5033583 8161500
  * @summary Check toGenericString() method
  * @author Joseph D. Darcy
  */
@@ -35,12 +35,8 @@ import java.util.*;
 public class GenericStringTest {
     public static void main(String argv[]) throws Exception {
         int failures = 0;
-        List<Class> classList = new LinkedList<Class>();
-        classList.add(TestClass1.class);
-        classList.add(TestClass2.class);
 
-
-        for(Class clazz: classList)
+        for(Class clazz: List.of(TestClass1.class, TestClass2.class))
             for(Field field: clazz.getDeclaredFields()) {
                 ExpectedString es = field.getAnnotation(ExpectedString.class);
                 String genericString = field.toGenericString();
@@ -61,15 +57,15 @@ public class GenericStringTest {
 
 class TestClass1 {
     @ExpectedString("int TestClass1.field1")
-        int field1;
+    int field1;
 
     @ExpectedString("private static java.lang.String TestClass1.field2")
-        private static String field2;
+    private static String field2;
 }
 
 class TestClass2<E> {
     @ExpectedString("public E TestClass2.field1")
-        public E field1;
+    public E field1;
 }
 
 @Retention(RetentionPolicy.RUNTIME)

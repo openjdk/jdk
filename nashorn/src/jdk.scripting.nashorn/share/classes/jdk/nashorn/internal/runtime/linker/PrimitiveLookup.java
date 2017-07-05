@@ -117,7 +117,7 @@ public final class PrimitiveLookup {
                     return new GuardedInvocation(GlobalConstants.staticConstantGetter(find.getObjectValue()), guard, sp, null);
                 }
 
-                if (find.isInherited() && !(find.getProperty().isAccessorProperty())) {
+                if (find.isInheritedOrdinaryProperty()) {
                     // If property is found in the prototype object bind the method handle directly to
                     // the proto filter instead of going through wrapper instantiation below.
                     final ScriptObject proto = wrappedReceiver.getProto();

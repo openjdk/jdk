@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static org.testng.Assert.assertEquals;
 public class XSLTFunctionsTest {
 
     /**
-     * @bug 8062518
+     * @bug 8062518 8153082
      * Verifies that a reference to the DTM created by XSLT document function is
      * actually read from the DTM by an extension function.
      * @param xml Content of xml file to process

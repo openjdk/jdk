@@ -262,7 +262,6 @@
  *
  * </ul>
  *
- *
  * The methods of all classes in {@code java.util.concurrent} and its
  * subpackages extend these guarantees to higher-level
  * synchronization.  In particular:

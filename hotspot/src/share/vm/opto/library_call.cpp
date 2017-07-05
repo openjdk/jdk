@@ -2405,8 +2405,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
 
-  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
-         alias_type->basic_type() != T_ILLEGAL, "field, array element or unknown");
+  // Only field, array element or unknown locations are supported.
+  if (alias_type->adr_type() != TypeRawPtr::BOTTOM &&
+      alias_type->adr_type() != TypeOopPtr::BOTTOM &&
+      alias_type->basic_type() == T_ILLEGAL) {
+    return false;
+  }
+
   bool mismatched = false;
   BasicType bt = alias_type->basic_type();
   if (bt != T_ILLEGAL) {
@@ -2782,12 +2787,6 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       ShouldNotReachHere();
   }
 
-  // Null check receiver.
-  receiver = null_check(receiver);
-  if (stopped()) {
-    return true;
-  }
-
   // Build field offset expression.
   // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
   // to be plain byte offsets, which are also the same as those accepted
@@ -2799,8 +2798,6 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);
-  assert(alias_type->adr_type() == TypeRawPtr::BOTTOM || alias_type->adr_type() == TypeOopPtr::BOTTOM ||
-         alias_type->basic_type() != T_ILLEGAL, "field, array element or unknown");
   BasicType bt = alias_type->basic_type();
   if (bt != T_ILLEGAL &&
       ((bt == T_OBJECT || bt == T_ARRAY) != (type == T_OBJECT))) {
@@ -2830,6 +2827,12 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       break;
     default:
       ShouldNotReachHere();
+  }
+
+  // Null check receiver.
+  receiver = null_check(receiver);
+  if (stopped()) {
+    return true;
   }
 
   int alias_idx = C->get_alias_index(adr_type);

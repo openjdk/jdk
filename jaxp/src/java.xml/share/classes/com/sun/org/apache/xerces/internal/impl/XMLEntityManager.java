@@ -2066,6 +2066,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // system id has to be a valid URI
         if (strict) {
+
             try {
                 // if it's already an absolute one, return it
                 new URI(systemId);

@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -98,6 +98,10 @@ public interface Constants extends InstructionConstants {
     public static final int ACC_STATIC
         = com.sun.org.apache.bcel.internal.Constants.ACC_STATIC;
 
+    public static final String MODULE_SIG
+        = "Ljava/lang/reflect/Module;";
+    public static final String CLASS_SIG
+        = "Ljava/lang/Class;";
     public static final String STRING_SIG
         = "Ljava/lang/String;";
     public static final String STRING_BUFFER_SIG
@@ -246,8 +250,12 @@ public interface Constants extends InstructionConstants {
         = "com.sun.org.apache.xalan.internal.xsltc.DOM";
     public static final String DOM_IMPL
         = "com.sun.org.apache.xalan.internal.xsltc.dom.SAXImpl";
-        public static final String SAX_IMPL
+    public static final String SAX_IMPL
         = "com.sun.org.apache.xalan.internal.xsltc.dom.SAXImpl";
+    public static final String CLASS_CLASS
+        = "java.lang.Class";
+    public static final String MODULE_CLASS
+        = "java.lang.reflect.Module";
     public static final String STRING_CLASS
         = "java.lang.String";
     public static final String OBJECT_CLASS
@@ -293,7 +301,7 @@ public interface Constants extends InstructionConstants {
         = "()D";
 
     public static final String DOM_PNAME
-  = "dom";
+        = "dom";
     public static final String NODE_PNAME
         = "node";
     public static final String TRANSLET_OUTPUT_PNAME
@@ -335,6 +343,19 @@ public interface Constants extends InstructionConstants {
         = "setStartNode";
     public static final String RESET
         = "reset";
+    public static final String GET_MODULE
+        = "getModule";
+    public static final String FOR_NAME
+        = "forName";
+    public static final String ADD_READS
+        = "addReads";
+
+    public static final String GET_MODULE_SIG
+        = "()" + MODULE_SIG;
+    public static final String FOR_NAME_SIG
+        = "(" + STRING_SIG + ")" + CLASS_SIG;
+    public static final String ADD_READS_SIG
+        = "(" + MODULE_SIG + ")" + MODULE_SIG;
 
     public static final String ATTR_SET_SIG
         = "(" + DOM_INTF_SIG  + NODE_ITERATOR_SIG + TRANSLET_OUTPUT_SIG + "I)V";
