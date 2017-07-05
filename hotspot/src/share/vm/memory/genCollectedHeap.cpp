@@ -42,7 +42,6 @@
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "runtime/aprofiler.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.hpp"
@@ -873,12 +872,6 @@ void GenCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
   }
 }
 
-void GenCollectedHeap::object_iterate_since_last_GC(ObjectClosure* cl) {
-  for (int i = 0; i < _n_gens; i++) {
-    _gens[i]->object_iterate_since_last_GC(cl);
-  }
-}
-
 Space* GenCollectedHeap::space_containing(const void* addr) const {
   for (int i = 0; i < _n_gens; i++) {
     Space* res = _gens[i]->space_containing(addr);
@@ -1186,8 +1179,6 @@ void GenCollectedHeap::gc_prologue(bool full) {
   CollectedHeap::accumulate_statistics_all_tlabs();
   ensure_parsability(true);   // retire TLABs
 
-  // Call allocation profiler
-  AllocationProfiler::iterate_since_last_gc();
   // Walk generations
   GenGCPrologueClosure blk(full);
   generation_iterate(&blk, false);  // not old-to-young.
