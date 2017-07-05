@@ -358,7 +358,9 @@ final class P11RSACipher extends CipherSpi {
                 System.arraycopy(buffer, 0, tmpBuffer, 0, bufOfs);
                 tmpBuffer = p11.C_Sign(session.id(), tmpBuffer);
                 if (tmpBuffer.length > outLen) {
-                    throw new BadPaddingException("Output buffer too small");
+                    throw new BadPaddingException(
+                        "Output buffer (" + outLen + ") is too small to " +
+                        "hold the produced data (" + tmpBuffer.length + ")");
                 }
                 System.arraycopy(tmpBuffer, 0, out, outOfs, tmpBuffer.length);
                 n = tmpBuffer.length;

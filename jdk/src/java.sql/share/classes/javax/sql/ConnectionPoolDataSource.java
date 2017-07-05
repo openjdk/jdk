@@ -72,6 +72,34 @@ public interface ConnectionPoolDataSource  extends CommonDataSource {
   PooledConnection getPooledConnection(String user, String password)
     throws SQLException;
 
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  java.io.PrintWriter getLogWriter() throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  void setLogWriter(java.io.PrintWriter out) throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  void setLoginTimeout(int seconds) throws SQLException;
+
+  /**
+   * {@inheritDoc}
+   * @since 1.4
+   */
+  @Override
+  int getLoginTimeout() throws SQLException;
+
   //------------------------- JDBC 4.3 -----------------------------------
 
   /**
