@@ -2358,7 +2358,7 @@ class SignatureFile {
             if (sigalg == null) {
 
                 if (keyAlgorithm.equalsIgnoreCase("DSA"))
-                    signatureAlgorithm = "SHA1withDSA";
+                    signatureAlgorithm = "SHA256withDSA";
                 else if (keyAlgorithm.equalsIgnoreCase("RSA"))
                     signatureAlgorithm = "SHA256withRSA";
                 else if (keyAlgorithm.equalsIgnoreCase("EC"))
