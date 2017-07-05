@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,22 @@ public interface MulticastChannel
     extends NetworkChannel
 {
     /**
+     * Closes this channel.
+     *
+     * <p> If the channel is a member of a multicast group then the membership
+     * is {@link MembershipKey#drop dropped}. Upon return, the {@link
+     * MembershipKey membership-key} will be {@link MembershipKey#isValid
+     * invalid}.
+     *
+     * <p> This method otherwise behaves exactly as specified by the {@link
+     * Channel} interface.
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
+     */
+    @Override void close() throws IOException;
+
+    /**
      * Joins a multicast group to begin receiving all datagrams sent to the group,
      * returning a membership key.
      *
@@ -130,7 +146,7 @@ public interface MulticastChannel
      * interface to receive all datagrams then the membership key, representing
      * that membership, is returned. Otherwise this channel joins the group and
      * the resulting new membership key is returned. The resulting membership key
-     * is not {@link MembershipKey#getSourceAddress source-specific}.
+     * is not {@link MembershipKey#sourceAddress source-specific}.
      *
      * <p> A multicast channel may join several multicast groups, including
      * the same group on more than one interface. An implementation may impose a
@@ -150,6 +166,8 @@ public interface MulticastChannel
      * @throws  IllegalStateException
      *          If the channel already has source-specific membership of the
      *          group on the interface
+     * @throws  UnsupportedOperationException
+     *          If the channel's socket is not an Internet Protocol socket
      * @throws  ClosedChannelException
      *          If this channel is closed
      * @throws  IOException
@@ -170,7 +188,7 @@ public interface MulticastChannel
      * interface to receive datagrams from the given source address then the
      * membership key, representing that membership, is returned. Otherwise this
      * channel joins the group and the resulting new membership key is returned.
-     * The resulting membership key is {@link MembershipKey#getSourceAddress
+     * The resulting membership key is {@link MembershipKey#sourceAddress
      * source-specific}.
      *
      * <p> Membership is <em>cumulative</em> and this method may be invoked
@@ -196,7 +214,8 @@ public interface MulticastChannel
      *          If the channel is currently a member of the group on the given
      *          interface to receive all datagrams
      * @throws  UnsupportedOperationException
-     *          If the underlying operation system does not support source filtering
+     *          If the channel's socket is not an Internet Protocol socket or
+     *          source filtering is not supported
      * @throws  ClosedChannelException
      *          If this channel is closed
      * @throws  IOException

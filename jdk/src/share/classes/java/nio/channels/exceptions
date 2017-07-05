@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,21 @@ gen OverlappingFileLockException "
 
 SINCE=1.7
 
+SUPER=java.io.IOException
+
+gen InterruptedByTimeoutException "
+ * Checked exception received by a thread when a timeout elapses before an
+ * asynchronous operation completes." \
+ -4268008601014042947L
+
+SUPER=IllegalArgumentException
+
+gen IllegalChannelGroupException "
+ * Unchecked exception thrown when an attempt is made to open a channel
+ * in a group that was not created by the same provider. " \
+ -2495041211157744253L
+
+
 SUPER=IllegalStateException
 
 gen AlreadyBoundException "
@@ -157,3 +172,23 @@ gen AlreadyBoundException "
  * network oriented channel that is already bound." \
  6796072983322737592L
 
+gen AcceptPendingException "
+ * Unchecked exception thrown when an attempt is made to initiate an accept
+ * operation on a channel and a previous accept operation has not completed." \
+ 2721339977965416421L
+
+gen ReadPendingException "
+ * Unchecked exception thrown when an attempt is made to read from an
+ * asynchronous socket channel and a previous read has not completed." \
+ 1986315242191227217L
+
+gen WritePendingException "
+ * Unchecked exception thrown when an attempt is made to write to an
+ * asynchronous socket channel and a previous write has not completed." \
+ 7031871839266032276L
+
+gen ShutdownChannelGroupException "
+ * Unchecked exception thrown when an attempt is made to construct a channel in 
+ * a group that is shutdown or the completion handler for an I/O operation 
+ * cannot be invoked because the channel group is shutdown." \
+ -3903801676350154157L
