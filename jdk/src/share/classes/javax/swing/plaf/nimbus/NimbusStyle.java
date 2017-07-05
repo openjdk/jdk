@@ -808,7 +808,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * Simple utility method that searchs the given array of Strings for the
+     * Simple utility method that searches the given array of Strings for the
      * given string. This method is only called from getExtendedState if
      * the developer has specified a specific state for the component to be
      * in (ie, has "wedged" the component in that state) by specifying
@@ -1010,7 +1010,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * Contains values such as the UIDefaults and painters asssociated with
+     * Contains values such as the UIDefaults and painters associated with
      * a state. Whereas <code>State</code> represents a distinct state that a
      * component can be in (such as Enabled), this class represents the colors,
      * fonts, painters, etc associated with some state for this

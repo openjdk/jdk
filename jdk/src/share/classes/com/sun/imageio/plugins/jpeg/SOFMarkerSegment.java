@@ -78,7 +78,7 @@ class SOFMarkerSegment extends MarkerSegment {
         numLines |= buffer.buf[buffer.bufPtr++] & 0xff;
         samplesPerLine = (buffer.buf[buffer.bufPtr++] & 0xff) << 8;
         samplesPerLine |= buffer.buf[buffer.bufPtr++] & 0xff;
-        int numComponents = buffer.buf[buffer.bufPtr++];
+        int numComponents = buffer.buf[buffer.bufPtr++] & 0xff;
         componentSpecs = new ComponentSpec [numComponents];
         for (int i = 0; i < numComponents; i++) {
             componentSpecs[i] = new ComponentSpec(buffer);

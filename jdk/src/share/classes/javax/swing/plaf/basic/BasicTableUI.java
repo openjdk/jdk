@@ -738,7 +738,7 @@ public class BasicTableUI extends TableUI
      * the current <code>TableCellEditor</code>.
      */
      public class KeyHandler implements KeyListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -764,7 +764,7 @@ public class BasicTableUI extends TableUI
      * Instantiate it only within subclasses of {@code BasicTableUI}.
      */
     public class FocusHandler implements FocusListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -786,7 +786,7 @@ public class BasicTableUI extends TableUI
      * Instantiate it only within subclasses of BasicTableUI.
      */
     public class MouseInputHandler implements MouseInputListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.

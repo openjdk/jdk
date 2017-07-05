@@ -275,6 +275,11 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         public boolean isTrue() {
             return JSType.toBoolean(value);
         }
+
+        @Override
+        public boolean isLocal() {
+            return true;
+        }
     }
 
     @Immutable

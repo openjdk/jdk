@@ -45,7 +45,7 @@ import javax.swing.plaf.basic.BasicHTML;
  * specified position and justification.
  * <p>
  * If the border, font, or color property values are not
- * specified in the constuctor or by invoking the appropriate
+ * specified in the constructor or by invoking the appropriate
  * set methods, the property values will be defined by the current
  * look and feel, using the following property names in the
  * Defaults Table:

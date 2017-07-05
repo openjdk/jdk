@@ -28,6 +28,7 @@ package sun.util.xml;
 import java.io.*;
 import java.util.*;
 import java.nio.charset.*;
+import java.util.Map.Entry;
 import org.xml.sax.*;
 import org.w3c.dom.*;
 import javax.xml.parsers.*;
@@ -153,11 +154,15 @@ public class PlatformXmlPropertiesProvider extends XmlPropertiesProvider {
         }
 
         synchronized (props) {
-            for (String key : props.stringPropertyNames()) {
-                Element entry = (Element)properties.appendChild(
-                    doc.createElement("entry"));
-                entry.setAttribute("key", key);
-                entry.appendChild(doc.createTextNode(props.getProperty(key)));
+            for (Entry<Object, Object> e : props.entrySet()) {
+                final Object k = e.getKey();
+                final Object v = e.getValue();
+                if (k instanceof String && v instanceof String) {
+                    Element entry = (Element)properties.appendChild(
+                        doc.createElement("entry"));
+                    entry.setAttribute("key", (String)k);
+                    entry.appendChild(doc.createTextNode((String)v));
+                }
             }
         }
         emitDocument(doc, os, encoding);

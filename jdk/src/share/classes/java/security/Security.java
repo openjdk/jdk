@@ -496,7 +496,7 @@ public final class Security {
      * <li> <i>{@literal <crypto_service>.<algorithm_or_type>
      * <attribute_name>:<attribute_value>}</i>
      * <p> The cryptographic service name must not contain any dots. There
-     * must be one or more space charaters between the
+     * must be one or more space characters between the
      * <i>{@literal <algorithm_or_type>}</i> and the
      * <i>{@literal <attribute_name>}</i>.
      *  <p> A provider satisfies this selection criterion iff the
@@ -570,7 +570,7 @@ public final class Security {
      * <li>  <i>{@literal <crypto_service>}.
      * {@literal <algorithm_or_type> <attribute_name>}</i>
      * <p> The cryptographic service name must not contain any dots. There
-     * must be one or more space charaters between the
+     * must be one or more space characters between the
      * <i>{@literal <algorithm_or_type>}</i>
      * and the <i>{@literal <attribute_name>}</i>.
      * <p> The value associated with the key must be a non-empty string.

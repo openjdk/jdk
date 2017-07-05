@@ -48,7 +48,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * of the prime modulus (in bits).
  * When using this approach, algorithm-specific parameter generation
  * values - if any - default to some standard values, unless they can be
- * derived from the specified size.<P>
+ * derived from the specified size.
  *
  * <li>The other approach initializes a parameter generator object
  * using algorithm-specific semantics, which are represented by a set of

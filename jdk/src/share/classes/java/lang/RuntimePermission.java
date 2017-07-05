@@ -47,7 +47,6 @@ import java.util.StringTokenizer;
  * The following table lists all the possible RuntimePermission target names,
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
- * <P>
  *
  * <table border=1 cellpadding=5 summary="permission target name,
  *  what the target allows,and associated risks">

@@ -161,7 +161,7 @@ import sun.security.action.GetBooleanAction;
  * <p>
  * The painting architecture of Swing requires an opaque
  * <code>JComponent</code>
- * to exist in the containment hieararchy above all other components. This is
+ * to exist in the containment hierarchy above all other components. This is
  * typically provided by way of the content pane. If you replace the content
  * pane, it is recommended that you make the content pane opaque
  * by way of <code>setOpaque(true)</code>. Additionally, if the content pane
@@ -608,7 +608,7 @@ public class JRootPane extends JComponent implements Accessible {
      * parented by the root pane.
      * <p>
      * Swing's painting architecture requires an opaque <code>JComponent</code>
-     * in the containment hiearchy. This is typically provided by the
+     * in the containment hierarchy. This is typically provided by the
      * content pane. If you replace the content pane it is recommended you
      * replace it with an opaque <code>JComponent</code>.
      *
@@ -741,7 +741,7 @@ public class JRootPane extends JComponent implements Accessible {
      * On the other hand, the <code>glassPane</code>
      * is normally not visible, and so this can return true if the
      * <code>glassPane</code> isn't visible. Therefore, the
-     * return value here depends upon the visiblity of the
+     * return value here depends upon the visibility of the
      * <code>glassPane</code>.
      *
      * @return true if this component's children don't overlap

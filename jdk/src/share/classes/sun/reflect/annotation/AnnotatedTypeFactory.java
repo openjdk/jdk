@@ -95,6 +95,8 @@ public class AnnotatedTypeFactory {
             Class<?> clz = (Class)type;
             if (clz.getEnclosingClass() == null)
                 return addTo;
+            if (Modifier.isStatic(clz.getModifiers()))
+                return addNesting(clz.getEnclosingClass(), addTo);
             return addNesting(clz.getEnclosingClass(), addTo.pushInner());
         } else if (type instanceof ParameterizedType) {
             ParameterizedType t = (ParameterizedType)type;
@@ -166,7 +168,7 @@ public class AnnotatedTypeFactory {
 
         @Override
         public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotation) {
-            return AnnotationSupport.getMultipleAnnotations(annotations, annotation);
+            return AnnotationSupport.getDirectlyAndIndirectlyPresent(annotations, annotation);
         }
 
         // AnnotatedType

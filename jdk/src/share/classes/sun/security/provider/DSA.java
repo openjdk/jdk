@@ -529,7 +529,7 @@ abstract class DSA extends SignatureSpi {
          * i.e. FIPS186.
          *
          * @param seed the seed for generating k. This seed should be
-         * secure. This is what is refered to as the KSEED in the DSA
+         * secure. This is what is referred to as the KSEED in the DSA
          * specification.
          *
          * @param g the g parameter from the DSA key pair.

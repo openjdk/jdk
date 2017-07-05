@@ -187,7 +187,7 @@ abstract public class XBaseMenuWindow extends XWindow {
      ************************************************/
 
     /**
-     * Returns parent menu window (not the X-heirarchy parent window)
+     * Returns parent menu window (not the X-hierarchy parent window)
      */
     protected abstract XBaseMenuWindow getParentMenuWindow();
 

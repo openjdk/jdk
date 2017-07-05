@@ -59,7 +59,7 @@ import sun.reflect.Reflection;
  * <code>my.sql.Driver</code>
  * </pre>
  *
- * <P>Applications no longer need to explictly load JDBC drivers using <code>Class.forName()</code>. Existing programs
+ * <P>Applications no longer need to explicitly load JDBC drivers using <code>Class.forName()</code>. Existing programs
  * which currently load JDBC drivers using <code>Class.forName()</code> will continue to work without
  * modification.
  *

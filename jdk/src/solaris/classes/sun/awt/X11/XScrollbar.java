@@ -564,7 +564,7 @@ abstract class XScrollbar {
      * This method enforces the same constraints as in java.awt.Scrollbar:
      * <UL>
      * <LI> The maximum must be greater than the minimum </LI>
-     * <LI> The value must be greater than or equal to the minumum
+     * <LI> The value must be greater than or equal to the minimum
      *      and less than or equal to the maximum minus the
      *      visible amount </LI>
      * <LI> The visible amount must be greater than 1 and less than or equal
@@ -855,7 +855,7 @@ abstract class XScrollbar {
         }
 
         // There was one final adjustment here in the Motif function, which was
-        // noted to be for backward-compatiblity.  It has been left out for now.
+        // noted to be for backward-compatibility.  It has been left out for now.
 
         return retVal;
     }

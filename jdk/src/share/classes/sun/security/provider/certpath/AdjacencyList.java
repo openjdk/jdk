@@ -64,7 +64,7 @@ import java.util.List;
  * The iterator method returns objects of type <code>BuildStep</code>, not
  * objects of type <code>Vertex</code>.
  * A <code>BuildStep</code> contains a <code>Vertex</code> and a result code,
- * accessable via getResult method. There are five result values.
+ * accessible via getResult method. There are five result values.
  * <code>POSSIBLE</code> denotes that the current step represents a
  * <code>Certificate</code> that the builder is considering at this point in
  * the build. <code>FOLLOW</code> denotes a <code>Certificate</code> (one of

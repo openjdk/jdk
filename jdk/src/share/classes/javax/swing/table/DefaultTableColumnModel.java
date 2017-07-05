@@ -315,7 +315,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * of the view/controller object using this model (typically JTable).  The
      * view/controller need not display the columns sequentially from left to
      * right.  For example, columns could be displayed from right to left to
-     * accomodate a locale preference or some columns might be hidden at the
+     * accommodate a locale preference or some columns might be hidden at the
      * request of the user.  Because the model does not know how the columns
      * are laid out on screen, the given <code>xPosition</code> should not be
      * considered to be a coordinate in 2D graphics space.  Instead, it should

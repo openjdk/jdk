@@ -29,8 +29,43 @@
 #include "runtime/thread.hpp"
 
 
+// The closure for GetLoadedClasses
+class LoadedClassesClosure : public KlassClosure {
+private:
+  Stack<jclass, mtInternal> _classStack;
+  JvmtiEnv* _env;
 
-// The closure for GetLoadedClasses and GetClassLoaderClasses
+public:
+  LoadedClassesClosure(JvmtiEnv* env) {
+    _env = env;
+  }
+
+  void do_klass(Klass* k) {
+    // Collect all jclasses
+    _classStack.push((jclass) _env->jni_reference(k->java_mirror()));
+  }
+
+  int extract(jclass* result_list) {
+    // The size of the Stack will be 0 after extract, so get it here
+    int count = (int)_classStack.size();
+    int i = count;
+
+    // Pop all jclasses, fill backwards
+    while (!_classStack.is_empty()) {
+      result_list[--i] = _classStack.pop();
+    }
+
+    // Return the number of elements written
+    return count;
+  }
+
+  // Return current size of the Stack
+  int get_count() {
+    return (int)_classStack.size();
+  }
+};
+
+// The closure for GetClassLoaderClasses
 class JvmtiGetLoadedClassesClosure : public StackObj {
   // Since the SystemDictionary::classes_do callback
   // doesn't pass a closureData pointer,
@@ -165,19 +200,6 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     }
   }
 
-  // Finally, the static methods that are the callbacks
-  static void increment(Klass* k) {
-    JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
-    if (that->get_initiatingLoader() == NULL) {
-      for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
-        that->set_count(that->get_count() + 1);
-      }
-    } else if (k != NULL) {
-      // if initiating loader not null, just include the instance with 1 dimension
-      that->set_count(that->get_count() + 1);
-    }
-  }
-
   static void increment_with_loader(Klass* k, ClassLoaderData* loader_data) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     oop class_loader = loader_data->class_loader();
@@ -193,24 +215,6 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     oop class_loader = loader_data->class_loader();
     if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
       that->set_count(that->get_count() + 1);
-    }
-  }
-
-  static void add(Klass* k) {
-    JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
-    if (that->available()) {
-      if (that->get_initiatingLoader() == NULL) {
-        for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
-          oop mirror = l->java_mirror();
-          that->set_element(that->get_index(), mirror);
-          that->set_index(that->get_index() + 1);
-        }
-      } else if (k != NULL) {
-        // if initiating loader not null, just include the instance with 1 dimension
-        oop mirror = k->java_mirror();
-        that->set_element(that->get_index(), mirror);
-        that->set_index(that->get_index() + 1);
-      }
     }
   }
 
@@ -255,39 +259,30 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
 
 jvmtiError
 JvmtiGetLoadedClasses::getLoadedClasses(JvmtiEnv *env, jint* classCountPtr, jclass** classesPtr) {
-  // Since SystemDictionary::classes_do only takes a function pointer
-  // and doesn't call back with a closure data pointer,
-  // we can only pass static methods.
 
-  JvmtiGetLoadedClassesClosure closure;
+  LoadedClassesClosure closure(env);
   {
     // To get a consistent list of classes we need MultiArray_lock to ensure
-    // array classes aren't created, and SystemDictionary_lock to ensure that
-    // classes aren't added to the system dictionary,
+    // array classes aren't created.
     MutexLocker ma(MultiArray_lock);
-    MutexLocker sd(SystemDictionary_lock);
 
-    // First, count the classes
-    SystemDictionary::classes_do(&JvmtiGetLoadedClassesClosure::increment);
-    Universe::basic_type_classes_do(&JvmtiGetLoadedClassesClosure::increment);
-    // Next, fill in the classes
-    closure.allocate();
-    SystemDictionary::classes_do(&JvmtiGetLoadedClassesClosure::add);
-    Universe::basic_type_classes_do(&JvmtiGetLoadedClassesClosure::add);
-    // Drop the SystemDictionary_lock, so the results could be wrong from here,
-    // but we still have a snapshot.
+    // Iterate through all classes in ClassLoaderDataGraph
+    // and collect them using the LoadedClassesClosure
+    ClassLoaderDataGraph::loaded_classes_do(&closure);
   }
-  // Post results
+
+  // Return results by extracting the collected contents into a list
+  // allocated via JvmtiEnv
   jclass* result_list;
-  jvmtiError err = env->Allocate(closure.get_count() * sizeof(jclass),
-                                 (unsigned char**)&result_list);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
+  jvmtiError error = env->Allocate(closure.get_count() * sizeof(jclass),
+                               (unsigned char**)&result_list);
+
+  if (error == JVMTI_ERROR_NONE) {
+    int count = closure.extract(result_list);
+    *classCountPtr = count;
+    *classesPtr = result_list;
   }
-  closure.extract(env, result_list);
-  *classCountPtr = closure.get_count();
-  *classesPtr = result_list;
-  return JVMTI_ERROR_NONE;
+  return error;
 }
 
 jvmtiError

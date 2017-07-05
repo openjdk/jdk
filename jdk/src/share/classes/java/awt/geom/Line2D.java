@@ -477,7 +477,7 @@ public abstract class Line2D implements Shape, Cloneable {
      * direction is clockwise.
      * <p>A return value of 0 indicates that the point lies
      * exactly on the line segment.  Note that an indicator value
-     * of 0 is rare and not useful for determining colinearity
+     * of 0 is rare and not useful for determining collinearity
      * because of floating point rounding issues.
      * <p>If the point is colinear with the line segment, but
      * not between the end points, then the value will be -1 if the point

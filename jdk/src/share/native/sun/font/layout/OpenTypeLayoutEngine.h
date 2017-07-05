@@ -59,7 +59,7 @@ U_NAMESPACE_BEGIN
  * 3) Glyph post processing - in cases where the font doesn't directly contain a GSUB table,
  *    the previous two steps may have generated "fake" glyph indices to use with a "canned" GSUB
  *    table. This step turns those glyph indices into actual font-specific glyph indices, and may
- *    perform any other adjustments requried by the previous steps.
+ *    perform any other adjustments required by the previous steps.
  *
  * OpenTypeLayoutEngine will also use the font's GPOS table to apply position adjustments
  * such as kerning and accent positioning.
@@ -349,7 +349,7 @@ protected:
      * index and character index arrays, assuming that no "fake" glyph indices
      * were needed to do GSUB processing.
      *
-     * Input paramters:
+     * Input parameters:
      * @param tempGlyphs - the input "fake" glyph index array
      * @param tempCharIndices - the input "fake" character index array
      * @param tempGlyphCount - the number of "fake" glyph indices

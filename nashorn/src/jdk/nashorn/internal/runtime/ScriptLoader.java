@@ -52,24 +52,10 @@ final class ScriptLoader extends NashornLoader {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         checkPackageAccess(name);
-        try {
-            return super.loadClass(name, resolve);
-        } catch (final ClassNotFoundException | SecurityException e) {
-            // We'll get ClassNotFoundException for Nashorn 'struct' classes.
-            // Also, we'll get SecurityException for jdk.nashorn.internal.*
-            // classes. So, load these using to context's 'shared' loader.
-            // All these classes start with "jdk.nashorn.internal." prefix.
-            try {
-                if (name.startsWith(NASHORN_PKG_PREFIX)) {
-                    return context.getSharedLoader().loadClass(name);
-                }
-            } catch (final ClassNotFoundException ignored) {
-                //ignored
-            }
-
-            // throw the original exception from here
-            throw e;
+        if (name.startsWith(NASHORN_PKG_PREFIX)) {
+            return context.getSharedLoader().loadClass(name);
         }
+        return super.loadClass(name, resolve);
     }
 
     // package-private and private stuff below this point

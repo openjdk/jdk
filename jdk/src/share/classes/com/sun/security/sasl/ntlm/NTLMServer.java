@@ -62,7 +62,7 @@ import javax.security.sasl.*;
   *      LMv2: NTLM v2, LM only
   *      NTLMv2: NTLM v2, NTLM only
   *    If not specified, use system property "ntlm.version". If also
-  *    not specfied, all versions are accepted.
+  *    not specified, all versions are accepted.
   *
   * com.sun.security.sasl.ntlm.domain
   *    String, the domain of the server, default is server name (fqdn parameter)

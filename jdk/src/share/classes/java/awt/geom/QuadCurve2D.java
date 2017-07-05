@@ -511,7 +511,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
     /**
      * Returns the X coordinate of the end point in
      * <code>double</code> precision.
-     * @return the x coordiante of the end point.
+     * @return the x coordinate of the end point.
      * @since 1.2
      */
     public abstract double getX2();

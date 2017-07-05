@@ -338,7 +338,7 @@ public interface LdapContext extends DirContext {
      * parameter, a system property, or one or more resource files.
      *<p>
      * The value of this constant is "java.naming.factory.control".
-     *<p>
+     *
      * @see ControlFactory
      * @see javax.naming.Context#addToEnvironment
      * @see javax.naming.Context#removeFromEnvironment

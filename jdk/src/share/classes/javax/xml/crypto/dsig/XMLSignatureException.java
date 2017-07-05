@@ -31,7 +31,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 
 /**
- * Indicates an exceptional condition that occured during the XML
+ * Indicates an exceptional condition that occurred during the XML
  * signature generation or validation process.
  *
  * <p>An <code>XMLSignatureException</code> can contain a cause: another

@@ -24,6 +24,7 @@
  */
 package jdk.nashorn.internal.runtime;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -35,6 +36,8 @@ import java.util.TreeSet;
 @SuppressWarnings("serial")
 final class CompiledFunctions extends TreeSet<CompiledFunction> {
 
+    private CompiledFunction generic;
+
     CompiledFunction best(final MethodType type) {
         final Iterator<CompiledFunction> iter = iterator();
         while (iter.hasNext()) {
@@ -43,18 +46,57 @@ final class CompiledFunctions extends TreeSet<CompiledFunction> {
                 return next;
             }
         }
-        return mostGeneric();
+        return generic();
     }
 
     boolean needsCallee() {
-        for (final CompiledFunction inv : this) {
-            assert ScriptFunctionData.needsCallee(inv.getInvoker()) == ScriptFunctionData.needsCallee(mostGeneric().getInvoker());
-        }
         return ScriptFunctionData.needsCallee(mostGeneric().getInvoker());
     }
 
     CompiledFunction mostGeneric() {
         return last();
+    }
+
+    CompiledFunction generic() {
+        CompiledFunction gen = this.generic;
+        if (gen == null) {
+            gen = this.generic = makeGeneric(mostGeneric());
+        }
+        return gen;
+    }
+
+    private static CompiledFunction makeGeneric(final CompiledFunction func) {
+        final MethodHandle invoker = composeGenericMethod(func.getInvoker());
+        final MethodHandle constructor = func.hasConstructor() ? composeGenericMethod(func.getConstructor()) : null;
+        return new CompiledFunction(invoker.type(), invoker, constructor);
+    }
+
+    /**
+     * Takes a method handle, and returns a potentially different method handle that can be used in
+     * {@code ScriptFunction#invoke(Object, Object...)} or {code ScriptFunction#construct(Object, Object...)}.
+     * The returned method handle will be sure to return {@code Object}, and will have all its parameters turned into
+     * {@code Object} as well, except for the following ones:
+     * <ul>
+     *   <li>a last parameter of type {@code Object[]} which is used for vararg functions,</li>
+     *   <li>the first argument, which is forced to be {@link ScriptFunction}, in case the function receives itself
+     *   (callee) as an argument.</li>
+     * </ul>
+     *
+     * @param mh the original method handle
+     *
+     * @return the new handle, conforming to the rules above.
+     */
+    private static MethodHandle composeGenericMethod(final MethodHandle mh) {
+        final MethodType type = mh.type();
+        final boolean isVarArg = ScriptFunctionData.isVarArg(mh);
+        final int paramCount = isVarArg ? type.parameterCount() - 1 : type.parameterCount();
+
+        MethodType newType = MethodType.genericMethodType(paramCount, isVarArg);
+
+        if (ScriptFunctionData.needsCallee(mh)) {
+            newType = newType.changeParameterType(0, ScriptFunction.class);
+        }
+        return type.equals(newType) ? mh : mh.asType(newType);
     }
 
     /**

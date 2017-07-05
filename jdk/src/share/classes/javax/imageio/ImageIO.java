@@ -102,7 +102,7 @@ public final class ImageIO {
      * into the registry for later retrieval.
      *
      * <p> The exact set of locations searched depends on the
-     * implementation of the Java runtime enviroment.
+     * implementation of the Java runtime environment.
      *
      * @see ClassLoader#getResources
      */
@@ -1466,7 +1466,7 @@ public final class ImageIO {
      * it is the responsibility of the caller to close the stream, if desired.
      *
      * @param im a <code>RenderedImage</code> to be written.
-     * @param formatName a <code>String</code> containg the informal
+     * @param formatName a <code>String</code> containing the informal
      * name of the format.
      * @param output an <code>ImageOutputStream</code> to be written to.
      *
@@ -1499,7 +1499,7 @@ public final class ImageIO {
      * discarded.
      *
      * @param im a <code>RenderedImage</code> to be written.
-     * @param formatName a <code>String</code> containg the informal
+     * @param formatName a <code>String</code> containing the informal
      * name of the format.
      * @param output a <code>File</code> to be written to.
      *
@@ -1551,7 +1551,7 @@ public final class ImageIO {
      * <code>getCacheDirectory</code> will be used to control caching.
      *
      * @param im a <code>RenderedImage</code> to be written.
-     * @param formatName a <code>String</code> containg the informal
+     * @param formatName a <code>String</code> containing the informal
      * name of the format.
      * @param output an <code>OutputStream</code> to be written to.
      *

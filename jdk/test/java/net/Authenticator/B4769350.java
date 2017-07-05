@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
 
 /**
  * @test
- * @bug 4769350
- * @library ../../../sun/net/www/httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction AbstractCallback
+ * @bug 4769350 8017779
  * @run main/othervm B4769350 server
  * @run main/othervm B4769350 proxy
  * @summary proxy authentication username and password caching only works in serial case
@@ -34,8 +32,17 @@
  * tests may already have invoked the HTTP handler.
  */
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class B4769350 {
 
@@ -43,13 +50,12 @@ public class B4769350 {
     static boolean error = false;
 
     static void read (InputStream is) throws IOException {
-        int c;
-        while ((c=is.read()) != -1) {
+        while (is.read() != -1) {
             //System.out.write (c);
         }
     }
 
-    static class Client extends Thread {
+     static class Client extends Thread {
         String authority, path;
         boolean allowerror;
 
@@ -64,8 +70,8 @@ public class B4769350 {
             try {
                 URI u = new URI ("http", authority, path, null, null);
                 URL url = u.toURL();
-                URLConnection urlc = url.openConnection ();
-                InputStream is = urlc.getInputStream ();
+                URLConnection urlc = url.openConnection();
+                InputStream is = urlc.getInputStream();
                 read (is);
                 is.close();
             } catch (URISyntaxException  e) {
@@ -73,7 +79,8 @@ public class B4769350 {
                 error = true;
             } catch (IOException e) {
                 if (!allowerror) {
-                    System.out.println (Thread.currentThread().getName() + " " + e);
+                    System.out.println (Thread.currentThread().getName()
+                            + " " + e);
                     e.printStackTrace();
                     error = true;
                 }
@@ -81,55 +88,58 @@ public class B4769350 {
         }
     }
 
-    static class CallBack extends AbstractCallback {
+    class Server implements AutoCloseable {
+        HttpServer server;
+        Executor executor;
+        CyclicBarrier t1Cond1;
+        CyclicBarrier t1Cond2;
 
-        void errorReply (HttpTransaction req, String reply) throws IOException {
-            req.addResponseHeader ("Connection", "close");
-            req.addResponseHeader ("WWW-Authenticate", reply);
-            req.sendResponse (401, "Unauthorized");
-            req.orderlyClose();
+        public String getAddress() {
+            return server.getAddress().getHostName();
         }
 
-        void proxyReply (HttpTransaction req, String reply) throws IOException {
-            req.addResponseHeader ("Proxy-Authenticate", reply);
-            req.sendResponse (407, "Proxy Authentication Required");
-        }
+        public void startServer() {
+            InetSocketAddress addr = new InetSocketAddress(0);
 
-        void okReply (HttpTransaction req) throws IOException {
-            req.addResponseHeader ("Connection", "close");
-            req.setResponseEntityBody ("Hello .");
-            req.sendResponse (200, "Ok");
-            req.orderlyClose();
-        }
-
-        public void request (HttpTransaction req, int count) {
             try {
-                URI uri = req.getRequestURI();
-                String path = uri.getPath();
-                if (path.endsWith ("/t1a")) {
-                    doT1a (req, count);
-                } else if (path.endsWith ("/t1b")) {
-                    doT1b (req, count);
-                } else if (path.endsWith ("/t1c")) {
-                    doT1c (req, count);
-                } else if (path.endsWith ("/t1d")) {
-                    doT1d (req, count);
-                } else if (path.endsWith ("/t2a")) {
-                    doT2a (req, count);
-                } else if (path.endsWith ("/t2b")) {
-                    doT2b (req, count);
-                } else if (path.endsWith ("/t3a")) {
-                    doT3a (req, count);
-                } else if (path.endsWith ("/t3b")) {
-                    doT3bc (req, count);
-                } else if (path.endsWith ("/t3c")) {
-                    doT3bc (req, count);
-                } else {
-                   System.out.println ("unexpected request URI");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+                server = HttpServer.create(addr, 0);
+            } catch (IOException ioe) {
+                throw new RuntimeException("Server could not be created");
             }
+            executor = Executors.newFixedThreadPool(10);
+            server.setExecutor(executor);
+            server.createContext("/test/realm1/t1a",
+                    new AuthenticationHandlerT1a() );
+            server.createContext("/test/realm2/t1b",
+                    new AuthenticationHandlerT1b());
+            server.createContext("/test/realm1/t1c",
+                    new AuthenticationHandlerT1c());
+            server.createContext("/test/realm2/t1d",
+                    new AuthenticationHandlerT1d());
+            server.createContext("/test/realm3/t2a",
+                    new AuthenticationHandlerT2a());
+            server.createContext("/test/realm3/t2b",
+                    new AuthenticationHandlerT2b());
+            server.createContext("/test/realm4/t3a",
+                    new AuthenticationHandlerT3a());
+            server.createContext("/test/realm4/t3b",
+                    new AuthenticationHandlerT3bc());
+            server.createContext("/test/realm4/t3c",
+                    new AuthenticationHandlerT3bc());
+            t1Cond1 = new CyclicBarrier(2);
+            t1Cond2 = new CyclicBarrier(2);
+            server.start();
+        }
+
+        public int getPort() {
+            return server.getAddress().getPort();
+        }
+
+        public void close() {
+            if (executor != null)
+                ((ExecutorService)executor).shutdownNow();
+            if (server != null)
+                server.stop(0);
         }
 
         /* T1 tests the client by sending 4 requests to 2 different realms
@@ -138,90 +148,158 @@ public class B4769350 {
          * the second requests should be executed without calling the authenticator.
          * The test succeeds if the authenticator was only called twice.
          */
-        void doT1a (HttpTransaction req, int count) throws IOException {
-            switch (count) {
-            case 0:
-                errorReply (req, "Basic realm=\"realm1\"");
-                TestHttpServer.rendezvous ("one", 2);
-                break;
-            case 1:
-                TestHttpServer.waitForCondition ("cond2");
-                okReply (req);
-                break;
-            default:
-                System.out.println ("Unexpected request");
+        class AuthenticationHandlerT1a implements HttpHandler
+        {
+            volatile int count = -1;
+
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                try {
+                    switch(count) {
+                        case 0:
+                            AuthenticationHandler.errorReply(exchange,
+                                    "Basic realm=\"realm1\"");
+                            break;
+                        case 1:
+                            t1Cond1.await();
+                            t1cond2latch.await();
+                            AuthenticationHandler.okReply(exchange);
+                            break;
+                        default:
+                            System.out.println ("Unexpected request");
+                    }
+                } catch (InterruptedException |
+                                 BrokenBarrierException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
             }
         }
 
+        class AuthenticationHandlerT1b implements HttpHandler
+        {
+            volatile int count = -1;
 
-        void doT1b (HttpTransaction req, int count) throws IOException {
-            switch (count) {
-            case 0:
-                errorReply (req, "Basic realm=\"realm2\"");
-                TestHttpServer.rendezvous ("one", 2);
-                TestHttpServer.setCondition ("cond1");
-                break;
-            case 1:
-                TestHttpServer.waitForCondition ("cond2");
-                okReply (req);
-                break;
-            default:
-                System.out.println ("Unexpected request");
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                try {
+                    switch(count) {
+                        case 0:
+                            AuthenticationHandler.errorReply(exchange,
+                                    "Basic realm=\"realm2\"");
+                            break;
+                        case 1:
+                            t1Cond1.await();
+                            t1cond1latch.countDown();
+                            t1cond2latch.await();
+                            AuthenticationHandler.okReply(exchange);
+                            break;
+                        default:
+                            System.out.println ("Unexpected request");
+                    }
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
-        void doT1c (HttpTransaction req, int count) throws IOException {
-            switch (count) {
-            case 0:
-                errorReply (req, "Basic realm=\"realm1\"");
-                TestHttpServer.rendezvous ("two", 2);
-                break;
-            case 1:
-                okReply (req);
-                break;
-            default:
-                System.out.println ("Unexpected request");
+        class AuthenticationHandlerT1c implements HttpHandler
+        {
+            volatile int count = -1;
+
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                switch(count) {
+                    case 0:
+                        AuthenticationHandler.errorReply(exchange,
+                                "Basic realm=\"realm1\"");
+                        try {
+                            t1Cond2.await();
+                        } catch (InterruptedException |
+                                 BrokenBarrierException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    case 1:
+                        AuthenticationHandler.okReply(exchange);
+                        break;
+                    default:
+                        System.out.println ("Unexpected request");
+                }
             }
         }
 
-        void doT1d (HttpTransaction req, int count) throws IOException {
-            switch (count) {
-            case 0:
-                errorReply (req, "Basic realm=\"realm2\"");
-                TestHttpServer.rendezvous ("two", 2);
-                TestHttpServer.setCondition ("cond2");
-                break;
-            case 1:
-                okReply (req);
-                break;
-            default:
-                System.out.println ("Unexpected request");
+        class AuthenticationHandlerT1d implements HttpHandler
+        {
+            volatile int count = -1;
+
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                switch(count) {
+                    case 0:
+                        AuthenticationHandler.errorReply(exchange,
+                                "Basic realm=\"realm2\"");
+                        try {
+                            t1Cond2.await();
+                        } catch (InterruptedException |
+                                 BrokenBarrierException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                        t1cond2latch.countDown();
+                        break;
+                    case 1:
+                        AuthenticationHandler.okReply(exchange);
+                        break;
+                    default:
+                        System.out.println ("Unexpected request");
+                }
             }
         }
-
 
         /* T2 tests to check that if initial authentication fails, the second will
          * succeed, and the authenticator is called twice
          */
 
-        void doT2a (HttpTransaction req, int count) throws IOException {
-            /* This will be called several times */
-            if (count == 1) {
-                TestHttpServer.setCondition ("T2cond1");
+        class AuthenticationHandlerT2a implements HttpHandler
+        {
+            volatile int count = -1;
+
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                if (count == 1) {
+                    t2condlatch.countDown();
+                }
+                AuthenticationHandler.errorReply(exchange,
+                        "Basic realm=\"realm3\"");
+
             }
-            errorReply (req, "Basic realm=\"realm3\"");
         }
 
-        void doT2b (HttpTransaction req, int count) throws IOException {
-            switch (count) {
-            case 0:
-                errorReply (req, "Basic realm=\"realm3\"");
-                break;
-            case 1:
-                okReply (req);
-                break;
-            default:
-                System.out.println ("Unexpected request");
+         class AuthenticationHandlerT2b implements HttpHandler
+        {
+            volatile int count = -1;
+
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                switch(count) {
+                    case 0:
+                        AuthenticationHandler.errorReply(exchange,
+                                "Basic realm=\"realm3\"");
+                        break;
+                    case 1:
+                        AuthenticationHandler.okReply(exchange);
+                        break;
+                    default:
+                        System.out.println ("Unexpected request");
+                }
             }
         }
 
@@ -229,63 +307,117 @@ public class B4769350 {
          * resource at same time. Authenticator should be called once for server
          * and once for proxy
          */
-        void doT3a (HttpTransaction req, int count) throws IOException {
-            switch (count) {
-            case 0:
-                proxyReply (req, "Basic realm=\"proxy\"");
-                TestHttpServer.setCondition ("T3cond1");
-                break;
-            case 1:
-                errorReply (req, "Basic realm=\"realm4\"");
-                break;
-            case 2:
-                okReply (req);
-                break;
-            default:
-                System.out.println ("Unexpected request");
+
+        class AuthenticationHandlerT3a implements HttpHandler
+        {
+            volatile int count = -1;
+
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                switch(count) {
+                    case 0:
+                        AuthenticationHandler.proxyReply(exchange,
+                                "Basic realm=\"proxy\"");
+                        break;
+                    case 1:
+                        t3cond1.countDown();
+                        AuthenticationHandler.errorReply(exchange,
+                                "Basic realm=\"realm4\"");
+                        break;
+                    case 2:
+                        AuthenticationHandler.okReply(exchange);
+                        break;
+                    default:
+                        System.out.println ("Unexpected request");
+                }
             }
         }
 
-        void doT3bc (HttpTransaction req, int count) throws IOException {
-            switch (count) {
-            case 0:
-                proxyReply (req, "Basic realm=\"proxy\"");
-                break;
-            case 1:
-                okReply (req);
-                break;
-            default:
-                System.out.println ("Unexpected request");
+        class AuthenticationHandlerT3bc implements HttpHandler
+        {
+            volatile int count = -1;
+
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                count++;
+                switch(count) {
+                    case 0:
+                        AuthenticationHandler.proxyReply(exchange,
+                                "Basic realm=\"proxy\"");
+                        break;
+                    case 1:
+                        AuthenticationHandler.okReply(exchange);
+                        break;
+                    default:
+                        System.out.println ("Unexpected request");
+                }
             }
         }
-    };
+    }
 
-    static TestHttpServer server;
+    static class AuthenticationHandler {
+        static void errorReply(HttpExchange exchange, String reply)
+                throws IOException
+        {
+            exchange.getResponseHeaders().add("Connection", "close");
+            exchange.getResponseHeaders().add("WWW-Authenticate", reply);
+            exchange.sendResponseHeaders(401, 0);
+            exchange.close();
+        }
+
+        static void proxyReply (HttpExchange exchange, String reply)
+                throws IOException
+        {
+            exchange.getResponseHeaders().add("Proxy-Authenticate", reply);
+            exchange.sendResponseHeaders(407, 0);
+        }
+
+        static void okReply (HttpExchange exchange) throws IOException {
+            exchange.getResponseHeaders().add("Connection", "close");
+            String response = "Hello .";
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+            exchange.close();
+        }
+    }
+
+    static Server server;
     static MyAuthenticator auth = new MyAuthenticator ();
 
     static int redirects = 4;
 
     static Client c1,c2,c3,c4,c5,c6,c7,c8,c9;
 
-    static void doServerTests (String authority) throws Exception {
+    static CountDownLatch t1cond1latch;
+    static CountDownLatch t1cond2latch;
+    static CountDownLatch t2condlatch;
+    static CountDownLatch t3cond1;
+
+    static void doServerTests (String authority, Server server) throws Exception
+    {
         System.out.println ("Doing Server tests");
         System.out.println ("T1");
         c1 = new Client (authority, "/test/realm1/t1a", false);
         c2 = new Client (authority, "/test/realm2/t1b", false);
         c3 = new Client (authority, "/test/realm1/t1c", false);
         c4 = new Client (authority, "/test/realm2/t1d", false);
-
+        t1cond1latch = new CountDownLatch(1);
+        t1cond2latch = new CountDownLatch(1);
         c1.start(); c2.start();
-        TestHttpServer.waitForCondition ("cond1");
+        t1cond1latch.await();
         c3.start(); c4.start();
         c1.join(); c2.join(); c3.join(); c4.join();
 
         int f = auth.getCount();
         if (f != 2) {
-            except ("Authenticator was called "+f+" times. Should be 2");
+            except ("Authenticator was called "+f+" times. Should be 2",
+                    server);
         }
         if (error) {
-            except ("error occurred");
+            except ("error occurred", server);
         }
 
         auth.resetCount();
@@ -293,73 +425,71 @@ public class B4769350 {
 
         c5 = new Client (authority, "/test/realm3/t2a", true);
         c6 = new Client (authority, "/test/realm3/t2b", false);
+        t2condlatch = new CountDownLatch(1);
         c5.start ();
-        TestHttpServer.waitForCondition ("T2cond1");
+        t2condlatch.await();
         c6.start ();
         c5.join(); c6.join();
 
         f = auth.getCount();
         if (f != redirects+1) {
-            except ("Authenticator was called "+f+" times. Should be: " + redirects+1);
+            except ("Authenticator was called "+f+" times. Should be: "
+                    + redirects+1, server);
         }
         if (error) {
-            except ("error occurred");
+            except ("error occurred", server);
         }
     }
 
-    static void doProxyTests (String authority) throws Exception {
+    static void doProxyTests (String authority, Server server) throws Exception
+    {
         System.out.println ("Doing Proxy tests");
         c7 = new Client (authority, "/test/realm4/t3a", false);
         c8 = new Client (authority, "/test/realm4/t3b", false);
         c9 = new Client (authority, "/test/realm4/t3c", false);
+        t3cond1 = new CountDownLatch(1);
         c7.start ();
-        TestHttpServer.waitForCondition ("T3cond1");
+        t3cond1.await();
         c8.start ();
         c9.start ();
         c7.join(); c8.join(); c9.join();
 
         int f = auth.getCount();
         if (f != 2) {
-            except ("Authenticator was called "+f+" times. Should be: " + 2);
+            except ("Authenticator was called "+f+" times. Should be: " + 2,
+                    server);
         }
         if (error) {
-            except ("error occurred");
+            except ("error occurred", server);
         }
     }
 
     public static void main (String[] args) throws Exception {
+        new B4769350().runTest(args[0].equals ("proxy"));
+    }
+
+    public void runTest(boolean proxy) throws Exception {
         System.setProperty ("http.maxRedirects", Integer.toString (redirects));
         System.setProperty ("http.auth.serializeRequests", "true");
         Authenticator.setDefault (auth);
-        boolean proxy = args[0].equals ("proxy");
-        try {
-            server = new TestHttpServer (new CallBack(), 10, 1, 0);
-            System.out.println ("Server: listening on port: " + server.getLocalPort());
+        try (Server server = new Server()) {
+            server.startServer();
+            System.out.println ("Server: listening on port: "
+                    + server.getPort());
             if (proxy) {
                 System.setProperty ("http.proxyHost", "localhost");
-                System.setProperty ("http.proxyPort",Integer.toString(server.getLocalPort()));
-                doProxyTests ("www.foo.com");
+                System.setProperty ("http.proxyPort",
+                        Integer.toString(server.getPort()));
+                doProxyTests ("www.foo.com", server);
             } else {
-                doServerTests ("localhost:"+server.getLocalPort());
+                doServerTests ("localhost:"+server.getPort(), server);
             }
-            server.terminate();
-
-        } catch (Exception e) {
-            if (server != null) {
-                server.terminate();
-            }
-            throw e;
         }
+
     }
 
-    static void pause (int millis) {
-        try {
-            Thread.sleep (millis);
-        } catch (InterruptedException e) {}
-    }
-
-    public static void except (String s) {
-        server.terminate();
+    public static void except (String s, Server server) {
+        server.close();
         throw new RuntimeException (s);
     }
 
@@ -368,13 +498,10 @@ public class B4769350 {
             super ();
         }
 
-        int count = 0;
+        volatile int count = 0;
 
+        @Override
         public PasswordAuthentication getPasswordAuthentication () {
-            //System.out.println ("Authenticator called: " + getRequestingPrompt());
-            //try {
-                //Thread.sleep (1000);
-            //} catch (InterruptedException e) {}
             PasswordAuthentication pw;
             pw = new PasswordAuthentication ("user", "pass1".toCharArray());
             count ++;
@@ -386,7 +513,8 @@ public class B4769350 {
         }
 
         public int getCount () {
-            return (count);
+            return count;
         }
     }
 }
+

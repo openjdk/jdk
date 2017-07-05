@@ -50,9 +50,10 @@ import javax.accessibility.*;
  * as a rule, contain
  * all the non-menu components displayed by the <code>JFrame</code>.
  * This is different from the AWT <code>Frame</code> case.
- * As a conveniance <code>add</code> and its variants, <code>remove</code> and
- * <code>setLayout</code> have been overridden to forward to the
- * <code>contentPane</code> as necessary. This means you can write:
+ * As a convenience, the {@code add}, {@code remove}, and {@code setLayout}
+ * methods of this class are overridden, so that they delegate calls
+ * to the corresponding methods of the {@code ContentPane}.
+ * For example, you can add a child component to a frame as follows:
  * <pre>
  *       frame.add(child);
  * </pre>
@@ -505,7 +506,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * <code>setLayout</code> are forwarded to the <code>contentPane</code>.
      *
      * @return true if <code>add</code> and <code>setLayout</code>
-     *         are fowarded; false otherwise
+     *         are forwarded; false otherwise
      *
      * @see #addImpl
      * @see #setLayout
@@ -673,7 +674,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * This method is called by the constructor.
      * <p>
      * Swing's painting architecture requires an opaque <code>JComponent</code>
-     * in the containment hiearchy. This is typically provided by the
+     * in the containment hierarchy. This is typically provided by the
      * content pane. If you replace the content pane it is recommended you
      * replace it with an opaque <code>JComponent</code>.
      *

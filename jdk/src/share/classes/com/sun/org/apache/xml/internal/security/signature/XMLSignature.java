@@ -846,7 +846,7 @@ public final class XMLSignature extends SignatureElementProxy {
     }
 
     /**
-     * Signal wether Manifest should be automatically validated.
+     * Signal whether Manifest should be automatically validated.
      * Checking the digests in References in a Signature are mandatory, but for
      * References inside a Manifest it is application specific. This boolean is
      * to indicate that the References inside Manifests should be validated.

@@ -473,7 +473,7 @@ public interface SnmpAdaptorServerMBean extends CommunicatorServerMBean {
      * @param specific The specific number of the trap.
      * @param varBindList A list of <CODE>SnmpVarBind</CODE> instances or null.
      *
-     * @exception IOException An I/O error occured while sending the trap.
+     * @exception IOException An I/O error occurred while sending the trap.
      * @exception SnmpStatusException If the trap exceeds the limit defined by <CODE>bufferSize</CODE>.
      */
     public void snmpV1Trap(int generic, int specific, SnmpVarBindList varBindList) throws IOException, SnmpStatusException;
@@ -563,7 +563,7 @@ public interface SnmpAdaptorServerMBean extends CommunicatorServerMBean {
      * @param trapOid The OID identifying the trap.
      * @param varBindList A list of <CODE>SnmpVarBind</CODE> instances or null.
      *
-     * @exception IOException An I/O error occured while sending the trap.
+     * @exception IOException An I/O error occurred while sending the trap.
      * @exception SnmpStatusException If the trap exceeds the limit defined by <CODE>bufferSize</CODE>.
      */
     public void snmpV2Trap(SnmpOid trapOid, SnmpVarBindList varBindList) throws IOException, SnmpStatusException;

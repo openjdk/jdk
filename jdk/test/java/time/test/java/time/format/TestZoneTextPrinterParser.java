@@ -112,13 +112,13 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     }
 
     private static Set<ZoneId> preferred = new HashSet<>(Arrays.asList(new ZoneId[] {
-        ZoneId.of("EST"),
+        ZoneId.of("EST", ZoneId.SHORT_IDS),
         ZoneId.of("Asia/Taipei"),
         ZoneId.of("CET"),
     }));
 
     private static Set<ZoneId> preferred_s = new HashSet<>(Arrays.asList(new ZoneId[] {
-         ZoneId.of("EST"),
+         ZoneId.of("EST", ZoneId.SHORT_IDS),
          ZoneId.of("CET"),
          ZoneId.of("Australia/South"),
          ZoneId.of("Australia/West"),
@@ -131,7 +131,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     Object[][] data_preferredZones() {
         return new Object[][] {
             {"America/New_York", "Eastern Standard Time", none,      Locale.ENGLISH, TextStyle.FULL},
-            {"EST",              "Eastern Standard Time", preferred, Locale.ENGLISH, TextStyle.FULL},
+//          {"EST",              "Eastern Standard Time", preferred, Locale.ENGLISH, TextStyle.FULL},
             {"Europe/Paris",     "Central European Time", none,      Locale.ENGLISH, TextStyle.FULL},
             {"CET",              "Central European Time", preferred, Locale.ENGLISH, TextStyle.FULL},
             {"Asia/Shanghai",    "China Standard Time",   none,      Locale.ENGLISH, TextStyle.FULL},

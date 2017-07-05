@@ -126,14 +126,14 @@ import javax.swing.text.*;
  * policy is <code>JFormattedTextField.PERSIST</code>
  * and the <code>JFormattedTextField</code> has been edited, the
  * <code>AbstractFormatterFactory</code> will not be queried until the
- * value has been commited. Similarly if the focus lost policy is
+ * value has been committed. Similarly if the focus lost policy is
  * <code>JFormattedTextField.COMMIT</code> and an exception
  * is thrown from <code>stringToValue</code>, the
- * <code>AbstractFormatterFactory</code> will not be querired when focus is
+ * <code>AbstractFormatterFactory</code> will not be queried when focus is
  * lost or gained.
  * <p>
  * <code>JFormattedTextField.AbstractFormatter</code>
- * is also responsible for determining when values are commited to
+ * is also responsible for determining when values are committed to
  * the <code>JFormattedTextField</code>. Some
  * <code>JFormattedTextField.AbstractFormatter</code>s will make new values
  * available on every edit, and others will never commit the value. You can
@@ -184,7 +184,7 @@ public class JFormattedTextField extends JTextField {
 
     /**
      * Constant identifying that when focus is lost,
-     * <code>commitEdit</code> should be invoked. If in commiting the
+     * <code>commitEdit</code> should be invoked. If in committing the
      * new value a <code>ParseException</code> is thrown, the invalid
      * value will remain.
      *
@@ -194,7 +194,7 @@ public class JFormattedTextField extends JTextField {
 
     /**
      * Constant identifying that when focus is lost,
-     * <code>commitEdit</code> should be invoked. If in commiting the new
+     * <code>commitEdit</code> should be invoked. If in committing the new
      * value a <code>ParseException</code> is thrown, the value will be
      * reverted.
      *
@@ -878,7 +878,7 @@ public class JFormattedTextField extends JTextField {
      * Instances of <code>AbstractFormatter</code> are used by
      * <code>JFormattedTextField</code> to handle the conversion both
      * from an Object to a String, and back from a String to an Object.
-     * <code>AbstractFormatter</code>s can also enfore editing policies,
+     * <code>AbstractFormatter</code>s can also enforce editing policies,
      * or navigation policies, or manipulate the
      * <code>JFormattedTextField</code> in any way it sees fit to
      * enforce the desired policy.
@@ -1116,7 +1116,7 @@ public class JFormattedTextField extends JTextField {
                     ((JFormattedTextField)target).commitEdit();
                 } catch (ParseException pe) {
                     ((JFormattedTextField)target).invalidEdit();
-                    // value not commited, don't notify ActionListeners
+                    // value not committed, don't notify ActionListeners
                     return;
                 }
             }

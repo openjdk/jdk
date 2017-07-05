@@ -61,7 +61,7 @@ final class XDropTargetRegistry {
 
     /**
      * Returns the XID of the topmost window with WM_STATE set in the ancestor
-     * heirarchy of the specified window or 0 if none found.
+     * hierarchy of the specified window or 0 if none found.
      */
     private long getToplevelWindow(long window) {
         XBaseWindow candWindow = XToolkit.windowToXWindow(window);

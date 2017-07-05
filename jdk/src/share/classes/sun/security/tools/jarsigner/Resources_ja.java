@@ -79,7 +79,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {".verbose.suboptions.verbose.output.when.signing.verifying.",
                 "[-verbose[:suboptions]]     \u7F72\u540D/\u691C\u8A3C\u6642\u306E\u8A73\u7D30\u51FA\u529B\u3002"},
         {".suboptions.can.be.all.grouped.or.summary",
-                "                            \u30B5\u30D6\u30AA\u30D7\u30B7\u30E7\u30F3\u3068\u3057\u3066\u3001\u3059\u3079\u3066\u3001\u30B0\u30EB\u30FC\u30D7\u307E\u305F\u306F\u30B5\u30DE\u30EA\u30FC\u3092\u4F7F\u7528\u3067\u304D\u307E\u3059"},
+                "                            \u30B5\u30D6\u30AA\u30D7\u30B7\u30E7\u30F3\u3068\u3057\u3066\u3001all\u3001grouped\u307E\u305F\u306Fsummary\u3092\u4F7F\u7528\u3067\u304D\u307E\u3059"},
         {".certs.display.certificates.when.verbose.and.verifying",
                 "[-certs]                    \u8A73\u7D30\u51FA\u529B\u304A\u3088\u3073\u691C\u8A3C\u6642\u306B\u8A3C\u660E\u66F8\u3092\u8868\u793A"},
         {".tsa.url.location.of.the.Timestamping.Authority",

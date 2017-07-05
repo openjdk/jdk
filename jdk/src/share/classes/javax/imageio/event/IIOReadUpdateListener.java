@@ -58,7 +58,7 @@ public interface IIOReadUpdateListener extends EventListener {
      * @param source the <code>ImageReader</code> object calling this
      * method.
      * @param theImage the <code>BufferedImage</code> being updated.
-     * @param pass the numer of the pass that is about to begin,
+     * @param pass the number of the pass that is about to begin,
      * starting with 0.
      * @param minPass the index of the first pass that will be decoded.
      * @param maxPass the index of the last pass that will be decoded.
@@ -175,7 +175,7 @@ public interface IIOReadUpdateListener extends EventListener {
      * method.
      * @param theThumbnail the <code>BufferedImage</code> thumbnail
      * being updated.
-     * @param pass the numer of the pass that is about to begin,
+     * @param pass the number of the pass that is about to begin,
      * starting with 0.
      * @param minPass the index of the first pass that will be decoded.
      * @param maxPass the index of the last pass that will be decoded.

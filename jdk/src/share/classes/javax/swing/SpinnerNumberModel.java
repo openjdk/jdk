@@ -102,7 +102,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * have an upper or lower bound.
      * If <code>value</code> or <code>stepSize</code> is <code>null</code>,
      * or if both <code>minimum</code> and <code>maximum</code>
-     * are specified and <code>mininum &gt; maximum</code> then an
+     * are specified and <code>minimum &gt; maximum</code> then an
      * <code>IllegalArgumentException</code> is thrown.
      * Similarly if <code>(minimum &lt;= value &lt;= maximum</code>) is false,
      * an <code>IllegalArgumentException</code> is thrown.

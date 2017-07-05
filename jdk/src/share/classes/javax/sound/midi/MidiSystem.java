@@ -120,7 +120,7 @@ import com.sun.media.sound.MidiDeviceTransmitterEnvelope;
  * is optional.
  *
  * <p>If the provider class is specified, and it can be
- * successully retrieved from the installed providers,
+ * successfully retrieved from the installed providers,
  * the list of
  * <code>MidiDevice.Info</code> objects is retrieved
  * from the provider. Otherwise, or when these devices

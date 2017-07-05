@@ -28,14 +28,14 @@ package sun.management.counter.perf;
 public class InstrumentationException extends RuntimeException {
     /**
      * Constructs a <tt>InstrumentationException</tt> with no
-     * detail mesage.
+     * detail message.
      */
      public InstrumentationException() {
      }
 
     /**
      * Constructs a <tt>InstrumentationException</tt> with a specified
-     * detail mesage.
+     * detail message.
      *
      * @param message the detail message
      */

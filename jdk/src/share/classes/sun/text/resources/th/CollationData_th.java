@@ -144,11 +144,11 @@ public class CollationData_th extends ListResourceBundle {
                 // Below are thai puntuation marks and Tonal(Accent) marks. According to CLDR 1.9 and
                 // ISO/IEC 14651, Annex C, C.2.1 Thai ordering principles, 0E2F to 0E5B are punctuaion marks that need to be ignored
                 // in the first three leveles.  0E4E to 0E4B are tonal marks to be compared in secondary level.
-                // In real implmentation, set puncutation marks in tertiary as there is no fourth level in Java.
+                // In real implementation, set punctuation marks in tertiary as there is no fourth level in Java.
                 // Set all these special marks after \u0301, the accute accent.
                 + "& \u0301 "   // acute accent
 
-                //puncutation marks
+                //punctuation marks
                 + ", \u0E2F "                   //  PAIYANNOI      (ellipsis, abbreviation)
                 + ", \u0E46 "                   //  MAIYAMOK
                 + ", \u0E4F "                   //  FONGMAN

@@ -153,7 +153,7 @@ public abstract class DatagramChannel
      * Opens a datagram channel.
      *
      * <p> The {@code family} parameter is used to specify the {@link
-     * ProtocolFamily}. If the datagram channel is to be used for IP multicasing
+     * ProtocolFamily}. If the datagram channel is to be used for IP multicasting
      * then this should correspond to the address type of the multicast groups
      * that this channel will join.
      *

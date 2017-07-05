@@ -49,7 +49,7 @@ public class ExtraFileInMetaInf {
         new File("ks").delete();
         sun.security.tools.keytool.Main.main(
                 ("-keystore ks -storepass changeit -keypass changeit " +
-                        "-alias a -dname CN=A -genkeypair").split(" "));
+                        "-keyalg rsa -alias a -dname CN=A -genkeypair").split(" "));
         sun.security.tools.jarsigner.Main.main(
                 "-keystore ks -storepass changeit x.jar a".split(" "));
 
