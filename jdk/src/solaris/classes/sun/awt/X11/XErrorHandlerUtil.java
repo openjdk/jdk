@@ -42,7 +42,7 @@ public final class XErrorHandlerUtil {
     private static long display;
 
     /**
-     * Error handler at the moment of <code>XErrorHandlerUtil</code> initialization.
+     * Error handler at the moment of {@code XErrorHandlerUtil} initialization.
      */
     private static long saved_error_handler;
 
@@ -63,7 +63,7 @@ public final class XErrorHandlerUtil {
         new GetBooleanAction("sun.awt.noisyerrorhandler"));
 
     /**
-     * The flag indicating that <code>init</code> was called already.
+     * The flag indicating that {@code init} was called already.
      */
     private static boolean initPassed;
 
@@ -73,9 +73,9 @@ public final class XErrorHandlerUtil {
     private XErrorHandlerUtil() {}
 
     /**
-     * Sets the toolkit global error handler, stores the connection to X11 server, which
-     * will be used during an error handling process. This method is called once from
-     * <code>awt_init_Display</code> function defined in <code>awt_GraphicsEnv.c</code>
+     * Sets the toolkit global error handler, stores the connection to X11 server,
+     * which will be used during an error handling process. This method is called
+     * once from {@code awt_init_Display} function defined in {@code awt_GraphicsEnv.c}
      * file immediately after the connection to X11 window server is opened.
      * @param display the connection to X11 server which should be stored
      */
@@ -109,9 +109,9 @@ public final class XErrorHandlerUtil {
     }
 
     private static void RESTORE_XERROR_HANDLER(boolean doXSync) {
-        // Wait until all requests are processed by the X server
-        // and only then uninstall the error handler.
         if (doXSync) {
+            // Wait until all requests are processed by the X server
+            // and only then uninstall the error handler.
             XSync();
         }
         current_error_handler = null;

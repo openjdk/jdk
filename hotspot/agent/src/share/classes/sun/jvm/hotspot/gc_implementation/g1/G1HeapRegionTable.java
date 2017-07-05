@@ -103,14 +103,14 @@ public class G1HeapRegionTable extends VMObject {
         @Override
         public void remove()     { /* not supported */    }
 
-        HeapRegionIterator(Address addr) {
+        HeapRegionIterator(long committedLength) {
             index = 0;
-            length = length();
+            length = committedLength;
         }
     }
 
-    public Iterator<HeapRegion> heapRegionIterator() {
-        return new HeapRegionIterator(addr);
+    public Iterator<HeapRegion> heapRegionIterator(long committedLength) {
+        return new HeapRegionIterator(committedLength);
     }
 
     public G1HeapRegionTable(Address addr) {

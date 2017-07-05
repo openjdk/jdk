@@ -1108,7 +1108,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter; if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified targetSqlType
      * @see Types
      * @see #getObject
      * @since 1.4
@@ -1131,7 +1131,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter; if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified targetSqlType
      * @see #getObject
      * @since 1.4
      */
@@ -2536,7 +2536,7 @@ public interface CallableStatement extends PreparedStatement {
      *            or Reader object and the value of the scale parameter is less
      *            than zero
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      *
@@ -2562,7 +2562,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter; if a database access error occurs
      * or this method is called on a closed {@code CallableStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -2603,7 +2603,7 @@ public interface CallableStatement extends PreparedStatement {
      * if a database access error occurs or
      * this method is called on a closed {@code CallableStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified sqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -2639,7 +2639,7 @@ public interface CallableStatement extends PreparedStatement {
      * if a database access error occurs or
      * this method is called on a closed {@code CallableStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified sqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -2686,7 +2686,7 @@ public interface CallableStatement extends PreparedStatement {
      * if a database access error occurs or
      * this method is called on a closed {@code CallableStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified sqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -2725,7 +2725,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter; if a database access error occurs or
      * this method is called on a closed {@code CallableStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified sqlType
      * or if the JDBC driver does not support
      * this method
      * @since 1.8
@@ -2762,7 +2762,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter; if a database access error occurs or
      * this method is called on a closed {@code CallableStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified sqlType
      * or if the JDBC driver does not support
      * this method
      * @since 1.8
@@ -2811,7 +2811,7 @@ public interface CallableStatement extends PreparedStatement {
      * parameter; if a database access error occurs or
      * this method is called on a closed {@code CallableStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified sqlType
      * or if the JDBC driver does not support this method
      * @see JDBCType
      * @see SQLType

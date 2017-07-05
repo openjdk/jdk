@@ -71,7 +71,7 @@ class DnDEventMulticaster extends AWTEventMulticaster
      * Handles the <code>DragSourceDragEvent</code> by invoking
      * <code>dragOver</code> on listener-a and listener-b.
      *
-     * @param e the <code>DragSourceDragEvent</code>
+     * @param dsde the <code>DragSourceDragEvent</code>
      */
     public void dragOver(DragSourceDragEvent dsde) {
         ((DragSourceListener)a).dragOver(dsde);
