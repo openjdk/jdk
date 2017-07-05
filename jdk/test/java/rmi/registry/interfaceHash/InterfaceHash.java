@@ -36,9 +36,7 @@
  *
  * @author Peter Jones
  * @library ../../testlibrary
- * @build InterfaceHash
- * @build ReferenceRegistryStub
- * @build TestLibrary
+ * @build TestLibrary ReferenceRegistryStub
  * @run main/othervm InterfaceHash
  */
 

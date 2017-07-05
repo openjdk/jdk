@@ -174,7 +174,8 @@ public abstract class CalendarNameProvider extends LocaleServiceProvider {
      * <p>{@code style} gives the style of the string representation. It is one
      * of {@link Calendar#SHORT_FORMAT} ({@link Calendar#SHORT SHORT}),
      * {@link Calendar#SHORT_STANDALONE}, {@link Calendar#LONG_FORMAT}
-     * ({@link Calendar#LONG LONG}), or {@link Calendar#LONG_STANDALONE}.
+     * ({@link Calendar#LONG LONG}), {@link Calendar#LONG_STANDALONE},
+     * {@link Calendar#NARROW_FORMAT}, or {@link Calendar#NARROW_STANDALONE}.
      *
      * <p>For example, the following call will return {@code "Sunday"}.
      * <pre>
@@ -195,8 +196,10 @@ public abstract class CalendarNameProvider extends LocaleServiceProvider {
      *              the string representation style: one of {@link
      *              Calendar#SHORT_FORMAT} ({@link Calendar#SHORT SHORT}),
      *              {@link Calendar#SHORT_STANDALONE}, {@link
-     *              Calendar#LONG_FORMAT} ({@link Calendar#LONG LONG}), or
-     *              {@link Calendar#LONG_STANDALONE}
+     *              Calendar#LONG_FORMAT} ({@link Calendar#LONG LONG}),
+     *              {@link Calendar#LONG_STANDALONE},
+     *              {@link Calendar#NARROW_FORMAT},
+     *              or {@link Calendar#NARROW_STANDALONE}
      * @param locale
      *              the desired locale
      * @return the string representation of the {@code field value}, or {@code
@@ -226,8 +229,11 @@ public abstract class CalendarNameProvider extends LocaleServiceProvider {
      * <p>{@code style} gives the style of the string representation. It must be
      * one of {@link Calendar#ALL_STYLES}, {@link Calendar#SHORT_FORMAT} ({@link
      * Calendar#SHORT SHORT}), {@link Calendar#SHORT_STANDALONE}, {@link
-     * Calendar#LONG_FORMAT} ({@link Calendar#LONG LONG}), or {@link
-     * Calendar#LONG_STANDALONE}.
+     * Calendar#LONG_FORMAT} ({@link Calendar#LONG LONG}), {@link
+     * Calendar#LONG_STANDALONE}, {@link Calendar#NARROW_FORMAT}, or
+     * {@link Calendar#NARROW_STANDALONE}. Note that narrow names may
+     * not be unique due to use of single characters, such as "S" for Sunday
+     * and Saturday, and that no narrow names are included in that case.
      *
      * <p>For example, the following call will return a {@code Map} containing
      * {@code "January"} to {@link Calendar#JANUARY}, {@code "Jan"} to {@link
@@ -247,8 +253,9 @@ public abstract class CalendarNameProvider extends LocaleServiceProvider {
      *              {@link Calendar#ALL_STYLES}, {@link Calendar#SHORT_FORMAT}
      *              ({@link Calendar#SHORT SHORT}), {@link
      *              Calendar#SHORT_STANDALONE}, {@link Calendar#LONG_FORMAT}
-     *              ({@link Calendar#LONG LONG}), or {@link
-     *              Calendar#LONG_STANDALONE}.
+     *              ({@link Calendar#LONG LONG}), {@link Calendar#LONG_STANDALONE},
+     *              {@link Calendar#NARROW_FORMAT},
+     *              or {@link Calendar#NARROW_STANDALONE}
      * @param locale
      *              the desired locale
      * @return a {@code Map} containing all display names of {@code field} in

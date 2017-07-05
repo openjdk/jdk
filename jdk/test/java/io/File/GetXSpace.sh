@@ -53,7 +53,7 @@ allow() {
 }
 
 runTest() {
-  ${TESTJAVA}/bin/java -cp ${TESTCLASSES} GetXSpace $* 
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTCLASSES} GetXSpace $* 
   if [ $? -eq 0 ]
   then echo "Passed"
   else

@@ -24,14 +24,11 @@
 /* @test
  * @bug 4289544
  * @summary ActivationGroupImpl.newInstance does not set context classloader for impl
- *
  * @author Laird Dornin; code borrowed from Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build MyRMI
- * @build CheckImplClassLoader ActivatableImpl
- * @build ActivatableImpl ActivatableImpl_Stub
+ * @build TestLibrary RMID
+ *     MyRMI ActivatableImpl ActivatableImpl ActivatableImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=150 CheckImplClassLoader
  */
 

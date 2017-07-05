@@ -40,10 +40,7 @@ import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import sun.security.krb5.KerberosSecrets;
 import sun.security.krb5.PrincipalName;
 /**
@@ -189,18 +186,6 @@ public class Krb5Util {
         return subject;
     }
 
-    // A special KerberosKey, used as keys read from a KeyTab object.
-    // Each time new keys are read from KeyTab objects in the private
-    // credentials set, old ones are removed and new ones added.
-    public static class KeysFromKeyTab extends KerberosKey {
-        private static final long serialVersionUID = 8238092170252746927L;
-
-        public KeysFromKeyTab(KerberosKey key) {
-            super(key.getPrincipal(), key.getEncoded(),
-                    key.getKeyType(), key.getVersionNumber());
-        }
-    }
-
     /**
      * Credentials of a service, the private secret to authenticate its
      * identity, which can be:
@@ -239,7 +224,7 @@ public class Krb5Util {
                 // Compatibility with old behavior: even when there is no
                 // KerberosPrincipal, we can find one from KerberosKeys
                 List<KerberosKey> keys = SubjectComber.findMany(
-                        subj, null, null, KerberosKey.class);
+                        subj, serverPrincipal, null, KerberosKey.class);
                 if (!keys.isEmpty()) {
                     sc.kp = keys.get(0).getPrincipal();
                     serverPrincipal = sc.kp.getName();
@@ -255,9 +240,9 @@ public class Krb5Util {
                         subj, null, null, KeyTab.class);
             sc.kk = SubjectComber.findMany(
                         subj, serverPrincipal, null, KerberosKey.class);
-            sc.tgt = SubjectComber.find(subj, null, null, KerberosTicket.class);
-
-            if (sc.ktabs.isEmpty() && sc.kk.isEmpty()) {
+            sc.tgt = SubjectComber.find(
+                    subj, null, serverPrincipal, KerberosTicket.class);
+            if (sc.ktabs.isEmpty() && sc.kk.isEmpty() && sc.tgt == null) {
                 return null;
             }
             return sc;
@@ -268,37 +253,16 @@ public class Krb5Util {
         }
 
         public KerberosKey[] getKKeys() {
-            if (ktabs.isEmpty()) {
-                return kk.toArray(new KerberosKey[kk.size()]);
-            } else {
-                List<KerberosKey> keys = new ArrayList<>();
-                for (KeyTab ktab: ktabs) {
-                    for (KerberosKey k: ktab.getKeys(kp)) {
-                        keys.add(k);
-                    }
-                }
-                // Compatibility: also add keys to privCredSet. Remove old
-                // ones first, only remove those from keytab.
-                if (!subj.isReadOnly()) {
-                    Set<Object> pcs = subj.getPrivateCredentials();
-                    synchronized (pcs) {
-                        Iterator<Object> iterator = pcs.iterator();
-                        while (iterator.hasNext()) {
-                            Object obj = iterator.next();
-                            if (obj instanceof KeysFromKeyTab) {
-                                KerberosKey key = (KerberosKey)obj;
-                                if (Objects.equals(key.getPrincipal(), kp)) {
-                                    iterator.remove();
-                                }
-                            }
-                        }
-                    }
-                    for (KerberosKey key: keys) {
-                        subj.getPrivateCredentials().add(new KeysFromKeyTab(key));
-                    }
-                }
-                return keys.toArray(new KerberosKey[keys.size()]);
+            List<KerberosKey> keys = new ArrayList<>();
+            for (KerberosKey k: kk) {
+                keys.add(k);
             }
+            for (KeyTab ktab: ktabs) {
+                for (KerberosKey k: ktab.getKeys(kp)) {
+                    keys.add(k);
+                }
+            }
+            return keys.toArray(new KerberosKey[keys.size()]);
         }
 
         public EncryptionKey[] getEKeys() {

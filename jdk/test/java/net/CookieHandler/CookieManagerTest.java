@@ -126,7 +126,7 @@ class CookieHttpTransaction implements HttpCallback {
         testPolicies[count] = CookiePolicy.ACCEPT_ORIGINAL_SERVER;
         testCases[count++] = new CookieTestCase[]{
                 new CookieTestCase("Set-Cookie",
-                "CUSTOMER=WILE:BOB; path=/; expires=Wednesday, 09-Nov-2030 23:12:40 GMT;" + "domain=." + localHostAddr,
+                "CUSTOMER=WILE:BOB; path=/; expires=Sat, 09-Nov-2030 23:12:40 GMT;" + "domain=." + localHostAddr,
                 "CUSTOMER=WILE:BOB",
                 "/"
                 ),

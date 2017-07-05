@@ -43,160 +43,238 @@ package sun.util.resources;
 public final class TimeZoneNames extends TimeZoneNamesBundle {
 
     protected final Object[][] getContents() {
+        // Note: generic names came from CLDR with some adjustments.
         String ACT[] = new String[] {"Acre Time", "ACT",
-                                     "Acre Summer Time", "ACST"};
+                                     "Acre Summer Time", "ACST",
+                                     "Acre Time", "ACT"};
         String ADELAIDE[] = new String[] {"Central Standard Time (South Australia)", "CST",
-                                          "Central Summer Time (South Australia)", "CST"};
+                                          "Central Summer Time (South Australia)", "CST",
+                                          "Central Time (South Australia)", "CT"};
         String AGT[] = new String[] {"Argentine Time", "ART",
-                                     "Argentine Summer Time", "ARST"};
+                                     "Argentine Summer Time", "ARST",
+                                     "Argentine Time", "ART"};
         String AKST[] = new String[] {"Alaska Standard Time", "AKST",
-                                      "Alaska Daylight Time", "AKDT"};
+                                      "Alaska Daylight Time", "AKDT",
+                                      "Alaska Time", "AKT"};
         String AMT[] = new String[] {"Amazon Time", "AMT",
-                                     "Amazon Summer Time", "AMST"};
+                                     "Amazon Summer Time", "AMST",
+                                     "Amazon Time", "AMT"};
         String ARAST[] = new String[] {"Arabia Standard Time", "AST",
-                                       "Arabia Daylight Time", "ADT"};
+                                       "Arabia Daylight Time", "ADT",
+                                       "Arabia Time", "AT"};
         String ARMT[] = new String[] {"Armenia Time", "AMT",
-                                      "Armenia Summer Time", "AMST"};
+                                      "Armenia Summer Time", "AMST",
+                                      "Armenia Time", "AMT"};
         String AST[] = new String[] {"Atlantic Standard Time", "AST",
-                                     "Atlantic Daylight Time", "ADT"};
+                                     "Atlantic Daylight Time", "ADT",
+                                     "Atlantic Time", "AT"};
         String BDT[] = new String[] {"Bangladesh Time", "BDT",
-                                     "Bangladesh Summer Time", "BDST"};
+                                     "Bangladesh Summer Time", "BDST",
+                                     "Bangladesh Time", "BDT"};
         String BRISBANE[] = new String[] {"Eastern Standard Time (Queensland)", "EST",
-                                          "Eastern Summer Time (Queensland)", "EST"};
+                                          "Eastern Summer Time (Queensland)", "EST",
+                                          "Eastern Time (Queensland)", "ET"};
         String BROKEN_HILL[] = new String[] {"Central Standard Time (South Australia/New South Wales)", "CST",
-                                             "Central Summer Time (South Australia/New South Wales)", "CST"};
+                                             "Central Summer Time (South Australia/New South Wales)", "CST",
+                                             "Central Time (South Australia/New South Wales)", "CT"};
         String BRT[] = new String[] {"Brasilia Time", "BRT",
-                                     "Brasilia Summer Time", "BRST"};
+                                     "Brasilia Summer Time", "BRST",
+                                     "Brasilia Time", "BRT"};
         String BTT[] = new String[] {"Bhutan Time", "BTT",
-                                     "Bhutan Summer Time", "BTST"};
+                                     "Bhutan Summer Time", "BTST",
+                                     "Bhutan Time", "BTT"};
         String CAT[] = new String[] {"Central African Time", "CAT",
-                                     "Central African Summer Time", "CAST"};
+                                     "Central African Summer Time", "CAST",
+                                     "Central Africa Time", "CAT"};
         String CET[] = new String[] {"Central European Time", "CET",
-                                     "Central European Summer Time", "CEST"};
+                                     "Central European Summer Time", "CEST",
+                                     "Central European Time", "CET"};
         String CHAST[] = new String[] {"Chatham Standard Time", "CHAST",
-                                       "Chatham Daylight Time", "CHADT"};
+                                       "Chatham Daylight Time", "CHADT",
+                                       "Chatham Time", "CHAT"};
         String CHUT[] = new String[] {"Chuuk Time", "CHUT",
-                                      "Chuuk Summer Time", "CHUST"};
+                                      "Chuuk Summer Time", "CHUST",
+                                      "Chuuk Time", "CHUT"};
         String CIT[] = new String[] {"Central Indonesia Time", "CIT",
-                                     "Central Indonesia Summer Time", "CIST"};
+                                     "Central Indonesia Summer Time", "CIST",
+                                     "Central Indonesia Time", "CIT"};
         String CLT[] = new String[] {"Chile Time", "CLT",
-                                     "Chile Summer Time", "CLST"};
+                                     "Chile Summer Time", "CLST",
+                                     "Chile Time", "CLT"};
         String CST[] = new String[] {"Central Standard Time", "CST",
-                                     "Central Daylight Time", "CDT"};
+                                     "Central Daylight Time", "CDT",
+                                     "Central Time", "CT"};
         String CTT[] = new String[] {"China Standard Time", "CST",
-                                     "China Daylight Time", "CDT"};
+                                     "China Daylight Time", "CDT",
+                                     "China Time", "CT"};
         String CUBA[] = new String[] {"Cuba Standard Time", "CST",
-                                      "Cuba Daylight Time", "CDT"};
+                                      "Cuba Daylight Time", "CDT",
+                                      "Cuba Time", "CT"};
         String DARWIN[] = new String[] {"Central Standard Time (Northern Territory)", "CST",
-                                        "Central Summer Time (Northern Territory)", "CST"};
+                                        "Central Summer Time (Northern Territory)", "CST",
+                                        "Central Time (Northern Territory)", "CT"};
         String DUBLIN[] = new String[] {"Greenwich Mean Time", "GMT",
-                                        "Irish Summer Time", "IST"};
+                                        "Irish Summer Time", "IST",
+                                        "Irish Time", "IT"};
         String EAT[] = new String[] {"Eastern African Time", "EAT",
-                                     "Eastern African Summer Time", "EAST"};
+                                     "Eastern African Summer Time", "EAST",
+                                     "Eastern Africa Time", "EAT"};
         String EASTER[] = new String[] {"Easter Is. Time", "EAST",
-                                        "Easter Is. Summer Time", "EASST"};
+                                        "Easter Is. Summer Time", "EASST",
+                                        "Easter Is. Time", "EAST"};
         String EET[] = new String[] {"Eastern European Time", "EET",
-                                     "Eastern European Summer Time", "EEST"};
+                                     "Eastern European Summer Time", "EEST",
+                                     "Eastern European Time", "EET"};
         String EGT[] = new String[] {"Eastern Greenland Time", "EGT",
-                                     "Eastern Greenland Summer Time", "EGST"};
+                                     "Eastern Greenland Summer Time", "EGST",
+                                     "Eastern Greenland Time", "EGT"};
         String EST[] = new String[] {"Eastern Standard Time", "EST",
-                                     "Eastern Daylight Time", "EDT"};
+                                     "Eastern Daylight Time", "EDT",
+                                     "Eastern Time", "ET"};
         String EST_NSW[] = new String[] {"Eastern Standard Time (New South Wales)", "EST",
-                                         "Eastern Summer Time (New South Wales)", "EST"};
+                                         "Eastern Summer Time (New South Wales)", "EST",
+                                         "Eastern Time (New South Wales)", "ET"};
         String FET[] = new String[] {"Further-eastern European Time", "FET",
-                                     "Further-eastern European Summer Time", "FEST"};
+                                     "Further-eastern European Summer Time", "FEST",
+                                     "Further-eastern European Time", "FET"};
         String GHMT[] = new String[] {"Ghana Mean Time", "GMT",
-                                     "Ghana Summer Time", "GHST"};
+                                      "Ghana Summer Time", "GHST",
+                                      "Ghana Mean Time", "GMT"};
         String GAMBIER[] =  new String[] {"Gambier Time", "GAMT",
-                                          "Gambier Summer Time", "GAMST"};
+                                          "Gambier Summer Time", "GAMST",
+                                          "Gambier Time", "GAMT"};
         String GMT[] = new String[] {"Greenwich Mean Time", "GMT",
+                                     "Greenwich Mean Time", "GMT",
                                      "Greenwich Mean Time", "GMT"};
         String GMTBST[] = new String[] {"Greenwich Mean Time", "GMT",
-                                        "British Summer Time", "BST"};
+                                        "British Summer Time", "BST",
+                                        "British Time", "BT"};
         String GST[] = new String[] {"Gulf Standard Time", "GST",
-                                     "Gulf Daylight Time", "GDT"};
+                                     "Gulf Daylight Time", "GDT",
+                                     "Gulf Time", "GT"};
         String HAST[] = new String[] {"Hawaii-Aleutian Standard Time", "HAST",
-                                      "Hawaii-Aleutian Daylight Time", "HADT"};
+                                      "Hawaii-Aleutian Daylight Time", "HADT",
+                                      "Hawaii-Aleutian Time", "HAT"};
         String HKT[] =  new String[] {"Hong Kong Time", "HKT",
-                                      "Hong Kong Summer Time", "HKST"};
+                                      "Hong Kong Summer Time", "HKST",
+                                      "Hong Kong Time", "HKT"};
         String HST[] = new String[] {"Hawaii Standard Time", "HST",
-                                     "Hawaii Daylight Time", "HDT"};
+                                     "Hawaii Daylight Time", "HDT",
+                                     "Hawaii Time", "HT"};
         String ICT[] = new String[] {"Indochina Time", "ICT",
-                                     "Indochina Summer Time", "ICST"};
+                                     "Indochina Summer Time", "ICST",
+                                     "Indochina Time", "ICT"};
         String IRT[] = new String[] {"Iran Standard Time", "IRST",
-                                     "Iran Daylight Time", "IRDT"};
+                                     "Iran Daylight Time", "IRDT",
+                                     "Iran Time", "IRT"};
         String ISRAEL[] = new String[] {"Israel Standard Time", "IST",
-                                        "Israel Daylight Time", "IDT"};
+                                        "Israel Daylight Time", "IDT",
+                                        "Israel Time", "IT"};
         String IST[] = new String[] {"India Standard Time", "IST",
-                                     "India Daylight Time", "IDT"};
+                                     "India Daylight Time", "IDT",
+                                     "India Time", "IT"};
         String JST[] = new String[] {"Japan Standard Time", "JST",
-                                     "Japan Daylight Time", "JDT"};
+                                     "Japan Daylight Time", "JDT",
+                                     "Japan Time", "JT"};
         String KST[] = new String[] {"Korea Standard Time", "KST",
-                                     "Korea Daylight Time", "KDT"};
+                                     "Korea Daylight Time", "KDT",
+                                     "Korea Time", "KT"};
         String LORD_HOWE[] = new String[] {"Lord Howe Standard Time", "LHST",
-                                           "Lord Howe Summer Time", "LHST"};
+                                           "Lord Howe Summer Time", "LHST",
+                                           "Lord Howe Time", "LHT"};
         String MHT[] = new String[] {"Marshall Islands Time", "MHT",
-                                     "Marshall Islands Summer Time", "MHST"};
+                                     "Marshall Islands Summer Time", "MHST",
+                                     "Marshall Islands Time", "MHT"};
         String MSK[] = new String[] {"Moscow Standard Time", "MSK",
-                                     "Moscow Daylight Time", "MSD"};
+                                     "Moscow Daylight Time", "MSD",
+                                     "Moscow Time", "MT"};
         String MST[] = new String[] {"Mountain Standard Time", "MST",
-                                     "Mountain Daylight Time", "MDT"};
+                                     "Mountain Daylight Time", "MDT",
+                                     "Mountain Time", "MT"};
         String MYT[] = new String[] {"Malaysia Time", "MYT",
-                                     "Malaysia Summer Time", "MYST"};
+                                     "Malaysia Summer Time", "MYST",
+                                     "Malaysia Time", "MYT"};
         String NORONHA[] = new String[] {"Fernando de Noronha Time", "FNT",
-                                         "Fernando de Noronha Summer Time", "FNST"};
+                                         "Fernando de Noronha Summer Time", "FNST",
+                                         "Fernando de Noronha Time", "FNT"};
         String NOVT[] = new String[] {"Novosibirsk Time", "NOVT",
-                                      "Novosibirsk Summer Time", "NOVST"};
+                                      "Novosibirsk Summer Time", "NOVST",
+                                      "Novosibirsk Time", "NOVT"};
         String NPT[] = new String[] {"Nepal Time", "NPT",
-                                     "Nepal Summer Time", "NPST"};
+                                     "Nepal Summer Time", "NPST",
+                                     "Nepal Time", "NPT"};
         String NST[] = new String[] {"Newfoundland Standard Time", "NST",
-                                     "Newfoundland Daylight Time", "NDT"};
+                                     "Newfoundland Daylight Time", "NDT",
+                                     "Newfoundland Time", "NT"};
         String NZST[] = new String[] {"New Zealand Standard Time", "NZST",
-                                      "New Zealand Daylight Time", "NZDT"};
+                                      "New Zealand Daylight Time", "NZDT",
+                                      "New Zealand Time", "NZT"};
         String PITCAIRN[] = new String[] {"Pitcairn Standard Time", "PST",
-                                          "Pitcairn Daylight Time", "PDT"};
+                                          "Pitcairn Daylight Time", "PDT",
+                                          "Pitcairn Time", "PT"};
         String PKT[] = new String[] {"Pakistan Time", "PKT",
-                                     "Pakistan Summer Time", "PKST"};
+                                     "Pakistan Summer Time", "PKST",
+                                     "Pakistan Time", "PKT"};
         String PONT[] = new String[] {"Pohnpei Time", "PONT",
-                                      "Pohnpei Summer Time", "PONST"};
+                                      "Pohnpei Summer Time", "PONST",
+                                      "Ponape Time", "PONT"};
         String PST[] = new String[] {"Pacific Standard Time", "PST",
-                                     "Pacific Daylight Time", "PDT"};
+                                     "Pacific Daylight Time", "PDT",
+                                     "Pacific Time", "PT"};
         String SAST[] = new String[] {"South Africa Standard Time", "SAST",
-                                      "South Africa Summer Time", "SAST"};
+                                      "South Africa Summer Time", "SAST",
+                                      "South Africa Time", "SAT"};
         String SBT[] = new String[] {"Solomon Is. Time", "SBT",
-                                     "Solomon Is. Summer Time", "SBST"};
+                                     "Solomon Is. Summer Time", "SBST",
+                                     "Solomon Is. Time", "SBT"};
         String SGT[] = new String[] {"Singapore Time", "SGT",
-                                     "Singapore Summer Time", "SGST"};
+                                     "Singapore Summer Time", "SGST",
+                                     "Singapore Time", "SGT"};
         String SLST[] = new String[] {"Greenwich Mean Time", "GMT",
-                                      "Sierra Leone Summer Time", "SLST"};
+                                      "Sierra Leone Summer Time", "SLST",
+                                      "Sierra Leone Time", "SLT"};
         String TASMANIA[] = new String[] {"Eastern Standard Time (Tasmania)", "EST",
-                                          "Eastern Summer Time (Tasmania)", "EST"};
+                                          "Eastern Summer Time (Tasmania)", "EST",
+                                          "Eastern Time (Tasmania)", "ET"};
         String TMT[] = new String[] {"Turkmenistan Time", "TMT",
-                                     "Turkmenistan Summer Time", "TMST"};
+                                     "Turkmenistan Summer Time", "TMST",
+                                     "Turkmenistan Time", "TMT"};
         String ULAT[]= new String[] {"Ulaanbaatar Time", "ULAT",
-                                     "Ulaanbaatar Summer Time", "ULAST"};
+                                     "Ulaanbaatar Summer Time", "ULAST",
+                                     "Ulaanbaatar Time", "ULAT"};
         String WART[] = new String[] {"Western Argentine Time", "WART",
-                                      "Western Argentine Summer Time", "WARST"};
+                                      "Western Argentine Summer Time", "WARST",
+                                      "Western Argentine Time", "WART"};
         String WAT[] = new String[] {"Western African Time", "WAT",
-                                     "Western African Summer Time", "WAST"};
+                                     "Western African Summer Time", "WAST",
+                                     "Western African Time", "WAT"};
         String WET[] = new String[] {"Western European Time", "WET",
-                                     "Western European Summer Time", "WEST"};
+                                     "Western European Summer Time", "WEST",
+                                     "Western European Time", "WET"};
         String WIT[] = new String[] {"West Indonesia Time", "WIT",
-                                     "West Indonesia Summer Time", "WIST"};
+                                     "West Indonesia Summer Time", "WIST",
+                                     "West Indonesia Time", "WIT"};
         String WST_AUS[] = new String[] {"Western Standard Time (Australia)", "WST",
-                                         "Western Summer Time (Australia)", "WST"};
+                                         "Western Summer Time (Australia)", "WST",
+                                         "Western Time (Australia)", "WT"};
         String SAMOA[] = new String[] {"Samoa Standard Time", "SST",
-                                       "Samoa Daylight Time", "SDT"};
+                                       "Samoa Daylight Time", "SDT",
+                                       "Samoa Time", "ST"};
         String WST_SAMOA[] = new String[] {"West Samoa Time", "WST",
-                                           "West Samoa Daylight Time", "WSDT"};
+                                           "West Samoa Daylight Time", "WSDT",
+                                           "West Samoa Time", "WST"};
         String ChST[] = new String[] {"Chamorro Standard Time", "ChST",
-                                      "Chamorro Daylight Time", "ChDT"};
+                                      "Chamorro Daylight Time", "ChDT",
+                                      "Chamorro Time", "ChT"};
         String VICTORIA[] = new String[] {"Eastern Standard Time (Victoria)", "EST",
-                                          "Eastern Summer Time (Victoria)", "EST"};
+                                          "Eastern Summer Time (Victoria)", "EST",
+                                          "Eastern Time (Victoria)", "ET"};
         String UTC[] = new String[] {"Coordinated Universal Time", "UTC",
+                                     "Coordinated Universal Time", "UTC",
                                      "Coordinated Universal Time", "UTC"};
         String UZT[] = new String[] {"Uzbekistan Time", "UZT",
-                                     "Uzbekistan Summer Time", "UZST"};
+                                     "Uzbekistan Summer Time", "UZST",
+                                     "Uzbekistan Time", "UZT"};
 
         return new Object[][] {
             {"America/Los_Angeles", PST},
@@ -309,7 +387,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Argentina/Ushuaia", AGT},
             {"America/Aruba", AST},
             {"America/Asuncion", new String[] {"Paraguay Time", "PYT",
-                                               "Paraguay Summer Time", "PYST"}},
+                                               "Paraguay Summer Time", "PYST",
+                                               "Paraguay Time", "PYT"}},
             {"America/Atikokan", EST},
             {"America/Atka", HAST},
             {"America/Bahia", BRT},
@@ -320,17 +399,20 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Blanc-Sablon", AST},
             {"America/Boa_Vista", AMT},
             {"America/Bogota", new String[] {"Colombia Time", "COT",
-                                             "Colombia Summer Time", "COST"}},
+                                             "Colombia Summer Time", "COST",
+                                             "Colombia Time", "COT"}},
             {"America/Boise", MST},
             {"America/Buenos_Aires", AGT},
             {"America/Cambridge_Bay", MST},
             {"America/Campo_Grande", AMT},
             {"America/Cancun", CST},
             {"America/Caracas", new String[] {"Venezuela Time", "VET",
-                                              "Venezuela Summer Time", "VEST"}},
+                                              "Venezuela Summer Time", "VEST",
+                                              "Venezuela Time", "VET"}},
             {"America/Catamarca", AGT},
             {"America/Cayenne", new String[] {"French Guiana Time", "GFT",
-                                              "French Guiana Summer Time", "GFST"}},
+                                              "French Guiana Summer Time", "GFST",
+                                              "French Guiana Time", "GFT"}},
             {"America/Cayman", EST},
             {"America/Chihuahua", MST},
             {"America/Creston", MST},
@@ -352,16 +434,19 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Fortaleza", BRT},
             {"America/Glace_Bay", AST},
             {"America/Godthab", new String[] {"Western Greenland Time", "WGT",
-                                              "Western Greenland Summer Time", "WGST"}},
+                                              "Western Greenland Summer Time", "WGST",
+                                              "Western Greenland Time", "WGT"}},
             {"America/Goose_Bay", AST},
             {"America/Grand_Turk", EST},
             {"America/Grenada", AST},
             {"America/Guadeloupe", AST},
             {"America/Guatemala", CST},
             {"America/Guayaquil", new String[] {"Ecuador Time", "ECT",
-                                                "Ecuador Summer Time", "ECST"}},
+                                                "Ecuador Summer Time", "ECST",
+                                                "Ecuador Time", "ECT"}},
             {"America/Guyana", new String[] {"Guyana Time", "GYT",
-                                             "Guyana Summer Time", "GYST"}},
+                                             "Guyana Summer Time", "GYST",
+                                             "Guyana Time", "GYT"}},
             {"America/Havana", CUBA},
             {"America/Hermosillo", MST},
             {"America/Indiana/Indianapolis", EST},
@@ -382,9 +467,11 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Knox_IN", CST},
             {"America/Kralendijk", AST},
             {"America/La_Paz", new String[] {"Bolivia Time", "BOT",
-                                             "Bolivia Summer Time", "BOST"}},
+                                             "Bolivia Summer Time", "BOST",
+                                             "Bolivia Time", "BOT"}},
             {"America/Lima", new String[] {"Peru Time", "PET",
-                                           "Peru Summer Time", "PEST"}},
+                                           "Peru Summer Time", "PEST",
+                                           "Peru Time", "PET"}},
             {"America/Louisville", EST},
             {"America/Lower_Princes", AST},
             {"America/Maceio", BRT},
@@ -398,13 +485,16 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Menominee", CST},
             {"America/Merida", CST},
             {"America/Metlakatla", new String[] {"Metlakatla Standard Time", "MeST",
-                                                 "Metlakatla Daylight Time", "MeDT"}},
+                                                 "Metlakatla Daylight Time", "MeDT",
+                                                 "Metlakatla Time", "MeT"}},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"Pierre & Miquelon Standard Time", "PMST",
-                                               "Pierre & Miquelon Daylight Time", "PMDT"}},
+                                               "Pierre & Miquelon Daylight Time", "PMDT",
+                                               "Pierre & Miquelon Time", "PMT"}},
             {"America/Moncton", AST},
             {"America/Montevideo", new String[] {"Uruguay Time", "UYT",
-                                                 "Uruguay Summer Time", "UYST"}},
+                                                 "Uruguay Summer Time", "UYST",
+                                                 "Uruguay Time", "UYT"}},
             {"America/Monterrey", CST},
             {"America/Montreal", EST},
             {"America/Montserrat", AST},
@@ -419,7 +509,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"Suriname Time", "SRT",
-                                                 "Suriname Summer Time", "SRST"}},
+                                                 "Suriname Summer Time", "SRST",
+                                                 "Suriname Time", "SRT"}},
             {"America/Port-au-Prince", EST},
             {"America/Port_of_Spain", AST},
             {"America/Porto_Acre", AMT},
@@ -459,113 +550,143 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Yellowknife", MST},
             {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"Davis Time", "DAVT",
-                                               "Davis Summer Time", "DAVST"}},
+                                               "Davis Summer Time", "DAVST",
+                                               "Davis Time", "DAVT"}},
             {"Antarctica/DumontDUrville", new String[] {"Dumont-d'Urville Time", "DDUT",
-                                                        "Dumont-d'Urville Summer Time", "DDUST"}},
+                                                        "Dumont-d'Urville Summer Time", "DDUST",
+                                                        "Dumont-d'Urville Time", "DDUT"}},
             {"Antarctica/Macquarie", new String[] {"Macquarie Island Time", "MIST",
-                                                   "Macquarie Island Summer Time", "MIST"}},
+                                                   "Macquarie Island Summer Time", "MIST",
+                                                   "Macquarie Island Time", "MIST"}},
             {"Antarctica/Mawson", new String[] {"Mawson Time", "MAWT",
-                                                "Mawson Summer Time", "MAWST"}},
+                                                "Mawson Summer Time", "MAWST",
+                                                "Mawson Time", "MAWT"}},
             {"Antarctica/McMurdo", NZST},
             {"Antarctica/Palmer", CLT},
             {"Antarctica/Rothera", new String[] {"Rothera Time", "ROTT",
-                                                 "Rothera Summer Time", "ROTST"}},
+                                                 "Rothera Summer Time", "ROTST",
+                                                 "Rothera Time", "ROTT"}},
             {"Antarctica/South_Pole", NZST},
             {"Antarctica/Syowa", new String[] {"Syowa Time", "SYOT",
-                                               "Syowa Summer Time", "SYOST"}},
+                                               "Syowa Summer Time", "SYOST",
+                                               "Syowa Time", "SYOT"}},
             {"Antarctica/Vostok", new String[] {"Vostok Time", "VOST",
-                                                "Vostok Summer Time", "VOSST"}},
+                                                "Vostok Summer Time", "VOSST",
+                                                "Vostok Time", "VOST"}},
             {"Arctic/Longyearbyen", CET},
             {"Asia/Aden", ARAST},
             {"Asia/Almaty", new String[] {"Alma-Ata Time", "ALMT",
-                                          "Alma-Ata Summer Time", "ALMST"}},
+                                          "Alma-Ata Summer Time", "ALMST",
+                                          "Alma-Ata Time", "ALMT"}},
             {"Asia/Amman", EET},
             {"Asia/Anadyr", new String[] {"Anadyr Time", "ANAT",
-                                          "Anadyr Summer Time", "ANAST"}},
+                                          "Anadyr Summer Time", "ANAST",
+                                          "Anadyr Time", "ANAT"}},
             {"Asia/Aqtau", new String[] {"Aqtau Time", "AQTT",
-                                         "Aqtau Summer Time", "AQTST"}},
+                                         "Aqtau Summer Time", "AQTST",
+                                         "Aqtau Time", "AQTT"}},
             {"Asia/Aqtobe", new String[] {"Aqtobe Time", "AQTT",
-                                          "Aqtobe Summer Time", "AQTST"}},
+                                          "Aqtobe Summer Time", "AQTST",
+                                          "Aqtobe Time", "AQTT"}},
             {"Asia/Ashgabat", TMT},
             {"Asia/Ashkhabad", TMT},
             {"Asia/Baghdad", ARAST},
             {"Asia/Bahrain", ARAST},
             {"Asia/Baku", new String[] {"Azerbaijan Time", "AZT",
-                                        "Azerbaijan Summer Time", "AZST"}},
+                                        "Azerbaijan Summer Time", "AZST",
+                                        "Azerbaijan Time", "AZT"}},
             {"Asia/Bangkok", ICT},
             {"Asia/Beirut", EET},
             {"Asia/Bishkek", new String[] {"Kirgizstan Time", "KGT",
-                                           "Kirgizstan Summer Time", "KGST"}},
+                                           "Kirgizstan Summer Time", "KGST",
+                                           "Kirgizstan Time", "KGT"}},
             {"Asia/Brunei", new String[] {"Brunei Time", "BNT",
-                                          "Brunei Summer Time", "BNST"}},
+                                          "Brunei Summer Time", "BNST",
+                                          "Brunei Time", "BNT"}},
             {"Asia/Calcutta", IST},
             {"Asia/Choibalsan", new String[] {"Choibalsan Time", "CHOT",
-                                              "Choibalsan Summer Time", "CHOST"}},
+                                              "Choibalsan Summer Time", "CHOST",
+                                              "Choibalsan Time", "CHOT"}},
             {"Asia/Chongqing", CTT},
             {"Asia/Chungking", CTT},
             {"Asia/Colombo", IST},
             {"Asia/Dacca", BDT},
             {"Asia/Dhaka", BDT},
             {"Asia/Dili", new String[] {"Timor-Leste Time", "TLT",
-                                        "Timor-Leste Summer Time", "TLST"}},
+                                        "Timor-Leste Summer Time", "TLST",
+                                        "Timor-Leste Time", "TLT"}},
             {"Asia/Damascus", EET},
             {"Asia/Dubai", GST},
             {"Asia/Dushanbe", new String[] {"Tajikistan Time", "TJT",
-                                            "Tajikistan Summer Time", "TJST"}},
+                                            "Tajikistan Summer Time", "TJST",
+                                            "Tajikistan Time", "TJT"}},
             {"Asia/Gaza", EET},
             {"Asia/Harbin", CTT},
             {"Asia/Hebron", EET},
             {"Asia/Ho_Chi_Minh", ICT},
             {"Asia/Hong_Kong", HKT},
             {"Asia/Hovd", new String[] {"Hovd Time", "HOVT",
-                                        "Hovd Summer Time", "HOVST"}},
+                                        "Hovd Summer Time", "HOVST",
+                                        "Hovd Time", "HOVT"}},
             {"Asia/Irkutsk", new String[] {"Irkutsk Time", "IRKT",
-                                           "Irkutsk Summer Time", "IRKST"}},
+                                           "Irkutsk Summer Time", "IRKST",
+                                           "Irkutsk Time", "IRKT"}},
             {"Asia/Istanbul", EET},
             {"Asia/Jakarta", WIT},
             {"Asia/Jayapura", new String[] {"East Indonesia Time", "EIT",
-                                            "East Indonesia Summer Time", "EIST"}},
+                                            "East Indonesia Summer Time", "EIST",
+                                            "East Indonesia Time", "EIT"}},
             {"Asia/Kabul", new String[] {"Afghanistan Time", "AFT",
-                                         "Afghanistan Summer Time", "AFST"}},
+                                         "Afghanistan Summer Time", "AFST",
+                                         "Afghanistan Time", "AFT"}},
             {"Asia/Kamchatka", new String[] {"Petropavlovsk-Kamchatski Time", "PETT",
-                                             "Petropavlovsk-Kamchatski Summer Time", "PETST"}},
+                                             "Petropavlovsk-Kamchatski Summer Time", "PETST",
+                                             "Petropavlovsk-Kamchatski Time", "PETT"}},
             {"Asia/Karachi", PKT},
             {"Asia/Kashgar", CTT},
             {"Asia/Kathmandu", NPT},
             {"Asia/Katmandu", NPT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", new String[] {"Krasnoyarsk Time", "KRAT",
-                                               "Krasnoyarsk Summer Time", "KRAST"}},
+                                               "Krasnoyarsk Summer Time", "KRAST",
+                                               "Krasnoyarsk Time", "KRAT"}},
             {"Asia/Kuala_Lumpur", MYT},
             {"Asia/Kuching", MYT},
             {"Asia/Kuwait", ARAST},
             {"Asia/Macao", CTT},
             {"Asia/Macau", CTT},
             {"Asia/Magadan", new String[] {"Magadan Time", "MAGT",
-                                           "Magadan Summer Time", "MAGST"}},
+                                           "Magadan Summer Time", "MAGST",
+                                           "Magadan Time", "MAGT"}},
             {"Asia/Makassar", CIT},
             {"Asia/Manila", new String[] {"Philippines Time", "PHT",
-                                          "Philippines Summer Time", "PHST"}},
+                                          "Philippines Summer Time", "PHST",
+                                          "Philippines Time", "PHT"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
             {"Asia/Novokuznetsk", NOVT},
             {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"Oral Time", "ORAT",
-                                        "Oral Summer Time", "ORAST"}},
+                                        "Oral Summer Time", "ORAST",
+                                        "Oral Time", "ORAT"}},
             {"Asia/Omsk", new String[] {"Omsk Time", "OMST",
-                                        "Omsk Summer Time", "OMSST"}},
+                                        "Omsk Summer Time", "OMSST",
+                                        "Omsk Time", "OMST"}},
             {"Asia/Phnom_Penh", ICT},
             {"Asia/Pontianak", WIT},
             {"Asia/Pyongyang", KST},
             {"Asia/Qatar", ARAST},
             {"Asia/Qyzylorda", new String[] {"Qyzylorda Time", "QYZT",
-                                             "Qyzylorda Summer Time", "QYZST"}},
+                                             "Qyzylorda Summer Time", "QYZST",
+                                             "Qyzylorda Time", "QYZT"}},
             {"Asia/Rangoon", new String[] {"Myanmar Time", "MMT",
-                                           "Myanmar Summer Time", "MMST"}},
+                                           "Myanmar Summer Time", "MMST",
+                                           "Myanmar Time", "MMT"}},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"Sakhalin Time", "SAKT",
-                                            "Sakhalin Summer Time", "SAKST"}},
+                                            "Sakhalin Summer Time", "SAKST",
+                                            "Sakhalin Time", "SAKT"}},
             {"Asia/Samarkand", UZT},
             {"Asia/Seoul", KST},
             {"Asia/Singapore", SGT},
@@ -573,7 +694,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Asia/Tel_Aviv", ISRAEL},
             {"Asia/Tashkent", UZT},
             {"Asia/Tbilisi", new String[] {"Georgia Time", "GET",
-                                           "Georgia Summer Time", "GEST"}},
+                                           "Georgia Summer Time", "GEST",
+                                           "Georgia Time", "GET"}},
             {"Asia/Tehran", IRT},
             {"Asia/Thimbu", BTT},
             {"Asia/Thimphu", BTT},
@@ -583,28 +705,35 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Asia/Urumqi", CTT},
             {"Asia/Vientiane", ICT},
             {"Asia/Vladivostok", new String[] {"Vladivostok Time", "VLAT",
-                                               "Vladivostok Summer Time", "VLAST"}},
+                                               "Vladivostok Summer Time", "VLAST",
+                                               "Vladivostok Time", "VLAT"}},
             {"Asia/Yakutsk", new String[] {"Yakutsk Time", "YAKT",
-                                           "Yakutsk Summer Time", "YAKST"}},
+                                           "Yakutsk Summer Time", "YAKST",
+                                           "Yakutsk Time", "YAKT"}},
             {"Asia/Yekaterinburg", new String[] {"Yekaterinburg Time", "YEKT",
-                                                 "Yekaterinburg Summer Time", "YEKST"}},
+                                                 "Yekaterinburg Summer Time", "YEKST",
+                                                 "Yekaterinburg Time", "YEKT"}},
             {"Asia/Yerevan", ARMT},
             {"Atlantic/Azores", new String[] {"Azores Time", "AZOT",
-                                              "Azores Summer Time", "AZOST"}},
+                                              "Azores Summer Time", "AZOST",
+                                              "Azores Time", "AZOT"}},
             {"Atlantic/Bermuda", AST},
             {"Atlantic/Canary", WET},
             {"Atlantic/Cape_Verde", new String[] {"Cape Verde Time", "CVT",
-                                                  "Cape Verde Summer Time", "CVST"}},
+                                                  "Cape Verde Summer Time", "CVST",
+                                                  "Cape Verde Time", "CVT"}},
             {"Atlantic/Faeroe", WET},
             {"Atlantic/Faroe", WET},
             {"Atlantic/Jan_Mayen", CET},
             {"Atlantic/Madeira", WET},
             {"Atlantic/Reykjavik", GMT},
             {"Atlantic/South_Georgia", new String[] {"South Georgia Standard Time", "GST",
-                                                     "South Georgia Daylight Time", "GDT"}},
+                                                     "South Georgia Daylight Time", "GDT",
+                                                     "South Georgia Time", "GT"}},
             {"Atlantic/St_Helena", GMT},
             {"Atlantic/Stanley", new String[] {"Falkland Is. Time", "FKT",
-                                               "Falkland Is. Summer Time", "FKST"}},
+                                               "Falkland Is. Summer Time", "FKST",
+                                               "Falkland Is. Time", "FKT"}},
             {"Australia/ACT", EST_NSW},
             {"Australia/Adelaide", ADELAIDE},
             {"Australia/Brisbane", BRISBANE},
@@ -613,7 +742,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
             {"Australia/Eucla", new String[] {"Central Western Standard Time (Australia)", "CWST",
-                                              "Central Western Summer Time (Australia)", "CWST"}},
+                                              "Central Western Summer Time (Australia)", "CWST",
+                                              "Central Western Time (Australia)", "CWT"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},
@@ -697,7 +827,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Europe/Riga", EET},
             {"Europe/Rome", CET},
             {"Europe/Samara", new String[] {"Samara Time", "SAMT",
-                                            "Samara Summer Time", "SAMST"}},
+                                            "Samara Summer Time", "SAMST",
+                                            "Samara Time", "SAMT"}},
             {"Europe/San_Marino", CET},
             {"Europe/Sarajevo", CET},
             {"Europe/Simferopol", EET},
@@ -713,7 +844,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Europe/Vienna", CET},
             {"Europe/Vilnius", EET},
             {"Europe/Volgograd", new String[] {"Volgograd Time", "VOLT",
-                                               "Volgograd Summer Time", "VOLST"}},
+                                               "Volgograd Summer Time", "VOLST",
+                                               "Volgograd Time", "VOLT"}},
             {"Europe/Warsaw", CET},
             {"Europe/Zagreb", CET},
             {"Europe/Zaporozhye", EET},
@@ -727,30 +859,39 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"IST", IST},
             {"Indian/Antananarivo", EAT},
             {"Indian/Chagos", new String[] {"Indian Ocean Territory Time", "IOT",
-                                            "Indian Ocean Territory Summer Time", "IOST"}},
+                                            "Indian Ocean Territory Summer Time", "IOST",
+                                            "Indian Ocean Territory Time", "IOT"}},
             {"Indian/Christmas", new String[] {"Christmas Island Time", "CXT",
-                                               "Christmas Island Summer Time", "CXST"}},
+                                               "Christmas Island Summer Time", "CXST",
+                                               "Christmas Island Time", "CIT"}},
             {"Indian/Cocos", new String[] {"Cocos Islands Time", "CCT",
-                                           "Cocos Islands Summer Time", "CCST"}},
+                                           "Cocos Islands Summer Time", "CCST",
+                                           "Cocos Islands Time", "CCT"}},
             {"Indian/Comoro", EAT},
             {"Indian/Kerguelen", new String[] {"French Southern & Antarctic Lands Time", "TFT",
-                                               "French Southern & Antarctic Lands Summer Time", "TFST"}},
+                                               "French Southern & Antarctic Lands Summer Time", "TFST",
+                                               "French Southern & Antarctic Lands Time", "TFT"}},
             {"Indian/Mahe", new String[] {"Seychelles Time", "SCT",
-                                          "Seychelles Summer Time", "SCST"}},
+                                          "Seychelles Summer Time", "SCST",
+                                          "Seychelles Time", "SCT"}},
             {"Indian/Maldives", new String[] {"Maldives Time", "MVT",
-                                              "Maldives Summer Time", "MVST"}},
+                                              "Maldives Summer Time", "MVST",
+                                              "Maldives Time", "MVT"}},
             {"Indian/Mauritius", new String[] {"Mauritius Time", "MUT",
-                                               "Mauritius Summer Time", "MUST"}},
+                                               "Mauritius Summer Time", "MUST",
+                                               "Mauritius Time", "MUT"}},
             {"Indian/Mayotte", EAT},
             {"Indian/Reunion", new String[] {"Reunion Time", "RET",
-                                             "Reunion Summer Time", "REST"}},
+                                             "Reunion Summer Time", "REST",
+                                             "Reunion Time", "RET"}},
             {"Israel", ISRAEL},
             {"Jamaica", EST},
             {"Japan", JST},
             {"Kwajalein", MHT},
             {"Libya", EET},
             {"MET", new String[] {"Middle Europe Time", "MET",
-                                  "Middle Europe Summer Time", "MEST"}},
+                                  "Middle Europe Summer Time", "MEST",
+                                  "Middle Europe Time", "MET"}},
             {"Mexico/BajaNorte", PST},
             {"Mexico/BajaSur", MST},
             {"Mexico/General", CST},
@@ -770,61 +911,82 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Pacific/Chuuk", CHUT},
             {"Pacific/Easter", EASTER},
             {"Pacific/Efate", new String[] {"Vanuatu Time", "VUT",
-                                            "Vanuatu Summer Time", "VUST"}},
+                                            "Vanuatu Summer Time", "VUST",
+                                            "Vanuatu Time", "VUT"}},
             {"Pacific/Enderbury", new String[] {"Phoenix Is. Time", "PHOT",
-                                                "Phoenix Is. Summer Time", "PHOST"}},
+                                                "Phoenix Is. Summer Time", "PHOST",
+                                                "Phoenix Is. Time", "PHOT"}},
             {"Pacific/Fakaofo", new String[] {"Tokelau Time", "TKT",
-                                              "Tokelau Summer Time", "TKST"}},
+                                              "Tokelau Summer Time", "TKST",
+                                              "Tokelau Time", "TKT"}},
             {"Pacific/Fiji", new String[] {"Fiji Time", "FJT",
-                                           "Fiji Summer Time", "FJST"}},
+                                           "Fiji Summer Time", "FJST",
+                                           "Fiji Time", "FJT"}},
             {"Pacific/Funafuti", new String[] {"Tuvalu Time", "TVT",
-                                               "Tuvalu Summer Time", "TVST"}},
+                                               "Tuvalu Summer Time", "TVST",
+                                               "Tuvalu Time", "TVT"}},
             {"Pacific/Galapagos", new String[] {"Galapagos Time", "GALT",
-                                                "Galapagos Summer Time", "GALST"}},
+                                                "Galapagos Summer Time", "GALST",
+                                                "Galapagos Time", "GALT"}},
             {"Pacific/Gambier", GAMBIER},
             {"Pacific/Guadalcanal", SBT},
             {"Pacific/Guam", ChST},
             {"Pacific/Johnston", HST},
             {"Pacific/Kiritimati", new String[] {"Line Is. Time", "LINT",
-                                                 "Line Is. Summer Time", "LINST"}},
+                                                 "Line Is. Summer Time", "LINST",
+                                                 "Line Is. Time", "LINT"}},
             {"Pacific/Kosrae", new String[] {"Kosrae Time", "KOST",
-                                             "Kosrae Summer Time", "KOSST"}},
+                                             "Kosrae Summer Time", "KOSST",
+                                             "Kosrae Time", "KOST"}},
             {"Pacific/Kwajalein", MHT},
             {"Pacific/Majuro", MHT},
             {"Pacific/Marquesas", new String[] {"Marquesas Time", "MART",
-                                                "Marquesas Summer Time", "MARST"}},
+                                                "Marquesas Summer Time", "MARST",
+                                                "Marquesas Time", "MART"}},
             {"Pacific/Midway", SAMOA},
             {"Pacific/Nauru", new String[] {"Nauru Time", "NRT",
-                                            "Nauru Summer Time", "NRST"}},
+                                            "Nauru Summer Time", "NRST",
+                                            "Nauru Time", "NRT"}},
             {"Pacific/Niue", new String[] {"Niue Time", "NUT",
-                                           "Niue Summer Time", "NUST"}},
+                                           "Niue Summer Time", "NUST",
+                                           "Niue Time", "NUT"}},
             {"Pacific/Norfolk", new String[] {"Norfolk Time", "NFT",
-                                              "Norfolk Summer Time", "NFST"}},
+                                              "Norfolk Summer Time", "NFST",
+                                              "Norfolk Time", "NFT"}},
             {"Pacific/Noumea", new String[] {"New Caledonia Time", "NCT",
-                                             "New Caledonia Summer Time", "NCST"}},
+                                             "New Caledonia Summer Time", "NCST",
+                                             "New Caledonia Time", "NCT"}},
             {"Pacific/Pago_Pago", SAMOA},
             {"Pacific/Palau", new String[] {"Palau Time", "PWT",
-                                            "Palau Summer Time", "PWST"}},
+                                            "Palau Summer Time", "PWST",
+                                            "Palau Time", "PWT"}},
             {"Pacific/Pitcairn", PITCAIRN},
             {"Pacific/Pohnpei", PONT},
             {"Pacific/Ponape", PONT},
             {"Pacific/Port_Moresby", new String[] {"Papua New Guinea Time", "PGT",
-                                                   "Papua New Guinea Summer Time", "PGST"}},
+                                                   "Papua New Guinea Summer Time", "PGST",
+                                                   "Papua New Guinea Time", "PGT"}},
             {"Pacific/Rarotonga", new String[] {"Cook Is. Time", "CKT",
-                                                "Cook Is. Summer Time", "CKHST"}},
+                                                "Cook Is. Summer Time", "CKHST",
+                                                "Cook Is. Time", "CKT"}},
             {"Pacific/Saipan", ChST},
             {"Pacific/Samoa", SAMOA},
             {"Pacific/Tahiti", new String[] {"Tahiti Time", "TAHT",
-                                             "Tahiti Summer Time", "TAHST"}},
+                                             "Tahiti Summer Time", "TAHST",
+                                             "Tahiti Time", "TAHT"}},
             {"Pacific/Tarawa", new String[] {"Gilbert Is. Time", "GILT",
-                                             "Gilbert Is. Summer Time", "GILST"}},
+                                             "Gilbert Is. Summer Time", "GILST",
+                                             "Gilbert Is. Time", "GILT"}},
             {"Pacific/Tongatapu", new String[] {"Tonga Time", "TOT",
-                                                "Tonga Summer Time", "TOST"}},
+                                                "Tonga Summer Time", "TOST",
+                                                "Tonga Time", "TOT"}},
             {"Pacific/Truk", CHUT},
             {"Pacific/Wake", new String[] {"Wake Time", "WAKT",
-                                           "Wake Summer Time", "WAKST"}},
+                                           "Wake Summer Time", "WAKST",
+                                           "Wake Time", "WAKT"}},
             {"Pacific/Wallis", new String[] {"Wallis & Futuna Time", "WFT",
-                                             "Wallis & Futuna Summer Time", "WFST"}},
+                                             "Wallis & Futuna Summer Time", "WFST",
+                                             "Wallis & Futuna Time", "WFT"}},
             {"Pacific/Yap", CHUT},
             {"Poland", CET},
             {"PRC", CTT},

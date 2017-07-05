@@ -27,12 +27,9 @@
  * @summary Incoming connections should be subject to timeout
  * @author Adrian Colley
  *
- * @library ../../testlibrary
- * @build TestIface
- * @build TestImpl
- * @build TestImpl_Stub
- * @build ReadTimeoutTest
- * @run main/othervm/policy=security.policy/timeout=60 -Dsun.rmi.transport.tcp.readTimeout=5000 ReadTimeoutTest
+ * @build TestIface TestImpl TestImpl_Stub
+ * @run main/othervm/policy=security.policy/timeout=60
+ *     -Dsun.rmi.transport.tcp.readTimeout=5000 ReadTimeoutTest
  */
 
 /* This test sets a very short read timeout, exports an object, and then

@@ -22,8 +22,10 @@
  */
 
 /* @test
-   @bug 4094889
-   @summary rmid can have a corrupted log
+ * @bug 4094889
+ * @summary rmid can have a corrupted log
+ *
+ * @run main LogAlignmentTest
  */
 
 /* Fault: ReliableLog used RandomAccessFile.skipBytes() to seek past the end

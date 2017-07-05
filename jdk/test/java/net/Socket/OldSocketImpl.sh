@@ -50,7 +50,7 @@ esac
 # with 1.3 and in OldStyleImpl.jar
 
 # run
-${TESTJAVA}${FS}bin${FS}java -cp ${TESTSRC}${FS}OldSocketImpl.jar OldSocketImpl
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTSRC}${FS}OldSocketImpl.jar OldSocketImpl
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1

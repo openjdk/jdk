@@ -151,16 +151,15 @@ Java_sun_java2d_opengl_CGLLayer_nativeCreateLayer
     __block CGLLayer *layer = nil;
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
     JNFJObjectWrapper *javaLayer = [JNFJObjectWrapper wrapperWithJObject:obj withEnv:env];
 
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-        AWT_ASSERT_APPKIT_THREAD;
-
-        layer = [[CGLLayer alloc] initWithJavaLayer: javaLayer];
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+            AWT_ASSERT_APPKIT_THREAD;
+        
+            layer = [[CGLLayer alloc] initWithJavaLayer: javaLayer];
     }];
-
+    
 JNF_COCOA_EXIT(env);
 
     return ptr_to_jlong(layer);

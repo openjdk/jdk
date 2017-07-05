@@ -695,27 +695,23 @@ public class KeyStore {
     }
 
     /**
-     * Returns the default keystore type as specified in the Java security
-     * properties file, or the string
-     * &quot;jks&quot; (acronym for &quot;Java keystore&quot;)
+     * Returns the default keystore type as specified by the
+     * {@code keystore.type} security property, or the string
+     * {@literal "jks"} (acronym for {@literal "Java keystore"})
      * if no such property exists.
-     * The Java security properties file is located in the file named
-     * &lt;JAVA_HOME&gt;/lib/security/java.security.
-     * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
-     * and specifies the directory where the JRE is installed.
      *
      * <p>The default keystore type can be used by applications that do not
      * want to use a hard-coded keystore type when calling one of the
-     * <code>getInstance</code> methods, and want to provide a default keystore
+     * {@code getInstance} methods, and want to provide a default keystore
      * type in case a user does not specify its own.
      *
      * <p>The default keystore type can be changed by setting the value of the
-     * "keystore.type" security property (in the Java security properties
-     * file) to the desired keystore type.
+     * {@code keystore.type} security property to the desired keystore type.
      *
-     * @return the default keystore type as specified in the
-     * Java security properties file, or the string &quot;jks&quot;
+     * @return the default keystore type as specified by the
+     * {@code keystore.type} security property, or the string {@literal "jks"}
      * if no such property exists.
+     * @see java.security.Security security properties
      */
     public final static String getDefaultType() {
         String kstype;

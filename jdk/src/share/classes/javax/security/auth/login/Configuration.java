@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,12 +173,8 @@ import sun.security.jca.GetInstance;
  * Configuration implementation (a default subclass implementation of this
  * abstract class).
  * The default Configuration implementation can be changed by setting the value
- * of the "login.configuration.provider" security property (in the Java
- * security properties file) to the fully qualified name of the desired
- * Configuration subclass implementation.  The Java security properties file
- * is located in the file named &lt;JAVA_HOME&gt;/lib/security/java.security.
- * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- * and specifies the directory where the JRE is installed.
+ * of the {@code login.configuration.provider} security property to the fully
+ * qualified name of the desired Configuration subclass implementation.
  *
  * <p> Application code can directly subclass Configuration to provide a custom
  * implementation.  In addition, an instance of a Configuration object can be
@@ -190,6 +186,7 @@ import sun.security.jca.GetInstance;
  * for a list of standard Configuration types.
  *
  * @see javax.security.auth.login.LoginContext
+ * @see java.security.Security security properties
  */
 public abstract class Configuration {
 

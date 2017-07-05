@@ -27,7 +27,7 @@
 
 rm *.class tmp.ser
 javac WriteAddedField.java
-java WriteAddedField
+java ${TESTVMOPTS} WriteAddedField
 rm *.class
 javac ReadAddedField.java
-java ReadAddedField
+java ${TESTVMOPTS} ReadAddedField

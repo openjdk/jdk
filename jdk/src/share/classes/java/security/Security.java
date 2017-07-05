@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@ import sun.security.jca.*;
 /**
  * <p>This class centralizes all security properties and common security
  * methods. One of its primary uses is to manage providers.
+ *
+ * <p>The default values of security properties are read from an
+ * implementation-specific location, which is typically the properties file
+ * {@code lib/security/java.security} in the Java installation directory.
  *
  * @author Benjamin Renaud
  */

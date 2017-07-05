@@ -52,7 +52,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
     @Override
     public String getDisplayName(String calendarType, int field, int value, int style, Locale locale) {
         String name = null;
-        String key = getKey(calendarType, field, style);
+        String key = getResourceKey(calendarType, field, style);
         if (key != null) {
             ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getDateFormatData(locale);
             if (rb.containsKey(key)) {
@@ -64,9 +64,10 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                     name = strings[value];
                     // If name is empty in standalone, try its `format' style.
                     if (name.length() == 0
-                            && (style == SHORT_STANDALONE || style == LONG_STANDALONE)) {
+                            && (style == SHORT_STANDALONE || style == LONG_STANDALONE
+                                || style == NARROW_STANDALONE)) {
                         name = getDisplayName(calendarType, field, value,
-                                              style == SHORT_STANDALONE ? SHORT_FORMAT : LONG_FORMAT,
+                                              getBaseStyle(style),
                                               locale);
                     }
                 }
@@ -75,15 +76,17 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return name;
     }
 
+    private static int[] REST_OF_STYLES = {
+        SHORT_STANDALONE, LONG_FORMAT, LONG_STANDALONE,
+        NARROW_FORMAT, NARROW_STANDALONE
+    };
     @Override
     public Map<String, Integer> getDisplayNames(String calendarType, int field, int style, Locale locale) {
         Map<String, Integer> names;
         if (style == ALL_STYLES) {
             names = getDisplayNamesImpl(calendarType, field, SHORT_FORMAT, locale);
-            if (field != AM_PM) {
-                for (int st : new int[] { SHORT_STANDALONE, LONG_FORMAT, LONG_STANDALONE }) {
-                    names.putAll(getDisplayNamesImpl(calendarType, field, st, locale));
-                }
+            for (int st : REST_OF_STYLES) {
+                names.putAll(getDisplayNamesImpl(calendarType, field, st, locale));
             }
         } else {
             // specific style
@@ -94,31 +97,37 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
 
     private Map<String, Integer> getDisplayNamesImpl(String calendarType, int field,
                                                      int style, Locale locale) {
-        String key = getKey(calendarType, field, style);
+        String key = getResourceKey(calendarType, field, style);
         Map<String, Integer> map = new TreeMap<>(LengthBasedComparator.INSTANCE);
         if (key != null) {
             ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getDateFormatData(locale);
             if (rb.containsKey(key)) {
                 String[] strings = rb.getStringArray(key);
-                if (field == YEAR) {
-                    if (strings.length > 0) {
-                        map.put(strings[0], 1);
-                    }
-                } else {
-                    int base = (field == DAY_OF_WEEK) ? 1 : 0;
-                    for (int i = 0; i < strings.length; i++) {
-                        String name = strings[i];
-                        // Ignore any empty string (some standalone month names
-                        // are not defined)
-                        if (name.length() == 0) {
-                            continue;
+                if (!hasDuplicates(strings)) {
+                    if (field == YEAR) {
+                        if (strings.length > 0) {
+                            map.put(strings[0], 1);
                         }
-                        map.put(name, base + i);
+                    } else {
+                        int base = (field == DAY_OF_WEEK) ? 1 : 0;
+                        for (int i = 0; i < strings.length; i++) {
+                            String name = strings[i];
+                            // Ignore any empty string (some standalone month names
+                            // are not defined)
+                            if (name.length() == 0) {
+                                continue;
+                            }
+                            map.put(name, base + i);
+                        }
                     }
                 }
             }
         }
         return map;
+    }
+
+    private int getBaseStyle(int style) {
+        return style & ~(SHORT_STANDALONE - SHORT_FORMAT);
     }
 
     /**
@@ -180,55 +189,92 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return langtags;
     }
 
-    private int getIntData(String key, Locale locale) {
-        ResourceBundle rb = LocaleProviderAdapter.forType(type).getLocaleData().getCalendarData(locale);
-        if (rb.containsKey(key)) {
-            String firstday = rb.getString(key);
-            return Integer.parseInt(firstday);
+    private boolean hasDuplicates(String[] strings) {
+        int len = strings.length;
+        for (int i = 0; i < len - 1; i++) {
+            String a = strings[i];
+            if (a != null) {
+                for (int j = i + 1; j < len; j++) {
+                    if (a.equals(strings[j]))  {
+                        return true;
+                    }
+                }
+            }
         }
-        // Note that the base bundle of CLDR doesn't have the Calendar week parameters.
-        return 0;
+        return false;
     }
 
-    private String getKey(String type, int field, int style) {
-        boolean standalone = (style & 0x8000) != 0;
-        style &= ~0x8000;
+    private String getResourceKey(String type, int field, int style) {
+        int baseStyle = getBaseStyle(style);
+        boolean isStandalone = (style != baseStyle);
 
         if ("gregory".equals(type)) {
             type = null;
         }
-
+        boolean isNarrow = (baseStyle == NARROW_FORMAT);
         StringBuilder key = new StringBuilder();
         switch (field) {
         case ERA:
             if (type != null) {
                 key.append(type).append('.');
             }
-            if (style == SHORT) {
-                key.append("short.");
+            if (isNarrow) {
+                key.append("narrow.");
+            } else {
+                // JRE and CLDR use different resource key conventions
+                // due to historical reasons. (JRE DateFormatSymbols.getEras returns
+                // abbreviations while other getShort*() return abbreviations.)
+                if (this.type == LocaleProviderAdapter.Type.JRE) {
+                    if (baseStyle == SHORT) {
+                        key.append("short.");
+                    }
+                } else { // CLDR
+                    if (baseStyle == LONG) {
+                        key.append("long.");
+                    }
+                }
             }
             key.append("Eras");
             break;
 
         case YEAR:
-            key.append(type).append(".FirstYear");
+            if (!isNarrow) {
+                key.append(type).append(".FirstYear");
+            }
             break;
 
         case MONTH:
-            if (standalone) {
+            if (isStandalone) {
                 key.append("standalone.");
             }
-            key.append(style == SHORT ? "MonthAbbreviations" : "MonthNames");
+            key.append("Month").append(toStyleName(baseStyle));
             break;
 
         case DAY_OF_WEEK:
-            key.append(style == SHORT ? "DayAbbreviations" : "DayNames");
+            // support standalone narrow day names
+            if (isStandalone && isNarrow) {
+                key.append("standalone.");
+            }
+            key.append("Day").append(toStyleName(baseStyle));
             break;
 
         case AM_PM:
+            if (isNarrow) {
+                key.append("narrow.");
+            }
             key.append("AmPmMarkers");
             break;
         }
         return key.length() > 0 ? key.toString() : null;
+    }
+
+    private String toStyleName(int baseStyle) {
+        switch (baseStyle) {
+        case SHORT:
+            return "Abbreviations";
+        case NARROW_FORMAT:
+            return "Narrows";
+        }
+        return "Names";
     }
 }

@@ -40,6 +40,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
     TimeZoneNameProviderTest() {
         test1();
         test2();
+        test3();
         aliasTest();
     }
 
@@ -92,6 +93,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
     final String pattern = "z";
     final Locale OSAKA = new Locale("ja", "JP", "osaka");
     final Locale KYOTO = new Locale("ja", "JP", "kyoto");
+    final Locale GENERIC = new Locale("ja", "JP", "generic");
 
     final String[] TIMEZONES = {
         "GMT", "America/Los_Angeles", "SystemV/PST8",
@@ -154,6 +156,29 @@ public class TimeZoneNameProviderTest extends ProviderTest {
             // restore the reserved locale and time zone
             Locale.setDefault(defaultLocale);
             TimeZone.setDefault(reservedTimeZone);
+        }
+    }
+
+    void test3() {
+        final String[] TZNAMES = {
+            LATIME, PST, PST8PDT, US_PACIFIC,
+            TOKYOTIME, JST, JAPAN,
+        };
+        for (String tzname : TZNAMES) {
+            TimeZone tz = TimeZone.getTimeZone(tzname);
+            for (int style : new int[] { TimeZone.LONG, TimeZone.SHORT }) {
+                String osakaStd = tz.getDisplayName(false, style, OSAKA);
+                if (osakaStd != null) {
+                    // No API for getting generic time zone names
+                    String generic = TimeZoneNameUtility.retrieveGenericDisplayName(tzname,
+                                                                                    style, GENERIC);
+                    String expected = "Generic " + osakaStd;
+                    if (!expected.equals(generic)) {
+                        throw new RuntimeException("Wrong generic name: got=\"" + generic
+                                                   + "\", expected=\"" + expected + "\"");
+                    }
+                }
+            }
         }
     }
 
