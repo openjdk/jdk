@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,39 +46,39 @@ failed=0
 
 if [ $isWindows = false ]; then
     # -sysprops option
-    ${JINFO} -sysprops $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -sysprops $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
     # -flags option
-    ${JINFO} -flags $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -flags $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
     # no option
-    ${JINFO} $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
 fi
 
 
 # -flag option
-${JINFO} -flag +PrintGC $appJavaPid
+${JINFO} -J-XX:+UsePerfData -flag +PrintGC $appJavaPid
 if [ $? != 0 ]; then failed=1; fi 
 
-${JINFO} -flag -PrintGC $appJavaPid
+${JINFO} -J-XX:+UsePerfData -flag -PrintGC $appJavaPid
 if [ $? != 0 ]; then failed=1; fi
 
-${JINFO} -flag PrintGC $appJavaPid
+${JINFO} -J-XX:+UsePerfData -flag PrintGC $appJavaPid
 if [ $? != 0 ]; then failed=1; fi
 
 if $isSolaris; then
 
-    ${JINFO} -flag +ExtendedDTraceProbes $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -flag +ExtendedDTraceProbes $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
-    ${JINFO} -flag -ExtendedDTraceProbes $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -flag -ExtendedDTraceProbes $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
-    ${JINFO} -flag ExtendedDTraceProbes $appJavaPid
+    ${JINFO} -J-XX:+UsePerfData -flag ExtendedDTraceProbes $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 
 fi

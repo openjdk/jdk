@@ -55,10 +55,17 @@ VPATH += $(Src_Dirs_V:%=%:)
 Src_Dirs_I += $(GENERATED)
 INCLUDES += $(Src_Dirs_I:%=-I%)
 
-ifeq (${VERSION}, debug)
-  SYMFLAG = -g
+# SYMFLAG is used by {dtrace,jsig,saproc}.make.
+ifneq ($(OBJCOPY),)
+  # always build with debug info when we can create .debuginfo files
+  # and disable 'lazy debug info' so the .so has everything.
+  SYMFLAG = -g -xs
 else
-  SYMFLAG =
+  ifeq (${VERSION}, debug)
+    SYMFLAG = -g
+  else
+    SYMFLAG =
+  endif
 endif
 
 # The following variables are defined in the generated flags.make file.
@@ -140,6 +147,9 @@ JVM      = jvm
 LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
+LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
+LIBJVM_G_DEBUGINFO = lib$(JVM)$(G_SUFFIX).debuginfo
+
 SPECIAL_PATHS:=adlc c1 dist gc_implementation opto shark libadt
 
 SOURCE_PATHS=\
@@ -212,13 +222,23 @@ JVM_OBJ_FILES = $(Obj_Files) $(DTRACE_OBJS)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT)
+mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT) vm.def
 	rm -f $@
-	cat $^ > $@
+	cat $(MAPFILE) $(MAPFILE_DTRACE_OPT) \
+	    | $(NAWK) '{                                         \
+	              if ($$0 ~ "INSERT VTABLE SYMBOLS HERE") {  \
+	                  system ("cat vm.def");                 \
+	              } else {                                   \
+	                  print $$0;                             \
+	              }                                          \
+	          }' > $@
 
 mapfile_reorder : mapfile $(MAPFILE_DTRACE_OPT) $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
+
+vm.def: $(Obj_Files)
+	sh $(GAMMADIR)/make/solaris/makefiles/build_vm_def.sh *.o > $@
 
 ifeq ($(LINK_INTO),AOUT)
   LIBJVM.o                 =
@@ -255,13 +275,30 @@ ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	$(QUIETLY) rm -f $@.1 && ln -s $@ $@.1
 	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)
 	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	$(QUIETLY) [ -f $(LIBJVM_G_DEBUGINFO) ] || ln -s $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+endif
 endif # filter -sbfast -xsbfast
 
 
-DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)
+DEST_SUBDIR        = $(JDK_LIBDIR)/$(VM_SUBDIR)
+DEST_JVM           = $(DEST_SUBDIR)/$(LIBJVM)
+DEST_JVM_DEBUGINFO = $(DEST_SUBDIR)/$(LIBJVM_DEBUGINFO)
 
 install_jvm: $(LIBJVM)
 	@echo "Copying $(LIBJVM) to $(DEST_JVM)"
+	$(QUIETLY) test -f $(LIBJVM_DEBUGINFO) && \
+	    cp -f $(LIBJVM_DEBUGINFO) $(DEST_JVM_DEBUGINFO)
 	$(QUIETLY) cp -f $(LIBJVM) $(DEST_JVM) && echo "Done"
 
 #----------------------------------------------------------------------

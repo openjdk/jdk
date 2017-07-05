@@ -56,7 +56,8 @@ class typeArrayKlass : public arrayKlass {
   bool compute_is_subtype_of(klassOop k);
 
   // Allocation
-  typeArrayOop allocate(int length, TRAPS);
+  typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
+  typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
   typeArrayOop allocate_permanent(int length, TRAPS);  // used for class file structures
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 

@@ -43,6 +43,9 @@
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -213,12 +216,6 @@ class StubGenerator: public StubCodeGenerator {
     // non-core builds and need to be relocatable, so they each
     // fabricate a RuntimeStub internally.
     StubRoutines::_throw_AbstractMethodError_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_ArithmeticException_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_NullPointerException_entry =
       ShouldNotCallThisStub();
 
     StubRoutines::_throw_NullPointerException_at_call_entry =

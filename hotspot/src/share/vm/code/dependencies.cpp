@@ -113,9 +113,9 @@ void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
   assert_common_1(no_finalizable_subclasses, ctxk);
 }
 
-void Dependencies::assert_call_site_target_value(ciKlass* ctxk, ciCallSite* call_site, ciMethodHandle* method_handle) {
-  check_ctxk(ctxk);
-  assert_common_3(call_site_target_value, ctxk, call_site, method_handle);
+void Dependencies::assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle) {
+  check_ctxk(call_site->klass());
+  assert_common_2(call_site_target_value, call_site, method_handle);
 }
 
 // Helper function.  If we are adding a new dep. under ctxk2,
@@ -135,7 +135,7 @@ bool Dependencies::maybe_merge_ctxk(GrowableArray<ciObject*>* deps,
   }
 }
 
-void Dependencies::assert_common_1(Dependencies::DepType dept, ciObject* x) {
+void Dependencies::assert_common_1(DepType dept, ciObject* x) {
   assert(dep_args(dept) == 1, "sanity");
   log_dependency(dept, x);
   GrowableArray<ciObject*>* deps = _deps[dept];
@@ -148,21 +148,37 @@ void Dependencies::assert_common_1(Dependencies::DepType dept, ciObject* x) {
   }
 }
 
-void Dependencies::assert_common_2(Dependencies::DepType dept,
-                                   ciKlass* ctxk, ciObject* x) {
-  assert(dep_context_arg(dept) == 0, "sanity");
+void Dependencies::assert_common_2(DepType dept,
+                                   ciObject* x0, ciObject* x1) {
   assert(dep_args(dept) == 2, "sanity");
-  log_dependency(dept, ctxk, x);
+  log_dependency(dept, x0, x1);
   GrowableArray<ciObject*>* deps = _deps[dept];
 
   // see if the same (or a similar) dep is already recorded
-  if (note_dep_seen(dept, x)) {
-    // look in this bucket for redundant assertions
-    const int stride = 2;
-    for (int i = deps->length(); (i -= stride) >= 0; ) {
-      ciObject* x1 = deps->at(i+1);
-      if (x == x1) {  // same subject; check the context
-        if (maybe_merge_ctxk(deps, i+0, ctxk)) {
+  bool has_ctxk = has_explicit_context_arg(dept);
+  if (has_ctxk) {
+    assert(dep_context_arg(dept) == 0, "sanity");
+    if (note_dep_seen(dept, x1)) {
+      // look in this bucket for redundant assertions
+      const int stride = 2;
+      for (int i = deps->length(); (i -= stride) >= 0; ) {
+        ciObject* y1 = deps->at(i+1);
+        if (x1 == y1) {  // same subject; check the context
+          if (maybe_merge_ctxk(deps, i+0, x0->as_klass())) {
+            return;
+          }
+        }
+      }
+    }
+  } else {
+    assert(dep_implicit_context_arg(dept) == 0, "sanity");
+    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+      // look in this bucket for redundant assertions
+      const int stride = 2;
+      for (int i = deps->length(); (i -= stride) >= 0; ) {
+        ciObject* y0 = deps->at(i+0);
+        ciObject* y1 = deps->at(i+1);
+        if (x0 == y0 && x1 == y1) {
           return;
         }
       }
@@ -170,11 +186,11 @@ void Dependencies::assert_common_2(Dependencies::DepType dept,
   }
 
   // append the assertion in the correct bucket:
-  deps->append(ctxk);
-  deps->append(x);
+  deps->append(x0);
+  deps->append(x1);
 }
 
-void Dependencies::assert_common_3(Dependencies::DepType dept,
+void Dependencies::assert_common_3(DepType dept,
                                    ciKlass* ctxk, ciObject* x, ciObject* x2) {
   assert(dep_context_arg(dept) == 0, "sanity");
   assert(dep_args(dept) == 3, "sanity");
@@ -361,7 +377,7 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   3, // unique_concrete_subtypes_2 ctxk, k1, k2
   3, // unique_concrete_methods_2 ctxk, m1, m2
   1, // no_finalizable_subclasses ctxk
-  3  // call_site_target_value ctxk, call_site, method_handle
+  2  // call_site_target_value call_site, method_handle
 };
 
 const char* Dependencies::dep_name(Dependencies::DepType dept) {
@@ -375,10 +391,7 @@ int Dependencies::dep_args(Dependencies::DepType dept) {
 }
 
 void Dependencies::check_valid_dependency_type(DepType dept) {
-  for (int deptv = (int) FIRST_TYPE; deptv < (int) TYPE_LIMIT; deptv++) {
-    if (dept == ((DepType) deptv))  return;
-  }
-  ShouldNotReachHere();
+  guarantee(FIRST_TYPE <= dept && dept < TYPE_LIMIT, err_msg("invalid dependency type: %d", (int) dept));
 }
 
 // for the sake of the compiler log, print out current dependencies:
@@ -586,8 +599,7 @@ bool Dependencies::DepStream::next() {
     code_byte -= ctxk_bit;
     DepType dept = (DepType)code_byte;
     _type = dept;
-    guarantee((dept - FIRST_TYPE) < (TYPE_LIMIT - FIRST_TYPE),
-              "bad dependency type tag");
+    Dependencies::check_valid_dependency_type(dept);
     int stride = _dep_args[dept];
     assert(stride == dep_args(dept), "sanity");
     int skipj = -1;
@@ -615,18 +627,35 @@ oop Dependencies::DepStream::argument(int i) {
 
 klassOop Dependencies::DepStream::context_type() {
   assert(must_be_in_vm(), "raw oops here");
-  int ctxkj = dep_context_arg(_type);  // -1 if no context arg
-  if (ctxkj < 0) {
-    return NULL;           // for example, evol_method
-  } else {
-    oop k = recorded_oop_at(_xi[ctxkj]);
-    if (k != NULL) {       // context type was not compressed away
-      assert(k->is_klass(), "type check");
-      return (klassOop) k;
-    } else {               // recompute "default" context type
-      return ctxk_encoded_as_null(_type, recorded_oop_at(_xi[ctxkj+1]));
+
+  // Most dependencies have an explicit context type argument.
+  {
+    int ctxkj = dep_context_arg(_type);  // -1 if no explicit context arg
+    if (ctxkj >= 0) {
+      oop k = argument(ctxkj);
+      if (k != NULL) {       // context type was not compressed away
+        assert(k->is_klass(), "type check");
+        return (klassOop) k;
+      }
+      // recompute "default" context type
+      return ctxk_encoded_as_null(_type, argument(ctxkj+1));
     }
   }
+
+  // Some dependencies are using the klass of the first object
+  // argument as implicit context type (e.g. call_site_target_value).
+  {
+    int ctxkj = dep_implicit_context_arg(_type);
+    if (ctxkj >= 0) {
+      oop k = argument(ctxkj)->klass();
+      assert(k->is_klass(), "type check");
+      return (klassOop) k;
+    }
+  }
+
+  // And some dependencies don't have a context type at all,
+  // e.g. evol_method.
+  return NULL;
 }
 
 /// Checking dependencies:
@@ -1409,21 +1438,20 @@ klassOop Dependencies::check_has_no_finalizable_subclasses(klassOop ctxk, KlassD
 }
 
 
-klassOop Dependencies::check_call_site_target_value(klassOop ctxk, oop call_site, oop method_handle, CallSiteDepChange* changes) {
+klassOop Dependencies::check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes) {
   assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "sanity");
   assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "sanity");
   if (changes == NULL) {
     // Validate all CallSites
     if (java_lang_invoke_CallSite::target(call_site) != method_handle)
-      return ctxk;  // assertion failed
+      return call_site->klass();  // assertion failed
   } else {
     // Validate the given CallSite
     if (call_site == changes->call_site() && java_lang_invoke_CallSite::target(call_site) != changes->method_handle()) {
       assert(method_handle != changes->method_handle(), "must be");
-      return ctxk;  // assertion failed
+      return call_site->klass();  // assertion failed
     }
   }
-  assert(java_lang_invoke_CallSite::target(call_site) == method_handle, "should still be valid");
   return NULL;  // assertion still valid
 }
 
@@ -1488,7 +1516,7 @@ klassOop Dependencies::DepStream::check_call_site_dependency(CallSiteDepChange* 
   klassOop witness = NULL;
   switch (type()) {
   case call_site_target_value:
-    witness = check_call_site_target_value(context_type(), argument(1), argument(2), changes);
+    witness = check_call_site_target_value(argument(0), argument(1), changes);
     break;
   default:
     witness = NULL;

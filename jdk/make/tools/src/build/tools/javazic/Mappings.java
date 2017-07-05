@@ -76,8 +76,8 @@ class Mappings {
             // If the GMT offset of this Zone will change in some
             // future time, this Zone is added to the exclude list.
             boolean isExcluded = false;
-            if (zone.size() > 1) {
-                ZoneRec zrec = zone.get(zone.size()-2);
+            for (int i = 0; i < zone.size(); i++) {
+                ZoneRec zrec = zone.get(i);
                 if ((zrec.getGmtOffset() != rawOffset)
                     && (zrec.getUntilTime(0) > Time.getCurrentTime())) {
                     if (excludeList == null) {
@@ -85,6 +85,7 @@ class Mappings {
                     }
                     excludeList.add(zone.getName());
                     isExcluded = true;
+                    break;
                 }
             }
 

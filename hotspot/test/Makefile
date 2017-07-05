@@ -44,6 +44,22 @@ ifeq ($(OSNAME), Linux)
     ARCH = i586
   endif
 endif
+ifeq ($(OSNAME), Darwin)
+  PLATFORM = bsd
+  SLASH_JAVA = /java
+  ARCH = $(shell uname -m)
+  ifeq ($(ARCH), i386)
+    ARCH = i586
+  endif
+endif
+ifeq ($(findstring BSD,$(OSNAME)), BSD)
+  PLATFORM = bsd
+  SLASH_JAVA = /java
+  ARCH = $(shell uname -m)
+  ifeq ($(ARCH), i386)
+    ARCH = i586
+  endif
+endif
 ifeq ($(OSNAME), Windows_NT)
   PLATFORM = windows
   SLASH_JAVA = J:

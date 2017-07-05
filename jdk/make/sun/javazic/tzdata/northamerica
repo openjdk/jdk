@@ -490,6 +490,10 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
 # own time. I asked about daylight saving; they said it wasn't used. I
 # did not inquire about practices in the past.
 
+# From Arthur David Olson (2011-08-17):
+# For lack of better information, assume that Metlakatla's
+# abandonment of use of daylight saving resulted from the 1983 vote.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 18
 			 -8:57:41 -	LMT	1900 Aug 20 12:00
@@ -515,7 +519,7 @@ Zone America/Metlakatla	 15:13:42 -	LMT	1867 Oct 18
 			 -8:00	US	P%sT	1946
 			 -8:00	-	PST	1969
 			 -8:00	US	P%sT	1983 Oct 30 2:00
-			 -8:00	US	MeST
+			 -8:00	-	MeST
 Zone America/Yakutat	 14:41:05 -	LMT	1867 Oct 18
 			 -9:18:55 -	LMT	1900 Aug 20 12:00
 			 -9:00	-	YST	1942
@@ -615,8 +619,8 @@ Zone Pacific/Honolulu	-10:31:26 -	LMT	1896 Jan 13 12:00 #Schmitt&Cox
 			-10:30	-	HST	1933 Apr 30 2:00 #Laws 1933
 			-10:30	1:00	HDT	1933 May 21 12:00 #Laws 1933+12
 			-10:30	-	HST	1942 Feb 09 2:00 #Schmitt&Cox+2
-			-10:30	1:00	HDT	1945 Sep 30 2:00 #Schmitt&Fox+2
-			-10:30	US	H%sT	1947 Jun  8 2:00 #Schmitt&Fox+2
+			-10:30	1:00	HDT	1945 Sep 30 2:00 #Schmitt&Cox+2
+			-10:30	-	HST	1947 Jun  8 2:00 #Schmitt&Cox+2
 			-10:00	-	HST
 
 # Now we turn to US areas that have diverged from the consensus since 1970.
@@ -1185,12 +1189,39 @@ Rule	StJohns	1960	1986	-	Oct	lastSun	2:00	0	S
 # From Paul Eggert (2000-10-02):
 # INMS (2000-09-12) says that, since 1988 at least, Newfoundland switches
 # at 00:01 local time.  For now, assume it started in 1987.
+
+# From Michael Pelley (2011-08-05):
+# The Government of Newfoundland and Labrador has pending changes to
+# modify the hour for daylight savings time to come into effect in
+# November 2011. This modification would change the time from 12:01AM to
+# 2:00AM on the dates of the switches of Daylight Savings Time to/from
+# Standard Time.
+#
+# As a matter of reference, in Canada provinces have the authority of
+# setting time zone information. The legislation has passed our
+# legislative body (The House of Assembly) and is awaiting the
+# proclamation to come into effect. You may find this information at:
+# <a href="http://www.assembly.nl.ca/legislation/sr/lists/Proclamation.htm">
+# http://www.assembly.nl.ca/legislation/sr/lists/Proclamation.htm
+# </a>
+# and
+# search within that web page for Standard Time (Amendment) Act. The Act
+# may be found at:
+# <a href="http://www.assembly.nl.ca/business/bills/Bill1106.htm">
+# http://www.assembly.nl.ca/business/bills/Bill1106.htm
+# </a>
+# ...
+# MICHAEL PELLEY | Manager of Enterprise Architecture - Solution Delivery
+# Office of the Chief Information Officer Executive Council Government of
+# Newfoundland & Labrador P.O. Box 8700, 40 Higgins Line, St. John's NL
+# A1B 4J6
+
 Rule	StJohns	1987	only	-	Apr	Sun>=1	0:01	1:00	D
 Rule	StJohns	1987	2006	-	Oct	lastSun	0:01	0	S
 Rule	StJohns	1988	only	-	Apr	Sun>=1	0:01	2:00	DD
 Rule	StJohns	1989	2006	-	Apr	Sun>=1	0:01	1:00	D
-Rule	StJohns	2007	max	-	Mar	Sun>=8	0:01	1:00	D
-Rule	StJohns	2007	max	-	Nov	Sun>=1	0:01	0	S
+Rule	StJohns	2007	2011	-	Mar	Sun>=8	0:01	1:00	D
+Rule	StJohns	2007	2010	-	Nov	Sun>=1	0:01	0	S
 #
 # St John's has an apostrophe, but Posix file names can't have apostrophes.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1200,7 +1231,8 @@ Zone America/St_Johns	-3:30:52 -	LMT	1884
 			-3:30:52 StJohns N%sT	1935 Mar 30
 			-3:30	StJohns	N%sT	1942 May 11
 			-3:30	Canada	N%sT	1946
-			-3:30	StJohns	N%sT
+			-3:30	StJohns	N%sT	2011 Nov
+			-3:30	Canada	N%sT
 
 # most of east Labrador
 
@@ -1214,7 +1246,8 @@ Zone America/Goose_Bay	-4:01:40 -	LMT	1884 # Happy Valley-Goose Bay
 			-3:30	StJohns	N%sT	1942 May 11
 			-3:30	Canada	N%sT	1946
 			-3:30	StJohns	N%sT	1966 Mar 15 2:00
-			-4:00	StJohns	A%sT
+			-4:00	StJohns	A%sT	2011 Nov
+			-4:00	Canada	A%sT
 
 
 # west Labrador, Nova Scotia, Prince Edward I
@@ -1946,20 +1979,69 @@ Zone America/Dawson_Creek -8:00:56 -	LMT	1884
 # daylight saving....
 # http://www.nnsl.com/frames/newspapers/2006-11/nov13_06none.html
 
-# From Chris Walton (2007-03-14):
-# Today I phoned the "hamlet office" to find out what Resolute was doing with
-# its clocks.
+# From Chris Walton (2011-03-21):
+# Back in 2007 I initiated the creation of a new "zone file" for Resolute
+# Bay. Resolute Bay is a small community located about 900km north of
+# the Arctic Circle. The zone file was required because Resolute Bay had
+# decided to use UTC-5 instead of UTC-6 for the winter of 2006-2007.
 #
-# The individual that answered the phone confirmed that the clocks did not
-# move at the end of daylight saving on October 29/2006.  He also told me that
-# the clocks did not move this past weekend (March 11/2007)....
-
-# From Chris Walton (2008-11-13):
-# ...the residents of Resolute believe that they are changing "time zones"
-# twice a year.  In winter months, local time is qualified with "Eastern
-# Time" which is really "Eastern Standard Time (UTC-5)".  In summer
-# months, local time is qualified with "Central Time" which is really
-# "Central Daylight Time (UTC-5)"...
+# According to new information which I received last week, Resolute Bay
+# went back to using UTC-6 in the winter of 2007-2008...
+#
+# On March 11/2007 most of Canada went onto daylight saving. On March
+# 14/2007 I phoned the Resolute Bay hamlet office to do a "time check." I
+# talked to somebody that was both knowledgeable and helpful. I was able
+# to confirm that Resolute Bay was still operating on UTC-5. It was
+# explained to me that Resolute Bay had been on the Eastern Time zone
+# (EST) in the winter, and was now back on the Central Time zone (CDT).
+# i.e. the time zone had changed twice in the last year but the clocks
+# had not moved. The residents had to know which time zone they were in
+# so they could follow the correct TV schedule...
+#
+# On Nov 02/2008 most of Canada went onto standard time. On Nov 03/2008 I
+# phoned the Resolute Bay hamlet office...[D]ue to the challenging nature
+# of the phone call, I decided to seek out an alternate source of
+# information. I found an e-mail address for somebody by the name of
+# Stephanie Adams whose job was listed as "Inns North Support Officer for
+# Arctic Co-operatives." I was under the impression that Stephanie lived
+# and worked in Resolute Bay...
+#
+# On March 14/2011 I phoned the hamlet office again. I was told that
+# Resolute Bay had been using Central Standard Time over the winter of
+# 2010-2011 and that the clocks had therefore been moved one hour ahead
+# on March 13/2011. The person I talked to was aware that Resolute Bay
+# had previously experimented with Eastern Standard Time but he could not
+# tell me when the practice had stopped.
+#
+# On March 17/2011 I searched the Web to find an e-mail address of
+# somebody that might be able to tell me exactly when Resolute Bay went
+# off Eastern Standard Time. I stumbled on the name "Aziz Kheraj." Aziz
+# used to be the mayor of Resolute Bay and he apparently owns half the
+# businesses including "South Camp Inn." This website has some info on
+# Aziz:
+# <a href="http://www.uphere.ca/node/493">
+# http://www.uphere.ca/node/493
+# </a>
+#
+# I sent Aziz an e-mail asking when Resolute Bay had stopped using
+# Eastern Standard Time.
+#
+# Aziz responded quickly with this: "hi, The time was not changed for the
+# 1 year only, the following year, the community went back to the old way
+# of "spring ahead-fall behind" currently we are zulu plus 5 hrs and in
+# the winter Zulu plus 6 hrs"
+#
+# This of course conflicted with everything I had ascertained in November 2008.
+#
+# I sent Aziz a copy of my 2008 e-mail exchange with Stephanie. Aziz
+# responded with this: "Hi, Stephanie lives in Winnipeg. I live here, You
+# may want to check with the weather office in Resolute Bay or do a
+# search on the weather through Env. Canada. web site"
+#
+# If I had realized the Stephanie did not live in Resolute Bay I would
+# never have contacted her.  I now believe that all the information I
+# obtained in November 2008 should be ignored...
+# I apologize for reporting incorrect information in 2008.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	NT_YK	1918	only	-	Apr	14	2:00	1:00	D
@@ -1987,14 +2069,12 @@ Zone America/Iqaluit	0	-	zzz	1942 Aug # Frobisher Bay est.
 			-6:00	Canada	C%sT	2000 Oct 29 2:00
 			-5:00	Canada	E%sT
 # aka Qausuittuq
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Resolute 2006	max	-	Nov	Sun>=1	2:00	0	ES
-Rule	Resolute 2007	max	-	Mar	Sun>=8	2:00	0	CD
 Zone America/Resolute	0	-	zzz	1947 Aug 31 # Resolute founded
 			-6:00	NT_YK	C%sT	2000 Oct 29 2:00
 			-5:00	-	EST	2001 Apr  1 3:00
 			-6:00	Canada	C%sT	2006 Oct 29 2:00
-			-5:00	Resolute	%sT
+			-5:00	-	EST	2007 Mar 11 3:00
+			-6:00	Canada	C%sT
 # aka Kangiqiniq
 Zone America/Rankin_Inlet 0	-	zzz	1957 # Rankin Inlet founded
 			-6:00	NT_YK	C%sT	2000 Oct 29 2:00

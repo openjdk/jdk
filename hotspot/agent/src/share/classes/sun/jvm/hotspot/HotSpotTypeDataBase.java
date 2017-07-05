@@ -87,6 +87,7 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     readVMStructs();
     readVMIntConstants();
     readVMLongConstants();
+    readExternalDefinitions();
   }
 
   public Type lookupType(String cTypeName, boolean throwException) {
@@ -98,9 +99,9 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
         fieldType = (BasicType)lookupType(cTypeName.substring(0, cTypeName.length() - 6), false);
     }
     if (fieldType == null) {
-      if (cTypeName.startsWith("GrowableArray<") && cTypeName.endsWith(">*")) {
+      if (cTypeName.startsWith("GrowableArray<") && cTypeName.endsWith(">")) {
         String ttype = cTypeName.substring("GrowableArray<".length(),
-                                            cTypeName.length() - 2);
+                                            cTypeName.length() - 1);
         Type templateType = lookupType(ttype, false);
         if (templateType == null && typeNameIsPointerType(ttype)) {
           templateType = recursiveCreateBasicPointerType(ttype);
@@ -108,7 +109,21 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
         if (templateType == null) {
           lookupOrFail(ttype);
         }
-        fieldType = recursiveCreateBasicPointerType(cTypeName);
+
+        BasicType basicTargetType = createBasicType(cTypeName, false, false, false);
+
+        // transfer fields from GenericGrowableArray to template instance
+        BasicType generic = lookupOrFail("GenericGrowableArray");
+        BasicType specific = lookupOrFail("GrowableArray<int>");
+        basicTargetType.setSize(specific.getSize());
+        Iterator fields = generic.getFields();
+        while (fields.hasNext()) {
+          Field f = (Field)fields.next();
+          basicTargetType.addField(internalCreateField(basicTargetType, f.getName(),
+                                                       f.getType(), f.isStatic(),
+                                                       f.getOffset(), null));
+        }
+        fieldType = basicTargetType;
       }
     }
     if (fieldType == null && typeNameIsPointerType(cTypeName)) {
@@ -206,6 +221,156 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
                                  "order to determine the size of Java primitive types. Can not continue.");
     }
     return type;
+  }
+
+  private void readExternalDefinitions() {
+    String file = System.getProperty("sun.jvm.hotspot.typedb");
+    if (file != null) {
+      System.out.println("Reading " + file);
+      BufferedReader in = null;
+      try {
+        StreamTokenizer t = new StreamTokenizer(in = new BufferedReader(new InputStreamReader(new FileInputStream(file))));
+        t.resetSyntax();
+        t.wordChars('\u0000','\uFFFF');
+        t.whitespaceChars(' ', ' ');
+        t.whitespaceChars('\n', '\n');
+        t.whitespaceChars('\r', '\r');
+        t.quoteChar('\"');
+        t.eolIsSignificant(true);
+        while (t.nextToken() != StreamTokenizer.TT_EOF) {
+          if (t.ttype == StreamTokenizer.TT_EOL) {
+            continue;
+          }
+
+          if (t.sval.equals("field")) {
+            t.nextToken();
+            BasicType containingType = (BasicType)lookupType(t.sval);
+            t.nextToken();
+            String fieldName = t.sval;
+
+            // The field's Type must already be in the database -- no exceptions
+            t.nextToken();
+            Type fieldType = lookupType(t.sval);
+            t.nextToken();
+            boolean isStatic = Boolean.valueOf(t.sval).booleanValue();
+            t.nextToken();
+            long offset = Long.parseLong(t.sval);
+            t.nextToken();
+            Address staticAddress = null;
+            if (isStatic) {
+              throw new InternalError("static fields not supported");
+            }
+
+            // check to see if the field already exists
+            Iterator i = containingType.getFields();
+            boolean defined = false;
+            while (i.hasNext()) {
+              Field f = (Field) i.next();
+              if (f.getName().equals(fieldName)) {
+                if (f.isStatic() != isStatic) {
+                  throw new RuntimeException("static/nonstatic mismatch: " + fieldName);
+                }
+                if (!isStatic) {
+                  if (f.getOffset() != offset) {
+                    throw new RuntimeException("bad redefinition of field offset: " + fieldName);
+                  }
+                } else {
+                  if (!f.getStaticFieldAddress().equals(staticAddress)) {
+                    throw new RuntimeException("bad redefinition of field location: " + fieldName);
+                  }
+                }
+                if (f.getType() != fieldType) {
+                  System.out.println(fieldType);
+                  System.out.println(f.getType());
+                  throw new RuntimeException("bad redefinition of field type: " + fieldName);
+                }
+                defined = true;
+                break;
+              }
+            }
+
+            if (!defined) {
+              // Create field by type
+              createField(containingType,
+                          fieldName, fieldType,
+                          isStatic,
+                          offset,
+                          staticAddress);
+            }
+          } else if (t.sval.equals("type")) {
+            t.nextToken();
+            String typeName = t.sval;
+            t.nextToken();
+            String superclassName = t.sval;
+            if (superclassName.equals("null")) {
+              superclassName = null;
+            }
+            t.nextToken();
+            boolean isOop = Boolean.valueOf(t.sval).booleanValue();
+            t.nextToken();
+            boolean isInteger = Boolean.valueOf(t.sval).booleanValue();
+            t.nextToken();
+            boolean isUnsigned = Boolean.valueOf(t.sval).booleanValue();
+            t.nextToken();
+            long size = Long.parseLong(t.sval);
+
+            BasicType type = null;
+            try {
+              type = (BasicType)lookupType(typeName);
+            } catch (RuntimeException e) {
+            }
+            if (type != null) {
+              if (type.isOopType() != isOop) {
+                throw new RuntimeException("oop mismatch in type definition: " + typeName);
+              }
+              if (type.isCIntegerType() != isInteger) {
+                throw new RuntimeException("integer type mismatch in type definition: " + typeName);
+              }
+              if (type.isCIntegerType() && (((CIntegerType)type).isUnsigned()) != isUnsigned) {
+                throw new RuntimeException("unsigned mismatch in type definition: " + typeName);
+              }
+              if (type.getSuperclass() == null) {
+                if (superclassName != null) {
+                  if (type.getSize() == -1) {
+                    type.setSuperclass(lookupType(superclassName));
+                  } else {
+                    throw new RuntimeException("unexpected superclass in type definition: " + typeName);
+                  }
+                }
+              } else {
+                if (superclassName == null) {
+                  throw new RuntimeException("missing superclass in type definition: " + typeName);
+                }
+                if (!type.getSuperclass().getName().equals(superclassName)) {
+                  throw new RuntimeException("incorrect superclass in type definition: " + typeName);
+                }
+              }
+              if (type.getSize() != size) {
+                if (type.getSize() == -1 || type.getSize() == 0) {
+                  type.setSize(size);
+                } else {
+                  throw new RuntimeException("size mismatch in type definition: " + typeName + ": " + type.getSize() + " != " + size);
+                }
+              }
+            }
+
+            if (lookupType(typeName, false) == null) {
+              // Create type
+              createType(typeName, superclassName, isOop, isInteger, isUnsigned, size);
+            }
+          } else {
+            throw new InternalError("\"" + t.sval + "\"");
+          }
+        }
+      } catch (IOException ioe) {
+        ioe.printStackTrace();
+      } finally {
+        try {
+          in.close();
+        } catch (Exception e) {
+        }
+      }
+    }
   }
 
   private void readVMStructs() {
@@ -504,20 +669,6 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
           BasicType basicTargetType = createBasicType(targetTypeName, false, true, true);
           basicTargetType.setSize(1);
           targetType = basicTargetType;
-        } else if (targetTypeName.startsWith("GrowableArray<")) {
-          BasicType basicTargetType = createBasicType(targetTypeName, false, false, false);
-
-          // transfer fields from GenericGrowableArray to template instance
-          BasicType generic = lookupOrFail("GenericGrowableArray");
-          basicTargetType.setSize(generic.getSize());
-          Iterator fields = generic.getFields();
-          while (fields.hasNext()) {
-              Field f = (Field)fields.next();
-              basicTargetType.addField(internalCreateField(basicTargetType, f.getName(),
-                                                           f.getType(), f.isStatic(),
-                                                           f.getOffset(), null));
-          }
-          targetType = basicTargetType;
         } else {
           if (DEBUG) {
             System.err.println("WARNING: missing target type \"" + targetTypeName + "\" for pointer type \"" + typeName + "\"");
@@ -572,7 +723,7 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
 
         // Classes are created with a size of UNINITIALIZED_SIZE.
         // Set size if necessary.
-        if (curType.getSize() == UNINITIALIZED_SIZE) {
+        if (curType.getSize() == UNINITIALIZED_SIZE || curType.getSize() == 0) {
             curType.setSize(size);
         } else {
             if (curType.getSize() != size) {

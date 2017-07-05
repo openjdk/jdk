@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ public class CIntField extends Field {
 
   public long getValue(Oop obj) {
     return obj.getHandle().getCIntegerAt(getOffset(), size, isUnsigned);
+  }
+  public long getValue(Address addr) {
+    return addr.getCIntegerAt(getOffset(), size, isUnsigned);
   }
   public void setValue(Oop obj, long value) throws MutationException {
     // Fix this: set* missing in Address

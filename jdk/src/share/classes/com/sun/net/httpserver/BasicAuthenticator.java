@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,13 @@ public abstract class BasicAuthenticator extends Authenticator {
 
     public Result authenticate (HttpExchange t)
     {
-        Headers rmap = (Headers) t.getRequestHeaders();
+        Headers rmap = t.getRequestHeaders();
         /*
          * look for auth token
          */
         String auth = rmap.getFirst ("Authorization");
         if (auth == null) {
-            Headers map = (Headers) t.getResponseHeaders();
+            Headers map = t.getResponseHeaders();
             map.set ("WWW-Authenticate", "Basic realm=" + "\""+realm+"\"");
             return new Authenticator.Retry (401);
         }
@@ -83,7 +83,7 @@ public abstract class BasicAuthenticator extends Authenticator {
         } else {
             /* reject the request again with 401 */
 
-            Headers map = (Headers) t.getResponseHeaders();
+            Headers map = t.getResponseHeaders();
             map.set ("WWW-Authenticate", "Basic realm=" + "\""+realm+"\"");
             return new Authenticator.Failure(401);
         }

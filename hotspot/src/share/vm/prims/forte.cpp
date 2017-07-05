@@ -522,25 +522,6 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
-
-// This is if'd out because we no longer use thread suspension.
-// However if someone wanted to backport this to a 5.0 jvm then this
-// code would be important.
-#if 0
-  if (SafepointSynchronize::is_synchronizing()) {
-    // The safepoint mechanism is trying to synchronize all the threads.
-    // Since this can involve thread suspension, it is not safe for us
-    // to be here. We can reduce the deadlock risk window by quickly
-    // returning to the SIGPROF handler. However, it is still possible
-    // for VMThread to catch us here or in the SIGPROF handler. If we
-    // are suspended while holding a resource and another thread blocks
-    // on that resource in the SIGPROF handler, then we will have a
-    // three-thread deadlock (VMThread, this thread, the other thread).
-    trace->num_frames = ticks_safepoint; // -10
-    return;
-  }
-#endif
-
   JavaThread* thread;
 
   if (trace->env_id == NULL ||
@@ -640,6 +621,11 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 // Method to let libcollector know about a dynamically loaded function.
 // Because it is weakly bound, the calls become NOP's when the library
 // isn't present.
+#ifdef __APPLE__
+// XXXDARWIN: Link errors occur even when __attribute__((weak_import))
+// is added
+#define collector_func_load(x0,x1,x2,x3,x4,x5,x6) (0)
+#else
 void    collector_func_load(char* name,
                             void* null_argument_1,
                             void* null_argument_2,
@@ -650,6 +636,7 @@ void    collector_func_load(char* name,
 #pragma weak collector_func_load
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
         ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),0 : 0 )
+#endif // __APPLE__
 #endif // !_WINDOWS
 
 } // end extern "C"

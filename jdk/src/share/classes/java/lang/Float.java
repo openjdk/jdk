@@ -26,7 +26,6 @@
 package java.lang;
 
 import sun.misc.FloatingDecimal;
-import sun.misc.FpUtils;
 import sun.misc.FloatConsts;
 import sun.misc.DoubleConsts;
 
@@ -279,10 +278,10 @@ public final class Float extends Number implements Comparable<Float> {
             // Adjust exponent to create subnormal double, then
             // replace subnormal double exponent with subnormal float
             // exponent
-            String s = Double.toHexString(FpUtils.scalb((double)f,
-                                                        /* -1022+126 */
-                                                        DoubleConsts.MIN_EXPONENT-
-                                                        FloatConsts.MIN_EXPONENT));
+            String s = Double.toHexString(Math.scalb((double)f,
+                                                     /* -1022+126 */
+                                                     DoubleConsts.MIN_EXPONENT-
+                                                     FloatConsts.MIN_EXPONENT));
             return s.replaceFirst("p-1022$", "p-126");
         }
         else // double string will be the same as float string
@@ -460,7 +459,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  {@code true} if the argument is NaN;
      *          {@code false} otherwise.
      */
-    static public boolean isNaN(float v) {
+    public static boolean isNaN(float v) {
         return (v != v);
     }
 
@@ -472,8 +471,23 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  {@code true} if the argument is positive infinity or
      *          negative infinity; {@code false} otherwise.
      */
-    static public boolean isInfinite(float v) {
+    public static boolean isInfinite(float v) {
         return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+    }
+
+
+    /**
+     * Returns {@code true} if the argument is a finite floating-point
+     * value; returns {@code false} otherwise (for NaN and infinity
+     * arguments).
+     *
+     * @param f the {@code float} value to be tested
+     * @return {@code true} if the argument is a finite
+     * floating-point value, {@code false} otherwise.
+     * @since 1.8
+     */
+     public static boolean isFinite(float f) {
+        return Math.abs(f) <= FloatConsts.MAX_VALUE;
     }
 
     /**

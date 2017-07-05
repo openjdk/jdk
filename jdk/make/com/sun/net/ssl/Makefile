@@ -26,6 +26,9 @@
 BUILDDIR = ../../../..
 PACKAGE = com.sun.net.ssl
 PRODUCT = sun
+JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
 include $(BUILDDIR)/common/Defs.gmk
 
 #

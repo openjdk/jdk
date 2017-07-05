@@ -25,14 +25,7 @@
 
 package java.net;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.ref.*;
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandlerFactory;
-import java.util.Enumeration;
 import java.util.*;
 import java.util.jar.Manifest;
 import java.util.jar.JarFile;
@@ -352,8 +345,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     {
         try {
             return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Class>() {
-                    public Class run() throws ClassNotFoundException {
+                new PrivilegedExceptionAction<Class<?>>() {
+                    public Class<?> run() throws ClassNotFoundException {
                         String path = name.replace('.', '/').concat(".class");
                         Resource res = ucp.getResource(path, false);
                         if (res != null) {
@@ -406,7 +399,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * Resource. The resulting Class must be resolved before it can be
      * used.
      */
-    private Class defineClass(String name, Resource res) throws IOException {
+    private Class<?> defineClass(String name, Resource res) throws IOException {
         long t0 = System.nanoTime();
         int i = name.lastIndexOf('.');
         URL url = res.getCodeSourceURL();
@@ -774,7 +767,7 @@ final class FactoryURLClassLoader extends URLClassLoader {
         super(urls, acc);
     }
 
-    public final Class loadClass(String name, boolean resolve)
+    public final Class<?> loadClass(String name, boolean resolve)
         throws ClassNotFoundException
     {
         // First check if we have permission to access the package. This

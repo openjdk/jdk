@@ -182,10 +182,6 @@ void MethodHandleChain::print(oopDesc* m) {
   HandleMark hm;
   ResourceMark rm;
   Handle mh(m);
-  print(mh);
-}
-
-void MethodHandleChain::print(Handle mh) {
   EXCEPTION_MARK;
   MethodHandleChain mhc(mh, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -222,8 +218,22 @@ void MethodHandleChain::print_impl(TRAPS) {
       if (o != NULL) {
         if (o->is_instance()) {
           tty->print(" instance %s", o->klass()->klass_part()->internal_name());
+          if (java_lang_invoke_CountingMethodHandle::is_instance(o)) {
+            tty->print(" vmcount: %d", java_lang_invoke_CountingMethodHandle::vmcount(o));
+          }
         } else {
           o->print();
+        }
+      }
+      oop vmt = chain.vmtarget_oop();
+      if (vmt != NULL) {
+        if (vmt->is_method()) {
+          tty->print(" ");
+          methodOop(vmt)->print_short_name(tty);
+        } else if (java_lang_invoke_MethodHandle::is_instance(vmt)) {
+          tty->print(" method handle " INTPTR_FORMAT, vmt);
+        } else {
+          ShouldNotReachHere();
         }
       }
     } else if (chain.is_adapter()) {
@@ -232,6 +242,9 @@ void MethodHandleChain::print_impl(TRAPS) {
                  adapter_op_to_string(chain.adapter_conversion_op()));
       switch (chain.adapter_conversion_op()) {
         case java_lang_invoke_AdapterMethodHandle::OP_RETYPE_ONLY:
+          if (java_lang_invoke_CountingMethodHandle::is_instance(chain.method_handle_oop())) {
+            tty->print(" vmcount: %d", java_lang_invoke_CountingMethodHandle::vmcount(chain.method_handle_oop()));
+          }
         case java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW:
         case java_lang_invoke_AdapterMethodHandle::OP_CHECK_CAST:
         case java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_PRIM:
@@ -907,7 +920,10 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, Symbol* name, Symbol* si
     _non_bcp_klasses(THREAD, 5),
     _cur_stack(0),
     _max_stack(0),
-    _rtype(T_ILLEGAL)
+    _rtype(T_ILLEGAL),
+    _selectAlternative_bci(-1),
+    _taken_count(0),
+    _not_taken_count(0)
 {
 
   // Element zero is always the null constant.
@@ -1115,8 +1131,47 @@ void MethodHandleCompiler::emit_bc(Bytecodes::Code op, int index, int args_size)
     _bytecode.push(0);
     break;
 
+  case Bytecodes::_ifeq:
+    assert((unsigned short) index == index, "index does not fit in 16-bit");
+    _bytecode.push(op);
+    _bytecode.push(index >> 8);
+    _bytecode.push(index);
+    break;
+
   default:
     ShouldNotReachHere();
+  }
+}
+
+void MethodHandleCompiler::update_branch_dest(int src, int dst) {
+  switch (_bytecode.at(src)) {
+    case Bytecodes::_ifeq:
+      dst -= src; // compute the offset
+      assert((unsigned short) dst == dst, "index does not fit in 16-bit");
+      _bytecode.at_put(src + 1, dst >> 8);
+      _bytecode.at_put(src + 2, dst);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void MethodHandleCompiler::emit_load(ArgToken arg) {
+  TokenType tt = arg.token_type();
+  BasicType bt = arg.basic_type();
+
+  switch (tt) {
+    case tt_parameter:
+    case tt_temporary:
+      emit_load(bt, arg.index());
+      break;
+    case tt_constant:
+      emit_load_constant(arg);
+      break;
+    case tt_illegal:
+    case tt_void:
+    default:
+      ShouldNotReachHere();
   }
 }
 
@@ -1318,6 +1373,29 @@ MethodHandleCompiler::make_conversion(BasicType type, klassOop tk, Bytecodes::Co
 jvalue MethodHandleCompiler::zero_jvalue = { 0 };
 jvalue MethodHandleCompiler::one_jvalue  = { 1 };
 
+// Fetch any values from CountingMethodHandles and capture them for profiles
+bool MethodHandleCompiler::fetch_counts(ArgToken arg1, ArgToken arg2) {
+  int count1 = -1, count2 = -1;
+  if (arg1.token_type() == tt_constant && arg1.basic_type() == T_OBJECT &&
+      java_lang_invoke_CountingMethodHandle::is_instance(arg1.object()())) {
+    count1 = java_lang_invoke_CountingMethodHandle::vmcount(arg1.object()());
+  }
+  if (arg2.token_type() == tt_constant && arg2.basic_type() == T_OBJECT &&
+      java_lang_invoke_CountingMethodHandle::is_instance(arg2.object()())) {
+    count2 = java_lang_invoke_CountingMethodHandle::vmcount(arg2.object()());
+  }
+  int total = count1 + count2;
+  if (count1 != -1 && count2 != -1 && total != 0) {
+    // Normalize the collect counts to the invoke_count
+    tty->print("counts %d %d scaled by %d = ", count2, count1, _invoke_count);
+    if (count1 != 0) _not_taken_count = (int)(_invoke_count * count1 / (double)total);
+    if (count2 != 0) _taken_count = (int)(_invoke_count * count2 / (double)total);
+    tty->print_cr("%d %d", _taken_count, _not_taken_count);
+    return true;
+  }
+  return false;
+}
+
 // Emit bytecodes for the given invoke instruction.
 MethodHandleWalker::ArgToken
 MethodHandleCompiler::make_invoke(methodHandle m, vmIntrinsics::ID iid,
@@ -1367,6 +1445,29 @@ MethodHandleCompiler::make_invoke(methodHandle m, vmIntrinsics::ID iid,
     }
   }
 
+  if (m->intrinsic_id() == vmIntrinsics::_selectAlternative &&
+      fetch_counts(argv[1], argv[2])) {
+    assert(argc == 3, "three arguments");
+    assert(tailcall, "only");
+
+    // do inline bytecodes so we can drop profile data into it,
+    //   0:   iload_0
+    emit_load(argv[0]);
+    //   1:   ifeq    8
+    _selectAlternative_bci = _bytecode.length();
+    emit_bc(Bytecodes::_ifeq, 0); // emit placeholder offset
+    //   4:   aload_1
+    emit_load(argv[1]);
+    //   5:   areturn;
+    emit_bc(Bytecodes::_areturn);
+    //   8:   aload_2
+    update_branch_dest(_selectAlternative_bci, cur_bci());
+    emit_load(argv[2]);
+    //   9:   areturn
+    emit_bc(Bytecodes::_areturn);
+    return ArgToken();  // Dummy return value.
+  }
+
   check_non_bcp_klass(klass, CHECK_(zero));
   if (m->is_method_handle_invoke()) {
     check_non_bcp_klasses(m->method_handle_type(), CHECK_(zero));
@@ -1376,10 +1477,6 @@ MethodHandleCompiler::make_invoke(methodHandle m, vmIntrinsics::ID iid,
   ArgumentCount asc(signature);
   assert(argc == asc.size() + ((op == Bytecodes::_invokestatic || op == Bytecodes::_invokedynamic) ? 0 : 1),
          "argc mismatch");
-
-  // Inline the method.
-  InvocationCounter* ic = m->invocation_counter();
-  ic->set_carry_flag();
 
   for (int i = 0; i < argc; i++) {
     ArgToken arg = argv[i];
@@ -1686,7 +1783,7 @@ constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
 }
 
 
-methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
+methodHandle MethodHandleCompiler::get_method_oop(TRAPS) {
   methodHandle empty;
   // Create a method that holds the generated bytecode.  invokedynamic
   // has no receiver, normal MH calls do.
@@ -1765,6 +1862,7 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
     assert(m->method_data() == NULL, "there should not be an MDO yet");
     m->set_method_data(mdo);
 
+    bool found_selectAlternative = false;
     // Iterate over all profile data and set the count of the counter
     // data entries to the original call site counter.
     for (ProfileData* profile_data = mdo->first_data();
@@ -1774,7 +1872,15 @@ methodHandle MethodHandleCompiler::get_method_oop(TRAPS) const {
         CounterData* counter_data = profile_data->as_CounterData();
         counter_data->set_count(_invoke_count);
       }
+      if (profile_data->is_BranchData() &&
+          profile_data->bci() == _selectAlternative_bci) {
+        BranchData* bd = profile_data->as_BranchData();
+        bd->set_taken(_taken_count);
+        bd->set_not_taken(_not_taken_count);
+        found_selectAlternative = true;
+      }
     }
+    assert(_selectAlternative_bci == -1 || found_selectAlternative, "must have found profile entry");
   }
 
 #ifndef PRODUCT

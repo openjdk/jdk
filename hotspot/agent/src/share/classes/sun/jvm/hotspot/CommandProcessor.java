@@ -40,6 +40,8 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
+import sun.jvm.hotspot.opto.*;
+import sun.jvm.hotspot.ci.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.soql.*;
@@ -48,6 +50,8 @@ import sun.jvm.hotspot.ui.tree.*;
 import sun.jvm.hotspot.tools.*;
 import sun.jvm.hotspot.tools.ObjectHistogram;
 import sun.jvm.hotspot.tools.StackTrace;
+import sun.jvm.hotspot.tools.jcore.ClassDump;
+import sun.jvm.hotspot.tools.jcore.ClassFilter;
 
 public class CommandProcessor {
     public abstract static class DebuggerInterface {
@@ -57,6 +61,27 @@ public class CommandProcessor {
         public abstract void attach(String java, String core);
         public abstract void detach();
         public abstract void reattach();
+    }
+
+    public static class BootFilter implements ClassFilter {
+        public boolean canInclude(InstanceKlass kls) {
+            return kls.getClassLoader() == null;
+        }
+    }
+
+    public static class NonBootFilter implements ClassFilter {
+        private HashMap emitted = new HashMap();
+        public boolean canInclude(InstanceKlass kls) {
+            if (kls.getClassLoader() == null) return false;
+            if (emitted.get(kls.getName()) != null) {
+                // Since multiple class loaders are being shoved
+                // together duplicate classes are a possibilty.  For
+                // now just ignore them.
+                return false;
+            }
+            emitted.put(kls.getName(), kls);
+            return true;
+        }
     }
 
     static class Tokens {
@@ -258,9 +283,14 @@ public class CommandProcessor {
     }
 
     void dumpFields(Type type) {
+        dumpFields(type, true);
+    }
+
+    void dumpFields(Type type, boolean allowStatic) {
         Iterator i = type.getFields();
         while (i.hasNext()) {
             Field f = (Field) i.next();
+            if (!allowStatic && f.isStatic()) continue;
             out.print("field ");
             quote(type.getName());
             out.print(" ");
@@ -458,13 +488,18 @@ public class CommandProcessor {
                     });
             }
         },
-        new Command("flags", "flags [ flag ]", false) {
+        new Command("flags", "flags [ flag | -nd ]", false) {
             public void doit(Tokens t) {
                 int tokens = t.countTokens();
                 if (tokens != 0 && tokens != 1) {
                     usage();
                 } else {
                     String name = tokens > 0 ? t.nextToken() : null;
+                    boolean nonDefault = false;
+                    if (name != null && name.equals("-nd")) {
+                        name = null;
+                        nonDefault = true;
+                    }
 
                     VM.Flag[] flags = VM.getVM().getCommandLineFlags();
                     if (flags == null) {
@@ -474,7 +509,12 @@ public class CommandProcessor {
                         for (int f = 0; f < flags.length; f++) {
                             VM.Flag flag = flags[f];
                             if (name == null || flag.getName().equals(name)) {
-                                out.println(flag.getName() + " = " + flag.getValue());
+
+                                if (nonDefault && flag.getOrigin() == 0) {
+                                    // only print flags which aren't their defaults
+                                    continue;
+                                }
+                                out.println(flag.getName() + " = " + flag.getValue() + " " + flag.getOrigin());
                                 printed = true;
                             }
                         }
@@ -586,6 +626,158 @@ public class CommandProcessor {
                 }
             }
         },
+        new Command("printmdo", "printmdo [ -a | expression ]", false) {
+            // Print every MDO in the heap or the one referenced by expression.
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    String s = t.nextToken();
+                    if (s.equals("-a")) {
+                        HeapVisitor iterator = new DefaultHeapVisitor() {
+                                public boolean doObj(Oop obj) {
+                                    if (obj instanceof MethodData) {
+                                        Method m = ((MethodData)obj).getMethod();
+                                        out.println("MethodData " + obj.getHandle() + " for " +
+                                                    "method " + m.getMethodHolder().getName().asString() + "." +
+                                                    m.getName().asString() +
+                                                    m.getSignature().asString() + "@" + m.getHandle());
+                                        ((MethodData)obj).printDataOn(out);
+                                    }
+                                    return false;
+                                }
+                            };
+                        VM.getVM().getObjectHeap().iteratePerm(iterator);
+                    } else {
+                        Address a = VM.getVM().getDebugger().parseAddress(s);
+                        OopHandle handle = a.addOffsetToAsOopHandle(0);
+                        MethodData mdo = (MethodData)VM.getVM().getObjectHeap().newOop(handle);
+                        mdo.printDataOn(out);
+                    }
+                }
+            }
+        },
+        new Command("dumpideal", "dumpideal { -a | id }", false) {
+            // Do a full dump of the nodes reachabile from root in each compiler thread.
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    String name = t.nextToken();
+                    boolean all = name.equals("-a");
+                    Threads threads = VM.getVM().getThreads();
+                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        thread.printThreadIDOn(new PrintStream(bos));
+                        if (all || bos.toString().equals(name)) {
+                          if (thread instanceof CompilerThread) {
+                            CompilerThread ct = (CompilerThread)thread;
+                            out.println(ct);
+                            ciEnv env = ct.env();
+                            if (env != null) {
+                              Compile c = env.compilerData();
+                              c.root().dump(9999, out);
+                            } else {
+                              out.println("  not compiling");
+                            }
+                          }
+                        }
+                    }
+                }
+            }
+        },
+        new Command("dumpcfg", "dumpcfg { -a | id }", false) {
+            // Dump the PhaseCFG for every compiler thread that has one live.
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    String name = t.nextToken();
+                    boolean all = name.equals("-a");
+                    Threads threads = VM.getVM().getThreads();
+                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        thread.printThreadIDOn(new PrintStream(bos));
+                        if (all || bos.toString().equals(name)) {
+                          if (thread instanceof CompilerThread) {
+                            CompilerThread ct = (CompilerThread)thread;
+                            out.println(ct);
+                            ciEnv env = ct.env();
+                            if (env != null) {
+                              Compile c = env.compilerData();
+                              c.cfg().dump(out);
+                            }
+                          }
+                        }
+                    }
+                }
+            }
+        },
+        new Command("dumpilt", "dumpilt { -a | id }", false) {
+            // dumps the InlineTree of a C2 compile
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    String name = t.nextToken();
+                    boolean all = name.equals("-a");
+                    Threads threads = VM.getVM().getThreads();
+                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        thread.printThreadIDOn(new PrintStream(bos));
+                        if (all || bos.toString().equals(name)) {
+                            if (thread instanceof CompilerThread) {
+                                CompilerThread ct = (CompilerThread)thread;
+                                ciEnv env = ct.env();
+                                if (env != null) {
+                                    Compile c = env.compilerData();
+                                    InlineTree ilt = c.ilt();
+                                    if (ilt != null) {
+                                        ilt.print(out);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        new Command("vmstructsdump", "vmstructsdump", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 0) {
+                    usage();
+                    return;
+                }
+
+                // Dump a copy of the type database in a form that can
+                // be read back.
+                Iterator i = agent.getTypeDataBase().getTypes();
+                // Make sure the types are emitted in an order than can be read back in
+                HashSet emitted = new HashSet();
+                Stack pending = new Stack();
+                while (i.hasNext()) {
+                    Type n = (Type)i.next();
+                    if (emitted.contains(n.getName())) {
+                        continue;
+                    }
+
+                    while (n != null && !emitted.contains(n.getName())) {
+                        pending.push(n);
+                        n = n.getSuperclass();
+                    }
+                    while (!pending.empty()) {
+                        n = (Type)pending.pop();
+                        dumpType(n);
+                        emitted.add(n.getName());
+                    }
+                }
+                i = agent.getTypeDataBase().getTypes();
+                while (i.hasNext()) {
+                    dumpFields((Type)i.next(), false);
+                }
+            }
+        },
+
         new Command("inspect", "inspect expression", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
@@ -757,6 +949,50 @@ public class CommandProcessor {
                         }
                         base = base.addOffsetTo(step);
                     }
+                }
+            }
+        },
+        new Command("intConstant", "intConstant [ name [ value ] ]", true) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1 && t.countTokens() != 0 && t.countTokens() != 2) {
+                    usage();
+                    return;
+                }
+                HotSpotTypeDataBase db = (HotSpotTypeDataBase)agent.getTypeDataBase();
+                if (t.countTokens() == 1) {
+                    out.println("intConstant " + name + " " + db.lookupIntConstant(name));
+                } else if (t.countTokens() == 0) {
+                    Iterator i = db.getIntConstants();
+                    while (i.hasNext()) {
+                        String name = (String)i.next();
+                        out.println("intConstant " + name + " " + db.lookupIntConstant(name));
+                    }
+                } else if (t.countTokens() == 2) {
+                    String name = t.nextToken();
+                    Integer value = Integer.valueOf(t.nextToken());
+                    db.addIntConstant(name, value);
+                }
+            }
+        },
+        new Command("longConstant", "longConstant [ name [ value ] ]", true) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1 && t.countTokens() != 0 && t.countTokens() != 2) {
+                    usage();
+                    return;
+                }
+                HotSpotTypeDataBase db = (HotSpotTypeDataBase)agent.getTypeDataBase();
+                if (t.countTokens() == 1) {
+                    out.println("longConstant " + name + " " + db.lookupLongConstant(name));
+                } else if (t.countTokens() == 0) {
+                    Iterator i = db.getLongConstants();
+                    while (i.hasNext()) {
+                        String name = (String)i.next();
+                        out.println("longConstant " + name + " " + db.lookupLongConstant(name));
+                    }
+                } else if (t.countTokens() == 2) {
+                    String name = t.nextToken();
+                    Long value = Long.valueOf(t.nextToken());
+                    db.addLongConstant(name, value);
                 }
             }
         },
@@ -1311,13 +1547,13 @@ public class CommandProcessor {
                 return;
             }
 
-            executeCommand(ln);
+            executeCommand(ln, prompt);
         }
     }
 
     static Pattern historyPattern = Pattern.compile("((!\\*)|(!\\$)|(!!-?)|(!-?[0-9][0-9]*)|(![a-zA-Z][^ ]*))");
 
-    public void executeCommand(String ln) {
+    public void executeCommand(String ln, boolean putInHistory) {
         if (ln.indexOf('!') != -1) {
             int size = history.size();
             if (size == 0) {
@@ -1406,7 +1642,7 @@ public class CommandProcessor {
         Tokens t = new Tokens(ln);
         if (t.hasMoreTokens()) {
             boolean error = false;
-            history.add(ln);
+            if (putInHistory) history.add(ln);
             int len = t.countTokens();
             if (len > 2) {
                 String r = t.at(len - 2);
