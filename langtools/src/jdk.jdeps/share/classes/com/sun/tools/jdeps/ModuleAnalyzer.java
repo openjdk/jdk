@@ -59,14 +59,9 @@ public class ModuleAnalyzer {
 
     private final JdepsConfiguration configuration;
     private final PrintWriter log;
-
     private final DependencyFinder dependencyFinder;
     private final Map<Module, ModuleDeps> modules;
 
-    public ModuleAnalyzer(JdepsConfiguration config,
-                          PrintWriter log) {
-        this(config, log, Collections.emptySet());
-    }
     public ModuleAnalyzer(JdepsConfiguration config,
                           PrintWriter log,
                           Set<String> names) {
@@ -150,7 +145,7 @@ public class ModuleAnalyzer {
         private ModuleDescriptor descriptor(Set<Module> requiresTransitive,
                                             Set<Module> requires) {
 
-            ModuleDescriptor.Builder builder = ModuleDescriptor.module(root.name());
+            ModuleDescriptor.Builder builder = ModuleDescriptor.newModule(root.name());
 
             if (!root.name().equals(JAVA_BASE))
                 builder.requires(Set.of(MANDATED), JAVA_BASE);
@@ -331,88 +326,6 @@ public class ModuleAnalyzer {
             return false;
         }
         return true;
-    }
-
-    /**
-     * Generate dotfile from module descriptor
-     *
-     * @param dir output directory
-     */
-    public boolean genDotFiles(Path dir) throws IOException {
-        Files.createDirectories(dir);
-        for (Module m : modules.keySet()) {
-            genDotFile(dir, m.name());
-        }
-        return true;
-    }
-
-
-    private void genDotFile(Path dir, String name) throws IOException {
-        try (OutputStream os = Files.newOutputStream(dir.resolve(name + ".dot"));
-             PrintWriter out = new PrintWriter(os)) {
-            Set<Module> modules = configuration.resolve(Set.of(name))
-                .collect(Collectors.toSet());
-
-            // transitive reduction
-            Graph<String> graph = gengraph(modules);
-
-            out.format("digraph \"%s\" {%n", name);
-            DotGraph.printAttributes(out);
-            DotGraph.printNodes(out, graph);
-
-            modules.stream()
-                .map(Module::descriptor)
-                .sorted(Comparator.comparing(ModuleDescriptor::name))
-                .forEach(md -> {
-                    String mn = md.name();
-                    Set<String> requiresTransitive = md.requires().stream()
-                        .filter(d -> d.modifiers().contains(TRANSITIVE))
-                        .map(d -> d.name())
-                        .collect(toSet());
-
-                    DotGraph.printEdges(out, graph, mn, requiresTransitive);
-                });
-
-            out.println("}");
-        }
-    }
-
-    /**
-     * Returns a Graph of the given Configuration after transitive reduction.
-     *
-     * Transitive reduction of requires transitive edge and requires edge have
-     * to be applied separately to prevent the requires transitive edges
-     * (e.g. U -> V) from being reduced by a path (U -> X -> Y -> V)
-     * in which  V would not be re-exported from U.
-     */
-    private Graph<String> gengraph(Set<Module> modules) {
-        // build a Graph containing only requires transitive edges
-        // with transitive reduction.
-        Graph.Builder<String> rpgbuilder = new Graph.Builder<>();
-        for (Module module : modules) {
-            ModuleDescriptor md = module.descriptor();
-            String mn = md.name();
-            md.requires().stream()
-                    .filter(d -> d.modifiers().contains(TRANSITIVE))
-                    .map(d -> d.name())
-                    .forEach(d -> rpgbuilder.addEdge(mn, d));
-        }
-
-        Graph<String> rpg = rpgbuilder.build().reduce();
-
-        // build the readability graph
-        Graph.Builder<String> builder = new Graph.Builder<>();
-        for (Module module : modules) {
-            ModuleDescriptor md = module.descriptor();
-            String mn = md.name();
-            builder.addNode(mn);
-            configuration.reads(module)
-                    .map(Module::name)
-                    .forEach(d -> builder.addEdge(mn, d));
-        }
-
-        // transitive reduction of requires edges
-        return builder.build().reduce(rpg);
     }
 
     // ---- for testing purpose

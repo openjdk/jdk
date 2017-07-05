@@ -28,8 +28,8 @@
  * @library / /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.ReadConfigurationTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   compiler.jvmci.compilerToVM.ReadConfigurationTest
@@ -38,6 +38,7 @@
 package compiler.jvmci.compilerToVM;
 
 import jdk.test.lib.Asserts;
+import jdk.vm.ci.hotspot.VMField;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
@@ -49,9 +50,18 @@ public class ReadConfigurationTest {
     }
 
     private void runTest() {
-        TestHotSpotVMConfig config = new TestHotSpotVMConfig(HotSpotJVMCIRuntime.runtime().getConfigStore());
+        HotSpotVMConfigStore store = HotSpotJVMCIRuntime.runtime().getConfigStore();
+        TestHotSpotVMConfig config = new TestHotSpotVMConfig(store);
         Asserts.assertNE(config.codeCacheHighBound, 0L, "Got null address");
         Asserts.assertNE(config.stubRoutineJintArrayCopy, 0L, "Got null address");
+
+        for (VMField field : store.getFields().values()) {
+                Object value = field.value;
+                if (value != null) {
+                    Asserts.assertTrue(value instanceof Long || value instanceof Boolean,
+                        "Got unexpected value type for VM field " + field.name + ": " + value.getClass());
+                }
+        }
 
         for (VMIntrinsicMethod m : config.getStore().getIntrinsics()) {
             Asserts.assertNotNull(m);
