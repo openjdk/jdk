@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public abstract class MidiFileReader {
      * @throws InvalidMidiDataException if the stream does not point to valid
      *         MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code stream} is {@code null}
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
@@ -76,6 +77,7 @@ public abstract class MidiFileReader {
      * @throws InvalidMidiDataException if the URL does not point to valid MIDI
      *         file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code url} is {@code null}
      */
     public abstract MidiFileFormat getMidiFileFormat(URL url)
             throws InvalidMidiDataException, IOException;
@@ -90,6 +92,7 @@ public abstract class MidiFileReader {
      * @throws InvalidMidiDataException if the {@code File} does not point to
      *         valid MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code file} is {@code null}
      */
     public abstract MidiFileFormat getMidiFileFormat(File file)
             throws InvalidMidiDataException, IOException;
@@ -110,6 +113,7 @@ public abstract class MidiFileReader {
      * @throws InvalidMidiDataException if the stream does not point to valid
      *         MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code stream} is {@code null}
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
@@ -126,6 +130,7 @@ public abstract class MidiFileReader {
      * @throws InvalidMidiDataException if the URL does not point to valid MIDI
      *         file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code url} is {@code null}
      */
     public abstract Sequence getSequence(URL url)
             throws InvalidMidiDataException, IOException;
@@ -141,6 +146,7 @@ public abstract class MidiFileReader {
      * @throws InvalidMidiDataException if the {@code File} does not point to
      *         valid MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code file} is {@code null}
      */
     public abstract Sequence getSequence(File file)
             throws InvalidMidiDataException, IOException;

@@ -1265,14 +1265,15 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
 
         private void ensureSpace(final int n) {
-            if (end + n > curves.length) {
+            // use substraction to avoid integer overflow:
+            if (curves.length - end < n) {
                 if (doStats) {
                     RendererContext.stats.stat_array_stroker_polystack_curves
                         .add(end + n);
                 }
                 curves = rdrCtx.widenDirtyFloatArray(curves, end, end + n);
             }
-            if (numCurves + 1 > curveTypes.length) {
+            if (curveTypes.length <= numCurves) {
                 if (doStats) {
                     RendererContext.stats.stat_array_stroker_polystack_curveTypes
                         .add(numCurves + 1);

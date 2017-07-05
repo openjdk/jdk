@@ -49,7 +49,7 @@ import org.testng.TestNG;
 
 /*
  * @test
- * @bug 8077350 8081566 8081567 8098852
+ * @bug 8077350 8081566 8081567 8098852 8136597
  * @build jdk.testlibrary.*
  * @library /lib/testlibrary
  * @summary Functions of ProcessHandle.Info
@@ -210,10 +210,12 @@ public class InfoTest {
                             Assert.assertTrue(commandLine.contains(allArgs.get(i)),
                                               "commandLine() must contain argument: " + allArgs.get(i));
                         }
-                    } else if (info.commandLine().isPresent()) {
+                    } else if (info.commandLine().isPresent() &&
+                            command.isPresent() &&
+                            command.get().length() < info.commandLine().get().length()) {
                         // If we only have the commandLine() we can only do some basic checks...
                         String commandLine = info.commandLine().get();
-                        String javaExe = "java" + (Platform.isWindows() ? ".exe": "");
+                        String javaExe = "java" + (Platform.isWindows() ? ".exe" : "");
                         int pos = commandLine.indexOf(javaExe);
                         Assert.assertTrue(pos > 0, "commandLine() should at least contain 'java'");
 

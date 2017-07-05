@@ -38,8 +38,8 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import sun.misc.DoubleConsts;
-import sun.misc.FloatConsts;
+import jdk.internal.math.DoubleConsts;
+import jdk.internal.math.FloatConsts;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**

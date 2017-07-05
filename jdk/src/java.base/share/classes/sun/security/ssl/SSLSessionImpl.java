@@ -130,7 +130,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * also since counters make shorter debugging IDs than the big ones
      * we use in the protocol for uniqueness-over-time.
      */
-    private static volatile int counter = 0;
+    private static volatile int counter;
 
     /*
      * Use of session caches is globally enabled/disabled.

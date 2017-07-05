@@ -2433,6 +2433,32 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
+    //-----------------------------------------------------------------------
+    // toEpochSecond()
+    //--------------------------------------------------------------------------
+    @DataProvider(name="epochSecond")
+    Object[][] provider__toEpochSecond() {
+        return new Object[][] {
+        {LocalTime.of(0, 0).toEpochSecond(LocalDate.of(1970, 1, 1), OFFSET_PTWO), -7200L},
+        {LocalTime.of(11, 30).toEpochSecond(LocalDate.of(1965, 12, 31), OFFSET_PTWO), -126282600L},
+        {LocalTime.of(11, 30).toEpochSecond(LocalDate.of(1995, 5, 3), OFFSET_MTWO), 799507800L},
+        {LocalTime.of(0, 0).toEpochSecond(LocalDate.of(1970, 1, 1), OFFSET_PTWO),
+                Instant.ofEpochSecond(-7200).getEpochSecond()},
+        {LocalTime.of(11, 30).toEpochSecond(LocalDate.of(1969, 12, 31), OFFSET_MTWO),
+                Instant.ofEpochSecond(-37800L).getEpochSecond()},
+        {LocalTime.of(11, 30).toEpochSecond(LocalDate.of(1970, 1, 1), OFFSET_PTWO),
+                LocalDateTime.of(1970, 1, 1, 11, 30).toEpochSecond(OFFSET_PTWO)},
+        };
+    }
+
+    @Test(dataProvider="epochSecond")
+    public void test_toEpochSecond(long actual, long expected) {
+        assertEquals(actual, expected);
+    }
+
+    //-----------------------------------------------------------------------
+    // toSecondOfDay_fromNanoOfDay_symmetry()
+    //-----------------------------------------------------------------------
     @Test
     public void test_toSecondOfDay_fromNanoOfDay_symmetry() {
         LocalTime t = LocalTime.of(0, 0);
