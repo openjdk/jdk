@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ public final class SunRsaSignEntries {
                 "sun.security.rsa.RSASignature$MD5withRSA");
         map.put("Signature.SHA1withRSA",
                 "sun.security.rsa.RSASignature$SHA1withRSA");
+        map.put("Signature.SHA224withRSA",
+                "sun.security.rsa.RSASignature$SHA224withRSA");
         map.put("Signature.SHA256withRSA",
                 "sun.security.rsa.RSASignature$SHA256withRSA");
         map.put("Signature.SHA384withRSA",
@@ -66,6 +68,7 @@ public final class SunRsaSignEntries {
         map.put("Signature.MD2withRSA SupportedKeyClasses", rsaKeyClasses);
         map.put("Signature.MD5withRSA SupportedKeyClasses", rsaKeyClasses);
         map.put("Signature.SHA1withRSA SupportedKeyClasses", rsaKeyClasses);
+        map.put("Signature.SHA224withRSA SupportedKeyClasses", rsaKeyClasses);
         map.put("Signature.SHA256withRSA SupportedKeyClasses", rsaKeyClasses);
         map.put("Signature.SHA384withRSA SupportedKeyClasses", rsaKeyClasses);
         map.put("Signature.SHA512withRSA SupportedKeyClasses", rsaKeyClasses);
@@ -87,6 +90,9 @@ public final class SunRsaSignEntries {
         map.put("Alg.Alias.Signature.1.2.840.113549.1.1.5",     "SHA1withRSA");
         map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.5", "SHA1withRSA");
         map.put("Alg.Alias.Signature.1.3.14.3.2.29",            "SHA1withRSA");
+
+        map.put("Alg.Alias.Signature.1.2.840.113549.1.1.14",     "SHA224withRSA");
+        map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.14", "SHA224withRSA");
 
         map.put("Alg.Alias.Signature.1.2.840.113549.1.1.11",     "SHA256withRSA");
         map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.11", "SHA256withRSA");

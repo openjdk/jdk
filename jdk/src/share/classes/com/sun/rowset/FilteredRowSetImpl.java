@@ -128,7 +128,7 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
          for(int rows=this.getRow(); rows<=this.size();rows++) {
              bool = super.internalNext();
 
-             if( p == null) {
+             if( !bool || p == null) {
                return bool;
              }
              if(p.evaluate(this)){

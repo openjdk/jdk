@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.security.spec.MGF1ParameterSpec;
  * <pre>
  * OAEP-PSSDigestAlgorithms    ALGORITHM-IDENTIFIER ::= {
  *   { OID id-sha1 PARAMETERS NULL   }|
+ *   { OID id-sha224 PARAMETERS NULL   }|
  *   { OID id-sha256 PARAMETERS NULL }|
  *   { OID id-sha384 PARAMETERS NULL }|
  *   { OID id-sha512 PARAMETERS NULL },

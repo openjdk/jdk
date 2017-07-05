@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,26 +52,36 @@
 
 class java_lang_String : AllStatic {
  private:
-  enum {
-    hc_value_offset  = 0,
-    hc_offset_offset = 1
-    //hc_count_offset = 2  -- not a word-scaled offset
-    //hc_hash_offset  = 3  -- not a word-scaled offset
-  };
-
   static int value_offset;
   static int offset_offset;
   static int count_offset;
   static int hash_offset;
 
+  static bool initialized;
+
   static Handle basic_create(int length, bool tenured, TRAPS);
   static Handle basic_create_from_unicode(jchar* unicode, int length, bool tenured, TRAPS);
 
-  static void set_value( oop string, typeArrayOop buffer) { string->obj_field_put(value_offset,  (oop)buffer); }
-  static void set_offset(oop string, int offset)          { string->int_field_put(offset_offset, offset); }
-  static void set_count( oop string, int count)           { string->int_field_put(count_offset,  count);  }
+  static void set_value( oop string, typeArrayOop buffer) {
+    assert(initialized, "Must be initialized");
+    string->obj_field_put(value_offset,  (oop)buffer);
+  }
+  static void set_offset(oop string, int offset) {
+    assert(initialized, "Must be initialized");
+    if (offset_offset > 0) {
+      string->int_field_put(offset_offset, offset);
+    }
+  }
+  static void set_count( oop string, int count) {
+    assert(initialized, "Must be initialized");
+    if (count_offset > 0) {
+      string->int_field_put(count_offset,  count);
+    }
+  }
 
  public:
+  static void compute_offsets();
+
   // Instance creation
   static Handle create_from_unicode(jchar* unicode, int len, TRAPS);
   static Handle create_tenured_from_unicode(jchar* unicode, int len, TRAPS);
@@ -82,23 +92,61 @@ class java_lang_String : AllStatic {
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
   static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
-  static int value_offset_in_bytes()  { return value_offset;  }
-  static int count_offset_in_bytes()  { return count_offset;  }
-  static int offset_offset_in_bytes() { return offset_offset; }
-  static int hash_offset_in_bytes()   { return hash_offset;   }
+  static bool has_offset_field()  {
+    assert(initialized, "Must be initialized");
+    return (offset_offset > 0);
+  }
+
+  static bool has_count_field()  {
+    assert(initialized, "Must be initialized");
+    return (count_offset > 0);
+  }
+
+  static bool has_hash_field()  {
+    assert(initialized, "Must be initialized");
+    return (hash_offset > 0);
+  }
+
+  static int value_offset_in_bytes()  {
+    assert(initialized && (value_offset > 0), "Must be initialized");
+    return value_offset;
+  }
+  static int count_offset_in_bytes()  {
+    assert(initialized && (count_offset > 0), "Must be initialized");
+    return count_offset;
+  }
+  static int offset_offset_in_bytes() {
+    assert(initialized && (offset_offset > 0), "Must be initialized");
+    return offset_offset;
+  }
+  static int hash_offset_in_bytes()   {
+    assert(initialized && (hash_offset > 0), "Must be initialized");
+    return hash_offset;
+  }
 
   // Accessors
   static typeArrayOop value(oop java_string) {
+    assert(initialized && (value_offset > 0), "Must be initialized");
     assert(is_instance(java_string), "must be java_string");
     return (typeArrayOop) java_string->obj_field(value_offset);
   }
   static int offset(oop java_string) {
+    assert(initialized, "Must be initialized");
     assert(is_instance(java_string), "must be java_string");
-    return java_string->int_field(offset_offset);
+    if (offset_offset > 0) {
+      return java_string->int_field(offset_offset);
+    } else {
+      return 0;
+    }
   }
   static int length(oop java_string) {
+    assert(initialized, "Must be initialized");
     assert(is_instance(java_string), "must be java_string");
-    return java_string->int_field(count_offset);
+    if (count_offset > 0) {
+      return java_string->int_field(count_offset);
+    } else {
+      return ((typeArrayOop)java_string->obj_field(value_offset))->length();
+    }
   }
   static int utf8_length(oop java_string);
 

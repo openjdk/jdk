@@ -305,8 +305,10 @@ public abstract class AbstractPreferences extends Preferences {
      * @param key key whose mapping is to be removed from the preference node.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws NullPointerException {@inheritDoc}.
      */
     public void remove(String key) {
+        Objects.requireNonNull(key, "Specified key cannot be null");
         synchronized(lock) {
             if (removed)
                 throw new IllegalStateException("Node has been removed.");

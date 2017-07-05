@@ -30,6 +30,7 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
@@ -76,8 +77,11 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
     protected void setThemeBorder(final AbstractButton b) {
         super.setThemeBorder(b);
 
-        // Set the correct border
-        b.setBorder(AquaButtonBorder.getBevelButtonBorder());
+        Border border = b.getBorder();
+        if (border == null || border instanceof UIResource) {
+            // Set the correct border
+            b.setBorder(AquaButtonBorder.getBevelButtonBorder());
+        }
     }
 
     protected abstract AquaButtonBorder getPainter();

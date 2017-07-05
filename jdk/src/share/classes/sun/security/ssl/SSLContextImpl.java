@@ -267,36 +267,42 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     // Get suported CipherSuiteList.
     CipherSuiteList getSuportedCipherSuiteList() {
-        // Clear cache of available ciphersuites.
-        clearAvailableCache();
+        // The maintenance of cipher suites needs to be synchronized.
+        synchronized (this) {
+            // Clear cache of available ciphersuites.
+            clearAvailableCache();
 
-        if (supportedCipherSuiteList == null) {
-            supportedCipherSuiteList =
-                getApplicableCipherSuiteList(getSuportedProtocolList(), false);
+            if (supportedCipherSuiteList == null) {
+                supportedCipherSuiteList = getApplicableCipherSuiteList(
+                        getSuportedProtocolList(), false);
+            }
+
+            return supportedCipherSuiteList;
         }
-
-        return supportedCipherSuiteList;
     }
 
     // Get default CipherSuiteList.
     CipherSuiteList getDefaultCipherSuiteList(boolean roleIsServer) {
-        // Clear cache of available ciphersuites.
-        clearAvailableCache();
+        // The maintenance of cipher suites needs to be synchronized.
+        synchronized (this) {
+            // Clear cache of available ciphersuites.
+            clearAvailableCache();
 
-        if (roleIsServer) {
-            if (defaultServerCipherSuiteList == null) {
-                defaultServerCipherSuiteList = getApplicableCipherSuiteList(
+            if (roleIsServer) {
+                if (defaultServerCipherSuiteList == null) {
+                    defaultServerCipherSuiteList = getApplicableCipherSuiteList(
                         getDefaultProtocolList(true), true);
-            }
+                }
 
-            return defaultServerCipherSuiteList;
-        } else {
-            if (defaultClientCipherSuiteList == null) {
-                defaultClientCipherSuiteList = getApplicableCipherSuiteList(
+                return defaultServerCipherSuiteList;
+            } else {
+                if (defaultClientCipherSuiteList == null) {
+                    defaultClientCipherSuiteList = getApplicableCipherSuiteList(
                         getDefaultProtocolList(false), true);
-            }
+                }
 
-            return defaultClientCipherSuiteList;
+                return defaultClientCipherSuiteList;
+            }
         }
     }
 
@@ -364,8 +370,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * Clear cache of available ciphersuites. If we support all ciphers
      * internally, there is no need to clear the cache and calling this
      * method has no effect.
+     *
+     * Note that every call to clearAvailableCache() and the maintenance of
+     * cipher suites need to be synchronized with this instance.
      */
-    synchronized void clearAvailableCache() {
+    private void clearAvailableCache() {
         if (CipherSuite.DYNAMIC_AVAILABILITY) {
             supportedCipherSuiteList = null;
             defaultServerCipherSuiteList = null;

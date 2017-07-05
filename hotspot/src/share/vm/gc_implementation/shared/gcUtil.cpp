@@ -31,9 +31,15 @@ float AdaptiveWeightedAverage::compute_adaptive_average(float new_sample,
                                                         float average) {
   // We smooth the samples by not using weight() directly until we've
   // had enough data to make it meaningful. We'd like the first weight
-  // used to be 1, the second to be 1/2, etc until we have 100/weight
-  // samples.
-  unsigned count_weight = 100/count();
+  // used to be 1, the second to be 1/2, etc until we have
+  // OLD_THRESHOLD/weight samples.
+  unsigned count_weight = 0;
+
+  // Avoid division by zero if the counter wraps (7158457)
+  if (!is_old()) {
+    count_weight = OLD_THRESHOLD/count();
+  }
+
   unsigned adaptive_weight = (MAX2(weight(), count_weight));
 
   float new_avg = exp_avg(average, new_sample, adaptive_weight);
@@ -43,8 +49,6 @@ float AdaptiveWeightedAverage::compute_adaptive_average(float new_sample,
 
 void AdaptiveWeightedAverage::sample(float new_sample) {
   increment_count();
-  assert(count() != 0,
-         "Wraparound -- history would be incorrectly discarded");
 
   // Compute the new weighted average
   float new_avg = compute_adaptive_average(new_sample, average());
