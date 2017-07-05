@@ -29,7 +29,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build DelegateToContextLoader Dummy
+ * @build TestLibrary Dummy
  * @run main/othervm/policy=security.policy/timeout=120 DelegateToContextLoader
  */
 

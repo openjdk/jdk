@@ -27,9 +27,8 @@
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
- * @build ActivateMe
- * @build ForceLogSnapshot
- * @build ForceLogSnapshot_Stub
+ * @build TestLibrary RMID ActivationLibrary
+ *     ActivateMe ForceLogSnapshot_Stub
  * @run main/othervm/policy=security.policy/timeout=640 ForceLogSnapshot
  */
 

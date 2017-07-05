@@ -99,6 +99,17 @@ public class FormatData_hi_IN extends ListResourceBundle {
                     "\u0936\u0928\u093f" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u0930",
+                    "\u0938\u094b",
+                    "\u092e\u0902",
+                    "\u092c\u0941",
+                    "\u0917\u0941",
+                    "\u0936\u0941",
+                    "\u0936",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "\u092a\u0942\u0930\u094d\u0935\u093e\u0939\u094d\u0928", // am marker

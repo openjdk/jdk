@@ -75,7 +75,7 @@ echo "NEW_EXT_DIR=${NEW_EXT_DIR}"
 
 cd ${TESTSRC}
 
-${TESTJAVA}/bin/java -cp ${TESTCLASSES} -Djava.ext.dirs=${NEW_EXT_DIR} Bug6299235Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTCLASSES} -Djava.ext.dirs=${NEW_EXT_DIR} Bug6299235Test
 
 if [ $? -ne 0 ]
     then

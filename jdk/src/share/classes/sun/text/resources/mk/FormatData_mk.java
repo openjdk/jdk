@@ -104,6 +104,17 @@ public class FormatData_mk extends ListResourceBundle {
                     "\u0441\u0430\u0431." // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u043d",
+                    "\u043f",
+                    "\u0432",
+                    "\u0441",
+                    "\u0447",
+                    "\u043f",
+                    "\u0441",
+                }
+            },
             { "Eras",
                 new String[] { // era strings
                     "\u043f\u0440.\u043d.\u0435.",

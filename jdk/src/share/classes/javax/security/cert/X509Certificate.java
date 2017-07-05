@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,21 +96,17 @@ import java.util.Date;
  * </pre>
  * <p>
  * In either case, the code that instantiates an X.509 certificate
- * consults the Java security properties file to locate the actual
- * implementation or instantiates a default implementation.
+ * consults the value of the {@code cert.provider.x509v1} security property
+ * to locate the actual implementation or instantiates a default implementation.
  * <p>
- * The Java security properties file is located in the file named
- * &lt;JAVA_HOME&gt;/lib/security/java.security.
- * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- * and specifies the directory where the JRE is installed.
- * In the Security properties file, a default implementation
- * for X.509 v1 may be given such as:
+ * The {@code cert.provider.x509v1} property is set to a default
+ * implementation for X.509 such as:
  * <pre>
  * cert.provider.x509v1=com.sun.security.cert.internal.x509.X509V1CertImpl
  * </pre>
  * <p>
- * The value of this <code>cert.provider.x509v1</code> property has to be
- * changed to instatiate another implementation. If this security
+ * The value of this {@code cert.provider.x509v1} property has to be
+ * changed to instantiate another implementation. If this security
  * property is not set, a default implementation will be used.
  * Currently, due to possible security restrictions on access to
  * Security properties, this value is looked up and cached at class
@@ -127,6 +123,7 @@ import java.util.Date;
  * @since 1.4
  * @see Certificate
  * @see java.security.cert.X509Extension
+ * @see java.security.Security security properties
  */
 public abstract class X509Certificate extends Certificate {
 
@@ -156,8 +153,7 @@ public abstract class X509Certificate extends Certificate {
      * the data read from the input stream <code>inStream</code>.
      * The implementation (X509Certificate is an abstract class) is
      * provided by the class specified as the value of the
-     * <code>cert.provider.x509v1</code>
-     * property in the security properties file.
+     * {@code cert.provider.x509v1} security property.
      *
      * <p>Note: Only one DER-encoded
      * certificate is expected to be in the input stream.
@@ -184,8 +180,7 @@ public abstract class X509Certificate extends Certificate {
      * the specified byte array.
      * The implementation (X509Certificate is an abstract class) is
      * provided by the class specified as the value of the
-     * <code>cert.provider.x509v1</code>
-     * property in the security properties file.
+     * {@code cert.provider.x509v1} security property.
      *
      * <p>Note: All X509Certificate
      * subclasses must provide a constructor of the form:

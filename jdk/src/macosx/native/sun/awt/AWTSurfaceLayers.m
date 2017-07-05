@@ -99,17 +99,16 @@ Java_sun_lwawt_macosx_CPlatformComponent_nativeCreateComponent
   __block AWTSurfaceLayers *surfaceLayers = nil;
 
 JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
 
-  [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-      AWT_ASSERT_APPKIT_THREAD;
-
-      CALayer *windowLayer = jlong_to_ptr(windowLayerPtr);
-      surfaceLayers = [[AWTSurfaceLayers alloc] initWithWindowLayer: windowLayer];
-      CFRetain(surfaceLayers);
-      [surfaceLayers release];
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        AWT_ASSERT_APPKIT_THREAD;
+        
+        CALayer *windowLayer = jlong_to_ptr(windowLayerPtr);
+        surfaceLayers = [[AWTSurfaceLayers alloc] initWithWindowLayer: windowLayer];
+        CFRetain(surfaceLayers);
+        [surfaceLayers release];
     }];
-
+    
 JNF_COCOA_EXIT(env);
 
   return ptr_to_jlong(surfaceLayers);
@@ -126,12 +125,13 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformComponent_nativeSetBounds
 JNF_COCOA_ENTER(env);
 
   AWTSurfaceLayers *surfaceLayers = OBJC(surfaceLayersPtr);
-  [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+    
+  [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
       AWT_ASSERT_APPKIT_THREAD;
 
       CGRect rect = CGRectMake(x, y, width, height);
       [surfaceLayers setBounds: rect];
-    }];
+  }];
 
 JNF_COCOA_EXIT(env);
 }

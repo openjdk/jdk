@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,13 +59,9 @@ import sun.security.util.PropertyExpander;
  *
  * <ol>
  * <li>
- *   Loop through the <code>java.security.Security</code> properties,
+ *   Loop through the security properties,
  *   <i>auth.policy.url.1</i>, <i>auth.policy.url.2</i>, ...,
- *   <i>auth.policy.url.X</i>".  These properties are set
- *   in the Java security properties file, which is located in the file named
- *   &lt;JAVA_HOME&gt;/lib/security/java.security.
- *   &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- *   and specifies the directory where the JRE is installed.
+ *   <i>auth.policy.url.X</i>".
  *   Each property value specifies a <code>URL</code> pointing to a
  *   policy file to be loaded.  Read in and load each policy.
  *
@@ -235,6 +231,7 @@ import sun.security.util.PropertyExpander;
  * @see java.security.CodeSource
  * @see java.security.Permissions
  * @see java.security.ProtectionDomain
+ * @see java.security.Security security properties
  */
 @Deprecated
 public class PolicyFile extends javax.security.auth.Policy {

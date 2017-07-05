@@ -42,6 +42,12 @@ import java.net.URL;
  * <pre>
  *      java.net.URL url = rowset.getURL(1);
  * </pre>
+ *
+ * <h4> Thread safety </h4>
+ *
+ * A SerialDatalink is not safe for use by multiple concurrent threads.  If a
+ * SerialDatalink is to be used by more than one thread then access to the
+ * SerialDatalink should be controlled by appropriate synchronization.
  */
 public class SerialDatalink implements Serializable, Cloneable {
 

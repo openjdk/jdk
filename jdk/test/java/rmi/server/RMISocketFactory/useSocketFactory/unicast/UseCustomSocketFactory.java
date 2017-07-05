@@ -29,11 +29,7 @@
  * @author Ann Wollrath
  *
  * @library ../../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build Echo
- * @build EchoImpl
- * @build EchoImpl_Stub
- * @build UseCustomSocketFactory
+ * @build TestLibrary RMID JavaVM Echo EchoImpl EchoImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=120 UseCustomSocketFactory
  */
 

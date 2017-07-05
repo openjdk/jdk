@@ -41,13 +41,13 @@ fi
 set -ex
 
 ${TESTJAVA}/bin/rmic -classpath ${TESTCLASSES:-.} -d ${TESTCLASSES:-.} PImpl
-${TESTJAVA}/bin/java -classpath ${TESTCLASSES:-.} Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath ${TESTCLASSES:-.} Test
 
 ${TESTJAVA}/bin/rmic -classpath ${TESTCLASSES:-.} -d ${TESTCLASSES:-.} -vcompat PImpl
-${TESTJAVA}/bin/java -classpath ${TESTCLASSES:-.} Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath ${TESTCLASSES:-.} Test
 
 ${TESTJAVA}/bin/rmic -Xnew -classpath ${TESTCLASSES:-.} -d ${TESTCLASSES:-.} PImpl
-${TESTJAVA}/bin/java -classpath ${TESTCLASSES:-.} Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath ${TESTCLASSES:-.} Test
 
 ${TESTJAVA}/bin/rmic -Xnew -classpath ${TESTCLASSES:-.} -d ${TESTCLASSES:-.} -vcompat PImpl
-${TESTJAVA}/bin/java -classpath ${TESTCLASSES:-.} Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath ${TESTCLASSES:-.} Test

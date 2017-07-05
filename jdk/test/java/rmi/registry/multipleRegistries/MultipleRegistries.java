@@ -28,7 +28,6 @@
  *
  * @library ../../testlibrary
  * @build TestLibrary
- * @build MultipleRegistries
  * @run main/othervm/timeout=240 MultipleRegistries
  */
 

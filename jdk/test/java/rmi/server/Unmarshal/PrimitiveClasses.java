@@ -25,6 +25,7 @@
  * @bug 4442373
  * @summary Verify that RMI can successfully unmarshal Class objects for
  *          primitive types.
+ * @run main PrimitiveClasses
  */
 
 import java.rmi.MarshalledObject;

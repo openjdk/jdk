@@ -42,7 +42,7 @@ CLASSPATH=${TESTCLASSES}
 export CLASSPATH
 JAVA="${TESTJAVA}/bin/java"
 
-sh -xc "$JAVA CanonicalName $HOST" 2>&1
+sh -xc "$JAVA ${TESTVMOPTS} CanonicalName $HOST" 2>&1
 if [ $? != 0 ]; then
     echo "DNS not configured or host doesn't resolve to CNAME record"
     exit 0
@@ -52,7 +52,7 @@ failures=0
 
 go() {
     echo ''
-    sh -xc "$JAVA $1 Lookup $2" 2>&1
+    sh -xc "$JAVA ${TESTVMOPTS} $1 Lookup $2" 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 

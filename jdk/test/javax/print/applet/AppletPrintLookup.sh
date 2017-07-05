@@ -82,7 +82,7 @@ cp ${TESTSRC}${SEP}AppletPrintLookup.html  ${TESTCLASSES}
 ${TESTJAVA}${SEP}bin${SEP}appletviewer ${TESTCLASSES}${SEP}AppletPrintLookup.html &
 
 cd  ${TESTCLASSES} 
-${TESTJAVA}${SEP}bin${SEP}java YesNo
+${TESTJAVA}${SEP}bin${SEP}java ${TESTVMOPTS} YesNo
  if [ $? -ne 0 ]
     then
       echo "Test fails!"

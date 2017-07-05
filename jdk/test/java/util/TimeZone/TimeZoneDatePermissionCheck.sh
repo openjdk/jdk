@@ -53,6 +53,6 @@ ${TESTJAVA}/bin/jarsigner \
 # run it with the security manager on, plus accesscontroller debugging
 # will go into infinite recursion trying to get enough permissions for
 # printing Date of failing certificate unless fix is applied.
-${TESTJAVA}/bin/java -Djava.security.manager \
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.security.manager \
   -Djava.security.debug=access,failure,policy \
   -cp ${TESTCLASSES}/timezonedatetest.jar TimeZoneDatePermissionCheck

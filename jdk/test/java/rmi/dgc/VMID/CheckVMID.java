@@ -30,7 +30,7 @@
  * @author Ann Wollrath
  *
  * @library ../../testlibrary
- * @build CheckVMID
+ * @build TestLibrary
  * @run main/othervm/policy=security.policy CheckVMID
  */
 

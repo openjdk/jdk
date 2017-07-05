@@ -1067,10 +1067,6 @@ public class Krb5LoginModule implements LoginModule {
                     if (ktab != null) {
                         if (!privCredSet.contains(ktab)) {
                             privCredSet.add(ktab);
-                            // Compatibility; also add keys to privCredSet
-                            for (KerberosKey key: ktab.getKeys(kerbClientPrinc)) {
-                                privCredSet.add(new Krb5Util.KeysFromKeyTab(key));
-                            }
                         }
                     } else {
                         succeeded = false;

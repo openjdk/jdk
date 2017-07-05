@@ -38,6 +38,7 @@ BARFILES_JAVA = \
     CurrencyNameProviderImpl.java \
     CurrencyNameProviderImpl2.java \
     TimeZoneNameProviderImpl.java \
+    GenericTimeZoneNameProviderImpl.java \
     LocaleNameProviderImpl.java \
     CalendarDataProviderImpl.java \
     CalendarNameProviderImpl.java \

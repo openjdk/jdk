@@ -116,6 +116,23 @@ public class FormatData_hr extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4.",
+                    "5.",
+                    "6.",
+                    "7.",
+                    "8.",
+                    "9.",
+                    "10.",
+                    "11.",
+                    "12.",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "nedjelja", // Sunday
@@ -136,6 +153,28 @@ public class FormatData_hr extends ListResourceBundle {
                     "\u010det", // abb Thursday
                     "pet", // abb Friday
                     "sub" // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "N",
+                    "P",
+                    "U",
+                    "S",
+                    "\u010c",
+                    "P",
+                    "S",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "n",
+                    "p",
+                    "u",
+                    "s",
+                    "\u010d",
+                    "p",
+                    "s",
                 }
             },
             { "NumberElements",
