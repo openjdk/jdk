@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import org.omg.CORBA.portable.OutputStream;
 /**
  * The Holder for <tt>Short</tt>.  For more information on
  * Holder files, see <a href="doc-files/generatedfiles.html#holder">
- * "Generated Files: Holder Files"</a>.<P
- * A Holder class for a <code>short</code>
+ * "Generated Files: Holder Files"</a>.
+ * <P>A Holder class for a <code>short</code>
  * that is used to store "out" and "inout" parameters in IDL operations.
  * If an IDL operation signature has an IDL <code>short</code> as an "out"
  * or "inout" parameter, the programmer must pass an instance of

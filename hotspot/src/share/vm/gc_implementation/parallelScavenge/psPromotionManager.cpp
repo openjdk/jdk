@@ -33,10 +33,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.psgc.inline.hpp"
 #include "utilities/stack.inline.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
 OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
@@ -325,7 +322,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
 
     _promotion_failed_info.register_copy_failure(obj->size());
 
-    obj->push_contents(this);
+    push_contents(obj);
 
     // Save the mark if needed
     PSScavenge::oop_promotion_failed(obj, obj_mark);
@@ -342,7 +339,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " (%d)}",
                            "promotion-failure",
                            obj->klass()->internal_name(),
-                           (void *)obj, obj->size());
+                           p2i(obj), obj->size());
 
   }
 #endif

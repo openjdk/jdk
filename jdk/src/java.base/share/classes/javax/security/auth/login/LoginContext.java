@@ -25,18 +25,18 @@
 
 package javax.security.auth.login;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-import java.util.LinkedList;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.HashMap;
 import java.text.MessageFormat;
 import javax.security.auth.Subject;
 import javax.security.auth.AuthPermission;
 import javax.security.auth.callback.*;
-import java.security.AccessController;
+import javax.security.auth.spi.LoginModule;
 import java.security.AccessControlContext;
+import java.util.ServiceLoader;
+
 import sun.security.util.PendingException;
 import sun.security.util.ResourcesMgr;
 
@@ -192,7 +192,6 @@ import sun.security.util.ResourcesMgr;
  */
 public class LoginContext {
 
-    private static final String INIT_METHOD             = "initialize";
     private static final String LOGIN_METHOD            = "login";
     private static final String COMMIT_METHOD           = "commit";
     private static final String ABORT_METHOD            = "abort";
@@ -210,7 +209,6 @@ public class LoginContext {
     private AccessControlContext creatorAcc = null;  // customized config only
     private ModuleInfo[] moduleStack;
     private ClassLoader contextClassLoader = null;
-    private static final Class<?>[] PARAMS = { };
 
     // state saved in the event a user-specified asynchronous exception
     // was specified and thrown
@@ -678,63 +676,63 @@ public class LoginContext {
         for (int i = moduleIndex; i < moduleStack.length; i++, moduleIndex++) {
             try {
 
-                int mIndex = 0;
-                Method[] methods = null;
+                if (moduleStack[i].module == null) {
 
-                if (moduleStack[i].module != null) {
-                    methods = moduleStack[i].module.getClass().getMethods();
-                } else {
-
-                    // instantiate the LoginModule
+                    // locate and instantiate the LoginModule
                     //
-                    // Allow any object to be a LoginModule as long as it
-                    // conforms to the interface.
-                    Class<?> c = Class.forName(
-                                moduleStack[i].entry.getLoginModuleName(),
-                                true,
-                                contextClassLoader);
-
-                    Constructor<?> constructor = c.getConstructor(PARAMS);
-                    Object[] args = { };
-                    moduleStack[i].module = constructor.newInstance(args);
-
-                    // call the LoginModule's initialize method
-                    methods = moduleStack[i].module.getClass().getMethods();
-                    for (mIndex = 0; mIndex < methods.length; mIndex++) {
-                        if (methods[mIndex].getName().equals(INIT_METHOD)) {
+                    String name = moduleStack[i].entry.getLoginModuleName();
+                    ServiceLoader<LoginModule> sc = AccessController.doPrivileged(
+                            (PrivilegedAction<ServiceLoader<LoginModule>>)
+                                    () -> ServiceLoader.load(
+                                        LoginModule.class, contextClassLoader));
+                    for (LoginModule m: sc) {
+                        if (m.getClass().getName().equals(name)) {
+                            moduleStack[i].module = m;
+                            if (debug != null) {
+                                debug.println(name + " loaded as a service");
+                            }
                             break;
                         }
                     }
 
-                    Object[] initArgs = {subject,
-                                        callbackHandler,
-                                        state,
-                                        moduleStack[i].entry.getOptions() };
+                    if (moduleStack[i].module == null) {
+                        try {
+                            moduleStack[i].module = (LoginModule) Class.forName(
+                                    name, false, contextClassLoader).newInstance();
+                            if (debug != null) {
+                                debug.println(name + " loaded via reflection");
+                            }
+                        } catch (ClassNotFoundException e) {
+                            throw new LoginException("No LoginModule found for "
+                                    + name);
+                        }
+                    }
+
                     // invoke the LoginModule initialize method
-                    //
-                    // Throws ArrayIndexOutOfBoundsException if no such
-                    // method defined.  May improve to use LoginException in
-                    // the future.
-                    methods[mIndex].invoke(moduleStack[i].module, initArgs);
+                    moduleStack[i].module.initialize(subject,
+                            callbackHandler,
+                            state,
+                            moduleStack[i].entry.getOptions());
                 }
 
                 // find the requested method in the LoginModule
-                for (mIndex = 0; mIndex < methods.length; mIndex++) {
-                    if (methods[mIndex].getName().equals(methodName)) {
+                boolean status;
+                switch (methodName) {
+                    case LOGIN_METHOD:
+                        status = moduleStack[i].module.login();
                         break;
-                    }
+                    case COMMIT_METHOD:
+                        status = moduleStack[i].module.commit();
+                        break;
+                    case LOGOUT_METHOD:
+                        status = moduleStack[i].module.logout();
+                        break;
+                    case ABORT_METHOD:
+                        status = moduleStack[i].module.abort();
+                        break;
+                    default:
+                        throw new AssertionError("Unknown method " + methodName);
                 }
-
-                // set up the arguments to be passed to the LoginModule method
-                Object[] args = { };
-
-                // invoke the LoginModule method
-                //
-                // Throws ArrayIndexOutOfBoundsException if no such
-                // method defined.  May improve to use LoginException in
-                // the future.
-                boolean status = ((Boolean)methods[mIndex].invoke
-                                (moduleStack[i].module, args)).booleanValue();
 
                 if (status == true) {
 
@@ -760,31 +758,12 @@ public class LoginContext {
                     if (debug != null)
                         debug.println(methodName + " ignored");
                 }
-
-            } catch (NoSuchMethodException nsme) {
-                MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("unable.to.instantiate.LoginModule.module.because.it.does.not.provide.a.no.argument.constructor"));
-                Object[] source = {moduleStack[i].entry.getLoginModuleName()};
-                throwException(null, new LoginException(form.format(source)));
-            } catch (InstantiationException ie) {
-                throwException(null, new LoginException(ResourcesMgr.getString
-                        ("unable.to.instantiate.LoginModule.") +
-                        ie.getMessage()));
-            } catch (ClassNotFoundException cnfe) {
-                throwException(null, new LoginException(ResourcesMgr.getString
-                        ("unable.to.find.LoginModule.class.") +
-                        cnfe.getMessage()));
-            } catch (IllegalAccessException iae) {
-                throwException(null, new LoginException(ResourcesMgr.getString
-                        ("unable.to.access.LoginModule.") +
-                        iae.getMessage()));
-            } catch (InvocationTargetException ite) {
+            } catch (Exception ite) {
 
                 // failure cases
-
                 LoginException le;
 
-                if (ite.getCause() instanceof PendingException &&
+                if (ite instanceof PendingException &&
                     methodName.equals(LOGIN_METHOD)) {
 
                     // XXX
@@ -808,13 +787,13 @@ public class LoginContext {
                     // the only time that is not true is in this case -
                     // do not call throwException here.
 
-                    throw (PendingException)ite.getCause();
+                    throw (PendingException)ite;
 
-                } else if (ite.getCause() instanceof LoginException) {
+                } else if (ite instanceof LoginException) {
 
-                    le = (LoginException)ite.getCause();
+                    le = (LoginException)ite;
 
-                } else if (ite.getCause() instanceof SecurityException) {
+                } else if (ite instanceof SecurityException) {
 
                     // do not want privacy leak
                     // (e.g., sensitive file path in exception msg)
@@ -826,14 +805,14 @@ public class LoginContext {
                             ("original security exception with detail msg " +
                             "replaced by new exception with empty detail msg");
                         debug.println("original security exception: " +
-                                ite.getCause().toString());
+                                ite.toString());
                     }
                 } else {
 
                     // capture an unexpected LoginModule exception
                     java.io.StringWriter sw = new java.io.StringWriter();
-                    ite.getCause().printStackTrace
-                                                (new java.io.PrintWriter(sw));
+                    ite.printStackTrace
+                            (new java.io.PrintWriter(sw));
                     sw.flush();
                     le = new LoginException(sw.toString());
                 }
@@ -938,9 +917,9 @@ public class LoginContext {
      */
     private static class ModuleInfo {
         AppConfigurationEntry entry;
-        Object module;
+        LoginModule module;
 
-        ModuleInfo(AppConfigurationEntry newEntry, Object newModule) {
+        ModuleInfo(AppConfigurationEntry newEntry, LoginModule newModule) {
             this.entry = newEntry;
             this.module = newModule;
         }

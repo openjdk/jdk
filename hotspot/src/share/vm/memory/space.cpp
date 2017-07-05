@@ -44,8 +44,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
   if (top_obj != NULL) {
@@ -456,20 +454,20 @@ void Space::print() const { print_on(tty); }
 void Space::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-                bottom(), end());
+                p2i(bottom()), p2i(end()));
 }
 
 void ContiguousSpace::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-                bottom(), top(), end());
+                p2i(bottom()), p2i(top()), p2i(end()));
 }
 
 void OffsetTableContigSpace::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", "
                 INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-              bottom(), top(), _offsets.threshold(), end());
+              p2i(bottom()), p2i(top()), p2i(_offsets.threshold()), p2i(end()));
 }
 
 void ContiguousSpace::verify() const {
@@ -592,7 +590,7 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN)
 HeapWord* ContiguousSpace::block_start_const(const void* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
          err_msg("p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-                  p, bottom(), end()));
+                  p2i(p), p2i(bottom()), p2i(end())));
   if (p >= top()) {
     return top();
   } else {
@@ -603,7 +601,7 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
       cur += oop(cur)->size();
     }
     assert(oop(last)->is_oop(),
-           err_msg(PTR_FORMAT " should be an object start", last));
+           err_msg(PTR_FORMAT " should be an object start", p2i(last)));
     return last;
   }
 }
@@ -611,15 +609,15 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
 size_t ContiguousSpace::block_size(const HeapWord* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
          err_msg("p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-                  p, bottom(), end()));
+                  p2i(p), p2i(bottom()), p2i(end())));
   HeapWord* current_top = top();
   assert(p <= current_top,
          err_msg("p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
-                  p, current_top));
+                  p2i(p), p2i(current_top)));
   assert(p == current_top || oop(p)->is_oop(),
          err_msg("p (" PTR_FORMAT ") is not a block start - "
                  "current_top: " PTR_FORMAT ", is_oop: %s",
-                 p, current_top, BOOL_TO_STR(oop(p)->is_oop())));
+                 p2i(p), p2i(current_top), BOOL_TO_STR(oop(p)->is_oop())));
   if (p < current_top) {
     return oop(p)->size();
   } else {

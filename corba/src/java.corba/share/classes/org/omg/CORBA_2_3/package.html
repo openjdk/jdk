@@ -6,7 +6,7 @@
    <title>package</title>
 <!--
 /*
-* Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -43,23 +43,21 @@ breaking the JCK tests.
  
 <P>For a precise list of supported sections of official specifications with which 
 the Java[tm] Platform, Standard Edition 6, ORB complies, see <A 
-HREF="../CORBA/doc-files/compliance.html">Official Specifications for CORBA 
+HREF="../CORBA/doc-files/compliance.html">Official Specifications for CORBA
 support in Java[tm] SE 6</A>.
 <P>
 <a name="unimpl"></a>
 The following methods in the abstract class 
 <code>org.omg.CORBA_2_3.ORB</code> are unimplemented:
 <UL>
-  <code>
-  <LI>public org.omg.CORBA.portable.ValueFactory 
-  <b>register_value_factory(String id, org.omg.CORBA.portable.ValueFactory 
-factory)</b>
-  <LI>public void <b>unregister_value_factory(String id)</b>
-  <LI>public org.omg.CORBA.portable.ValueFactory 
-  <b>lookup_value_factory(String id)</b>
-  <LI>public org.omg.CORBA.Object <b>get_value_def(String repid)</b>
-  <LI>public void <b>set_delegate(java.lang.Object wrapper)</b>
-  </code>
+  <LI><code>public org.omg.CORBA.portable.ValueFactory 
+  <b>register_value_factory(String id, org.omg.CORBA.portable.ValueFactory
+     factory)</b></code>
+  <LI><code>public void <b>unregister_value_factory(String id)</b></code>
+  <LI><code>public org.omg.CORBA.portable.ValueFactory 
+  <b>lookup_value_factory(String id)</b></code>
+  <LI><code>public org.omg.CORBA.Object <b>get_value_def(String repid)</b></code>
+  <LI><code>public void <b>set_delegate(java.lang.Object wrapper)</b></code>
 </UL>
 @since JDK 1.3
 <br>
