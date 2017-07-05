@@ -288,15 +288,7 @@ instanceOop instanceMirrorKlass::allocate_instance(KlassHandle k, TRAPS) {
   // Query before forming handle.
   int size = instance_size(k);
   KlassHandle h_k(THREAD, as_klassOop());
-  instanceOop i;
-
-  if (JavaObjectsInPerm) {
-    i = (instanceOop) CollectedHeap::permanent_obj_allocate(h_k, size, CHECK_NULL);
-  } else {
-    assert(ScavengeRootsInCode > 0, "must be");
-    i = (instanceOop) CollectedHeap::obj_allocate(h_k, size, CHECK_NULL);
-  }
-
+  instanceOop i = (instanceOop) CollectedHeap::Class_obj_allocate(h_k, size, k, CHECK_NULL);
   return i;
 }
 

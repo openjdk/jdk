@@ -169,7 +169,7 @@ JVM_handle_bsd_signal(int sig,
 
   if (info != NULL && thread != NULL) {
     // Handle ALL stack overflow variations here
-    if (sig == SIGSEGV) {
+    if (sig == SIGSEGV || sig == SIGBUS) {
       address addr = (address) info->si_addr;
 
       // check if fault address is within thread stack
@@ -228,7 +228,7 @@ JVM_handle_bsd_signal(int sig,
     // of write protecting the memory serialization page.  It write
     // enables the page immediately after protecting it so we can
     // just return to retry the write.
-    if (sig == SIGSEGV &&
+    if ((sig == SIGSEGV || sig == SIGBUS) &&
         os::is_memory_serialize_page(thread, (address) info->si_addr)) {
       // Block current thread until permission is restored.
       os::block_on_serialize_page_trap();
@@ -260,10 +260,11 @@ JVM_handle_bsd_signal(int sig,
   }
 #endif // !PRODUCT
 
-  const char *fmt = "caught unhandled signal %d";
-  char buf[64];
+  const char *fmt =
+      "caught unhandled signal " INT32_FORMAT " at address " PTR_FORMAT;
+  char buf[128];
 
-  sprintf(buf, fmt, sig);
+  sprintf(buf, fmt, sig, info->si_addr);
   fatal(buf);
 }
 
@@ -338,7 +339,8 @@ static void current_stack_region(address *bottom, size_t *size) {
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
 
   if (rslt != 0)
-    fatal(err_msg("pthread_stackseg_np failed with err = %d", rslt));
+    fatal(err_msg("pthread_stackseg_np failed with err = " INT32_FORMAT,
+          rslt));
 
   stack_top = (address) ss.ss_sp;
   stack_bytes  = ss.ss_size;
@@ -350,12 +352,13 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   // JVM needs to know exact stack location, abort if it fails
   if (rslt != 0)
-    fatal(err_msg("pthread_attr_init failed with err = %d", rslt));
+    fatal(err_msg("pthread_attr_init failed with err = " INT32_FORMAT, rslt));
 
   rslt = pthread_attr_get_np(pthread_self(), &attr);
 
   if (rslt != 0)
-    fatal(err_msg("pthread_attr_get_np failed with err = %d", rslt));
+    fatal(err_msg("pthread_attr_get_np failed with err = " INT32_FORMAT,
+          rslt));
 
   if (pthread_attr_getstackaddr(&attr, (void **) &stack_bottom) != 0 ||
       pthread_attr_getstacksize(&attr, &stack_bytes) != 0) {
@@ -373,13 +376,15 @@ static void current_stack_region(address *bottom, size_t *size) {
       vm_exit_out_of_memory(0, "pthread_getattr_np");
     }
     else {
-      fatal(err_msg("pthread_getattr_np failed with errno = %d", res));
+      fatal(err_msg("pthread_getattr_np failed with errno = " INT32_FORMAT,
+            res));
     }
   }
 
   res = pthread_attr_getstack(&attr, (void **) &stack_bottom, &stack_bytes);
   if (res != 0) {
-    fatal(err_msg("pthread_attr_getstack failed with errno = %d", res));
+    fatal(err_msg("pthread_attr_getstack failed with errno = " INT32_FORMAT,
+          res));
   }
   stack_top = stack_bottom + stack_bytes;
 
@@ -391,7 +396,8 @@ static void current_stack_region(address *bottom, size_t *size) {
   size_t guard_bytes;
   res = pthread_attr_getguardsize(&attr, &guard_bytes);
   if (res != 0) {
-    fatal(err_msg("pthread_attr_getguardsize failed with errno = %d", res));
+    fatal(err_msg(
+        "pthread_attr_getguardsize failed with errno = " INT32_FORMAT, res));
   }
   int guard_pages = align_size_up(guard_bytes, page_bytes) / page_bytes;
   assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");
