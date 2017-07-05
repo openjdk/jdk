@@ -181,8 +181,8 @@ void* CodeInstaller::record_metadata_reference(Handle constant, TRAPS) {
   /*
    * This method needs to return a raw (untyped) pointer, since the value of a pointer to the base
    * class is in general not equal to the pointer of the subclass. When patching metaspace pointers,
-   * the compiler expects a direct pointer to the subclass (Klass*, Method* or Symbol*), not a
-   * pointer to the base class (Metadata* or MetaspaceObj*).
+   * the compiler expects a direct pointer to the subclass (Klass* or Method*), not a pointer to the
+   * base class (Metadata* or MetaspaceObj*).
    */
   oop obj = HotSpotMetaspaceConstantImpl::metaspaceObject(constant);
   if (obj->is_a(HotSpotResolvedObjectTypeImpl::klass())) {
@@ -197,11 +197,6 @@ void* CodeInstaller::record_metadata_reference(Handle constant, TRAPS) {
     int index = _oop_recorder->find_index(method);
     TRACE_jvmci_3("metadata[%d of %d] = %s", index, _oop_recorder->metadata_count(), method->name()->as_C_string());
     return method;
-  } else if (obj->is_a(HotSpotSymbol::klass())) {
-    Symbol* symbol = (Symbol*) (address) HotSpotSymbol::pointer(obj);
-    assert(!HotSpotMetaspaceConstantImpl::compressed(constant), "unexpected compressed symbol pointer %s @ " INTPTR_FORMAT, symbol->as_C_string(), p2i(symbol));
-    TRACE_jvmci_3("symbol = %s", symbol->as_C_string());
-    return symbol;
   } else {
     JVMCI_ERROR_NULL("unexpected metadata reference for constant of type %s", obj->klass()->signature_name());
   }
@@ -224,9 +219,8 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(Handle constant, TRA
 #endif
 
 Location::Type CodeInstaller::get_oop_type(Handle value) {
-  Handle lirKind = Value::lirKind(value);
-  Handle platformKind = LIRKind::platformKind(lirKind);
-  assert(LIRKind::referenceMask(lirKind) == 1, "unexpected referenceMask");
+  Handle valueKind = Value::valueKind(value);
+  Handle platformKind = ValueKind::platformKind(valueKind);
 
   if (platformKind == word_kind()) {
     return Location::oop;
@@ -501,7 +495,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle
     return result;
   }
 
-  _debug_recorder->pcs_size(); // ehm, create the sentinel record
+  _debug_recorder->pcs_size(); // create the sentinel record
 
   assert(_debug_recorder->pcs_length() >= 2, "must be at least 2");
 

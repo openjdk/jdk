@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 package jdk.vm.ci.code;
 
 import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.ValueKind;
 
 /**
  * Represents a compiler spill slot or an outgoing stack-based argument in a method's frame or an
@@ -43,16 +43,16 @@ public final class StackSlot extends AllocatableValue {
      * @param addFrameSize Specifies if the offset is relative to the stack pointer, or the
      *            beginning of the frame (stack pointer + total frame size).
      */
-    public static StackSlot get(LIRKind kind, int offset, boolean addFrameSize) {
+    public static StackSlot get(ValueKind<?> kind, int offset, boolean addFrameSize) {
         assert addFrameSize || offset >= 0;
         return new StackSlot(kind, offset, addFrameSize);
     }
 
     /**
-     * Private constructor to enforce use of {@link #get(LIRKind, int, boolean)} so that a cache can
-     * be used.
+     * Private constructor to enforce use of {@link #get(ValueKind, int, boolean)} so that a cache
+     * can be used.
      */
-    private StackSlot(LIRKind kind, int offset, boolean addFrameSize) {
+    private StackSlot(ValueKind<?> kind, int offset, boolean addFrameSize) {
         super(kind);
         this.offset = offset;
         this.addFrameSize = addFrameSize;
@@ -99,7 +99,7 @@ public final class StackSlot extends AllocatableValue {
     public StackSlot asOutArg() {
         assert offset >= 0;
         if (addFrameSize) {
-            return get(getLIRKind(), offset, false);
+            return get(getValueKind(), offset, false);
         }
         return this;
     }
@@ -110,7 +110,7 @@ public final class StackSlot extends AllocatableValue {
     public StackSlot asInArg() {
         assert offset >= 0;
         if (!addFrameSize) {
-            return get(getLIRKind(), offset, true);
+            return get(getValueKind(), offset, true);
         }
         return this;
     }

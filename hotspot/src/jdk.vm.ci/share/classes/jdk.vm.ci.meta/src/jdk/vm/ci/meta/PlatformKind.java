@@ -42,7 +42,7 @@ public interface PlatformKind {
 
         @Override
         public int hashCode() {
-            return e.ordinal() ^ e.name().hashCode();
+            return e.ordinal();
         }
 
         @Override

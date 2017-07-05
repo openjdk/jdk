@@ -31,8 +31,8 @@ public class ForStringDataProvider {
     @DataProvider(name = "forStringDataProvider")
     public static Object[][] forStringDataProvider() {
         return new Object[][]{
-                {DUMMY_CLASS_INSTANCE.stringField, "Object[String:\"" + DUMMY_CLASS_INSTANCE.stringField + "\"]"},
-                {DUMMY_CLASS_INSTANCE.stringEmptyField, "Object[String:\"\"]"},
-                {null, "Object[null]"}};
+                        {DUMMY_CLASS_INSTANCE.stringField, "Object[String:\"" + DUMMY_CLASS_INSTANCE.stringField + "\"]"},
+                        {DUMMY_CLASS_INSTANCE.stringEmptyField, "Object[String:\"\"]"},
+                        {null, "Object[null]"}};
     }
 }

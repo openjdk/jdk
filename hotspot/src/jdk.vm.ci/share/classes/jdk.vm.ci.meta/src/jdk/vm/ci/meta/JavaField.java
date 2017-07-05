@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.UnknownFormatConversionException;
  * Represents a reference to a Java field, either resolved or unresolved fields. Fields, like
  * methods and types, are resolved through {@link ConstantPool constant pools}.
  */
-public interface JavaField extends TrustedInterface {
+public interface JavaField {
 
     /**
      * Returns the name of this field.

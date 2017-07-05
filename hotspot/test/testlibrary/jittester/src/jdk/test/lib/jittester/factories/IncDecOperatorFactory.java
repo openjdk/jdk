@@ -23,14 +23,12 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.UnaryOperator;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeBoolean;
 
 class IncDecOperatorFactory extends UnaryOperatorFactory {
     IncDecOperatorFactory(OperatorKind opKind, long complexityLimit, int operatorLimit,
@@ -40,11 +38,11 @@ class IncDecOperatorFactory extends UnaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return TypeList.isBuiltInInt(resultType) && !resultType.equals(new TypeBoolean());
+        return TypeList.isBuiltInInt(resultType) && !resultType.equals(TypeList.BOOLEAN);
     }
 
     @Override
-    protected IRNode generateProduction(Type l) throws ProductionFailedException {
+    protected UnaryOperator generateProduction(Type l) throws ProductionFailedException {
         return new UnaryOperator(opKind, new IRNodeBuilder().setComplexityLimit(complexityLimit - 1)
                 .setOperatorLimit(operatorLimit - 1)
                 .setOwnerKlass((TypeKlass) ownerClass)

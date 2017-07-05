@@ -37,7 +37,7 @@ import jdk.test.lib.jittester.VariableInitialization;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class VariableInitializationFactory extends SafeFactory {
+class VariableInitializationFactory extends SafeFactory<VariableInitialization> {
     private final int operatorLimit;
     private final long complexityLimit;
     private final boolean constant;
@@ -58,7 +58,7 @@ class VariableInitializationFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
+    protected VariableInitialization sproduce() throws ProductionFailedException {
         LinkedList<Type> types = new LinkedList<>(TypeList.getAll());
         PseudoRandom.shuffle(types);
         if (types.isEmpty()) {
@@ -71,7 +71,7 @@ class VariableInitializationFactory extends SafeFactory {
                 .setResultType(resultType)
                 .setExceptionSafe(exceptionSafe)
                 .setNoConsts(false);
-        Rule rule = new Rule("initializer");
+        Rule<IRNode> rule = new Rule<>("initializer");
         rule.add("literal_initializer", b.getLiteralFactory());
         if (!ProductionParams.disableExprInInit.value()) {
             rule.add("expression", b.getLimitedExpressionFactory());

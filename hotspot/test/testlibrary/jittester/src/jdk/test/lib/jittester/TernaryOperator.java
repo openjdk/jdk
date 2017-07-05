@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,11 @@ public class TernaryOperator extends Operator {
         CONDITION,
         TRUE,
         FALSE,
-    };
+    }
     //protected Production conditionalExpression, leftExpression, rightExpression;
-    protected Type resultType;
 
     public TernaryOperator(IRNode condition, IRNode trueBranch, IRNode falseBranch) {
-        super(2);
+        super(null, 2, trueBranch.getResultType());
         resizeUpChildren(TernaryPart.values().length);
         setChild(TernaryPart.CONDITION.ordinal(), condition);
         setChild(TernaryPart.TRUE.ordinal(), trueBranch);

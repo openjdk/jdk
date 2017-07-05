@@ -25,12 +25,14 @@ package jdk.test.lib.jittester.functions;
 
 import java.util.ArrayList;
 import jdk.test.lib.jittester.IRNode;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class FunctionDefinitionBlock extends IRNode {
     public FunctionDefinitionBlock(ArrayList<IRNode> content, int level, TypeKlass ownerClass) {
-        setKlass(ownerClass);
+        super(TypeList.VOID);
+        setOwner(ownerClass);
         addChildren(content);
         this.level = level;
     }
@@ -42,10 +44,6 @@ public class FunctionDefinitionBlock extends IRNode {
             complexity += child.complexity();
         }
         return complexity;
-    }
-
-    protected int size() {
-        return getChildren() != null ? getChildren().size() : 0;
     }
 
     @Override

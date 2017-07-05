@@ -1643,7 +1643,8 @@ void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register t
     return;
   }
   Label retry_load;
-  prfm(Address(counter_addr), PSTL1STRM);
+  if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
+    prfm(Address(counter_addr), PSTL1STRM);
   bind(retry_load);
   // flush and load exclusive from the memory location
   ldxrw(tmp, counter_addr);
@@ -2084,7 +2085,8 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    prfm(Address(addr), PSTL1STRM);
+    if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
+      prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2120,7 +2122,8 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    prfm(Address(addr), PSTL1STRM);
+    if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
+      prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2155,7 +2158,8 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   } else {
     BLOCK_COMMENT("cmpxchg {");
     Label retry_load, done;
-    prfm(Address(addr), PSTL1STRM);
+    if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
+      prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     load_exclusive(tmp, addr, size, acquire);
     if (size == xword)
@@ -2194,7 +2198,8 @@ void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Regis
     result = different(prev, incr, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  prfm(Address(addr), PSTL1STRM);                                       \
+  if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))         \
+    prfm(Address(addr), PSTL1STRM);                                     \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   OP(rscratch1, result, incr);                                          \
@@ -2224,7 +2229,8 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
     result = different(prev, newv, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  prfm(Address(addr), PSTL1STRM);                                       \
+  if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))         \
+    prfm(Address(addr), PSTL1STRM);                                     \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   STXR(rscratch1, newv, addr);                                          \
@@ -4136,13 +4142,14 @@ void MacroAssembler::remove_frame(int framesize) {
   }
 }
 
+typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
 // Search for str1 in str2 and return index or -1
 void MacroAssembler::string_indexof(Register str2, Register str1,
                                     Register cnt2, Register cnt1,
                                     Register tmp1, Register tmp2,
                                     Register tmp3, Register tmp4,
-                                    int icnt1, Register result) {
+                                    int icnt1, Register result, int ae) {
   Label BM, LINEARSEARCH, DONE, NOMATCH, MATCH;
 
   Register ch1 = rscratch1;
@@ -4152,6 +4159,21 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
   Register cnt1_neg = cnt1;
   Register cnt2_neg = cnt2;
   Register result_tmp = tmp4;
+
+  bool isL = ae == StrIntrinsicNode::LL;
+
+  bool str1_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UL;
+  bool str2_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::LU;
+  int str1_chr_shift = str1_isL ? 0:1;
+  int str2_chr_shift = str2_isL ? 0:1;
+  int str1_chr_size = str1_isL ? 1:2;
+  int str2_chr_size = str2_isL ? 1:2;
+  chr_insn str1_load_1chr = str1_isL ? (chr_insn)&MacroAssembler::ldrb :
+                                      (chr_insn)&MacroAssembler::ldrh;
+  chr_insn str2_load_1chr = str2_isL ? (chr_insn)&MacroAssembler::ldrb :
+                                      (chr_insn)&MacroAssembler::ldrh;
+  chr_insn load_2chr = isL ? (chr_insn)&MacroAssembler::ldrh : (chr_insn)&MacroAssembler::ldrw;
+  chr_insn load_4chr = isL ? (chr_insn)&MacroAssembler::ldrw : (chr_insn)&MacroAssembler::ldr;
 
   // Note, inline_string_indexOf() generates checks:
   // if (substr.count > string.count) return -1;
@@ -4242,7 +4264,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
       mov(cnt1tmp, 0);
       sub(cnt1end, cnt1, 1);
     BIND(BCLOOP);
-      ldrh(ch1, Address(str1, cnt1tmp, Address::lsl(1)));
+      (this->*str1_load_1chr)(ch1, Address(str1, cnt1tmp, Address::lsl(str1_chr_shift)));
       cmp(ch1, 128);
       add(cnt1tmp, cnt1tmp, 1);
       br(HS, BCSKIP);
@@ -4254,36 +4276,36 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
       mov(result_tmp, str2);
 
       sub(cnt2, cnt2, cnt1);
-      add(str2end, str2, cnt2, LSL, 1);
+      add(str2end, str2, cnt2, LSL, str2_chr_shift);
     BIND(BMLOOPSTR2);
       sub(cnt1tmp, cnt1, 1);
-      ldrh(ch1, Address(str1, cnt1tmp, Address::lsl(1)));
-      ldrh(skipch, Address(str2, cnt1tmp, Address::lsl(1)));
+      (this->*str1_load_1chr)(ch1, Address(str1, cnt1tmp, Address::lsl(str1_chr_shift)));
+      (this->*str2_load_1chr)(skipch, Address(str2, cnt1tmp, Address::lsl(str2_chr_shift)));
       cmp(ch1, skipch);
       br(NE, BMSKIP);
       subs(cnt1tmp, cnt1tmp, 1);
       br(LT, BMMATCH);
     BIND(BMLOOPSTR1);
-      ldrh(ch1, Address(str1, cnt1tmp, Address::lsl(1)));
-      ldrh(ch2, Address(str2, cnt1tmp, Address::lsl(1)));
+      (this->*str1_load_1chr)(ch1, Address(str1, cnt1tmp, Address::lsl(str1_chr_shift)));
+      (this->*str2_load_1chr)(ch2, Address(str2, cnt1tmp, Address::lsl(str2_chr_shift)));
       cmp(ch1, ch2);
       br(NE, BMSKIP);
       subs(cnt1tmp, cnt1tmp, 1);
       br(GE, BMLOOPSTR1);
     BIND(BMMATCH);
-      sub(result_tmp, str2, result_tmp);
-      lsr(result, result_tmp, 1);
+      sub(result, str2, result_tmp);
+      if (!str2_isL) lsr(result, result, 1);
       add(sp, sp, 128);
       b(DONE);
     BIND(BMADV);
-      add(str2, str2, 2);
+      add(str2, str2, str2_chr_size);
       b(BMCHECKEND);
     BIND(BMSKIP);
       cmp(skipch, 128);
       br(HS, BMADV);
       ldrb(ch2, Address(sp, skipch));
-      add(str2, str2, cnt1, LSL, 1);
-      sub(str2, str2, ch2, LSL, 1);
+      add(str2, str2, cnt1, LSL, str2_chr_shift);
+      sub(str2, str2, ch2, LSL, str2_chr_shift);
     BIND(BMCHECKEND);
       cmp(str2, str2end);
       br(LE, BMLOOPSTR2);
@@ -4300,119 +4322,113 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
 
     if (icnt1 == -1)
     {
-        Label DOSHORT, FIRST_LOOP, STR2_NEXT, STR1_LOOP, STR1_NEXT, LAST_WORD;
+        Label DOSHORT, FIRST_LOOP, STR2_NEXT, STR1_LOOP, STR1_NEXT;
 
-        cmp(cnt1, 4);
+        cmp(cnt1, str1_isL == str2_isL ? 4 : 2);
         br(LT, DOSHORT);
 
         sub(cnt2, cnt2, cnt1);
-        sub(cnt1, cnt1, 4);
         mov(result_tmp, cnt2);
 
-        lea(str1, Address(str1, cnt1, Address::uxtw(1)));
-        lea(str2, Address(str2, cnt2, Address::uxtw(1)));
-        sub(cnt1_neg, zr, cnt1, LSL, 1);
-        sub(cnt2_neg, zr, cnt2, LSL, 1);
-        ldr(first, Address(str1, cnt1_neg));
+        lea(str1, Address(str1, cnt1, Address::lsl(str1_chr_shift)));
+        lea(str2, Address(str2, cnt2, Address::lsl(str2_chr_shift)));
+        sub(cnt1_neg, zr, cnt1, LSL, str1_chr_shift);
+        sub(cnt2_neg, zr, cnt2, LSL, str2_chr_shift);
+        (this->*str1_load_1chr)(first, Address(str1, cnt1_neg));
 
       BIND(FIRST_LOOP);
-        ldr(ch2, Address(str2, cnt2_neg));
+        (this->*str2_load_1chr)(ch2, Address(str2, cnt2_neg));
         cmp(first, ch2);
         br(EQ, STR1_LOOP);
       BIND(STR2_NEXT);
-        adds(cnt2_neg, cnt2_neg, 2);
+        adds(cnt2_neg, cnt2_neg, str2_chr_size);
         br(LE, FIRST_LOOP);
         b(NOMATCH);
 
       BIND(STR1_LOOP);
-        adds(cnt1tmp, cnt1_neg, 8);
-        add(cnt2tmp, cnt2_neg, 8);
-        br(GE, LAST_WORD);
+        adds(cnt1tmp, cnt1_neg, str1_chr_size);
+        add(cnt2tmp, cnt2_neg, str2_chr_size);
+        br(GE, MATCH);
 
       BIND(STR1_NEXT);
-        ldr(ch1, Address(str1, cnt1tmp));
-        ldr(ch2, Address(str2, cnt2tmp));
+        (this->*str1_load_1chr)(ch1, Address(str1, cnt1tmp));
+        (this->*str2_load_1chr)(ch2, Address(str2, cnt2tmp));
         cmp(ch1, ch2);
         br(NE, STR2_NEXT);
-        adds(cnt1tmp, cnt1tmp, 8);
-        add(cnt2tmp, cnt2tmp, 8);
+        adds(cnt1tmp, cnt1tmp, str1_chr_size);
+        add(cnt2tmp, cnt2tmp, str2_chr_size);
         br(LT, STR1_NEXT);
-
-      BIND(LAST_WORD);
-        ldr(ch1, Address(str1));
-        sub(str2tmp, str2, cnt1_neg);         // adjust to corresponding
-        ldr(ch2, Address(str2tmp, cnt2_neg)); // word in str2
-        cmp(ch1, ch2);
-        br(NE, STR2_NEXT);
         b(MATCH);
 
       BIND(DOSHORT);
+      if (str1_isL == str2_isL) {
         cmp(cnt1, 2);
         br(LT, DO1);
         br(GT, DO3);
+      }
     }
 
     if (icnt1 == 4) {
       Label CH1_LOOP;
 
-        ldr(ch1, str1);
+        (this->*load_4chr)(ch1, str1);
         sub(cnt2, cnt2, 4);
         mov(result_tmp, cnt2);
-        lea(str2, Address(str2, cnt2, Address::uxtw(1)));
-        sub(cnt2_neg, zr, cnt2, LSL, 1);
+        lea(str2, Address(str2, cnt2, Address::lsl(str2_chr_shift)));
+        sub(cnt2_neg, zr, cnt2, LSL, str2_chr_shift);
 
       BIND(CH1_LOOP);
-        ldr(ch2, Address(str2, cnt2_neg));
+        (this->*load_4chr)(ch2, Address(str2, cnt2_neg));
         cmp(ch1, ch2);
         br(EQ, MATCH);
-        adds(cnt2_neg, cnt2_neg, 2);
+        adds(cnt2_neg, cnt2_neg, str2_chr_size);
         br(LE, CH1_LOOP);
         b(NOMATCH);
     }
 
-    if (icnt1 == -1 || icnt1 == 2) {
+    if ((icnt1 == -1 && str1_isL == str2_isL) || icnt1 == 2) {
       Label CH1_LOOP;
 
       BIND(DO2);
-        ldrw(ch1, str1);
+        (this->*load_2chr)(ch1, str1);
         sub(cnt2, cnt2, 2);
         mov(result_tmp, cnt2);
-        lea(str2, Address(str2, cnt2, Address::uxtw(1)));
-        sub(cnt2_neg, zr, cnt2, LSL, 1);
+        lea(str2, Address(str2, cnt2, Address::lsl(str2_chr_shift)));
+        sub(cnt2_neg, zr, cnt2, LSL, str2_chr_shift);
 
       BIND(CH1_LOOP);
-        ldrw(ch2, Address(str2, cnt2_neg));
+        (this->*load_2chr)(ch2, Address(str2, cnt2_neg));
         cmp(ch1, ch2);
         br(EQ, MATCH);
-        adds(cnt2_neg, cnt2_neg, 2);
+        adds(cnt2_neg, cnt2_neg, str2_chr_size);
         br(LE, CH1_LOOP);
         b(NOMATCH);
     }
 
-    if (icnt1 == -1 || icnt1 == 3) {
+    if ((icnt1 == -1 && str1_isL == str2_isL) || icnt1 == 3) {
       Label FIRST_LOOP, STR2_NEXT, STR1_LOOP;
 
       BIND(DO3);
-        ldrw(first, str1);
-        ldrh(ch1, Address(str1, 4));
+        (this->*load_2chr)(first, str1);
+        (this->*str1_load_1chr)(ch1, Address(str1, 2*str1_chr_size));
 
         sub(cnt2, cnt2, 3);
         mov(result_tmp, cnt2);
-        lea(str2, Address(str2, cnt2, Address::uxtw(1)));
-        sub(cnt2_neg, zr, cnt2, LSL, 1);
+        lea(str2, Address(str2, cnt2, Address::lsl(str2_chr_shift)));
+        sub(cnt2_neg, zr, cnt2, LSL, str2_chr_shift);
 
       BIND(FIRST_LOOP);
-        ldrw(ch2, Address(str2, cnt2_neg));
+        (this->*load_2chr)(ch2, Address(str2, cnt2_neg));
         cmpw(first, ch2);
         br(EQ, STR1_LOOP);
       BIND(STR2_NEXT);
-        adds(cnt2_neg, cnt2_neg, 2);
+        adds(cnt2_neg, cnt2_neg, str2_chr_size);
         br(LE, FIRST_LOOP);
         b(NOMATCH);
 
       BIND(STR1_LOOP);
-        add(cnt2tmp, cnt2_neg, 4);
-        ldrh(ch2, Address(str2, cnt2tmp));
+        add(cnt2tmp, cnt2_neg, 2*str2_chr_size);
+        (this->*str2_load_1chr)(ch2, Address(str2, cnt2tmp));
         cmp(ch1, ch2);
         br(NE, STR2_NEXT);
         b(MATCH);
@@ -4423,24 +4439,31 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
       Label DO1_SHORT, DO1_LOOP;
 
       BIND(DO1);
-        ldrh(ch1, str1);
-        cmp(cnt2, 4);
+        (this->*str1_load_1chr)(ch1, str1);
+        cmp(cnt2, 8);
         br(LT, DO1_SHORT);
 
+        if (str2_isL) {
+          if (!str1_isL) {
+            tst(ch1, 0xff00);
+            br(NE, NOMATCH);
+          }
+          orr(ch1, ch1, ch1, LSL, 8);
+        }
         orr(ch1, ch1, ch1, LSL, 16);
         orr(ch1, ch1, ch1, LSL, 32);
 
-        sub(cnt2, cnt2, 4);
+        sub(cnt2, cnt2, 8/str2_chr_size);
         mov(result_tmp, cnt2);
-        lea(str2, Address(str2, cnt2, Address::uxtw(1)));
-        sub(cnt2_neg, zr, cnt2, LSL, 1);
+        lea(str2, Address(str2, cnt2, Address::lsl(str2_chr_shift)));
+        sub(cnt2_neg, zr, cnt2, LSL, str2_chr_shift);
 
-        mov(tmp3, 0x0001000100010001);
+        mov(tmp3, str2_isL ? 0x0101010101010101 : 0x0001000100010001);
       BIND(CH1_LOOP);
         ldr(ch2, Address(str2, cnt2_neg));
         eor(ch2, ch1, ch2);
         sub(tmp1, ch2, tmp3);
-        orr(tmp2, ch2, 0x7fff7fff7fff7fff);
+        orr(tmp2, ch2, str2_isL ? 0x7f7f7f7f7f7f7f7f : 0x7fff7fff7fff7fff);
         bics(tmp1, tmp1, tmp2);
         br(NE, HAS_ZERO);
         adds(cnt2_neg, cnt2_neg, 8);
@@ -4459,13 +4482,13 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
 
       BIND(DO1_SHORT);
         mov(result_tmp, cnt2);
-        lea(str2, Address(str2, cnt2, Address::uxtw(1)));
-        sub(cnt2_neg, zr, cnt2, LSL, 1);
+        lea(str2, Address(str2, cnt2, Address::lsl(str2_chr_shift)));
+        sub(cnt2_neg, zr, cnt2, LSL, str2_chr_shift);
       BIND(DO1_LOOP);
-        ldrh(ch2, Address(str2, cnt2_neg));
+        (this->*str2_load_1chr)(ch2, Address(str2, cnt2_neg));
         cmpw(ch1, ch2);
         br(EQ, MATCH);
-        adds(cnt2_neg, cnt2_neg, 2);
+        adds(cnt2_neg, cnt2_neg, str2_chr_size);
         br(LT, DO1_LOOP);
     }
   }
@@ -4473,7 +4496,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
     mov(result, -1);
     b(DONE);
   BIND(MATCH);
-    add(result, result_tmp, cnt2_neg, ASR, 1);
+    add(result, result_tmp, cnt2_neg, ASR, str2_chr_shift);
   BIND(DONE);
 }
 

@@ -5128,27 +5128,45 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
     if (VM_Version::supports_sse2() && UseLibmIntrinsic) {
-      StubRoutines::x86::_ONEHALF_adr = (address)StubRoutines::x86::_ONEHALF;
-      StubRoutines::x86::_P_2_adr = (address)StubRoutines::x86::_P_2;
-      StubRoutines::x86::_SC_4_adr = (address)StubRoutines::x86::_SC_4;
-      StubRoutines::x86::_Ctable_adr = (address)StubRoutines::x86::_Ctable;
-      StubRoutines::x86::_SC_2_adr = (address)StubRoutines::x86::_SC_2;
-      StubRoutines::x86::_SC_3_adr = (address)StubRoutines::x86::_SC_3;
-      StubRoutines::x86::_SC_1_adr = (address)StubRoutines::x86::_SC_1;
-      StubRoutines::x86::_PI_INV_TABLE_adr = (address)StubRoutines::x86::_PI_INV_TABLE;
-      StubRoutines::x86::_PI_4_adr = (address)StubRoutines::x86::_PI_4;
-      StubRoutines::x86::_PI32INV_adr = (address)StubRoutines::x86::_PI32INV;
-      StubRoutines::x86::_SIGN_MASK_adr = (address)StubRoutines::x86::_SIGN_MASK;
-      StubRoutines::x86::_P_1_adr = (address)StubRoutines::x86::_P_1;
-      StubRoutines::x86::_P_3_adr = (address)StubRoutines::x86::_P_3;
-      StubRoutines::x86::_NEG_ZERO_adr = (address)StubRoutines::x86::_NEG_ZERO;
-      StubRoutines::_dexp = generate_libmExp();
-      StubRoutines::_dlog = generate_libmLog();
-      StubRoutines::_dlog10 = generate_libmLog10();
-      StubRoutines::_dpow = generate_libmPow();
-      StubRoutines::_dtan = generate_libmTan();
-      StubRoutines::_dsin = generate_libmSin();
-      StubRoutines::_dcos = generate_libmCos();
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
+          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
+          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
+        StubRoutines::x86::_ONEHALF_adr = (address)StubRoutines::x86::_ONEHALF;
+        StubRoutines::x86::_P_2_adr = (address)StubRoutines::x86::_P_2;
+        StubRoutines::x86::_SC_4_adr = (address)StubRoutines::x86::_SC_4;
+        StubRoutines::x86::_Ctable_adr = (address)StubRoutines::x86::_Ctable;
+        StubRoutines::x86::_SC_2_adr = (address)StubRoutines::x86::_SC_2;
+        StubRoutines::x86::_SC_3_adr = (address)StubRoutines::x86::_SC_3;
+        StubRoutines::x86::_SC_1_adr = (address)StubRoutines::x86::_SC_1;
+        StubRoutines::x86::_PI_INV_TABLE_adr = (address)StubRoutines::x86::_PI_INV_TABLE;
+        StubRoutines::x86::_PI_4_adr = (address)StubRoutines::x86::_PI_4;
+        StubRoutines::x86::_PI32INV_adr = (address)StubRoutines::x86::_PI32INV;
+        StubRoutines::x86::_SIGN_MASK_adr = (address)StubRoutines::x86::_SIGN_MASK;
+        StubRoutines::x86::_P_1_adr = (address)StubRoutines::x86::_P_1;
+        StubRoutines::x86::_P_3_adr = (address)StubRoutines::x86::_P_3;
+        StubRoutines::x86::_NEG_ZERO_adr = (address)StubRoutines::x86::_NEG_ZERO;
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
+        StubRoutines::_dexp = generate_libmExp();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
+        StubRoutines::_dlog = generate_libmLog();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
+        StubRoutines::_dlog10 = generate_libmLog10();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
+        StubRoutines::_dpow = generate_libmPow();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
+        StubRoutines::_dsin = generate_libmSin();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
+        StubRoutines::_dcos = generate_libmCos();
+      }
+      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
+        StubRoutines::_dtan = generate_libmTan();
+      }
     }
   }
 

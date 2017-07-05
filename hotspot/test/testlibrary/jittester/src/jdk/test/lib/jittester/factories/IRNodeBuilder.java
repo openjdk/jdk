@@ -25,14 +25,64 @@ package jdk.test.lib.jittester.factories;
 
 import java.util.Collection;
 import java.util.Optional;
+
+import jdk.test.lib.jittester.BinaryOperator;
+import jdk.test.lib.jittester.Block;
+import jdk.test.lib.jittester.Break;
+import jdk.test.lib.jittester.CastOperator;
+import jdk.test.lib.jittester.Continue;
+import jdk.test.lib.jittester.Declaration;
+import jdk.test.lib.jittester.IRNode;
+import jdk.test.lib.jittester.If;
 import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.LocalVariable;
+import jdk.test.lib.jittester.NonStaticMemberVariable;
+import jdk.test.lib.jittester.Nothing;
+import jdk.test.lib.jittester.Operator;
 import jdk.test.lib.jittester.OperatorKind;
+import jdk.test.lib.jittester.PrintVariables;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.ProductionParams;
+import jdk.test.lib.jittester.Statement;
+import jdk.test.lib.jittester.StaticMemberVariable;
+import jdk.test.lib.jittester.Switch;
 import jdk.test.lib.jittester.Symbol;
+import jdk.test.lib.jittester.TernaryOperator;
+import jdk.test.lib.jittester.Throw;
+import jdk.test.lib.jittester.TryCatchBlock;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
+import jdk.test.lib.jittester.UnaryOperator;
+import jdk.test.lib.jittester.VariableBase;
+import jdk.test.lib.jittester.VariableDeclaration;
+import jdk.test.lib.jittester.VariableDeclarationBlock;
+import jdk.test.lib.jittester.VariableInitialization;
+import jdk.test.lib.jittester.arrays.ArrayCreation;
+import jdk.test.lib.jittester.arrays.ArrayElement;
+import jdk.test.lib.jittester.arrays.ArrayExtraction;
+import jdk.test.lib.jittester.classes.ClassDefinitionBlock;
+import jdk.test.lib.jittester.classes.Interface;
+import jdk.test.lib.jittester.classes.Klass;
+import jdk.test.lib.jittester.classes.MainKlass;
+import jdk.test.lib.jittester.functions.ArgumentDeclaration;
+import jdk.test.lib.jittester.functions.ConstructorDefinition;
+import jdk.test.lib.jittester.functions.ConstructorDefinitionBlock;
+import jdk.test.lib.jittester.functions.Function;
+import jdk.test.lib.jittester.functions.FunctionDeclaration;
+import jdk.test.lib.jittester.functions.FunctionDeclarationBlock;
+import jdk.test.lib.jittester.functions.FunctionDefinition;
+import jdk.test.lib.jittester.functions.FunctionDefinitionBlock;
 import jdk.test.lib.jittester.functions.FunctionInfo;
+import jdk.test.lib.jittester.functions.FunctionRedefinition;
+import jdk.test.lib.jittester.functions.FunctionRedefinitionBlock;
+import jdk.test.lib.jittester.functions.Return;
+import jdk.test.lib.jittester.functions.StaticConstructorDefinition;
+import jdk.test.lib.jittester.loops.CounterInitializer;
+import jdk.test.lib.jittester.loops.CounterManipulator;
+import jdk.test.lib.jittester.loops.DoWhile;
+import jdk.test.lib.jittester.loops.For;
+import jdk.test.lib.jittester.loops.LoopingCondition;
+import jdk.test.lib.jittester.loops.While;
 import jdk.test.lib.jittester.types.TypeKlass;
 
 public class IRNodeBuilder {
@@ -63,41 +113,40 @@ public class IRNodeBuilder {
     private Optional<Boolean> isConstant = Optional.empty();
     private Optional<Boolean> isInitialized = Optional.empty();
     private Optional<String> name = Optional.empty();
-    private Optional<String> printerName = Optional.empty();
     private Optional<Integer> flags = Optional.empty();
     private Optional<FunctionInfo> functionInfo = Optional.empty();
     private Optional<Boolean> semicolon = Optional.empty();
 
-    public ArgumentDeclarationFactory getArgumentDeclarationFactory() {
+    public Factory<ArgumentDeclaration> getArgumentDeclarationFactory() {
         return new ArgumentDeclarationFactory(getArgumentType(), getVariableNumber());
     }
 
-    public Factory getArithmeticOperatorFactory() throws ProductionFailedException {
+    public Factory<Operator> getArithmeticOperatorFactory() throws ProductionFailedException {
         return new ArithmeticOperatorFactory(getComplexityLimit(), getOperatorLimit(),
                 getOwnerClass(), getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public ArrayCreationFactory getArrayCreationFactory() {
+    public Factory<ArrayCreation> getArrayCreationFactory() {
         return new ArrayCreationFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public ArrayElementFactory getArrayElementFactory() {
+    public Factory<ArrayElement> getArrayElementFactory() {
         return new ArrayElementFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public ArrayExtractionFactory getArrayExtractionFactory() {
+    public Factory<ArrayExtraction> getArrayExtractionFactory() {
         return new ArrayExtractionFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public AssignmentOperatorFactory getAssignmentOperatorFactory() {
+    public Factory<Operator> getAssignmentOperatorFactory() {
         return new AssignmentOperatorFactory(getComplexityLimit(), getOperatorLimit(),
                 getOwnerClass(), resultType.orElse(null), getExceptionSafe(), getNoConsts());
     }
 
-    public BinaryOperatorFactory getBinaryOperatorFactory() throws ProductionFailedException {
+    public Factory<BinaryOperator> getBinaryOperatorFactory() throws ProductionFailedException {
         OperatorKind o = getOperatorKind();
         switch (o) {
             case ASSIGN:
@@ -166,7 +215,7 @@ public class IRNodeBuilder {
         }
     }
 
-    public UnaryOperatorFactory getUnaryOperatorFactory() throws ProductionFailedException {
+    public Factory<UnaryOperator> getUnaryOperatorFactory() throws ProductionFailedException {
         OperatorKind o = getOperatorKind();
         switch (o) {
             case NOT:
@@ -193,24 +242,24 @@ public class IRNodeBuilder {
         }
     }
 
-    public BlockFactory getBlockFactory() throws ProductionFailedException {
+    public Factory<Block> getBlockFactory() {
         return new BlockFactory(getOwnerClass(), getResultType(), getComplexityLimit(),
-            getStatementLimit(), getOperatorLimit(), getLevel(), subBlock.orElse(false),
-            canHaveBreaks.orElse(false), canHaveContinues.orElse(false),
+                getStatementLimit(), getOperatorLimit(), getLevel(), subBlock.orElse(false),
+                canHaveBreaks.orElse(false), canHaveContinues.orElse(false),
                 canHaveReturn.orElse(false), canHaveReturn.orElse(false));
-                //now 'throw' can be placed only in the same positions as 'return'
+        //now 'throw' can be placed only in the same positions as 'return'
     }
 
-    public BreakFactory getBreakFactory() {
+    public Factory<Break> getBreakFactory() {
         return new BreakFactory();
     }
 
-    public CastOperatorFactory getCastOperatorFactory() {
+    public Factory<CastOperator> getCastOperatorFactory() {
         return new CastOperatorFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public Factory getClassDefinitionBlockFactory() {
+    public Factory<ClassDefinitionBlock> getClassDefinitionBlockFactory() {
         return new ClassDefinitionBlockFactory(getPrefix(),
                 ProductionParams.classesLimit.value(),
                 ProductionParams.memberFunctionsLimit.value(),
@@ -221,7 +270,7 @@ public class IRNodeBuilder {
                 getLevel());
     }
 
-    public Factory getMainKlassFactory() {
+    public Factory<MainKlass> getMainKlassFactory() {
         return new MainKlassFactory(getName(), getComplexityLimit(),
                 ProductionParams.memberFunctionsLimit.value(),
                 ProductionParams.memberFunctionsArgLimit.value(),
@@ -230,200 +279,200 @@ public class IRNodeBuilder {
                 ProductionParams.operatorLimit.value());
     }
 
-    public ConstructorDefinitionBlockFactory getConstructorDefinitionBlockFactory() {
+    public Factory<ConstructorDefinitionBlock> getConstructorDefinitionBlockFactory() {
         return new ConstructorDefinitionBlockFactory(getOwnerClass(), getMemberFunctionsLimit(),
                 ProductionParams.memberFunctionsArgLimit.value(), getComplexityLimit(),
                 getStatementLimit(), getOperatorLimit(), getLevel());
     }
 
-    public ConstructorDefinitionFactory getConstructorDefinitionFactory() {
+    public Factory<ConstructorDefinition> getConstructorDefinitionFactory() {
         return new ConstructorDefinitionFactory(getOwnerClass(), getComplexityLimit(),
                 getStatementLimit(), getOperatorLimit(),
                 getMemberFunctionsArgLimit(), getLevel());
     }
 
-    public ContinueFactory getContinueFactory() {
+    public Factory<Continue> getContinueFactory() {
         return new ContinueFactory();
     }
 
-    public CounterInitializerFactory getCounterInitializerFactory(int counterValue) {
+    public Factory<CounterInitializer> getCounterInitializerFactory(int counterValue) {
         return new CounterInitializerFactory(getOwnerClass(), counterValue);
     }
 
-    public CounterManipulatorFactory getCounterManipulatorFactory() {
+    public Factory<CounterManipulator> getCounterManipulatorFactory() {
         return new CounterManipulatorFactory(getLocalVariable());
     }
 
-    public DeclarationFactory getDeclarationFactory() {
+    public Factory<Declaration> getDeclarationFactory() {
         return new DeclarationFactory(getOwnerClass(), getComplexityLimit(), getOperatorLimit(),
-            getIsLocal(), getExceptionSafe());
+                getIsLocal(), getExceptionSafe());
     }
 
-    public DoWhileFactory getDoWhileFactory() {
+    public Factory<DoWhile> getDoWhileFactory() {
         return new DoWhileFactory(getOwnerClass(), getResultType(), getComplexityLimit(),
                 getStatementLimit(), getOperatorLimit(), getLevel(), getCanHaveReturn());
     }
 
-    public WhileFactory getWhileFactory() {
+    public Factory<While> getWhileFactory() {
         return new WhileFactory(getOwnerClass(), getResultType(), getComplexityLimit(),
                 getStatementLimit(), getOperatorLimit(), getLevel(), getCanHaveReturn());
     }
 
-    public IfFactory getIfFactory() {
+    public Factory<If> getIfFactory() {
         return new IfFactory(getOwnerClass(), getResultType(), getComplexityLimit(),
-        getStatementLimit(), getOperatorLimit(), getLevel(), getCanHaveBreaks(),
+                getStatementLimit(), getOperatorLimit(), getLevel(), getCanHaveBreaks(),
                 getCanHaveContinues(), getCanHaveReturn());
     }
 
-    public ForFactory getForFactory() {
+    public Factory<For> getForFactory() {
         return new ForFactory(getOwnerClass(), getResultType(), getComplexityLimit(),
                 getStatementLimit(), getOperatorLimit(), getLevel(), getCanHaveReturn());
     }
 
-    public SwitchFactory getSwitchFactory() { // TODO: switch is not used now
+    public Factory<Switch> getSwitchFactory() { // TODO: switch is not used now
         return new SwitchFactory(getOwnerClass(), getComplexityLimit(), getStatementLimit(),
                 getOperatorLimit(), getLevel(), getCanHaveReturn());
     }
 
-    public ExpressionFactory getExpressionFactory() throws ProductionFailedException {
+    public Factory<IRNode> getExpressionFactory() throws ProductionFailedException {
         return new ExpressionFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public FunctionDeclarationBlockFactory getFunctionDeclarationBlockFactory() {
+    public Factory<FunctionDeclarationBlock> getFunctionDeclarationBlockFactory() {
         return new FunctionDeclarationBlockFactory(getOwnerClass(), getMemberFunctionsLimit(),
                 getMemberFunctionsArgLimit(), getLevel());
     }
 
-    public FunctionDeclarationFactory getFunctionDeclarationFactory() {
-        return new FunctionDeclarationFactory(getName(), getOwnerClass(),resultType.orElse(null),
+    public Factory<FunctionDeclaration> getFunctionDeclarationFactory() {
+        return new FunctionDeclarationFactory(getName(), getOwnerClass(),resultType.orElse(TypeList.VOID),
                 getMemberFunctionsArgLimit(), getFlags());
     }
 
-    public FunctionDefinitionBlockFactory getFunctionDefinitionBlockFactory() {
+    public Factory<FunctionDefinitionBlock> getFunctionDefinitionBlockFactory() {
         return new FunctionDefinitionBlockFactory(getOwnerClass(), getMemberFunctionsLimit(),
                 getMemberFunctionsArgLimit(), getComplexityLimit(), getStatementLimit(),
                 getOperatorLimit(), getLevel(), getFlags());
     }
 
-    public FunctionDefinitionFactory getFunctionDefinitionFactory() {
-        return new FunctionDefinitionFactory(getName(), getOwnerClass(), resultType.orElse(null),
+    public Factory<FunctionDefinition> getFunctionDefinitionFactory() {
+        return new FunctionDefinitionFactory(getName(), getOwnerClass(), resultType.orElse(TypeList.VOID),
                 getComplexityLimit(), getStatementLimit(), getOperatorLimit(),
                 getMemberFunctionsArgLimit(), getLevel(), getFlags());
     }
 
-    public FunctionFactory getFunctionFactory() {
+    public Factory<Function> getFunctionFactory() {
         return new FunctionFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 resultType.orElse(null), getExceptionSafe());
     }
 
-    public FunctionRedefinitionBlockFactory getFunctionRedefinitionBlockFactory(Collection<Symbol>
-            functionSet) {
+    public Factory<FunctionRedefinitionBlock> getFunctionRedefinitionBlockFactory(Collection<Symbol>
+                                                                                        functionSet) {
         return new FunctionRedefinitionBlockFactory(functionSet, getOwnerClass(),
                 getComplexityLimit(), getStatementLimit(), getOperatorLimit(), getLevel());
     }
 
-    public FunctionRedefinitionFactory getFunctionRedefinitionFactory() {
+    public Factory<FunctionRedefinition> getFunctionRedefinitionFactory() {
         return new FunctionRedefinitionFactory(getFunctionInfo(), getOwnerClass(),
                 getComplexityLimit(), getStatementLimit(), getOperatorLimit(), getLevel(),
                 getFlags());
     }
 
-    public InterfaceFactory getInterfaceFactory() {
+    public Factory<Interface> getInterfaceFactory() {
         return new InterfaceFactory(getName(), getMemberFunctionsLimit(),
                 getMemberFunctionsArgLimit(), getLevel());
     }
 
-    public KlassFactory getKlassFactory() {
-        return new KlassFactory(getName(), getPrinterName(), getComplexityLimit(),
+    public Factory<Klass> getKlassFactory() {
+        return new KlassFactory(getName(), getComplexityLimit(),
                 getMemberFunctionsLimit(), getMemberFunctionsArgLimit(), getStatementLimit(),
                 getOperatorLimit(), getLevel());
     }
 
-    public LimitedExpressionFactory getLimitedExpressionFactory() throws ProductionFailedException {
+    public Factory<IRNode> getLimitedExpressionFactory() throws ProductionFailedException {
         return new LimitedExpressionFactory(getComplexityLimit(), getOperatorLimit(),
                 getOwnerClass(), getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public LiteralFactory getLiteralFactory() {
+    public Factory<Literal> getLiteralFactory() {
         return new LiteralFactory(getResultType());
     }
 
-    public LocalVariableFactory getLocalVariableFactory() {
+    public Factory<LocalVariable> getLocalVariableFactory() {
         return new LocalVariableFactory(/*getVariableType()*/getResultType(), getFlags());
     }
 
-    public LogicOperatorFactory getLogicOperatorFactory() throws ProductionFailedException {
+    public Factory<Operator> getLogicOperatorFactory() throws ProductionFailedException {
         return new LogicOperatorFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public LoopingConditionFactory getLoopingConditionFactory(Literal _limiter) {
+    public Factory<LoopingCondition> getLoopingConditionFactory(Literal _limiter) {
         return new LoopingConditionFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getLocalVariable(), _limiter);
     }
 
-    public NonStaticMemberVariableFactory getNonStaticMemberVariableFactory() {
+    public Factory<NonStaticMemberVariable> getNonStaticMemberVariableFactory() {
         return new NonStaticMemberVariableFactory(getComplexityLimit(), getOperatorLimit(),
                 getOwnerClass(), /*getVariableType()*/getResultType(), getFlags(), getExceptionSafe());
     }
 
-    public NothingFactory getNothingFactory() {
+    public Factory<Nothing> getNothingFactory() {
         return new NothingFactory();
     }
 
-    public PrintVariablesFactory getPrintVariablesFactory() {
-        return new PrintVariablesFactory(getPrinterName(), getOwnerClass(), getLevel());
+    public Factory<PrintVariables> getPrintVariablesFactory() {
+        return new PrintVariablesFactory(getOwnerClass(), getLevel());
     }
 
-    public ReturnFactory getReturnFactory() {
+    public Factory<Return> getReturnFactory() {
         return new ReturnFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe());
     }
 
-    public ThrowFactory getThrowFactory() {
+    public Factory<Throw> getThrowFactory() {
         return new ThrowFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(), getResultType(), getExceptionSafe());
     }
 
-    public StatementFactory getStatementFactory() {
+    public Factory<Statement> getStatementFactory() {
         return new StatementFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getExceptionSafe(), getNoConsts(), semicolon.orElse(true));
     }
 
-    public StaticConstructorDefinitionFactory getStaticConstructorDefinitionFactory() {
+    public Factory<StaticConstructorDefinition> getStaticConstructorDefinitionFactory() {
         return new StaticConstructorDefinitionFactory(getOwnerClass(), getComplexityLimit(),
                 getStatementLimit(), getOperatorLimit(), getLevel());
     }
 
-    public StaticMemberVariableFactory getStaticMemberVariableFactory() {
+    public Factory<StaticMemberVariable> getStaticMemberVariableFactory() {
         return new StaticMemberVariableFactory(getOwnerClass(), /*getVariableType()*/getResultType(), getFlags());
     }
 
-    public TernaryOperatorFactory getTernaryOperatorFactory() {
+    public Factory<TernaryOperator> getTernaryOperatorFactory() {
         return new TernaryOperatorFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 getResultType(), getExceptionSafe(), getNoConsts());
     }
 
-    public VariableDeclarationBlockFactory getVariableDeclarationBlockFactory() {
+    public Factory<VariableDeclarationBlock> getVariableDeclarationBlockFactory() {
         return new VariableDeclarationBlockFactory(getOwnerClass(), getComplexityLimit(),
                 getOperatorLimit(), getLevel(), getExceptionSafe());
     }
 
-    public VariableDeclarationFactory getVariableDeclarationFactory() {
+    public Factory<VariableDeclaration> getVariableDeclarationFactory() {
         return new VariableDeclarationFactory(getOwnerClass(), getIsStatic(), getIsLocal(), getResultType());
     }
 
-    public VariableFactory getVariableFactory() {
+    public Factory<VariableBase> getVariableFactory() {
         return new VariableFactory(getComplexityLimit(), getOperatorLimit(), getOwnerClass(),
                 /*getVariableType()*/getResultType(), getIsConstant(), getIsInitialized(), getExceptionSafe(), getNoConsts());
     }
 
-    public VariableInitializationFactory getVariableInitializationFactory() {
-            return new VariableInitializationFactory(getOwnerClass(), getIsConstant(), getIsStatic(),
-                    getIsLocal(), getComplexityLimit(), getOperatorLimit(), getExceptionSafe());
+    public Factory<VariableInitialization> getVariableInitializationFactory() {
+        return new VariableInitializationFactory(getOwnerClass(), getIsConstant(), getIsStatic(),
+                getIsLocal(), getComplexityLimit(), getOperatorLimit(), getExceptionSafe());
     }
 
-    public TryCatchBlockFactory getTryCatchBlockFactory() {
+    public Factory<TryCatchBlock> getTryCatchBlockFactory() {
         return new TryCatchBlockFactory(getOwnerClass(), getResultType(),
                 getComplexityLimit(), getStatementLimit(), getOperatorLimit(),
                 getLevel(), subBlock.orElse(false), getCanHaveBreaks(),
@@ -570,11 +619,6 @@ public class IRNodeBuilder {
         return this;
     }
 
-    public IRNodeBuilder setPrinterName(String value) {
-        printerName = Optional.of(value);
-        return this;
-    }
-
     public IRNodeBuilder setSemicolon(boolean value) {
         semicolon = Optional.of(value);
         return this;
@@ -697,10 +741,5 @@ public class IRNodeBuilder {
     private FunctionInfo getFunctionInfo() {
         return functionInfo.orElseThrow(() -> new IllegalArgumentException(
                 "FunctionInfo wasn't set"));
-    }
-
-    private String getPrinterName() {
-        return printerName.orElseThrow(() -> new IllegalArgumentException(
-                "printerName wasn't set"));
     }
 }
