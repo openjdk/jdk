@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@ package jdk.incubator.http;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Timeout event notified by selector thread. Executes the given handler if
- * the timer not cancelled first.
+ * the timer not canceled first.
  *
  * Register with {@link HttpClientImpl#registerTimer(TimeoutEvent)}.
  *
@@ -38,6 +39,10 @@ import java.time.Instant;
  */
 abstract class TimeoutEvent implements Comparable<TimeoutEvent> {
 
+    private static final AtomicLong COUNTER = new AtomicLong();
+    // we use id in compareTo to make compareTo consistent with equals
+    // see TimeoutEvent::compareTo below;
+    private final long id = COUNTER.incrementAndGet();
     private final Instant deadline;
 
     TimeoutEvent(Duration duration) {
@@ -52,6 +57,24 @@ abstract class TimeoutEvent implements Comparable<TimeoutEvent> {
 
     @Override
     public int compareTo(TimeoutEvent other) {
-        return this.deadline.compareTo(other.deadline);
+        if (other == this) return 0;
+        // if two events have the same deadline, but are not equals, then the
+        // smaller is the one that was created before (has the smaller id).
+        // This is arbitrary and we don't really care which is smaller or
+        // greater, but we need a total order, so two events with the
+        // same deadline cannot compare == 0 if they are not equals.
+        final int compareDeadline = this.deadline.compareTo(other.deadline);
+        if (compareDeadline == 0 && !this.equals(other)) {
+            long diff = this.id - other.id; // should take care of wrap around
+            if (diff < 0) return -1;
+            else if (diff > 0) return 1;
+            else assert false : "Different events with same id and deadline";
+        }
+        return compareDeadline;
+    }
+
+    @Override
+    public String toString() {
+        return "TimeoutEvent[id=" + id + ", deadline=" + deadline + "]";
     }
 }

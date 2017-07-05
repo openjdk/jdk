@@ -43,6 +43,7 @@ import java.util.Formatter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLEngine;
 import jdk.incubator.http.internal.common.*;
 import jdk.incubator.http.internal.frame.*;
 import jdk.incubator.http.internal.hpack.Encoder;
@@ -82,8 +83,6 @@ import static jdk.incubator.http.internal.frame.SettingsFrame.*;
  * stream are provided by calling Stream.incoming().
  */
 class Http2Connection  {
-
-
     /*
      *  ByteBuffer pooling strategy for HTTP/2 protocol:
      *
@@ -241,14 +240,7 @@ class Http2Connection  {
                                                           Http2ClientImpl client2,
                                                           Exchange<?> exchange,
                                                           ByteBuffer initial) {
-        CompletableFuture<Http2Connection> cf = new MinimalFuture<>();
-        try {
-            Http2Connection c = new Http2Connection(connection, client2, exchange, initial);
-            cf.complete(c);
-        } catch (IOException | InterruptedException e) {
-            cf.completeExceptionally(e);
-        }
-        return cf;
+        return MinimalFuture.supply(() -> new Http2Connection(connection, client2, exchange, initial));
     }
 
     /**
@@ -265,13 +257,44 @@ class Http2Connection  {
                 keyFor(request.uri(), request.proxy(h2client.client())));
         Log.logTrace("Connection send window size {0} ", windowController.connectionWindowSize());
 
-        connection.connect();
         // start reading
         AsyncConnection asyncConn = (AsyncConnection)connection;
         asyncConn.setAsyncCallbacks(this::asyncReceive, this::shutdown, this::getReadBuffer);
-        connection.configureMode(Mode.ASYNC); // set mode only AFTER setAsyncCallbacks to provide visibility.
-        asyncConn.startReading();
+        connection.connect();
+        checkSSLConfig();
+        // safe to resume async reading now.
+        asyncConn.enableCallback();
         sendConnectionPreface();
+    }
+
+    /**
+     * Throws an IOException if h2 was not negotiated
+     */
+    private void checkSSLConfig() throws IOException {
+        AsyncSSLConnection aconn = (AsyncSSLConnection)connection;
+        SSLEngine engine = aconn.getEngine();
+        String alpn = engine.getApplicationProtocol();
+        if (alpn == null || !alpn.equals("h2")) {
+            String msg;
+            if (alpn == null) {
+                Log.logSSL("ALPN not supported");
+                msg = "ALPN not supported";
+            } else switch (alpn) {
+              case "":
+                Log.logSSL("No ALPN returned");
+                msg = "No ALPN negotiated";
+                break;
+              case "http/1.1":
+                Log.logSSL("HTTP/1.1 ALPN returned");
+                msg = "HTTP/1.1 ALPN returned";
+                break;
+              default:
+                Log.logSSL("unknown ALPN returned");
+                msg = "Unexpected ALPN: " + alpn;
+                throw new IOException(msg);
+            }
+            throw new ALPNException(msg, aconn);
+        }
     }
 
     static String keyFor(HttpConnection connection) {
@@ -863,6 +886,23 @@ class Http2Connection  {
         @Override
         int getStreamId() {
             return 0;
+        }
+    }
+
+    /**
+     * Thrown when https handshake negotiates http/1.1 alpn instead of h2
+     */
+    static final class ALPNException extends IOException {
+        private static final long serialVersionUID = 23138275393635783L;
+        final AsyncSSLConnection connection;
+
+        ALPNException(String msg, AsyncSSLConnection connection) {
+            super(msg);
+            this.connection = connection;
+        }
+
+        AsyncSSLConnection getConnection() {
+            return connection;
         }
     }
 }

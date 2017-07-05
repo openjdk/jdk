@@ -26,7 +26,6 @@
  * @bug 6757225 6763051
  * @summary Test that type names in MXBeans match their spec.
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import java.lang.reflect.Field;
