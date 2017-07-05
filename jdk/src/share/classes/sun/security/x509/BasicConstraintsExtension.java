@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,18 +70,15 @@ implements CertAttrSet<String> {
 
     // Encode this extension value
     private void encodeThis() throws IOException {
-        if (ca == false && pathLen < 0) {
-            this.extensionValue = null;
-            return;
-        }
         DerOutputStream out = new DerOutputStream();
         DerOutputStream tmp = new DerOutputStream();
 
         if (ca) {
             tmp.putBoolean(ca);
-        }
-        if (pathLen >= 0) {
-            tmp.putInteger(pathLen);
+            // Only encode pathLen when ca == true
+            if (pathLen >= 0) {
+                tmp.putInteger(pathLen);
+            }
         }
         out.write(DerValue.tag_Sequence, tmp);
         this.extensionValue = out.toByteArray();
@@ -134,7 +131,7 @@ implements CertAttrSet<String> {
              throw new IOException("Invalid encoding of BasicConstraints");
          }
 
-         if (val.data == null) {
+         if (val.data == null || val.data.available() == 0) {
              // non-CA cert ("cA" field is FALSE by default), return -1
              return;
          }

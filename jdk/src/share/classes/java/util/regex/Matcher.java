@@ -491,6 +491,45 @@ public final class Matcher implements MatchResult {
     }
 
     /**
+     * Returns the input subsequence captured by the given
+     * <a href="Pattern.html#groupname">named-capturing group</a> during the previous
+     * match operation.
+     *
+     * <p> If the match was successful but the group specified failed to match
+     * any part of the input sequence, then <tt>null</tt> is returned. Note
+     * that some groups, for example <tt>(a*)</tt>, match the empty string.
+     * This method will return the empty string when such a group successfully
+     * matches the empty string in the input.  </p>
+     *
+     * @param  name
+     *         The name of a named-capturing group in this matcher's pattern
+     *
+     * @return  The (possibly empty) subsequence captured by the named group
+     *          during the previous match, or <tt>null</tt> if the group
+     *          failed to match part of the input
+     *
+     * @throws  IllegalStateException
+     *          If no match has yet been attempted,
+     *          or if the previous match operation failed
+     *
+     * @throws  IllegalArgumentException
+     *          If there is no capturing group in the pattern
+     *          with the given name
+     */
+    public String group(String name) {
+        if (name == null)
+            throw new NullPointerException("Null group name");
+        if (first < 0)
+            throw new IllegalStateException("No match found");
+        if (!parentPattern.namedGroups().containsKey(name))
+            throw new IllegalArgumentException("No group with name <" + name + ">");
+        int group = parentPattern.namedGroups().get(name);
+        if ((groups[group*2] == -1) || (groups[group*2+1] == -1))
+            return null;
+        return getSubSequence(groups[group * 2], groups[group * 2 + 1]).toString();
+    }
+
+    /**
      * Returns the number of capturing groups in this matcher's pattern.
      *
      * <p> Group zero denotes the entire pattern by convention. It is not
@@ -649,9 +688,11 @@ public final class Matcher implements MatchResult {
      *
      * <p> The replacement string may contain references to subsequences
      * captured during the previous match: Each occurrence of
-     * <tt>$</tt><i>g</i><tt></tt> will be replaced by the result of
-     * evaluating {@link #group(int) group}<tt>(</tt><i>g</i><tt>)</tt>.
-     * The first number after the <tt>$</tt> is always treated as part of
+     * <tt>$</tt>&lt;<i>name</i>&gt; or <tt>$</tt><i>g</i>
+     * will be replaced by the result of evaluating the corresponding
+     * {@link #group(String) group(name)} or {@link #group(int) group(g)</tt>}
+     * respectively. For  <tt>$</tt><i>g</i><tt></tt>,
+     * the first number after the <tt>$</tt> is always treated as part of
      * the group reference. Subsequent numbers are incorporated into g if
      * they would form a legal group reference. Only the numerals '0'
      * through '9' are considered as potential components of the group
@@ -695,6 +736,10 @@ public final class Matcher implements MatchResult {
      *          If no match has yet been attempted,
      *          or if the previous match operation failed
      *
+     * @throws  IllegalArgumentException
+     *          If the replacement string refers to a named-capturing
+     *          group that does not exist in the pattern
+     *
      * @throws  IndexOutOfBoundsException
      *          If the replacement string refers to a capturing group
      *          that does not exist in the pattern
@@ -719,29 +764,62 @@ public final class Matcher implements MatchResult {
             } else if (nextChar == '$') {
                 // Skip past $
                 cursor++;
-                // The first number is always a group
-                int refNum = (int)replacement.charAt(cursor) - '0';
-                if ((refNum < 0)||(refNum > 9))
-                    throw new IllegalArgumentException(
-                        "Illegal group reference");
-                cursor++;
-
-                // Capture the largest legal group string
-                boolean done = false;
-                while (!done) {
-                    if (cursor >= replacement.length()) {
-                        break;
+                // A StringIndexOutOfBoundsException is thrown if
+                // this "$" is the last character in replacement
+                // string in current implementation, a IAE might be
+                // more appropriate.
+                nextChar = replacement.charAt(cursor);
+                int refNum = -1;
+                if (nextChar == '<') {
+                    cursor++;
+                    StringBuilder gsb = new StringBuilder();
+                    while (cursor < replacement.length()) {
+                        nextChar = replacement.charAt(cursor);
+                        if (ASCII.isLower(nextChar) ||
+                            ASCII.isUpper(nextChar) ||
+                            ASCII.isDigit(nextChar)) {
+                            gsb.append(nextChar);
+                            cursor++;
+                        } else {
+                            break;
+                        }
                     }
-                    int nextDigit = replacement.charAt(cursor) - '0';
-                    if ((nextDigit < 0)||(nextDigit > 9)) { // not a number
-                        break;
-                    }
-                    int newRefNum = (refNum * 10) + nextDigit;
-                    if (groupCount() < newRefNum) {
-                        done = true;
-                    } else {
-                        refNum = newRefNum;
-                        cursor++;
+                    if (gsb.length() == 0)
+                        throw new IllegalArgumentException(
+                            "named capturing group has 0 length name");
+                    if (nextChar != '>')
+                        throw new IllegalArgumentException(
+                            "named capturing group is missing trailing '>'");
+                    String gname = gsb.toString();
+                    if (!parentPattern.namedGroups().containsKey(gname))
+                        throw new IllegalArgumentException(
+                            "No group with name <" + gname + ">");
+                    refNum = parentPattern.namedGroups().get(gname);
+                    cursor++;
+                } else {
+                    // The first number is always a group
+                    refNum = (int)nextChar - '0';
+                    if ((refNum < 0)||(refNum > 9))
+                        throw new IllegalArgumentException(
+                            "Illegal group reference");
+                    cursor++;
+                    // Capture the largest legal group string
+                    boolean done = false;
+                    while (!done) {
+                        if (cursor >= replacement.length()) {
+                            break;
+                        }
+                        int nextDigit = replacement.charAt(cursor) - '0';
+                        if ((nextDigit < 0)||(nextDigit > 9)) { // not a number
+                            break;
+                        }
+                        int newRefNum = (refNum * 10) + nextDigit;
+                        if (groupCount() < newRefNum) {
+                            done = true;
+                        } else {
+                            refNum = newRefNum;
+                            cursor++;
+                        }
                     }
                 }
                 // Append group

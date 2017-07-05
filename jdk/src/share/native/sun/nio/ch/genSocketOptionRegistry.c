@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,9 @@ int main(int argc, const char* argv[]) {
     out("class SocketOptionRegistry {                                                   ");
     out("    private SocketOptionRegistry() { }                                         ");
     out("    private static class RegistryKey {                                         ");
-    out("        private final SocketOption name;                                       ");
+    out("        private final SocketOption<?> name;                                    ");
     out("        private final ProtocolFamily family;                                   ");
-    out("        RegistryKey(SocketOption name, ProtocolFamily family) {                ");
+    out("        RegistryKey(SocketOption<?> name, ProtocolFamily family) {                ");
     out("            this.name = name;                                                  ");
     out("            this.family = family;                                              ");
     out("        }                                                                      ");
@@ -119,7 +119,7 @@ int main(int argc, const char* argv[]) {
     out("            return map;                                                        ");
     out("        }                                                                      ");
     out("    }                                                                          ");
-    out("    public static OptionKey findOption(SocketOption name, ProtocolFamily family) { ");
+    out("    public static OptionKey findOption(SocketOption<?> name, ProtocolFamily family) { ");
     out("        RegistryKey key = new RegistryKey(name, family);                       ");
     out("        return LazyInitialization.options.get(key);                            ");
     out("    }                                                                          ");

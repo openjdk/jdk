@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
-#include "sun_nio_ch_FileDispatcher.h"
 
 /* this is a fake c file to make the build happy since there is no
    real SocketDispatcher.c file on Solaris but there is on windows. */
