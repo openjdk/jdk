@@ -778,6 +778,23 @@ inline void Assembler::z_mdb(  FloatRegister r1, const Address& a)              
 
 
 //---------------
+// MUL-ADD
+//---------------
+inline void Assembler::z_maebr(FloatRegister f1, FloatRegister f3, FloatRegister f2) { emit_32( MAEBR_ZOPC | fregt(f1, 16, 32) | freg(f3, 24, 32) | freg(f2, 28, 32) );}
+inline void Assembler::z_madbr(FloatRegister f1, FloatRegister f3, FloatRegister f2) { emit_32( MADBR_ZOPC | fregt(f1, 16, 32) | freg(f3, 24, 32) | freg(f2, 28, 32) );}
+inline void Assembler::z_msebr(FloatRegister f1, FloatRegister f3, FloatRegister f2) { emit_32( MSEBR_ZOPC | fregt(f1, 16, 32) | freg(f3, 24, 32) | freg(f2, 28, 32) );}
+inline void Assembler::z_msdbr(FloatRegister f1, FloatRegister f3, FloatRegister f2) { emit_32( MSDBR_ZOPC | fregt(f1, 16, 32) | freg(f3, 24, 32) | freg(f2, 28, 32) );}
+inline void Assembler::z_maeb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MAEB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
+inline void Assembler::z_madb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MADB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
+inline void Assembler::z_mseb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MSEB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
+inline void Assembler::z_msdb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MSDB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
+inline void Assembler::z_maeb(FloatRegister f1, FloatRegister f3, const Address& a) { z_maeb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_madb(FloatRegister f1, FloatRegister f3, const Address& a) { z_madb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_mseb(FloatRegister f1, FloatRegister f3, const Address& a) { z_mseb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_msdb(FloatRegister f1, FloatRegister f3, const Address& a) { z_msdb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+
+
+//---------------
 // DIV
 //---------------
 inline void Assembler::z_debr( FloatRegister f1, FloatRegister f2)                      { emit_32( DEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}

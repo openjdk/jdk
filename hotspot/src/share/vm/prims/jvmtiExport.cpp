@@ -130,15 +130,15 @@ class JvmtiEventMark : public StackObj {
 private:
   JavaThread *_thread;
   JNIEnv* _jni_env;
-  bool _exception_detected;
-  bool _exception_caught;
+  JvmtiThreadState::ExceptionState _saved_exception_state;
 #if 0
   JNIHandleBlock* _hblock;
 #endif
 
 public:
   JvmtiEventMark(JavaThread *thread) :  _thread(thread),
-                                         _jni_env(thread->jni_environment()) {
+                                        _jni_env(thread->jni_environment()),
+                                        _saved_exception_state(JvmtiThreadState::ES_CLEARED) {
 #if 0
     _hblock = thread->active_handles();
     _hblock->clear_thoroughly(); // so we can be safe
@@ -149,11 +149,7 @@ public:
     // we are before an event.
     // Save current jvmti thread exception state.
     if (state != NULL) {
-      _exception_detected = state->is_exception_detected();
-      _exception_caught = state->is_exception_caught();
-    } else {
-      _exception_detected = false;
-      _exception_caught = false;
+      _saved_exception_state = state->get_exception_state();
     }
 
     JNIHandleBlock* old_handles = thread->active_handles();
@@ -186,12 +182,7 @@ public:
     // we are continuing after an event.
     if (state != NULL) {
       // Restore the jvmti thread exception state.
-      if (_exception_detected) {
-        state->set_exception_detected();
-      }
-      if (_exception_caught) {
-        state->set_exception_caught();
-      }
+      state->restore_exception_state(_saved_exception_state);
     }
   }
 
@@ -1552,7 +1543,6 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
   }
 }
 
-
 void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, address location, oop exception) {
   HandleMark hm(thread);
   methodHandle mh(thread, method);
@@ -2454,7 +2444,7 @@ void JvmtiExport::clear_detected_exception(JavaThread* thread) {
 
   JvmtiThreadState* state = thread->jvmti_thread_state();
   if (state != NULL) {
-    state->clear_exception_detected();
+    state->clear_exception_state();
   }
 }
 

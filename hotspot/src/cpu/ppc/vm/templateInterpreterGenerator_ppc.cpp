@@ -1134,14 +1134,57 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
 // End of helpers
 
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
-  if (!Interpreter::math_entry_available(kind)) {
-    NOT_PRODUCT(__ should_not_reach_here();)
-    return NULL;
+
+  // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
+  bool use_instruction = false;
+  address runtime_entry = NULL;
+  int num_args = 1;
+  bool double_precision = true;
+
+  // PPC64 specific:
+  switch (kind) {
+    case Interpreter::java_lang_math_sqrt: use_instruction = VM_Version::has_fsqrt(); break;
+    case Interpreter::java_lang_math_abs:  use_instruction = true; break;
+    case Interpreter::java_lang_math_fmaF:
+    case Interpreter::java_lang_math_fmaD: use_instruction = UseFMA; break;
+    default: break; // Fall back to runtime call.
   }
+
+  switch (kind) {
+    case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
+    case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
+    case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
+    case Interpreter::java_lang_math_sqrt : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);  break;
+    case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
+    case Interpreter::java_lang_math_log10: runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10); break;
+    case Interpreter::java_lang_math_pow  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dpow); num_args = 2; break;
+    case Interpreter::java_lang_math_exp  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);   break;
+    case Interpreter::java_lang_math_fmaF : /* run interpreted */ num_args = 3; double_precision = false; break;
+    case Interpreter::java_lang_math_fmaD : /* run interpreted */ num_args = 3; break;
+    default: ShouldNotReachHere();
+  }
+
+  // Use normal entry if neither instruction nor runtime call is used.
+  if (!use_instruction && runtime_entry == NULL) return NULL;
 
   address entry = __ pc();
 
-  __ lfd(F1_RET, Interpreter::stackElementSize, R15_esp);
+  // Load arguments
+  assert(num_args <= 13, "passed in registers");
+  if (double_precision) {
+    int offset = (2 * num_args - 1) * Interpreter::stackElementSize;
+    for (int i = 0; i < num_args; ++i) {
+      __ lfd(as_FloatRegister(F1_ARG1->encoding() + i), offset, R15_esp);
+      offset -= 2 * Interpreter::stackElementSize;
+    }
+  } else {
+    int offset = num_args * Interpreter::stackElementSize;
+    for (int i = 0; i < num_args; ++i) {
+      __ lfs(as_FloatRegister(F1_ARG1->encoding() + i), offset, R15_esp);
+      offset -= Interpreter::stackElementSize;
+    }
+  }
 
   // Pop c2i arguments (if any) off when we return.
 #ifdef ASSERT
@@ -1152,15 +1195,30 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 #endif // ASSERT
   __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
 
-  if (kind == Interpreter::java_lang_math_sqrt) {
-    __ fsqrt(F1_RET, F1_RET);
-  } else if (kind == Interpreter::java_lang_math_abs) {
-    __ fabs(F1_RET, F1_RET);
+  if (use_instruction) {
+    switch (kind) {
+      case Interpreter::java_lang_math_sqrt: __ fsqrt(F1_RET, F1);          break;
+      case Interpreter::java_lang_math_abs:  __ fabs(F1_RET, F1);           break;
+      case Interpreter::java_lang_math_fmaF: __ fmadds(F1_RET, F1, F2, F3); break;
+      case Interpreter::java_lang_math_fmaD: __ fmadd(F1_RET, F1, F2, F3);  break;
+      default: ShouldNotReachHere();
+    }
   } else {
-    ShouldNotReachHere();
+    // Comment: Can use tail call if the unextended frame is always C ABI compliant:
+    //__ load_const_optimized(R12_scratch2, runtime_entry, R0);
+    //__ call_c_and_return_to_caller(R12_scratch2);
+
+    // Push a new C frame and save LR.
+    __ save_LR_CR(R0);
+    __ push_frame_reg_args(0, R11_scratch1);
+
+    __ call_VM_leaf(runtime_entry);
+
+    // Pop the C frame and restore LR.
+    __ pop_frame();
+    __ restore_LR_CR(R0);
   }
 
-  // And we're done.
   __ blr();
 
   __ flush();

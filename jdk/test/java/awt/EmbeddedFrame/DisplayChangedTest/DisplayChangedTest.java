@@ -23,12 +23,12 @@
 
 /*
  @test
- @bug 4980592
+ @bug 4980592 8171363
  @summary   switching user in XP causes an NPE in
             sun.awt.windows.WWindowPeer.displayChanged
  @requires (os.family == "windows")
  @modules java.desktop/java.awt.peer
- @modules java.desktop/sun.awt.windows
+ @modules java.desktop/sun.awt.windows:open
  @modules java.desktop/sun.awt
  @author son@sparc.spb.su: area=embedded
  @run main DisplayChangedTest

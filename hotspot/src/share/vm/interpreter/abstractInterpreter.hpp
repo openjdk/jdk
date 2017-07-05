@@ -299,10 +299,6 @@ class AbstractInterpreter: AllStatic {
   }
 
   static void initialize_method_handle_entries();
-
-  // PPC-only: Support abs and sqrt like in compiler.
-  // For others we can use a normal (native) entry.
-  static bool math_entry_available(MethodKind kind);
 };
 
 //------------------------------------------------------------------------------------------------------------------------

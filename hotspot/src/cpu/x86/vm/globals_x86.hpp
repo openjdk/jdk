@@ -63,9 +63,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
 #define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
 #define MIN_STACK_RESERVED_PAGES (0)
 
-#ifdef AMD64
-// Very large C++ stack frames using solaris-amd64 optimized builds
-// due to lack of optimization caused by C++ compiler bugs
+#ifdef _LP64
+// Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
+// stack if compiled for unix and LP64. To pass stack overflow tests we need
+// 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(7) DEBUG_ONLY(+2))
 // For those clients that do not use write socket, we allow
 // the min range value to be below that of the default
@@ -73,7 +74,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
 #else
 #define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
 #define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
-#endif // AMD64
+#endif // _LP64
 
 define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
 define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);

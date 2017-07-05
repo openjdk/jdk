@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8038436 8158504 8065555
+ * @bug 8038436 8158504 8065555 8167143
  * @summary Test for changes in 8038436
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
@@ -120,7 +120,7 @@ public class Bug8038436 {
         "fi, fi-FI, fr, fr-BE, fr-CA, fr-CH, fr-FR, ga, ga-IE, he, he-IL, " +
         "hi-IN, hr, hr-HR, hu, hu-HU, id, id-ID, is, is-IS, it, it-CH, it-IT, " +
         "ja, ja-JP, ko, ko-KR, lt, lt-LT, lv, lv-LV, mk, mk-MK, ms, ms-MY, mt, " +
-        "mt-MT, nl, nl-BE, nl-NL, no, no-NO, no-NO, pl, pl-PL, pt, pt-BR, " +
+        "mt-MT, nb-NO, nl, nl-BE, nl-NL, nn-NO, no, no-NO, no-NO, pl, pl-PL, pt, pt-BR, " +
         "pt-PT, ro, ro-RO, ru, ru-RU, sk, sk-SK, sl, sl-SI, sq, sq-AL, sr, " +
         "sr-BA, sr-CS, sr-Latn, sr-Latn-ME, sr-ME, sr-RS, sv, sv-SE, th, th-TH, " +
         "tr, tr-TR, uk, uk-UA, und, vi, vi-VN, zh, zh-CN, zh-HK, zh-Hans-CN, " +
@@ -130,7 +130,7 @@ public class Bug8038436 {
     static final String[] decimalfspLocs = bipLocs;
     static final String[] calnpLocs = bipLocs;
     static final String[] cpLocs = ("ar, be, bg, ca, cs, da, el, es, et, fi, " +
-        "fr, he, hi, hr, hu, is, ja, ko, lt, lv, mk, no, pl, ro, ru, sk, sl, " +
+        "fr, he, hi, hr, hu, is, ja, ko, lt, lv, mk, nb-NO, nn-NO, no, pl, ro, ru, sk, sl, " +
         "sq, sr, sr-Latn, sv, th, tr, uk, und, vi, zh, zh-HK, zh-Hant-HK, " +
         "zh-Hant-TW, zh-TW, ").split(",\\s*");
     static final String[] nfpLocs = ("ar, ar-AE, ar-BH, ar-DZ, ar-EG, ar-IQ, " +
@@ -160,22 +160,22 @@ public class Bug8038436 {
         "es-PA, es-PE, es-PR, es-PY, es-SV, es-US, es-UY, es-VE, et-EE, fi-FI, " +
         "fr, fr-BE, fr-CA, fr-CH, fr-FR, fr-LU, ga-IE, he-IL, hi-IN, hr-HR, " +
         "hu-HU, id-ID, is-IS, it, it-CH, it-IT, ja, ja-JP, ko, ko-KR, lt-LT, " +
-        "lv-LV, mk-MK, ms-MY, mt-MT, nl-BE, nl-NL, no-NO, pl-PL, pt, pt-BR, " +
+        "lv-LV, mk-MK, ms-MY, mt-MT, nb-NO, nl-BE, nl-NL, nn-NO, no-NO, pl-PL, pt, pt-BR, " +
         "pt-PT, ro-RO, ru-RU, sk-SK, sl-SI, sq-AL, sr-BA, sr-CS, sr-Latn-BA, " +
         "sr-Latn-ME, sr-Latn-RS, sr-ME, sr-RS, sv, sv-SE, th-TH, tr-TR, uk-UA, " +
         "und, vi-VN, zh-CN, zh-HK, zh-Hans-CN, zh-Hans-SG, zh-Hant-HK, " +
         "zh-Hant-TW, zh-SG, zh-TW, ").split(",\\s*");
     static final String[] lnpLocs = ("ar, be, bg, ca, cs, da, de, el, el-CY, " +
         "en, en-MT, en-PH, en-SG, es, es-US, et, fi, fr, ga, he, hi, hr, hu, " +
-        "id, is, it, ja, ko, lt, lv, mk, ms, mt, nl, no, no-NO, pl, pt, pt-BR, " +
+        "id, is, it, ja, ko, lt, lv, mk, ms, mt, nb-NO, nl, nn-NO, no, no-NO, pl, pt, pt-BR, " +
         "pt-PT, ro, ru, sk, sl, sq, sr, sr-Latn, sv, th, tr, uk, und, vi, zh, " +
         "zh-HK, zh-Hans-SG, zh-Hant-HK, zh-Hant-TW, zh-SG, zh-TW, ").split(",\\s*");
     static final String[] tznpLocs = ("de, en, en-CA, en-GB, en-IE, es, fr, hi, " +
-        "it, ja, ko, pt-BR, sv, und, zh-CN, zh-HK, zh-Hans-CN, zh-Hant-HK, " +
+        "it, ja, ko, nb-NO, nn-NO, pt-BR, sv, und, zh-CN, zh-HK, zh-Hans-CN, zh-Hant-HK, " +
         "zh-Hant-TW, zh-TW, ").split(",\\s*");
     static final String[] caldpLocs = ("ar, be, bg, ca, cs, da, de, el, el-CY, " +
         "en, en-GB, en-IE, en-MT, es, es-ES, es-US, et, fi, fr, fr-CA, he, hi, " +
-        "hr, hu, id-ID, is, it, ja, ko, lt, lv, mk, ms-MY, mt, mt-MT, nl, no, " +
+        "hr, hu, id-ID, is, it, ja, ko, lt, lv, mk, ms-MY, mt, mt-MT, nb-NO, nl, nn-NO, no, " +
         "pl, pt, pt-BR, pt-PT, ro, ru, sk, sl, sq, sr, sr-Latn-BA, sr-Latn-ME, " +
         "sr-Latn-RS, sv, th, tr, uk, und, vi, zh, ").split(",\\s*");
     static final String[] calpLocs = caldpLocs;
