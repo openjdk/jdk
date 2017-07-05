@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ public class AuthResources_zh_TW extends java.util.ListResourceBundle {
         {"Unable to properly expand config", "\u7121\u6cd5\u5b8c\u5168\u64f4\u5145 {0}"},
         {"extra_config (No such file or directory)",
                 "{0} \uff08\u6c92\u6709\u6b64\u6a94\u6848\u6216\u76ee\u9304\uff09"},
-        {"Unable to locate a login configuration",
-                "\u7121\u6cd5\u5b9a\u4f4d\u767b\u5165\u914d\u7f6e"},
+        {"Configuration Error:\n\tNo such file or directory",
+                "\u914d\u7f6e\u932f\u8aa4\uff1a\n\t\u6c92\u6709\u9019\u985e\u7684\u6a94\u6848\u6216\u76ee\u9304"},
         {"Configuration Error:\n\tInvalid control flag, flag",
                 "\u914d\u7f6e\u932f\u8aa4\uff1a\n\t\u7121\u6548\u7684\u63a7\u5236\u65d7\u865f\uff0c {0}"},
         {"Configuration Error:\n\tCan not specify multiple entries for appName",

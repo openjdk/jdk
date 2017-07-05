@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,47 +53,48 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
 
         // UnixPrincipals
         {"UnixNumericGroupPrincipal [Primary Group]: name",
-        "UnixNumericGroupPrincipal [prim\u00e4r grupp]: {0}"},
+                "UnixNumericGroupPrincipal [prim\u00e4r grupp]: {0}"},
         {"UnixNumericGroupPrincipal [Supplementary Group]: name",
-        "UnixNumericGroupPrincipal [till\u00e4ggsgrupp]: {0}"},
+                "UnixNumericGroupPrincipal [till\u00e4ggsgrupp]: {0}"},
         {"UnixNumericUserPrincipal: name", "UnixNumericUserPrincipal: {0}"},
         {"UnixPrincipal: name", "UnixPrincipal: {0}"},
 
         // com.sun.security.auth.login.ConfigFile
         {"Unable to properly expand config", "Det g\u00e5r inte att utvidga korrekt {0}"},
         {"extra_config (No such file or directory)",
-        "{0} (Det finns ingen s\u00e5dan fil eller katalog.)"},
-        {"Unable to locate a login configuration",
-        "Det g\u00e5r inte att hitta n\u00e5gon inloggningskonfiguration"},
+                "{0} (Det finns ingen s\u00e5dan fil eller katalog.)"},
+        {"Configuration Error:\n\tNo such file or directory",
+                "Konfigurationsfel:\n\tDet finns ingen s\u00e5dan fil eller katalog."},
         {"Configuration Error:\n\tInvalid control flag, flag",
-        "Konfigurationsfel:\n\tOgiltig kontrollflagga, {0}"},
+                "Konfigurationsfel:\n\tOgiltig kontrollflagga, {0}"},
         {"Configuration Error:\n\tCan not specify multiple entries for appName",
-        "Konfigurationsfel:\n\tDet g\u00e5r inte att ange flera poster f\u00f6r {0}"},
+            "Konfigurationsfel:\n\tDet g\u00e5r inte att ange flera poster f\u00f6r {0}"},
         {"Configuration Error:\n\texpected [expect], read [end of file]",
-        "Konfigurationsfel:\n\tf\u00f6rv\u00e4ntade [{0}], l\u00e4ste [end of file]"},
+                "Konfigurationsfel:\n\tf\u00f6rv\u00e4ntade [{0}], l\u00e4ste [end of file]"},
         {"Configuration Error:\n\tLine line: expected [expect], found [value]",
-        "Konfigurationsfel:\n\tLine {0}: f\u00f6rv\u00e4ntade [{1}], hittade [{2}]"},
+            "Konfigurationsfel:\n\tLine {0}: f\u00f6rv\u00e4ntade [{1}], hittade [{2}]"},
         {"Configuration Error:\n\tLine line: expected [expect]",
-        "Konfigurationsfel:\n\tLine {0}: f\u00f6rv\u00e4ntade [{1}]"},
+            "Konfigurationsfel:\n\tLine {0}: f\u00f6rv\u00e4ntade [{1}]"},
         {"Configuration Error:\n\tLine line: system property [value] expanded to empty value",
-        "Konfigurationsfel:\n\tLine {0}: systemegenskapen [{1}] utvidgad till tomt v\u00e4rde"},
+            "Konfigurationsfel:\n\tLine {0}: systemegenskapen [{1}] utvidgad till tomt v\u00e4rde"},
 
         // com.sun.security.auth.module.JndiLoginModule
         {"username: ","anv\u00e4ndarnamn: "},
         {"password: ","l\u00f6senord: "},
 
         // com.sun.security.auth.module.KeyStoreLoginModule
-        {"Please enter keystore information","Ange keystore-information"},
+        {"Please enter keystore information",
+                "Ange keystore-information"},
         {"Keystore alias: ","Keystore-alias: "},
         {"Keystore password: ","Keystore-l\u00f6senord: "},
         {"Private key password (optional): ",
-        "L\u00f6senord f\u00f6r personlig nyckel (valfritt): "},
+            "L\u00f6senord f\u00f6r personlig nyckel (valfritt): "},
 
         // com.sun.security.auth.module.Krb5LoginModule
         {"Kerberos username [[defUsername]]: ",
-        "Kerberos-anv\u00e4ndarnamn [{0}]: "},
+                "Kerberos-anv\u00e4ndarnamn [{0}]: "},
         {"Kerberos password for [username]: ",
-            "Kerberos-l\u00f6senord f\u00f6r {0}: "},
+                "Kerberos-l\u00f6senord f\u00f6r {0}: "},
 
         /***    EVERYTHING BELOW IS DEPRECATED  ***/
 
@@ -106,17 +107,17 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
         {"(", "("},
         {")", ")"},
         {"attempt to add a Permission to a readonly PermissionCollection",
-        "f\u00f6rs\u00f6k att l\u00e4gga till beh\u00f6righet till skrivskyddad PermissionCollection"},
+            "f\u00f6rs\u00f6k att l\u00e4gga till beh\u00f6righet till skrivskyddad PermissionCollection"},
 
         // com.sun.security.auth.PolicyParser
         {"expected keystore type", "f\u00f6rv\u00e4ntad keystore-typ"},
         {"can not specify Principal with a ",
-        "det g\u00e5r inte att specificera n\u00e5gon principal med "},
+                "det g\u00e5r inte att specificera n\u00e5gon principal med "},
         {"wildcard class without a wildcard name",
-        "jokertecken f\u00f6r klass men inte f\u00f6r namn"},
+                "jokertecken f\u00f6r klass men inte f\u00f6r namn"},
         {"expected codeBase or SignedBy", "f\u00f6rv\u00e4ntade codeBase eller SignedBy"},
         {"only Principal-based grant entries permitted",
-        "enbart Principal-baserade poster till\u00e5tna"},
+                "enbart Principal-baserade poster till\u00e5tna"},
         {"expected permission entry", "f\u00f6rv\u00e4ntade beh\u00f6righetspost"},
         {"number ", "antal "},
         {"expected ", "f\u00f6rv\u00e4ntade "},
@@ -129,11 +130,11 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
 
         // SolarisPrincipals
         {"SolarisNumericGroupPrincipal [Primary Group]: ",
-        "SolarisNumericGroupPrincipal [prim\u00e4r grupp]: "},
+                "SolarisNumericGroupPrincipal [prim\u00e4r grupp]: "},
         {"SolarisNumericGroupPrincipal [Supplementary Group]: ",
-        "SolarisNumericGroupPrincipal [till\u00e4ggsgrupp]: "},
+                "SolarisNumericGroupPrincipal [till\u00e4ggsgrupp]: "},
         {"SolarisNumericUserPrincipal: ",
-        "SolarisNumericUserPrincipal: "},
+                "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal: ", "SolarisPrincipal: "},
         {"provided null name", "gav null-namn"}
 

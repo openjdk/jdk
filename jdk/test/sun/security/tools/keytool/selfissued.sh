@@ -1,5 +1,5 @@
 #
-# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
 #
 
 # @test
-# @bug 6825352
-# @summary support self-issued certificate in keytool
+# @bug 6825352 6937978
+# @summary support self-issued certificate in keytool and let -gencert generate the chain
 #
 # @run shell selfissued.sh
 #
@@ -50,20 +50,22 @@ KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystor
 rm $KS
 
 $KT -alias ca -dname CN=CA -genkeypair
-$KT -alias me -dname CN=CA -genkeypair
+$KT -alias ca1 -dname CN=CA -genkeypair
+$KT -alias ca2 -dname CN=CA -genkeypair
 $KT -alias e1 -dname CN=E1 -genkeypair
-$KT -alias e2 -dname CN=E2 -genkeypair
 
-# me signed by ca, self-issued
-$KT -alias me -certreq | $KT -alias ca -gencert | $KT -alias me -importcert
+# ca signs ca1, ca1 signs ca2, all self-issued
+$KT -alias ca1 -certreq | $KT -alias ca -gencert -ext san=dns:ca1 \
+        | $KT -alias ca1 -importcert
+$KT -alias ca2 -certreq | $KT -alias ca1 -gencert -ext san=dns:ca2 \
+        | $KT -alias ca2 -importcert
 
-# Import e1 signed by me, should add me and ca
-$KT -alias e1 -certreq | $KT -alias me -gencert | $KT -alias e1 -importcert
+# Import e1 signed by ca2, should add ca2 and ca1, at least 3 certs in the chain
+$KT -alias e1 -certreq | $KT -alias ca2 -gencert > e1.cert
+$KT -alias ca1 -delete
+$KT -alias ca2 -delete
+cat e1.cert | $KT -alias e1 -importcert
 $KT -alias e1 -list -v | grep '\[3\]' || { echo Bad E1; exit 1; }
-
-# Import (e2 signed by me,ca,me), should reorder to (e2,me,ca)
-( $KT -alias e2 -certreq | $KT -alias me -gencert; $KT -exportcert -alias ca; $KT -exportcert -alias me ) | $KT -alias e2 -importcert
-$KT -alias e2 -list -v | grep '\[3\]' || { echo Bad E2; exit 1; }
 
 echo Good
 
