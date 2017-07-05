@@ -6506,6 +6506,13 @@ GLAPI void APIENTRY glStringMarkerGREMEDY (GLsizei, const GLvoid *);
 typedef void (APIENTRYP PFNGLSTRINGMARKERGREMEDYPROC) (GLsizei len, const GLvoid *string);
 #endif
 
+#ifndef GL_NV_texture_barrier
+#define GL_NV_texture_barrier 1
+#ifdef GL_EXT_PROTOTYPES
+GLAPI void APIENTRY glTextureBarrierNV (void);
+#endif /* GL_EXT_PROTOTYPES */
+typedef void (APIENTRYP PNFGLTEXTUREBARRIERNVPROC) (void);
+#endif
 
 #ifdef __cplusplus
 }

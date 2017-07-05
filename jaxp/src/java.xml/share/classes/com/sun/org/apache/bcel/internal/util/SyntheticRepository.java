@@ -60,7 +60,6 @@ package com.sun.org.apache.bcel.internal.util;
 
 import java.io.*;
 
-import java.util.Map;
 import java.util.HashMap;
 
 import com.sun.org.apache.bcel.internal.classfile.*;
@@ -86,30 +85,16 @@ import com.sun.org.apache.bcel.internal.classfile.*;
  * @author David Dixon-Peugh
  */
 public class SyntheticRepository implements Repository {
-  private static final String DEFAULT_PATH = ClassPath.getClassPath();
 
   private static HashMap _instances = new HashMap(); // CLASSPATH X REPOSITORY
 
-  private ClassPath _path = null;
   private HashMap   _loadedClasses = new HashMap(); // CLASSNAME X JAVACLASS
 
-  private SyntheticRepository(ClassPath path) {
-    _path = path;
-  }
-
-  public static SyntheticRepository getInstance() {
-    return getInstance(ClassPath.SYSTEM_CLASS_PATH);
-  }
-
-  public static SyntheticRepository getInstance(ClassPath classPath) {
-    SyntheticRepository rep = (SyntheticRepository)_instances.get(classPath);
-
-    if(rep == null) {
-      rep = new SyntheticRepository(classPath);
-      _instances.put(classPath, rep);
+    private SyntheticRepository() {
     }
 
-    return rep;
+  public static SyntheticRepository getInstance() {
+      return new SyntheticRepository();
   }
 
   /**
@@ -147,12 +132,9 @@ public class SyntheticRepository implements Repository {
 
     className = className.replace('/', '.'); // Just in case, canonical form
 
-    try {
-      return loadClass(_path.getInputStream(className), className);
-    } catch(IOException e) {
-      throw new ClassNotFoundException("Exception while looking for class " +
+    IOException e = new IOException("Couldn't find: " + className + ".class");
+    throw new ClassNotFoundException("Exception while looking for class " +
                                        className + ": " + e.toString());
-    }
   }
 
   /**

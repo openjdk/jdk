@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 package sun.awt;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.IOException;;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
@@ -54,10 +54,9 @@ public class FontDescriptor implements Cloneable {
         // The following looks odd but its the only public way to get the
         // historical name if one exists and the canonical name otherwise.
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(new byte[8]);
-            InputStreamReader isr = new InputStreamReader(bais, cs);
-            this.charsetName = isr.getEncoding();
-            isr.close();
+            OutputStreamWriter osw = new OutputStreamWriter(new ByteArrayOutputStream(), cs);
+            this.charsetName = osw.getEncoding();
+            osw.close();
         } catch (IOException ioe) {
         }
     }

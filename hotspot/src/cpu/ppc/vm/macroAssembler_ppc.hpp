@@ -702,6 +702,27 @@ class MacroAssembler: public Assembler {
                        Register tmp6, Register tmp7, Register tmp8, Register tmp9, Register tmp10,
                        Register tmp11, Register tmp12, Register tmp13);
 
+  // CRC32 Intrinsics.
+  void load_reverse_32(Register dst, Register src);
+  int  crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3);
+  void fold_byte_crc32(Register crc, Register val, Register table, Register tmp);
+  void fold_8bit_crc32(Register crc, Register table, Register tmp);
+  void update_byte_crc32(Register crc, Register val, Register table);
+  void update_byteLoop_crc32(Register crc, Register buf, Register len, Register table,
+                             Register data, bool loopAlignment, bool invertCRC);
+  void update_1word_crc32(Register crc, Register buf, Register table, int bufDisp, int bufInc,
+                          Register t0,  Register t1,  Register t2,  Register t3,
+                          Register tc0, Register tc1, Register tc2, Register tc3);
+  void kernel_crc32_2word(Register crc, Register buf, Register len, Register table,
+                          Register t0,  Register t1,  Register t2,  Register t3,
+                          Register tc0, Register tc1, Register tc2, Register tc3);
+  void kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
+                          Register t0,  Register t1,  Register t2,  Register t3,
+                          Register tc0, Register tc1, Register tc2, Register tc3);
+  void kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
+                          Register t0,  Register t1,  Register t2,  Register t3);
+  void kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp);
+
   //
   // Debugging
   //

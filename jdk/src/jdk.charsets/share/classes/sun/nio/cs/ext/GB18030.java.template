@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  */
 
-package sun.nio.cs.ext;
+package $PACKAGE$;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -44,7 +44,7 @@ public class GB18030
     private static final int GB18030_FOUR_BYTE = 3;
 
     public GB18030() {
-        super("GB18030", ExtendedCharsets.aliasesFor("GB18030"));
+        super("GB18030", $ALIASES$);
     }
 
     public boolean contains(Charset cs) {

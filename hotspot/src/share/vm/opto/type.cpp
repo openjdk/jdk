@@ -200,8 +200,7 @@ const Type* Type::get_typeflow_type(ciType* type) {
 
 
 //-----------------------make_from_constant------------------------------------
-const Type* Type::make_from_constant(ciConstant constant,
-                                     bool require_constant, bool is_autobox_cache) {
+const Type* Type::make_from_constant(ciConstant constant, bool require_constant) {
   switch (constant.basic_type()) {
   case T_BOOLEAN:  return TypeInt::make(constant.as_boolean());
   case T_CHAR:     return TypeInt::make(constant.as_char());
@@ -222,14 +221,57 @@ const Type* Type::make_from_constant(ciConstant constant,
       if (oop_constant->is_null_object()) {
         return Type::get_zero_type(T_OBJECT);
       } else if (require_constant || oop_constant->should_be_constant()) {
-        return TypeOopPtr::make_from_constant(oop_constant, require_constant, is_autobox_cache);
+        return TypeOopPtr::make_from_constant(oop_constant, require_constant);
       }
     }
+  case T_ILLEGAL:
+    // Invalid ciConstant returned due to OutOfMemoryError in the CI
+    assert(Compile::current()->env()->failing(), "otherwise should not see this");
+    return NULL;
   }
   // Fall through to failure
   return NULL;
 }
 
+
+const Type* Type::make_constant(ciField* field, Node* obj) {
+  if (!field->is_constant())  return NULL;
+
+  const Type* con_type = NULL;
+  if (field->is_static()) {
+    // final static field
+    con_type = Type::make_from_constant(field->constant_value(), /*require_const=*/true);
+    if (Compile::current()->eliminate_boxing() && field->is_autobox_cache() && con_type != NULL) {
+      con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
+    }
+  } else {
+    // final or stable non-static field
+    // Treat final non-static fields of trusted classes (classes in
+    // java.lang.invoke and sun.invoke packages and subpackages) as
+    // compile time constants.
+    if (obj->is_Con()) {
+      const TypeOopPtr* oop_ptr = obj->bottom_type()->isa_oopptr();
+      ciObject* constant_oop = oop_ptr->const_oop();
+      ciConstant constant = field->constant_value_of(constant_oop);
+      con_type = Type::make_from_constant(constant, /*require_const=*/true);
+    }
+  }
+  if (FoldStableValues && field->is_stable() && con_type != NULL) {
+    if (con_type->is_zero_type()) {
+      return NULL; // the field hasn't been initialized yet
+    } else if (con_type->isa_oopptr()) {
+      const Type* stable_type = Type::get_const_type(field->type());
+      if (field->type()->is_array_klass()) {
+        int stable_dimension = field->type()->as_array_klass()->dimension();
+        stable_type = stable_type->is_aryptr()->cast_to_stable(true, stable_dimension);
+      }
+      if (stable_type != NULL) {
+        con_type = con_type->join_speculative(stable_type);
+      }
+    }
+  }
+  return con_type;
+}
 
 //------------------------------make-------------------------------------------
 // Create a simple Type, with default empty symbol sets.  Then hashcons it
@@ -3009,9 +3051,7 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass *klass, bool klass_
 
 //------------------------------make_from_constant-----------------------------
 // Make a java pointer from an oop constant
-const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o,
-                                                 bool require_constant,
-                                                 bool is_autobox_cache) {
+const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
   assert(!o->is_null_object(), "null object not yet handled here.");
   ciKlass* klass = o->klass();
   if (klass->is_instance_klass()) {
@@ -3026,10 +3066,6 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o,
     // Element is an object array. Recursively call ourself.
     const TypeOopPtr *etype =
       TypeOopPtr::make_from_klass_raw(klass->as_obj_array_klass()->element_klass());
-    if (is_autobox_cache) {
-      // The pointers in the autobox arrays are always non-null.
-      etype = etype->cast_to_ptr_type(TypePtr::NotNull)->is_oopptr();
-    }
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
     // We used to pass NotNull in here, asserting that the sub-arrays
     // are all not-null.  This is not true in generally, as code can
@@ -3039,7 +3075,7 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o,
     } else if (!o->should_be_constant()) {
       return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
     }
-    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0, InstanceBot, NULL, InlineDepthBottom, is_autobox_cache);
+    const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
     return arr;
   } else if (klass->is_type_array_klass()) {
     // Element is an typeArray
@@ -3940,7 +3976,6 @@ const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
-
 //------------------------------cast_to_stable---------------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_stable(bool stable, int stable_dimension) const {
   if (stable_dimension <= 0 || (stable_dimension == 1 && stable == this->is_stable()))
@@ -3967,6 +4002,18 @@ int TypeAryPtr::stable_dimension() const {
   if (elem_ptr != NULL && elem_ptr->isa_aryptr())
     dim += elem_ptr->is_aryptr()->stable_dimension();
   return dim;
+}
+
+//----------------------cast_to_autobox_cache-----------------------------------
+const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache(bool cache) const {
+  if (is_autobox_cache() == cache)  return this;
+  const TypeOopPtr* etype = elem()->make_oopptr();
+  if (etype == NULL)  return this;
+  // The pointers in the autobox arrays are always non-null.
+  TypePtr::PTR ptr_type = cache ? TypePtr::NotNull : TypePtr::AnyNull;
+  etype = etype->cast_to_ptr_type(TypePtr::NotNull)->is_oopptr();
+  const TypeAry* new_ary = TypeAry::make(etype, size(), is_stable());
+  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, cache);
 }
 
 //------------------------------eq---------------------------------------------
@@ -4455,7 +4502,7 @@ int TypeMetadataPtr::hash(void) const {
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypeMetadataPtr::singleton(void) const {
-  // detune optimizer to not generate constant metadta + constant offset as a constant!
+  // detune optimizer to not generate constant metadata + constant offset as a constant!
   // TopPTR, Null, AnyNull, Constant are all singletons
   return (_offset == 0) && !below_centerline(_ptr);
 }

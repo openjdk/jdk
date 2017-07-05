@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: java
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: 基本ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "java" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" Title: java
+.\" Language: Japanese
+.\" Date: 2015ǯ3��3��
+.\" SectDesc: ���ܥġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "java" "1" "2015ǯ3��3��" "JDK 8" "���ܥġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-java \- Javaアプリケーションを起動します。
-.SH "概要"
+.SH "̾��"
+java \- Java���ץꥱ��������ư���ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjava\fR [\fIoptions\fR] \fIclassname\fR [\fIargs\fR]
+\fBjava\fR [\fIoptions\fR] \fIclassname\fR [\fIargs\fR]
 .fi
 .if n \{\
 .RE
@@ -66,7 +68,7 @@ java \- Javaアプリケーションを起動します。
 .RS 4
 .\}
 .nf
-\fIjava\fR [\fIoptions\fR] \fI\-jar\fR \fIfilename\fR [\fIargs\fR]
+\fBjava\fR [\fIoptions\fR] \fB\-jar\fR \fIfilename\fR [\fIargs\fR]
 .fi
 .if n \{\
 .RE
@@ -74,47 +76,48 @@ java \- Javaアプリケーションを起動します。
 .PP
 \fIoptions\fR
 .RS 4
-空白で区切られたコマンドライン・オプション。オプションを参照してください。
+����Ƕ��ڤ�줿���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIclassname\fR
 .RS 4
-起動するクラスの名前。
+��ư���륯�饹��̾����
 .RE
 .PP
 \fIfilename\fR
 .RS 4
-呼び出されるJavaアーカイブ(JAR)ファイルの名前。\fI\-jar\fRオプションと一緒にのみ使用します。
+�ƤӽФ����Java����������(JAR)�ե������̾����\fB\-jar\fR���ץ����Ȱ��ˤΤ߻��Ѥ��ޤ���
 .RE
 .PP
 \fIargs\fR
 .RS 4
-空白で区切られた\fImain()\fRメソッドに渡される引数。
+����Ƕ��ڤ�줿\fBmain()\fR�᥽�åɤ��Ϥ���������
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjava\fRコマンドはJavaアプリケーションを開始します。Java Runtime Environment (JRE)を起動した後、指定したクラスをロードし、そのクラスの\fImain()\fRメソッドを呼び出すことにより、これを行います。このメソッドは、\fIpublic\fRおよび\fIstatic\fRとして宣言する必要があります。また、値は返せません。さらに、\fIString\fR配列をパラメータとして指定できる必要があります。メソッド宣言は次の形式を含みます。
+\fBjava\fR���ޥ�ɤ�Java���ץꥱ�������򳫻Ϥ��ޤ���Java Runtime Environment (JRE)��ư�����塢���ꤷ�����饹������ɤ������Υ��饹��\fBmain()\fR�᥽�åɤ�ƤӽФ����Ȥˤ�ꡢ�����Ԥ��ޤ������Υ᥽�åɤϡ�\fIpublic\fR�����\fIstatic\fR�Ȥ����������ɬ�פ�����ޤ����ޤ����ͤ��֤��ޤ��󡣤���ˡ�\fBString\fR�����ѥ�᡼���Ȥ��ƻ���Ǥ���ɬ�פ�����ޤ����᥽�å�����ϼ��η�����ޤߤޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-public static void main(String[] args)
+\fBpublic static void main(String[] args)\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIjava\fRコマンドを使用して、\fImain()\fRメソッドがあるか\fIjavafx\&.application\&.Application\fRを拡張するクラスをロードすることで、JavaFXアプリケーションを起動できます。後者の場合、起動ツールは\fIApplication\fRクラスのインスタンスを構成し、その\fIinit()\fRメソッドをコールし、\fIstart(javafx\&.stage\&.Stage)\fRメソッドをコールします。
+\fBjava\fR���ޥ�ɤ���Ѥ��ơ�\fBmain()\fR�᥽�åɤ����뤫\fBjavafx\&.application\&.Application\fR���ĥ���륯�饹������ɤ��뤳�Ȥǡ�JavaFX���ץꥱ��������ư�Ǥ��ޤ�����Ԥξ�硢��ư�ġ����\fBApplication\fR���饹�Υ��󥹥��󥹤�����������\fBinit()\fR�᥽�åɤ򥳡��뤷��\fBstart(javafx\&.stage\&.Stage)\fR�᥽�åɤ򥳡��뤷�ޤ���
 .PP
-デフォルトでは、\fIjava\fRコマンドのオプションではない最初の引数は、呼び出されるクラスの完全修飾名です。\fI\-jar\fRオプションを指定した場合、その引数は、アプリケーションのクラス・ファイルとリソース・ファイルを含むJARファイルの名前になります。起動クラスは、ソース・コードの\fIMain\-Class\fRマニフェスト・ヘッダーによって指定される必要があります。
+�ǥե���ȤǤϡ�\fBjava\fR���ޥ�ɤΥ��ץ����ǤϤʤ��ǽ�ΰ����ϡ��ƤӽФ���륯�饹�δ�������̾�Ǥ���\fB\-jar\fR���ץ�������ꤷ����硢���ΰ����ϡ����ץꥱ�������Υ��饹���ե�����ȥ꥽�������ե������ޤ�JAR�ե������̾���ˤʤ�ޤ�����ư���饹�ϡ��������������ɤ�\fBMain\-Class\fR�ޥ˥ե����ȡ��إå����ˤ�äƻ��ꤵ���ɬ�פ�����ޤ���
 .PP
-JREは、ブートストラップ・クラス・パス、インストール済拡張機能およびユーザーのクラス・パスの3箇所から、起動クラス(およびアプリケーションで使用されている他のクラス)を検索します。
+JRE�ϡ��֡��ȥ��ȥ�åס����饹���ѥ������󥹥ȡ���ѳ�ĥ��ǽ����ӥ桼�����Υ��饹���ѥ���3�ս꤫�顢��ư���饹(����ӥ��ץꥱ�������ǻ��Ѥ���Ƥ���¾�Υ��饹)�򸡺����ޤ���
 .PP
-クラス・ファイル名またはJARファイル名の後の引数は、\fImain()\fRメソッドに渡されます。
-.SH "オプション"
+���饹���ե�����̾�ޤ���JAR�ե�����̾�θ�ΰ����ϡ�\fBmain()\fR�᥽�åɤ��Ϥ���ޤ���
+.SH "���ץ����"
 .PP
-\fIjava\fRコマンドは、次のカテゴリに分類できる広範なオプションをサポートしています。
+\fBjava\fR���ޥ�ɤϡ����Υ��ƥ����ʬ��Ǥ��빭�Ϥʥ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -124,7 +127,7 @@ JREは、ブートストラップ・クラス・パス、インストール済�
 .sp -1
 .IP \(bu 2.3
 .\}
-標準オプション
+ɸ�४�ץ����
 .RE
 .sp
 .RS 4
@@ -135,7 +138,7 @@ JREは、ブートストラップ・クラス・パス、インストール済�
 .sp -1
 .IP \(bu 2.3
 .\}
-非標準オプション
+��ɸ�४�ץ����
 .RE
 .sp
 .RS 4
@@ -146,7 +149,7 @@ JREは、ブートストラップ・クラス・パス、インストール済�
 .sp -1
 .IP \(bu 2.3
 .\}
-高度なランタイム・オプション
+���٤ʥ�󥿥��ࡦ���ץ����
 .RE
 .sp
 .RS 4
@@ -157,7 +160,7 @@ JREは、ブートストラップ・クラス・パス、インストール済�
 .sp -1
 .IP \(bu 2.3
 .\}
-高度なJITコンパイラ・オプション
+���٤�JIT����ѥ��顦���ץ����
 .RE
 .sp
 .RS 4
@@ -168,7 +171,7 @@ JREは、ブートストラップ・クラス・パス、インストール済�
 .sp -1
 .IP \(bu 2.3
 .\}
-高度なサービスアビリティ・オプション
+���٤ʥ����ӥ����ӥ�ƥ������ץ����
 .RE
 .sp
 .RS 4
@@ -179,53 +182,55 @@ JREは、ブートストラップ・クラス・パス、インストール済�
 .sp -1
 .IP \(bu 2.3
 .\}
-高度なガベージ・コレクション・オプション
+���٤ʥ��١��������쥯����󡦥��ץ����
 .RE
 .PP
-標準のオプションは、Java Virtual Machine (JVM)のすべての実装でサポートすることが保証されます。これらは、JREのバージョンの確認、クラス・パスの設定、冗長な出力の有効化などの一般的なアクションに使用されます。
+ɸ��Υ��ץ����ϡ�Java Virtual Machine (JVM)�Τ��٤Ƥμ����ǥ��ݡ��Ȥ��뤳�Ȥ��ݾڤ���ޤ��������ϡ�JRE�ΥС������γ�ǧ�����饹���ѥ������ꡢ��Ĺ�ʽ��Ϥ�ͭ�����ʤɤΰ���Ū�ʥ��������˻��Ѥ���ޤ���
 .PP
-標準以外のオプションは、Java HotSpot仮想マシンに固有の汎用オプションであるため、すべてのJVM実装でサポートされることは保証されず、変更される可能性があります。これらのオプションは\fI\-X\fRで開始します。
+ɸ��ʳ��Υ��ץ����ϡ�Java HotSpot���ۥޥ���˸�ͭ�����ѥ��ץ����Ǥ��뤿�ᡢ���٤Ƥ�JVM�����ǥ��ݡ��Ȥ���뤳�Ȥ��ݾڤ��줺���ѹ�������ǽ��������ޤ��������Υ��ץ�����\fB\-X\fR�ǳ��Ϥ��ޤ���
 .PP
-拡張オプションは、不用意に使用しないことをお薦めします。これらは、特定のシステム要件を持つことが多く、システム構成パラメータへの特権アクセスが必要な場合があるJava HotSpot仮想マシン操作の特定の領域を調整するために使用される開発者オプションです。これらは、すべてのJVM実装でサポートされることは保証されず、変更される可能性があります。拡張オプションは\fI\-XX\fRで始まります。
+��ĥ���ץ����ϡ����Ѱդ˻��Ѥ��ʤ����Ȥ����ᤷ�ޤ��������ϡ�����Υ����ƥ��׷����Ĥ��Ȥ�¿���������ƥ๽���ѥ�᡼���ؤ��ø�����������ɬ�פʾ�礬����Java HotSpot���ۥޥ�������������ΰ��Ĵ�����뤿��˻��Ѥ���볫ȯ�ԥ��ץ����Ǥ��������ϡ����٤Ƥ�JVM�����ǥ��ݡ��Ȥ���뤳�Ȥ��ݾڤ��줺���ѹ�������ǽ��������ޤ�����ĥ���ץ�����\fB\-XX\fR�ǻϤޤ�ޤ���
 .PP
-最新リリースで非推奨または削除されるオプションを追跡するために、ドキュメントの最後に非推奨で削除されたオプションという名前のセクションがあります。
+�ǿ���꡼������侩�ޤ��Ϻ������륪�ץ��������פ��뤿��ˡ��ɥ�����ȤκǸ����侩�Ǻ�����줿���ץ����Ȥ���̾���Υ�������󤬤���ޤ���
 .PP
-ブール・オプションは、デフォルトで無効になっている機能を有効にしたり、デフォルトで有効になっている機能を無効にするために使用されます。このようなオプションは、パラメータを必要としません。ブール値\fI\-XX\fRオプションは、プラス記号(\fI\-XX:+\fR\fIOptionName\fR)を使用して有効にし、マイナス記号(\fI\-XX:\-\fR\fIOptionName\fR)を使用して無効にします。
+�֡��롦���ץ����ϡ��ǥե���Ȥ�̵���ˤʤäƤ��뵡ǽ��ͭ���ˤ����ꡢ�ǥե���Ȥ�ͭ���ˤʤäƤ��뵡ǽ��̵���ˤ��뤿��˻��Ѥ���ޤ������Τ褦�ʥ��ץ����ϡ��ѥ�᡼����ɬ�פȤ��ޤ��󡣥֡�����\fB\-XX\fR���ץ����ϡ��ץ饹����(\fB\-XX:+\fR\fIOptionName\fR)����Ѥ���ͭ���ˤ����ޥ��ʥ�����(\fB\-XX:\-\fR\fIOptionName\fR)����Ѥ���̵���ˤ��ޤ���
 .PP
-引数が必要なオプションの場合、引数は、オプション名を空白、コロン(:)または等号(=)で区切ったものになるか、あるいは引数がオプションの後に直接続く場合もあります(正確な構文は各オプションによって異なります)。サイズをバイト単位で指定するよう求められている場合、接尾辞を使用しないか、あるいはキロバイト(KB)には接尾辞\fIk\fRまたは\fIK\fR、メガバイト(MB)には接尾辞\fIm\fRまたは\fIM\fR、ギガバイト(GB)には接尾辞\fIg\fRまたは\fIG\fRを使用します。たとえば、サイズを8GBに設定するには、\fI8g\fR、\fI8192m\fR、\fI8388608k\fRまたは\fI8589934592\fRのいずれかを引数として指定できます。パーセントの指定が必要な場合は、0から1の数値を使用します(たとえば、25%の場合は\fI0\&.25\fRを指定します)。
-.SS "標準オプション"
+������ɬ�פʥ��ץ����ξ�硢�����ϡ����ץ����̾����򡢥�����(:)�ޤ�������(=)�Ƕ��ڤä���Τˤʤ뤫�����뤤�ϰ��������ץ����θ��ľ��³�����⤢��ޤ�(���Τʹ�ʸ�ϳƥ��ץ����ˤ�äưۤʤ�ޤ�)����������Х���ñ�̤ǻ��ꤹ��褦�����Ƥ����硢����������Ѥ��ʤ��������뤤�ϥ����Х���(KB)�ˤ�������\fBk\fR�ޤ���\fBK\fR���ᥬ�Х���(MB)�ˤ�������\fBm\fR�ޤ���\fBM\fR�������Х���(GB)�ˤ�������\fBg\fR�ޤ���\fBG\fR����Ѥ��ޤ������Ȥ��С���������8GB�����ꤹ��ˤϡ�\fB8g\fR��\fB8192m\fR��\fB8388608k\fR�ޤ���\fB8589934592\fR�Τ����줫������Ȥ��ƻ���Ǥ��ޤ����ѡ�����Ȥλ��꤬ɬ�פʾ��ϡ�0����1�ο��ͤ���Ѥ��ޤ�(���Ȥ��С�25%�ξ���\fB0\&.25\fR����ꤷ�ޤ�)��
+.SS "ɸ�४�ץ����"
 .PP
-これらは、JVMのすべての実装でサポートされる最も一般的に使用されるオプションです。
+�����ϡ�JVM�Τ��٤Ƥμ����ǥ��ݡ��Ȥ����Ǥ����Ū�˻��Ѥ���륪�ץ����Ǥ���
 .PP
 \-agentlib:\fIlibname\fR[=\fIoptions\fR]
 .RS 4
-指定したネイティブ・エージェント・ライブラリをロードします。ライブラリ名の後に、ライブラリに固有のオプションのカンマ区切りリストを使用できます。
+���ꤷ���ͥ��ƥ��֡�����������ȡ��饤�֥�������ɤ��ޤ����饤�֥��̾�θ�ˡ��饤�֥��˸�ͭ�Υ��ץ����Υ���޶��ڤ�ꥹ�Ȥ���ѤǤ��ޤ���
 .sp
-オプション\fI\-agentlib:foo\fRを指定した場合、JVMは、\fILD_LIBRARY_PATH\fRシステム変数(OS Xでは、この変数は\fIDYLD_LIBRARY_PATH\fRになります)で指定された場所に\fIlibfoo\&.so\fRという名前のライブラリをロードしようとします。
+���ץ����\fB\-agentlib:foo\fR����ꤷ����硢JVM�ϡ�\fBLD_LIBRARY_PATH\fR�����ƥ��ѿ�(OS X�Ǥϡ������ѿ���\fBDYLD_LIBRARY_PATH\fR�ˤʤ�ޤ�)�ǻ��ꤵ�줿����\fBlibfoo\&.so\fR�Ȥ���̾���Υ饤�֥�������ɤ��褦�Ȥ��ޤ���
 .sp
-次の例では、スタックの深さ3で、20ミリ秒ごとにヒープ・プロファイリング・ツール(HPROF)ライブラリをロードして、サンプルのCPU情報を取得する方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\-agentlib:hprof=cpu=samples,interval=20,depth=3
-.fi
-.if n \{\
-.RE
-.\}
-次の例では、メイン・クラスのロード前にJVMを一時停止して、Javaデバッグ・ワイヤ・プロトコル(JDWP)ライブラリをロードして、ポート8000でのソケット接続用にリスニングする方法を示します。
+������Ǥϡ������å��ο���3�ǡ�20�ߥ��ä��Ȥ˥ҡ��ס��ץ��ե�����󥰡��ġ���(HPROF)�饤�֥�������ɤ��ơ�����ץ��CPU��������������ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-agentlib:jdwp=transport=dt_socket,server=y,address=8000
+\fB\-agentlib:hprof=cpu=samples,interval=20,depth=3\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-ネイティブ・エージェント・ライブラリの詳細は、次を参照してください。
+������Ǥϡ��ᥤ�󡦥��饹�Υ���������JVM������ߤ��ơ�Java�ǥХå����磻�䡦�ץ��ȥ���(JDWP)�饤�֥�������ɤ��ơ��ݡ���8000�ǤΥ����å���³�Ѥ˥ꥹ�˥󥰤�����ˡ�򼨤��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB\-agentlib:jdwp=transport=dt_socket,server=y,address=8000\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+�ͥ��ƥ��֡�����������ȡ��饤�֥��ξܺ٤ϡ����򻲾Ȥ��Ƥ���������
 .sp
 .RS 4
 .ie n \{\
@@ -235,7 +240,7 @@ JREは、ブートストラップ・クラス・パス、インストール済�
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/8/docs/api/java/lang/instrument/package\-summary\&.htmlにある\fIjava\&.lang\&.instrument\fRパッケージの説明
+http://docs\&.oracle\&.com/javase/8/docs/api/java/lang/instrument/package\-summary\&.html�ˤ���\fBjava\&.lang\&.instrument\fR�ѥå�����������
 .RE
 .sp
 .RS 4
@@ -246,113 +251,125 @@ http://docs\&.oracle\&.com/javase/8/docs/api/java/lang/instrument/package\-summa
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/8/docs/platform/jvmti/jvmti\&.html#startingにあるJVMツール・インタフェース・ガイドのエージェントのコマンドライン・オプションに関する項
+http://docs\&.oracle\&.com/javase/8/docs/platform/jvmti/jvmti\&.html#starting�ˤ���JVM�ġ��롦���󥿥ե������������ɤΥ���������ȤΥ��ޥ�ɹԥ��ץ����˴ؤ����
 .RE
 .RE
 .PP
 \-agentpath:\fIpathname\fR[=\fIoptions\fR]
 .RS 4
-絶対パス名で指定されたネイティブ・エージェント・ライブラリをロードします。このオプションは\fI\-agentlib\fRと同等ですが、ライブラリのフル・パスおよびファイル名を使用します。
+���Хѥ�̾�ǻ��ꤵ�줿�ͥ��ƥ��֡�����������ȡ��饤�֥�������ɤ��ޤ������Υ��ץ�����\fB\-agentlib\fR��Ʊ���Ǥ������饤�֥��Υե롦�ѥ�����ӥե�����̾����Ѥ��ޤ���
 .RE
 .PP
 \-client
 .RS 4
-Java HotSpot Client VMを選択します。64ビット・バージョンのJava SE Development Kit (JDK)では、現在、このオプションは無視され、かわりにServer JVMが使用されます。
+Java HotSpot Client VM�����򤷤ޤ���64�ӥåȡ��С�������Java SE Development Kit (JDK)�Ǥϡ����ߡ����Υ��ץ�����̵�뤵�졢������Server JVM�����Ѥ���ޤ���
 .sp
-デフォルトのJVM選択は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/server\-class\&.htmlにある
-サーバークラス・マシンの検出を参照してください。
+�ǥե���Ȥ�JVM����ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/server\-class\&.html�ˤ���
+�����С����饹���ޥ���θ��Ф򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-D\fIproperty\fR=\fIvalue\fR
 .RS 4
-システム・プロパティの値を設定します。\fIproperty\fR変数は、プロパティの名前を表す、空白のない文字列です。\fIvalue\fR変数は、プロパティの値を表す文字列です。\fIvalue\fRが空白を含む文字列の場合、それを引用符で囲みます(例:
-\fI\-Dfoo="foo bar"\fR)。
+�����ƥࡦ�ץ��ѥƥ����ͤ����ꤷ�ޤ���\fIproperty\fR�ѿ��ϡ��ץ��ѥƥ���̾����ɽ��������Τʤ�ʸ����Ǥ���\fIvalue\fR�ѿ��ϡ��ץ��ѥƥ����ͤ�ɽ��ʸ����Ǥ���\fIvalue\fR�������ޤ�ʸ����ξ�硢����������ǰϤߤޤ�(��:
+\fB\-Dfoo="foo bar"\fR)��
 .RE
 .PP
 \-d32
 .RS 4
-アプリケーションを32ビット環境で実行します。32ビット環境がインストールされていないかサポートされていない場合は、エラーが報告されます。デフォルトでは、64ビット・システムが使用されている場合を除き、アプリケーションは32ビット環境で実行されます。
+���ץꥱ��������32�ӥåȴĶ��Ǽ¹Ԥ��ޤ���32�ӥåȴĶ������󥹥ȡ��뤵��Ƥ��ʤ������ݡ��Ȥ���Ƥ��ʤ����ϡ����顼����𤵤�ޤ����ǥե���ȤǤϡ�64�ӥåȡ������ƥब���Ѥ���Ƥ��������������ץꥱ��������32�ӥåȴĶ��Ǽ¹Ԥ���ޤ���
 .RE
 .PP
 \-d64
 .RS 4
-アプリケーションを64ビット環境で実行します。64ビット環境がインストールされていないかサポートされていない場合は、エラーが報告されます。デフォルトでは、64ビット・システムが使用されている場合を除き、アプリケーションは32ビット環境で実行されます。
+���ץꥱ��������64�ӥåȴĶ��Ǽ¹Ԥ��ޤ���64�ӥåȴĶ������󥹥ȡ��뤵��Ƥ��ʤ������ݡ��Ȥ���Ƥ��ʤ����ϡ����顼����𤵤�ޤ����ǥե���ȤǤϡ�64�ӥåȡ������ƥब���Ѥ���Ƥ��������������ץꥱ��������32�ӥåȴĶ��Ǽ¹Ԥ���ޤ���
 .sp
-現在のところ、Java HotSpot Server VMのみが64ビットの操作をサポートしているため、\fI\-d64\fR使用時には\fI\-server\fRオプションが暗黙的に使用されます。\fI\-d64\fR使用時には、\fI\-client\fRオプションは無視されます。この仕様は、将来のリリースでは変更になる可能性があります。
+���ߤΤȤ�����Java HotSpot Server VM�Τߤ�64�ӥåȤ����򥵥ݡ��Ȥ��Ƥ��뤿�ᡢ\fB\-d64\fR���ѻ��ˤ�\fB\-server\fR���ץ���󤬰���Ū�˻��Ѥ���ޤ���\fB\-d64\fR���ѻ��ˤϡ�\fB\-client\fR���ץ�����̵�뤵��ޤ������λ��ͤϡ�����Υ�꡼���Ǥ��ѹ��ˤʤ��ǽ��������ޤ���
 .RE
 .PP
-\-disableassertions[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR], \-da[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
+\-disableassertions[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
+.br
+\-da[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
 .RS 4
-アサーションを無効にします。デフォルトでは、アサーションはすべてのパッケージおよびクラスで無効になっています。
+������������̵���ˤ��ޤ����ǥե���ȤǤϡ������������Ϥ��٤ƤΥѥå���������ӥ��饹��̵���ˤʤäƤ��ޤ���
 .sp
-引数なしの\fI\-disableassertions\fR
-(\fI\-da\fR)を指定すると、すべてのパッケージおよびクラスでアサーションが無効になります。\fI\&.\&.\&.\fRで終わる\fIpackagename\fR引数を指定すると、指定したパッケージとそのサブパッケージ内でアサーションが無効になります。引数として\fI\&.\&.\&.\fRのみを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが無効になります。\fIclassname\fR引数を指定すると、切替えによって、指定したクラス内でアサーションが無効になります。
+�����ʤ���\fB\-disableassertions\fR
+(\fB\-da\fR)����ꤹ��ȡ����٤ƤΥѥå���������ӥ��饹�ǥ����������̵���ˤʤ�ޤ���\fB\&.\&.\&.\fR�ǽ����\fIpackagename\fR��������ꤹ��ȡ����ꤷ���ѥå������Ȥ��Υ��֥ѥå�������ǥ����������̵���ˤʤ�ޤ��������Ȥ���\fB\&.\&.\&.\fR�Τߤ���ꤹ��ȡ����ߤκ�ȥǥ��쥯�ȥ�ˤ���̾���Τʤ��ѥå�������ǥ����������̵���ˤʤ�ޤ���\fIclassname\fR��������ꤹ��ȡ����ؤ��ˤ�äơ����ꤷ�����饹��ǥ����������̵���ˤʤ�ޤ���
 .sp
-\fI\-disableassertions\fR
-(\fI\-da\fR)オプションは、すべてのクラス・ローダーおよびシステム・クラスに適用されます(システム・クラスにはクラス・ローダーはありません)。このルールには1つ例外があります。オプションの引数が指定されていない場合は、システム・クラスに適用されません。これにより、システム・クラスを除くすべてのクラスでアサーションを簡単に無効にすることができます。\fI\-disablesystemassertions\fRオプションを使用すると、すべてのシステム・クラスでアサーションを無効にすることができます。
+\fB\-disableassertions\fR
+(\fB\-da\fR)���ץ����ϡ����٤ƤΥ��饹��������������ӥ����ƥࡦ���饹��Ŭ�Ѥ���ޤ�(�����ƥࡦ���饹�ˤϥ��饹�����������Ϥ���ޤ���)�����Υ롼��ˤ�1���㳰������ޤ������ץ����ΰ��������ꤵ��Ƥ��ʤ����ϡ������ƥࡦ���饹��Ŭ�Ѥ���ޤ��󡣤���ˤ�ꡢ�����ƥࡦ���饹��������٤ƤΥ��饹�ǥ������������ñ��̵���ˤ��뤳�Ȥ��Ǥ��ޤ���\fB\-disablesystemassertions\fR���ץ�������Ѥ���ȡ����٤ƤΥ����ƥࡦ���饹�ǥ�����������̵���ˤ��뤳�Ȥ��Ǥ��ޤ���
 .sp
-特定のパッケージやクラスでアサーションを明示的に有効にするには、\fI\-enableassertions\fR
-(\fI\-ea\fR)オプションを使用します。両方のオプションを同時に使用できます。たとえば、パッケージ\fIcom\&.wombat\&.fruitbat\fR
-(およびそのサブパッケージ)ではアサーションを有効にして、クラス\fIcom\&.wombat\&.fruitbat\&.Brickbat\fRではアサーションを無効にして、\fIMyClass\fRアプリケーションを実行するには、次のコマンドを使用します。
+����Υѥå������䥯�饹�ǥ���������������Ū��ͭ���ˤ���ˤϡ�\fB\-enableassertions\fR
+(\fB\-ea\fR)���ץ�������Ѥ��ޤ���ξ���Υ��ץ�����Ʊ���˻��ѤǤ��ޤ������Ȥ��С��ѥå�����\fBcom\&.wombat\&.fruitbat\fR
+(����Ӥ��Υ��֥ѥå�����)�Ǥϥ�����������ͭ���ˤ��ơ����饹\fBcom\&.wombat\&.fruitbat\&.Brickbat\fR�Ǥϥ�����������̵���ˤ��ơ�\fBMyClass\fR���ץꥱ��������¹Ԥ���ˤϡ����Υ��ޥ�ɤ���Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-java \-ea:com\&.wombat\&.fruitbat\&.\&.\&. \-da:com\&.wombat\&.fruitbat\&.Brickbat MyClass
+\fBjava \-ea:com\&.wombat\&.fruitbat\&.\&.\&. \-da:com\&.wombat\&.fruitbat\&.Brickbat MyClass\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-\-disablesystemassertions, \-dsa
+\-disablesystemassertions
+.br
+\-dsa
 .RS 4
-すべてのシステム・クラス内でアサーションを無効にします。
+���٤ƤΥ����ƥࡦ���饹��ǥ�����������̵���ˤ��ޤ���
 .RE
 .PP
-\-enableassertions[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR], \-ea[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
+\-enableassertions[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
+.br
+\-ea[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
 .RS 4
-アサーションを有効にします。デフォルトでは、アサーションはすべてのパッケージおよびクラスで無効になっています。
+������������ͭ���ˤ��ޤ����ǥե���ȤǤϡ������������Ϥ��٤ƤΥѥå���������ӥ��饹��̵���ˤʤäƤ��ޤ���
 .sp
-引数なしの\fI\-enableassertions\fR
-(\fI\-ea\fR)を指定すると、すべてのパッケージおよびクラスでアサーションが有効になります。\fI\&.\&.\&.\fRで終わる\fIpackagename\fR引数を指定すると、指定したパッケージとそのサブパッケージ内でアサーションが有効になります。引数として\fI\&.\&.\&.\fRのみを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが有効になります。\fIclassname\fR引数を指定すると、切替えによって、指定したクラス内でアサーションが有効になります。
+�����ʤ���\fB\-enableassertions\fR
+(\fB\-ea\fR)����ꤹ��ȡ����٤ƤΥѥå���������ӥ��饹�ǥ����������ͭ���ˤʤ�ޤ���\fB\&.\&.\&.\fR�ǽ����\fIpackagename\fR��������ꤹ��ȡ����ꤷ���ѥå������Ȥ��Υ��֥ѥå�������ǥ����������ͭ���ˤʤ�ޤ��������Ȥ���\fB\&.\&.\&.\fR�Τߤ���ꤹ��ȡ����ߤκ�ȥǥ��쥯�ȥ�ˤ���̾���Τʤ��ѥå�������ǥ����������ͭ���ˤʤ�ޤ���\fIclassname\fR��������ꤹ��ȡ����ؤ��ˤ�äơ����ꤷ�����饹��ǥ����������ͭ���ˤʤ�ޤ���
 .sp
-\fI\-enableassertions\fR
-(\fI\-ea\fR)オプションは、すべてのクラス・ローダーおよびシステム・クラスに適用されます(システム・クラスにはクラス・ローダーはありません)。このルールには1つ例外があります。オプションの引数が指定されていない場合は、システム・クラスに適用されません。これにより、システム・クラスを除くすべてのクラスでアサーションを簡単に有効にすることができます。\fI\-enablesystemassertions\fRオプションは、すべてのシステム・クラスでアサーションを有効にする別のスイッチを提供します。
+\fB\-enableassertions\fR
+(\fB\-ea\fR)���ץ����ϡ����٤ƤΥ��饹��������������ӥ����ƥࡦ���饹��Ŭ�Ѥ���ޤ�(�����ƥࡦ���饹�ˤϥ��饹�����������Ϥ���ޤ���)�����Υ롼��ˤ�1���㳰������ޤ������ץ����ΰ��������ꤵ��Ƥ��ʤ����ϡ������ƥࡦ���饹��Ŭ�Ѥ���ޤ��󡣤���ˤ�ꡢ�����ƥࡦ���饹��������٤ƤΥ��饹�ǥ������������ñ��ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ���\fB\-enablesystemassertions\fR���ץ����ϡ����٤ƤΥ����ƥࡦ���饹�ǥ�����������ͭ���ˤ����̤Υ����å����󶡤��ޤ���
 .sp
-特定のパッケージやクラスでアサーションを明示的に無効にするには、\fI\-disableassertions\fR
-(\fI\-da\fR)オプションを使用します。単一コマンドにこれらのスイッチのインスタンスを複数指定した場合は、指定したスイッチが順番に処理されてからクラスがロードされます。たとえば、パッケージ\fIcom\&.wombat\&.fruitbat\fR
-(およびそのサブパッケージ)でのみアサーションを有効にして、クラス\fIcom\&.wombat\&.fruitbat\&.Brickbat\fRではアサーションを無効にして、\fIMyClass\fRアプリケーションを実行するには、次のコマンドを使用します。
+����Υѥå������䥯�饹�ǥ���������������Ū��̵���ˤ���ˤϡ�\fB\-disableassertions\fR
+(\fB\-da\fR)���ץ�������Ѥ��ޤ���ñ�쥳�ޥ�ɤˤ����Υ����å��Υ��󥹥��󥹤�ʣ�����ꤷ�����ϡ����ꤷ�������å������֤˽�������Ƥ��饯�饹�������ɤ���ޤ������Ȥ��С��ѥå�����\fBcom\&.wombat\&.fruitbat\fR
+(����Ӥ��Υ��֥ѥå�����)�ǤΤߥ�����������ͭ���ˤ��ơ����饹\fBcom\&.wombat\&.fruitbat\&.Brickbat\fR�Ǥϥ�����������̵���ˤ��ơ�\fBMyClass\fR���ץꥱ��������¹Ԥ���ˤϡ����Υ��ޥ�ɤ���Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-java \-ea:com\&.wombat\&.fruitbat\&.\&.\&. \-da:com\&.wombat\&.fruitbat\&.Brickbat MyClass
+\fBjava \-ea:com\&.wombat\&.fruitbat\&.\&.\&. \-da:com\&.wombat\&.fruitbat\&.Brickbat MyClass\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-\-enablesystemassertions, \-esa
+\-enablesystemassertions
+.br
+\-esa
 .RS 4
-すべてのシステム・クラス内でアサーションを有効にします。
+���٤ƤΥ����ƥࡦ���饹��ǥ�����������ͭ���ˤ��ޤ���
 .RE
 .PP
-\-help, \-?
+\-help
+.br
+\-?
 .RS 4
-実際にJVMを実行せずに、\fIjava\fRコマンドの使用状況情報を表示します。
+�ºݤ�JVM��¹Ԥ����ˡ�\fBjava\fR���ޥ�ɤλ��Ѿ��������ɽ�����ޤ���
 .RE
 .PP
 \-jar \fIfilename\fR
 .RS 4
-JARファイルにカプセル化されたプログラムを実行します。\fIfilename\fR引数は、使用するアプリケーションの開始点として機能する\fIpublic static void main(String[] args)\fRメソッドを定義する、\fIMain\-Class:\fR\fIclassname\fRという形式の1行を含むマニフェストを持つJARファイルの名前です。
+JAR�ե�����˥��ץ��벽���줿�ץ�������¹Ԥ��ޤ���\fIfilename\fR�����ϡ����Ѥ��륢�ץꥱ�������γ������Ȥ��Ƶ�ǽ����\fBpublic static void main(String[] args)\fR�᥽�åɤ�������롢\fBMain\-Class:\fR\fIclassname\fR�Ȥ���������1�Ԥ�ޤ�ޥ˥ե����Ȥ����JAR�ե������̾���Ǥ���
 .sp
-\fI\-jar\fRオプションを使用すると、指定したJARファイルがすべてのユーザー・クラスのソースになり、クラス・パスの他の設定は無視されます。
+\fB\-jar\fR���ץ�������Ѥ���ȡ����ꤷ��JAR�ե����뤬���٤ƤΥ桼���������饹�Υ������ˤʤꡢ���饹���ѥ���¾�������̵�뤵��ޤ���
 .sp
-JARファイルの詳細は、次のリソースを参照してください。
+JAR�ե�����ξܺ٤ϡ����Υ꥽�����򻲾Ȥ��Ƥ���������
 .sp
 .RS 4
 .ie n \{\
@@ -373,7 +390,7 @@ jar(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jar/index\&.htmlにあるJavaアーカイブ(JAR)ファイルのガイド
+http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jar/index\&.html�ˤ���Java����������(JAR)�ե�����Υ�����
 .RE
 .sp
 .RS 4
@@ -384,48 +401,49 @@ http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jar/index\&.htmlにあ
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.htmlにある
-「レッスン: JARファイルのプログラムのパッケージ化」
+http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.html�ˤ���
+�֥�å���: JAR�ե�����Υץ������Υѥå���������
 .RE
 .RE
 .PP
 \-javaagent:\fIjarpath\fR[=\fIoptions\fR]
 .RS 4
-指定したJavaプログラミング言語エージェントをロードします。Javaアプリケーションのインストゥルメントの詳細は、http://docs\&.oracle\&.com/javase/8/docs/api/java/lang/instrument/package\-summary\&.htmlにあるJava APIドキュメントの\fIjava\&.lang\&.instrument\fRパッケージの説明を参照してください。
+���ꤷ��Java�ץ�����ߥ󥰸��쥨��������Ȥ�����ɤ��ޤ���Java���ץꥱ�������Υ��󥹥ȥ�����Ȥξܺ٤ϡ�http://docs\&.oracle\&.com/javase/8/docs/api/java/lang/instrument/package\-summary\&.html�ˤ���Java API�ɥ�����Ȥ�\fBjava\&.lang\&.instrument\fR�ѥå������������򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-jre\-restrict\-search
 .RS 4
-ユーザー・プライベートなJREをバージョン検索に含めます。
+�桼�������ץ饤�١��Ȥ�JRE��С�����󸡺��˴ޤ�ޤ���
 .RE
 .PP
 \-no\-jre\-restrict\-search
 .RS 4
-ユーザー・プライベートなJREをバージョン検索から除外します。
+�桼�������ץ饤�١��Ȥ�JRE��С�����󸡺�����������ޤ���
 .RE
 .PP
 \-server
 .RS 4
-Java HotSpot Server VMを選択します。64ビット・バージョンのJDKでは、Server VMのみをサポートしているため、その場合、このオプションは暗黙的です。
+Java HotSpot Server VM�����򤷤ޤ���64�ӥåȡ��С�������JDK�Ǥϡ�Server VM�Τߤ򥵥ݡ��Ȥ��Ƥ��뤿�ᡢ���ξ�硢���Υ��ץ����ϰ���Ū�Ǥ���
 .sp
-デフォルトのJVM選択は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/server\-class\&.htmlにある
-サーバークラス・マシンの検出を参照してください。
+�ǥե���Ȥ�JVM����ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/server\-class\&.html�ˤ���
+�����С����饹���ޥ���θ��Ф򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-showversion
 .RS 4
-バージョン情報を表示し、アプリケーションの実行を続行します。このオプションは\fI\-version\fRオプションと同等ですが、\-versionはバージョン情報の表示後にJVMに終了を指示する点が異なります。
+�С����������ɽ���������ץꥱ�������μ¹Ԥ�³�Ԥ��ޤ������Υ��ץ�����\fB\-version\fR���ץ�����Ʊ���Ǥ�����\-version�ϥС����������ɽ�����JVM�˽�λ��ؼ����������ۤʤ�ޤ���
 .RE
 .PP
 \-splash:\fIimgname\fR
 .RS 4
-\fIimgname\fRで指定されたイメージを含むスプラッシュ画面を表示します。たとえば、アプリケーションの起動時に\fIimages\fRディレクトリの\fIsplash\&.gif\fRファイルを表示するには、次のオプションを使用します。
+\fIimgname\fR�ǻ��ꤵ�줿���᡼����ޤॹ�ץ�å�����̤�ɽ�����ޤ������Ȥ��С����ץꥱ�������ε�ư����\fBimages\fR�ǥ��쥯�ȥ��\fBsplash\&.gif\fR�ե������ɽ������ˤϡ����Υ��ץ�������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-splash:images/splash\&.gif
+\fB\-splash:images/splash\&.gif\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -434,140 +452,132 @@ Java HotSpot Server VMを選択します。64ビット・バージョンのJDK�
 .PP
 \-verbose:class
 .RS 4
-ロードされた各クラスに関する情報を表示します。
+�����ɤ��줿�ƥ��饹�˴ؤ�������ɽ�����ޤ���
 .RE
 .PP
 \-verbose:gc
 .RS 4
-各ガベージ・コレクション(GC)イベントに関する情報を表示します。
+�ƥ��١��������쥯�����(GC)���٥�Ȥ˴ؤ�������ɽ�����ޤ���
 .RE
 .PP
 \-verbose:jni
 .RS 4
-ネイティブ・メソッドの使用およびその他のJava Native Interface (JNI)アクティビティに関する情報を表示します。
+�ͥ��ƥ��֡��᥽�åɤλ��Ѥ���Ӥ���¾��Java Native Interface (JNI)�����ƥ��ӥƥ��˴ؤ�������ɽ�����ޤ���
 .RE
 .PP
 \-version
 .RS 4
-バージョン情報を表示してから終了します。このオプションは\fI\-showversion\fRオプションと同等ですが、\-showversionはバージョン情報の表示後にJVMに終了を指示しない点が異なります。
+�С����������ɽ�����Ƥ��齪λ���ޤ������Υ��ץ�����\fB\-showversion\fR���ץ�����Ʊ���Ǥ�����\-showversion�ϥС����������ɽ�����JVM�˽�λ��ؼ����ʤ������ۤʤ�ޤ���
 .RE
 .PP
 \-version:\fIrelease\fR
 .RS 4
-アプリケーションの実行に使用するリリース・バージョンを指定します。コールされた\fIjava\fRコマンドのバージョンがこの指定内容を満たさず、かつ適切な実装がシステム上で見つかった場合には、その適切な実装が使用されます。
+���ץꥱ�������μ¹Ԥ˻��Ѥ����꡼�����С���������ꤷ�ޤ��������뤵�줿\fBjava\fR���ޥ�ɤΥС�����󤬤��λ������Ƥ���������������Ŭ�ڤʼ����������ƥ��Ǹ��Ĥ��ä����ˤϡ�����Ŭ�ڤʼ��������Ѥ���ޤ���
 .sp
-\fIrelease\fR引数は、正確なバージョン文字列、または空白で区切られたバージョン文字列とバージョン範囲のリストを指定します。\fIバージョン文字列\fRは、次の形式で、開発者のバージョン番号を指定します:
-\fI1\&.\fR\fIx\fR\fI\&.0_\fR\fIu\fR
-(\fIx\fRはメジャー・バージョン番号、\fIu\fRは更新バージョン番号です)。\fIバージョン範囲\fRは、このバージョン以降を指定するにはバージョン文字列の後にプラス記号(\fI+\fR)を続けたもの、または一致する接頭辞を含む任意のバージョン文字列を指定するには一部のバージョン文字列の後にアスタリスク(\fI*\fR)を続けたもので構成されます。論理\fIOR\fRの組合せには空白、2つのバージョンの文字列/範囲の論理\fIAND\fRの組合せにはアンパサンド(\fI&\fR)を使用して、バージョン文字列とバージョン範囲を組み合せることができます。たとえば、クラスまたはJARファイルの実行にJRE 6u13 (1\&.6\&.0_13)または6u10 (1\&.6\&.0_10)以降の任意のJRE 6のいずれかを必要とする場合、次を指定します。
+\fIrelease\fR�����ϡ����ΤʥС������ʸ���󡢤ޤ��϶���Ƕ��ڤ�줿�С������ʸ����ȥС�������ϰϤΥꥹ�Ȥ���ꤷ�ޤ���\fI�С������ʸ����\fR�ϡ����η����ǡ���ȯ�ԤΥС�������ֹ����ꤷ�ޤ�:
+\fB1\&.\fR\fIx\fR\fB\&.0_\fR\fIu\fR
+(\fIx\fR�ϥ᥸�㡼���С�������ֹ桢\fIu\fR�Ϲ����С�������ֹ�Ǥ�)��\fI�С�������ϰ�\fR�ϡ����ΥС������ʹߤ���ꤹ��ˤϥС������ʸ����θ�˥ץ饹����(\fB+\fR)��³������Ρ��ޤ��ϰ��פ�����Ƭ����ޤ�Ǥ�դΥС������ʸ�������ꤹ��ˤϰ����ΥС������ʸ����θ�˥������ꥹ��(\fB*\fR)��³������Τǹ�������ޤ�������\fIOR\fR���ȹ礻�ˤ϶���2�ĤΥС�������ʸ����/�ϰϤ�����\fIAND\fR���ȹ礻�ˤϥ���ѥ����(\fB&\fR)����Ѥ��ơ��С������ʸ����ȥС�������ϰϤ��Ȥ߹礻�뤳�Ȥ��Ǥ��ޤ������Ȥ��С����饹�ޤ���JAR�ե�����μ¹Ԥ�JRE 6u13 (1\&.6\&.0_13)�ޤ���6u10 (1\&.6\&.0_10)�ʹߤ�Ǥ�դ�JRE 6�Τ����줫��ɬ�פȤ����硢������ꤷ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-version:"1\&.6\&.0_13 1\&.6* & 1\&.6\&.0_10+"
+\fB\-version:"1\&.6\&.0_13 1\&.6* & 1\&.6\&.0_10+"\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-引用符が必要なのは、\fIrelease\fRパラメータに空白がある場合のみです。
+�����䤬ɬ�פʤΤϡ�\fIrelease\fR�ѥ�᡼���˶��򤬤�����ΤߤǤ���
 .sp
-JARファイルの場合は、バージョン要件をコマンドラインに指定するよりも、JARファイルのマニフェスト内に指定することが推奨されています。
+JAR�ե�����ξ��ϡ��С�������׷�򥳥ޥ�ɹԤ˻��ꤹ����⡢JAR�ե�����Υޥ˥ե�������˻��ꤹ�뤳�Ȥ��侩����Ƥ��ޤ���
 .RE
-.SS "非標準オプション"
+.SS "��ɸ�४�ץ����"
 .PP
-これらのオプションは、Java HotSpot仮想マシンに固有の汎用オプションです。
+�����Υ��ץ����ϡ�Java HotSpot���ۥޥ���˸�ͭ�����ѥ��ץ����Ǥ���
 .PP
 \-X
 .RS 4
-使用可能なすべての\fI\-X\fRオプションのヘルプを表示します。
+���Ѳ�ǽ�ʤ��٤Ƥ�\fB\-X\fR���ץ����Υإ�פ�ɽ�����ޤ���
 .RE
 .PP
 \-Xbatch
 .RS 4
-バックグラウンド・コンパイルを無効にします。デフォルトでは、JVMでは、バックグラウンド・コンパイルが終了するまで、メソッドをバックグラウンド・タスクとしてコンパイルし、インタプリタ・モードでメソッドを実行します。\fI\-Xbatch\fRフラグを指定すると、バックグラウンド・コンパイルが無効になり、すべてのメソッドのコンパイルが完了するまでフォアグラウンド・タスクとして処理されます。
+�Хå����饦��ɡ�����ѥ����̵���ˤ��ޤ����ǥե���ȤǤϡ�JVM�Ǥϡ��Хå����饦��ɡ�����ѥ��뤬��λ����ޤǡ��᥽�åɤ�Хå����饦��ɡ��������Ȥ��ƥ���ѥ��뤷�����󥿥ץ꥿���⡼�ɤǥ᥽�åɤ�¹Ԥ��ޤ���\fB\-Xbatch\fR�ե饰����ꤹ��ȡ��Хå����饦��ɡ�����ѥ��뤬̵���ˤʤꡢ���٤ƤΥ᥽�åɤΥ���ѥ��뤬��λ����ޤǥե������饦��ɡ��������Ȥ��ƽ�������ޤ���
 .sp
-このオプションは\fI\-XX:\-BackgroundCompilation\fRと同等です。
+���Υ��ץ�����\fB\-XX:\-BackgroundCompilation\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-Xbootclasspath:\fIpath\fR
 .RS 4
-ブート・クラス・ファイルを検索するディレクトリ、JARファイルおよびZIPアーカイブの、コロン(:)で区切られたリストを指定します。これらは、JDKに含まれるブート・クラス・ファイルのかわりに使用されます。
+�֡��ȡ����饹���ե�����򸡺�����ǥ��쥯�ȥꡢJAR�ե����뤪���ZIP���������֤Ρ�������(:)�Ƕ��ڤ�줿�ꥹ�Ȥ���ꤷ�ޤ��������ϡ�JDK�˴ޤޤ��֡��ȡ����饹���ե�����Τ����˻��Ѥ���ޤ���
 .sp
-JREバイナリ・コード・ライセンスに違反するため、\fIrt\&.jar\fRでクラスをオーバーライドする目的で、このオプションを使用するアプリケーションをデプロイしないでください。
+JRE�Х��ʥꡦ�����ɡ��饤���󥹤˰�ȿ���뤿�ᡢ\fBrt\&.jar\fR�ǥ��饹�򥪡��С��饤�ɤ�����Ū�ǡ����Υ��ץ�������Ѥ��륢�ץꥱ��������ǥץ������ʤ��Ǥ���������
 .RE
 .PP
 \-Xbootclasspath/a:\fIpath\fR
 .RS 4
-デフォルトのブートストラップ・クラス・パスの最後に追加するディレクトリ、JARファイルおよびZIPアーカイブの、コロン(:)で区切られたリストを指定します。
+�ǥե���ȤΥ֡��ȥ��ȥ�åס����饹���ѥ��κǸ���ɲä���ǥ��쥯�ȥꡢJAR�ե����뤪���ZIP���������֤Ρ�������(:)�Ƕ��ڤ�줿�ꥹ�Ȥ���ꤷ�ޤ���
 .sp
-JREバイナリ・コード・ライセンスに違反するため、\fIrt\&.jar\fRでクラスをオーバーライドする目的で、このオプションを使用するアプリケーションをデプロイしないでください。
+JRE�Х��ʥꡦ�����ɡ��饤���󥹤˰�ȿ���뤿�ᡢ\fBrt\&.jar\fR�ǥ��饹�򥪡��С��饤�ɤ�����Ū�ǡ����Υ��ץ�������Ѥ��륢�ץꥱ��������ǥץ������ʤ��Ǥ���������
 .RE
 .PP
 \-Xbootclasspath/p:\fIpath\fR
 .RS 4
-デフォルトのブートストラップ・クラス・パスの先頭に追加するディレクトリ、JARファイルおよびZIPアーカイブの、コロン(:)で区切られたリストを指定します。
+�ǥե���ȤΥ֡��ȥ��ȥ�åס����饹���ѥ�����Ƭ���ɲä���ǥ��쥯�ȥꡢJAR�ե����뤪���ZIP���������֤Ρ�������(:)�Ƕ��ڤ�줿�ꥹ�Ȥ���ꤷ�ޤ���
 .sp
-JREバイナリ・コード・ライセンスに違反するため、\fIrt\&.jar\fRでクラスをオーバーライドする目的で、このオプションを使用するアプリケーションをデプロイしないでください。
-.RE
-.PP
-\-Xboundthreads
-.RS 4
-ユーザー・レベルのスレッドをカーネル・スレッドにバインドします。
+JRE�Х��ʥꡦ�����ɡ��饤���󥹤˰�ȿ���뤿�ᡢ\fBrt\&.jar\fR�ǥ��饹�򥪡��С��饤�ɤ�����Ū�ǡ����Υ��ץ�������Ѥ��륢�ץꥱ��������ǥץ������ʤ��Ǥ���������
 .RE
 .PP
 \-Xcheck:jni
 .RS 4
-Java Native Interface (JNI)機能に対して追加チェックを行います。具体的には、これは、JNIリクエストを処理する前に、JNI関数に渡されるパラメータと実行環境のデータを検証します。無効なデータが見つかった場合は、ネイティブ・コードに問題があることを示しているため、JVMはリカバリ不能なエラーを発生して終了します。このオプションを使用すると、パフォーマンス低下が予想されます。
+Java Native Interface (JNI)��ǽ���Ф����ɲå����å���Ԥ��ޤ�������Ū�ˤϡ�����ϡ�JNI�ꥯ�����Ȥ�����������ˡ�JNI�ؿ����Ϥ����ѥ�᡼���ȼ¹ԴĶ��Υǡ����򸡾ڤ��ޤ���̵���ʥǡ��������Ĥ��ä����ϡ��ͥ��ƥ��֡������ɤ����꤬���뤳�Ȥ򼨤��Ƥ��뤿�ᡢJVM�ϥꥫ�Х���ǽ�ʥ��顼��ȯ�����ƽ�λ���ޤ������Υ��ץ�������Ѥ���ȡ��ѥե����ޥ��㲼��ͽ�ۤ���ޤ���
 .RE
 .PP
 \-Xcomp
 .RS 4
-最初の呼出しでJavaコードおよびコンパイル・メソッドの解釈を無効にします。デフォルトでは、JITコンパイラは、10,000の解釈されたメソッド呼出しを実行して、効率的なコンパイルのための情報を収集します。効率を犠牲にしてコンパイルのパフォーマンスを向上させるには、\fI\-Xcomp\fRフラグを使用して、解釈されたメソッド呼出しを無効にします。
+�ǽ�θƽФ��ǥ᥽�åɤΥ���ѥ������Ū�˼¹Ԥ��ޤ����ǥե���ȤǤϡ����饤�����VM(\fB\-client\fR)��1,000�β�ᤵ�줿�᥽�åɸƽФ���¹Ԥ��������С�VM(\fB\-server\fR)��10,000�β�ᤵ�줿�᥽�åɸƽФ���¹Ԥ��ơ���ΨŪ�ʥ���ѥ���Τ���ξ����������ޤ���\fB\-Xcomp\fR���ץ�������ꤹ��ȡ���ᤵ�줿�᥽�åɸƽФ���̵���ˤʤꡢ��Ψ�����ˤ��ƥ���ѥ���Υѥե����ޥ󥹤����夷�ޤ���
 .sp
-\fI\-XX:CompileThreshold\fRオプションを使用して、コンパイルの前に、解釈されたメソッド呼出しの数を変更することもできます。
+\fB\-XX:CompileThreshold\fR���ץ�������Ѥ��ơ�����ѥ�������ˡ���ᤵ�줿�᥽�åɸƽФ��ο����ѹ����뤳�Ȥ�Ǥ��ޤ���
 .RE
 .PP
 \-Xdebug
 .RS 4
-何も行いません。下位互換性のために用意されています。
+����Ԥ��ޤ��󡣸����ߴ����Τ�����Ѱդ���Ƥ��ޤ���
 .RE
 .PP
 \-Xdiag
 .RS 4
-追加の診断メッセージを表示します。
+�ɲäο��ǥ�å�������ɽ�����ޤ���
 .RE
 .PP
 \-Xfuture
 .RS 4
-クラス・ファイル形式の仕様への準拠を強化する、厳密なクラス・ファイル形式のチェックが有効になります。将来のリリースでは、より厳密なチェックがデフォルトになるため、新しいコードを開発するときには、開発者はこのフラグを使用することをお薦めします。
-.RE
-.PP
-\-Xincgc
-.RS 4
-増分GCを有効にします。
+���饹���ե���������λ��ͤؤν��򶯲����롢��̩�ʥ��饹���ե���������Υ����å���ͭ���ˤʤ�ޤ�������Υ�꡼���Ǥϡ���긷̩�ʥ����å����ǥե���Ȥˤʤ뤿�ᡢ�����������ɤ�ȯ����Ȥ��ˤϡ���ȯ�ԤϤ��Υե饰����Ѥ��뤳�Ȥ����ᤷ�ޤ���
 .RE
 .PP
 \-Xint
 .RS 4
-インタプリタ専用モードでアプリケーションを実行します。ネイティブ・コードへのコンパイルは無効になり、すべてのバイトコードがインタプリタによって実行されます。ジャスト・イン・タイム(JIT)コンパイラが提供するパフォーマンス上の利点は、このモードでは実現されません。
+���󥿥ץ꥿���ѥ⡼�ɤǥ��ץꥱ��������¹Ԥ��ޤ����ͥ��ƥ��֡������ɤؤΥ���ѥ����̵���ˤʤꡢ���٤ƤΥХ��ȥ����ɤ����󥿥ץ꥿�ˤ�äƼ¹Ԥ���ޤ������㥹�ȡ����󡦥�����(JIT)����ѥ��餬�󶡤���ѥե����ޥ󥹾�������ϡ����Υ⡼�ɤǤϼ¸�����ޤ���
 .RE
 .PP
 \-Xinternalversion
 .RS 4
-\fI\-version\fRオプションより詳細なJVMバージョン情報を表示してから終了します。
+\fB\-version\fR���ץ������ܺ٤�JVM�С����������ɽ�����Ƥ��齪λ���ޤ���
 .RE
 .PP
 \-Xloggc:\fIfilename\fR
 .RS 4
-詳細なGCイベント情報をロギング用にリダイレクトするファイルを設定します。このファイルに書き込まれる情報は、記録された各イベントの前に行われる最初のGCイベント以降に経過した時間を指定した\fI\-verbose:gc\fRの出力と類似しています。\fI\-Xloggc\fRオプションは\fI\-verbose:gc\fRをオーバーライドします(これらの両方が同じ\fIjava\fRコマンドで指定された場合)。
+�ܺ٤�GC���٥�Ⱦ����������Ѥ˥�����쥯�Ȥ���ե���������ꤷ�ޤ������Υե�����˽񤭹��ޤ�����ϡ���Ͽ���줿�ƥ��٥�Ȥ����˹Ԥ���ǽ��GC���٥�Ȱʹߤ˷вᤷ�����֤���ꤷ��\fB\-verbose:gc\fR�ν��Ϥ�������Ƥ��ޤ���\fB\-Xloggc\fR���ץ�����\fB\-verbose:gc\fR�򥪡��С��饤�ɤ��ޤ�(������ξ����Ʊ��\fBjava\fR���ޥ�ɤǻ��ꤵ�줿���)��
 .sp
-例:
+��:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-Xloggc:garbage\-collection\&.log
+\fB\-Xloggc:garbage\-collection\&.log\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -576,112 +586,116 @@ Java Native Interface (JNI)機能に対して追加チェックを行います�
 .PP
 \-Xmaxjitcodesize=\fIsize\fR
 .RS 4
-JITコンパイルされたコードの最大コード・キャッシュ・サイズ(バイト単位)を指定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、この値は48MBに設定されています。
+JIT����ѥ��뤵�줿�����ɤκ��祳���ɡ�����å��塦������(�Х���ñ��)����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե���ȤǤϡ������ͤ�48MB�����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-Xmaxjitcodesize=48m
+\fB\-Xmaxjitcodesize=48m\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-このオプションは\fI\-XX:ReservedCodeCacheSize\fRと同等です。
+���Υ��ץ�����\fB\-XX:ReservedCodeCacheSize\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-Xmixed
 .RS 4
-ネイティブ・コードにコンパイルされたホット・メソッドを除き、インタプリタによってすべてのバイトコードを実行します。
+�ͥ��ƥ��֡������ɤ˥���ѥ��뤵�줿�ۥåȡ��᥽�åɤ���������󥿥ץ꥿�ˤ�äƤ��٤ƤΥХ��ȥ����ɤ�¹Ԥ��ޤ���
 .RE
 .PP
 \-Xmn\fIsize\fR
 .RS 4
-若い世代(ナーサリ)のヒープの初期サイズおよび最大サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。
+�㤤����(�ʡ�����)�Υҡ��פν������������Ӻ��祵����(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ���
 .sp
-ヒープの若い世代リージョンは新しいオブジェクトに使用されます。GCは、他のリージョンよりこのリージョンで、より頻繁に実行されます。若い世代のサイズが小さすぎる場合、多数のマイナー・ガベージ・コレクションが実行されます。サイズが大きすぎる場合、フル・ガベージ・コレクションのみが実行されますが、完了までに時間がかかることがあります。若い世代のサイズは、全体のヒープ・サイズの半分から4分の1の間にしておくことをお薦めします。
+�ҡ��פμ㤤����꡼�����Ͽ��������֥������Ȥ˻��Ѥ���ޤ���GC�ϡ�¾�Υ꡼������ꤳ�Υ꡼�����ǡ�������ˤ˼¹Ԥ���ޤ����㤤����Υ������������������硢¿���Υޥ��ʡ������١��������쥯����󤬼¹Ԥ���ޤ������������礭�������硢�ե롦���١��������쥯�����Τߤ��¹Ԥ���ޤ�������λ�ޤǤ˻��֤������뤳�Ȥ�����ޤ����㤤����Υ������ϡ����ΤΥҡ��ס���������Ⱦʬ����4ʬ��1�δ֤ˤ��Ƥ������Ȥ����ᤷ�ޤ���
 .sp
-次の例では、若い世代の初期サイズおよび最大サイズを様々な単位を使用して256MBに設定する方法を示します。
+������Ǥϡ��㤤����ν������������Ӻ��祵�������͡���ñ�̤���Ѥ���256MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-Xmn256m
-\-Xmn262144k
-\-Xmn268435456
+\fB\-Xmn256m\fR
+\fB\-Xmn262144k\fR
+\fB\-Xmn268435456\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-若い世代のヒープの初期サイズと最大サイズの両方を設定する\fI\-Xmn\fRオプションのかわりに、初期サイズの設定には\fI\-XX:NewSize\fRを、最大サイズの設定には\fI\-XX:MaxNewSize\fRを使用できます。
+�㤤����Υҡ��פν���������Ⱥ��祵������ξ�������ꤹ��\fB\-Xmn\fR���ץ����Τ����ˡ����������������ˤ�\fB\-XX:NewSize\fR�򡢺��祵����������ˤ�\fB\-XX:MaxNewSize\fR����ѤǤ��ޤ���
 .RE
 .PP
 \-Xms\fIsize\fR
 .RS 4
-ヒープの初期サイズ(バイト単位)を設定します。指定する値は、1MBより大きい1024の倍数にする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。
+�ҡ��פν��������(�Х���ñ��)�����ꤷ�ޤ������ꤹ���ͤϡ�1MB����礭��1024���ܿ��ˤ���ɬ�פ�����ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ���
 .sp
-次の例では、割り当てられたメモリーのサイズを様々な単位を使用して6MBに設定する方法を示します。
+������Ǥϡ�������Ƥ�줿���꡼�Υ��������͡���ñ�̤���Ѥ���6MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-Xms6291456
-\-Xms6144k
-\-Xms6m
+\fB\-Xms6291456\fR
+\fB\-Xms6144k\fR
+\fB\-Xms6m\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-このオプションを設定しない場合、初期サイズは、古い世代と若い世代に割り当てられたサイズの合計として設定されます。若い世代のヒープの初期サイズは、\fI\-Xmn\fRオプションまたは\fI\-XX:NewSize\fRオプションを使用して設定できます。
+���Υ��ץ��������ꤷ�ʤ���硢����������ϡ��Ť�����ȼ㤤����˳�����Ƥ�줿�������ι�פȤ������ꤵ��ޤ����㤤����Υҡ��פν���������ϡ�\fB\-Xmn\fR���ץ����ޤ���\fB\-XX:NewSize\fR���ץ�������Ѥ�������Ǥ��ޤ���
 .RE
 .PP
 \-Xmx\fIsize\fR
 .RS 4
-メモリー割当てプールの最大サイズ(バイト単位)を指定します。指定する値は、2MBより大きい1024の倍数にする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は、実行時にシステム構成に基づいて選択されます。サーバー・デプロイメントでは、\fI\-Xms\fRおよび\fI\-Xmx\fRは通常同じ値に設定されます。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gc\-ergonomics\&.htmlにあるガベージ・コレクタ・エルゴノミックを参照してください。
+���꡼�����ƥס���κ��祵����(�Х���ñ��)����ꤷ�ޤ������ꤹ���ͤϡ�2MB����礭��1024���ܿ��ˤ���ɬ�פ�����ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե�����ͤϡ��¹Ի��˥����ƥ๽���˴�Ť������򤵤�ޤ��������С����ǥץ������ȤǤϡ�\fB\-Xms\fR�����\fB\-Xmx\fR���̾�Ʊ���ͤ����ꤵ��ޤ���http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gctuning/index\&.html��\fIJava SE HotSpot���ۥޥ���Υ��١��������쥯����󡦥��塼�˥󥰡�������\fR�Υ��르�Υߥ����˴ؤ����򻲾Ȥ��Ƥ���������
 .sp
-次の例では、割り当てられたメモリーの許可される最大サイズを様々な単位を使用して80MBに設定する方法を示します。
+������Ǥϡ�������Ƥ�줿���꡼�ε��Ĥ������祵�������͡���ñ�̤���Ѥ���80MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-Xmx83886080
-\-Xmx81920k
-\-Xmx80m
+\fB\-Xmx83886080\fR
+\fB\-Xmx81920k\fR
+\fB\-Xmx80m\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fI\-Xmx\fRオプションは\fI\-XX:MaxHeapSize\fRと同等です。
+\fB\-Xmx\fR���ץ�����\fB\-XX:MaxHeapSize\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-Xnoclassgc
 .RS 4
-クラスのガベージ・コレクション(GC)を無効にします。これにより、GC時間を節約でき、アプリケーション実行中の中断が短縮されます。
+���饹�Υ��١��������쥯�����(GC)��̵���ˤ��ޤ�������ˤ�ꡢGC���֤�����Ǥ������ץꥱ�������¹�������Ǥ�û�̤���ޤ���
 .sp
-起動時に\fI\-Xnoclassgc\fRを指定すると、アプリケーション内のクラス・オブジェクトは、GCの間はそのまま残り、常にライブであるとみなされます。これにより、より多くのメモリーが永久に占有されることになり、注意して使用しないと、メモリー不足の例外がスローされます。
+��ư����\fB\-Xnoclassgc\fR����ꤹ��ȡ����ץꥱ���������Υ��饹�����֥������Ȥϡ�GC�δ֤Ϥ��Τޤ޻Ĥꡢ��˥饤�֤Ǥ���Ȥߤʤ���ޤ�������ˤ�ꡢ���¿���Υ��꡼���ʵפ���ͭ����뤳�Ȥˤʤꡢ���դ��ƻ��Ѥ��ʤ��ȡ����꡼��­���㳰������������ޤ���
 .RE
 .PP
 \-Xprof
 .RS 4
-実行中のプログラムのプロファイルを生成し、プロファイル・データを標準出力に送信します。このオプションは、プログラム開発用のユーティリティとして提供されています。本番稼働システムでの使用を目的としたものではありません。
+�¹���Υץ�������ץ��ե����뤷���ץ��ե�����󥰡��ǡ�����ɸ����Ϥ��������ޤ������Υ��ץ����ϡ��ץ�����೫ȯ�ѤΥ桼�ƥ���ƥ��Ȥ����󶡤���Ƥ��ޤ������ֲ�Ư�����ƥ�Ǥλ��Ѥ���Ū�Ȥ�����ΤǤϤ���ޤ���
 .RE
 .PP
 \-Xrs
 .RS 4
-JVMによるオペレーティング・システム・シグナルの使用を減らします。
+JVM�ˤ�륪�ڥ졼�ƥ��󥰡������ƥࡦ�����ʥ�λ��Ѥ򸺤餷�ޤ���
 .sp
-シャットダウン・フックは、JVMが突然終了した場合でも、シャットダウン時にユーザー・クリーンアップ・コード(データベース接続のクローズなど)を実行することによって、Javaアプリケーションのシャットダウンを順番に有効にします。
+����åȥ����󡦥եå��ϡ�JVM��������λ�������Ǥ⡢����åȥ�������˥桼���������꡼�󥢥åס�������(�ǡ����١�����³�Υ��������ʤ�)��¹Ԥ��뤳�Ȥˤ�äơ�Java���ץꥱ�������Υ���åȥ��������֤�ͭ���ˤ��ޤ���
 .sp
-JVMは、予期しない終了のシャットダウン・フックを実装するためにシグナルをキャッチします。JVMは、\fISIGHUP\fR、\fISIGINT\fRおよび\fISIGTERM\fRを使用して、シャットダウン・フックの実行を開始します。
+JVM�ϡ�ͽ�����ʤ���λ�Υ���åȥ����󡦥եå���������뤿��˥����ʥ�򥭥�å����ޤ���JVM�ϡ�\fBSIGHUP\fR��\fBSIGINT\fR�����\fBSIGTERM\fR����Ѥ��ơ�����åȥ����󡦥եå��μ¹Ԥ򳫻Ϥ��ޤ���
 .sp
-JVMは、デバッグの目的でスレッド・スタックをダンプするという機能を実現するために、同様のメカニズムを使用します。JVMは、スレッド・ダンプを実行するために\fISIGQUIT\fRを使用します。
+JVM�ϡ��ǥХå�����Ū�ǥ���åɡ������å������פ���Ȥ�����ǽ��¸����뤿��ˡ�Ʊ�ͤΥᥫ�˥������Ѥ��ޤ���JVM�ϡ�����åɡ�����פ�¹Ԥ��뤿���\fBSIGQUIT\fR����Ѥ��ޤ���
 .sp
-JVMを埋め込んでいるアプリケーションは、\fISIGINT\fRや\fISIGTERM\fRなどのシグナルを頻繁にトラップする必要があり、その結果、JVMのシグナル・ハンドラと衝突する可能性があります。\fI\-Xrs\fRオプションは、この問題に対処するために使用できます。\fI\-Xrs\fRが使用されている場合、\fISIGINT\fR、\fISIGTERM\fR、\fISIGHUP\fRおよび\fISIGQUIT\fRのシグナル・マスクはJVMによって変更されず、これらのシグナルのシグナル・ハンドラはインストールされません。
+JVM��������Ǥ��륢�ץꥱ�������ϡ�\fBSIGINT\fR��\fBSIGTERM\fR�ʤɤΥ����ʥ�����ˤ˥ȥ�åפ���ɬ�פ����ꡢ���η�̡�JVM�Υ����ʥ롦�ϥ�ɥ�Ⱦ��ͤ����ǽ��������ޤ���\fB\-Xrs\fR���ץ����ϡ�����������н褹�뤿��˻��ѤǤ��ޤ���\fB\-Xrs\fR�����Ѥ���Ƥ����硢\fBSIGINT\fR��\fBSIGTERM\fR��\fBSIGHUP\fR�����\fBSIGQUIT\fR�Υ����ʥ롦�ޥ�����JVM�ˤ�ä��ѹ����줺�������Υ����ʥ�Υ����ʥ롦�ϥ�ɥ�ϥ��󥹥ȡ��뤵��ޤ���
 .sp
-\fI\-Xrs\fRを指定すると、次の2つの結果が生じます:
+\fB\-Xrs\fR����ꤹ��ȡ�����2�Ĥη�̤������ޤ�:
 .sp
 .RS 4
 .ie n \{\
@@ -691,7 +705,7 @@ JVMを埋め込んでいるアプリケーションは、\fISIGINT\fRや\fISIGTE
 .sp -1
 .IP \(bu 2.3
 .\}
-\fISIGQUIT\fRによるスレッド・ダンプは使用できません。
+\fBSIGQUIT\fR�ˤ�륹��åɡ�����פϻ��ѤǤ��ޤ���
 .RE
 .sp
 .RS 4
@@ -702,63 +716,63 @@ JVMを埋め込んでいるアプリケーションは、\fISIGINT\fRや\fISIGTE
 .sp -1
 .IP \(bu 2.3
 .\}
-シャットダウン・フック処理の実行は、JVMが終了しようとしている時点で\fISystem\&.exit()\fRを呼び出すなどして、ユーザー・コード側で行う必要があります。
+����åȥ����󡦥եå������μ¹Ԥϡ�JVM����λ���褦�Ȥ��Ƥ��������\fBSystem\&.exit()\fR��ƤӽФ��ʤɤ��ơ��桼������������¦�ǹԤ�ɬ�פ�����ޤ���
 .RE
 .RE
 .PP
 \-Xshare:\fImode\fR
 .RS 4
-クラス・データ共有モードを設定します。このオプションで使用可能な\fImode\fR引数は次のとおりです。
+���饹���ǡ�����ͭ�⡼�ɤ����ꤷ�ޤ������Υ��ץ����ǻ��Ѳ�ǽ��\fImode\fR�����ϼ��ΤȤ���Ǥ���
 .PP
 auto
 .RS 4
-可能な場合、共有クラスのデータを使用します。これは、Java HotSpot 32\-Bit Client VMの場合のデフォルト値です。
+��ǽ�ʾ�硢��ͭ���饹�Υǡ�������Ѥ��ޤ�������ϡ�Java HotSpot 32\-Bit Client VM�ξ��Υǥե�����ͤǤ���
 .RE
 .PP
 on
 .RS 4
-クラス・データ共有の使用が必要です。クラス・データ共有を使用できない場合、エラー・メッセージを出力して終了します。
+���饹���ǡ�����ͭ�λ��Ѥ�ɬ�פǤ������饹���ǡ�����ͭ����ѤǤ��ʤ���硢���顼����å���������Ϥ��ƽ�λ���ޤ���
 .RE
 .PP
 off
 .RS 4
-共有クラス・データを使用しません。これは、Java HotSpot 32\-Bit Server VM、Java HotSpot 64\-Bit Client VMおよびJava HotSpot 64\-Bit Server VMの場合のデフォルト値です。
+��ͭ���饹���ǡ�������Ѥ��ޤ��󡣤���ϡ�Java HotSpot 32\-Bit Server VM��Java HotSpot 64\-Bit Client VM�����Java HotSpot 64\-Bit Server VM�ξ��Υǥե�����ͤǤ���
 .RE
 .PP
 dump
 .RS 4
-クラス・データ共有アーカイブを手動で生成します。
+���饹���ǡ�����ͭ���������֤��ư���������ޤ���
 .RE
 .RE
 .PP
 \-XshowSettings:\fIcategory\fR
 .RS 4
-設定を表示して続行します。このオプションで使用可能な\fIcategory\fR引数は次のとおりです。
+�����ɽ������³�Ԥ��ޤ������Υ��ץ����ǻ��Ѳ�ǽ��\fIcategory\fR�����ϼ��ΤȤ���Ǥ���
 .PP
 all
 .RS 4
-設定のすべてのカテゴリを表示します。これがデフォルト値です。
+����Τ��٤ƤΥ��ƥ����ɽ�����ޤ������줬�ǥե�����ͤǤ���
 .RE
 .PP
 locale
 .RS 4
-ロケールに関連する設定を表示します。
+��������˴�Ϣ���������ɽ�����ޤ���
 .RE
 .PP
 properties
 .RS 4
-システム・プロパティに関連する設定を表示します。
+�����ƥࡦ�ץ��ѥƥ��˴�Ϣ���������ɽ�����ޤ���
 .RE
 .PP
 vm
 .RS 4
-JVMの設定を表示します。
+JVM�������ɽ�����ޤ���
 .RE
 .RE
 .PP
 \-Xss\fIsize\fR
 .RS 4
-スレッドのスタック・サイズ(バイト単位)を設定します。KBを示す場合は文字\fIk\fRまたは\fIK\fR、MBを示す場合は文字\fIm\fRまたは\fIM\fR、GBを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値はプラットフォームによって異なります。
+����åɤΥ����å���������(�Х���ñ��)�����ꤷ�ޤ���KB�򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR��MB�򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR��GB�򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե�����ͤϥץ�åȥե�����ˤ�äưۤʤ�ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -768,7 +782,7 @@ JVMの設定を表示します。
 .sp -1
 .IP \(bu 2.3
 .\}
-Linux/ARM (32ビット): 320KB
+Linux/ARM (32�ӥå�): 320KB
 .RE
 .sp
 .RS 4
@@ -779,7 +793,7 @@ Linux/ARM (32ビット): 320KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Linux/i386 (32ビット): 320KB
+Linux/i386 (32�ӥå�): 320KB
 .RE
 .sp
 .RS 4
@@ -790,7 +804,7 @@ Linux/i386 (32ビット): 320KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Linux/x64 (64ビット): 1024KB
+Linux/x64 (64�ӥå�): 1024KB
 .RE
 .sp
 .RS 4
@@ -801,7 +815,7 @@ Linux/x64 (64ビット): 1024KB
 .sp -1
 .IP \(bu 2.3
 .\}
-OS X (64ビット): 1024KB
+OS X (64�ӥå�): 1024KB
 .RE
 .sp
 .RS 4
@@ -812,7 +826,7 @@ OS X (64ビット): 1024KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Oracle Solaris/i386 (32ビット): 320KB
+Oracle Solaris/i386 (32�ӥå�): 320KB
 .RE
 .sp
 .RS 4
@@ -823,7 +837,7 @@ Oracle Solaris/i386 (32ビット): 320KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Oracle Solaris/x64 (64ビット): 1024KB
+Oracle Solaris/x64 (64�ӥå�): 1024KB
 .RE
 .sp
 .RS 4
@@ -834,97 +848,106 @@ Oracle Solaris/x64 (64ビット): 1024KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Windows: 仮想メモリーによって異なります。
+Windows: ���ۥ��꡼�ˤ�äưۤʤ�ޤ���
 .RE
 .sp
-次の例では、スレッド・スタック・サイズを異なる単位で1024KBに設定します。
+������Ǥϡ�����åɡ������å�����������ۤʤ�ñ�̤�1024KB�����ꤷ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-Xss1m
-\-Xss1024k
-\-Xss1048576
+\fB\-Xss1m\fR
+\fB\-Xss1024k\fR
+\fB\-Xss1048576\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-このオプションは\fI\-XX:ThreadStackSize\fRと同等です。
+���Υ��ץ�����\fB\-XX:ThreadStackSize\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-Xusealtsigs
 .RS 4
-JVM内部シグナルの\fISIGUSR1\fRおよび\fISIGUSR2\fRのかわりに、代替シグナルを使用します。このオプションは\fI\-XX:+UseAltSigs\fRと同等です。
+JVM���������ʥ��\fBSIGUSR1\fR�����\fBSIGUSR2\fR�Τ����ˡ����إ����ʥ����Ѥ��ޤ������Υ��ץ�����\fB\-XX:+UseAltSigs\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-Xverify:\fImode\fR
 .RS 4
-バイトコード・ベリファイアのモードを設定します。バイトコードの検証は一部の問題のトラブルシューティングに役立ちますが、実行中のアプリケーションへのオーバーヘッドを増大させます。このオプションで使用可能な\fImode\fR引数は次のとおりです。
+�Х��ȥ����ɡ��٥�ե������Υ⡼�ɤ����ꤷ�ޤ����Х��ȥ����ɤθ��ڤϰ���������Υȥ�֥륷�塼�ƥ��󥰤���Ω���ޤ������¹���Υ��ץꥱ�������ؤΥ����С��إåɤ����礵���ޤ������Υ��ץ����ǻ��Ѳ�ǽ��\fImode\fR�����ϼ��ΤȤ���Ǥ���
 .PP
-none
+�ʤ�
 .RS 4
-バイトコードを検証しません。これにより、起動時間が短縮され、Javaによって提供される保護も軽減されます。
+�Х��ȥ����ɤ򸡾ڤ��ޤ��󡣤���ˤ�ꡢ��ư���֤�û�̤��졢Java�ˤ�ä��󶡤�����ݸ��ڸ�����ޤ���
 .RE
 .PP
 remote
 .RS 4
-ネットワークを介してリモートでロードされるクラスのみを検証します。これは、\fI\-Xverify\fRオプションを指定しない場合のデフォルトの動作です。
+�֡��ȥ��ȥ�åס����饹�����������ǥ����ɤ���Ƥ��ʤ������Υ��饹�򸡾ڤ��ޤ�������ϡ�\fB\-Xverify\fR���ץ�������ꤷ�ʤ����Υǥե���Ȥ�ư��Ǥ���
 .RE
 .PP
 all
 .RS 4
-すべてのクラスを検証します。
+���٤ƤΥ��饹�򸡾ڤ��ޤ���
 .RE
 .RE
-.SS "高度なランタイム・オプション"
+.SS "���٤ʥ�󥿥��ࡦ���ץ����"
 .PP
-これらのオプションは、Java HotSpot VMの実行時の動作を制御します。
+�����Υ��ץ����ϡ�Java HotSpot VM�μ¹Ի���ư������椷�ޤ���
 .PP
 \-XX:+DisableAttachMechanism
 .RS 4
-JVMにツールをアタッチするメカニズムを無効にするオプションを有効にします。デフォルトでは、このオプションは無効になっており、これは、アタッチ・メカニズムを有効にすると、\fIjcmd\fR、\fIjstack\fR、\fIjmap\fR、\fIjinfo\fRなどのツールを使用できることを意味します。
+JVM�˥ġ���򥢥��å�����ᥫ�˥����̵���ˤ��륪�ץ�����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ����ϡ������å����ᥫ�˥����ͭ���ˤ���ȡ�\fBjcmd\fR��\fBjstack\fR��\fBjmap\fR��\fBjinfo\fR�ʤɤΥġ������ѤǤ��뤳�Ȥ��̣���ޤ���
 .RE
 .PP
 \-XX:ErrorFile=\fIfilename\fR
 .RS 4
-リカバリ不能なエラーが発生した場合にエラー・データが書き込まれるパスおよびファイル名を指定します。デフォルトでは、このファイルは、現在の作業ディレクトリに作成され、名前は\fIhs_err_pid\fR\fIpid\fR\fI\&.log\fR
-(\fIpid\fRはエラーの原因となったプロセスの識別子)になります。次の例では、デフォルトのログ・ファイルを設定する方法を示します(プロセスの識別子は\fI%p\fRとして指定されます)。
+�ꥫ�Х���ǽ�ʥ��顼��ȯ���������˥��顼���ǡ������񤭹��ޤ��ѥ�����ӥե�����̾����ꤷ�ޤ����ǥե���ȤǤϡ����Υե�����ϡ����ߤκ�ȥǥ��쥯�ȥ�˺������졢̾����\fBhs_err_pid\fR\fIpid\fR\fB\&.log\fR
+(\fIpid\fR�ϥ��顼�θ����Ȥʤä��ץ������μ��̻�)�ˤʤ�ޤ���������Ǥϡ��ǥե���ȤΥ������ե���������ꤹ����ˡ�򼨤��ޤ�(�ץ������μ��̻Ҥ�\fB%p\fR�Ȥ��ƻ��ꤵ��ޤ�)��
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:ErrorFile=\&./hs_err_pid%p\&.log
+\fB\-XX:ErrorFile=\&./hs_err_pid%p\&.log\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-次の例では、エラー・ログを\fI/var/log/java/java_error\&.log\fRに設定する方法を示します。
+������Ǥϡ����顼��������\fB/var/log/java/java_error\&.log\fR�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:ErrorFile=/var/log/java/java_error\&.log
+\fB\-XX:ErrorFile=/var/log/java/java_error\&.log\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-(領域不足、権限の問題または別の問題により)指定したディレクトリにファイルを作成できない場合、ファイルはオペレーティング・システムの一時ディレクトリに作成されます。一時ディレクトリは\fI/tmp\fRです。
+(�ΰ���­�����¤�����ޤ����̤�����ˤ��)���ꤷ���ǥ��쥯�ȥ�˥ե����������Ǥ��ʤ���硢�ե�����ϥ��ڥ졼�ƥ��󥰡������ƥ�ΰ���ǥ��쥯�ȥ�˺�������ޤ�������ǥ��쥯�ȥ��\fB/tmp\fR�Ǥ���
+.RE
+.PP
+\-XX:+FailOverToOldVerifier
+.RS 4
+�����������ס������å������Ԥ������Ρ��Ť��٥�ե������ؤμ�ư�ե����륪���С���ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ�Ƕ�ΥХ��ȥ����ɡ��С���������Ѥ������饹�ˤϡ������̵�뤵��ޤ�(�Ĥޤꡢ̵���Ȥ��ƽ�������ޤ�)���Ť��С������ΥХ��ȥ����ɤ���Ѥ������饹�ˤϡ������ͭ�����Ǥ��ޤ���
 .RE
 .PP
 \-XX:LargePageSizeInBytes=\fIsize\fR
 .RS 4
-Javaヒープに使用される大きいページの最大サイズ(バイト単位)を設定します。\fIsize\fR引数は、2の累乗(2、4、8、16、\&.\&.\&.)である必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、サイズは0に設定され、これは、JVMでは大きいページのサイズが自動的に選択されていることを意味します。
+Solaris�Ǥϡ�Java�ҡ��פ˻��Ѥ����顼�����ڡ����κ��祵����(�Х���ñ��)�����ꤷ�ޤ���\fIsize\fR�����ϡ�2���߾�(2��4��8��16��\&.\&.\&.)�Ǥ���ɬ�פ�����ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե���ȤǤϡ���������0�����ꤵ�졢����ϡ�JVM�Ǥϥ顼�����ڡ����Υ���������ưŪ�����򤵤�Ƥ��뤳�Ȥ��̣���ޤ���
 .sp
-次の例では、大きいページのサイズを4メガバイト(MB)に設定する方法を示します。
+������Ǥϡ��顼�����ڡ����Υ�������4�ᥬ�Х���(MB)�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:LargePageSizeInBytes=4m
+\fB\-XX:LargePageSizeInBytes=4m\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -933,17 +956,18 @@ Javaヒープに使用される大きいページの最大サイズ(バイト単
 .PP
 \-XX:MaxDirectMemorySize=\fIsize\fR
 .RS 4
-新規I/O (\fIjava\&.nio\fRパッケージ)の直接バッファ割当ての最大合計サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、サイズは0に設定され、これは、JVMではNIOの直接バッファ割当てのサイズが自動的に選択されていることを意味します。
+����I/O (\fBjava\&.nio\fR�ѥå�����)��ľ�ܥХåե������Ƥκ����ץ�����(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե���ȤǤϡ���������0�����ꤵ�졢����ϡ�JVM�Ǥ�NIO��ľ�ܥХåե������ƤΥ���������ưŪ�����򤵤�Ƥ��뤳�Ȥ��̣���ޤ���
 .sp
-次の例では、NIOサイズを異なる単位で1024KBに設定する方法を示します。
+������Ǥϡ�NIO��������ۤʤ�ñ�̤�1024KB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxDirectMemorySize=1m
-\-XX:MaxDirectMemorySize=1024k
-\-XX:MaxDirectMemorySize=1048576
+\fB\-XX:MaxDirectMemorySize=1m\fR
+\fB\-XX:MaxDirectMemorySize=1024k\fR
+\fB\-XX:MaxDirectMemorySize=1048576\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -952,36 +976,48 @@ Javaヒープに使用される大きいページの最大サイズ(バイト単
 .PP
 \-XX:NativeMemoryTracking=\fImode\fR
 .RS 4
-JVMのネイティブ・メモリー使用状況のトラッキングのモードを指定します。このオプションで使用可能な\fImode\fR引数は次のとおりです。
+JVM�Υͥ��ƥ��֡����꡼���Ѿ����Υȥ�å��󥰤Υ⡼�ɤ���ꤷ�ޤ������Υ��ץ����ǻ��Ѳ�ǽ��\fImode\fR�����ϼ��ΤȤ���Ǥ���
 .PP
 off
 .RS 4
-JVMのネイティブ・メモリー使用状況を追跡しません。これは、\fI\-XX:NativeMemoryTracking\fRオプションを指定しない場合のデフォルトの動作です。
+JVM�Υͥ��ƥ��֡����꡼���Ѿ��������פ��ޤ��󡣤���ϡ�\fB\-XX:NativeMemoryTracking\fR���ץ�������ꤷ�ʤ����Υǥե���Ȥ�ư��Ǥ���
 .RE
 .PP
 summary
 .RS 4
-JVMサブシステム(Javaヒープ、クラス、コード、スレッドなど)によるメモリー使用状況のみ追跡します。
+JVM���֥����ƥ�(Java�ҡ��ס����饹�������ɡ�����åɤʤ�)�ˤ����꡼���Ѿ����Τ����פ��ޤ���
 .RE
 .PP
 detail
 .RS 4
-JVMサブシステムによるメモリー使用状況のトラッキングに加えて、個々の\fICallSite\fR
-(個々の仮想メモリー・リージョンおよびそのコミット済リージョン)によるメモリー使用状況を追跡します。
+JVM���֥����ƥ�ˤ����꡼���Ѿ����Υȥ�å��󥰤˲ä��ơ��ġ���\fBCallSite\fR
+(�ġ��β��ۥ��꡼���꡼����󤪤�Ӥ��Υ��ߥåȺѥ꡼�����)�ˤ����꡼���Ѿ��������פ��ޤ���
 .RE
+.RE
+.PP
+\-XX:ObjectAlignmentInBytes=\fIalignment\fR
+.RS 4
+Java���֥������ȤΥ��꡼���֤����ꤷ�ޤ�(�Х���ñ��)���ǥե���ȤǤϡ��ͤ�8�Х��Ȥ����ꤵ��ޤ������ꤵ����ͤϡ�2���߾�ˤ���8����256(ξü��ޤ�)���ϰ���ˤ���ɬ�פ�����ޤ������Υ��ץ����ˤ�ꡢ�礭��Java�ҡ��ס��������ǰ��̥ݥ��󥿤���ѤǤ��ޤ���
+.sp
+�Х���ñ�̤Υҡ��ס����������¤ϼ��Τ褦�˷׻�����ޤ�:
+.sp
+\fB4GB * ObjectAlignmentInBytes\fR
+.sp
+����: ���֤��ͤ�������ȡ����֥������ȴ֤�̤���Ѥ��ΰ�������ޤ�����̤Ȥ��ơ��礭���ҡ��ס��������ǰ��̥ݥ��󥿤���Ѥ�����åȤ��狼��ʤ���ǽ��������ޤ���
 .RE
 .PP
 \-XX:OnError=\fIstring\fR
 .RS 4
-リカバリ不能なエラーが発生したときに実行する、カスタム・コマンドまたは一連のセミコロン区切りのコマンドを設定します。文字列に空白が含まれている場合は、引用符で囲む必要があります。
+�ꥫ�Х���ǽ�ʥ��顼��ȯ�������Ȥ��˼¹Ԥ��롢�������ࡦ���ޥ�ɤޤ��ϰ�Ϣ�Υ��ߥ�������ڤ�Υ��ޥ�ɤ����ꤷ�ޤ���ʸ����˶��򤬴ޤޤ�Ƥ�����ϡ�������ǰϤ�ɬ�פ�����ޤ���
 .sp
-次の例では、\fI\-XX:OnError\fRオプションを使用してコア・イメージを作成するために\fIgcore\fRコマンドを実行する方法、およびリカバリ不能なエラーの場合にデバッガを起動してプロセスに接続する方法を示します(\fI%p\fRは現在のプロセスを指定します)。
+������Ǥϡ�\fB\-XX:OnError\fR���ץ�������Ѥ��ƥ��������᡼����������뤿���\fBgcore\fR���ޥ�ɤ�¹Ԥ�����ˡ������ӥꥫ�Х���ǽ�ʥ��顼�ξ��˥ǥХå���ư���ƥץ���������³������ˡ�򼨤��ޤ�(\fB%p\fR�ϸ��ߤΥץ���������ꤷ�ޤ�)��
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:OnError="gcore %p;dbx \- %p"
+\fB\-XX:OnError="gcore %p;dbx \- %p"\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -990,27 +1026,48 @@ JVMサブシステムによるメモリー使用状況のトラッキングに�
 .PP
 \-XX:OnOutOfMemoryError=\fIstring\fR
 .RS 4
-\fIOutOfMemoryError\fR例外が最初にスローされたときに実行する、カスタム・コマンドまたは一連のセミコロン区切りのコマンドを設定します。文字列に空白が含まれている場合は、引用符で囲む必要があります。コマンド文字列の例は、\fI\-XX:OnError\fRオプションの説明を参照してください。
+\fBOutOfMemoryError\fR�㳰���ǽ�˥��������줿�Ȥ��˼¹Ԥ��롢�������ࡦ���ޥ�ɤޤ��ϰ�Ϣ�Υ��ߥ�������ڤ�Υ��ޥ�ɤ����ꤷ�ޤ���ʸ����˶��򤬴ޤޤ�Ƥ�����ϡ�������ǰϤ�ɬ�פ�����ޤ������ޥ��ʸ�������ϡ�\fB\-XX:OnError\fR���ץ����������򻲾Ȥ��Ƥ���������
+.RE
+.PP
+\-XX:+PerfDataSaveToFile
+.RS 4
+ͭ���ʾ�硢Java���ץꥱ�������ν�λ����jstat(1)�Х��ʥꡦ�ǡ�������¸���ޤ������ΥХ��ʥꡦ�ǡ�����\fBhsperfdata_\fR\fI<pid>\fR�Ȥ���̾���Υե��������¸����ޤ���\fI<pid>\fR�ϡ��¹Ԥ���Java���ץꥱ�������Υץ��������̻ҤǤ������Τ褦��\fBjstat\fR����Ѥ��ơ����Υե�����˴ޤޤ��ѥե����ޥ󥹡��ǡ�����ɽ�����ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjstat \-class file:///\fR\fB\fI<path>\fR\fR\fB/hsperfdata_\fR\fB\fI<pid>\fR\fR
+\fBjstat \-gc file:///\fR\fB\fI<path>\fR\fR\fB/hsperfdata_\fR\fB\fI<pid>\fR\fR
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 \-XX:+PrintCommandLineFlags
 .RS 4
-コマンドラインに表示された、人間工学的に選択したJVMフラグの印刷を有効にします。これは、ヒープ領域サイズや選択されたガベージ・コレクタなど、JVMによって設定されたエルゴノミック値を確認する場合に役立ちます。デフォルトでは、このオプションは無効であり、フラグは印刷されません。
+���ޥ�ɹԤ�ɽ�����줿���ʹֹ���Ū�����򤷤�JVM�ե饰�ΰ�����ͭ���ˤ��ޤ�������ϡ��ҡ����ΰ襵���������򤵤줿���١��������쥯���ʤɡ�JVM�ˤ�ä����ꤵ�줿���르�Υߥå��ͤ��ǧ���������Ω���ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ�ե饰�ϰ�������ޤ���
 .RE
 .PP
 \-XX:+PrintNMTStatistics
 .RS 4
-ネイティブ・メモリーのトラッキングが有効な場合に、JVMの終了時に収集されたネイティブ・メモリーのトラッキング・データの印刷を有効にします(\fI\-XX:NativeMemoryTracking\fRを参照してください)。デフォルトでは、このオプションは無効であり、ネイティブ・メモリーのトラッキング・データは印刷されません。
+�ͥ��ƥ��֡����꡼�Υȥ�å��󥰤�ͭ���ʾ��ˡ�JVM�ν�λ���˼������줿�ͥ��ƥ��֡����꡼�Υȥ�å��󥰡��ǡ����ΰ�����ͭ���ˤ��ޤ�(\fB\-XX:NativeMemoryTracking\fR�򻲾Ȥ��Ƥ�������)���ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ�ͥ��ƥ��֡����꡼�Υȥ�å��󥰡��ǡ����ϰ�������ޤ���
+.RE
+.PP
+\-XX:+RelaxAccessControlCheck
+.RS 4
+�٥�ե�������Υ���������������å����̤򸺤餷�ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ�Ƕ�ΥХ��ȥ����ɡ��С���������Ѥ������饹�ˤϡ������̵�뤵��ޤ�(�Ĥޤꡢ̵���Ȥ��ƽ�������ޤ�)���Ť��С������ΥХ��ȥ����ɤ���Ѥ������饹�ˤϡ������ͭ�����Ǥ��ޤ���
 .RE
 .PP
 \-XX:+ShowMessageBoxOnError
 .RS 4
-JVMでリカバリ不能なエラーが発生した場合、ダイアログ・ボックスの表示を有効にします。これにより、JVMにデバッガを接続してエラーの原因を調査できるように、JVMを終了しないようにして、プロセスをアクティブなままにします。デフォルトでは、このオプションは無効です。
+JVM�ǥꥫ�Х���ǽ�ʥ��顼��ȯ��������硢�������������ܥå�����ɽ����ͭ���ˤ��ޤ�������ˤ�ꡢJVM�˥ǥХå�����³���ƥ��顼�θ�����Ĵ���Ǥ���褦�ˡ�JVM��λ���ʤ��褦�ˤ��ơ��ץ������򥢥��ƥ��֤ʤޤޤˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:ThreadStackSize=\fIsize\fR
 .RS 4
-スレッドのスタック・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値はプラットフォームによって異なります。
+����åɤΥ����å���������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե�����ͤϥץ�åȥե�����ˤ�äưۤʤ�ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1020,7 +1077,7 @@ JVMでリカバリ不能なエラーが発生した場合、ダイアログ・�
 .sp -1
 .IP \(bu 2.3
 .\}
-Linux/ARM (32ビット): 320KB
+Linux/ARM (32�ӥå�): 320KB
 .RE
 .sp
 .RS 4
@@ -1031,7 +1088,7 @@ Linux/ARM (32ビット): 320KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Linux/i386 (32ビット): 320KB
+Linux/i386 (32�ӥå�): 320KB
 .RE
 .sp
 .RS 4
@@ -1042,7 +1099,7 @@ Linux/i386 (32ビット): 320KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Linux/x64 (64ビット): 1024KB
+Linux/x64 (64�ӥå�): 1024KB
 .RE
 .sp
 .RS 4
@@ -1053,7 +1110,7 @@ Linux/x64 (64ビット): 1024KB
 .sp -1
 .IP \(bu 2.3
 .\}
-OS X (64ビット): 1024KB
+OS X (64�ӥå�): 1024KB
 .RE
 .sp
 .RS 4
@@ -1064,7 +1121,7 @@ OS X (64ビット): 1024KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Oracle Solaris/i386 (32ビット): 320KB
+Oracle Solaris/i386 (32�ӥå�): 320KB
 .RE
 .sp
 .RS 4
@@ -1075,7 +1132,7 @@ Oracle Solaris/i386 (32ビット): 320KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Oracle Solaris/x64 (64ビット): 1024KB
+Oracle Solaris/x64 (64�ӥå�): 1024KB
 .RE
 .sp
 .RS 4
@@ -1086,158 +1143,247 @@ Oracle Solaris/x64 (64ビット): 1024KB
 .sp -1
 .IP \(bu 2.3
 .\}
-Windows: 仮想メモリーによって異なります。
+Windows: ���ۥ��꡼�ˤ�äưۤʤ�ޤ���
 .RE
 .sp
-次の例では、スレッド・スタック・サイズを異なる単位で1024KBに設定する方法を示します。
+������Ǥϡ�����åɡ������å�����������ۤʤ�ñ�̤�1024KB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:ThreadStackSize=1m
-\-XX:ThreadStackSize=1024k
-\-XX:ThreadStackSize=1048576
+\fB\-XX:ThreadStackSize=1m\fR
+\fB\-XX:ThreadStackSize=1024k\fR
+\fB\-XX:ThreadStackSize=1048576\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-このオプションは\fI\-Xss\fRと同等です。
+���Υ��ץ�����\fB\-Xss\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-XX:+TraceClassLoading
 .RS 4
-クラスがロードされるときのクラスのトレースを有効にします。デフォルトでは、このオプションは無効であり、クラスはトレースされません。
+���饹�������ɤ����Ȥ��Υ��饹�Υȥ졼����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ���饹�ϥȥ졼������ޤ���
 .RE
 .PP
 \-XX:+TraceClassLoadingPreorder
 .RS 4
-クラスが参照される順序で、ロードされたすべてのクラスのトレースを有効にします。デフォルトでは、このオプションは無効であり、クラスはトレースされません。
+���饹�����Ȥ�������ǡ������ɤ��줿���٤ƤΥ��饹�Υȥ졼����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ���饹�ϥȥ졼������ޤ���
 .RE
 .PP
 \-XX:+TraceClassResolution
 .RS 4
-定数プールの解決のトレースを有効にします。デフォルトでは、このオプションは無効であり、定数プールの解決はトレースされません。
+����ס���β��Υȥ졼����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ����ס���β��ϥȥ졼������ޤ���
 .RE
 .PP
 \-XX:+TraceClassUnloading
 .RS 4
-クラスがアンロードされるときのクラスのトレースを有効にします。デフォルトでは、このオプションは無効であり、クラスはトレースされません。
+���饹����������ɤ����Ȥ��Υ��饹�Υȥ졼����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ���饹�ϥȥ졼������ޤ���
 .RE
 .PP
 \-XX:+TraceLoaderConstraints
 .RS 4
-ローダー制約の記録のトレースを有効にします。デフォルトでは、このオプションは無効であり、ローダー制約の記録は追跡されません。
+������������ε�Ͽ�Υȥ졼����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ������������ε�Ͽ�����פ���ޤ���
 .RE
 .PP
 \-XX:+UseAltSigs
 .RS 4
-JVM内部シグナルの\fISIGUSR1\fRおよび\fISIGUSR2\fRのかわりに、代替シグナルの使用を有効にします。デフォルトでは、このオプションは無効であり、代替シグナルは使用されません。このオプションは\fI\-Xusealtsigs\fRと同等です。
+JVM���������ʥ��\fBSIGUSR1\fR�����\fBSIGUSR2\fR�Τ����ˡ����إ����ʥ�λ��Ѥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ���إ����ʥ�ϻ��Ѥ���ޤ��󡣤��Υ��ץ�����\fB\-Xusealtsigs\fR��Ʊ���Ǥ���
 .RE
 .PP
-\-XX:+UseBiasedLocking
+\-XX:\-UseBiasedLocking
 .RS 4
-バイアス・ロックの使用を有効にします。かなりの量の非競合の同期化がある一部のアプリケーションは、このフラグを有効にすると大幅な高速化が実現しますが、特定のパターンのロックがあるアプリケーションは、速度が低下することがあります。バイアス・ロックの方法の詳細は、http://www\&.oracle\&.com/technetwork/java/tuning\-139912\&.html#section4\&.2\&.5にあるJavaチューニングのホワイト・ペーパーの例を参照してください。
+�Х����������å��λ��Ѥ�̵���ˤ��ޤ������ʤ���̤��󶥹��Ʊ��������������Υ��ץꥱ�������ϡ����Υե饰��ͭ���ˤ���������ʹ�®�����¸����ޤ���������Υѥ�����Υ��å������륢�ץꥱ�������ϡ�®�٤��㲼���뤳�Ȥ�����ޤ����Х����������å�����ˡ�ξܺ٤ϡ�http://www\&.oracle\&.com/technetwork/java/tuning\-139912\&.html#section4\&.2\&.5�ˤ���Java���塼�˥󥰤Υۥ磻�ȡ��ڡ��ѡ�����򻲾Ȥ��Ƥ���������
 .sp
-デフォルトでは、このオプションは無効であり、バイアス・ロックは使用されません。
+�ǥե���ȤǤϡ����Υ��ץ�����ͭ���ˤʤäƤ��ޤ���
 .RE
 .PP
-\-XX:+UseCompressedOops
+\-XX:\-UseCompressedOops
 .RS 4
-圧縮されたポインタの使用を有効にします。このオプションを有効にすると、オブジェクト参照は、64ビットのポインタではなく32ビットのオフセットとして表され、これにより、32GBより小さいJavaヒープ・サイズのアプリケーションの実行時に、通常、パフォーマンスが向上します。このオプションは、64ビットのJVMでのみ機能します。
+���̤��줿�ݥ��󥿤λ��Ѥ�̵���ˤ��ޤ����ǥե���ȤǤϤ��Υ��ץ����ͭ���Ǥ��ꡢJava�ҡ��ס���������32GB��꾮�������˰��̥ݥ��󥿤����Ѥ���ޤ������Υ��ץ�����ͭ���ˤ���ȡ����֥������Ȼ��Ȥϡ�64�ӥåȤΥݥ��󥿤ǤϤʤ�32�ӥåȤΥ��ե��åȤȤ���ɽ���졢����ˤ�ꡢ32GB��꾮����Java�ҡ��ס��������Υ��ץꥱ�������μ¹Ի��ˡ��̾�ѥե����ޥ󥹤����夷�ޤ������Υ��ץ����ϡ�64�ӥåȤ�JVM�ǤΤߵ�ǽ���ޤ���
 .sp
-デフォルトでは、このオプションは無効であり、圧縮ポインタは使用されません。
+Java�ҡ��ס���������32GB����礭�����ˤⰵ�̥ݥ��󥿤���ѤǤ��ޤ���\fB\-XX:ObjectAlignmentInBytes\fR���ץ����򻲾Ȥ��Ƥ���������
+.RE
+.PP
+\-XX:+UseHugeTLBFS
+.RS 4
+Linux�ѤΤ��Υ��ץ����ϡ�\fB\-XX:+UseLargePages\fR����ꤹ��Τ�Ʊ���Ǥ������Υ��ץ����ϡ��ǥե���ȤǤ�̵���ˤʤäƤ��ޤ������Υ��ץ����ϡ����꡼��ͽ����ˤ��٤ƤΥ顼�����ڡ���������˳�����Ƥޤ������Τ��ᡢJVM�ϥ顼�����ڡ��������꡼�ΰ��ưŪ�˳�ĥ�ޤ��Ͻ̾��Ǥ��ޤ��󡣤���ư���Ԥ����ϡ�\fB\-XX:UseTransparentHugePages\fR�򻲾Ȥ��Ƥ���������
+.sp
+�ܺ٤ϡ�"�顼�����ڡ���"�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-XX:+UseLargePages
 .RS 4
-大きいページのメモリーの使用を有効にします。このオプションはデフォルトで有効になっています。大きいページのメモリーの使用を無効にするには、\fI\-XX:\-UseLargePages\fRを指定します。
+�顼�����ڡ����Υ��꡼�λ��Ѥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ�顼�����ڡ����Υ��꡼�ϻ��Ѥ���ޤ���
 .sp
-詳細は、http://www\&.oracle\&.com/technetwork/java/javase/tech/largememory\-jsp\-137182\&.htmlにある大きいメモリー・ページ用のJavaサポートを参照してください。
+�ܺ٤ϡ�"�顼�����ڡ���"�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-XX:+UseMembar
 .RS 4
-スレッドの状態の遷移でメンバーの発行を有効にします。このオプションは、有効になっているPower PCおよびARMサーバーを除くすべてのプラットフォーム上で、デフォルトでは無効になっています。Power PCとARMのスレッド状態遷移に対するメンバーの発行を無効にするには、\fI\-XX:\-UseMembar\fRを指定します。
+����åɤξ��֤����ܤǥ��С���ȯ�Ԥ�ͭ���ˤ��ޤ������Υ��ץ����ϡ�ͭ���ˤʤäƤ���ARM�����С���������٤ƤΥץ�åȥե������ǡ��ǥե���ȤǤ�̵���ˤʤäƤ��ޤ���(ARM�����С��Ǥ��Υ��ץ�����̵���ˤ��ʤ����Ȥ����ᤷ�ޤ���)
 .RE
 .PP
 \-XX:+UsePerfData
 .RS 4
-\fIperfdata\fR機能を有効にします。このオプションはデフォルトで有効になっており、JVMのモニタリングおよびパフォーマンス・テストが可能になります。これを無効にすると、\fIhsperfdata_userid\fRディレクトリの作成を抑制します。\fIperfdata\fR機能を無効にするには、\fI\-XX:\-UsePerfData\fRを指定します。
+\fBperfdata\fR��ǽ��ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ꡢJVM�Υ�˥���󥰤���ӥѥե����ޥ󥹡��ƥ��Ȥ���ǽ�ˤʤ�ޤ��������̵���ˤ���ȡ�\fBhsperfdata_userid\fR�ǥ��쥯�ȥ�κ������������ޤ���\fBperfdata\fR��ǽ��̵���ˤ���ˤϡ�\fB\-XX:\-UsePerfData\fR����ꤷ�ޤ���
+.RE
+.PP
+\-XX:+UseTransparentHugePages
+.RS 4
+Linux�Ǥϡ�ưŪ�˳�ĥ�ޤ��Ͻ̾��Ǥ���顼�����ڡ����λ��Ѥ�ͭ�������Ƥ������������Υ��ץ����ϡ��ǥե���ȤǤ�̵���ˤʤäƤ��ޤ���OS��¾�Υڡ������ư���ƥҥ塼�����ڡ�����������뤿�ᡢƩ��Ū�ҥ塼�����ڡ����ǥѥե����ޥ󥹤����꤬���Ф�����礬����ޤ������Υ��ץ����ϻŪ�˻��ѤǤ��ޤ���
+.sp
+�ܺ٤ϡ�"�顼�����ڡ���"�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-XX:+AllowUserSignalHandlers
 .RS 4
-アプリケーションによるシグナル・ハンドラのインストールを有効にします。デフォルトでは、このオプションは無効であり、アプリケーションはシグナル・ハンドラをインストールすることは許可されていません。
+���ץꥱ�������ˤ�륷���ʥ롦�ϥ�ɥ�Υ��󥹥ȡ����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ���ץꥱ�������ϥ����ʥ롦�ϥ�ɥ�򥤥󥹥ȡ��뤹�뤳�Ȥϵ��Ĥ���Ƥ��ޤ���
 .RE
-.SS "高度なJITコンパイラ・オプション"
+.SS "���٤�JIT����ѥ��顦���ץ����"
 .PP
-これらのオプションは、Java HotSpot VMで実行される動的なjust\-in\-time (JIT)コンパイラを制御します。
+�����Υ��ץ����ϡ�Java HotSpot VM�Ǽ¹Ԥ����ưŪ��just\-in\-time (JIT)����ѥ�������椷�ޤ���
 .PP
 \-XX:+AggressiveOpts
 .RS 4
-積極的なパフォーマンス最適化機能の使用を有効にします。これは今後のリリースでデフォルトになる予定です。デフォルトでは、このオプションは無効であり、試験的なパフォーマンス機能は使用されません。
+�Ѷ�Ū�ʥѥե����ޥ󥹺�Ŭ����ǽ�λ��Ѥ�ͭ���ˤ��ޤ�������Ϻ���Υ�꡼���ǥǥե���Ȥˤʤ�ͽ��Ǥ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ�Ū�ʥѥե����ޥ󥹵�ǽ�ϻ��Ѥ���ޤ���
 .RE
 .PP
 \-XX:AllocateInstancePrefetchLines=\fIlines\fR
 .RS 4
-インスタンス割当てポインタの前にプリフェッチする行数を設定します。デフォルトでは、プリフェッチする行数は1に設定されています。
+���󥹥��󥹳����ƥݥ��󥿤����˥ץ�ե��å�����Կ������ꤷ�ޤ����ǥե���ȤǤϡ��ץ�ե��å�����Կ���1�����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:AllocateInstancePrefetchLines=1
+\fB\-XX:AllocateInstancePrefetchLines=1\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
+Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
+.RE
+.PP
+\-XX:AllocatePrefetchDistance=\fIsize\fR
+.RS 4
+���֥������ȳ����ƤΥץ�ե��å���Υ�Υ�����(�Х���ñ��)�����ꤷ�ޤ����������֥������Ȥ��ͤǽ񤭹��⤦�Ȥ�����꡼�ϡ��Ǹ�˳�����Ƥ�줿���֥������ȤΥ��ɥ쥹���顢���ε�Υ�ޤǥץ�ե��å�����ޤ�����Java����åɤˤ��ȼ��γ����ƥݥ���Ȥ�����ޤ���
+.sp
+����ͤϡ��ץ�ե��å���Υ�ϥץ�åȥե�����˴�Ť������򤵤�뤳�Ȥ򼨤��ޤ��������ͤϡ��ץ�ե��å�����Х��ȿ��Ǥ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե�����ͤ�\-1�����ꤵ��Ƥ��ޤ���
+.sp
+������Ǥϡ��ץ�ե��å���Υ��1024�Х��Ȥ����ꤹ����ˡ�򼨤��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB\-XX:AllocatePrefetchDistance=1024\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .RE
 .PP
 \-XX:AllocatePrefetchInstr=\fIinstruction\fR
 .RS 4
-割当てポインタの前にプリフェッチするプリフェッチ命令を設定します。使用可能な値は0から3までです。値の背後にある実際の命令は、プラットフォームによって異なります。デフォルトでは、プリフェッチ命令は0に設定されています。
+�����ƥݥ��󥿤����˥ץ�ե��å�����ץ�ե��å�̿������ꤷ�ޤ���Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ������Ѳ�ǽ���ͤ�0����3�ޤǤǤ����ͤ��ظ�ˤ���ºݤ�̿��ϡ��ץ�åȥե�����ˤ�äưۤʤ�ޤ����ǥե���ȤǤϡ��ץ�ե��å�̿���0�����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:AllocatePrefetchInstr=0
+\fB\-XX:AllocatePrefetchInstr=0\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
+Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
+.RE
+.PP
+\-XX:AllocatePrefetchLines=\fIlines\fR
+.RS 4
+����ѥ��뤵�줿�����ɤ����������ץ�ե��å�̿�����Ѥ��ơ��Ǹ�Υ��֥������ȳ����Ƹ�˥����ɤ��륭��å���Կ������ꤷ�ޤ����Ǹ�˳�����Ƥ�줿���֥������Ȥ����󥹥��󥹤ξ��ϡ��ǥե�����ͤ�1�ˤʤꡢ����ξ���3�ˤʤ�ޤ���
+.sp
+������Ǥϡ������ɤ���륭��å���Կ���5�����ꤹ����ˡ�򼨤��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB\-XX:AllocatePrefetchLines=5\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .RE
 .PP
 \-XX:AllocatePrefetchStepSize=\fIsize\fR
 .RS 4
-順次プリフェッチ命令のステップ・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、ステップ・サイズは16バイトに設定されています。
+�缡�ץ�ե��å�̿��Υ��ƥåס�������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե���ȤǤϡ����ƥåס���������16�Х��Ȥ����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:AllocatePrefetchStepSize=16
+\fB\-XX:AllocatePrefetchStepSize=16\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
+Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
+.RE
+.PP
+\-XX:AllocatePrefetchStyle=\fIstyle\fR
+.RS 4
+�ץ�ե��å�̿�����������륳���ɡ�������������ꤷ�ޤ���\fIstyle\fR�����ϡ�0����3�ޤǤ������Ǥ���
+.PP
+0
+.RS 4
+�ץ�ե��å�̿����������ޤ���
+.RE
+.PP
+1
+.RS 4
+�Ƴ����Ƥθ�ǡ��ץ�ե��å�̿���¹Ԥ��ޤ�������ϥǥե���ȤΥѥ�᡼���Ǥ���
+.RE
+.PP
+2
+.RS 4
+����åɡ���������ʳ����ƥ֥��å�(TLAB)�����������ޡ������ݥ��󥿤���Ѥ��ơ��ץ�ե��å�̿���¹Ԥ��륿���ߥ󥰤���ꤷ�ޤ���
+.RE
+.PP
+3
+.RS 4
+�����ƥץ�ե��å��Ѥ�SPARC��BIS̿�����Ѥ��ޤ���
+.RE
+.sp
+Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .RE
 .PP
 \-XX:+BackgroundCompilation
 .RS 4
-バックグラウンド・コンパイルを有効にします。このオプションはデフォルトで有効になっています。バックグラウンド・コンパイルを無効にするには、\fI\-XX:\-BackgroundCompilation\fRを指定します(これは\fI\-Xbatch\fRを指定するのと同等です)。
+�Хå����饦��ɡ�����ѥ����ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ����Хå����饦��ɡ�����ѥ����̵���ˤ���ˤϡ�\fB\-XX:\-BackgroundCompilation\fR����ꤷ�ޤ�(�����\fB\-Xbatch\fR����ꤹ��Τ�Ʊ���Ǥ�)��
 .RE
 .PP
 \-XX:CICompilerCount=\fIthreads\fR
 .RS 4
-コンパイルに使用するコンパイラ・スレッドの数を設定します。デフォルトでは、スレッド数は、サーバーJVMの場合は2、クライアントJVMの場合は1に設定されており、層コンパイルが使用されている場合、コア数に合せて増減します。次の例では、スレッドの数を2に設定する方法を示します。
+����ѥ���˻��Ѥ��륳��ѥ��顦����åɤο������ꤷ�ޤ����ǥե���ȤǤϡ�����åɿ��ϡ������С�JVM�ξ���2�����饤�����JVM�ξ���1�����ꤵ��Ƥ��ꡢ�إ���ѥ��뤬���Ѥ���Ƥ����硢�������˹礻���������ޤ���������Ǥϡ�����åɤο���2�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CICompilerCount=2
+\fB\-XX:CICompilerCount=2\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1246,13 +1392,14 @@ JVM内部シグナルの\fISIGUSR1\fRおよび\fISIGUSR2\fRのかわりに、代
 .PP
 \-XX:CodeCacheMinimumFreeSpace=\fIsize\fR
 .RS 4
-コンパイルに必要な最小空き領域(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。最小空き領域より少ない領域しか残っていない場合、コンパイルは停止します。デフォルトでは、このオプションは500KBに設定されています。次の例では、最小空き領域を1024MBに設定する方法を示します。
+����ѥ����ɬ�פʺǾ������ΰ�(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����Ǿ������ΰ��꾯�ʤ��ΰ褷���ĤäƤ��ʤ���硢����ѥ������ߤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����500KB�����ꤵ��Ƥ��ޤ���������Ǥϡ��Ǿ������ΰ��1024MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CodeCacheMinimumFreeSpace=1024m
+\fB\-XX:CodeCacheMinimumFreeSpace=1024m\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1261,189 +1408,200 @@ JVM内部シグナルの\fISIGUSR1\fRおよび\fISIGUSR2\fRのかわりに、代
 .PP
 \-XX:CompileCommand=\fIcommand\fR,\fImethod\fR[,\fIoption\fR]
 .RS 4
-メソッドで実行するコマンドを指定します。たとえば、コンパイル元から\fIString\fRクラスの\fIindexOf()\fRメソッドを実行するには、次を使用します。
+�᥽�åɤǼ¹Ԥ��륳�ޥ�ɤ���ꤷ�ޤ������Ȥ��С�����ѥ��븵����\fBString\fR���饹��\fBindexOf()\fR�᥽�åɤ�¹Ԥ���ˤϡ�������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileCommand=exclude,java/lang/String\&.indexOf
+\fB\-XX:CompileCommand=exclude,java/lang/String\&.indexOf\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-スラッシュ(\fI/\fR)で区切られたすべてのパッケージおよびサブパッケージを含む、完全クラス名を指定します。切取りと貼付けの操作を容易にするために、\fI\-XX:+PrintCompilation\fRオプションおよび\fI\-XX:+LogCompilation\fRオプションによって生成されるメソッド名の形式を使用することもできます。
+����å���(\fB/\fR)�Ƕ��ڤ�줿���٤ƤΥѥå���������ӥ��֥ѥå�������ޤࡢ�������饹̾����ꤷ�ޤ����ڼ���Ž�դ��������ưפˤ��뤿��ˡ�\fB\-XX:+PrintCompilation\fR���ץ���󤪤��\fB\-XX:+LogCompilation\fR���ץ����ˤ�ä����������᥽�å�̾�η�������Ѥ��뤳�Ȥ�Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileCommand=exclude,java\&.lang\&.String::indexOf
+\fB\-XX:CompileCommand=exclude,java\&.lang\&.String::indexOf\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-署名なしでメソッドを指定すると、コマンドは指定した名前を持つすべてのメソッドに適用されます。ただし、クラス・ファイル形式でメソッドの署名を指定することもできます。たとえば、コンパイル元から\fIString\fRクラスの\fIindexOf(String)\fRメソッドのみ除外するには、次を使用します。
+��̾�ʤ��ǥ᥽�åɤ���ꤹ��ȡ����ޥ�ɤϻ��ꤷ��̾������Ĥ��٤ƤΥ᥽�åɤ�Ŭ�Ѥ���ޤ��������������饹���ե���������ǥ᥽�åɤν�̾����ꤹ�뤳�Ȥ�Ǥ��ޤ������ξ�硢�����������ǰϤ�ɬ�פ����ꡢ�Ϥޤʤ��ȡ�������ˤ�ꥻ�ߥ����󤬥��ޥ�ɤν�λ�Ȥ��ư����ޤ������Ȥ��С�����ѥ��븵����\fBString\fR���饹��\fBindexOf(String)\fR�᥽�åɤΤ߽�������ˤϡ�������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileCommand=exclude,java/lang/String\&.indexOf(Ljava/lang/String;)I
+\fB\-XX:CompileCommand="exclude,java/lang/String\&.indexOf,(Ljava/lang/String;)I"\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-また、クラス名およびメソッド名にワイルドカードとしてアスタリスク(*)を使用できます。たとえば、コンパイル元からすべてのクラスのすべての\fIindexOf()\fRメソッドを除外するには、次を使用します。
+�ޤ������饹̾����ӥ᥽�å�̾�˥磻��ɥ����ɤȤ��ƥ������ꥹ��(*)����ѤǤ��ޤ������Ȥ��С�����ѥ��븵���餹�٤ƤΥ��饹�Τ��٤Ƥ�\fBindexOf()\fR�᥽�åɤ��������ˤϡ�������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileCommand=exclude,*\&.indexOf
+\fB\-XX:CompileCommand=exclude,*\&.indexOf\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-カンマとピリオドは空白の別名で、これにより、シェルを介してコンパイラ・コマンドを渡すことが容易になります。引数を引用符で囲むことで、空白をセパレータとして使用して\fI\-XX:CompileCommand\fRに引数を渡すことができます。
+����ޤȥԥꥪ�ɤ϶������̾�ǡ�����ˤ�ꡢ�������𤷤ƥ���ѥ��顦���ޥ�ɤ��Ϥ����Ȥ��ưפˤʤ�ޤ��������������ǰϤळ�Ȥǡ�����򥻥ѥ졼���Ȥ��ƻ��Ѥ���\fB\-XX:CompileCommand\fR�˰������Ϥ����Ȥ��Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileCommand="exclude java/lang/String indexOf"
+\fB\-XX:CompileCommand="exclude java/lang/String indexOf"\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fI\-XX:CompileCommand\fRオプションを使用してコマンドラインで渡されたコマンドを解析した後に、JITコンパイラは\fI\&.hotspot_compiler\fRファイルからコマンドを読み取ります。このファイルにコマンドを追加するか、または\fI\-XX:CompileCommandFile\fRオプションを使用して別のファイルを指定することができます。
+\fB\-XX:CompileCommand\fR���ץ�������Ѥ��ƥ��ޥ�ɹԤ��Ϥ��줿���ޥ�ɤ���Ϥ�����ˡ�JIT����ѥ����\fB\&.hotspot_compiler\fR�ե����뤫�饳�ޥ�ɤ��ɤ߼��ޤ������Υե�����˥��ޥ�ɤ��ɲä��뤫���ޤ���\fB\-XX:CompileCommandFile\fR���ץ�������Ѥ����̤Υե��������ꤹ�뤳�Ȥ��Ǥ��ޤ���
 .sp
-複数のコマンドを追加するには、\fI\-XX:CompileCommand\fRオプションを複数回指定するか、または改行セパレータ(\fI\en\fR)を使用して各引数を区切ります。次のコマンドを使用できます。
+ʣ���Υ��ޥ�ɤ��ɲä���ˤϡ�\fB\-XX:CompileCommand\fR���ץ�����ʣ������ꤹ�뤫���ޤ��ϲ��ԥ��ѥ졼��(\fB\en\fR)����Ѥ��Ƴư�������ڤ�ޤ������Υ��ޥ�ɤ���ѤǤ��ޤ���
 .PP
 break
 .RS 4
-指定したメソッドのコンパイルの最初に停止するために、JVMのデバッグ時のブレークポイントを設定します。
+���ꤷ���᥽�åɤΥ���ѥ���κǽ����ߤ��뤿��ˡ�JVM�ΥǥХå����Υ֥졼���ݥ���Ȥ����ꤷ�ޤ���
 .RE
 .PP
 compileonly
 .RS 4
-指定したメソッドを除いたすべてのメソッドを、コンパイルから除外します。別の方法として、\fI\-XX:CompileOnly\fRオプションを使用して複数のメソッドを指定できます。
+���ꤷ���᥽�åɤ���������٤ƤΥ᥽�åɤ򡢥���ѥ��뤫��������ޤ����̤���ˡ�Ȥ��ơ�\fB\-XX:CompileOnly\fR���ץ�������Ѥ���ʣ���Υ᥽�åɤ����Ǥ��ޤ���
 .RE
 .PP
 dontinline
 .RS 4
-指定したメソッドをインライン化しないようにします。
+���ꤷ���᥽�åɤ򥤥�饤�󲽤��ʤ��褦�ˤ��ޤ���
 .RE
 .PP
 exclude
 .RS 4
-指定したメソッドをコンパイルから除外します。
+���ꤷ���᥽�åɤ򥳥�ѥ��뤫��������ޤ���
 .RE
 .PP
 help
 .RS 4
-\fI\-XX:CompileCommand\fRオプションのヘルプ・メッセージを印刷します。
+\fB\-XX:CompileCommand\fR���ץ����Υإ�ס���å�������������ޤ���
 .RE
 .PP
 inline
 .RS 4
-指定したメソッドをインライン化しようとします。
+���ꤷ���᥽�åɤ򥤥�饤�󲽤��褦�Ȥ��ޤ���
 .RE
 .PP
 log
 .RS 4
-指定したメソッドを除くすべてのメソッドに対して、(\fI\-XX:+LogCompilation\fRオプションを使用して)コンパイル・ロギングを除外します。デフォルトでは、コンパイルされたすべてのメソッドにロギングが実行されます。
+���ꤷ���᥽�åɤ�������٤ƤΥ᥽�åɤ��Ф��ơ�(\fB\-XX:+LogCompilation\fR���ץ�������Ѥ���)����ѥ��롦�����󥰤�������ޤ����ǥե���ȤǤϡ�����ѥ��뤵�줿���٤ƤΥ᥽�åɤ˥����󥰤��¹Ԥ���ޤ���
 .RE
 .PP
 option
 .RS 4
-このコマンドは、最後の引数(\fIoption\fR)のかわりに、指定したメソッドにJITコンパイル・オプションを渡すために使用できます。コンパイル・オプションは、メソッド名の後の末尾に設定されます。たとえば、\fIStringBuffer\fRクラスの\fIappend()\fRメソッドに対して\fIBlockLayoutByFrequency\fRオプションを有効にするには、次を使用します。
+���Υ��ޥ�ɤϡ��Ǹ�ΰ���(\fIoption\fR)�Τ����ˡ����ꤷ���᥽�åɤ�JIT����ѥ��롦���ץ������Ϥ�����˻��ѤǤ��ޤ�������ѥ��롦���ץ����ϡ��᥽�å�̾�θ�����������ꤵ��ޤ������Ȥ��С�\fBStringBuffer\fR���饹��\fBappend()\fR�᥽�åɤ��Ф���\fBBlockLayoutByFrequency\fR���ץ�����ͭ���ˤ���ˤϡ�������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileCommand=option,java/lang/StringBuffer\&.append,BlockLayoutByFrequency
+\fB\-XX:CompileCommand=option,java/lang/StringBuffer\&.append,BlockLayoutByFrequency\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-カンマまたは空白で区切って、複数のコンパイル・オプションを指定できます。
+����ޤޤ��϶���Ƕ��ڤäơ�ʣ���Υ���ѥ��롦���ץ��������Ǥ��ޤ���
 .RE
 .PP
 print
 .RS 4
-指定したメソッドのコンパイル後に生成されたアセンブラ・コードを出力します。
+���ꤷ���᥽�åɤΥ���ѥ������������줿������֥顦�����ɤ���Ϥ��ޤ���
 .RE
 .PP
 quiet
 .RS 4
-コンパイル・コマンドを出力しません。デフォルトでは、\fI\-XX:CompileCommand\fRオプションを使用して指定したコマンドが出力されます。たとえば、\fIString\fRクラスの\fIindexOf()\fRメソッドのコンパイルから除外する場合、次が標準出力に出力されます。
+����ѥ��롦���ޥ�ɤ���Ϥ��ޤ��󡣥ǥե���ȤǤϡ�\fB\-XX:CompileCommand\fR���ץ�������Ѥ��ƻ��ꤷ�����ޥ�ɤ����Ϥ���ޤ������Ȥ��С�\fBString\fR���饹��\fBindexOf()\fR�᥽�åɤΥ���ѥ��뤫����������硢����ɸ����Ϥ˽��Ϥ���ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-CompilerOracle: exclude java/lang/String\&.indexOf
+\fBCompilerOracle: exclude java/lang/String\&.indexOf\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-他の\fI\-XX:CompileCommand\fRオプションの前に\fI\-XX:CompileCommand=quiet\fRオプションを指定することによって、これを抑制できます。
+¾��\fB\-XX:CompileCommand\fR���ץ���������\fB\-XX:CompileCommand=quiet\fR���ץ�������ꤹ�뤳�Ȥˤ�äơ�����������Ǥ��ޤ���
 .RE
 .RE
 .PP
 \-XX:CompileCommandFile=\fIfilename\fR
 .RS 4
-JITコンパイラ・コマンドの読取り元のファイルを設定します。デフォルトでは、JITコンパイラによって実行されるコマンドを格納するために、\fI\&.hotspot_compiler\fRファイルが使用されます。
+JIT����ѥ��顦���ޥ�ɤ��ɼ�긵�Υե���������ꤷ�ޤ����ǥե���ȤǤϡ�JIT����ѥ���ˤ�äƼ¹Ԥ���륳�ޥ�ɤ��Ǽ���뤿��ˡ�\fB\&.hotspot_compiler\fR�ե����뤬���Ѥ���ޤ���
 .sp
-コマンド・ファイルの各行は、コマンドが使用されるコマンド、クラス名およびメソッド名を表します。たとえば、次の行は、\fIString\fRクラスの\fItoString()\fRメソッドに対してアセンブリ・コードを出力します。
+���ޥ�ɡ��ե�����γƹԤϡ����ޥ�ɤ����Ѥ���륳�ޥ�ɡ����饹̾����ӥ᥽�å�̾��ɽ���ޤ������Ȥ��С����ιԤϡ�\fBString\fR���饹��\fBtoString()\fR�᥽�åɤ��Ф��ƥ�����֥ꡦ�����ɤ���Ϥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-print java/lang/String toString
+\fBprint java/lang/String toString\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-メソッドで実行するJITコンパイラのコマンドの指定の詳細は、\fI\-XX:CompileCommand\fRオプションを参照してください。
+�᥽�åɤǼ¹Ԥ���JIT����ѥ���Υ��ޥ�ɤλ���ξܺ٤ϡ�\fB\-XX:CompileCommand\fR���ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-XX:CompileOnly=\fImethods\fR
 .RS 4
-コンパイルを制限する(カンマで区切られた)メソッドのリストを設定します。指定したメソッドのみがコンパイルされます。完全クラス名(パッケージおよびサブパッケージを含む)で各メソッドを指定します。たとえば、\fIString\fRクラスの\fIlength()\fRメソッドおよび\fIList\fRクラスの\fIsize()\fRメソッドのみをコンパイルするには、次を使用します。
+����ѥ�������¤���(����ޤǶ��ڤ�줿)�᥽�åɤΥꥹ�Ȥ����ꤷ�ޤ������ꤷ���᥽�åɤΤߤ�����ѥ��뤵��ޤ����������饹̾(�ѥå���������ӥ��֥ѥå�������ޤ�)�ǳƥ᥽�åɤ���ꤷ�ޤ������Ȥ��С�\fBString\fR���饹��\fBlength()\fR�᥽�åɤ����\fBList\fR���饹��\fBsize()\fR�᥽�åɤΤߤ򥳥�ѥ��뤹��ˤϡ�������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileOnly=java/lang/String\&.length,java/util/List\&.size
+\fB\-XX:CompileOnly=java/lang/String\&.length,java/util/List\&.size\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-スラッシュ(\fI/\fR)で区切られたすべてのパッケージおよびサブパッケージを含む、完全クラス名を指定します。切取りと貼付けの操作を容易にするために、\fI\-XX:+PrintCompilation\fRオプションおよび\fI\-XX:+LogCompilation\fRオプションによって生成されるメソッド名の形式を使用することもできます。
+����å���(\fB/\fR)�Ƕ��ڤ�줿���٤ƤΥѥå���������ӥ��֥ѥå�������ޤࡢ�������饹̾����ꤷ�ޤ����ڼ���Ž�դ��������ưפˤ��뤿��ˡ�\fB\-XX:+PrintCompilation\fR���ץ���󤪤��\fB\-XX:+LogCompilation\fR���ץ����ˤ�ä����������᥽�å�̾�η�������Ѥ��뤳�Ȥ�Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileOnly=java\&.lang\&.String::length,java\&.util\&.List::size
+\fB\-XX:CompileOnly=java\&.lang\&.String::length,java\&.util\&.List::size\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-ワイルドカードはサポートされていませんが、クラス名またはパッケージ名だけを指定してクラスまたはパッケージのすべてのメソッドをコンパイルすることも、メソッドだけを指定して任意のクラスのこの名前を持つメソッドをコンパイルすることもできます。
+�磻��ɥ����ɤϥ��ݡ��Ȥ���Ƥ��ޤ��󤬡����饹̾�ޤ��ϥѥå�����̾��������ꤷ�ƥ��饹�ޤ��ϥѥå������Τ��٤ƤΥ᥽�åɤ򥳥�ѥ��뤹�뤳�Ȥ⡢�᥽�åɤ�������ꤷ��Ǥ�դΥ��饹�Τ���̾������ĥ᥽�åɤ򥳥�ѥ��뤹�뤳�Ȥ�Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileOnly=java/lang/String
-\-XX:CompileOnly=java/lang
-\-XX:CompileOnly=\&.length
+\fB\-XX:CompileOnly=java/lang/String\fR
+\fB\-XX:CompileOnly=java/lang\fR
+\fB\-XX:CompileOnly=\&.length\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1452,39 +1610,36 @@ print java/lang/String toString
 .PP
 \-XX:CompileThreshold=\fIinvocations\fR
 .RS 4
-コンパイル前に解釈されたメソッド呼出しの数を設定します。デフォルトでは、サーバーJVMでは、JITコンパイラは、10,000の解釈されたメソッド呼出しを実行して、効率的なコンパイルのための情報を収集します。クライアントJVMの場合、デフォルト設定は1,500呼出しです。次の例では、解釈されたメソッド呼出しの数を5,000に設定する方法を示します。
+����ѥ������˲�ᤵ�줿�᥽�åɸƽФ��ο������ꤷ�ޤ����ǥե���ȤǤϡ������С�JVM�Ǥϡ�JIT����ѥ���ϡ�10,000�β�ᤵ�줿�᥽�åɸƽФ���¹Ԥ��ơ���ΨŪ�ʥ���ѥ���Τ���ξ����������ޤ������饤�����JVM�ξ�硢�ǥե���������1,500�ƽФ��Ǥ����إ���ѥ��뤬ͭ���ʾ�硢���Υ��ץ�����̵�뤵��ޤ������ץ����\fB\-XX:+TieredCompilation\fR�򻲾Ȥ��Ƥ���������������Ǥϡ���ᤵ�줿�᥽�åɸƽФ��ο���5,000�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CompileThreshold=5000
+\fB\-XX:CompileThreshold=5000\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fI\-Xcomp\fRオプションを指定して、コンパイルの前に、Javaメソッドの解釈を完全に無効にすることができます。
+\fB\-Xcomp\fR���ץ�������ꤷ�ơ�����ѥ�������ˡ�Java�᥽�åɤβ�������̵���ˤ��뤳�Ȥ��Ǥ��ޤ���
 .RE
 .PP
 \-XX:+DoEscapeAnalysis
 .RS 4
-エスケープ分析の使用を有効にします。このオプションはデフォルトで有効になっています。エスケープ分析の使用を無効にするには、\fI\-XX:\-DoEscapeAnalysis\fRを指定します。
-.RE
-.PP
-\-XX:+FailOverToOldVerifier
-.RS 4
-新しいタイプ・チェッカが失敗した場合の、古いベリファイアへの自動フェイルオーバーを有効にします。デフォルトでは、このオプションは無効になっており、最近のバイトコード・バージョンを使用したクラスには、これは無視されます(つまり、無効として処理されます)。古いバージョンのバイトコードを使用したクラスには、これを有効化できます。
+����������ʬ�Ϥλ��Ѥ�ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ�������������ʬ�Ϥλ��Ѥ�̵���ˤ���ˤϡ�\fB\-XX:\-DoEscapeAnalysis\fR����ꤷ�ޤ���Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .RE
 .PP
 \-XX:InitialCodeCacheSize=\fIsize\fR
 .RS 4
-初期コード・キャッシュ・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は500KBに設定されています。次の例では、初期コード・キャッシュ・サイズを32KBに設定する方法を示します。
+��������ɡ�����å��塦������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե�����ͤ�500KB�����ꤵ��Ƥ��ޤ�����������ɡ�����å��塦�������򥷥��ƥ�κǾ����꡼���ڡ�������������꾮�������ʤ��Ǥ���������������Ǥϡ���������ɡ�����å��塦��������32KB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:InitialCodeCacheSize=32k
+\fB\-XX:InitialCodeCacheSize=32k\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1493,18 +1648,19 @@ print java/lang/String toString
 .PP
 \-XX:+Inline
 .RS 4
-メソッドのインライン化を有効にします。このオプションは、パフォーマンスを向上させるためにデフォルトで有効になっています。メソッドのインライン化を無効にするには、\fI\-XX:\-Inline\fRを指定します。
+�᥽�åɤΥ���饤�󲽤�ͭ���ˤ��ޤ������Υ��ץ����ϡ��ѥե����ޥ󥹤���夵���뤿��˥ǥե���Ȥ�ͭ���ˤʤäƤ��ޤ����᥽�åɤΥ���饤�󲽤�̵���ˤ���ˤϡ�\fB\-XX:\-Inline\fR����ꤷ�ޤ���
 .RE
 .PP
 \-XX:InlineSmallCode=\fIsize\fR
 .RS 4
-インライン化が必要なコンパイルされたメソッドの最大コード・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。指定したサイズより小さいサイズのコンパイルされたメソッドのみが、インライン化されます。デフォルトでは、最大コード・サイズは1000バイトに設定されています。
+����饤�󲽤�ɬ�פʥ���ѥ��뤵�줿�᥽�åɤκ��祳���ɡ�������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ������ꤷ����������꾮�����������Υ���ѥ��뤵�줿�᥽�åɤΤߤ�������饤�󲽤���ޤ����ǥե���ȤǤϡ����祳���ɡ���������1000�Х��Ȥ����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:InlineSmallCode=1000
+\fB\-XX:InlineSmallCode=1000\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1513,22 +1669,23 @@ print java/lang/String toString
 .PP
 \-XX:+LogCompilation
 .RS 4
-現在の作業ディレクトリにある\fIhotspot\&.log\fRという名前のファイルへのコンパイル・アクティビティのロギングを有効にします。\fI\-XX:LogFile\fRオプションを使用して、異なるログ・ファイル・パスと名前を指定できます。
+���ߤκ�ȥǥ��쥯�ȥ�ˤ���\fBhotspot\&.log\fR�Ȥ���̾���Υե�����ؤΥ���ѥ��롦�����ƥ��ӥƥ��Υ����󥰤�ͭ���ˤ��ޤ���\fB\-XX:LogFile\fR���ץ�������Ѥ��ơ��ۤʤ�������ե����롦�ѥ���̾�������Ǥ��ޤ���
 .sp
-デフォルトでは、このオプションは無効であり、コンパイル・アクティビティは記録されません。\fI\-XX:+LogCompilation\fRオプションは、診断JVMオプションのロックを解除する\fI\-XX:UnlockDiagnosticVMOptions\fRオプションとともに使用する必要があります。
+�ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ����ѥ��롦�����ƥ��ӥƥ��ϵ�Ͽ����ޤ���\fB\-XX:+LogCompilation\fR���ץ����ϡ�����JVM���ץ����Υ��å���������\fB\-XX:UnlockDiagnosticVMOptions\fR���ץ����ȤȤ�˻��Ѥ���ɬ�פ�����ޤ���
 .sp
-\fI\-XX:+PrintCompilation\fRオプションを使用して、メソッドをコンパイルするたびに、コンソールに出力されたメッセージを含む詳細な診断出力を有効化できます。
+\fB\-XX:+PrintCompilation\fR���ץ�������Ѥ��ơ��᥽�åɤ򥳥�ѥ��뤹�뤿�Ӥˡ����󥽡���˽��Ϥ��줿��å�������ޤ�ܺ٤ʿ��ǽ��Ϥ�ͭ�����Ǥ��ޤ���
 .RE
 .PP
 \-XX:MaxInlineSize=\fIsize\fR
 .RS 4
-インライン化するメソッドの最大バイトコード・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、最大バイトコード・サイズは35バイトに設定されています。
+����饤�󲽤���᥽�åɤκ���Х��ȥ����ɡ�������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե���ȤǤϡ�����Х��ȥ����ɡ���������35�Х��Ȥ����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxInlineSize=35
+\fB\-XX:MaxInlineSize=35\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1537,13 +1694,14 @@ print java/lang/String toString
 .PP
 \-XX:MaxNodeLimit=\fInodes\fR
 .RS 4
-単一のメソッドのコンパイル時に使用されるノードの最大数を設定します。デフォルトでは、ノードの最大数は65,000に設定されています。
+ñ��Υ᥽�åɤΥ���ѥ�����˻��Ѥ����Ρ��ɤκ���������ꤷ�ޤ����ǥե���ȤǤϡ��Ρ��ɤκ������65,000�����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxNodeLimit=65000
+\fB\-XX:MaxNodeLimit=65000\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1552,13 +1710,14 @@ print java/lang/String toString
 .PP
 \-XX:MaxTrivialSize=\fIsize\fR
 .RS 4
-インライン化する単純メソッドの最大バイトコード・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、単純メソッドの最大バイトコード・サイズは6バイトに設定されています。
+����饤�󲽤���ñ��᥽�åɤκ���Х��ȥ����ɡ�������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե���ȤǤϡ�ñ��᥽�åɤκ���Х��ȥ����ɡ���������6�Х��Ȥ����ꤵ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxTrivialSize=6
+\fB\-XX:MaxTrivialSize=6\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1567,94 +1726,166 @@ print java/lang/String toString
 .PP
 \-XX:+OptimizeStringConcat
 .RS 4
-\fIString\fR連結操作の最適化を有効にします。このオプションはデフォルトで有効になっています。\fIString\fR連結操作の最適化を無効にするには、\fI\-XX:\-OptimizeStringConcat\fRを指定します。
+\fBString\fRϢ�����κ�Ŭ����ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ���\fBString\fRϢ�����κ�Ŭ����̵���ˤ���ˤϡ�\fB\-XX:\-OptimizeStringConcat\fR����ꤷ�ޤ���Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .RE
 .PP
 \-XX:+PrintAssembly
 .RS 4
-外部の\fIdisassembler\&.so\fRライブラリを使用して、バイトコード化されたネイティブのメソッドのアセンブリ・コードの出力を有効にします。これにより、生成されたコードを表示することができ、パフォーマンスの問題の診断に役立ちます。
+������\fBdisassembler\&.so\fR�饤�֥�����Ѥ��ơ��Х��ȥ����ɲ����줿�ͥ��ƥ��֤Υ᥽�åɤΥ�����֥ꡦ�����ɤν��Ϥ�ͭ���ˤ��ޤ�������ˤ�ꡢ�������줿�����ɤ�ɽ�����뤳�Ȥ��Ǥ����ѥե����ޥ󥹤�����ο��Ǥ���Ω���ޤ���
 .sp
-デフォルトでは、このオプションは無効であり、アセンブリ・コードは印刷されません。\fI\-XX:+PrintAssembly\fRオプションは、診断JVMオプションのロックを解除する\fI\-XX:UnlockDiagnosticVMOptions\fRオプションとともに使用する必要があります。
+�ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ������֥ꡦ�����ɤϰ�������ޤ���\fB\-XX:+PrintAssembly\fR���ץ����ϡ�����JVM���ץ����Υ��å���������\fB\-XX:UnlockDiagnosticVMOptions\fR���ץ����ȤȤ�˻��Ѥ���ɬ�פ�����ޤ���
 .RE
 .PP
 \-XX:+PrintCompilation
 .RS 4
-メソッドをコンパイルするたびに、コンソールにメッセージを出力することによって、JVMからの詳細な診断出力を有効にします。これにより、実際にコンパイルされるメソッドを確認できます。デフォルトでは、このオプションは無効であり、診断出力は印刷されません。
+�᥽�åɤ򥳥�ѥ��뤹�뤿�Ӥˡ����󥽡���˥�å���������Ϥ��뤳�Ȥˤ�äơ�JVM����ξܺ٤ʿ��ǽ��Ϥ�ͭ���ˤ��ޤ�������ˤ�ꡢ�ºݤ˥���ѥ��뤵���᥽�åɤ��ǧ�Ǥ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ���ǽ��Ϥϰ�������ޤ���
 .sp
-\fI\-XX:+LogCompilation\fRオプションを使用して、コンパイル・アクティビティをファイルに記録することもできます。
+\fB\-XX:+LogCompilation\fR���ץ�������Ѥ��ơ�����ѥ��롦�����ƥ��ӥƥ���ե�����˵�Ͽ���뤳�Ȥ�Ǥ��ޤ���
 .RE
 .PP
 \-XX:+PrintInlining
 .RS 4
-インライン化の決定内容の出力を有効にします。これにより、インライン化されるメソッドを確認できます。
+����饤�󲽤η������Ƥν��Ϥ�ͭ���ˤ��ޤ�������ˤ�ꡢ����饤�󲽤����᥽�åɤ��ǧ�Ǥ��ޤ���
 .sp
-デフォルトでは、このオプションは無効であり、インライン化情報は出力されません。\fI\-XX:+PrintInlining\fRオプションは、診断JVMオプションのロックを解除する\fI\-XX:+UnlockDiagnosticVMOptions\fRオプションとともに使用する必要があります。
-.RE
-.PP
-\-XX:+RelaxAccessControlCheck
-.RS 4
-ベリファイア内のアクセス制御チェックの量を減らします。デフォルトでは、このオプションは無効になっており、最近のバイトコード・バージョンを使用したクラスには、これは無視されます(つまり、無効として処理されます)。古いバージョンのバイトコードを使用したクラスには、これを有効化できます。
+�ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ����饤�󲽾���Ͻ��Ϥ���ޤ���\fB\-XX:+PrintInlining\fR���ץ����ϡ�����JVM���ץ����Υ��å���������\fB\-XX:+UnlockDiagnosticVMOptions\fR���ץ����ȤȤ�˻��Ѥ���ɬ�פ�����ޤ���
 .RE
 .PP
 \-XX:ReservedCodeCacheSize=\fIsize\fR
 .RS 4
-JITコンパイルされたコードの最大コード・キャッシュ・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。このオプションは\fI\-Xmaxjitcodesize\fRと同等です。
+JIT����ѥ��뤵�줿�����ɤκ��祳���ɡ�����å��塦������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ������Υ��ץ�����2GB�����¤�����ޤ��������Ǥʤ����ϡ����顼����������ޤ������祳���ɡ�����å��塦���������������ɡ�����å��塦��������꾮�������ʤ��Ǥ���������\fB\-XX:InitialCodeCacheSize\fR���ץ����򻲾Ȥ��Ƥ������������Υ��ץ�����\fB\-Xmaxjitcodesize\fR��Ʊ���Ǥ���
+.RE
+.PP
+\-XX:RTMAbortRatio=\fIabort_ratio\fR
+.RS 4
+RTM���Ψ�ϡ����٤Ƥμ¹Ժ�RTM�ȥ�󥶥��������Ф���ѡ�����ơ���(%)�Ȥ��ƻ��ꤵ��ޤ�����ߤ��줿�ȥ�󥶥�������������Ψ��Ķ������硢����ѥ��뤵�줿�����ɤ����Ŭ������ޤ�������Ψ�ϡ�\fB\-XX:+UseRTMDeopt\fR���ץ����ͭ���ʾ��˻��Ѥ���ޤ������Υ��ץ����Υǥե�����ͤ�50�Ǥ����Ĥޤꡢ���٤ƤΥȥ�󥶥�������50%����ߤ��줿��硢����ѥ��뤵�줿�����ɤ����Ŭ������ޤ���
+.RE
+.PP
+\-XX:RTMRetryCount=\fInumber_of_retries\fR
+.RS 4
+��ߤޤ��ϥӥ����ξ�硢RTM���å��������ɤϡ�ɸ��Υ��å����ᥫ�˥���˥ե�����Хå��������ˤ��Υ��ץ����ˤ�äƻ��ꤵ�줿����ƻ�Ԥ���ޤ������Υ��ץ����Υǥե�����ͤ�5�Ǥ���\fB\-XX:UseRTMLocking\fR���ץ�����ͭ��������ɬ�פ�����ޤ���
 .RE
 .PP
 \-XX:+TieredCompilation
 .RS 4
-層コンパイルの使用を有効にします。デフォルトでは、このオプションは無効であり、層コンパイルは使用されません。
+�إ���ѥ���λ��Ѥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����ͭ���ˤʤäƤ��ޤ���Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
 .RE
 .PP
-\-XX:+UseCodeCacheFlushing
+\-XX:+UseAES
 .RS 4
-コンパイラをシャットダウンする前に、コード・キャッシュのフラッシュを有効にします。このオプションはデフォルトで有効になっています。コンパイラをシャットダウンする前にコード・キャッシュのフラッシュを無効にするには\fI\-XX:\-UseCodeCacheFlushing\fRを指定します。
+Intel��AMD�����SPARC�ϡ��ɥ��������Ф��ơ��ϡ��ɥ������١�����AES�ȹ��ߤ�ͭ�������ޤ���Intel Westmere (2010�ʹ�)��AMD Bulldozer (2011�ʹ�)�����SPARC (T4�ʹ�)�������ݡ��Ȥ���Ƥ���ϡ��ɥ������Ǥ���UseAES�ϡ�UseAESIntrinsics�ȤȤ�˻��Ѥ��ޤ���
 .RE
 .PP
-\-XX:+UseCondCardMark
+\-XX:+UseAESIntrinsics
 .RS 4
-カード表の更新前に、カードがすでにマークされているかどうかのチェックを有効にします。このオプションは、デフォルトでは無効になっており、複数のソケットを持つマシン上でのみ使用する必要があります。これにより、同時操作にかなり依存しているJavaアプリケーションのパフォーマンスが向上します。
-.RE
-.PP
-\-XX:+UseSuperWord
-.RS 4
-スカラー演算のスーパーワード演算への変換を有効にします。このオプションはデフォルトで有効になっています。スカラー演算のスーパーワード演算への変換を無効にするには、\fI\-XX:\-UseSuperWord\fRを指定します。
-.RE
-.SS "高度なサービスアビリティ・オプション"
-.PP
-これらのオプションは、システム情報を収集し、詳細なデバッグを実行する機能を提供します。
-.PP
-\-XX:+ExtendedDTraceProbes
-.RS 4
-パフォーマンスに影響を与える追加の\fIdtrace\fRツール・プローブを有効にします。デフォルトでは、このオプションは無効になっており、\fIdtrace\fRは標準プローブのみを実行します。
-.RE
-.PP
-\-XX:+HeapDumpOnOutOfMemory
-.RS 4
-\fIjava\&.lang\&.OutOfMemoryError\fR例外がスローされた場合に、ヒープ・プロファイラ(HPROF)を使用して、現在のディレクトリ内のファイルへのJavaヒープのダンプを有効にします。\fI\-XX:HeapDumpPath\fRオプションを使用して、ヒープ・ダンプ・ファイルのパスおよび名前を明示的に設定できます。デフォルトでは、このオプションは無効であり、\fIOutOfMemoryError\fR例外がスローされた場合にヒープはダンプされません。
-.RE
-.PP
-\-XX:HeapDumpPath=\fIpath\fR
-.RS 4
-\fI\-XX:+HeapDumpOnOutOfMemoryError\fRオプションが設定されている場合、ヒープ・プロファイラ(HPROF)が提供するヒープ・ダンプを書き込むパスおよびファイル名を設定します。デフォルトでは、このファイルは、現在の作業ディレクトリに作成され、名前は\fIjava_pid\fR\fIpid\fR\fI\&.hprof\fR
-(\fIpid\fRはエラーの原因となったプロセスの識別子)になります。次の例では、デフォルトのファイルを明示的に設定する方法を示します(\fI%p\fRは現在のプロセスの識別子を表します)。
+UseAES��UseAESIntrinsics�ե饰�ϥǥե���Ȥ�ͭ��������Ƥ��ꡢJava HotSpot Server VM 32�ӥåȤ����64�ӥåȤ��Ф��ƤΤߥ��ݡ��Ȥ���Ƥ��ޤ����ϡ��ɥ������١�����AES�ȹ��ߤ�̵��������ˤϡ�\fB\-XX:\-UseAES \-XX:\-UseAESIntrinsics\fR����ꤷ�ޤ������Ȥ��С��ϡ��ɥ�����AES��ͭ��������ˤϡ����Υե饰����Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:HeapDumpPath=\&./java_pid%p\&.hprof
+\fB\-XX:+UseAES \-XX:+UseAESIntrinsics\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-次の例では、ヒープ・ダンプ・ファイルを\fI/var/log/java/java_heapdump\&.hprof\fRに設定する方法を示します。
+32�ӥåȤ����64�ӥåȤ��Ф���UseAES�����UseAESIntrinsics�ե饰�򥵥ݡ��Ȥ���ˤϡ�\fB\-server\fR���ץ�������Ѥ���Java HotSpot Server VM�����򤷤ޤ��������Υե饰�ϡ����饤�����VM�Ǥϥ��ݡ��Ȥ���Ƥ��ޤ���
+.RE
+.PP
+\-XX:+UseCodeCacheFlushing
+.RS 4
+����ѥ���򥷥�åȥ����󤹤����ˡ������ɡ�����å���Υե�å����ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ�������ѥ���򥷥�åȥ����󤹤����˥����ɡ�����å���Υե�å����̵���ˤ���ˤ�\fB\-XX:\-UseCodeCacheFlushing\fR����ꤷ�ޤ���
+.RE
+.PP
+\-XX:+UseCondCardMark
+.RS 4
+������ɽ�ι������ˡ������ɤ����Ǥ˥ޡ�������Ƥ��뤫�ɤ����Υ����å���ͭ���ˤ��ޤ������Υ��ץ����ϡ��ǥե���ȤǤ�̵���ˤʤäƤ��ꡢʣ���Υ����åȤ���ĥޥ����ǤΤ߻��Ѥ���ɬ�פ�����ޤ�������ˤ�ꡢƱ�����ˤ��ʤ��¸���Ƥ���Java���ץꥱ�������Υѥե����ޥ󥹤����夷�ޤ���Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
+.RE
+.PP
+\-XX:+UseRTMDeopt
+.RS 4
+���Ψ�˱����ơ�RTM���å���ưĴ�����ޤ�������Ψ�ϡ�\fB\-XX:RTMAbortRatio\fR���ץ����ˤ�äƻ��ꤵ��ޤ�����ߤ��줿�ȥ�󥶥������������Ψ��Ķ������硢���å���ޤ�᥽�åɤ����٤ƤΥ��å���ɸ��Υ��å��Ȥ������Ŭ������Ӻƥ���ѥ��뤵��ޤ������Υ��ץ����ϡ��ǥե���ȤǤ�̵���ˤʤäƤ��ޤ���\fB\-XX:+UseRTMLocking\fR���ץ�����ͭ��������ɬ�פ�����ޤ���
+.RE
+.PP
+\-XX:+UseRTMLocking
+.RS 4
+�ե�����Хå����ϥ�ɥ�Ȥ���ɸ��Υ��å����ᥫ�˥������Ѥ��ơ�Ÿ�����줿���٤ƤΥ��å����Ф���Restricted Transactional Memory (RTM)���å��������ɤ��������ޤ������Υ��ץ����ϡ��ǥե���ȤǤ�̵���ˤʤäƤ��ޤ���RTM�˴�Ϣ���륪�ץ����ϡ�Transactional Synchronization Extensions (TSX)�򥵥ݡ��Ȥ���x86 CPU���Java HotSpot Server VM���Ф��ƤΤ߻��Ѳ�ǽ�Ǥ���
+.sp
+RTM�ϡ�x86̿�᥻�åȳ�ĥ�ǥޥ������åɡ����ץꥱ�������κ������ưפˤ���Intel��TSX�ΰ����Ǥ���RTM�Ǥϡ�������̿��
+\fBXBEGIN\fR��\fBXABORT\fR��\fBXEND\fR�����\fBXTEST\fR��Ƴ������Ƥ��ޤ���\fBXBEGIN\fR�����\fBXEND\fR̿��ϡ��ȥ�󥶥������Ȥ��Ƽ¹Ԥ��뤿���̿�᥻�åȤ�Ϥߤޤ����ȥ�󥶥������μ¹Ի��˶��礬���Ĥ���ʤ��ä���硢���꡼�ȥ쥸�������ѹ�����\fBXEND\fR̿���Ʊ���˥��ߥåȤ���ޤ���\fBXABORT\fR̿��Ǥϥȥ�󥶥�����������Ū����ߤǤ���\fBXEND\fR̿��Ǥ�̿�᥻�åȤ��ȥ�󥶥��������Ǽ¹��椫�ɤ������ǧ�Ǥ��ޤ���
+.sp
+�ȥ�󥶥������Υ��å��ϡ��̤Υ���åɤ�Ʊ���ȥ�󥶥������˥����������褦�Ȥ����Ȥ���Ÿ������ޤ����������äơ����Υȥ�󥶥������ؤΥ���������ǽ�˥ꥯ�����Ȥ��ʤ��ä�����åɤϥ֥��å�����ޤ���RTM�Ǥϡ��ȥ�󥶥��������ߤޤ��ϼ��Ԥ������Τ���ˡ��ե�����Хå������åȤ���ꤹ��ɬ�פ�����ޤ���RTM���å��Ȥϡ�TSX�Υ����ƥ�˰Ѿ�����Ƥ�����å��Ǥ���
+.sp
+RTM�ˤ�ꡢ���פʥ꡼�����ˤ����ƾ��ͤ����ʤ������٤ι⤤���å��Υѥե����ޥ󥹤����夵��ޤ�(����ϡ�ʣ���Υ���åɤˤ�ä�Ʊ���˥��������Ǥ��ʤ������ɤǤ�)���ޤ���RTM�ˤ�ꡢ��γ�٥��å��Υѥե����ޥ󥹤���夵��ޤ���������Ū�˥ޥ������åɡ����ץꥱ�������ǤΥѥե����ޥ󥹤Ϥ褯����ޤ���(��γ�٥��å��Ȥϡ����å��μ�������Ӳ����Υ����С��إåɤ�Ǿ������뤿���Ĺ�����֥��å����ݻ�������ά�Ǥ��ꡢ��������γ�٥��å��Ȥ�ɬ�פʾ��Τߥ��å�����ǽ�ʤ���������˥��å�������뤳�ȤǺ���¤��¹Խ�����ã�����ߤ���ά�Ǥ���)����ˡ��ۤʤ륹��åɤˤ�äƻ��Ѥ���Ƥ�����٤ʶ�����å��ξ�硢RTM�ˤ�ꡢ���ä�����å��塦�饤��ͭ(����å��塦�饤�󡦥ԥ�ݥ�Ȥ�ƤФ��)��︺�Ǥ��ޤ�������ϡ��ۤʤ�ץ����å������ʣ���Υ���åɤ��ۤʤ�꥽�����˥����������Ƥ������ȯ�����ޤ������꥽������Ʊ������å��塦�饤���ͭ���ޤ�����̤Ȥ��ơ��ץ����å���¾�Υץ����å��Υ���å��塦�饤��򷫤��֤�̵���ˤ�������ˤ�ꡢ����å���ǤϤʤ��ᥤ�󡦥��꡼������ɼ�꤬��������ޤ���
+.RE
+.PP
+\-XX:+UseSHA
+.RS 4
+SPARC�ϡ��ɥ�������SHA�Ź沽�ϥå���ؿ��Υϡ��ɥ������١������ȹ��ߤ�ͭ���ˤ��ޤ���\fBUseSHA\fR�ϡ�\fBUseSHA1Intrinsics\fR��\fBUseSHA256Intrinsics\fR�����\fBUseSHA512Intrinsics\fR���ץ������Ȥ߹礻�ƻ��Ѥ��ޤ���
+.sp
+\fBUseSHA\fR�����\fBUseSHA*Intrinsics\fR�ե饰�ϥǥե���Ȥ�ͭ���Ǥ��ꡢSPARC T4�ʾ��Java HotSpot Server VM 64�ӥåȤǤΤߥ��ݡ��Ȥ���ޤ���
+.sp
+SHA�����Ф���\fBsun\&.security\&.provider\&.Sun\fR�ץ��Х�������Ѥ�����Τߡ����ε�ǽ��Ŭ�ѤǤ��ޤ���
+.sp
+���٤ƤΥϡ��ɥ������١�����SHA�ȹ��ߤ�̵��������ˤϡ�\fB\-XX:\-UseSHA\fR����ꤷ�Ƥ��������������SHA�ȹ��ߤΤ�̵��������ˤϡ�Ŭ�ڤ��б����륪�ץ�������Ѥ��Ƥ������������Ȥ��С�\fB\-XX:\-UseSHA256Intrinsics\fR�ʤɤǤ���
+.RE
+.PP
+\-XX:+UseSHA1Intrinsics
+.RS 4
+SHA\-1�Ź沽�ϥå���ؿ����ȹ��ߤ�ͭ���ˤ��ޤ���
+.RE
+.PP
+\-XX:+UseSHA256Intrinsics
+.RS 4
+SHA\-224�����SHA\-256�Ź沽�ϥå���ؿ����ȹ��ߤ�ͭ���ˤ��ޤ���
+.RE
+.PP
+\-XX:+UseSHA512Intrinsics
+.RS 4
+SHA\-384�����SHA\-512�Ź沽�ϥå���ؿ����ȹ��ߤ�ͭ���ˤ��ޤ���
+.RE
+.PP
+\-XX:+UseSuperWord
+.RS 4
+�����顼�黻�Υ����ѡ���ɱ黻�ؤ��Ѵ���ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ��������顼�黻�Υ����ѡ���ɱ黻�ؤ��Ѵ���̵���ˤ���ˤϡ�\fB\-XX:\-UseSuperWord\fR����ꤷ�ޤ���Java HotSpot Server VM�Τߤ������Υ��ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
+.RE
+.SS "���٤ʥ����ӥ����ӥ�ƥ������ץ����"
+.PP
+�����Υ��ץ����ϡ������ƥ�������������ܺ٤ʥǥХå���¹Ԥ��뵡ǽ���󶡤��ޤ���
+.PP
+\-XX:+ExtendedDTraceProbes
+.RS 4
+�ѥե����ޥ󥹤˱ƶ���Ϳ�����ɲä�\fBdtrace\fR�ġ��롦�ץ����֤�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ\fBdtrace\fR��ɸ��ץ����֤Τߤ�¹Ԥ��ޤ���
+.RE
+.PP
+\-XX:+HeapDumpOnOutOfMemory
+.RS 4
+\fBjava\&.lang\&.OutOfMemoryError\fR�㳰�����������줿���ˡ��ҡ��ס��ץ��ե�����(HPROF)����Ѥ��ơ����ߤΥǥ��쥯�ȥ���Υե�����ؤ�Java�ҡ��פΥ���פ�ͭ���ˤ��ޤ���\fB\-XX:HeapDumpPath\fR���ץ�������Ѥ��ơ��ҡ��ס�����ס��ե�����Υѥ������̾��������Ū������Ǥ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ\fBOutOfMemoryError\fR�㳰�����������줿���˥ҡ��פϥ���פ���ޤ���
+.RE
+.PP
+\-XX:HeapDumpPath=\fIpath\fR
+.RS 4
+\fB\-XX:+HeapDumpOnOutOfMemoryError\fR���ץ�������ꤵ��Ƥ����硢�ҡ��ס��ץ��ե�����(HPROF)���󶡤���ҡ��ס�����פ�񤭹���ѥ�����ӥե�����̾�����ꤷ�ޤ����ǥե���ȤǤϡ����Υե�����ϡ����ߤκ�ȥǥ��쥯�ȥ�˺������졢̾����\fBjava_pid\fR\fIpid\fR\fB\&.hprof\fR
+(\fIpid\fR�ϥ��顼�θ����Ȥʤä��ץ������μ��̻�)�ˤʤ�ޤ���������Ǥϡ��ǥե���ȤΥե����������Ū�����ꤹ����ˡ�򼨤��ޤ�(\fB%p\fR�ϸ��ߤΥץ������μ��̻Ҥ�ɽ���ޤ�)��
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:HeapDumpPath=/var/log/java/java_heapdump\&.hprof
+\fB\-XX:HeapDumpPath=\&./java_pid%p\&.hprof\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+������Ǥϡ��ҡ��ס�����ס��ե������\fB/var/log/java/java_heapdump\&.hprof\fR�����ꤹ����ˡ�򼨤��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB\-XX:HeapDumpPath=/var/log/java/java_heapdump\&.hprof\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1663,15 +1894,16 @@ JITコンパイルされたコードの最大コード・キャッシュ・サ�
 .PP
 \-XX:LogFile=\fIpath\fR
 .RS 4
-ログ・データが書き込まれるパスおよびファイル名を設定します。デフォルトでは、ファイルは現在の作業ディレクトリに作成され、名前は\fIhotspot\&.log\fRです。
+�������ǡ������񤭹��ޤ��ѥ�����ӥե�����̾�����ꤷ�ޤ����ǥե���ȤǤϡ��ե�����ϸ��ߤκ�ȥǥ��쥯�ȥ�˺������졢̾����\fBhotspot\&.log\fR�Ǥ���
 .sp
-次の例では、ログ・ファイルを\fI/var/log/java/hotspot\&.log\fRに設定する方法を示します。
+������Ǥϡ��������ե������\fB/var/log/java/hotspot\&.log\fR�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:LogFile=/var/log/java/hotspot\&.log
+\fB\-XX:LogFile=/var/log/java/hotspot\&.log\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1680,184 +1912,53 @@ JITコンパイルされたコードの最大コード・キャッシュ・サ�
 .PP
 \-XX:+PrintClassHistogram
 .RS 4
-\fI[Control]+[C]\fRイベント(\fISIGTERM\fR)後にクラス・インスタンスのヒストグラムの印刷を有効にします。デフォルトでは、このオプションは無効です。
+\fB[Control]+[C]\fR���٥��(\fBSIGTERM\fR)��˥��饹�����󥹥��󥹤Υҥ��ȥ����ΰ�����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .sp
-このオプションを設定すると、\fIjmap \-histo\fRコマンド、または\fIjcmd \fR\fIpid\fR\fI GC\&.class_histogram\fRコマンド(\fIpid\fRは現在のJavaプロセスの識別子)を実行する場合と同じになります。
+���Υ��ץ��������ꤹ��ȡ�\fBjmap \-histo\fR���ޥ�ɡ��ޤ���\fBjcmd \fR\fIpid\fR\fB GC\&.class_histogram\fR���ޥ��(\fIpid\fR�ϸ��ߤ�Java�ץ������μ��̻�)��¹Ԥ������Ʊ���ˤʤ�ޤ���
 .RE
 .PP
 \-XX:+PrintConcurrentLocks
 .RS 4
+������ͭ���ˤ��ޤ� ���å�(���θ�) \- ���٥�ȡ��ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .sp
-\fI[Control]+[C]\fRイベント(\fISIGTERM\fR)後に\fIjava\&.util\&.concurrent\fRロックの印刷を有効にします。デフォルトでは、このオプションは無効です。
+\fB[Control]+[C]\fR���٥��(\fBSIGTERM\fR)���\fBjava\&.util\&.concurrent\fR���å��ΰ�����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .sp
-このオプションを設定すると、\fIjstack \-l\fRコマンド、または\fIjcmd \fR\fIpid\fR\fI Thread\&.print \-l\fRコマンド(\fIpid\fRは現在のJavaプロセスの識別子)を実行する場合と同じになります。
+���Υ��ץ��������ꤹ��ȡ�\fBjstack \-l\fR���ޥ�ɡ��ޤ���\fBjcmd \fR\fIpid\fR\fB Thread\&.print \-l\fR���ޥ��(\fIpid\fR�ϸ��ߤ�Java�ץ������μ��̻�)��¹Ԥ������Ʊ���ˤʤ�ޤ���
 .RE
 .PP
 \-XX:+UnlockDiagnosticVMOptions
 .RS 4
-JVMの診断を目的としたオプションをアンロックします。デフォルトでは、このオプションは無効であり、診断オプションは使用できません。
+JVM�ο��Ǥ���Ū�Ȥ������ץ����򥢥���å����ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ���ǥ��ץ����ϻ��ѤǤ��ޤ���
 .RE
-.SS "高度なガベージ・コレクション・オプション"
+.SS "���٤ʥ��١��������쥯����󡦥��ץ����"
 .PP
-これらのオプションは、ガベージ・コレクション(GC)がJava HotSpot VMによってどのように実行されるかを制御します。
+�����Υ��ץ����ϡ����١��������쥯�����(GC)��Java HotSpot VM�ˤ�äƤɤΤ褦�˼¹Ԥ���뤫�����椷�ޤ���
 .PP
 \-XX:+AggressiveHeap
 .RS 4
-Javaヒープの最適化を有効にします。これにより、コンピュータの構成(RAMおよびCPU)に基づいて、様々なパラメータが、メモリー割当てが集中した長時間実行ジョブに最適になるように設定されます。デフォルトでは、このオプションは無効であり、ヒープは最適化されません。
-.RE
-.PP
-\-XX:AllocatePrefetchDistance=\fIsize\fR
-.RS 4
-オブジェクト割当てのプリフェッチ距離のサイズ(バイト単位)を設定します。新規オブジェクトの値で書き込もうとするメモリーは、最後に割り当てられたオブジェクトのアドレスから、この距離までプリフェッチされます。各Javaスレッドには独自の割当てポイントがあります。
-.sp
-負の値は、プリフェッチ距離はプラットフォームに基づいて選択されることを示します。正の値は、プリフェッチするバイト数です。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は\-1に設定されています。
-.sp
-次の例では、プリフェッチ距離を1024バイトに設定する方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\-XX:AllocatePrefetchDistance=1024
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\-XX:AllocatePrefetchLines=\fIlines\fR
-.RS 4
-コンパイルされたコードで生成されるプリフェッチ命令を使用して、最後のオブジェクト割当て後にロードするキャッシュ行数を設定します。最後に割り当てられたオブジェクトがインスタンスの場合は、デフォルト値は1になり、配列の場合は3になります。
-.sp
-次の例では、ロードされるキャッシュ行数を5に設定する方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\-XX:AllocatePrefetchLines=5
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\-XX:AllocatePrefetchStyle=\fIstyle\fR
-.RS 4
-プリフェッチ命令に生成されるコード・スタイルを設定します。\fIstyle\fR引数は、0から3までの整数です。
-.PP
-0
-.RS 4
-プリフェッチ命令を生成しません。
-.RE
-.PP
-1
-.RS 4
-各割当ての後で、プリフェッチ命令を実行します。これはデフォルトのパラメータです。
-.RE
-.PP
-2
-.RS 4
-スレッド・ローカルな割当てブロック(TLAB)ウォーターマーク・ポインタを使用して、プリフェッチ命令を実行するタイミングを決定します。
-.RE
-.PP
-3
-.RS 4
-割当てプリフェッチ用のSPARCでBIS命令を使用します。
-.RE
+Java�ҡ��פκ�Ŭ����ͭ���ˤ��ޤ�������ˤ�ꡢ����ԥ塼���ι���(RAM�����CPU)�˴�Ť��ơ��͡��ʥѥ�᡼���������꡼�����Ƥ����椷��Ĺ���ּ¹ԥ���֤˺�Ŭ�ˤʤ�褦�����ꤵ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��ꡢ�ҡ��פϺ�Ŭ������ޤ���
 .RE
 .PP
 \-XX:+AlwaysPreTouch
 .RS 4
-JVMの初期化中にJavaヒープ上のすべてのページのタッチを有効にします。これにより、\fImain()\fRメソッドの入力前に、すべてのページがメモリーに取得されます。このオプションは、物理メモリーにマップされたすべての仮想メモリーを含む長時間実行のシステムをシミュレートするテストで使用できます。デフォルトでは、このオプションは無効になっており、JVMヒープ領域がいっぱいになると、すべてのページがコミットされます。
+JVM�ν�������Java�ҡ��׾�Τ��٤ƤΥڡ����Υ��å���ͭ���ˤ��ޤ�������ˤ�ꡢ\fBmain()\fR�᥽�åɤ��������ˡ����٤ƤΥڡ��������꡼�˼�������ޤ������Υ��ץ����ϡ�ʪ�����꡼�˥ޥåפ��줿���٤Ƥβ��ۥ��꡼��ޤ�Ĺ���ּ¹ԤΥ����ƥ�򥷥ߥ�졼�Ȥ���ƥ��Ȥǻ��ѤǤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢJVM�ҡ����ΰ褬���äѤ��ˤʤ�ȡ����٤ƤΥڡ��������ߥåȤ���ޤ���
 .RE
 .PP
 \-XX:+CMSClassUnloadingEnabled
 .RS 4
-並行マークスイープ(CMS)ガベージ・コレクタを使用する場合に、アンロードするクラスを有効にします。このオプションはデフォルトで有効になっています。CMSガベージ・コレクタのクラス・アンロードを無効にするには、\fI\-XX:\-CMSClassUnloadingEnabled\fRを指定します。
+�¹ԥޡ�����������(CMS)���١��������쥯������Ѥ�����ˡ���������ɤ��륯�饹��ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ���CMS���١��������쥯���Υ��饹����������ɤ�̵���ˤ���ˤϡ�\fB\-XX:\-CMSClassUnloadingEnabled\fR����ꤷ�ޤ���
 .RE
 .PP
 \-XX:CMSExpAvgFactor=\fIpercent\fR
 .RS 4
-並行コレクション統計の指数平均を計算する際に、現在のサンプルを重み付けするために使用される時間の割合(0から100まで)を設定します。デフォルトでは、指数平均係数は25%に設定されています。次の例では、係数を15%に設定する方法を示します。
+�¹ԥ��쥯��������פλؿ�ʿ�Ѥ�׻�����ݤˡ����ߤΥ���ץ��Ť��դ����뤿��˻��Ѥ������֤γ��(0����100�ޤ�)�����ꤷ�ޤ����ǥե���ȤǤϡ��ؿ�ʿ�ѷ�����25%�����ꤵ��Ƥ��ޤ���������Ǥϡ�������15%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CMSExpAvgFactor=15
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\-XX:CMSIncrementalDutyCycle=\fIpercent\fR
-.RS 4
-並行コレクタの実行が許可されているマイナー・コレクション間の時間の割合(0から100まで)を設定します。\fI\-XX:+CMSIncrementalPacing\fRが有効な場合、デューティ・サイクルが自動的に設定され、このオプションは初期値のみを設定します。
-.sp
-デフォルトでは、デューティ・サイクルは10%に設定されています。次の例では、デューティ・サイクルを20%に設定する方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\-XX:CMSIncrementalDutyCycle=20
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\-XX:CMSIncrementalDutyCycleMin=\fIpercent\fR
-.RS 4
-\fI\-XX:+CMSIncrementalPacing\fRが有効な場合にデューティ・サイクルの下限であるマイナー・コレクション間の時間の割合(0から100まで)を設定します。デフォルトでは、デューティ・サイクルの下限は0%に設定されています。次の例では、下限を10%に設定する方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\-XX:CMSIncrementalDutyCycleMin=10
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\-XX:+CMSIncrementalMode
-.RS 4
-CMSコレクタの増分モードを有効にします。このオプションはデフォルトで無効になっており、2つ以下のGCスレッドを持つ構成にのみ有効にする必要があります。\fICMSIncremental\fRで始まるすべてのオプションは、このオプションが有効な場合のみ、適用されます。
-.RE
-.PP
-\-XX:CMSIncrementalOffset=\fIpercent\fR
-.RS 4
-増分モードのデューティ・サイクルをマイナー・コレクション間で期間内に右に移動する時間の割合(0から100まで)を設定します。デフォルトでは、オフセットは0%に設定されています。次の例では、デューティ・サイクルのオフセットを25%に設定する方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\-XX:CMSIncrementalOffset=25
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\-XX:+CMSIncrementalPacing
-.RS 4
-JVMの実行中に収集された統計に基づいて、増分モードのデューティ・サイクルの自動調整を有効にします。このオプションはデフォルトで有効になっています。増分モード・デューティ・サイクルの自動調整を無効にするには、\fI\-XX:\-CMSIncrementalPacing\fRを指定します。
-.RE
-.PP
-\-XX:CMSIncrementalSafetyFactor=\fIpercent\fR
-.RS 4
-デューティ・サイクルを計算する際に、保守を追加するために使用される時間の割合(0から100まで)を設定します。デフォルトでは、安全係数は10%に設定されています。次の例では、安全係数を5%に設定する方法を示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-\-XX:CMSIncrementalSafetyFactor=5
+\fB\-XX:CMSExpAvgFactor=15\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1866,15 +1967,16 @@ JVMの実行中に収集された統計に基づいて、増分モードのデ�
 .PP
 \-XX:CMSInitiatingOccupancyFraction=\fIpercent\fR
 .RS 4
-CMS収集サイクルを開始する古い世代の占有率(0から100まで)を設定します。デフォルト値は\-1に設定されています。負の値(デフォルトを含む)は、\fI\-XX:CMSTriggerRatio\fRが開始占有率の値を定義するために使用されることを意味します。
+CMS������������򳫻Ϥ���Ť��������ͭΨ(0����100�ޤ�)�����ꤷ�ޤ����ǥե�����ͤ�\-1�����ꤵ��Ƥ��ޤ��������(�ǥե���Ȥ�ޤ�)�ϡ�\fB\-XX:CMSTriggerRatio\fR��������ͭΨ���ͤ�������뤿��˻��Ѥ���뤳�Ȥ��̣���ޤ���
 .sp
-次の例では、占有率を20%に設定する方法を示します。
+������Ǥϡ���ͭΨ��20%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CMSInitiatingOccupancyFraction=20
+\fB\-XX:CMSInitiatingOccupancyFraction=20\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1883,20 +1985,21 @@ CMS収集サイクルを開始する古い世代の占有率(0から100まで)�
 .PP
 \-XX:+CMSScavengeBeforeRemark
 .RS 4
-CMSコメント・ステップの前にスカベンジの試行を有効にします。デフォルトでは、このオプションは無効です。
+CMS�����ȡ����ƥåפ����˥����٥󥸤λ�Ԥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:CMSTriggerRatio=\fIpercent\fR
 .RS 4
-CMS収集サイクルが開始する前に割り当てられる\fI\-XX:MinHeapFreeRatio\fRによって指定される値の割合(0から100まで)を設定します。デフォルト値は80%に設定されています。
+CMS�����������뤬���Ϥ������˳�����Ƥ���\fB\-XX:MinHeapFreeRatio\fR�ˤ�äƻ��ꤵ����ͤγ��(0����100�ޤ�)�����ꤷ�ޤ����ǥե�����ͤ�80%�����ꤵ��Ƥ��ޤ���
 .sp
-次の例では、占有率を75%に設定する方法を示します。
+������Ǥϡ���ͭΨ��75%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:CMSTriggerRatio=75
+\fB\-XX:CMSTriggerRatio=75\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1905,15 +2008,16 @@ CMS収集サイクルが開始する前に割り当てられる\fI\-XX:MinHeapFr
 .PP
 \-XX:ConcGCThreads=\fIthreads\fR
 .RS 4
-並行GCに使用されるスレッドの数を設定します。デフォルト値は、JVMに使用できるCPUの数によって異なります。
+�¹�GC�˻��Ѥ���륹��åɤο������ꤷ�ޤ����ǥե�����ͤϡ�JVM�˻��ѤǤ���CPU�ο��ˤ�äưۤʤ�ޤ���
 .sp
-たとえば、並行GCのスレッド数を2に設定するには、次のオプションを指定します。
+���Ȥ��С��¹�GC�Υ���åɿ���2�����ꤹ��ˤϡ����Υ��ץ�������ꤷ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:ConcGCThreads=2
+\fB\-XX:ConcGCThreads=2\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1922,30 +2026,31 @@ CMS収集サイクルが開始する前に割り当てられる\fI\-XX:MinHeapFr
 .PP
 \-XX:+DisableExplicitGC
 .RS 4
-\fISystem\&.gc()\fRの呼出しの処理を無効にするオプションを有効にします。このオプションはデフォルトで無効になっており、これは\fISystem\&.gc()\fRへの呼出しが処理されることを意味します。\fISystem\&.gc()\fRの呼出しの処理が無効になっている場合、JVMは必要に応じてGCを実行します。
+\fBSystem\&.gc()\fR�θƽФ��ν�����̵���ˤ��륪�ץ�����ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�̵���ˤʤäƤ��ꡢ�����\fBSystem\&.gc()\fR�ؤθƽФ�����������뤳�Ȥ��̣���ޤ���\fBSystem\&.gc()\fR�θƽФ��ν�����̵���ˤʤäƤ����硢JVM��ɬ�פ˱�����GC��¹Ԥ��ޤ���
 .RE
 .PP
 \-XX:+ExplicitGCInvokesConcurrent
 .RS 4
-\fISystem\&.gc()\fRリクエストを使用することによって、並行GCの呼出しを有効にします。このオプションはデフォルトで無効になっており、\fI\-XX:+UseConcMarkSweepGC\fRオプションとともに使用する場合のみ、有効にすることができます。
+\fBSystem\&.gc()\fR�ꥯ�����Ȥ���Ѥ��뤳�Ȥˤ�äơ��¹�GC�θƽФ���ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�̵���ˤʤäƤ��ꡢ\fB\-XX:+UseConcMarkSweepGC\fR���ץ����ȤȤ�˻��Ѥ�����Τߡ�ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ���
 .RE
 .PP
 \-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses
 .RS 4
-\fISystem\&.gc()\fRリクエストを使用し、並行GCサイクル中にクラスをアンロードすることによって、並行GCの呼出しを有効にします。このオプションはデフォルトで無効になっており、\fI\-XX:+UseConcMarkSweepGC\fRオプションとともに使用する場合のみ、有効にすることができます。
+\fBSystem\&.gc()\fR�ꥯ�����Ȥ���Ѥ����¹�GC����������˥��饹�򥢥�����ɤ��뤳�Ȥˤ�äơ��¹�GC�θƽФ���ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�̵���ˤʤäƤ��ꡢ\fB\-XX:+UseConcMarkSweepGC\fR���ץ����ȤȤ�˻��Ѥ�����Τߡ�ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ���
 .RE
 .PP
 \-XX:G1HeapRegionSize=\fIsize\fR
 .RS 4
-ガベージファースト(G1)コレクタを使用する際にJavaヒープを細分化するリージョンのサイズを設定します。値には、1MBから32MBまでを指定できます。デフォルトのリージョン・サイズは、ヒープ・サイズに基づいて人間工学的に決定されます。
+���١����ե�������(G1)���쥯������Ѥ���ݤ�Java�ҡ��פ��ʬ������꡼�����Υ����������ꤷ�ޤ����ͤˤϡ�1MB����32MB�ޤǤ����Ǥ��ޤ����ǥե���ȤΥ꡼����󡦥������ϡ��ҡ��ס��������˴�Ť��ƿʹֹ���Ū�˷��ꤵ��ޤ���
 .sp
-次の例では、細分化されたサイズを16MBに設定する方法を示します。
+������Ǥϡ���ʬ�����줿��������16MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:G1HeapRegionSize=16m
+\fB\-XX:G1HeapRegionSize=16m\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1954,20 +2059,21 @@ CMS収集サイクルが開始する前に割り当てられる\fI\-XX:MinHeapFr
 .PP
 \-XX:+G1PrintHeapRegions
 .RS 4
-割り当てられたリージョンおよびG1コレクタによって再要求されたものに関する情報の印刷を有効にします。デフォルトでは、このオプションは無効です。
+������Ƥ�줿�꡼����󤪤��G1���쥯���ˤ�äƺ��׵ᤵ�줿��Τ˴ؤ������ΰ�����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:G1ReservePercent=\fIpercent\fR
 .RS 4
-G1コレクタの昇格が失敗する可能性を減らすためのfalseの上限として予約されたヒープの割合(0から50まで)を設定します。デフォルトでは、このオプションは10%に設定されています。
+G1���쥯���ξ��ʤ����Ԥ����ǽ���򸺤餹�����false�ξ�¤Ȥ���ͽ�󤵤줿�ҡ��פγ��(0����50�ޤ�)�����ꤷ�ޤ����ǥե���ȤǤϡ����Υ��ץ�����10%�����ꤵ��Ƥ��ޤ���
 .sp
-次の例では、予約されたヒープを20%に設定する方法を示します。
+������Ǥϡ�ͽ�󤵤줿�ҡ��פ�20%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:G1ReservePercent=20
+\fB\-XX:G1ReservePercent=20\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1976,50 +2082,53 @@ G1コレクタの昇格が失敗する可能性を減らすためのfalseの上�
 .PP
 \-XX:InitialHeapSize=\fIsize\fR
 .RS 4
-メモリー割当てプールの初期サイズ(バイト単位)を設定します。指定する値は、0、または1MBより大きい1024の倍数のいずれかにする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は、実行時にシステム構成に基づいて選択されます。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gc\-ergonomics\&.htmlにあるガベージ・コレクタ・エルゴノミックを参照してください。
+���꡼�����ƥס���ν��������(�Х���ñ��)�����ꤷ�ޤ������ꤹ���ͤϡ�0���ޤ���1MB����礭��1024���ܿ��Τ����줫�ˤ���ɬ�פ�����ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե�����ͤϡ��¹Ի��˥����ƥ๽���˴�Ť������򤵤�ޤ���http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gctuning/index\&.html��\fIJava SE HotSpot���ۥޥ���Υ��١��������쥯����󡦥��塼�˥󥰡�������\fR�Υ��르�Υߥ����˴ؤ����򻲾Ȥ��Ƥ���������
 .sp
-次の例では、割り当てられたメモリーのサイズを様々な単位を使用して6MBに設定する方法を示します。
+������Ǥϡ�������Ƥ�줿���꡼�Υ��������͡���ñ�̤���Ѥ���6MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:InitialHeapSize=6291456
-\-XX:InitialHeapSize=6144k
-\-XX:InitialHeapSize=6m
+\fB\-XX:InitialHeapSize=6291456\fR
+\fB\-XX:InitialHeapSize=6144k\fR
+\fB\-XX:InitialHeapSize=6m\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-このオプションを0に設定した場合、初期サイズは、古い世代と若い世代に割り当てられたサイズの合計として設定されます。若い世代のヒープのサイズは、\fI\-XX:NewSize\fRオプションを使用して設定できます。
+���Υ��ץ�����0�����ꤷ����硢����������ϡ��Ť�����ȼ㤤����˳�����Ƥ�줿�������ι�פȤ������ꤵ��ޤ����㤤����Υҡ��פΥ������ϡ�\fB\-XX:NewSize\fR���ץ�������Ѥ�������Ǥ��ޤ���
 .RE
 .PP
 \-XX:InitialSurvivorRatio=\fIratio\fR
 .RS 4
-スループット・ガベージ・コレクタが使用するサバイバ領域の初期比を設定します(\fI\-XX:+UseParallelGC\fRおよび/または\fI\-XX:+UseParallelOldGC\fRオプションによって有効になります)。\fI\-XX:+UseParallelGC\fRオプションおよび\fI\-XX:+UseParallelOldGC\fRオプションを使用することによって、スループット・ガベージ・コレクタで適応サイズ指定をデフォルトで有効にします。初期値から始めて、アプリケーションの動作に従って、サバイバ領域がサイズ変更されます。(\fI\-XX:\-UseAdaptiveSizePolicy\fRオプションを使用して)適応サイズ指定を無効にした場合、\fI\-XX:SurvivorRatio\fRオプションを使用して、アプリケーションの実行全体のサバイバ領域のサイズを設定する必要があります。
+���롼�ץåȡ����١��������쥯�������Ѥ��륵�Х����ΰ�ν��������ꤷ�ޤ�(\fB\-XX:+UseParallelGC\fR�����/�ޤ���\fB\-XX:+UseParallelOldGC\fR���ץ����ˤ�ä�ͭ���ˤʤ�ޤ�)��\fB\-XX:+UseParallelGC\fR���ץ���󤪤��\fB\-XX:+UseParallelOldGC\fR���ץ�������Ѥ��뤳�Ȥˤ�äơ����롼�ץåȡ����١��������쥯����Ŭ�������������ǥե���Ȥ�ͭ���ˤ��ޤ�������ͤ���Ϥ�ơ����ץꥱ��������ư��˽��äơ����Х����ΰ褬�������ѹ�����ޤ���(\fB\-XX:\-UseAdaptiveSizePolicy\fR���ץ�������Ѥ���)Ŭ�������������̵���ˤ�����硢\fB\-XX:SurvivorRatio\fR���ץ�������Ѥ��ơ����ץꥱ�������μ¹����ΤΥ��Х����ΰ�Υ����������ꤹ��ɬ�פ�����ޤ���
 .sp
-次の式を使用して、若い世代のサイズ(Y)およびサバイバ領域の初期比(R)に基づいて、サバイバ領域の初期サイズ(S)を計算できます。
+���μ�����Ѥ��ơ��㤤����Υ�����(Y)����ӥ��Х����ΰ�ν����(R)�˴�Ť��ơ����Х����ΰ�ν��������(S)��׻��Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-S=Y/(R+2)
+\fBS=Y/(R+2)\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-等式内の2は、2つのサバイバ領域を示します。サバイバ領域の初期比に指定する値を大きくすると、サバイバ領域の初期サイズは小さくなります。
+�������2�ϡ�2�ĤΥ��Х����ΰ�򼨤��ޤ������Х����ΰ�ν����˻��ꤹ���ͤ��礭������ȡ����Х����ΰ�ν���������Ͼ������ʤ�ޤ���
 .sp
-デフォルトでは、サバイバ領域の初期比は8に設定されています。若い世代の領域サイズのデフォルト値(2MB)を使用した場合、サバイバ領域の初期サイズは0\&.2MBになります。
+�ǥե���ȤǤϡ����Х����ΰ�ν�����8�����ꤵ��Ƥ��ޤ����㤤������ΰ襵�����Υǥե������(2MB)����Ѥ�����硢���Х����ΰ�ν����������0\&.2MB�ˤʤ�ޤ���
 .sp
-次の例では、サバイバ領域の初期比を4に設定する方法を示します。
+������Ǥϡ����Х����ΰ�ν�����4�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:InitialSurvivorRatio=4
+\fB\-XX:InitialSurvivorRatio=4\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2028,15 +2137,16 @@ S=Y/(R+2)
 .PP
 \-XX:InitiatingHeapOccupancyPercent=\fIpercent\fR
 .RS 4
-並行GCサイクルを開始するヒープ占有率(0から100まで)を設定します。これは、1つの世代のみ(たとえばG1ガベージ・コレクタなど)ではなく、ヒープ全体の占有に基づいて並行GCサイクルをトリガーするガベージ・コレクタによって使用されます。
+�¹�GC��������򳫻Ϥ���ҡ�����ͭΨ(0����100�ޤ�)�����ꤷ�ޤ�������ϡ�1�Ĥ�����Τ�(���Ȥ���G1���١��������쥯���ʤ�)�ǤϤʤ����ҡ������Τ���ͭ�˴�Ť����¹�GC���������ȥꥬ�����륬�١��������쥯���ˤ�äƻ��Ѥ���ޤ���
 .sp
-デフォルトでは、開始値は45%に設定されています。値0は、GCサイクルが停止しないことを意味します。次の例では、開始ヒープ占有率を75%に設定する方法を示します。
+�ǥե���ȤǤϡ������ͤ�45%�����ꤵ��Ƥ��ޤ�����0�ϡ�GC�������뤬��ߤ��ʤ����Ȥ��̣���ޤ���������Ǥϡ����ϥҡ�����ͭΨ��75%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:InitiatingHeapOccupancyPercent=75
+\fB\-XX:InitiatingHeapOccupancyPercent=75\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2045,15 +2155,16 @@ S=Y/(R+2)
 .PP
 \-XX:MaxGCPauseMillis=\fItime\fR
 .RS 4
-最大GC休止時間(ミリ秒単位)のターゲットを設定します。これはソフト・ゴールのため、JVMは実現のために最善の努力をします。デフォルトでは、休止時間の最大値はありません。
+����GC�ٻ߻���(�ߥ���ñ��)�Υ������åȤ����ꤷ�ޤ�������ϥ��եȡ�������Τ��ᡢJVM�ϼ¸��Τ���˺��������Ϥ򤷤ޤ����ǥե���ȤǤϡ��ٻ߻��֤κ����ͤϤ���ޤ���
 .sp
-次の例では、最大ターゲット休止時間を500ミリ秒に設定する方法を示します。
+������Ǥϡ����祿�����åȵٻ߻��֤�500�ߥ��ä����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxGCPauseMillis=500
+\fB\-XX:MaxGCPauseMillis=500\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2062,37 +2173,39 @@ S=Y/(R+2)
 .PP
 \-XX:MaxHeapSize=\fIsize\fR
 .RS 4
-メモリー割当てプールの最大サイズ(バイト単位)を設定します。指定する値は、2MBより大きい1024の倍数にする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は、実行時にシステム構成に基づいて選択されます。サーバー・デプロイメントでは、\fI\-XX:InitialHeapSize\fRおよび\fI\-XX:MaxHeapSize\fRは通常同じ値に設定されます。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gc\-ergonomics\&.htmlにあるガベージ・コレクタ・エルゴノミックを参照してください。
+���꡼�����ƥס���κ��祵����(�Х���ñ��)�����ꤷ�ޤ������ꤹ���ͤϡ�2MB����礭��1024���ܿ��ˤ���ɬ�פ�����ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ����ǥե�����ͤϡ��¹Ի��˥����ƥ๽���˴�Ť������򤵤�ޤ��������С����ǥץ������ȤǤϡ�\fB\-XX:InitialHeapSize\fR�����\fB\-XX:MaxHeapSize\fR���̾�Ʊ���ͤ����ꤵ��ޤ���http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gctuning/index\&.html��\fIJava SE HotSpot���ۥޥ���Υ��١��������쥯����󡦥��塼�˥󥰡�������\fR�Υ��르�Υߥ����˴ؤ����򻲾Ȥ��Ƥ���������
 .sp
-次の例では、割り当てられたメモリーの許可される最大サイズを様々な単位を使用して80MBに設定する方法を示します。
+������Ǥϡ�������Ƥ�줿���꡼�ε��Ĥ������祵�������͡���ñ�̤���Ѥ���80MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxHeapSize=83886080
-\-XX:MaxHeapSize=81920k
-\-XX:MaxHeapSize=80m
+\fB\-XX:MaxHeapSize=83886080\fR
+\fB\-XX:MaxHeapSize=81920k\fR
+\fB\-XX:MaxHeapSize=80m\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-Oracle Solaris 7およびOracle Solaris 8 SPARCプラットフォームの場合のこの値の上限は、およそ4,000MBからオーバーヘッドの量を引いたものです。Oracle Solaris 2\&.6およびx86プラットフォームの場合の上限は、およそ2,000MBからオーバーヘッドの量を引いたものです。Linuxプラットフォームの場合の上限は、およそ2,000MBからオーバーヘッドの量を引いたものです。
+Oracle Solaris 7�����Oracle Solaris 8 SPARC�ץ�åȥե�����ξ��Τ����ͤξ�¤ϡ����褽4,000MB���饪���С��إåɤ��̤��������ΤǤ���Oracle Solaris 2\&.6�����x86�ץ�åȥե�����ξ��ξ�¤ϡ����褽2,000MB���饪���С��إåɤ��̤��������ΤǤ���Linux�ץ�åȥե�����ξ��ξ�¤ϡ����褽2,000MB���饪���С��إåɤ��̤��������ΤǤ���
 .sp
-\fI\-XX:MaxHeapSize\fRオプションは\fI\-Xmx\fRと同等です。
+\fB\-XX:MaxHeapSize\fR���ץ�����\fB\-Xmx\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-XX:MaxHeapFreeRatio=\fIpercent\fR
 .RS 4
-GCイベント後の空きヒープ領域の許可されている最大の割合(0から100まで)を設定します。空きヒープ領域がこの値を超えて拡大した場合、そのヒープは縮小します。デフォルトでは、この値は70%に設定されています。
+GC���٥�ȸ�ζ����ҡ����ΰ�ε��Ĥ���Ƥ������γ��(0����100�ޤ�)�����ꤷ�ޤ��������ҡ����ΰ褬�����ͤ�Ķ���Ƴ��礷����硢���Υҡ��פϽ̾����ޤ����ǥե���ȤǤϡ������ͤ�70%�����ꤵ��Ƥ��ޤ���
 .sp
-次の例では、空きヒープの最大比率を75%に設定する方法を示します。
+������Ǥϡ������ҡ��פκ�����Ψ��75%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxHeapFreeRatio=75
+\fB\-XX:MaxHeapFreeRatio=75\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2101,15 +2214,16 @@ GCイベント後の空きヒープ領域の許可されている最大の割合
 .PP
 \-XX:MaxMetaspaceSize=\fIsize\fR
 .RS 4
-クラス・メタデータに割り当てることができるネイティブ・メモリーの最大量を設定します。デフォルトでは、このサイズは制限されていません。アプリケーションのメタデータの量は、アプリケーション自体、他の実行中アプリケーション、およびシステムで使用可能なメモリーの量によって異なります。
+���饹���᥿�ǡ����˳�����Ƥ뤳�Ȥ��Ǥ���ͥ��ƥ��֡����꡼�κ����̤����ꤷ�ޤ����ǥե���ȤǤϡ����Υ����������¤���Ƥ��ޤ��󡣥��ץꥱ�������Υ᥿�ǡ������̤ϡ����ץꥱ��������Ρ�¾�μ¹��楢�ץꥱ������󡢤���ӥ����ƥ�ǻ��Ѳ�ǽ�ʥ��꡼���̤ˤ�äưۤʤ�ޤ���
 .sp
-次の例では、クラス・メタデータの最大サイズを256MBに設定する方法を示します。
+������Ǥϡ����饹���᥿�ǡ����κ��祵������256MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxMetaspaceSize=256m
+\fB\-XX:MaxMetaspaceSize=256m\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2118,20 +2232,21 @@ GCイベント後の空きヒープ領域の許可されている最大の割合
 .PP
 \-XX:MaxNewSize=\fIsize\fR
 .RS 4
-若い世代(ナーサリ)のヒープの最大サイズ(バイト単位)を設定します。デフォルト値は人間工学的に設定されます。
+�㤤����(�ʡ�����)�Υҡ��פκ��祵����(�Х���ñ��)�����ꤷ�ޤ����ǥե�����ͤϿʹֹ���Ū�����ꤵ��ޤ���
 .RE
 .PP
 \-XX:MaxTenuringThreshold=\fIthreshold\fR
 .RS 4
-適応GCサイズ指定で使用する最大殿堂入りしきい値を設定します。最大値は15です。デフォルト値は、パラレル(スループット)コレクタの場合は15、CMSコレクタの場合は6です。
+Ŭ��GC����������ǻ��Ѥ��������Ʋ���ꤷ�����ͤ����ꤷ�ޤ��������ͤ�15�Ǥ����ǥե�����ͤϡ��ѥ���(���롼�ץå�)���쥯���ξ���15��CMS���쥯���ξ���6�Ǥ���
 .sp
-次の例では、最大殿堂入りしきい値を10に設定する方法を示します。
+������Ǥϡ�������Ʋ���ꤷ�����ͤ�10�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MaxTenuringThreshold=10
+\fB\-XX:MaxTenuringThreshold=10\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2140,20 +2255,21 @@ GCイベント後の空きヒープ領域の許可されている最大の割合
 .PP
 \-XX:MetaspaceSize=\fIsize\fR
 .RS 4
-最初に超えたときにガベージ・コレクションをトリガーする、割り当てられたクラス・メタデータ領域のサイズを設定します。このガベージ・コレクションのしきい値は、使用されるメタデータの量によって増加または減少します。デフォルトのサイズはプラットフォームによって異なります。
+�ǽ��Ķ�����Ȥ��˥��١��������쥯������ȥꥬ�����롢������Ƥ�줿���饹���᥿�ǡ����ΰ�Υ����������ꤷ�ޤ������Υ��١��������쥯�����Τ������ͤϡ����Ѥ����᥿�ǡ������̤ˤ�ä����äޤ��ϸ������ޤ����ǥե���ȤΥ������ϥץ�åȥե�����ˤ�äưۤʤ�ޤ���
 .RE
 .PP
 \-XX:MinHeapFreeRatio=\fIpercent\fR
 .RS 4
-GCイベント後の空きヒープ領域の許可されている最小の割合(0から100まで)を設定します。空きヒープ領域がこの値を下回った場合、そのヒープは拡大します。デフォルトでは、この値は40%に設定されています。
+GC���٥�ȸ�ζ����ҡ����ΰ�ε��Ĥ���Ƥ���Ǿ��γ��(0����100�ޤ�)�����ꤷ�ޤ��������ҡ����ΰ褬�����ͤ򲼲�ä���硢���Υҡ��פϳ��礷�ޤ����ǥե���ȤǤϡ������ͤ�40%�����ꤵ��Ƥ��ޤ���
 .sp
-次の例では、空きヒープの最小比率を25%に設定する方法を示します。
+������Ǥϡ������ҡ��פκǾ���Ψ��25%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:MinHeapFreeRatio=25
+\fB\-XX:MinHeapFreeRatio=25\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2162,13 +2278,14 @@ GCイベント後の空きヒープ領域の許可されている最小の割合
 .PP
 \-XX:NewRatio=\fIratio\fR
 .RS 4
-若い世代のサイズと古い世代のサイズとの比率を設定します。デフォルトでは、このオプションは2に設定されています。次の例では、若い/古いの比率を1に設定する方法を示します。
+�㤤����Υ������ȸŤ�����Υ������Ȥ���Ψ�����ꤷ�ޤ����ǥե���ȤǤϡ����Υ��ץ�����2�����ꤵ��Ƥ��ޤ���������Ǥϡ��㤤/�Ť�����Ψ��1�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:NewRatio=1
+\fB\-XX:NewRatio=1\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2177,37 +2294,39 @@ GCイベント後の空きヒープ領域の許可されている最小の割合
 .PP
 \-XX:NewSize=\fIsize\fR
 .RS 4
-若い世代(ナーサリ)のヒープの初期サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。
+�㤤����(�ʡ�����)�Υҡ��פν��������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ���
 .sp
-ヒープの若い世代リージョンは新しいオブジェクトに使用されます。GCは、他のリージョンよりこのリージョンで、より頻繁に実行されます。若い世代のサイズが小さすぎる場合、多数のマイナーGCが実行されます。サイズが大きすぎる場合、フルGCのみが実行されますが、完了までに時間がかかることがあります。若い世代のサイズは、全体のヒープ・サイズの半分から4分の1の間にしておくことをお薦めします。
+�ҡ��פμ㤤����꡼�����Ͽ��������֥������Ȥ˻��Ѥ���ޤ���GC�ϡ�¾�Υ꡼������ꤳ�Υ꡼�����ǡ�������ˤ˼¹Ԥ���ޤ����㤤����Υ������������������硢¿���Υޥ��ʡ�GC���¹Ԥ���ޤ������������礭�������硢�ե�GC�Τߤ��¹Ԥ���ޤ�������λ�ޤǤ˻��֤������뤳�Ȥ�����ޤ����㤤����Υ������ϡ����ΤΥҡ��ס���������Ⱦʬ����4ʬ��1�δ֤ˤ��Ƥ������Ȥ����ᤷ�ޤ���
 .sp
-次の例では、若い世代の初期サイズを様々な単位を使用して256MBに設定する方法を示します。
+������Ǥϡ��㤤����ν�����������͡���ñ�̤���Ѥ���256MB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:NewSize=256m
-\-XX:NewSize=262144k
-\-XX:NewSize=268435456
+\fB\-XX:NewSize=256m\fR
+\fB\-XX:NewSize=262144k\fR
+\fB\-XX:NewSize=268435456\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fI\-XX:NewSize\fRオプションは\fI\-Xmn\fRと同等です。
+\fB\-XX:NewSize\fR���ץ�����\fB\-Xmn\fR��Ʊ���Ǥ���
 .RE
 .PP
 \-XX:ParallelGCThreads=\fIthreads\fR
 .RS 4
-若い世代と古い世代でパラレル・ガベージ・コレクションに使用するスレッドの数を設定します。デフォルト値は、JVMに使用できるCPUの数によって異なります。
+�㤤����ȸŤ�����ǥѥ��롦���١��������쥯�����˻��Ѥ��륹��åɤο������ꤷ�ޤ����ǥե�����ͤϡ�JVM�˻��ѤǤ���CPU�ο��ˤ�äưۤʤ�ޤ���
 .sp
-たとえば、パラレルGCのスレッド数を2に設定するには、次のオプションを指定します。
+���Ȥ��С��ѥ���GC�Υ���åɿ���2�����ꤹ��ˤϡ����Υ��ץ�������ꤷ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:ParallelGCThreads=2
+\fB\-XX:ParallelGCThreads=2\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2216,104 +2335,117 @@ GCイベント後の空きヒープ領域の許可されている最小の割合
 .PP
 \-XX:+ParallelRefProcEnabled
 .RS 4
-パラレル参照処理を有効にします。デフォルトでは、このオプションは無効です。
+�ѥ��뻲�Ƚ�����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:+PrintAdaptiveSizePolicy
 .RS 4
-適応世代サイズ指定に関する情報の出力を有効にします。デフォルトでは、このオプションは無効です。
+Ŭ�����奵��������˴ؤ������ν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:+PrintGC
 .RS 4
-GCごとのメッセージの出力を有効にします。デフォルトでは、このオプションは無効です。
+GC���ȤΥ�å������ν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:+PrintGCApplicationConcurrentTime
 .RS 4
-最後の休止(たとえばGC休止など)以降に経過した時間の出力を有効にします。デフォルトでは、このオプションは無効です。
+�Ǹ�εٻ�(���Ȥ���GC�ٻߤʤ�)�ʹߤ˷вᤷ�����֤ν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:+PrintGCApplicationStoppedTime
 .RS 4
-休止(たとえばGC休止など)が継続した時間の出力を有効にします。デフォルトでは、このオプションは無効です。
+�ٻ�(���Ȥ���GC�ٻߤʤ�)����³�������֤ν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
-\-XX+PrintGCDateStamp
+\-XX:+PrintGCDateStamps
 .RS 4
-GCごとの日付スタンプの出力を有効にします。デフォルトでは、このオプションは無効です。
+GC���Ȥ����ե�����פν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:+PrintGCDetails
 .RS 4
-GCごとの詳細メッセージの出力を有効にします。デフォルトでは、このオプションは無効です。
+GC���Ȥξܺ٥�å������ν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:+PrintGCTaskTimeStamps
 .RS 4
-個々のGCワーカー・スレッド・タスクごとのタイムスタンプの出力を有効にします。デフォルトでは、このオプションは無効です。
+�ġ���GC�����������åɡ����������ȤΥ����ॹ����פν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
-\-XX:+PrintGCTimeStamp
+\-XX:+PrintGCTimeStamps
 .RS 4
-GCごとのタイムスタンプの出力を有効にします。デフォルトでは、このオプションは無効です。
+GC���ȤΥ����ॹ����פν��Ϥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
+.RE
+.PP
+\-XX:+PrintStringDeduplicationStatistics
+.RS 4
+�ܺ٤ʽ�ʣ�������פ�������ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���\fB\-XX:+UseStringDeduplication\fR���ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-XX:+PrintTenuringDistribution
 .RS 4
-殿堂入り期間情報の出力を有効にします。次に、出力の例を示します。
+��Ʋ������־���ν��Ϥ�ͭ���ˤ��ޤ������ˡ����Ϥ���򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-Desired survivor size 48286924 bytes, new threshold 10 (max 10)
-\- age 1: 28992024 bytes, 28992024 total
-\- age 2: 1366864 bytes, 30358888 total
-\- age 3: 1425912 bytes, 31784800 total
-\&.\&.\&.
+\fBDesired survivor size 48286924 bytes, new threshold 10 (max 10)\fR
+\fB\- age 1: 28992024 bytes, 28992024 total\fR
+\fB\- age 2: 1366864 bytes, 30358888 total\fR
+\fB\- age 3: 1425912 bytes, 31784800 total\fR
+\fB\&.\&.\&.\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-期間1オブジェクトは、最も若いサバイバです(前のスカベンジの後に作成され、最新のスカベンジで存続し、Eden領域からサバイバ領域に移動しました)。期間2オブジェクトは、2つのスカベンジで存続します(2番目のスカベンジ中に、あるサバイバ領域から次の領域にコピーされました)。このように続きます。
+����1���֥������Ȥϡ��Ǥ�㤤���Х��ФǤ�(���Υ����٥󥸤θ�˺������졢�ǿ��Υ����٥󥸤�¸³����Eden�ΰ褫�饵�Х����ΰ�˰�ư���ޤ���)������2���֥������Ȥϡ�2�ĤΥ����٥󥸤�¸³���ޤ�(2���ܤΥ����٥���ˡ����륵�Х����ΰ褫�鼡���ΰ�˥��ԡ�����ޤ���)�����Τ褦��³���ޤ���
 .sp
-前述の例では、28,992,024バイトが1つのスカベンジで存続し、Eden領域からサバイバ領域にコピーされました。1,366,864バイトは期間2オブジェクトなどにより占有されています。各行の3番目の値は、期間n以下のオブジェクトの累積サイズです。
+���Ҥ���Ǥϡ�28,992,024�Х��Ȥ�1�ĤΥ����٥󥸤�¸³����Eden�ΰ褫�饵�Х����ΰ�˥��ԡ�����ޤ�����1,366,864�Х��Ȥϴ���2���֥������Ȥʤɤˤ����ͭ����Ƥ��ޤ����ƹԤ�3���ܤ��ͤϡ�����n�ʲ��Υ��֥������Ȥ����ѥ������Ǥ���
 .sp
-デフォルトでは、このオプションは無効です。
+�ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���
 .RE
 .PP
 \-XX:+ScavengeBeforeFullGC
 .RS 4
-それぞれのフルGCの前に若い世代のGCを有効にします。このオプションはデフォルトで有効になっています。フルGCの前に若い世代のスカベンジを行うと、古い世代領域から若い世代領域へのアクセスが可能なオブジェクトの数を減らすことができるため、これを無効に\fIしない\fRことをお薦めします。各フルGCの前に若い世代のGCを無効にするには、\fI\-XX:\-ScavengeBeforeFullGC\fRを指定します。
+���줾��Υե�GC�����˼㤤�����GC��ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ����ե�GC�����˼㤤����Υ����٥󥸤�Ԥ��ȡ��Ť������ΰ褫��㤤�����ΰ�ؤΥ�����������ǽ�ʥ��֥������Ȥο��򸺤餹���Ȥ��Ǥ��뤿�ᡢ�����̵����\fI���ʤ�\fR���Ȥ����ᤷ�ޤ����ƥե�GC�����˼㤤�����GC��̵���ˤ���ˤϡ�\fB\-XX:\-ScavengeBeforeFullGC\fR����ꤷ�ޤ���
 .RE
 .PP
 \-XX:SoftRefLRUPolicyMSPerMB=\fItime\fR
 .RS 4
-ソフト・アクセスが可能なオブジェクトが最後に参照されてからヒープ上でアクティブなままになっている時間(ミリ秒単位)を設定します。デフォルト値は、ヒープ内の空きメガバイト当たりで1秒の存続期間です。\fI\-XX:SoftRefLRUPolicyMSPerMB\fRオプションは、現在のヒープ・サイズ(Java HotSpot Client VM用)または最大可能ヒープ・サイズ(Java HotSpot Server VM用)の1メガバイト当たりのミリ秒を表す整数値を受け入れます。この違いは、Client VMは、ヒープを大きくするのではなく、ソフト参照をフラッシュする傾向があるのに対し、Server VMは、ソフト参照をフラッシュするのではなく、ヒープを大きくする傾向があることを意味します。後者の場合、\fI\-Xmx\fRオプションの値は、ソフト参照がどのくらい迅速にガベージ・コレクションされるかに重要な影響を及ぼします。
+���եȡ�������������ǽ�ʥ��֥������Ȥ��Ǹ�˻��Ȥ���Ƥ���ҡ��׾�ǥ����ƥ��֤ʤޤޤˤʤäƤ������(�ߥ���ñ��)�����ꤷ�ޤ����ǥե�����ͤϡ��ҡ�����ζ����ᥬ�Х����������1�ä�¸³���֤Ǥ���\fB\-XX:SoftRefLRUPolicyMSPerMB\fR���ץ����ϡ����ߤΥҡ��ס�������(Java HotSpot Client VM��)�ޤ��Ϻ����ǽ�ҡ��ס�������(Java HotSpot Server VM��)��1�ᥬ�Х���������Υߥ��ä�ɽ�������ͤ��������ޤ������ΰ㤤�ϡ�Client VM�ϡ��ҡ��פ��礭������ΤǤϤʤ������եȻ��Ȥ�ե�å��夹�뷹��������Τ��Ф���Server VM�ϡ����եȻ��Ȥ�ե�å��夹��ΤǤϤʤ����ҡ��פ��礭�����뷹�������뤳�Ȥ��̣���ޤ�����Ԥξ�硢\fB\-Xmx\fR���ץ������ͤϡ����եȻ��Ȥ��ɤΤ��餤��®�˥��١��������쥯����󤵤�뤫�˽��פʱƶ���ڤܤ��ޤ���
 .sp
-次の例では、値を2\&.5秒に設定する方法を示します。
+������Ǥϡ��ͤ�2\&.5�ä����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:SoftRefLRUPolicyMSPerMB=2500
+\fB\-XX:SoftRefLRUPolicyMSPerMB=2500\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
+\-XX:StringDeduplicationAgeThreshold=\fIthreshold\fR
+.RS 4
+���ꤷ�����֤���ã���ĤĤ���\fBString\fR���֥������Ȥϡ���ʣ�����θ���Ȥߤʤ���ޤ������֥������Ȥδ��֤ϡ����֥������Ȥ����١��������쥯������¸³���������¬���ͤǤ�������ϡ���Ʋ����ȸƤФ����⤢��ޤ���\fB\-XX:+PrintTenuringDistribution\fR���ץ����򻲾Ȥ��Ƥ������������δ��֤���ã�������˸Ť��ҡ��ס��꡼�����˾��ʤ��줿\fBString\fR���֥������Ȥϡ���˽�ʣ�����θ���Ȥߤʤ���ޤ������Υ��ץ����Υǥե�����ͤ�\fB3\fR�Ǥ���\fB\-XX:+UseStringDeduplication\fR���ץ����򻲾Ȥ��Ƥ���������
+.RE
+.PP
 \-XX:SurvivorRatio=\fIratio\fR
 .RS 4
-Eden領域のサイズとサバイバ領域のサイズとの比率を設定します。デフォルトでは、このオプションは8に設定されています。次の例では、Eden/サバイバ領域の比率を4に設定する方法を示します。
+Eden�ΰ�Υ������ȥ��Х����ΰ�Υ������Ȥ���Ψ�����ꤷ�ޤ����ǥե���ȤǤϡ����Υ��ץ�����8�����ꤵ��Ƥ��ޤ���������Ǥϡ�Eden/���Х����ΰ����Ψ��4�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:SurvivorRatio=4
+\fB\-XX:SurvivorRatio=4\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2322,15 +2454,16 @@ Eden領域のサイズとサバイバ領域のサイズとの比率を設定し�
 .PP
 \-XX:TargetSurvivorRatio=\fIpercent\fR
 .RS 4
-若いガベージ・コレクションの後に使用されるサバイバ領域の目的の割合(0から100まで)を設定します。デフォルトでは、このオプションは50%に設定されています。
+�㤤���١��������쥯�����θ�˻��Ѥ���륵�Х����ΰ����Ū�γ��(0����100�ޤ�)�����ꤷ�ޤ����ǥե���ȤǤϡ����Υ��ץ�����50%�����ꤵ��Ƥ��ޤ���
 .sp
-次の例では、ターゲットのサバイバ領域の比率を30%に設定する方法を示します。
+������Ǥϡ��������åȤΥ��Х����ΰ����Ψ��30%�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:TargetSurvivorRatio=30
+\fB\-XX:TargetSurvivorRatio=30\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2339,15 +2472,16 @@ Eden領域のサイズとサバイバ領域のサイズとの比率を設定し�
 .PP
 \-XX:TLABSize=\fIsize\fR
 .RS 4
-スレッド・ローカルな割当てバッファ(TLAB)の初期サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。このオプションが0に設定されている場合、JVMでは初期サイズが自動的に選択されます。
+����åɡ���������ʳ����ƥХåե�(TLAB)�ν��������(�Х���ñ��)�����ꤷ�ޤ��������Х��Ȥ򼨤�����ʸ��\fBk\fR�ޤ���\fBK\fR���ᥬ�Х��Ȥ򼨤�����ʸ��\fBm\fR�ޤ���\fBM\fR�������Х��Ȥ򼨤�����ʸ��\fBg\fR�ޤ���\fBG\fR���ɲä��ޤ������Υ��ץ����0�����ꤵ��Ƥ����硢JVM�ǤϽ������������ưŪ�����򤵤�ޤ���
 .sp
-次の例では、TLABの初期サイズを512KBに設定する方法を示します。
+������Ǥϡ�TLAB�ν����������512KB�����ꤹ����ˡ�򼨤��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-XX:TLABSize=512k
+\fB\-XX:TLABSize=512k\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2356,131 +2490,287 @@ Eden領域のサイズとサバイバ領域のサイズとの比率を設定し�
 .PP
 \-XX:+UseAdaptiveSizePolicy
 .RS 4
-適応世代サイズ指定の使用を有効にします。このオプションはデフォルトで有効になっています。適応世代サイズ指定を無効にするには、\fI\-XX:\-UseAdaptiveSizePolicy\fRを指定し、メモリー割当てプールのサイズを明示的に設定します(\fI\-XX:SurvivorRatio\fRオプションを参考にしてください)。
+Ŭ�����奵��������λ��Ѥ�ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ���Ŭ�����奵���������̵���ˤ���ˤϡ�\fB\-XX:\-UseAdaptiveSizePolicy\fR����ꤷ�����꡼�����ƥס���Υ�����������Ū�����ꤷ�ޤ�(\fB\-XX:SurvivorRatio\fR���ץ����򻲹ͤˤ��Ƥ�������)��
 .RE
 .PP
 \-XX:+UseCMSInitiatingOccupancyOnly
 .RS 4
-CMSコレクタの開始のための唯一の基準としての占有値の使用を有効にします。デフォルトでは、このオプションは無効になっており、他の基準が使用されます。
+CMS���쥯���γ��ϤΤ����ͣ��δ��Ȥ��Ƥ���ͭ�ͤλ��Ѥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ¾�δ�ब���Ѥ���ޤ���
 .RE
 .PP
 \-XX:+UseConcMarkSweepGC
 .RS 4
-古い世代へのCMSガベージ・コレクタの使用を有効にします。アプリケーションの待機時間の要件を、スループット(\fI\-XX:+UseParallelGC\fR)ガベージ・コレクタによって満たすことができない場合、CMSガベージ・コレクタを使用することをお薦めします。G1ガベージ・コレクタ(\fI\-XX:+UseG1GC\fR)は別の代替となります。
+�Ť�����ؤ�CMS���١��������쥯���λ��Ѥ�ͭ���ˤ��ޤ������ץꥱ���������Ե����֤��׷�򡢥��롼�ץå�(\fB\-XX:+UseParallelGC\fR)���١��������쥯���ˤ�ä����������Ȥ��Ǥ��ʤ���硢CMS���١��������쥯������Ѥ��뤳�Ȥ����ᤷ�ޤ���G1���١��������쥯��(\fB\-XX:+UseG1GC\fR)���̤����ؤȤʤ�ޤ���
 .sp
-デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。このオプションを有効にすると、\fI\-XX:+UseParNewGC\fRオプションが自動的に設定されます。
+�ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ���쥯���ϡ��ޥ���ι��������JVM�Υ����פ˴�Ť��ơ���ưŪ�����򤵤�ޤ������Υ��ץ����ͭ���ʾ�硢\fB\-XX:+UseParNewGC\fR���ץ����ϼ�ưŪ�����ꤵ�졢̵�������ʤ�ɬ�פ�����ޤ�������ͳ��JDK 8�Ǥ�\fB\-XX:+UseConcMarkSweepGC \-XX:\-UseParNewGC\fR���ץ������ȹ礻����侩�Ǥ��뤿��Ǥ���
 .RE
 .PP
 \-XX:+UseG1GC
 .RS 4
-G1ガベージ・コレクタの使用を有効にします。これはサーバー形式のガベージ・コレクタで、大量のRAMを持つマルチプロセッサ・マシンを対象としています。高い確率でGC休止時間の目標を達成し、同時に適切なスループットも維持します。G1コレクタは、GC待機時間の限定された要件(安定した予測可能な0\&.5秒未満の休止時間)を持つ、大きいヒープ(約6GB以上のサイズ)が必要なアプリケーションに推奨されます。
+���١����ե�������(G1)�����١��������쥯���λ��Ѥ�ͭ���ˤ��ޤ�������ϥ����С������Υ��١��������쥯���ǡ����̤�RAM����ĥޥ���ץ����å����ޥ�����оݤȤ��Ƥ��ޤ����⤤��Ψ��GC�ٻ߻��֤���ɸ��ã������Ʊ����Ŭ�ڤʥ��롼�ץåȤ�ݻ����ޤ���G1���쥯���ϡ�GC�Ե����֤θ��ꤵ�줿�׷�(���ꤷ��ͽ¬��ǽ��0\&.5��̤���εٻ߻���)����ġ��礭���ҡ���(��6GB�ʾ�Υ�����)��ɬ�פʥ��ץꥱ�������˿侩����ޤ���
 .sp
-デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。
+�ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ���쥯���ϡ��ޥ���ι��������JVM�Υ����פ˴�Ť��ơ���ưŪ�����򤵤�ޤ���
 .RE
 .PP
 \-XX:+UseGCOverheadLimit
 .RS 4
-\fIOutOfMemoryError\fR例外がスローされるまでに、GCでJVMによって要した時間の割合を制限するポリシーの使用を有効にします。デフォルトでは、このオプションは有効になっており、ガベージ・コレクションに合計時間の98%より多く費やされ、ヒープのリカバリが2%未満である場合、パラレルGCによって\fIOutOfMemoryError\fRがスローされます。ヒープが小さい場合、この機能は、アプリケーションが長期間ほとんどまたはまったく進捗なく実行している状態を回避するために使用できます。このオプションを無効にするには、\fI\-XX:\-UseGCOverheadLimit\fRを指定します。
+\fBOutOfMemoryError\fR�㳰�������������ޤǤˡ�GC��JVM�ˤ�ä��פ������֤γ������¤���ݥꥷ���λ��Ѥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����ͭ���ˤʤäƤ��ꡢ���١��������쥯�����˹�׻��֤�98%���¿����䤵�졢�ҡ��פΥꥫ�Х꤬2%̤���Ǥ����硢�ѥ���GC�ˤ�ä�\fBOutOfMemoryError\fR������������ޤ����ҡ��פ���������硢���ε�ǽ�ϡ����ץꥱ�������Ĺ���֤ۤȤ�ɤޤ��Ϥޤä�����Ľ�ʤ��¹Ԥ��Ƥ�����֤���򤹤뤿��˻��ѤǤ��ޤ������Υ��ץ�����̵���ˤ���ˤϡ�\fB\-XX:\-UseGCOverheadLimit\fR����ꤷ�ޤ���
 .RE
 .PP
 \-XX:+UseNUMA
 .RS 4
-アプリケーションで短い待機時間のメモリーの使用を増加させることで、不均一なメモリー・アーキテクチャ(NUMA)を使用したマシン上のアプリケーションのパフォーマンス最適化を有効にします。デフォルトでは、このオプションは無効になっており、NUMAに対する最適化は行われません。このオプションは、パラレル・ガベージ・コレクタ(\fI\-XX:+UseParallelGC\fR)が使用されている場合のみ使用可能です。
+���ץꥱ��������û���Ե����֤Υ��꡼�λ��Ѥ����ä����뤳�Ȥǡ��ԶѰ�ʥ��꡼���������ƥ�����(NUMA)����Ѥ����ޥ����Υ��ץꥱ�������Υѥե����ޥ󥹺�Ŭ����ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢNUMA���Ф����Ŭ���ϹԤ��ޤ��󡣤��Υ��ץ����ϡ��ѥ��롦���١��������쥯��(\fB\-XX:+UseParallelGC\fR)�����Ѥ���Ƥ�����Τ߻��Ѳ�ǽ�Ǥ���
 .RE
 .PP
 \-XX:+UseParallelGC
 .RS 4
-複数のプロセッサを利用してアプリケーションのパフォーマンスを向上させる、パラレル・スカベンジ・ガベージ・コレクタ(スループット・コレクタとも呼ばれる)の使用を有効にします。
+ʣ���Υץ����å������Ѥ��ƥ��ץꥱ�������Υѥե����ޥ󥹤���夵���롢�ѥ��롦�����٥󥸡����١��������쥯��(���롼�ץåȡ����쥯���Ȥ�ƤФ��)�λ��Ѥ�ͭ���ˤ��ޤ���
 .sp
-デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。これを有効にした場合、明示的に無効にしないかぎり、\fI\-XX:+UseParallelOldGC\fRオプションが自動的に有効になります。
+�ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ���쥯���ϡ��ޥ���ι��������JVM�Υ����פ˴�Ť��ơ���ưŪ�����򤵤�ޤ��������ͭ���ˤ�����硢����Ū��̵���ˤ��ʤ������ꡢ\fB\-XX:+UseParallelOldGC\fR���ץ���󤬼�ưŪ��ͭ���ˤʤ�ޤ���
 .RE
 .PP
 \-XX:+UseParallelOldGC
 .RS 4
-フルGCへのパラレル・ガベージ・コレクタの使用を有効にします。デフォルトでは、このオプションは無効です。これを有効にすると、\fI\-XX:+UseParallelGC\fRオプションが自動的に有効になります。
+�ե�GC�ؤΥѥ��롦���١��������쥯���λ��Ѥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ��������ͭ���ˤ���ȡ�\fB\-XX:+UseParallelGC\fR���ץ���󤬼�ưŪ��ͭ���ˤʤ�ޤ���
 .RE
 .PP
 \-XX:+UseParNewGC
 .RS 4
-若い世代でのコレクションへのパラレル・スレッドの使用を有効にします。デフォルトでは、このオプションは無効です。\fI\-XX:+UseConcMarkSweepGC\fRオプションを設定すると、これは自動的に有効になります。
+�㤤����ǤΥ��쥯�����ؤΥѥ��롦����åɤλ��Ѥ�ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ���\fB\-XX:+UseConcMarkSweepGC\fR���ץ��������ꤹ��ȡ�����ϼ�ưŪ��ͭ���ˤʤ�ޤ���JDK 8�Ǥϡ�\fB\-XX:+UseConcMarkSweepGC\fR���ץ�������ꤻ����\fB\-XX:+UseParNewGC\fR���ץ�������Ѥ��뤳�Ȥ���侩�Ǥ���
 .RE
 .PP
 \-XX:+UseSerialGC
 .RS 4
-シリアル・ガベージ・コレクタの使用を有効にします。ガベージ・コレクションから特別な機能を必要としない、小規模で単純なアプリケーションの場合には、これは一般に最適な選択です。デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。
+���ꥢ�롦���١��������쥯���λ��Ѥ�ͭ���ˤ��ޤ������١��������쥯����󤫤����̤ʵ�ǽ��ɬ�פȤ��ʤ��������Ϥ�ñ��ʥ��ץꥱ�������ξ��ˤϡ�����ϰ��̤˺�Ŭ������Ǥ����ǥե���ȤǤϡ����Υ��ץ�����̵���ˤʤäƤ��ꡢ���쥯���ϡ��ޥ���ι��������JVM�Υ����פ˴�Ť��ơ���ưŪ�����򤵤�ޤ���
+.RE
+.PP
+\-XX:+UseSHM
+.RS 4
+Linux�Ǥϡ�JVM�Ƕ�ͭ���꡼����Ѥ��ƥ顼�����ڡ���������Ǥ���褦�ˤ��ޤ���
+.sp
+�ܺ٤ϡ�"�顼�����ڡ���"�򻲾Ȥ��Ƥ���������
+.RE
+.PP
+\-XX:+UseStringDeduplication
+.RS 4
+ʸ����ν�ʣ������ͭ�������ޤ����ǥե���ȤǤϡ����Υ��ץ�����̵���Ǥ������Υ��ץ�������Ѥ���ˤϡ����١����ե�������(G1)�����١��������쥯����ͭ���ˤ���ɬ�פ�����ޤ���\fB\-XX:+UseG1GC\fR���ץ����򻲾Ȥ��Ƥ���������
+.sp
+¿����\fBString\fR���֥������Ȥ�Ʊ���Ǥ���Ȥ������Ȥ��顢\fIString deduplication\fR�ˤ�ꡢJava�ҡ��׾��\fBString\fR���֥������ȤΥ��꡼���եåȥץ��Ȥ��︺����ޤ�����\fBString\fR���֥������Ȥ��ȼ���ʸ�������ݥ���Ȥ���ΤǤϤʤ���Ʊ���\fBString\fR���֥������Ȥ�Ʊ��ʸ�������ݥ���Ȥ���ͭ�Ǥ��ޤ���
 .RE
 .PP
 \-XX:+UseTLAB
 .RS 4
-若い世代の領域でのスレッド・ローカルな割当てブロック(TLAB)の使用を有効にします。このオプションはデフォルトで有効になっています。TLABの使用を無効にするには、\fI\-XX:\-UseTLAB\fRを指定します。
+�㤤������ΰ�ǤΥ���åɡ���������ʳ����ƥ֥��å�(TLAB)�λ��Ѥ�ͭ���ˤ��ޤ������Υ��ץ����ϥǥե���Ȥ�ͭ���ˤʤäƤ��ޤ���TLAB�λ��Ѥ�̵���ˤ���ˤϡ�\fB\-XX:\-UseTLAB\fR����ꤷ�ޤ���
 .RE
-.SS "非推奨で削除されたオプション"
+.SS "��侩�Ǻ�����줿���ץ����"
 .PP
-これらのオプションは、以前のリリースには含まれていましたが、以降は不要とみなされています。
+�����Υ��ץ����ϡ������Υ�꡼���ˤϴޤޤ�Ƥ��ޤ��������ʹߤ����פȤߤʤ���Ƥ��ޤ���
+.PP
+\-Xincgc
+.RS 4
+���󥯥��󥿥롦���١��������쥯������ͭ���ˤ��ޤ������Υ��ץ�����JDK 8�Ǥ���侩�ǡ�����������ΤϤ���ޤ���
+.RE
 .PP
 \-Xrun\fIlibname\fR
 .RS 4
-指定したデバッグ/プロファイルのライブラリをロードします。このオプションは、\fI\-agentlib\fRオプションに取って代わられました。
+���ꤷ���ǥХå�/�ץ��ե�����󥰤Υ饤�֥�������ɤ��ޤ������Υ��ץ����ϡ�\fB\-agentlib\fR���ץ����˼�ä������ޤ�����
+.RE
+.PP
+\-XX:CMSIncrementalDutyCycle=\fIpercent\fR
+.RS 4
+�¹ԥ��쥯���μ¹Ԥ����Ĥ���Ƥ���ޥ��ʡ������쥯�����֤λ��֤γ��(0����100�ޤ�)�����ꤷ�ޤ���\fB\-XX:+CMSIncrementalMode\fR���ץ�������侩������ơ����Υ��ץ�����JDK 8�Ǥ���侩�Ȥʤꡢ����������ΤϤ���ޤ���
+.RE
+.PP
+\-XX:CMSIncrementalDutyCycleMin=\fIpercent\fR
+.RS 4
+\fB\-XX:+CMSIncrementalPacing\fR��ͭ���ʾ��˥ǥ塼�ƥ�����������β��¤Ǥ���ޥ��ʡ������쥯�����֤λ��֤γ��(0����100�ޤ�)�����ꤷ�ޤ���\fB\-XX:+CMSIncrementalMode\fR���ץ�������侩������ơ����Υ��ץ�����JDK 8�Ǥ���侩�Ȥʤꡢ����������ΤϤ���ޤ���
+.RE
+.PP
+\-XX:+CMSIncrementalMode
+.RS 4
+CMS���쥯������ʬ�⡼�ɤ�ͭ���ˤ��ޤ���\fBCMSIncremental\fR�ǻϤޤ뤽��¾�Υ��ץ����ȤȤ�ˡ����Υ��ץ�����JDK 8�Ǥ���侩�Ȥʤꡢ����������ΤϤ���ޤ���
+.RE
+.PP
+\-XX:CMSIncrementalOffset=\fIpercent\fR
+.RS 4
+��ʬ�⡼�ɤΥǥ塼�ƥ������������ޥ��ʡ������쥯�����֤Ǵ�����˱��˰�ư������֤γ��(0����100�ޤ�)�����ꤷ�ޤ���\fB\-XX:+CMSIncrementalMode\fR���ץ�������侩������ơ����Υ��ץ�����JDK 8�Ǥ���侩�Ȥʤꡢ����������ΤϤ���ޤ���
+.RE
+.PP
+\-XX:+CMSIncrementalPacing
+.RS 4
+JVM�μ¹���˼������줿���פ˴�Ť��ơ���ʬ�⡼�ɤΥǥ塼�ƥ�����������μ�ưĴ����ͭ���ˤ��ޤ���\fB\-XX:+CMSIncrementalMode\fR���ץ�������侩������ơ����Υ��ץ�����JDK 8�Ǥ���侩�Ȥʤꡢ����������ΤϤ���ޤ���
+.RE
+.PP
+\-XX:CMSIncrementalSafetyFactor=\fIpercent\fR
+.RS 4
+�ǥ塼�ƥ������������׻�����ݤˡ��ݼ���ɲä��뤿��˻��Ѥ������֤γ��(0����100�ޤ�)�����ꤷ�ޤ���\fB\-XX:+CMSIncrementalMode\fR���ץ�������侩������ơ����Υ��ץ�����JDK 8�Ǥ���侩�Ȥʤꡢ����������ΤϤ���ޤ���
 .RE
 .PP
 \-XX:CMSInitiatingPermOccupancyFraction=\fIpercent\fR
 .RS 4
-GCを開始する永久世代占有率(0から100まで)を設定します。このオプションはJDK 8では非推奨で、それに代わるものはありません。
+GC�򳫻Ϥ���ʵ�������ͭΨ(0����100�ޤ�)�����ꤷ�ޤ������Υ��ץ�����JDK 8�Ǥ���侩�ǡ�����������ΤϤ���ޤ���
 .RE
 .PP
 \-XX:MaxPermSize=\fIsize\fR
 .RS 4
-永久世代領域の最大サイズ(バイト単位)を設定します。このオプションは、JDK 8で非推奨になり、\fI\-XX:MaxMetaspaceSize\fRオプションに取って代わられました。
+�ʵ������ΰ�κ��祵����(�Х���ñ��)�����ꤷ�ޤ������Υ��ץ����ϡ�JDK 8����侩�ˤʤꡢ\fB\-XX:MaxMetaspaceSize\fR���ץ����˼�ä������ޤ�����
 .RE
 .PP
 \-XX:PermSize=\fIsize\fR
 .RS 4
-超えた場合にはガベージ・コレクションをトリガーする、永久世代に割り当てられた領域(バイト単位)を設定します。このオプションは、JDK 8で非推奨になり、\fI\-XX:MetaspaceSize\fRオプションに取って代わられました。
+Ķ�������ˤϥ��١��������쥯������ȥꥬ�����롢�ʵ�����˳�����Ƥ�줿�ΰ�(�Х���ñ��)�����ꤷ�ޤ������Υ��ץ����ϡ�JDK 8����侩�ˤʤꡢ\fB\-XX:MetaspaceSize\fR���ץ����˼�ä������ޤ�����
 .RE
 .PP
 \-XX:+UseSplitVerifier
 .RS 4
-検証プロセスの分割を有効にします。デフォルトでは、このオプションは以前のリリースでは有効になっており、検証は、タイプ参照(コンパイラによって実行)と、タイプ・チェック(JVMランタイムによって実行)の2つのフェーズに分割されていました。このオプションはJDK 8で非推奨となり、検証はデフォルトで分割され、無効にする方法はありません。
+���ڥץ�������ʬ���ͭ���ˤ��ޤ����ǥե���ȤǤϡ����Υ��ץ����ϰ����Υ�꡼���Ǥ�ͭ���ˤʤäƤ��ꡢ���ڤϡ������׻���(����ѥ���ˤ�äƼ¹�)�ȡ������ס������å�(JVM��󥿥���ˤ�äƼ¹�)��2�ĤΥե�������ʬ�䤵��Ƥ��ޤ��������Υ��ץ�����JDK 8����侩�Ȥʤꡢ���ڤϥǥե���Ȥ�ʬ�䤵�졢̵���ˤ�����ˡ�Ϥ���ޤ���
 .RE
 .PP
 \-XX:+UseStringCache
 .RS 4
-一般に割り当てられた文字列のキャッシングを有効にします。このオプションはJDK 8から削除され、それに代わるものはありません。
+���̤˳�����Ƥ�줿ʸ����Υ���å��󥰤�ͭ���ˤ��ޤ������Υ��ץ�����JDK 8���������졢����������ΤϤ���ޤ���
 .RE
-.SH "パフォーマンス・チューニングの例"
+.SH "�ѥե����ޥ󥹡����塼�˥󥰤���"
 .PP
-次の例では、スループットの最適化またはレスポンス時間の短縮化のいずれかを行うための、試験的なチューニング・フラグの使用方法を示します。
+������Ǥϡ����롼�ץåȤκ�Ŭ���ޤ��ϥ쥹�ݥ󥹻��֤�û�̲��Τ����줫��Ԥ�����Ρ��Ū�ʥ��塼�˥󥰡��ե饰�λ�����ˡ�򼨤��ޤ���
 .PP
-\fBExample 1\fR, スループットを向上するためのチューニング
+\fB�� 1 \fR���롼�ץåȤ���夹�뤿��Υ��塼�˥�
 .RS 4
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-java \-d64 \-server \-XX:+AggressiveOpts \-XX:+UseLargePages \-Xmn10g  \-Xms26g \-Xmx26g
+\fBjava \-d64 \-server \-XX:+AggressiveOpts \-XX:+UseLargePages \-Xmn10g  \-Xms26g \-Xmx26g\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-\fBExample 2\fR, レスポンス時間を速くするためのチューニング
+\fB�� 2 \fR�쥹�ݥ󥹻��֤�®�����뤿��Υ��塼�˥�
 .RS 4
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-java \-d64 \-XX:+UseG1GC \-Xms26g Xmx26g \-XX:MaxGCPauseMillis=500 \-XX:+PrintGCTimeStamp
+\fBjava \-d64 \-XX:+UseG1GC \-Xms26g Xmx26g \-XX:MaxGCPauseMillis=500 \-XX:+PrintGCTimeStamp\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
-.SH "終了ステータス"
+.SH "�顼�����ڡ���"
 .PP
-通常、次の終了値が起動ツールから返されるのは、起動元が不正な引数で呼び出されたか、深刻なエラーが発生したか、あるいはJVMにより例外がスローされた場合です。ただし、Javaアプリケーションは、API呼出し\fISystem\&.exit(exitValue)\fRを使用して任意の値を返すことを選択することもできます。値は次のとおりです。
+�ҥ塼�����ڡ����Ȥ�ƤФ��顼�����ڡ����ϡ�ɸ��Υ��꡼���ڡ�����������(�ץ����å�����ӥ��ڥ졼�ƥ��󥰡������ƥ�ˤ�äưۤʤ�ޤ�)���Ϥ뤫���礭�����꡼���ڡ����Ǥ����顼�����ڡ����ϡ��ץ����å���Translation\-Lookaside Buffer���Ŭ�����ޤ���
+.PP
+Translation\-Lookaside Buffer (TLB)�ϡ��Ƕ���Ѥ��줿���ۤ���ʪ���ؤΥ��ɥ쥹�Ѵ����ݻ�����ڡ����Ѵ�����å���Ǥ���TLB�ϡ����ʤ������ƥࡦ�꥽�����Ǥ����ץ����å���ʣ���Υ��꡼������������ɬ�פʾ��Τ��볬�إڡ���ɽ�����ɤ߼��ɬ�פ����뤿�ᡢTLB�ߥ�����٤��������ǽ��������ޤ����礭�����꡼���ڡ���������������Ѥ��ơ�ñ���TLB����ȥ���礭�����꡼�ϰϤ�ɽ�����Ȥ��Ǥ��ޤ���TLB��­�����ʤ��ʤꡢ���꡼���󷿤Υ��ץꥱ�������Υѥե����ޥ󥹤����夹���ǽ��������ޤ���
+.PP
+���������顼�����ڡ����Υڡ��������꡼�ϡ������ƥ�Υѥե����ޥ󥹤˰��ƶ���Ϳ�����礬����ޤ������Ȥ��С����̤Υ��꡼�����ץꥱ�������ǳ��ݤ�����硢�̾���꡼��­��¾�Υ��ץꥱ�������β��ʥڡ����󥰤�ȯ�����������ƥ����Τ��٤��ʤ��ǽ��������ޤ����ޤ���Ĺ���ֲ�Ư���Ƥ��륷���ƥ�ϡ��������Ҳ���ȯ�������ǽ��������ޤ�������ˤ�ꡢ��ʬ���礭���Υڡ��������꡼��ͽ��Ǥ��ʤ���ǽ��������ޤ������줬ȯ��������硢OS�ޤ���JVM�Τ����줫���̾�Υڡ����λ��Ѥ����ޤ���
+.SS "�顼�����ڡ����Υ��ݡ���"
+.PP
+Solaris�����Linux�ϡ��顼�����ڡ����򥵥ݡ��Ȥ��ޤ���
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBSolaris\fR
+.RS 4
+.PP
+Solaris 9�ʾ�ˤϡ�Multiple Page Size Support(MPSS)���ޤޤ�Ƥ��ޤ����ɲäι�����ɬ�פ���ޤ���http://www\&.oracle\&.com/technetwork/server\-storage/solaris10/overview/solaris9\-features\-scalability\-135663\&.html�򻲾Ȥ��Ƥ���������
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBLinux\fR
+.RS 4
+.PP
+2\&.6�����ͥ�ϡ��顼�����ڡ����򥵥ݡ��Ȥ��ޤ��������Υ٥�����ϡ�2\&.4�١����Υ�꡼���Υ����ɤ�Хå��ݡ��Ȥ��Ƥ��ޤ��������ƥब�顼�����ڡ��������꡼�򥵥ݡ��Ȥ��Ƥ��뤫�ɤ������ǧ����ˤϡ������Ԥ��Ƥ�������:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB# cat /proc/meminfo | grep Huge\fR
+\fBHugePages_Total: 0\fR
+\fBHugePages_Free: 0\fR
+\fBHugepagesize: 2048 kB\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+���Ϥ�3�Ĥ�"Huge"�ѿ���������Ƥ����硢�����ƥ�ϥ顼�����ڡ��������꡼�򥵥ݡ��Ȥ��Ƥ��ޤ�������������ɬ�פ�����ޤ������ޥ�ɤ�������Ϥ��ʤ���硢�����ƥ�ϥ顼�����ڡ����򥵥ݡ��Ȥ��Ƥ��ޤ��󡣥顼�����ڡ��������꡼����Ѥ��륷���ƥ��������ˤϡ�\fBroot\fR�Ȥ��ƥ������󤷤ơ����μ���¹Ԥ��Ƥ�������:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+���ץ����\fB\-XX:+UseSHM\fR(\fB\-XX:+UseHugeTLBFS\fR�Τ����)����Ѥ����硢\fBSHMMAX\fR�ͤ����䤷�Ƥ���������Java�ҡ��ס�����������礭������ɬ�פ�����ޤ���4GB�ʲ���ʪ��RAM����Ѥ��������ƥ�ǡ����ˤ�ꤹ�٤ƤΥ��꡼����ͭ��ǽ�ˤʤ�ޤ�:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB# echo 4294967295 > /proc/sys/kernel/shmmax\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+���ץ����\fB\-XX:+UseSHM\fR�ޤ���\fB\-XX:+UseHugeTLBFS\fR����Ѥ����硢�顼�����ڡ����ο�����ꤷ�Ƥ���������������Ǥϡ�4GB�����ƥ��3GB���顼�����ڡ�����ͽ�󤵤�ޤ�(2048KB�Υ顼�����ڡ��������������ꤹ���硢3GB = 3 * 1024MB = 3072MB = 3072 * 1024KB = 3145728KB and 3145728KB / 2048KB = 1536):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB# echo 1536 > /proc/sys/vm/nr_hugepages\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fB����\fR
+.ps -1
+.br
+.TS
+allbox tab(:);
+l.
+T{
+����
 .sp
 .RS 4
 .ie n \{\
@@ -2490,7 +2780,7 @@ java \-d64 \-XX:+UseG1GC \-Xms26g Xmx26g \-XX:MaxGCPauseMillis=500 \-XX:+PrintGC
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI0\fR: 正常終了
+�����ƥ��Ƶ�ư�������\fB/proc\fR�˴ޤޤ���ͤ��ꥻ�åȤ����Τ����դ��Ƥ������������Τ��ᡢ�����������ץ�(\fBrc\&.local\fR��\fBsysctl\&.conf\fR�ʤ�)������Ǥ��ޤ���
 .RE
 .sp
 .RS 4
@@ -2501,9 +2791,86 @@ java \-d64 \-XX:+UseG1GC \-Xms26g Xmx26g \-XX:MaxGCPauseMillis=500 \-XX:+PrintGC
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI>0\fR: エラー発生
+OS�����ͥ롦�ѥ�᡼��\fB/proc/sys/kernel/shmmax\fR�ޤ���\fB/proc/sys/vm/nr_hugepages\fR����(�ޤ��ϥ������ѹ�)�����硢Java�ץ�������Java�ҡ��װʳ����ΰ���Ф��ƥ顼�����ڡ����������Ƥ뤳�Ȥ�����ޤ��������μ�����Ѥ��ơ������ΰ���Ф��ƥ顼�����ڡ����������Ƥ뤳�Ȥ��Ǥ��ޤ�:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Java�ҡ���
 .RE
-.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Permanent����
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+�����ɡ�����å���
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+�ѥ���GC�Υޡ����󥰡��ӥåȥޥåס��ǡ�����¤
+.RE
+.sp
+���η�̡�Java�ҡ��פΥ�������\fBnr_hugepages\fR�ѥ�᡼����������ȡ��ΰ�Υ������������礭�������JVM��Permanent���太��ӥ顼�����ڡ����Υ����ɡ�����å����ΰ�γ����Ƥ˼��Ԥ����礬����ޤ���
+.RE
+T}
+.TE
+.sp 1
+.sp .5v
+.RE
+.RE
+.SH "��λ���ơ�����"
+.PP
+�̾���ν�λ�ͤ���ư�ġ��뤫���֤����Τϡ���ư���������ʰ����ǸƤӽФ��줿��������ʥ��顼��ȯ�������������뤤��JVM�ˤ���㳰�����������줿���Ǥ�����������Java���ץꥱ�������ϡ�API�ƽФ�\fBSystem\&.exit(exitValue)\fR����Ѥ���Ǥ�դ��ͤ��֤����Ȥ����򤹤뤳�Ȥ�Ǥ��ޤ����ͤϼ��ΤȤ���Ǥ���
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB0\fR: ���ｪλ
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB>0\fR: ���顼ȯ��
+.RE
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\
@@ -2547,6 +2914,17 @@ javah(1)
 .IP \(bu 2.3
 .\}
 jar(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jstat(1)
 .RE
 .br
 'pl 8.5i
