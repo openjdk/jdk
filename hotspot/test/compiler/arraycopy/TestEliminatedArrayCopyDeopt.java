@@ -25,14 +25,20 @@
  * @test
  * @bug 8130847 8156760
  * @summary Eliminated instance/array written to by an array copy variant must be correctly initialized when reallocated at a deopt
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestEliminatedArrayCopyDeopt
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks TestEliminatedArrayCopyDeopt
+ * @ignore 8136818
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestEliminatedArrayCopyDeopt
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks
+ *                   compiler.arraycopy.TestEliminatedArrayCopyDeopt
  */
 
 // Test that if an ArrayCopy node is eliminated because it doesn't
 // escape, then the correct field/array element values are captured so
 // on a deoptimization, when the object/array is reallocated, it is
 // correctly initialized
+
+package compiler.arraycopy;
 
 public class TestEliminatedArrayCopyDeopt {
 

@@ -25,31 +25,39 @@
  * @test
  * @bug 8031743
  * @summary loadI2L_immI broken for negative memory values
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*.foo* LoadWithMask2
  *
+ * @run main/othervm -Xbatch
+ *      -XX:CompileCommand=compileonly,compiler.codegen.LoadWithMask2::foo*
+ *      compiler.codegen.LoadWithMask2
  */
-public class LoadWithMask2 {
-  static int x;
-  static long foo1() {
-    return x & 0xfffffffe;
-  }
-  static long foo2() {
-    return x & 0xff000000;
-  }
-  static long foo3() {
-    return x & 0x8abcdef1;
-  }
 
-  public static void main(String[] args) {
-    x = -1;
-    long l = 0;
-    for (int i = 0; i < 100000; ++i) {
-      l = foo1() & foo2() & foo3();
+package compiler.codegen;
+
+public class LoadWithMask2 {
+    static int x;
+
+    static long foo1() {
+        return x & 0xfffffffe;
     }
-    if (l > 0) {
-      System.out.println("FAILED");
-      System.exit(97);
+
+    static long foo2() {
+        return x & 0xff000000;
     }
-    System.out.println("PASSED");
-  }
+
+    static long foo3() {
+        return x & 0x8abcdef1;
+    }
+
+    public static void main(String[] args) {
+        x = -1;
+        long l = 0;
+        for (int i = 0; i < 100000; ++i) {
+            l = foo1() & foo2() & foo3();
+        }
+        if (l > 0) {
+            System.out.println("FAILED");
+            System.exit(97);
+        }
+        System.out.println("PASSED");
+    }
 }

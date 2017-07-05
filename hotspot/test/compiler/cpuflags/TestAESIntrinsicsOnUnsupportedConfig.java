@@ -24,19 +24,24 @@
 
 /*
  * @test
- * @library /testlibrary /test/lib /compiler/codegen/7184394 /
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestAESIntrinsicsOnUnsupportedConfig TestAESMain
+ *
+ * @build compiler.cpuflags.TestAESIntrinsicsOnUnsupportedConfig
+ *        compiler.codegen.aes.TestAESMain
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *       -XX:+WhiteBoxAPI -Xbatch  TestAESIntrinsicsOnUnsupportedConfig
+ *       -XX:+WhiteBoxAPI -Xbatch
+ *       compiler.cpuflags.TestAESIntrinsicsOnUnsupportedConfig
  */
 
-import jdk.test.lib.cli.predicate.NotPredicate;
+package compiler.cpuflags;
+
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
+import jdk.test.lib.cli.predicate.NotPredicate;
 
 public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
 

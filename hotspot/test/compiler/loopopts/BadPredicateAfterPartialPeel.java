@@ -26,9 +26,15 @@
  * @test
  * @bug 8146792
  * @summary Predicate moved after partial peel may lead to broken graph
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileOnly=BadPredicateAfterPartialPeel::m -XX:CompileCommand=dontinline,BadPredicateAfterPartialPeel::not_inlined* -XX:CompileCommand=quiet BadPredicateAfterPartialPeel
- *
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
+ *      -XX:-UseOnStackReplacement
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.BadPredicateAfterPartialPeel::m
+ *      -XX:CompileCommand=dontinline,compiler.loopopts.BadPredicateAfterPartialPeel::not_inlined*
+ *      -XX:CompileCommand=quiet
+ *      compiler.loopopts.BadPredicateAfterPartialPeel
  */
+
+package compiler.loopopts;
 
 public class BadPredicateAfterPartialPeel {
 

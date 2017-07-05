@@ -32,6 +32,11 @@ import jdk.vm.ci.services.Services;
 
 final class HotSpotJVMCICompilerConfig {
 
+    /**
+     * This factory allows JVMCI initialization to succeed but raises an error if the VM asks JVMCI
+     * to perform a compilation. This allows the reflective parts of the JVMCI API to be used
+     * without requiring a compiler implementation to be available.
+     */
     private static class DummyCompilerFactory extends JVMCICompilerFactory implements JVMCICompiler {
 
         public HotSpotCompilationRequestResult compileMethod(CompilationRequest request) {
@@ -67,7 +72,6 @@ final class HotSpotJVMCICompilerConfig {
                 for (JVMCICompilerFactory f : Services.load(JVMCICompilerFactory.class)) {
                     if (f.getCompilerName().equals(compilerName)) {
                         Services.exportJVMCITo(f.getClass());
-                        f.onSelection();
                         factory = f;
                     }
                 }
@@ -75,8 +79,21 @@ final class HotSpotJVMCICompilerConfig {
                     throw new JVMCIError("JVMCI compiler '%s' not found", compilerName);
                 }
             } else {
-                factory = new DummyCompilerFactory();
+                // Auto select a single available compiler
+                for (JVMCICompilerFactory f : Services.load(JVMCICompilerFactory.class)) {
+                    if (factory == null) {
+                        factory = f;
+                    } else {
+                        // Multiple factories seen - cancel auto selection
+                        factory = null;
+                        break;
+                    }
+                }
+                if (factory == null) {
+                    factory = new DummyCompilerFactory();
+                }
             }
+            factory.onSelection();
             compilerFactory = factory;
         }
         return compilerFactory;

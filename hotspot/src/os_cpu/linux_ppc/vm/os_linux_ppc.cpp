@@ -34,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm_linux.h"
 #include "memory/allocation.inline.hpp"
-#include "mutex_linux.inline.hpp"
 #include "nativeInst_ppc.hpp"
 #include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"

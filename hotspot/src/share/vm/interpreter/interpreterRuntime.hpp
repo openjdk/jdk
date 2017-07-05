@@ -32,6 +32,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/macros.hpp"
 
 // The InterpreterRuntime is called by the interpreter for everything
 // that cannot/should not be dealt with in assembly and needs C support.
@@ -167,24 +168,7 @@ class InterpreterRuntime: AllStatic {
   static intptr_t trace_bytecode(JavaThread* thread, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2) PRODUCT_RETURN0;
 
   // Platform dependent stuff
-#ifdef TARGET_ARCH_x86
-# include "interpreterRT_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "interpreterRT_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "interpreterRT_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "interpreterRT_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "interpreterRT_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "interpreterRT_aarch64.hpp"
-#endif
+#include CPU_HEADER(interpreterRT)
 
   // optional normalization of fingerprints to reduce the number of adapters
   static uint64_t normalize_fast_native_fingerprint(uint64_t fingerprint);

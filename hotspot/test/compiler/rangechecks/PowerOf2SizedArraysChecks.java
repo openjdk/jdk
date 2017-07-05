@@ -26,11 +26,16 @@
  * @test
  * @bug 8003585
  * @summary strength reduce or eliminate range checks for power-of-two sized arrays
- * @run main/othervm -XX:CompileCommand=compileonly,PowerOf2SizedArraysChecks::test* -XX:-BackgroundCompilation PowerOf2SizedArraysChecks
  *
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.rangechecks.PowerOf2SizedArraysChecks::test*
+ *                   -XX:-BackgroundCompilation
+ *                   compiler.rangechecks.PowerOf2SizedArraysChecks
  */
 
-import java.util.function.*;
+package compiler.rangechecks;
+
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class PowerOf2SizedArraysChecks {
 

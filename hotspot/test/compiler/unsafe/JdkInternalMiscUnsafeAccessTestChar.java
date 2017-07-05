@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for char
+ *
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Diters=100   -Xint                   JdkInternalMiscUnsafeAccessTestChar
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 JdkInternalMiscUnsafeAccessTestChar
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  JdkInternalMiscUnsafeAccessTestChar
- * @run testng/othervm -Diters=20000                         JdkInternalMiscUnsafeAccessTestChar
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.JdkInternalMiscUnsafeAccessTestChar
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.JdkInternalMiscUnsafeAccessTestChar
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.JdkInternalMiscUnsafeAccessTestChar
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.JdkInternalMiscUnsafeAccessTestChar
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 

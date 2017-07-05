@@ -23,75 +23,104 @@
  */
 
 /**
-* @test
-* @bug 8135028
-* @summary Add C2 x86 Superword support for scalar sum reduction optimizations : double sqrt test
-* @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
-*
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=2 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=2 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-*
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=4 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=4 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-*
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=8 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=8 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-*
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=16 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-SuperWordReductions -XX:LoopUnrollLimit=250 -XX:LoopMaxUnroll=16 -XX:CompileThresholdScaling=0.1 SumRedSqrt_Double
-*/
+ * @test
+ * @bug 8135028
+ * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : double sqrt test
+ * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=2
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=2
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=4
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=4
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=8
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=8
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:+SuperWordReductions
+ *      -XX:LoopMaxUnroll=16
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
+ *      -XX:CompileThresholdScaling=0.1
+ *      -XX:-SuperWordReductions
+ *      -XX:LoopMaxUnroll=16
+ *      compiler.loopopts.superword.SumRedSqrt_Double
+ */
 
-public class SumRedSqrt_Double
-{
-  public static void main(String[] args) throws Exception {
-    double[] a = new double[256*1024];
-    double[] b = new double[256*1024];
-    double[] c = new double[256*1024];
-    double[] d = new double[256*1024];
-    sumReductionInit(a,b,c);
-    double total = 0;
-    double valid = 2.06157643776E14;
-    for(int j = 0; j < 2000; j++) {
-      total = sumReductionImplement(a,b,c,d,total);
-    }
-    if(total == valid) {
-      System.out.println("Success");
-    } else {
-      System.out.println("Invalid sum of elements variable in total: " + total);
-      System.out.println("Expected value = " + valid);
-      throw new Exception("Failed");
-    }
-  }
 
-  public static void sumReductionInit(
-    double[] a,
-    double[] b,
-    double[] c)
-  {
-    for(int j = 0; j < 1; j++)
-    {
-      for(int i = 0; i < a.length; i++)
-      {
-        a[i] = i * 1 + j;
-        b[i] = i * 1 - j;
-        c[i] = i + j;
-      }
-    }
-  }
+package compiler.loopopts.superword;
 
-  public static double sumReductionImplement(
-    double[] a,
-    double[] b,
-    double[] c,
-    double[] d,
-    double total)
-  {
-    for(int i = 0; i < a.length; i++)
-    {
-      d[i]= Math.sqrt(a[i] * b[i]) + Math.sqrt(a[i] * c[i]) + Math.sqrt(b[i] * c[i]);
-      total += d[i];
+public class SumRedSqrt_Double {
+    public static void main(String[] args) throws Exception {
+        double[] a = new double[256 * 1024];
+        double[] b = new double[256 * 1024];
+        double[] c = new double[256 * 1024];
+        double[] d = new double[256 * 1024];
+        sumReductionInit(a, b, c);
+        double total = 0;
+        double valid = 2.06157643776E14;
+        for (int j = 0; j < 2000; j++) {
+            total = sumReductionImplement(a, b, c, d, total);
+        }
+        if (total == valid) {
+            System.out.println("Success");
+        } else {
+            System.out.println("Invalid sum of elements variable in total: " + total);
+            System.out.println("Expected value = " + valid);
+            throw new Exception("Failed");
+        }
     }
-    return total;
-  }
+
+    public static void sumReductionInit(
+            double[] a,
+            double[] b,
+            double[] c) {
+        for (int j = 0; j < 1; j++) {
+            for (int i = 0; i < a.length; i++) {
+                a[i] = i * 1 + j;
+                b[i] = i * 1 - j;
+                c[i] = i + j;
+            }
+        }
+    }
+
+    public static double sumReductionImplement(
+            double[] a,
+            double[] b,
+            double[] c,
+            double[] d,
+            double total) {
+        for (int i = 0; i < a.length; i++) {
+            d[i] = Math.sqrt(a[i] * b[i]) + Math.sqrt(a[i] * c[i]) + Math.sqrt(b[i] * c[i]);
+            total += d[i];
+        }
+        return total;
+    }
 
 }

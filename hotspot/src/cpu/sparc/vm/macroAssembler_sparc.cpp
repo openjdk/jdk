@@ -184,72 +184,10 @@ void MacroAssembler::null_check(Register reg, int offset) {
 
 void MacroAssembler::jmp2(Register r1, Register r2, const char* file, int line ) {
   assert_not_delayed();
-  // This can only be traceable if r1 & r2 are visible after a window save
-  if (TraceJumps) {
-#ifndef PRODUCT
-    save_frame(0);
-    verify_thread();
-    ld(G2_thread, in_bytes(JavaThread::jmp_ring_index_offset()), O0);
-    add(G2_thread, in_bytes(JavaThread::jmp_ring_offset()), O1);
-    sll(O0, exact_log2(4*sizeof(intptr_t)), O2);
-    add(O2, O1, O1);
-
-    add(r1->after_save(), r2->after_save(), O2);
-    set((intptr_t)file, O3);
-    set(line, O4);
-    Label L;
-    // get nearby pc, store jmp target
-    call(L, relocInfo::none);  // No relocation for call to pc+0x8
-    delayed()->st(O2, O1, 0);
-    bind(L);
-
-    // store nearby pc
-    st(O7, O1, sizeof(intptr_t));
-    // store file
-    st(O3, O1, 2*sizeof(intptr_t));
-    // store line
-    st(O4, O1, 3*sizeof(intptr_t));
-    add(O0, 1, O0);
-    and3(O0, JavaThread::jump_ring_buffer_size  - 1, O0);
-    st(O0, G2_thread, in_bytes(JavaThread::jmp_ring_index_offset()));
-    restore();
-#endif /* PRODUCT */
-  }
   jmpl(r1, r2, G0);
 }
 void MacroAssembler::jmp(Register r1, int offset, const char* file, int line ) {
   assert_not_delayed();
-  // This can only be traceable if r1 is visible after a window save
-  if (TraceJumps) {
-#ifndef PRODUCT
-    save_frame(0);
-    verify_thread();
-    ld(G2_thread, in_bytes(JavaThread::jmp_ring_index_offset()), O0);
-    add(G2_thread, in_bytes(JavaThread::jmp_ring_offset()), O1);
-    sll(O0, exact_log2(4*sizeof(intptr_t)), O2);
-    add(O2, O1, O1);
-
-    add(r1->after_save(), offset, O2);
-    set((intptr_t)file, O3);
-    set(line, O4);
-    Label L;
-    // get nearby pc, store jmp target
-    call(L, relocInfo::none);  // No relocation for call to pc+0x8
-    delayed()->st(O2, O1, 0);
-    bind(L);
-
-    // store nearby pc
-    st(O7, O1, sizeof(intptr_t));
-    // store file
-    st(O3, O1, 2*sizeof(intptr_t));
-    // store line
-    st(O4, O1, 3*sizeof(intptr_t));
-    add(O0, 1, O0);
-    and3(O0, JavaThread::jump_ring_buffer_size  - 1, O0);
-    st(O0, G2_thread, in_bytes(JavaThread::jmp_ring_index_offset()));
-    restore();
-#endif /* PRODUCT */
-  }
   jmp(r1, offset);
 }
 
@@ -260,44 +198,7 @@ void MacroAssembler::jumpl(const AddressLiteral& addrlit, Register temp, Registe
   // variable length instruction streams.
   patchable_sethi(addrlit, temp);
   Address a(temp, addrlit.low10() + offset);  // Add the offset to the displacement.
-  if (TraceJumps) {
-#ifndef PRODUCT
-    // Must do the add here so relocation can find the remainder of the
-    // value to be relocated.
-    add(a.base(), a.disp(), a.base(), addrlit.rspec(offset));
-    save_frame(0);
-    verify_thread();
-    ld(G2_thread, in_bytes(JavaThread::jmp_ring_index_offset()), O0);
-    add(G2_thread, in_bytes(JavaThread::jmp_ring_offset()), O1);
-    sll(O0, exact_log2(4*sizeof(intptr_t)), O2);
-    add(O2, O1, O1);
-
-    set((intptr_t)file, O3);
-    set(line, O4);
-    Label L;
-
-    // get nearby pc, store jmp target
-    call(L, relocInfo::none);  // No relocation for call to pc+0x8
-    delayed()->st(a.base()->after_save(), O1, 0);
-    bind(L);
-
-    // store nearby pc
-    st(O7, O1, sizeof(intptr_t));
-    // store file
-    st(O3, O1, 2*sizeof(intptr_t));
-    // store line
-    st(O4, O1, 3*sizeof(intptr_t));
-    add(O0, 1, O0);
-    and3(O0, JavaThread::jump_ring_buffer_size  - 1, O0);
-    st(O0, G2_thread, in_bytes(JavaThread::jmp_ring_index_offset()));
-    restore();
-    jmpl(a.base(), G0, d);
-#else
-    jmpl(a.base(), a.disp(), d);
-#endif /* PRODUCT */
-  } else {
-    jmpl(a.base(), a.disp(), d);
-  }
+  jmpl(a.base(), a.disp(), d);
 }
 
 void MacroAssembler::jump(const AddressLiteral& addrlit, Register temp, int offset, const char* file, int line) {

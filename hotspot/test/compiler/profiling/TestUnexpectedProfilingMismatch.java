@@ -25,11 +25,17 @@
  * @test
  * @bug 8027631
  * @summary profiling of arguments at calls cannot rely on signature of callee for types
- * @run main/othervm -XX:-BackgroundCompilation -XX:TieredStopAtLevel=3 -XX:TypeProfileLevel=111 -XX:Tier3InvocationThreshold=200 -XX:Tier0InvokeNotifyFreqLog=7 TestUnexpectedProfilingMismatch
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:TieredStopAtLevel=3 -XX:TypeProfileLevel=111
+ *                   -XX:Tier3InvocationThreshold=200 -XX:Tier0InvokeNotifyFreqLog=7
+ *                   compiler.profiling.TestUnexpectedProfilingMismatch
  */
 
-import java.lang.invoke.*;
+package compiler.profiling;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 public class TestUnexpectedProfilingMismatch {
 

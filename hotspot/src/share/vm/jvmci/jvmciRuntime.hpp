@@ -87,6 +87,11 @@ class JVMCIRuntime: public AllStatic {
   static Handle callStatic(const char* className, const char* methodName, const char* returnType, JavaCallArguments* args, TRAPS);
 
   /**
+   * Determines if the VM is sufficiently booted to initialize JVMCI.
+   */
+  static bool can_initialize_JVMCI();
+
+  /**
    * Trigger initialization of HotSpotJVMCIRuntime through JVMCI.getRuntime()
    */
   static void initialize_JVMCI(TRAPS);
@@ -156,6 +161,9 @@ class JVMCIRuntime: public AllStatic {
   // helper methods to throw exception with complex messages
   static void throw_klass_external_name_exception(JavaThread* thread, const char* exception, Klass* klass);
   static void throw_class_cast_exception(JavaThread* thread, const char* exception, Klass* caster_klass, Klass* target_klass);
+
+  // Forces initialization of the JVMCI runtime.
+  static void force_initialization(TRAPS);
 
   // Test only function
   static int test_deoptimize_call_int(JavaThread* thread, int value);

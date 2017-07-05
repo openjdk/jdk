@@ -28,9 +28,12 @@
  *          are properly sign extended to 64 bit (e.g., PPC64, s390x). This can fail
  *          if slow_arraycopy_C() is commpiled by the C compiler without any imlicit
  *          casts (as spill stores to the stack that are done with 4-byte instruction).
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayCopyOverflowArguments
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestArrayCopyOverflowArguments
  */
+
+package compiler.arraycopy;
 
 public class TestArrayCopyOverflowArguments {
 

@@ -23,17 +23,17 @@
 
 package jdk.vm.ci.hotspot.test;
 
+import jdk.vm.ci.meta.JavaConstant;
+import org.testng.annotations.DataProvider;
+
+import java.util.LinkedList;
+import java.util.stream.Stream;
+
 import static jdk.vm.ci.hotspot.test.TestHelper.ARRAYS_MAP;
 import static jdk.vm.ci.hotspot.test.TestHelper.ARRAY_ARRAYS_MAP;
 import static jdk.vm.ci.hotspot.test.TestHelper.CONSTANT_REFLECTION_PROVIDER;
 import static jdk.vm.ci.hotspot.test.TestHelper.DUMMY_CLASS_INSTANCE;
 import static jdk.vm.ci.hotspot.test.TestHelper.INSTANCE_FIELDS_MAP;
-
-import java.util.LinkedList;
-import java.util.stream.Stream;
-
-import jdk.vm.ci.meta.JavaConstant;
-import org.testng.annotations.DataProvider;
 
 public class ReadArrayElementDataProvider {
 

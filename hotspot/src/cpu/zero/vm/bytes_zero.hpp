@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -165,12 +165,8 @@ class Bytes: AllStatic {
 #ifdef VM_LITTLE_ENDIAN
 // The following header contains the implementations of swap_u2,
 // swap_u4, and swap_u8
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "bytes_linux_zero.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "bytes_bsd_zero.inline.hpp"
-#endif
+
+#include OS_CPU_HEADER_INLINE(bytes)
 
 #endif // VM_LITTLE_ENDIAN
 

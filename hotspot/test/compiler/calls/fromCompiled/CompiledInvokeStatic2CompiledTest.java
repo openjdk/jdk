@@ -23,8 +23,10 @@
 
 /*
  * @test
+ * @summary check calls from compiled to compiled using InvokeStatic
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /testlibrary /
+ *
  * @build compiler.calls.common.InvokeStatic
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,5 +42,4 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -Xbatch compiler.calls.common.InvokeStatic
  *    -compileCaller 4 -checkCallerCompileLevel 4 -compileCallee 4 -checkCalleeCompileLevel 4
- * @summary check calls from compiled to compiled using InvokeStatic
  */

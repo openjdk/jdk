@@ -26,7 +26,8 @@
  * @bug 8135068
  * @summary Tests CompilerCommand's method matcher
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib ../share /
+ * @library /testlibrary /test/lib /
+ *
  * @build compiler.compilercontrol.matcher.MethodMatcherTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -36,10 +37,10 @@
 
 package compiler.compilercontrol.matcher;
 
-import jdk.test.lib.Pair;
 import compiler.compilercontrol.share.method.MethodDescriptor;
 import compiler.compilercontrol.share.method.MethodGenerator;
-import pool.PoolHelper;
+import compiler.compilercontrol.share.pool.PoolHelper;
+import jdk.test.lib.Pair;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Executable;

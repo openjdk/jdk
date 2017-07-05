@@ -23,13 +23,14 @@
 
 /*
  * @test
+ * @summary check calls from interpreted to interpreted using InvokeInterface
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /testlibrary /
+ *
  * @build compiler.calls.common.InvokeInterface
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -XX:CompileCommand=exclude,compiler.calls.common.InvokeInterface::caller -XX:CompileCommand=exclude,compiler.calls.common.InvokeInterface::callee compiler.calls.common.InvokeInterface
  *    -checkCallerCompileLevel 0 -checkCalleeCompileLevel 0
- * @summary check calls from interpreted to interpreted using InvokeInterface
  */

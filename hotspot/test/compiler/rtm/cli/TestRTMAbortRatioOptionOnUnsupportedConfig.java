@@ -30,17 +30,21 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMAbortRatioOptionOnUnsupportedConfig
+ *
+ * @build compiler.rtm.cli.TestRTMAbortRatioOptionOnUnsupportedConfig
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestRTMAbortRatioOptionOnUnsupportedConfig
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.rtm.cli.TestRTMAbortRatioOptionOnUnsupportedConfig
  */
 
-import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.NotPredicate;
+package compiler.rtm.cli;
+
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
+import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.NotPredicate;
 
 public class TestRTMAbortRatioOptionOnUnsupportedConfig
         extends RTMGenericCommandLineOptionTest {
