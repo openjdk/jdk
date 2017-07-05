@@ -123,9 +123,6 @@
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-# 8080428
-java/lang/invoke/8022701/MHIllegalAccess.java                   generic-all
-
 ############################################################################
 
 # jdk_instrument

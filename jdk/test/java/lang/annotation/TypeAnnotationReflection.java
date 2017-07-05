@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004698 8007073 8022343
+ * @bug 8004698 8007073 8022343 8054304 8058595
  * @summary Unit test for type annotations
  */
 
@@ -200,6 +200,17 @@ public class TypeAnnotationReflection {
         check(annos.length == 1);
         check(annos[0].annotationType().equals(TypeAnno.class));
         check(((TypeAnno)annos[0]).value().equals("M Runnable"));
+
+        // Check that AnnotatedTypeVariable.getAnnotatedBounds() returns jlO for a naked
+        // type variable (i.e no bounds, no annotations)
+        Method m4 = TestClassTypeVarAndField.class.getDeclaredMethod("foo4", (Class<?>[])null);
+        AnnotatedType ret4 = m4.getAnnotatedReturnType();
+        AnnotatedType[] annotatedBounds4 = ((AnnotatedTypeVariable)ret4).getAnnotatedBounds();
+        check(annotatedBounds4.length == 1);
+
+        annos = annotatedBounds4[0].getAnnotations();
+        check(annos.length == 0);
+        check(annotatedBounds4[0].getType().equals(Object.class));
     }
 
     private static void testFields() throws Exception {
@@ -231,7 +242,7 @@ public class TypeAnnotationReflection {
     private static void testClassTypeVar() throws Exception {
         TypeVariable[] typeVars = TestClassTypeVarAndField.class.getTypeParameters();
         Annotation[] annos;
-        check(typeVars.length == 2);
+        check(typeVars.length == 3);
 
         // First TypeVar
         AnnotatedType[] annotatedBounds = typeVars[0].getAnnotatedBounds();
@@ -262,6 +273,14 @@ public class TypeAnnotationReflection {
         check(annos.length == 1);
         check(annos[0].annotationType().equals(TypeAnno2.class));
         check(((TypeAnno2)annos[0]).value().equals("EEBound"));
+
+        // third Typevar V declared without explicit bounds should see jlO as its bound.
+        annotatedBounds = typeVars[2].getAnnotatedBounds();
+        check(annotatedBounds.length == 1);
+
+        annos = annotatedBounds[0].getAnnotations();
+        check(annos.length == 0);
+        check(annotatedBounds[0].getType().equals(Object.class));
     }
 
     private static void testMethodTypeVar() throws Exception {
@@ -282,7 +301,7 @@ public class TypeAnnotationReflection {
         // Second method
         m2 = TestClassTypeVarAndField.class.getDeclaredMethod("foo3", (Class<?>[])null);
         t = m2.getTypeParameters();
-        check(t.length == 1);
+        check(t.length == 2);
         annos = t[0].getAnnotations();
         check(annos.length == 1);
         check(annos[0].annotationType().equals(TypeAnno.class));
@@ -290,6 +309,14 @@ public class TypeAnnotationReflection {
 
         annotatedBounds2 = t[0].getAnnotatedBounds();
         check(annotatedBounds2.length == 1);
+
+        annos = annotatedBounds2[0].getAnnotations();
+        check(annos.length == 0);
+
+        // for the naked type variable L of foo3, we should see jlO as its bound.
+        annotatedBounds2 = t[1].getAnnotatedBounds();
+        check(annotatedBounds2.length == 1);
+        check(annotatedBounds2[0].getType().equals(Object.class));
 
         annos = annotatedBounds2[0].getAnnotations();
         check(annos.length == 0);
@@ -357,9 +384,24 @@ public class TypeAnnotationReflection {
         w = (AnnotatedWildcardType)((AnnotatedParameterizedType)f
             .getAnnotatedType()).getAnnotatedActualTypeArguments()[0];
         t = w.getAnnotatedUpperBounds();
-        check(t.length == 0);
+        check(t.length == 1);
+        check(t[0].getType().equals(Object.class));
+        annos = t[0].getAnnotations();
+        check(annos.length == 0);
         t = w.getAnnotatedLowerBounds();
         check(t.length == 1);
+
+        // for an unbounded wildcard, we should see jlO as its upperbound and null type as its lower bound.
+        f = TestWildcardType.class.getDeclaredField("f3");
+        w = (AnnotatedWildcardType)((AnnotatedParameterizedType)f
+            .getAnnotatedType()).getAnnotatedActualTypeArguments()[0];
+        t = w.getAnnotatedUpperBounds();
+        check(t.length == 1);
+        check(t[0].getType().equals(Object.class));
+        annos = t[0].getAnnotations();
+        check(annos.length == 0);
+        t = w.getAnnotatedLowerBounds();
+        check(t.length == 0);
     }
 
     private static void testParameterTypes() throws Exception {
@@ -515,6 +557,7 @@ abstract class TestWildcardType {
     public <T> List<? super T> foo() { return null;}
     public Class<@TypeAnno("1") ? extends @TypeAnno("2") Annotation> f1;
     public Class<@TypeAnno("3") ? super @TypeAnno("4") Annotation> f2;
+    public Class<@TypeAnno("5") ?> f3;
 }
 
 abstract class TestParameterizedType implements @TypeAnno("M") Map<@TypeAnno("S")String, @TypeAnno("I") @TypeAnno2("I2")Integer> {
@@ -555,14 +598,15 @@ abstract class TestClassException {
 
 abstract class TestClassTypeVarAndField <T extends @TypeAnno("Object1") Object
                                           & @TypeAnno("Runnable1") @TypeAnno2("Runnable2") Runnable,
-                                        @TypeAnno("EE")EE extends @TypeAnno2("EEBound") Runnable > {
+                                        @TypeAnno("EE")EE extends @TypeAnno2("EEBound") Runnable, V > {
     @TypeAnno("T1 field") @TypeAnno2("T2 field") T field1;
     T field2;
     @TypeAnno("Object field") Object field3;
 
     public @TypeAnno("t1") @TypeAnno2("t2") T foo(){ return null; }
     public <M extends @TypeAnno("M Runnable") Runnable> M foo2() {return null;}
-    public <@TypeAnno("K") K extends Cloneable> K foo3() {return null;}
+    public <@TypeAnno("K") K extends Cloneable, L> K foo3() {return null;}
+    public <L> L foo4() {return null;}
 }
 
 @Target(ElementType.TYPE_USE)
