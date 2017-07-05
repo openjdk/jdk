@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,9 @@ import com.sun.tools.internal.xjc.model.CReferencePropertyInfo;
  * Generates fields and accessors.
  */
 public final class BeanGenerator implements Outline {
+
+    /** JAXB module name. JAXB dependency is mandatory in generated Java module. */
+    private static final String JAXB_PACKAGE = "java.xml.bind";
 
     /** Simplifies class/interface creation and collision detection. */
     private final CodeModelClassFactory codeModelClassFactory;
@@ -252,6 +255,10 @@ public final class BeanGenerator implements Outline {
         // create factories for the impl-less elements
         for (CElementInfo ei : model.getAllElements()) {
             getPackageContext(ei._package()).objectFactoryGenerator().populate(ei);
+        }
+
+        if (model.options.getModuleName() != null) {
+            codeModel._prepareModuleInfo(model.options.getModuleName(), JAXB_PACKAGE);
         }
 
         if (model.options.debugMode) {

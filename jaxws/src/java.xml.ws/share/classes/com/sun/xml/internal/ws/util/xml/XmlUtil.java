@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,29 @@
 package com.sun.xml.internal.ws.util.xml;
 
 import com.sun.istack.internal.Nullable;
-import com.sun.org.apache.xml.internal.resolver.Catalog;
-import com.sun.org.apache.xml.internal.resolver.CatalogManager;
-import com.sun.org.apache.xml.internal.resolver.tools.CatalogResolver;
 import com.sun.xml.internal.ws.server.ServerRtException;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.EntityReference;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
-import org.xml.sax.*;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogFeatures.Feature;
+import javax.xml.catalog.CatalogManager;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -58,20 +67,18 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.ws.WebServiceException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.EntityReference;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
 
 /**
  * @author WS Development Team
@@ -282,75 +289,63 @@ public class XmlUtil {
     * Gets an EntityResolver using XML catalog
     */
      public static EntityResolver createEntityResolver(@Nullable URL catalogUrl) {
-        // set up a manager
-        CatalogManager manager = new CatalogManager();
-        manager.setIgnoreMissingProperties(true);
-        // Using static catalog may  result in to sharing of the catalog by multiple apps running in a container
-        manager.setUseStaticCatalog(false);
-        Catalog catalog = manager.getCatalog();
+        ArrayList<URL> urlsArray = new ArrayList<URL>();
+        EntityResolver er;
+        if (catalogUrl != null) {
+            urlsArray.add(catalogUrl);
+        }
         try {
-            if (catalogUrl != null) {
-                catalog.parseCatalog(catalogUrl);
-            }
-        } catch (IOException e) {
+            er = createCatalogResolver(urlsArray);
+        } catch (Exception e) {
             throw new ServerRtException("server.rt.err",e);
         }
-        return workaroundCatalogResolver(catalog);
+        return er;
     }
 
     /**
      * Gets a default EntityResolver for catalog at META-INF/jaxws-catalog.xml
      */
     public static EntityResolver createDefaultCatalogResolver() {
-
-        // set up a manager
-        CatalogManager manager = new CatalogManager();
-        manager.setIgnoreMissingProperties(true);
-        // Using static catalog may  result in to sharing of the catalog by multiple apps running in a container
-        manager.setUseStaticCatalog(false);
-        // parse the catalog
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Enumeration<URL> catalogEnum;
-        Catalog catalog = manager.getCatalog();
+        EntityResolver er;
         try {
+            /**
+             * Gets a URLs for catalog defined at META-INF/jaxws-catalog.xml
+             */
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            Enumeration<URL> catalogEnum;
             if (cl == null) {
                 catalogEnum = ClassLoader.getSystemResources("META-INF/jax-ws-catalog.xml");
             } else {
                 catalogEnum = cl.getResources("META-INF/jax-ws-catalog.xml");
             }
-
-            while(catalogEnum.hasMoreElements()) {
-                URL url = catalogEnum.nextElement();
-                catalog.parseCatalog(url);
-            }
-        } catch (IOException e) {
+            er = createCatalogResolver(Collections.list(catalogEnum));
+        } catch (Exception e) {
             throw new WebServiceException(e);
         }
 
-        return workaroundCatalogResolver(catalog);
+        return er;
     }
 
     /**
-     *  Default CatalogResolver implementation is broken as it depends on CatalogManager.getCatalog() which will always create a new one when
-     *  useStaticCatalog is false.
-     *  This returns a CatalogResolver that uses the catalog passed as parameter.
-     * @param catalog
-     * @return  CatalogResolver
+     * Instantiate catalog resolver using new catalog API (javax.xml.catalog.*)
+     * added in JDK9. Usage of new API removes dependency on internal API
+     * (com.sun.org.apache.xml.internal) for modular runtime.
      */
-    private static CatalogResolver workaroundCatalogResolver(final Catalog catalog) {
-        // set up a manager
-        CatalogManager manager = new CatalogManager() {
-            @Override
-            public Catalog getCatalog() {
-                return catalog;
-            }
-        };
-        manager.setIgnoreMissingProperties(true);
-        // Using static catalog may  result in to sharing of the catalog by multiple apps running in a container
-        manager.setUseStaticCatalog(false);
+    private static EntityResolver createCatalogResolver(ArrayList<URL> urls) throws Exception {
+        // Prepare array of catalog paths
+        String[] paths = urls.stream()
+                             .map(u -> u.toExternalForm())
+                             .toArray(c -> new String[c]);
 
-        return new CatalogResolver(manager);
+        //Create CatalogResolver with new JDK9+ API
+        return (EntityResolver) CatalogManager.catalogResolver(catalogFeatures, paths);
     }
+
+    // Cache CatalogFeatures instance for future usages.
+    // Resolve feature is set to "continue" value for backward compatibility.
+    private static CatalogFeatures catalogFeatures = CatalogFeatures.builder()
+                                                    .with(Feature.RESOLVE, "continue")
+                                                    .build();
 
     /**
      * {@link ErrorHandler} that always treat the error as fatal.

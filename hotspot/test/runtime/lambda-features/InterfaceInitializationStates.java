@@ -88,9 +88,7 @@ public class InterfaceInitializationStates {
     // Iunlinked is testing initialization like interface I, except interface I is linked when
     // ClassLIM is linked.
     // Iunlinked is not linked already when K gets an initialization error.  Linking Iunlinked
-    // should succeed and not get NoClassDefFoundError because it does not depend on the
-    // initialization state of K for linking.  There's bug now where it gets this error.
-    // See: https://bugs.openjdk.java.net/browse/JDK-8166203.
+    // should succeed because it does not depend on the initialization state of K for linking.
     interface Iunlinked extends K {
         boolean v = InterfaceInitializationStates.out(Iunlinked.class);
     }
@@ -157,15 +155,9 @@ public class InterfaceInitializationStates {
             System.out.println("ExceptionInInitializerError as expected");
         }
 
-        // Initialize Iunlinked. This should not get NoClassDefFoundError because K
+        // Initialize Iunlinked. No exception should be thrown even if K
         // (its super interface) is in initialization_error state.
-        // This is a bug.  It does now.
-        try {
-            boolean bb = Iunlinked.v;
-            throw new RuntimeException("FAIL exception not thrown for Iunlinked initialization");
-        } catch(NoClassDefFoundError e) {
-            System.out.println("NoClassDefFoundError thrown because of bug");
-        }
+        boolean bb = Iunlinked.v;
 
         // This should be okay
         boolean value = Iparams.v;
@@ -182,7 +174,7 @@ public class InterfaceInitializationStates {
 
          // Check expected class initialization order
         List<Class<?>> expectedCInitOrder = Arrays.asList(L.class, K.class, M.class, ClassM.class,
-                                                          I.class, Iparams.class,
+                                                          I.class, Iunlinked.class, Iparams.class,
                                                           ClassIparams.class);
         if (!cInitOrder.equals(expectedCInitOrder)) {
             throw new RuntimeException(

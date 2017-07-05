@@ -37,14 +37,13 @@ public class TestJVMCIPrintProperties {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EnableJVMCI",
-            "-XX:+JVMCIPrintProperties",
-            "-version");
+            "-XX:+JVMCIPrintProperties");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("[JVMCI properties]"); // expected message
-        output.shouldContain("String jvmci.Compiler"); // expected message
-        output.shouldContain("Boolean jvmci.InitTimer"); // expected message
-        output.shouldContain("Boolean jvmci.PrintConfig"); // expected message
-        output.shouldContain("String jvmci.TraceMethodDataFilter"); // expected message
+        output.shouldContain("jvmci.Compiler = null"); // expected message
+        output.shouldContain("jvmci.InitTimer = false"); // expected message
+        output.shouldContain("jvmci.PrintConfig = false"); // expected message
+        output.shouldContain("jvmci.TraceMethodDataFilter = null"); // expected message
         output.shouldHaveExitValue(0);
     }
 }

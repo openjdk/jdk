@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,18 +51,21 @@ public class ProgressCodeWriter extends FilterCodeWriter {
 
     private final PrintStream progress;
 
+    @Override
     public OutputStream openBinary(JPackage pkg, String fileName) throws IOException {
         report(pkg, fileName);
         return super.openBinary(pkg,fileName);
     }
 
+    @Override
     public Writer openSource(JPackage pkg, String fileName) throws IOException {
         report(pkg, fileName);
         return super.openSource(pkg,fileName);
     }
 
     private void report(JPackage pkg, String fileName) {
-        if(pkg.isUnnamed()) progress.println(fileName);
+        if(pkg == null || pkg.isUnnamed())
+            progress.println(fileName);
         else
             progress.println(
                 pkg.name().replace('.',File.separatorChar)

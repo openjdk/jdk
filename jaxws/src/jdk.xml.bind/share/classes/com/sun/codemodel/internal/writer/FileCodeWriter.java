@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class FileCodeWriter extends CodeWriter {
     private final boolean readOnly;
 
     /** Files that shall be marked as read only. */
-    private final Set<File> readonlyFiles = new HashSet<File>();
+    private final Set<File> readonlyFiles = new HashSet<>();
 
     public FileCodeWriter( File target ) throws IOException {
         this(target,false);
@@ -72,13 +72,14 @@ public class FileCodeWriter extends CodeWriter {
             throw new IOException(target + ": non-existent directory");
     }
 
+    @Override
     public OutputStream openBinary(JPackage pkg, String fileName) throws IOException {
         return new FileOutputStream(getFile(pkg,fileName));
     }
 
     protected File getFile(JPackage pkg, String fileName ) throws IOException {
         File dir;
-        if(pkg.isUnnamed())
+        if(pkg == null || pkg.isUnnamed())
             dir = target;
         else
             dir = new File(target, toDirName(pkg));
@@ -97,6 +98,7 @@ public class FileCodeWriter extends CodeWriter {
         return fn;
     }
 
+    @Override
     public void close() throws IOException {
         // mark files as read-onnly if necessary
         for (File f : readonlyFiles)

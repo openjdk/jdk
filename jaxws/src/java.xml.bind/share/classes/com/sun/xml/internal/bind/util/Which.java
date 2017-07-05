@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class Which {
 
     /**
      * Search the specified classloader for the given classname.
-     *
+     * Then give the return value.
      * @param classname the fully qualified name of the class to search for
      * @param loader the classloader to search
      * @return the source location of the resource, or null if it wasn't found

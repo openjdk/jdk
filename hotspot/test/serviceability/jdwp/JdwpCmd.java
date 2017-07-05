@@ -70,7 +70,6 @@ public abstract class JdwpCmd<T extends JdwpReply> {
     }
 
     public final T send(JdwpChannel channel) throws IOException {
-        System.err.println("Sending command: " + this);
         channel.write(data.array(), HEADER_LEN + getDataLength());
         if (reply != null) {
             reply.initFromStream(channel.getInputStream());

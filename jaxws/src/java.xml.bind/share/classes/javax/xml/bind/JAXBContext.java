@@ -450,8 +450,8 @@ public abstract class JAXBContext {
      *      in an empty map.
      *
      * @return a new instance of a {@code JAXBContext}
-     * @throws JAXBException
-     *      if an error was encountered while creating the {@code JAXBContext} such as
+     * @throws JAXBException if an error was encountered while creating the
+     *                       {@code JAXBContext} such as
      * <ol>
      *   <li>failure to locate either ObjectFactory.class or jaxb.index in the packages</li>
      *   <li>an ambiguity among global elements contained in the contextPath</li>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package com.sun.tools.internal.ws.wscompile;
 
+import com.sun.codemodel.internal.CodeWriter;
 import com.sun.codemodel.internal.JPackage;
 
 import javax.annotation.processing.Filer;
-import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
 
 /**
@@ -37,16 +38,20 @@ import java.io.Writer;
  *
  * @author WS Development Team
  */
-public class FilerCodeWriter extends WSCodeWriter {
+public class FilerCodeWriter extends CodeWriter {
 
     /** The Filer used to create files. */
     private final Filer filer;
 
     private Writer w;
 
-    public FilerCodeWriter(File outDir, Options options) throws IOException {
-        super(outDir, options);
+    public FilerCodeWriter(Options options) throws IOException {
         this.filer = options.filer;
+    }
+
+    @Override
+    public OutputStream openBinary(JPackage pkg, String fileName) throws IOException {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     public Writer openSource(JPackage pkg, String fileName) throws IOException {
@@ -61,7 +66,6 @@ public class FilerCodeWriter extends WSCodeWriter {
 
 
     public void close() throws IOException {
-        super.close();
         if (w != null)
             w.close();
         w = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,10 @@ import com.sun.tools.internal.ws.wsdl.parser.WSDLInternalizationLogic;
 import com.sun.tools.internal.xjc.util.NullStream;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.util.ServiceFinder;
-import com.sun.istack.internal.tools.ParallelWorldClassLoader;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.bind.JAXBPermission;
 import javax.xml.stream.*;
-import javax.xml.ws.EndpointContext;
 import java.io.*;
 import java.util.*;
 import java.text.MessageFormat;
@@ -66,6 +63,9 @@ import org.xml.sax.SAXException;
  * @author Vivek Pandey
  */
 public class WsimportTool {
+    /** JAXWS module name. JAXWS dependency is mandatory in generated Java module. */
+    private static final String JAXWS_MODULE = "java.xml.ws";
+
     private static final String WSIMPORT = "wsimport";
     private final PrintStream out;
     private final Container container;
@@ -476,9 +476,13 @@ public class WsimportTool {
             }
         }
 
+        if (options.getModuleName() != null) {
+            options.getCodeModel()._prepareModuleInfo(options.getModuleName(), JAXWS_MODULE);
+        }
+
         CodeWriter cw;
         if (options.filer != null) {
-            cw = new FilerCodeWriter(options.sourceDir, options);
+            cw = new FilerCodeWriter(options);
         } else {
             cw = new WSCodeWriter(options.sourceDir, options);
         }
@@ -499,18 +503,6 @@ public class WsimportTool {
         this.options.entityResolver = resolver;
     }
 
-    /*
-     * To take care of JDK6-JDK6u3, where 2.1 API classes are not there
-     */
-    private static boolean useBootClasspath(Class clazz) {
-        try {
-            ParallelWorldClassLoader.toJarUrl(clazz.getResource('/'+clazz.getName().replace('.','/')+".class"));
-            return true;
-        } catch(Exception e) {
-            return false;
-        }
-    }
-
     protected boolean compileGeneratedClasses(ErrorReceiver receiver, WsimportListener listener){
         List<String> sourceFiles = new ArrayList<String>();
 
@@ -523,21 +515,15 @@ public class WsimportTool {
         if (sourceFiles.size() > 0) {
             String classDir = options.destDir.getAbsolutePath();
             String classpathString = createClasspathString();
-            boolean bootCP = useBootClasspath(EndpointContext.class) || useBootClasspath(JAXBPermission.class);
             List<String> args = new ArrayList<String>();
+
             args.add("--add-modules");
             args.add("java.xml.ws");
+
             args.add("-d");
             args.add(classDir);
             args.add("-classpath");
             args.add(classpathString);
-            //javac is not working in osgi as the url starts with a bundle
-            if (bootCP) {
-                args.add("-Xbootclasspath/p:"
-                        + JavaCompilerHelper.getJarFile(EndpointContext.class)
-                        + File.pathSeparator
-                        + JavaCompilerHelper.getJarFile(JAXBPermission.class));
-            }
 
             if (options.debug) {
                 args.add("-g");
