@@ -158,6 +158,9 @@ public class Krb5 {
     public static final int PA_ETYPE_INFO    = 11;
     public static final int PA_ETYPE_INFO2   = 19;
 
+    // S4U2user info
+    public static final int PA_FOR_USER      = 129;
+
     //-------------------------------+-------------
     //authorization data type        |ad-type value
     //-------------------------------+-------------

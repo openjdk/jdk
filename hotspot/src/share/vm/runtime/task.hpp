@@ -49,12 +49,12 @@ class PeriodicTask: public CHeapObj<mtInternal> {
   static int num_tasks()   { return _num_tasks; }
 
  private:
-  size_t _counter;
-  const size_t _interval;
+  int _counter;
+  const int _interval;
 
   static int _num_tasks;
   static PeriodicTask* _tasks[PeriodicTask::max_tasks];
-  static void real_time_tick(size_t delay_time);
+  static void real_time_tick(int delay_time);
 
 #ifndef PRODUCT
   static elapsedTimer _timer;                      // measures time between ticks
@@ -69,51 +69,36 @@ class PeriodicTask: public CHeapObj<mtInternal> {
   PeriodicTask(size_t interval_time); // interval is in milliseconds of elapsed time
   ~PeriodicTask();
 
-  // Tells whether is enrolled
-  bool is_enrolled() const;
-
   // Make the task active
-  // NOTE: this may only be called before the WatcherThread has been started
+  // For dynamic enrollment at the time T, the task will execute somewhere
+  // between T and T + interval_time.
   void enroll();
 
   // Make the task deactive
-  // NOTE: this may only be called either while the WatcherThread is
-  // inactive or by a task from within its task() method. One-shot or
-  // several-shot tasks may be implemented this way.
   void disenroll();
 
-  void execute_if_pending(size_t delay_time) {
-    _counter += delay_time;
-    if (_counter >= _interval) {
+  void execute_if_pending(int delay_time) {
+    // make sure we don't overflow
+    jlong tmp = (jlong) _counter + (jlong) delay_time;
+
+    if (tmp >= (jlong) _interval) {
       _counter = 0;
       task();
+    } else {
+      _counter += delay_time;
     }
   }
 
   // Returns how long (time in milliseconds) before the next time we should
   // execute this task.
-  size_t time_to_next_interval() const {
+  int time_to_next_interval() const {
     assert(_interval > _counter,  "task counter greater than interval?");
     return _interval - _counter;
   }
 
   // Calculate when the next periodic task will fire.
   // Called by the WatcherThread's run method.
-  // This assumes that periodic tasks aren't entering the system
-  // dynamically, except for during startup.
-  static size_t time_to_wait() {
-    if (_num_tasks == 0) {
-      // Don't wait any more; shut down the thread since we don't
-      // currently support dynamic enrollment.
-      return 0;
-    }
-
-    size_t delay = _tasks[0]->time_to_next_interval();
-    for (int index = 1; index < _num_tasks; index++) {
-      delay = MIN2(delay, _tasks[index]->time_to_next_interval());
-    }
-    return delay;
-  }
+  static int time_to_wait();
 
   // The task to perform at each period
   virtual void task() = 0;

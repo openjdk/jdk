@@ -1059,6 +1059,9 @@ public class SpNegoContext implements GSSContextSpi {
         if (mechContext != null) {
             GSSCredentialImpl delegCred =
                         (GSSCredentialImpl)mechContext.getDelegCred();
+            if (delegCred == null) {
+                return null;
+            }
             // determine delegated cred element usage
             boolean initiate = false;
             if (delegCred.getUsage() == GSSCredential.INITIATE_ONLY) {

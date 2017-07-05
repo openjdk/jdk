@@ -178,6 +178,20 @@ public class KDC {
          * What backend server can be delegated to
          */
         OK_AS_DELEGATE,
+        /**
+         * Allow S4U2self, List<String> of middle servers.
+         * If not set, means KDC does not understand S4U2self at all, therefore
+         * would ignore any PA-FOR-USER request and send a ticket using the
+         * cname of teh requestor. If set, it returns FORWARDABLE tickets to
+         * a server with its name in the list
+         */
+        ALLOW_S4U2SELF,
+        /**
+         * Allow S4U2proxy, Map<String,List<String>> of middle servers to
+         * backends. If not set or a backend not in a server's list,
+         * Krb5.KDC_ERR_POLICY will be send for S4U2proxy request.
+         */
+        ALLOW_S4U2PROXY,
     };
 
     static {
@@ -618,13 +632,18 @@ public class KDC {
             int e2 = eTypes[0];     // etype for outgoing session key
             int e3 = eTypes[0];     // etype for outgoing ticket
 
-            PAData[] pas = kDCReqDotPAData(tgsReq);
+            PAData[] pas = KDCReqDotPAData(tgsReq);
 
             Ticket tkt = null;
             EncTicketPart etp = null;
+
+            PrincipalName cname = null;
+            boolean allowForwardable = true;
+
             if (pas == null || pas.length == 0) {
                 throw new KrbException(Krb5.KDC_ERR_PADATA_TYPE_NOSUPP);
             } else {
+                PrincipalName forUserCName = null;
                 for (PAData pa: pas) {
                     if (pa.getType() == Krb5.PA_TGS_REQ) {
                         APReq apReq = new APReq(pa.getValue());
@@ -636,7 +655,30 @@ public class KDC {
                         DerInputStream derIn = new DerInputStream(bb);
                         DerValue der = derIn.getDerValue();
                         etp = new EncTicketPart(der.toByteArray());
+                        // Finally, cname will be overwritten by PA-FOR-USER
+                        // if it exists.
+                        cname = etp.cname;
+                        System.out.println(realm + "> presenting a ticket of "
+                                + etp.cname + " to " + tkt.sname);
+                    } else if (pa.getType() == Krb5.PA_FOR_USER) {
+                        if (options.containsKey(Option.ALLOW_S4U2SELF)) {
+                            PAForUserEnc p4u = new PAForUserEnc(
+                                    new DerValue(pa.getValue()), null);
+                            forUserCName = p4u.name;
+                            System.out.println(realm + "> presenting a PA_FOR_USER "
+                                    + " in the name of " + p4u.name);
+                        }
                     }
+                }
+                if (forUserCName != null) {
+                    List<String> names = (List<String>)options.get(Option.ALLOW_S4U2SELF);
+                    if (!names.contains(cname.toString())) {
+                        // Mimic the normal KDC behavior. When a server is not
+                        // allowed to send S4U2self, do not send an error.
+                        // Instead, send a ticket which is useless later.
+                        allowForwardable = false;
+                    }
+                    cname = forUserCName;
                 }
                 if (tkt == null) {
                     throw new KrbException(Krb5.KDC_ERR_PADATA_TYPE_NOSUPP);
@@ -658,7 +700,8 @@ public class KDC {
             }
 
             boolean[] bFlags = new boolean[Krb5.TKT_OPTS_MAX+1];
-            if (body.kdcOptions.get(KDCOptions.FORWARDABLE)) {
+            if (body.kdcOptions.get(KDCOptions.FORWARDABLE)
+                    && allowForwardable) {
                 bFlags[Krb5.TKT_OPTS_FORWARDABLE] = true;
             }
             if (body.kdcOptions.get(KDCOptions.FORWARDED) ||
@@ -678,6 +721,37 @@ public class KDC {
             if (body.kdcOptions.get(KDCOptions.ALLOW_POSTDATE)) {
                 bFlags[Krb5.TKT_OPTS_MAY_POSTDATE] = true;
             }
+            if (body.kdcOptions.get(KDCOptions.CNAME_IN_ADDL_TKT)) {
+                if (!options.containsKey(Option.ALLOW_S4U2PROXY)) {
+                    // Don't understand CNAME_IN_ADDL_TKT
+                    throw new KrbException(Krb5.KDC_ERR_BADOPTION);
+                } else {
+                    Map<String,List<String>> map = (Map<String,List<String>>)
+                            options.get(Option.ALLOW_S4U2PROXY);
+                    Ticket second = KDCReqBodyDotFirstAdditionalTicket(body);
+                    EncryptionKey key2 = keyForUser(second.sname, second.encPart.getEType(), true);
+                    byte[] bb = second.encPart.decrypt(key2, KeyUsage.KU_TICKET);
+                    DerInputStream derIn = new DerInputStream(bb);
+                    DerValue der = derIn.getDerValue();
+                    EncTicketPart tktEncPart = new EncTicketPart(der.toByteArray());
+                    if (!tktEncPart.flags.get(Krb5.TKT_OPTS_FORWARDABLE)) {
+                        //throw new KrbException(Krb5.KDC_ERR_BADOPTION);
+                    }
+                    PrincipalName client = tktEncPart.cname;
+                    System.out.println(realm + "> and an additional ticket of "
+                            + client + " to " + second.sname);
+                    if (map.containsKey(cname.toString())) {
+                        if (map.get(cname.toString()).contains(service.toString())) {
+                            System.out.println(realm + "> S4U2proxy OK");
+                        } else {
+                            throw new KrbException(Krb5.KDC_ERR_BADOPTION);
+                        }
+                    } else {
+                        throw new KrbException(Krb5.KDC_ERR_BADOPTION);
+                    }
+                    cname = client;
+                }
+            }
 
             String okAsDelegate = (String)options.get(Option.OK_AS_DELEGATE);
             if (okAsDelegate != null && (
@@ -691,7 +765,7 @@ public class KDC {
             EncTicketPart enc = new EncTicketPart(
                     tFlags,
                     key,
-                    etp.cname,
+                    cname,
                     new TransitedEncoding(1, new byte[0]),  // TODO
                     new KerberosTime(new Date()),
                     body.from,
@@ -729,7 +803,7 @@ public class KDC {
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_TGS_REP_PART_SESSKEY);
             TGSRep tgsRep = new TGSRep(null,
-                    etp.cname,
+                    cname,
                     t,
                     edata);
             System.out.println("     Return " + tgsRep.cname
@@ -942,7 +1016,7 @@ public class KDC {
                 outPAs.add(new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray()));
             }
 
-            PAData[] inPAs = kDCReqDotPAData(asReq);
+            PAData[] inPAs = KDCReqDotPAData(asReq);
             if (inPAs == null || inPAs.length == 0) {
                 Object preauth = options.get(Option.PREAUTH_REQUIRED);
                 if (preauth == null || preauth.equals(Boolean.TRUE)) {
@@ -1252,6 +1326,7 @@ public class KDC {
     private static final Field getEType;
     private static final Constructor<EncryptedData> ctorEncryptedData;
     private static final Method stringToKey;
+    private static final Field getAddlTkt;
 
     static {
         try {
@@ -1265,6 +1340,8 @@ public class KDC {
                     "stringToKey",
                     char[].class, String.class, byte[].class, Integer.TYPE);
             stringToKey.setAccessible(true);
+            getAddlTkt = KDCReqBody.class.getDeclaredField("additionalTickets");
+            getAddlTkt.setAccessible(true);
         } catch (NoSuchFieldException nsfe) {
             throw new AssertionError(nsfe);
         } catch (NoSuchMethodException nsme) {
@@ -1278,7 +1355,7 @@ public class KDC {
             throw new AssertionError(e);
         }
     }
-    private static PAData[] kDCReqDotPAData(KDCReq req) {
+    private static PAData[] KDCReqDotPAData(KDCReq req) {
         try {
             return (PAData[])getPADataField.get(req);
         } catch (Exception e) {
@@ -1299,6 +1376,13 @@ public class KDC {
                     null, password, salt, s2kparams, keyType);
         } catch (InvocationTargetException ex) {
             throw (KrbCryptoException)ex.getCause();
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+    private static Ticket KDCReqBodyDotFirstAdditionalTicket(KDCReqBody body) {
+        try {
+            return ((Ticket[])getAddlTkt.get(body))[0];
         } catch (Exception e) {
             throw new AssertionError(e);
         }

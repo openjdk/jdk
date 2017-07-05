@@ -39,7 +39,6 @@ import java.security.*;
 import sun.security.timestamp.*;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
-import sun.security.x509.CertificateIssuerName;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
 import sun.security.x509.X509CRLImpl;
@@ -712,8 +711,8 @@ public class PKCS7 {
                     X509CertInfo tbsCert =
                         new X509CertInfo(cert.getTBSCertificate());
                     certIssuerName = (Principal)
-                        tbsCert.get(CertificateIssuerName.NAME + "." +
-                                    CertificateIssuerName.DN_NAME);
+                        tbsCert.get(X509CertInfo.ISSUER + "." +
+                                    X509CertInfo.DN_NAME);
                 } catch (Exception e) {
                     // error generating X500Name object from the cert's
                     // issuer DN, leave name as is.

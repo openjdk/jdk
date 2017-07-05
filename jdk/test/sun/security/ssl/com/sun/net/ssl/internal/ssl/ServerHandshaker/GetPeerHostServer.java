@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ class GetPeerHostServer extends Thread
     private String host;
     ServerSocket ss;
     boolean isHostIPAddr = false;
+    int serverPort = 0;
 
     public GetPeerHostServer ()
     {
@@ -57,7 +58,8 @@ class GetPeerHostServer extends Thread
             kmf.init(ks, passphrase);
             ctx.init(kmf.getKeyManagers(), null, null);
             ServerSocketFactory ssf = ctx.getServerSocketFactory();
-            ss = ssf.createServerSocket(9999);
+            ss = ssf.createServerSocket(serverPort);
+            serverPort = ss.getLocalPort();
         }catch (Exception e) {
             System.err.println("Unexpected exceptions: " + e);
             e.printStackTrace();
@@ -89,5 +91,9 @@ class GetPeerHostServer extends Thread
 
     boolean getPassStatus () {
         return isHostIPAddr;
+    }
+
+    int getServerPort() {
+        return serverPort;
     }
 }

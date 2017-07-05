@@ -64,7 +64,12 @@ abstract class KrbKdcRep {
 
         for (int i = 1; i < 6; i++) {
             if (req.reqBody.kdcOptions.get(i) !=
-                rep.encKDCRepPart.flags.get(i)) {
+                   rep.encKDCRepPart.flags.get(i)) {
+                if (Krb5.DEBUG) {
+                    System.out.println("> KrbKdcRep.check: at #" + i
+                            + ". request for " + req.reqBody.kdcOptions.get(i)
+                            + ", received " + rep.encKDCRepPart.flags.get(i));
+                }
                 throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
             }
         }
