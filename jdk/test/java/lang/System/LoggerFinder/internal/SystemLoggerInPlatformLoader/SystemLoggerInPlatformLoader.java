@@ -28,9 +28,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
 
-/**
+/*
  * @test 8163162
  * @summary Checks that LazyLoggers are returned for System.Logger instances
  *          created by modules in the platform class loader.
@@ -98,25 +99,36 @@ public class SystemLoggerInPlatformLoader {
     }
 
     public static void main(String[] args) {
-        System.Logger splogger = getSystemLogger("bar"); // for a platform class
-        System.Logger slogger = System.getLogger("bar"); // for an application class
-        if (slogger == splogger) {
+        System.Logger platformLogger = getSystemLogger("bar"); // for a platform class
+        System.Logger appLogger = System.getLogger("bar"); // for an application class
+        if (appLogger == platformLogger) {
             throw new RuntimeException("Same loggers");
         }
-        Class sploggerType = splogger.getClass();
-        System.out.println("splogger: " + sploggerType);
-        if (!sploggerType.getSimpleName().equals("JdkLazyLogger")) {
-            throw new RuntimeException(sploggerType.getSimpleName()
-                      + ": unexpected class for splogger"
+        Class<?> platformLoggerType = platformLogger.getClass();
+        System.out.println("platformLogger: " + platformLoggerType);
+        boolean simpleConsoleOnly = !Layer.boot().findModule("java.logging").isPresent();
+        if (simpleConsoleOnly) {
+            /* Happens if the test is called with custom JDK without java.logging module
+               or in case usage commandline option --limit-modules java.base */
+            if (!platformLoggerType.getSimpleName().equals("SimpleConsoleLogger")) {
+                throw new RuntimeException(platformLoggerType.getSimpleName()
+                      + ": unexpected class for platform logger"
+                      + " (expected a simple console logger class)");
+            }
+        } else {
+            if (!platformLoggerType.getSimpleName().equals("JdkLazyLogger")) {
+                throw new RuntimeException(platformLoggerType.getSimpleName()
+                      + ": unexpected class for platform logger"
                       + " (expected a lazy logger for a platform class)");
-        }
-        Class sloggerType = slogger.getClass();
-        System.out.println("slogger: " + sloggerType);
-        if (sloggerType.equals(sploggerType)) {
-            throw new RuntimeException(sloggerType
-                      + ": unexpected class for slogger"
+            }
+            Class<?> appLoggerType = appLogger.getClass();
+            System.out.println("appLogger: " + appLoggerType);
+            if (appLoggerType.equals(platformLoggerType)) {
+                throw new RuntimeException(appLoggerType
+                      + ": unexpected class for application logger"
                       + " (a lazy logger was not expected"
                       + " for a non platform class)");
+            }
         }
     }
 }

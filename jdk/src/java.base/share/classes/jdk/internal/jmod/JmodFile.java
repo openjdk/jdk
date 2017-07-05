@@ -28,8 +28,10 @@ package jdk.internal.jmod;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -39,9 +41,9 @@ import java.util.zip.ZipFile;
  */
 public class JmodFile implements AutoCloseable {
     // jmod magic number and version number
-    public static final int JMOD_MAJOR_VERSION = 0x01;
-    public static final int JMOD_MINOR_VERSION = 0x00;
-    public static final byte[] JMOD_MAGIC_NUMBER = {
+    private static final int JMOD_MAJOR_VERSION = 0x01;
+    private static final int JMOD_MINOR_VERSION = 0x00;
+    private static final byte[] JMOD_MAGIC_NUMBER = {
         0x4A, 0x4D, /* JM */
         JMOD_MAJOR_VERSION, JMOD_MINOR_VERSION, /* version 1.0 */
     };
@@ -173,6 +175,10 @@ public class JmodFile implements AutoCloseable {
         checkMagic(file);
         this.file = file;
         this.zipfile = new ZipFile(file.toFile());
+    }
+
+    public static void writeMagicNumber(OutputStream os) throws IOException {
+        os.write(JMOD_MAGIC_NUMBER);
     }
 
     /**

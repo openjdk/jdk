@@ -158,7 +158,6 @@ jdk_nio = \
 
 jdk_net = \
     java/net \
-    -java/net/httpclient \
     com/sun/net/httpserver \
     sun/net \
     jdk/net
