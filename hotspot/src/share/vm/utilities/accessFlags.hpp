@@ -172,6 +172,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
 
   // Atomic update of flags
   void atomic_set_bits(jint bits);
+  bool atomic_set_one_bit(jint bit);
   void atomic_clear_bits(jint bits);
 
  private:
@@ -233,12 +234,13 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
                                          atomic_set_bits(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE);
                                        }
 
-  void set_on_stack(const bool value)
+  bool set_on_stack(const bool value)
                                        {
                                          if (value) {
-                                           atomic_set_bits(JVM_ACC_ON_STACK);
+                                           return atomic_set_one_bit(JVM_ACC_ON_STACK);
                                          } else {
                                            atomic_clear_bits(JVM_ACC_ON_STACK);
+                                           return true; // Ignored
                                          }
                                        }
   // Conversion

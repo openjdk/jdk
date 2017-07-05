@@ -529,6 +529,16 @@ public class UTF8Reader
                     invalidByte(4, 4, b2);
                 }
 
+                // check if output buffer is large enough to hold 2 surrogate chars
+                if (out + 1 >= ch.length) {
+                    fBuffer[0] = (byte)b0;
+                    fBuffer[1] = (byte)b1;
+                    fBuffer[2] = (byte)b2;
+                    fBuffer[3] = (byte)b3;
+                    fOffset = 4;
+                    return out - offset;
+                }
+
                 // decode bytes into surrogate characters
                 int uuuuu = ((b0 << 2) & 0x001C) | ((b1 >> 4) & 0x0003);
                 if (uuuuu > 0x10) {

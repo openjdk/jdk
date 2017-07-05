@@ -398,8 +398,8 @@ GLXGC_FindBestVisual(JNIEnv *env, jint screen)
 static GLXPbuffer
 GLXGC_InitScratchPbuffer(GLXFBConfig fbconfig)
 {
-    int pbattrlist[] = {GLX_PBUFFER_WIDTH, 1,
-                        GLX_PBUFFER_HEIGHT, 1,
+    int pbattrlist[] = {GLX_PBUFFER_WIDTH, 4,
+                        GLX_PBUFFER_HEIGHT, 4,
                         GLX_PRESERVED_CONTENTS, GL_FALSE,
                         0};
 

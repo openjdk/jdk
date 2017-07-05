@@ -84,13 +84,18 @@ public final class FindProperty {
      * @return method handle for the getter
      */
     public MethodHandle getGetter(final Class<?> type, final int programPoint, final LinkRequest request) {
-        final MethodHandle getter;
+        MethodHandle getter;
         if (isValid(programPoint)) {
             getter = property.getOptimisticGetter(type, programPoint);
         } else {
             getter = property.getGetter(type);
         }
         if (property instanceof UserAccessorProperty) {
+            getter = MH.insertArguments(getter, 1, UserAccessorProperty.getINVOKE_UA_GETTER(type, programPoint));
+            if (isValid(programPoint) && type.isPrimitive()) {
+                getter = MH.insertArguments(getter, 1, programPoint);
+            }
+            property.setType(type);
             return insertAccessorsGetter((UserAccessorProperty) property, request, getter);
         }
         return getter;
@@ -111,7 +116,8 @@ public final class FindProperty {
     public MethodHandle getSetter(final Class<?> type, final boolean strict, final LinkRequest request) {
         MethodHandle setter = property.getSetter(type, getOwner().getMap());
         if (property instanceof UserAccessorProperty) {
-            setter =  MH.insertArguments(setter, 1, strict ? property.getKey() : null);
+            setter =  MH.insertArguments(setter, 1, UserAccessorProperty.getINVOKE_UA_SETTER(type), strict ? property.getKey() : null);
+            property.setType(type);
             return insertAccessorsGetter((UserAccessorProperty) property, request, setter);
         }
 

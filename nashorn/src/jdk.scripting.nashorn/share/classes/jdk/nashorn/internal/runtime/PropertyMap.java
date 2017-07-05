@@ -512,7 +512,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         assert sameType ||
                 oldProperty instanceof AccessorProperty &&
                 newProperty instanceof UserAccessorProperty :
-            "arbitrary replaceProperty attempted " + sameType + " oldProperty=" + oldProperty.getClass() + " newProperty=" + newProperty.getClass() + " [" + oldProperty.getCurrentType() + " => " + newProperty.getCurrentType() + "]";
+            "arbitrary replaceProperty attempted " + sameType + " oldProperty=" + oldProperty.getClass() + " newProperty=" + newProperty.getClass() + " [" + oldProperty.getLocalType() + " => " + newProperty.getLocalType() + "]";
 
         newMap.flags = flags;
 

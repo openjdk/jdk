@@ -161,12 +161,12 @@ public class SpillProperty extends AccessorProperty {
      */
     public SpillProperty(final String key, final int flags, final int slot) {
         super(key, flags, slot, primitiveGetter(slot), primitiveSetter(slot), objectGetter(slot), objectSetter(slot));
-        assert !OBJECT_FIELDS_ONLY || getCurrentType() == Object.class;
+        assert !OBJECT_FIELDS_ONLY || getLocalType() == Object.class;
     }
 
     SpillProperty(final String key, final int flags, final int slot, final Class<?> initialType) {
         this(key, flags, slot);
-        setCurrentType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
+        setType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
     }
 
     SpillProperty(final String key, final int flags, final int slot, final ScriptObject owner, final Object initialValue) {
