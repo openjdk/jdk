@@ -309,12 +309,10 @@ int CodeCache::alignment_offset() {
 
 // Mark nmethods for unloading if they contain otherwise unreachable
 // oops.
-void CodeCache::do_unloading(BoolObjectClosure* is_alive,
-                             OopClosure* keep_alive,
-                             bool unloading_occurred) {
+void CodeCache::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
   FOR_ALL_ALIVE_NMETHODS(nm) {
-    nm->do_unloading(is_alive, keep_alive, unloading_occurred);
+    nm->do_unloading(is_alive, unloading_occurred);
   }
 }
 

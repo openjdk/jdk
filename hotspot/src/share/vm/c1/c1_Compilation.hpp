@@ -127,6 +127,7 @@ class Compilation: public StackObj {
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
+  int max_vector_size() const                    { return 0; }
   ciMethod* method() const                       { return _method; }
   int osr_bci() const                            { return _osr_bci; }
   bool is_osr_compile() const                    { return osr_bci() >= 0; }

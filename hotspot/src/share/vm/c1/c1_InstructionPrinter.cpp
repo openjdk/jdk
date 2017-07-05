@@ -831,6 +831,12 @@ void InstructionPrinter::do_UnsafePutObject(UnsafePutObject* x) {
   output()->put(')');
 }
 
+void InstructionPrinter::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
+  print_unsafe_object_op(x, x->is_add()?"UnsafeGetAndSetObject (add)":"UnsafeGetAndSetObject");
+  output()->print(", value ");
+  print_value(x->value());
+  output()->put(')');
+}
 
 void InstructionPrinter::do_UnsafePrefetchRead(UnsafePrefetchRead* x) {
   print_unsafe_object_op(x, "UnsafePrefetchRead");

@@ -48,7 +48,8 @@ SASRCFILES = $(SASRCDIR)/salibelf.c                   \
              $(SASRCDIR)/libproc_impl.c               \
              $(SASRCDIR)/ps_proc.c                    \
              $(SASRCDIR)/ps_core.c                    \
-             $(SASRCDIR)/LinuxDebuggerLocal.c
+             $(SASRCDIR)/LinuxDebuggerLocal.c         \
+             $(AGENT_DIR)/src/share/native/sadis.c
 
 -include $(HS_ALT_MAKE)/linux/makefiles/saproc.make
 

@@ -303,31 +303,31 @@ class GraphKit : public Phase {
 
 
   // Some convenient shortcuts for common nodes
-  Node* IfTrue(IfNode* iff)                   { return _gvn.transform(new (C,1) IfTrueNode(iff));      }
-  Node* IfFalse(IfNode* iff)                  { return _gvn.transform(new (C,1) IfFalseNode(iff));     }
+  Node* IfTrue(IfNode* iff)                   { return _gvn.transform(new (C) IfTrueNode(iff));      }
+  Node* IfFalse(IfNode* iff)                  { return _gvn.transform(new (C) IfFalseNode(iff));     }
 
-  Node* AddI(Node* l, Node* r)                { return _gvn.transform(new (C,3) AddINode(l, r));       }
-  Node* SubI(Node* l, Node* r)                { return _gvn.transform(new (C,3) SubINode(l, r));       }
-  Node* MulI(Node* l, Node* r)                { return _gvn.transform(new (C,3) MulINode(l, r));       }
-  Node* DivI(Node* ctl, Node* l, Node* r)     { return _gvn.transform(new (C,3) DivINode(ctl, l, r));  }
+  Node* AddI(Node* l, Node* r)                { return _gvn.transform(new (C) AddINode(l, r));       }
+  Node* SubI(Node* l, Node* r)                { return _gvn.transform(new (C) SubINode(l, r));       }
+  Node* MulI(Node* l, Node* r)                { return _gvn.transform(new (C) MulINode(l, r));       }
+  Node* DivI(Node* ctl, Node* l, Node* r)     { return _gvn.transform(new (C) DivINode(ctl, l, r));  }
 
-  Node* AndI(Node* l, Node* r)                { return _gvn.transform(new (C,3) AndINode(l, r));       }
-  Node* OrI(Node* l, Node* r)                 { return _gvn.transform(new (C,3) OrINode(l, r));        }
-  Node* XorI(Node* l, Node* r)                { return _gvn.transform(new (C,3) XorINode(l, r));       }
+  Node* AndI(Node* l, Node* r)                { return _gvn.transform(new (C) AndINode(l, r));       }
+  Node* OrI(Node* l, Node* r)                 { return _gvn.transform(new (C) OrINode(l, r));        }
+  Node* XorI(Node* l, Node* r)                { return _gvn.transform(new (C) XorINode(l, r));       }
 
-  Node* MaxI(Node* l, Node* r)                { return _gvn.transform(new (C,3) MaxINode(l, r));       }
-  Node* MinI(Node* l, Node* r)                { return _gvn.transform(new (C,3) MinINode(l, r));       }
+  Node* MaxI(Node* l, Node* r)                { return _gvn.transform(new (C) MaxINode(l, r));       }
+  Node* MinI(Node* l, Node* r)                { return _gvn.transform(new (C) MinINode(l, r));       }
 
-  Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new (C,3) LShiftINode(l, r));    }
-  Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new (C,3) RShiftINode(l, r));    }
-  Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new (C,3) URShiftINode(l, r));   }
+  Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new (C) LShiftINode(l, r));    }
+  Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new (C) RShiftINode(l, r));    }
+  Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new (C) URShiftINode(l, r));   }
 
-  Node* CmpI(Node* l, Node* r)                { return _gvn.transform(new (C,3) CmpINode(l, r));       }
-  Node* CmpL(Node* l, Node* r)                { return _gvn.transform(new (C,3) CmpLNode(l, r));       }
-  Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new (C,3) CmpPNode(l, r));       }
-  Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new (C,2) BoolNode(cmp, relop)); }
+  Node* CmpI(Node* l, Node* r)                { return _gvn.transform(new (C) CmpINode(l, r));       }
+  Node* CmpL(Node* l, Node* r)                { return _gvn.transform(new (C) CmpLNode(l, r));       }
+  Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new (C) CmpPNode(l, r));       }
+  Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new (C) BoolNode(cmp, relop)); }
 
-  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(new (C,4) AddPNode(b, a, o));    }
+  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(new (C) AddPNode(b, a, o));    }
 
   // Convert between int and long, and size_t.
   // (See macros ConvI2X, etc., in type.hpp for ConvI2X, etc.)
@@ -792,7 +792,7 @@ class GraphKit : public Phase {
 
   // Handy for making control flow
   IfNode* create_and_map_if(Node* ctrl, Node* tst, float prob, float cnt) {
-    IfNode* iff = new (C, 2) IfNode(ctrl, tst, prob, cnt);// New IfNode's
+    IfNode* iff = new (C) IfNode(ctrl, tst, prob, cnt);// New IfNode's
     _gvn.set_type(iff, iff->Value(&_gvn)); // Value may be known at parse-time
     // Place 'if' on worklist if it will be in graph
     if (!tst->is_Con())  record_for_igvn(iff);     // Range-check and Null-check removal is later
@@ -800,7 +800,7 @@ class GraphKit : public Phase {
   }
 
   IfNode* create_and_xform_if(Node* ctrl, Node* tst, float prob, float cnt) {
-    IfNode* iff = new (C, 2) IfNode(ctrl, tst, prob, cnt);// New IfNode's
+    IfNode* iff = new (C) IfNode(ctrl, tst, prob, cnt);// New IfNode's
     _gvn.transform(iff);                           // Value may be known at parse-time
     // Place 'if' on worklist if it will be in graph
     if (!tst->is_Con())  record_for_igvn(iff);     // Range-check and Null-check removal is later

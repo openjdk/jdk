@@ -219,7 +219,7 @@ bool os::register_code_area(char *low, char *high) {
   return true;
 }
 
-void os::initialize_thread() {
+void os::initialize_thread(Thread* thr) {
 // Nothing to do.
 }
 
