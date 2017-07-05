@@ -453,10 +453,8 @@ public abstract class MethodHandle {
      */
     // @param type type (permanently assigned) of the new method handle
     /*non-public*/ MethodHandle(MethodType type, LambdaForm form) {
-        type.getClass();  // explicit NPE
-        form.getClass();  // explicit NPE
-        this.type = type;
-        this.form = form.uncustomize();
+        this.type = Objects.requireNonNull(type);
+        this.form = Objects.requireNonNull(form).uncustomize();
 
         this.form.prepare();  // TO DO:  Try to delay this step until just before invocation.
     }
@@ -1171,7 +1169,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * @see #asFixedArity
      */
     public MethodHandle asVarargsCollector(Class<?> arrayType) {
-        arrayType.getClass(); // explicit NPE
+        Objects.requireNonNull(arrayType);
         boolean lastMatch = asCollectorChecks(arrayType, 0);
         if (isVarargsCollector() && lastMatch)
             return this;

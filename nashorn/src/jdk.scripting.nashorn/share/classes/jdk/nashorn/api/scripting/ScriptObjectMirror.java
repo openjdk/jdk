@@ -46,6 +46,7 @@ import javax.script.Bindings;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -817,6 +818,23 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         return inGlobal(new Callable<Double>() {
             @Override public Double call() {
                 return JSType.toNumber(sobj);
+            }
+        });
+    }
+
+    @Override
+    public Object getDefaultValue(Class<?> hint) {
+        return inGlobal(new Callable<Object>() {
+            @Override public Object call() {
+                try {
+                    return sobj.getDefaultValue(hint);
+                } catch (final ECMAException e) {
+                    // We're catching ECMAException (likely TypeError), and translating it to
+                    // UnsupportedOperationException. This in turn will be translated into TypeError of the
+                    // caller's Global by JSType#toPrimitive(JSObject,Class) therefore ensuring that it's
+                    // recognized as "instanceof TypeError" in the caller.
+                    throw new UnsupportedOperationException(e.getMessage(), e);
+                }
             }
         });
     }

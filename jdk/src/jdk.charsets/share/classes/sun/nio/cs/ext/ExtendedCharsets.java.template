@@ -222,16 +222,6 @@ public class ExtendedCharsets extends AbstractCharsetProvider {
 
             }
         }
-        String osName = getProperty("os.name");
-        if ("SunOS".equals(osName) || "Linux".equals(osName) || "AIX".equals(osName)
-               || osName.contains("OS X")) {
-            charset("x-COMPOUND_TEXT", "COMPOUND_TEXT",
-                    new String[] {
-                        "COMPOUND_TEXT",        // JDK historical
-                        "x11-compound_text",
-                        "x-compound-text"
-                    });
-        }
         initialized = true;
     }
 

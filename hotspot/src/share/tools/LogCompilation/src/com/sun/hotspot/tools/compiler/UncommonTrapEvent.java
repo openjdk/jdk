@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class UncommonTrapEvent extends BasicLogEvent {
     }
 
     public void print(PrintStream stream) {
-        stream.printf("%s uncommon trap %s %s\n", getId(), getReason(), getAction());
+        stream.printf("%s uncommon trap %.3f %s %s\n", getId(), getStart(), getReason(), getAction());
         stream.print(getJvms());
     }
 

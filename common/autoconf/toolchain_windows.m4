@@ -351,18 +351,34 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       IFS=";"
       for i in $VS_INCLUDE; do
         ipath=$i
-	IFS="$OLDIFS"
-        BASIC_FIXUP_PATH([ipath])
-	IFS=";"
-      	SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+        # Only process non-empty elements
+        if test "x$ipath" != x; then
+          IFS="$OLDIFS"
+          # Check that directory exists before calling fixup_path
+          testpath=$ipath
+          BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([testpath])
+          if test -d "$testpath"; then
+            BASIC_FIXUP_PATH([ipath])
+            SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
+          fi
+          IFS=";"
+        fi
       done
       # Convert VS_LIB into SYSROOT_LDFLAGS
       for i in $VS_LIB; do
         libpath=$i
-	IFS="$OLDIFS"
-        BASIC_FIXUP_PATH([libpath])
-	IFS=";"
-      	SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+        # Only process non-empty elements
+        if test "x$libpath" != x; then
+          IFS="$OLDIFS"
+          # Check that directory exists before calling fixup_path
+          testpath=$libpath
+          BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([testpath])
+          if test -d "$testpath"; then
+            BASIC_FIXUP_PATH([libpath])
+            SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
+          fi
+          IFS=";"
+        fi
       done
       IFS="$OLDIFS"
     fi

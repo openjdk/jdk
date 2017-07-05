@@ -41,6 +41,7 @@ public class Main {
         int OS       = 4;
         int TEMPLATE = 5;
         int EXT_SRC  = 6;
+        int COPYRIGHT_SRC  = 7;
 
         if (args.length < 3 ) {
             System.out.println("Usage: java -jar charsetmapping.jar src dst spiType charsets os [template]");
@@ -54,6 +55,7 @@ public class Main {
             String[] osStdcs = getOSStdCSList(new File(args[SRC_DIR], args[OS]));
             boolean hasBig5_HKSCS = false;
             boolean hasMS950_HKSCS_XP = false;
+            boolean hasEUC_TW = false;
             for (String name : osStdcs) {
                 Charset cs = charsets.get(name);
                 if (cs != null) {
@@ -63,6 +65,8 @@ public class Main {
                     hasBig5_HKSCS = true;
                 } else if (name.equals("MS950_HKSCS_XP")) {
                     hasMS950_HKSCS_XP = true;
+                } else if (name.equals("EUC_TW")) {
+                    hasEUC_TW = true;
                 }
             }
             for (Charset cs : charsets.values()) {
@@ -89,19 +93,28 @@ public class Main {
                 }
             }
             // provider StandardCharsets.java / ExtendedCharsets.java
-            SPI.genClass(args[TYPE], charsets, args[SRC_DIR], args[DST_DIR], args[TEMPLATE]);
+            SPI.genClass(args[TYPE], charsets,
+                         args[SRC_DIR], args[DST_DIR],
+                         args[TEMPLATE],
+                         args[OS].endsWith("windows") ? "windows" : "unix");
 
             // HKSCSMapping2008/XP.java goes together with Big5/MS950XP_HKSCS
             if (isStandard && hasBig5_HKSCS || isExtended && !hasBig5_HKSCS) {
                 HKSCS.genClass2008(args[SRC_DIR], args[DST_DIR],
-                                   isStandard ? "sun.nio.cs" : "sun.nio.cs.ext");
+                                   isStandard ? "sun.nio.cs" : "sun.nio.cs.ext",
+                                   new File(args[COPYRIGHT_SRC], "HKSCS.java"));
             }
             if (isStandard && hasMS950_HKSCS_XP || isExtended && !hasMS950_HKSCS_XP) {
                 HKSCS.genClassXP(args[SRC_DIR], args[DST_DIR],
-                                 isStandard ? "sun.nio.cs" : "sun.nio.cs.ext");
+                                 isStandard ? "sun.nio.cs" : "sun.nio.cs.ext",
+                                 new File(args[COPYRIGHT_SRC], "HKSCS.java"));
             }
-        } else if ("euctw".equals(args[TYPE])) {
-            EUC_TW.genClass(args);
+            if (isStandard && hasEUC_TW) {
+                EUC_TW.genClass("sun.nio.cs", args);
+            }
+            if (!isStandard && !hasEUC_TW) {
+                EUC_TW.genClass("sun.nio.cs.ext", args);
+            }
         } else if ("sjis0213".equals(args[TYPE])) {
             JIS0213.genClass(args);
         } else if ("hkscs".equals(args[TYPE])) {
@@ -156,6 +169,9 @@ public class Main {
                         break;
                     case "type":
                         cs.type = tokens[2];
+                        break;
+                    case "os":
+                        cs.os = tokens[2];
                         break;
                     case "hisname":
                         cs.hisName = tokens[2];

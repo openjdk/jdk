@@ -180,8 +180,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @since 1.8
      */
     public ZipEntry setLastModifiedTime(FileTime time) {
-        Objects.requireNonNull(name, "time");
-        this.mtime = time;
+        this.mtime = Objects.requireNonNull(time, "lastModifiedTime");
         this.time = time.to(TimeUnit.MILLISECONDS);
         return this;
     }
@@ -227,8 +226,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @since 1.8
      */
     public ZipEntry setLastAccessTime(FileTime time) {
-        Objects.requireNonNull(name, "time");
-        this.atime = time;
+        this.atime = Objects.requireNonNull(time, "lastAccessTime");
         return this;
     }
 
@@ -265,8 +263,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @since 1.8
      */
     public ZipEntry setCreationTime(FileTime time) {
-        Objects.requireNonNull(name, "time");
-        this.ctime = time;
+        this.ctime = Objects.requireNonNull(time, "creationTime");
         return this;
     }
 
