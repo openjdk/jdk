@@ -1,4 +1,4 @@
-## JPEG release 6b
+## Independent JPEG Group: JPEG release 6b
 
 ### JPEG License
 <pre>

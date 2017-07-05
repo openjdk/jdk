@@ -420,6 +420,7 @@ class ZipFile implements ZipConstants, Closeable {
                     Integer.MAX_VALUE : (int) avail);
         }
 
+        @SuppressWarnings("deprecation")
         protected void finalize() throws Throwable {
             close();
         }
@@ -641,9 +642,18 @@ class ZipFile implements ZipConstants, Closeable {
      * This will prevent holding up system resources for an undetermined
      * length of time.
      *
+     * @deprecated The {@code finalize} method has been deprecated.
+     *     Subclasses that override {@code finalize} in order to perform cleanup
+     *     should be modified to use alternative cleanup mechanisms and
+     *     to remove the overriding {@code finalize} method.
+     *     When overriding the {@code finalize} method, its implementation must explicitly
+     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
+     *     See the specification for {@link Object#finalize()} for further
+     *     information about migration options.
      * @throws IOException if an I/O error has occurred
      * @see    java.util.zip.ZipFile#close()
      */
+    @Deprecated(since="9")
     protected void finalize() throws IOException {
         close();
     }
@@ -813,6 +823,7 @@ class ZipFile implements ZipConstants, Closeable {
             }
         }
 
+        @SuppressWarnings("deprecation")
         protected void finalize() {
             close();
         }

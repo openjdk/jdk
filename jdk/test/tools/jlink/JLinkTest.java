@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -88,7 +87,7 @@ public class JLinkTest {
         {
             // number of built-in plugins
             List<Plugin> builtInPlugins = new ArrayList<>();
-            builtInPlugins.addAll(PluginRepository.getPlugins(Layer.boot()));
+            builtInPlugins.addAll(PluginRepository.getPlugins(ModuleLayer.boot()));
             totalPlugins = builtInPlugins.size();
             // actual num. of plugins loaded from jdk.jlink module
             int actualJLinkPlugins = 0;

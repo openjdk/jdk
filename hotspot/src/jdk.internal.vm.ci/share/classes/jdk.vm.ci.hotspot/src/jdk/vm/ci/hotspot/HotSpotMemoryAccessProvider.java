@@ -31,6 +31,10 @@ import jdk.vm.ci.meta.MemoryAccessProvider;
  */
 public interface HotSpotMemoryAccessProvider extends MemoryAccessProvider {
 
+    /**
+     * @throws IllegalArgumentException if the address computed from {@code base} and
+     *             {@code displacement} does not denote a location holding a narrow oop
+     */
     JavaConstant readNarrowOopConstant(Constant base, long displacement);
 
     Constant readKlassPointerConstant(Constant base, long displacement);
