@@ -59,7 +59,9 @@ import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
 import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
 import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.FunctionInitializer;
+import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -88,6 +90,8 @@ public final class Compiler implements Loggable {
     private final Source source;
 
     private final String sourceName;
+
+    private final ErrorManager errors;
 
     private final boolean optimistic;
 
@@ -311,6 +315,7 @@ public final class Compiler implements Loggable {
      * @param env       script environment
      * @param installer code installer
      * @param source    source to compile
+     * @param errors    error manager
      * @param isStrict  is this a strict compilation
      */
     public Compiler(
@@ -318,8 +323,9 @@ public final class Compiler implements Loggable {
             final ScriptEnvironment env,
             final CodeInstaller<ScriptEnvironment> installer,
             final Source source,
+            final ErrorManager errors,
             final boolean isStrict) {
-        this(context, env, installer, source, isStrict, false, null, null, null, null, null, null);
+        this(context, env, installer, source, errors, isStrict, false, null, null, null, null, null, null);
     }
 
     /**
@@ -329,6 +335,7 @@ public final class Compiler implements Loggable {
      * @param env                      script environment
      * @param installer                code installer
      * @param source                   source to compile
+     * @param errors                   error manager
      * @param isStrict                 is this a strict compilation
      * @param isOnDemand               is this an on demand compilation
      * @param compiledFunction         compiled function, if any
@@ -343,6 +350,7 @@ public final class Compiler implements Loggable {
             final ScriptEnvironment env,
             final CodeInstaller<ScriptEnvironment> installer,
             final Source source,
+            final ErrorManager errors,
             final boolean isStrict,
             final boolean isOnDemand,
             final RecompilableScriptFunctionData compiledFunction,
@@ -359,6 +367,7 @@ public final class Compiler implements Loggable {
         this.bytecode                 = new LinkedHashMap<>();
         this.log                      = initLogger(context);
         this.source                   = source;
+        this.errors                   = errors;
         this.sourceName               = FunctionNode.getSourceName(source);
         this.onDemand                 = isOnDemand;
         this.compiledFunction         = compiledFunction;
@@ -524,7 +533,17 @@ public final class Compiler implements Loggable {
 
         for (final CompilationPhase phase : phases) {
             log.fine(phase, " starting for ", quote(name));
-            newFunctionNode = phase.apply(this, phases, newFunctionNode);
+
+            try {
+                newFunctionNode = phase.apply(this, phases, newFunctionNode);
+            } catch (final ParserException error) {
+                errors.error(error);
+                if (env._dump_on_error) {
+                    error.printStackTrace(env.getErr());
+                }
+                return null;
+            }
+
             log.fine(phase, " done for function ", quote(name));
 
             if (env._print_mem_usage) {

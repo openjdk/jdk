@@ -721,6 +721,19 @@ copy_debug_jdk::
 	   ($(CD) $(JDK_IMAGE_DIR)/debug && $(TAR) -xf -) ; \
 	fi
 
+copy_optimized_jdk::
+	$(RM) -r $(JDK_IMAGE_DIR)/optimized
+	$(MKDIR) -p $(JDK_IMAGE_DIR)/optimized
+	if [ -d $(JDK_IMPORT_PATH)/optimized ] ; then \
+	  ($(CD) $(JDK_IMPORT_PATH)/optimized && \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
+	   ($(CD) $(JDK_IMAGE_DIR)/optimized && $(TAR) -xf -) ; \
+	else \
+	  ($(CD) $(JDK_IMPORT_PATH) && \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
+	   ($(CD) $(JDK_IMAGE_DIR)/optimized && $(TAR) -xf -) ; \
+	fi
+
 #
 # Check target
 #

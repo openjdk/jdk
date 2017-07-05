@@ -252,6 +252,15 @@ public class Shell {
                     return COMPILATION_ERROR;
                 }
 
+                new Compiler(
+                       context,
+                       env,
+                       null, //null - pass no code installer - this is compile only
+                       functionNode.getSource(),
+                       context.getErrorManager(),
+                       env._strict | functionNode.isStrict()).
+                       compile(functionNode, CompilationPhases.COMPILE_ALL_NO_INSTALL);
+
                 if (env._print_ast) {
                     context.getErr().println(new ASTWriter(functionNode));
                 }
@@ -260,14 +269,9 @@ public class Shell {
                     context.getErr().println(new PrintVisitor(functionNode));
                 }
 
-                //null - pass no code installer - this is compile only
-                new Compiler(
-                       context,
-                       env,
-                       null,
-                       functionNode.getSource(),
-                       env._strict | functionNode.isStrict()).
-                       compile(functionNode, CompilationPhases.COMPILE_ALL_NO_INSTALL);
+                if (errors.getNumberOfErrors() != 0) {
+                    return COMPILATION_ERROR;
+                }
             }
         } finally {
             env.getOut().flush();

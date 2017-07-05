@@ -1377,7 +1377,7 @@ awtJNI_CreateColorData(JNIEnv *env, AwtGraphicsConfigDataPtr adata,
 
         /* Unlock now to initialize the SystemColor class */
         if (lock) {
-            AWT_UNLOCK ();
+            AWT_UNLOCK_CHECK_EXCEPTION(env);
         }
         sysColors = (*env)->FindClass (env, "java/awt/SystemColor");
         CHECK_NULL(sysColors);

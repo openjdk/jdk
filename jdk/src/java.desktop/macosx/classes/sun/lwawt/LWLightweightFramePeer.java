@@ -94,10 +94,12 @@ public class LWLightweightFramePeer extends LWWindowPeer {
 
     @Override
     public void addDropTarget(DropTarget dt) {
+        getLwTarget().addDropTarget(dt);
     }
 
     @Override
     public void removeDropTarget(DropTarget dt) {
+        getLwTarget().removeDropTarget(dt);
     }
 
     @Override

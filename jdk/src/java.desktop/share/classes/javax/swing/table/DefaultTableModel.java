@@ -70,10 +70,18 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * The <code>Vector</code> of <code>Vectors</code> of
      * <code>Object</code> values.
      */
-    protected Vector<Vector<Object>>    dataVector;
+    @SuppressWarnings("rawtypes")
+    protected Vector<Vector>    dataVector;
 
     /** The <code>Vector</code> of column identifiers. */
-    protected Vector<Object>    columnIdentifiers;
+    @SuppressWarnings("rawtypes")
+    protected Vector    columnIdentifiers;
+    // Unfortunately, for greater source compatibility the inner-most
+    // Vector in the two fields above is being left raw. The Vector is
+    // read as well as written so using Vector<?> is not suitable and
+    // using Vector<Object> (without adding copying of input Vectors),
+    // would disallow existing code that used, say, a Vector<String>
+    // as an input parameter.
 
 //
 // Constructors
@@ -121,7 +129,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #setDataVector
      * @see #setValueAt
      */
-    public DefaultTableModel(Vector<Object> columnNames, int rowCount) {
+    public DefaultTableModel(Vector<?> columnNames, int rowCount) {
         setDataVector(newVector(rowCount), columnNames);
     }
 
@@ -156,7 +164,8 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #getDataVector
      * @see #setDataVector
      */
-    public DefaultTableModel(Vector<Vector<Object>> data, Vector<Object> columnNames) {
+    @SuppressWarnings("rawtypes")
+    public DefaultTableModel(Vector<? extends Vector> data, Vector<?> columnNames) {
         setDataVector(data, columnNames);
     }
 
@@ -191,7 +200,8 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #newRowsAdded
      * @see #setDataVector
      */
-    public Vector<Vector<Object>> getDataVector() {
+    @SuppressWarnings("rawtypes")
+    public Vector<Vector> getDataVector() {
         return dataVector;
     }
 
@@ -219,9 +229,10 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   columnIdentifiers     the names of the columns
      * @see #getDataVector
      */
-    public void setDataVector(Vector<Vector<Object>> dataVector,
-                              Vector<Object> columnIdentifiers) {
-        this.dataVector = nonNullVector(dataVector);
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void setDataVector(Vector<? extends Vector> dataVector,
+                              Vector<?> columnIdentifiers) {
+        this.dataVector = nonNullVector((Vector<Vector>)dataVector);
         this.columnIdentifiers = nonNullVector(columnIdentifiers);
         justifyRows(0, getRowCount());
         fireTableStructureChanged();
@@ -267,7 +278,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
             if (dataVector.elementAt(i) == null) {
                 dataVector.setElementAt(new Vector<>(), i);
             }
-            ((Vector)dataVector.elementAt(i)).setSize(getColumnCount());
+            dataVector.elementAt(i).setSize(getColumnCount());
         }
     }
 
@@ -350,7 +361,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      * @param   rowData          optional data of the row being added
      */
-    public void addRow(Vector<Object> rowData) {
+    public void addRow(Vector<?> rowData) {
         insertRow(getRowCount(), rowData);
     }
 
@@ -374,7 +385,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   rowData         optional data of the row being added
      * @exception  ArrayIndexOutOfBoundsException  if the row was invalid
      */
-    public void insertRow(int row, Vector<Object> rowData) {
+    public void insertRow(int row, Vector<?> rowData) {
         dataVector.insertElementAt(rowData, row);
         justifyRows(row, row+1);
         fireTableRowsInserted(row, row);
@@ -484,7 +495,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *                          to zero columns
      * @see #setNumRows
      */
-    public void setColumnIdentifiers(Vector<Object> columnIdentifiers) {
+    public void setColumnIdentifiers(Vector<?> columnIdentifiers) {
         setDataVector(dataVector, columnIdentifiers);
     }
 
@@ -550,7 +561,8 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   columnName the identifier of the column being added
      * @param   columnData       optional data of the column being added
      */
-    public void addColumn(Object columnName, Vector<Object> columnData) {
+    @SuppressWarnings("unchecked") // Adding element to raw columnIdentifiers
+    public void addColumn(Object columnName, Vector<?> columnData) {
         columnIdentifiers.addElement(columnName);
         if (columnData != null) {
             int columnSize = columnData.size();
@@ -652,6 +664,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *               column was given
      */
     public Object getValueAt(int row, int column) {
+        @SuppressWarnings("unchecked")
         Vector<Object> rowVector = dataVector.elementAt(row);
         return rowVector.elementAt(column);
     }
@@ -668,6 +681,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *               column was given
      */
     public void setValueAt(Object aValue, int row, int column) {
+        @SuppressWarnings("unchecked")
         Vector<Object> rowVector = dataVector.elementAt(row);
         rowVector.setElementAt(aValue, column);
         fireTableCellUpdated(row, column);

@@ -94,6 +94,9 @@ public final class ScriptEnvironment {
     /** Use single Global instance per jsr223 engine instance. */
     public final boolean _global_per_engine;
 
+    /** Enable experimental ECMAScript 6 features. */
+    public final boolean _es6;
+
     /** Argument passed to compile only if optimistic compilation should take place */
     public static final String COMPILE_ONLY_OPTIMISTIC_ARG = "optimistic";
 
@@ -257,6 +260,15 @@ public final class ScriptEnvironment {
         _strict               = options.getBoolean("strict");
         _version              = options.getBoolean("version");
         _verify_code          = options.getBoolean("verify.code");
+
+        final String language = options.getString("language");
+        if (language == null || language.equals("es5")) {
+            _es6 = false;
+        } else if (language.equals("es6")) {
+            _es6 = true;
+        } else {
+            throw new RuntimeException("Unsupported language: " + language);
+        }
 
         String dir = null;
         String func = null;

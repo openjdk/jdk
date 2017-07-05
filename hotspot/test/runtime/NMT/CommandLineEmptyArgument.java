@@ -26,7 +26,6 @@
  * @key nmt
  * @summary Empty argument to NMT should result in an informative error message
  * @library /testlibrary
- * @ignore 8055051
  */
 
 import com.oracle.java.testlibrary.*;
