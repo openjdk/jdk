@@ -25,8 +25,7 @@
 
 package java.lang;
 
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
+import jdk.internal.misc.Signal;
 
 
 /**
@@ -39,7 +38,7 @@ import sun.misc.SignalHandler;
 
 class Terminator {
 
-    private static SignalHandler handler = null;
+    private static Signal.Handler handler = null;
 
     /* Invocations of setup and teardown are already synchronized
      * on the shutdown lock, so no further synchronization is needed here
@@ -47,7 +46,7 @@ class Terminator {
 
     static void setup() {
         if (handler != null) return;
-        SignalHandler sh = new SignalHandler() {
+        Signal.Handler sh = new Signal.Handler() {
             public void handle(Signal sig) {
                 Shutdown.exit(sig.getNumber() + 0200);
             }

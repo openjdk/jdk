@@ -28,13 +28,21 @@
  * @run
  */
 
-if (typeof Symbol !== 'undefined' || 'Symbol' in this) {
-    Assert.fail('Symbol is defined in global scope');
+function checkUndefined(name, object) {
+    if (typeof object[name] !== 'undefined' || name in object) {
+        Assert.fail(name + ' is defined in ' + object);
+    }
 }
 
-if (typeof Object.getOwnPropertySymbols !== 'undefined' || 'getOwnPropertySymbols' in Object) {
-    Assert.fail('getOwnPropertySymbols is defined in global Object');
-}
+checkUndefined('Symbol', this);
+checkUndefined('Map', this);
+checkUndefined('Set', this);
+checkUndefined('WeakMap', this);
+checkUndefined('WeakSet', this);
+checkUndefined('getOwnPropertySymbols', Object);
+checkUndefined('entries', Array.prototype);
+checkUndefined('values', Array.prototype);
+checkUndefined('keys', Array.prototype);
 
 function expectError(src, msg, error) {
     try {

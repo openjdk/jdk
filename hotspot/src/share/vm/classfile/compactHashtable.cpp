@@ -365,14 +365,14 @@ bool HashtableTextDump::skip_newline() {
 }
 
 int HashtableTextDump::skip(char must_be_char) {
-  corrupted_if(remain() < 1);
-  corrupted_if(*_p++ != must_be_char);
+  corrupted_if(remain() < 1, "Truncated");
+  corrupted_if(*_p++ != must_be_char, "Unexpected character");
   return 0;
 }
 
 void HashtableTextDump::skip_past(char c) {
   for (;;) {
-    corrupted_if(remain() < 1);
+    corrupted_if(remain() < 1, "Truncated");
     if (*_p++ == c) {
       return;
     }
@@ -381,7 +381,7 @@ void HashtableTextDump::skip_past(char c) {
 
 void HashtableTextDump::check_version(const char* ver) {
   int len = (int)strlen(ver);
-  corrupted_if(remain() < len);
+  corrupted_if(remain() < len, "Truncated");
   if (strncmp(_p, ver, len) != 0) {
     quit("wrong version of hashtable dump file", _filename);
   }
@@ -451,7 +451,7 @@ int HashtableTextDump::scan_symbol_prefix() {
 jchar HashtableTextDump::unescape(const char* from, const char* end, int count) {
   jchar value = 0;
 
-  corrupted_if(from + count > end);
+  corrupted_if(from + count > end, "Truncated");
 
   for (int i=0; i<count; i++) {
     char c = *from++;
@@ -486,7 +486,7 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
     if (*from != '\\') {
       *to++ = *from++;
     } else {
-      corrupted_if(from + 2 > end);
+      corrupted_if(from + 2 > end, "Truncated");
       char c = from[1];
       from += 2;
       switch (c) {
@@ -507,7 +507,7 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
       }
     }
   }
-  corrupted_if(n > 0); // expected more chars but file has ended
+  corrupted_if(n > 0, "Truncated"); // expected more chars but file has ended
   _p = from;
   skip_newline();
 }

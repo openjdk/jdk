@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -875,10 +875,11 @@ public abstract class SSLEngine {
      * created, all enabled cipher suites support a minimum quality of
      * service.  Thus, in some environments this value might be empty.
      * <P>
-     * Even if a suite has been enabled, it might never be used.  (For
-     * example, the peer does not support it, the requisite
-     * certificates/private keys for the suite are not available, or an
-     * anonymous suite is enabled but authentication is required.)
+     * Note that even if a suite is enabled, it may never be used. This
+     * can occur if the peer does not support it, or its use is restricted,
+     * or the requisite certificates (and private keys) for the suite are
+     * not available, or an anonymous suite is enabled but authentication
+     * is required.
      *
      * @return  an array of cipher suite names
      * @see     #getSupportedCipherSuites()
@@ -920,6 +921,11 @@ public abstract class SSLEngine {
     /**
      * Returns the names of the protocol versions which are currently
      * enabled for use with this {@code SSLEngine}.
+     * <P>
+     * Note that even if a protocol is enabled, it may never be used.
+     * This can occur if the peer does not support the protocol, or its
+     * use is restricted, or there are no enabled cipher suites supported
+     * by the protocol.
      *
      * @return  an array of protocols
      * @see     #setEnabledProtocols(String [])

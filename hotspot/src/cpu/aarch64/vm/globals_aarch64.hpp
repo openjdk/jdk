@@ -40,11 +40,7 @@ define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for im
 define_pd_global(bool, TrapBasedNullChecks,  false);
 define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs past to check cast
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
 define_pd_global(intx, CodeEntryAlignment,       64);
-#else
-define_pd_global(intx, CodeEntryAlignment,       16);
-#endif // COMPILER2
 define_pd_global(intx, OptoLoopAlignment,        16);
 define_pd_global(intx, InlineFrequencyCount,     100);
 

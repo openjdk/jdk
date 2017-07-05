@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 
-// The Concurrent Mark GC Thread triggers the parallel CMConcurrentMarkingTasks
+// The Concurrent Mark GC Thread triggers the parallel G1CMConcurrentMarkingTasks
 // as well as handling various marking cleanup.
 
-class ConcurrentMark;
+class G1ConcurrentMark;
 class G1CollectorPolicy;
 
 class ConcurrentMarkThread: public ConcurrentGCThread {
@@ -45,7 +45,7 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   virtual void run();
 
  private:
-  ConcurrentMark*                  _cm;
+  G1ConcurrentMark*                _cm;
 
   enum State {
     Idle,
@@ -65,7 +65,7 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
  public:
   // Constructor
-  ConcurrentMarkThread(ConcurrentMark* cm);
+  ConcurrentMarkThread(G1ConcurrentMark* cm);
 
   static void makeSurrogateLockerThread(TRAPS);
   static SurrogateLockerThread* slt() { return _slt; }
@@ -75,7 +75,7 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // Marking virtual time so far this thread and concurrent marking tasks.
   double vtime_mark_accum();
 
-  ConcurrentMark* cm()     { return _cm; }
+  G1ConcurrentMark* cm()   { return _cm; }
 
   void set_idle()          { assert(_state != Started, "must not be starting a new cycle"); _state = Idle; }
   bool idle()              { return _state == Idle; }

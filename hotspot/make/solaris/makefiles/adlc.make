@@ -66,17 +66,21 @@ CXXFLAGS = $(SYSDEFS) $(INCLUDES)
 CXXFLAGS += -DASSERT
 
 ifndef USE_GCC
-  # We need libCstd.so for adlc 
+  # We need libCstd.so for adlc
   CFLAGS += -library=Cstd -g
   LFLAGS += -library=Cstd -g
 endif
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
+CFLAGS_WARN = +w
 # Compiler warnings are treated as errors
 ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
-  CFLAGS_WARN = +w -errwarn
+  WARNINGS_ARE_ERRORS ?= -xwe
 endif
-# When using compiler version 5.13 (Solaris Studio 12.4), calls to explicitly 
+
+CFLAGS_WARN += $(WARNINGS_ARE_ERRORS)
+
+# When using compiler version 5.13 (Solaris Studio 12.4), calls to explicitly
 # instantiated template functions trigger this warning when +w is active.
 ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 513), 1)
   CFLAGS_WARN += -erroff=notemsource

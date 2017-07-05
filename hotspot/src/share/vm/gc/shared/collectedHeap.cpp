@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -571,30 +571,28 @@ void CollectedHeap::resize_all_tlabs() {
   }
 }
 
-void CollectedHeap::full_gc_dump(GCTimer* timer, const char* when) {
-  if (HeapDumpBeforeFullGC || HeapDumpAfterFullGC) {
-    GCIdMarkAndRestore gc_id_mark;
-    FormatBuffer<> title("Heap Dump (%s full gc)", when);
-    GCTraceTime(Info, gc) tm(title.buffer(), timer);
+void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
+  assert(timer != NULL, "timer is null");
+  if ((HeapDumpBeforeFullGC && before) || (HeapDumpAfterFullGC && !before)) {
+    GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
     HeapDumper::dump_heap();
   }
+
   LogHandle(gc, classhisto) log;
   if (log.is_trace()) {
+    GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
     ResourceMark rm;
-    GCIdMarkAndRestore gc_id_mark;
-    FormatBuffer<> title("Class Histogram (%s full gc)", when);
-    GCTraceTime(Trace, gc, classhisto) tm(title.buffer(), timer);
     VM_GC_HeapInspection inspector(log.trace_stream(), false /* ! full gc */);
     inspector.doit();
   }
 }
 
 void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
-  full_gc_dump(timer, "before");
+  full_gc_dump(timer, true);
 }
 
 void CollectedHeap::post_full_gc_dump(GCTimer* timer) {
-  full_gc_dump(timer, "after");
+  full_gc_dump(timer, false);
 }
 
 void CollectedHeap::initialize_reserved_region(HeapWord *start, HeapWord *end) {

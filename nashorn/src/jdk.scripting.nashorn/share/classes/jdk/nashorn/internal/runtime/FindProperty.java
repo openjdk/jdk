@@ -163,7 +163,7 @@ public final class FindProperty {
      * @return appropriate receiver
      */
     public ScriptObject getGetterReceiver() {
-        return property != null && property instanceof UserAccessorProperty ? self : prototype;
+        return property != null && property.isAccessorProperty() ? self : prototype;
     }
 
     /**

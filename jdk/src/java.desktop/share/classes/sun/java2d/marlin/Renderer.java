@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ final class Renderer implements PathConsumer2D, MarlinConst {
     private static final int ALL_BUT_LSB = 0xfffffffe;
     private static final int ERR_STEP_MAX = 0x7fffffff; // = 2^31 - 1
 
-    private static final double POWER_2_TO_32 = FloatMath.powerOfTwoD(32);
+    private static final double POWER_2_TO_32 = 0x1.0p32;
 
     // use float to make tosubpix methods faster (no int to float conversion)
     public static final float f_SUBPIXEL_POSITIONS_X

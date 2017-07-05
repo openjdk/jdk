@@ -35,8 +35,6 @@ text: .text%Java_sun_reflect_NativeConstructorAccessorImpl_newInstance0;
 text: .text%Java_java_lang_System_setOut0;
 text: .text%Java_java_lang_System_setErr0;
 text: .text%Java_java_lang_System_identityHashCode;
-text: .text%Java_sun_misc_Signal_findSignal;
-text: .text%Java_sun_misc_Signal_handle0;
 text: .text%JNU_NewObjectByName;
 text: .text%Java_java_io_UnixFileSystem_initIDs;
 text: .text%Java_java_io_UnixFileSystem_canonicalize0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,24 +145,9 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
   virtual CardTableRS* create_rem_set(MemRegion reserved);
 
-  // This method controls how a collector satisfies a request
-  // for a block of memory.  "gc_time_limit_was_exceeded" will
-  // be set to true if the adaptive size policy determine that
-  // an excessive amount of time is being spent doing collections
-  // and caused a NULL to be returned.  If a NULL is not returned,
-  // "gc_time_limit_was_exceeded" has an undefined meaning.
-  virtual HeapWord* mem_allocate_work(size_t size,
-                                      bool is_tlab,
-                                      bool* gc_overhead_limit_was_exceeded) = 0;
-
-  // This method controls how a collector handles one or more
-  // of its generations being fully allocated.
-  virtual HeapWord *satisfy_failed_allocation(size_t size, bool is_tlab) = 0;
-  // This method controls how a collector handles a metadata allocation
-  // failure.
-  virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
-                                                       size_t size,
-                                                       Metaspace::MetadataType mdtype);
+  MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
+                                               size_t size,
+                                               Metaspace::MetadataType mdtype);
 
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }

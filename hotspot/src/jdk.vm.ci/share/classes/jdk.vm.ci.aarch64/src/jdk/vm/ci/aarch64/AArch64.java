@@ -76,14 +76,14 @@ public class AArch64 extends Architecture {
     public static final Register zr = r31;
     public static final Register sp = r31;
 
+    // @formatter:off
     public static final Register[] cpuRegisters = {
-        // @formatter:off
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
         r24, r25, r26, r27, r28, r29, r30, r31
-        // @formatter:on
     };
+    // @formatter:on
 
     public static final RegisterCategory SIMD = new RegisterCategory("SIMD");
 
@@ -121,17 +121,17 @@ public class AArch64 extends Architecture {
     public static final Register v30 = new Register(62, 30, "v30", SIMD);
     public static final Register v31 = new Register(63, 31, "v31", SIMD);
 
+    // @formatter:off
     public static final Register[] simdRegisters = {
-        // @formatter:off
         v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7,
         v8,  v9,  v10, v11, v12, v13, v14, v15,
         v16, v17, v18, v19, v20, v21, v22, v23,
         v24, v25, v26, v27, v28, v29, v30, v31
-        // @formatter:on
     };
+    // @formatter:on
 
+    // @formatter:off
     public static final Register[] allRegisters = {
-        // @formatter:off
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
@@ -141,14 +141,14 @@ public class AArch64 extends Architecture {
         v8,  v9,  v10, v11, v12, v13, v14, v15,
         v16, v17, v18, v19, v20, v21, v22, v23,
         v24, v25, v26, v27, v28, v29, v30, v31
-        // @formatter:on
     };
+    // @formatter:on
 
     /**
      * Basic set of CPU features mirroring what is returned from the cpuid instruction. See:
      * {@code VM_Version::cpuFeatureFlags}.
      */
-    public static enum CPUFeature {
+    public enum CPUFeature {
         FP,
         ASIMD,
         EVTSTRM,
@@ -166,7 +166,7 @@ public class AArch64 extends Architecture {
     /**
      * Set of flags to control code emission.
      */
-    public static enum Flag {
+    public enum Flag {
         UseBarriersForVolatile,
         UseCRC32,
         UseNeon

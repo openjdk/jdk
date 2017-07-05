@@ -1494,7 +1494,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
 }
 
 void CodeCache::print_codelist(outputStream* st) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   NMethodIterator iter;
   while(iter.next_alive()) {
@@ -1508,9 +1508,8 @@ void CodeCache::print_codelist(outputStream* st) {
 }
 
 void CodeCache::print_layout(outputStream* st) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
-
   print_summary(st, true);
 }
 

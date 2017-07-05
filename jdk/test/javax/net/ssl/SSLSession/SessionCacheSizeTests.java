@@ -31,7 +31,6 @@
  * @bug 4366807
  * @summary Need new APIs to get/set session timeout and session cache size.
  * @run main/othervm SessionCacheSizeTests
- * @key intermittent
  */
 
 import java.io.*;

@@ -504,12 +504,22 @@ public class CLDRConverter {
      * Examine if the id includes the country (territory) code. If it does, it returns
      * the country code.
      * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it return "SG".
-     * For now, it does not return US M.49 code, e.g., '001', as those three digit numbers cannot
+     * It does NOT return UN M.49 code, e.g., '001', as those three digit numbers cannot
      * be translated into package names.
      */
     static String getCountryCode(String id) {
-        String ctry = Locale.forLanguageTag(id.replaceAll("_", "-")).getCountry();
-        return ctry.length() == 2 ? ctry : null;
+        String rgn = getRegionCode(id);
+        return rgn.length() == 2 ? rgn: null;
+    }
+
+    /**
+     * Examine if the id includes the region code. If it does, it returns
+     * the region code.
+     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it return "SG".
+     * It DOES return UN M.49 code, e.g., '001', as well as ISO 3166 two letter country codes.
+     */
+    static String getRegionCode(String id) {
+        return Locale.forLanguageTag(id.replaceAll("_", "-")).getCountry();
     }
 
     private static class KeyComparator implements Comparator<String> {

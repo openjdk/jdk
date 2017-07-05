@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,7 +364,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
                                                    return (TosState)((_flags >> tos_state_shift) & tos_state_mask); }
 
   // Code generation support
-  static WordSize size()                         { return in_WordSize(sizeof(ConstantPoolCacheEntry) / HeapWordSize); }
+  static WordSize size()                         { return in_WordSize(sizeof(ConstantPoolCacheEntry) / wordSize); }
   static ByteSize size_in_bytes()                { return in_ByteSize(sizeof(ConstantPoolCacheEntry)); }
   static ByteSize indices_offset()               { return byte_offset_of(ConstantPoolCacheEntry, _indices); }
   static ByteSize f1_offset()                    { return byte_offset_of(ConstantPoolCacheEntry, _f1); }
@@ -439,14 +439,14 @@ class ConstantPoolCache: public MetaspaceObj {
  private:
   void set_length(int length)                    { _length = length; }
 
-  static int header_size()                       { return sizeof(ConstantPoolCache) / HeapWordSize; }
-  static int size(int length)                    { return align_object_size(header_size() + length * in_words(ConstantPoolCacheEntry::size())); }
+  static int header_size()                       { return sizeof(ConstantPoolCache) / wordSize; }
+  static int size(int length)                    { return align_metadata_size(header_size() + length * in_words(ConstantPoolCacheEntry::size())); }
  public:
   int size() const                               { return size(length()); }
  private:
 
   // Helpers
-  ConstantPool**        constant_pool_addr()   { return &_constant_pool; }
+  ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
   ConstantPoolCacheEntry* base() const           { return (ConstantPoolCacheEntry*)((address)this + in_bytes(base_offset())); }
 
   friend class constantPoolCacheKlass;
