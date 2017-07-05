@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1858,7 +1858,7 @@ JNI_ENTRY(jobject, jni_ToReflectedField(JNIEnv *env, jclass cls, jfieldID fieldI
     // Static field. The fieldID a JNIid specifying the field holder and the offset within the klassOop.
     JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fieldID);
     assert(id->is_static_field_id(), "invalid static field id");
-    found = instanceKlass::cast(id->holder())->find_local_field_from_offset(id->offset(), true, &fd);
+    found = id->find_local_field(&fd);
   } else {
     // Non-static field. The fieldID is really the offset of the field within the instanceOop.
     int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);
@@ -1906,9 +1906,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   JNIid* id = instanceKlass::cast(fd.field_holder())->jni_id_for(fd.offset());
   debug_only(id->set_is_static_field_id();)
 
-  debug_only(int first_offset = instanceKlass::cast(fd.field_holder())->offset_of_static_fields();)
-  debug_only(int end_offset = first_offset + (instanceKlass::cast(fd.field_holder())->static_field_size() * wordSize);)
-  assert(id->offset() >= first_offset && id->offset() < end_offset, "invalid static field offset");
+  debug_only(id->verify(fd.field_holder()));
 
   ret = jfieldIDWorkaround::to_static_jfieldID(id);
   return ret;
@@ -1928,7 +1926,7 @@ JNI_ENTRY(jobject, jni_GetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID 
   if (JvmtiExport::should_post_field_access()) {
     JvmtiExport::jni_GetField_probe(thread, NULL, NULL, id->holder(), fieldID, true);
   }
-  jobject ret = JNIHandles::make_local(id->holder()->obj_field(id->offset()));
+  jobject ret = JNIHandles::make_local(id->holder()->java_mirror()->obj_field(id->offset()));
   DTRACE_PROBE1(hotspot_jni, GetStaticObjectField__return, ret);
   return ret;
 JNI_END
@@ -1950,7 +1948,7 @@ JNI_ENTRY(Return, jni_GetStatic##Result##Field(JNIEnv *env, jclass clazz, jfield
   if (JvmtiExport::should_post_field_access()) { \
     JvmtiExport::jni_GetField_probe(thread, NULL, NULL, id->holder(), fieldID, true); \
   } \
-  ret = id->holder()-> Fieldname##_field (id->offset()); \
+  ret = id->holder()->java_mirror()-> Fieldname##_field (id->offset()); \
   return ret;\
 JNI_END
 
@@ -1976,7 +1974,7 @@ JNI_ENTRY(void, jni_SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fie
     field_value.l = value;
     JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, 'L', (jvalue *)&field_value);
   }
-  id->holder()->obj_field_put(id->offset(), JNIHandles::resolve(value));
+  id->holder()->java_mirror()->obj_field_put(id->offset(), JNIHandles::resolve(value));
   DTRACE_PROBE(hotspot_jni, SetStaticObjectField__return);
 JNI_END
 
@@ -1999,7 +1997,7 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
     field_value.unionType = value; \
     JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, SigType, (jvalue *)&field_value); \
   } \
-  id->holder()-> Fieldname##_field_put (id->offset(), value); \
+  id->holder()->java_mirror()-> Fieldname##_field_put (id->offset(), value); \
   DTRACE_PROBE(hotspot_jni, SetStatic##Result##Field__return);\
 JNI_END
 

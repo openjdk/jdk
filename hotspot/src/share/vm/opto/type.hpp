@@ -988,8 +988,8 @@ public:
 
   static const TypeNarrowOop *make( const TypePtr* type);
 
-  static const TypeNarrowOop* make_from_constant(ciObject* con) {
-    return make(TypeOopPtr::make_from_constant(con));
+  static const TypeNarrowOop* make_from_constant(ciObject* con, bool require_constant = false) {
+    return make(TypeOopPtr::make_from_constant(con, require_constant));
   }
 
   // returns the equivalent ptr type for this compressed pointer
