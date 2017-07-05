@@ -26,6 +26,7 @@ package sun.jvm.hotspot.utilities;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
@@ -204,15 +205,29 @@ public class ObjectReader {
       }
    }
 
-   protected Object getHashtable(Instance oop, boolean isProperties) {
+   private void setPropertiesEntry(java.util.Properties p, Oop oop) {
+      InstanceKlass ik = (InstanceKlass)oop.getKlass();
+      OopField keyField = (OopField)ik.findField("key", "Ljava/lang/Object;");
+      OopField valueField = (OopField)ik.findField("val", "Ljava/lang/Object;");
+
+      try {
+         p.setProperty((String)readObject(keyField.getValue(oop)),
+                       (String)readObject(valueField.getValue(oop)));
+      } catch (ClassNotFoundException ce) {
+         if (DEBUG) {
+            debugPrintStackTrace(ce);
+         }
+      }
+   }
+
+   protected Object getHashtable(Instance oop) {
       InstanceKlass k = (InstanceKlass)oop.getKlass();
       OopField tableField = (OopField)k.findField("table", "[Ljava/util/Hashtable$Entry;");
       if (tableField == null) {
          debugPrintln("Could not find field of [Ljava/util/Hashtable$Entry;");
          return null;
       }
-      java.util.Hashtable table = (isProperties) ? new java.util.Properties()
-                                                 : new java.util.Hashtable();
+      java.util.Hashtable table = new java.util.Hashtable();
       ObjArray kvs = (ObjArray)tableField.getValue(oop);
       long size = kvs.getLength();
       debugPrintln("Hashtable$Entry Size = " + size);
@@ -223,6 +238,39 @@ public class ObjectReader {
          }
       }
       return table;
+   }
+
+   private Properties getProperties(Instance oop) {
+      InstanceKlass k = (InstanceKlass)oop.getKlass();
+      OopField mapField = (OopField)k.findField("map", "Ljava/util/concurrent/ConcurrentHashMap;");
+      if (mapField == null) {
+         debugPrintln("Could not find field of Ljava/util/concurrent/ConcurrentHashMap");
+         return null;
+      }
+
+      Instance mapObj = (Instance)mapField.getValue(oop);
+      if (mapObj == null) {
+         debugPrintln("Could not get map field from java.util.Properties");
+         return null;
+      }
+
+      InstanceKlass mk = (InstanceKlass)mapObj.getKlass();
+      OopField tableField = (OopField)mk.findField("table", "[Ljava/util/concurrent/ConcurrentHashMap$Node;");
+      if (tableField == null) {
+         debugPrintln("Could not find field of [Ljava/util/concurrent/ConcurrentHashMap$Node");
+         return null;
+      }
+
+      java.util.Properties props = new java.util.Properties();
+      ObjArray kvs = (ObjArray)tableField.getValue(mapObj);
+      long size = kvs.getLength();
+      debugPrintln("ConcurrentHashMap$Node Size = " + size);
+      LongStream.range(0, size)
+                .mapToObj(kvs::getObjAt)
+                .filter(o -> o != null)
+                .forEach(o -> setPropertiesEntry(props, o));
+
+      return props;
    }
 
    public Object readInstance(Instance oop) throws ClassNotFoundException {
@@ -240,11 +288,11 @@ public class ObjectReader {
          }
 
          if (kls.getName().equals(javaUtilHashtable())) {
-            return getHashtable(oop, false);
+            return getHashtable(oop);
          }
 
          if (kls.getName().equals(javaUtilProperties())) {
-            return getHashtable(oop, true);
+            return getProperties(oop);
          }
 
          Class clz = readClass(kls);

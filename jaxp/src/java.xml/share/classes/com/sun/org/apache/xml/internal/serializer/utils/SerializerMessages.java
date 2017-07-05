@@ -19,9 +19,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: SerializerMessages.java,v 1.1.4.1 2005/09/08 11:03:11 suresh_emailid Exp $
- */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
 import java.util.ListResourceBundle;

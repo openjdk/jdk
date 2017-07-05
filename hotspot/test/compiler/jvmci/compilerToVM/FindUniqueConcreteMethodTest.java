@@ -32,6 +32,8 @@
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.runtime
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.FindUniqueConcreteMethodTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -41,7 +43,10 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
+import compiler.jvmci.common.testcases.DuplicateSimpleSingleImplementerInterface;
+import compiler.jvmci.common.testcases.SimpleSingleImplementerInterface;
 import compiler.jvmci.common.testcases.MultipleImplementer1;
+import compiler.jvmci.common.testcases.MultipleSuperImplementers;
 import compiler.jvmci.common.testcases.SingleImplementer;
 import compiler.jvmci.common.testcases.SingleImplementerInterface;
 import compiler.jvmci.common.testcases.SingleSubclass;
@@ -96,6 +101,11 @@ public class FindUniqueConcreteMethodTest {
         // static method
         result.add(new TestCase(false, SingleSubclass.class,
                 SingleSubclass.class, "staticMethod"));
+        // interface method
+        result.add(new TestCase(false, MultipleSuperImplementers.class,
+                                DuplicateSimpleSingleImplementerInterface.class, "interfaceMethod", false));
+        result.add(new TestCase(false, MultipleSuperImplementers.class,
+                                SimpleSingleImplementerInterface.class, "interfaceMethod", false));
         return result;
     }
 
@@ -103,7 +113,7 @@ public class FindUniqueConcreteMethodTest {
         System.out.println(tcase);
         Method method = tcase.holder.getDeclaredMethod(tcase.methodName);
         HotSpotResolvedJavaMethod testMethod = CTVMUtilities
-                .getResolvedMethod(tcase.receiver, method);
+            .getResolvedMethod(tcase.methodFromReceiver ? tcase.receiver : tcase.holder, method);
         HotSpotResolvedObjectType resolvedType = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.receiver), getClass(),
                 /* resolve = */ true);
@@ -118,20 +128,25 @@ public class FindUniqueConcreteMethodTest {
         public final Class<?> holder;
         public final String methodName;
         public final boolean isPositive;
+        public final boolean methodFromReceiver;
 
         public TestCase(boolean isPositive, Class<?> clazz, Class<?> holder,
-                String methodName) {
+                        String methodName, boolean methodFromReceiver) {
             this.receiver = clazz;
             this.methodName = methodName;
             this.isPositive = isPositive;
             this.holder = holder;
+            this.methodFromReceiver = methodFromReceiver;
+        }
+
+        public TestCase(boolean isPositive, Class<?> clazz, Class<?> holder, String methodName) {
+            this(isPositive, clazz, holder, methodName, true);
         }
 
         @Override
         public String toString() {
-            return String.format("CASE: receiver=%s, holder=%s, method=%s,"
-                    + " isPositive=%s", receiver.getName(),
-                    holder.getName(), methodName, isPositive);
+            return String.format("CASE: receiver=%s, holder=%s, method=%s, isPositive=%s, methodFromReceiver=%s",
+                                 receiver.getName(), holder.getName(), methodName, isPositive, methodFromReceiver);
         }
     }
 }

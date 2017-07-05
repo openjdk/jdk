@@ -89,7 +89,7 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
         data_chunk.close();
     }
 
-    private static class NoCloseOutputStream extends OutputStream {
+    private static final class NoCloseOutputStream extends OutputStream {
         final OutputStream out;
 
         NoCloseOutputStream(OutputStream out) {

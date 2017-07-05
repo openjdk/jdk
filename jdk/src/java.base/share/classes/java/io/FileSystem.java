@@ -228,13 +228,8 @@ abstract class FileSystem {
     static boolean useCanonPrefixCache = true;
 
     private static boolean getBooleanProperty(String prop, boolean defaultVal) {
-        String val = System.getProperty(prop);
-        if (val == null) return defaultVal;
-        if (val.equalsIgnoreCase("true")) {
-            return true;
-        } else {
-            return false;
-        }
+        return Boolean.parseBoolean(System.getProperty(prop,
+                String.valueOf(defaultVal)));
     }
 
     static {

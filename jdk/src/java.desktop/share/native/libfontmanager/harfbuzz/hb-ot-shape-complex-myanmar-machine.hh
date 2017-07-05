@@ -1,5 +1,5 @@
 
-#line 1 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 1 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
 /*
  * Copyright © 2011,2012  Google, Inc.
  *
@@ -32,7 +32,7 @@
 #include "hb-private.hh"
 
 
-#line 36 "hb-ot-shape-complex-myanmar-machine.hh"
+#line 36 "../../src/hb-ot-shape-complex-myanmar-machine.hh.tmp"
 static const unsigned char _myanmar_syllable_machine_trans_keys[] = {
         1u, 31u, 3u, 30u, 5u, 29u, 5u, 8u, 5u, 29u, 3u, 25u, 5u, 25u, 5u, 25u,
         3u, 29u, 3u, 29u, 3u, 29u, 3u, 29u, 1u, 16u, 3u, 29u, 3u, 29u, 3u, 29u,
@@ -261,11 +261,11 @@ static const int myanmar_syllable_machine_error = -1;
 static const int myanmar_syllable_machine_en_main = 0;
 
 
-#line 36 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 36 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
 
 
 
-#line 93 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 93 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
 
 
 #define found_syllable(syllable_type) \
@@ -285,7 +285,7 @@ find_syllables (hb_buffer_t *buffer)
   int cs;
   hb_glyph_info_t *info = buffer->info;
 
-#line 289 "hb-ot-shape-complex-myanmar-machine.hh"
+#line 289 "../../src/hb-ot-shape-complex-myanmar-machine.hh.tmp"
         {
         cs = myanmar_syllable_machine_start;
         ts = 0;
@@ -293,7 +293,7 @@ find_syllables (hb_buffer_t *buffer)
         act = 0;
         }
 
-#line 114 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 114 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
 
 
   p = 0;
@@ -302,7 +302,7 @@ find_syllables (hb_buffer_t *buffer)
   unsigned int last = 0;
   unsigned int syllable_serial = 1;
 
-#line 306 "hb-ot-shape-complex-myanmar-machine.hh"
+#line 306 "../../src/hb-ot-shape-complex-myanmar-machine.hh.tmp"
         {
         int _slen;
         int _trans;
@@ -316,7 +316,7 @@ _resume:
 #line 1 "NONE"
         {ts = p;}
         break;
-#line 320 "hb-ot-shape-complex-myanmar-machine.hh"
+#line 320 "../../src/hb-ot-shape-complex-myanmar-machine.hh.tmp"
         }
 
         _keys = _myanmar_syllable_machine_trans_keys + (cs<<1);
@@ -335,38 +335,38 @@ _eof_trans:
 
         switch ( _myanmar_syllable_machine_trans_actions[_trans] ) {
         case 7:
-#line 85 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 85 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p+1;{ found_syllable (consonant_syllable); }}
         break;
         case 5:
-#line 86 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 86 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p+1;{ found_syllable (non_myanmar_cluster); }}
         break;
         case 10:
-#line 87 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 87 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p+1;{ found_syllable (punctuation_cluster); }}
         break;
         case 4:
-#line 88 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 88 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p+1;{ found_syllable (broken_cluster); }}
         break;
         case 3:
-#line 89 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 89 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p+1;{ found_syllable (non_myanmar_cluster); }}
         break;
         case 6:
-#line 85 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 85 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p;p--;{ found_syllable (consonant_syllable); }}
         break;
         case 8:
-#line 88 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 88 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p;p--;{ found_syllable (broken_cluster); }}
         break;
         case 9:
-#line 89 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 89 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
         {te = p;p--;{ found_syllable (non_myanmar_cluster); }}
         break;
-#line 370 "hb-ot-shape-complex-myanmar-machine.hh"
+#line 370 "../../src/hb-ot-shape-complex-myanmar-machine.hh.tmp"
         }
 
 _again:
@@ -375,7 +375,7 @@ _again:
 #line 1 "NONE"
         {ts = 0;}
         break;
-#line 379 "hb-ot-shape-complex-myanmar-machine.hh"
+#line 379 "../../src/hb-ot-shape-complex-myanmar-machine.hh.tmp"
         }
 
         if ( ++p != pe )
@@ -391,7 +391,7 @@ _again:
 
         }
 
-#line 123 "hb-ot-shape-complex-myanmar-machine.rl"
+#line 123 "../../src/hb-ot-shape-complex-myanmar-machine.rl"
 
 }
 

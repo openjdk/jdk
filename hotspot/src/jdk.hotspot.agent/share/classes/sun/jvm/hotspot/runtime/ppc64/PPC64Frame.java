@@ -46,7 +46,6 @@ public class PPC64Frame extends Frame {
   private static final int SENDER_SP_OFFSET           =  0;
 
   // Interpreter frames
-  private static final int INTERPRETER_FRAME_MIRROR_OFFSET = -3; // for native calls only
   private static final int INTERPRETER_FRAME_SENDER_SP_OFFSET = -4;
   private static final int INTERPRETER_FRAME_LAST_SP_OFFSET = INTERPRETER_FRAME_SENDER_SP_OFFSET - 1;
   private static final int INTERPRETER_FRAME_MDX_OFFSET = INTERPRETER_FRAME_LAST_SP_OFFSET -1;
@@ -55,7 +54,8 @@ public class PPC64Frame extends Frame {
   private static final int INTERPRETER_FRAME_CACHE_OFFSET =INTERPRETER_FRAME_BCX_OFFSET - 1;
   private static final int INTERPRETER_FRAME_MONITORS_OFFSET = INTERPRETER_FRAME_CACHE_OFFSET - 1;
   private static final int INTERPRETER_FRAME_LOCALS_OFFSET = INTERPRETER_FRAME_MONITORS_OFFSET - 1;
-  private static final int INTERPRETER_FRAME_METHOD_OFFSET = INTERPRETER_FRAME_LOCALS_OFFSET - 1;
+  private static final int INTERPRETER_FRAME_MIRROR_OFFSET = INTERPRETER_FRAME_LOCALS_OFFSET - 1;
+  private static final int INTERPRETER_FRAME_METHOD_OFFSET = INTERPRETER_FRAME_MIRROR_OFFSET - 1;
   private static final int INTERPRETER_FRAME_INITIAL_SP_OFFSET = INTERPRETER_FRAME_BCX_OFFSET - 1; // FIXME: probably wrong, but unused anyway
   private static final int INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET = INTERPRETER_FRAME_INITIAL_SP_OFFSET;
   private static final int INTERPRETER_FRAME_MONITOR_BLOCK_BOTTOM_OFFSET = INTERPRETER_FRAME_INITIAL_SP_OFFSET;

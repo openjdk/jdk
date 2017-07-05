@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,15 @@ class RSAPrivateKey extends Key implements PrivateKey
      */
     RSAPrivateKey(long hCryptProv, long hCryptKey, int keyLength)
     {
-        super(hCryptProv, hCryptKey, keyLength);
+        super(new NativeHandles(hCryptProv, hCryptKey), keyLength);
+    }
+
+    /**
+     * Construct an RSAPrivateKey object.
+     */
+    RSAPrivateKey(NativeHandles handles, int keyLength)
+    {
+        super(handles, keyLength);
     }
 
     /**
@@ -63,8 +71,8 @@ class RSAPrivateKey extends Key implements PrivateKey
     public String toString()
     {
         return "RSAPrivateKey [size=" + keyLength + " bits, type=" +
-            getKeyType(hCryptKey) + ", container=" +
-            getContainerName(hCryptProv) + "]";
+            getKeyType(handles.hCryptKey) + ", container=" +
+            getContainerName(handles.hCryptProv) + "]";
     }
 
     // This class is not serializable

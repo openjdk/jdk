@@ -1071,6 +1071,9 @@ void InterpreterMacroAssembler::remove_activation(
 
     NOT_LP64(get_thread(rthread);)
 
+    cmpl(Address(rthread, JavaThread::stack_guard_state_offset()), JavaThread::stack_guard_enabled);
+    jcc(Assembler::equal, no_reserved_zone_enabling);
+
     cmpptr(rbx, Address(rthread, JavaThread::reserved_stack_activation_offset()));
     jcc(Assembler::lessEqual, no_reserved_zone_enabling);
 

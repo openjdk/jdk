@@ -36,7 +36,6 @@ import sun.invoke.util.Wrapper;
 import java.lang.invoke.LambdaForm.NamedFunction;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -308,7 +307,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         /*non-public*/ char fieldTypeChar(int i) {
             return typeChars.charAt(i);
         }
-        Object fieldSignature() {
+        String fieldSignature() {
             return typeChars;
         }
         public Class<? extends BoundMethodHandle> fieldHolder() {

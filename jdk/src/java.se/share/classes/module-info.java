@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Defines the core Java SE API.
+ * <P>
+ * The modules defining
+ * CORBA and Java EE APIs are not required by this module, but they are
+ * required by {@code java.se.ee}.
+ */
 module java.se {
     requires public java.compact3;
     requires public java.datatransfer;

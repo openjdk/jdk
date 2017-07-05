@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -97,8 +98,8 @@ public class SF2Region {
     public static final int GENERATOR_OVERRIDINGROOTKEY = 58;
     public static final int GENERATOR_UNUSED5 = 59;
     public static final int GENERATOR_ENDOPR = 60;
-    protected Map<Integer, Short> generators = new HashMap<Integer, Short>();
-    protected List<SF2Modulator> modulators = new ArrayList<SF2Modulator>();
+    protected Map<Integer, Short> generators = new HashMap<>();
+    protected List<SF2Modulator> modulators = new ArrayList<>();
 
     public Map<Integer, Short> getGenerators() {
         return generators;

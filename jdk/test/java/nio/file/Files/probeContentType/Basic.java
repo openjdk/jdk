@@ -184,7 +184,7 @@ public class Basic {
             "webm"
         };
         String[][] expectedTypes = new String[][] {
-            {"audio/aac", "audio/x-aac"},
+            {"audio/aac", "audio/x-aac", "audio/vnd.dlna.adts"},
             {"audio/flac", "audio/x-flac"},
             {"image/jpeg"},
             {"audio/mpeg"},

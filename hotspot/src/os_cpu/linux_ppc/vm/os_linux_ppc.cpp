@@ -238,6 +238,28 @@ JVM_handle_linux_signal(int sig,
     }
   }
 
+  // Make the signal handler transaction-aware by checking the existence of a
+  // second (transactional) context with MSR TS bits active. If the signal is
+  // caught during a transaction, then just return to the HTM abort handler.
+  // Please refer to Linux kernel document powerpc/transactional_memory.txt,
+  // section "Signals".
+  if (uc && uc->uc_link) {
+    ucontext_t* second_uc = uc->uc_link;
+
+    // MSR TS bits are 29 and 30 (Power ISA, v2.07B, Book III-S, pp. 857-858,
+    // 3.2.1 "Machine State Register"), however note that ISA notation for bit
+    // numbering is MSB 0, so for normal bit numbering (LSB 0) they come to be
+    // bits 33 and 34. It's not related to endianness, just a notation matter.
+    if (second_uc->uc_mcontext.regs->msr & 0x600000000) {
+      if (TraceTraps) {
+        tty->print_cr("caught signal in transaction, "
+                        "ignoring to jump to abort handler");
+      }
+      // Return control to the HTM abort handler.
+      return true;
+    }
+  }
+
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
   if (os::Linux::signal_handlers_are_installed) {

@@ -29,187 +29,76 @@
  * @library /testlibrary /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ * @modules java.base/jdk.internal.org.objectweb.asm
+            java.base/jdk.internal.org.objectweb.asm.tree
+            jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.code
  *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
  * @build compiler.jvmci.compilerToVM.GetConstantPoolTest
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   compiler.jvmci.compilerToVM.GetConstantPoolTest
  */
 package compiler.jvmci.compilerToVM;
 
-import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Utils;
+import compiler.jvmci.common.CTVMUtilities;
+import compiler.jvmci.common.testcases.TestCase;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ConstantPool;
-import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Executable;
 
 /**
  * Tests for jdk.vm.ci.hotspot.CompilerToVM::getConstantPool method
  */
 public class GetConstantPoolTest {
-    private static enum TestCase {
-        NULL_BASE {
-            @Override
-            ConstantPool getConstantPool() {
-                return CompilerToVMHelper.getConstantPool(null,
-                        getPtrToCpAddress());
-            }
-        },
-        JAVA_METHOD_BASE {
-            @Override
-            ConstantPool getConstantPool() {
-                HotSpotResolvedJavaMethod methodInstance
-                        = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
-                                TEST_CLASS, 0);
-                Field field;
-                try {
-                    // jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl.metaspaceMethod
-                    field = methodInstance.getClass()
-                            .getDeclaredField("metaspaceMethod");
-                    field.setAccessible(true);
-                    field.set(methodInstance, getPtrToCpAddress());
-                } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e, e);
-                }
 
-                return CompilerToVMHelper.getConstantPool(methodInstance, 0L);
-            }
-        },
-        CONSTANT_POOL_BASE {
-            @Override
-            ConstantPool getConstantPool() {
-                ConstantPool cpInst;
-                try {
-                    cpInst = CompilerToVMHelper.getConstantPool(null,
-                            getPtrToCpAddress());
-                    Field field = CompilerToVMHelper.HotSpotConstantPoolClass()
-                            .getDeclaredField("metaspaceConstantPool");
-                    field.setAccessible(true);
-                    field.set(cpInst, getPtrToCpAddress());
-                } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
-                }
-                return CompilerToVMHelper.getConstantPool(cpInst, 0L);
-            }
-        },
-        CONSTANT_POOL_BASE_IN_TWO {
-            @Override
-            ConstantPool getConstantPool() {
-                long ptr = getPtrToCpAddress();
-                ConstantPool cpInst;
-                try {
-                    cpInst = CompilerToVMHelper.getConstantPool(null, ptr);
-                    Field field = CompilerToVMHelper.HotSpotConstantPoolClass()
-                            .getDeclaredField("metaspaceConstantPool");
-                    field.setAccessible(true);
-                    field.set(cpInst, ptr / 2L);
-                } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
-                }
-                return CompilerToVMHelper.getConstantPool(cpInst,
-                        ptr - ptr / 2L);
-            }
-        },
-        CONSTANT_POOL_BASE_ZERO {
-            @Override
-            ConstantPool getConstantPool() {
-                long ptr = getPtrToCpAddress();
-                ConstantPool cpInst;
-                try {
-                    cpInst = CompilerToVMHelper.getConstantPool(null, ptr);
-                    Field field = CompilerToVMHelper.HotSpotConstantPoolClass()
-                            .getDeclaredField("metaspaceConstantPool");
-                    field.setAccessible(true);
-                    field.set(cpInst, 0L);
-                } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
-                }
-                return CompilerToVMHelper.getConstantPool(cpInst, ptr);
-            }
-        },
-        ;
-        abstract ConstantPool getConstantPool();
+    public static void testMethod(Executable executable) {
+        test(CTVMUtilities.getResolvedMethod(executable));
     }
 
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final Unsafe UNSAFE = Utils.getUnsafe();
+    public static void testClass(Class cls) {
+        HotSpotResolvedObjectType type = CompilerToVMHelper
+                .lookupType(Utils.toJVMTypeSignature(cls),
+                        GetConstantPoolTest.class, /* resolve = */ true);
+        test(type);
+    }
 
-    private static final Class TEST_CLASS = GetConstantPoolTest.class;
-    private static final long CP_ADDRESS
-            = WB.getConstantPool(GetConstantPoolTest.class);
-
-    public void test(TestCase testCase) {
-        System.out.println(testCase.name());
-        ConstantPool cp = testCase.getConstantPool();
-        String cpStringRep = cp.toString();
-        String cpClassSimpleName
-                = CompilerToVMHelper.HotSpotConstantPoolClass().getSimpleName();
-        if (!cpStringRep.contains(cpClassSimpleName)
-                || !cpStringRep.contains(TEST_CLASS.getName())) {
-            String msg = String.format("%s : "
-                    + " Constant pool is not valid."
-                    + " String representation should contain \"%s\" and \"%s\"",
-                    testCase.name(), cpClassSimpleName,
-                    TEST_CLASS.getName());
-            throw new AssertionError(msg);
-        }
+    private static void test(Object object) {
+        ConstantPool cp = CompilerToVMHelper.getConstantPool(object);
+        System.out.println(object + " -> " + cp);
     }
 
     public static void main(String[] args) {
-        GetConstantPoolTest test = new GetConstantPoolTest();
-        for (TestCase testCase : TestCase.values()) {
-            test.test(testCase);
-        }
-        testObjectBase();
-        testMetaspaceWrapperBase();
+        TestCase.getAllClasses().forEach(GetConstantPoolTest::testClass);
+        TestCase.getAllExecutables().forEach(GetConstantPoolTest::testMethod);
+        testNull();
+        testObject();
     }
 
-    private static void testObjectBase() {
+    private static void testNull() {
         try {
-            Object cp = CompilerToVMHelper.getConstantPool(new Object(), 0L);
-            throw new AssertionError("Test OBJECT_BASE."
+            Object cp = CompilerToVMHelper.getConstantPool(null);
+            throw new AssertionError("Test OBJECT."
+                + " Expected IllegalArgumentException has not been caught");
+        } catch (NullPointerException npe) {
+            // expected
+        }
+    }
+    private static void testObject() {
+        try {
+            Object cp = CompilerToVMHelper.getConstantPool(new Object());
+            throw new AssertionError("Test OBJECT."
                 + " Expected IllegalArgumentException has not been caught");
         } catch (IllegalArgumentException iae) {
             // expected
         }
-    }
-    private static void testMetaspaceWrapperBase() {
-        try {
-            Object cp = CompilerToVMHelper.getConstantPool(
-                    new PublicMetaspaceWrapperObject() {
-                        @Override
-                        public long getMetaspacePointer() {
-                            return getPtrToCpAddress();
-                        }
-                    }, 0L);
-            throw new AssertionError("Test METASPACE_WRAPPER_BASE."
-                + " Expected IllegalArgumentException has not been caught");
-        } catch (IllegalArgumentException iae) {
-            // expected
-        }
-    }
-
-    private static long getPtrToCpAddress() {
-        Field field;
-        try {
-            field = TEST_CLASS.getDeclaredField("CP_ADDRESS");
-        } catch (NoSuchFieldException nsfe) {
-            throw new Error("TESTBUG : cannot find field \"CP_ADDRESS\" : "
-                    + nsfe.getMessage(), nsfe);
-        }
-        Object base = UNSAFE.staticFieldBase(field);
-        return WB.getObjectAddress(base) + UNSAFE.staticFieldOffset(field);
     }
 }
