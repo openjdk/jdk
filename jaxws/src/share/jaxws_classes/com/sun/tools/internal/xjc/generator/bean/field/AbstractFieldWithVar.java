@@ -32,7 +32,6 @@ import com.sun.codemodel.internal.JFieldVar;
 import com.sun.codemodel.internal.JMod;
 import com.sun.codemodel.internal.JType;
 import com.sun.codemodel.internal.JVar;
-import com.sun.tools.internal.xjc.api.SpecVersion;
 import com.sun.tools.internal.xjc.generator.bean.ClassOutlineImpl;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
 

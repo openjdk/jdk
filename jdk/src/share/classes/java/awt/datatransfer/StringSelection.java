@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.awt.datatransfer;
 
 import java.io.*;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * A <code>Transferable</code> which implements the capability required
@@ -43,8 +42,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @see java.awt.datatransfer.DataFlavor#stringFlavor
  * @see java.awt.datatransfer.DataFlavor#plainTextFlavor
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class StringSelection implements Transferable, ClipboardOwner {
 
     private static final int STRING = 0;

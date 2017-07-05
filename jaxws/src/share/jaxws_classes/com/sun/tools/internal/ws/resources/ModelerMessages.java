@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  * questions.
  */
 
-
 package com.sun.tools.internal.ws.resources;
 
-import com.sun.xml.internal.ws.util.localization.Localizable;
-import com.sun.xml.internal.ws.util.localization.LocalizableMessageFactory;
-import com.sun.xml.internal.ws.util.localization.Localizer;
+import com.sun.istack.internal.localization.Localizable;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.Localizer;
 
 
 /**
@@ -458,6 +457,18 @@ public final class ModelerMessages {
      */
     public static String WSDLMODELER_INVALID_OPERATION_JAVA_RESERVED_WORD_NOT_ALLOWED_CUSTOM_NAME(Object arg0, Object arg1) {
         return localizer.localize(localizableWSDLMODELER_INVALID_OPERATION_JAVA_RESERVED_WORD_NOT_ALLOWED_CUSTOM_NAME(arg0, arg1));
+    }
+
+    public static Localizable localizableWSDLMODELER_WARNING_MEMBER_SUBMISSION_ADDRESSING_USED(Object arg0, Object arg1) {
+        return messageFactory.getMessage("wsdlmodeler.warning.memberSubmissionAddressingUsed", arg0, arg1);
+    }
+
+    /**
+     * obsolete addressing version 08-2004:"{0}" used; version "{1}" should be used instead.
+     *
+     */
+    public static String WSDLMODELER_WARNING_MEMBER_SUBMISSION_ADDRESSING_USED(Object arg0, Object arg1) {
+        return localizer.localize(localizableWSDLMODELER_WARNING_MEMBER_SUBMISSION_ADDRESSING_USED(arg0, arg1));
     }
 
     public static Localizable localizableWSDLMODELER_WARNING_BINDING_OPERATION_MULTIPLE_PART_BINDING(Object arg0, Object arg1) {
@@ -986,6 +997,18 @@ public final class ModelerMessages {
      */
     public static String WSDLMODELER_WARNING_R_2716_R_2726(Object arg0, Object arg1) {
         return localizer.localize(localizableWSDLMODELER_WARNING_R_2716_R_2726(arg0, arg1));
+    }
+
+    public static Localizable localizableWSDLMODELER_INVALID_IGNORING_MEMBER_SUBMISSION_ADDRESSING(Object arg0, Object arg1) {
+        return messageFactory.getMessage("wsdlmodeler.invalid.ignoringMemberSubmissionAddressing", arg0, arg1);
+    }
+
+    /**
+     * ignoring wsa:Action attribute since obsolete addressing version 08-2004:"{0}" used; expecting addressing version "{1}". To use version 08-2004 anyway run wsimport with -extension switch.
+     *
+     */
+    public static String WSDLMODELER_INVALID_IGNORING_MEMBER_SUBMISSION_ADDRESSING(Object arg0, Object arg1) {
+        return localizer.localize(localizableWSDLMODELER_INVALID_IGNORING_MEMBER_SUBMISSION_ADDRESSING(arg0, arg1));
     }
 
     public static Localizable localizableWSDLMODELER_WARNING_NO_SOAP_ADDRESS(Object arg0) {

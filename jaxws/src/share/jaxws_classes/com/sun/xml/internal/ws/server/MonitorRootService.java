@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,63 +26,20 @@
 package com.sun.xml.internal.ws.server;
 
 import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
-import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.WSFeatureList;
-import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
-import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
-import com.sun.xml.internal.ws.api.message.Message;
-import com.sun.xml.internal.ws.api.message.Packet;
-import com.sun.xml.internal.ws.api.model.SEIModel;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundPortType;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLService;
-import com.sun.xml.internal.ws.api.pipe.Codec;
-import com.sun.xml.internal.ws.api.pipe.Engine;
-import com.sun.xml.internal.ws.api.pipe.Fiber;
-import com.sun.xml.internal.ws.api.pipe.FiberContextSwitchInterceptor;
-import com.sun.xml.internal.ws.api.pipe.ServerPipeAssemblerContext;
-import com.sun.xml.internal.ws.api.pipe.ServerTubeAssemblerContext;
-import com.sun.xml.internal.ws.api.pipe.Tube;
-import com.sun.xml.internal.ws.api.pipe.TubeCloner;
-import com.sun.xml.internal.ws.api.pipe.TubelineAssembler;
-import com.sun.xml.internal.ws.api.pipe.TubelineAssemblerFactory;
 import com.sun.xml.internal.ws.api.server.*;
-import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
-import com.sun.xml.internal.ws.model.wsdl.WSDLProperties;
-import com.sun.xml.internal.ws.model.wsdl.WSDLPortImpl;
-import com.sun.xml.internal.ws.resources.HandlerMessages;
 import com.sun.xml.internal.ws.transport.http.HttpAdapter;
 import com.sun.xml.internal.ws.util.RuntimeVersion;
-import com.sun.org.glassfish.external.amx.AMXGlassfish;
 import com.sun.org.glassfish.gmbal.AMXMetadata;
 import com.sun.org.glassfish.gmbal.Description;
-import com.sun.org.glassfish.gmbal.InheritedAttribute;
-import com.sun.org.glassfish.gmbal.InheritedAttributes;
 import com.sun.org.glassfish.gmbal.ManagedAttribute;
-import com.sun.org.glassfish.gmbal.ManagedData;
 import com.sun.org.glassfish.gmbal.ManagedObject;
-import com.sun.org.glassfish.gmbal.ManagedObjectManager;
-import com.sun.org.glassfish.gmbal.ManagedObjectManagerFactory;
 import java.net.URL;
-import javax.management.ObjectName;
-
-
-import javax.annotation.PreDestroy;
 import javax.xml.namespace.QName;
-import javax.xml.ws.EndpointReference;
-import javax.xml.ws.WebServiceException;
-import javax.xml.ws.handler.Handler;
-import javax.xml.stream.XMLStreamException;
-import javax.management.InstanceAlreadyExistsException;
-import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.Executor;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Harold Carr
@@ -128,28 +85,6 @@ public final class MonitorRootService extends MonitorBase {
         return endpoint.getServiceName();
     }
 
-    //
-    // Items from assembler context
-    //
-    /*  NOTE:  These are not ready when the AMX Validator runs so NPE.
-    @ManagedAttribute
-    @Description("The last tube in the dispatch chain")
-    public @NotNull Tube terminalTube() {
-        return endpoint.getAssemblerContext().getTerminalTube();
-    }
-
-    @ManagedAttribute
-    @Description("True if tubeline is known to be used for serving synchronous transport")
-    public boolean synchronous() {
-        return endpoint.getAssemblerContext().isSynchronous();
-    }
-
-    @ManagedAttribute
-    @Description("")
-    public String codecMimeType() {
-        return endpoint.getAssemblerContext().getCodec().getMimeType();
-    }
-    */
     //
     // Items from WSBinding
     //
@@ -246,7 +181,7 @@ public final class MonitorRootService extends MonitorBase {
 
     @ManagedAttribute
     @Description("Show what goes across HTTP transport")
-    public void dumpHTTPMessages(final boolean x) { HttpAdapter.dump = x; }
+    public void dumpHTTPMessages(final boolean x) { HttpAdapter.setDump(x); }
 
 }
 

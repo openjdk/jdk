@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class Types extends Entity implements TWSDLExtensible {
         _helper = new ExtensibilityHelper();
     }
 
+    @Override
     public QName getElementName() {
         return WSDLConstants.QNAME_TYPES;
     }
@@ -65,32 +66,39 @@ public class Types extends Entity implements TWSDLExtensible {
         visitor.postVisit(this);
     }
 
+    @Override
     public void validateThis() {
     }
 
     /**
      * wsdl:type does not have any name attribute
      */
+    @Override
     public String getNameValue() {
         return null;
     }
 
+    @Override
     public String getNamespaceURI() {
-        return parent.getNamespaceURI();
+        return (parent == null) ? null : parent.getNamespaceURI();
     }
 
+    @Override
     public QName getWSDLElementName() {
         return getElementName();
     }
 
+    @Override
     public void addExtension(TWSDLExtension e) {
         _helper.addExtension(e);
     }
 
+    @Override
     public Iterable<TWSDLExtension> extensions() {
         return _helper.extensions();
     }
 
+    @Override
     public TWSDLExtensible getParent() {
         return parent;
     }
@@ -99,6 +107,7 @@ public class Types extends Entity implements TWSDLExtensible {
         this.parent = parent;
     }
 
+    @Override
     public void withAllSubEntitiesDo(EntityAction action) {
         _helper.withAllSubEntitiesDo(action);
     }

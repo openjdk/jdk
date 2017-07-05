@@ -29,7 +29,6 @@ import java.lang.reflect.Type;
 
 import com.sun.xml.internal.bind.v2.model.core.NonElement;
 import com.sun.xml.internal.bind.v2.runtime.Transducer;
-import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 
 /**
  * @author Kohsuke Kawaguchi

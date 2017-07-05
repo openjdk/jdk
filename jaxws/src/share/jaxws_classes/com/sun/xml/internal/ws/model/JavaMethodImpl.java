@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,8 @@ public final class JavaMethodImpl implements JavaMethod {
                 inputAction = soapAction;
             else if(!inputAction.equals(soapAction)){
                 //both are explicitly set via annotations, make sure @Action == @WebMethod.action
-                throw new WebServiceException("@Action and @WebMethod(action=\"\" does not match on operation "+ method.getName());
+                //http://java.net/jira/browse/JAX_WS-1108
+              //throw new WebServiceException("@Action and @WebMethod(action=\"\" does not match on operation "+ method.getName());
             }
         }
     }
@@ -122,7 +123,7 @@ public final class JavaMethodImpl implements JavaMethod {
     }
 
     /**
-     * @see {@link JavaMethod}
+     * @see JavaMethod
      *
      * @return Returns the method.
      */
@@ -131,7 +132,7 @@ public final class JavaMethodImpl implements JavaMethod {
     }
 
     /**
-     * @see {@link JavaMethod}
+     * @see JavaMethod
      *
      * @return Returns the SEI method where annotations are present
      */
@@ -171,7 +172,7 @@ public final class JavaMethodImpl implements JavaMethod {
     }
 
     /**
-     * Returns the {@link WSDLBoundOperation} Operation associated with {@link this}
+     * Returns the {@link WSDLBoundOperation} Operation associated with {@link JavaMethodImpl}
      * operation.
      * @deprecated
      * @return the WSDLBoundOperation for this JavaMethod

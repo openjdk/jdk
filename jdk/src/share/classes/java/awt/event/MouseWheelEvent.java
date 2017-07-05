@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package java.awt.event;
 
 import java.awt.Component;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * An event which indicates that the mouse wheel was rotated in a component.
@@ -99,8 +99,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @since 1.4
  */
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class MouseWheelEvent extends MouseEvent {
 
     /**
@@ -109,7 +107,7 @@ public class MouseWheelEvent extends MouseEvent {
      *
      * @see #getScrollType
      */
-    public static final int WHEEL_UNIT_SCROLL = 0;
+    @Native public static final int WHEEL_UNIT_SCROLL = 0;
 
     /**
      * Constant representing scrolling by a "block" (like scrolling
@@ -117,7 +115,7 @@ public class MouseWheelEvent extends MouseEvent {
      *
      * @see #getScrollType
      */
-    public static final int WHEEL_BLOCK_SCROLL = 1;
+    @Native public static final int WHEEL_BLOCK_SCROLL = 1;
 
     /**
      * Indicates what sort of scrolling should take place in response to this

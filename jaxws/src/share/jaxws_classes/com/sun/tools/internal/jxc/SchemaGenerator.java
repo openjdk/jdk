@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package com.sun.tools.internal.jxc;
 
 import com.sun.tools.internal.jxc.ap.Options;
 import com.sun.tools.internal.xjc.BadCommandLineException;
-import com.sun.tools.internal.xjc.api.util.ApClassLoader;
-import com.sun.tools.internal.xjc.api.util.ToolsJarNotFoundException;
 import com.sun.xml.internal.bind.util.Which;
 
 import javax.lang.model.SourceVersion;
@@ -45,7 +43,9 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -70,26 +70,12 @@ public class SchemaGenerator {
             if (cl==null) {
                 cl = SecureLoader.getSystemClassLoader();
             }
-//            ClassLoader classLoader = new ApClassLoader(cl, packagePrefixes); // todo: check if can be removed
             return run(args, cl);
         } catch(Exception e) {
             System.err.println(e.getMessage());
             return -1;
         }
     }
-
-    /**
-     * List of package prefixes we want to load in the same package
-     */
-    private static final String[] packagePrefixes = {
-        "com.sun.tools.internal.jxc.",
-        "com.sun.tools.internal.xjc.",
-        "com.sun.istack.internal.tools.",
-        "com.sun.tools.javac.",
-        "com.sun.tools.javadoc.",
-        "javax.annotation.processing.",
-        "javax.lang.model."
-    };
 
     /**
      * Runs the schema generator.
@@ -148,18 +134,8 @@ public class SchemaGenerator {
             aptargs.add(options.encoding);
         }
 
-        // make jaxb-api.jar visible to classpath
-        File jaxbApi = findJaxbApiJar();
-        if(jaxbApi!=null) {
-            if(options.classpath!=null) {
-                options.classpath = options.classpath+File.pathSeparatorChar+jaxbApi;
-            } else {
-                options.classpath = jaxbApi.getPath();
-            }
-        }
-
         aptargs.add("-cp");
-        aptargs.add(options.classpath);
+        aptargs.add(setClasspath(options.classpath)); // set original classpath + jaxb-api to be visible to annotation processor
 
         if(options.targetDir!=null) {
             aptargs.add("-d");
@@ -170,6 +146,31 @@ public class SchemaGenerator {
 
         String[] argsarray = aptargs.toArray(new String[aptargs.size()]);
         return ((Boolean) compileMethod.invoke(null, argsarray, options.episodeFile)) ? 0 : 1;
+    }
+
+    private static String setClasspath(String givenClasspath) {
+        StringBuilder cp = new StringBuilder();
+        appendPath(cp, givenClasspath);
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        while (cl != null) {
+            if (cl instanceof URLClassLoader) {
+                for (URL url : ((URLClassLoader) cl).getURLs()) {
+                    appendPath(cp, url.getPath());
+                }
+            }
+            cl = cl.getParent();
+        }
+
+        appendPath(cp, findJaxbApiJar());
+        return cp.toString();
+    }
+
+    private static void appendPath(StringBuilder cp, String url) {
+        if (url == null || url.trim().isEmpty())
+            return;
+        if (cp.length() != 0)
+            cp.append(File.pathSeparatorChar);
+        cp.append(url);
     }
 
     /**
@@ -183,7 +184,7 @@ public class SchemaGenerator {
      * @return
      *      null if failed to locate it.
      */
-    private static File findJaxbApiJar() {
+    private static String findJaxbApiJar() {
         String url = Which.which(JAXBContext.class);
         if(url==null)       return null;    // impossible, but hey, let's be defensive
 
@@ -198,11 +199,11 @@ public class SchemaGenerator {
         try {
             File f = new File(new URL(jarFileUrl).toURI());
             if (f.exists() && f.getName().endsWith(".jar")) { // see 6510966
-                return f;
+                return f.getPath();
             }
             f = new File(new URL(jarFileUrl).getFile());
             if (f.exists() && f.getName().endsWith(".jar")) { // this is here for potential backw. compatibility issues
-                return f;
+                return f.getPath();
             }
         } catch (URISyntaxException ex) {
             Logger.getLogger(SchemaGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -210,18 +211,6 @@ public class SchemaGenerator {
             Logger.getLogger(SchemaGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
-    }
-
-    /**
-     * Returns true if the list of arguments have an argument
-     * that looks like a class name.
-     */
-    private static boolean hasClass(List<String> args) {
-        for (String arg : args) {
-            if(!arg.endsWith(".java"))
-                return true;
-        }
-        return false;
     }
 
     private static void usage( ) {

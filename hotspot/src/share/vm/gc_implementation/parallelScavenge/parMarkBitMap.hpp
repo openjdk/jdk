@@ -173,6 +173,12 @@ public:
   void reset_counters();
 #endif  // #ifndef PRODUCT
 
+  void print_on_error(outputStream* st) const {
+    st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, this);
+    _beg_bits.print_on_error(st, " Begin Bits: ");
+    _end_bits.print_on_error(st, " End Bits:   ");
+  }
+
 #ifdef  ASSERT
   void verify_clear() const;
   inline void verify_bit(idx_t bit) const;

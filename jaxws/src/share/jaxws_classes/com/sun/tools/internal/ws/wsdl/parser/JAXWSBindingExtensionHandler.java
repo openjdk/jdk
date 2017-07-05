@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,7 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.*;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -56,7 +53,8 @@ import java.util.Map;
  */
 public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
-    private static final XPathFactory xpf = XPathFactory.newInstance();
+    // xml security enabled always, xpath used for parsing "part" attribute
+    private static final XPathFactory xpf = XmlUtil.newXPathFactory(true);
     private final XPath xpath = xpf.newXPath();
 
     public JAXWSBindingExtensionHandler(Map<String, AbstractExtensionHandler> extensionHandlerMap) {
@@ -66,6 +64,7 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     /* (non-Javadoc)
      * @see AbstractExtensionHandler#getNamespaceURI()
      */
+    @Override
     public String getNamespaceURI() {
         return JAXWSBindingsConstants.NS_JAXWS_BINDINGS;
     }
@@ -80,8 +79,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
         context.registerNamespaces(e);
 
         JAXWSBinding jaxwsBinding =  getJAXWSExtension(parent);
-        if(jaxwsBinding == null)
+        if(jaxwsBinding == null) {
             jaxwsBinding = new JAXWSBinding(context.getLocation(e));
+        }
         String attr = XmlUtil.getAttributeOrNull(e, JAXWSBindingsConstants.WSDL_LOCATION_ATTR);
         if (attr != null) {
             jaxwsBinding.setWsdlLocation(attr);
@@ -99,29 +99,29 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
         for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
             Element e2 = Util.nextElement(iter);
-            if (e2 == null)
+            if (e2 == null) {
                 break;
-
-            if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.PACKAGE)){
-                parsePackage(context, jaxwsBinding, e2);
-                if((jaxwsBinding.getJaxwsPackage() != null) && (jaxwsBinding.getJaxwsPackage().getJavaDoc() != null)){
-                    ((Definitions)parent).setDocumentation(new Documentation(jaxwsBinding.getJaxwsPackage().getJavaDoc()));
-                }
-            }else if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_WRAPPER_STYLE)){
-                parseWrapperStyle(context, jaxwsBinding, e2);
-            }else if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ASYNC_MAPPING)){
-                parseAsynMapping(context, jaxwsBinding, e2);
             }
-//            else if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ADDITIONAL_SOAPHEADER_MAPPING)){
-//                parseAdditionalSOAPHeaderMapping(context, jaxwsBinding, e2);
-//            }
-            else if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_MIME_CONTENT)){
+
+            if (XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.PACKAGE)) {
+                parsePackage(context, jaxwsBinding, e2);
+                if ((jaxwsBinding.getJaxwsPackage() != null) && (jaxwsBinding.getJaxwsPackage().getJavaDoc() != null)) {
+                    ((Definitions) parent).setDocumentation(new Documentation(jaxwsBinding.getJaxwsPackage().getJavaDoc()));
+                }
+            } else if (XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_WRAPPER_STYLE)) {
+                parseWrapperStyle(context, jaxwsBinding, e2);
+            } else if (XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ASYNC_MAPPING)) {
+                parseAsynMapping(context, jaxwsBinding, e2);
+            } //            else if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ADDITIONAL_SOAPHEADER_MAPPING)){
+            //                parseAdditionalSOAPHeaderMapping(context, jaxwsBinding, e2);
+            //            }
+            else if (XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_MIME_CONTENT)) {
                 parseMimeContent(context, jaxwsBinding, e2);
-            }else{
+            } else {
                 Util.fail(
-                    "parsing.invalidExtensionElement",
-                    e2.getTagName(),
-                    e2.getNamespaceURI());
+                        "parsing.invalidExtensionElement",
+                        e2.getTagName(),
+                        e2.getNamespaceURI());
                 return false;
             }
         }
@@ -150,25 +150,15 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
      */
     private void parseProvider(com.sun.tools.internal.ws.api.wsdl.TWSDLParserContext context, JAXWSBinding parent, Element e) {
         String val = e.getTextContent();
-        if(val == null)
+        if (val == null) {
             return;
-        if(val.equals("false") || val.equals("0")){
+        }
+        if (val.equals("false") || val.equals("0")) {
             ((JAXWSBinding)parent).setProvider(Boolean.FALSE);
-        }else if(val.equals("true") || val.equals("1")){
+        } else if(val.equals("true") || val.equals("1")) {
             ((JAXWSBinding)parent).setProvider(Boolean.TRUE);
         }
 
-    }
-
-    /**
-     *
-     * @param context
-     * @param parent
-     * @param e
-     */
-    private void parseJAXBBindings(com.sun.tools.internal.ws.api.wsdl.TWSDLParserContext context, TWSDLExtensible parent, Element e) {
-        JAXWSBinding binding = (JAXWSBinding)parent;
-        binding.addJaxbBindings(e);
     }
 
     /**
@@ -191,12 +181,13 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     private void parseWrapperStyle(com.sun.tools.internal.ws.api.wsdl.TWSDLParserContext context, JAXWSBinding parent, Element e) {
         //System.out.println("In handleWrapperStyleExtension: " + e.getNodeName());
         String val = e.getTextContent();
-        if(val == null)
+        if (val == null) {
             return;
-        if(val.equals("false") || val.equals("0")){
-            ((JAXWSBinding)parent).setEnableWrapperStyle(Boolean.FALSE);
-        }else if(val.equals("true") || val.equals("1")){
-            ((JAXWSBinding)parent).setEnableWrapperStyle(Boolean.TRUE);
+        }
+        if (val.equals("false") || val.equals("0")) {
+            ((JAXWSBinding) parent).setEnableWrapperStyle(Boolean.FALSE);
+        } else if (val.equals("true") || val.equals("1")) {
+            ((JAXWSBinding) parent).setEnableWrapperStyle(Boolean.TRUE);
         }
     }
 
@@ -225,12 +216,13 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     private void parseAsynMapping(com.sun.tools.internal.ws.api.wsdl.TWSDLParserContext context, JAXWSBinding parent, Element e) {
         //System.out.println("In handleAsynMappingExtension: " + e.getNodeName());
         String val = e.getTextContent();
-        if(val == null)
+        if (val == null) {
             return;
-        if(val.equals("false") || val.equals("0")){
-            ((JAXWSBinding)parent).setEnableAsyncMapping(Boolean.FALSE);
-        }else if(val.equals("true") || val.equals("1")){
-            ((JAXWSBinding)parent).setEnableAsyncMapping(Boolean.TRUE);
+        }
+        if (val.equals("false") || val.equals("0")) {
+            ((JAXWSBinding) parent).setEnableAsyncMapping(Boolean.FALSE);
+        } else if (val.equals("true") || val.equals("1")) {
+            ((JAXWSBinding) parent).setEnableAsyncMapping(Boolean.TRUE);
         }
     }
 
@@ -242,12 +234,13 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     private void parseMimeContent(com.sun.tools.internal.ws.api.wsdl.TWSDLParserContext context, JAXWSBinding parent, Element e) {
         //System.out.println("In handleMimeContentExtension: " + e.getNodeName());
         String val = e.getTextContent();
-        if(val == null)
+        if (val == null) {
             return;
-        if(val.equals("false") || val.equals("0")){
-            ((JAXWSBinding)parent).setEnableMimeContentMapping(Boolean.FALSE);
-        }else if(val.equals("true") || val.equals("1")){
-            ((JAXWSBinding)parent).setEnableMimeContentMapping(Boolean.TRUE);
+        }
+        if (val.equals("false") || val.equals("0")) {
+            ((JAXWSBinding) parent).setEnableMimeContentMapping(Boolean.FALSE);
+        } else if (val.equals("true") || val.equals("1")) {
+            ((JAXWSBinding) parent).setEnableMimeContentMapping(Boolean.TRUE);
         }
     }
 
@@ -276,10 +269,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
         String partName = XmlUtil.getAttributeOrNull(msgPartElm, "name");
         String msgName = XmlUtil.getAttributeOrNull((Element)msgElm, "name");
-        if((partName == null) || (msgName == null))
+        if ((partName == null) || (msgName == null)) {
             return;
-
-        String val = XmlUtil.getAttributeOrNull(msgPartElm, "element");
+        }
 
         String element = XmlUtil.getAttributeOrNull(e, JAXWSBindingsConstants.ELEMENT_ATTR);
         String name = XmlUtil.getAttributeOrNull(e, JAXWSBindingsConstants.NAME_ATTR);
@@ -333,28 +325,12 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     }
 
 
-    /**
-     * @param context
-     * @param jaxwsBinding
-     * @param e
-     */
-    private void parseException(com.sun.tools.internal.ws.api.wsdl.TWSDLParserContext context, JAXWSBinding jaxwsBinding, Element e) {
-        for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
-            Element e2 = Util.nextElement(iter);
-            if (e2 == null)
-                break;
-            if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.CLASS)){
-                String className = XmlUtil.getAttributeOrNull(e2, JAXWSBindingsConstants.NAME_ATTR);
-                String javaDoc = getJavaDoc(e2);
-                jaxwsBinding.setException(new com.sun.tools.internal.ws.wsdl.document.jaxws.Exception(new CustomName(className, javaDoc)));
-            }
-        }
-    }
-
+    @Override
     public boolean handleDefinitionsExtension(TWSDLParserContext context, TWSDLExtensible parent, Element e) {
         return parseGlobalJAXWSBindings(context, parent, e);
     }
 
+    @Override
     public boolean handlePortTypeExtension(TWSDLParserContext context, TWSDLExtensible parent, Element e) {
         if(XmlUtil.matchesTagNS(e, JAXWSBindingsConstants.JAXWS_BINDINGS)){
             context.push();
@@ -363,23 +339,24 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
             for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
                 Element e2 = Util.nextElement(iter);
-                if (e2 == null)
+                if (e2 == null) {
                     break;
+                }
 
-                if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_WRAPPER_STYLE)){
+                if (XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_WRAPPER_STYLE)) {
                     parseWrapperStyle(context, jaxwsBinding, e2);
-                }else if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ASYNC_MAPPING)){
+                } else if (XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ASYNC_MAPPING)) {
                     parseAsynMapping(context, jaxwsBinding, e2);
-                }else if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.CLASS)){
+                } else if (XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.CLASS)) {
                     parseClass(context, jaxwsBinding, e2);
-                    if((jaxwsBinding.getClassName() != null) && (jaxwsBinding.getClassName().getJavaDoc() != null)){
-                        ((PortType)parent).setDocumentation(new Documentation(jaxwsBinding.getClassName().getJavaDoc()));
+                    if ((jaxwsBinding.getClassName() != null) && (jaxwsBinding.getClassName().getJavaDoc() != null) && (parent instanceof PortType)) {
+                        ((PortType) parent).setDocumentation(new Documentation(jaxwsBinding.getClassName().getJavaDoc()));
                     }
-                }else{
+                } else {
                     Util.fail(
-                        "parsing.invalidExtensionElement",
-                        e2.getTagName(),
-                        e2.getNamespaceURI());
+                            "parsing.invalidExtensionElement",
+                            e2.getTagName(),
+                            e2.getNamespaceURI());
                     return false;
                 }
             }
@@ -398,6 +375,7 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
         }
     }
 
+    @Override
     public boolean handleOperationExtension(TWSDLParserContext context, TWSDLExtensible parent, Element e) {
         if(XmlUtil.matchesTagNS(e, JAXWSBindingsConstants.JAXWS_BINDINGS)){
             if(parent instanceof Operation){
@@ -423,8 +401,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
             for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
                 Element e2 = Util.nextElement(iter);
-                if (e2 == null)
+                if (e2 == null) {
                     break;
+                }
 
 //                if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ADDITIONAL_SOAPHEADER_MAPPING)){
 //                    parseAdditionalSOAPHeaderMapping(context, jaxwsBinding, e2);
@@ -463,8 +442,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
         for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
             Element e2 = Util.nextElement(iter);
-            if (e2 == null)
+            if (e2 == null) {
                 break;
+            }
 
             if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_WRAPPER_STYLE)){
                 parseWrapperStyle(context, jaxwsBinding, e2);
@@ -493,6 +473,7 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
         return true;
     }
 
+    @Override
     public boolean handleBindingExtension(TWSDLParserContext context, TWSDLExtensible parent, Element e) {
         if(XmlUtil.matchesTagNS(e, JAXWSBindingsConstants.JAXWS_BINDINGS)){
             context.push();
@@ -501,8 +482,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
             for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
                 Element e2 = Util.nextElement(iter);
-                if (e2 == null)
+                if (e2 == null) {
                     break;
+                }
 
 //                if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.ENABLE_ADDITIONAL_SOAPHEADER_MAPPING)){
 //                    parseAdditionalSOAPHeaderMapping(context, jaxwsBinding, e2);
@@ -535,6 +517,7 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     /* (non-Javadoc)
      * @see ExtensionHandlerBase#handleFaultExtension(TWSDLParserContextImpl, TWSDLExtensible, org.w3c.dom.Element)
      */
+    @Override
     public boolean handleFaultExtension(TWSDLParserContext context, TWSDLExtensible parent, Element e) {
         if(XmlUtil.matchesTagNS(e, JAXWSBindingsConstants.JAXWS_BINDINGS)){
             context.push();
@@ -543,8 +526,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
             for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
                 Element e2 = Util.nextElement(iter);
-                if (e2 == null)
+                if (e2 == null) {
                     break;
+                }
                 if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.CLASS)){
                     parseClass(context, jaxwsBinding, e2);
                     if((jaxwsBinding.getClassName() != null) && (jaxwsBinding.getClassName().getJavaDoc() != null)){
@@ -573,6 +557,7 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
         }
     }
 
+    @Override
     public boolean handleServiceExtension(TWSDLParserContext context, TWSDLExtensible parent, Element e) {
         if(XmlUtil.matchesTagNS(e, JAXWSBindingsConstants.JAXWS_BINDINGS)){
             context.push();
@@ -581,8 +566,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
             for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
                 Element e2 = Util.nextElement(iter);
-                if (e2 == null)
+                if (e2 == null) {
                     break;
+                }
                 if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.CLASS)){
                     parseClass(context, jaxwsBinding, e2);
                     if((jaxwsBinding.getClassName() != null) && (jaxwsBinding.getClassName().getJavaDoc() != null)){
@@ -611,6 +597,7 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
         }
     }
 
+    @Override
     public boolean handlePortExtension(TWSDLParserContext context, TWSDLExtensible parent, Element e) {
         if(XmlUtil.matchesTagNS(e, JAXWSBindingsConstants.JAXWS_BINDINGS)){
             context.push();
@@ -619,8 +606,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
 
             for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
                 Element e2 = Util.nextElement(iter);
-                if (e2 == null)
+                if (e2 == null) {
                     break;
+                }
 
                 if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.PROVIDER)){
                     parseProvider(context, jaxwsBinding, e2);
@@ -655,8 +643,9 @@ public class JAXWSBindingExtensionHandler extends AbstractExtensionHandler {
     private String getJavaDoc(Element e){
         for(Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();){
             Element e2 = Util.nextElement(iter);
-            if (e2 == null)
+            if (e2 == null) {
                 break;
+            }
             if(XmlUtil.matchesTagNS(e2, JAXWSBindingsConstants.JAVADOC)){
                 return XmlUtil.getTextForNode(e2);
             }

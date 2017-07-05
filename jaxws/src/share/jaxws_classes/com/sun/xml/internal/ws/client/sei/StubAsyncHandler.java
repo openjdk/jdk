@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.xml.internal.ws.client.sei;
 import java.util.List;
 
 import javax.jws.soap.SOAPBinding.Style;
+
+import com.sun.xml.internal.ws.api.message.MessageContextFactory;
 import com.sun.xml.internal.ws.model.JavaMethodImpl;
 import com.sun.xml.internal.ws.model.ParameterImpl;
 import com.sun.xml.internal.ws.model.WrapperParameter;
@@ -36,8 +38,8 @@ public class StubAsyncHandler extends StubHandler {
 
     private final Class asyncBeanClass;
 
-        public StubAsyncHandler(JavaMethodImpl jm, JavaMethodImpl sync) {
-        super(sync);
+        public StubAsyncHandler(JavaMethodImpl jm, JavaMethodImpl sync, MessageContextFactory mcf) {
+        super(sync, mcf);
 
         List<ParameterImpl> rp = sync.getResponseParameters();
         int size = 0;

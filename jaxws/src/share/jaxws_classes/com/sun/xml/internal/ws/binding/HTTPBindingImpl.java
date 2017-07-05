@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,6 @@ public class HTTPBindingImpl extends BindingImpl implements HTTPBinding {
                 throw new WebServiceException(ClientMessages.NON_LOGICAL_HANDLER_SET(handler.getClass()));
             }
         }
-        handlerConfig = new HandlerConfiguration(Collections.<String>emptySet(), chain);
+        setHandlerConfig(new HandlerConfiguration(Collections.<String>emptySet(), chain));
     }
 }

@@ -288,12 +288,15 @@ class Field extends AccessibleObject implements Member {
      * {@code protected} or {@code private} first, and then other
      * modifiers in the following order: {@code static}, {@code final},
      * {@code transient}, {@code volatile}.
+     *
+     * @return a string describing this {@code Field}
+     * @jls 8.3.1 Field Modifiers
      */
     public String toString() {
         int mod = getModifiers();
         return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
-            + getTypeName(getType()) + " "
-            + getTypeName(getDeclaringClass()) + "."
+            + getType().getTypeName() + " "
+            + getDeclaringClass().getTypeName() + "."
             + getName());
     }
 
@@ -315,14 +318,14 @@ class Field extends AccessibleObject implements Member {
      * its generic type
      *
      * @since 1.5
+     * @jls 8.3.1 Field Modifiers
      */
     public String toGenericString() {
         int mod = getModifiers();
         Type fieldType = getGenericType();
         return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
-            +  ((fieldType instanceof Class) ?
-                getTypeName((Class)fieldType): fieldType.toString())+ " "
-            + getTypeName(getDeclaringClass()) + "."
+            + fieldType.getTypeName() + " "
+            + getDeclaringClass().getTypeName() + "."
             + getName());
     }
 
@@ -990,29 +993,6 @@ class Field extends AccessibleObject implements Member {
                 checkAccess(caller, clazz, obj, modifiers);
             }
         }
-    }
-
-    /*
-     * Utility routine to paper over array type names
-     */
-    static String getTypeName(Class<?> type) {
-        if (type.isArray()) {
-            try {
-                Class<?> cl = type;
-                int dimensions = 0;
-                while (cl.isArray()) {
-                    dimensions++;
-                    cl = cl.getComponentType();
-                }
-                StringBuffer sb = new StringBuffer();
-                sb.append(cl.getName());
-                for (int i = 0; i < dimensions; i++) {
-                    sb.append("[]");
-                }
-                return sb.toString();
-            } catch (Throwable e) { /*FALLTHRU*/ }
-        }
-        return type.getName();
     }
 
     /**

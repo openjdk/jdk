@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,19 @@
 
 package com.sun.xml.internal.ws.util.xml;
 
+import java.io.IOException;
+
+import javax.xml.bind.attachment.AttachmentMarshaller;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.XMLConstants;
+
+import com.sun.xml.internal.ws.streaming.MtomStreamWriter;
+import com.sun.xml.internal.org.jvnet.staxex.Base64Data;
+import com.sun.xml.internal.org.jvnet.staxex.XMLStreamReaderEx;
+import com.sun.xml.internal.org.jvnet.staxex.XMLStreamWriterEx;
 
 /**
  * Reads a sub-tree from {@link XMLStreamReader} and writes to {@link XMLStreamWriter}
@@ -50,6 +58,10 @@ public class XMLStreamReaderToXMLStreamWriter {
 
     private char[] buf;
 
+    boolean optimizeBase64Data = false;
+
+    AttachmentMarshaller mtomAttachmentMarshaller;
+
     /**
      * Reads one subtree and writes it out.
      *
@@ -62,6 +74,11 @@ public class XMLStreamReaderToXMLStreamWriter {
         this.in = in;
         this.out = out;
 
+        optimizeBase64Data = (in instanceof XMLStreamReaderEx);
+
+        if (out instanceof XMLStreamWriterEx && out instanceof MtomStreamWriter) {
+            mtomAttachmentMarshaller = ((MtomStreamWriter) out).getAttachmentMarshaller();
+        }
         // remembers the nest level of elements to know when we are done.
         int depth=0;
 
@@ -136,9 +153,29 @@ public class XMLStreamReaderToXMLStreamWriter {
 
 
     protected void handleCharacters() throws XMLStreamException {
-        for (int start=0,read=buf.length; read == buf.length; start+=buf.length) {
-            read = in.getTextCharacters(start, buf, 0, buf.length);
-            out.writeCharacters(buf, 0, read);
+
+        CharSequence c = null;
+
+        if (optimizeBase64Data) {
+            c = ((XMLStreamReaderEx)in).getPCDATA();
+        }
+
+        if ((c != null) && (c instanceof Base64Data)) {
+            if (mtomAttachmentMarshaller != null) {
+                Base64Data b64d = (Base64Data) c;
+                ((XMLStreamWriterEx)out).writeBinary(b64d.getDataHandler());
+            } else {
+                try {
+                    ((Base64Data)c).writeTo(out);
+                } catch (IOException e) {
+                    throw new XMLStreamException(e);
+                }
+            }
+        } else {
+            for (int start=0,read=buf.length; read == buf.length; start+=buf.length) {
+                read = in.getTextCharacters(start, buf, 0, buf.length);
+                out.writeCharacters(buf, 0, read);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public abstract class Plugin {
      *
      * <p> Since options can appear in no particular order, WsImport allows
      * sub-options of a plugin to show up before the option that activates a
-     * plugin (one that's returned by {@link #getOptionName().)
+     * plugin (one that's returned by {@link #getOptionName()}.)
      *
      * But nevertheless a {@link Plugin} needs to be activated to participate in
      * further processing.
@@ -120,14 +120,14 @@ public abstract class Plugin {
      * @param options This object allows access to various options used for code
      * generation as well as access to the generated code.
      *
-     * @param errorHandler Errors should be reported to this handler.
+     * @param errorReceiver Errors should be reported to this handler.
      *
      * @return If the add-on executes successfully, return true. If it detects
      * some errors but those are reported and recovered gracefully, return
      * false.
      *
-     * @throws SAXException After an error is reported to {@link ErrorHandler},
-     * the same exception can be thrown to indicate a fatal irrecoverable error. {@link ErrorHandler}
+     * @throws SAXException After an error is reported to {@link ErrorReceiver},
+     * the same exception can be thrown to indicate a fatal irrecoverable error. {@link ErrorReceiver}
      * itself may throw it, if it chooses not to recover from the error.
      */
     public abstract boolean run(

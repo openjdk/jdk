@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 
 package com.sun.xml.internal.ws.encoding;
-
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
@@ -53,6 +52,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Parses Mime multipart message into primary part and attachment parts. It
@@ -66,15 +67,18 @@ public final class MimeMultipartParser {
     private final String start;
     private final MIMEMessage message;
     private Attachment root;
+    private ContentTypeImpl contentType;
 
     // Attachments without root part
     private final Map<String, Attachment> attachments = new HashMap<String, Attachment>();
 
     private boolean gotAll;
 
-    public MimeMultipartParser(InputStream in, String contentType, StreamingAttachmentFeature feature) {
-        ContentType ct = new ContentType(contentType);
-        String boundary = ct.getParameter("boundary");
+    public MimeMultipartParser(InputStream in, String cType, StreamingAttachmentFeature feature) {
+        this.contentType = new ContentTypeImpl(cType);
+//        ContentType ct = new ContentType(cType);
+//        String boundary = ct.getParameter("boundary");
+        String boundary = contentType.getBoundary();
         if (boundary == null || boundary.equals("")) {
             throw new WebServiceException("MIME boundary parameter not found" + contentType);
         }
@@ -82,7 +86,8 @@ public final class MimeMultipartParser {
                 ? new MIMEMessage(in, boundary, feature.getConfig())
                 : new MIMEMessage(in, boundary);
         // Strip <...> from root part's Content-ID
-        String st = ct.getParameter("start");
+//        String st = ct.getParameter("start");
+        String st = contentType.getRootId();
         if (st != null && st.length() > 2 && st.charAt(0) == '<' && st.charAt(st.length()-1) == '>') {
             st = st.substring(1, st.length()-1);
         }
@@ -116,8 +121,11 @@ public final class MimeMultipartParser {
             List<MIMEPart> parts = message.getAttachments();
             for(MIMEPart part : parts) {
                 if (part != rootPart) {
-                    PartAttachment attach = new PartAttachment(part);
-                    attachments.put(attach.getContentId(), attach);
+                    String cid = part.getContentId();
+                    if (!attachments.containsKey(cid)) {
+                        PartAttachment attach = new PartAttachment(part);
+                        attachments.put(attach.getContentId(), attach);
+                    }
                 }
             }
             gotAll = true;
@@ -147,19 +155,21 @@ public final class MimeMultipartParser {
 
         final MIMEPart part;
         byte[] buf;
+        private StreamingDataHandler streamingDataHandler;
 
         PartAttachment(MIMEPart part) {
             this.part = part;
         }
 
-        public @NotNull String getContentId() {
+        public @NotNull @Override String getContentId() {
             return part.getContentId();
         }
 
-        public @NotNull String getContentType() {
+        public @NotNull @Override String getContentType() {
             return part.getContentType();
         }
 
+        @Override
         public byte[] asByteArray() {
             if (buf == null) {
                 ByteArrayBuffer baf = new ByteArrayBuffer();
@@ -167,29 +177,44 @@ public final class MimeMultipartParser {
                     baf.write(part.readOnce());
                 } catch(IOException ioe) {
                     throw new WebServiceException(ioe);
+                } finally {
+                    if (baf != null) {
+                        try {
+                            baf.close();
+                        } catch (IOException ex) {
+                            Logger.getLogger(MimeMultipartParser.class.getName()).log(Level.FINE, null, ex);
+                        }
+                    }
                 }
                 buf = baf.toByteArray();
             }
             return buf;
         }
 
+        @Override
         public DataHandler asDataHandler() {
-            return (buf != null)
-                ? new DataSourceStreamingDataHandler(new ByteArrayDataSource(buf,getContentType()))
-                : new MIMEPartStreamingDataHandler(part);
+            if (streamingDataHandler == null) {
+                streamingDataHandler = (buf != null)
+                    ? new DataSourceStreamingDataHandler(new ByteArrayDataSource(buf,getContentType()))
+                    : new MIMEPartStreamingDataHandler(part);
+            }
+            return streamingDataHandler;
         }
 
+        @Override
         public Source asSource() {
             return (buf != null)
                 ? new StreamSource(new ByteArrayInputStream(buf))
                 : new StreamSource(part.read());
         }
 
+        @Override
         public InputStream asInputStream() {
             return (buf != null)
                 ? new ByteArrayInputStream(buf) : part.read();
         }
 
+        @Override
         public void writeTo(OutputStream os) throws IOException {
             if (buf != null) {
                 os.write(buf);
@@ -204,36 +229,47 @@ public final class MimeMultipartParser {
             }
         }
 
+        @Override
         public void writeTo(SOAPMessage saaj) throws SOAPException {
             saaj.createAttachmentPart().setDataHandler(asDataHandler());
         }
 
         // AttachmentEx methods begin here
+        @Override
         public Iterator<MimeHeader> getMimeHeaders() {
             final Iterator<? extends Header> ih = part.getAllHeaders()
                     .iterator();
             return new Iterator<MimeHeader>() {
+                @Override
                 public boolean hasNext() {
                     return ih.hasNext();
                 }
 
+                @Override
                 public MimeHeader next() {
                     final Header hdr = ih.next();
                     return new AttachmentEx.MimeHeader() {
+                        @Override
                         public String getValue() {
                             return hdr.getValue();
                         }
+                        @Override
                         public String getName() {
                             return hdr.getName();
                         }
                     };
                 }
 
+                @Override
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
             };
         }
+    }
+
+    public ContentTypeImpl getContentType() {
+        return contentType;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package com.sun.xml.internal.ws.api.server;
 
+import com.sun.xml.internal.ws.server.WSEndpointImpl;
 import java.util.HashSet;
 import java.util.Set;
+import com.sun.org.glassfish.external.amx.AMXGlassfish;
+import com.sun.org.glassfish.external.amx.MBeanListener;
+import com.sun.org.glassfish.gmbal.ManagedObjectManager;
 
 /**
  * The lazy provider is intended to defer Gmbal API calls until there is a JMX connection. The provider is scope
@@ -41,7 +45,7 @@ import java.util.Set;
  * Glassfish:
  * {@link WebServicesContainer} is one of two classes for which a {@link ManagedObjectManager} instance (see Gmbal API)
  * is created when a webservice application is deployed into the Glassfish. For the purpose of postponing Gmbal API calls
- * the {@code WebServiceContainer} extends {@link MBeanListener.CallbackImpl} so it can register itself as a listener of
+ * the {@code WebServicesContainer} extends {@link MBeanListener.CallbackImpl} so it can register itself as a listener of
  * {@link AMXGlassfish} and receive a notification about a connection of a JMX client to the Glassfish server (see
  * {@code WebServicesContainer#postConstruct} for registration details). The moment the JMX client is connected a notification
  * is sent to the listeners of {@code AMXGlassfish}. When this event is received by {@code WebServiceContainer} (see the
@@ -53,7 +57,7 @@ import java.util.Set;
  * libraries (outside of Glassfish) so no notification from the Glassfish server can be expected in this case. This leads
  * to a situation when Metro/JAX-WS has to be aware of context in which it is used and acts appropriately. There are 3
  * scopes an application using Metro/JAX-WS can be in: {@code STANDALONE}, {@code GLASSFISH_NO_JMX}, {@code GLASSFISH_JMX}
- * ({@link LazyMOMProvider.Scope}). The default scope is {@code STANDALONE} and all Gmbal API calls are invoked as they
+ * ({@link LazyMOMProvider#scope}). The default scope is {@code STANDALONE} and all Gmbal API calls are invoked as they
  * are requested. The other two scopes are applied only when an application is deployed into a Glassfish server. The
  * {@code GLASSFISH_NO_JMX} is set at the moment the application is deployed (see below) and its purpose is to defer Gmbal
  * API calls for as long as possible. For some classes e.g. {@code ManagedObjectManager} proxy classes were introduced to
@@ -181,7 +185,8 @@ public enum LazyMOMProvider {
     /**
      * Returns {@code true} if this provider is in the default scope.
      *
-     * @return
+     * @return {@code true} if this provider is in the default scope,
+     *          {@code false} otherwise
      */
     private boolean isProviderInDefaultScope() {
         return this.scope == Scope.STANDALONE;

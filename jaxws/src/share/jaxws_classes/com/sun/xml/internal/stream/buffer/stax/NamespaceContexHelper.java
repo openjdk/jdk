@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,6 @@ final public class NamespaceContexHelper implements NamespaceContextEx {
     // Current position to store the next namespace context
     private int contextPosition;
 
-    // The current namespace context
-    private int currentContext;
-
     /**
      * Create a new NamespaceContexHelper.
      *
@@ -88,7 +85,7 @@ final public class NamespaceContexHelper implements NamespaceContextEx {
         prefixes[1] = "xmlns";
         namespaceURIs[1] = "http://www.w3.org/2000/xmlns/";
 
-        currentContext = namespacePosition = 2;
+        namespacePosition = 2;
     }
 
 
@@ -257,7 +254,7 @@ final public class NamespaceContexHelper implements NamespaceContextEx {
         if (contextPosition == contexts.length)
             resizeContexts();
 
-        contexts[contextPosition++] = currentContext = namespacePosition;
+        contexts[contextPosition++] = namespacePosition;
     }
 
     private void resizeContexts() {
@@ -274,7 +271,7 @@ final public class NamespaceContexHelper implements NamespaceContextEx {
      */
     public void popContext() {
         if (contextPosition > 0) {
-            namespacePosition = currentContext = contexts[--contextPosition];
+            namespacePosition = contexts[--contextPosition];
         }
     }
 
@@ -284,6 +281,6 @@ final public class NamespaceContexHelper implements NamespaceContextEx {
      * Pop all namespace contexts and reset the root context.
      */
     public void resetContexts() {
-        currentContext = namespacePosition = 2;
+        namespacePosition = 2;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class DataSourceDispatch extends DispatchImpl<DataSource> {
     }
 
     DataSource toReturnValue(Packet response) {
-        Message message = response.getMessage();
+        Message message = response.getInternalMessage();
         return (message instanceof MessageDataSource)
                 ? ((MessageDataSource)message).getDataSource()
                 : XMLMessage.getDataSource(message, binding.getFeatures());

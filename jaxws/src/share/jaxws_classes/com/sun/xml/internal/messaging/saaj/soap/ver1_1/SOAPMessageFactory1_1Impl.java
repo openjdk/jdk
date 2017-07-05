@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,16 @@ public class SOAPMessageFactory1_1Impl extends MessageFactoryImpl {
         return new Message1_1Impl(isFastInfoset, acceptFastInfoset);
     }
 
-    public SOAPMessage createMessage(MimeHeaders headers, InputStream in)
-        throws IOException, SOAPExceptionImpl {
-        if ((headers == null) || (getContentType(headers) == null)) {
+    public SOAPMessage createMessage(MimeHeaders headers, InputStream in) throws IOException, SOAPExceptionImpl {
+
+        if (headers == null) {
             headers = new MimeHeaders();
+        }
+
+        if (getContentType(headers) == null) {
             headers.setHeader("Content-Type", SOAPConstants.SOAP_1_1_CONTENT_TYPE);
         }
+
         MessageImpl msg = new Message1_1Impl(headers, in);
         msg.setLazyAttachments(lazyAttachments);
         return msg;

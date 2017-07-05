@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.xml.internal.ws.wsdl.writer.document.xsd;
 import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.txw2.annotation.XmlAttribute;
 import com.sun.xml.internal.txw2.annotation.XmlElement;
-import com.sun.xml.internal.ws.wsdl.writer.document.Documented;
 import com.sun.xml.internal.ws.wsdl.writer.document.*;
 
 /**
@@ -43,4 +42,7 @@ public interface Schema
 
     @XmlElement("import")
     public Import _import();
+
+    @XmlAttribute
+    public com.sun.xml.internal.ws.wsdl.writer.document.xsd.Schema targetNamespace(String value);
 }

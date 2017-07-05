@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,11 @@ public final class W3CEndpointReference extends EndpointReference {
 
     private final static JAXBContext w3cjc = getW3CJaxbContext();
 
+    // should be changed to package private, keeping original modifier to keep backwards compatibility
+    protected static final String NS = "http://www.w3.org/2005/08/addressing";
+
+    // default constructor forbidden ...
+    // should be private, keeping original modifier to keep backwards compatibility
     protected W3CEndpointReference() {
     }
 
@@ -137,6 +142,7 @@ public final class W3CEndpointReference extends EndpointReference {
     List<Element> elements;
 
 
+    @XmlType(name="address", namespace=W3CEndpointReference.NS)
     private static class Address {
         protected Address() {}
         @XmlValue
@@ -146,6 +152,7 @@ public final class W3CEndpointReference extends EndpointReference {
     }
 
 
+    @XmlType(name="elements", namespace=W3CEndpointReference.NS)
     private static class Elements {
         protected Elements() {}
         @XmlAnyElement
@@ -154,5 +161,4 @@ public final class W3CEndpointReference extends EndpointReference {
         Map<QName,String> attributes;
     }
 
-    protected static final String NS = "http://www.w3.org/2005/08/addressing";
 }

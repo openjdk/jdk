@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import javax.activation.DataHandler;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  *
@@ -156,7 +157,8 @@ public class ServerLogicalHandlerTube extends HandlerTube {
         //Lets copy all the MessageContext.OUTBOUND_ATTACHMENT_PROPERTY to the message
         Map<String, DataHandler> atts = (Map<String, DataHandler>) context.get(MessageContext.OUTBOUND_MESSAGE_ATTACHMENTS);
         AttachmentSet attSet = context.packet.getMessage().getAttachments();
-        for(String cid : atts.keySet()){
+        for (Entry<String, DataHandler> entry : atts.entrySet()) {
+            String cid = entry.getKey();
             Attachment att = new DataHandlerAttachment(cid, atts.get(cid));
             attSet.add(att);
         }

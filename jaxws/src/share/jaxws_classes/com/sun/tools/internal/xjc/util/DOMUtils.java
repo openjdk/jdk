@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,25 +122,6 @@ public class DOMUtils {
       return (Element)children.item(0);
     return null;
   }
-
-// these implementations look wrong to me, since getElementsByTagName returns
-// all the elements in descendants, not just children.
-//
-//   public static Element[] getChildElements(Element parent, QName qname) {
-//    NodeList children = parent.getElementsByTagNameNS(qname.uri, qname.localpart);
-//    return getElements(children);
-//  }
-//
-//  public static Element[] getChildElements(Element parent, String namespaceURI,
-//                       String localName) {
-//    NodeList children = parent.getElementsByTagNameNS(namespaceURI, localName);
-//    return getElements(children);
-//  }
-//
-//  public static Element[] getChildElements(Element parent, String name) {
-//    NodeList children = parent.getElementsByTagName(name);
-//    return getElements(children);
-//  }
 
     public static Element[] getElements(NodeList children) {
         Element[] elements = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,25 @@
 
 package com.sun.xml.internal.ws.util;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+import com.sun.xml.internal.ws.util.xml.XmlUtil;
+import org.w3c.dom.*;
 
+import javax.xml.XMLConstants;
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import javax.xml.XMLConstants;
-import javax.xml.namespace.NamespaceContext;
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
-
-import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
 
 /**
- * @author: JAXWS Development Team
+ * @author JAXWS Development Team
  */
 public class DOMUtil {
 
@@ -63,7 +56,7 @@ public class DOMUtil {
         synchronized (DOMUtil.class) {
             if (db == null) {
                 try {
-                    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                    DocumentBuilderFactory dbf = XmlUtil.newDocumentBuilderFactory();
                     dbf.setNamespaceAware(true);
                     db = dbf.newDocumentBuilder();
                 } catch (ParserConfigurationException e) {
@@ -72,28 +65,6 @@ public class DOMUtil {
             }
             return db.newDocument();
         }
-    }
-
-    public static Node createDOMNode(InputStream inputStream) {
-
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        dbf.setValidating(false);
-        try {
-            DocumentBuilder builder = dbf.newDocumentBuilder();
-            try {
-                return builder.parse(inputStream);
-            } catch (SAXException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
-        } catch (ParserConfigurationException pce) {
-            IllegalArgumentException iae = new IllegalArgumentException(pce.getMessage());
-            iae.initCause(pce);
-            throw iae;
-        }
-        return null;
     }
 
     /**
@@ -112,6 +83,7 @@ public class DOMUtil {
                 switch (child.getNodeType()) {
                     case Node.PROCESSING_INSTRUCTION_NODE:
                         writer.writeProcessingInstruction(child.getNodeValue());
+                        break;
                     case Node.DOCUMENT_TYPE_NODE:
                         break;
                     case Node.CDATA_SECTION_NODE:
@@ -126,6 +98,7 @@ public class DOMUtil {
                     case Node.ELEMENT_NODE:
                         serializeNode((Element) child, writer);
                         break;
+                    default: break;
                 }
             }
         }
@@ -222,8 +195,9 @@ public class DOMUtil {
         for (Node n = e.getFirstChild(); n != null; n = n.getNextSibling()) {
             if (n.getNodeType() == Node.ELEMENT_NODE) {
                 Element c = (Element) n;
-                if (c.getLocalName().equals(local) && c.getNamespaceURI().equals(nsUri))
+                if (c.getLocalName().equals(local) && c.getNamespaceURI().equals(nsUri)) {
                     return c;
+                }
             }
         }
         return null;
@@ -232,8 +206,11 @@ public class DOMUtil {
     private static
     @NotNull
     String fixNull(@Nullable String s) {
-        if (s == null) return "";
-        else return s;
+        if (s == null) {
+            return "";
+        } else {
+            return s;
+        }
     }
 
     /**

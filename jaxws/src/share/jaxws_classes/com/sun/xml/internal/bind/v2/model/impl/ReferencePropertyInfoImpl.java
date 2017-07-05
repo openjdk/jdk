@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ class ReferencePropertyInfoImpl<T,C,F,M>
      * @see #getElements()
      */
     private Set<Element<T,C>> types;
-    private Set<PropertyInfoImpl<T,C,F,M>> subTypes = new LinkedHashSet<PropertyInfoImpl<T,C,F,M>>();
+    private Set<ReferencePropertyInfoImpl<T,C,F,M>> subTypes = new LinkedHashSet<ReferencePropertyInfoImpl<T,C,F,M>>();
 
     private final boolean isMixed;
 
@@ -186,10 +186,7 @@ class ReferencePropertyInfoImpl<T,C,F,M>
             }
         }
 
-        Iterator<PropertyInfoImpl<T,C,F,M>> i = subTypes.iterator();
-        while (i.hasNext()) {
-
-            ReferencePropertyInfoImpl<T,C,F,M> info = (ReferencePropertyInfoImpl<T, C, F, M>) i.next();
+        for (ReferencePropertyInfoImpl<T, C, F, M> info : subTypes) {
             PropertySeed sd = info.seed;
             refs = sd.readAnnotation(XmlElementRefs.class);
             ref = sd.readAnnotation(XmlElementRef.class);
@@ -377,7 +374,8 @@ class ReferencePropertyInfoImpl<T,C,F,M>
     }
 
     public final void addType(PropertyInfoImpl<T,C,F,M> info) {
-        subTypes.add(info);
+        //noinspection unchecked
+        subTypes.add((ReferencePropertyInfoImpl)info);
     }
 
     public final boolean isMixed() {

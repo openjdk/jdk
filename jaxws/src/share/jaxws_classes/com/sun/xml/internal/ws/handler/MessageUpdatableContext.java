@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,6 @@ public abstract class MessageUpdatableContext implements MessageContext {
     }
 
     /**
-     * Fill a {@link Packet} with values of this {@link MessageContext}.
-     */
-    private void fill(Packet packet) {
-        ctxt.fill(packet);
-    }
-    /**
      * Updates Message in the packet with user modifications
      */
     abstract void updateMessage();
@@ -79,7 +73,6 @@ public abstract class MessageUpdatableContext implements MessageContext {
      */
     public final void updatePacket() {
         updateMessage();
-        fill(packet);
     }
 
     MessageContextImpl getMessageContext() {

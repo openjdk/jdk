@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,125 +232,108 @@ public class SOAPExtensionHandler extends AbstractExtensionHandler {
 //            context.fireDoneParsingEntity(getBodyQName(), body);
             return true;
         } else if (XmlUtil.matchesTagNS(e, getHeaderQName())) {
-            context.push();
-            context.registerNamespaces(e);
-
-            SOAPHeader header = new SOAPHeader(context.getLocation(e));
-
-            String use = XmlUtil.getAttributeOrNull(e, Constants.ATTR_USE);
-            if (use != null) {
-                if (use.equals(Constants.ATTRVALUE_LITERAL)) {
-                    header.setUse(SOAPUse.LITERAL);
-                } else if (use.equals(Constants.ATTRVALUE_ENCODED)) {
-                    header.setUse(SOAPUse.ENCODED);
-                } else {
-                    Util.fail(
-                        "parsing.invalidAttributeValue",
-                        Constants.ATTR_USE,
-                        use);
-                }
-            }
-
-            String namespace =
-                XmlUtil.getAttributeOrNull(e, Constants.ATTR_NAMESPACE);
-            if (namespace != null) {
-                header.setNamespace(namespace);
-            }
-
-            String encodingStyle =
-                XmlUtil.getAttributeOrNull(e, Constants.ATTR_ENCODING_STYLE);
-            if (encodingStyle != null) {
-                header.setEncodingStyle(encodingStyle);
-            }
-
-            String part = XmlUtil.getAttributeOrNull(e, Constants.ATTR_PART);
-            if (part != null) {
-                header.setPart(part);
-            }
-
-            String messageAttr =
-                XmlUtil.getAttributeOrNull(e, Constants.ATTR_MESSAGE);
-            if (messageAttr != null) {
-                header.setMessage(context.translateQualifiedName(context.getLocation(e), messageAttr));
-            }
-
-            for (Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();) {
-                Element e2 = Util.nextElement(iter);
-                if (e2 == null)
-                    break;
-
-                if (XmlUtil
-                    .matchesTagNS(e2, getHeaderfaultQName())) {
-                    context.push();
-                    context.registerNamespaces(e);
-
-                    SOAPHeaderFault headerfault = new SOAPHeaderFault(context.getLocation(e));
-
-                    String use2 =
-                        XmlUtil.getAttributeOrNull(e2, Constants.ATTR_USE);
-                    if (use2 != null) {
-                        if (use2.equals(Constants.ATTRVALUE_LITERAL)) {
-                            headerfault.setUse(SOAPUse.LITERAL);
-                        } else if (use.equals(Constants.ATTRVALUE_ENCODED)) {
-                            headerfault.setUse(SOAPUse.ENCODED);
-                        } else {
-                            Util.fail(
-                                "parsing.invalidAttributeValue",
-                                Constants.ATTR_USE,
-                                use2);
-                        }
-                    }
-
-                    String namespace2 =
-                        XmlUtil.getAttributeOrNull(
-                            e2,
-                            Constants.ATTR_NAMESPACE);
-                    if (namespace2 != null) {
-                        headerfault.setNamespace(namespace2);
-                    }
-
-                    String encodingStyle2 =
-                        XmlUtil.getAttributeOrNull(
-                            e2,
-                            Constants.ATTR_ENCODING_STYLE);
-                    if (encodingStyle2 != null) {
-                        headerfault.setEncodingStyle(encodingStyle2);
-                    }
-
-                    String part2 =
-                        XmlUtil.getAttributeOrNull(e2, Constants.ATTR_PART);
-                    if (part2 != null) {
-                        headerfault.setPart(part2);
-                    }
-
-                    String messageAttr2 =
-                        XmlUtil.getAttributeOrNull(e2, Constants.ATTR_MESSAGE);
-                    if (messageAttr2 != null) {
-                        headerfault.setMessage(
-                            context.translateQualifiedName(context.getLocation(e2), messageAttr2));
-                    }
-
-                    header.add(headerfault);
-                    context.pop();
-                } else {
-                    Util.fail(
-                        "parsing.invalidElement",
-                        e2.getTagName(),
-                        e2.getNamespaceURI());
-                }
-            }
-
-            parent.addExtension(header);
-            context.pop();
-            context.fireDoneParsingEntity(getHeaderQName(), header);
-            return true;
+            return handleHeaderElement(parent, e, context);
         } else {
-            Util.fail(
-                "parsing.invalidExtensionElement",
-                e.getTagName(),
-                e.getNamespaceURI());
+            Util.fail("parsing.invalidExtensionElement", e.getTagName(), e.getNamespaceURI());
             return false; // keep compiler happy
         }
+    }
+
+    private boolean handleHeaderElement(TWSDLExtensible parent, Element e, TWSDLParserContextImpl context) {
+        context.push();
+        context.registerNamespaces(e);
+
+        SOAPHeader header = new SOAPHeader(context.getLocation(e));
+
+        String use = XmlUtil.getAttributeOrNull(e, Constants.ATTR_USE);
+        if (use != null) {
+            if (use.equals(Constants.ATTRVALUE_LITERAL)) {
+                header.setUse(SOAPUse.LITERAL);
+            } else if (use.equals(Constants.ATTRVALUE_ENCODED)) {
+                header.setUse(SOAPUse.ENCODED);
+            } else {
+                Util.fail("parsing.invalidAttributeValue", Constants.ATTR_USE, use);
+            }
+        }
+
+        String namespace = XmlUtil.getAttributeOrNull(e, Constants.ATTR_NAMESPACE);
+        if (namespace != null) {
+            header.setNamespace(namespace);
+        }
+
+        String encodingStyle = XmlUtil.getAttributeOrNull(e, Constants.ATTR_ENCODING_STYLE);
+        if (encodingStyle != null) {
+            header.setEncodingStyle(encodingStyle);
+        }
+
+        String part = XmlUtil.getAttributeOrNull(e, Constants.ATTR_PART);
+        if (part != null) {
+            header.setPart(part);
+        }
+
+        String messageAttr = XmlUtil.getAttributeOrNull(e, Constants.ATTR_MESSAGE);
+        if (messageAttr != null) {
+            header.setMessage(context.translateQualifiedName(context.getLocation(e), messageAttr));
+        }
+
+        for (Iterator iter = XmlUtil.getAllChildren(e); iter.hasNext();) {
+            Element e2 = Util.nextElement(iter);
+            if (e2 == null)
+                break;
+
+            if (XmlUtil.matchesTagNS(e2, getHeaderfaultQName())) {
+                handleHeaderFaultElement(e, context, header, use, e2);
+            } else {
+                Util.fail("parsing.invalidElement", e2.getTagName(), e2.getNamespaceURI());
+            }
+        }
+
+        parent.addExtension(header);
+        context.pop();
+        context.fireDoneParsingEntity(getHeaderQName(), header);
+        return true;
+    }
+
+    private void handleHeaderFaultElement(Element e, TWSDLParserContextImpl context, SOAPHeader header, String use, Element e2) {
+        context.push();
+        context.registerNamespaces(e);
+
+        SOAPHeaderFault headerfault = new SOAPHeaderFault(context.getLocation(e));
+
+        String use2 = XmlUtil.getAttributeOrNull(e2, Constants.ATTR_USE);
+        if (use2 != null) {
+            if (use2.equals(Constants.ATTRVALUE_LITERAL)) {
+                headerfault.setUse(SOAPUse.LITERAL);
+            } else if (use.equals(Constants.ATTRVALUE_ENCODED)) {
+                headerfault.setUse(SOAPUse.ENCODED);
+            } else {
+                Util.fail("parsing.invalidAttributeValue", Constants.ATTR_USE, use2);
+            }
+        }
+
+        String namespace2 = XmlUtil.getAttributeOrNull(e2, Constants.ATTR_NAMESPACE);
+        if (namespace2 != null) {
+            headerfault.setNamespace(namespace2);
+        }
+
+        String encodingStyle2 = XmlUtil.getAttributeOrNull(e2, Constants.ATTR_ENCODING_STYLE);
+        if (encodingStyle2 != null) {
+            headerfault.setEncodingStyle(encodingStyle2);
+        }
+
+        String part2 = XmlUtil.getAttributeOrNull(e2, Constants.ATTR_PART);
+        if (part2 != null) {
+            headerfault.setPart(part2);
+        }
+
+        String messageAttr2 = XmlUtil.getAttributeOrNull(e2, Constants.ATTR_MESSAGE);
+        if (messageAttr2 != null) {
+            headerfault.setMessage(
+                context.translateQualifiedName(context.getLocation(e2), messageAttr2));
+        }
+
+        header.add(headerfault);
+        context.pop();
     }
 
     public boolean handleFaultExtension(
@@ -398,6 +381,10 @@ public class SOAPExtensionHandler extends AbstractExtensionHandler {
             context.pop();
 //            context.fireDoneParsingEntity(getFaultQName(), fault);
             return true;
+        } else if (XmlUtil.matchesTagNS(e, getHeaderQName())) {
+            // although SOAP spec doesn't define meaning of this extension; it is allowed
+            // to be here, so we have to accept it, not fail (bug 13576977)
+            return handleHeaderElement(parent, e, (TWSDLParserContextImpl) context);
         } else {
             Util.fail(
                 "parsing.invalidExtensionElement",

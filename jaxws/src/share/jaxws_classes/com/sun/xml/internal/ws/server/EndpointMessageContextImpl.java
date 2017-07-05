@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import javax.activation.DataHandler;
  *
  * @author Jitendra Kotamraju
  */
-@SuppressWarnings({"SuspiciousMethodCalls"})
 public final class EndpointMessageContextImpl extends AbstractMap<String,Object> implements MessageContext {
 
     /**
@@ -69,6 +68,7 @@ public final class EndpointMessageContextImpl extends AbstractMap<String,Object>
     }
 
     @Override
+    @SuppressWarnings("element-type-mismatch")
     public Object get(Object key) {
         if (packet.supports(key)) {
             return packet.get(key);    // strongly typed
@@ -113,6 +113,7 @@ public final class EndpointMessageContextImpl extends AbstractMap<String,Object>
     }
 
     @Override
+    @SuppressWarnings("element-type-mismatch")
     public Object remove(Object key) {
          if (packet.supports(key)) {
              return packet.remove(key);

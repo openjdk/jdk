@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import com.sun.xml.internal.ws.api.message.AttachmentSet;
 import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 import com.sun.xml.internal.ws.encoding.TagInfoset;
 import com.sun.xml.internal.ws.message.AbstractMessageImpl;
@@ -69,7 +70,7 @@ import java.util.List;
  * TODO: we need another message class that keeps {@link XMLStreamReader} that points
  * at the start of the envelope element.
  */
-public final class StreamMessage extends AbstractMessageImpl {
+public class StreamMessage extends AbstractMessageImpl {
     /**
      * The reader will be positioned at
      * the first child of the SOAP body
@@ -77,7 +78,7 @@ public final class StreamMessage extends AbstractMessageImpl {
     private @NotNull XMLStreamReader reader;
 
     // lazily created
-    private @Nullable HeaderList headers;
+    private @Nullable MessageHeaders headers;
 
     /**
      * Because the StreamMessage leaves out the white spaces around payload
@@ -123,12 +124,17 @@ public final class StreamMessage extends AbstractMessageImpl {
         create(SOAPVersion.SOAP_12);
     }
 
+    public StreamMessage(SOAPVersion v) {
+        super(v);
+        payloadLocalName = null;
+        payloadNamespaceURI = null;
+    }
     /**
      * Creates a {@link StreamMessage} from a {@link XMLStreamReader}
      * that points at the start element of the payload, and headers.
      *
      * <p>
-     * This method creaets a {@link Message} from a payload.
+     * This method creates a {@link Message} from a payload.
      *
      * @param headers
      *      if null, it means no headers. if non-null,
@@ -137,7 +143,7 @@ public final class StreamMessage extends AbstractMessageImpl {
      *      points at the start element/document of the payload (or the end element of the &lt;s:Body>
      *      if there's no payload)
      */
-    public StreamMessage(@Nullable HeaderList headers, @NotNull AttachmentSet attachmentSet, @NotNull XMLStreamReader reader, @NotNull SOAPVersion soapVersion) {
+    public StreamMessage(@Nullable MessageHeaders headers, @NotNull AttachmentSet attachmentSet, @NotNull XMLStreamReader reader, @NotNull SOAPVersion soapVersion) {
         super(soapVersion);
         this.headers = headers;
         this.attachmentSet = attachmentSet;
@@ -177,18 +183,18 @@ public final class StreamMessage extends AbstractMessageImpl {
      * and the complete infoset of the SOAP envelope.
      *
      * <p>
-     * See {@link #StreamMessage(HeaderList, AttachmentSet, XMLStreamReader, SOAPVersion)} for
+     * See {@link #StreamMessage(MessageHeaders, AttachmentSet, XMLStreamReader, SOAPVersion)} for
      * the description of the basic parameters.
      *
      * @param headerTag
      *      Null if the message didn't have a header tag.
      *
      */
-    public StreamMessage(@NotNull TagInfoset envelopeTag, @Nullable TagInfoset headerTag, @NotNull AttachmentSet attachmentSet, @Nullable HeaderList headers, @NotNull TagInfoset bodyTag, @NotNull XMLStreamReader reader, @NotNull SOAPVersion soapVersion) {
+    public StreamMessage(@NotNull TagInfoset envelopeTag, @Nullable TagInfoset headerTag, @NotNull AttachmentSet attachmentSet, @Nullable MessageHeaders headers, @NotNull TagInfoset bodyTag, @NotNull XMLStreamReader reader, @NotNull SOAPVersion soapVersion) {
         this(envelopeTag, headerTag, attachmentSet, headers, null, bodyTag, null, reader, soapVersion);
     }
 
-    public StreamMessage(@NotNull TagInfoset envelopeTag, @Nullable TagInfoset headerTag, @NotNull AttachmentSet attachmentSet, @Nullable HeaderList headers, @Nullable String bodyPrologue, @NotNull TagInfoset bodyTag, @Nullable String bodyEpilogue, @NotNull XMLStreamReader reader, @NotNull SOAPVersion soapVersion) {
+    public StreamMessage(@NotNull TagInfoset envelopeTag, @Nullable TagInfoset headerTag, @NotNull AttachmentSet attachmentSet, @Nullable MessageHeaders headers, @Nullable String bodyPrologue, @NotNull TagInfoset bodyTag, @Nullable String bodyEpilogue, @NotNull XMLStreamReader reader, @NotNull SOAPVersion soapVersion) {
         this(headers,attachmentSet,reader,soapVersion);
         if(envelopeTag == null ) {
             throw new IllegalArgumentException("EnvelopeTag TagInfoset cannot be null");
@@ -205,12 +211,12 @@ public final class StreamMessage extends AbstractMessageImpl {
     }
 
     public boolean hasHeaders() {
-        return headers!=null && !headers.isEmpty();
+        return headers!=null && headers.hasHeaders();
     }
 
-    public HeaderList getHeaders() {
+    public MessageHeaders getHeaders() {
         if (headers == null) {
-            headers = new HeaderList();
+            headers = new HeaderList(getSOAPVersion());
         }
         return headers;
     }
@@ -384,10 +390,10 @@ public final class StreamMessage extends AbstractMessageImpl {
         envelopeTag.writeStart(writer);
 
         //write headers
-        HeaderList hl = getHeaders();
-        if(hl.size() > 0){
+        MessageHeaders hl = getHeaders();
+        if(hl.hasHeaders()){
             headerTag.writeStart(writer);
-            for(Header h:hl){
+            for(Header h : hl.asList()){
                 h.writeTo(writer);
             }
             writer.writeEndElement();
@@ -523,11 +529,10 @@ public final class StreamMessage extends AbstractMessageImpl {
         envelopeTag.writeStart(contentHandler);
         headerTag.writeStart(contentHandler);
         if(hasHeaders()) {
-            HeaderList headers = getHeaders();
-            int len = headers.size();
-            for( int i=0; i<len; i++ ) {
+            MessageHeaders headers = getHeaders();
+            for (Header h : headers.asList()) {
                 // shouldn't JDK be smart enough to use array-style indexing for this foreach!?
-                headers.get(i).writeTo(contentHandler,errorHandler);
+                h.writeTo(contentHandler,errorHandler);
             }
         }
         headerTag.writeEnd(contentHandler);
@@ -573,4 +578,8 @@ public final class StreamMessage extends AbstractMessageImpl {
         return bodyEpilogue;
     }
 
+    public XMLStreamReader getReader() {
+        assert unconsumed();
+        return reader;
+    }
 }

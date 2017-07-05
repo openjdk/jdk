@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,11 +74,11 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 7:
+        case 1:
             {
-                if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                if(($__uri.equals("") && $__local.equals("schema"))) {
+                    NGCCHandler h = new Schema(this, super._source, $runtime, 31, baseDir);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -90,11 +90,22 @@ public class Config extends NGCCHandler {
                 revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
             }
             break;
-        case 1:
+        case 7:
             {
-                if(($__uri.equals("") && $__local.equals("schema"))) {
-                    NGCCHandler h = new Schema(this, super._source, $runtime, 31, baseDir);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    unexpectedEnterElement($__qname);
+                }
+            }
+            break;
+        case 8:
+            {
+                if(($__uri.equals("") && $__local.equals("config"))) {
+                    $runtime.onEnterElementConsumed($__uri, $__local, $__qname, $attrs);
+                    $_ngcc_current_state = 7;
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -110,17 +121,6 @@ public class Config extends NGCCHandler {
                 else {
                     $_ngcc_current_state = 1;
                     $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-            }
-            break;
-        case 8:
-            {
-                if(($__uri.equals("") && $__local.equals("config"))) {
-                    $runtime.onEnterElementConsumed($__uri, $__local, $__qname, $attrs);
-                    $_ngcc_current_state = 7;
-                }
-                else {
-                    unexpectedEnterElement($__qname);
                 }
             }
             break;
@@ -149,11 +149,11 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 7:
+        case 1:
             {
-                if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                if(($__uri.equals("") && $__local.equals("config"))) {
+                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
+                    $_ngcc_current_state = 0;
                 }
                 else {
                     unexpectedLeaveElement($__qname);
@@ -165,11 +165,11 @@ public class Config extends NGCCHandler {
                 revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 1:
+        case 7:
             {
-                if(($__uri.equals("") && $__local.equals("config"))) {
-                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
-                    $_ngcc_current_state = 0;
+                if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
                 }
                 else {
                     unexpectedLeaveElement($__qname);
@@ -196,6 +196,11 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 7:
             {
                 if(($__uri.equals("") && $__local.equals("baseDir"))) {
@@ -204,11 +209,6 @@ public class Config extends NGCCHandler {
                 else {
                     unexpectedEnterAttribute($__qname);
                 }
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         case 2:
@@ -236,6 +236,12 @@ public class Config extends NGCCHandler {
                 revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
+        case 2:
+            {
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 5:
             {
                 if(($__uri.equals("") && $__local.equals("baseDir"))) {
@@ -244,12 +250,6 @@ public class Config extends NGCCHandler {
                 else {
                     unexpectedLeaveAttribute($__qname);
                 }
-            }
-            break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -263,6 +263,18 @@ public class Config extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromText(this, super._cookie, $value);
+            }
+            break;
+        case 6:
+            {
+                bd = $value;
+                $_ngcc_current_state = 5;
+                action1();
+            }
+            break;
         case 7:
             {
                 if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
@@ -271,22 +283,10 @@ public class Config extends NGCCHandler {
                 }
             }
             break;
-        case 0:
-            {
-                revertToParentFromText(this, super._cookie, $value);
-            }
-            break;
         case 2:
             {
                 $_ngcc_current_state = 1;
                 $runtime.sendText(super._cookie, $value);
-            }
-            break;
-        case 6:
-            {
-                bd = $value;
-                $_ngcc_current_state = 5;
-                action1();
             }
             break;
         }
@@ -301,17 +301,17 @@ public class Config extends NGCCHandler {
                 $_ngcc_current_state = 1;
             }
             break;
+        case 34:
+            {
+                this.classes = ((Classes)result);
+                $_ngcc_current_state = 2;
+            }
+            break;
         case 32:
             {
                 this._schema = ((Schema)result);
                 action0();
                 $_ngcc_current_state = 1;
-            }
-            break;
-        case 34:
-            {
-                this.classes = ((Classes)result);
-                $_ngcc_current_state = 2;
             }
             break;
         }

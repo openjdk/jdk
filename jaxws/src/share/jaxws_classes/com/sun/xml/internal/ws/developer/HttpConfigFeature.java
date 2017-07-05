@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.net.CookieHandler;
  */
 public final class HttpConfigFeature extends WebServiceFeature {
     /**
-     * Constant value identifying the {@link @HttpConfigFeature} feature.
+     * Constant value identifying the {@link HttpConfigFeature} feature.
      */
     public static final String ID = "http://jax-ws.java.net/features/http-config";
 

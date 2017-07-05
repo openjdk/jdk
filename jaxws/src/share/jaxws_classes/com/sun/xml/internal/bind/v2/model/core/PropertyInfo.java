@@ -98,7 +98,7 @@ public interface PropertyInfo<T,C> extends AnnotationSource {
     Collection<? extends TypeInfo<T,C>> ref();
 
     /**
-     * Gets the kind of this proeprty.
+     * Gets the kind of this property.
      *
      * @return
      *      always non-null.

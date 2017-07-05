@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.xml.internal.stream.buffer.MutableXMLStreamBuffer;
 import com.sun.xml.internal.stream.buffer.XMLStreamBufferResult;
 import com.sun.xml.internal.ws.api.server.SDDocument;
 import com.sun.xml.internal.ws.api.server.SDDocumentSource;
-import com.sun.xml.internal.ws.wsdl.writer.WSDLResolver;
 
 import javax.xml.namespace.QName;
 import javax.xml.transform.Result;
@@ -49,7 +48,7 @@ import java.util.Map;
  *
  * @author Jitendra Kotamraju
  */
-final class WSDLGenResolver implements WSDLResolver {
+final class WSDLGenResolver implements com.oracle.webservices.internal.api.databinding.WSDLResolver {
 
     private final List<SDDocumentImpl> docs;
     private final List<SDDocumentSource> newDocs = new ArrayList<SDDocumentSource>();

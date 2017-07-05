@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package com.sun.xml.internal.ws.message.saaj;
 
-import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.XMLStreamException2;
-import com.sun.istack.internal.Nullable;
 import com.sun.istack.internal.FragmentContentHandler;
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+import com.sun.istack.internal.XMLStreamException2;
 import com.sun.xml.internal.bind.api.Bridge;
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
 import com.sun.xml.internal.ws.api.SOAPVersion;
@@ -36,11 +36,12 @@ import com.sun.xml.internal.ws.api.message.*;
 import com.sun.xml.internal.ws.message.AttachmentUnmarshallerImpl;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
 import com.sun.xml.internal.ws.streaming.DOMStreamReader;
+import com.sun.xml.internal.ws.util.ASCIIUtility;
 import com.sun.xml.internal.ws.util.DOMUtil;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -50,13 +51,7 @@ import org.xml.sax.helpers.LocatorImpl;
 import javax.activation.DataHandler;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.soap.AttachmentPart;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPHeader;
-import javax.xml.soap.SOAPHeaderElement;
-import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.*;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -85,7 +80,7 @@ public class SAAJMessage extends Message {
     private boolean accessedMessage;
     private final SOAPMessage sm;
 
-    private HeaderList headers;
+    private MessageHeaders headers;
     private List<Element> bodyParts;
     private Element payload;
 
@@ -107,11 +102,11 @@ public class SAAJMessage extends Message {
      * @param headers
      * @param sm
      */
-    private SAAJMessage(HeaderList headers, AttachmentSet as, SOAPMessage sm) {
+    private SAAJMessage(MessageHeaders headers, AttachmentSet as, SOAPMessage sm, SOAPVersion version) {
         this.sm = sm;
         this.parse();
         if(headers == null)
-            headers = new HeaderList();
+            headers = new HeaderList(version);
         this.headers = headers;
         this.attachmentSet = as;
     }
@@ -121,7 +116,7 @@ public class SAAJMessage extends Message {
             try {
                 access();
                 if (headers == null)
-                    headers = new HeaderList();
+                    headers = new HeaderList(getSOAPVersion());
                 SOAPHeader header = sm.getSOAPHeader();
                 if (header != null) {
                     headerAttrs = header.getAttributes();
@@ -139,7 +134,7 @@ public class SAAJMessage extends Message {
         }
     }
 
-    private void access() {
+    protected void access() {
         if (!accessedMessage) {
             try {
                 envelopeAttrs = sm.getSOAPPart().getEnvelope().getAttributes();
@@ -166,13 +161,14 @@ public class SAAJMessage extends Message {
 
     public boolean hasHeaders() {
         parse();
-        return headers.size() > 0;
+        return headers.hasHeaders();
     }
 
-    public @NotNull HeaderList getHeaders() {
+    public @NotNull MessageHeaders getHeaders() {
         parse();
         return headers;
     }
+
     /**
      * Gets the attachments of this message
      * (attachments live outside a message.)
@@ -247,7 +243,7 @@ public class SAAJMessage extends Message {
                     newBody.appendChild(n);
                 }
                 addAttributes(msg.getSOAPHeader(),headerAttrs);
-                for (Header header : headers) {
+                for (Header header : headers.asList()) {
                     header.writeTo(msg);
                 }
                 SOAPEnvelope se = msg.getSOAPPart().getEnvelope();
@@ -271,7 +267,7 @@ public class SAAJMessage extends Message {
                 newBody.appendChild(n);
             }
             addAttributes(msg.getSOAPHeader(),headerAttrs);
-            for (Header header : headers) {
+            for (Header header : headers.asList()) {
               header.writeTo(msg);
             }
             for (Attachment att : getAttachments()) {
@@ -366,9 +362,8 @@ public class SAAJMessage extends Message {
                     } else {
                         writer.writeStartElement(env.getPrefix(), "Header", env.getNamespaceURI());
                     }
-                    int len = headers.size();
-                    for (int i = 0; i < len; i++) {
-                        headers.get(i).writeTo(writer);
+                    for (Header h : headers.asList()) {
+                        h.writeTo(writer);
                     }
                     writer.writeEndElement();
                 }
@@ -399,11 +394,9 @@ public class SAAJMessage extends Message {
             if (hasHeaders()) {
                 startPrefixMapping(contentHandler, headerAttrs,"S");
                 contentHandler.startElement(soapNsUri, "Header", "S:Header", getAttributes(headerAttrs));
-                HeaderList headers = getHeaders();
-                int len = headers.size();
-                for (int i = 0; i < len; i++) {
-                    // shouldn't JDK be smart enough to use array-style indexing for this foreach!?
-                    headers.get(i).writeTo(contentHandler, errorHandler);
+                MessageHeaders headers = getHeaders();
+                for (Header h : headers.asList()) {
+                    h.writeTo(contentHandler, errorHandler);
                 }
                 endPrefixMapping(contentHandler, headerAttrs,"S");
                 contentHandler.endElement(soapNsUri, "Header", "S:Header");
@@ -520,7 +513,7 @@ public class SAAJMessage extends Message {
                     newBody.appendChild(n);
                 }
                 addAttributes(newBody, bodyAttrs);
-                return new SAAJMessage(getHeaders(), getAttachments(), msg);
+                return new SAAJMessage(getHeaders(), getAttachments(), msg, soapVersion);
             }
         } catch (SOAPException e) {
             throw new WebServiceException(e);
@@ -529,9 +522,11 @@ public class SAAJMessage extends Message {
     private static final AttributesImpl EMPTY_ATTS = new AttributesImpl();
     private static final LocatorImpl NULL_LOCATOR = new LocatorImpl();
 
-    private class SAAJAttachment implements AttachmentEx {
+    private static class SAAJAttachment implements AttachmentEx {
 
         final AttachmentPart ap;
+
+        String contentIdNoAngleBracket;
 
         public SAAJAttachment(AttachmentPart part) {
             this.ap = part;
@@ -541,7 +536,12 @@ public class SAAJMessage extends Message {
          * Content ID of the attachment. Uniquely identifies an attachment.
          */
         public String getContentId() {
-            return ap.getContentId();
+            if (contentIdNoAngleBracket == null) {
+                contentIdNoAngleBracket = ap.getContentId();
+                if (contentIdNoAngleBracket != null && contentIdNoAngleBracket.charAt(0) == '<')
+                    contentIdNoAngleBracket = contentIdNoAngleBracket.substring(1, contentIdNoAngleBracket.length()-1);
+            }
+            return contentIdNoAngleBracket;
         }
 
         /**
@@ -600,7 +600,11 @@ public class SAAJMessage extends Message {
          * Writes the contents of the attachment into the given stream.
          */
         public void writeTo(OutputStream os) throws IOException {
-            os.write(asByteArray());
+            try {
+                ASCIIUtility.copyStream(ap.getRawContent(), os);
+            } catch (SOAPException e) {
+                throw new WebServiceException(e);
+            }
         }
 
         /**
@@ -647,7 +651,7 @@ public class SAAJMessage extends Message {
      * SAAJ wants '&lt;' and '>' for the content ID, but {@link AttachmentSet}
      * doesn't. S this class also does the conversion between them.
      */
-    private class SAAJAttachmentSet implements AttachmentSet {
+    private static class SAAJAttachmentSet implements AttachmentSet {
 
         private Map<String, Attachment> attMap;
         private Iterator attIter;
@@ -708,4 +712,7 @@ public class SAAJMessage extends Message {
         }
     }
 
+    public SOAPVersion getSOAPVersion() {
+        return soapVersion;
+    }
 }

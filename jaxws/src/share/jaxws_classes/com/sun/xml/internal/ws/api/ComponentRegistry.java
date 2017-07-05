@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import com.sun.istack.internal.NotNull;
 /**
  * Registry for component delegates.  It is expected that implementations of
  * ComponentRegistry will delegate to registered {@link Component}s in its own
- * implementation of {@link Component.getSPI}, either before or after it
+ * implementation of {@link Component#getSPI(java.lang.Class)}, either before or after it
  * considers its own SPI implementations.
  *
  * @since 2.2.6

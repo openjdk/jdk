@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.util.List;
  */
 final class InternetHeaders {
 
-    private final FinalArrayList<hdr> headers = new FinalArrayList<hdr>();
+    private final FinalArrayList<Hdr> headers = new FinalArrayList<Hdr>();
 
     /**
      * Read and parse the given RFC822 message stream till the
@@ -78,7 +78,7 @@ final class InternetHeaders {
         String line;
         String prevline = null; // the previous header line, as a string
         // a buffer to accumulate the header in, when we know it's needed
-        StringBuffer lineBuffer = new StringBuffer();
+        StringBuilder lineBuffer = new StringBuilder();
 
         try {
             //while ((line = lis.readLine()) != null) {
@@ -95,9 +95,9 @@ final class InternetHeaders {
                     lineBuffer.append(line);
                 } else {
                     // new header
-                    if (prevline != null)
+                    if (prevline != null) {
                         addHeaderLine(prevline);
-                    else if (lineBuffer.length() > 0) {
+                    } else if (lineBuffer.length() > 0) {
                         // store previous header first
                         addHeaderLine(lineBuffer.toString());
                         lineBuffer.setLength(0);
@@ -124,7 +124,7 @@ final class InternetHeaders {
 
         int len = headers.size();
         for( int i=0; i<len; i++ ) {
-            hdr h = (hdr) headers.get(i);
+            Hdr h = (Hdr) headers.get(i);
             if (name.equalsIgnoreCase(h.name)) {
                 v.add(h.getValue());
             }
@@ -155,13 +155,13 @@ final class InternetHeaders {
         try {
             char c = line.charAt(0);
             if (c == ' ' || c == '\t') {
-                hdr h = (hdr) headers.get(headers.size() - 1);
+                Hdr h = (Hdr) headers.get(headers.size() - 1);
                 h.line += "\r\n" + line;
-            } else
-                headers.add(new hdr(line));
+            } else {
+                headers.add(new Hdr(line));
+            }
         } catch (StringIndexOutOfBoundsException e) {
             // line is empty, ignore it
-            return;
         } catch (NoSuchElementException e) {
             // XXX - vector is empty?
         }
@@ -173,7 +173,7 @@ final class InternetHeaders {
  * A private utility class to represent an individual header.
  */
 
-class hdr implements Header {
+class Hdr implements Header {
 
     String name;    // the canonicalized (trimmed) name of this header
     // XXX - should name be stored in lower case?
@@ -183,7 +183,7 @@ class hdr implements Header {
      * Constructor that takes a line and splits out
      * the header name.
      */
-    hdr(String l) {
+    Hdr(String l) {
         int i = l.indexOf(':');
         if (i < 0) {
             // should never happen
@@ -197,7 +197,7 @@ class hdr implements Header {
     /*
      * Constructor that takes a header name and value.
      */
-    hdr(String n, String v) {
+    Hdr(String n, String v) {
         name = n;
         line = n + ": " + v;
     }
@@ -205,6 +205,7 @@ class hdr implements Header {
     /*
      * Return the "name" part of the header line.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -212,10 +213,12 @@ class hdr implements Header {
     /*
      * Return the "value" part of the header line.
      */
+    @Override
     public String getValue() {
         int i = line.indexOf(':');
-        if (i < 0)
+        if (i < 0) {
             return line;
+        }
 
         int j;
         if (name.equalsIgnoreCase("Content-Description")) {
@@ -223,15 +226,17 @@ class hdr implements Header {
             // rf. RFC2822 section 2.2.3, rf. RFC2822 section 3.2.3
             for (j = i + 1; j < line.length(); j++) {
                 char c = line.charAt(j);
-                if (!(/*c == ' ' ||*/c == '\t' || c == '\r' || c == '\n'))
+                if (!(/*c == ' ' ||*/c == '\t' || c == '\r' || c == '\n')) {
                     break;
+                }
             }
         } else {
             // skip whitespace after ':'
             for (j = i + 1; j < line.length(); j++) {
                 char c = line.charAt(j);
-                if (!(c == ' ' || c == '\t' || c == '\r' || c == '\n'))
+                if (!(c == ' ' || c == '\t' || c == '\r' || c == '\n')) {
                     break;
+                }
             }
         }
         return line.substring(j);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.internal.ws.wscompile;
 
 import com.sun.codemodel.internal.CodeWriter;
 import com.sun.codemodel.internal.writer.ProgressCodeWriter;
+import com.sun.istack.internal.tools.DefaultAuthenticator;
 import com.sun.tools.internal.ws.ToolVersion;
 import com.sun.tools.internal.ws.api.TJavaGeneratorExtension;
 import com.sun.tools.internal.ws.processor.generator.CustomExceptionGenerator;
@@ -55,9 +56,10 @@ import javax.xml.stream.*;
 import javax.xml.ws.EndpointContext;
 import java.io.*;
 import java.util.*;
-import java.net.Authenticator;
+import java.text.MessageFormat;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 /**
@@ -134,11 +136,13 @@ public class WsimportTool {
             this.listener = listener;
         }
 
+        @Override
         public void info(SAXParseException exception) {
             if (options.verbose)
                 super.info(exception);
         }
 
+        @Override
         public void warning(SAXParseException exception) {
             if (!options.quiet)
                 super.warning(exception);
@@ -179,13 +183,10 @@ public class WsimportTool {
             }
         }
 
-        Authenticator orig = null;
         try {
             parseArguments(args, listener, receiver);
 
             try {
-                orig = DefaultAuthenticator.getCurrentAuthenticator();
-
                 Model wsdlModel = buildWsdlModel(listener, receiver);
                 if (wsdlModel == null)
                    return false;
@@ -235,7 +236,7 @@ public class WsimportTool {
         } finally{
             deleteGeneratedFiles();
             if (!options.disableAuthenticator) {
-                Authenticator.setDefault(orig);
+                DefaultAuthenticator.reset();
             }
         }
         if(receiver.hadError()) {
@@ -253,11 +254,12 @@ public class WsimportTool {
             synchronized (generatedFiles) {
                 for (File file : generatedFiles) {
                     if (!file.getName().endsWith(".java")) {
-                        file.delete();
+                        boolean deleted = file.delete();
+                        if (options.verbose && !deleted) {
+                            System.out.println(MessageFormat.format("{0} could not be deleted.", file));
+                        }
                         trackedRootPackages.add(file.getParentFile());
-
                     }
-
                 }
             }
             //remove empty package dirs
@@ -265,7 +267,10 @@ public class WsimportTool {
 
                 while(pkg.list() != null && pkg.list().length ==0 && !pkg.equals(options.destDir)) {
                     File parentPkg = pkg.getParentFile();
-                    pkg.delete();
+                    boolean deleted = pkg.delete();
+                    if (options.verbose && !deleted) {
+                        System.out.println(MessageFormat.format("{0} could not be deleted.", pkg));
+                    }
                     pkg = parentPkg;
                 }
             }
@@ -273,7 +278,6 @@ public class WsimportTool {
         if(!options.keep) {
             options.removeGeneratedFiles();
         }
-
     }
 
     private void addClassesToGeneratedFiles() throws IOException {
@@ -286,7 +290,7 @@ public class WsimportTool {
                 File classDir = new File(options.destDir,relativeDir);
                 if(classDir.exists()) {
                     classDir.listFiles(new FilenameFilter() {
-
+                        @Override
                         public boolean accept(File dir, String name) {
                             if(name.equals(className+".class") || (name.startsWith(className+"$") && name.endsWith(".class"))) {
                                 trackedClassFiles.add(new File(dir,name));
@@ -309,42 +313,50 @@ public class WsimportTool {
             zipFile = new File(options.destDir, options.clientjar);
         }
 
-        if (zipFile.exists()) {
-            //TODO
-        }
-        FileOutputStream fos = null;
-        if( !options.quiet )
+        FileOutputStream fos;
+        if (!options.quiet) {
             listener.message(WscompileMessages.WSIMPORT_ARCHIVING_ARTIFACTS(zipFile));
+        }
 
-
+        BufferedInputStream bis = null;
+        FileInputStream fi = null;
         fos = new FileOutputStream(zipFile);
         JarOutputStream jos = new JarOutputStream(fos);
-
-        String base = options.destDir.getCanonicalPath();
-        for(File f: options.getGeneratedFiles()) {
-            //exclude packaging the java files in the jar
-            if(f.getName().endsWith(".java")) {
-                continue;
+        try {
+            String base = options.destDir.getCanonicalPath();
+            for(File f: options.getGeneratedFiles()) {
+                //exclude packaging the java files in the jar
+                if(f.getName().endsWith(".java")) {
+                    continue;
+                }
+                if(options.verbose) {
+                    listener.message(WscompileMessages.WSIMPORT_ARCHIVE_ARTIFACT(f, options.clientjar));
+                }
+                String entry = f.getCanonicalPath().substring(base.length()+1);
+                fi = new FileInputStream(f);
+                bis = new BufferedInputStream(fi);
+                JarEntry jarEntry = new JarEntry(entry);
+                jos.putNextEntry(jarEntry);
+                int bytesRead;
+                byte[] buffer = new byte[1024];
+                while ((bytesRead = bis.read(buffer)) != -1) {
+                    jos.write(buffer, 0, bytesRead);
+                }
             }
-            if(options.verbose) {
-                listener.message(WscompileMessages.WSIMPORT_ARCHIVE_ARTIFACT(f, options.clientjar));
+        } finally {
+            try {
+                if (bis != null) {
+                    bis.close();
+                }
+            } finally {
+                if (jos != null) {
+                    jos.close();
+                }
+                if (fi != null) {
+                    fi.close();
+                }
             }
-            String entry = f.getCanonicalPath().substring(base.length()+1);
-            BufferedInputStream bis = new BufferedInputStream(
-                            new FileInputStream(f));
-            JarEntry jarEntry = new JarEntry(entry);
-            jos.putNextEntry(jarEntry);
-            int bytesRead;
-            byte[] buffer = new byte[1024];
-            while ((bytesRead = bis.read(buffer)) != -1) {
-                jos.write(buffer, 0, bytesRead);
-            }
-            bis.close();
-
         }
-
-        jos.close();
-
     }
 
     protected void parseArguments(String[] args, Listener listener,
@@ -356,15 +368,56 @@ public class WsimportTool {
         options.parseBindings(receiver);
     }
 
-    protected Model buildWsdlModel(Listener listener,
-                                   Receiver receiver) throws BadCommandLineException, XMLStreamException, IOException {
-        if( !options.quiet )
-            listener.message(WscompileMessages.WSIMPORT_PARSING_WSDL());
-
+    protected Model buildWsdlModel(Listener listener, final Receiver receiver)
+            throws BadCommandLineException, XMLStreamException, IOException {
         //set auth info
         //if(options.authFile != null)
         if (!options.disableAuthenticator) {
-            Authenticator.setDefault(new DefaultAuthenticator(receiver, options.authFile));
+            class AuthListener implements DefaultAuthenticator.Receiver {
+
+                private final boolean isFatal;
+
+                AuthListener(boolean isFatal) {
+                    this.isFatal = isFatal;
+                }
+
+                @Override
+                public void onParsingError(String text, Locator loc) {
+                    error(new SAXParseException(WscompileMessages.WSIMPORT_ILLEGAL_AUTH_INFO(text), loc));
+                }
+
+                @Override
+                public void onError(Exception e, Locator loc) {
+                    if (e instanceof FileNotFoundException) {
+                        error(new SAXParseException(WscompileMessages.WSIMPORT_AUTH_FILE_NOT_FOUND(
+                                loc.getSystemId(), WsimportOptions.defaultAuthfile), null));
+                    } else {
+                        error(new SAXParseException(WscompileMessages.WSIMPORT_FAILED_TO_PARSE(loc.getSystemId(),e.getMessage()), loc));
+                    }
+                }
+
+                private void error(SAXParseException e) {
+                    if (isFatal) {
+                        receiver.error(e);
+                    } else {
+                        receiver.debug(e);
+                    }
+                }
+            }
+
+            DefaultAuthenticator da = DefaultAuthenticator.getAuthenticator();
+            if (options.proxyAuth != null) {
+                da.setProxyAuth(options.proxyAuth);
+            }
+            if (options.authFile != null) {
+                da.setAuth(options.authFile, new AuthListener(true));
+            } else {
+                da.setAuth(new File(WsimportOptions.defaultAuthfile), new AuthListener(false));
+            }
+        }
+
+        if (!options.quiet) {
+            listener.message(WscompileMessages.WSIMPORT_PARSING_WSDL());
         }
 
         MetadataFinder forest = new MetadataFinder(new WSDLInternalizationLogic(), options, receiver);
@@ -498,7 +551,7 @@ public class WsimportTool {
 
             listener.message(WscompileMessages.WSIMPORT_COMPILING_CODE());
             if(options.verbose){
-                StringBuffer argstr = new StringBuffer();
+                StringBuilder argstr = new StringBuilder();
                 for(String arg:args){
                     argstr.append(arg).append(" ");
                 }

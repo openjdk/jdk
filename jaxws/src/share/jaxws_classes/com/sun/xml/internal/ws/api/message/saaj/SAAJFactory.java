@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.xml.soap.SAAJMetaFactory;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFactory;
 import javax.xml.soap.SOAPMessage;
+import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.SAXException;
 
@@ -41,6 +42,7 @@ import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.Attachment;
 import com.sun.xml.internal.ws.api.message.AttachmentEx;
 import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.message.saaj.SAAJMessage;
 import com.sun.xml.internal.ws.util.ServiceFinder;
 import com.sun.xml.internal.ws.util.xml.XmlUtil;
@@ -76,14 +78,14 @@ public class SAAJFactory {
      *            specified implementation of  <code>MessageFactory</code>.
      * @see SAAJMetaFactory
      */
-        public static MessageFactory getMessageFactory(String saajFactoryString) throws SOAPException {
+        public static MessageFactory getMessageFactory(String protocol) throws SOAPException {
                 for (SAAJFactory s : ServiceFinder.find(SAAJFactory.class)) {
-                        MessageFactory mf = s.createMessageFactory(saajFactoryString);
+                        MessageFactory mf = s.createMessageFactory(protocol);
                         if (mf != null)
                                 return mf;
                 }
 
-        return instance.createMessageFactory(saajFactoryString);
+        return instance.createMessageFactory(protocol);
         }
 
     /**
@@ -104,14 +106,14 @@ public class SAAJFactory {
      *            specified <code>SOAPFactory</code>
      * @see SAAJMetaFactory
      */
-        public static SOAPFactory getSOAPFactory(String saajFactoryString) throws SOAPException {
+        public static SOAPFactory getSOAPFactory(String protocol) throws SOAPException {
                 for (SAAJFactory s : ServiceFinder.find(SAAJFactory.class)) {
-                        SOAPFactory sf = s.createSOAPFactory(saajFactoryString);
+                        SOAPFactory sf = s.createSOAPFactory(protocol);
                         if (sf != null)
                                 return sf;
                 }
 
-        return instance.createSOAPFactory(saajFactoryString);
+        return instance.createSOAPFactory(protocol);
         }
 
         /**
@@ -146,6 +148,50 @@ public class SAAJFactory {
         return instance.readAsSOAPMessage(soapVersion, message);
         }
 
+        /**
+     * Reads Message as SOAPMessage.  After this call message is consumed.
+     * @param soapVersion SOAP version
+     * @param message Message
+     * @param packet The packet that owns the Message
+     * @return Created SOAPMessage
+     * @throws SOAPException if SAAJ processing fails
+     */
+    public static SOAPMessage read(SOAPVersion soapVersion, Message message, Packet packet) throws SOAPException {
+        for (SAAJFactory s : ServiceFinder.find(SAAJFactory.class)) {
+            SOAPMessage msg = s.readAsSOAPMessage(soapVersion, message, packet);
+            if (msg != null)
+                return msg;
+        }
+
+        return instance.readAsSOAPMessage(soapVersion, message, packet);
+    }
+
+    /**
+     * Reads the message within the Packet to a SAAJMessage.  After this call message is consumed.
+     * @param packet Packet
+     * @return Created SAAJPMessage
+     * @throws SOAPException if SAAJ processing fails
+     */
+    public static SAAJMessage read(Packet packet) throws SOAPException {
+        for (SAAJFactory s : ServiceFinder.find(SAAJFactory.class)) {
+            SAAJMessage msg = s.readAsSAAJ(packet);
+            if (msg != null) return msg;
+        }
+        return instance.readAsSAAJ(packet);
+    }
+
+    /**
+     * Reads the message within the Packet to a SAAJMessage.  After this call message is consumed.
+     * @param packet Packet
+     * @return Created SAAJPMessage
+     * @throws SOAPException if SAAJ processing fails
+     */
+    public SAAJMessage readAsSAAJ(Packet packet) throws SOAPException {
+        SOAPVersion v = packet.getMessage().getSOAPVersion();
+        SOAPMessage msg = readAsSOAPMessage(v, packet.getMessage());
+        return new SAAJMessage(msg);
+    }
+
     /**
      * Creates a new <code>MessageFactory</code> object that is an instance
      * of the specified implementation.  May be a dynamic message factory,
@@ -169,8 +215,8 @@ public class SAAJFactory {
      *            specified implementation of  <code>MessageFactory</code>.
      * @see SAAJMetaFactory
      */
-        public MessageFactory createMessageFactory(String saajFactoryString) throws SOAPException {
-                return MessageFactory.newInstance(saajFactoryString);
+        public MessageFactory createMessageFactory(String protocol) throws SOAPException {
+                return MessageFactory.newInstance(protocol);
         }
 
     /**
@@ -191,8 +237,8 @@ public class SAAJFactory {
      *            specified <code>SOAPFactory</code>
      * @see SAAJMetaFactory
      */
-        public SOAPFactory createSOAPFactory(String saajFactoryString) throws SOAPException {
-                return SOAPFactory.newInstance(saajFactoryString);
+        public SOAPFactory createSOAPFactory(String protocol) throws SOAPException {
+                return SOAPFactory.newInstance(protocol);
         }
 
         /**
@@ -211,16 +257,36 @@ public class SAAJFactory {
          * @return Created SOAPMessage
          * @throws SOAPException if SAAJ processing fails
          */
-        public SOAPMessage readAsSOAPMessage(SOAPVersion soapVersion, Message message) throws SOAPException {
+        public SOAPMessage readAsSOAPMessage(final SOAPVersion soapVersion, final Message message) throws SOAPException {
         SOAPMessage msg = soapVersion.getMessageFactory().createMessage();
+        SaajStaxWriter writer = new SaajStaxWriter(msg);
+        try {
+            message.writeTo(writer);
+        } catch (XMLStreamException e) {
+            throw (e.getCause() instanceof SOAPException) ? (SOAPException) e.getCause() : new SOAPException(e);
+        }
+        msg = writer.getSOAPMessage();
+        addAttachmentsToSOAPMessage(msg, message);
+        if (msg.saveRequired())
+                msg.saveChanges();
+        return msg;
+        }
 
+    public SOAPMessage readAsSOAPMessageSax2Dom(final SOAPVersion soapVersion, final Message message) throws SOAPException {
+        SOAPMessage msg = soapVersion.getMessageFactory().createMessage();
         SAX2DOMEx s2d = new SAX2DOMEx(msg.getSOAPPart());
         try {
             message.writeTo(s2d, XmlUtil.DRACONIAN_ERROR_HANDLER);
         } catch (SAXException e) {
             throw new SOAPException(e);
         }
+        addAttachmentsToSOAPMessage(msg, message);
+        if (msg.saveRequired())
+            msg.saveChanges();
+        return msg;
+    }
 
+        static protected void addAttachmentsToSOAPMessage(SOAPMessage msg, Message message) {
         for(Attachment att : message.getAttachments()) {
             AttachmentPart part = msg.createAttachmentPart();
             part.setDataHandler(att.asDataHandler());
@@ -249,9 +315,19 @@ public class SAAJFactory {
             }
             msg.addAttachmentPart(part);
         }
+    }
 
-        if (msg.saveRequired())
-                msg.saveChanges();
-        return msg;
+    /**
+     * Reads Message as SOAPMessage.  After this call message is consumed.
+     * The implementation in this class simply calls readAsSOAPMessage(SOAPVersion, Message),
+     * and ignores the other parameters
+     * Subclasses can override and choose to base SOAPMessage creation on Packet properties if needed
+     * @param soapVersion SOAP version
+     * @param message Message
+     * @return Created SOAPMessage
+     * @throws SOAPException if SAAJ processing fails
+     */
+        public SOAPMessage readAsSOAPMessage(SOAPVersion soapVersion, Message message, Packet packet) throws SOAPException {
+            return readAsSOAPMessage(soapVersion, message);
         }
 }

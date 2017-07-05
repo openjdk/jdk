@@ -38,7 +38,7 @@ import com.sun.tools.internal.xjc.model.TypeUse;
 import com.sun.tools.internal.xjc.model.nav.NType;
 import static com.sun.tools.internal.xjc.outline.Aspect.EXPOSED;
 import com.sun.tools.internal.xjc.outline.Outline;
-import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapter;
+import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapterMarker;
 
 /**
  * {@link TypeAndAnnotation} implementation.
@@ -81,7 +81,7 @@ final class TypeAndAnnotationImpl implements TypeAndAnnotation {
         CAdapter adapterUse = typeUse.getAdapterUse();
         if(adapterUse!=null) {
             // ugly, ugly hack
-            if(adapterUse.getAdapterIfKnown()== SwaRefAdapter.class) {
+            if(adapterUse.getAdapterIfKnown() == SwaRefAdapterMarker.class) {
                 programElement.annotate(XmlAttachmentRef.class);
             } else {
                 // [RESULT]

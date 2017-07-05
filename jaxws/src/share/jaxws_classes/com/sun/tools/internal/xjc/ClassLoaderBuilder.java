@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import javax.xml.bind.JAXBContext;
 
 import com.sun.istack.internal.tools.MaskingClassLoader;
 import com.sun.istack.internal.tools.ParallelWorldClassLoader;
-import com.sun.tools.internal.xjc.SecureLoader;
 
 /**
  * Creates a class loader configured to run XJC 1.0/2.0 safely without
@@ -62,7 +61,7 @@ class ClassLoaderBuilder {
             // JAXB API is loaded from the bootstrap. We need to override one with ours
             mustang = true;
 
-            List mask = new ArrayList(Arrays.asList(maskedPackages));
+            List<String> mask = new ArrayList<String>(Arrays.asList(maskedPackages));
             mask.add("javax.xml.bind.");
 
             cl = new MaskingClassLoader(cl,mask);
@@ -80,7 +79,7 @@ class ClassLoaderBuilder {
         // so that the XJC2 classes in the parent class loader
         //  won't interfere with loading XJC1 classes in a child class loader
 
-        if (v.equals("1.0")) {
+        if ("1.0".equals(v)) {
             if(!mustang)
                 // if we haven't used Masking ClassLoader, do so now.
                 cl = new MaskingClassLoader(cl,toolPackages);

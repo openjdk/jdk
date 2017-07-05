@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package javax.xml.bind.annotation;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.awt.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
@@ -42,7 +41,7 @@ import javax.activation.DataHandler;
  * base64-encoded binary data in XML.
  *
  * <p>
- * When XOP encoding is enabled as described in {@link AttachmentMarshaller#isXOPPackage()}, this annotation disables datatypes such as {@link Image} or {@link Source} or <tt>byte[]</tt> that are bound to base64-encoded binary from being considered for
+ * When XOP encoding is enabled as described in {@link AttachmentMarshaller#isXOPPackage()}, this annotation disables datatypes such as {@link java.awt.Image} or {@link Source} or <tt>byte[]</tt> that are bound to base64-encoded binary from being considered for
  * XOP encoding. If a JAXB property is annotated with this annotation or if
  * the JAXB property's base type is annotated with this annotation,
  * neither

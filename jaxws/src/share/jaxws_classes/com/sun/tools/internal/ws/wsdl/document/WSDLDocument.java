@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Set;
 
 /**
  * A WSDL document.
@@ -110,6 +109,7 @@ public class WSDLDocument extends AbstractDocument{
         _definitions.accept(visitor);
     }
 
+    @Override
     public void validate(EntityReferenceValidator validator) {
         GloballyValidatingAction action =
             new GloballyValidatingAction(this, validator);
@@ -119,14 +119,14 @@ public class WSDLDocument extends AbstractDocument{
         }
     }
 
+    @Override
     protected Entity getRoot() {
         return _definitions;
     }
 
     private Definitions _definitions;
 
-    private class GloballyValidatingAction
-        implements EntityAction, EntityReferenceAction {
+    private static class GloballyValidatingAction implements EntityAction, EntityReferenceAction {
         public GloballyValidatingAction(
             AbstractDocument document,
             EntityReferenceValidator validator) {
@@ -134,6 +134,7 @@ public class WSDLDocument extends AbstractDocument{
             _validator = validator;
         }
 
+        @Override
         public void perform(Entity entity) {
             try {
                 entity.validateThis();
@@ -146,9 +147,10 @@ public class WSDLDocument extends AbstractDocument{
             }
         }
 
+        @Override
         public void perform(Kind kind, QName name) {
             try {
-                GloballyKnown entity = _document.find(kind, name);
+                _document.find(kind, name);
             } catch (NoSuchEntityException e) {
                 // failed to resolve, check with the validator
                 if (_exception == null) {

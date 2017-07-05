@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  * questions.
  */
 
-
 package com.sun.xml.internal.ws.resources;
 
-import com.sun.xml.internal.ws.util.localization.Localizable;
-import com.sun.xml.internal.ws.util.localization.LocalizableMessageFactory;
-import com.sun.xml.internal.ws.util.localization.Localizer;
+import com.sun.istack.internal.localization.Localizable;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.Localizer;
 
 
 /**
@@ -62,6 +61,18 @@ public final class ModelerMessages {
      */
     public static String RUNTIME_MODELER_WSFEATURE_NO_FTRCONSTRUCTOR(Object arg0, Object arg1) {
         return localizer.localize(localizableRUNTIME_MODELER_WSFEATURE_NO_FTRCONSTRUCTOR(arg0, arg1));
+    }
+
+    public static Localizable localizableRUNTIME_MODELER_EXTERNAL_METADATA_UNABLE_TO_READ(Object arg0) {
+        return messageFactory.getMessage("runtime.modeler.external.metadata.unable.to.read", arg0);
+    }
+
+    /**
+     * Unable to read metadata file {0}. Check configuration/deployment.
+     *
+     */
+    public static String RUNTIME_MODELER_EXTERNAL_METADATA_UNABLE_TO_READ(Object arg0) {
+        return localizer.localize(localizableRUNTIME_MODELER_EXTERNAL_METADATA_UNABLE_TO_READ(arg0));
     }
 
     public static Localizable localizableRUNTIME_MODELER_WEBMETHOD_MUST_BE_PUBLIC(Object arg0) {
@@ -98,6 +109,18 @@ public final class ModelerMessages {
      */
     public static String RUNTIME_MODELER_MTOM_CONFLICT(Object arg0, Object arg1) {
         return localizer.localize(localizableRUNTIME_MODELER_MTOM_CONFLICT(arg0, arg1));
+    }
+
+    public static Localizable localizableRUNTIME_MODELER_EXTERNAL_METADATA_GENERIC(Object arg0) {
+        return messageFactory.getMessage("runtime.modeler.external.metadata.generic", arg0);
+    }
+
+    /**
+     * An error occurred while processing external WS metadata; check configuration/deployment. Nested error: {0}.
+     *
+     */
+    public static String RUNTIME_MODELER_EXTERNAL_METADATA_GENERIC(Object arg0) {
+        return localizer.localize(localizableRUNTIME_MODELER_EXTERNAL_METADATA_GENERIC(arg0));
     }
 
     public static Localizable localizableRUNTIME_MODELER_FEATURE_CONFLICT(Object arg0, Object arg1) {
@@ -182,6 +205,18 @@ public final class ModelerMessages {
      */
     public static String RUNTIME_MODELER_ADDRESSING_RESPONSES_NOSUCHMETHOD(Object arg0) {
         return localizer.localize(localizableRUNTIME_MODELER_ADDRESSING_RESPONSES_NOSUCHMETHOD(arg0));
+    }
+
+    public static Localizable localizableRUNTIME_MODELER_EXTERNAL_METADATA_WRONG_FORMAT(Object arg0) {
+        return messageFactory.getMessage("runtime.modeler.external.metadata.wrong.format", arg0);
+    }
+
+    /**
+     * Unable to read metadata from {0}. Is the format correct?
+     *
+     */
+    public static String RUNTIME_MODELER_EXTERNAL_METADATA_WRONG_FORMAT(Object arg0) {
+        return localizer.localize(localizableRUNTIME_MODELER_EXTERNAL_METADATA_WRONG_FORMAT(arg0));
     }
 
     public static Localizable localizableRUNTIME_MODELER_ONEWAY_OPERATION_NO_OUT_PARAMETERS(Object arg0, Object arg1) {
@@ -302,6 +337,18 @@ public final class ModelerMessages {
      */
     public static String RUNTIME_MODELER_ENDPOINT_INTERFACE_NO_WEBSERVICE(Object arg0) {
         return localizer.localize(localizableRUNTIME_MODELER_ENDPOINT_INTERFACE_NO_WEBSERVICE(arg0));
+    }
+
+    public static Localizable localizableRUNTIME_MODELER_EXTERNAL_METADATA_UNSUPPORTED_SCHEMA(Object arg0, Object arg1) {
+        return messageFactory.getMessage("runtime.modeler.external.metadata.unsupported.schema", arg0, arg1);
+    }
+
+    /**
+     * Unsupported metadata file schema {0}. Supported schemes are {1}.
+     *
+     */
+    public static String RUNTIME_MODELER_EXTERNAL_METADATA_UNSUPPORTED_SCHEMA(Object arg0, Object arg1) {
+        return localizer.localize(localizableRUNTIME_MODELER_EXTERNAL_METADATA_UNSUPPORTED_SCHEMA(arg0, arg1));
     }
 
     public static Localizable localizableRUNTIMEMODELER_INVALID_SOAPBINDING_ON_METHOD(Object arg0, Object arg1, Object arg2) {

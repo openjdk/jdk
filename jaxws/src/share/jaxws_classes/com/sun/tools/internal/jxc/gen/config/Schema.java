@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,23 +67,6 @@ public class Schema extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 6:
-            {
-                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    $_ngcc_current_state = 2;
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
-            }
-            break;
         case 2:
             {
                 if(($ai = $runtime.getAttributeIndex("","location"))>=0) {
@@ -107,6 +90,23 @@ public class Schema extends NGCCHandler {
                 }
             }
             break;
+        case 0:
+            {
+                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
+            }
+            break;
+        case 6:
+            {
+                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    $_ngcc_current_state = 2;
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+            }
+            break;
         default:
             {
                 unexpectedEnterElement($__qname);
@@ -121,23 +121,6 @@ public class Schema extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 6:
-            {
-                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-                }
-                else {
-                    $_ngcc_current_state = 2;
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-                }
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 1:
             {
                 if(($__uri.equals("") && $__local.equals("schema"))) {
@@ -161,6 +144,23 @@ public class Schema extends NGCCHandler {
                 }
             }
             break;
+        case 0:
+            {
+                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 6:
+            {
+                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                }
+                else {
+                    $_ngcc_current_state = 2;
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                }
+            }
+            break;
         default:
             {
                 unexpectedLeaveElement($__qname);
@@ -175,13 +175,13 @@ public class Schema extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 6:
+        case 2:
             {
-                if(($__uri.equals("") && $__local.equals("namespace"))) {
-                    $_ngcc_current_state = 8;
+                if(($__uri.equals("") && $__local.equals("location"))) {
+                    $_ngcc_current_state = 4;
                 }
                 else {
-                    $_ngcc_current_state = 2;
+                    $_ngcc_current_state = 1;
                     $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
                 }
             }
@@ -191,13 +191,13 @@ public class Schema extends NGCCHandler {
                 revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 2:
+        case 6:
             {
-                if(($__uri.equals("") && $__local.equals("location"))) {
-                    $_ngcc_current_state = 4;
+                if(($__uri.equals("") && $__local.equals("namespace"))) {
+                    $_ngcc_current_state = 8;
                 }
                 else {
-                    $_ngcc_current_state = 1;
+                    $_ngcc_current_state = 2;
                     $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
                 }
             }
@@ -216,6 +216,12 @@ public class Schema extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 2:
+            {
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 7:
             {
                 if(($__uri.equals("") && $__local.equals("namespace"))) {
@@ -226,23 +232,6 @@ public class Schema extends NGCCHandler {
                 }
             }
             break;
-        case 6:
-            {
-                $_ngcc_current_state = 2;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 3:
             {
                 if(($__uri.equals("") && $__local.equals("location"))) {
@@ -251,6 +240,17 @@ public class Schema extends NGCCHandler {
                 else {
                     unexpectedLeaveAttribute($__qname);
                 }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 6:
+            {
+                $_ngcc_current_state = 2;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -264,14 +264,14 @@ public class Schema extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 6:
+        case 2:
             {
-                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
+                if(($ai = $runtime.getAttributeIndex("","location"))>=0) {
                     $runtime.consumeAttribute($ai);
                     $runtime.sendText(super._cookie, $value);
                 }
                 else {
-                    $_ngcc_current_state = 2;
+                    $_ngcc_current_state = 1;
                     $runtime.sendText(super._cookie, $value);
                 }
             }
@@ -283,25 +283,25 @@ public class Schema extends NGCCHandler {
                 action0();
             }
             break;
-        case 0:
-            {
-                revertToParentFromText(this, super._cookie, $value);
-            }
-            break;
         case 8:
             {
                 namespace = $value;
                 $_ngcc_current_state = 7;
             }
             break;
-        case 2:
+        case 0:
             {
-                if(($ai = $runtime.getAttributeIndex("","location"))>=0) {
+                revertToParentFromText(this, super._cookie, $value);
+            }
+            break;
+        case 6:
+            {
+                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
                     $runtime.consumeAttribute($ai);
                     $runtime.sendText(super._cookie, $value);
                 }
                 else {
-                    $_ngcc_current_state = 1;
+                    $_ngcc_current_state = 2;
                     $runtime.sendText(super._cookie, $value);
                 }
             }

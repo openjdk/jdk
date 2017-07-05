@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import org.xml.sax.SAXParseException;
  * <p>
  * However, to make the error handling easy (and make it work
  * with visitor patterns nicely),
- * none of the methods on thi class throws {@link org.xml.sax.SAXException}.
+ * none of the methods on this class throws {@link org.xml.sax.SAXException}.
  * Instead, when the compilation needs to be aborted,
  * it throws {@link AbortException}, which is unchecked.
  *

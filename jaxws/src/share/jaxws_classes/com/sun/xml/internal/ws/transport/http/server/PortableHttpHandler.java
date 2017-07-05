@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.xml.ws.spi.http.HttpHandler;
 import javax.xml.ws.spi.http.HttpExchange;
 import java.io.IOException;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -66,9 +67,12 @@ final class PortableHttpHandler extends HttpHandler {
     /**
      * Called by HttpServer when there is a matching request for the context
      */
+    @Override
     public void handle(HttpExchange msg) {
         try {
-            logger.fine("Received HTTP request:"+msg.getRequestURI());
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Received HTTP request:{0}", msg.getRequestURI());
+            }
             if (executor != null) {
                 // Use application's Executor to handle request. Application may
                 // have set an executor using Endpoint.setExecutor().
@@ -76,16 +80,18 @@ final class PortableHttpHandler extends HttpHandler {
             } else {
                 handleExchange(msg);
             }
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             // Dont't propagate the exception otherwise it kills the httpserver
-            e.printStackTrace();
+            logger.log(Level.SEVERE, null, e);
         }
     }
 
     public void handleExchange(HttpExchange msg) throws IOException {
         WSHTTPConnection con = new PortableConnectionImpl(adapter,msg);
         try {
-            logger.fine("Received HTTP request:"+msg.getRequestURI());
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Received HTTP request:{0}", msg.getRequestURI());
+            }
             String method = msg.getRequestMethod();
             if(method.equals(GET_METHOD) || method.equals(POST_METHOD) || method.equals(HEAD_METHOD)
             || method.equals(PUT_METHOD) || method.equals(DELETE_METHOD)) {
@@ -109,6 +115,8 @@ final class PortableHttpHandler extends HttpHandler {
             this.msg = msg;
         }
 
+        @Override
+        @SuppressWarnings("CallToThreadDumpStack")
         public void run() {
             try {
                 handleExchange(msg);

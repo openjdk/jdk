@@ -43,6 +43,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.XmlAttachmentRef;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlIDREF;
+import javax.xml.bind.annotation.XmlMimeType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
 
 import com.sun.codemodel.internal.ClassType;
@@ -96,7 +98,8 @@ import com.sun.tools.internal.xjc.outline.FieldOutline;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.outline.PackageOutline;
 import com.sun.tools.internal.xjc.util.CodeModelClassFactory;
-import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapter;
+import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
+import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapterMarker;
 import com.sun.xml.internal.xsom.XmlString;
 import com.sun.istack.internal.NotNull;
 import com.sun.tools.internal.xjc.model.CReferencePropertyInfo;
@@ -770,7 +773,7 @@ public final class BeanGenerator implements Outline {
     public final void generateAdapterIfNecessary(CPropertyInfo prop, JAnnotatable field) {
         CAdapter adapter = prop.getAdapter();
         if (adapter != null) {
-            if (adapter.getAdapterIfKnown() == SwaRefAdapter.class) {
+            if (adapter.getAdapterIfKnown() == SwaRefAdapterMarker.class) {
                 field.annotate(XmlAttachmentRef.class);
             } else {
                 // [RESULT]

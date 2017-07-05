@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,10 +143,20 @@ public abstract class EndpointResponseMessageBuilder {
          */
         protected final ValueGetter[] getters;
 
+        /**
+         * How does each wrapped parameter binds to XML?
+         */
+        protected XMLBridge[] parameterBridges;
+
+        /**
+         * Used for error diagnostics.
+         */
+        protected List<ParameterImpl> children;
+
         protected Wrapped(WrapperParameter wp, SOAPVersion soapVersion) {
             super(wp.getXMLBridge(), soapVersion);
 
-            List<ParameterImpl> children = wp.getWrapperChildren();
+            children = wp.getWrapperChildren();
 
             indices = new int[children.size()];
             getters = new ValueGetter[children.size()];
@@ -155,6 +165,32 @@ public abstract class EndpointResponseMessageBuilder {
                 indices[i] = p.getIndex();
                 getters[i] = ValueGetter.get(p);
             }
+        }
+
+        /**
+         * Packs a bunch of arguments intoa {@link WrapperComposite}.
+         */
+        WrapperComposite buildWrapperComposite(Object[] methodArgs, Object returnValue) {
+            WrapperComposite cs = new WrapperComposite();
+            cs.bridges = parameterBridges;
+            cs.values = new Object[parameterBridges.length];
+
+            // fill in wrapped parameters from methodArgs
+            for( int i=indices.length-1; i>=0; i-- ) {
+                Object v;
+                if (indices[i] == -1) {
+                    v = getters[i].get(returnValue);
+                } else {
+                    v = getters[i].get(methodArgs[indices[i]]);
+                }
+                if(v==null) {
+                    throw new WebServiceException("Method Parameter: "+
+                        children.get(i).getName() +" cannot be null. This is BP 1.1 R2211 violation.");
+                }
+                cs.values[i] = v;
+            }
+
+            return cs;
         }
     }
 
@@ -174,6 +210,7 @@ public abstract class EndpointResponseMessageBuilder {
          * Wrapper bean.
          */
         private final Class wrapper;
+        private boolean dynamicWrapper;
 
         /**
          * Needed to get wrapper instantiation method.
@@ -186,21 +223,26 @@ public abstract class EndpointResponseMessageBuilder {
         public DocLit(WrapperParameter wp, SOAPVersion soapVersion) {
             super(wp, soapVersion);
             bindingContext = wp.getOwner().getBindingContext();
-
             wrapper = (Class)wp.getXMLBridge().getTypeInfo().type;
-
-            List<ParameterImpl> children = wp.getWrapperChildren();
-
+            dynamicWrapper = WrapperComposite.class.equals(wrapper);
+            children = wp.getWrapperChildren();
+            parameterBridges = new XMLBridge[children.size()];
             accessors = new PropertyAccessor[children.size()];
             for( int i=0; i<accessors.length; i++ ) {
                 ParameterImpl p = children.get(i);
                 QName name = p.getName();
-                try {
-                    accessors[i] = p.getOwner().getBindingContext().getElementPropertyAccessor(
-                        wrapper, name.getNamespaceURI(), name.getLocalPart() );
-                } catch (JAXBException e) {
-                    throw new WebServiceException(  // TODO: i18n
-                        wrapper+" do not have a property of the name "+name,e);
+                if (dynamicWrapper) {
+                    parameterBridges[i] = children.get(i).getInlinedRepeatedElementBridge();
+                    if (parameterBridges[i] == null) parameterBridges[i] = children.get(i).getXMLBridge();
+                } else {
+                    try {
+                        accessors[i] = (dynamicWrapper) ? null :
+                            p.getOwner().getBindingContext().getElementPropertyAccessor(
+                            wrapper, name.getNamespaceURI(), name.getLocalPart() );
+                    } catch (JAXBException e) {
+                        throw new WebServiceException(  // TODO: i18n
+                            wrapper+" do not have a property of the name "+name,e);
+                    }
                 }
             }
 
@@ -210,6 +252,7 @@ public abstract class EndpointResponseMessageBuilder {
          * Packs a bunch of arguments into a {@link WrapperComposite}.
          */
         Object build(Object[] methodArgs, Object returnValue) {
+            if (dynamicWrapper) return buildWrapperComposite(methodArgs, returnValue);
             try {
                 //Object bean = wrapper.newInstance();
                 Object bean = bindingContext.newWrapperInstace(wrapper);
@@ -251,15 +294,6 @@ public abstract class EndpointResponseMessageBuilder {
      * (TODO: Why don't we have a wrapper bean for this, when doc/lit does!?)
      */
     public final static class RpcLit extends Wrapped {
-        /**
-         * How does each wrapped parameter binds to XML?
-         */
-        private final XMLBridge[] parameterBridges;
-
-        /**
-         * Used for error diagnostics.
-         */
-        private final List<ParameterImpl> children;
 
         /**
          * Creates a {@link EndpointResponseMessageBuilder} from a {@link WrapperParameter}.
@@ -269,8 +303,6 @@ public abstract class EndpointResponseMessageBuilder {
             // we'll use CompositeStructure to pack requests
             assert wp.getTypeInfo().type==WrapperComposite.class;
 
-            this.children = wp.getWrapperChildren();
-
             parameterBridges = new XMLBridge[children.size()];
             for( int i=0; i<parameterBridges.length; i++ )
                 parameterBridges[i] = children.get(i).getXMLBridge();
@@ -279,27 +311,8 @@ public abstract class EndpointResponseMessageBuilder {
         /**
          * Packs a bunch of arguments intoa {@link WrapperComposite}.
          */
-        WrapperComposite build(Object[] methodArgs, Object returnValue) {
-            WrapperComposite cs = new WrapperComposite();
-            cs.bridges = parameterBridges;
-            cs.values = new Object[parameterBridges.length];
-
-            // fill in wrapped parameters from methodArgs
-            for( int i=indices.length-1; i>=0; i-- ) {
-                Object v;
-                if (indices[i] == -1) {
-                    v = getters[i].get(returnValue);
-                } else {
-                    v = getters[i].get(methodArgs[indices[i]]);
-                }
-                if(v==null) {
-                    throw new WebServiceException("Method Parameter: "+
-                        children.get(i).getName() +" cannot be null. This is BP 1.1 R2211 violation.");
-                }
-                cs.values[i] = v;
-            }
-
-            return cs;
+        Object build(Object[] methodArgs, Object returnValue) {
+            return buildWrapperComposite(methodArgs, returnValue);
         }
     }
 }

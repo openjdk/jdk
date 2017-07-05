@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.namespace.QName;
 import javax.xml.ws.WebServiceException;
-import javax.xml.ws.WebServiceFeature;
 
-import com.sun.xml.internal.org.jvnet.ws.databinding.DatabindingModeFeature;
 
 import java.lang.reflect.Method;
 import java.security.AccessController;
@@ -90,8 +88,9 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
 
     void postProcess() {
         // should be called only once.
-        if (jaxbContext != null)
+        if (jaxbContext != null) {
             return;
+        }
         populateMaps();
         createJAXBContext();
     }
@@ -107,7 +106,9 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
             putOp(m.getOperationQName(),m);
 
         }
-        if (databinding != null) ((com.sun.xml.internal.ws.db.DatabindingImpl)databinding).freeze(port);
+        if (databinding != null) {
+            ((com.sun.xml.internal.ws.db.DatabindingImpl)databinding).freeze(port);
+        }
     }
 
     /**
@@ -115,6 +116,7 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
      */
     abstract protected void populateMaps();
 
+    @Override
     public Pool.Marshaller getMarshallerPool() {
         return marshallers;
     }
@@ -123,10 +125,12 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
      * @return the <code>JAXBRIContext</code>
      * @deprecated
      */
+    @Override
     public JAXBContext getJAXBContext() {
         JAXBContext jc = bindingContext.getJAXBContext();
-        if (jc != null) return jc;
-        if (jaxbContext == null && jc instanceof JAXBRIContext) jaxbContext = (JAXBRIContext) bindingContext.getJAXBContext();
+        if (jc != null) {
+            return jc;
+        }
         return jaxbContext;
     }
 
@@ -162,8 +166,9 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
         final List<Class> cls = new ArrayList<Class>(types.size() + additionalClasses.size());
 
         cls.addAll(additionalClasses);
-        for (TypeInfo type : types)
+        for (TypeInfo type : types) {
             cls.add((Class) type.type);
+        }
 
         try {
             //jaxbContext = JAXBRIContext.newInstance(cls, types, targetNamespace, false);
@@ -171,21 +176,21 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
             bindingContext = AccessController.doPrivileged(new PrivilegedExceptionAction<BindingContext>() {
                 public BindingContext run() throws Exception {
                     if(LOGGER.isLoggable(Level.FINEST)) {
-                        LOGGER.log(Level.FINEST,"Creating JAXBContext with classes="+cls+" and types="+types);
+                        LOGGER.log(Level.FINEST, "Creating JAXBContext with classes={0} and types={1}", new Object[]{cls, types});
                     }
                     UsesJAXBContextFeature f = features.get(UsesJAXBContextFeature.class);
-                                        DatabindingModeFeature dbf = features.get(DatabindingModeFeature.class);
+                    com.oracle.webservices.internal.api.databinding.DatabindingModeFeature dmf =
+                            features.get(com.oracle.webservices.internal.api.databinding.DatabindingModeFeature.class);
                     JAXBContextFactory factory = f!=null ? f.getFactory() : null;
                     if(factory==null)   factory=JAXBContextFactory.DEFAULT;
 
 //                    return factory.createJAXBContext(AbstractSEIModelImpl.this,cls,types);
 
                     databindingInfo.properties().put(JAXBContextFactory.class.getName(), factory);
-                    if (dbf != null) {
+                    if (dmf != null) {
                         if (LOGGER.isLoggable(Level.FINE))
-                            LOGGER.fine("DatabindingModeFeature in SEI specifies mode: "
-                                    + dbf.getMode());
-                        databindingInfo.setDatabindingMode(dbf
+                            LOGGER.log(Level.FINE, "DatabindingModeFeature in SEI specifies mode: {0}", dmf.getMode());
+                        databindingInfo.setDatabindingMode(dmf
                                 .getMode());
                     }
 
@@ -194,7 +199,7 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
                         databindingInfo.contentClasses().addAll(cls);
                         databindingInfo.typeInfos().addAll(types);
                         databindingInfo.properties().put("c14nSupport", Boolean.FALSE);
-                        databindingInfo.setDefaultNamespace(AbstractSEIModelImpl.this.getTargetNamespace());
+                        databindingInfo.setDefaultNamespace(AbstractSEIModelImpl.this.getDefaultSchemaNamespace());
                         BindingContext bc =  BindingContextFactory.create(databindingInfo);
                             if (LOGGER.isLoggable(Level.FINE))
                                 LOGGER.log(Level.FINE,
@@ -325,7 +330,7 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
     }
 
     /**
-     * Applies binding related information to the RpcLitPayload. The payload map is populated correctl
+     * Applies binding related information to the RpcLitPayload. The payload map is populated correctly
      * @return
      * Returns attachment parameters if/any.
      */
@@ -443,6 +448,15 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
         return targetNamespace;
     }
 
+    String getDefaultSchemaNamespace() {
+        String defaultNamespace = getTargetNamespace();
+        if (defaultSchemaNamespaceSuffix == null) return defaultNamespace;
+        if (!defaultNamespace.endsWith("/")) {
+            defaultNamespace += "/";
+        }
+        return (defaultNamespace + defaultSchemaNamespaceSuffix);
+    }
+
     @NotNull
     public QName getBoundPortTypeName() {
         assert portName != null;
@@ -515,5 +529,6 @@ public abstract class AbstractSEIModelImpl implements SEIModel {
         protected ClassLoader classLoader = null;
         protected WSBinding wsBinding;
         protected BindingInfo databindingInfo;
+        protected String defaultSchemaNamespaceSuffix;
         private static final Logger LOGGER = Logger.getLogger(AbstractSEIModelImpl.class.getName());
 }

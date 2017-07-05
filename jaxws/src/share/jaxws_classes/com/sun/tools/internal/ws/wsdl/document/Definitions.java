@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.internal.ws.wsdl.document;
 import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensible;
 import com.sun.tools.internal.ws.api.wsdl.TWSDLExtension;
 import com.sun.tools.internal.ws.wsdl.framework.*;
+
 import org.xml.sax.Locator;
 
 import javax.xml.namespace.QName;
@@ -211,6 +212,10 @@ public class Definitions extends Entity implements Defining, TWSDLExtensible {
     }
 
     public void validateThis() {
+    }
+
+    public Map resolveBindings() {
+        return _document.getMap(Kinds.BINDING);
     }
 
     private AbstractDocument _document;

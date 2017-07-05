@@ -37,9 +37,9 @@ class SecureLoader {
         if (System.getSecurityManager() == null) {
             return Thread.currentThread().getContextClassLoader();
         } else {
-            return (ClassLoader) java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public java.lang.Object run() {
+            return java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<ClassLoader>() {
+                        public ClassLoader run() {
                             return Thread.currentThread().getContextClassLoader();
                         }
                     });
@@ -50,9 +50,9 @@ class SecureLoader {
         if (System.getSecurityManager() == null) {
             return c.getClassLoader();
         } else {
-            return (ClassLoader) java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public java.lang.Object run() {
+            return java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<ClassLoader>() {
+                        public ClassLoader run() {
                             return c.getClassLoader();
                         }
                     });
@@ -63,9 +63,9 @@ class SecureLoader {
         if (System.getSecurityManager() == null) {
             return ClassLoader.getSystemClassLoader();
         } else {
-            return (ClassLoader) java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public java.lang.Object run() {
+            return java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<ClassLoader>() {
+                        public ClassLoader run() {
                             return ClassLoader.getSystemClassLoader();
                         }
                     });

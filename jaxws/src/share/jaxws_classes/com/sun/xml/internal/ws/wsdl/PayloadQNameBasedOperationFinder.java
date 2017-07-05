@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.ws.wsdl;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.model.SEIModel;
+import com.sun.xml.internal.ws.api.model.WSDLOperationMapping;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.message.Message;
@@ -62,7 +63,7 @@ final class PayloadQNameBasedOperationFinder extends WSDLOperationFinder {
     public static final String EMPTY_PAYLOAD_NSURI = "";
     public static final QName EMPTY_PAYLOAD = new QName(EMPTY_PAYLOAD_NSURI, EMPTY_PAYLOAD_LOCAL);
 
-    private final QNameMap<QName> methodHandlers = new QNameMap<QName>();
+    private final QNameMap<WSDLOperationMapping> methodHandlers = new QNameMap<WSDLOperationMapping>();
     private final QNameMap<List<String>> unique = new QNameMap<List<String>>();
 
 
@@ -98,7 +99,7 @@ final class PayloadQNameBasedOperationFinder extends WSDLOperationFinder {
                 // Set up method handlers only for unique QNames. So that dispatching
                 // happens consistently for a method
                 if (unique.get(name).size() == 1) {
-                    methodHandlers.put(name, m.getOperationQName());
+                    methodHandlers.put(name, wsdlOperationMapping(m));
                 }
             }
         } else {
@@ -106,7 +107,7 @@ final class PayloadQNameBasedOperationFinder extends WSDLOperationFinder {
                 QName name = wsdlOp.getReqPayloadName();
                 if (name == null)
                     name = EMPTY_PAYLOAD;
-                methodHandlers.put(name, wsdlOp.getName());
+                methodHandlers.put(name, wsdlOperationMapping(wsdlOp));
             }
         }
     }
@@ -119,7 +120,9 @@ final class PayloadQNameBasedOperationFinder extends WSDLOperationFinder {
      * @throws DispatchException if the payload itself is incorrect, this happens when the payload is not accepted by
      *          any operation in the port.
      */
-    public QName getWSDLOperationQName(Packet request) throws DispatchException{
+//  public QName getWSDLOperationQName(Packet request) throws DispatchException{
+
+    public WSDLOperationMapping getWSDLOperationMapping(Packet request) throws DispatchException {
         Message message = request.getMessage();
         String localPart = message.getPayloadLocalPart();
         String nsUri;
@@ -131,7 +134,7 @@ final class PayloadQNameBasedOperationFinder extends WSDLOperationFinder {
             if(nsUri == null)
                 nsUri = EMPTY_PAYLOAD_NSURI;
         }
-        QName op = methodHandlers.get(nsUri, localPart);
+        WSDLOperationMapping op = methodHandlers.get(nsUri, localPart);
 
         // Check if payload itself is correct. Usually it is, so let us check last
         if (op == null && !unique.containsKey(nsUri,localPart)) {

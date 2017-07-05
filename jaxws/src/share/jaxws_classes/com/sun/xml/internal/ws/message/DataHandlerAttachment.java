@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,10 @@ public final class DataHandlerAttachment implements Attachment {
 
     private final DataHandler dh;
     private final String contentId;
+    String contentIdNoAngleBracket;
 
     /**
-     * This will be constructed by {@link AttachmentMarshallerImpl}
+     * This will be constructed by {@link com.sun.xml.internal.ws.message.jaxb.AttachmentMarshallerImpl}
      */
     public DataHandlerAttachment(@NotNull String contentId, @NotNull DataHandler dh) {
         this.dh = dh;
@@ -58,7 +59,13 @@ public final class DataHandlerAttachment implements Attachment {
     }
 
     public String getContentId() {
-        return contentId;
+//        return contentId;
+        if (contentIdNoAngleBracket == null) {
+            contentIdNoAngleBracket = contentId;
+            if (contentIdNoAngleBracket != null && contentIdNoAngleBracket.charAt(0) == '<')
+                contentIdNoAngleBracket = contentIdNoAngleBracket.substring(1, contentIdNoAngleBracket.length()-1);
+        }
+        return contentIdNoAngleBracket;
     }
 
     public String getContentType() {

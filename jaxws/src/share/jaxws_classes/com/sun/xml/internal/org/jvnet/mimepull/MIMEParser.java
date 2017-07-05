@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
 
 /**
  * Pull parser for the MIME messages. Applications can use pull API to continue
@@ -52,6 +53,8 @@ import java.nio.ByteBuffer;
 class MIMEParser implements Iterable<MIMEEvent> {
 
     private static final Logger LOGGER = Logger.getLogger(MIMEParser.class.getName());
+
+    private static final String HEADER_ENCODING = "ISO8859-1";
 
     // Actually, the grammar doesn't support whitespace characters
     // after boundary. But the mail implementation checks for it.
@@ -106,47 +109,50 @@ class MIMEParser implements Iterable<MIMEEvent> {
      *
      * @return iterator for parsing events
      */
+    @Override
     public Iterator<MIMEEvent> iterator() {
         return new MIMEEventIterator();
     }
 
     class MIMEEventIterator implements Iterator<MIMEEvent> {
 
+        @Override
         public boolean hasNext() {
             return !parsed;
         }
 
+        @Override
         public MIMEEvent next() {
             switch(state) {
                 case START_MESSAGE :
-                    LOGGER.finer("MIMEParser state="+STATE.START_MESSAGE);
+                    if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.START_MESSAGE);}
                     state = STATE.SKIP_PREAMBLE;
                     return MIMEEvent.START_MESSAGE;
 
                 case SKIP_PREAMBLE :
-                    LOGGER.finer("MIMEParser state="+STATE.SKIP_PREAMBLE);
+                    if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.SKIP_PREAMBLE);}
                     skipPreamble();
                     // fall through
                 case START_PART :
-                    LOGGER.finer("MIMEParser state="+STATE.START_PART);
+                    if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.START_PART);}
                     state = STATE.HEADERS;
                     return MIMEEvent.START_PART;
 
                 case HEADERS :
-                    LOGGER.finer("MIMEParser state="+STATE.HEADERS);
+                    if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.HEADERS);}
                     InternetHeaders ih = readHeaders();
                     state = STATE.BODY;
                     bol = true;
                     return new MIMEEvent.Headers(ih);
 
                 case BODY :
-                    LOGGER.finer("MIMEParser state="+STATE.BODY);
+                    if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.BODY);}
                     ByteBuffer buf = readBody();
                     bol = false;
                     return new MIMEEvent.Content(buf);
 
                 case END_PART :
-                    LOGGER.finer("MIMEParser state="+STATE.END_PART);
+                    if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.END_PART);}
                     if (done) {
                         state = STATE.END_MESSAGE;
                     } else {
@@ -155,7 +161,7 @@ class MIMEParser implements Iterable<MIMEEvent> {
                     return MIMEEvent.END_PART;
 
                 case END_MESSAGE :
-                    LOGGER.finer("MIMEParser state="+STATE.END_MESSAGE);
+                    if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.END_MESSAGE);}
                     parsed = true;
                     return MIMEEvent.END_MESSAGE;
 
@@ -164,6 +170,7 @@ class MIMEParser implements Iterable<MIMEEvent> {
             }
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -316,7 +323,7 @@ class MIMEParser implements Iterable<MIMEEvent> {
             }
             adjustBuf(start+1, len-start-1);
         }
-        LOGGER.fine("Skipped the preamble. buffer len="+len);
+        if (LOGGER.isLoggable(Level.FINE)) {LOGGER.log(Level.FINE, "Skipped the preamble. buffer len={0}", len);}
     }
 
     private static byte[] getBytes(String s) {
@@ -324,8 +331,9 @@ class MIMEParser implements Iterable<MIMEEvent> {
         int size = chars.length;
         byte[] bytes = new byte[size];
 
-        for (int i = 0; i < size;)
+        for (int i = 0; i < size;) {
             bytes[i] = (byte) chars[i++];
+        }
         return bytes;
     }
 
@@ -409,7 +417,7 @@ NEXT:   while (off <= last) {
      * Fills the remaining buf to the full capacity
      */
     private void fillBuf() {
-        LOGGER.finer("Before fillBuf() buffer len="+len);
+        if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "Before fillBuf() buffer len={0}", len);}
         assert !eof;
         while(len < buf.length) {
             int read;
@@ -421,7 +429,7 @@ NEXT:   while (off <= last) {
             if (read == -1) {
                 eof = true;
                 try {
-                    LOGGER.fine("Closing the input stream.");
+                    if (LOGGER.isLoggable(Level.FINE)) {LOGGER.fine("Closing the input stream.");}
                     in.close();
                 } catch(IOException ioe) {
                     throw new MIMEParsingException(ioe);
@@ -431,7 +439,7 @@ NEXT:   while (off <= last) {
                 len += read;
             }
         }
-        LOGGER.finer("After fillBuf() buffer len="+len);
+        if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "After fillBuf() buffer len={0}", len);}
     }
 
     private void doubleBuf() {
@@ -484,7 +492,7 @@ NEXT:   while (off <= last) {
                 return null;
             }
 
-            String hdr = new String(buf, offset, hdrLen);
+            String hdr = new String(buf, offset, hdrLen, HEADER_ENCODING);
             offset += hdrLen+lwsp;
             return hdr;
         }

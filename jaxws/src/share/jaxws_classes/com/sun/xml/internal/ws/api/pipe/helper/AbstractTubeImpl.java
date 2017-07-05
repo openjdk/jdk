@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,15 +75,35 @@ public abstract class AbstractTubeImpl implements Tube, Pipe {
         return na;
     }
 
+    protected final NextAction doThrow(Packet response, Throwable t) {
+        NextAction na = new NextAction();
+        na.throwException(response, t);
+        return na;
+    }
+
+    @Deprecated
     protected final NextAction doSuspend() {
         NextAction na = new NextAction();
         na.suspend();
         return na;
     }
 
+    protected final NextAction doSuspend(Runnable onExitRunnable) {
+        NextAction na = new NextAction();
+        na.suspend(onExitRunnable);
+        return na;
+    }
+
+    @Deprecated
     protected final NextAction doSuspend(Tube next) {
         NextAction na = new NextAction();
         na.suspend(next);
+        return na;
+    }
+
+    protected final NextAction doSuspend(Tube next, Runnable onExitRunnable) {
+        NextAction na = new NextAction();
+        na.suspend(next, onExitRunnable);
         return na;
     }
 

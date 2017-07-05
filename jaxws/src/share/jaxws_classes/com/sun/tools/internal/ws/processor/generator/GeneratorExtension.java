@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public abstract class GeneratorExtension {
 
     /**
      * Allow additional wsimport options
-     * @param name, for instance, "-neoption"
+     * @param name for instance, "-neoption"
      * @return whether the name specifies an option recognized by the extension
      */
     public boolean validateOption(String name) {

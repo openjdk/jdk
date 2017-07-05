@@ -67,7 +67,7 @@ public class AnnotationParserFactoryImpl implements AnnotationParserFactory {
 
     public AnnotationParser create() {
         return new AnnotationParser() {
-            private Unmarshaller u = BindInfo.getJAXBContext().createUnmarshaller();
+            private Unmarshaller u = BindInfo.getCustomizationUnmarshaller();
 
             private UnmarshallerHandler handler;
 

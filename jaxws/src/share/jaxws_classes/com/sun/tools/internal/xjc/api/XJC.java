@@ -25,7 +25,6 @@
 
 package com.sun.tools.internal.xjc.api;
 
-import com.sun.tools.internal.xjc.api.impl.j2s.JavaCompilerImpl;
 import com.sun.tools.internal.xjc.api.impl.s2j.SchemaCompilerImpl;
 import com.sun.xml.internal.bind.api.impl.NameConverter;
 
@@ -37,15 +36,6 @@ import com.sun.xml.internal.bind.api.impl.NameConverter;
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
 public final class XJC {
-    /**
-     * Gets a fresh {@link JavaCompiler}.
-     *
-     * @return
-     *      always return non-null object.
-     */
-    public static JavaCompiler createJavaCompiler() {
-        return new JavaCompilerImpl();
-    }
 
     /**
      * Gets a fresh {@link SchemaCompiler}.

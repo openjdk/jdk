@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import com.sun.xml.internal.ws.addressing.EPRSDDocumentFilter;
 import com.sun.xml.internal.ws.addressing.WSEPRExtension;
 import com.sun.xml.internal.ws.api.Component;
 import com.sun.xml.internal.ws.api.ComponentFeature;
+import com.sun.xml.internal.ws.api.ComponentsFeature;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
@@ -40,25 +41,8 @@ import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.api.pipe.Codec;
-import com.sun.xml.internal.ws.api.pipe.Engine;
-import com.sun.xml.internal.ws.api.pipe.Fiber;
-import com.sun.xml.internal.ws.api.pipe.FiberContextSwitchInterceptor;
-import com.sun.xml.internal.ws.api.pipe.ServerPipeAssemblerContext;
-import com.sun.xml.internal.ws.api.pipe.ServerTubeAssemblerContext;
-import com.sun.xml.internal.ws.api.pipe.SyncStartForAsyncFeature;
-import com.sun.xml.internal.ws.api.pipe.Tube;
-import com.sun.xml.internal.ws.api.pipe.TubeCloner;
-import com.sun.xml.internal.ws.api.pipe.TubelineAssembler;
-import com.sun.xml.internal.ws.api.pipe.TubelineAssemblerFactory;
-import com.sun.xml.internal.ws.api.server.Container;
-import com.sun.xml.internal.ws.api.server.EndpointAwareCodec;
-import com.sun.xml.internal.ws.api.server.EndpointComponent;
-import com.sun.xml.internal.ws.api.server.EndpointReferenceExtensionContributor;
-import com.sun.xml.internal.ws.api.server.LazyMOMProvider;
-import com.sun.xml.internal.ws.api.server.TransportBackChannel;
-import com.sun.xml.internal.ws.api.server.WSEndpoint;
-import com.sun.xml.internal.ws.api.server.WebServiceContextDelegate;
+import com.sun.xml.internal.ws.api.pipe.*;
+import com.sun.xml.internal.ws.api.server.*;
 import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
 import com.sun.xml.internal.ws.model.wsdl.WSDLDirectProperties;
@@ -81,18 +65,12 @@ import javax.xml.ws.EndpointReference;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.Handler;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.management.ObjectName;
 
 /**
  * {@link WSEndpoint} implementation.
@@ -101,41 +79,42 @@ import java.util.logging.Logger;
  * @author Jitendra Kotamraju
  */
 public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMOMProvider.WSEndpointScopeChangeListener {
-        private static final Logger LOGGER = Logger.getLogger(WSEndpointImpl.class.getName());
+
+    private static final Logger logger = Logger.getLogger(com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".server.endpoint");
 
     private final @NotNull QName serviceName;
     private final @NotNull QName portName;
-        protected final WSBinding binding;
-        private final SEIModel seiModel;
+    protected final WSBinding binding;
+    private final SEIModel seiModel;
     private final @NotNull Container container;
-        private final WSDLPort port;
+    private final WSDLPort port;
 
-        protected final Tube masterTubeline;
-        private final ServiceDefinitionImpl serviceDef;
-        private final SOAPVersion soapVersion;
-        private final Engine engine;
+    protected final Tube masterTubeline;
+    private final ServiceDefinitionImpl serviceDef;
+    private final SOAPVersion soapVersion;
+    private final Engine engine;
     private final @NotNull Codec masterCodec;
     private final @NotNull PolicyMap endpointPolicy;
-        private final Pool<Tube> tubePool;
+    private final Pool<Tube> tubePool;
     private final OperationDispatcher operationDispatcher;
-    private       @NotNull ManagedObjectManager managedObjectManager;
-    private       boolean managedObjectManagerClosed = false;
-    private       Object managedObjectManagerLock = new Object();
-    private       LazyMOMProvider.Scope lazyMOMProviderScope = LazyMOMProvider.Scope.STANDALONE;
+    private @NotNull ManagedObjectManager managedObjectManager;
+    private boolean managedObjectManagerClosed = false;
+    private final Object managedObjectManagerLock = new Object();
+    private LazyMOMProvider.Scope lazyMOMProviderScope = LazyMOMProvider.Scope.STANDALONE;
     private final @NotNull ServerTubeAssemblerContext context;
 
     private Map<QName, WSEndpointReference.EPRExtension> endpointReferenceExtensions = new HashMap<QName, WSEndpointReference.EPRExtension>();
-        /**
-     * Set to true once we start shutting down this endpoint.
-     * Used to avoid running the clean up processing twice.
-         *
-         * @see #dispose()
-         */
-        private boolean disposed;
-
-        private final Class<T> implementationClass;
-    private final @NotNull WSDLProperties wsdlProperties;
-        private final Set<Component> componentRegistry = new CopyOnWriteArraySet<Component>();
+    /**
+     * Set to true once we start shutting down this endpoint. Used to avoid
+     * running the clean up processing twice.
+     *
+     * @see #dispose()
+     */
+    private boolean disposed;
+    private final Class<T> implementationClass;
+    private final @NotNull
+    WSDLProperties wsdlProperties;
+    private final Set<Component> componentRegistry = new CopyOnWriteArraySet<Component>();
 
     protected WSEndpointImpl(@NotNull QName serviceName, @NotNull QName portName, WSBinding binding,
                    Container container, SEIModel seiModel, WSDLPort port,
@@ -157,44 +136,60 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
         LazyMOMProvider.INSTANCE.registerEndpoint(this);
         initManagedObjectManager();
 
-                if (serviceDef != null) {
-                        serviceDef.setOwner(this);
-                }
+        if (serviceDef != null) {
+            serviceDef.setOwner(this);
+        }
 
-                ComponentFeature cf = binding.getFeature(ComponentFeature.class);
-                if (cf != null) {
-                    switch(cf.getTarget()) {
-                        case ENDPOINT:
-                            componentRegistry.add(cf.getComponent());
-                            break;
-                        case CONTAINER:
-                            container.getComponents().add(cf.getComponent());
-                        default:
-                            throw new IllegalArgumentException();
-                    }
+        ComponentFeature cf = binding.getFeature(ComponentFeature.class);
+        if (cf != null) {
+            switch (cf.getTarget()) {
+                case ENDPOINT:
+                    componentRegistry.add(cf.getComponent());
+                    break;
+                case CONTAINER:
+                    container.getComponents().add(cf.getComponent());
+                    break;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
+        ComponentsFeature csf = binding.getFeature(ComponentsFeature.class);
+        if (csf != null) {
+            for (ComponentFeature cfi : csf.getComponentFeatures()) {
+                switch (cfi.getTarget()) {
+                    case ENDPOINT:
+                        componentRegistry.add(cfi.getComponent());
+                        break;
+                    case CONTAINER:
+                        container.getComponents().add(cfi.getComponent());
+                        break;
+                    default:
+                        throw new IllegalArgumentException();
                 }
+            }
+        }
 
         TubelineAssembler assembler = TubelineAssemblerFactory.create(
                 Thread.currentThread().getContextClassLoader(), binding.getBindingId(), container);
-                assert assembler != null;
+        assert assembler != null;
 
         this.operationDispatcher = (port == null) ? null : new OperationDispatcher(port, binding, seiModel);
 
         context = createServerTubeAssemblerContext(terminalTube, isSynchronous);
-    this.masterTubeline = assembler.createServer(context);
+        this.masterTubeline = assembler.createServer(context);
 
-                Codec c = context.getCodec();
-                if (c instanceof EndpointAwareCodec) {
+        Codec c = context.getCodec();
+        if (c instanceof EndpointAwareCodec) {
             // create a copy to avoid sharing the codec between multiple endpoints
-                        c = c.copy();
-                        ((EndpointAwareCodec) c).setEndpoint(this);
-                }
-                this.masterCodec = c;
+            c = c.copy();
+            ((EndpointAwareCodec) c).setEndpoint(this);
+        }
+        this.masterCodec = c;
 
-                tubePool = new TubePool(masterTubeline);
-                terminalTube.setEndpoint(this);
-                engine = new Engine(toString());
-                wsdlProperties = (port == null) ? new WSDLDirectProperties(serviceName, portName, seiModel) : new WSDLPortProperties(port, seiModel);
+        tubePool = new TubePool(masterTubeline);
+        terminalTube.setEndpoint(this);
+        engine = new Engine(toString(), container);
+        wsdlProperties = (port == null) ? new WSDLDirectProperties(serviceName, portName, seiModel) : new WSDLPortProperties(port, seiModel);
 
         Map<QName, WSEndpointReference.EPRExtension> eprExtensions = new HashMap<QName, WSEndpointReference.EPRExtension>();
         try {
@@ -230,9 +225,9 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
 
   protected ServerTubeAssemblerContext createServerTubeAssemblerContext(
             EndpointAwareTube terminalTube, boolean isSynchronous) {
-    ServerTubeAssemblerContext context = new ServerPipeAssemblerContext(
+    ServerTubeAssemblerContext ctx = new ServerPipeAssemblerContext(
         seiModel, port, this, terminalTube, isSynchronous);
-    return context;
+    return ctx;
   }
 
         protected WSEndpointImpl(@NotNull QName serviceName, @NotNull QName portName, WSBinding binding, Container container,
@@ -259,7 +254,7 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
                 seiModel, port, this, null /* not known */, false);
 
                 tubePool = new TubePool(masterTubeline);
-                engine = new Engine(toString());
+                engine = new Engine(toString(), container);
                 wsdlProperties = (port == null) ? new WSDLDirectProperties(serviceName, portName, seiModel) : new WSDLPortProperties(port, seiModel);
   }
 
@@ -313,96 +308,143 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
         processAsync(request, callback, interceptor, true);
     }
 
-    private void processAsync(final Packet request, final CompletionCallback callback, FiberContextSwitchInterceptor interceptor, boolean schedule) {
-                request.endpoint = WSEndpointImpl.this;
-                request.addSatellite(wsdlProperties);
+    private void processAsync(final Packet request,
+            final CompletionCallback callback,
+            FiberContextSwitchInterceptor interceptor, boolean schedule) {
+        Container old = ContainerResolver.getDefault().enterContainer(container);
+        try {
+            request.endpoint = WSEndpointImpl.this;
+            request.addSatellite(wsdlProperties);
 
-        Fiber fiber = engine.createFiber();
-                if (interceptor != null) {
-                        fiber.addInterceptor(interceptor);
+            Fiber fiber = engine.createFiber();
+            fiber.setDeliverThrowableInPacket(true);
+            if (interceptor != null) {
+                fiber.addInterceptor(interceptor);
+            }
+            final Tube tube = tubePool.take();
+            Fiber.CompletionCallback cbak = new Fiber.CompletionCallback() {
+                public void onCompletion(@NotNull Packet response) {
+                    ThrowableContainerPropertySet tc = response.getSatellite(ThrowableContainerPropertySet.class);
+                    if (tc == null) {
+                        // Only recycle tubes in non-exception path as some Tubes may be
+                        // in invalid state following exception
+                        tubePool.recycle(tube);
+                    }
+
+                    if (callback != null) {
+                        if (tc != null) {
+                            response = createServiceResponseForException(tc,
+                                                                         response,
+                                                                         soapVersion,
+                                                                         request.endpoint.getPort(),
+                                                                         null,
+                                                                         request.endpoint.getBinding());
+                        }
+                        callback.onCompletion(response);
+                    }
                 }
-                final Tube tube = tubePool.take();
-                Fiber.CompletionCallback cbak = new Fiber.CompletionCallback() {
-            public void onCompletion(@NotNull Packet response) {
-                                tubePool.recycle(tube);
-                                if (callback != null) {
-                                        callback.onCompletion(response);
-                                }
-                        }
 
-            public void onCompletion(@NotNull Throwable error) {
-                // let's not reuse tubes as they might be in a wrong state, so not
-                                // calling tubePool.recycle()
-                // Convert all runtime exceptions to Packet so that transport doesn't
-                                // have to worry about converting to wire message
-                                // TODO XML/HTTP binding
-                                Message faultMsg = SOAPFaultBuilder.createSOAPFaultMessage(
-                                                soapVersion, null, error);
-                Packet response = request.createServerResponse(faultMsg, request.endpoint.getPort(), null,
-                        request.endpoint.getBinding());
-                                if (callback != null) {
-                                        callback.onCompletion(response);
-                                }
-                        }
-                };
+                public void onCompletion(@NotNull Throwable error) {
+                    // will never be called now that we are using
+                    // fiber.setDeliverThrowableInPacket(true);
+                    throw new IllegalStateException();
+                }
+            };
 
-                fiber.start(tube, request, cbak,
-                                binding.isFeatureEnabled(SyncStartForAsyncFeature.class) || !schedule);
+            fiber.start(tube, request, cbak,
+                    binding.isFeatureEnabled(SyncStartForAsyncFeature.class)
+                            || !schedule);
+        } finally {
+            ContainerResolver.getDefault().exitContainer(old);
         }
+    }
+
+    @Override
+    public Packet createServiceResponseForException(final ThrowableContainerPropertySet tc,
+                                                    final Packet      responsePacket,
+                                                    final SOAPVersion soapVersion,
+                                                    final WSDLPort    wsdlPort,
+                                                    final SEIModel    seiModel,
+                                                    final WSBinding   binding)
+    {
+        // This will happen in addressing if it is enabled.
+        if (tc.isFaultCreated()) return responsePacket;
+
+        final Message faultMessage = SOAPFaultBuilder.createSOAPFaultMessage(soapVersion, null, tc.getThrowable());
+        final Packet result = responsePacket.createServerResponse(faultMessage, wsdlPort, seiModel, binding);
+        // Pass info to upper layers
+        tc.setFaultMessage(faultMessage);
+        tc.setResponsePacket(responsePacket);
+        tc.setFaultCreated(true);
+        return result;
+    }
 
     @Override
     public void process(final Packet request, final CompletionCallback callback, FiberContextSwitchInterceptor interceptor) {
         processAsync(request, callback, interceptor, false);
     }
 
-    public @NotNull PipeHead createPipeHead() {
-                return new PipeHead() {
-                        private final Tube tube = TubeCloner.clone(masterTubeline);
+    public @NotNull
+    PipeHead createPipeHead() {
+        return new PipeHead() {
+            private final Tube tube = TubeCloner.clone(masterTubeline);
 
-            public @NotNull Packet process(Packet request, WebServiceContextDelegate wscd, TransportBackChannel tbc) {
-                                request.webServiceContextDelegate = wscd;
-                                request.transportBackChannel = tbc;
-                                request.endpoint = WSEndpointImpl.this;
-                                request.addSatellite(wsdlProperties);
+            public @NotNull
+            Packet process(Packet request, WebServiceContextDelegate wscd,
+                    TransportBackChannel tbc) {
+                Container old = ContainerResolver.getDefault().enterContainer(container);
+                try {
+                    request.webServiceContextDelegate = wscd;
+                    request.transportBackChannel = tbc;
+                    request.endpoint = WSEndpointImpl.this;
+                    request.addSatellite(wsdlProperties);
 
-                                Fiber fiber = engine.createFiber();
-                                Packet response;
-                                try {
-                                        response = fiber.runSync(tube, request);
-                                } catch (RuntimeException re) {
-                                        // Catch all runtime exceptions so that transport doesn't
-                                        // have to worry about converting to wire message
-                                        // TODO XML/HTTP binding
-                                        Message faultMsg = SOAPFaultBuilder.createSOAPFaultMessage(
-                                                        soapVersion, null, re);
-                    response = request.createServerResponse(faultMsg, request.endpoint.getPort(), null, request.endpoint.getBinding());
-                                }
-                                return response;
-                        }
-                };
-        }
+                    Fiber fiber = engine.createFiber();
+                    Packet response;
+                    try {
+                        response = fiber.runSync(tube, request);
+                    } catch (RuntimeException re) {
+                        // Catch all runtime exceptions so that transport
+                        // doesn't
+                        // have to worry about converting to wire message
+                        // TODO XML/HTTP binding
+                        Message faultMsg = SOAPFaultBuilder
+                                .createSOAPFaultMessage(soapVersion, null, re);
+                        response = request.createServerResponse(faultMsg,
+                                request.endpoint.getPort(), null,
+                                request.endpoint.getBinding());
+                    }
+                    return response;
+                } finally {
+                    ContainerResolver.getDefault().exitContainer(old);
+                }
+            }
+        };
+    }
 
         public synchronized void dispose() {
-                if (disposed)
-                        return;
-                disposed = true;
+            if (disposed) {
+                return;
+            }
+            disposed = true;
 
-    masterTubeline.preDestroy();
+            masterTubeline.preDestroy();
 
-                for (Handler handler : binding.getHandlerChain()) {
-                        for (Method method : handler.getClass().getMethods()) {
-                                if (method.getAnnotation(PreDestroy.class) == null) {
-                                        continue;
-                                }
-                                try {
-                                        method.invoke(handler);
-                                } catch (Exception e) {
-                    logger.log(Level.WARNING, HandlerMessages.HANDLER_PREDESTROY_IGNORE(e.getMessage()), e);
-                                }
-                                break;
-                        }
+            for (Handler handler : binding.getHandlerChain()) {
+                for (Method method : handler.getClass().getMethods()) {
+                    if (method.getAnnotation(PreDestroy.class) == null) {
+                        continue;
+                    }
+                    try {
+                        method.invoke(handler);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, HandlerMessages.HANDLER_PREDESTROY_IGNORE(e.getMessage()), e);
+                    }
+                    break;
                 }
-        closeManagedObjectManager();
+            }
+            closeManagedObjectManager();
+            LazyMOMProvider.INSTANCE.unregisterEndpoint(this);
         }
 
         public ServiceDefinitionImpl getServiceDefinition() {
@@ -488,7 +530,7 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
 
                 @Override
                 public boolean equals(Object obj) {
-                        return component.equals(obj);
+                    return component.equals(obj);
                 }
         }
 
@@ -514,34 +556,32 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
                 }
         }
 
+        @Override
         public @NotNull Set<Component> getComponents() {
                 return componentRegistry;
         }
 
-    private static final Logger logger = Logger.getLogger(
-        com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".server.endpoint");
-
-    public <T extends EndpointReference> T getEndpointReference(Class<T>
-            clazz, String address, String wsdlAddress, Element... referenceParameters) {
+    public <T extends EndpointReference> T getEndpointReference(Class<T> clazz, String address, String wsdlAddress, Element... referenceParameters) {
         List<Element> refParams = null;
         if (referenceParameters != null) {
             refParams = Arrays.asList(referenceParameters);
         }
         return getEndpointReference(clazz, address, wsdlAddress, null, refParams);
     }
+
     public <T extends EndpointReference> T getEndpointReference(Class<T> clazz,
-                        String address, String wsdlAddress, List<Element> metadata,
-                        List<Element> referenceParameters) {
-                QName portType = null;
-                if (port != null) {
-                        portType = port.getBinding().getPortTypeName();
-                }
+            String address, String wsdlAddress, List<Element> metadata,
+            List<Element> referenceParameters) {
+        QName portType = null;
+        if (port != null) {
+            portType = port.getBinding().getPortTypeName();
+        }
 
         AddressingVersion av = AddressingVersion.fromSpecClass(clazz);
         return new WSEndpointReference(
-                    av, address, serviceName, portName, portType, metadata, wsdlAddress, referenceParameters,endpointReferenceExtensions.values(), null).toSpec(clazz);
+                av, address, serviceName, portName, portType, metadata, wsdlAddress, referenceParameters, endpointReferenceExtensions.values(), null).toSpec(clazz);
 
-        }
+    }
 
     public @NotNull QName getPortName() {
                 return portName;
@@ -583,12 +623,12 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
      */
     @NotNull ManagedObjectManager obtainManagedObjectManager() {
         final MonitorRootService monitorRootService = new MonitorRootService(this);
-        final ManagedObjectManager managedObjectManager = monitorRootService.createManagedObjectManager(this);
+        final ManagedObjectManager mOM = monitorRootService.createManagedObjectManager(this);
 
         // ManagedObjectManager was suspended due to root creation (see MonitorBase#initMOM)
-        managedObjectManager.resumeJMXRegistration();
+        mOM.resumeJMXRegistration();
 
-        return managedObjectManager;
+        return mOM;
     }
 
     public void scopeChanged(LazyMOMProvider.Scope scope) {
@@ -617,8 +657,11 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
         }
     }
 
+    private static final Logger monitoringLogger = Logger.getLogger(com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".monitoring");
+
     // This can be called independently of WSEndpoint.dispose.
     // Example: the WSCM framework calls this before dispose.
+    @Override
     public void closeManagedObjectManager() {
         synchronized (managedObjectManagerLock) {
             if (managedObjectManagerClosed == true) {
@@ -634,16 +677,23 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
                 }
 
                 if (close) {
-                    // no further notification on scope change
-                    LazyMOMProvider.INSTANCE.unregisterEndpoint(this);
-                    MonitorBase.closeMOM(managedObjectManager);
+                    try {
+                        final ObjectName name = managedObjectManager.getObjectName(managedObjectManager.getRoot());
+                        // The name is null when the MOM is a NOOP.
+                        if (name != null) {
+                            monitoringLogger.log(Level.INFO, "Closing Metro monitoring root: {0}", name);
+                        }
+                        managedObjectManager.close();
+                    } catch (java.io.IOException e) {
+                        monitoringLogger.log(Level.WARNING, "Ignoring error when closing Managed Object Manager", e);
+                    }
                 }
             }
             managedObjectManagerClosed = true;
         }
     }
 
-    public @NotNull ServerTubeAssemblerContext getAssemblerContext() {
+    public @NotNull @Override ServerTubeAssemblerContext getAssemblerContext() {
         return context;
     }
 }

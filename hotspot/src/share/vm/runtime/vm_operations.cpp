@@ -175,7 +175,8 @@ void VM_HandleFullCodeCache::doit() {
 }
 
 void VM_Verify::doit() {
-  Universe::verify();
+  Universe::heap()->prepare_for_verify();
+  Universe::verify(_silent);
 }
 
 bool VM_PrintThreads::doit_prologue() {

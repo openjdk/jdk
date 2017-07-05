@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,10 @@ public class W3CAddressingWSDLGeneratorExtension extends WSDLGeneratorExtension 
         if (a != null && !a.input().equals("")) {
             addAttribute(input, a.input());
         } else {
-            if (method.getBinding().getSOAPAction().equals("")) {
+
+            String soapAction = method.getBinding().getSOAPAction();
+            // in SOAP 1.2 soapAction is optional ...
+            if (soapAction == null || soapAction.equals("")) {
                 //hack: generate default action for interop with .Net3.0 when soapAction is non-empty
                 String defaultAction = getDefaultAction(method);
                 addAttribute(input, defaultAction);
@@ -143,7 +146,7 @@ public class W3CAddressingWSDLGeneratorExtension extends WSDLGeneratorExtension 
     public void addBindingExtension(TypedXmlWriter binding) {
         if (!enabled)
             return;
-        UsingAddressing ua = binding._element(AddressingVersion.W3C.wsdlExtensionTag, UsingAddressing.class);
+        binding._element(AddressingVersion.W3C.wsdlExtensionTag, UsingAddressing.class);
         /*
         Do not generate wsdl:required=true
         if(required) {

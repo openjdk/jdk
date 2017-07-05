@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  * questions.
  */
 
-
 package com.sun.tools.internal.ws.resources;
 
-import com.sun.xml.internal.ws.util.localization.Localizable;
-import com.sun.xml.internal.ws.util.localization.LocalizableMessageFactory;
-import com.sun.xml.internal.ws.util.localization.Localizer;
+import com.sun.istack.internal.localization.Localizable;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.Localizer;
 
 
 /**
@@ -730,6 +729,18 @@ public final class WsdlMessages {
         return localizer.localize(localizablePARSING_WSDL_NOT_DEFAULT_NAMESPACE(arg0));
     }
 
+    public static Localizable localizablePARSING_UNKNOWN_EXTENSIBILITY_ELEMENT_OR_ATTRIBUTE(Object arg0, Object arg1) {
+        return messageFactory.getMessage("parsing.unknownExtensibilityElementOrAttribute", arg0, arg1);
+    }
+
+    /**
+     * unknown extensibility element or attribute "{0}" (in namespace "{1}")
+     *
+     */
+    public static String PARSING_UNKNOWN_EXTENSIBILITY_ELEMENT_OR_ATTRIBUTE(Object arg0, Object arg1) {
+        return localizer.localize(localizablePARSING_UNKNOWN_EXTENSIBILITY_ELEMENT_OR_ATTRIBUTE(arg0, arg1));
+    }
+
     public static Localizable localizableVALIDATION_DUPLICATED_ELEMENT(Object arg0) {
         return messageFactory.getMessage("validation.duplicatedElement", arg0);
     }
@@ -927,7 +938,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * failed.noservice=Could not find wsdl:service in the provided WSDL(s):
+     * Could not find wsdl:service in the provided WSDL(s):
      *
      * {0} At least one WSDL with at least one service definition needs to be provided.
      *

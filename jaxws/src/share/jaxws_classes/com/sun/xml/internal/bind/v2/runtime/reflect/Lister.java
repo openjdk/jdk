@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,9 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
 
             // invoke set when possible (see Issue 488)
             try {
-                acc.set(bean,collection);
+                if (acc.isAdapted()) {
+                    acc.set(bean,collection);
+                }
             } catch (AccessorException ae) {
                 if(acc.isAdapted()) throw ae;
             }
