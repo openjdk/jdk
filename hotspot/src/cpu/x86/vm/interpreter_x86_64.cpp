@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@
 
 #define __ _masm->
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #ifdef _WIN64
 address AbstractInterpreterGenerator::generate_slow_signature_handler() {

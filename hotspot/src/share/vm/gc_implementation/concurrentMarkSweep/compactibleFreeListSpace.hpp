@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,7 +403,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
     if (CMSTraceSweeper) {
       gclog_or_tty->print_cr(">>>>> Saving sweep limit " PTR_FORMAT
                              "  for space [" PTR_FORMAT "," PTR_FORMAT ") <<<<<<",
-                             _sweep_limit, bottom(), end());
+                             p2i(_sweep_limit), p2i(bottom()), p2i(end()));
     }
   }
   NOT_PRODUCT(

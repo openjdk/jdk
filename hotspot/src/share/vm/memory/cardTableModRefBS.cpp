@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,11 +138,11 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
     gclog_or_tty->print_cr("  "
                   "  &_byte_map[0]: " INTPTR_FORMAT
                   "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
-                  &_byte_map[0],
-                  &_byte_map[_last_valid_index]);
+                  p2i(&_byte_map[0]),
+                  p2i(&_byte_map[_last_valid_index]));
     gclog_or_tty->print_cr("  "
                   "  byte_map_base: " INTPTR_FORMAT,
-                  byte_map_base);
+                  p2i(byte_map_base));
   }
 }
 
@@ -392,23 +392,23 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     gclog_or_tty->print_cr("  "
                   "  _covered[%d].start(): " INTPTR_FORMAT
                   "  _covered[%d].last(): " INTPTR_FORMAT,
-                  ind, _covered[ind].start(),
-                  ind, _covered[ind].last());
+                  ind, p2i(_covered[ind].start()),
+                  ind, p2i(_covered[ind].last()));
     gclog_or_tty->print_cr("  "
                   "  _committed[%d].start(): " INTPTR_FORMAT
                   "  _committed[%d].last(): " INTPTR_FORMAT,
-                  ind, _committed[ind].start(),
-                  ind, _committed[ind].last());
+                  ind, p2i(_committed[ind].start()),
+                  ind, p2i(_committed[ind].last()));
     gclog_or_tty->print_cr("  "
                   "  byte_for(start): " INTPTR_FORMAT
                   "  byte_for(last): " INTPTR_FORMAT,
-                  byte_for(_covered[ind].start()),
-                  byte_for(_covered[ind].last()));
+                  p2i(byte_for(_covered[ind].start())),
+                  p2i(byte_for(_covered[ind].last())));
     gclog_or_tty->print_cr("  "
                   "  addr_for(start): " INTPTR_FORMAT
                   "  addr_for(last): " INTPTR_FORMAT,
-                  addr_for((jbyte*) _committed[ind].start()),
-                  addr_for((jbyte*) _committed[ind].last()));
+                  p2i(addr_for((jbyte*) _committed[ind].start())),
+                  p2i(addr_for((jbyte*) _committed[ind].last())));
   }
   // Touch the last card of the covered region to show that it
   // is committed (or SEGV).
@@ -657,14 +657,14 @@ void CardTableModRefBS::verify_region(MemRegion mr,
     if (failed) {
       if (!failures) {
         tty->cr();
-        tty->print_cr("== CT verification failed: ["PTR_FORMAT","PTR_FORMAT"]", start, end);
+        tty->print_cr("== CT verification failed: [" INTPTR_FORMAT "," INTPTR_FORMAT "]", p2i(start), p2i(end));
         tty->print_cr("==   %sexpecting value: %d",
                       (val_equals) ? "" : "not ", val);
         failures = true;
       }
       tty->print_cr("==   card "PTR_FORMAT" ["PTR_FORMAT","PTR_FORMAT"], "
-                    "val: %d", curr, addr_for(curr),
-                    (HeapWord*) (((size_t) addr_for(curr)) + card_size),
+                    "val: %d", p2i(curr), p2i(addr_for(curr)),
+                    p2i((HeapWord*) (((size_t) addr_for(curr)) + card_size)),
                     (int) curr_val);
     }
   }
@@ -682,7 +682,7 @@ void CardTableModRefBS::verify_dirty_region(MemRegion mr) {
 
 void CardTableModRefBS::print_on(outputStream* st) const {
   st->print_cr("Card table byte_map: [" INTPTR_FORMAT "," INTPTR_FORMAT "] byte_map_base: " INTPTR_FORMAT,
-               _byte_map, _byte_map + _byte_map_size, byte_map_base);
+               p2i(_byte_map), p2i(_byte_map + _byte_map_size), p2i(byte_map_base));
 }
 
 bool CardTableModRefBSForCTRS::card_will_be_scanned(jbyte cv) {

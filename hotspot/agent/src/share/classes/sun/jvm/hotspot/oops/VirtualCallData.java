@@ -35,9 +35,9 @@ import sun.jvm.hotspot.utilities.*;
 //
 // A VirtualCallData is used to access profiling information about a
 // call.  For now, it has nothing more than a ReceiverTypeData.
-public class VirtualCallData extends ReceiverTypeData {
-  public VirtualCallData(DataLayout layout) {
-    super(layout);
+public class VirtualCallData<K,M> extends ReceiverTypeData<K,M> {
+  public VirtualCallData(MethodDataInterface<K,M> methodData, DataLayout layout) {
+    super(methodData, layout);
     //assert(layout.tag() == DataLayout.virtualCallDataTag, "wrong type");
   }
 

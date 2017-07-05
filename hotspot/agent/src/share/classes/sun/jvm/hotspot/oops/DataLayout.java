@@ -41,6 +41,11 @@ public class DataLayout {
   public static final int retDataTag = 6;
   public static final int branchDataTag = 7;
   public static final int multiBranchDataTag = 8;
+  public static final int argInfoDataTag = 9;
+  public static final int callTypeDataTag = 10;
+  public static final int virtualCallTypeDataTag = 11;
+  public static final int parametersTypeDataTag = 12;
+  public static final int speculativeTrapDataTag = 13;
 
   // The _struct._flags word is formatted as [trapState:4 | flags:4].
   // The trap state breaks down further as [recompile:1 | reason:3].
@@ -61,8 +66,6 @@ public class DataLayout {
 
   private int offset;
 
-  private boolean handlized;
-
   public DataLayout(MethodData d, int o) {
     data = d.getAddress();
     offset = o;
@@ -71,7 +74,6 @@ public class DataLayout {
   public DataLayout(Address d, int o) {
     data = d;
     offset = o;
-    handlized = true;
   }
 
   public int dp() { return offset; }
@@ -90,12 +92,7 @@ public class DataLayout {
   }
 
   public Address addressAt(int index) {
-    OopHandle handle;
-    if (handlized) {
-      return data.getAddressAt(offset + cellOffset(index));
-    } else {
-      return data.getOopHandleAt(offset + cellOffset(index));
-    }
+    return data.getAddressAt(offset + cellOffset(index));
   }
 
   // Every data layout begins with a header.  This header
@@ -128,7 +125,7 @@ public class DataLayout {
     return 1;
   }
 
-  static int computeSizeInBytes(int cellCount) {
+  static public int computeSizeInBytes(int cellCount) {
     return headerSizeInBytes() + cellCount * MethodData.cellSize;
   }
 

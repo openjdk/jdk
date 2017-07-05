@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // Implementation of ThreadShadow
 void check_ThreadShadow() {
@@ -236,6 +237,7 @@ void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_na
   va_end(ap);
   _throw_msg(thread, file, line, h_name, msg);
 }
+
 
 // Creates an exception oop, calls the <init> method with the given signature.
 // and returns a Handle

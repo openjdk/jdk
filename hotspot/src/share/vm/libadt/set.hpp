@@ -25,12 +25,9 @@
 #ifndef SHARE_VM_LIBADT_SET_HPP
 #define SHARE_VM_LIBADT_SET_HPP
 
-#include "libadt/port.hpp"
 #include "memory/allocation.hpp"
 
 // Sets - An Abstract Data Type
-
-//INTERFACE
 
 class SparseSet;
 class VectorSet;

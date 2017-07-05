@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,8 @@
 # include "adfiles/ad_ppc_64.hpp"
 #endif
 #endif // COMPILER2
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 bool DeoptimizationMarker::_is_active = false;
 
@@ -742,6 +744,8 @@ int Deoptimization::deoptimize_dependents() {
   return 0;
 }
 
+Deoptimization::DeoptAction Deoptimization::_unloaded_action
+  = Deoptimization::Action_reinterpret;
 
 #ifdef COMPILER2
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, GrowableArray<ScopeValue*>* objects, TRAPS) {
@@ -1183,6 +1187,23 @@ JRT_LEAF(void, Deoptimization::popframe_preserve_args(JavaThread* thread, int by
 }
 JRT_END
 
+MethodData*
+Deoptimization::get_method_data(JavaThread* thread, methodHandle m,
+                                bool create_if_missing) {
+  Thread* THREAD = thread;
+  MethodData* mdo = m()->method_data();
+  if (mdo == NULL && create_if_missing && !HAS_PENDING_EXCEPTION) {
+    // Build an MDO.  Ignore errors like OutOfMemory;
+    // that simply means we won't have an MDO to update.
+    Method::build_interpreter_method_data(m, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+      CLEAR_PENDING_EXCEPTION;
+    }
+    mdo = m()->method_data();
+  }
+  return mdo;
+}
 
 #if defined(COMPILER2) || defined(SHARK)
 void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int index, TRAPS) {
@@ -1283,7 +1304,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
 
     // Ensure that we can record deopt. history:
     // Need MDO to record RTM code generation state.
-    bool create_if_missing = ProfileTraps RTM_OPT_ONLY( || UseRTMLocking );
+    bool create_if_missing = ProfileTraps || UseCodeAging RTM_OPT_ONLY( || UseRTMLocking );
 
     MethodData* trap_mdo =
       get_method_data(thread, trap_method, create_if_missing);
@@ -1319,7 +1340,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         if (xtty != NULL)
           xtty->name(class_name);
       }
-      if (xtty != NULL && trap_mdo != NULL) {
+      if (xtty != NULL && trap_mdo != NULL && (int)reason < (int)MethodData::_trap_hist_limit) {
         // Dump the relevant MDO state.
         // This is the deopt count for the current reason, any previous
         // reasons or recompiles seen at this point.
@@ -1419,7 +1440,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     //
     // The other actions cause immediate removal of the present code.
 
-    bool update_trap_state = true;
+    bool update_trap_state = (reason != Reason_tenured);
     bool make_not_entrant = false;
     bool make_not_compilable = false;
     bool reprofile = false;
@@ -1546,7 +1567,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
       if (make_not_entrant && maybe_prior_recompile && maybe_prior_trap) {
         reprofile = true;
       }
-
     }
 
     // Take requested actions on the method:
@@ -1575,6 +1595,11 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         trap_mdo->atomic_set_rtm_state(ProfileRTM);
       }
 #endif
+      // For code aging we count traps separately here, using make_not_entrant()
+      // as a guard against simultaneous deopts in multiple threads.
+      if (reason == Reason_tenured && trap_mdo != NULL) {
+        trap_mdo->inc_tenure_traps();
+      }
     }
 
     if (inc_recompile_count) {
@@ -1606,24 +1631,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
 
 }
 JRT_END
-
-MethodData*
-Deoptimization::get_method_data(JavaThread* thread, methodHandle m,
-                                bool create_if_missing) {
-  Thread* THREAD = thread;
-  MethodData* mdo = m()->method_data();
-  if (mdo == NULL && create_if_missing && !HAS_PENDING_EXCEPTION) {
-    // Build an MDO.  Ignore errors like OutOfMemory;
-    // that simply means we won't have an MDO to update.
-    Method::build_interpreter_method_data(m, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
-      CLEAR_PENDING_EXCEPTION;
-    }
-    mdo = m()->method_data();
-  }
-  return mdo;
-}
 
 ProfileData*
 Deoptimization::query_update_method_data(MethodData* trap_mdo,
@@ -1811,9 +1818,7 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
 
 
 //--------------------------------statics--------------------------------------
-Deoptimization::DeoptAction Deoptimization::_unloaded_action
-  = Deoptimization::Action_reinterpret;
-const char* Deoptimization::_trap_reason_name[Reason_LIMIT] = {
+const char* Deoptimization::_trap_reason_name[] = {
   // Note:  Keep this in sync. with enum DeoptReason.
   "none",
   "null_check",
@@ -1834,9 +1839,10 @@ const char* Deoptimization::_trap_reason_name[Reason_LIMIT] = {
   "loop_limit_check",
   "speculate_class_check",
   "speculate_null_check",
-  "rtm_state_change"
+  "rtm_state_change",
+  "tenured"
 };
-const char* Deoptimization::_trap_action_name[Action_LIMIT] = {
+const char* Deoptimization::_trap_action_name[] = {
   // Note:  Keep this in sync. with enum DeoptAction.
   "none",
   "maybe_recompile",
@@ -1846,6 +1852,9 @@ const char* Deoptimization::_trap_action_name[Action_LIMIT] = {
 };
 
 const char* Deoptimization::trap_reason_name(int reason) {
+  // Check that every reason has a name
+  STATIC_ASSERT(sizeof(_trap_reason_name)/sizeof(const char*) == Reason_LIMIT);
+
   if (reason == Reason_many)  return "many";
   if ((uint)reason < Reason_LIMIT)
     return _trap_reason_name[reason];
@@ -1854,6 +1863,9 @@ const char* Deoptimization::trap_reason_name(int reason) {
   return buf;
 }
 const char* Deoptimization::trap_action_name(int action) {
+  // Check that every action has a name
+  STATIC_ASSERT(sizeof(_trap_action_name)/sizeof(const char*) == Action_LIMIT);
+
   if ((uint)action < Action_LIMIT)
     return _trap_action_name[action];
   static char buf[20];

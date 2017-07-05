@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
   address base = Universe::narrow_oop_base();
   int    shift = Universe::narrow_oop_shift();
   oop result = (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
-  assert(check_obj_alignment(result), err_msg("address not aligned: " PTR_FORMAT, (void*) result));
+  assert(check_obj_alignment(result), err_msg("address not aligned: " INTPTR_FORMAT, p2i((void*) result)));
   return result;
 }
 
