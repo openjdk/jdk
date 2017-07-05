@@ -259,6 +259,9 @@ public:
   // be provided are returned as a list of ScratchBlocks, sorted by
   // decreasing size.
   ScratchBlock* gather_scratch(Generation* requestor, size_t max_alloc_words);
+  // Allow each generation to reset any scratch space that it has
+  // contributed as it needs.
+  void release_scratch();
 
   size_t large_typearray_limit();
 
@@ -481,6 +484,9 @@ private:
   // In support of ExplicitGCInvokesConcurrent functionality
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
   void collect_mostly_concurrent(GCCause::Cause cause);
+
+  // Save the tops of the spaces in all generations
+  void record_gen_tops_before_GC() PRODUCT_RETURN;
 
 protected:
   virtual void gc_prologue(bool full);

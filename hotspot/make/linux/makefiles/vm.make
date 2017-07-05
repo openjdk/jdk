@@ -195,7 +195,7 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
               if [ $$? = 0 ] ; then					\
 		/usr/bin/chcon -t textrel_shlib_t $@;                   \
 		if [ $$? != 0 ]; then                                   \
-		  echo "ERROR: Cannot chcon $@"; exit 1;                \
+		  echo "ERROR: Cannot chcon $@";			\
 		fi							\
 	      fi							\
 	    fi                                                          \

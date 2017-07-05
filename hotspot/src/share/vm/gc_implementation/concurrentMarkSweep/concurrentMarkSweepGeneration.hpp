@@ -1048,10 +1048,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   double _initiating_occupancy;
 
  protected:
-  // Grow generation by specified size (returns false if unable to grow)
-  bool grow_by(size_t bytes);
-  // Grow generation to reserved size.
-  bool grow_to_reserved();
   // Shrink generation by specified size (returns false if unable to shrink)
   virtual void shrink_by(size_t bytes);
 
@@ -1102,6 +1098,11 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Override
   virtual void ref_processor_init();
+
+  // Grow generation by specified size (returns false if unable to grow)
+  bool grow_by(size_t bytes);
+  // Grow generation to reserved size.
+  bool grow_to_reserved();
 
   void clear_expansion_cause() { _expansion_cause = CMSExpansionCause::_no_expansion; }
 
@@ -1193,6 +1194,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Allocation failure
   void expand(size_t bytes, size_t expand_bytes,
     CMSExpansionCause::Cause cause);
+  virtual bool expand(size_t bytes, size_t expand_bytes);
   void shrink(size_t bytes);
   HeapWord* expand_and_par_lab_allocate(CMSParGCThreadState* ps, size_t word_sz);
   bool expand_and_ensure_spooling_space(PromotionInfo* promo);

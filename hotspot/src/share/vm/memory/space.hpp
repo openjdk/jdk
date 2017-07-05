@@ -131,15 +131,17 @@ class Space: public CHeapObj {
     return MemRegion(bottom(), saved_mark_word());
   }
 
-  // Initialization
-  virtual void initialize(MemRegion mr, bool clear_space);
-  virtual void clear();
+  // Initialization.  These may be run to reset an existing
+  // Space.
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+  virtual void clear(bool mangle_space);
 
   // For detecting GC bugs.  Should only be called at GC boundaries, since
   // some unused space may be used as scratch space during GC's.
   // Default implementation does nothing. We also call this when expanding
   // a space to satisfy an allocation request. See bug #4668531
   virtual void mangle_unused_area() {}
+  virtual void mangle_unused_area_complete() {}
   virtual void mangle_region(MemRegion mr) {}
 
   // Testers
@@ -354,7 +356,7 @@ private:
   CompactibleSpace* _next_compaction_space;
 
 public:
-  virtual void initialize(MemRegion mr, bool clear_space);
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
   // Used temporarily during a compaction phase to hold the value
   // top should have when compaction is complete.
@@ -724,11 +726,13 @@ protected:
   /* continuously, but those that weren't need to have their thresholds */      \
   /* re-initialized.  Also mangles unused area for debugging.           */      \
   if (is_empty()) {                                                             \
-    clear();                                                                    \
+    clear(SpaceDecorator::Mangle);                                              \
   } else {                                                                      \
     if (ZapUnusedHeapArea) mangle_unused_area();                                \
   }                                                                             \
 }
+
+class GenSpaceMangler;
 
 // A space in which the free area is contiguous.  It therefore supports
 // faster allocation, and compaction.
@@ -738,13 +742,21 @@ class ContiguousSpace: public CompactibleSpace {
  protected:
   HeapWord* _top;
   HeapWord* _concurrent_iteration_safe_limit;
+  // A helper for mangling the unused area of the space in debug builds.
+  GenSpaceMangler* _mangler;
+
+  GenSpaceMangler* mangler() { return _mangler; }
 
   // Allocation helpers (return NULL if full).
   inline HeapWord* allocate_impl(size_t word_size, HeapWord* end_value);
   inline HeapWord* par_allocate_impl(size_t word_size, HeapWord* end_value);
 
  public:
-  virtual void initialize(MemRegion mr, bool clear_space);
+
+  ContiguousSpace();
+  ~ContiguousSpace();
+
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
   // Accessors
   HeapWord* top() const            { return _top;    }
@@ -753,15 +765,34 @@ class ContiguousSpace: public CompactibleSpace {
   void set_saved_mark()       { _saved_mark_word = top();    }
   void reset_saved_mark()     { _saved_mark_word = bottom(); }
 
-  virtual void clear();
+  virtual void clear(bool mangle_space);
 
   WaterMark bottom_mark()     { return WaterMark(this, bottom()); }
   WaterMark top_mark()        { return WaterMark(this, top()); }
   WaterMark saved_mark()      { return WaterMark(this, saved_mark_word()); }
   bool saved_mark_at_top() const { return saved_mark_word() == top(); }
 
-  void mangle_unused_area();
-  void mangle_region(MemRegion mr);
+  // In debug mode mangle (write it with a particular bit
+  // pattern) the unused part of a space.
+
+  // Used to save the an address in a space for later use during mangling.
+  void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
+  // Used to save the space's current top for later use during mangling.
+  void set_top_for_allocations() PRODUCT_RETURN;
+
+  // Mangle regions in the space from the current top up to the
+  // previously mangled part of the space.
+  void mangle_unused_area() PRODUCT_RETURN;
+  // Mangle [top, end)
+  void mangle_unused_area_complete() PRODUCT_RETURN;
+  // Mangle the given MemRegion.
+  void mangle_region(MemRegion mr) PRODUCT_RETURN;
+
+  // Do some sparse checking on the area that should have been mangled.
+  void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
+  // Check the complete area that should have been mangled.
+  // This code may be NULL depending on the macro DEBUG_MANGLING.
+  void check_mangled_unused_area_complete() PRODUCT_RETURN;
 
   // Size computations: sizes in bytes.
   size_t capacity() const        { return byte_size(bottom(), end()); }
@@ -956,7 +987,7 @@ class EdenSpace : public ContiguousSpace {
   void set_soft_end(HeapWord* value) { _soft_end = value; }
 
   // Override.
-  void clear();
+  void clear(bool mangle_space);
 
   // Set both the 'hard' and 'soft' limits (_end and _soft_end).
   void set_end(HeapWord* value) {
@@ -1000,7 +1031,7 @@ class OffsetTableContigSpace: public ContiguousSpace {
   void set_bottom(HeapWord* value);
   void set_end(HeapWord* value);
 
-  void clear();
+  void clear(bool mangle_space);
 
   inline HeapWord* block_start(const void* p) const;
 

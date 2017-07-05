@@ -51,12 +51,9 @@ ifeq ($(JDK_MINOR_VERSION),6)
   VALIDATED_COMPILER_REV   := 5.8
   VALIDATED_C_COMPILER_REV := 5.8
 else
-  # FIXUP: Change to SS12 (5.9) once it has been validated.
   # Validated compiler for JDK7 is SS12 (5.9)
-  #VALIDATED_COMPILER_REV   := 5.9
-  #VALIDATED_C_COMPILER_REV := 5.9
-  VALIDATED_COMPILER_REV   := 5.8
-  VALIDATED_C_COMPILER_REV := 5.8
+  VALIDATED_COMPILER_REV   := 5.9
+  VALIDATED_C_COMPILER_REV := 5.9
 endif
 
 # Warning messages about not using the above validated version

@@ -85,6 +85,8 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
   }
 
   debug_only(void* prev_addr() const { return (void*)&_prev; })
+  debug_only(void* next_addr() const { return (void*)&_next; })
+  debug_only(void* size_addr() const { return (void*)&_size; })
 
   size_t size() const volatile {
     LP64_ONLY(if (UseCompressedOops) return mark()->get_size(); else )
