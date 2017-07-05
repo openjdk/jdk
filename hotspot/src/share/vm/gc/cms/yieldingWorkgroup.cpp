@@ -26,20 +26,45 @@
 #include "gc/cms/yieldingWorkgroup.hpp"
 #include "utilities/macros.hpp"
 
-// Forward declaration of classes declared here.
-
-class GangWorker;
-class WorkData;
+YieldingFlexibleGangWorker::YieldingFlexibleGangWorker(YieldingFlexibleWorkGang* gang, int id)
+    : AbstractGangWorker(gang, id) {}
 
 YieldingFlexibleWorkGang::YieldingFlexibleWorkGang(
-  const char* name, uint workers, bool are_GC_task_threads) :
-  FlexibleWorkGang(name, workers, are_GC_task_threads, false),
-    _yielded_workers(0) {}
+    const char* name, uint workers, bool are_GC_task_threads) :
+         AbstractWorkGang(name, workers, are_GC_task_threads, false),
+         _yielded_workers(0),
+         _started_workers(0),
+         _finished_workers(0),
+         _sequence_number(0),
+         _task(NULL) {
 
-GangWorker* YieldingFlexibleWorkGang::allocate_worker(uint which) {
-  YieldingFlexibleGangWorker* new_member =
-      new YieldingFlexibleGangWorker(this, which);
-  return (YieldingFlexibleGangWorker*) new_member;
+  // Other initialization.
+  _monitor = new Monitor(/* priority */       Mutex::leaf,
+                         /* name */           "WorkGroup monitor",
+                         /* allow_vm_block */ are_GC_task_threads,
+                                              Monitor::_safepoint_check_sometimes);
+
+  assert(monitor() != NULL, "Failed to allocate monitor");
+}
+
+AbstractGangWorker* YieldingFlexibleWorkGang::allocate_worker(uint which) {
+  return new YieldingFlexibleGangWorker(this, which);
+}
+
+void YieldingFlexibleWorkGang::internal_worker_poll(YieldingWorkData* data) const {
+  assert(data != NULL, "worker data is null");
+  data->set_task(task());
+  data->set_sequence_number(sequence_number());
+}
+
+void YieldingFlexibleWorkGang::internal_note_start() {
+  assert(monitor()->owned_by_self(), "note_finish is an internal method");
+  _started_workers += 1;
+}
+
+void YieldingFlexibleWorkGang::internal_note_finish() {
+  assert(monitor()->owned_by_self(), "note_finish is an internal method");
+  _finished_workers += 1;
 }
 
 // Run a task; returns when the task is done, or the workers yield,
@@ -292,37 +317,37 @@ void YieldingFlexibleGangTask::abort() {
 ///////////////////////////////
 void YieldingFlexibleGangWorker::loop() {
   int previous_sequence_number = 0;
-  Monitor* gang_monitor = gang()->monitor();
+  Monitor* gang_monitor = yf_gang()->monitor();
   MutexLockerEx ml(gang_monitor, Mutex::_no_safepoint_check_flag);
-  WorkData data;
+  YieldingWorkData data;
   int id;
   while (true) {
     // Check if there is work to do.
-    gang()->internal_worker_poll(&data);
+    yf_gang()->internal_worker_poll(&data);
     if (data.task() != NULL && data.sequence_number() != previous_sequence_number) {
       // There is work to be done.
       // First check if we need to become active or if there
       // are already the requisite number of workers
-      if (gang()->started_workers() == yf_gang()->active_workers()) {
+      if (yf_gang()->started_workers() == yf_gang()->active_workers()) {
         // There are already enough workers, we do not need to
         // to run; fall through and wait on monitor.
       } else {
         // We need to pitch in and do the work.
-        assert(gang()->started_workers() < yf_gang()->active_workers(),
+        assert(yf_gang()->started_workers() < yf_gang()->active_workers(),
                "Unexpected state");
-        id = gang()->started_workers();
-        gang()->internal_note_start();
+        id = yf_gang()->started_workers();
+        yf_gang()->internal_note_start();
         // Now, release the gang mutex and do the work.
         {
           MutexUnlockerEx mul(gang_monitor, Mutex::_no_safepoint_check_flag);
           data.task()->work(id);   // This might include yielding
         }
         // Reacquire monitor and note completion of this worker
-        gang()->internal_note_finish();
+        yf_gang()->internal_note_finish();
         // Update status of task based on whether all workers have
         // finished or some have yielded
-        assert(data.task() == gang()->task(), "Confused task binding");
-        if (gang()->finished_workers() == yf_gang()->active_workers()) {
+        assert(data.task() == yf_gang()->task(), "Confused task binding");
+        if (yf_gang()->finished_workers() == yf_gang()->active_workers()) {
           switch (data.yf_task()->status()) {
             case ABORTING: {
               data.yf_task()->set_status(ABORTED);
@@ -338,7 +363,7 @@ void YieldingFlexibleGangWorker::loop() {
           }
           gang_monitor->notify_all();  // Notify overseer
         } else { // at least one worker is still working or yielded
-          assert(gang()->finished_workers() < yf_gang()->active_workers(),
+          assert(yf_gang()->finished_workers() < yf_gang()->active_workers(),
                  "Counts inconsistent");
           switch (data.yf_task()->status()) {
             case ACTIVE: {
@@ -347,7 +372,7 @@ void YieldingFlexibleGangWorker::loop() {
               break;
             }
             case YIELDING: {
-              if (gang()->finished_workers() + yf_gang()->yielded_workers()
+              if (yf_gang()->finished_workers() + yf_gang()->yielded_workers()
                   == yf_gang()->active_workers()) {
                 data.yf_task()->set_status(YIELDED);
                 gang_monitor->notify_all();  // notify overseer

@@ -170,21 +170,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ MacroAssembler::verify_FPU(0, "generate_return_entry_for compiled");
   }
 
-  // In SSE mode, interpreter returns FP results in xmm0 but they need
-  // to end up back on the FPU so it can operate on them.
-  if (state == ftos && UseSSE >= 1) {
-    __ subptr(rsp, wordSize);
-    __ movflt(Address(rsp, 0), xmm0);
-    __ fld_s(Address(rsp, 0));
-    __ addptr(rsp, wordSize);
-  } else if (state == dtos && UseSSE >= 2) {
-    __ subptr(rsp, 2*wordSize);
-    __ movdbl(Address(rsp, 0), xmm0);
-    __ fld_d(Address(rsp, 0));
-    __ addptr(rsp, 2*wordSize);
+  if (state == ftos) {
+    __ MacroAssembler::verify_FPU(UseSSE >= 1 ? 0 : 1, "generate_return_entry_for in interpreter");
+  } else if (state == dtos) {
+    __ MacroAssembler::verify_FPU(UseSSE >= 2 ? 0 : 1, "generate_return_entry_for in interpreter");
   }
-
-  __ MacroAssembler::verify_FPU(state == ftos || state == dtos ? 1 : 0, "generate_return_entry_for in interpreter");
 
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
@@ -217,20 +207,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
   address entry = __ pc();
 
-  // In SSE mode, FP results are in xmm0
-  if (state == ftos && UseSSE > 0) {
-    __ subptr(rsp, wordSize);
-    __ movflt(Address(rsp, 0), xmm0);
-    __ fld_s(Address(rsp, 0));
-    __ addptr(rsp, wordSize);
-  } else if (state == dtos && UseSSE >= 2) {
-    __ subptr(rsp, 2*wordSize);
-    __ movdbl(Address(rsp, 0), xmm0);
-    __ fld_d(Address(rsp, 0));
-    __ addptr(rsp, 2*wordSize);
+  if (state == ftos) {
+    __ MacroAssembler::verify_FPU(UseSSE >= 1 ? 0 : 1, "generate_deopt_entry_for in interpreter");
+  } else if (state == dtos) {
+    __ MacroAssembler::verify_FPU(UseSSE >= 2 ? 0 : 1, "generate_deopt_entry_for in interpreter");
   }
-
-  __ MacroAssembler::verify_FPU(state == ftos || state == dtos ? 1 : 0, "generate_deopt_entry_for in interpreter");
 
   // The stack is not extended by deopt but we must NULL last_sp as this
   // entry is like a "return".
@@ -735,7 +716,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
-    // rbx,: Method*
+    // rbx: Method*
     // rsi: senderSP must preserved for slow path, set SP to it on fast path
     // rdx: scratch
     // rdi: scratch
@@ -839,6 +820,124 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
     return entry;
   }
   return generate_native_entry(false);
+}
+
+/**
+ * Method entry for static native method:
+ *    java.lang.Float.intBitsToFloat(int bits)
+ */
+address InterpreterGenerator::generate_Float_intBitsToFloat_entry() {
+  address entry;
+
+  if (UseSSE >= 1) {
+    entry = __ pc();
+
+    // rsi: the sender's SP
+
+    // Skip safepoint check (compiler intrinsic versions of this method
+    // do not perform safepoint checks either).
+
+    // Load 'bits' into xmm0 (interpreter returns results in xmm0)
+    __ movflt(xmm0, Address(rsp, wordSize));
+
+    // Return
+    __ pop(rdi); // get return address
+    __ mov(rsp, rsi); // set rsp to the sender's SP
+    __ jmp(rdi);
+  } else {
+    entry = generate_native_entry(false);
+  }
+
+  return entry;
+}
+
+/**
+ * Method entry for static native method:
+ *    java.lang.Float.floatToRawIntBits(float value)
+ */
+address InterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
+  address entry;
+
+  if (UseSSE >= 1) {
+    entry = __ pc();
+
+    // rsi: the sender's SP
+
+    // Skip safepoint check (compiler intrinsic versions of this method
+    // do not perform safepoint checks either).
+
+    // Load the parameter (a floating-point value) into rax.
+    __ movl(rax, Address(rsp, wordSize));
+
+    // Return
+    __ pop(rdi); // get return address
+    __ mov(rsp, rsi); // set rsp to the sender's SP
+    __ jmp(rdi);
+  } else {
+    entry = generate_native_entry(false);
+  }
+
+  return entry;
+}
+
+
+/**
+ * Method entry for static native method:
+ *    java.lang.Double.longBitsToDouble(long bits)
+ */
+address InterpreterGenerator::generate_Double_longBitsToDouble_entry() {
+  address entry;
+
+   if (UseSSE >= 2) {
+     entry = __ pc();
+
+     // rsi: the sender's SP
+
+     // Skip safepoint check (compiler intrinsic versions of this method
+     // do not perform safepoint checks either).
+
+     // Load 'bits' into xmm0 (interpreter returns results in xmm0)
+     __ movdbl(xmm0, Address(rsp, wordSize));
+
+     // Return
+     __ pop(rdi); // get return address
+     __ mov(rsp, rsi); // set rsp to the sender's SP
+     __ jmp(rdi);
+   } else {
+     entry = generate_native_entry(false);
+   }
+
+   return entry;
+}
+
+/**
+ * Method entry for static native method:
+ *    java.lang.Double.doubleToRawLongBits(double value)
+ */
+address InterpreterGenerator::generate_Double_doubleToRawLongBits_entry() {
+  address entry;
+
+  if (UseSSE >= 2) {
+    entry = __ pc();
+
+    // rsi: the sender's SP
+
+    // Skip safepoint check (compiler intrinsic versions of this method
+    // do not perform safepoint checks either).
+
+    // Load the parameter (a floating-point value) into rax.
+    __ movl(rdx, Address(rsp, 2*wordSize));
+    __ movl(rax, Address(rsp, wordSize));
+
+    // Return
+    __ pop(rdi); // get return address
+    __ mov(rsp, rsi); // set rsp to the sender's SP
+    __ jmp(rdi);
+  } else {
+    entry = generate_native_entry(false);
+  }
+
+  return entry;
 }
 
 //
@@ -1090,7 +1189,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
               double_handler.addr());
     __ jcc(Assembler::notEqual, L);
     __ bind(push_double);
-    __ push(dtos);
+    __ push_d(); // FP values are returned using the FPU, so push FPU contents (even if UseSSE > 0).
     __ bind(L);
   }
   __ push(ltos);

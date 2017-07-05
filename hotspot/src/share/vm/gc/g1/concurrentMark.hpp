@@ -451,7 +451,7 @@ protected:
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
-  FlexibleWorkGang* _parallel_workers;
+  WorkGang* _parallel_workers;
 
   ForceOverflowSettings _force_overflow_conc;
   ForceOverflowSettings _force_overflow_stw;
@@ -1126,7 +1126,7 @@ public:
   inline void deal_with_reference(oop obj);
 
   // It scans an object and visits its children.
-  void scan_object(oop obj) { process_grey_object<true>(obj); }
+  inline void scan_object(oop obj);
 
   // It pushes an object on the local queue.
   inline void push(oop obj);

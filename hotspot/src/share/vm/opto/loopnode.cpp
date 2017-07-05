@@ -1175,7 +1175,7 @@ void CountedLoopEndNode::dump_spec(outputStream *st) const {
 //=============================================================================
 //------------------------------is_member--------------------------------------
 // Is 'l' a member of 'this'?
-int IdealLoopTree::is_member( const IdealLoopTree *l ) const {
+bool IdealLoopTree::is_member(const IdealLoopTree *l) const {
   while( l->_nest > _nest ) l = l->_parent;
   return l == this;
 }

@@ -69,5 +69,3 @@ if [ $failures -gt 0 ];
   then echo "$failures test(s) failed";
   else echo "All test(s) passed"; fi
 exit $failures
-
-
