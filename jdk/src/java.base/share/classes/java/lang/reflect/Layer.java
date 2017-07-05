@@ -56,20 +56,19 @@ import sun.security.util.SecurityConstants;
 /**
  * A layer of modules in the Java virtual machine.
  *
- * <p> A layer is created from a graph of modules that is the {@link
- * Configuration} and a function that maps each module to a {@link ClassLoader}.
+ * <p> A layer is created from a graph of modules in a {@link Configuration}
+ * and a function that maps each module to a {@link ClassLoader}.
  * Creating a layer informs the Java virtual machine about the classes that
- * may be loaded from modules so that the Java virtual machine knows which
- * module that each class is a member of. Each layer, except the {@link
- * #empty() empty} layer, has at least one {@link #parents() parent}. </p>
+ * may be loaded from the modules so that the Java virtual machine knows which
+ * module that each class is a member of. </p>
  *
  * <p> Creating a layer creates a {@link Module} object for each {@link
  * ResolvedModule} in the configuration. For each resolved module that is
  * {@link ResolvedModule#reads() read}, the {@code Module} {@link
  * Module#canRead reads} the corresponding run-time {@code Module}, which may
- * be in the same layer or a parent layer. The {@code Module} {@link
- * Module#isExported(String) exports} the packages described by its {@link
- * ModuleDescriptor}. </p>
+ * be in the same layer or a {@link #parents() parent} layer. The {@code Module}
+ * {@link Module#isExported(String) exports} and {@link Module#isOpen(String)
+ * opens} the packages described by its {@link ModuleDescriptor}. </p>
  *
  * <p> The {@link #defineModulesWithOneLoader defineModulesWithOneLoader} and
  * {@link #defineModulesWithManyLoaders defineModulesWithManyLoaders} methods
@@ -80,7 +79,7 @@ import sun.security.util.SecurityConstants;
  * a function specified to the method. Each of these methods has an instance
  * and static variant. The instance methods create a layer with the receiver
  * as the parent layer. The static methods are for more advanced cases where
- * there can be more than one parent layer or a {@link Layer.Controller
+ * there can be more than one parent layer or where a {@link Layer.Controller
  * Controller} is needed to control modules in the layer. </p>
  *
  * <p> A Java virtual machine has at least one non-empty layer, the {@link
@@ -93,9 +92,8 @@ import sun.security.util.SecurityConstants;
  * the {@link #parents() parent} when creating additional layers. </p>
  *
  * <p> As when creating a {@code Configuration},
- * {@link ModuleDescriptor#isAutomatic() automatic} modules receive
- * <a href="../module/Configuration.html#automaticmoduleresolution">special
- * treatment</a> when creating a layer. An automatic module is created in the
+ * {@link ModuleDescriptor#isAutomatic() automatic} modules receive special
+ * treatment when creating a layer. An automatic module is created in the
  * Java virtual machine as a {@code Module} that reads every unnamed {@code
  * Module} in the Java virtual machine. </p>
  *
@@ -115,8 +113,7 @@ import sun.security.util.SecurityConstants;
  *
  *     Layer parent = Layer.boot();
  *
- *     Configuration cf = parent.configuration()
- *         .resolveRequires(finder, ModuleFinder.of(), Set.of("myapp"));
+ *     Configuration cf = parent.configuration().resolve(finder, ModuleFinder.of(), Set.of("myapp"));
  *
  *     ClassLoader scl = ClassLoader.getSystemClassLoader();
  *
@@ -126,6 +123,7 @@ import sun.security.util.SecurityConstants;
  * }</pre>
  *
  * @since 9
+ * @spec JPMS
  * @see Module#getLayer()
  */
 
@@ -168,10 +166,15 @@ public final class Layer {
      * module layers return a {@code Controller} that can be used to control
      * modules in the layer.
      *
+     * <p> Unless otherwise specified, passing a {@code null} argument to a
+     * method in this class causes a {@link NullPointerException
+     * NullPointerException} to be thrown. </p>
+     *
      * @apiNote Care should be taken with {@code Controller} objects, they
      * should never be shared with untrusted code.
      *
      * @since 9
+     * @spec JPMS
      */
     public static final class Controller {
         private final Layer layer;
@@ -281,10 +284,8 @@ public final class Layer {
      *         If the parent of the given configuration is not the configuration
      *         for this layer
      * @throws LayerInstantiationException
-     *         If all modules cannot be defined to the same class loader for any
-     *         of the reasons listed above or the layer cannot be created because
-     *         the configuration contains a module named "{@code java.base}" or
-     *         a module with a package name starting with "{@code java.}"
+     *         If the layer cannot be created for any of the reasons specified
+     *         by the static {@code defineModulesWithOneLoader} method
      * @throws SecurityException
      *         If {@code RuntimePermission("createClassLoader")} or
      *         {@code RuntimePermission("getClassLoader")} is denied by
@@ -325,9 +326,8 @@ public final class Layer {
      *         If the parent of the given configuration is not the configuration
      *         for this layer
      * @throws LayerInstantiationException
-     *         If the layer cannot be created because the configuration contains
-     *         a module named "{@code java.base}" or a module with a package
-     *         name starting with "{@code java.}"
+     *         If the layer cannot be created for any of the reasons specified
+     *         by the static {@code defineModulesWithManyLoaders} method
      * @throws SecurityException
      *         If {@code RuntimePermission("createClassLoader")} or
      *         {@code RuntimePermission("getClassLoader")} is denied by
@@ -365,14 +365,8 @@ public final class Layer {
      *         If the parent of the given configuration is not the configuration
      *         for this layer
      * @throws LayerInstantiationException
-     *         If creating the {@code Layer} fails for any of the reasons
-     *         listed above, the layer cannot be created because the
-     *         configuration contains a module named "{@code java.base}",
-     *         a module with a package name starting with "{@code java.}" is
-     *         mapped to a class loader other than the {@link
-     *         ClassLoader#getPlatformClassLoader() platform class loader},
-     *         or the function to map a module name to a class loader returns
-     *         {@code null}
+     *         If the layer cannot be created for any of the reasons specified
+     *         by the static {@code defineModules} method
      * @throws SecurityException
      *         If {@code RuntimePermission("getClassLoader")} is denied by
      *         the security manager
@@ -396,7 +390,6 @@ public final class Layer {
      * exported to one or more of the modules in this layer. The class
      * loader delegates to the class loader of the module, throwing {@code
      * ClassNotFoundException} if not found by that class loader.
-     *
      * When {@code loadClass} is invoked to load classes that do not map to a
      * module then it delegates to the parent class loader. </p>
      *
@@ -413,6 +406,10 @@ public final class Layer {
      *     in a specific package. </p></li>
      *
      * </ul>
+     *
+     * <p> In addition, a layer cannot be created if the configuration contains
+     * a module named "{@code java.base}" or a module with a package name
+     * starting with "{@code java.}". </p>
      *
      * <p> If there is a security manager then the class loader created by
      * this method will load classes and resources with privileges that are
@@ -433,9 +430,7 @@ public final class Layer {
      *         the parent layers, including order
      * @throws LayerInstantiationException
      *         If all modules cannot be defined to the same class loader for any
-     *         of the reasons listed above or the layer cannot be created because
-     *         the configuration contains a module named "{@code java.base}" or
-     *         a module with a package name starting with "{@code java.}"
+     *         of the reasons listed above
      * @throws SecurityException
      *         If {@code RuntimePermission("createClassLoader")} or
      *         {@code RuntimePermission("getClassLoader")} is denied by
@@ -480,7 +475,6 @@ public final class Layer {
      * module in a parent layer. The class loader delegates to the class loader
      * of the module, throwing {@code ClassNotFoundException} if not found by
      * that class loader.
-     *
      * When {@code loadClass} is invoked to load classes that do not map to a
      * module then it delegates to the parent class loader. </p>
      *
@@ -533,15 +527,19 @@ public final class Layer {
 
     /**
      * Creates a new layer by defining the modules in the given {@code
-     * Configuration} to the Java virtual machine.
-     * Each module is mapped, by name, to its class loader by means of the
-     * given function. The class loader delegation implemented by these class
-     * loaders must respect module readability. The class loaders should be
+     * Configuration} to the Java virtual machine. The given function maps each
+     * module in the configuration, by name, to a class loader. Creating the
+     * layer informs the Java virtual machine about the classes that may be
+     * loaded so that the Java virtual machine knows which module that each
+     * class is a member of.
+     *
+     * <p> The class loader delegation implemented by the class loaders must
+     * respect module readability. The class loaders should be
      * {@link ClassLoader#registerAsParallelCapable parallel-capable} so as to
      * avoid deadlocks during class loading. In addition, the entity creating
-     * a new layer with this method should arrange that the class loaders are
+     * a new layer with this method should arrange that the class loaders be
      * ready to load from these modules before there are any attempts to load
-     * classes or resources.
+     * classes or resources. </p>
      *
      * <p> Creating a {@code Layer} can fail for the following reasons: </p>
      *
@@ -558,6 +556,13 @@ public final class Layer {
      *
      * </ul>
      *
+     * <p> In addition, a layer cannot be created if the configuration contains
+     * a module named "{@code java.base}", a configuration contains a module
+     * with a package name starting with "{@code java.}" is mapped to a class
+     * loader other than the {@link ClassLoader#getPlatformClassLoader()
+     * platform class loader}, or the function to map a module name to a class
+     * loader returns {@code null}. </p>
+     *
      * <p> If the function to map a module name to class loader throws an error
      * or runtime exception then it is propagated to the caller of this method.
      * </p>
@@ -565,7 +570,7 @@ public final class Layer {
      * @apiNote It is implementation specific as to whether creating a Layer
      * with this method is an atomic operation or not. Consequentially it is
      * possible for this method to fail with some modules, but not all, defined
-     * to Java virtual machine.
+     * to the Java virtual machine.
      *
      * @param  cf
      *         The configuration for the layer
@@ -580,14 +585,7 @@ public final class Layer {
      *         If the parent configurations do not match the configuration of
      *         the parent layers, including order
      * @throws LayerInstantiationException
-     *         If creating the {@code Layer} fails for any of the reasons
-     *         listed above, the layer cannot be created because the
-     *         configuration contains a module named "{@code java.base}",
-     *         a module with a package name starting with "{@code java.}" is
-     *         mapped to a class loader other than the {@link
-     *         ClassLoader#getPlatformClassLoader() platform class loader},
-     *         or the function to map a module name to a class loader returns
-     *         {@code null}
+     *         If creating the layer fails for any of the reasons listed above
      * @throws SecurityException
      *         If {@code RuntimePermission("getClassLoader")} is denied by
      *         the security manager
@@ -763,7 +761,7 @@ public final class Layer {
 
     /**
      * Returns the module with the given name in this layer, or if not in this
-     * layer, the {@linkplain #parents parents} layers. Finding a module in
+     * layer, the {@linkplain #parents parent} layers. Finding a module in
      * parent layers is equivalent to invoking {@code findModule} on each
      * parent, in search order, until the module is found or all parents have
      * been searched. In a <em>tree of layers</em>  then this is equivalent to
