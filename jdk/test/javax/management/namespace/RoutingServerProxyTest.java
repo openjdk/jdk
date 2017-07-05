@@ -25,6 +25,7 @@
  * @test RoutingServerProxyTest.java 1.6
  * @summary General RoutingServerProxyTest test.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean RoutingServerProxyTest Wombat WombatMBean
  * @compile -XDignore.symbol.file=true RoutingServerProxyTest.java
  * @run build RoutingServerProxyTest Wombat WombatMBean

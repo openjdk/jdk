@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.security.cert.CertPathValidatorResult;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.PKIXCertPathValidatorResult;
 import java.security.cert.PKIXParameters;
+import java.security.cert.PKIXReason;
 import java.security.cert.PolicyNode;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -47,7 +48,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
-import java.util.HashSet;
 import javax.security.auth.x500.X500Principal;
 import sun.security.util.Debug;
 
@@ -67,6 +67,7 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
     private List<PKIXCertPathChecker> userCheckers;
     private String sigProvider;
     private BasicChecker basicChecker;
+    private String ocspProperty;
 
     /**
      * Default constructor.
@@ -126,7 +127,7 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
 
         // Must copy elements of certList into a new modifiable List before
         // calling Collections.reverse().
-        List<X509Certificate> certList = new ArrayList<X509Certificate>
+        ArrayList<X509Certificate> certList = new ArrayList<X509Certificate>
             ((List<X509Certificate>)cp.getCertificates());
         if (debug != null) {
             if (certList.isEmpty()) {
@@ -201,7 +202,8 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
         }
         // (b) otherwise, generate new exception
         throw new CertPathValidatorException
-                        ("Path does not chain with any of the trust anchors");
+            ("Path does not chain with any of the trust anchors",
+             null, null, -1, PKIXReason.NO_TRUST_ANCHOR);
     }
 
     /**
@@ -210,7 +212,6 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
      */
     private boolean isWorthTrying(X509Certificate trustedCert,
                                   X509Certificate firstCert)
-        throws CertPathValidatorException
     {
         if (debug != null) {
             debug.println("PKIXCertPathValidator.isWorthTrying() checking "
@@ -240,7 +241,6 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
      * Internal method to setup the internal state
      */
     private void populateVariables(PKIXParameters pkixParam)
-        throws CertPathValidatorException
     {
         // default value for testDate is current time
         testDate = pkixParam.getDate();
@@ -250,6 +250,17 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
 
         userCheckers = pkixParam.getCertPathCheckers();
         sigProvider = pkixParam.getSigProvider();
+
+        if (pkixParam.isRevocationEnabled()) {
+            // Examine OCSP security property
+            ocspProperty = AccessController.doPrivileged(
+                new PrivilegedAction<String>() {
+                    public String run() {
+                        return
+                            Security.getProperty(OCSPChecker.OCSP_ENABLE_PROP);
+                    }
+                });
+        }
     }
 
     /**
@@ -259,12 +270,9 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
      */
     private PolicyNode doValidate(
             TrustAnchor anchor, CertPath cpOriginal,
-            List<X509Certificate> certList, PKIXParameters pkixParam,
+            ArrayList<X509Certificate> certList, PKIXParameters pkixParam,
             PolicyNodeImpl rootNode) throws CertPathValidatorException
     {
-        List<PKIXCertPathChecker> certPathCheckers =
-            new ArrayList<PKIXCertPathChecker>();
-
         int certPathLen = certList.size();
 
         basicChecker = new BasicChecker(anchor, testDate, sigProvider, false);
@@ -281,6 +289,8 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
                               pkixParam.getPolicyQualifiersRejected(),
                               rootNode);
 
+        ArrayList<PKIXCertPathChecker> certPathCheckers =
+            new ArrayList<PKIXCertPathChecker>();
         // add standard checkers that we will be using
         certPathCheckers.add(keyChecker);
         certPathCheckers.add(constraintsChecker);
@@ -289,15 +299,6 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
 
         // only add a revocationChecker if revocation is enabled
         if (pkixParam.isRevocationEnabled()) {
-
-            // Examine OCSP security property
-            String ocspProperty = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    public String run() {
-                        return
-                            Security.getProperty(OCSPChecker.OCSP_ENABLE_PROP);
-                    }
-                });
 
             // Use OCSP if it has been enabled
             if ("true".equalsIgnoreCase(ocspProperty)) {
