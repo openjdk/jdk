@@ -80,7 +80,7 @@ import java.util.Calendar;
  * For example, the word used for a month when used alone in a date picker is different
  * to the word used for month in association with a day and year in a date.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This is immutable and thread-safe enum.
  */
 public enum TextStyle {

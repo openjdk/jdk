@@ -361,16 +361,10 @@ public final class GlyphList {
                 graybits = new byte[len];
             }
         }
-        long pixelDataAddress;
-        if (StrikeCache.nativeAddressSize == 4) {
-            pixelDataAddress = 0xffffffff &
-                StrikeCache.unsafe.getInt(images[glyphindex] +
+        long pixelDataAddress =
+            StrikeCache.unsafe.getAddress(images[glyphindex] +
                                           StrikeCache.pixelDataOffset);
-        } else {
-            pixelDataAddress =
-            StrikeCache.unsafe.getLong(images[glyphindex] +
-                                       StrikeCache.pixelDataOffset);
-        }
+
         if (pixelDataAddress == 0L) {
             return graybits;
         }

@@ -49,7 +49,7 @@ extern "C" {
   }
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 #define VM_SYMBOL_ENUM_NAME_BODY(name, string) #name "\0"
 static const char* vm_symbol_enum_names =
   VM_SYMBOLS_DO(VM_SYMBOL_ENUM_NAME_BODY, VM_ALIAS_IGNORE)
@@ -64,7 +64,7 @@ static const char* vm_symbol_enum_name(vmSymbols::SID sid) {
   }
   return string;
 }
-#endif //PRODUCT
+#endif //ASSERT
 
 // Put all the VM symbol strings in one place.
 // Makes for a more compact libjvm.

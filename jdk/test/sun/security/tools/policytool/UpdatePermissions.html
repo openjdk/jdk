@@ -10,6 +10,8 @@ reading these instructions.<br><br>
 First, policytool will be invoked.<br><br>
 
 Then, follow these steps:<br>
+0) If testing on Windows, create a temporary directory.
+(Example: C:\foo\tmp)<br><br>
 1) Click on the "Add Policy Entry" button in the
 main policytool window.<br><br>
 
@@ -29,13 +31,18 @@ select "listenToAllAWTEvents".<br><br>
 select "Save As".<br><br>
 
 8) In the SaveAs window, enter "/tmp/ptool.test" as the file name
-and click "OK".<br><br>
+and click "OK".<br>
+If testing on Windows, use the temporary directory created in Step 0.
+(Example: Save as "C:\foo\tmp\ptool.test")<br><br>
 
-9) cat /tmp/ptool.test<br><br>
+9) cat /tmp/ptool.test<br>
+If testing on Windows, check the contents of the file created in the previous
+step.<br><br>
+
 
 10) check to make sure that the new entry is in the policy file.<br><br>
 
-11) repeat steps 1-9 for:<br>
+11) repeat steps 1-10 for:<br>
 	AWTPermission:		readDisplayPixels<br>
 	NetPermission:		specifyStreamHandler<br>
 	RuntimePermission:	setContextClassLoader,
@@ -46,7 +53,8 @@ and click "OK".<br><br>
 
 In the confirmation dialog pop-up, click "OK".<br><br>
 
-Exit policytool.<br><br>
+Exit policytool. If testing on Windows, delete the temporary directory and its
+contents created during this test.<br><br>
 
 Press "Pass" if ... press "Fail" otherwise.<br><br>
 

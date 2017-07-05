@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ class ErrorContext VALUE_OBJ_CLASS_SPEC {
     _expected.reset_frame();
   }
 
-  void details(outputStream* ss, Method* method) const;
+  void details(outputStream* ss, const Method* method) const;
 
 #ifdef ASSERT
   void print_on(outputStream* str) const {
@@ -237,12 +237,12 @@ class ErrorContext VALUE_OBJ_CLASS_SPEC {
 #endif
 
  private:
-  void location_details(outputStream* ss, Method* method) const;
+  void location_details(outputStream* ss, const Method* method) const;
   void reason_details(outputStream* ss) const;
   void frame_details(outputStream* ss) const;
-  void bytecode_details(outputStream* ss, Method* method) const;
-  void handler_details(outputStream* ss, Method* method) const;
-  void stackmap_details(outputStream* ss, Method* method) const;
+  void bytecode_details(outputStream* ss, const Method* method) const;
+  void handler_details(outputStream* ss, const Method* method) const;
+  void stackmap_details(outputStream* ss, const Method* method) const;
 };
 
 // A new instance of this class is created for each class being verified

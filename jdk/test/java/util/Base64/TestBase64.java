@@ -23,6 +23,7 @@
 
 /**
  * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
+ *       8014217
  * @summary tests java.util.Base64
  */
 
@@ -109,6 +110,14 @@ public class TestBase64 {
 
         // illegal ending unit
         checkIAE(new Runnable() { public void run() { Base64.getMimeDecoder().decode("$=#"); }});
+
+        checkIOE(new Testable() { public void test() throws IOException {
+                                     byte[] bytes = "AA=".getBytes("ASCII");
+                                     try (InputStream stream =
+                                              Base64.getDecoder().wrap(new ByteArrayInputStream(bytes))) {
+                                         while (stream.read() != -1);
+                                     }
+        }});
 
         // test return value from decode(ByteBuffer, ByteBuffer)
         testDecBufRet();

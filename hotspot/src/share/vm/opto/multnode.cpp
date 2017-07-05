@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/callnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/multnode.hpp"
 #include "opto/opcodes.hpp"
@@ -73,13 +74,26 @@ bool ProjNode::is_CFG() const {
   return (_con == TypeFunc::Control && def->is_CFG());
 }
 
+const Type* ProjNode::proj_type(const Type* t) const {
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  if (t == Type::BOTTOM) {
+    return Type::BOTTOM;
+  }
+  t = t->is_tuple()->field_at(_con);
+  Node* n = in(0);
+  if ((_con == TypeFunc::Parms) &&
+      n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method()) {
+    // The result of autoboxing is always non-null on normal path.
+    t = t->join(TypePtr::NOTNULL);
+  }
+  return t;
+}
+
 const Type *ProjNode::bottom_type() const {
-  if (in(0) == NULL)  return Type::TOP;
-  const Type *tb = in(0)->bottom_type();
-  if( tb == Type::TOP ) return Type::TOP;
-  if( tb == Type::BOTTOM ) return Type::BOTTOM;
-  const TypeTuple *t = tb->is_tuple();
-  return t->field_at(_con);
+  if (in(0) == NULL) return Type::TOP;
+  return proj_type(in(0)->bottom_type());
 }
 
 const TypePtr *ProjNode::adr_type() const {
@@ -115,11 +129,8 @@ void ProjNode::check_con() const {
 
 //------------------------------Value------------------------------------------
 const Type *ProjNode::Value( PhaseTransform *phase ) const {
-  if( !in(0) ) return Type::TOP;
-  const Type *t = phase->type(in(0));
-  if( t == Type::TOP ) return t;
-  if( t == Type::BOTTOM ) return t;
-  return t->is_tuple()->field_at(_con);
+  if (in(0) == NULL) return Type::TOP;
+  return proj_type(phase->type(in(0)));
 }
 
 //------------------------------out_RegMask------------------------------------

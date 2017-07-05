@@ -283,7 +283,7 @@ class WindowsPath extends AbstractPath {
 
     // Add long path prefix to path if required
     static String addPrefixIfNeeded(String path) {
-        if (path.length() > 248) {
+        if (path.length() > MAX_PATH) {
             if (path.startsWith("\\\\")) {
                 path = "\\\\?\\UNC" + path.substring(1, path.length());
             } else {

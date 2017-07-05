@@ -47,17 +47,17 @@ public class ISO2022_JP_2 extends ISO2022_JP
     }
 
     public CharsetDecoder newDecoder() {
-        return new Decoder(this, Decoder.DEC0208, DEC0212);
+        return new Decoder(this, Decoder.DEC0208, CoderHolder.DEC0212);
     }
 
     public CharsetEncoder newEncoder() {
-        return new Encoder(this, Encoder.ENC0208, ENC0212, true);
+        return new Encoder(this, Encoder.ENC0208, CoderHolder.ENC0212, true);
     }
 
-    private final static DoubleByte.Decoder DEC0212 =
-        (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
-
-    private final static DoubleByte.Encoder ENC0212 =
-        (DoubleByte.Encoder)new JIS_X_0212().newEncoder();
-
+    private static class CoderHolder {
+        final static DoubleByte.Decoder DEC0212 =
+            (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
+        final static DoubleByte.Encoder ENC0212 =
+            (DoubleByte.Encoder)new JIS_X_0212().newEncoder();
+    }
 }

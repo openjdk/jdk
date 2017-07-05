@@ -93,7 +93,7 @@ import java.util.Locale;
  * <p>
  * Instances of {@code Era} may be compared using the {@code ==} operator.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface must be implemented with care to ensure other classes operate correctly.
  * All implementations must be singletons - final, immutable and thread-safe.
  * It is recommended to use an enum whenever possible.

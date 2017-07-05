@@ -81,7 +81,7 @@ import java.util.Map;
  * The fields are supported, and can be queried and set if {@code EPOCH_DAY} is available.
  * The fields work with all chronologies.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This is an immutable and thread-safe class.
  *
  * @since 1.8

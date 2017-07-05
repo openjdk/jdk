@@ -52,14 +52,10 @@ NATIVE=false
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     PATHSEP=":"
     FILESEP="/"
     NATIVE=true
-    ;;
-  Darwin )
-    PATHSEP=":"
-    FILESEP="/"
     ;;
   CYGWIN* )
     PATHSEP=";"

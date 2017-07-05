@@ -90,7 +90,7 @@ import java.util.List;
  * used in application code. Instead, applications should create and pass
  * around instances of concrete types, such as {@code Period} and {@code Duration}.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface places no restrictions on the mutability of implementations,
  * however immutability is strongly recommended.
  *
@@ -104,7 +104,7 @@ public interface TemporalAmount {
      * value of the {@code TemporalAmount}.  A value must be returned
      * for each unit listed in {@code getUnits}.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations may declare support for units not listed by {@link #getUnits()}.
      * Typically, the implementation would define additional units
      * as conversions for the convenience of developers.
@@ -124,7 +124,7 @@ public interface TemporalAmount {
      * The units are ordered from longest duration to the shortest duration
      * of the unit.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * The list of units completely and uniquely represents the
      * state of the object without omissions, overlaps or duplication.
      * The units are in order from longest duration to shortest.
@@ -150,7 +150,7 @@ public interface TemporalAmount {
      * It is recommended to use the second approach, {@code plus(TemporalAmount)},
      * as it is a lot clearer to read in code.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * The implementation must take the input object and add to it.
      * The implementation defines the logic of the addition and is responsible for
      * documenting that logic. It may use any method on {@code Temporal} to
@@ -192,7 +192,7 @@ public interface TemporalAmount {
      * It is recommended to use the second approach, {@code minus(TemporalAmount)},
      * as it is a lot clearer to read in code.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * The implementation must take the input object and subtract from it.
      * The implementation defines the logic of the subtraction and is responsible for
      * documenting that logic. It may use any method on {@code Temporal} to

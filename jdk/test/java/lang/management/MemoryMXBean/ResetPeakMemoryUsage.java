@@ -28,7 +28,10 @@
  * @author  Mandy Chung
  *
  * @build ResetPeakMemoryUsage MemoryUtil
- * @run main/othervm ResetPeakMemoryUsage
+ * @run main/othervm -XX:+UseSerialGC -Xmn8m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+UseConcMarkSweepGC -Xmn8m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+UseParallelGC -Xmn8m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+UseG1GC -Xmn8m -XX:G1HeapRegionSize=1m ResetPeakMemoryUsage
  */
 
 import java.lang.management.*;
@@ -36,52 +39,62 @@ import java.util.*;
 
 public class ResetPeakMemoryUsage {
     private static MemoryMXBean mbean = ManagementFactory.getMemoryMXBean();
-    private static List pools = ManagementFactory.getMemoryPoolMXBeans();
-    private static MemoryPoolMXBean mpool = null;
+    // make public so that it can't be optimized away easily
+    public static Object[] obj;
 
     public static void main(String[] argv) {
+        List pools = ManagementFactory.getMemoryPoolMXBeans();
         ListIterator iter = pools.listIterator();
+        boolean found = false;
         while (iter.hasNext()) {
             MemoryPoolMXBean p = (MemoryPoolMXBean) iter.next();
+            // only check heap pools that support usage threshold
+            // this is typically only the old generation space
+            // since the other spaces are expected to get filled up
             if (p.getType() == MemoryType.HEAP &&
-                    p.isUsageThresholdSupported()) {
-                mpool = p;
-                System.out.println("Selected memory pool: ");
-                MemoryUtil.printMemoryPool(mpool);
-                break;
+                p.isUsageThresholdSupported())
+            {
+                found = true;
+                testPool(p);
             }
         }
-        if (mpool == null) {
-            throw new RuntimeException("No heap pool found with threshold != -1");
+        if (!found) {
+            throw new RuntimeException("No heap pool found");
         }
+    }
+
+    private static void testPool(MemoryPoolMXBean mpool) {
+        System.out.println("Selected memory pool: ");
+        MemoryUtil.printMemoryPool(mpool);
 
         MemoryUsage usage0 = mpool.getUsage();
         MemoryUsage peak0 = mpool.getPeakUsage();
-        final long largeArraySize = (usage0.getMax() - usage0.getUsed()) / 10;
 
-        System.out.println("Before big object is allocated: ");
-        printMemoryUsage();
+        // use a size that is larger than the young generation and G1 regions
+        // to force the array into the old gen
+        int largeArraySize = 9 * 1000 * 1000;
 
-        // Allocate a big array - need to allocate from the old gen
-        Object[][][] obj = new Object[1][1][(int) largeArraySize];
+        System.out.println("Before big object array (of size "+largeArraySize+") is allocated: ");
+        printMemoryUsage(usage0, peak0);
 
-        System.out.println("After the object is allocated: ");
-        printMemoryUsage();
+        obj = new Object[largeArraySize];
 
         MemoryUsage usage1 = mpool.getUsage();
         MemoryUsage peak1 = mpool.getPeakUsage();
+        System.out.println("After the object is allocated: ");
+        printMemoryUsage(usage1, peak1);
 
         if (usage1.getUsed() <= usage0.getUsed()) {
             throw new RuntimeException(
                 formatSize("Before allocation: used", usage0.getUsed()) +
-                " expected to be > " +
+                " expected to be < " +
                 formatSize("After allocation: used", usage1.getUsed()));
         }
 
         if (peak1.getUsed() <= peak0.getUsed()) {
             throw new RuntimeException(
                 formatSize("Before allocation: peak", peak0.getUsed()) +
-                " expected to be > " +
+                " expected to be < " +
                 formatSize("After allocation: peak", peak1.getUsed()));
         }
 
@@ -91,11 +104,10 @@ public class ResetPeakMemoryUsage {
         obj = null;
         mbean.gc();
 
-        System.out.println("After GC: ");
-        printMemoryUsage();
-
         MemoryUsage usage2 = mpool.getUsage();
         MemoryUsage peak2 = mpool.getPeakUsage();
+        System.out.println("After GC: ");
+        printMemoryUsage(usage2, peak2);
 
         if (usage2.getUsed() >= usage1.getUsed()) {
             throw new RuntimeException(
@@ -104,20 +116,12 @@ public class ResetPeakMemoryUsage {
                 formatSize("After GC: used", usage2.getUsed()));
         }
 
-        if (peak2.getUsed() != peak1.getUsed()) {
-            throw new RuntimeException(
-                formatSize("Before GC: peak", peak1.getUsed()) + " " +
-                " expected to be equal to " +
-                formatSize("After GC: peak", peak2.getUsed()));
-        }
-
         mpool.resetPeakUsage();
-
-        System.out.println("After resetPeakUsage: ");
-        printMemoryUsage();
 
         MemoryUsage usage3 = mpool.getUsage();
         MemoryUsage peak3 = mpool.getPeakUsage();
+        System.out.println("After resetPeakUsage: ");
+        printMemoryUsage(usage3, peak3);
 
         if (peak3.getUsed() != usage3.getUsed()) {
             throw new RuntimeException(
@@ -137,9 +141,7 @@ public class ResetPeakMemoryUsage {
     }
 
     private static String INDENT = "    ";
-    private static void printMemoryUsage() {
-        MemoryUsage current = mpool.getUsage();
-        MemoryUsage peak = mpool.getPeakUsage();
+    private static void printMemoryUsage(MemoryUsage current, MemoryUsage peak) {
         System.out.println("Current Usage: ");
         MemoryUtil.printMemoryUsage(current);
         System.out.println("Peak Usage: ");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,21 @@ public class DragEventSource
     }
 
     private static void init() {
+
+        boolean isSupported = SystemTray.isSupported();
+        System.out.println("is SysTray Supported: " + isSupported);
+
+        if (!isSupported) {
+            String[] instructions =
+            {
+              "The test cannot be run because SystemTray is not supported.",
+              "Simply press PASS button."
+            };
+            Sysout.createDialog( );
+            Sysout.printInstructions( instructions );
+            return;
+        }
+
         String[] instructions =
         {
             "Use see a Frame with a button in it.",
@@ -79,8 +94,8 @@ public class DragEventSource
 
         frame.setLayout(new FlowLayout());
         tray = SystemTray.getSystemTray();
-        boolean isSupported = tray.isSupported();
-        System.out.println("is SysTray Supported: " + isSupported);
+
+
         TrayIcon icons[] = tray.getTrayIcons();
         System.out.println(icons.length);
 
