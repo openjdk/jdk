@@ -244,7 +244,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
                     taskStarted.countDown();
                     assertEquals(1, p.getPoolSize());
                     assertEquals(1, p.getActiveThreadCount());
-                    done.await();
+                    await(done);
                 }};
             Future<?> future = p.submit(task);
             await(taskStarted);

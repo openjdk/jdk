@@ -529,6 +529,30 @@ public class ModuleFinderTest {
 
 
     /**
+     * Test ModuleFinder.of with a directory containing hidden files
+     */
+    public void testOfWithHiddenFiles() throws Exception {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createExplodedModule(dir.resolve("m"), "m",
+                "com/.ignore",
+                "com/foo/.ignore",
+                "com/foo/foo.properties");
+
+        ModuleFinder finder = ModuleFinder.of(dir);
+        ModuleReference mref = finder.find("m").orElse(null);
+        assertNotNull(mref);
+
+        Set<String> expectedPackages;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            expectedPackages = Set.of("com", "com.foo");
+        } else {
+            expectedPackages = Set.of("com.foo");
+        }
+        assertEquals(mref.descriptor().packages(), expectedPackages);
+    }
+
+
+    /**
      * Test ModuleFinder.of with a truncated module-info.class
      */
     public void testOfWithTruncatedModuleInfo() throws Exception {

@@ -37,7 +37,6 @@
 
 import static jdk.test.lib.Asserts.*;
 
-import java.lang.reflect.Layer;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -59,7 +58,7 @@ import myloaders.MyDiffClassLoader;
 //
 public class UmodDiffCL_PkgNotExp {
 
-    // Create a Layer over the boot layer.
+    // Create a layer over the boot layer.
     // Define modules within this layer to test access between
     // publically defined classes within packages of those modules.
     public void createLayerOnBoot() throws Throwable {
@@ -88,7 +87,7 @@ public class UmodDiffCL_PkgNotExp {
         ModuleFinder finder = ModuleLibrary.of(descriptor_m1x, descriptor_m2x);
 
         // Resolves "m1x"
-        Configuration cf = Layer.boot()
+        Configuration cf = ModuleLayer.boot()
                 .configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
@@ -97,8 +96,8 @@ public class UmodDiffCL_PkgNotExp {
         map.put("m1x", MyDiffClassLoader.loader1);
         map.put("m2x", MyDiffClassLoader.loader2);
 
-        // Create Layer that contains m1x & m2x
-        Layer layer = Layer.boot().defineModules(cf, map::get);
+        // Create layer that contains m1x & m2x
+        ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
         assertTrue(layer.findLoader("m1x") == MyDiffClassLoader.loader1);
         assertTrue(layer.findLoader("m2x") == MyDiffClassLoader.loader2);
