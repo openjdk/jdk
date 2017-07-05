@@ -29,7 +29,7 @@ import jdk.test.lib.*;
  * @bug 8132525
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main CheckCICompilerCount
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -786,10 +786,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         return keyName;
     }
 
-    private String getTarget(String qName, String path, String calType, String context, String width) {
-        // qName
+    private String getTarget(String path, String calType, String context, String width) {
+        // Target qName
         int lastSlash = path.lastIndexOf('/');
-        qName = path.substring(lastSlash+1);
+        String qName = path.substring(lastSlash+1);
         int bracket = qName.indexOf('[');
         if (bracket != -1) {
             qName = qName.substring(0, bracket);
@@ -885,7 +885,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     String[] tmp = keyName.split(",", 3);
                     String calType = currentCalendarType.lname();
                     String src = calType+"."+tmp[0];
-                    String target = getTarget(containerqName,
+                    String target = getTarget(
                                 entry.getKey(),
                                 calType,
                                 tmp[1].length()>0 ? tmp[1] : currentContext,

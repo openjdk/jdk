@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.awt.windows;
 
+import java.awt.peer.TaskbarPeer;
 import java.awt.*;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
@@ -1131,6 +1132,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public native boolean syncNativeQueue(final long timeout);
+
     @Override
     public boolean isDesktopSupported() {
         return true;
@@ -1139,6 +1141,16 @@ public final class WToolkit extends SunToolkit implements Runnable {
     @Override
     public DesktopPeer createDesktopPeer(Desktop target) {
         return new WDesktopPeer();
+    }
+
+    @Override
+    public boolean isTaskbarSupported() {
+        return WTaskbarPeer.isTaskbarSupported();
+    }
+
+    @Override
+    public TaskbarPeer createTaskbarPeer(Taskbar target) {
+        return new WTaskbarPeer();
     }
 
     private static native void setExtraMouseButtonsEnabledNative(boolean enable);

@@ -165,6 +165,7 @@
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
+  nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   nonstatic_field(Klass,                       _prototype_header,                             markOop)                               \
   nonstatic_field(Klass,                       _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  oop)                                   \
@@ -551,8 +552,9 @@
   declare_function(JVMCIRuntime::exception_handler_for_pc) \
   declare_function(JVMCIRuntime::monitorenter) \
   declare_function(JVMCIRuntime::monitorexit) \
-  declare_function(JVMCIRuntime::create_null_exception) \
-  declare_function(JVMCIRuntime::create_out_of_bounds_exception) \
+  declare_function(JVMCIRuntime::throw_and_post_jvmti_exception) \
+  declare_function(JVMCIRuntime::throw_klass_external_name_exception) \
+  declare_function(JVMCIRuntime::throw_class_cast_exception) \
   declare_function(JVMCIRuntime::log_primitive) \
   declare_function(JVMCIRuntime::log_object) \
   declare_function(JVMCIRuntime::log_printf) \

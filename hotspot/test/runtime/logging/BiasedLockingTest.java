@@ -26,7 +26,7 @@
  * @bug 8149383
  * @summary -Xlog:biasedlocking should have logging from statements in the source code
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver BiasedLockingTest

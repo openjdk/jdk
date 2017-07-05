@@ -60,12 +60,16 @@ public class BigFont extends Applet {
 
         System.out.println("Applet " + id + " "+
                            Thread.currentThread().getThreadGroup());
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager());
+        }
         // Larger than size for a single font.
         int fontSize = 64 * 1000 * 1000;
         SizedInputStream sis = new SizedInputStream(fontSize);
         try {
              Font font = Font.createFont(Font.TRUETYPE_FONT, sis);
         } catch (Throwable t) {
+            t.printStackTrace();
             if (t instanceof FontFormatException ||
                 fontSize <= sis.getCurrentSize())
             {

@@ -43,7 +43,7 @@ volatile bool AttachListener::_initialized;
 
 // Implementation of "properties" command.
 //
-// Invokes sun.misc.VMSupport.serializePropertiesToByteArray to serialize
+// Invokes VMSupport.serializePropertiesToByteArray to serialize
 // the system properties into a byte array.
 
 static Klass* load_and_initialize_klass(Symbol* sh, TRAPS) {
@@ -59,8 +59,8 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
   Thread* THREAD = Thread::current();
   HandleMark hm;
 
-  // load sun.misc.VMSupport
-  Symbol* klass = vmSymbols::sun_misc_VMSupport();
+  // load VMSupport
+  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
   Klass* k = load_and_initialize_klass(klass, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);

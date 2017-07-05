@@ -225,31 +225,18 @@ AwtTextArea::HandleEvent(MSG *msg, BOOL synthetic)
 
         /*
          * We consume WM_MOUSEMOVE while the left mouse button is pressed,
-         * so we have to simulate autoscrolling when mouse is moved outside
-         * of the client area.
+         * so we have to simulate selection autoscrolling when mouse is moved
+         * outside of the client area.
          */
         POINT p;
         RECT r;
-        BOOL bScrollLeft = FALSE;
-        BOOL bScrollRight = FALSE;
-        BOOL bScrollUp = FALSE;
         BOOL bScrollDown = FALSE;
 
         p.x = msg->pt.x;
         p.y = msg->pt.y;
         VERIFY(::GetClientRect(GetHWnd(), &r));
 
-        if (p.x < 0) {
-            bScrollLeft = TRUE;
-            p.x = 0;
-        } else if (p.x > r.right) {
-            bScrollRight = TRUE;
-            p.x = r.right - 1;
-        }
-        if (p.y < 0) {
-            bScrollUp = TRUE;
-            p.y = 0;
-        } else if (p.y > r.bottom) {
+        if (p.y > r.bottom) {
             bScrollDown = TRUE;
             p.y = r.bottom - 1;
         }
@@ -269,32 +256,7 @@ AwtTextArea::HandleEvent(MSG *msg, BOOL synthetic)
 
             EditSetSel(cr);
         }
-
-        if (bScrollLeft == TRUE || bScrollRight == TRUE) {
-            SCROLLINFO si;
-            memset(&si, 0, sizeof(si));
-            si.cbSize = sizeof(si);
-            si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
-
-            VERIFY(::GetScrollInfo(GetHWnd(), SB_HORZ, &si));
-            if (bScrollLeft == TRUE) {
-                si.nPos = si.nPos - si.nPage / 2;
-                si.nPos = max(si.nMin, si.nPos);
-            } else if (bScrollRight == TRUE) {
-                si.nPos = si.nPos + si.nPage / 2;
-                si.nPos = min(si.nPos, si.nMax);
-            }
-            /*
-             * Okay to use 16-bit position since RichEdit control adjusts
-             * its scrollbars so that their range is always 16-bit.
-             */
-            DASSERT(abs(si.nPos) < 0x8000);
-            SendMessage(WM_HSCROLL,
-                        MAKEWPARAM(SB_THUMBPOSITION, LOWORD(si.nPos)));
-        }
-        if (bScrollUp == TRUE) {
-            SendMessage(EM_LINESCROLL, 0, -1);
-        } else if (bScrollDown == TRUE) {
+        if (bScrollDown == TRUE) {
             SendMessage(EM_LINESCROLL, 0, 1);
         }
         delete msg;

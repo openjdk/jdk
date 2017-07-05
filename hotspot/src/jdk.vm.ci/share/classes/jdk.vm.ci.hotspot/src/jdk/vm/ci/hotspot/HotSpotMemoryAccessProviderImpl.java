@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,13 +82,13 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
         Object base = asObject(baseConstant);
         if (base != null) {
             switch (bits) {
-                case 8:
+                case Byte.SIZE:
                     return UNSAFE.getByte(base, displacement);
-                case 16:
+                case Short.SIZE:
                     return UNSAFE.getShort(base, displacement);
-                case 32:
+                case Integer.SIZE:
                     return UNSAFE.getInt(base, displacement);
-                case 64:
+                case Long.SIZE:
                     return UNSAFE.getLong(base, displacement);
                 default:
                     throw new JVMCIError("%d", bits);
@@ -96,13 +96,13 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
         } else {
             long pointer = asRawPointer(baseConstant);
             switch (bits) {
-                case 8:
+                case Byte.SIZE:
                     return UNSAFE.getByte(pointer + displacement);
-                case 16:
+                case Short.SIZE:
                     return UNSAFE.getShort(pointer + displacement);
-                case 32:
+                case Integer.SIZE:
                     return UNSAFE.getInt(pointer + displacement);
-                case 64:
+                case Long.SIZE:
                     return UNSAFE.getLong(pointer + displacement);
                 default:
                     throw new JVMCIError("%d", bits);
@@ -151,7 +151,8 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
             Object o = readRawObject(baseConstant, displacement, runtime.getConfig().useCompressedOops);
             return HotSpotObjectConstantImpl.forObject(o);
         } else {
-            return readPrimitiveConstant(kind, baseConstant, displacement, kind.getByteCount() * 8);
+            int bits = kind.getByteCount() * Byte.SIZE;
+            return readPrimitiveConstant(kind, baseConstant, displacement, bits);
         }
     }
 
@@ -228,5 +229,17 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
         Object baseObject = ((HotSpotObjectConstantImpl) base).object();
         HotSpotResolvedJavaMethodImpl method = runtime.getCompilerToVM().getResolvedJavaMethod(baseObject, displacement);
         return HotSpotMetaspaceConstantImpl.forMetaspaceObject(method, false);
+    }
+
+    @Override
+    public Constant readSymbolConstant(Constant base, long displacement) {
+        int bits = runtime.getConfig().symbolPointerSize * Byte.SIZE;
+        long pointer = readRawValue(base, displacement, bits);
+        if (pointer == 0) {
+            return JavaConstant.NULL_POINTER;
+        } else {
+            String symbol = runtime.getCompilerToVM().getSymbol(pointer);
+            return new HotSpotSymbol(symbol, pointer).asConstant();
+        }
     }
 }

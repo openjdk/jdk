@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ if (typeof javafx.application.Application != "function") {
 }
 
 // Extend the javafx.application.Application class overriding init, start and stop.
-com.sun.javafx.application.LauncherImpl.launchApplication((Java.extend(javafx.application.Application, {
+javafx.application.Application.launch((Java.extend(javafx.application.Application, {
     // Overridden javafx.application.Application.init();
     init: function() {
         // Java FX packages and classes must be defined here because

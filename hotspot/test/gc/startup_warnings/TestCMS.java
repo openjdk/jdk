@@ -27,7 +27,7 @@
 * @bug 8006398
 * @summary Test that CMS does not print a warning message
 * @library /testlibrary
-* @modules java.base/sun.misc
+* @modules java.base/jdk.internal.misc
 *          java.management
 */
 

@@ -448,7 +448,10 @@ C2V_END
 
 C2V_VMENTRY(jboolean, canInlineMethod,(JNIEnv *, jobject, jobject jvmci_method))
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
-  return !method->is_not_compilable() && !CompilerOracle::should_not_inline(method) && !method->dont_inline();
+  // In hosted mode ignore the not_compilable flags since they are never set by
+  // the JVMCI compiler.
+  bool is_compilable = UseJVMCICompiler ? !method->is_not_compilable(CompLevel_full_optimization) : true;
+  return is_compilable && !CompilerOracle::should_not_inline(method) && !method->dont_inline();
 C2V_END
 
 C2V_VMENTRY(jboolean, shouldInlineMethod,(JNIEnv *, jobject, jobject jvmci_method))
@@ -1048,6 +1051,11 @@ C2V_VMENTRY(jobject, getSymbol, (JNIEnv*, jobject, jlong symbol))
   return JNIHandles::make_local(THREAD, sym());
 C2V_END
 
+C2V_VMENTRY(jlong, lookupSymbol, (JNIEnv*, jobject, jobject string))
+  Symbol* symbol = java_lang_String::as_symbol_or_null(JNIHandles::resolve(string));
+  return (jlong) symbol;
+C2V_END
+
 bool matches(jobjectArray methods, Method* method) {
   objArrayOop methods_oop = (objArrayOop) JNIHandles::resolve(methods);
 
@@ -1475,6 +1483,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"isMature",                                     CC"("METASPACE_METHOD_DATA")Z",                                                   FN_PTR(isMature)},
   {CC"hasCompiledCodeForOSR",                        CC"("HS_RESOLVED_METHOD"II)Z",                                                    FN_PTR(hasCompiledCodeForOSR)},
   {CC"getSymbol",                                    CC"(J)"STRING,                                                                    FN_PTR(getSymbol)},
+  {CC"lookupSymbol",                                 CC"("STRING")J",                                                                  FN_PTR(lookupSymbol)},
   {CC"getNextStackFrame",                            CC"("HS_STACK_FRAME_REF "["RESOLVED_METHOD"I)"HS_STACK_FRAME_REF,                 FN_PTR(getNextStackFrame)},
   {CC"materializeVirtualObjects",                    CC"("HS_STACK_FRAME_REF"Z)V",                                                     FN_PTR(materializeVirtualObjects)},
   {CC"shouldDebugNonSafepoints",                     CC"()Z",                                                                          FN_PTR(shouldDebugNonSafepoints)},

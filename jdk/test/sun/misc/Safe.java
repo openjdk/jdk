@@ -25,7 +25,7 @@
  * @bug 4495577
  * @summary Ensure that sun.misc.Unsafe cannot (easily)
  *          be accessed from user code
- * @modules java.base/sun.misc
+ * @modules jdk.unsupported
  */
 
 

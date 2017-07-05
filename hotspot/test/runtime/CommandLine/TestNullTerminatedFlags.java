@@ -28,7 +28,7 @@ import jdk.test.lib.*;
  * @bug 6522873
  * @summary Test that the VM don't allow random junk characters at the end of valid command line flags.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestNullTerminatedFlags
  */

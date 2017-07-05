@@ -26,7 +26,6 @@
  * @bug 8054386
  * @summary java debugging test for CDS
  * @modules jdk.jdi
- *          java.base/sun.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @library /lib/testlibrary

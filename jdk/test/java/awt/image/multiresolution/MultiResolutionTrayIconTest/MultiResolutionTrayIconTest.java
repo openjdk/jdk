@@ -90,8 +90,10 @@ public class MultiResolutionTrayIconTest extends Applet {
         BufferedImage nok = generateImage(w / 2 + 2, h / 2 + 2, Color.RED);
         BaseMultiResolutionImage mri =
             new BaseMultiResolutionImage(new BufferedImage[] {nok, img});
-        icon    = new TrayIcon(img);
+        icon = new TrayIcon(img);
+        icon.setImageAutoSize(true); // just in case
         iconMRI = new TrayIcon(mri);
+        iconMRI.setImageAutoSize(true);
     }
 
     private void doTest() {

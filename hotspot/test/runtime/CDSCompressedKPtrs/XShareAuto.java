@@ -26,7 +26,7 @@
  * @bug 8005933
  * @summary Test that -Xshare:auto uses CDS when explicitly specified with -server.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main XShareAuto
  */

@@ -26,7 +26,7 @@
  * @bug 8065579
  * @requires vm.gc=="null" | vm.gc=="G1"
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

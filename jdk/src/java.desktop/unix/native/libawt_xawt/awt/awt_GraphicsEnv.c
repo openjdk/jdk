@@ -43,7 +43,7 @@
 #include <jvm.h>
 #include <jvm_md.h>
 #include <jlong.h>
-
+#include "systemScale.h"
 #include <stdlib.h>
 
 #include "awt_GraphicsEnv.h"
@@ -2083,17 +2083,6 @@ Java_sun_awt_X11GraphicsDevice_exitFullScreenExclusive
  * End DisplayMode/FullScreen support
  */
 
-int getScale(const char *name) {
-    char *uiScale = getenv(name);
-    if (uiScale != NULL) {
-        double scale = strtod(uiScale, NULL);
-        if (errno == ERANGE || scale < 1) {
-            return -1;
-        }
-        return (int) scale;
-    }
-    return -1;
-}
 
 /*
  * Class:     sun_awt_X11GraphicsDevice
@@ -2104,16 +2093,5 @@ JNIEXPORT jint JNICALL
 Java_sun_awt_X11GraphicsDevice_getNativeScaleFactor
     (JNIEnv *env, jobject this, jint screen) {
 
-    // for debug purposes
-    static int scale = -2.0;
-
-    if (scale == -2) {
-        scale = getScale("J2D_UISCALE");
-    }
-
-    if (scale >= 1) {
-        return scale;
-    }
-
-    return getScale("GDK_SCALE");
+    return getNativeScaleFactor();
 }

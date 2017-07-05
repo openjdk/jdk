@@ -28,7 +28,6 @@ import java.awt.BasicStroke;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import sun.awt.SunHints;
 import sun.java2d.ReentrantContext;
 import sun.java2d.ReentrantContextProvider;
