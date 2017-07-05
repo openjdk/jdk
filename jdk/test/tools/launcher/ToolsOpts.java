@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8002091
  * @summary Test options patterns for javac,javah,javap and javadoc using
  * javac as a test launcher. Create a dummy javac and intercept options to check
  * reception of options as passed through the launcher without having to launch

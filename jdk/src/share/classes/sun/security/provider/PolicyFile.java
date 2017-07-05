@@ -1336,10 +1336,9 @@ public class PolicyFile extends java.security.Policy {
 
             if (pppe.isWildcardName()) {
                 // a wildcard name matches any principal with the same class
-                for (Principal p : principals) {
-                    if (pppe.principalClass.equals(p.getClass().getName())) {
-                        continue;
-                    }
+                if (wildcardPrincipalNameImplies(pppe.principalClass,
+                                                 principals)) {
+                    continue;
                 }
                 if (debug != null) {
                     debug.println("evaluation (principal name wildcard) failed");
@@ -1412,6 +1411,21 @@ public class PolicyFile extends java.security.Policy {
             debug.println("evaluation (codesource/principals) passed");
         }
         addPerms(perms, principals, entry);
+    }
+
+    /**
+     * Returns true if the array of principals contains at least one
+     * principal of the specified class.
+     */
+    private static boolean wildcardPrincipalNameImplies(String principalClass,
+                                                        Principal[] principals)
+    {
+        for (Principal p : principals) {
+            if (principalClass.equals(p.getClass().getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void addPerms(Permissions perms,

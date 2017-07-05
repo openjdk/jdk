@@ -1,0 +1,4 @@
+TypeError: function eval() { [native code] } is not a constructor function
+TypeError: function pop() { [native code] } is not a constructor function
+TypeError: function indexOf() { [native code] } is not a constructor function
+TypeError: function valueOf() { [native code] } is not a constructor function

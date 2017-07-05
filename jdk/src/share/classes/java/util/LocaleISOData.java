@@ -473,7 +473,7 @@ class LocaleISOData {
         + "YE" + "YEM"  // Yemen
         + "YT" + "MYT"  // Mayotte
         + "ZA" + "ZAF"  // South Africa, Republic of
-        + "ZM" + "ZMW"  // Zambia, Republic of
+        + "ZM" + "ZMB"  // Zambia, Republic of
         + "ZW" + "ZWE"  // Zimbabwe
         ;
 

@@ -36,9 +36,7 @@
 #include <windows.h>
 #include <io.h>
 
-#include "jvm.h"
 #include "jni.h"
-#include "jni_util.h"
 #include "io_util.h"
 #include "jlong.h"
 #include "io_util_md.h"
@@ -115,13 +113,15 @@ static WCHAR* getFinalPath(const WCHAR *path)
         DWORD len = (*GetFinalPathNameByHandle_func)(h, result, MAX_PATH, 0);
         if (len >= MAX_PATH) {
             /* retry with a buffer of the right size */
-            result = (WCHAR*)realloc(result, (len+1) * sizeof(WCHAR));
-            if (result != NULL) {
+            WCHAR* newResult = (WCHAR*)realloc(result, (len+1) * sizeof(WCHAR));
+            if (newResult != NULL) {
+                result = newResult;
                 len = (*GetFinalPathNameByHandle_func)(h, result, len, 0);
             } else {
                 len = 0;
             }
         }
+
         if (len > 0) {
             /**
              * Strip prefix (should be \\?\ or \\?\UNC)

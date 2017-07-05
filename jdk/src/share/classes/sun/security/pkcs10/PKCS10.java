@@ -37,7 +37,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.PublicKey;
 
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
@@ -289,10 +289,9 @@ public class PKCS10 {
         if (encoded == null)
             throw new SignatureException("Cert request was not signed");
 
-        BASE64Encoder   encoder = new BASE64Encoder();
 
         out.println("-----BEGIN NEW CERTIFICATE REQUEST-----");
-        encoder.encodeBuffer(encoded, out);
+        out.println(Base64.getMimeEncoder().encodeToString(encoded));
         out.println("-----END NEW CERTIFICATE REQUEST-----");
     }
 

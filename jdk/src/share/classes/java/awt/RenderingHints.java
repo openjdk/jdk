@@ -92,7 +92,7 @@ public class RenderingHints
      * {@code equals()} method.
      */
     public abstract static class Key {
-        private static HashMap identitymap = new HashMap(17);
+        private static HashMap<Object,Object> identitymap = new HashMap<>(17);
 
         private String getIdentity() {
             // Note that the identity string is dependent on 3 variables:
@@ -138,7 +138,7 @@ public class RenderingHints
             }
             // Note: Use a weak reference to avoid holding on to extra
             // objects and classes after they should be unloaded.
-            identitymap.put(identity, new WeakReference(k));
+            identitymap.put(identity, new WeakReference<Key>(k));
         }
 
         private int privatekey;
@@ -195,7 +195,7 @@ public class RenderingHints
         }
     }
 
-    HashMap hintmap = new HashMap(7);
+    HashMap<Object,Object> hintmap = new HashMap<>(7);
 
     /**
      * Antialiasing hint key.
@@ -1267,12 +1267,13 @@ public class RenderingHints
      * object.
      * @return a clone of this instance.
      */
+    @SuppressWarnings("unchecked")
     public Object clone() {
         RenderingHints rh;
         try {
             rh = (RenderingHints) super.clone();
             if (hintmap != null) {
-                rh.hintmap = (HashMap) hintmap.clone();
+                rh.hintmap = (HashMap<Object,Object>) hintmap.clone();
             }
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable

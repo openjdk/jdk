@@ -476,6 +476,20 @@ public abstract class Executable extends AccessibleObject
         return declaredAnnotations;
     }
 
+    /**
+     * Returns an AnnotatedType object that represents the potentially
+     * annotated return type of the method/constructor represented by this
+     * Executable.
+     *
+     * If this Executable represents a constructor, the AnnotatedType object
+     * represents the type of the constructed object.
+     *
+     * If this Executable represents a method, the AnnotatedType object
+     * represents the use of a type to specify the return type of the method.
+     *
+     * @since 1.8
+     */
+    public abstract AnnotatedType getAnnotatedReturnType();
 
     /* Helper for subclasses of Executable.
      *

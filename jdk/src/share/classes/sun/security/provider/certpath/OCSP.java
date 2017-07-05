@@ -89,7 +89,7 @@ public final class OCSP {
                 new GetIntegerAction("com.sun.security.ocsp.timeout",
                                      DEFAULT_CONNECT_TIMEOUT));
         if (tmp < 0) {
-            tmp = DEFAULT_CONNECT_TIMEOUT;
+            return DEFAULT_CONNECT_TIMEOUT;
         }
         // Convert to milliseconds, as the system property will be
         // specified in seconds

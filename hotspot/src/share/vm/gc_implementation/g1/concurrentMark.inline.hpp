@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,12 +252,10 @@ inline bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
 
     start_offset = _bm.get_next_one_offset(start_offset, end_offset);
     while (start_offset < end_offset) {
-      HeapWord* obj_addr = offsetToHeapWord(start_offset);
-      oop obj = (oop) obj_addr;
       if (!cl->do_bit(start_offset)) {
         return false;
       }
-      HeapWord* next_addr = MIN2(obj_addr + obj->size(), end_addr);
+      HeapWord* next_addr = MIN2(nextObject(offsetToHeapWord(start_offset)), end_addr);
       BitMap::idx_t next_offset = heapWordToOffset(next_addr);
       start_offset = _bm.get_next_one_offset(next_offset, end_offset);
     }

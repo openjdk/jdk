@@ -43,7 +43,7 @@ fi
 # to script as java.lang.System property.  sysProps is
 # jrunscript shell built-in variable for System properties.
 
-${JRUNSCRIPT} -Djrunscript.foo=bar <<EOF
+${JRUNSCRIPT} -l nashorn -Djrunscript.foo=bar <<EOF
 if (sysProps["jrunscript.foo"] == "bar") { println("Passed"); exit(0); }
 // unexpected value
 println("Unexpected System property value");

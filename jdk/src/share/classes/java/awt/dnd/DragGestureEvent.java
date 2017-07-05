@@ -165,7 +165,7 @@ public class DragGestureEvent extends EventObject {
      * <P>
      * @return an Iterator for the events comprising the gesture
      */
-
+    @SuppressWarnings("unchecked")
     public Iterator<InputEvent> iterator() { return events.iterator(); }
 
     /**
@@ -184,7 +184,7 @@ public class DragGestureEvent extends EventObject {
      * <P>
      * @return an array of the events comprising the gesture
      */
-
+    @SuppressWarnings("unchecked")
     public Object[] toArray(Object[] array) { return events.toArray(array); }
 
     /**
@@ -333,7 +333,6 @@ public class DragGestureEvent extends EventObject {
         component = (Component)f.get("component", null);
         origin = (Point)f.get("origin", null);
         action = f.get("action", 0);
-
         // Pre-1.4 support. 'events' was previously non-transient
         try {
             events = (List)f.get("events", null);
@@ -351,7 +350,7 @@ public class DragGestureEvent extends EventObject {
     /*
      * fields
      */
-
+    @SuppressWarnings("rawtypes")
     private transient List events;
 
     /**

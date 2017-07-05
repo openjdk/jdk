@@ -72,6 +72,8 @@ public:
 
     /* Returns whether this frame is embedded in an external native frame. */
     INLINE BOOL IsEmbeddedFrame() { return m_isEmbedded; }
+    /* Returns whether this frame is lightweight. */
+    INLINE virtual BOOL IsLightweightFrame() { return m_isLightweight; }
 
     INLINE BOOL IsSimpleWindow() { return FALSE; }
 
@@ -168,6 +170,9 @@ private:
 
     /* The frame is an EmbeddedFrame. */
     BOOL m_isEmbedded;
+
+    /* The frame is a LightweightFrame */
+    BOOL m_isLightweight;
 
     /* used so that calls to ::MoveWindow in SetMenuBar don't propogate
        because they are immediately followed by calls to Component.resize */
