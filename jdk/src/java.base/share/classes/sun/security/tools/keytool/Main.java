@@ -153,6 +153,7 @@ public final class Main {
     private boolean trustcacerts = false;
     private boolean protectedPath = false;
     private boolean srcprotectedPath = false;
+    private boolean cacerts = false;
     private CertificateFactory cf = null;
     private KeyStore caks = null; // "cacerts" keystore
     private char[] srcstorePass = null;
@@ -169,15 +170,15 @@ public final class Main {
             STOREPASS, STORETYPE, PROVIDERNAME, ADDPROVIDER,
             PROVIDERCLASS, PROVIDERPATH, V, PROTECTED),
         CHANGEALIAS("Changes.an.entry.s.alias",
-            ALIAS, DESTALIAS, KEYPASS, KEYSTORE, STOREPASS,
+            ALIAS, DESTALIAS, KEYPASS, KEYSTORE, CACERTS, STOREPASS,
             STORETYPE, PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V, PROTECTED),
         DELETE("Deletes.an.entry",
-            ALIAS, KEYSTORE, STOREPASS, STORETYPE,
+            ALIAS, KEYSTORE, CACERTS, STOREPASS, STORETYPE,
             PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V, PROTECTED),
         EXPORTCERT("Exports.certificate",
-            RFC, ALIAS, FILEOUT, KEYSTORE, STOREPASS,
+            RFC, ALIAS, FILEOUT, KEYSTORE, CACERTS, STOREPASS,
             STORETYPE, PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V, PROTECTED),
         GENKEYPAIR("Generates.a.key.pair",
@@ -196,7 +197,7 @@ public final class Main {
             PROVIDERCLASS, PROVIDERPATH, V, PROTECTED),
         IMPORTCERT("Imports.a.certificate.or.a.certificate.chain",
             NOPROMPT, TRUSTCACERTS, PROTECTED, ALIAS, FILEIN,
-            KEYPASS, KEYSTORE, STOREPASS, STORETYPE,
+            KEYPASS, KEYSTORE, CACERTS, STOREPASS, STORETYPE,
             PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V),
         IMPORTPASS("Imports.a.password",
@@ -215,7 +216,7 @@ public final class Main {
             STORETYPE, PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V),
         LIST("Lists.entries.in.a.keystore",
-            RFC, ALIAS, KEYSTORE, STOREPASS, STORETYPE,
+            RFC, ALIAS, KEYSTORE, CACERTS, STOREPASS, STORETYPE,
             PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V, PROTECTED),
         PRINTCERT("Prints.the.content.of.a.certificate",
@@ -225,7 +226,7 @@ public final class Main {
         PRINTCRL("Prints.the.content.of.a.CRL.file",
             FILEIN, V),
         STOREPASSWD("Changes.the.store.password.of.a.keystore",
-            NEW, KEYSTORE, STOREPASS, STORETYPE, PROVIDERNAME,
+            NEW, KEYSTORE, CACERTS, STOREPASS, STORETYPE, PROVIDERNAME,
             ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH, V),
 
         // Undocumented start here, KEYCLONE is used a marker in -help;
@@ -306,6 +307,7 @@ public final class Main {
         KEYPASS("keypass", "<arg>", "key.password"),
         KEYSIZE("keysize", "<size>", "key.bit.size"),
         KEYSTORE("keystore", "<keystore>", "keystore.name"),
+        CACERTS("cacerts", null, "access.the.cacerts.keystore"),
         NEW("new", "<arg>", "new.password"),
         NOPROMPT("noprompt", null, "do.not.prompt"),
         OUTFILE("outfile", "<file>", "output.file.name"),
@@ -472,14 +474,16 @@ public final class Main {
                 help = true;
             } else if (collator.compare(flags, "-conf") == 0) {
                 i++;
-            }
-
-            /*
-             * specifiers
-             */
-            else if (collator.compare(flags, "-keystore") == 0 ||
-                    collator.compare(flags, "-destkeystore") == 0) {
+            } else if (collator.compare(flags, "-keystore") == 0) {
                 ksfname = args[++i];
+                if (new File(ksfname).getCanonicalPath().equals(
+                        new File(KeyStoreUtil.getCacerts()).getCanonicalPath())) {
+                    System.err.println(rb.getString("warning.cacerts.option"));
+                }
+            } else if (collator.compare(flags, "-destkeystore") == 0) {
+                ksfname = args[++i];
+            } else if (collator.compare(flags, "-cacerts") == 0) {
+                cacerts = true;
             } else if (collator.compare(flags, "-storepass") == 0 ||
                     collator.compare(flags, "-deststorepass") == 0) {
                 storePass = getPass(modifier, args[++i]);
@@ -636,6 +640,15 @@ public final class Main {
      * Execute the commands.
      */
     void doCommands(PrintStream out) throws Exception {
+
+        if (cacerts) {
+            if (ksfname != null || storetype != null) {
+                throw new IllegalArgumentException(rb.getString
+                        ("the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option"));
+            }
+            ksfname = KeyStoreUtil.getCacerts();
+        }
+
         if (storetype == null) {
             storetype = KeyStore.getDefaultType();
         }

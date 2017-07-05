@@ -28,8 +28,7 @@
  * @author mkos
  * @library javax.mail.jar
  * @modules java.xml.ws
- * @compile -addmods java.xml.ws MailTest.java
- * @run main/othervm -addmods java.xml.ws MailTest
+ * @run main MailTest
  */
 
 import javax.activation.CommandMap;

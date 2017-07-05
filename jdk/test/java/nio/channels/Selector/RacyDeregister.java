@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,11 @@ import java.nio.channels.SocketChannel;
  */
 public class RacyDeregister {
 
+    // FIXME: numOuterLoopIterations should be reverted to the hard-coded value
+    // 15 when JDK-8161083 is resolved as either a bug or a non-issue.
+    static final int numOuterLoopIterations =
+        System.getProperty("os.name").startsWith("Windows") ? 150 : 15;
+
     static boolean notified;
     static final Object selectorLock = new Object();
     static final Object notifyLock = new Object();
@@ -77,7 +82,7 @@ public class RacyDeregister {
 
             public void run() {
                 try {
-                    for (int k = 0; k < 15; k++) {
+                    for (int k = 0; k < numOuterLoopIterations; k++) {
                         for (int i = 0; i < 10000; i++) {
                             synchronized (notifyLock) {
                                 synchronized (selectorLock) {
@@ -94,6 +99,17 @@ public class RacyDeregister {
                                     }
                                     long endTime = System.currentTimeMillis();
                                     if (endTime - beginTime > 5000) {
+                                        for (int j = 0; j < 60; j++) {
+                                            Thread.sleep(1000);
+                                            if (notified) {
+                                                long t =
+                                                    System.currentTimeMillis();
+                                                System.out.printf
+                                                    ("Notified after %d ms%n",
+                                                     t - beginTime);
+                                                break;
+                                            }
+                                        }
                                         succTermination = false;
                                         // wake up main thread doing select()
                                         sel.wakeup();

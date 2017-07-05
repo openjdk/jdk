@@ -136,11 +136,14 @@ public class AtomicBooleanTest extends JSR166TestCase {
      * getAndSet returns previous value and sets to given value
      */
     public void testGetAndSet() {
-        AtomicBoolean ai = new AtomicBoolean(true);
-        assertEquals(true, ai.getAndSet(false));
-        assertEquals(false, ai.getAndSet(false));
-        assertEquals(false, ai.getAndSet(true));
-        assertTrue(ai.get());
+        AtomicBoolean ai = new AtomicBoolean();
+        boolean[] booleans = { false, true };
+        for (boolean before : booleans)
+            for (boolean after : booleans) {
+                ai.set(before);
+                assertEquals(before, ai.getAndSet(after));
+                assertEquals(after, ai.get());
+            }
     }
 
     /**

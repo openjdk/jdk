@@ -68,7 +68,7 @@ class ModuleReferences {
 
     /**
      * Creates a ModuleReference to a module or to patched module when
-     * creating modules for the boot Layer and -Xpatch is specified.
+     * creating modules for the boot Layer and --patch-module is specified.
      */
     private static ModuleReference newModule(ModuleDescriptor md,
                                              URI uri,

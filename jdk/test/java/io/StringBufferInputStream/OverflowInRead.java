@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,29 @@
  * questions.
  */
 
-// This loads the class affected by the -Xpatch option.  For the test to pass
-// it must load the class from the -Xpatch directory, not the jimage file.
-public class XpatchMain {
+/* @test
+ * @bug 8163518
+ * @summary Integer overflow when reading in large buffer
+ * @requires (sun.arch.data.model == "64" & os.maxMemory > 4g)
+ * @run main/othervm -Xmx4g OverflowInRead
+ */
+
+import java.io.StringBufferInputStream;
+
+public class OverflowInRead {
     public static void main(String[] args) throws Exception {
-        Class.forName(args[0]);
+        String s = "_123456789_123456789_123456789_123456789"; // s.length() > 33
+        try (StringBufferInputStream sbis = new StringBufferInputStream(s)) {
+            int len1 = 33;
+            byte[] buf1 = new byte[len1];
+            if (sbis.read(buf1, 0, len1) != len1)
+                throw new Exception("Expected to read " + len1 + " bytes");
+
+            int len2 = Integer.MAX_VALUE - 32;
+            byte[] buf2 = new byte[len2];
+            int expLen2 = s.length() - len1;
+            if (sbis.read(buf2, 0, len2) != expLen2)
+                throw new Exception("Expected to read " + expLen2 + " bytes");
+        }
     }
 }

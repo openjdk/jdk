@@ -140,7 +140,7 @@ PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = NULL;
 PerfCounter*    ClassLoader::_isUnsyncloadClass = NULL;
 PerfCounter*    ClassLoader::_load_instance_class_failCounter = NULL;
 
-GrowableArray<ModuleClassPathList*>* ClassLoader::_xpatch_entries = NULL;
+GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = NULL;
 GrowableArray<ModuleClassPathList*>* ClassLoader::_exploded_entries = NULL;
 ClassPathEntry* ClassLoader::_jrt_entry = NULL;
 ClassPathEntry* ClassLoader::_first_append_entry = NULL;
@@ -685,27 +685,27 @@ bool ClassLoader::check_shared_paths_misc_info(void *buf, int size) {
 }
 #endif
 
-// Construct the array of module/path pairs as specified to -Xpatch
+// Construct the array of module/path pairs as specified to --patch-module
 // for the boot loader to search ahead of the jimage, if the class being
-// loaded is defined to a module that has been specified to -Xpatch.
-void ClassLoader::setup_xpatch_entries() {
+// loaded is defined to a module that has been specified to --patch-module.
+void ClassLoader::setup_patch_mod_entries() {
   Thread* THREAD = Thread::current();
-  GrowableArray<ModuleXPatchPath*>* xpatch_args = Arguments::get_xpatchprefix();
-  int num_of_entries = xpatch_args->length();
+  GrowableArray<ModulePatchPath*>* patch_mod_args = Arguments::get_patch_mod_prefix();
+  int num_of_entries = patch_mod_args->length();
 
-  assert(!DumpSharedSpaces, "DumpSharedSpaces not supported with -Xpatch");
-  assert(!UseSharedSpaces, "UseSharedSpaces not supported with -Xpatch");
+  assert(!DumpSharedSpaces, "DumpSharedSpaces not supported with --patch-module");
+  assert(!UseSharedSpaces, "UseSharedSpaces not supported with --patch-module");
 
-  // Set up the boot loader's _xpatch_entries list
-  _xpatch_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
+  // Set up the boot loader's _patch_mod_entries list
+  _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
 
   for (int i = 0; i < num_of_entries; i++) {
-    const char* module_name = (xpatch_args->at(i))->module_name();
+    const char* module_name = (patch_mod_args->at(i))->module_name();
     Symbol* const module_sym = SymbolTable::lookup(module_name, (int)strlen(module_name), CHECK);
     assert(module_sym != NULL, "Failed to obtain Symbol for module name");
     ModuleClassPathList* module_cpl = new ModuleClassPathList(module_sym);
 
-    char* class_path = (xpatch_args->at(i))->path_string();
+    char* class_path = (patch_mod_args->at(i))->path_string();
     int len = (int)strlen(class_path);
     int end = 0;
     // Iterate over the module's class path entries
@@ -735,10 +735,10 @@ void ClassLoader::setup_xpatch_entries() {
       }
     }
 
-    // Record the module into the list of -Xpatch entries only if
+    // Record the module into the list of --patch-module entries only if
     // valid ClassPathEntrys have been created
     if (module_cpl->module_first_entry() != NULL) {
-      _xpatch_entries->push(module_cpl);
+      _patch_mod_entries->push(module_cpl);
     }
   }
 }
@@ -1020,9 +1020,9 @@ void ClassLoader::print_bootclasspath() {
   ClassPathEntry* e;
   tty->print("[bootclasspath= ");
 
-  // Print -Xpatch module/path specifications first
-  if (_xpatch_entries != NULL) {
-    print_module_entry_table(_xpatch_entries);
+  // Print --patch-module module/path specifications first
+  if (_patch_mod_entries != NULL) {
+    print_module_entry_table(_patch_mod_entries);
   }
 
   // [jimage | exploded modules build]
@@ -1341,7 +1341,7 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
   return file_name;
 }
 
-// Search either the xpatch or exploded build entries for class
+// Search either the patch-module or exploded build entries for class
 ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleClassPathList*>* const module_list,
                                                     const char* const class_name, const char* const file_name, TRAPS) {
   ClassFileStream* stream = NULL;
@@ -1366,7 +1366,7 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
     int num_of_entries = module_list->length();
     const Symbol* class_module_name = mod_entry->name();
 
-    // Loop through all the modules in either the xpatch or exploded entries looking for module
+    // Loop through all the modules in either the patch-module or exploded entries looking for module
     for (int i = 0; i < num_of_entries; i++) {
       ModuleClassPathList* module_cpl = module_list->at(i);
       Symbol* module_cpl_name = module_cpl->module_name();
@@ -1378,7 +1378,7 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
         while (e != NULL) {
           stream = e->open_stream(file_name, CHECK_NULL);
           // No context.check is required since CDS is not supported
-          // for an exploded modules build or if -Xpatch is specified.
+          // for an exploded modules build or if --patch-module is specified.
           if (NULL != stream) {
             return stream;
           }
@@ -1420,32 +1420,32 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
 
   // If DumpSharedSpaces is true boot loader visibility boundaries are set to:
   //   - [jimage] + [_first_append_entry to _last_append_entry] (all path entries).
-  // No -Xpatch entries or exploded module builds are included since CDS
-  // is not supported if -Xpatch or exploded module builds are used.
+  // No --patch-module entries or exploded module builds are included since CDS
+  // is not supported if --patch-module or exploded module builds are used.
   //
   // If search_append_only is true, boot loader visibility boundaries are
   // set to be _first_append_entry to the end. This includes:
   //   [-Xbootclasspath/a]; [jvmti appended entries]
   //
   // If both DumpSharedSpaces and search_append_only are false, boot loader
-  // visibility boundaries are set to be the -Xpatch entries plus the base piece.
+  // visibility boundaries are set to be the --patch-module entries plus the base piece.
   // This would include:
-  //   [-Xpatch:<module>=<file>(<pathsep><file>)*]; [jimage | exploded module build]
+  //   [--patch-module=<module>=<file>(<pathsep><file>)*]; [jimage | exploded module build]
   //
   // DumpSharedSpaces and search_append_only are mutually exclusive and cannot
   // be true at the same time.
   assert(!(DumpSharedSpaces && search_append_only), "DumpSharedSpaces and search_append_only are both true");
 
-  // Load Attempt #1: -Xpatch
-  // Determine the class' defining module.  If it appears in the _xpatch_entries,
+  // Load Attempt #1: --patch-module
+  // Determine the class' defining module.  If it appears in the _patch_mod_entries,
   // attempt to load the class from those locations specific to the module.
-  // Specifications to -Xpatch can contain a partial number of classes
+  // Specifications to --patch-module can contain a partial number of classes
   // that are part of the overall module definition.  So if a particular class is not
   // found within its module specification, the search should continue to Load Attempt #2.
-  // Note: The -Xpatch entries are never searched if the boot loader's
+  // Note: The --patch-module entries are never searched if the boot loader's
   //       visibility boundary is limited to only searching the append entries.
-  if (_xpatch_entries != NULL && !search_append_only && !DumpSharedSpaces) {
-    stream = search_module_entries(_xpatch_entries, class_name, file_name, CHECK_NULL);
+  if (_patch_mod_entries != NULL && !search_append_only && !DumpSharedSpaces) {
+    stream = search_module_entries(_patch_mod_entries, class_name, file_name, CHECK_NULL);
   }
 
   // Load Attempt #2: [jimage | exploded build]
@@ -1650,11 +1650,11 @@ void ClassLoader::classLoader_init2(TRAPS) {
   // Create the moduleEntry for java.base
   create_javabase();
 
-  // Setup the list of module/path pairs for -Xpatch processing
+  // Setup the list of module/path pairs for --patch-module processing
   // This must be done after the SymbolTable is created in order
   // to use fast_compare on module names instead of a string compare.
-  if (Arguments::get_xpatchprefix() != NULL) {
-    setup_xpatch_entries();
+  if (Arguments::get_patch_mod_prefix() != NULL) {
+    setup_patch_mod_entries();
   }
 
   // Setup the initial java.base/path pair for the exploded build entries.
