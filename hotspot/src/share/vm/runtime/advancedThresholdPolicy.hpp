@@ -201,9 +201,12 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
   // Is method profiled enough?
   bool is_method_profiled(Method* method);
 
+  double _increase_threshold_at_ratio;
+
 protected:
   void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level);
 
+  void set_increase_threshold_at_ratio() { _increase_threshold_at_ratio = 100 / (100 - (double)IncreaseFirstTierCompileThresholdAt); }
   void set_start_time(jlong t) { _start_time = t;    }
   jlong start_time() const     { return _start_time; }
 

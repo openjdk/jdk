@@ -80,8 +80,6 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
   // Constructor
   // Construct a list without any entries.
   FreeList();
-  // Construct a list with "fc" as the first (and lone) entry in the list.
-  FreeList(Chunk_t* fc);
 
   // Do initialization
   void initialize();
@@ -176,9 +174,6 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
   // Verify that the chunk is in the list.
   // found.  Return NULL if "fc" is not found.
   bool verify_chunk_in_free_list(Chunk_t* fc) const;
-
-  // Stats verification
-//  void verify_stats() const { ShouldNotReachHere(); };
 
   // Printing support
   static void print_labels_on(outputStream* st, const char* c);
