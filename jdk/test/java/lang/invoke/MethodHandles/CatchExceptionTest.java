@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package test.java.lang.invoke.MethodHandles;
 
-import com.oracle.testlibrary.jsr292.Helper;
-import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 import jdk.testlibrary.Asserts;
 import jdk.testlibrary.TimeLimitedRunner;
 import jdk.testlibrary.Utils;
+import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
+import test.java.lang.invoke.lib.Helper;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /* @test
- * @library /lib/testlibrary/jsr292 /lib/testlibrary/
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @compile CatchExceptionTest.java
  * @run main/othervm -esa test.java.lang.invoke.MethodHandles.CatchExceptionTest
  * @key intermittent randomness
@@ -68,8 +73,8 @@ public class CatchExceptionTest {
     private int dropped;
     private MethodHandle thrower;
 
-    public CatchExceptionTest(TestCase testCase, final boolean isVararg, final int argsCount,
-            final int catchDrops) {
+    public CatchExceptionTest(TestCase testCase, final boolean isVararg,
+                              final int argsCount, final int catchDrops) {
         this.testCase = testCase;
         this.dropped = catchDrops;
         MethodHandle thrower = testCase.thrower;
@@ -353,8 +358,8 @@ class TestCase<T> {
                 new ClassCastException("testing"),
                 new java.io.IOException("testing"),
                 new LinkageError("testing")};
-        List<Supplier<TestCase>> list = new ArrayList<>(constructors.length *
-                throwables.length * ThrowMode.values().length);
+        List<Supplier<TestCase>> list = new ArrayList<>(constructors.length
+                * throwables.length * ThrowMode.values().length);
         //noinspection unchecked
         for (PartialConstructor f : constructors) {
             for (ThrowMode mode : ThrowMode.values()) {

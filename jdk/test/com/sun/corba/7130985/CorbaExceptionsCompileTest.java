@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 7130985
  * @summary Four helper classes missing in Sun JDK
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @build jdk.testlibrary.*
  * @modules java.corba
  * @run main CorbaExceptionsCompileTest
@@ -35,12 +35,12 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.rmi.RemoteException;
+
 import org.omg.CORBA.ORBPackage.InvalidName;
 import org.omg.CORBA.TypeCodePackage.BadKind;
 import org.omg.CORBA.TypeCodePackage.Bounds;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import jdk.testlibrary.JDKToolLauncher;
 
 public class CorbaExceptionsCompileTest implements CorbaExceptionsTest {
