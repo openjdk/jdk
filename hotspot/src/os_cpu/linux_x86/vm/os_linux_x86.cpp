@@ -218,6 +218,10 @@ JVM_handle_linux_signal(int sig,
 
   Thread* t = ThreadLocalStorage::get_thread_slow();
 
+  // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
+  // (no destructors can be run)
+  os::WatcherThreadCrashProtection::check_crash_protection(sig, t);
+
   SignalHandlerMark shm(t);
 
   // Note: it's not uncommon that JNI code uses signal/sigset to install

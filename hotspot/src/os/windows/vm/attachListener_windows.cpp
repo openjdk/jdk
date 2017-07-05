@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,6 +356,10 @@ AttachOperation* AttachListener::dequeue() {
   thread->check_and_wait_while_suspended();
 
   return op;
+}
+
+void AttachListener::vm_start() {
+  // nothing to do
 }
 
 int AttachListener::pd_init() {
