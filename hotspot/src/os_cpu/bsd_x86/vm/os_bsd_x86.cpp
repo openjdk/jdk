@@ -492,6 +492,11 @@ JVM_handle_bsd_signal(int sig,
       }
     }
 
+    if ((sig == SIGSEGV || sig == SIGBUS) && VM_Version::is_cpuinfo_segv_addr(pc)) {
+      // Verify that OS save/restore AVX registers.
+      stub = VM_Version::cpuinfo_cont_addr();
+    }
+
     // We test if stub is already set (by the stack overflow code
     // above) so it is not overwritten by the code that follows. This
     // check is not required on other platforms, because on other

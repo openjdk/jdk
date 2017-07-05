@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #ifdef TARGET_OS_FAMILY_linux
@@ -67,16 +68,14 @@ void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
   idx_t new_size_in_words = size_in_words();
   if (in_resource_area) {
     _map = NEW_RESOURCE_ARRAY(bm_word_t, new_size_in_words);
+    Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) _map,
+                         MIN2(old_size_in_words, new_size_in_words));
   } else {
-    if (old_map != NULL) {
-      _map_allocator.free();
-    }
-    _map = _map_allocator.allocate(new_size_in_words);
+    _map = _map_allocator.reallocate(new_size_in_words);
   }
-  Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) _map,
-                       MIN2(old_size_in_words, new_size_in_words));
+
   if (new_size_in_words > old_size_in_words) {
-    clear_range_of_words(old_size_in_words, size_in_words());
+    clear_range_of_words(old_size_in_words, new_size_in_words);
   }
 }
 
@@ -536,6 +535,83 @@ void BitMap::print_on(outputStream* st) const {
   tty->cr();
 }
 
+class TestBitMap : public AllStatic {
+  const static BitMap::idx_t BITMAP_SIZE = 1024;
+  static void fillBitMap(BitMap& map) {
+    map.set_bit(1);
+    map.set_bit(3);
+    map.set_bit(17);
+    map.set_bit(512);
+  }
+
+  static void testResize(bool in_resource_area) {
+    {
+      BitMap map(0, in_resource_area);
+      map.resize(BITMAP_SIZE, in_resource_area);
+      fillBitMap(map);
+
+      BitMap map2(BITMAP_SIZE, in_resource_area);
+      fillBitMap(map2);
+      assert(map.is_same(map2), "could be");
+    }
+
+    {
+      BitMap map(128, in_resource_area);
+      map.resize(BITMAP_SIZE, in_resource_area);
+      fillBitMap(map);
+
+      BitMap map2(BITMAP_SIZE, in_resource_area);
+      fillBitMap(map2);
+      assert(map.is_same(map2), "could be");
+    }
+
+    {
+      BitMap map(BITMAP_SIZE, in_resource_area);
+      map.resize(BITMAP_SIZE, in_resource_area);
+      fillBitMap(map);
+
+      BitMap map2(BITMAP_SIZE, in_resource_area);
+      fillBitMap(map2);
+      assert(map.is_same(map2), "could be");
+    }
+  }
+
+  static void testResizeResource() {
+    ResourceMark rm;
+    testResize(true);
+  }
+
+  static void testResizeNonResource() {
+    const uintx bitmap_bytes = BITMAP_SIZE / BitsPerByte;
+
+    // Test the default behavior
+    testResize(false);
+
+    {
+      // Make sure that AllocatorMallocLimit is larger than our allocation request
+      // forcing it to call standard malloc()
+      UIntFlagSetting fs(ArrayAllocatorMallocLimit, bitmap_bytes * 4);
+      testResize(false);
+    }
+    {
+      // Make sure that AllocatorMallocLimit is smaller than our allocation request
+      // forcing it to call mmap() (or equivalent)
+      UIntFlagSetting fs(ArrayAllocatorMallocLimit, bitmap_bytes / 4);
+      testResize(false);
+    }
+  }
+
+ public:
+  static void test() {
+    testResizeResource();
+    testResizeNonResource();
+  }
+
+};
+
+void TestBitMap_test() {
+  TestBitMap::test();
+}
 #endif
 
 

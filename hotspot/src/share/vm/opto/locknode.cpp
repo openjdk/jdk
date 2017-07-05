@@ -136,6 +136,8 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
 //-----------------------------hash--------------------------------------------
 uint FastLockNode::hash() const { return NO_HASH; }
 
+uint FastLockNode::size_of() const { return sizeof(*this); }
+
 //------------------------------cmp--------------------------------------------
 uint FastLockNode::cmp( const Node &n ) const {
   return (&n == this);                // Always fail except on self
@@ -157,6 +159,22 @@ void FastLockNode::create_lock_counter(JVMState* state) {
   BiasedLockingNamedCounter* blnc = (BiasedLockingNamedCounter*)
            OptoRuntime::new_named_counter(state, NamedCounter::BiasedLockingCounter);
   _counters = blnc->counters();
+}
+
+void FastLockNode::create_rtm_lock_counter(JVMState* state) {
+#if INCLUDE_RTM_OPT
+  Compile* C = Compile::current();
+  if (C->profile_rtm() || (PrintPreciseRTMLockingStatistics && C->use_rtm())) {
+    RTMLockingNamedCounter* rlnc = (RTMLockingNamedCounter*)
+           OptoRuntime::new_named_counter(state, NamedCounter::RTMLockingCounter);
+    _rtm_counters = rlnc->counters();
+    if (UseRTMForStackLocks) {
+      rlnc = (RTMLockingNamedCounter*)
+           OptoRuntime::new_named_counter(state, NamedCounter::RTMLockingCounter);
+      _stack_rtm_counters = rlnc->counters();
+    }
+  }
+#endif
 }
 
 //=============================================================================

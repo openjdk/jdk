@@ -42,17 +42,11 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
-extern uint size_exception_handler();
-extern uint size_deopt_handler();
-
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
 #else
 #define DEBUG_ARG(x)
 #endif
-
-extern int emit_exception_handler(CodeBuffer &cbuf);
-extern int emit_deopt_handler(CodeBuffer &cbuf);
 
 // Convert Nodes to instruction bits and pass off to the VM
 void Compile::Output() {
@@ -394,6 +388,11 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
         if (mach->is_MachCall()) {
+          // add size information for trampoline stub
+          // class CallStubImpl is platform-specific and defined in the *.ad files.
+          stub_size  += CallStubImpl::size_call_trampoline();
+          reloc_size += CallStubImpl::reloc_call_trampoline();
+
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
 
@@ -1133,10 +1132,9 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   shorten_branches(blk_starts, code_req, locs_req, stub_req);
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
-  int exception_handler_req = size_exception_handler();
-  int deopt_handler_req = size_deopt_handler();
-  exception_handler_req += MAX_stubs_size; // add marginal slop for handler
-  deopt_handler_req += MAX_stubs_size; // add marginal slop for handler
+  // class HandlerImpl is platform-specific and defined in the *.ad files.
+  int exception_handler_req = HandlerImpl::size_exception_handler() + MAX_stubs_size; // add marginal slop for handler
+  int deopt_handler_req     = HandlerImpl::size_deopt_handler()     + MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
 
@@ -1622,17 +1620,18 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   FillExceptionTables(inct_cnt, call_returns, inct_starts, blk_labels);
 
   // Only java methods have exception handlers and deopt handlers
+  // class HandlerImpl is platform-specific and defined in the *.ad files.
   if (_method) {
     // Emit the exception handler code.
-    _code_offsets.set_value(CodeOffsets::Exceptions, emit_exception_handler(*cb));
+    _code_offsets.set_value(CodeOffsets::Exceptions, HandlerImpl::emit_exception_handler(*cb));
     // Emit the deopt handler code.
-    _code_offsets.set_value(CodeOffsets::Deopt, emit_deopt_handler(*cb));
+    _code_offsets.set_value(CodeOffsets::Deopt, HandlerImpl::emit_deopt_handler(*cb));
 
     // Emit the MethodHandle deopt handler code (if required).
     if (has_method_handle_invokes()) {
       // We can use the same code as for the normal deopt handler, we
       // just need a different entry point address.
-      _code_offsets.set_value(CodeOffsets::DeoptMH, emit_deopt_handler(*cb));
+      _code_offsets.set_value(CodeOffsets::DeoptMH, HandlerImpl::emit_deopt_handler(*cb));
     }
   }
 

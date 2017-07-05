@@ -139,11 +139,21 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
 }
 #endif // INCLUDE_SERVICES
 
-void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary, const MetaspaceSummary& meta_space_summary) const {
+void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const {
   assert_set_gc_id();
 
   send_gc_heap_summary_event(when, heap_summary);
-  send_meta_space_summary_event(when, meta_space_summary);
+}
+
+void GCTracer::report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& summary) const {
+  assert_set_gc_id();
+
+  send_meta_space_summary_event(when, summary);
+
+  send_metaspace_chunk_free_list_summary(when, Metaspace::NonClassType, summary.metaspace_chunk_free_list_summary());
+  if (UseCompressedClassPointers) {
+    send_metaspace_chunk_free_list_summary(when, Metaspace::ClassType, summary.class_chunk_free_list_summary());
+  }
 }
 
 void YoungGCTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions) {

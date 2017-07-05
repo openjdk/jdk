@@ -1439,66 +1439,9 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
   return MachNode::size(ra_); // too many variables; just compute it
                               // the hard way
 }
-
+ 
 
 //=============================================================================
-uint size_exception_handler()
-{
-  // NativeCall instruction size is the same as NativeJump.
-  // Note that this value is also credited (in output.cpp) to
-  // the size of the code section.
-  return NativeJump::instruction_size;
-}
-
-// Emit exception handler code.
-int emit_exception_handler(CodeBuffer& cbuf)
-{
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
-  int offset = __ offset();
-  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
-uint size_deopt_handler()
-{
-  // three 5 byte instructions
-  return 15;
-}
-
-// Emit deopt handler code.
-int emit_deopt_handler(CodeBuffer& cbuf)
-{
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  MacroAssembler _masm(&cbuf);
-  address base =
-  __ start_a_stub(size_deopt_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
-  int offset = __ offset();
-  address the_pc = (address) __ pc();
-  Label next;
-  // push a "the_pc" on the stack without destroying any registers
-  // as they all may be live.
-
-  // push address of "next"
-  __ call(next, relocInfo::none); // reloc none is fine since it is a disp32
-  __ bind(next);
-  // adjust it so it matches "the_pc"
-  __ subptr(Address(rsp, 0), __ offset() - offset);
-  __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
 
 int Matcher::regnum_to_fpu_offset(int regnum)
 {
@@ -11387,13 +11330,31 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 // ============================================================================
 // inlined locking and unlocking
 
+instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rdx_RegI scr, rRegI cx1, rRegI cx2) %{
+  predicate(Compile::current()->use_rtm());
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register,
+                 _counters, _rtm_counters, _stack_rtm_counters,
+                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
+                 true, ra_->C->profile_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
+  predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $scr$$Register, _counters);
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
+                 $scr$$Register, noreg, noreg, _counters, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -11404,7 +11365,7 @@ instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
   %}
   ins_pipe(pipe_slow);
 %}

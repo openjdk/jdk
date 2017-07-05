@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
-#include "gc_implementation/g1/heapRegionSets.hpp"
+#include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "memory/allocation.hpp"
 

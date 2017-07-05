@@ -115,7 +115,7 @@ class outputStream : public ResourceObj {
    // flushing
    virtual void flush() {}
    virtual void write(const char* str, size_t len) = 0;
-   virtual void rotate_log() {} // GC log rotation
+   virtual void rotate_log(bool force, outputStream* out = NULL) {} // GC log rotation
    virtual ~outputStream() {}   // close properly on deletion
 
    void dec_cr() { dec(); cr(); }
@@ -240,8 +240,14 @@ class gcLogFileStream : public fileStream {
   gcLogFileStream(const char* file_name);
   ~gcLogFileStream();
   virtual void write(const char* c, size_t len);
-  virtual void rotate_log();
+  virtual void rotate_log(bool force, outputStream* out = NULL);
   void dump_loggc_header();
+
+  /* If "force" sets true, force log file rotation from outside JVM */
+  bool should_rotate(bool force) {
+    return force ||
+             ((GCLogFileSize != 0) && ((uintx)_bytes_written >= GCLogFileSize));
+  }
 };
 
 #ifndef PRODUCT

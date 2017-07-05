@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -114,7 +115,6 @@ void ProfileData::print_data_on(outputStream* st, const MethodData* md) const {
   print_data_on(st, print_data_on_helper(md));
 }
 
-#ifndef PRODUCT
 void ProfileData::print_shared(outputStream* st, const char* name, const char* extra) const {
   st->print("bci: %d", bci());
   st->fill_to(tab_width_one);
@@ -137,7 +137,6 @@ void ProfileData::print_shared(outputStream* st, const char* name, const char* e
 void ProfileData::tab(outputStream* st, bool first) const {
   st->fill_to(first ? tab_width_one : tab_width_two);
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // BitData
@@ -146,23 +145,19 @@ void ProfileData::tab(outputStream* st, bool first) const {
 // whether a checkcast bytecode has seen a null value.
 
 
-#ifndef PRODUCT
 void BitData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "BitData", extra);
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // CounterData
 //
 // A CounterData corresponds to a simple counter.
 
-#ifndef PRODUCT
 void CounterData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "CounterData", extra);
   st->print_cr("count(%u)", count());
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // JumpData
@@ -187,12 +182,10 @@ void JumpData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
   set_displacement(offset);
 }
 
-#ifndef PRODUCT
 void JumpData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "JumpData", extra);
   st->print_cr("taken(%u) displacement(%d)", taken(), displacement());
 }
-#endif // !PRODUCT
 
 int TypeStackSlotEntries::compute_cell_count(Symbol* signature, bool include_receiver, int max) {
   // Parameter profiling include the receiver
@@ -341,7 +334,6 @@ bool TypeEntriesAtCall::arguments_profiling_enabled() {
   return MethodData::profile_arguments();
 }
 
-#ifndef PRODUCT
 void TypeEntries::print_klass(outputStream* st, intptr_t k) {
   if (is_type_none(k)) {
     st->print("none");
@@ -397,7 +389,6 @@ void VirtualCallTypeData::print_data_on(outputStream* st, const char* extra) con
     _ret.print_data_on(st);
   }
 }
-#endif
 
 // ==================================================================
 // ReceiverTypeData
@@ -416,7 +407,6 @@ void ReceiverTypeData::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
   }
 }
 
-#ifndef PRODUCT
 void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   uint row;
   int entries = 0;
@@ -446,7 +436,6 @@ void VirtualCallData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "VirtualCallData", extra);
   print_receiver_data_on(st);
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // RetData
@@ -498,7 +487,6 @@ DataLayout* RetData::advance(MethodData *md, int bci) {
 }
 #endif // CC_INTERP
 
-#ifndef PRODUCT
 void RetData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "RetData", extra);
   uint row;
@@ -515,7 +503,6 @@ void RetData::print_data_on(outputStream* st, const char* extra) const {
     }
   }
 }
-#endif // !PRODUCT
 
 // ==================================================================
 // BranchData
@@ -533,7 +520,6 @@ void BranchData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
   set_displacement(offset);
 }
 
-#ifndef PRODUCT
 void BranchData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "BranchData", extra);
   st->print_cr("taken(%u) displacement(%d)",
@@ -541,7 +527,6 @@ void BranchData::print_data_on(outputStream* st, const char* extra) const {
   tab(st);
   st->print_cr("not taken(%u)", not_taken());
 }
-#endif
 
 // ==================================================================
 // MultiBranchData
@@ -607,7 +592,6 @@ void MultiBranchData::post_initialize(BytecodeStream* stream,
   }
 }
 
-#ifndef PRODUCT
 void MultiBranchData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "MultiBranchData", extra);
   st->print_cr("default_count(%u) displacement(%d)",
@@ -619,9 +603,7 @@ void MultiBranchData::print_data_on(outputStream* st, const char* extra) const {
                  count_at(i), displacement_at(i));
   }
 }
-#endif
 
-#ifndef PRODUCT
 void ArgInfoData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ArgInfoData", extra);
   int nargs = number_of_args();
@@ -630,8 +612,6 @@ void ArgInfoData::print_data_on(outputStream* st, const char* extra) const {
   }
   st->cr();
 }
-
-#endif
 
 int ParametersTypeData::compute_cell_count(Method* m) {
   if (!MethodData::profile_parameters_for_method(m)) {
@@ -653,7 +633,6 @@ bool ParametersTypeData::profiling_enabled() {
   return MethodData::profile_parameters();
 }
 
-#ifndef PRODUCT
 void ParametersTypeData::print_data_on(outputStream* st, const char* extra) const {
   st->print("parameter types", extra);
   _parameters.print_data_on(st);
@@ -665,7 +644,6 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
   method()->print_short_name(st);
   st->cr();
 }
-#endif
 
 // ==================================================================
 // MethodData*
@@ -800,6 +778,8 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   case Bytecodes::_invokeinterface:
   case Bytecodes::_if_acmpeq:
   case Bytecodes::_if_acmpne:
+  case Bytecodes::_ifnull:
+  case Bytecodes::_ifnonnull:
   case Bytecodes::_invokestatic:
 #ifdef COMPILER2
     return UseTypeSpeculation;
@@ -1153,6 +1133,21 @@ void MethodData::init() {
   _highest_osr_comp_level = 0;
   _would_profile = true;
 
+#if INCLUDE_RTM_OPT
+  _rtm_state = NoRTM; // No RTM lock eliding by default
+  if (UseRTMLocking &&
+      !CompilerOracle::has_option_string(_method, "NoRTMLockEliding")) {
+    if (CompilerOracle::has_option_string(_method, "UseRTMLockEliding") || !UseRTMDeopt) {
+      // Generate RTM lock eliding code without abort ratio calculation code.
+      _rtm_state = UseRTM;
+    } else if (UseRTMDeopt) {
+      // Generate RTM lock eliding code and include abort ratio calculation
+      // code if UseRTMDeopt is on.
+      _rtm_state = ProfileRTM;
+    }
+  }
+#endif
+
   // Initialize flags and trap history.
   _nof_decompiles = 0;
   _nof_overflow_recompiles = 0;
@@ -1341,8 +1336,6 @@ ArgInfoData *MethodData::arg_info() {
 
 // Printing
 
-#ifndef PRODUCT
-
 void MethodData::print_on(outputStream* st) const {
   assert(is_methodData(), "should be method data");
   st->print("method data for ");
@@ -1351,15 +1344,12 @@ void MethodData::print_on(outputStream* st) const {
   print_data_on(st);
 }
 
-#endif //PRODUCT
-
 void MethodData::print_value_on(outputStream* st) const {
   assert(is_methodData(), "should be method data");
   st->print("method data for ");
   method()->print_value_on(st);
 }
 
-#ifndef PRODUCT
 void MethodData::print_data_on(outputStream* st) const {
   ResourceMark rm;
   ProfileData* data = first_data();
@@ -1400,7 +1390,6 @@ void MethodData::print_data_on(outputStream* st) const {
     if (dp >= end) return;
   }
 }
-#endif
 
 #if INCLUDE_SERVICES
 // Size Statistics
