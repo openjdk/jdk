@@ -198,10 +198,11 @@ void G1StringDedupTable::create() {
   _table = new G1StringDedupTable(_min_size);
 }
 
-void G1StringDedupTable::add(typeArrayOop value, unsigned int hash, G1StringDedupEntry** list) {
+void G1StringDedupTable::add(typeArrayOop value, bool latin1, unsigned int hash, G1StringDedupEntry** list) {
   G1StringDedupEntry* entry = _entry_cache->alloc();
   entry->set_obj(value);
   entry->set_hash(hash);
+  entry->set_latin1(latin1);
   entry->set_next(*list);
   *list = entry;
   _entries++;
@@ -226,15 +227,15 @@ void G1StringDedupTable::transfer(G1StringDedupEntry** pentry, G1StringDedupTabl
 bool G1StringDedupTable::equals(typeArrayOop value1, typeArrayOop value2) {
   return (value1 == value2 ||
           (value1->length() == value2->length() &&
-           (!memcmp(value1->base(T_CHAR),
-                    value2->base(T_CHAR),
-                    value1->length() * sizeof(jchar)))));
+           (!memcmp(value1->base(T_BYTE),
+                    value2->base(T_BYTE),
+                    value1->length() * sizeof(jbyte)))));
 }
 
-typeArrayOop G1StringDedupTable::lookup(typeArrayOop value, unsigned int hash,
+typeArrayOop G1StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned int hash,
                                         G1StringDedupEntry** list, uintx &count) {
   for (G1StringDedupEntry* entry = *list; entry != NULL; entry = entry->next()) {
-    if (entry->hash() == hash) {
+    if (entry->hash() == hash && entry->latin1() == latin1) {
       typeArrayOop existing_value = entry->obj();
       if (equals(value, existing_value)) {
         // Match found
@@ -248,13 +249,13 @@ typeArrayOop G1StringDedupTable::lookup(typeArrayOop value, unsigned int hash,
   return NULL;
 }
 
-typeArrayOop G1StringDedupTable::lookup_or_add_inner(typeArrayOop value, unsigned int hash) {
+typeArrayOop G1StringDedupTable::lookup_or_add_inner(typeArrayOop value, bool latin1, unsigned int hash) {
   size_t index = hash_to_index(hash);
   G1StringDedupEntry** list = bucket(index);
   uintx count = 0;
 
   // Lookup in list
-  typeArrayOop existing_value = lookup(value, hash, list, count);
+  typeArrayOop existing_value = lookup(value, latin1, hash, list, count);
 
   // Check if rehash is needed
   if (count > _rehash_threshold) {
@@ -263,7 +264,7 @@ typeArrayOop G1StringDedupTable::lookup_or_add_inner(typeArrayOop value, unsigne
 
   if (existing_value == NULL) {
     // Not found, add new entry
-    add(value, hash, list);
+    add(value, latin1, hash, list);
 
     // Update statistics
     _entries_added++;
@@ -272,15 +273,24 @@ typeArrayOop G1StringDedupTable::lookup_or_add_inner(typeArrayOop value, unsigne
   return existing_value;
 }
 
-unsigned int G1StringDedupTable::hash_code(typeArrayOop value) {
+unsigned int G1StringDedupTable::hash_code(typeArrayOop value, bool latin1) {
   unsigned int hash;
   int length = value->length();
-  const jchar* data = (jchar*)value->base(T_CHAR);
-
-  if (use_java_hash()) {
-    hash = java_lang_String::hash_code(data, length);
+  if (latin1) {
+    const jbyte* data = (jbyte*)value->base(T_BYTE);
+    if (use_java_hash()) {
+      hash = java_lang_String::hash_code(data, length);
+    } else {
+      hash = AltHashing::murmur3_32(_table->_hash_seed, data, length);
+    }
   } else {
-    hash = AltHashing::murmur3_32(_table->_hash_seed, data, length);
+    length /= sizeof(jchar) / sizeof(jbyte); // Convert number of bytes to number of chars
+    const jchar* data = (jchar*)value->base(T_CHAR);
+    if (use_java_hash()) {
+      hash = java_lang_String::hash_code(data, length);
+    } else {
+      hash = AltHashing::murmur3_32(_table->_hash_seed, data, length);
+    }
   }
 
   return hash;
@@ -299,6 +309,7 @@ void G1StringDedupTable::deduplicate(oop java_string, G1StringDedupStat& stat) {
     return;
   }
 
+  bool latin1 = java_lang_String::is_latin1(java_string);
   unsigned int hash = 0;
 
   if (use_java_hash()) {
@@ -308,7 +319,7 @@ void G1StringDedupTable::deduplicate(oop java_string, G1StringDedupStat& stat) {
 
   if (hash == 0) {
     // Compute hash
-    hash = hash_code(value);
+    hash = hash_code(value, latin1);
     stat.inc_hashed();
 
     if (use_java_hash() && hash != 0) {
@@ -317,7 +328,7 @@ void G1StringDedupTable::deduplicate(oop java_string, G1StringDedupStat& stat) {
     }
   }
 
-  typeArrayOop existing_value = lookup_or_add(value, hash);
+  typeArrayOop existing_value = lookup_or_add(value, latin1, hash);
   if (existing_value == value) {
     // Same value, already known
     stat.inc_known();
@@ -459,7 +470,8 @@ uintx G1StringDedupTable::unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* 
             // destination partitions. finish_rehash() will do a single
             // threaded transfer of all entries.
             typeArrayOop value = (typeArrayOop)*p;
-            unsigned int hash = hash_code(value);
+            bool latin1 = (*entry)->latin1();
+            unsigned int hash = hash_code(value, latin1);
             (*entry)->set_hash(hash);
           }
 
@@ -523,7 +535,8 @@ void G1StringDedupTable::verify() {
       guarantee(G1CollectedHeap::heap()->is_in_reserved(value), "Object must be on the heap");
       guarantee(!value->is_forwarded(), "Object must not be forwarded");
       guarantee(value->is_typeArray(), "Object must be a typeArrayOop");
-      unsigned int hash = hash_code(value);
+      bool latin1 = (*entry)->latin1();
+      unsigned int hash = hash_code(value, latin1);
       guarantee((*entry)->hash() == hash, "Table entry has inorrect hash");
       guarantee(_table->hash_to_index(hash) == bucket, "Table entry has incorrect index");
       entry = (*entry)->next_addr();
@@ -536,10 +549,12 @@ void G1StringDedupTable::verify() {
     G1StringDedupEntry** entry1 = _table->bucket(bucket);
     while (*entry1 != NULL) {
       typeArrayOop value1 = (*entry1)->obj();
+      bool latin1_1 = (*entry1)->latin1();
       G1StringDedupEntry** entry2 = (*entry1)->next_addr();
       while (*entry2 != NULL) {
         typeArrayOop value2 = (*entry2)->obj();
-        guarantee(!equals(value1, value2), "Table entries must not have identical arrays");
+        bool latin1_2 = (*entry2)->latin1();
+        guarantee(latin1_1 != latin1_2 || !equals(value1, value2), "Table entries must not have identical arrays");
         entry2 = (*entry2)->next_addr();
       }
       entry1 = (*entry1)->next_addr();

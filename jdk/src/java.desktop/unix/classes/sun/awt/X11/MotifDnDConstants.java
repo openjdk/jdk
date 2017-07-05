@@ -31,7 +31,7 @@ import java.nio.ByteOrder;
 
 import java.util.Arrays;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Motif DnD protocol global constants and convenience routines.

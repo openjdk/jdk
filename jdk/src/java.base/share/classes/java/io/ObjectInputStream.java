@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 
 /**

@@ -40,6 +40,10 @@ import org.testng.annotations.Test;
 
 /**
  * Tests for javax.script.Invocable implementation of nashorn.
+ *
+ * @test
+ * @build jdk.nashorn.api.scripting.test.VariableArityTestInterface jdk.nashorn.api.scripting.test.InvocableTest
+ * @run testng jdk.nashorn.api.scripting.test.InvocableTest
  */
 @SuppressWarnings("javadoc")
 public class InvocableTest {

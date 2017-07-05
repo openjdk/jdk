@@ -311,6 +311,10 @@
        <fileset dir="${test.src.dir}/jdk/nashorn/internal/runtime/test/resources"/>
     </copy>
 
+    <copy todir="${build.test.classes.dir}/jdk/nashorn/internal/runtime/doubleconv/test/resources">
+      <fileset dir="${test.src.dir}/jdk/nashorn/internal/runtime/doubleconv/test/resources"/>
+    </copy>
+
     <copy todir="${build.test.classes.dir}/jdk/nashorn/api/scripting/test/resources">
        <fileset dir="${test.src.dir}/jdk/nashorn/api/scripting/test/resources"/>
     </copy>
@@ -436,6 +440,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
           <include name="**/runtime/test/*Test.class"/>
           <include name="**/runtime/regexp/test/*Test.class"/>
           <include name="**/runtime/regexp/joni/test/*Test.class"/>
+          <include name="**/runtime/doubleconv/test/*Test.class"/>
           <include name="**/framework/*Test.class"/>
      </fileset>
   </target>

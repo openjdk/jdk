@@ -1955,7 +1955,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
 //    return to caller
 //
 nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
-                                                methodHandle method,
+                                                const methodHandle& method,
                                                 int compile_id,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,

@@ -509,86 +509,6 @@ int LIR_Assembler::emit_deopt_handler() {
 }
 
 
-// This is the fast version of java.lang.String.compare; it has not
-// OSR-entry and therefore, we generate a slow version for OSR's
-void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst, CodeEmitInfo* info) {
-  __ movptr (rbx, rcx); // receiver is in rcx
-  __ movptr (rax, arg1->as_register());
-
-  // Get addresses of first characters from both Strings
-  __ load_heap_oop(rsi, Address(rax, java_lang_String::value_offset_in_bytes()));
-  if (java_lang_String::has_offset_field()) {
-    __ movptr     (rcx, Address(rax, java_lang_String::offset_offset_in_bytes()));
-    __ movl       (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ lea        (rsi, Address(rsi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  } else {
-    __ movl       (rax, Address(rsi, arrayOopDesc::length_offset_in_bytes()));
-    __ lea        (rsi, Address(rsi, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  }
-
-  // rbx, may be NULL
-  add_debug_info_for_null_check_here(info);
-  __ load_heap_oop(rdi, Address(rbx, java_lang_String::value_offset_in_bytes()));
-  if (java_lang_String::has_offset_field()) {
-    __ movptr     (rcx, Address(rbx, java_lang_String::offset_offset_in_bytes()));
-    __ movl       (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ lea        (rdi, Address(rdi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  } else {
-    __ movl       (rbx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
-    __ lea        (rdi, Address(rdi, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  }
-
-  // compute minimum length (in rax) and difference of lengths (on top of stack)
-  __ mov   (rcx, rbx);
-  __ subptr(rbx, rax); // subtract lengths
-  __ push  (rbx);      // result
-  __ cmov  (Assembler::lessEqual, rax, rcx);
-
-  // is minimum length 0?
-  Label noLoop, haveResult;
-  __ testptr (rax, rax);
-  __ jcc (Assembler::zero, noLoop);
-
-  // compare first characters
-  __ load_unsigned_short(rcx, Address(rdi, 0));
-  __ load_unsigned_short(rbx, Address(rsi, 0));
-  __ subl(rcx, rbx);
-  __ jcc(Assembler::notZero, haveResult);
-  // starting loop
-  __ decrement(rax); // we already tested index: skip one
-  __ jcc(Assembler::zero, noLoop);
-
-  // set rsi.edi to the end of the arrays (arrays have same length)
-  // negate the index
-
-  __ lea(rsi, Address(rsi, rax, Address::times_2, type2aelembytes(T_CHAR)));
-  __ lea(rdi, Address(rdi, rax, Address::times_2, type2aelembytes(T_CHAR)));
-  __ negptr(rax);
-
-  // compare the strings in a loop
-
-  Label loop;
-  __ align(wordSize);
-  __ bind(loop);
-  __ load_unsigned_short(rcx, Address(rdi, rax, Address::times_2, 0));
-  __ load_unsigned_short(rbx, Address(rsi, rax, Address::times_2, 0));
-  __ subl(rcx, rbx);
-  __ jcc(Assembler::notZero, haveResult);
-  __ increment(rax);
-  __ jcc(Assembler::notZero, loop);
-
-  // strings are equal up to min length
-
-  __ bind(noLoop);
-  __ pop(rax);
-  return_op(LIR_OprFact::illegalOpr);
-
-  __ bind(haveResult);
-  // leave instruction is going to discard the TOS value
-  __ mov (rax, rcx); // result of call is in rax,
-}
-
-
 void LIR_Assembler::return_op(LIR_Opr result) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == rax, "word returns are in rax,");
   if (!result->is_illegal() && result->is_float_kind() && !result->is_xmm_register()) {
@@ -1667,8 +1587,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   Register Rtmp1 = noreg;
 
   // check if it needs to be profiled
-  ciMethodData* md;
-  ciProfileData* data;
+  ciMethodData* md = NULL;
+  ciProfileData* data = NULL;
 
   if (op->should_profile()) {
     ciMethod* method = op->profiled_method();
@@ -1827,8 +1747,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     CodeStub* stub = op->stub();
 
     // check if it needs to be profiled
-    ciMethodData* md;
-    ciProfileData* data;
+    ciMethodData* md = NULL;
+    ciProfileData* data = NULL;
 
     if (op->should_profile()) {
       ciMethod* method = op->profiled_method();
@@ -2005,7 +1925,8 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     case lir_cond_greater:      acond = Assembler::greater;      ncond = Assembler::lessEqual;    break;
     case lir_cond_belowEqual:   acond = Assembler::belowEqual;   ncond = Assembler::above;        break;
     case lir_cond_aboveEqual:   acond = Assembler::aboveEqual;   ncond = Assembler::below;        break;
-    default:                    ShouldNotReachHere();
+    default:                    acond = Assembler::equal;        ncond = Assembler::notEqual;
+                                ShouldNotReachHere();
   }
 
   if (opr1->is_cpu_register()) {
@@ -3181,27 +3102,23 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   assert(default_type != NULL && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
 
   int elem_size = type2aelembytes(basic_type);
-  int shift_amount;
   Address::ScaleFactor scale;
 
   switch (elem_size) {
     case 1 :
-      shift_amount = 0;
       scale = Address::times_1;
       break;
     case 2 :
-      shift_amount = 1;
       scale = Address::times_2;
       break;
     case 4 :
-      shift_amount = 2;
       scale = Address::times_4;
       break;
     case 8 :
-      shift_amount = 3;
       scale = Address::times_8;
       break;
     default:
+      scale = Address::no_scale;
       ShouldNotReachHere();
   }
 

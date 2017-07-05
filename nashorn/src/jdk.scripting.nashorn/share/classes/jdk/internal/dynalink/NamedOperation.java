@@ -98,7 +98,7 @@ import java.util.Objects;
  * the documentation for all {@link StandardOperation} members describes how
  * they are affected by being incorporated into a named operation.
  */
-public class NamedOperation implements Operation {
+public final class NamedOperation implements Operation {
     private final Operation baseOperation;
     private final Object name;
 
@@ -145,13 +145,11 @@ public class NamedOperation implements Operation {
      */
     @Override
     public boolean equals(final Object obj) {
-        if (obj == null) {
-            return false;
-        } else if(obj.getClass() != NamedOperation.class) {
-            return false;
+        if (obj instanceof NamedOperation) {
+            final NamedOperation other = (NamedOperation)obj;
+            return baseOperation.equals(other.baseOperation) && name.equals(other.name);
         }
-        final NamedOperation other = (NamedOperation)obj;
-        return baseOperation.equals(other.baseOperation) && name.equals(other.name);
+        return false;
     }
 
     /**

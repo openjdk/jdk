@@ -208,8 +208,7 @@ void CardGeneration::compute_new_size() {
   const double min_tmp = used_after_gc / maximum_used_percentage;
   size_t minimum_desired_capacity = (size_t)MIN2(min_tmp, double(max_uintx));
   // Don't shrink less than the initial generation size
-  minimum_desired_capacity = MAX2(minimum_desired_capacity,
-                                  spec()->init_size());
+  minimum_desired_capacity = MAX2(minimum_desired_capacity, initial_size());
   assert(used_after_gc <= minimum_desired_capacity, "sanity check");
 
   if (PrintGC && Verbose) {
@@ -262,8 +261,7 @@ void CardGeneration::compute_new_size() {
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
-    maximum_desired_capacity = MAX2(maximum_desired_capacity,
-                                    spec()->init_size());
+    maximum_desired_capacity = MAX2(maximum_desired_capacity, initial_size());
     if (PrintGC && Verbose) {
       gclog_or_tty->print_cr("  "
                              "  maximum_free_percentage: %6.2f"
@@ -299,20 +297,20 @@ void CardGeneration::compute_new_size() {
       }
       if (PrintGC && Verbose) {
         gclog_or_tty->print_cr("  "
-                      "  shrinking:"
-                      "  initSize: %.1fK"
-                      "  maximum_desired_capacity: %.1fK",
-                      spec()->init_size() / (double) K,
-                      maximum_desired_capacity / (double) K);
+                               "  shrinking:"
+                               "  initSize: %.1fK"
+                               "  maximum_desired_capacity: %.1fK",
+                               initial_size() / (double) K,
+                               maximum_desired_capacity / (double) K);
         gclog_or_tty->print_cr("  "
-                      "  shrink_bytes: %.1fK"
-                      "  current_shrink_factor: " SIZE_FORMAT
-                      "  new shrink factor: " SIZE_FORMAT
-                      "  _min_heap_delta_bytes: %.1fK",
-                      shrink_bytes / (double) K,
-                      current_shrink_factor,
-                      _shrink_factor,
-                      _min_heap_delta_bytes / (double) K);
+                               "  shrink_bytes: %.1fK"
+                               "  current_shrink_factor: " SIZE_FORMAT
+                               "  new shrink factor: " SIZE_FORMAT
+                               "  _min_heap_delta_bytes: %.1fK",
+                               shrink_bytes / (double) K,
+                               current_shrink_factor,
+                               _shrink_factor,
+                               _min_heap_delta_bytes / (double) K);
       }
     }
   }

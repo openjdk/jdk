@@ -1433,10 +1433,31 @@ public:
   void inc_counter(address counter_addr, Register Rtmp1, Register Rtmp2);
   void inc_counter(int*    counter_addr, Register Rtmp1, Register Rtmp2);
 
-  // Compare char[] arrays aligned to 4 bytes.
-  void char_arrays_equals(Register ary1, Register ary2,
-                          Register limit, Register result,
-                          Register chr1, Register chr2, Label& Ldone);
+#ifdef COMPILER2
+  // Compress char[] to byte[] by compressing 16 bytes at once. Return 0 on failure.
+  void string_compress_16(Register src, Register dst, Register cnt, Register result,
+                          Register tmp1, Register tmp2, Register tmp3, Register tmp4,
+                          FloatRegister ftmp1, FloatRegister ftmp2, FloatRegister ftmp3, Label& Ldone);
+
+  // Compress char[] to byte[]. Return 0 on failure.
+  void string_compress(Register src, Register dst, Register cnt, Register tmp, Register result, Label& Ldone);
+
+  // Inflate byte[] to char[] by inflating 16 bytes at once.
+  void string_inflate_16(Register src, Register dst, Register cnt, Register tmp,
+                         FloatRegister ftmp1, FloatRegister ftmp2, FloatRegister ftmp3, FloatRegister ftmp4, Label& Ldone);
+
+  // Inflate byte[] to char[].
+  void string_inflate(Register src, Register dst, Register cnt, Register tmp, Label& Ldone);
+
+  void string_compare(Register str1, Register str2,
+                      Register cnt1, Register cnt2,
+                      Register tmp1, Register tmp2,
+                      Register result, int ae);
+
+  void array_equals(bool is_array_equ, Register ary1, Register ary2,
+                    Register limit, Register tmp, Register result, bool is_byte);
+#endif
+
   // Use BIS for zeroing
   void bis_zeroing(Register to, Register count, Register temp, Label& Ldone);
 

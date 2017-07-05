@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,15 @@ include GensrcExceptions.gmk
 
 include GensrcProperties.gmk
 
-$(eval $(call SetupCompileProperties,LIST_RESOURCE_BUNDLE, \
-    $(filter %.properties, \
-        $(call CacheFind, $(JDK_TOPDIR)/src/java.base/share/classes/sun/launcher/resources)), \
-    ListResourceBundle))
+$(eval $(call SetupCompileProperties, LIST_RESOURCE_BUNDLE, \
+    SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/classes/sun/launcher/resources, \
+    CLASS := ListResourceBundle, \
+))
 
-$(eval $(call SetupCompileProperties,SUN_UTIL, \
-    $(filter %.properties, \
-        $(call CacheFind, $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/resources)), \
-    sun.util.resources.LocaleNamesBundle))
+$(eval $(call SetupCompileProperties, SUN_UTIL, \
+    SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/resources, \
+    CLASS := sun.util.resources.LocaleNamesBundle, \
+))
 
 GENSRC_JAVA_BASE += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
 

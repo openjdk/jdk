@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
 SAPROC   = saproc
 
 ifeq ($(OS_VENDOR), Darwin)
-  LIBSAPROC           = lib$(SAPROC).dylib
+  LIBSAPROC           = lib$(SAPROC).$(LIBRARY_SUFFIX)
 
-  LIBSAPROC_DEBUGINFO = lib$(SAPROC).dylib.dSYM
+  LIBSAPROC_DEBUGINFO = lib$(SAPROC).$(LIBRARY_SUFFIX).dSYM
   LIBSAPROC_DIZ       = lib$(SAPROC).diz
 else
   LIBSAPROC           = lib$(SAPROC).so
