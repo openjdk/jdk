@@ -25,21 +25,14 @@
 #ifndef SHARE_VM_OOPS_KLASS_HPP
 #define SHARE_VM_OOPS_KLASS_HPP
 
-#include "memory/genOopClosures.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/specialized_oop_closures.hpp"
-#include "oops/klassPS.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
-#include "gc_implementation/g1/g1OopClosures.hpp"
-#include "gc_implementation/parNew/parOopClosures.hpp"
-#endif // INCLUDE_ALL_GCS
 
 //
 // A Klass provides:
@@ -61,6 +54,7 @@ template <class T> class GrowableArray;
 class ClassLoaderData;
 class klassVtable;
 class ParCompactionManager;
+class PSPromotionManager;
 class KlassSizeStats;
 class fieldDescriptor;
 
@@ -478,13 +472,6 @@ protected:
   //     and the package separators as '/'.
   virtual const char* signature_name() const;
 
-  // garbage collection support
-  virtual void oop_follow_contents(oop obj) = 0;
-  virtual int  oop_adjust_pointers(oop obj) = 0;
-
-  // Parallel Scavenge and Parallel Old
-  PARALLEL_GC_DECLS_PV
-
   // type testing operations
  protected:
   virtual bool oop_is_instance_slow()       const { return false; }
@@ -581,60 +568,35 @@ protected:
     clean_weak_klass_links(is_alive, false /* clean_alive_klasses */);
   }
 
-  // iterators
-  virtual int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) = 0;
-  virtual int oop_oop_iterate_v(oop obj, ExtendedOopClosure* blk) {
-    return oop_oop_iterate(obj, blk);
-  }
+  // GC specific object visitors
+  //
+  // Mark Sweep
+  virtual void oop_ms_follow_contents(oop obj) = 0;
+  virtual int  oop_ms_adjust_pointers(oop obj) = 0;
+#if INCLUDE_ALL_GCS
+  // Parallel Scavenge
+  virtual void oop_ps_push_contents(  oop obj, PSPromotionManager* pm)   = 0;
+  // Parallel Compact
+  virtual void oop_pc_follow_contents(oop obj, ParCompactionManager* cm) = 0;
+  virtual void oop_pc_update_pointers(oop obj) = 0;
+#endif
+
+  // Iterators specialized to particular subtypes
+  // of ExtendedOopClosure, to avoid closure virtual calls.
+#define Klass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                                      \
+  virtual int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) = 0;                    \
+  /* Iterates "closure" over all the oops in "obj" (of type "this") within "mr". */                \
+  virtual int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) = 0;
+
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL)
 
 #if INCLUDE_ALL_GCS
-  // In case we don't have a specialized backward scanner use forward
-  // iteration.
-  virtual int oop_oop_iterate_backwards_v(oop obj, ExtendedOopClosure* blk) {
-    return oop_oop_iterate_v(obj, blk);
-  }
-#endif // INCLUDE_ALL_GCS
+#define Klass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)                    \
+  virtual int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) = 0;
 
-  // Iterates "blk" over all the oops in "obj" (of type "this") within "mr".
-  // (I don't see why the _m should be required, but without it the Solaris
-  // C++ gives warning messages about overridings of the "oop_oop_iterate"
-  // defined above "hiding" this virtual function.  (DLD, 6/20/00)) */
-  virtual int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) = 0;
-  virtual int oop_oop_iterate_v_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
-    return oop_oop_iterate_m(obj, blk, mr);
-  }
-
-  // Versions of the above iterators specialized to particular subtypes
-  // of OopClosure, to avoid closure virtual calls.
-#define Klass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                \
-  virtual int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk) {     \
-    /* Default implementation reverts to general version. */                 \
-    return oop_oop_iterate(obj, blk);                                        \
-  }                                                                          \
-                                                                             \
-  /* Iterates "blk" over all the oops in "obj" (of type "this") within "mr". \
-     (I don't see why the _m should be required, but without it the Solaris  \
-     C++ gives warning messages about overridings of the "oop_oop_iterate"   \
-     defined above "hiding" this virtual function.  (DLD, 6/20/00)) */       \
-  virtual int oop_oop_iterate##nv_suffix##_m(oop obj,                        \
-                                             OopClosureType* blk,            \
-                                             MemRegion mr) {                 \
-    return oop_oop_iterate_m(obj, blk, mr);                                  \
-  }
-
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL)
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL)
-
-#if INCLUDE_ALL_GCS
-#define Klass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)      \
-  virtual int oop_oop_iterate_backwards##nv_suffix(oop obj,                  \
-                                                   OopClosureType* blk) {    \
-    /* Default implementation reverts to general version. */                 \
-    return oop_oop_iterate_backwards_v(obj, blk);                            \
-  }
-
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
 #endif // INCLUDE_ALL_GCS
 
   virtual void array_klasses_do(void f(Klass* k)) {}

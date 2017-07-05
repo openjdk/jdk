@@ -116,9 +116,10 @@ class ObjectSynchronizer : AllStatic {
   // Basically we deflate all monitors that are not busy.
   // An adaptive profile-based deflation policy could be used if needed
   static void deflate_idle_monitors();
-  static int walk_monitor_list(ObjectMonitor** listheadp,
-                               ObjectMonitor** freeHeadp,
-                               ObjectMonitor** freeTailp);
+  // For a given monitor list: global or per-thread, deflate idle monitors
+  static int deflate_monitor_list(ObjectMonitor** listheadp,
+                                  ObjectMonitor** freeHeadp,
+                                  ObjectMonitor** freeTailp);
   static bool deflate_monitor(ObjectMonitor* mid, oop obj,
                               ObjectMonitor** freeHeadp,
                               ObjectMonitor** freeTailp);
@@ -135,16 +136,17 @@ class ObjectSynchronizer : AllStatic {
 
  private:
   enum { _BLOCKSIZE = 128 };
+  // global list of blocks of monitors
   // gBlockList is really PaddedEnd<ObjectMonitor> *, but we don't
   // want to expose the PaddedEnd template more than necessary.
-  static ObjectMonitor* gBlockList;
+  static ObjectMonitor * gBlockList;
+  // global monitor free list
   static ObjectMonitor * volatile gFreeList;
-  // global monitor in use list, for moribund threads,
+  // global monitor in-use list, for moribund threads,
   // monitors they inflated need to be scanned for deflation
   static ObjectMonitor * volatile gOmInUseList;
   // count of entries in gOmInUseList
   static int gOmInUseCount;
-
 };
 
 // ObjectLocker enforced balanced locking and can never thrown an

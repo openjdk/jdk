@@ -69,7 +69,7 @@ import uncommontrap.Verifier;
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=never_taken_fired.xml
  *                   TestUnstableIfTrap NEVER_TAKEN true
- * @run main uncommontrap.Verifier always_taken_not_fired.xml
+ * @run main/othervm uncommontrap.Verifier always_taken_not_fired.xml
  *                                 always_taken_fired.xml
  *                                 never_taken_not_fired.xml
  *                                 never_taken_fired.xml

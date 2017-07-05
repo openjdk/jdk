@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/genOopClosures.hpp"
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/concurrentMarkSweep/promotionInfo.hpp"
 #include "oops/markOop.inline.hpp"

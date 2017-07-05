@@ -47,9 +47,9 @@ bool MemTracker::_is_nmt_env_valid = true;
 NMT_TrackingLevel MemTracker::init_tracking_level() {
   NMT_TrackingLevel level = NMT_off;
   char buf[64];
-  char nmt_option[64];
   jio_snprintf(buf, sizeof(buf), "NMT_LEVEL_%d", os::current_process_id());
-  if (os::getenv(buf, nmt_option, sizeof(nmt_option))) {
+  const char *nmt_option = ::getenv(buf);
+  if (nmt_option != NULL) {
     if (strcmp(nmt_option, "summary") == 0) {
       level = NMT_summary;
     } else if (strcmp(nmt_option, "detail") == 0) {
@@ -311,4 +311,3 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->print_cr(" ");
   walker.report_statistics(out);
 }
-

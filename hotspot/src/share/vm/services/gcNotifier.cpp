@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ bool GCNotifier::has_event() {
 
 static Handle getGcInfoBuilder(GCMemoryManager *gcManager,TRAPS) {
 
-  Klass* k = Management::sun_management_GarbageCollectorImpl_klass(CHECK_NH);
+  Klass* k = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK_NH);
   instanceKlassHandle gcMBeanKlass (THREAD, k);
 
   instanceOop i = gcManager->get_memory_manager_instance(THREAD);
@@ -214,8 +214,8 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
     Handle objName = java_lang_String::create_from_str(request->gcManager->name(), CHECK);
     Handle objAction = java_lang_String::create_from_str(request->gcAction, CHECK);
     Handle objCause = java_lang_String::create_from_str(request->gcCause, CHECK);
+    Klass* k = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK);
 
-    Klass* k = Management::sun_management_GarbageCollectorImpl_klass(CHECK);
     instanceKlassHandle gc_mbean_klass(THREAD, k);
 
     instanceOop gc_mbean = request->gcManager->get_memory_manager_instance(THREAD);

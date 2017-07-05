@@ -105,6 +105,7 @@
                 _JVM_GetClassTypeAnnotations
                 _JVM_GetDeclaredClasses
                 _JVM_GetDeclaringClass
+                _JVM_GetSimpleBinaryName
                 _JVM_GetEnclosingMethodInfo
                 _JVM_GetFieldIxModifiers
                 _JVM_GetFieldTypeAnnotations

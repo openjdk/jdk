@@ -26,7 +26,6 @@
 #define SHARE_VM_OOPS_OBJARRAYKLASS_HPP
 
 #include "classfile/classLoaderData.hpp"
-#include "memory/specialized_oop_closures.hpp"
 #include "oops/arrayKlass.hpp"
 #include "utilities/macros.hpp"
 
@@ -103,28 +102,67 @@ class ObjArrayKlass : public ArrayKlass {
   // Initialization (virtual from Klass)
   void initialize(TRAPS);
 
-  // Garbage collection
-  void oop_follow_contents(oop obj);
-  inline void oop_follow_contents(oop obj, int index);
-  template <class T> inline void objarray_follow_contents(oop obj, int index);
-
-  int  oop_adjust_pointers(oop obj);
-
-  // Parallel Scavenge and Parallel Old
-  PARALLEL_GC_DECLS
+  // GC specific object visitors
+  //
+  // Mark Sweep
+  void oop_ms_follow_contents(oop obj);
+  int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
-  inline void oop_follow_contents(ParCompactionManager* cm, oop obj, int index);
-  template <class T> inline void
-    objarray_follow_contents(ParCompactionManager* cm, oop obj, int index);
-#endif // INCLUDE_ALL_GCS
+  // Parallel Scavenge
+  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
+  // Parallel Compact
+  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
+  void oop_pc_update_pointers(oop obj);
+#endif
 
-  // Iterators
-  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {
-    return oop_oop_iterate_v(obj, blk);
-  }
-  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
-    return oop_oop_iterate_v_m(obj, blk, mr);
-  }
+  // Oop fields (and metadata) iterators
+  //  [nv = true]  Use non-virtual calls to do_oop_nv.
+  //  [nv = false] Use virtual calls to do_oop.
+  //
+  // The ObjArrayKlass iterators also visits the Object's klass.
+
+ private:
+
+  // Iterate over oop elements and metadata.
+  template <bool nv, typename OopClosureType>
+  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+
+  // Iterate over oop elements within mr, and metadata.
+  template <bool nv, typename OopClosureType>
+  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+  // Iterate over oop elements with indices within [start, end), and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end);
+
+  // Iterate over oop elements within [start, end), and metadata.
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_range_specialized(objArrayOop a, OopClosureType* closure, int start, int end);
+
+ public:
+  // Iterate over all oop elements.
+  template <bool nv, class OopClosureType>
+  inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
+
+ private:
+  // Iterate over all oop elements.
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_elements_specialized(objArrayOop a, OopClosureType* closure);
+
+  // Iterate over all oop elements with indices within mr.
+  template <bool nv, class OopClosureType>
+  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr);
+
+  // Iterate over oop elements within [low, high)..
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_elements_specialized_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
+
+
+ public:
+
 #define ObjArrayKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)   \
   int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);         \
   int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk,      \
@@ -134,6 +172,14 @@ class ObjArrayKlass : public ArrayKlass {
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
+
+#if INCLUDE_ALL_GCS
+#define ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix) \
+  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
+
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+#endif // INCLUDE_ALL_GCS
 
   // JVM support
   jint compute_modifier_flags(TRAPS) const;
