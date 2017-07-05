@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,19 +196,19 @@ class CryptoPermission extends java.security.Permission {
      * Checks if the specified permission is "implied" by
      * this object.
      * <p>
-     * More specifically, this method returns true if:<p>
+     * More specifically, this method returns true if:
      * <ul>
-     * <li> <i>p</i> is an instance of CryptoPermission, and<p>
+     * <li> <i>p</i> is an instance of CryptoPermission, and</li>
      * <li> <i>p</i>'s algorithm name equals or (in the case of wildcards)
-     *       is implied by this permission's algorithm name, and<p>
+     *       is implied by this permission's algorithm name, and</li>
      * <li> <i>p</i>'s maximum allowable key size is less or
-     *       equal to this permission's maximum allowable key size, and<p>
+     *       equal to this permission's maximum allowable key size, and</li>
      * <li> <i>p</i>'s algorithm parameter spec equals or is
-     *        implied by this permission's algorithm parameter spec, and<p>
+     *        implied by this permission's algorithm parameter spec, and</li>
      * <li> <i>p</i>'s exemptionMechanism equals or
      *        is implied by this permission's
      *        exemptionMechanism (a <code>null</code> exemption mechanism
-     *        implies any other exemption mechanism).
+     *        implies any other exemption mechanism).</li>
      * </ul>
      *
      * @param p the permission to check against.

@@ -95,9 +95,3 @@ Java_sun_nio_ch_EPoll_epollWait(JNIEnv *env, jclass c,
     }
     return res;
 }
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_EPoll_close0(JNIEnv *env, jclass c, jint epfd) {
-    int res;
-    RESTARTABLE(close(epfd), res);
-}

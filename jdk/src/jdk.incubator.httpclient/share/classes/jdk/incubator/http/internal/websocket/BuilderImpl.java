@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public final class BuilderImpl implements Builder {
     private final HttpClient client;
     private final URI uri;
     private final Listener listener;
-    private final List<Pair<String, String>> headers = new LinkedList<>();
+    private final Collection<Pair<String, String>> headers = new LinkedList<>();
     private final Collection<String> subprotocols = new LinkedList<>();
     private Duration timeout;
 
@@ -65,17 +65,18 @@ public final class BuilderImpl implements Builder {
     }
 
     @Override
-    public Builder subprotocols(String mostPreferred, String... lesserPreferred)
+    public Builder subprotocols(String mostPreferred,
+                                String... lesserPreferred)
     {
         requireNonNull(mostPreferred, "mostPreferred");
         requireNonNull(lesserPreferred, "lesserPreferred");
         List<String> subprotocols = new LinkedList<>();
+        subprotocols.add(mostPreferred);
         for (int i = 0; i < lesserPreferred.length; i++) {
             String p = lesserPreferred[i];
             requireNonNull(p, "lesserPreferred[" + i + "]");
             subprotocols.add(p);
         }
-        subprotocols.add(0, mostPreferred);
         this.subprotocols.clear();
         this.subprotocols.addAll(subprotocols);
         return this;
@@ -98,20 +99,9 @@ public final class BuilderImpl implements Builder {
 
     Listener getListener() { return listener; }
 
-    List<Pair<String, String>> getHeaders() { return headers; }
+    Collection<Pair<String, String>> getHeaders() { return headers; }
 
     Collection<String> getSubprotocols() { return subprotocols; }
 
     Duration getConnectTimeout() { return timeout; }
-
-    @Override
-    public String toString() {
-        return "WebSocket.Builder{"
-                + ", uri=" + uri
-                + ", listener=" + listener
-                + (!headers.isEmpty() ? ", headers=" + headers : "")
-                + (!subprotocols.isEmpty() ? ", subprotocols=" + subprotocols : "")
-                + ( timeout != null ? ", connectTimeout=" + timeout : "")
-                + '}';
-    }
 }
