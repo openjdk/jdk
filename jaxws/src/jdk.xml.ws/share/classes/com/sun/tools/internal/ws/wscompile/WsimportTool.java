@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public class WsimportTool {
     }
 
     private void deleteGeneratedFiles() {
-        Set<File> trackedRootPackages = new HashSet<File>();
+        Set<File> trackedRootPackages = new HashSet<>();
 
         if (options.clientjar != null) {
             //remove all non-java artifacts as they will packaged in jar.
@@ -282,7 +282,7 @@ public class WsimportTool {
 
     private void addClassesToGeneratedFiles() throws IOException {
         Iterable<File> generatedFiles = options.getGeneratedFiles();
-        final List<File> trackedClassFiles = new ArrayList<File>();
+        final List<File> trackedClassFiles = new ArrayList<>();
         for(File f: generatedFiles) {
             if(f.getName().endsWith(".java")) {
                 String relativeDir = DirectoryUtil.getRelativePathfromCommonBase(f.getParentFile(),options.sourceDir);
@@ -504,7 +504,7 @@ public class WsimportTool {
     }
 
     protected boolean compileGeneratedClasses(ErrorReceiver receiver, WsimportListener listener){
-        List<String> sourceFiles = new ArrayList<String>();
+        List<String> sourceFiles = new ArrayList<>();
 
         for (File f : options.getGeneratedFiles()) {
             if (f.exists() && f.getName().endsWith(".java")) {
@@ -515,10 +515,7 @@ public class WsimportTool {
         if (sourceFiles.size() > 0) {
             String classDir = options.destDir.getAbsolutePath();
             String classpathString = createClasspathString();
-            List<String> args = new ArrayList<String>();
-
-            args.add("--add-modules");
-            args.add("java.xml.ws");
+            List<String> args = new ArrayList<>();
 
             args.add("-d");
             args.add(classDir);
@@ -534,8 +531,26 @@ public class WsimportTool {
                 args.add(options.encoding);
             }
 
+            boolean addModules = true;
             if (options.javacOptions != null) {
-                args.addAll(options.getJavacOptions(args, listener));
+                List<String> javacOptions = options.getJavacOptions(args, listener);
+                for (int i = 0; i < javacOptions.size(); i++) {
+                    String opt = javacOptions.get(i);
+                    if ("-source".equals(opt) && 9 >= getVersion(javacOptions.get(i + 1))) {
+                        addModules = false;
+                    }
+                    if ("-target".equals(opt) && 9 >= getVersion(javacOptions.get(i + 1))) {
+                        addModules = false;
+                    }
+                    if ("--release".equals(opt) && 9 >= getVersion(javacOptions.get(i + 1))) {
+                        addModules = false;
+                    }
+                    args.add(opt);
+                }
+            }
+            if (addModules) {
+                args.add("--add-modules");
+                args.add("java.xml.ws");
             }
 
             for (int i = 0; i < sourceFiles.size(); ++i) {
@@ -571,5 +586,9 @@ public class WsimportTool {
         System.out.println(WscompileMessages.WSIMPORT_HELP(WSIMPORT));
         System.out.println(WscompileMessages.WSIMPORT_USAGE_EXTENSIONS());
         System.out.println(WscompileMessages.WSIMPORT_USAGE_EXAMPLES());
+    }
+
+    private float getVersion(String s) {
+        return Float.parseFloat(s);
     }
 }
