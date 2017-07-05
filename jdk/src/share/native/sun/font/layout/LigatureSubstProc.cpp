@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2013 - All Rights Reserved
  *
  */
 
@@ -47,15 +47,15 @@ U_NAMESPACE_BEGIN
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(LigatureSubstitutionProcessor)
 
-LigatureSubstitutionProcessor::LigatureSubstitutionProcessor(const MorphSubtableHeader *morphSubtableHeader)
-  : StateTableProcessor(morphSubtableHeader)
+  LigatureSubstitutionProcessor::LigatureSubstitutionProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success)
+: StateTableProcessor(morphSubtableHeader, success), ligatureSubstitutionHeader(morphSubtableHeader, success)
 {
-    ligatureSubstitutionHeader = (const LigatureSubstitutionHeader *) morphSubtableHeader;
+    if(LE_FAILURE(success)) return;
     ligatureActionTableOffset = SWAPW(ligatureSubstitutionHeader->ligatureActionTableOffset);
     componentTableOffset = SWAPW(ligatureSubstitutionHeader->componentTableOffset);
     ligatureTableOffset = SWAPW(ligatureSubstitutionHeader->ligatureTableOffset);
 
-    entryTable = (const LigatureSubstitutionStateEntry *) ((char *) &stateTableHeader->stHeader + entryTableOffset);
+    entryTable = LEReferenceToArrayOf<LigatureSubstitutionStateEntry>(stHeader, success, entryTableOffset, LE_UNBOUNDED_ARRAY);
 }
 
 LigatureSubstitutionProcessor::~LigatureSubstitutionProcessor()
@@ -69,7 +69,9 @@ void LigatureSubstitutionProcessor::beginStateTable()
 
 ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index)
 {
-    const LigatureSubstitutionStateEntry *entry = &entryTable[index];
+  LEErrorCode success = LE_NO_ERROR;
+  const LigatureSubstitutionStateEntry *entry = entryTable.getAlias(index, success);
+
     ByteOffset newState = SWAPW(entry->newStateOffset);
     le_int16 flags = SWAPW(entry->flags);
 
@@ -79,12 +81,16 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
         }
 
         componentStack[m] = currGlyph;
+    } else if ( m == -1) {
+        // bad font- skip this glyph.
+        currGlyph++;
+        return newState;
     }
 
     ByteOffset actionOffset = flags & lsfActionOffsetMask;
 
     if (actionOffset != 0) {
-        const LigatureActionEntry *ap = (const LigatureActionEntry *) ((char *) &ligatureSubstitutionHeader->stHeader + actionOffset);
+      LEReferenceTo<LigatureActionEntry> ap(stHeader, success, actionOffset);
         LigatureActionEntry action;
         le_int32 offset, i = 0;
         le_int32 stack[nComponents];
@@ -93,7 +99,8 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
         do {
             le_uint32 componentGlyph = componentStack[m--];
 
-            action = SWAPL(*ap++);
+            action = SWAPL(*ap.getAlias());
+            ap.addObject(success); // ap++
 
             if (m < 0) {
                 m = nComponents - 1;
@@ -101,29 +108,48 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
 
             offset = action & lafComponentOffsetMask;
             if (offset != 0) {
-                const le_int16 *offsetTable = (const le_int16 *)((char *) &ligatureSubstitutionHeader->stHeader + 2 * SignExtend(offset, lafComponentOffsetMask));
+              LEReferenceToArrayOf<le_int16> offsetTable(stHeader, success, 2 * SignExtend(offset, lafComponentOffsetMask), LE_UNBOUNDED_ARRAY);
 
-                i += SWAPW(offsetTable[LE_GET_GLYPH(glyphStorage[componentGlyph])]);
+              if(LE_FAILURE(success)) {
+                  currGlyph++;
+                  LE_DEBUG_BAD_FONT("off end of ligature substitution header");
+                  return newState; // get out! bad font
+              }
+              if(componentGlyph > glyphStorage.getGlyphCount()) {
+                LE_DEBUG_BAD_FONT("preposterous componentGlyph");
+                currGlyph++;
+                return newState; // get out! bad font
+              }
+              i += SWAPW(offsetTable.getObject(LE_GET_GLYPH(glyphStorage[componentGlyph]), success));
 
                 if (action & (lafLast | lafStore))  {
-                    const TTGlyphID *ligatureOffset = (const TTGlyphID *) ((char *) &ligatureSubstitutionHeader->stHeader + i);
-                    TTGlyphID ligatureGlyph = SWAPW(*ligatureOffset);
+                  LEReferenceTo<TTGlyphID> ligatureOffset(stHeader, success, i);
+                  TTGlyphID ligatureGlyph = SWAPW(*ligatureOffset.getAlias());
 
-                    glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], ligatureGlyph);
-                    stack[++mm] = componentGlyph;
-                    i = 0;
+                  glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], ligatureGlyph);
+                  if(mm==nComponents) {
+                    LE_DEBUG_BAD_FONT("exceeded nComponents");
+                    mm--; // don't overrun the stack.
+                  }
+                  stack[++mm] = componentGlyph;
+                  i = 0;
                 } else {
-                    glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], 0xFFFF);
+                  glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], 0xFFFF);
                 }
             }
-        } while (!(action & lafLast));
+#if LE_ASSERT_BAD_FONT
+            if(m<0) {
+              LE_DEBUG_BAD_FONT("m<0")
+            }
+#endif
+        } while (!(action & lafLast)  && (m>=0) ); // stop if last bit is set, or if run out of items
 
         while (mm >= 0) {
-            if (++m >= nComponents) {
-                m = 0;
-            }
+          if (++m >= nComponents) {
+            m = 0;
+          }
 
-            componentStack[m] = stack[mm--];
+          componentStack[m] = stack[mm--];
         }
     }
 

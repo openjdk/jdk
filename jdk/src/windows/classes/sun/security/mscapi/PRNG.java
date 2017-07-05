@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public final class PRNG extends SecureRandomSpi
      *
      * @param seed the seed.
      */
+    @Override
     protected void engineSetSeed(byte[] seed) {
         if (seed != null) {
             generateSeed(-1, seed);
@@ -69,6 +70,7 @@ public final class PRNG extends SecureRandomSpi
      *
      * @param bytes the array to be filled in with random bytes.
      */
+    @Override
     protected void engineNextBytes(byte[] bytes) {
         if (bytes != null) {
             if (generateSeed(0, bytes) == null) {
@@ -85,6 +87,7 @@ public final class PRNG extends SecureRandomSpi
      *
      * @return the seed bytes.
      */
+    @Override
     protected byte[] engineGenerateSeed(int numBytes) {
         byte[] seed = generateSeed(numBytes, null);
 

@@ -76,11 +76,11 @@
 
 package sun.text.resources.is;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_is extends ListResourceBundle {
+public class FormatData_is extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -116,6 +116,23 @@ public class FormatData_is extends ListResourceBundle {
                     "n\u00f3v.", // abb november
                     "des.", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "\u00c1",
+                    "L",
+                    "O",
+                    "N",
+                    "D",
+                    "",
                 }
             },
             { "standalone.MonthNarrows",
@@ -216,13 +233,6 @@ public class FormatData_is extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "calendarname.islamic-civil", "\u00cdslamskt borgaradagatal" },
-            { "calendarname.islamicc", "\u00cdslamskt borgaradagatal" },
-            { "calendarname.islamic", "\u00cdslamskt dagatal" },
-            { "calendarname.buddhist", "B\u00fadd\u00edskt dagatal" },
-            { "calendarname.japanese", "Japanskt dagatal" },
-            { "calendarname.gregorian", "Gregor\u00edskt dagatal" },
-            { "calendarname.gregory", "Gregor\u00edskt dagatal" },
         };
     }
 }

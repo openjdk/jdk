@@ -43,7 +43,7 @@
 
 static void *awtHandle = NULL;
 
-typedef JNIEXPORT jint JNICALL JNI_OnLoad_type(JavaVM *vm, void *reserved);
+typedef jint JNICALL JNI_OnLoad_type(JavaVM *vm, void *reserved);
 
 /* Initialize the Java VM instance variable when the library is
    first loaded */
@@ -206,7 +206,7 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
                                      jobject frame, jstring jcommand)
 {
     /* type of the old backdoor function */
-    typedef JNIEXPORT void JNICALL
+    typedef void JNICALL
         XsessionWMcommand_type(JNIEnv *env, jobject this,
                                jobject frame, jstring jcommand);
 
@@ -234,7 +234,7 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
 JNIEXPORT void JNICALL
 Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
 {
-    typedef JNIEXPORT void JNICALL
+    typedef void JNICALL
         XsessionWMcommand_New_type(JNIEnv *env, jobjectArray jargv);
 
     static XsessionWMcommand_New_type *XsessionWMcommand = NULL;

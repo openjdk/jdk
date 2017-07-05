@@ -76,11 +76,11 @@
 
 package sun.text.resources.nl;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_nl extends ListResourceBundle {
+public class FormatData_nl extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -116,6 +116,23 @@ public class FormatData_nl extends ListResourceBundle {
                     "nov", // abb november
                     "dec", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
                 }
             },
             { "DayNames",
@@ -194,111 +211,6 @@ public class FormatData_nl extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd-MM-yy G",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd-MM-yy GGGGG",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd-MM-yy GGGGG",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM y GGGG",
-                    "dd-MM-yy G",
-                }
-            },
-            { "islamic.MonthNames",
-                new String[] {
-                    "Moeharram",
-                    "Safar",
-                    "Rabi\u02bba al awal",
-                    "Rabi\u02bba al thani",
-                    "Joemad\u02bbal awal",
-                    "Joemad\u02bbal thani",
-                    "Rajab",
-                    "Sja\u02bbaban",
-                    "Ramadan",
-                    "Sjawal",
-                    "Doe al ka\u02bbaba",
-                    "Doe al hizja",
-                    "",
-                }
-            },
-            { "islamic.MonthAbbreviations",
-                new String[] {
-                    "Moeh.",
-                    "Saf.",
-                    "Rab. I",
-                    "Rab. II",
-                    "Joem. I",
-                    "Joem. II",
-                    "Raj.",
-                    "Sja.",
-                    "Ram.",
-                    "Sjaw.",
-                    "Doe al k.",
-                    "Doe al h.",
-                    "",
-                }
-            },
-            { "islamic.Eras",
-                new String[] {
-                    "",
-                    "Sa\u02bbna Hizjria",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y G",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "dd-MM-yy G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "d MMM y GGGG",
-                    "dd-MM-yy GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "Islamitische kalender (cyclisch)" },
-            { "calendarname.islamicc", "Islamitische kalender (cyclisch)" },
-            { "calendarname.roc", "Kalender van de Chinese Republiek" },
-            { "calendarname.islamic", "Islamitische kalender" },
-            { "calendarname.buddhist", "Boeddhistische kalender" },
-            { "calendarname.japanese", "Japanse kalender" },
-            { "calendarname.gregorian", "Gregoriaanse kalender" },
-            { "calendarname.gregory", "Gregoriaanse kalender" },
-            { "field.era", "Tijdperk" },
-            { "field.year", "Jaar" },
-            { "field.month", "Maand" },
-            { "field.weekday", "Dag van de week" },
-            { "field.dayperiod", "AM/PM" },
-            { "field.hour", "Uur" },
-            { "field.minute", "Minuut" },
-            { "field.second", "Seconde" },
-            { "field.zone", "Zone" },
         };
     }
 }

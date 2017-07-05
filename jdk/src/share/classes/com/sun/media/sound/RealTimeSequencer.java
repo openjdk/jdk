@@ -1026,7 +1026,7 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
     class SequencerReceiver extends AbstractReceiver {
 
-        protected void implSend(MidiMessage message, long timeStamp) {
+        void implSend(MidiMessage message, long timeStamp) {
             if (recording) {
                 long tickPos = 0;
 

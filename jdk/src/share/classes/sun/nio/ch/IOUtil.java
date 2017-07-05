@@ -44,11 +44,11 @@ public class IOUtil {
     private IOUtil() { }                // No instantiation
 
     static int write(FileDescriptor fd, ByteBuffer src, long position,
-                     NativeDispatcher nd, Object lock)
+                     NativeDispatcher nd)
         throws IOException
     {
         if (src instanceof DirectBuffer)
-            return writeFromNativeBuffer(fd, src, position, nd, lock);
+            return writeFromNativeBuffer(fd, src, position, nd);
 
         // Substitute a native buffer
         int pos = src.position();
@@ -62,7 +62,7 @@ public class IOUtil {
             // Do not update src until we see how many bytes were written
             src.position(pos);
 
-            int n = writeFromNativeBuffer(fd, bb, position, nd, lock);
+            int n = writeFromNativeBuffer(fd, bb, position, nd);
             if (n > 0) {
                 // now update src
                 src.position(pos + n);
@@ -74,8 +74,7 @@ public class IOUtil {
     }
 
     private static int writeFromNativeBuffer(FileDescriptor fd, ByteBuffer bb,
-                                           long position, NativeDispatcher nd,
-                                             Object lock)
+                                             long position, NativeDispatcher nd)
         throws IOException
     {
         int pos = bb.position();
@@ -89,7 +88,7 @@ public class IOUtil {
         if (position != -1) {
             written = nd.pwrite(fd,
                                 ((DirectBuffer)bb).address() + pos,
-                                rem, position, lock);
+                                rem, position);
         } else {
             written = nd.write(fd, ((DirectBuffer)bb).address() + pos, rem);
         }
@@ -184,18 +183,18 @@ public class IOUtil {
     }
 
     static int read(FileDescriptor fd, ByteBuffer dst, long position,
-                    NativeDispatcher nd, Object lock)
+                    NativeDispatcher nd)
         throws IOException
     {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
         if (dst instanceof DirectBuffer)
-            return readIntoNativeBuffer(fd, dst, position, nd, lock);
+            return readIntoNativeBuffer(fd, dst, position, nd);
 
         // Substitute a native buffer
         ByteBuffer bb = Util.getTemporaryDirectBuffer(dst.remaining());
         try {
-            int n = readIntoNativeBuffer(fd, bb, position, nd, lock);
+            int n = readIntoNativeBuffer(fd, bb, position, nd);
             bb.flip();
             if (n > 0)
                 dst.put(bb);
@@ -206,8 +205,7 @@ public class IOUtil {
     }
 
     private static int readIntoNativeBuffer(FileDescriptor fd, ByteBuffer bb,
-                                            long position, NativeDispatcher nd,
-                                            Object lock)
+                                            long position, NativeDispatcher nd)
         throws IOException
     {
         int pos = bb.position();
@@ -220,7 +218,7 @@ public class IOUtil {
         int n = 0;
         if (position != -1) {
             n = nd.pread(fd, ((DirectBuffer)bb).address() + pos,
-                         rem, position, lock);
+                         rem, position);
         } else {
             n = nd.read(fd, ((DirectBuffer)bb).address() + pos, rem);
         }

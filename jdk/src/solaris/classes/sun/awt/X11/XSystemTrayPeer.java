@@ -58,7 +58,9 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         long selection_owner = selection.getOwner(SCREEN);
         available = (selection_owner != XConstants.None);
 
-        log.fine(" check if system tray is available. selection owner: " + selection_owner);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine(" check if system tray is available. selection owner: " + selection_owner);
+        }
     }
 
     public void ownerChanged(int screen, XMSelection sel, long newOwner, long data, long timestamp) {
@@ -106,7 +108,9 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     void addTrayIcon(XTrayIconPeer tiPeer) throws AWTException {
         long selection_owner = selection.getOwner(SCREEN);
 
-        log.fine(" send SYSTEM_TRAY_REQUEST_DOCK message to owner: " + selection_owner);
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine(" send SYSTEM_TRAY_REQUEST_DOCK message to owner: " + selection_owner);
+        }
 
         if (selection_owner == XConstants.None) {
             throw new AWTException("TrayIcon couldn't be displayed.");

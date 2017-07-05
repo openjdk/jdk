@@ -59,10 +59,11 @@
  */
 package test.java.time.temporal;
 
-import java.time.temporal.*;
-
-import java.time.DateTimeException;
+import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.UnsupportedTemporalTypeException;
+import java.time.temporal.ValueRange;
 
 /**
  * Mock simple date-time with one field-value.
@@ -88,7 +89,7 @@ public final class MockFieldValue implements TemporalAccessor {
             if (isSupported(field)) {
                 return field.range();
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.rangeRefinedBy(this);
     }
@@ -98,7 +99,7 @@ public final class MockFieldValue implements TemporalAccessor {
         if (this.field.equals(field)) {
             return value;
         }
-        throw new DateTimeException("Unsupported field: " + field);
+        throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
     }
 
 }

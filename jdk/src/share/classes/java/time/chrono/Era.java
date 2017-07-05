@@ -65,10 +65,10 @@ import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoUnit.ERAS;
 
 import java.time.DateTimeException;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -120,55 +120,6 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      */
     int getValue();
 
-    /**
-     * Gets the chronology of this era.
-     * <p>
-     * The {@code Chronology} represents the calendar system in use.
-     * This always returns the standard form of the chronology.
-     *
-     * @return the chronology, not null
-     */
-    Chronology getChronology();
-
-    //-----------------------------------------------------------------------
-    /**
-     * Obtains a date in this era given the year-of-era, month, and day.
-     * <p>
-     * This era is combined with the given date fields to form a date.
-     * The year specified must be the year-of-era.
-     * Methods to create a date from the proleptic-year are on {@code Chronology}.
-     * This always uses the standard form of the chronology.
-     * <p>
-     * This default implementation invokes the factory method on {@link Chronology}.
-     *
-     * @param yearOfEra  the calendar system year-of-era
-     * @param month  the calendar system month-of-year
-     * @param day  the calendar system day-of-month
-     * @return a local date based on this era and the specified year-of-era, month and day
-     */
-    public default ChronoLocalDate date(int yearOfEra, int month, int day) {
-        return getChronology().date(this, yearOfEra, month, day);
-    }
-
-
-    /**
-     * Obtains a date in this era given year-of-era and day-of-year fields.
-     * <p>
-     * This era is combined with the given date fields to form a date.
-     * The year specified must be the year-of-era.
-     * Methods to create a date from the proleptic-year are on {@code Chronology}.
-     * This always uses the standard form of the chronology.
-     * <p>
-     * This default implementation invokes the factory method on {@link Chronology}.
-     *
-     * @param yearOfEra  the calendar system year-of-era
-     * @param dayOfYear  the calendar system day-of-year
-     * @return a local date based on this era and the specified year-of-era and day-of-year
-     */
-    public default ChronoLocalDate dateYearDay(int yearOfEra, int dayOfYear) {
-        return getChronology().dateYearDay(this, yearOfEra, dayOfYear);
-    }
-
     //-----------------------------------------------------------------------
     /**
      * Checks if the specified field is supported.
@@ -190,7 +141,7 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * @return true if the field is supported on this era, false if not
      */
     @Override
-    public default boolean isSupported(TemporalField field) {
+    default boolean isSupported(TemporalField field) {
         if (field instanceof ChronoField) {
             return field == ERA;
         }
@@ -207,19 +158,23 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@code ERA} field returns the range.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
      * passing {@code this} as the argument.
      * Whether the range can be obtained is determined by the field.
+     * <p>
+     * The default implementation must return a range for {@code ERA} from
+     * zero to one, suitable for two era calendar systems such as ISO.
      *
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     @Override  // override for Javadoc
-    public default ValueRange range(TemporalField field) {
+    default ValueRange range(TemporalField field) {
         return TemporalAccessor.super.range(field);
     }
 
@@ -233,7 +188,7 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@code ERA} field returns the value of the era.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -242,15 +197,18 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      *
      * @param field  the field to get, not null
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc and performance
-    public default int get(TemporalField field) {
+    default int get(TemporalField field) {
         if (field == ERA) {
             return getValue();
         }
-        return range(field).checkValidIntValue(getLong(field), field);
+        return TemporalAccessor.super.get(field);
     }
 
     /**
@@ -262,7 +220,7 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@code ERA} field returns the value of the era.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -272,14 +230,15 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public default long getLong(TemporalField field) {
+    default long getLong(TemporalField field) {
         if (field == ERA) {
             return getValue();
         } else if (field instanceof ChronoField) {
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.getFrom(this);
     }
@@ -305,10 +264,8 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public default <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.chronology()) {
-            return (R) getChronology();
-        } else if (query == Queries.precision()) {
+    default <R> R query(TemporalQuery<R> query) {
+        if (query == TemporalQuery.precision()) {
             return (R) ERAS;
         }
         return TemporalAccessor.super.query(query);
@@ -339,7 +296,7 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public default Temporal adjustInto(Temporal temporal) {
+    default Temporal adjustInto(Temporal temporal) {
         return temporal.with(ERA, getValue());
     }
 
@@ -359,7 +316,7 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * @param locale  the locale to use, not null
      * @return the text value of the era, not null
      */
-    public default String getDisplayName(TextStyle style, Locale locale) {
+    default String getDisplayName(TextStyle style, Locale locale) {
         return new DateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
     }
 

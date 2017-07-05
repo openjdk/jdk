@@ -184,7 +184,7 @@ import java.security.PrivilegedAction;
         for (int i=0; i<markerInterfaces.length; i++) {
             interfaces[i+1] = markerInterfaces[i].getName().replace('.', '/');
         }
-        cw.visit(CLASSFILE_VERSION, ACC_SUPER,
+        cw.visit(CLASSFILE_VERSION, ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC,
                  lambdaClassName, null,
                  NAME_MAGIC_ACCESSOR_IMPL, interfaces);
 

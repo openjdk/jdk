@@ -65,7 +65,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
+import java.time.DateTimeException;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ValueRange;
 
 import org.testng.annotations.DataProvider;
@@ -228,6 +229,42 @@ public class TestDateTimeValueRange extends AbstractTest {
         assertEquals(test.isValidIntValue(1), false);
         assertEquals(test.isValidIntValue(31), false);
         assertEquals(test.isValidIntValue(32), false);
+    }
+
+    //-----------------------------------------------------------------------
+    // checkValidValue
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="valid")
+    public void test_of_checkValidValue(long sMin, long lMin, long sMax, long lMax) {
+        ValueRange test = ValueRange.of(sMin, lMin, sMax, lMax);
+        assertEquals(test.checkValidIntValue(sMin, null), sMin);
+        assertEquals(test.checkValidIntValue(lMin, null), lMin);
+        assertEquals(test.checkValidIntValue(sMax, null), sMax);
+        assertEquals(test.checkValidIntValue(lMax, null), lMax);
+    }
+
+    @Test(dataProvider="valid", expectedExceptions = DateTimeException.class)
+    public void test_of_checkValidValueMinException(long sMin, long lMin, long sMax, long lMax) {
+        ValueRange test = ValueRange.of(sMin, lMin, sMax, lMax);
+        test.checkValidIntValue(sMin-1, null);
+    }
+
+    @Test(dataProvider="valid", expectedExceptions = DateTimeException.class)
+    public void test_of_checkValidValueMaxException(long sMin, long lMin, long sMax, long lMax) {
+        ValueRange test = ValueRange.of(sMin, lMin, sMax, lMax);
+        test.checkValidIntValue(lMax+1, null);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_checkValidValueUnsupported_long_long() {
+        ValueRange test = ValueRange.of(1, 28, Integer.MAX_VALUE + 1L);
+        test.checkValidIntValue(0, (ChronoField)null);
+    }
+
+    @Test(expectedExceptions = DateTimeException.class)
+    public void test_checkValidValueInvalid_long_long() {
+        ValueRange test = ValueRange.of(1, 28, Integer.MAX_VALUE + 1L);
+        test.checkValidIntValue(Integer.MAX_VALUE + 2L, (ChronoField)null);
     }
 
     //-----------------------------------------------------------------------

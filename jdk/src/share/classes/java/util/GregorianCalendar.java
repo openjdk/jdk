@@ -45,7 +45,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
+import java.time.temporal.TemporalQuery;
 import sun.util.calendar.BaseCalendar;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;

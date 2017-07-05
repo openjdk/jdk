@@ -178,7 +178,7 @@ public enum ChronoUnit implements TemporalUnit {
      * Unit that represents the concept of an era.
      * The ISO calendar system doesn't have eras thus it is impossible to add
      * an era to a date or date-time.
-     * The estimated duration of the era is artificially defined as {@code 1,000,00,000 Years}.
+     * The estimated duration of the era is artificially defined as {@code 1,000,000,000 Years}.
      * <p>
      * When used with other calendar systems there are no restrictions on the unit.
      */

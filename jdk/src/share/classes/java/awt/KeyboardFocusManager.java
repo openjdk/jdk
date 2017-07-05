@@ -2410,7 +2410,7 @@ public abstract class KeyboardFocusManager
         Window nativeFocusedWindow = thisManager.getNativeFocusedWindow();
         if (focusLog.isLoggable(PlatformLogger.FINER)) {
             focusLog.finer("SNFH for {0} in {1}",
-                           String.valueOf(descendant), String.valueOf(heavyweight));
+                       String.valueOf(descendant), String.valueOf(heavyweight));
         }
         if (focusLog.isLoggable(PlatformLogger.FINEST)) {
             focusLog.finest("0. Current focus owner {0}",
@@ -2478,9 +2478,10 @@ public abstract class KeyboardFocusManager
                     manager.enqueueKeyEvents(time, descendant);
                 }
 
-                if (focusLog.isLoggable(PlatformLogger.FINEST))
+                if (focusLog.isLoggable(PlatformLogger.FINEST)) {
                     focusLog.finest("3. SNFH_HANDLED for lightweight" +
                                     descendant + " in " + heavyweight);
+                }
                 return SNFH_SUCCESS_HANDLED;
             } else {
                 if (!focusedWindowChangeAllowed) {
@@ -2501,8 +2502,9 @@ public abstract class KeyboardFocusManager
                                              (hwFocusRequest != null)
                                              ? hwFocusRequest.heavyweight
                                              : nativeFocusedWindow)) {
-                        if (focusLog.isLoggable(PlatformLogger.FINEST))
+                        if (focusLog.isLoggable(PlatformLogger.FINEST)) {
                             focusLog.finest("4. SNFH_FAILURE for " + descendant);
+                        }
                         return SNFH_FAILURE;
                     }
                 }
@@ -2511,8 +2513,9 @@ public abstract class KeyboardFocusManager
                 heavyweightRequests.add
                     (new HeavyweightFocusRequest(heavyweight, descendant,
                                                  temporary, cause));
-                if (focusLog.isLoggable(PlatformLogger.FINEST))
+                if (focusLog.isLoggable(PlatformLogger.FINEST)) {
                     focusLog.finest("5. SNFH_PROCEED for " + descendant);
+                }
                 return SNFH_SUCCESS_PROCEED;
             }
         }

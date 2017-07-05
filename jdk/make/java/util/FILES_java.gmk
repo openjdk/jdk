@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 FILES_java = \
         sun/util/resources/LocaleData.java \
         sun/util/resources/OpenListResourceBundle.java \
+        sun/util/resources/ParallelListResourceBundle.java \
         sun/util/resources/LocaleNamesBundle.java \
         sun/util/resources/TimeZoneNamesBundle.java \
         sun/util/resources/TimeZoneNames.java \

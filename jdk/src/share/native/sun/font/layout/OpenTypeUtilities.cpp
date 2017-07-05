@@ -76,58 +76,74 @@ le_int8 OpenTypeUtilities::highBit(le_int32 value)
     return bit;
 }
 
-Offset OpenTypeUtilities::getTagOffset(LETag tag, const TagAndOffsetRecord *records, le_int32 recordCount)
+
+Offset OpenTypeUtilities::getTagOffset(LETag tag, const LEReferenceToArrayOf<TagAndOffsetRecord> &records, LEErrorCode &success)
 {
-    le_uint8 bit = highBit(recordCount);
-    le_int32 power = 1 << bit;
-    le_int32 extra = recordCount - power;
-    le_int32 probe = power;
-    le_int32 index = 0;
+  if(LE_FAILURE(success)) return 0;
 
-    if (SWAPT(records[extra].tag) <= tag) {
-        index = extra;
+  le_uint32 recordCount = records.getCount();
+  le_uint8 bit = highBit(recordCount);
+  le_int32 power = 1 << bit;
+  le_int32 extra = recordCount - power;
+  le_int32 probe = power;
+  le_int32 index = 0;
+
+  {
+    const ATag &aTag = records.getAlias(extra,success)->tag;
+    if (SWAPT(aTag) <= tag) {
+      index = extra;
     }
+  }
 
-    while (probe > (1 << 0)) {
-        probe >>= 1;
+  while (probe > (1 << 0) && LE_SUCCESS(success)) {
+    probe >>= 1;
 
-        if (SWAPT(records[index + probe].tag) <= tag) {
-            index += probe;
-        }
+    {
+      const ATag &aTag = records.getAlias(index+probe,success)->tag;
+      if (SWAPT(aTag) <= tag) {
+        index += probe;
+      }
     }
+  }
 
-    if (SWAPT(records[index].tag) == tag) {
-        return SWAPW(records[index].offset);
+  {
+    const ATag &aTag = records.getAlias(index,success)->tag;
+    if (SWAPT(aTag) == tag) {
+      return SWAPW(records.getAlias(index,success)->offset);
     }
+  }
 
-    return 0;
+  return 0;
 }
 
-le_int32 OpenTypeUtilities::getGlyphRangeIndex(TTGlyphID glyphID, const GlyphRangeRecord *records, le_int32 recordCount)
+le_int32 OpenTypeUtilities::getGlyphRangeIndex(TTGlyphID glyphID, const LEReferenceToArrayOf<GlyphRangeRecord> &records, LEErrorCode &success)
 {
+  if(LE_FAILURE(success)) return -1;
+
+    le_uint32 recordCount = records.getCount();
     le_uint8 bit = highBit(recordCount);
     le_int32 power = 1 << bit;
     le_int32 extra = recordCount - power;
     le_int32 probe = power;
     le_int32 range = 0;
 
-        if (recordCount == 0) {
-                return -1;
-        }
+    if (recordCount == 0) {
+      return -1;
+    }
 
-    if (SWAPW(records[extra].firstGlyph) <= glyphID) {
+    if (SWAPW(records(extra,success).firstGlyph) <= glyphID) {
         range = extra;
     }
 
-    while (probe > (1 << 0)) {
+    while (probe > (1 << 0) && LE_SUCCESS(success)) {
         probe >>= 1;
 
-        if (SWAPW(records[range + probe].firstGlyph) <= glyphID) {
+        if (SWAPW(records(range + probe,success).firstGlyph) <= glyphID) {
             range += probe;
         }
     }
 
-    if (SWAPW(records[range].firstGlyph) <= glyphID && SWAPW(records[range].lastGlyph) >= glyphID) {
+    if (SWAPW(records(range,success).firstGlyph) <= glyphID && SWAPW(records(range,success).lastGlyph) >= glyphID) {
         return range;
     }
 
@@ -199,6 +215,38 @@ void OpenTypeUtilities::sort(le_uint16 *array, le_int32 count)
     }
 }
 
-
-
 U_NAMESPACE_END
+
+#if LE_ASSERT_BAD_FONT
+#include <stdio.h>
+
+static const char *letagToStr(LETag tag, char *str) {
+  str[0]= 0xFF & (tag>>24);
+  str[1]= 0xFF & (tag>>16);
+  str[2]= 0xFF & (tag>>8);
+  str[3]= 0xFF & (tag>>0);
+  str[4]= 0;
+  return str;
+}
+
+U_CAPI void U_EXPORT2 _debug_LETableReference(const char *f, int l, const char *msg, const LETableReference *what, const void *ptr, size_t len) {
+  char tagbuf[5];
+
+  fprintf(stderr, "%s:%d: LETableReference@0x%p: ", f, l, what);
+  fprintf(stderr, msg, ptr, len);
+  fprintf(stderr, "\n");
+
+  for(int depth=0;depth<10&&(what!=NULL);depth++) {
+    for(int i=0;i<depth;i++) {
+      fprintf(stderr, " "); // indent
+    }
+    if(!what->isValid()) {
+      fprintf(stderr, "(invalid)");
+    }
+    fprintf(stderr, "@%p: tag (%s) font (0x%p), [0x%p+0x%lx]\n", what, letagToStr(what->getTag(), tagbuf), what->getFont(),
+            what->getAlias(), what->getLength());
+
+    what = what->getParent();
+  }
+}
+#endif

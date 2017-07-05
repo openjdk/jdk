@@ -387,7 +387,9 @@ public class InputContext extends java.awt.im.InputContext
             }
             previousInputMethod = null;
 
-            if (log.isLoggable(PlatformLogger.FINE)) log.fine("Current client component " + currentClientComponent);
+            if (log.isLoggable(PlatformLogger.FINE)) {
+                log.fine("Current client component " + currentClientComponent);
+            }
             if (inputMethod instanceof InputMethodAdapter) {
                 ((InputMethodAdapter) inputMethod).setClientComponent(currentClientComponent);
             }
@@ -884,14 +886,16 @@ public class InputContext extends java.awt.im.InputContext
     }
 
     private void logCreationFailed(Throwable throwable) {
-        String errorTextFormat = Toolkit.getProperty("AWT.InputMethodCreationFailed",
-                                                     "Could not create {0}. Reason: {1}");
-        Object[] args =
-            {inputMethodLocator.getDescriptor().getInputMethodDisplayName(null, Locale.getDefault()),
-             throwable.getLocalizedMessage()};
-        MessageFormat mf = new MessageFormat(errorTextFormat);
         PlatformLogger logger = PlatformLogger.getLogger("sun.awt.im");
-        logger.config(mf.format(args));
+        if (logger.isLoggable(PlatformLogger.CONFIG)) {
+            String errorTextFormat = Toolkit.getProperty("AWT.InputMethodCreationFailed",
+                                                         "Could not create {0}. Reason: {1}");
+            Object[] args =
+                {inputMethodLocator.getDescriptor().getInputMethodDisplayName(null, Locale.getDefault()),
+                 throwable.getLocalizedMessage()};
+            MessageFormat mf = new MessageFormat(errorTextFormat);
+            logger.config(mf.format(args));
+        }
     }
 
     InputMethodLocator getInputMethodLocator() {

@@ -71,7 +71,6 @@ extern jfieldID ni_displayNameID;   /* NetworkInterface.displayName */
 extern jfieldID ni_childsID;        /* NetworkInterface.childs */
 
 extern jclass ni_iacls;             /* InetAddress */
-extern jfieldID ni_iaAddr;          /* InetAddress.address */
 
 extern jclass ni_ia4cls;            /* Inet4Address */
 extern jmethodID ni_ia4Ctor;        /* Inet4Address() */

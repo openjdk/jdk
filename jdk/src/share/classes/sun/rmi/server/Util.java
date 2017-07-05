@@ -48,6 +48,7 @@ import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.DigestOutputStream;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -140,17 +141,20 @@ public final class Util {
             return createStub(remoteClass, clientRef);
         }
 
-        ClassLoader loader = implClass.getClassLoader();
-        Class[] interfaces = getRemoteInterfaces(implClass);
-        InvocationHandler handler =
+        final ClassLoader loader = implClass.getClassLoader();
+        final Class[] interfaces = getRemoteInterfaces(implClass);
+        final InvocationHandler handler =
             new RemoteObjectInvocationHandler(clientRef);
 
         /* REMIND: private remote interfaces? */
 
         try {
-            return (Remote) Proxy.newProxyInstance(loader,
-                                                   interfaces,
-                                                   handler);
+            return AccessController.doPrivileged(new PrivilegedAction<Remote>() {
+                public Remote run() {
+                    return (Remote) Proxy.newProxyInstance(loader,
+                                                           interfaces,
+                                                           handler);
+                }});
         } catch (IllegalArgumentException e) {
             throw new StubNotFoundException("unable to create proxy", e);
         }

@@ -134,7 +134,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_ClassLoader_00024NativeLibrary_load;
 		Java_java_lang_ClassLoader_00024NativeLibrary_unload;
 		Java_java_lang_ClassLoader_00024NativeLibrary_findBuiltinLib;
-		Java_java_lang_ClassLoader_getCaller; 
 		Java_java_lang_ClassLoader_registerNatives;
 		Java_java_lang_Compiler_registerNatives;
 		Java_java_lang_Double_longBitsToDouble;
@@ -217,7 +216,7 @@ SUNWprivate_1.1 {
 		Java_java_lang_Throwable_fillInStackTrace;
                 Java_java_lang_Throwable_getStackTraceDepth;
                 Java_java_lang_Throwable_getStackTraceElement;
-		Java_java_lang_UNIXProcess_initIDs;
+		Java_java_lang_UNIXProcess_init;
 		Java_java_lang_UNIXProcess_waitForProcessExit;
 		Java_java_lang_UNIXProcess_forkAndExec;
 		Java_java_lang_UNIXProcess_destroyProcess;
@@ -233,7 +232,6 @@ SUNWprivate_1.1 {
 		Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedExceptionAction_2Ljava_security_AccessControlContext_2;
 		Java_java_security_AccessController_getStackAccessControlContext;
 		Java_java_security_AccessController_getInheritedAccessControlContext;
-		Java_java_util_ResourceBundle_getClassContext;
 		Java_java_util_TimeZone_getSystemTimeZoneID;
 		Java_java_util_TimeZone_getSystemGMTOffsetID;
 		Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8;
