@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,26 @@ public class ChangingInterests {
         return "(" + s + ")";
     }
 
-    static void write1(SocketChannel peer) throws IOException {
-        peer.write(ByteBuffer.wrap(new byte[1]));
-        // give time for other end to be readable
-        try {
-            Thread.sleep(50);
-        } catch (InterruptedException ignore) { }
+    /**
+     * Writes two bytes to 'out' and reads one byte from 'in' so
+     * as to make 'in' readable.
+     */
+    static void makeReadable(SocketChannel out, SocketChannel in) throws IOException {
+        out.write(ByteBuffer.wrap(new byte[2]));
+        ByteBuffer oneByte = ByteBuffer.wrap(new byte[1]);
+        do {
+            int n = in.read(oneByte);
+            if (n == 1) {
+                break;
+            } else if (n == 0) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ignore) { }
+            } else {
+                throw new RuntimeException
+                    ("Expected to read 0 or 1 byte; actual number was " + n);
+            }
+        } while (true);
     }
 
     static void drain(SocketChannel sc) throws IOException {
@@ -147,7 +161,7 @@ public class ChangingInterests {
         sc.configureBlocking(false);
 
         // ensure that channel "sc" is readable
-        write1(peer);
+        makeReadable(peer, sc);
 
         try (Selector sel = Selector.open()) {
             SelectionKey key = sc.register(sel, 0);
@@ -172,7 +186,7 @@ public class ChangingInterests {
                         drain(sc);
                         testForSpin(sel);
                         System.out.println("Make channel readable again");
-                        write1(peer);
+                        makeReadable(peer, sc);
                     }
 
                     System.out.println();

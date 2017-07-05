@@ -188,6 +188,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                     .classTrees(classTrees.toList())
                     .scanSpecifiedItems();
 
+            // abort, if errors were encountered during modules initialization
+            if (messager.hasErrors()) {
+                return null;
+            }
+
             // Parse the files in the packages and subpackages to be documented
             ListBuffer<JCCompilationUnit> packageTrees = new ListBuffer<>();
             parse(etable.getFilesToParse(), packageTrees, false);
