@@ -120,7 +120,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
     private int version;        // The version of .hprof being read
 
     private int debugLevel;
-    private int currPos;        // Current position in the file
+    private long currPos;        // Current position in the file
 
     private int dumpsToSkip;
     private boolean callStack;  // If true, read the call stack of objects
@@ -196,7 +196,9 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                 break;
             }
             in.readInt();       // Timestamp of this record
-            int length = in.readInt();
+            // Length of record: readInt() will return negative value for record
+            // length >2GB.  so store 32bit value in long to keep it unsigned.
+            long length = in.readInt() & 0xffffffffL;
             if (debugLevel > 0) {
                 System.out.println("Read record type " + type
                                    + ", length " + length
@@ -211,7 +213,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
             switch (type) {
                 case HPROF_UTF8: {
                     long id = readID();
-                    byte[] chars = new byte[length - identifierSize];
+                    byte[] chars = new byte[(int)length - identifierSize];
                     in.readFully(chars);
                     names.put(new Long(id), new String(chars));
                     break;
@@ -351,8 +353,8 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
         return snapshot;
     }
 
-    private void skipBytes(int length) throws IOException {
-        in.skipBytes(length);
+    private void skipBytes(long length) throws IOException {
+        in.skipBytes((int)length);
     }
 
     private int readVersionHeader() throws IOException {
@@ -381,7 +383,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
         throw new IOException("Version string not recognized at byte " + (pos+3));
     }
 
-    private void readHeapDump(int bytesLeft, int posAtEnd) throws IOException {
+    private void readHeapDump(long bytesLeft, long posAtEnd) throws IOException {
         while (bytesLeft > 0) {
             int type = in.readUnsignedByte();
             if (debugLevel > 0) {

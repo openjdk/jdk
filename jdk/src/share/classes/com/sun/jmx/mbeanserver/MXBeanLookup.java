@@ -224,7 +224,7 @@ public abstract class MXBeanLookup {
         throws InvalidObjectException {
             String domain = prefix + name.getDomain();
             try {
-                name = switchDomain(domain, name);
+                name = name.withDomain(domain);
             } catch (MalformedObjectNameException e) {
                 throw EnvHelp.initCause(
                         new InvalidObjectException(e.getMessage()), e);
@@ -242,7 +242,7 @@ public abstract class MXBeanLookup {
                         "Proxy's name does not start with " + prefix + ": " + name);
             }
             try {
-                name = switchDomain(domain.substring(prefix.length()), name);
+                name = name.withDomain(domain.substring(prefix.length()));
             } catch (MalformedObjectNameException e) {
                 throw EnvHelp.initCause(new OpenDataException(e.getMessage()), e);
             }
@@ -267,14 +267,6 @@ public abstract class MXBeanLookup {
 
     static void setLookup(MXBeanLookup lookup) {
         currentLookup.set(lookup);
-    }
-
-    // Method temporarily added until we have ObjectName.switchDomain in the
-    // public API.  Note that this method DOES NOT PRESERVE the order of
-    // keys in the ObjectName so it must not be used in the final release.
-    static ObjectName switchDomain(String domain, ObjectName name)
-            throws MalformedObjectNameException {
-        return new ObjectName(domain, name.getKeyPropertyList());
     }
 
     private static final ThreadLocal<MXBeanLookup> currentLookup =

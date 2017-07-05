@@ -20,7 +20,6 @@ The make/makefile rules are:
   VARIANT               If DBG, debug build, if OPT, optimized build
   TARGET_CLASS_VERSION  The classfile version number (currently 5)
   ANT_HOME              Home of ant to use, if provided
-  FINDBUGS_HOME         Home of findbugs to use, if provided
   QUIET                 If defined, be quiet
   VERBOSE               If defined, be verbose
   JDK_VERSION           Version being built

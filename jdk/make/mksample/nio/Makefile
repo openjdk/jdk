@@ -31,7 +31,7 @@ BUILDDIR = ../..
 PRODUCT = java
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = server
+SUBDIRS = multicast server
 all build clean clobber::
 	$(SUBDIRS-loop)
 
