@@ -70,7 +70,6 @@ public abstract class XMLEventFactory {
    * This static method creates a new factory instance.
    * This method uses the following ordered lookup procedure to determine
    * the XMLEventFactory implementation class to load:
-   * <p>
    * <ul>
    * <li>
    *   Use the javax.xml.stream.XMLEventFactory system property.
@@ -158,7 +157,6 @@ public abstract class XMLEventFactory {
    * <p>
    * This method uses the following ordered lookup procedure to determine
    * the XMLEventFactory implementation class to load:
-   * <p>
    * <ul>
    * <li>
    *   Use the value of the system property identified by {@code factoryId}.

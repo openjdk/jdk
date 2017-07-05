@@ -1151,7 +1151,7 @@ class PackageReader extends BandStructure {
         return -1;
     }
 
-    Comparator<Entry> entryOutputOrder = new Comparator<Entry>() {
+    Comparator<Entry> entryOutputOrder = new Comparator<>() {
         public int compare(Entry e0, Entry e1) {
             int k0 = getOutputIndex(e0);
             int k1 = getOutputIndex(e1);

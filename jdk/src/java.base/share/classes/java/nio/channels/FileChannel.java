@@ -330,7 +330,7 @@ public abstract class FileChannel
     public static FileChannel open(Path path, OpenOption... options)
         throws IOException
     {
-        Set<OpenOption> set = new HashSet<OpenOption>(options.length);
+        Set<OpenOption> set = new HashSet<>(options.length);
         Collections.addAll(set, options);
         return open(path, set, NO_ATTRIBUTES);
     }

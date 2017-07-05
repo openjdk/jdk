@@ -121,7 +121,7 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     private static native void init();
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {
                 System.loadLibrary("nio");
                 return null;

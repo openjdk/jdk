@@ -268,6 +268,23 @@ public final class URL implements java.io.Serializable {
      *     createURLStreamHandler} method of each provider, if instantiated, is
      *     invoked, with the protocol string, until a provider returns non-null,
      *     or all providers have been exhausted.
+     * <li>If the previous step fails to find a protocol handler, the
+     *     constructor reads the value of the system property:
+     *     <blockquote>{@code
+     *         java.protocol.handler.pkgs
+     *     }</blockquote>
+     *     If the value of that system property is not {@code null},
+     *     it is interpreted as a list of packages separated by a vertical
+     *     slash character '{@code |}'. The constructor tries to load
+     *     the class named:
+     *     <blockquote>{@code
+     *         <package>.<protocol>.Handler
+     *     }</blockquote>
+     *     where {@code <package>} is replaced by the name of the package
+     *     and {@code <protocol>} is replaced by the name of the protocol.
+     *     If this class does not exist, or if the class exists but it is not
+     *     a subclass of {@code URLStreamHandler}, then the next package
+     *     in the list is tried.
      * <li>If the previous step fails to find a protocol handler, then the
      *     constructor tries to load a built-in protocol handler.
      *     If this class does not exist, or if the class exists but it is not a
@@ -1139,8 +1156,41 @@ public final class URL implements java.io.Serializable {
         }
     }
 
+    private static URLStreamHandler lookupViaProperty(String protocol) {
+        String packagePrefixList = java.security.AccessController.doPrivileged(
+                new PrivilegedAction<>() {
+                    public String run() {
+                        return System.getProperty(protocolPathProp, "");
+                    }
+                });
+        String[] packagePrefixes = packagePrefixList.split("\\|");
+
+        URLStreamHandler handler = null;
+        for (int i=0; handler == null && i<packagePrefixes.length; i++) {
+            String packagePrefix = packagePrefixes[i].trim();
+            try {
+                String clsName = packagePrefix + "." + protocol + ".Handler";
+                Class<?> cls = null;
+                try {
+                    cls = Class.forName(clsName);
+                } catch (ClassNotFoundException e) {
+                    ClassLoader cl = ClassLoader.getSystemClassLoader();
+                    if (cl != null) {
+                        cls = cl.loadClass(clsName);
+                    }
+                }
+                if (cls != null) {
+                    handler = (URLStreamHandler)cls.newInstance();
+                }
+            } catch (Exception e) {
+                // any number of exceptions can get thrown here
+            }
+        }
+        return handler;
+    }
+
     private static Iterator<URLStreamHandlerProvider> providers() {
-        return new Iterator<URLStreamHandlerProvider>() {
+        return new Iterator<>() {
 
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             ServiceLoader<URLStreamHandlerProvider> sl =
@@ -1193,7 +1243,7 @@ public final class URL implements java.io.Serializable {
         gate.set(gate);
         try {
             return AccessController.doPrivileged(
-                new PrivilegedAction<URLStreamHandler>() {
+                new PrivilegedAction<>() {
                     public URLStreamHandler run() {
                         Iterator<URLStreamHandlerProvider> itr = providers();
                         while (itr.hasNext()) {
@@ -1250,6 +1300,10 @@ public final class URL implements java.io.Serializable {
 
             if (handler == null && !protocol.equalsIgnoreCase("jar")) {
                 handler = lookupViaProviders(protocol);
+            }
+
+            if (handler == null) {
+                handler = lookupViaProperty(protocol);
             }
         }
 

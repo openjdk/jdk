@@ -48,7 +48,7 @@ abstract class AbstractPoller implements Runnable {
     private boolean shutdown;
 
     protected AbstractPoller() {
-        this.requestList = new LinkedList<Request>();
+        this.requestList = new LinkedList<>();
         this.shutdown = false;
     }
 
@@ -57,7 +57,7 @@ abstract class AbstractPoller implements Runnable {
      */
     public void start() {
         final Runnable thisRunnable = this;
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Object run() {
                 Thread thr = new ManagedLocalsThread(thisRunnable);
