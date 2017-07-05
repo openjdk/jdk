@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   friend class VMStructs;
   friend class InterpreterMacroAssembler;
   friend class TemplateInterpreterGenerator;
+  friend class InterpreterGenerator;
   friend class TemplateTable;
   // friend class Interpreter;
  public:
@@ -93,6 +94,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   static address    _throw_ArrayStoreException_entry;
   static address    _throw_ArithmeticException_entry;
   static address    _throw_ClassCastException_entry;
+  static address    _throw_WrongMethodType_entry;
   static address    _throw_NullPointerException_entry;
   static address    _throw_exception_entry;
 
@@ -137,6 +139,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   static address    remove_activation_entry()                   { return _remove_activation_entry; }
   static address    throw_exception_entry()                     { return _throw_exception_entry; }
   static address    throw_ArithmeticException_entry()           { return _throw_ArithmeticException_entry; }
+  static address    throw_WrongMethodType_entry()               { return _throw_WrongMethodType_entry; }
   static address    throw_NullPointerException_entry()          { return _throw_NullPointerException_entry; }
   static address    throw_StackOverflowError_entry()            { return _throw_StackOverflowError_entry; }
 

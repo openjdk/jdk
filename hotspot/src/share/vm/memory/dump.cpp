@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -928,6 +928,10 @@ public:
     // shared classes at runtime, where constraints were previously created.
     guarantee(SystemDictionary::constraints()->number_of_entries() == 0,
               "loader constraints are not saved");
+    // Revisit and implement this if we prelink method handle call sites:
+    guarantee(SystemDictionary::invoke_method_table() == NULL ||
+              SystemDictionary::invoke_method_table()->number_of_entries() == 0,
+              "invoke method table is not saved");
     GenCollectedHeap* gch = GenCollectedHeap::heap();
 
     // At this point, many classes have been loaded.

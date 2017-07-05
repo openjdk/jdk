@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,6 +291,16 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   __ should_not_reach_here();
 
   return entry_point;
+}
+
+
+// Method handle invoker
+// Dispatch a method of the form java.dyn.MethodHandles::invoke(...)
+address InterpreterGenerator::generate_method_handle_entry(void) {
+  if (!EnableMethodHandles) {
+    return generate_abstract_entry();
+  }
+  return generate_abstract_entry(); //6815692//
 }
 
 

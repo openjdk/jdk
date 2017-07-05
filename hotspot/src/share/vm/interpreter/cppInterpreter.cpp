@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ void CppInterpreterGenerator::generate_all() {
     method_entry(empty);
     method_entry(accessor);
     method_entry(abstract);
+    method_entry(method_handle);
     method_entry(java_lang_math_sin   );
     method_entry(java_lang_math_cos   );
     method_entry(java_lang_math_tan   );

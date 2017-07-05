@@ -108,6 +108,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
                   (int)(s->code_end() - __ pc()));
   }
   guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+  // shut the door on sizing bugs
+  int slop = 3;  // 32-bit offset is this much larger than an 8-bit one
+  assert(vtable_index > 10 || __ pc() + slop <= s->code_end(), "room for 32-bit offset");
 
   s->set_exception_points(npe_addr, ame_addr);
   return s;
@@ -181,6 +184,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                   (int)(s->code_end() - __ pc()));
   }
   guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+  // shut the door on sizing bugs
+  int slop = 3;  // 32-bit offset is this much larger than an 8-bit one
+  assert(itable_index > 10 || __ pc() + slop <= s->code_end(), "room for 32-bit offset");
 
   s->set_exception_points(npe_addr, ame_addr);
   return s;
@@ -196,6 +202,41 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
     // Itable stub size
     return (DebugVtables ? 256 : 66) + (CountCompiledCalls ? 6 : 0);
   }
+  // In order to tune these parameters, run the JVM with VM options
+  // +PrintMiscellaneous and +WizardMode to see information about
+  // actual itable stubs.  Look for lines like this:
+  //   itable #1 at 0x5551212[65] left over: 3
+  // Reduce the constants so that the "left over" number is >=3
+  // for the common cases.
+  // Do not aim at a left-over number of zero, because a
+  // large vtable or itable index (> 16) will require a 32-bit
+  // immediate displacement instead of an 8-bit one.
+  //
+  // The JVM98 app. _202_jess has a megamorphic interface call.
+  // The itable code looks like this:
+  // Decoding VtableStub itbl[1]@1
+  //   mov    0x4(%ecx),%esi
+  //   mov    0xe8(%esi),%edi
+  //   lea    0x130(%esi,%edi,4),%edi
+  //   add    $0x7,%edi
+  //   and    $0xfffffff8,%edi
+  //   lea    0x4(%esi),%esi
+  //   mov    (%edi),%ebx
+  //   cmp    %ebx,%eax
+  //   je     success
+  // loop:
+  //   test   %ebx,%ebx
+  //   je     throw_icce
+  //   add    $0x8,%edi
+  //   mov    (%edi),%ebx
+  //   cmp    %ebx,%eax
+  //   jne    loop
+  // success:
+  //   mov    0x4(%edi),%edi
+  //   mov    (%esi,%edi,1),%ebx
+  //   jmp    *0x44(%ebx)
+  // throw_icce:
+  //   jmp    throw_ICCE_entry
 }
 
 int VtableStub::pd_code_alignment() {

@@ -48,6 +48,8 @@ public class JavaThread extends Thread {
   private static AddressField  lastJavaPCField;
   private static CIntegerField threadStateField;
   private static AddressField  osThreadField;
+  private static AddressField  stackBaseField;
+  private static CIntegerField stackSizeField;
 
   private static JavaThreadPDAccess access;
 
@@ -83,6 +85,8 @@ public class JavaThread extends Thread {
     lastJavaPCField   = anchorType.getAddressField("_last_Java_pc");
     threadStateField  = type.getCIntegerField("_thread_state");
     osThreadField     = type.getAddressField("_osthread");
+    stackBaseField    = type.getAddressField("_stack_base");
+    stackSizeField    = type.getCIntegerField("_stack_size");
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
@@ -312,6 +316,14 @@ public class JavaThread extends Thread {
     return (OSThread) VMObjectFactory.newObject(OSThread.class, osThreadField.getValue(addr));
   }
 
+  public Address getStackBase() {
+    return stackBaseField.getValue();
+  }
+
+  public long getStackSize() {
+    return stackSizeField.getValue();
+  }
+
   /** Gets the Java-side thread object for this JavaThread */
   public Oop getThreadObj() {
     return VM.getVM().getObjectHeap().newOop(threadObjField.getValue(addr));
@@ -345,11 +357,18 @@ public class JavaThread extends Thread {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(VM.getVM().isDebugging(), "Not yet implemented for non-debugging system");
     }
-    Address highest = highestLock();
     Address sp      = lastSPDbg();
+    Address stackBase = getStackBase();
     // Be robust
-    if ((highest == null) || (sp == null)) return false;
-    return (highest.greaterThanOrEqual(a) && sp.lessThanOrEqual(a));
+    if (sp == null) return false;
+    return stackBase.greaterThanOrEqual(a) && sp.lessThanOrEqual(a);
+  }
+
+  public boolean isLockOwned(Address a) {
+    Address stackBase = getStackBase();
+    Address stackLimit = stackBase.addOffsetTo(-getStackSize());
+
+    return stackBase.greaterThanOrEqual(a) && stackLimit.lessThanOrEqual(a);
 
     // FIXME: should traverse MonitorArray/MonitorChunks as in VM
   }

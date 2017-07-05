@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,20 @@ void LinkResolver::lookup_method_in_interfaces(methodHandle& result, KlassHandle
   result = methodHandle(THREAD, ik->lookup_method_in_all_interfaces(name(), signature()));
 }
 
+void LinkResolver::lookup_implicit_method(methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS) {
+  if (EnableMethodHandles && MethodHandles::enabled() &&
+      name == vmSymbolHandles::invoke_name() && klass() == SystemDictionary::MethodHandle_klass()) {
+    methodOop result_oop = SystemDictionary::find_method_handle_invoke(signature,
+                                                                       Handle(),
+                                                                       Handle(),
+                                                                       CHECK);
+    if (result_oop != NULL) {
+      assert(result_oop->is_method_handle_invoke() && result_oop->signature() == signature(), "consistent");
+      result = methodHandle(THREAD, result_oop);
+    }
+  }
+}
+
 void LinkResolver::check_method_accessability(KlassHandle ref_klass,
                                               KlassHandle resolved_klass,
                                               KlassHandle sel_klass,
@@ -238,6 +252,11 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
   if (resolved_method.is_null()) { // not found in the class hierarchy
     // 3. lookup method in all the interfaces implemented by the resolved klass
     lookup_method_in_interfaces(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+
+    if (resolved_method.is_null()) {
+      // JSR 292:  see if this is an implicitly generated method MethodHandle.invoke(*...)
+      lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+    }
 
     if (resolved_method.is_null()) {
       // 4. method lookup failed
