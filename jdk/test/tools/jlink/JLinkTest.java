@@ -32,13 +32,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.PluginRepository;
 import tests.Helper;
 import tests.JImageGenerator;
-import tests.JImageGenerator.InMemoryFile;
 
 /*
  * @test
@@ -48,13 +48,17 @@ import tests.JImageGenerator.InMemoryFile;
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
  * @run main/othervm -Xmx1g JLinkTest
  */
 public class JLinkTest {
+    static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
+        .orElseThrow(() ->
+            new RuntimeException("jlink tool not found")
+        );
+
     // number of built-in plugins from jdk.jlink module
     private static int getNumJlinkPlugins() {
         ModuleDescriptor desc = Plugin.class.getModule().getDescriptor();
@@ -180,7 +184,8 @@ public class JLinkTest {
         {
             // Help
             StringWriter writer = new StringWriter();
-            jdk.tools.jlink.internal.Main.run(new String[]{"--help"}, new PrintWriter(writer));
+            PrintWriter pw = new PrintWriter(writer);
+            JLINK_TOOL.run(pw, pw, "--help");
             String output = writer.toString();
             if (output.split("\n").length < 10) {
                 System.err.println(output);
@@ -202,7 +207,9 @@ public class JLinkTest {
         {
             // List plugins
             StringWriter writer = new StringWriter();
-            jdk.tools.jlink.internal.Main.run(new String[]{"--list-plugins"}, new PrintWriter(writer));
+            PrintWriter pw = new PrintWriter(writer);
+
+            JLINK_TOOL.run(pw, pw, "--list-plugins");
             String output = writer.toString();
             long number = Stream.of(output.split("\\R"))
                     .filter((s) -> s.matches("Plugin Name:.*"))

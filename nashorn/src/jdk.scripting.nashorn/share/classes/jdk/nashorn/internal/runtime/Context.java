@@ -389,6 +389,15 @@ public final class Context {
     // is created, and invalidated forever once the second global is created.
     private final AtomicReference<GlobalConstants> globalConstantsRef = new AtomicReference<>();
 
+    // Are java.sql, java.sql.rowset modules found in the system?
+    static final boolean javaSqlFound, javaSqlRowsetFound;
+
+    static {
+        final Layer boot = Layer.boot();
+        javaSqlFound = boot.findModule("java.sql").isPresent();
+        javaSqlRowsetFound = boot.findModule("java.sql.rowset").isPresent();
+    }
+
     /**
      * Get the current global scope
      * @return the current global scope

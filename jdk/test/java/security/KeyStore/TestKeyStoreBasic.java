@@ -40,7 +40,7 @@ import java.util.Base64;
 
 /*
  * @test
- * @bug 8048621 8133090
+ * @bug 8048621 8133090 8167371
  * @summary Test basic operations with keystores (jks, jceks, pkcs12)
  * @author Yu-Ching Valerie PENG
  */
@@ -116,6 +116,8 @@ public class TestKeyStoreBasic {
     };
     private static final String ALIAS_HEAD = "test";
 
+    private static final String CRYPTO_ALG = "PBEWithHmacSHA256AndAES_128";
+
     public static void main(String args[]) throws Exception {
         TestKeyStoreBasic jstest = new TestKeyStoreBasic();
         jstest.run();
@@ -125,7 +127,7 @@ public class TestKeyStoreBasic {
         for (String provider : PROVIDERS) {
             try {
                 runTest(provider);
-                System.out.println("Test with provider " + provider + "passed");
+                System.out.println("Test with provider " + provider + " passed");
             } catch (java.security.KeyStoreException e) {
                 if (provider.equals("SunPKCS11-Solaris")) {
                     System.out.println("KeyStoreException is expected: "
@@ -236,6 +238,44 @@ public class TestKeyStoreBasic {
         // compare the creation date of the 2 key stores for all aliases
         compareCreationDate(ks, ks2, numEntries);
 
+        // check setEntry/getEntry with a password protection algorithm
+        if ("PKCS12".equalsIgnoreCase(ks.getType())) {
+            System.out.println(
+                "Skipping the setEntry/getEntry check for PKCS12 keystore...");
+            return;
+        }
+        String alias = ALIAS_HEAD + ALIAS_HEAD;
+        KeyStore.PasswordProtection pw =
+            new KeyStore.PasswordProtection(PASSWD2, CRYPTO_ALG, null);
+        KeyStore.PrivateKeyEntry entry =
+            new KeyStore.PrivateKeyEntry(privateKey, new Certificate[]{ cert });
+        checkSetEntry(ks, alias, pw, entry);
+        ks.setEntry(alias, entry, new KeyStore.PasswordProtection(PASSWD2));
+        checkGetEntry(ks, alias, pw);
+    }
+
+    // check setEntry with a password protection algorithm
+    private void checkSetEntry(KeyStore ks, String alias,
+        KeyStore.PasswordProtection pw, KeyStore.Entry entry) throws Exception {
+        try {
+            ks.setEntry(alias, entry, pw);
+            throw new Exception(
+                "ERROR: expected KeyStore.setEntry to throw an exception");
+        } catch (KeyStoreException e) {
+            // ignore the expected exception
+        }
+    }
+
+    // check getEntry with a password protection algorithm
+    private void checkGetEntry(KeyStore ks, String alias,
+        KeyStore.PasswordProtection pw) throws Exception {
+        try {
+            ks.getEntry(alias, pw);
+            throw new Exception(
+                "ERROR: expected KeyStore.getEntry to throw an exception");
+        } catch (KeyStoreException e) {
+            // ignore the expected exception
+        }
     }
 
     // check key store type

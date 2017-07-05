@@ -255,7 +255,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
     CFLAGS_unix := -UDEBUG, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
+    LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:JIMAGE_Open -export:JIMAGE_Close \
         -export:JIMAGE_PackageToModule \

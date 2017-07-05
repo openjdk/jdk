@@ -85,12 +85,12 @@ import sun.util.calendar.ZoneInfo;
  * further information is the U.S. Naval Observatory, particularly
  * the Directorate of Time at:
  * <blockquote><pre>
- *     <a href=http://tycho.usno.navy.mil>http://tycho.usno.navy.mil</a>
+ *     <a href="http://www.usno.navy.mil">http://www.usno.navy.mil</a>
  * </pre></blockquote>
  * <p>
  * and their definitions of "Systems of Time" at:
  * <blockquote><pre>
- *     <a href=http://tycho.usno.navy.mil/systime.html>http://tycho.usno.navy.mil/systime.html</a>
+ *     <a href="http://www.usno.navy.mil/USNO/time/master-clock/systems-of-time">http://www.usno.navy.mil/USNO/time/master-clock/systems-of-time</a>
  * </pre></blockquote>
  * <p>
  * In all methods of class {@code Date} that accept or return
