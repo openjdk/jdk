@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
 
     }
 
+    @SuppressWarnings("deprecation")
     public void setBackground(Color c) {
         Component comp;
         int i;
@@ -101,6 +102,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         setForegroundForHierarchy((Container) target, c);
     }
 
+    @SuppressWarnings("deprecation")
     private void setForegroundForHierarchy(Container cont, Color c) {
         synchronized(target.getTreeLock()) {
             int n = cont.getComponentCount();

@@ -22,6 +22,9 @@
  *
  */
 
+// Disable CRT security warning against strcpy/strcat
+#pragma warning(disable: 4996)
+
 // this is source code windbg based SA debugger agent to debug
 // Dr. Watson dump files and process snapshots.
 

@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8010722
  * @summary Tests ergonomics for UseCompressedOops.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestUseCompressedOopsErgo TestUseCompressedOopsErgoTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

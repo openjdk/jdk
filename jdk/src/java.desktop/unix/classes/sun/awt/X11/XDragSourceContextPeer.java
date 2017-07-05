@@ -110,6 +110,7 @@ public final class XDragSourceContextPeer
         return theInstance;
     }
 
+    @SuppressWarnings("deprecation")
     protected void startDrag(Transferable transferable,
                              long[] formats, Map<Long, DataFlavor> formatMap) {
         Component component = getTrigger().getComponent();

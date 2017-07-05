@@ -23,25 +23,49 @@
 
 /*
  * @test
- * @bug 8060206
+ * @bug 8060206 8067366
  * @summary Extension mechanism is removed
  */
 
 import java.io.*;
+import java.lang.Integer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class ExtDirs {
-    public static void main(String arg[]) throws Exception {
+    private static String[] VALUES = new String[] {
+            null,
+            "",
+            "\"\""
+    };
+    public static void main(String... args) throws Exception {
         String value = System.getProperty("java.ext.dirs");
+        System.out.format("java.ext.dirs = '%s'%n", value);
+        if (args.length > 0) {
+            int index = Integer.valueOf(args[0]);
+            String expectedValue = VALUES[index];
+            if (!(expectedValue == value ||
+                    (value != null && value.isEmpty()) ||
+                    (expectedValue != null & expectedValue.equals(value)))) {
+                throw new RuntimeException("java.ext.dirs (" +
+                        value + ") != " + expectedValue);
+            }
+            // launched by subprocess.
+            return;
+        }
+
         if (value != null) {
             throw new RuntimeException("java.ext.dirs not removed: " + value);
         }
 
-        fatalError("-Djava.ext.dirs=foo");
+        fatalError(0, "-Djava.ext.dirs=foo");
+        start(0);
+        start(1, "-Djava.ext.dirs=");
+        start(2, "-Djava.ext.dirs=\"\"");
     }
 
-    static void fatalError(String... args) throws Exception {
+    static ProcessBuilder newProcessBuilder(int testParam, String... args) throws Exception {
         List<String> commands = new ArrayList<>();
         String java = System.getProperty("java.home") + "/bin/java";
         commands.add(java);
@@ -52,9 +76,22 @@ public class ExtDirs {
         commands.add("-cp");
         commands.add(cpath);
         commands.add("ExtDirs");
+        commands.add(String.valueOf(testParam));
 
-        ProcessBuilder processBuilder = new ProcessBuilder(commands);
-        final Process process = processBuilder.start();
+        System.out.println("Testing " + commands.stream().collect(Collectors.joining(" ")));
+        return new ProcessBuilder(commands);
+    }
+
+    static void start(int testParam, String... args) throws Exception {
+        start(newProcessBuilder(testParam, args), false);
+    }
+
+    static void fatalError(int testParam, String... args) throws Exception {
+        start(newProcessBuilder(testParam, args), true);
+    }
+
+    static void start(ProcessBuilder pb, boolean fatalError) throws Exception {
+        final Process process = pb.start();
         BufferedReader errorStream = new BufferedReader(
                 new InputStreamReader(process.getErrorStream()));
         BufferedReader outStream = new BufferedReader(
@@ -72,11 +109,15 @@ public class ExtDirs {
         System.err.println(errorLine);
         process.waitFor(1000, TimeUnit.MILLISECONDS);
         int exitStatus = process.exitValue();
-        if (exitStatus == 0) {
-            throw new RuntimeException("Expect fatal error");
-        }
-        if (!errorLine.contains("Could not create the Java Virtual Machine")) {
-            throw new RuntimeException(errorLine);
+        if (fatalError) {
+            if (exitStatus == 0) {
+                throw new RuntimeException("Expected fatal error");
+            }
+            if (!errorLine.contains("Could not create the Java Virtual Machine")) {
+                throw new RuntimeException(errorLine);
+            }
+        } else if (exitStatus != 0) {
+            throw new RuntimeException("Failed: " + errorLine);
         }
     }
 }

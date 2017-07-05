@@ -26,7 +26,7 @@
  * @bug 8031321
  * @summary Verify processing of UseBMI1Instructions option on CPU with
  *          BMI1 feature support.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestUseBMI1InstructionsOnSupportedCPU
  *        BMISupportedCPUTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

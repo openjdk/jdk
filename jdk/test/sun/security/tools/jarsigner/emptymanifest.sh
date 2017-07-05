@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,14 @@ case "$OS" in
     ;;
 esac
 
-KS=emptymanifest.jks
+KS=emptymanifest.ks
 JFILE=em.jar
 
 KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS"
 JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
 JAVA="$TESTJAVA${FS}bin${FS}java ${TESTVMOPTS}"
 JAVAC="$TESTJAVA${FS}bin${FS}javac ${TESTTOOLVMOPTS} ${TESTJAVACOPTS}"
-JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -keystore $KS -storepass changeit"
 
 rm $KS $JFILE
 echo A > A
@@ -70,7 +70,7 @@ zip $JFILE META-INF${FS}MANIFEST.MF A B
 
 $KT -alias a -dname CN=a -keyalg rsa -genkey -validity 300
 
-$JARSIGNER -keystore $KS -storepass changeit $JFILE a || exit 1
-$JARSIGNER -keystore $KS -verify -debug -strict $JFILE || exit 2
+$JARSIGNER $JFILE a || exit 1
+$JARSIGNER -verify -debug -strict $JFILE || exit 2
 
 exit 0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,7 @@ class GlyphPainter1 extends GlyphView.GlyphPainter {
         return p1;
     }
 
+    @SuppressWarnings("deprecation")
     void sync(GlyphView v) {
         Font f = v.getFont();
         if ((metrics == null) || (! f.equals(metrics.getFont()))) {

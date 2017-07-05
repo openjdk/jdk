@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * An object that may be used to locate a file in a file system. It will
@@ -246,6 +247,12 @@ public interface Path
      * "{@code foo/bar}" starts with "{@code foo}" and "{@code foo/bar}". It
      * does not start with "{@code f}" or "{@code fo}".
      *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     startsWith(getFileSystem().getPath(other));
+     * }</pre>
+     *
      * @param   other
      *          the given path string
      *
@@ -255,7 +262,9 @@ public interface Path
      * @throws  InvalidPathException
      *          If the path string cannot be converted to a Path.
      */
-    boolean startsWith(String other);
+    default boolean startsWith(String other) {
+        return startsWith(getFileSystem().getPath(other));
+    }
 
     /**
      * Tests if this path ends with the given path.
@@ -294,6 +303,12 @@ public interface Path
      * Path}"{@code foo/bar}" with the {@code String} "{@code bar/}" returns
      * {@code true}.
      *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     endsWith(getFileSystem().getPath(other));
+     * }</pre>
+     *
      * @param   other
      *          the given path string
      *
@@ -303,7 +318,9 @@ public interface Path
      * @throws  InvalidPathException
      *          If the path string cannot be converted to a Path.
      */
-    boolean endsWith(String other);
+    default boolean endsWith(String other) {
+        return endsWith(getFileSystem().getPath(other));
+    }
 
     /**
      * Returns a path that is this path with redundant name elements eliminated.
@@ -365,6 +382,12 @@ public interface Path
      * invoking this method with the path string "{@code gus}" will result in
      * the {@code Path} "{@code foo/bar/gus}".
      *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     resolve(getFileSystem().getPath(other));
+     * }</pre>
+     *
      * @param   other
      *          the path string to resolve against this path
      *
@@ -375,7 +398,9 @@ public interface Path
      *
      * @see FileSystem#getPath
      */
-    Path resolve(String other);
+    default Path resolve(String other) {
+        return resolve(getFileSystem().getPath(other));
+    }
 
     /**
      * Resolves the given path against this path's {@link #getParent parent}
@@ -389,6 +414,14 @@ public interface Path
      * returns this path's parent, or where this path doesn't have a parent, the
      * empty path.
      *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     (getParent() == null) ? other : getParent().resolve(other);
+     * }</pre>
+     * unless {@code other == null}, in which case a
+     * {@code NullPointerException} is thrown.
+     *
      * @param   other
      *          the path to resolve against this path's parent
      *
@@ -396,12 +429,23 @@ public interface Path
      *
      * @see #resolve(Path)
      */
-    Path resolveSibling(Path other);
+    default Path resolveSibling(Path other) {
+        if (other == null)
+            throw new NullPointerException();
+        Path parent = getParent();
+        return (parent == null) ? other : parent.resolve(other);
+    }
 
     /**
      * Converts a given path string to a {@code Path} and resolves it against
      * this path's {@link #getParent parent} path in exactly the manner
      * specified by the {@link #resolveSibling(Path) resolveSibling} method.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     resolveSibling(getFileSystem().getPath(other));
+     * }</pre>
      *
      * @param   other
      *          the path string to resolve against this path's parent
@@ -413,7 +457,9 @@ public interface Path
      *
      * @see FileSystem#getPath
      */
-    Path resolveSibling(String other);
+    default Path resolveSibling(String other) {
+        return resolveSibling(getFileSystem().getPath(other));
+    }
 
     /**
      * Constructs a relative path between this path and a given path.
@@ -590,12 +636,28 @@ public interface Path
      * File} object returned by this method is {@link #equals equal} to the
      * original {@code File}.
      *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     new File(toString());
+     * }</pre>
+     * if the {@code FileSystem} which created this {@code Path} is the default
+     * file system; otherwise an {@code UnsupportedOperationException} is
+     * thrown.
+     *
      * @return  a {@code File} object representing this path
      *
      * @throws  UnsupportedOperationException
      *          if this {@code Path} is not associated with the default provider
      */
-    File toFile();
+    default File toFile() {
+        if (getFileSystem() == FileSystems.getDefault()) {
+            return new File(toString());
+        } else {
+            throw new UnsupportedOperationException("Path not associated with "
+                    + "default file system.");
+        }
+    }
 
     // -- watchable --
 
@@ -681,6 +743,13 @@ public interface Path
      *
      *     WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
      * </pre>
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     register(watcher, events, new WatchEvent.Modifier[0]);
+     * }</pre>
+     *
      * @param   watcher
      *          The watch service to which this object is to be registered
      * @param   events
@@ -706,9 +775,10 @@ public interface Path
      *          method is invoked to check read access to the file.
      */
     @Override
-    WatchKey register(WatchService watcher,
-                      WatchEvent.Kind<?>... events)
-        throws IOException;
+    default WatchKey register(WatchService watcher,
+                      WatchEvent.Kind<?>... events) throws IOException {
+        return register(watcher, events, new WatchEvent.Modifier[0]);
+    }
 
     // -- Iterable --
 
@@ -721,10 +791,36 @@ public interface Path
      * is the name of the file or directory denoted by this path. The {@link
      * #getRoot root} component, if present, is not returned by the iterator.
      *
+     * @implSpec
+     * The default implementation returns an {@code Iterator<Path>} which, for
+     * this path, traverses the {@code Path}s returned by
+     * {@code getName(index)}, where {@code index} ranges from zero to
+     * {@code getNameCount() - 1}, inclusive.
+     *
      * @return  an iterator over the name elements of this path.
      */
     @Override
-    Iterator<Path> iterator();
+    default Iterator<Path> iterator() {
+        return new Iterator<Path>() {
+            private int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return (i < getNameCount());
+            }
+
+            @Override
+            public Path next() {
+                if (i < getNameCount()) {
+                    Path result = getName(i);
+                    i++;
+                    return result;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        };
+    }
 
     // -- compareTo/equals/hashCode --
 

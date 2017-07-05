@@ -70,6 +70,7 @@ enum GCH_strong_roots_tasks {
 
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   SharedHeap(policy),
+  _rem_set(NULL),
   _gen_policy(policy),
   _gen_process_roots_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _full_collections_completed(0)
@@ -465,7 +466,7 @@ void GenCollectedHeap::do_collection(bool  full,
           // atomic wrt other collectors in this configuration, we
           // are guaranteed to have empty discovered ref lists.
           if (rp->discovery_is_atomic()) {
-            rp->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
+            rp->enable_discovery();
             rp->setup_policy(do_clear_all_soft_refs);
           } else {
             // collect() below will enable discovery as appropriate
