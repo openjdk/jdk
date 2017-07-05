@@ -776,9 +776,10 @@ protected:
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
-  HeapWord* do_collection_pause(size_t       word_size,
-                                unsigned int gc_count_before,
-                                bool*        succeeded);
+  HeapWord* do_collection_pause(size_t         word_size,
+                                unsigned int   gc_count_before,
+                                bool*          succeeded,
+                                GCCause::Cause gc_cause);
 
   // The guts of the incremental collection pause, executed by the vm
   // thread. It returns false if it is unable to do the collection due

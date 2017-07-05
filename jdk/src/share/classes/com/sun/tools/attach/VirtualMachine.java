@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.io.IOException;
  * {@link java.lang.instrument} for a detailed description on how these agents
  * are loaded and started). The {@link #loadAgentLibrary loadAgentLibrary} and
  * {@link #loadAgentPath loadAgentPath} methods are used to load agents that
- * are deployed in a dynamic library and make use of the <a
+ * are deployed either in a dynamic library or statically linked into the VM and make use of the <a
  * href="../../../../../../../../technotes/guides/jvmti/index.html">JVM Tools
  * Interface</a>. </p>
  *
@@ -298,25 +298,29 @@ public abstract class VirtualMachine {
      * <p> A <a href="../../../../../../../../technotes/guides/jvmti/index.html">JVM
      * TI</a> client is called an <i>agent</i>. It is developed in a native language.
      * A JVM TI agent is deployed in a platform specific manner but it is typically the
-     * platform equivalent of a dynamic library. This method causes the given agent
-     * library to be loaded into the target VM (if not already loaded).
+     * platform equivalent of a dynamic library. Alternatively, it may be statically linked into the VM.
+     * This method causes the given agent library to be loaded into the target
+     * VM (if not already loaded or if not statically linked into the VM).
      * It then causes the target VM to invoke the <code>Agent_OnAttach</code> function
+     * or, for a statically linked agent named 'L', the <code>Agent_OnAttach_L</code> function
      * as specified in the
      * <a href="../../../../../../../../technotes/guides/jvmti/index.html"> JVM Tools
-     * Interface</a> specification. Note that the <code>Agent_OnAttach</code>
+     * Interface</a> specification. Note that the <code>Agent_OnAttach[_L]</code>
      * function is invoked even if the agent library was loaded prior to invoking
      * this method.
      *
      * <p> The agent library provided is the name of the agent library. It is interpreted
      * in the target virtual machine in an implementation-dependent manner. Typically an
      * implementation will expand the library name into an operating system specific file
-     * name. For example, on UNIX systems, the name <tt>foo</tt> might be expanded to
-     * <tt>libfoo.so</tt>, and located using the search path specified by the
-     * <tt>LD_LIBRARY_PATH</tt> environment variable.</p>
+     * name. For example, on UNIX systems, the name <tt>L</tt> might be expanded to
+     * <tt>libL.so</tt>, and located using the search path specified by the
+     * <tt>LD_LIBRARY_PATH</tt> environment variable. If the agent named 'L' is
+     * statically linked into the VM then the VM must export a function named
+     * <code>Agent_OnAttach_L</code>.</p>
      *
-     * <p> If the <code>Agent_OnAttach</code> function in the agent library returns
+     * <p> If the <code>Agent_OnAttach[_L]</code> function in the agent library returns
      * an error then an {@link com.sun.tools.attach.AgentInitializationException} is
-     * thrown. The return value from the <code>Agent_OnAttach</code> can then be
+     * thrown. The return value from the <code>Agent_OnAttach[_L]</code> can then be
      * obtained by invoking the {@link
      * com.sun.tools.attach.AgentInitializationException#returnValue() returnValue}
      * method on the exception. </p>
@@ -325,15 +329,16 @@ public abstract class VirtualMachine {
      *          The name of the agent library.
      *
      * @param   options
-     *          The options to provide to the <code>Agent_OnAttach</code>
+     *          The options to provide to the <code>Agent_OnAttach[_L]</code>
      *          function (can be <code>null</code>).
      *
      * @throws  AgentLoadException
-     *          If the agent library does not exist, or cannot be loaded for
-     *          another reason.
+     *          If the agent library does not exist, the agent library is not
+     *          statically linked with the VM, or the agent library cannot be
+     *          loaded for another reason.
      *
      * @throws  AgentInitializationException
-     *          If the <code>Agent_OnAttach</code> function returns an error
+     *          If the <code>Agent_OnAttach[_L]</code> function returns an error.
      *
      * @throws  IOException
      *          If an I/O error occurs
@@ -359,11 +364,12 @@ public abstract class VirtualMachine {
      *          The name of the agent library.
      *
      * @throws  AgentLoadException
-     *          If the agent library does not exist, or cannot be loaded for
-     *          another reason.
+     *          If the agent library does not exist, the agent library is not
+     *          statically linked with the VM, or the agent library cannot be
+     *          loaded for another reason.
      *
      * @throws  AgentInitializationException
-     *          If the <code>Agent_OnAttach</code> function returns an error
+     *          If the <code>Agent_OnAttach[_L]</code> function returns an error.
      *
      * @throws  IOException
      *          If an I/O error occurs
@@ -383,12 +389,23 @@ public abstract class VirtualMachine {
      * <p> A <a href="../../../../../../../../technotes/guides/jvmti/index.html">JVM
      * TI</a> client is called an <i>agent</i>. It is developed in a native language.
      * A JVM TI agent is deployed in a platform specific manner but it is typically the
-     * platform equivalent of a dynamic library. This method causes the given agent
-     * library to be loaded into the target VM (if not already loaded).
-     * It then causes the target VM to invoke the <code>Agent_OnAttach</code> function
-     * as specified in the
+     * platform equivalent of a dynamic library. Alternatively, the native
+     * library specified by the agentPath parameter may be statically
+     * linked with the VM. The parsing of the agentPath parameter into
+     * a statically linked library name is done in a platform
+     * specific manner in the VM. For example, in UNIX, an agentPath parameter
+     * of <code>/a/b/libL.so</code> would name a library 'L'.
+     *
+     * See the JVM TI Specification for more details.
+     *
+     * This method causes the given agent library to be loaded into the target
+     * VM (if not already loaded or if not statically linked into the VM).
+     * It then causes the target VM to invoke the <code>Agent_OnAttach</code>
+     * function or, for a statically linked agent named 'L', the
+     * <code>Agent_OnAttach_L</code> function as specified in the
      * <a href="../../../../../../../../technotes/guides/jvmti/index.html"> JVM Tools
-     * Interface</a> specification. Note that the <code>Agent_OnAttach</code>
+     * Interface</a> specification.
+     * Note that the <code>Agent_OnAttach[_L]</code>
      * function is invoked even if the agent library was loaded prior to invoking
      * this method.
      *
@@ -396,9 +413,9 @@ public abstract class VirtualMachine {
      * agent library. Unlike {@link #loadAgentLibrary loadAgentLibrary}, the library name
      * is not expanded in the target virtual machine. </p>
      *
-     * <p> If the <code>Agent_OnAttach</code> function in the agent library returns
+     * <p> If the <code>Agent_OnAttach[_L]</code> function in the agent library returns
      * an error then an {@link com.sun.tools.attach.AgentInitializationException} is
-     * thrown. The return value from the <code>Agent_OnAttach</code> can then be
+     * thrown. The return value from the <code>Agent_OnAttach[_L]</code> can then be
      * obtained by invoking the {@link
      * com.sun.tools.attach.AgentInitializationException#returnValue() returnValue}
      * method on the exception. </p>
@@ -407,15 +424,16 @@ public abstract class VirtualMachine {
      *          The full path of the agent library.
      *
      * @param   options
-     *          The options to provide to the <code>Agent_OnAttach</code>
+     *          The options to provide to the <code>Agent_OnAttach[_L]</code>
      *          function (can be <code>null</code>).
      *
      * @throws  AgentLoadException
-     *          If the agent library does not exist, or cannot be loaded for
-     *          another reason.
+     *          If the agent library does not exist, the agent library is not
+     *          statically linked with the VM, or the agent library cannot be
+     *          loaded for another reason.
      *
      * @throws  AgentInitializationException
-     *          If the <code>Agent_OnAttach</code> function returns an error
+     *          If the <code>Agent_OnAttach[_L]</code> function returns an error.
      *
      * @throws  IOException
      *          If an I/O error occurs
@@ -441,11 +459,12 @@ public abstract class VirtualMachine {
      *          The full path to the agent library.
      *
      * @throws  AgentLoadException
-     *          If the agent library does not exist, or cannot be loaded for
-     *          another reason.
+     *          If the agent library does not exist, the agent library is not
+     *          statically linked with the VM, or the agent library cannot be
+     *          loaded for another reason.
      *
      * @throws  AgentInitializationException
-     *          If the <code>Agent_OnAttach</code> function returns an error
+     *          If the <code>Agent_OnAttach[_L]</code> function returns an error.
      *
      * @throws  IOException
      *          If an I/O error occurs

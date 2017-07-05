@@ -87,6 +87,8 @@ class MemTracker : AllStatic {
         MEMFLAGS flags, address pc = 0, Thread* thread = NULL) { }
    static inline void record_virtual_memory_commit(address addr, size_t size,
         address pc = 0, Thread* thread = NULL) { }
+   static inline void record_virtual_memory_release(address addr, size_t size,
+        Thread* thread = NULL) { }
    static inline void record_virtual_memory_type(address base, MEMFLAGS flags,
         Thread* thread = NULL) { }
    static inline Tracker get_realloc_tracker() { return _tkr; }
@@ -372,6 +374,13 @@ class MemTracker : AllStatic {
     tkr.record(addr, size, flags, pc);
   }
 
+  static inline void record_virtual_memory_release(address addr, size_t size,
+      Thread* thread = NULL) {
+    if (is_on()) {
+      Tracker tkr(Tracker::Release, thread);
+      tkr.record(addr, size);
+    }
+  }
 
   // record memory type on virtual memory base address
   static inline void record_virtual_memory_type(address base, MEMFLAGS flags,

@@ -347,9 +347,23 @@ public class IOUtil {
 
     static native void initIDs();
 
+    /**
+     * Used to trigger loading of native libraries
+     */
+    public static void load() { }
+
     static {
-        // Note that IOUtil.initIDs is called from within Util.load.
-        Util.load();
+        java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<Void>() {
+                    public Void run() {
+                        System.loadLibrary("net");
+                        System.loadLibrary("nio");
+                        return null;
+                    }
+                });
+
+        initIDs();
+
         IOV_MAX = iovMax();
     }
 

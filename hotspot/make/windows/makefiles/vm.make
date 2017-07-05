@@ -393,3 +393,11 @@ default::
 _build_pch_file.obj:
         @echo #include "precompiled.hpp" > ../generated/_build_pch_file.cpp
         $(CXX) $(CXX_FLAGS) /Fp"vm.pch" /Yc"precompiled.hpp" /c ../generated/_build_pch_file.cpp
+
+!if "$(BUILD_WIN_SA)" != "1"
+BUILD_VM_DEF_FLAG=-nosa
+!endif
+
+vm.def: $(Obj_Files)
+	sh $(WorkSpace)/make/windows/build_vm_def.sh $(BUILD_VM_DEF_FLAG)
+

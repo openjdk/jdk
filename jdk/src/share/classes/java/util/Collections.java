@@ -27,7 +27,6 @@ package java.util;
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -35,6 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -1148,7 +1148,16 @@ public class Collections {
         public Spliterator<E> spliterator() {
             return (Spliterator<E>)c.spliterator();
         }
-
+        @SuppressWarnings("unchecked")
+        @Override
+        public Stream<E> stream() {
+            return (Stream<E>)c.stream();
+        }
+        @SuppressWarnings("unchecked")
+        @Override
+        public Stream<E> parallelStream() {
+            return (Stream<E>)c.parallelStream();
+        }
     }
 
     /**
@@ -2009,8 +2018,8 @@ public class Collections {
      * through the returned collection.<p>
      *
      * It is imperative that the user manually synchronize on the returned
-     * collection when traversing it via {@link Iterator} or
-     * {@link Spliterator}:
+     * collection when traversing it via {@link Iterator}, {@link Spliterator}
+     * or {@link Stream}:
      * <pre>
      *  Collection c = Collections.synchronizedCollection(myCollection);
      *     ...
@@ -2119,6 +2128,14 @@ public class Collections {
         @Override
         public Spliterator<E> spliterator() {
             return c.spliterator(); // Must be manually synched by user!
+        }
+        @Override
+        public Stream<E> stream() {
+            return c.stream(); // Must be manually synched by user!
+        }
+        @Override
+        public Stream<E> parallelStream() {
+            return c.parallelStream(); // Must be manually synched by user!
         }
         private void writeObject(ObjectOutputStream s) throws IOException {
             synchronized (mutex) {s.defaultWriteObject();}
@@ -3172,6 +3189,10 @@ public class Collections {
         }
         @Override
         public Spliterator<E> spliterator() {return c.spliterator();}
+        @Override
+        public Stream<E> stream()           {return c.stream();}
+        @Override
+        public Stream<E> parallelStream()   {return c.parallelStream();}
     }
 
     /**
@@ -5096,6 +5117,22 @@ public class Collections {
                                                    ") > toIndex(" + toIndex + ")");
             return new CopiesList<>(toIndex - fromIndex, element);
         }
+
+        // Override default methods in Collection
+        @Override
+        public Stream<E> stream() {
+            return IntStream.range(0, n).mapToObj(i -> element);
+        }
+
+        @Override
+        public Stream<E> parallelStream() {
+            return IntStream.range(0, n).parallel().mapToObj(i -> element);
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            return stream().spliterator();
+        }
     }
 
     /**
@@ -5503,6 +5540,10 @@ public class Collections {
 
         @Override
         public Spliterator<E> spliterator() {return s.spliterator();}
+        @Override
+        public Stream<E> stream()           {return s.stream();}
+        @Override
+        public Stream<E> parallelStream()   {return s.parallelStream();}
 
         private static final long serialVersionUID = 2454657854757543876L;
 
@@ -5568,10 +5609,14 @@ public class Collections {
         @Override
         public void forEach(Consumer<? super E> action) {q.forEach(action);}
         @Override
-        public Spliterator<E> spliterator() {return q.spliterator();}
-        @Override
         public boolean removeIf(Predicate<? super E> filter) {
             return q.removeIf(filter);
         }
+        @Override
+        public Spliterator<E> spliterator() {return q.spliterator();}
+        @Override
+        public Stream<E> stream()           {return q.stream();}
+        @Override
+        public Stream<E> parallelStream()   {return q.parallelStream();}
     }
 }

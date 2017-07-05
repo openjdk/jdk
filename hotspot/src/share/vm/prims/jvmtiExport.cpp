@@ -2191,6 +2191,8 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   char buffer[JVM_MAXPATHLEN];
   void* library = NULL;
   jint result = JNI_ERR;
+  const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
+  size_t num_symbol_entries = ARRAY_SIZE(on_attach_symbols);
 
   // get agent name and options
   const char* agent = op->arg(0);
@@ -2200,43 +2202,48 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
   // The abs paramter should be "true" or "false"
   bool is_absolute_path = (absParam != NULL) && (strcmp(absParam,"true")==0);
 
+  // Initially marked as invalid. It will be set to valid if we can find the agent
+  AgentLibrary *agent_lib = new AgentLibrary(agent, options, is_absolute_path, NULL);
 
-  // If the path is absolute we attempt to load the library. Otherwise we try to
-  // load it from the standard dll directory.
+  // Check for statically linked in agent. If not found then if the path is
+  // absolute we attempt to load the library. Otherwise we try to load it
+  // from the standard dll directory.
 
-  if (is_absolute_path) {
-    library = os::dll_load(agent, ebuf, sizeof ebuf);
-  } else {
-    // Try to load the agent from the standard dll directory
-    if (os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
-                           agent)) {
-      library = os::dll_load(buffer, ebuf, sizeof ebuf);
-    }
-    if (library == NULL) {
-      // not found - try local path
-      char ns[1] = {0};
-      if (os::dll_build_name(buffer, sizeof(buffer), ns, agent)) {
+  if (!os::find_builtin_agent(agent_lib, on_attach_symbols, num_symbol_entries)) {
+    if (is_absolute_path) {
+      library = os::dll_load(agent, ebuf, sizeof ebuf);
+    } else {
+      // Try to load the agent from the standard dll directory
+      if (os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+                             agent)) {
         library = os::dll_load(buffer, ebuf, sizeof ebuf);
       }
+      if (library == NULL) {
+        // not found - try local path
+        char ns[1] = {0};
+        if (os::dll_build_name(buffer, sizeof(buffer), ns, agent)) {
+          library = os::dll_load(buffer, ebuf, sizeof ebuf);
+        }
+      }
+    }
+    if (library != NULL) {
+      agent_lib->set_os_lib(library);
+      agent_lib->set_valid();
     }
   }
-
   // If the library was loaded then we attempt to invoke the Agent_OnAttach
   // function
-  if (library != NULL) {
-
+  if (agent_lib->valid()) {
     // Lookup the Agent_OnAttach function
     OnAttachEntry_t on_attach_entry = NULL;
-    const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
-    for (uint symbol_index = 0; symbol_index < ARRAY_SIZE(on_attach_symbols); symbol_index++) {
-      on_attach_entry =
-        CAST_TO_FN_PTR(OnAttachEntry_t, os::dll_lookup(library, on_attach_symbols[symbol_index]));
-      if (on_attach_entry != NULL) break;
-    }
-
+    on_attach_entry = CAST_TO_FN_PTR(OnAttachEntry_t,
+       os::find_agent_function(agent_lib, false, on_attach_symbols, num_symbol_entries));
     if (on_attach_entry == NULL) {
       // Agent_OnAttach missing - unload library
-      os::dll_unload(library);
+      if (!agent_lib->is_static_lib()) {
+        os::dll_unload(library);
+      }
+      delete agent_lib;
     } else {
       // Invoke the Agent_OnAttach function
       JavaThread* THREAD = JavaThread::current();
@@ -2256,7 +2263,9 @@ jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
       // If OnAttach returns JNI_OK then we add it to the list of
       // agent libraries so that we can call Agent_OnUnload later.
       if (result == JNI_OK) {
-        Arguments::add_loaded_agent(agent, (char*)options, is_absolute_path, library);
+        Arguments::add_loaded_agent(agent_lib);
+      } else {
+        delete agent_lib;
       }
 
       // Agent_OnAttach executed so completion status is JNI_OK
