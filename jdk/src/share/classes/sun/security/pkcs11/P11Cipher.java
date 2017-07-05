@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,6 @@ final class P11Cipher extends CipherSpi {
             // should not happen
             throw new ProviderException(nspe);
         }
-        session = token.getOpSession();
     }
 
     protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
@@ -845,18 +844,6 @@ final class P11Cipher extends CipherSpi {
         int n = P11SecretKeyFactory.convertKey
                 (token, key, keyAlgorithm).keyLength();
         return n;
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if ((session != null) && token.isValid()) {
-                cancelOperation();
-                session = token.releaseSession(session);
-            }
-        } finally {
-            super.finalize();
-        }
     }
 
     private final void bufferInputBytes(byte[] in, int inOfs, int len) {

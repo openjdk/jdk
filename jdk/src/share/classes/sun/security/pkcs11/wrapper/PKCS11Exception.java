@@ -148,6 +148,7 @@ public class PKCS11Exception extends Exception {
             0x00000115,
             0x00000120,
             0x00000121,
+            0x00000130,
             0x00000150,
             0x00000160,
             0x00000170,
@@ -156,6 +157,7 @@ public class PKCS11Exception extends Exception {
             0x00000191,
             0x000001A0,
             0x000001A1,
+            0x00000200,
             0x80000000,
         };
         String[] errorMessages = new String[] {
@@ -234,6 +236,7 @@ public class PKCS11Exception extends Exception {
             "CKR_WRAPPING_KEY_TYPE_INCONSISTENT",
             "CKR_RANDOM_SEED_NOT_SUPPORTED",
             "CKR_RANDOM_NO_RNG",
+            "CKR_DOMAIN_PARAMS_INVALID",
             "CKR_BUFFER_TOO_SMALL",
             "CKR_SAVED_STATE_INVALID",
             "CKR_INFORMATION_SENSITIVE",
@@ -242,6 +245,7 @@ public class PKCS11Exception extends Exception {
             "CKR_CRYPTOKI_ALREADY_INITIALIZED",
             "CKR_MUTEX_BAD",
             "CKR_MUTEX_NOT_LOCKED",
+            "CKR_FUNCTION_REJECTED",
             "CKR_VENDOR_DEFINED",
         };
         errorMap = new HashMap<Long,String>();

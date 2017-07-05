@@ -702,6 +702,21 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # http://www.worldtimezone.com/dst_news/dst_news_morocco03.html
 # </a>
 
+# From Steffen Thorsen (2010-04-13):
+# Several news media in Morocco report that the Ministry of Modernization
+# of Public Sectors has announced that Morocco will have DST from
+# 2010-05-02 to 2010-08-08.
+#
+# Example:
+# <a href="http://www.lavieeco.com/actualites/4099-le-maroc-passera-a-l-heure-d-ete-gmt1-le-2-mai.html">
+# http://www.lavieeco.com/actualites/4099-le-maroc-passera-a-l-heure-d-ete-gmt1-le-2-mai.html
+# </a>
+# (French)
+# Our page:
+# <a href="http://www.timeanddate.com/news/time/morocco-starts-dst-2010.html">
+# http://www.timeanddate.com/news/time/morocco-starts-dst-2010.html
+# </a>
+
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	S
@@ -723,6 +738,8 @@ Rule	Morocco	2008	only	-	Jun	 1	 0:00	1:00	S
 Rule	Morocco	2008	only	-	Sep	 1	 0:00	0	-
 Rule	Morocco	2009	only	-	Jun	 1	 0:00	1:00	S
 Rule	Morocco	2009	only	-	Aug	 21	 0:00	0	-
+Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	S
+Rule	Morocco	2010	only	-	Aug	 8	 0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 			 0:00	Morocco	WE%sT	1984 Mar 16
@@ -964,6 +981,24 @@ Zone	Africa/Lome	0:04:52 -	LMT	1893
 # Therefore, the standard time will be kept unchanged the whole year long."
 # So foregoing DST seems to be an exception (albeit one that may be repeated in the  future).
 
+# From Alexander Krivenyshev (2010-03-27):
+# According to some news reports Tunis confirmed not to use DST in 2010
+#
+# (translation):
+# "The Tunisian government has decided to abandon DST, which was scheduled on
+# Sunday...
+# Tunisian authorities had suspended the DST for the first time last year also
+# coincided with the month of Ramadan..."
+#
+# (in Arabic)
+# <a href="http://www.moheet.com/show_news.aspx?nid=358861&pg=1">
+# http://www.moheet.com/show_news.aspx?nid=358861&pg=1
+# <a href="http://www.almadenahnews.com/newss/news.php?c=118&id=38036">
+# http://www.almadenahnews.com/newss/news.php?c=118&id=38036
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_tunis02.html">
+# http://www.worldtimezone.com/dst_news/dst_news_tunis02.html
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Tunisia	1939	only	-	Apr	15	23:00s	1:00	S
 Rule	Tunisia	1939	only	-	Nov	18	23:00s	0	-
@@ -990,8 +1025,7 @@ Rule	Tunisia	2005	only	-	May	 1	 0:00s	1:00	S
 Rule	Tunisia	2005	only	-	Sep	30	 1:00s	0	-
 Rule	Tunisia	2006	2008	-	Mar	lastSun	 2:00s	1:00	S
 Rule	Tunisia	2006	2008	-	Oct	lastSun	 2:00s	0	-
-Rule	Tunisia	2010	max	-	Mar	lastSun	 2:00s	1:00	S
-Rule	Tunisia	2010	max	-	Oct	lastSun	 2:00s	0	-
+
 # Shanks & Pottenger give 0:09:20 for Paris Mean Time; go with Howse's
 # more precise 0:09:21.
 # Shanks & Pottenger say the 1911 switch was on Mar 9; go with Howse's Mar 11.
