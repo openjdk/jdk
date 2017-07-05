@@ -32,12 +32,12 @@
 public class DeoptimizeAllTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
+        // to prevent inlining #method into #compile()
+        WHITE_BOX.setDontInlineMethod(METHOD, true);
         new DeoptimizeAllTest().runTest();
     }
 
     protected void test() throws Exception {
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.setDontInlineMethod(METHOD, true);
         compile();
         checkCompiled(METHOD);
         WHITE_BOX.deoptimizeAll();

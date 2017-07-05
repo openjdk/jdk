@@ -87,7 +87,7 @@ StubCodeGenerator::~StubCodeGenerator() {
     CodeBuffer* cbuf = _masm->code();
     CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
     if (blob != NULL) {
-      blob->set_comments(cbuf->comments());
+      blob->set_strings(cbuf->strings());
     }
     bool saw_first = false;
     StubCodeDesc* toprint[1000];

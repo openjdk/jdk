@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.Threads;
+import sun.jvm.hotspot.runtime.JavaThread;
 import java.lang.reflect.*;
 
 /** <P> An implementation of the JVMDebugger interface. The basic debug
@@ -51,10 +54,11 @@ import java.lang.reflect.*;
 public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     private boolean useGCC32ABI;
     private boolean attached;
-    private long    p_ps_prochandle; // native debugger handle
-    private long    symbolicator; // macosx symbolicator handle
-    private long    task; // macosx task handle
+    private long    p_ps_prochandle;      // native debugger handle
+    private long    symbolicator;         // macosx symbolicator handle
+    private long    task;                 // macosx task handle
     private boolean isCore;
+    private boolean isDarwin;             // variant for bsd
 
     // CDebugger support
     private BsdCDebugger cdbg;
@@ -208,6 +212,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
             }
         }
 
+        isDarwin = getOS().equals("darwin");
         workerThread = new BsdDebuggerLocalWorkerThread(this);
         workerThread.start();
     }
@@ -240,8 +245,11 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
 
     /* called from attach methods */
     private void findABIVersion() throws DebuggerException {
-        if (lookupByName0("libjvm.so", "__vt_10JavaThread") != 0 ||
-            lookupByName0("libjvm_g.so", "__vt_10JavaThread") != 0) {
+        String libjvmName = isDarwin ? "libjvm.dylib" : "libjvm.so";
+        String libjvm_gName = isDarwin? "libjvm_g.dylib" : "libjvm_g.so";
+        String javaThreadVt = isDarwin ? "_vt_10JavaThread" : "__vt_10JavaThread";
+        if (lookupByName0(libjvmName, javaThreadVt) != 0 ||
+            lookupByName0(libjvm_gName, javaThreadVt) != 0) {
             // old C++ ABI
             useGCC32ABI = false;
         } else {
@@ -360,7 +368,8 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         }
 
         if (isCore) {
-            long addr = lookupByName0(objectName, symbol);
+            // MacOSX symbol with "_" as leading
+            long addr = lookupByName0(objectName, isDarwin ? "_" + symbol : symbol);
             return (addr == 0)? null : new BsdAddress(this, handleGCC32ABI(addr, symbol));
         } else {
             class LookupByNameTask implements WorkerThreadTask {
@@ -403,11 +412,11 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     public ThreadProxy getThreadForIdentifierAddress(Address threadIdAddr, Address uniqueThreadIdAddr) {
         return new BsdThread(this, threadIdAddr, uniqueThreadIdAddr);
     }
+
     @Override
     public ThreadProxy getThreadForIdentifierAddress(Address addr) {
         throw new RuntimeException("unimplemented");
     }
-
 
     /** From the ThreadAccess interface via Debugger and JVMDebugger */
     public ThreadProxy getThreadForThreadId(long id) {
@@ -599,6 +608,33 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         throws UnmappedAddressException, DebuggerException {
         // FIXME
         throw new DebuggerException("Unimplemented");
+    }
+
+    /** this functions used for core file reading and called from native attach0,
+        it returns an array of long integers as
+        [thread_id, stack_start, stack_end, thread_id, stack_start, stack_end, ....] for
+        all java threads recorded in Threads. Also adds the ThreadProxy to threadList */
+    public long[] getJavaThreadsInfo() {
+        requireAttach();
+        Threads threads = VM.getVM().getThreads();
+        int len = threads.getNumberOfThreads();
+        long[] result = new long[len * 3];    // triple
+        JavaThread t = threads.first();
+        long beg, end;
+        int i = 0;
+        while (t != null) {
+            end = t.getStackBaseValue();
+            beg = end - t.getStackSize();
+            BsdThread bsdt = (BsdThread)t.getThreadProxy();
+            long uid = bsdt.getUniqueThreadId();
+            if (threadList != null) threadList.add(bsdt);
+            result[i] = uid;
+            result[i + 1] = beg;
+            result[i + 2] = end;
+            t = t.next();
+            i += 3;
+        }
+        return result;
     }
 
     static {

@@ -284,13 +284,17 @@ void AbstractAssembler::update_delayed_values() {
   DelayedConstant::update_all();
 }
 
-
-
-
 void AbstractAssembler::block_comment(const char* comment) {
   if (sect() == CodeBuffer::SECT_INSTS) {
     code_section()->outer()->block_comment(offset(), comment);
   }
+}
+
+const char* AbstractAssembler::code_string(const char* str) {
+  if (sect() == CodeBuffer::SECT_INSTS || sect() == CodeBuffer::SECT_STUBS) {
+    return code_section()->outer()->code_string(str);
+  }
+  return NULL;
 }
 
 bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
