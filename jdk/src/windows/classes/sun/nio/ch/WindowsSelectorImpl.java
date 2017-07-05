@@ -312,14 +312,17 @@ final class WindowsSelectorImpl extends SelectorImpl {
         private int processSelectedKeys(long updateCount) {
             int numKeysUpdated = 0;
             numKeysUpdated += processFDSet(updateCount, readFds,
-                                           PollArrayWrapper.POLLIN);
+                                           PollArrayWrapper.POLLIN,
+                                           false);
             numKeysUpdated += processFDSet(updateCount, writeFds,
                                            PollArrayWrapper.POLLCONN |
-                                           PollArrayWrapper.POLLOUT);
+                                           PollArrayWrapper.POLLOUT,
+                                           false);
             numKeysUpdated += processFDSet(updateCount, exceptFds,
                                            PollArrayWrapper.POLLIN |
                                            PollArrayWrapper.POLLCONN |
-                                           PollArrayWrapper.POLLOUT);
+                                           PollArrayWrapper.POLLOUT,
+                                           true);
             return numKeysUpdated;
         }
 
@@ -331,7 +334,9 @@ final class WindowsSelectorImpl extends SelectorImpl {
          *
          * me.updateCount <= me.clearedCount <= updateCount
          */
-        private int processFDSet(long updateCount, int[] fds, int rOps) {
+        private int processFDSet(long updateCount, int[] fds, int rOps,
+                                 boolean isExceptFds)
+        {
             int numKeysUpdated = 0;
             for (int i = 1; i <= fds[0]; i++) {
                 int desc = fds[i];
@@ -347,6 +352,17 @@ final class WindowsSelectorImpl extends SelectorImpl {
                 if (me == null)
                     continue;
                 SelectionKeyImpl sk = me.ski;
+
+                // The descriptor may be in the exceptfds set because there is
+                // OOB data queued to the socket. If there is OOB data then it
+                // is discarded and the key is not added to the selected set.
+                if (isExceptFds &&
+                    (sk.channel() instanceof SocketChannelImpl) &&
+                    discardUrgentData(desc))
+                {
+                    continue;
+                }
+
                 if (selectedKeys.contains(sk)) { // Key in selected set
                     if (me.clearedCount != updateCount) {
                         if (sk.channel.translateAndSetReadyOps(rOps, sk) &&
@@ -459,6 +475,8 @@ final class WindowsSelectorImpl extends SelectorImpl {
     }
 
     private native void resetWakeupSocket0(int wakeupSourceFd);
+
+    private native boolean discardUrgentData(int fd);
 
     // We increment this counter on each call to updateSelectedKeys()
     // each entry in  SubSelector.fdsMap has a memorized value of

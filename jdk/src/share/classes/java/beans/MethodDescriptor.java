@@ -82,21 +82,21 @@ public class MethodDescriptor extends FeatureDescriptor {
         Method method = getMethod0();
         if (method == null) {
             Class cls = getClass0();
-            if (cls != null) {
+            String name = getName();
+            if ((cls != null) && (name != null)) {
                 Class[] params = getParams();
                 if (params == null) {
                     for (int i = 0; i < 3; i++) {
                         // Find methods for up to 2 params. We are guessing here.
                         // This block should never execute unless the classloader
                         // that loaded the argument classes disappears.
-                        method = Introspector.findMethod(cls, getName(), i, null);
+                        method = Introspector.findMethod(cls, name, i);
                         if (method != null) {
                             break;
                         }
                     }
                 } else {
-                    method = Introspector.findMethod(cls, getName(),
-                                                     params.length, params);
+                    method = Statement.getMethod(cls, name, params);
                 }
                 setMethod(method);
             }

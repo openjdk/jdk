@@ -25,7 +25,6 @@
  * @bug 4511624
  * @summary Test Making lots of Selectors
  * @library ..
- * @run main/timeout=240 Connect
  */
 
 import java.io.*;
@@ -38,7 +37,7 @@ import java.nio.channels.spi.SelectorProvider;
 public class Connect {
 
     static int success = 0;
-    static int LIMIT = 500;
+    static int LIMIT = 100;
 
     public static void main(String[] args) throws Exception {
         scaleTest();
@@ -51,29 +50,30 @@ public class Connect {
         for (int j=0; j<LIMIT; j++) {
             SocketChannel sc = SocketChannel.open();
             sc.configureBlocking(false);
-            boolean result = sc.connect(isa);
-            if (!result) {
+            boolean connected = sc.connect(isa);
+            if (!connected) {
                 Selector RSelector = SelectorProvider.provider().openSelector();
                 SelectionKey RKey = sc.register (RSelector, SelectionKey.OP_CONNECT);
-                while (!result) {
+                while (!connected) {
                     int keysAdded = RSelector.select(100);
                     if (keysAdded > 0) {
-                        Set readyKeys = RSelector.selectedKeys();
-                        Iterator i = readyKeys.iterator();
+                        Set<SelectionKey> readyKeys = RSelector.selectedKeys();
+                        Iterator<SelectionKey> i = readyKeys.iterator();
                         while (i.hasNext()) {
-                            SelectionKey sk = (SelectionKey)i.next();
+                            SelectionKey sk = i.next();
                             SocketChannel nextReady = (SocketChannel)sk.channel();
-                            result = nextReady.finishConnect();
+                            connected = nextReady.finishConnect();
                         }
+                        readyKeys.clear();
                     }
                 }
                 RSelector.close();
             }
-            read(sc);
+            readAndClose(sc);
         }
     }
 
-    static void read(SocketChannel sc) throws Exception {
+    static void readAndClose(SocketChannel sc) throws Exception {
         ByteBuffer bb = ByteBuffer.allocateDirect(100);
         int n = 0;
         while (n == 0) // Note this is not a rigorous check for done reading

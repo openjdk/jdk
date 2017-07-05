@@ -24,6 +24,7 @@
 /* @test
  * @bug 4510489
  * @summary Verify IOUtil.java reads to buffer limits
+ * @run main/othervm MapReadOnly
  */
 import java.io.*;
 import java.nio.*;

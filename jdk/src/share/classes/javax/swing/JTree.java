@@ -1986,20 +1986,17 @@ public class JTree extends JComponent implements Scrollable, Accessible
      *               true if all nodes in the path are expanded
      */
     public boolean isExpanded(TreePath path) {
+
         if(path == null)
             return false;
+        Object  value;
 
-        // Is this node expanded?
-        Boolean value = expandedState.get(path);
+        do{
+            value = expandedState.get(path);
+            if(value == null || !((Boolean)value).booleanValue())
+                return false;
+        } while( (path=path.getParentPath())!=null );
 
-        if(value == null || !value.booleanValue())
-            return false;
-
-        // It is, make sure its parent is also expanded.
-        TreePath        parentPath = path.getParentPath();
-
-        if(parentPath != null)
-            return isExpanded(parentPath);
         return true;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,9 +226,6 @@ public class HighestKvno {
         EncryptionKey[] keys = ktab.readServiceKeys(pn);
         if (keys[0].getKeyVersionNumber() != 5) {
             throw new Exception("Highest not first");
-        }
-        if (ktab.readServiceKey(pn).getKeyVersionNumber() != 5) {
-            throw new Exception("Highest not chosen");
         }
         new File("kt").delete();
     }

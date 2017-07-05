@@ -34,6 +34,7 @@ class InterpreterRuntime: AllStatic {
   static frame     last_frame(JavaThread *thread)    { return thread->last_frame(); }
   static methodOop method(JavaThread *thread)        { return last_frame(thread).interpreter_frame_method(); }
   static address   bcp(JavaThread *thread)           { return last_frame(thread).interpreter_frame_bcp(); }
+  static int       bci(JavaThread *thread)           { return last_frame(thread).interpreter_frame_bci(); }
   static void      set_bcp_and_mdp(address bcp, JavaThread*thread);
   static Bytecodes::Code code(JavaThread *thread)    {
     // pass method to avoid calling unsafe bcp_to_method (partial fix 4926272)
@@ -59,6 +60,7 @@ class InterpreterRuntime: AllStatic {
  public:
   // Constants
   static void    ldc           (JavaThread* thread, bool wide);
+  static void    resolve_ldc   (JavaThread* thread, Bytecodes::Code bytecode);
 
   // Allocation
   static void    _new          (JavaThread* thread, constantPoolOopDesc* pool, int index);

@@ -22,9 +22,6 @@
  *
  */
 
-define_array(ciObjectArray, ciObject*);
-define_stack(ciObjectList, ciObjectArray);
-
 // This class implements a fast, conservative analysis of effect of methods
 // on the escape state of their arguments.  The analysis is at the bytecode
 // level.
@@ -34,18 +31,17 @@ class  ciBlock;
 
 class BCEscapeAnalyzer : public ResourceObj {
  private:
+  Arena*            _arena;        // ciEnv arena
+
   bool              _conservative; // If true, return maximally
                                    // conservative results.
   ciMethod*         _method;
   ciMethodData*     _methodData;
   int               _arg_size;
-
-  intStack          _stack;
-
-  BitMap            _arg_local;
-  BitMap            _arg_stack;
-  BitMap            _arg_returned;
-  BitMap            _dirty;
+  VectorSet         _arg_local;
+  VectorSet         _arg_stack;
+  VectorSet         _arg_returned;
+  VectorSet         _dirty;
   enum{ ARG_OFFSET_MAX = 31};
   uint              *_arg_modified;
 
@@ -54,7 +50,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   bool              _allocated_escapes;
   bool              _unknown_modified;
 
-  ciObjectList     _dependencies;
+  GrowableArray<ciObject *> _dependencies;
 
   ciMethodBlocks   *_methodBlocks;
 
@@ -68,20 +64,10 @@ class BCEscapeAnalyzer : public ResourceObj {
  private:
   // helper functions
   bool is_argument(int i)    { return i >= 0 && i < _arg_size; }
-
-  void raw_push(int i)       { _stack.push(i); }
-  int  raw_pop()             { return _stack.is_empty() ? -1 : _stack.pop(); }
-  void apush(int i)          { raw_push(i); }
-  void spush()               { raw_push(-1); }
-  void lpush()               { spush(); spush(); }
-  int  apop()                { return raw_pop(); }
-  void spop()                { assert(_stack.is_empty() || _stack.top() == -1, ""); raw_pop(); }
-  void lpop()                { spop(); spop(); }
-
   void set_returned(ArgumentMap vars);
   bool is_argument(ArgumentMap vars);
   bool is_arg_stack(ArgumentMap vars);
-  void clear_bits(ArgumentMap vars, BitMap &bs);
+  void clear_bits(ArgumentMap vars, VectorSet &bs);
   void set_method_escape(ArgumentMap vars);
   void set_global_escape(ArgumentMap vars);
   void set_dirty(ArgumentMap vars);
@@ -116,25 +102,25 @@ class BCEscapeAnalyzer : public ResourceObj {
   ciMethodData*     methodData() const           { return _methodData; }
   BCEscapeAnalyzer* parent() const               { return _parent; }
   int               level() const                { return _level; }
-  ciObjectList*     dependencies()               { return &_dependencies; }
+  GrowableArray<ciObject *>* dependencies()               { return &_dependencies; }
   bool              has_dependencies() const     { return !_dependencies.is_empty(); }
 
   // retrieval of interprocedural escape information
 
   // The given argument does not escape the callee.
   bool is_arg_local(int i) const {
-    return !_conservative && _arg_local.at(i);
+    return !_conservative && _arg_local.test(i);
   }
 
   // The given argument escapes the callee, but does not become globally
   // reachable.
   bool is_arg_stack(int i) const {
-    return !_conservative && _arg_stack.at(i);
+    return !_conservative && _arg_stack.test(i);
   }
 
   // The given argument does not escape globally, and may be returned.
   bool is_arg_returned(int i) const {
-    return !_conservative && _arg_returned.at(i); }
+    return !_conservative && _arg_returned.test(i); }
 
   // True iff only input arguments are returned.
   bool is_return_local() const {

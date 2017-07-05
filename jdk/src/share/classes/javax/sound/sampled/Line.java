@@ -70,7 +70,7 @@ package javax.sound.sampled;
  * @see LineEvent
  * @since 1.3
  */
-public interface Line {
+public interface Line extends AutoCloseable {
 
     /**
      * Obtains the <code>Line.Info</code> object describing this

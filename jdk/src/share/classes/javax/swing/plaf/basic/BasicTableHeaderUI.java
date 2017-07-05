@@ -876,7 +876,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
             String name = getName();
             if (TOGGLE_SORT_ORDER == name) {
                 JTable table = th.getTable();
-                RowSorter sorter = table.getRowSorter();
+                RowSorter sorter = table == null ? null : table.getRowSorter();
                 if (sorter != null) {
                     int columnIndex = ui.getSelectedColumnIndex();
                     columnIndex = table.convertColumnIndexToModel(

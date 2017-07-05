@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package java.util;
 
 /**
  * This class implements the Dual-Pivot Quicksort algorithm by
- * Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. The algorithm
+ * Vladimir Yaroslavskiy, Jon Bentley, and Josh Bloch. The algorithm
  * offers O(n log(n)) performance on many data sets that cause other
  * quicksorts to degrade to quadratic performance, and is typically
  * faster than traditional (one-pivot) Quicksort implementations.
@@ -36,7 +36,8 @@ package java.util;
  * @author Jon Bentley
  * @author Josh Bloch
  *
- * @version 2009.11.29 m765.827.12i
+ * @version 2010.06.21 m765.827.12i:5\7
+ * @since 1.7
  */
 final class DualPivotQuicksort {
 
@@ -68,7 +69,7 @@ final class DualPivotQuicksort {
     private static final int COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR = 32768;
 
     /*
-     * Sorting methods for 7 primitive types.
+     * Sorting methods for seven primitive types.
      */
 
     /**
@@ -77,7 +78,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      */
     public static void sort(int[] a) {
-        doSort(a, 0, a.length - 1);
+        sort(a, 0, a.length - 1, true);
     }
 
     /**
@@ -95,98 +96,132 @@ final class DualPivotQuicksort {
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        doSort(a, fromIndex, toIndex - 1);
-    }
-
-    /**
-     * Sorts the specified range of the array into ascending order. This
-     * method differs from the public {@code sort} method in that the
-     * {@code right} index is inclusive, and it does no range checking
-     * on {@code left} or {@code right}.
-     *
-     * @param a the array to be sorted
-     * @param left the index of the first element, inclusive, to be sorted
-     * @param right the index of the last element, inclusive, to be sorted
-     */
-    private static void doSort(int[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int i = left + 1; i <= right; i++) {
-                int ai = a[i];
-                int j;
-                for (j = i - 1; j >= left && ai < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ai;
-            }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
-        }
+        sort(a, fromIndex, toIndex - 1, true);
     }
 
     /**
      * Sorts the specified range of the array into ascending order by the
-     * Dual-Pivot Quicksort algorithm.
+     * Dual-Pivot Quicksort algorithm. This method differs from the public
+     * {@code sort} method in that the {@code right} index is inclusive,
+     * it does no range checking on {@code left} or {@code right}, and has
+     * boolean flag whether insertion sort with sentinel is used or not.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
+     * @param leftmost indicates if the part is the most left in the range
      */
-    private static void dualPivotQuicksort(int[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
+    private static void sort(int[] a, int left, int right, boolean leftmost) {
+        int length = right - left + 1;
+
+        // Use insertion sort on tiny arrays
+        if (length < INSERTION_SORT_THRESHOLD) {
+            if (!leftmost) {
+                /*
+                 * Every element in adjoining part plays the role
+                 * of sentinel, therefore this allows us to avoid
+                 * the j >= left check on each iteration.
+                 */
+                for (int j, i = left + 1; i <= right; i++) {
+                    int ai = a[i];
+                    for (j = i - 1; ai < a[j]; j--) {
+                        // assert j >= left;
+                        a[j + 1] = a[j];
+                    }
+                    a[j + 1] = ai;
+                }
+            } else {
+                /*
+                 * For case of leftmost part traditional (without a sentinel)
+                 * insertion sort, optimized for server JVM, is used.
+                 */
+                for (int i = left, j = i; i < right; j = ++i) {
+                    int ai = a[i + 1];
+                    while (ai < a[j]) {
+                        a[j + 1] = a[j];
+                        if (j-- == left) {
+                            break;
+                        }
+                    }
+                    a[j + 1] = ai;
+                }
+            }
+            return;
+        }
+
+        // Inexpensive approximation of length / 7
+        int seventh = (length >>> 3) + (length >>> 6) + 1;
+
+        /*
+         * Sort five evenly spaced elements around (and including) the
+         * center element in the range. These elements will be used for
+         * pivot selection as described below. The choice for spacing
+         * these elements was empirically determined to work well on
+         * a wide variety of inputs.
+         */
         int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
+        int e2 = e3 - seventh;
+        int e1 = e2 - seventh;
+        int e4 = e3 + seventh;
+        int e5 = e4 + seventh;
 
-        // Sort these elements using a 5-element sorting network
-        int ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+        // Sort these elements using insertion sort
+        if (a[e2] < a[e1]) { int t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
 
-        if (ae1 > ae2) { int t = ae1; ae1 = ae2; ae2 = t; }
-        if (ae4 > ae5) { int t = ae4; ae4 = ae5; ae5 = t; }
-        if (ae1 > ae3) { int t = ae1; ae1 = ae3; ae3 = t; }
-        if (ae2 > ae3) { int t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae1 > ae4) { int t = ae1; ae1 = ae4; ae4 = t; }
-        if (ae3 > ae4) { int t = ae3; ae3 = ae4; ae4 = t; }
-        if (ae2 > ae5) { int t = ae2; ae2 = ae5; ae5 = t; }
-        if (ae2 > ae3) { int t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae4 > ae5) { int t = ae4; ae4 = ae5; ae5 = t; }
-
-        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
+        if (a[e3] < a[e2]) { int t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+            if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+        }
+        if (a[e4] < a[e3]) { int t = a[e4]; a[e4] = a[e3]; a[e3] = t;
+            if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+            }
+        }
+        if (a[e5] < a[e4]) { int t = a[e5]; a[e5] = a[e4]; a[e4] = t;
+            if (t < a[e3]) { a[e4] = a[e3]; a[e3] = t;
+                if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                    if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+                }
+            }
+        }
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
          * These values are inexpensive approximations of the first and
          * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the elements to be sorted are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
          */
-        int pivot1 = ae2; a[e2] = a[left];
-        int pivot2 = ae4; a[e4] = a[right];
+        int pivot1 = a[e2];
+        int pivot2 = a[e4];
 
         // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
+        int less  = left;  // The index of the first element of center part
+        int great = right; // The index before the first element of right part
 
-        boolean pivotsDiffer = (pivot1 != pivot2);
+        if (pivot1 != pivot2) {
+            /*
+             * The first and the last elements to be sorted are moved to the
+             * locations formerly occupied by the pivots. When partitioning
+             * is complete, the pivots are swapped back into their final
+             * positions, and excluded from subsequent sorting.
+             */
+            a[e2] = a[left];
+            a[e4] = a[right];
 
-        if (pivotsDiffer) {
+            /*
+             * Skip elements, which are less or greater than pivot values.
+             */
+            while (a[++less] < pivot1);
+            while (a[--great] > pivot2);
+
             /*
              * Partitioning:
              *
-             *   left part         center part                    right part
-             * +------------------------------------------------------------+
-             * | < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2 |
-             * +------------------------------------------------------------+
-             *              ^                          ^       ^
-             *              |                          |       |
-             *             less                        k     great
+             *   left part           center part                   right part
+             * +--------------------------------------------------------------+
+             * |  < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2  |
+             * +--------------------------------------------------------------+
+             *               ^                          ^       ^
+             *               |                          |       |
+             *              less                        k     great
              *
              * Invariants:
              *
@@ -194,16 +229,14 @@ final class DualPivotQuicksort {
              *    pivot1 <= all in [less, k)     <= pivot2
              *              all in (great, right) > pivot2
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
             outer:
             for (int k = less; k <= great; k++) {
                 int ak = a[k];
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
                 } else if (ak > pivot2) { // Move a[k] to right part
                     while (a[great] > pivot2) {
@@ -213,26 +246,107 @@ final class DualPivotQuicksort {
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // pivot1 <= a[great] <= pivot2
                         a[k] = a[great];
-                        a[great--] = ak;
+                    }
+                    a[great] = ak;
+                    great--;
+                }
+            }
+
+            // Swap pivots into their final positions
+            a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+            a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+            // Sort left and right parts recursively, excluding known pivots
+            sort(a, left, less - 2, leftmost);
+            sort(a, great + 2, right, false);
+
+            /*
+             * If center part is too large (comprises > 5/7 of the array),
+             * swap internal pivot values to ends.
+             */
+            if (less < e1 && e5 < great) {
+                /*
+                 * Skip elements, which are equal to pivot values.
+                 */
+                while (a[less] == pivot1) {
+                    less++;
+                }
+                while (a[great] == pivot2) {
+                    great--;
+                }
+
+                /*
+                 * Partitioning:
+                 *
+                 *   left part         center part                  right part
+                 * +----------------------------------------------------------+
+                 * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
+                 * +----------------------------------------------------------+
+                 *              ^                        ^       ^
+                 *              |                        |       |
+                 *             less                      k     great
+                 *
+                 * Invariants:
+                 *
+                 *              all in (*,  less) == pivot1
+                 *     pivot1 < all in [less,  k)  < pivot2
+                 *              all in (great, *) == pivot2
+                 *
+                 * Pointer k is the first index of ?-part.
+                 */
+                outer:
+                for (int k = less; k <= great; k++) {
+                    int ak = a[k];
+                    if (ak == pivot1) { // Move a[k] to left part
+                        a[k] = a[less];
+                        a[less] = ak;
+                        less++;
+                    } else if (ak == pivot2) { // Move a[k] to right part
+                        while (a[great] == pivot2) {
+                            if (great-- == k) {
+                                break outer;
+                            }
+                        }
+                        if (a[great] == pivot1) {
+                            a[k] = a[less];
+                            /*
+                             * Even though a[great] equals to pivot1, the
+                             * assignment a[less] = pivot1 may be incorrect,
+                             * if a[great] and pivot1 are floating-point zeros
+                             * of different signs. Therefore in float and
+                             * double sorting methods we have to use more
+                             * accurate assignment a[less] = a[great].
+                             */
+                            a[less] = pivot1;
+                            less++;
+                        } else { // pivot1 < a[great] < pivot2
+                            a[k] = a[great];
+                        }
+                        a[great] = ak;
+                        great--;
                     }
                 }
             }
+
+            // Sort center part recursively
+            sort(a, less, great, false);
+
         } else { // Pivots are equal
             /*
-             * Partition degenerates to the traditional 3-way,
-             * or "Dutch National Flag", partition:
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") schema:
              *
-             *   left part   center part            right part
-             * +----------------------------------------------+
-             * |  < pivot  |  == pivot  |    ?    |  > pivot  |
-             * +----------------------------------------------+
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
+             *   left part    center part              right part
+             * +-------------------------------------------------+
+             * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+             * +-------------------------------------------------+
+             *              ^              ^        ^
+             *              |              |        |
+             *             less            k      great
              *
              * Invariants:
              *
@@ -240,20 +354,19 @@ final class DualPivotQuicksort {
              *   all in [less, k)     == pivot
              *   all in (great, right) > pivot
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
-            for (int k = less; k <= great; k++) {
-                int ak = a[k];
-                if (ak == pivot1) {
+            for (int k = left; k <= great; k++) {
+                if (a[k] == pivot1) {
                     continue;
                 }
+                int ak = a[k];
+
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
-                } else { // (a[k] > pivot1) - Move a[k] to right part
+                } else { // a[k] > pivot1 - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -261,92 +374,33 @@ final class DualPivotQuicksort {
                      * In other words, a[e3] acts as a sentinel for great.
                      */
                     while (a[great] > pivot1) {
+                        // assert great > k;
                         great--;
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // a[great] == pivot1
+                        /*
+                         * Even though a[great] equals to pivot1, the
+                         * assignment a[k] = pivot1 may be incorrect,
+                         * if a[great] and pivot1 are floating-point
+                         * zeros of different signs. Therefore in float
+                         * and double sorting methods we have to use
+                         * more accurate assignment a[k] = a[great].
+                         */
                         a[k] = pivot1;
-                        a[great--] = ak;
                     }
+                    a[great] = ak;
+                    great--;
                 }
             }
+
+            // Sort left and right parts recursively
+            sort(a, left, less - 1, leftmost);
+            sort(a, great + 1, right, false);
         }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        doSort(a, left,   less - 2);
-        doSort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 2/3 of the array),
-         * swap internal pivot values to ends
-         */
-        if (less < e1 && great > e5) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-
-            /*
-             * Partitioning:
-             *
-             *   left part       center part                   right part
-             * +----------------------------------------------------------+
-             * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
-             * +----------------------------------------------------------+
-             *              ^                        ^       ^
-             *              |                        |       |
-             *             less                      k     great
-             *
-             * Invariants:
-             *
-             *              all in (*, less)  == pivot1
-             *     pivot1 < all in [less, k)   < pivot2
-             *              all in (great, *) == pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            outer:
-            for (int k = less; k <= great; k++) {
-                int ak = a[k];
-                if (ak == pivot2) { // Move a[k] to right part
-                    while (a[great] == pivot2) {
-                        if (great-- == k) {
-                            break outer;
-                        }
-                    }
-                    if (a[great] == pivot1) {
-                        a[k] = a[less];
-                        a[less++] = pivot1;
-                    } else { // pivot1 < a[great] < pivot2
-                        a[k] = a[great];
-                    }
-                    a[great--] = pivot2;
-                } else if (ak == pivot1) { // Move a[k] to left part
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
-        }
-
-        // Sort center part recursively, excluding known pivot values
-        doSort(a, less, great);
     }
 
     /**
@@ -355,7 +409,7 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
-        doSort(a, 0, a.length - 1);
+        sort(a, 0, a.length - 1, true);
     }
 
     /**
@@ -373,98 +427,132 @@ final class DualPivotQuicksort {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        doSort(a, fromIndex, toIndex - 1);
-    }
-
-    /**
-     * Sorts the specified range of the array into ascending order. This
-     * method differs from the public {@code sort} method in that the
-     * {@code right} index is inclusive, and it does no range checking on
-     * {@code left} or {@code right}.
-     *
-     * @param a the array to be sorted
-     * @param left the index of the first element, inclusive, to be sorted
-     * @param right the index of the last element, inclusive, to be sorted
-     */
-    private static void doSort(long[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int i = left + 1; i <= right; i++) {
-                long ai = a[i];
-                int j;
-                for (j = i - 1; j >= left && ai < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ai;
-            }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
-        }
+        sort(a, fromIndex, toIndex - 1, true);
     }
 
     /**
      * Sorts the specified range of the array into ascending order by the
-     * Dual-Pivot Quicksort algorithm.
+     * Dual-Pivot Quicksort algorithm. This method differs from the public
+     * {@code sort} method in that the {@code right} index is inclusive,
+     * it does no range checking on {@code left} or {@code right}, and has
+     * boolean flag whether insertion sort with sentinel is used or not.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
+     * @param leftmost indicates if the part is the most left in the range
      */
-    private static void dualPivotQuicksort(long[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
+    private static void sort(long[] a, int left, int right, boolean leftmost) {
+        int length = right - left + 1;
+
+        // Use insertion sort on tiny arrays
+        if (length < INSERTION_SORT_THRESHOLD) {
+            if (!leftmost) {
+                /*
+                 * Every element in adjoining part plays the role
+                 * of sentinel, therefore this allows us to avoid
+                 * the j >= left check on each iteration.
+                 */
+                for (int j, i = left + 1; i <= right; i++) {
+                    long ai = a[i];
+                    for (j = i - 1; ai < a[j]; j--) {
+                        // assert j >= left;
+                        a[j + 1] = a[j];
+                    }
+                    a[j + 1] = ai;
+                }
+            } else {
+                /*
+                 * For case of leftmost part traditional (without a sentinel)
+                 * insertion sort, optimized for server JVM, is used.
+                 */
+                for (int i = left, j = i; i < right; j = ++i) {
+                    long ai = a[i + 1];
+                    while (ai < a[j]) {
+                        a[j + 1] = a[j];
+                        if (j-- == left) {
+                            break;
+                        }
+                    }
+                    a[j + 1] = ai;
+                }
+            }
+            return;
+        }
+
+        // Inexpensive approximation of length / 7
+        int seventh = (length >>> 3) + (length >>> 6) + 1;
+
+        /*
+         * Sort five evenly spaced elements around (and including) the
+         * center element in the range. These elements will be used for
+         * pivot selection as described below. The choice for spacing
+         * these elements was empirically determined to work well on
+         * a wide variety of inputs.
+         */
         int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
+        int e2 = e3 - seventh;
+        int e1 = e2 - seventh;
+        int e4 = e3 + seventh;
+        int e5 = e4 + seventh;
 
-        // Sort these elements using a 5-element sorting network
-        long ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+        // Sort these elements using insertion sort
+        if (a[e2] < a[e1]) { long t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
 
-        if (ae1 > ae2) { long t = ae1; ae1 = ae2; ae2 = t; }
-        if (ae4 > ae5) { long t = ae4; ae4 = ae5; ae5 = t; }
-        if (ae1 > ae3) { long t = ae1; ae1 = ae3; ae3 = t; }
-        if (ae2 > ae3) { long t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae1 > ae4) { long t = ae1; ae1 = ae4; ae4 = t; }
-        if (ae3 > ae4) { long t = ae3; ae3 = ae4; ae4 = t; }
-        if (ae2 > ae5) { long t = ae2; ae2 = ae5; ae5 = t; }
-        if (ae2 > ae3) { long t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae4 > ae5) { long t = ae4; ae4 = ae5; ae5 = t; }
-
-        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
+        if (a[e3] < a[e2]) { long t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+            if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+        }
+        if (a[e4] < a[e3]) { long t = a[e4]; a[e4] = a[e3]; a[e3] = t;
+            if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+            }
+        }
+        if (a[e5] < a[e4]) { long t = a[e5]; a[e5] = a[e4]; a[e4] = t;
+            if (t < a[e3]) { a[e4] = a[e3]; a[e3] = t;
+                if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                    if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+                }
+            }
+        }
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
          * These values are inexpensive approximations of the first and
          * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the elements to be sorted are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
          */
-        long pivot1 = ae2; a[e2] = a[left];
-        long pivot2 = ae4; a[e4] = a[right];
+        long pivot1 = a[e2];
+        long pivot2 = a[e4];
 
         // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
+        int less  = left;  // The index of the first element of center part
+        int great = right; // The index before the first element of right part
 
-        boolean pivotsDiffer = (pivot1 != pivot2);
+        if (pivot1 != pivot2) {
+            /*
+             * The first and the last elements to be sorted are moved to the
+             * locations formerly occupied by the pivots. When partitioning
+             * is complete, the pivots are swapped back into their final
+             * positions, and excluded from subsequent sorting.
+             */
+            a[e2] = a[left];
+            a[e4] = a[right];
 
-        if (pivotsDiffer) {
+            /*
+             * Skip elements, which are less or greater than pivot values.
+             */
+            while (a[++less] < pivot1);
+            while (a[--great] > pivot2);
+
             /*
              * Partitioning:
              *
-             *   left part         center part                    right part
-             * +------------------------------------------------------------+
-             * | < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2 |
-             * +------------------------------------------------------------+
-             *              ^                          ^       ^
-             *              |                          |       |
-             *             less                        k     great
+             *   left part           center part                   right part
+             * +--------------------------------------------------------------+
+             * |  < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2  |
+             * +--------------------------------------------------------------+
+             *               ^                          ^       ^
+             *               |                          |       |
+             *              less                        k     great
              *
              * Invariants:
              *
@@ -472,16 +560,14 @@ final class DualPivotQuicksort {
              *    pivot1 <= all in [less, k)     <= pivot2
              *              all in (great, right) > pivot2
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
             outer:
             for (int k = less; k <= great; k++) {
                 long ak = a[k];
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
                 } else if (ak > pivot2) { // Move a[k] to right part
                     while (a[great] > pivot2) {
@@ -491,26 +577,107 @@ final class DualPivotQuicksort {
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // pivot1 <= a[great] <= pivot2
                         a[k] = a[great];
-                        a[great--] = ak;
+                    }
+                    a[great] = ak;
+                    great--;
+                }
+            }
+
+            // Swap pivots into their final positions
+            a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+            a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+            // Sort left and right parts recursively, excluding known pivots
+            sort(a, left, less - 2, leftmost);
+            sort(a, great + 2, right, false);
+
+            /*
+             * If center part is too large (comprises > 5/7 of the array),
+             * swap internal pivot values to ends.
+             */
+            if (less < e1 && e5 < great) {
+                /*
+                 * Skip elements, which are equal to pivot values.
+                 */
+                while (a[less] == pivot1) {
+                    less++;
+                }
+                while (a[great] == pivot2) {
+                    great--;
+                }
+
+                /*
+                 * Partitioning:
+                 *
+                 *   left part         center part                  right part
+                 * +----------------------------------------------------------+
+                 * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
+                 * +----------------------------------------------------------+
+                 *              ^                        ^       ^
+                 *              |                        |       |
+                 *             less                      k     great
+                 *
+                 * Invariants:
+                 *
+                 *              all in (*,  less) == pivot1
+                 *     pivot1 < all in [less,  k)  < pivot2
+                 *              all in (great, *) == pivot2
+                 *
+                 * Pointer k is the first index of ?-part.
+                 */
+                outer:
+                for (int k = less; k <= great; k++) {
+                    long ak = a[k];
+                    if (ak == pivot1) { // Move a[k] to left part
+                        a[k] = a[less];
+                        a[less] = ak;
+                        less++;
+                    } else if (ak == pivot2) { // Move a[k] to right part
+                        while (a[great] == pivot2) {
+                            if (great-- == k) {
+                                break outer;
+                            }
+                        }
+                        if (a[great] == pivot1) {
+                            a[k] = a[less];
+                            /*
+                             * Even though a[great] equals to pivot1, the
+                             * assignment a[less] = pivot1 may be incorrect,
+                             * if a[great] and pivot1 are floating-point zeros
+                             * of different signs. Therefore in float and
+                             * double sorting methods we have to use more
+                             * accurate assignment a[less] = a[great].
+                             */
+                            a[less] = pivot1;
+                            less++;
+                        } else { // pivot1 < a[great] < pivot2
+                            a[k] = a[great];
+                        }
+                        a[great] = ak;
+                        great--;
                     }
                 }
             }
+
+            // Sort center part recursively
+            sort(a, less, great, false);
+
         } else { // Pivots are equal
             /*
-             * Partition degenerates to the traditional 3-way,
-             * or "Dutch National Flag", partition:
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") schema:
              *
-             *   left part   center part            right part
-             * +----------------------------------------------+
-             * |  < pivot  |  == pivot  |    ?    |  > pivot  |
-             * +----------------------------------------------+
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
+             *   left part    center part              right part
+             * +-------------------------------------------------+
+             * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+             * +-------------------------------------------------+
+             *              ^              ^        ^
+             *              |              |        |
+             *             less            k      great
              *
              * Invariants:
              *
@@ -518,20 +685,19 @@ final class DualPivotQuicksort {
              *   all in [less, k)     == pivot
              *   all in (great, right) > pivot
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
-            for (int k = less; k <= great; k++) {
-                long ak = a[k];
-                if (ak == pivot1) {
+            for (int k = left; k <= great; k++) {
+                if (a[k] == pivot1) {
                     continue;
                 }
+                long ak = a[k];
+
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
-                } else { // (a[k] > pivot1) - Move a[k] to right part
+                } else { // a[k] > pivot1 - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -539,92 +705,33 @@ final class DualPivotQuicksort {
                      * In other words, a[e3] acts as a sentinel for great.
                      */
                     while (a[great] > pivot1) {
+                        // assert great > k;
                         great--;
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // a[great] == pivot1
+                        /*
+                         * Even though a[great] equals to pivot1, the
+                         * assignment a[k] = pivot1 may be incorrect,
+                         * if a[great] and pivot1 are floating-point
+                         * zeros of different signs. Therefore in float
+                         * and double sorting methods we have to use
+                         * more accurate assignment a[k] = a[great].
+                         */
                         a[k] = pivot1;
-                        a[great--] = ak;
                     }
+                    a[great] = ak;
+                    great--;
                 }
             }
+
+            // Sort left and right parts recursively
+            sort(a, left, less - 1, leftmost);
+            sort(a, great + 1, right, false);
         }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        doSort(a, left,   less - 2);
-        doSort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 2/3 of the array),
-         * swap internal pivot values to ends
-         */
-        if (less < e1 && great > e5) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-
-            /*
-             * Partitioning:
-             *
-             *   left part       center part                   right part
-             * +----------------------------------------------------------+
-             * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
-             * +----------------------------------------------------------+
-             *              ^                        ^       ^
-             *              |                        |       |
-             *             less                      k     great
-             *
-             * Invariants:
-             *
-             *              all in (*, less)  == pivot1
-             *     pivot1 < all in [less, k)   < pivot2
-             *              all in (great, *) == pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            outer:
-            for (int k = less; k <= great; k++) {
-                long ak = a[k];
-                if (ak == pivot2) { // Move a[k] to right part
-                    while (a[great] == pivot2) {
-                        if (great-- == k) {
-                            break outer;
-                        }
-                    }
-                    if (a[great] == pivot1) {
-                        a[k] = a[less];
-                        a[less++] = pivot1;
-                    } else { // pivot1 < a[great] < pivot2
-                        a[k] = a[great];
-                    }
-                    a[great--] = pivot2;
-                } else if (ak == pivot1) { // Move a[k] to left part
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
-        }
-
-        // Sort center part recursively, excluding known pivot values
-        doSort(a, less, great);
     }
 
     /**
@@ -633,7 +740,11 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      */
     public static void sort(short[] a) {
-        doSort(a, 0, a.length - 1);
+        if (a.length > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
+            countingSort(a, 0, a.length - 1);
+        } else {
+            sort(a, 0, a.length - 1, true);
+        }
     }
 
     /**
@@ -651,115 +762,166 @@ final class DualPivotQuicksort {
      */
     public static void sort(short[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        doSort(a, fromIndex, toIndex - 1);
+
+        if (toIndex - fromIndex > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
+            countingSort(a, fromIndex, toIndex - 1);
+        } else {
+            sort(a, fromIndex, toIndex - 1, true);
+        }
     }
 
     /** The number of distinct short values. */
     private static final int NUM_SHORT_VALUES = 1 << 16;
 
     /**
-     * Sorts the specified range of the array into ascending order. This
-     * method differs from the public {@code sort} method in that the
-     * {@code right} index is inclusive, and it does no range checking on
-     * {@code left} or {@code right}.
+     * Sorts the specified range of the array by counting sort.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
      */
-    private static void doSort(short[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int i = left + 1; i <= right; i++) {
-                short ai = a[i];
-                int j;
-                for (j = i - 1; j >= left && ai < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ai;
-            }
-        } else if (right-left+1 > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
-            // Use counting sort on huge arrays
-            int[] count = new int[NUM_SHORT_VALUES];
+    private static void countingSort(short[] a, int left, int right) {
+        int[] count = new int[NUM_SHORT_VALUES];
 
-            for (int i = left; i <= right; i++) {
-                count[a[i] - Short.MIN_VALUE]++;
+        for (int i = left; i <= right; i++) {
+            count[a[i] - Short.MIN_VALUE]++;
+        }
+        for (int i = NUM_SHORT_VALUES - 1, k = right; k >= left; i--) {
+            while (count[i] == 0) {
+                i--;
             }
-            for (int i = 0, k = left; i < count.length && k <= right; i++) {
-                short value = (short) (i + Short.MIN_VALUE);
+            short value = (short) (i + Short.MIN_VALUE);
+            int s = count[i];
 
-                for (int s = count[i]; s > 0; s--) {
-                    a[k++] = value;
-               }
-            }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
+            do {
+                a[k--] = value;
+            } while (--s > 0);
         }
     }
 
     /**
      * Sorts the specified range of the array into ascending order by the
-     * Dual-Pivot Quicksort algorithm.
+     * Dual-Pivot Quicksort algorithm. This method differs from the public
+     * {@code sort} method in that the {@code right} index is inclusive,
+     * it does no range checking on {@code left} or {@code right}, and has
+     * boolean flag whether insertion sort with sentinel is used or not.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
+     * @param leftmost indicates if the part is the most left in the range
      */
-    private static void dualPivotQuicksort(short[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
+    private static void sort(short[] a, int left, int right,boolean leftmost) {
+        int length = right - left + 1;
+
+        // Use insertion sort on tiny arrays
+        if (length < INSERTION_SORT_THRESHOLD) {
+            if (!leftmost) {
+                /*
+                 * Every element in adjoining part plays the role
+                 * of sentinel, therefore this allows us to avoid
+                 * the j >= left check on each iteration.
+                 */
+                for (int j, i = left + 1; i <= right; i++) {
+                    short ai = a[i];
+                    for (j = i - 1; ai < a[j]; j--) {
+                        // assert j >= left;
+                        a[j + 1] = a[j];
+                    }
+                    a[j + 1] = ai;
+                }
+            } else {
+                /*
+                 * For case of leftmost part traditional (without a sentinel)
+                 * insertion sort, optimized for server JVM, is used.
+                 */
+                for (int i = left, j = i; i < right; j = ++i) {
+                    short ai = a[i + 1];
+                    while (ai < a[j]) {
+                        a[j + 1] = a[j];
+                        if (j-- == left) {
+                            break;
+                        }
+                    }
+                    a[j + 1] = ai;
+                }
+            }
+            return;
+        }
+
+        // Inexpensive approximation of length / 7
+        int seventh = (length >>> 3) + (length >>> 6) + 1;
+
+        /*
+         * Sort five evenly spaced elements around (and including) the
+         * center element in the range. These elements will be used for
+         * pivot selection as described below. The choice for spacing
+         * these elements was empirically determined to work well on
+         * a wide variety of inputs.
+         */
         int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
+        int e2 = e3 - seventh;
+        int e1 = e2 - seventh;
+        int e4 = e3 + seventh;
+        int e5 = e4 + seventh;
 
-        // Sort these elements using a 5-element sorting network
-        short ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+        // Sort these elements using insertion sort
+        if (a[e2] < a[e1]) { short t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
 
-        if (ae1 > ae2) { short t = ae1; ae1 = ae2; ae2 = t; }
-        if (ae4 > ae5) { short t = ae4; ae4 = ae5; ae5 = t; }
-        if (ae1 > ae3) { short t = ae1; ae1 = ae3; ae3 = t; }
-        if (ae2 > ae3) { short t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae1 > ae4) { short t = ae1; ae1 = ae4; ae4 = t; }
-        if (ae3 > ae4) { short t = ae3; ae3 = ae4; ae4 = t; }
-        if (ae2 > ae5) { short t = ae2; ae2 = ae5; ae5 = t; }
-        if (ae2 > ae3) { short t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae4 > ae5) { short t = ae4; ae4 = ae5; ae5 = t; }
-
-        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
+        if (a[e3] < a[e2]) { short t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+            if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+        }
+        if (a[e4] < a[e3]) { short t = a[e4]; a[e4] = a[e3]; a[e3] = t;
+            if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+            }
+        }
+        if (a[e5] < a[e4]) { short t = a[e5]; a[e5] = a[e4]; a[e4] = t;
+            if (t < a[e3]) { a[e4] = a[e3]; a[e3] = t;
+                if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                    if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+                }
+            }
+        }
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
          * These values are inexpensive approximations of the first and
          * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the elements to be sorted are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
          */
-        short pivot1 = ae2; a[e2] = a[left];
-        short pivot2 = ae4; a[e4] = a[right];
+        short pivot1 = a[e2];
+        short pivot2 = a[e4];
 
         // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
+        int less  = left;  // The index of the first element of center part
+        int great = right; // The index before the first element of right part
 
-        boolean pivotsDiffer = (pivot1 != pivot2);
+        if (pivot1 != pivot2) {
+            /*
+             * The first and the last elements to be sorted are moved to the
+             * locations formerly occupied by the pivots. When partitioning
+             * is complete, the pivots are swapped back into their final
+             * positions, and excluded from subsequent sorting.
+             */
+            a[e2] = a[left];
+            a[e4] = a[right];
 
-        if (pivotsDiffer) {
+            /*
+             * Skip elements, which are less or greater than pivot values.
+             */
+            while (a[++less] < pivot1);
+            while (a[--great] > pivot2);
+
             /*
              * Partitioning:
              *
-             *   left part         center part                    right part
-             * +------------------------------------------------------------+
-             * | < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2 |
-             * +------------------------------------------------------------+
-             *              ^                          ^       ^
-             *              |                          |       |
-             *             less                        k     great
+             *   left part           center part                   right part
+             * +--------------------------------------------------------------+
+             * |  < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2  |
+             * +--------------------------------------------------------------+
+             *               ^                          ^       ^
+             *               |                          |       |
+             *              less                        k     great
              *
              * Invariants:
              *
@@ -767,16 +929,14 @@ final class DualPivotQuicksort {
              *    pivot1 <= all in [less, k)     <= pivot2
              *              all in (great, right) > pivot2
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
             outer:
             for (int k = less; k <= great; k++) {
                 short ak = a[k];
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
                 } else if (ak > pivot2) { // Move a[k] to right part
                     while (a[great] > pivot2) {
@@ -786,26 +946,107 @@ final class DualPivotQuicksort {
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // pivot1 <= a[great] <= pivot2
                         a[k] = a[great];
-                        a[great--] = ak;
+                    }
+                    a[great] = ak;
+                    great--;
+                }
+            }
+
+            // Swap pivots into their final positions
+            a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+            a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+            // Sort left and right parts recursively, excluding known pivots
+            sort(a, left, less - 2, leftmost);
+            sort(a, great + 2, right, false);
+
+            /*
+             * If center part is too large (comprises > 5/7 of the array),
+             * swap internal pivot values to ends.
+             */
+            if (less < e1 && e5 < great) {
+                /*
+                 * Skip elements, which are equal to pivot values.
+                 */
+                while (a[less] == pivot1) {
+                    less++;
+                }
+                while (a[great] == pivot2) {
+                    great--;
+                }
+
+                /*
+                 * Partitioning:
+                 *
+                 *   left part         center part                  right part
+                 * +----------------------------------------------------------+
+                 * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
+                 * +----------------------------------------------------------+
+                 *              ^                        ^       ^
+                 *              |                        |       |
+                 *             less                      k     great
+                 *
+                 * Invariants:
+                 *
+                 *              all in (*,  less) == pivot1
+                 *     pivot1 < all in [less,  k)  < pivot2
+                 *              all in (great, *) == pivot2
+                 *
+                 * Pointer k is the first index of ?-part.
+                 */
+                outer:
+                for (int k = less; k <= great; k++) {
+                    short ak = a[k];
+                    if (ak == pivot1) { // Move a[k] to left part
+                        a[k] = a[less];
+                        a[less] = ak;
+                        less++;
+                    } else if (ak == pivot2) { // Move a[k] to right part
+                        while (a[great] == pivot2) {
+                            if (great-- == k) {
+                                break outer;
+                            }
+                        }
+                        if (a[great] == pivot1) {
+                            a[k] = a[less];
+                            /*
+                             * Even though a[great] equals to pivot1, the
+                             * assignment a[less] = pivot1 may be incorrect,
+                             * if a[great] and pivot1 are floating-point zeros
+                             * of different signs. Therefore in float and
+                             * double sorting methods we have to use more
+                             * accurate assignment a[less] = a[great].
+                             */
+                            a[less] = pivot1;
+                            less++;
+                        } else { // pivot1 < a[great] < pivot2
+                            a[k] = a[great];
+                        }
+                        a[great] = ak;
+                        great--;
                     }
                 }
             }
+
+            // Sort center part recursively
+            sort(a, less, great, false);
+
         } else { // Pivots are equal
             /*
-             * Partition degenerates to the traditional 3-way,
-             * or "Dutch National Flag", partition:
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") schema:
              *
-             *   left part   center part            right part
-             * +----------------------------------------------+
-             * |  < pivot  |  == pivot  |    ?    |  > pivot  |
-             * +----------------------------------------------+
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
+             *   left part    center part              right part
+             * +-------------------------------------------------+
+             * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+             * +-------------------------------------------------+
+             *              ^              ^        ^
+             *              |              |        |
+             *             less            k      great
              *
              * Invariants:
              *
@@ -813,20 +1054,19 @@ final class DualPivotQuicksort {
              *   all in [less, k)     == pivot
              *   all in (great, right) > pivot
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
-            for (int k = less; k <= great; k++) {
-                short ak = a[k];
-                if (ak == pivot1) {
+            for (int k = left; k <= great; k++) {
+                if (a[k] == pivot1) {
                     continue;
                 }
+                short ak = a[k];
+
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
-                } else { // (a[k] > pivot1) - Move a[k] to right part
+                } else { // a[k] > pivot1 - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -834,92 +1074,33 @@ final class DualPivotQuicksort {
                      * In other words, a[e3] acts as a sentinel for great.
                      */
                     while (a[great] > pivot1) {
+                        // assert great > k;
                         great--;
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // a[great] == pivot1
+                        /*
+                         * Even though a[great] equals to pivot1, the
+                         * assignment a[k] = pivot1 may be incorrect,
+                         * if a[great] and pivot1 are floating-point
+                         * zeros of different signs. Therefore in float
+                         * and double sorting methods we have to use
+                         * more accurate assignment a[k] = a[great].
+                         */
                         a[k] = pivot1;
-                        a[great--] = ak;
                     }
+                    a[great] = ak;
+                    great--;
                 }
             }
+
+            // Sort left and right parts recursively
+            sort(a, left, less - 1, leftmost);
+            sort(a, great + 1, right, false);
         }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        doSort(a, left,   less - 2);
-        doSort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 2/3 of the array),
-         * swap internal pivot values to ends
-         */
-        if (less < e1 && great > e5) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-
-            /*
-             * Partitioning:
-             *
-             *   left part       center part                   right part
-             * +----------------------------------------------------------+
-             * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
-             * +----------------------------------------------------------+
-             *              ^                        ^       ^
-             *              |                        |       |
-             *             less                      k     great
-             *
-             * Invariants:
-             *
-             *              all in (*, less)  == pivot1
-             *     pivot1 < all in [less, k)   < pivot2
-             *              all in (great, *) == pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            outer:
-            for (int k = less; k <= great; k++) {
-                short ak = a[k];
-                if (ak == pivot2) { // Move a[k] to right part
-                    while (a[great] == pivot2) {
-                        if (great-- == k) {
-                            break outer;
-                        }
-                    }
-                    if (a[great] == pivot1) {
-                        a[k] = a[less];
-                        a[less++] = pivot1;
-                    } else { // pivot1 < a[great] < pivot2
-                        a[k] = a[great];
-                    }
-                    a[great--] = pivot2;
-                } else if (ak == pivot1) { // Move a[k] to left part
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
-        }
-
-        // Sort center part recursively, excluding known pivot values
-        doSort(a, less, great);
     }
 
     /**
@@ -928,7 +1109,11 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      */
     public static void sort(char[] a) {
-        doSort(a, 0, a.length - 1);
+        if (a.length > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
+            countingSort(a, 0, a.length - 1);
+        } else {
+            sort(a, 0, a.length - 1, true);
+        }
     }
 
     /**
@@ -946,113 +1131,166 @@ final class DualPivotQuicksort {
      */
     public static void sort(char[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        doSort(a, fromIndex, toIndex - 1);
+
+        if (toIndex - fromIndex > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
+            countingSort(a, fromIndex, toIndex - 1);
+        } else {
+            sort(a, fromIndex, toIndex - 1, true);
+        }
     }
 
     /** The number of distinct char values. */
     private static final int NUM_CHAR_VALUES = 1 << 16;
 
     /**
-     * Sorts the specified range of the array into ascending order. This
-     * method differs from the public {@code sort} method in that the
-     * {@code right} index is inclusive, and it does no range checking on
-     * {@code left} or {@code right}.
+     * Sorts the specified range of the array by counting sort.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
      */
-    private static void doSort(char[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int i = left + 1; i <= right; i++) {
-                char ai = a[i];
-                int j;
-                for (j = i - 1; j >= left && ai < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ai;
-            }
-        } else if (right-left+1 > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
-            // Use counting sort on huge arrays
-            int[] count = new int[NUM_CHAR_VALUES];
+    private static void countingSort(char[] a, int left, int right) {
+        int[] count = new int[NUM_CHAR_VALUES];
 
-            for (int i = left; i <= right; i++) {
-                count[a[i]]++;
+        for (int i = left; i <= right; i++) {
+            count[a[i]]++;
+        }
+        for (int i = 0, k = left; k <= right; i++) {
+            while (count[i] == 0) {
+                i++;
             }
-            for (int i = 0, k = left; i < count.length && k <= right; i++) {
-                for (int s = count[i]; s > 0; s--) {
-                    a[k++] = (char) i;
-               }
-            }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
+            char value = (char) i;
+            int s = count[i];
+
+            do {
+                a[k++] = value;
+            } while (--s > 0);
         }
     }
 
     /**
      * Sorts the specified range of the array into ascending order by the
-     * Dual-Pivot Quicksort algorithm.
+     * Dual-Pivot Quicksort algorithm. This method differs from the public
+     * {@code sort} method in that the {@code right} index is inclusive,
+     * it does no range checking on {@code left} or {@code right}, and has
+     * boolean flag whether insertion sort with sentinel is used or not.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
+     * @param leftmost indicates if the part is the most left in the range
      */
-    private static void dualPivotQuicksort(char[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
+    private static void sort(char[] a, int left, int right, boolean leftmost) {
+        int length = right - left + 1;
+
+        // Use insertion sort on tiny arrays
+        if (length < INSERTION_SORT_THRESHOLD) {
+            if (!leftmost) {
+                /*
+                 * Every element in adjoining part plays the role
+                 * of sentinel, therefore this allows us to avoid
+                 * the j >= left check on each iteration.
+                 */
+                for (int j, i = left + 1; i <= right; i++) {
+                    char ai = a[i];
+                    for (j = i - 1; ai < a[j]; j--) {
+                        // assert j >= left;
+                        a[j + 1] = a[j];
+                    }
+                    a[j + 1] = ai;
+                }
+            } else {
+                /*
+                 * For case of leftmost part traditional (without a sentinel)
+                 * insertion sort, optimized for server JVM, is used.
+                 */
+                for (int i = left, j = i; i < right; j = ++i) {
+                    char ai = a[i + 1];
+                    while (ai < a[j]) {
+                        a[j + 1] = a[j];
+                        if (j-- == left) {
+                            break;
+                        }
+                    }
+                    a[j + 1] = ai;
+                }
+            }
+            return;
+        }
+
+        // Inexpensive approximation of length / 7
+        int seventh = (length >>> 3) + (length >>> 6) + 1;
+
+        /*
+         * Sort five evenly spaced elements around (and including) the
+         * center element in the range. These elements will be used for
+         * pivot selection as described below. The choice for spacing
+         * these elements was empirically determined to work well on
+         * a wide variety of inputs.
+         */
         int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
+        int e2 = e3 - seventh;
+        int e1 = e2 - seventh;
+        int e4 = e3 + seventh;
+        int e5 = e4 + seventh;
 
-        // Sort these elements using a 5-element sorting network
-        char ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+        // Sort these elements using insertion sort
+        if (a[e2] < a[e1]) { char t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
 
-        if (ae1 > ae2) { char t = ae1; ae1 = ae2; ae2 = t; }
-        if (ae4 > ae5) { char t = ae4; ae4 = ae5; ae5 = t; }
-        if (ae1 > ae3) { char t = ae1; ae1 = ae3; ae3 = t; }
-        if (ae2 > ae3) { char t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae1 > ae4) { char t = ae1; ae1 = ae4; ae4 = t; }
-        if (ae3 > ae4) { char t = ae3; ae3 = ae4; ae4 = t; }
-        if (ae2 > ae5) { char t = ae2; ae2 = ae5; ae5 = t; }
-        if (ae2 > ae3) { char t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae4 > ae5) { char t = ae4; ae4 = ae5; ae5 = t; }
-
-        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
+        if (a[e3] < a[e2]) { char t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+            if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+        }
+        if (a[e4] < a[e3]) { char t = a[e4]; a[e4] = a[e3]; a[e3] = t;
+            if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+            }
+        }
+        if (a[e5] < a[e4]) { char t = a[e5]; a[e5] = a[e4]; a[e4] = t;
+            if (t < a[e3]) { a[e4] = a[e3]; a[e3] = t;
+                if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                    if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+                }
+            }
+        }
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
          * These values are inexpensive approximations of the first and
          * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the elements to be sorted are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
          */
-        char pivot1 = ae2; a[e2] = a[left];
-        char pivot2 = ae4; a[e4] = a[right];
+        char pivot1 = a[e2];
+        char pivot2 = a[e4];
 
         // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
+        int less  = left;  // The index of the first element of center part
+        int great = right; // The index before the first element of right part
 
-        boolean pivotsDiffer = (pivot1 != pivot2);
+        if (pivot1 != pivot2) {
+            /*
+             * The first and the last elements to be sorted are moved to the
+             * locations formerly occupied by the pivots. When partitioning
+             * is complete, the pivots are swapped back into their final
+             * positions, and excluded from subsequent sorting.
+             */
+            a[e2] = a[left];
+            a[e4] = a[right];
 
-        if (pivotsDiffer) {
+            /*
+             * Skip elements, which are less or greater than pivot values.
+             */
+            while (a[++less] < pivot1);
+            while (a[--great] > pivot2);
+
             /*
              * Partitioning:
              *
-             *   left part         center part                    right part
-             * +------------------------------------------------------------+
-             * | < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2 |
-             * +------------------------------------------------------------+
-             *              ^                          ^       ^
-             *              |                          |       |
-             *             less                        k     great
+             *   left part           center part                   right part
+             * +--------------------------------------------------------------+
+             * |  < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2  |
+             * +--------------------------------------------------------------+
+             *               ^                          ^       ^
+             *               |                          |       |
+             *              less                        k     great
              *
              * Invariants:
              *
@@ -1060,16 +1298,14 @@ final class DualPivotQuicksort {
              *    pivot1 <= all in [less, k)     <= pivot2
              *              all in (great, right) > pivot2
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
             outer:
             for (int k = less; k <= great; k++) {
                 char ak = a[k];
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
                 } else if (ak > pivot2) { // Move a[k] to right part
                     while (a[great] > pivot2) {
@@ -1079,26 +1315,107 @@ final class DualPivotQuicksort {
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // pivot1 <= a[great] <= pivot2
                         a[k] = a[great];
-                        a[great--] = ak;
+                    }
+                    a[great] = ak;
+                    great--;
+                }
+            }
+
+            // Swap pivots into their final positions
+            a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+            a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+            // Sort left and right parts recursively, excluding known pivots
+            sort(a, left, less - 2, leftmost);
+            sort(a, great + 2, right, false);
+
+            /*
+             * If center part is too large (comprises > 5/7 of the array),
+             * swap internal pivot values to ends.
+             */
+            if (less < e1 && e5 < great) {
+                /*
+                 * Skip elements, which are equal to pivot values.
+                 */
+                while (a[less] == pivot1) {
+                    less++;
+                }
+                while (a[great] == pivot2) {
+                    great--;
+                }
+
+                /*
+                 * Partitioning:
+                 *
+                 *   left part         center part                  right part
+                 * +----------------------------------------------------------+
+                 * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
+                 * +----------------------------------------------------------+
+                 *              ^                        ^       ^
+                 *              |                        |       |
+                 *             less                      k     great
+                 *
+                 * Invariants:
+                 *
+                 *              all in (*,  less) == pivot1
+                 *     pivot1 < all in [less,  k)  < pivot2
+                 *              all in (great, *) == pivot2
+                 *
+                 * Pointer k is the first index of ?-part.
+                 */
+                outer:
+                for (int k = less; k <= great; k++) {
+                    char ak = a[k];
+                    if (ak == pivot1) { // Move a[k] to left part
+                        a[k] = a[less];
+                        a[less] = ak;
+                        less++;
+                    } else if (ak == pivot2) { // Move a[k] to right part
+                        while (a[great] == pivot2) {
+                            if (great-- == k) {
+                                break outer;
+                            }
+                        }
+                        if (a[great] == pivot1) {
+                            a[k] = a[less];
+                            /*
+                             * Even though a[great] equals to pivot1, the
+                             * assignment a[less] = pivot1 may be incorrect,
+                             * if a[great] and pivot1 are floating-point zeros
+                             * of different signs. Therefore in float and
+                             * double sorting methods we have to use more
+                             * accurate assignment a[less] = a[great].
+                             */
+                            a[less] = pivot1;
+                            less++;
+                        } else { // pivot1 < a[great] < pivot2
+                            a[k] = a[great];
+                        }
+                        a[great] = ak;
+                        great--;
                     }
                 }
             }
+
+            // Sort center part recursively
+            sort(a, less, great, false);
+
         } else { // Pivots are equal
             /*
-             * Partition degenerates to the traditional 3-way,
-             * or "Dutch National Flag", partition:
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") schema:
              *
-             *   left part   center part            right part
-             * +----------------------------------------------+
-             * |  < pivot  |  == pivot  |    ?    |  > pivot  |
-             * +----------------------------------------------+
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
+             *   left part    center part              right part
+             * +-------------------------------------------------+
+             * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+             * +-------------------------------------------------+
+             *              ^              ^        ^
+             *              |              |        |
+             *             less            k      great
              *
              * Invariants:
              *
@@ -1106,20 +1423,19 @@ final class DualPivotQuicksort {
              *   all in [less, k)     == pivot
              *   all in (great, right) > pivot
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
-            for (int k = less; k <= great; k++) {
-                char ak = a[k];
-                if (ak == pivot1) {
+            for (int k = left; k <= great; k++) {
+                if (a[k] == pivot1) {
                     continue;
                 }
+                char ak = a[k];
+
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
-                } else { // (a[k] > pivot1) - Move a[k] to right part
+                } else { // a[k] > pivot1 - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -1127,92 +1443,33 @@ final class DualPivotQuicksort {
                      * In other words, a[e3] acts as a sentinel for great.
                      */
                     while (a[great] > pivot1) {
+                        // assert great > k;
                         great--;
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // a[great] == pivot1
+                        /*
+                         * Even though a[great] equals to pivot1, the
+                         * assignment a[k] = pivot1 may be incorrect,
+                         * if a[great] and pivot1 are floating-point
+                         * zeros of different signs. Therefore in float
+                         * and double sorting methods we have to use
+                         * more accurate assignment a[k] = a[great].
+                         */
                         a[k] = pivot1;
-                        a[great--] = ak;
                     }
+                    a[great] = ak;
+                    great--;
                 }
             }
+
+            // Sort left and right parts recursively
+            sort(a, left, less - 1, leftmost);
+            sort(a, great + 1, right, false);
         }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        doSort(a, left,   less - 2);
-        doSort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 2/3 of the array),
-         * swap internal pivot values to ends
-         */
-        if (less < e1 && great > e5) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-
-            /*
-             * Partitioning:
-             *
-             *   left part       center part                   right part
-             * +----------------------------------------------------------+
-             * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
-             * +----------------------------------------------------------+
-             *              ^                        ^       ^
-             *              |                        |       |
-             *             less                      k     great
-             *
-             * Invariants:
-             *
-             *              all in (*, less)  == pivot1
-             *     pivot1 < all in [less, k)   < pivot2
-             *              all in (great, *) == pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            outer:
-            for (int k = less; k <= great; k++) {
-                char ak = a[k];
-                if (ak == pivot2) { // Move a[k] to right part
-                    while (a[great] == pivot2) {
-                        if (great-- == k) {
-                            break outer;
-                        }
-                    }
-                    if (a[great] == pivot1) {
-                        a[k] = a[less];
-                        a[less++] = pivot1;
-                    } else { // pivot1 < a[great] < pivot2
-                        a[k] = a[great];
-                    }
-                    a[great--] = pivot2;
-                } else if (ak == pivot1) { // Move a[k] to left part
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
-        }
-
-        // Sort center part recursively, excluding known pivot values
-        doSort(a, less, great);
     }
 
     /**
@@ -1221,7 +1478,11 @@ final class DualPivotQuicksort {
      * @param a the array to be sorted
      */
     public static void sort(byte[] a) {
-        doSort(a, 0, a.length - 1);
+        if (a.length > COUNTING_SORT_THRESHOLD_FOR_BYTE) {
+            countingSort(a, 0, a.length - 1);
+        } else {
+            sort(a, 0, a.length - 1, true);
+        }
     }
 
     /**
@@ -1239,115 +1500,166 @@ final class DualPivotQuicksort {
      */
     public static void sort(byte[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        doSort(a, fromIndex, toIndex - 1);
+
+        if (toIndex - fromIndex > COUNTING_SORT_THRESHOLD_FOR_BYTE) {
+            countingSort(a, fromIndex, toIndex - 1);
+        } else {
+            sort(a, fromIndex, toIndex - 1, true);
+        }
     }
 
     /** The number of distinct byte values. */
     private static final int NUM_BYTE_VALUES = 1 << 8;
 
     /**
-     * Sorts the specified range of the array into ascending order. This
-     * method differs from the public {@code sort} method in that the
-     * {@code right} index is inclusive, and it does no range checking on
-     * {@code left} or {@code right}.
+     * Sorts the specified range of the array by counting sort.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
      */
-    private static void doSort(byte[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int i = left + 1; i <= right; i++) {
-                byte ai = a[i];
-                int j;
-                for (j = i - 1; j >= left && ai < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ai;
-            }
-        } else if (right - left + 1 > COUNTING_SORT_THRESHOLD_FOR_BYTE) {
-            // Use counting sort on huge arrays
-            int[] count = new int[NUM_BYTE_VALUES];
+    private static void countingSort(byte[] a, int left, int right) {
+        int[] count = new int[NUM_BYTE_VALUES];
 
-            for (int i = left; i <= right; i++) {
-                count[a[i] - Byte.MIN_VALUE]++;
+        for (int i = left; i <= right; i++) {
+            count[a[i] - Byte.MIN_VALUE]++;
+        }
+        for (int i = NUM_BYTE_VALUES - 1, k = right; k >= left; i--) {
+            while (count[i] == 0) {
+                i--;
             }
-            for (int i = 0, k = left; i < count.length && k <= right; i++) {
-                byte value = (byte) (i + Byte.MIN_VALUE);
+            byte value = (byte) (i + Byte.MIN_VALUE);
+            int s = count[i];
 
-                for (int s = count[i]; s > 0; s--) {
-                    a[k++] = value;
-               }
-            }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
+            do {
+                a[k--] = value;
+            } while (--s > 0);
         }
     }
 
     /**
      * Sorts the specified range of the array into ascending order by the
-     * Dual-Pivot Quicksort algorithm.
+     * Dual-Pivot Quicksort algorithm. This method differs from the public
+     * {@code sort} method in that the {@code right} index is inclusive,
+     * it does no range checking on {@code left} or {@code right}, and has
+     * boolean flag whether insertion sort with sentinel is used or not.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
+     * @param leftmost indicates if the part is the most left in the range
      */
-    private static void dualPivotQuicksort(byte[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
+    private static void sort(byte[] a, int left, int right, boolean leftmost) {
+        int length = right - left + 1;
+
+        // Use insertion sort on tiny arrays
+        if (length < INSERTION_SORT_THRESHOLD) {
+            if (!leftmost) {
+                /*
+                 * Every element in adjoining part plays the role
+                 * of sentinel, therefore this allows us to avoid
+                 * the j >= left check on each iteration.
+                 */
+                for (int j, i = left + 1; i <= right; i++) {
+                    byte ai = a[i];
+                    for (j = i - 1; ai < a[j]; j--) {
+                        // assert j >= left;
+                        a[j + 1] = a[j];
+                    }
+                    a[j + 1] = ai;
+                }
+            } else {
+                /*
+                 * For case of leftmost part traditional (without a sentinel)
+                 * insertion sort, optimized for server JVM, is used.
+                 */
+                for (int i = left, j = i; i < right; j = ++i) {
+                    byte ai = a[i + 1];
+                    while (ai < a[j]) {
+                        a[j + 1] = a[j];
+                        if (j-- == left) {
+                            break;
+                        }
+                    }
+                    a[j + 1] = ai;
+                }
+            }
+            return;
+        }
+
+        // Inexpensive approximation of length / 7
+        int seventh = (length >>> 3) + (length >>> 6) + 1;
+
+        /*
+         * Sort five evenly spaced elements around (and including) the
+         * center element in the range. These elements will be used for
+         * pivot selection as described below. The choice for spacing
+         * these elements was empirically determined to work well on
+         * a wide variety of inputs.
+         */
         int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
+        int e2 = e3 - seventh;
+        int e1 = e2 - seventh;
+        int e4 = e3 + seventh;
+        int e5 = e4 + seventh;
 
-        // Sort these elements using a 5-element sorting network
-        byte ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+        // Sort these elements using insertion sort
+        if (a[e2] < a[e1]) { byte t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
 
-        if (ae1 > ae2) { byte t = ae1; ae1 = ae2; ae2 = t; }
-        if (ae4 > ae5) { byte t = ae4; ae4 = ae5; ae5 = t; }
-        if (ae1 > ae3) { byte t = ae1; ae1 = ae3; ae3 = t; }
-        if (ae2 > ae3) { byte t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae1 > ae4) { byte t = ae1; ae1 = ae4; ae4 = t; }
-        if (ae3 > ae4) { byte t = ae3; ae3 = ae4; ae4 = t; }
-        if (ae2 > ae5) { byte t = ae2; ae2 = ae5; ae5 = t; }
-        if (ae2 > ae3) { byte t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae4 > ae5) { byte t = ae4; ae4 = ae5; ae5 = t; }
-
-        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
+        if (a[e3] < a[e2]) { byte t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+            if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+        }
+        if (a[e4] < a[e3]) { byte t = a[e4]; a[e4] = a[e3]; a[e3] = t;
+            if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+            }
+        }
+        if (a[e5] < a[e4]) { byte t = a[e5]; a[e5] = a[e4]; a[e4] = t;
+            if (t < a[e3]) { a[e4] = a[e3]; a[e3] = t;
+                if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                    if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+                }
+            }
+        }
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
          * These values are inexpensive approximations of the first and
          * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the elements to be sorted are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
          */
-        byte pivot1 = ae2; a[e2] = a[left];
-        byte pivot2 = ae4; a[e4] = a[right];
+        byte pivot1 = a[e2];
+        byte pivot2 = a[e4];
 
         // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
+        int less  = left;  // The index of the first element of center part
+        int great = right; // The index before the first element of right part
 
-        boolean pivotsDiffer = (pivot1 != pivot2);
+        if (pivot1 != pivot2) {
+            /*
+             * The first and the last elements to be sorted are moved to the
+             * locations formerly occupied by the pivots. When partitioning
+             * is complete, the pivots are swapped back into their final
+             * positions, and excluded from subsequent sorting.
+             */
+            a[e2] = a[left];
+            a[e4] = a[right];
 
-        if (pivotsDiffer) {
+            /*
+             * Skip elements, which are less or greater than pivot values.
+             */
+            while (a[++less] < pivot1);
+            while (a[--great] > pivot2);
+
             /*
              * Partitioning:
              *
-             *   left part         center part                    right part
-             * +------------------------------------------------------------+
-             * | < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2 |
-             * +------------------------------------------------------------+
-             *              ^                          ^       ^
-             *              |                          |       |
-             *             less                        k     great
+             *   left part           center part                   right part
+             * +--------------------------------------------------------------+
+             * |  < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2  |
+             * +--------------------------------------------------------------+
+             *               ^                          ^       ^
+             *               |                          |       |
+             *              less                        k     great
              *
              * Invariants:
              *
@@ -1355,16 +1667,14 @@ final class DualPivotQuicksort {
              *    pivot1 <= all in [less, k)     <= pivot2
              *              all in (great, right) > pivot2
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
             outer:
             for (int k = less; k <= great; k++) {
                 byte ak = a[k];
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
                 } else if (ak > pivot2) { // Move a[k] to right part
                     while (a[great] > pivot2) {
@@ -1374,26 +1684,107 @@ final class DualPivotQuicksort {
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // pivot1 <= a[great] <= pivot2
                         a[k] = a[great];
-                        a[great--] = ak;
+                    }
+                    a[great] = ak;
+                    great--;
+                }
+            }
+
+            // Swap pivots into their final positions
+            a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+            a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+            // Sort left and right parts recursively, excluding known pivots
+            sort(a, left, less - 2, leftmost);
+            sort(a, great + 2, right, false);
+
+            /*
+             * If center part is too large (comprises > 5/7 of the array),
+             * swap internal pivot values to ends.
+             */
+            if (less < e1 && e5 < great) {
+                /*
+                 * Skip elements, which are equal to pivot values.
+                 */
+                while (a[less] == pivot1) {
+                    less++;
+                }
+                while (a[great] == pivot2) {
+                    great--;
+                }
+
+                /*
+                 * Partitioning:
+                 *
+                 *   left part         center part                  right part
+                 * +----------------------------------------------------------+
+                 * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
+                 * +----------------------------------------------------------+
+                 *              ^                        ^       ^
+                 *              |                        |       |
+                 *             less                      k     great
+                 *
+                 * Invariants:
+                 *
+                 *              all in (*,  less) == pivot1
+                 *     pivot1 < all in [less,  k)  < pivot2
+                 *              all in (great, *) == pivot2
+                 *
+                 * Pointer k is the first index of ?-part.
+                 */
+                outer:
+                for (int k = less; k <= great; k++) {
+                    byte ak = a[k];
+                    if (ak == pivot1) { // Move a[k] to left part
+                        a[k] = a[less];
+                        a[less] = ak;
+                        less++;
+                    } else if (ak == pivot2) { // Move a[k] to right part
+                        while (a[great] == pivot2) {
+                            if (great-- == k) {
+                                break outer;
+                            }
+                        }
+                        if (a[great] == pivot1) {
+                            a[k] = a[less];
+                            /*
+                             * Even though a[great] equals to pivot1, the
+                             * assignment a[less] = pivot1 may be incorrect,
+                             * if a[great] and pivot1 are floating-point zeros
+                             * of different signs. Therefore in float and
+                             * double sorting methods we have to use more
+                             * accurate assignment a[less] = a[great].
+                             */
+                            a[less] = pivot1;
+                            less++;
+                        } else { // pivot1 < a[great] < pivot2
+                            a[k] = a[great];
+                        }
+                        a[great] = ak;
+                        great--;
                     }
                 }
             }
+
+            // Sort center part recursively
+            sort(a, less, great, false);
+
         } else { // Pivots are equal
             /*
-             * Partition degenerates to the traditional 3-way,
-             * or "Dutch National Flag", partition:
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") schema:
              *
-             *   left part   center part            right part
-             * +----------------------------------------------+
-             * |  < pivot  |  == pivot  |    ?    |  > pivot  |
-             * +----------------------------------------------+
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
+             *   left part    center part              right part
+             * +-------------------------------------------------+
+             * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+             * +-------------------------------------------------+
+             *              ^              ^        ^
+             *              |              |        |
+             *             less            k      great
              *
              * Invariants:
              *
@@ -1401,20 +1792,19 @@ final class DualPivotQuicksort {
              *   all in [less, k)     == pivot
              *   all in (great, right) > pivot
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
-            for (int k = less; k <= great; k++) {
-                byte ak = a[k];
-                if (ak == pivot1) {
+            for (int k = left; k <= great; k++) {
+                if (a[k] == pivot1) {
                     continue;
                 }
+                byte ak = a[k];
+
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
-                } else { // (a[k] > pivot1) - Move a[k] to right part
+                } else { // a[k] > pivot1 - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -1422,92 +1812,33 @@ final class DualPivotQuicksort {
                      * In other words, a[e3] acts as a sentinel for great.
                      */
                     while (a[great] > pivot1) {
+                        // assert great > k;
                         great--;
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // a[great] == pivot1
+                        /*
+                         * Even though a[great] equals to pivot1, the
+                         * assignment a[k] = pivot1 may be incorrect,
+                         * if a[great] and pivot1 are floating-point
+                         * zeros of different signs. Therefore in float
+                         * and double sorting methods we have to use
+                         * more accurate assignment a[k] = a[great].
+                         */
                         a[k] = pivot1;
-                        a[great--] = ak;
                     }
+                    a[great] = ak;
+                    great--;
                 }
             }
+
+            // Sort left and right parts recursively
+            sort(a, left, less - 1, leftmost);
+            sort(a, great + 1, right, false);
         }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        doSort(a, left,   less - 2);
-        doSort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 2/3 of the array),
-         * swap internal pivot values to ends
-         */
-        if (less < e1 && great > e5) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-
-            /*
-             * Partitioning:
-             *
-             *   left part       center part                   right part
-             * +----------------------------------------------------------+
-             * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
-             * +----------------------------------------------------------+
-             *              ^                        ^       ^
-             *              |                        |       |
-             *             less                      k     great
-             *
-             * Invariants:
-             *
-             *              all in (*, less)  == pivot1
-             *     pivot1 < all in [less, k)   < pivot2
-             *              all in (great, *) == pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            outer:
-            for (int k = less; k <= great; k++) {
-                byte ak = a[k];
-                if (ak == pivot2) { // Move a[k] to right part
-                    while (a[great] == pivot2) {
-                        if (great-- == k) {
-                            break outer;
-                        }
-                    }
-                    if (a[great] == pivot1) {
-                        a[k] = a[less];
-                        a[less++] = pivot1;
-                    } else { // pivot1 < a[great] < pivot2
-                        a[k] = a[great];
-                    }
-                    a[great--] = pivot2;
-                } else if (ak == pivot1) { // Move a[k] to left part
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
-        }
-
-        // Sort center part recursively, excluding known pivot values
-        doSort(a, less, great);
     }
 
     /**
@@ -1531,7 +1862,7 @@ final class DualPivotQuicksort {
      * Sorts the specified range of the array into ascending order. The range
      * to be sorted extends from the index {@code fromIndex}, inclusive, to
      * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
-     * the range to be sorted is empty and the call is a no-op).
+     * the range to be sorted is empty (and the call is a no-op).
      *
      * <p>The {@code <} relation does not provide a total order on all float
      * values: {@code -0.0f == 0.0f} is {@code true} and a {@code Float.NaN}
@@ -1565,162 +1896,207 @@ final class DualPivotQuicksort {
      */
     private static void sortNegZeroAndNaN(float[] a, int left, int right) {
         /*
-         * Phase 1: Count negative zeros and move NaNs to end of array
+         * Phase 1: Move NaNs to the end of the array.
          */
-        final int NEGATIVE_ZERO = Float.floatToIntBits(-0.0f);
-        int numNegativeZeros = 0;
-        int n = right;
-
-        for (int k = left; k <= n; k++) {
+        while (left <= right && Float.isNaN(a[right])) {
+            right--;
+        }
+        for (int k = right - 1; k >= left; k--) {
             float ak = a[k];
-            if (ak == 0.0f && NEGATIVE_ZERO == Float.floatToIntBits(ak)) {
-                a[k] = 0.0f;
-                numNegativeZeros++;
-            } else if (ak != ak) { // i.e., ak is NaN
-                a[k--] = a[n];
-                a[n--] = Float.NaN;
+            if (ak != ak) { // a[k] is NaN
+                a[k] = a[right];
+                a[right] = ak;
+                right--;
             }
         }
 
         /*
-         * Phase 2: Sort everything except NaNs (which are already in place)
+         * Phase 2: Sort everything except NaNs (which are already in place).
          */
-        doSort(a, left, n);
+        sort(a, left, right, true);
 
         /*
-         * Phase 3: Turn positive zeros back into negative zeros as appropriate
+         * Phase 3: Place negative zeros before positive zeros.
          */
-        if (numNegativeZeros == 0) {
-            return;
-        }
+        int hi = right;
 
-        // Find first zero element
-        int zeroIndex = findAnyZero(a, left, n);
-
-        for (int i = zeroIndex - 1; i >= left && a[i] == 0.0f; i--) {
-            zeroIndex = i;
-        }
-
-        // Turn the right number of positive zeros back into negative zeros
-        for (int i = zeroIndex, m = zeroIndex + numNegativeZeros; i < m; i++) {
-            a[i] = -0.0f;
-        }
-    }
-
-    /**
-     * Returns the index of some zero element in the specified range via
-     * binary search. The range is assumed to be sorted, and must contain
-     * at least one zero.
-     *
-     * @param a the array to be searched
-     * @param low the index of the first element, inclusive, to be searched
-     * @param high the index of the last element, inclusive, to be searched
-     */
-    private static int findAnyZero(float[] a, int low, int high) {
-        while (true) {
-            int middle = (low + high) >>> 1;
+        /*
+         * Search first zero, or first positive, or last negative element.
+         */
+        while (left < hi) {
+            int middle = (left + hi) >>> 1;
             float middleValue = a[middle];
 
             if (middleValue < 0.0f) {
-                low = middle + 1;
-            } else if (middleValue > 0.0f) {
-                high = middle - 1;
-            } else { // middleValue == 0.0f
-                return middle;
+                left = middle + 1;
+            } else {
+                hi = middle;
             }
         }
-    }
 
-    /**
-     * Sorts the specified range of the array into ascending order. This
-     * method differs from the public {@code sort} method in three ways:
-     * {@code right} index is inclusive, it does no range checking on
-     * {@code left} or {@code right}, and it does not handle negative
-     * zeros or NaNs in the array.
-     *
-     * @param a the array to be sorted, which must not contain -0.0f or NaN
-     * @param left the index of the first element, inclusive, to be sorted
-     * @param right the index of the last element, inclusive, to be sorted
-     */
-    private static void doSort(float[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int i = left + 1; i <= right; i++) {
-                float ai = a[i];
-                int j;
-                for (j = i - 1; j >= left && ai < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ai;
+        /*
+         * Skip the last negative value (if any) or all leading negative zeros.
+         */
+        while (left <= right && Float.floatToRawIntBits(a[left]) < 0) {
+            left++;
+        }
+
+        /*
+         * Move negative zeros to the beginning of the sub-range.
+         *
+         * Partitioning:
+         *
+         * +---------------------------------------------------+
+         * |   < 0.0   |   -0.0   |    0.0    |  ?  ( >= 0.0 ) |
+         * +---------------------------------------------------+
+         *              ^          ^           ^
+         *              |          |           |
+         *             left        p           k
+         *
+         * Invariants:
+         *
+         *   all in (*,  left)  <  0.0
+         *   all in [left,  p) == -0.0
+         *   all in [p,     k) ==  0.0
+         *   all in [k, right] >=  0.0
+         *
+         * Pointer k is the first index of ?-part.
+         */
+        for (int k = left + 1, p = left; k <= right; k++) {
+            float ak = a[k];
+            if (ak != 0.0f) {
+                break;
             }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
+            if (Float.floatToRawIntBits(ak) < 0) { // ak is -0.0f
+                a[k] = 0.0f;
+                a[p++] = -0.0f;
+            }
         }
     }
 
     /**
      * Sorts the specified range of the array into ascending order by the
-     * Dual-Pivot Quicksort algorithm.
+     * Dual-Pivot Quicksort algorithm. This method differs from the public
+     * {@code sort} method in that the {@code right} index is inclusive,
+     * it does no range checking on {@code left} or {@code right}, and has
+     * boolean flag whether insertion sort with sentinel is used or not.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
+     * @param leftmost indicates if the part is the most left in the range
      */
-    private static void dualPivotQuicksort(float[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
+    private static void sort(float[] a, int left, int right,boolean leftmost) {
+        int length = right - left + 1;
+
+        // Use insertion sort on tiny arrays
+        if (length < INSERTION_SORT_THRESHOLD) {
+            if (!leftmost) {
+                /*
+                 * Every element in adjoining part plays the role
+                 * of sentinel, therefore this allows us to avoid
+                 * the j >= left check on each iteration.
+                 */
+                for (int j, i = left + 1; i <= right; i++) {
+                    float ai = a[i];
+                    for (j = i - 1; ai < a[j]; j--) {
+                        // assert j >= left;
+                        a[j + 1] = a[j];
+                    }
+                    a[j + 1] = ai;
+                }
+            } else {
+                /*
+                 * For case of leftmost part traditional (without a sentinel)
+                 * insertion sort, optimized for server JVM, is used.
+                 */
+                for (int i = left, j = i; i < right; j = ++i) {
+                    float ai = a[i + 1];
+                    while (ai < a[j]) {
+                        a[j + 1] = a[j];
+                        if (j-- == left) {
+                            break;
+                        }
+                    }
+                    a[j + 1] = ai;
+                }
+            }
+            return;
+        }
+
+        // Inexpensive approximation of length / 7
+        int seventh = (length >>> 3) + (length >>> 6) + 1;
+
+        /*
+         * Sort five evenly spaced elements around (and including) the
+         * center element in the range. These elements will be used for
+         * pivot selection as described below. The choice for spacing
+         * these elements was empirically determined to work well on
+         * a wide variety of inputs.
+         */
         int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
+        int e2 = e3 - seventh;
+        int e1 = e2 - seventh;
+        int e4 = e3 + seventh;
+        int e5 = e4 + seventh;
 
-        // Sort these elements using a 5-element sorting network
-        float ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+        // Sort these elements using insertion sort
+        if (a[e2] < a[e1]) { float t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
 
-        if (ae1 > ae2) { float t = ae1; ae1 = ae2; ae2 = t; }
-        if (ae4 > ae5) { float t = ae4; ae4 = ae5; ae5 = t; }
-        if (ae1 > ae3) { float t = ae1; ae1 = ae3; ae3 = t; }
-        if (ae2 > ae3) { float t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae1 > ae4) { float t = ae1; ae1 = ae4; ae4 = t; }
-        if (ae3 > ae4) { float t = ae3; ae3 = ae4; ae4 = t; }
-        if (ae2 > ae5) { float t = ae2; ae2 = ae5; ae5 = t; }
-        if (ae2 > ae3) { float t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae4 > ae5) { float t = ae4; ae4 = ae5; ae5 = t; }
-
-        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
+        if (a[e3] < a[e2]) { float t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+            if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+        }
+        if (a[e4] < a[e3]) { float t = a[e4]; a[e4] = a[e3]; a[e3] = t;
+            if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+            }
+        }
+        if (a[e5] < a[e4]) { float t = a[e5]; a[e5] = a[e4]; a[e4] = t;
+            if (t < a[e3]) { a[e4] = a[e3]; a[e3] = t;
+                if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                    if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+                }
+            }
+        }
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
          * These values are inexpensive approximations of the first and
          * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the elements to be sorted are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
          */
-        float pivot1 = ae2; a[e2] = a[left];
-        float pivot2 = ae4; a[e4] = a[right];
+        float pivot1 = a[e2];
+        float pivot2 = a[e4];
 
         // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
+        int less  = left;  // The index of the first element of center part
+        int great = right; // The index before the first element of right part
 
-        boolean pivotsDiffer = (pivot1 != pivot2);
+        if (pivot1 != pivot2) {
+            /*
+             * The first and the last elements to be sorted are moved to the
+             * locations formerly occupied by the pivots. When partitioning
+             * is complete, the pivots are swapped back into their final
+             * positions, and excluded from subsequent sorting.
+             */
+            a[e2] = a[left];
+            a[e4] = a[right];
 
-        if (pivotsDiffer) {
+            /*
+             * Skip elements, which are less or greater than pivot values.
+             */
+            while (a[++less] < pivot1);
+            while (a[--great] > pivot2);
+
             /*
              * Partitioning:
              *
-             *   left part         center part                    right part
-             * +------------------------------------------------------------+
-             * | < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2 |
-             * +------------------------------------------------------------+
-             *              ^                          ^       ^
-             *              |                          |       |
-             *             less                        k     great
+             *   left part           center part                   right part
+             * +--------------------------------------------------------------+
+             * |  < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2  |
+             * +--------------------------------------------------------------+
+             *               ^                          ^       ^
+             *               |                          |       |
+             *              less                        k     great
              *
              * Invariants:
              *
@@ -1728,16 +2104,14 @@ final class DualPivotQuicksort {
              *    pivot1 <= all in [less, k)     <= pivot2
              *              all in (great, right) > pivot2
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
             outer:
             for (int k = less; k <= great; k++) {
                 float ak = a[k];
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
                 } else if (ak > pivot2) { // Move a[k] to right part
                     while (a[great] > pivot2) {
@@ -1747,26 +2121,107 @@ final class DualPivotQuicksort {
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // pivot1 <= a[great] <= pivot2
                         a[k] = a[great];
-                        a[great--] = ak;
+                    }
+                    a[great] = ak;
+                    great--;
+                }
+            }
+
+            // Swap pivots into their final positions
+            a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+            a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+            // Sort left and right parts recursively, excluding known pivots
+            sort(a, left, less - 2, leftmost);
+            sort(a, great + 2, right, false);
+
+            /*
+             * If center part is too large (comprises > 5/7 of the array),
+             * swap internal pivot values to ends.
+             */
+            if (less < e1 && e5 < great) {
+                /*
+                 * Skip elements, which are equal to pivot values.
+                 */
+                while (a[less] == pivot1) {
+                    less++;
+                }
+                while (a[great] == pivot2) {
+                    great--;
+                }
+
+                /*
+                 * Partitioning:
+                 *
+                 *   left part         center part                  right part
+                 * +----------------------------------------------------------+
+                 * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
+                 * +----------------------------------------------------------+
+                 *              ^                        ^       ^
+                 *              |                        |       |
+                 *             less                      k     great
+                 *
+                 * Invariants:
+                 *
+                 *              all in (*,  less) == pivot1
+                 *     pivot1 < all in [less,  k)  < pivot2
+                 *              all in (great, *) == pivot2
+                 *
+                 * Pointer k is the first index of ?-part.
+                 */
+                outer:
+                for (int k = less; k <= great; k++) {
+                    float ak = a[k];
+                    if (ak == pivot1) { // Move a[k] to left part
+                        a[k] = a[less];
+                        a[less] = ak;
+                        less++;
+                    } else if (ak == pivot2) { // Move a[k] to right part
+                        while (a[great] == pivot2) {
+                            if (great-- == k) {
+                                break outer;
+                            }
+                        }
+                        if (a[great] == pivot1) {
+                            a[k] = a[less];
+                            /*
+                             * Even though a[great] equals to pivot1, the
+                             * assignment a[less] = pivot1 may be incorrect,
+                             * if a[great] and pivot1 are floating-point zeros
+                             * of different signs. Therefore in float and
+                             * double sorting methods we have to use more
+                             * accurate assignment a[less] = a[great].
+                             */
+                            a[less] = a[great];
+                            less++;
+                        } else { // pivot1 < a[great] < pivot2
+                            a[k] = a[great];
+                        }
+                        a[great] = ak;
+                        great--;
                     }
                 }
             }
+
+            // Sort center part recursively
+            sort(a, less, great, false);
+
         } else { // Pivots are equal
             /*
-             * Partition degenerates to the traditional 3-way,
-             * or "Dutch National Flag", partition:
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") schema:
              *
-             *   left part   center part            right part
-             * +----------------------------------------------+
-             * |  < pivot  |  == pivot  |    ?    |  > pivot  |
-             * +----------------------------------------------+
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
+             *   left part    center part              right part
+             * +-------------------------------------------------+
+             * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+             * +-------------------------------------------------+
+             *              ^              ^        ^
+             *              |              |        |
+             *             less            k      great
              *
              * Invariants:
              *
@@ -1774,20 +2229,19 @@ final class DualPivotQuicksort {
              *   all in [less, k)     == pivot
              *   all in (great, right) > pivot
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
-            for (int k = less; k <= great; k++) {
-                float ak = a[k];
-                if (ak == pivot1) {
+            for (int k = left; k <= great; k++) {
+                if (a[k] == pivot1) {
                     continue;
                 }
+                float ak = a[k];
+
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
-                } else { // (a[k] > pivot1) - Move a[k] to right part
+                } else { // a[k] > pivot1 - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -1795,92 +2249,33 @@ final class DualPivotQuicksort {
                      * In other words, a[e3] acts as a sentinel for great.
                      */
                     while (a[great] > pivot1) {
+                        // assert great > k;
                         great--;
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // a[great] == pivot1
-                        a[k] = pivot1;
-                        a[great--] = ak;
-                    }
-                }
-            }
-        }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        doSort(a, left,   less - 2);
-        doSort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 2/3 of the array),
-         * swap internal pivot values to ends
-         */
-        if (less < e1 && great > e5) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-
-            /*
-             * Partitioning:
-             *
-             *   left part       center part                   right part
-             * +----------------------------------------------------------+
-             * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
-             * +----------------------------------------------------------+
-             *              ^                        ^       ^
-             *              |                        |       |
-             *             less                      k     great
-             *
-             * Invariants:
-             *
-             *              all in (*, less)  == pivot1
-             *     pivot1 < all in [less, k)   < pivot2
-             *              all in (great, *) == pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            outer:
-            for (int k = less; k <= great; k++) {
-                float ak = a[k];
-                if (ak == pivot2) { // Move a[k] to right part
-                    while (a[great] == pivot2) {
-                        if (great-- == k) {
-                            break outer;
-                        }
-                    }
-                    if (a[great] == pivot1) {
-                        a[k] = a[less];
-                        a[less++] = pivot1;
-                    } else { // pivot1 < a[great] < pivot2
+                        /*
+                         * Even though a[great] equals to pivot1, the
+                         * assignment a[k] = pivot1 may be incorrect,
+                         * if a[great] and pivot1 are floating-point
+                         * zeros of different signs. Therefore in float
+                         * and double sorting methods we have to use
+                         * more accurate assignment a[k] = a[great].
+                         */
                         a[k] = a[great];
                     }
-                    a[great--] = pivot2;
-                } else if (ak == pivot1) { // Move a[k] to left part
-                    a[k] = a[less];
-                    a[less++] = pivot1;
+                    a[great] = ak;
+                    great--;
                 }
             }
-        }
 
-        // Sort center part recursively, excluding known pivot values
-        doSort(a, less, great);
+            // Sort left and right parts recursively
+            sort(a, left, less - 1, leftmost);
+            sort(a, great + 1, right, false);
+        }
     }
 
     /**
@@ -1938,162 +2333,207 @@ final class DualPivotQuicksort {
      */
     private static void sortNegZeroAndNaN(double[] a, int left, int right) {
         /*
-         * Phase 1: Count negative zeros and move NaNs to end of array
+         * Phase 1: Move NaNs to the end of the array.
          */
-        final long NEGATIVE_ZERO = Double.doubleToLongBits(-0.0d);
-        int numNegativeZeros = 0;
-        int n = right;
-
-        for (int k = left; k <= n; k++) {
+        while (left <= right && Double.isNaN(a[right])) {
+            right--;
+        }
+        for (int k = right - 1; k >= left; k--) {
             double ak = a[k];
-            if (ak == 0.0d && NEGATIVE_ZERO == Double.doubleToLongBits(ak)) {
-                a[k] = 0.0d;
-                numNegativeZeros++;
-            } else if (ak != ak) { // i.e., ak is NaN
-                a[k--] = a[n];
-                a[n--] = Double.NaN;
+            if (ak != ak) { // a[k] is NaN
+                a[k] = a[right];
+                a[right] = ak;
+                right--;
             }
         }
 
         /*
-         * Phase 2: Sort everything except NaNs (which are already in place)
+         * Phase 2: Sort everything except NaNs (which are already in place).
          */
-        doSort(a, left, n);
+        sort(a, left, right, true);
 
         /*
-         * Phase 3: Turn positive zeros back into negative zeros as appropriate
+         * Phase 3: Place negative zeros before positive zeros.
          */
-        if (numNegativeZeros == 0) {
-            return;
-        }
+        int hi = right;
 
-        // Find first zero element
-        int zeroIndex = findAnyZero(a, left, n);
-
-        for (int i = zeroIndex - 1; i >= left && a[i] == 0.0d; i--) {
-            zeroIndex = i;
-        }
-
-        // Turn the right number of positive zeros back into negative zeros
-        for (int i = zeroIndex, m = zeroIndex + numNegativeZeros; i < m; i++) {
-            a[i] = -0.0d;
-        }
-    }
-
-    /**
-     * Returns the index of some zero element in the specified range via
-     * binary search. The range is assumed to be sorted, and must contain
-     * at least one zero.
-     *
-     * @param a the array to be searched
-     * @param low the index of the first element, inclusive, to be searched
-     * @param high the index of the last element, inclusive, to be searched
-     */
-    private static int findAnyZero(double[] a, int low, int high) {
-        while (true) {
-            int middle = (low + high) >>> 1;
+        /*
+         * Search first zero, or first positive, or last negative element.
+         */
+        while (left < hi) {
+            int middle = (left + hi) >>> 1;
             double middleValue = a[middle];
 
             if (middleValue < 0.0d) {
-                low = middle + 1;
-            } else if (middleValue > 0.0d) {
-                high = middle - 1;
-            } else { // middleValue == 0.0d
-                return middle;
+                left = middle + 1;
+            } else {
+                hi = middle;
             }
         }
-    }
 
-    /**
-     * Sorts the specified range of the array into ascending order. This
-     * method differs from the public {@code sort} method in three ways:
-     * {@code right} index is inclusive, it does no range checking on
-     * {@code left} or {@code right}, and it does not handle negative
-     * zeros or NaNs in the array.
-     *
-     * @param a the array to be sorted, which must not contain -0.0d and NaN
-     * @param left the index of the first element, inclusive, to be sorted
-     * @param right the index of the last element, inclusive, to be sorted
-     */
-    private static void doSort(double[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int i = left + 1; i <= right; i++) {
-                double ai = a[i];
-                int j;
-                for (j = i - 1; j >= left && ai < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ai;
+        /*
+         * Skip the last negative value (if any) or all leading negative zeros.
+         */
+        while (left <= right && Double.doubleToRawLongBits(a[left]) < 0) {
+            left++;
+        }
+
+        /*
+         * Move negative zeros to the beginning of the sub-range.
+         *
+         * Partitioning:
+         *
+         * +---------------------------------------------------+
+         * |   < 0.0   |   -0.0   |    0.0    |  ?  ( >= 0.0 ) |
+         * +---------------------------------------------------+
+         *              ^          ^           ^
+         *              |          |           |
+         *             left        p           k
+         *
+         * Invariants:
+         *
+         *   all in (*,  left)  <  0.0
+         *   all in [left,  p) == -0.0
+         *   all in [p,     k) ==  0.0
+         *   all in [k, right] >=  0.0
+         *
+         * Pointer k is the first index of ?-part.
+         */
+        for (int k = left + 1, p = left; k <= right; k++) {
+            double ak = a[k];
+            if (ak != 0.0d) {
+                break;
             }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
+            if (Double.doubleToRawLongBits(ak) < 0) { // ak is -0.0d
+                a[k] = 0.0d;
+                a[p++] = -0.0d;
+            }
         }
     }
 
     /**
      * Sorts the specified range of the array into ascending order by the
-     * Dual-Pivot Quicksort algorithm.
+     * Dual-Pivot Quicksort algorithm. This method differs from the public
+     * {@code sort} method in that the {@code right} index is inclusive,
+     * it does no range checking on {@code left} or {@code right}, and has
+     * boolean flag whether insertion sort with sentinel is used or not.
      *
      * @param a the array to be sorted
      * @param left the index of the first element, inclusive, to be sorted
      * @param right the index of the last element, inclusive, to be sorted
+     * @param leftmost indicates if the part is the most left in the range
      */
-    private static void dualPivotQuicksort(double[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
+    private static void sort(double[] a, int left,int right,boolean leftmost) {
+        int length = right - left + 1;
+
+        // Use insertion sort on tiny arrays
+        if (length < INSERTION_SORT_THRESHOLD) {
+            if (!leftmost) {
+                /*
+                 * Every element in adjoining part plays the role
+                 * of sentinel, therefore this allows us to avoid
+                 * the j >= left check on each iteration.
+                 */
+                for (int j, i = left + 1; i <= right; i++) {
+                    double ai = a[i];
+                    for (j = i - 1; ai < a[j]; j--) {
+                        // assert j >= left;
+                        a[j + 1] = a[j];
+                    }
+                    a[j + 1] = ai;
+                }
+            } else {
+                /*
+                 * For case of leftmost part traditional (without a sentinel)
+                 * insertion sort, optimized for server JVM, is used.
+                 */
+                for (int i = left, j = i; i < right; j = ++i) {
+                    double ai = a[i + 1];
+                    while (ai < a[j]) {
+                        a[j + 1] = a[j];
+                        if (j-- == left) {
+                            break;
+                        }
+                    }
+                    a[j + 1] = ai;
+                }
+            }
+            return;
+        }
+
+        // Inexpensive approximation of length / 7
+        int seventh = (length >>> 3) + (length >>> 6) + 1;
+
+        /*
+         * Sort five evenly spaced elements around (and including) the
+         * center element in the range. These elements will be used for
+         * pivot selection as described below. The choice for spacing
+         * these elements was empirically determined to work well on
+         * a wide variety of inputs.
+         */
         int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
+        int e2 = e3 - seventh;
+        int e1 = e2 - seventh;
+        int e4 = e3 + seventh;
+        int e5 = e4 + seventh;
 
-        // Sort these elements using a 5-element sorting network
-        double ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+        // Sort these elements using insertion sort
+        if (a[e2] < a[e1]) { double t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
 
-        if (ae1 > ae2) { double t = ae1; ae1 = ae2; ae2 = t; }
-        if (ae4 > ae5) { double t = ae4; ae4 = ae5; ae5 = t; }
-        if (ae1 > ae3) { double t = ae1; ae1 = ae3; ae3 = t; }
-        if (ae2 > ae3) { double t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae1 > ae4) { double t = ae1; ae1 = ae4; ae4 = t; }
-        if (ae3 > ae4) { double t = ae3; ae3 = ae4; ae4 = t; }
-        if (ae2 > ae5) { double t = ae2; ae2 = ae5; ae5 = t; }
-        if (ae2 > ae3) { double t = ae2; ae2 = ae3; ae3 = t; }
-        if (ae4 > ae5) { double t = ae4; ae4 = ae5; ae5 = t; }
-
-        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
+        if (a[e3] < a[e2]) { double t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+            if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+        }
+        if (a[e4] < a[e3]) { double t = a[e4]; a[e4] = a[e3]; a[e3] = t;
+            if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+            }
+        }
+        if (a[e5] < a[e4]) { double t = a[e5]; a[e5] = a[e4]; a[e4] = t;
+            if (t < a[e3]) { a[e4] = a[e3]; a[e3] = t;
+                if (t < a[e2]) { a[e3] = a[e2]; a[e2] = t;
+                    if (t < a[e1]) { a[e2] = a[e1]; a[e1] = t; }
+                }
+            }
+        }
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
          * These values are inexpensive approximations of the first and
          * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the elements to be sorted are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
          */
-        double pivot1 = ae2; a[e2] = a[left];
-        double pivot2 = ae4; a[e4] = a[right];
+        double pivot1 = a[e2];
+        double pivot2 = a[e4];
 
         // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
+        int less  = left;  // The index of the first element of center part
+        int great = right; // The index before the first element of right part
 
-        boolean pivotsDiffer = (pivot1 != pivot2);
+        if (pivot1 != pivot2) {
+            /*
+             * The first and the last elements to be sorted are moved to the
+             * locations formerly occupied by the pivots. When partitioning
+             * is complete, the pivots are swapped back into their final
+             * positions, and excluded from subsequent sorting.
+             */
+            a[e2] = a[left];
+            a[e4] = a[right];
 
-        if (pivotsDiffer) {
+            /*
+             * Skip elements, which are less or greater than pivot values.
+             */
+            while (a[++less] < pivot1);
+            while (a[--great] > pivot2);
+
             /*
              * Partitioning:
              *
-             *   left part         center part                    right part
-             * +------------------------------------------------------------+
-             * | < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2 |
-             * +------------------------------------------------------------+
-             *              ^                          ^       ^
-             *              |                          |       |
-             *             less                        k     great
+             *   left part           center part                   right part
+             * +--------------------------------------------------------------+
+             * |  < pivot1  |  pivot1 <= && <= pivot2  |    ?    |  > pivot2  |
+             * +--------------------------------------------------------------+
+             *               ^                          ^       ^
+             *               |                          |       |
+             *              less                        k     great
              *
              * Invariants:
              *
@@ -2101,16 +2541,14 @@ final class DualPivotQuicksort {
              *    pivot1 <= all in [less, k)     <= pivot2
              *              all in (great, right) > pivot2
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
             outer:
             for (int k = less; k <= great; k++) {
                 double ak = a[k];
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
                 } else if (ak > pivot2) { // Move a[k] to right part
                     while (a[great] > pivot2) {
@@ -2120,26 +2558,107 @@ final class DualPivotQuicksort {
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // pivot1 <= a[great] <= pivot2
                         a[k] = a[great];
-                        a[great--] = ak;
+                    }
+                    a[great] = ak;
+                    great--;
+                }
+            }
+
+            // Swap pivots into their final positions
+            a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+            a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+            // Sort left and right parts recursively, excluding known pivots
+            sort(a, left, less - 2, leftmost);
+            sort(a, great + 2, right, false);
+
+            /*
+             * If center part is too large (comprises > 5/7 of the array),
+             * swap internal pivot values to ends.
+             */
+            if (less < e1 && e5 < great) {
+                /*
+                 * Skip elements, which are equal to pivot values.
+                 */
+                while (a[less] == pivot1) {
+                    less++;
+                }
+                while (a[great] == pivot2) {
+                    great--;
+                }
+
+                /*
+                 * Partitioning:
+                 *
+                 *   left part         center part                  right part
+                 * +----------------------------------------------------------+
+                 * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
+                 * +----------------------------------------------------------+
+                 *              ^                        ^       ^
+                 *              |                        |       |
+                 *             less                      k     great
+                 *
+                 * Invariants:
+                 *
+                 *              all in (*,  less) == pivot1
+                 *     pivot1 < all in [less,  k)  < pivot2
+                 *              all in (great, *) == pivot2
+                 *
+                 * Pointer k is the first index of ?-part.
+                 */
+                outer:
+                for (int k = less; k <= great; k++) {
+                    double ak = a[k];
+                    if (ak == pivot1) { // Move a[k] to left part
+                        a[k] = a[less];
+                        a[less] = ak;
+                        less++;
+                    } else if (ak == pivot2) { // Move a[k] to right part
+                        while (a[great] == pivot2) {
+                            if (great-- == k) {
+                                break outer;
+                            }
+                        }
+                        if (a[great] == pivot1) {
+                            a[k] = a[less];
+                            /*
+                             * Even though a[great] equals to pivot1, the
+                             * assignment a[less] = pivot1 may be incorrect,
+                             * if a[great] and pivot1 are floating-point zeros
+                             * of different signs. Therefore in float and
+                             * double sorting methods we have to use more
+                             * accurate assignment a[less] = a[great].
+                             */
+                            a[less] = a[great];
+                            less++;
+                        } else { // pivot1 < a[great] < pivot2
+                            a[k] = a[great];
+                        }
+                        a[great] = ak;
+                        great--;
                     }
                 }
             }
+
+            // Sort center part recursively
+            sort(a, less, great, false);
+
         } else { // Pivots are equal
             /*
-             * Partition degenerates to the traditional 3-way,
-             * or "Dutch National Flag", partition:
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") schema:
              *
-             *   left part   center part            right part
-             * +----------------------------------------------+
-             * |  < pivot  |  == pivot  |    ?    |  > pivot  |
-             * +----------------------------------------------+
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
+             *   left part    center part              right part
+             * +-------------------------------------------------+
+             * |  < pivot  |   == pivot   |     ?    |  > pivot  |
+             * +-------------------------------------------------+
+             *              ^              ^        ^
+             *              |              |        |
+             *             less            k      great
              *
              * Invariants:
              *
@@ -2147,20 +2666,19 @@ final class DualPivotQuicksort {
              *   all in [less, k)     == pivot
              *   all in (great, right) > pivot
              *
-             * Pointer k is the first index of ?-part
+             * Pointer k is the first index of ?-part.
              */
-            for (int k = less; k <= great; k++) {
-                double ak = a[k];
-                if (ak == pivot1) {
+            for (int k = left; k <= great; k++) {
+                if (a[k] == pivot1) {
                     continue;
                 }
+                double ak = a[k];
+
                 if (ak < pivot1) { // Move a[k] to left part
-                    if (k != less) {
-                        a[k] = a[less];
-                        a[less] = ak;
-                    }
+                    a[k] = a[less];
+                    a[less] = ak;
                     less++;
-                } else { // (a[k] > pivot1) - Move a[k] to right part
+                } else { // a[k] > pivot1 - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -2168,102 +2686,43 @@ final class DualPivotQuicksort {
                      * In other words, a[e3] acts as a sentinel for great.
                      */
                     while (a[great] > pivot1) {
+                        // assert great > k;
                         great--;
                     }
                     if (a[great] < pivot1) {
                         a[k] = a[less];
-                        a[less++] = a[great];
-                        a[great--] = ak;
+                        a[less] = a[great];
+                        less++;
                     } else { // a[great] == pivot1
-                        a[k] = pivot1;
-                        a[great--] = ak;
-                    }
-                }
-            }
-        }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        doSort(a, left,   less - 2);
-        doSort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 2/3 of the array),
-         * swap internal pivot values to ends
-         */
-        if (less < e1 && great > e5) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-
-            /*
-             * Partitioning:
-             *
-             *   left part       center part                   right part
-             * +----------------------------------------------------------+
-             * | == pivot1 |  pivot1 < && < pivot2  |    ?    | == pivot2 |
-             * +----------------------------------------------------------+
-             *              ^                        ^       ^
-             *              |                        |       |
-             *             less                      k     great
-             *
-             * Invariants:
-             *
-             *              all in (*, less)  == pivot1
-             *     pivot1 < all in [less, k)   < pivot2
-             *              all in (great, *) == pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            outer:
-            for (int k = less; k <= great; k++) {
-                double ak = a[k];
-                if (ak == pivot2) { // Move a[k] to right part
-                    while (a[great] == pivot2) {
-                        if (great-- == k) {
-                            break outer;
-                        }
-                    }
-                    if (a[great] == pivot1) {
-                        a[k] = a[less];
-                        a[less++] = pivot1;
-                    } else { // pivot1 < a[great] < pivot2
+                        /*
+                         * Even though a[great] equals to pivot1, the
+                         * assignment a[k] = pivot1 may be incorrect,
+                         * if a[great] and pivot1 are floating-point
+                         * zeros of different signs. Therefore in float
+                         * and double sorting methods we have to use
+                         * more accurate assignment a[k] = a[great].
+                         */
                         a[k] = a[great];
                     }
-                    a[great--] = pivot2;
-                } else if (ak == pivot1) { // Move a[k] to left part
-                    a[k] = a[less];
-                    a[less++] = pivot1;
+                    a[great] = ak;
+                    great--;
                 }
             }
-        }
 
-        // Sort center part recursively, excluding known pivot values
-        doSort(a, less, great);
+            // Sort left and right parts recursively
+            sort(a, left, less - 1, leftmost);
+            sort(a, great + 1, right, false);
+        }
     }
 
     /**
-     * Checks that {@code fromIndex} and {@code toIndex} are in
-     * the range and throws an appropriate exception, if they aren't.
+     * Checks that {@code fromIndex} and {@code toIndex} are in the range,
+     * otherwise throws an appropriate exception.
      */
     private static void rangeCheck(int length, int fromIndex, int toIndex) {
         if (fromIndex > toIndex) {
             throw new IllegalArgumentException(
-                "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+                "fromIndex: " + fromIndex + " > toIndex: " + toIndex);
         }
         if (fromIndex < 0) {
             throw new ArrayIndexOutOfBoundsException(fromIndex);

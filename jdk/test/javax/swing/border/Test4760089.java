@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vtune_solaris.cpp.incl"
+/*
+ * @test
+ * @bug 4760089
+ * @summary Tests that titled border do not paint inner titled border over its caption
+ * @author Sergey Malenkov
+ * @run applet/manual=yesno Test4760089.html
+ */
 
-// empty implementation
+import javax.swing.JApplet;
+import javax.swing.JPanel;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 
-void VTune::start_GC() {}
-void VTune::end_GC() {}
-void VTune::start_class_load() {}
-void VTune::end_class_load() {}
-void VTune::exit() {}
-void VTune::register_stub(const char* name, address start, address end) {}
+public class Test4760089 extends JApplet {
+    @Override
+    public void init() {
+        Border border = new EtchedBorder();
+        border = new TitledBorder(border, "LEFT",  TitledBorder.LEFT,  TitledBorder.TOP);
+        border = new TitledBorder(border, "RIGHT", TitledBorder.RIGHT, TitledBorder.TOP);
 
-void VTune::create_nmethod(nmethod* nm) {}
-void VTune::delete_nmethod(nmethod* nm) {}
-
-void vtune_init() {}
+        JPanel panel = new JPanel();
+        panel.setBorder(border);
+        getContentPane().add(panel);
+    }
+}

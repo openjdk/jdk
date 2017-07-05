@@ -62,7 +62,7 @@ public class Supplementary {
          0     1     2345     678     9     012     345678     9 01     2     */
         "\uD800\uDC00!#$\uD800%&\uD800\uDC00;+\uDC00<>;=^\uDC00\\@\uD800\uDC00",
 
-        // includes an undefined supprementary characters in Unicode 4.0.0
+        // includes an undefined supplementary character in Unicode 4.0.0
       /*                                    1     11     1     1111     1
          0     1     2345     6     789     0     12     3     4567     8     */
         "\uDB40\uDE00abc\uDE01\uDB40de\uDB40\uDE02f\uDB40\uDE03ghi\uDB40\uDE02",
@@ -168,7 +168,7 @@ public class Supplementary {
      * string in input[m].
      *
      * The meaning of each element in golden3[][n]
-     *   golden3[][0]: characater which is searched.
+     *   golden3[][0]: character which is searched.
      *   golden3[][2]: the golden data for indexOf(int ch)
      *   From golden3[][2] to golden3[][n-1]:
      *       the golden data for indexOf(int ch, int fromIndex)
@@ -201,17 +201,17 @@ public class Supplementary {
             /*
              * Normal case
              */
-            testIndexOf(First, s, golden3[i][0], golden3[i][2]);
+            testIndexOf(s, golden3[i][0], golden3[i][2]);
 
             /*
              * Abnormal case - char which isn't included in the string.
              */
-            testIndexOf(First, s, 'Z', -1);
-            testIndexOf(First, s, 0xDB98, -1);
-            testIndexOf(First, s, 0xDE76, -1);
-            testIndexOf(First, s, 0x12345, -1);
-            testIndexOf(First, s, -1, -1);
-            testIndexOf(First, s, 0x110000, -1);
+            testIndexOf(s, 'Z', -1);
+            testIndexOf(s, 0xDB98, -1);
+            testIndexOf(s, 0xDE76, -1);
+            testIndexOf(s, 0x12345, -1);
+            testIndexOf(s, -1, -1);
+            testIndexOf(s, 0x110000, -1);
         }
     }
 
@@ -229,7 +229,7 @@ public class Supplementary {
              */
             int fromIndex = 0;
             for (int j = 2; j < golden3[i].length; j++) {
-                fromIndex = testIndexOf(First, s, fromIndex, ch,
+                fromIndex = testIndexOf(s, fromIndex, ch,
                                         golden3[i][j]) + 1;
             }
 
@@ -237,19 +237,19 @@ public class Supplementary {
              * Abnormal case1 - char is included in the string but fromIndex
              *                  is incorrect.
              */
-            testIndexOf(First, s, -1, ch, golden3[i][2]);
-            testIndexOf(First, s, s.length(), ch,
+            testIndexOf(s, -1, ch, golden3[i][2]);
+            testIndexOf(s, s.length(), ch,
                         golden3[i][golden3[i].length-1]);
 
             /*
              * Abnormal case2 - char which isn't included in the string.
              */
-            testIndexOf(First, s, 0, 'Z', -1);
-            testIndexOf(First, s, 0, 0xDB98, -1);
-            testIndexOf(First, s, 0, 0xDE76, -1);
-            testIndexOf(First, s, 0, 0x12345, -1);
-            testIndexOf(First, s, 0, -1, -1);
-            testIndexOf(First, s, 0, 0x110000, -1);
+            testIndexOf(s, 0, 'Z', -1);
+            testIndexOf(s, 0, 0xDB98, -1);
+            testIndexOf(s, 0, 0xDE76, -1);
+            testIndexOf(s, 0, 0x12345, -1);
+            testIndexOf(s, 0, -1, -1);
+            testIndexOf(s, 0, 0x110000, -1);
         }
     }
 
@@ -264,18 +264,18 @@ public class Supplementary {
             /*
              * Normal case
              */
-            testIndexOf(Last, s, golden3[i][0],
+            testLastIndexOf(s, golden3[i][0],
                         golden3[i][golden3[i].length-2]);
 
             /*
              * Abnormal case - char which isn't included in the string.
              */
-            testIndexOf(Last, s, 'Z', -1);
-            testIndexOf(Last, s, 0xDB98, -1);
-            testIndexOf(Last, s, 0xDE76, -1);
-            testIndexOf(Last, s, 0x12345, -1);
-            testIndexOf(Last, s, -1, -1);
-            testIndexOf(Last, s, 0x110000, -1);
+            testLastIndexOf(s, 'Z', -1);
+            testLastIndexOf(s, 0xDB98, -1);
+            testLastIndexOf(s, 0xDE76, -1);
+            testLastIndexOf(s, 0x12345, -1);
+            testLastIndexOf(s, -1, -1);
+            testLastIndexOf(s, 0x110000, -1);
         }
     }
 
@@ -294,7 +294,7 @@ public class Supplementary {
              */
             int fromIndex = len - 1;
             for (int j = golden3[i].length - 2; j > 0; j--) {
-                fromIndex = testIndexOf(Last, s, fromIndex, ch,
+                fromIndex = testLastIndexOf(s, fromIndex, ch,
                                         golden3[i][j]) - 1;
             }
 
@@ -302,18 +302,18 @@ public class Supplementary {
              * Abnormal case1 - char is included in the string but fromIndex
              *                  is incorrect.
              */
-            testIndexOf(Last, s, -1, ch, golden3[i][1]);
-            testIndexOf(Last, s, len, ch, golden3[i][golden3[i].length-2]);
+            testLastIndexOf(s, -1, ch, golden3[i][1]);
+            testLastIndexOf(s, len, ch, golden3[i][golden3[i].length-2]);
 
             /*
              * Abnormal case2 - char which isn't included in the string.
              */
-            testIndexOf(Last, s, len, 'Z', -1);
-            testIndexOf(Last, s, len, 0xDB98, -1);
-            testIndexOf(Last, s, len, 0xDE76, -1);
-            testIndexOf(Last, s, len, 0x12345, -1);
-            testIndexOf(Last, s, len, -1, -1);
-            testIndexOf(Last, s, len, 0x110000, -1);
+            testLastIndexOf(s, len, 'Z', -1);
+            testLastIndexOf(s, len, 0xDB98, -1);
+            testLastIndexOf(s, len, 0xDE76, -1);
+            testLastIndexOf(s, len, 0x12345, -1);
+            testLastIndexOf(s, len, -1, -1);
+            testLastIndexOf(s, len, 0x110000, -1);
         }
     }
 
@@ -471,7 +471,7 @@ public class Supplementary {
                       result, expected);
                 result = str.offsetByCodePoints(j, -nCodePoints);
                 check(result != 0,
-                      "offsetBycodePoints(input["+i+"], "+j+", "+(-nCodePoints)+")",
+                      "offsetByCodePoints(input["+i+"], "+j+", "+(-nCodePoints)+")",
                       result, 0);
             }
 
@@ -531,7 +531,7 @@ public class Supplementary {
                       result, expected);
                 result = str.offsetByCodePoints(j, -nCodePoints);
                 check(result != 0,
-                      "offsetBycodePoints(input["+i+"], "+j+", "+(-nCodePoints)+")",
+                      "offsetByCodePoints(input["+i+"], "+j+", "+(-nCodePoints)+")",
                       result, 0);
             }
         }
@@ -539,7 +539,7 @@ public class Supplementary {
 
 
     static final boolean At = true, Before = false;
-    static final boolean First = true, Last = false;
+    static final boolean FIRST = true, LAST = false;
 
     static void testCodePoint(boolean isAt, String s, int index, int expected) {
         int c = isAt ? s.codePointAt(index) : s.codePointBefore(index);
@@ -563,22 +563,72 @@ public class Supplementary {
               + s + "> should throw StringIndexOutOfBoundsPointerException.");
     }
 
-    static void testIndexOf(boolean isFirst, String s, int c, int expected) {
-        int index = isFirst ? s.indexOf(c) : s.lastIndexOf(c);
-
-        check(index != expected,
-              (isFirst ? "i" : "lastI") + "ndexOf(" + toHexString(c)
-              + ") for <" + s + ">", index, expected);
+    static void testIndexOf(String s, int c, int expected) {
+        testIndexOf2(s, c, expected);
+        if (s.indexOf(c) != -1) {
+            testIndexOf2(s + (char) c, c, expected);
+            if (Character.isSupplementaryCodePoint(c)) {
+                char[] surrogates = Character.toChars(c);
+                testIndexOf2(s + new String(surrogates), c, expected);
+                testIndexOf2(s + surrogates[0], c, expected);
+                testIndexOf2(s + surrogates[1], c, expected);
+                testIndexOf2(new String(surrogates) + s, c, 0);
+                testIndexOf2(surrogates[0] + s, c, expected + 1);
+                testIndexOf2(surrogates[1] + s, c, expected + 1);
+            }
+        }
     }
 
-    static int testIndexOf(boolean isFirst, String s, int fromIndex, int c,
-                           int expected) {
-        int index = isFirst ? s.indexOf(c, fromIndex) :
-                              s.lastIndexOf(c, fromIndex);
+    static void testIndexOf2(String s, int c, int expected) {
+        int index = s.indexOf(c);
 
         check(index != expected,
-              (isFirst ? "i" : "lastI") + "ndexOf(" + toHexString(c) + ", "
-              + fromIndex + ") for <" + s + ">", index, expected);
+              "indexOf(" + toHexString(c) + ") for <" + s + ">",
+              index, expected);
+    }
+
+    static void testLastIndexOf(String s, int c, int expected) {
+        testLastIndexOf2(s, c, expected);
+        if (s.lastIndexOf(c) != -1) {
+            testLastIndexOf2((char) c + s, c, expected + 1);
+            if (Character.isSupplementaryCodePoint(c)) {
+                char[] surrogates = Character.toChars(c);
+                testLastIndexOf2(s + new String(surrogates), c, s.length());
+                testLastIndexOf2(s + surrogates[0], c, expected);
+                testLastIndexOf2(s + surrogates[1], c, expected);
+                testLastIndexOf2(new String(surrogates) + s, c, expected + 2);
+                testLastIndexOf2(surrogates[0] + s, c, expected + 1);
+                testLastIndexOf2(surrogates[1] + s, c, expected + 1);
+            }
+        }
+    }
+
+    static void testLastIndexOf2(String s, int c, int expected) {
+        int index = s.lastIndexOf(c);
+
+        check(index != expected,
+              "lastIndexOf(" + toHexString(c) + ") for <" + s + ">",
+              index, expected);
+    }
+
+    static int testIndexOf(String s, int fromIndex, int c, int expected) {
+        int index = s.indexOf(c, fromIndex);
+
+        check(index != expected,
+              "indexOf(" + toHexString(c) + ", "
+              + fromIndex + ") for <" + s + ">",
+              index, expected);
+
+        return index;
+    }
+
+    static int testLastIndexOf(String s, int fromIndex, int c, int expected) {
+        int index = s.lastIndexOf(c, fromIndex);
+
+        check(index != expected,
+              "lastIndexOf(" + toHexString(c) + ", "
+              + fromIndex + ") for <" + s + ">",
+              index, expected);
 
         return index;
     }

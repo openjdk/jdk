@@ -38,7 +38,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-
 /**
  * The <code>String</code> class represents character strings. All
  * string literals in Java programs, such as <code>"abc"</code>, are
@@ -99,6 +98,8 @@ import java.util.regex.PatternSyntaxException;
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
+ * @author  Martin Buchholz
+ * @author  Ulf Zibis
  * @see     java.lang.Object#toString()
  * @see     java.lang.StringBuffer
  * @see     java.lang.StringBuilder
@@ -273,32 +274,32 @@ public final class String
             throw new StringIndexOutOfBoundsException(offset + count);
         }
 
+        final int end = offset + count;
+
         // Pass 1: Compute precise size of char[]
-        int n = 0;
-        for (int i = offset; i < offset + count; i++) {
+        int n = count;
+        for (int i = offset; i < end; i++) {
             int c = codePoints[i];
-            if (c >= Character.MIN_CODE_POINT &&
-                c <  Character.MIN_SUPPLEMENTARY_CODE_POINT)
-                n += 1;
-            else if (Character.isSupplementaryCodePoint(c))
-                n += 2;
+            if (Character.isBmpCodePoint(c))
+                continue;
+            else if (Character.isValidCodePoint(c))
+                n++;
             else throw new IllegalArgumentException(Integer.toString(c));
         }
 
         // Pass 2: Allocate and fill in char[]
-        char[] v = new char[n];
-        for (int i = offset, j = 0; i < offset + count; i++) {
+        final char[] v = new char[n];
+
+        for (int i = offset, j = 0; i < end; i++, j++) {
             int c = codePoints[i];
-            if (c < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
-                v[j++] = (char) c;
-            } else {
-                Character.toSurrogates(c, v, j);
-                j += 2;
-            }
+            if (Character.isBmpCodePoint(c))
+                v[j] = (char) c;
+            else
+                Character.toSurrogates(c, v, j++);
         }
 
         this.value  = v;
-        this.count  = v.length;
+        this.count  = n;
         this.offset = 0;
     }
 
@@ -1573,9 +1574,6 @@ public final class String
      *          if the character does not occur.
      */
     public int indexOf(int ch, int fromIndex) {
-        int max = offset + count;
-        char v[] = value;
-
         if (fromIndex < 0) {
             fromIndex = 0;
         } else if (fromIndex >= count) {
@@ -1583,29 +1581,36 @@ public final class String
             return -1;
         }
 
-        int i = offset + fromIndex;
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            for (; i < max ; i++) {
-                if (v[i] == ch) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            final int max = offset + count;
+            for (int i = offset + fromIndex; i < max ; i++) {
+                if (value[i] == ch) {
                     return i - offset;
                 }
             }
             return -1;
+        } else {
+            return indexOfSupplementary(ch, fromIndex);
         }
+    }
 
-        if (ch <= Character.MAX_CODE_POINT) {
-            // handle supplementary characters here
-            char[] surrogates = Character.toChars(ch);
-            for (; i < max; i++) {
-                if (v[i] == surrogates[0]) {
-                    if (i + 1 == max) {
-                        break;
-                    }
-                    if (v[i+1] == surrogates[1]) {
-                        return i - offset;
-                    }
+    /**
+     * Handles (rare) calls of indexOf with a supplementary character.
+     */
+    private int indexOfSupplementary(int ch, int fromIndex) {
+        if (Character.isValidCodePoint(ch)) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            final char hi = Character.highSurrogate(ch);
+            final char lo = Character.lowSurrogate(ch);
+            final int max = offset + count - 1;
+            for (int i = offset + fromIndex; i < max; i++) {
+                if (value[i] == hi && value[i+1] == lo) {
+                    return i - offset;
                 }
             }
         }
@@ -1674,34 +1679,36 @@ public final class String
      *          if the character does not occur before that point.
      */
     public int lastIndexOf(int ch, int fromIndex) {
-        int min = offset;
-        char v[] = value;
-
-        int i = offset + ((fromIndex >= count) ? count - 1 : fromIndex);
-
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            for (; i >= min ; i--) {
-                if (v[i] == ch) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            int i = offset + Math.min(fromIndex, count - 1);
+            for (; i >= offset ; i--) {
+                if (value[i] == ch) {
                     return i - offset;
                 }
             }
             return -1;
+        } else {
+            return lastIndexOfSupplementary(ch, fromIndex);
         }
+    }
 
-        int max = offset + count;
-        if (ch <= Character.MAX_CODE_POINT) {
-            // handle supplementary characters here
-            char[] surrogates = Character.toChars(ch);
-            for (; i >= min; i--) {
-                if (v[i] == surrogates[0]) {
-                    if (i + 1 == max) {
-                        break;
-                    }
-                    if (v[i+1] == surrogates[1]) {
-                        return i - offset;
-                    }
+    /**
+     * Handles (rare) calls of lastIndexOf with a supplementary character.
+     */
+    private int lastIndexOfSupplementary(int ch, int fromIndex) {
+        if (Character.isValidCodePoint(ch)) {
+            final char[] value = this.value;
+            final int offset = this.offset;
+            char hi = Character.highSurrogate(ch);
+            char lo = Character.lowSurrogate(ch);
+            int i = offset + Math.min(fromIndex, count - 2);
+            for (; i >= offset; i--) {
+                if (value[i] == hi && value[i+1] == lo) {
+                    return i - offset;
                 }
             }
         }
@@ -1710,18 +1717,17 @@ public final class String
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring. The integer returned is the smallest value
-     * <i>k</i> such that:
+     * specified substring.
+     *
+     * <p>The returned index is the smallest value <i>k</i> for which:
      * <blockquote><pre>
      * this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * is <code>true</code>.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
-     * @param   str   any string.
-     * @return  if the string argument occurs as a substring within this
-     *          object, then the index of the first character of the first
-     *          such substring is returned; if it does not occur as a
-     *          substring, <code>-1</code> is returned.
+     * @param   str   the substring to search for.
+     * @return  the index of the first occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str) {
         return indexOf(str, 0);
@@ -1729,17 +1735,19 @@ public final class String
 
     /**
      * Returns the index within this string of the first occurrence of the
-     * specified substring, starting at the specified index.  The integer
-     * returned is the smallest value <tt>k</tt> for which:
-     * <blockquote><pre>
-     *     k &gt;= Math.min(fromIndex, this.length()) && this.startsWith(str, k)
-     * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * specified substring, starting at the specified index.
      *
-     * @param   str         the substring for which to search.
+     * <p>The returned index is the smallest value <i>k</i> for which:
+     * <blockquote><pre>
+     * <i>k</i> &gt;= fromIndex && this.startsWith(str, <i>k</i>)
+     * </pre></blockquote>
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
+     *
+     * @param   str         the substring to search for.
      * @param   fromIndex   the index from which to start the search.
-     * @return  the index within this string of the first occurrence of the
-     *          specified substring, starting at the specified index.
+     * @return  the index of the first occurrence of the specified substring,
+     *          starting at the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str, int fromIndex) {
         return indexOf(value, offset, count,
@@ -1798,20 +1806,19 @@ public final class String
     }
 
     /**
-     * Returns the index within this string of the rightmost occurrence
-     * of the specified substring.  The rightmost empty string "" is
-     * considered to occur at the index value <code>this.length()</code>.
-     * The returned index is the largest value <i>k</i> such that
+     * Returns the index within this string of the last occurrence of the
+     * specified substring.  The last occurrence of the empty string ""
+     * is considered to occur at the index value {@code this.length()}.
+     *
+     * <p>The returned index is the largest value <i>k</i> for which:
      * <blockquote><pre>
-     * this.startsWith(str, k)
+     * this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * is true.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
      * @param   str   the substring to search for.
-     * @return  if the string argument occurs one or more times as a substring
-     *          within this object, then the index of the first character of
-     *          the last such substring is returned. If it does not occur as
-     *          a substring, <code>-1</code> is returned.
+     * @return  the index of the last occurrence of the specified substring,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str) {
         return lastIndexOf(str, count);
@@ -1820,16 +1827,18 @@ public final class String
     /**
      * Returns the index within this string of the last occurrence of the
      * specified substring, searching backward starting at the specified index.
-     * The integer returned is the largest value <i>k</i> such that:
+     *
+     * <p>The returned index is the largest value <i>k</i> for which:
      * <blockquote><pre>
-     *     k &lt;= Math.min(fromIndex, this.length()) && this.startsWith(str, k)
+     * <i>k</i> &lt;= fromIndex && this.startsWith(str, <i>k</i>)
      * </pre></blockquote>
-     * If no such value of <i>k</i> exists, then -1 is returned.
+     * If no such value of <i>k</i> exists, then {@code -1} is returned.
      *
      * @param   str         the substring to search for.
      * @param   fromIndex   the index to start the search from.
-     * @return  the index within this string of the last occurrence of the
-     *          specified substring.
+     * @return  the index of the last occurrence of the specified substring,
+     *          searching backward from the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str, int fromIndex) {
         return lastIndexOf(value, offset, count,

@@ -195,9 +195,8 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
         }
 
         ButtonModel model = b.getModel();
-        model.setArmed(false);
         model.setPressed(false);
-
+        model.setArmed(false);
         b.repaint();
     }
 

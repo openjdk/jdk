@@ -24,6 +24,7 @@
 /* @test
    @bug 4452020 4629048 4638365 4869859
  * @summary Test FileChannel scattering reads
+ * @run main/othervm ScatteringRead
  */
 
 import java.nio.channels.*;

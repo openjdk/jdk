@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 
 package sun.security.krb5;
 
-import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 import sun.security.util.*;
@@ -159,7 +158,7 @@ class KrbPriv extends KrbAppMessage {
 
                                byte[] bytes = krb_priv.encPart.decrypt(key,
                                    KeyUsage.KU_ENC_KRB_PRIV_PART);
-                               byte[] temp = krb_priv.encPart.reset(bytes, true);
+                               byte[] temp = krb_priv.encPart.reset(bytes);
                                DerValue ref = new DerValue(temp);
                                EncKrbPrivPart enc_part = new EncKrbPrivPart(ref);
 
