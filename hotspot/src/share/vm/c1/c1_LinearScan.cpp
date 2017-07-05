@@ -1138,8 +1138,10 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
         }
       }
     }
-
-  } else if (opr_type != T_LONG) {
+    // We want to sometimes use logical operations on pointers, in particular in GC barriers.
+    // Since 64bit logical operations do not current support operands on stack, we have to make sure
+    // T_OBJECT doesn't get spilled along with T_LONG.
+  } else if (opr_type != T_LONG LP64_ONLY(&& opr_type != T_OBJECT)) {
     // integer instruction (note: long operands must always be in register)
     switch (op->code()) {
       case lir_cmp:
