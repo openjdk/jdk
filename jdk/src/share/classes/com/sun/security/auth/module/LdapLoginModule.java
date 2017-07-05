@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -969,8 +969,8 @@ public class LdapLoginModule implements LoginModule {
                 "to acquire authentication information from the user");
 
         Callback[] callbacks = new Callback[2];
-        callbacks[0] = new NameCallback(rb.getString("username: "));
-        callbacks[1] = new PasswordCallback(rb.getString("password: "), false);
+        callbacks[0] = new NameCallback(rb.getString("username."));
+        callbacks[1] = new PasswordCallback(rb.getString("password."), false);
 
         try {
             callbackHandler.handle(callbacks);

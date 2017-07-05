@@ -55,6 +55,8 @@ import java.util.Set;
  */
 
 public class ZipFileSystemProvider extends FileSystemProvider {
+
+
     private final Map<Path, ZipFileSystem> filesystems = new HashMap<>();
 
     public ZipFileSystemProvider() {}
@@ -101,10 +103,16 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         synchronized(filesystems) {
-            if (filesystems.containsKey(path))
-                throw new FileSystemAlreadyExistsException();
+            Path realPath = null;
+            if (path.exists()) {
+                realPath = path.toRealPath(true);
+                if (filesystems.containsKey(realPath))
+                    throw new FileSystemAlreadyExistsException();
+            }
             ZipFileSystem zipfs = new ZipFileSystem(this, path, env);
-            filesystems.put(path, zipfs);
+            if (realPath == null)
+                realPath = path.toRealPath(true);
+            filesystems.put(realPath, zipfs);
             return zipfs;
         }
     }
@@ -137,16 +145,21 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     @Override
     public FileSystem getFileSystem(URI uri) {
         synchronized (filesystems) {
-            ZipFileSystem zipfs = filesystems.get(uriToPath(uri));
+            ZipFileSystem zipfs = null;
+            try {
+                zipfs = filesystems.get(uriToPath(uri).toRealPath(true));
+            } catch (IOException x) {
+                // ignore the ioe from toRealPath(), return FSNFE
+            }
             if (zipfs == null)
                 throw new FileSystemNotFoundException();
             return zipfs;
         }
     }
 
-    void removeFileSystem(Path zfpath) {
+    void removeFileSystem(Path zfpath) throws IOException {
         synchronized (filesystems) {
-            filesystems.remove(zfpath);
+            filesystems.remove(zfpath.toRealPath(true));
         }
     }
 }

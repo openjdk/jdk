@@ -25,7 +25,8 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Shared constants

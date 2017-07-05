@@ -31,13 +31,11 @@
 
 package sun.security.krb5;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Locale;
 import sun.security.krb5.internal.Krb5;
-import sun.security.krb5.internal.UDPClient;
-import sun.security.krb5.internal.TCPClient;
+import sun.security.krb5.internal.NetClient;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.StringTokenizer;
@@ -48,8 +46,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import sun.security.krb5.internal.KRBError;
 
-public abstract class KrbKdcReq {
+/**
+ * KDC-REQ/KDC-REP communication. No more base class for KrbAsReq and
+ * KrbTgsReq. This class is now communication only.
+ */
+public final class KdcComm {
 
     // The following settings can be configured in [libdefaults]
     // section of krb5.conf, which are global for all realms. Each of
@@ -161,20 +164,23 @@ public abstract class KrbKdcReq {
         KdcAccessibility.reset();
     }
 
-    protected byte[] obuf;
-    protected byte[] ibuf;
-
     /**
-     * Sends the provided data to the KDC of the specified realm.
-     * Returns the response from the KDC.
-     * Default realm/KDC is used if realm is null.
-     * @param realm the realm of the KDC where data is to be sent.
-     * @returns the kdc to which the AS request was sent to
-     * @exception InterruptedIOException if timeout expires
-     * @exception KrbException
+     * The instance fields
      */
+    private String realm;
 
-    public String send(String realm)
+    public KdcComm(String realm) throws KrbException {
+        if (realm == null) {
+           realm = Config.getInstance().getDefaultRealm();
+            if (realm == null) {
+                throw new KrbException(Krb5.KRB_ERR_GENERIC,
+                                       "Cannot find default realm");
+            }
+        }
+        this.realm = realm;
+    }
+
+    public byte[] send(byte[] obuf)
         throws IOException, KrbException {
         int udpPrefLimit = getRealmSpecificValue(
                 realm, "udp_preference_limit", defaultUdpPrefLimit);
@@ -182,10 +188,10 @@ public abstract class KrbKdcReq {
         boolean useTCP = (udpPrefLimit > 0 &&
              (obuf != null && obuf.length > udpPrefLimit));
 
-        return (send(realm, useTCP));
+        return send(obuf, useTCP);
     }
 
-    public String send(String realm, boolean useTCP)
+    private byte[] send(byte[] obuf, boolean useTCP)
         throws IOException, KrbException {
 
         if (obuf == null)
@@ -206,10 +212,21 @@ public abstract class KrbKdcReq {
             throw new KrbException("Cannot get kdc for realm " + realm);
         }
         String tempKdc = null; // may include the port number also
+        byte[] ibuf = null;
         for (String tmp: KdcAccessibility.list(kdcList)) {
             tempKdc = tmp;
             try {
-                send(realm,tempKdc,useTCP);
+                ibuf = send(obuf,tempKdc,useTCP);
+                KRBError ke = null;
+                try {
+                    ke = new KRBError(ibuf);
+                } catch (Exception e) {
+                    // OK
+                }
+                if (ke != null && ke.getErrorCode() ==
+                        Krb5.KRB_ERR_RESPONSE_TOO_BIG) {
+                    ibuf = send(obuf, tempKdc, true);
+                }
                 KdcAccessibility.removeBad(tempKdc);
                 break;
             } catch (Exception e) {
@@ -229,16 +246,16 @@ public abstract class KrbKdcReq {
                 throw (KrbException) savedException;
             }
         }
-        return tempKdc;
+        return ibuf;
     }
 
     // send the AS Request to the specified KDC
 
-    public void send(String realm, String tempKdc, boolean useTCP)
+    private byte[] send(byte[] obuf, String tempKdc, boolean useTCP)
         throws IOException, KrbException {
 
         if (obuf == null)
-            return;
+            return null;
 
         int port = Krb5.KDC_INET_DEFAULT_PORT;
         int retries = getRealmSpecificValue(
@@ -303,11 +320,12 @@ public abstract class KrbKdcReq {
         KdcCommunication kdcCommunication =
             new KdcCommunication(kdc, port, useTCP, timeout, retries, obuf);
         try {
-            ibuf = AccessController.doPrivileged(kdcCommunication);
+            byte[] ibuf = AccessController.doPrivileged(kdcCommunication);
             if (DEBUG) {
                 System.out.println(">>> KrbKdcReq send: #bytes read="
                         + (ibuf != null ? ibuf.length : 0));
             }
+            return ibuf;
         } catch (PrivilegedActionException e) {
             Exception wrappedException = e.getException();
             if (wrappedException instanceof IOException) {
@@ -315,10 +333,6 @@ public abstract class KrbKdcReq {
             } else {
                 throw (KrbException) wrappedException;
             }
-        }
-        if (DEBUG) {
-            System.out.println(">>> KrbKdcReq send: #bytes read="
-                               + (ibuf != null ? ibuf.length : 0));
         }
     }
 
@@ -349,12 +363,16 @@ public abstract class KrbKdcReq {
 
             byte[] ibuf = null;
 
-            if (useTCP) {
-                TCPClient kdcClient = new TCPClient(kdc, port);
+            for (int i=1; i <= retries; i++) {
+                String proto = useTCP?"TCP":"UDP";
+                NetClient kdcClient = NetClient.getInstance(
+                        proto, kdc, port, timeout);
                 if (DEBUG) {
                     System.out.println(">>> KDCCommunication: kdc=" + kdc
-                           + " TCP:"
-                           +  port
+                           + " " + proto + ":"
+                           +  port +  ", timeout="
+                           + timeout
+                           + ",Attempt =" + i
                            + ", #bytes=" + obuf.length);
                 }
                 try {
@@ -366,50 +384,18 @@ public abstract class KrbKdcReq {
                      * And get a response.
                      */
                     ibuf = kdcClient.receive();
+                    break;
+                } catch (SocketTimeoutException se) {
+                    if (DEBUG) {
+                        System.out.println ("SocketTimeOutException with " +
+                                            "attempt: " + i);
+                    }
+                    if (i == retries) {
+                        ibuf = null;
+                        throw se;
+                    }
                 } finally {
                     kdcClient.close();
-                }
-
-            } else {
-                // For each KDC we try defaultKdcRetryLimit times to
-                // get the response
-                for (int i=1; i <= retries; i++) {
-                    UDPClient kdcClient = new UDPClient(kdc, port, timeout);
-
-                    if (DEBUG) {
-                        System.out.println(">>> KDCCommunication: kdc=" + kdc
-                               + (useTCP ? " TCP:":" UDP:")
-                               +  port +  ", timeout="
-                               + timeout
-                               + ",Attempt =" + i
-                               + ", #bytes=" + obuf.length);
-                    }
-                    try {
-                        /*
-                         * Send the data to the kdc.
-                         */
-
-                        kdcClient.send(obuf);
-
-                        /*
-                         * And get a response.
-                         */
-                        try {
-                            ibuf = kdcClient.receive();
-                            break;
-                        } catch (SocketTimeoutException se) {
-                            if (DEBUG) {
-                                System.out.println ("SocketTimeOutException with " +
-                                                    "attempt: " + i);
-                            }
-                            if (i == retries) {
-                                ibuf = null;
-                                throw se;
-                            }
-                        }
-                    } finally {
-                        kdcClient.close();
-                    }
                 }
             }
             return ibuf;

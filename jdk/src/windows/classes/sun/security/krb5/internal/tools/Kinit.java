@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,7 @@ package sun.security.krb5.internal.tools;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.StringTokenizer;
-import java.io.File;
 import java.util.Arrays;
 import sun.security.util.Password;
 
@@ -152,6 +148,7 @@ public class Kinit {
         if (principal != null) {
             princName = principal.toString();
         }
+        KrbAsReqBuilder builder;
         if (DEBUG) {
             System.out.println("Principal is " + principal);
         }
@@ -172,6 +169,7 @@ public class Kinit {
                         new String(psswd));
                 }
             }
+            builder = new KrbAsReqBuilder(principal, psswd);
         } else {
             if (DEBUG) {
                 System.out.println(">>> Kinit using keytab");
@@ -198,11 +196,13 @@ public class Kinit {
                 }
                 throw new KrbException(msg);
             }
+            builder = new KrbAsReqBuilder(principal, skeys);
         }
 
         KDCOptions opt = new KDCOptions();
         setOptions(KDCOptions.FORWARDABLE, options.forwardable, opt);
         setOptions(KDCOptions.PROXIABLE, options.proxiable, opt);
+        builder.setOptions(opt);
         String realm = options.getKDCRealm();
         if (realm == null) {
             realm = Config.getInstance().getDefaultRealm();
@@ -215,62 +215,21 @@ public class Kinit {
         PrincipalName sname = new PrincipalName("krbtgt" + "/" + realm,
                                         PrincipalName.KRB_NT_SRV_INST);
         sname.setRealm(realm);
+        builder.setTarget(sname);
 
         if (DEBUG) {
             System.out.println(">>> Creating KrbAsReq");
         }
 
-        KrbAsReq as_req = null;
-        HostAddresses addresses = null;
-        try {
-            if (options.getAddressOption())
-                addresses = HostAddresses.getLocalAddresses();
+        if (options.getAddressOption())
+            builder.setAddresses(HostAddresses.getLocalAddresses());
 
-            if (useKeytab) {
-                as_req = new KrbAsReq(skeys, opt,
-                                      principal, sname,
-                                      null, null, null, null, addresses, null);
-            } else {
-                as_req = new KrbAsReq(psswd, opt,
-                                      principal, sname,
-                                      null, null, null, null, addresses, null);
-            }
-        } catch (KrbException exc) {
-            throw exc;
-        } catch (Exception exc) {
-            throw new KrbException(exc.toString());
-        }
-
-        KrbAsRep as_rep = null;
-        try {
-            as_rep = sendASRequest(as_req, useKeytab, realm, psswd, skeys);
-        } catch (KrbException ke) {
-            if ((ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) ||
-                (ke.returnCode() == Krb5.KDC_ERR_PREAUTH_REQUIRED)) {
-                if (DEBUG) {
-                    System.out.println("Kinit: PREAUTH FAILED/REQ, re-send AS-REQ");
-                }
-                KRBError error = ke.getError();
-                int etype = error.getEType();
-                String salt = error.getSalt();
-                byte[] s2kparams = error.getParams();
-                if (useKeytab) {
-                    as_req = new KrbAsReq(skeys, true, etype, salt,
-                                        s2kparams, opt, principal, sname,
-                                        null, null, null, null, addresses, null);
-                } else {
-                    as_req = new KrbAsReq(psswd, true, etype, salt,
-                                        s2kparams, opt, principal, sname,
-                                        null, null, null, null, addresses, null);
-                }
-                as_rep = sendASRequest(as_req, useKeytab, realm, psswd, skeys);
-            } else {
-                throw ke;
-            }
-        }
+        builder.action();
 
         sun.security.krb5.internal.ccache.Credentials credentials =
-            as_rep.setCredentials();
+            builder.getCCreds();
+        builder.destroy();
+
         // we always create a new cache and store the ticket we get
         CredentialsCache cache =
             CredentialsCache.create(principal, options.cachename);
@@ -294,41 +253,6 @@ public class Kinit {
             Arrays.fill(psswd, '0');
         }
         options = null; // release reference to options
-    }
-
-    private static KrbAsRep sendASRequest(KrbAsReq as_req, boolean useKeytab,
-                String realm, char[] passwd, EncryptionKey[] skeys)
-        throws IOException, RealmException, KrbException {
-
-        if (DEBUG) {
-            System.out.println(">>> Kinit: sending as_req to realm " + realm);
-        }
-
-        String kdc = as_req.send(realm);
-
-        if (DEBUG) {
-            System.out.println(">>> reading response from kdc");
-        }
-        KrbAsRep as_rep = null;
-        try {
-            if (useKeytab) {
-                as_rep = as_req.getReply(skeys);
-            } else {
-                as_rep = as_req.getReply(passwd);
-            }
-        } catch (KrbException ke) {
-            if (ke.returnCode() == Krb5.KRB_ERR_RESPONSE_TOO_BIG) {
-                as_req.send(realm, kdc, true); // useTCP is set
-                if (useKeytab) {
-                    as_rep = as_req.getReply(skeys);
-                } else {
-                    as_rep = as_req.getReply(passwd);
-                }
-            } else {
-                throw ke;
-            }
-        }
-        return as_rep;
     }
 
     private static void setOptions(int flag, int option, KDCOptions opt) {
