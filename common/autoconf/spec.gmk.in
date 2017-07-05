@@ -23,8 +23,8 @@
 # questions.
 #
 
-# Configured @DATE_WHEN_CONFIGURED@ to build for a @HOST@ system,
-# using ./configure @CONFIGURE_COMMAND_LINE@
+# Configured @DATE_WHEN_CONFIGURED@ to build for a @OPENJDK_TARGET_SYSTEM@ system,
+# using 'configure @CONFIGURE_COMMAND_LINE@'
 
 # When calling macros, the spaces between arguments are 
 # often semantically important! Sometimes we need to subst 
@@ -67,48 +67,50 @@ SPEC:=@SPEC@
 # The "human readable" name of this configuration
 CONF_NAME:=@CONF_NAME@
 
-# The built jdk will run in this host system.
-HOST:=@HOST@
-HOST_OS:=@HOST_OS@
-HOST_OS_FAMILY:=@HOST_OS_FAMILY@
-HOST_OS_API:=@HOST_OS_API@
+# The built jdk will run in this target system.
+OPENJDK_TARGET_SYSTEM:=@OPENJDK_TARGET_SYSTEM@
 
-HOST_CPU:=@HOST_CPU@
-HOST_CPU_ARCH:=@HOST_CPU_ARCH@
-HOST_CPU_BITS:=@HOST_CPU_BITS@
-HOST_CPU_ENDIAN:=@HOST_CPU_ENDIAN@
+OPENJDK_TARGET_OS:=@OPENJDK_TARGET_OS@
+OPENJDK_TARGET_OS_FAMILY:=@OPENJDK_TARGET_OS_FAMILY@
+OPENJDK_TARGET_OS_API:=@OPENJDK_TARGET_OS_API@
+
+OPENJDK_TARGET_CPU:=@OPENJDK_TARGET_CPU@
+OPENJDK_TARGET_CPU_ARCH:=@OPENJDK_TARGET_CPU_ARCH@
+OPENJDK_TARGET_CPU_BITS:=@OPENJDK_TARGET_CPU_BITS@
+OPENJDK_TARGET_CPU_ENDIAN:=@OPENJDK_TARGET_CPU_ENDIAN@
 
 # We are building on this build system.
-# When not cross-compiling, it is the same as the host.
-BUILD:=@BUILD@
-BUILD_OS:=@BUILD_OS@
-BUILD_OS_FAMILY:=@BUILD_OS_FAMILY@
-BUILD_OS_API:=@BUILD_OS_API@
+# When not cross-compiling, it is the same as the target.
+OPENJDK_BUILD_SYSTEM:=@OPENJDK_BUILD_SYSTEM@
 
-BUILD_CPU:=@BUILD_CPU@
-BUILD_CPU_ARCH:=@BUILD_CPU_ARCH@
-BUILD_CPU_BITS:=@BUILD_CPU_BITS@
-BUILD_CPU_ENDIAN:=@BUILD_CPU_ENDIAN@
+OPENJDK_BUILD_OS:=@OPENJDK_BUILD_OS@
+OPENJDK_BUILD_OS_FAMILY:=@OPENJDK_BUILD_OS_FAMILY@
+OPENJDK_BUILD_OS_API:=@OPENJDK_BUILD_OS_API@
+
+OPENJDK_BUILD_CPU:=@OPENJDK_BUILD_CPU@
+OPENJDK_BUILD_CPU_ARCH:=@OPENJDK_BUILD_CPU_ARCH@
+OPENJDK_BUILD_CPU_BITS:=@OPENJDK_BUILD_CPU_BITS@
+OPENJDK_BUILD_CPU_ENDIAN:=@OPENJDK_BUILD_CPU_ENDIAN@
 
 # Legacy OS values for use in release file.
 REQUIRED_OS_NAME:=@REQUIRED_OS_NAME@
 REQUIRED_OS_VERSION:=@REQUIRED_OS_VERSION@
 
-# Old name for HOST_OS (aix,bsd,hpux,linux,macosx,solaris,windows etc)
-PLATFORM:=@HOST_OS@
-# Old name for HOST_CPU, uses i586 and amd64, instead of ia32 and x64.
-ARCH:=@LEGACY_HOST_CPU1@
+# Old name for OPENJDK_TARGET_OS (aix,bsd,hpux,linux,macosx,solaris,windows etc)
+PLATFORM:=@OPENJDK_TARGET_OS@
+# Old name for OPENJDK_TARGET_CPU, uses i586 and amd64, instead of ia32 and x64.
+ARCH:=@LEGACY_OPENJDK_TARGET_CPU1@
 # Yet another name for arch used for an extra subdir below the jvm lib.
 # Uses i386 and amd64, instead of ia32 and x64.
-LIBARCH:=@LEGACY_HOST_CPU2@
+LIBARCH:=@LEGACY_OPENJDK_TARGET_CPU2@
 # Use to switch between solaris and windows subdirs in the jdk.
-LEGACY_HOST_OS_API:=@LEGACY_HOST_OS_API@
+LEGACY_OPENJDK_TARGET_OS_API:=@LEGACY_OPENJDK_TARGET_OS_API@
 # 32 or 64 bit
-ARCH_DATA_MODEL:=@HOST_CPU_BITS@
+ARCH_DATA_MODEL:=@OPENJDK_TARGET_CPU_BITS@
 # Legacy setting for building for a 64 bit machine.
 # If yes then this expands to _LP64:=1
 @LP64@
-ENDIAN:=@HOST_CPU_ENDIAN@
+ENDIAN:=@OPENJDK_TARGET_CPU_ENDIAN@
 @SET_OPENJDK@
 JIGSAW:=@JIGSAW@
 LIBM:=-lm
@@ -185,7 +187,6 @@ SUPPORT_HEADLESS:=@SUPPORT_HEADLESS@
 # The java launcher uses the default.
 # The other can be selected by specifying -client -server -kernel -zero or -zeroshark
 # on the java launcher command line.
-DEFAULT_JVM_VARIANT:=@DEFAULT_JVM_VARIANT@
 JVM_VARIANTS:=@JVM_VARIANTS@
 JVM_VARIANT_SERVER:=@JVM_VARIANT_SERVER@
 JVM_VARIANT_CLIENT:=@JVM_VARIANT_CLIENT@
@@ -202,53 +203,42 @@ DEBUG_CLASSFILES:=@DEBUG_CLASSFILES@
 # Legacy setting: -debug or -fastdebug
 BUILD_VARIANT_RELEASE:=@BUILD_VARIANT_RELEASE@
 
-LANGTOOLS_OUTPUTDIR:=@OUTPUT_ROOT@/langtools
-LANGTOOLS_DIST:=@OUTPUT_ROOT@/langtools/dist
-LANGTOOLS_MAKE_ARGS:=@LANGTOOLS_MAKE_ARGS@
-
-CORBA_OUTPUTDIR:=@OUTPUT_ROOT@/corba
-CORBA_DIST:=@OUTPUT_ROOT@/corba/dist
-CORBA_MAKE_ARGS:=@CORBA_MAKE_ARGS@
-
-JAXP_OUTPUTDIR:=@OUTPUT_ROOT@/jaxp
-JAXP_DIST:=@OUTPUT_ROOT@/jaxp/dist
-JAXP_MAKE_ARGS:=@JAXP_MAKE_ARGS@
-
-JAXWS_OUTPUTDIR:=@OUTPUT_ROOT@/jaxws
-JAXWS_DIST:=@OUTPUT_ROOT@/jaxws/dist
-JAXWS_MAKE_ARGS:=@JAXWS_MAKE_ARGS@
-
-HOTSPOT_OUTPUTDIR:=@OUTPUT_ROOT@/hotspot
-HOTSPOT_DIST:=@OUTPUT_ROOT@/hotspot/dist
-HOTSPOT_MAKE_ARGS:=@HOTSPOT_MAKE_ARGS@
+LANGTOOLS_OUTPUTDIR:=@LANGTOOLS_OUTPUTDIR@
+CORBA_OUTPUTDIR:=@CORBA_OUTPUTDIR@
+JAXP_OUTPUTDIR:=@JAXP_OUTPUTDIR@
+JAXWS_OUTPUTDIR:=@JAXWS_OUTPUTDIR@
+HOTSPOT_OUTPUTDIR:=@HOTSPOT_OUTPUTDIR@
 
 # This where a working jvm is built.
 # You can run $(JDK_OUTPUTDIR)/bin/java
 # Though the layout of the contents of $(JDK_OUTPUTDIR) is not
 # yet the same as a default installation.
-HOTSPOT_IMPORT_PATH:=@OUTPUT_ROOT@/hotspot/dist
 JDK_OUTPUTDIR:=@OUTPUT_ROOT@/jdk
-JDK_MAKE_ARGS:=@JDK_MAKE_ARGS@
 
 # When you run "make install" it will create the standardized
 # layout for the jdk and the jre inside the images subdir.
 # Then it will copy the contents of the jdk into the installation
 # directory.
 IMAGES_OUTPUTDIR:=@OUTPUT_ROOT@/images
-IMAGES_MAKE_ARGS:=@IMAGES_MAKE_ARGS@
+
+LANGTOOLS_DIST:=@LANGTOOLS_DIST@
+CORBA_DIST:=@CORBA_DIST@
+JAXP_DIST:=@JAXP_DIST@
+JAXWS_DIST:=@JAXWS_DIST@
+HOTSPOT_DIST:=@HOTSPOT_DIST@
+
 # Legacy variables used by Release.gmk
 JDK_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2sdk-image
 JRE_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2re-image
 
 # Can be /sparcv9 or /amd64 on Solaris
-ISA_DIR:=@LEGACY_HOST_CPU3@
+ISA_DIR:=@LEGACY_OPENJDK_TARGET_CPU3@
 BINDIR:=$(JDK_OUTPUTDIR)/bin$(ISA_DIR)
 
 # The boot jdk to use
 ALT_BOOTDIR:=@BOOT_JDK@
 BOOT_JDK:=@BOOT_JDK@
 BOOT_JDK_JVMARGS:=@BOOT_JDK_JVMARGS@
-BOOT_JAVAC_ARGS:=@BOOT_JAVAC_ARGS@
 BOOT_RTJAR:=@BOOT_RTJAR@
 BOOT_TOOLSJAR:=@BOOT_TOOLSJAR@
 
@@ -258,8 +248,6 @@ BOOT_JDK_SOURCETARGET:=@BOOT_JDK_SOURCETARGET@
 
 # Information about the build system
 NUM_CORES:=@NUM_CORES@
-# This is used from the libjvm build for C/C++ code.
-HOTSPOT_BUILD_JOBS:=@CONCURRENT_BUILD_JOBS@
 # This is used from the jdk build for C/C++ code.
 PARALLEL_COMPILE_JOBS:=@CONCURRENT_BUILD_JOBS@
 # Store javac server synchronization files here, and
@@ -282,6 +270,8 @@ JAVAC_SERVER_CORES:=@JAVAC_SERVER_CORES@
 JAVAC_USE_DEPS:=@JAVAC_USE_DEPS@
 # We can invoke javac: SINGLE_THREADED_BATCH or MULTI_CORE_CONCURRENT
 JAVAC_USE_MODE:=@JAVAC_USE_MODE@
+# Enable not yet complete sjavac support.
+ENABLE_SJAVAC:=@ENABLE_SJAVAC@
 
 # The OpenJDK makefiles should be changed to using the standard
 # configure output ..._CFLAGS and ..._LIBS. In the meantime we
@@ -375,22 +365,24 @@ LDEXECXX:=@UNCYGDRIVE@ @LDEXECXX@
 @DEFINE_CROSS_COMPILE_ARCH@
 # The HOSTCC should really be named BUILDCC, ie build executable for
 # the build platform. Same as CC when not cross compiling.
-HOSTCC:=@HOSTCC@
-HOSTCXX:=@HOSTCXX@
+HOSTCC:=@UNCYGDRIVE@ @HOSTCC@
+HOSTCXX:=@UNCYGDRIVE@ @HOSTCXX@
 # And of course, the jdk spells HOSTCC as NIO_CC/HOST_CC 
-HOST_CC:=@HOSTCC@
-NIO_CC:=@HOSTCC@
+HOST_CC:=@UNCYGDRIVE@ @HOSTCC@
+NIO_CC:=@UNCYGDRIVE@ @HOSTCC@
 
-AS:=@AS@
+HOST_LD:=@UNCYGDRIVE@ @HOSTLD@
+
+AS:=@UNCYGDRIVE@ @AS@
 ASFLAGS:=@ASFLAGS@
 
 # AR is used to create a static library (is ar in posix, lib.exe in winapi)
 AR:=@UNCYGDRIVE@ @AR@
 ARFLAGS:=@ARFLAGS@
 
-NM:=@NM@
-STRIP:=@STRIP@
-MCS:=@MCS@
+NM:=@UNCYGDRIVE@ @NM@
+STRIP:=@UNCYGDRIVE@ @STRIP@
+MCS:=@UNCYGDRIVE@ @MCS@
 
 # Command to create a shared library
 SHARED_LIBRARY_FLAGS:=@SHARED_LIBRARY_FLAGS@
@@ -403,6 +395,17 @@ SET_SHARED_LIBRARY_MAPFILE=@SET_SHARED_LIBRARY_MAPFILE@
 #   using reorder file
 C_FLAG_REORDER:=@C_FLAG_REORDER@
 CXX_FLAG_REORDER:=@CXX_FLAG_REORDER@
+
+#
+# Options for generating debug symbols
+ENABLE_DEBUG_SYMBOLS:=@ENABLE_DEBUG_SYMBOLS@
+CFLAGS_DEBUG_SYMBOLS:=@CFLAGS_DEBUG_SYMBOLS@
+CXXFLAGS_DEBUG_SYMBOLS:=@CXXFLAGS_DEBUG_SYMBOLS@
+ZIP_DEBUGINFO_FILES:=@ZIP_DEBUGINFO_FILES@
+
+#
+# Compress (or not) jars
+COMPRESS_JARS=@COMPRESS_JARS@
 
 # Options to linker to specify the library name.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
@@ -507,22 +510,27 @@ READELF:=@READELF@
 EXPR:=@EXPR@
 FILE:=@FILE@
 HG:=@HG@
+OBJCOPY:=@OBJCOPY@
 
 UNCYGDRIVE:=@UNCYGDRIVE@
 
 # Where the build output is stored for your convenience.
 BUILD_LOG:=@BUILD_LOG@
+BUILD_LOG_PREVIOUS:=@BUILD_LOG_PREVIOUS@
 BUILD_LOG_WRAPPER:=@BUILD_LOG_WRAPPER@
 
 # Build setup
 ENABLE_DOCS:=@ENABLE_DOCS@
 GENERATE_DOCS:=@ENABLE_DOCS@
 DISABLE_NIMBUS:=@DISABLE_NIMBUS@
+ENABLE_JFR=@ENABLE_JFR@
 USE_EXTERNAL_LIBJPEG:=@USE_EXTERNAL_LIBJPEG@
 USE_EXTERNAL_LIBGIF:=@USE_EXTERNAL_LIBGIF@
 USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
+LIBZIP_CAN_USE_MMAP:=@LIBZIP_CAN_USE_MMAP@
 CHECK_FOR_VCINSTALLDIR=@CHECK_FOR_VCINSTALLDIR@
 MSVCRNN_DLL:=@MSVCR100DLL@
+
 
 # ADD_SRCS takes a single argument with source roots
 # and appends any corresponding source roots found
@@ -550,6 +558,17 @@ ifneq (,$(OVERRIDE_SRC_ROOT))
 else
     OVR_SRCS:=
 endif
+
+####################################################
+#
+# Legacy Hotspot support
+
+HOTSPOT_DIST:=@HOTSPOT_DIST@
+HOTSPOT_MAKE_ARGS:=@HOTSPOT_MAKE_ARGS@
+# This is used from the libjvm build for C/C++ code.
+HOTSPOT_BUILD_JOBS:=@CONCURRENT_BUILD_JOBS@
+# Control wether Hotspot runs Queens test after building
+TEST_IN_BUILD=@TEST_IN_BUILD@
 
 ####################################################
 #
@@ -611,10 +630,9 @@ INSTALL_SYSCONFDIR=@sysconfdir@
 # Name of Service Agent library
 SALIB_NAME=@SALIB_NAME@
 
-# Control wether Hotspot runs Queens test after building
-TEST_IN_BUILD=@TEST_IN_BUILD@
-
 OS_VERSION_MAJOR:=@OS_VERSION_MAJOR@
 OS_VERSION_MINOR:=@OS_VERSION_MINOR@
 OS_VERSION_MICRO:=@OS_VERSION_MICRO@
 
+# Include the closed-spec.gmk file if it exists
+-include $(dir @SPEC@)/closed-spec.gmk
