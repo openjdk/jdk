@@ -1306,6 +1306,14 @@ int AWTPreload(const char *funcName)
             /* save path length */
             jrePathLen = JLI_StrLen(libraryPath);
 
+            if (jrePathLen + JLI_StrLen("\\bin\\verify.dll") >= MAXPATHLEN) {
+              /* jre path is too long, the library path will not fit there;
+               * report and abort preloading
+               */
+              JLI_ReportErrorMessage(JRE_ERROR11);
+              break;
+            }
+
             /* load msvcrt 1st */
             LoadMSVCRT();
 

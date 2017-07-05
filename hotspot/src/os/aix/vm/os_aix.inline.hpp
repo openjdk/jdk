@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,6 @@
 #ifndef OS_AIX_VM_OS_AIX_INLINE_HPP
 #define OS_AIX_VM_OS_AIX_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 
 // System includes
@@ -43,18 +41,6 @@
 
 inline void* os::thread_local_storage_at(int index) {
   return pthread_getspecific((pthread_key_t)index);
-}
-
-inline const char* os::file_separator() {
-  return "/";
-}
-
-inline const char* os::line_separator() {
-  return "\n";
-}
-
-inline const char* os::path_separator() {
-  return ":";
 }
 
 // File names are case-sensitive on windows only

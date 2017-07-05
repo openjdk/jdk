@@ -216,16 +216,4 @@ class LinearLeastSquareFit : public CHeapObj<mtGC> {
   bool increment_will_decrease();
 };
 
-class GCPauseTimer : StackObj {
-  elapsedTimer* _timer;
- public:
-  GCPauseTimer(elapsedTimer* timer) {
-    _timer = timer;
-    _timer->stop();
-  }
-  ~GCPauseTimer() {
-    _timer->start();
-  }
-};
-
 #endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCUTIL_HPP

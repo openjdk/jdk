@@ -112,22 +112,22 @@ class IncDecExpression extends UnaryExpression {
     private void codeIncDecOp(Assembler asm, boolean inc) {
         switch (type.getTypeCode()) {
           case TC_BYTE:
-            asm.add(where, opc_ldc, new Integer(1));
+            asm.add(where, opc_ldc, 1);
             asm.add(where, inc ? opc_iadd : opc_isub);
             asm.add(where, opc_i2b);
             break;
           case TC_SHORT:
-            asm.add(where, opc_ldc, new Integer(1));
+            asm.add(where, opc_ldc, 1);
             asm.add(where, inc ? opc_iadd : opc_isub);
             asm.add(where, opc_i2s);
             break;
           case TC_CHAR:
-            asm.add(where, opc_ldc, new Integer(1));
+            asm.add(where, opc_ldc, 1);
             asm.add(where, inc ? opc_iadd : opc_isub);
             asm.add(where, opc_i2c);
             break;
           case TC_INT:
-            asm.add(where, opc_ldc, new Integer(1));
+            asm.add(where, opc_ldc, 1);
             asm.add(where, inc ? opc_iadd : opc_isub);
             break;
           case TC_LONG:

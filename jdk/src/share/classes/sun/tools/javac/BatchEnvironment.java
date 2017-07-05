@@ -1172,7 +1172,7 @@ class BatchEnvironment extends Environment implements ErrorConsumer {
                     if (!hitErrorLimit) {
                         hitErrorLimit = true;
                         output(errorString("too.many.errors",
-                                           new Integer(errorLimit),null,null));
+                                           errorLimit,null,null));
                     }
                     return;
                 }

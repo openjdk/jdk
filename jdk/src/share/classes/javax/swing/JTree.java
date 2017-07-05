@@ -4032,7 +4032,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         /**
          * Subclassed to load the children, if necessary.
          */
-        public Enumeration children() {
+        public Enumeration<TreeNode> children() {
             if(!loadedChildren)
                 loadChildren();
             return super.children();

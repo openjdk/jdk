@@ -177,18 +177,10 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
     if (numBytes > FILEDATACACHESIZE) {
         bBuffer = (*env)->NewDirectByteBuffer(env, destBuffer, numBytes);
         if (bBuffer != NULL) {
-            /* Loop until the read succeeds (or EOF).
-             * This should improve robustness in the event of a problem in
-             * the I/O system. If we find that we ever end up spinning here
-             * we are going to have to do some serious work to recover.
-             * Just returning without reading the data will cause a crash.
-             */
-            while (bread == 0) {
-                bread = (*env)->CallIntMethod(env,
-                                              scalerInfo->font2D,
-                                              sunFontIDs.ttReadBlockMID,
-                                              bBuffer, offset, numBytes);
-            }
+            bread = (*env)->CallIntMethod(env,
+                                          scalerInfo->font2D,
+                                          sunFontIDs.ttReadBlockMID,
+                                          bBuffer, offset, numBytes);
             return bread;
         } else {
             /* We probably hit bug bug 4845371. For reasons that
@@ -224,19 +216,10 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                  (offset + FILEDATACACHESIZE > scalerInfo->fileSize) ?
                  scalerInfo->fileSize - offset : FILEDATACACHESIZE;
         bBuffer = scalerInfo->directBuffer;
-        /* Loop until all the read succeeds (or EOF).
-         * This should improve robustness in the event of a problem in
-         * the I/O system. If we find that we ever end up spinning here
-         * we are going to have to do some serious work to recover.
-         * Just returning without reading the data will cause a crash.
-         */
-        while (bread == 0) {
-            bread = (*env)->CallIntMethod(env, scalerInfo->font2D,
-                                          sunFontIDs.ttReadBlockMID,
-                                          bBuffer, offset,
-                                          scalerInfo->fontDataLength);
-        }
-
+        bread = (*env)->CallIntMethod(env, scalerInfo->font2D,
+                                      sunFontIDs.ttReadBlockMID,
+                                      bBuffer, offset,
+                                      scalerInfo->fontDataLength);
         memcpy(destBuffer, scalerInfo->fontData, numBytes);
         return numBytes;
     }

@@ -241,7 +241,7 @@ public class JvmRuntimeImpl implements JvmRuntimeMBean {
 
         final String[] args = getInputArguments(JvmContextFactory.
                                                 getUserData());
-        return new Integer(args.length);
+        return args.length;
     }
 
     /**

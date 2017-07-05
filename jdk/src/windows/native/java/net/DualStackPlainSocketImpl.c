@@ -367,8 +367,8 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_shutdown0
 JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_setIntOption
   (JNIEnv *env, jclass clazz, jint fd, jint cmd, jint value) {
 
-    int level, opt;
-    struct linger linger;
+    int level = 0, opt = 0;
+    struct linger linger = {0, 0};
     char *parg;
     int arglen;
 
@@ -407,9 +407,9 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_setIntOption
 JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_getIntOption
   (JNIEnv *env, jclass clazz, jint fd, jint cmd) {
 
-    int level, opt;
+    int level = 0, opt = 0;
     int result=0;
-    struct linger linger;
+    struct linger linger = {0, 0};
     char *arg;
     int arglen;
 

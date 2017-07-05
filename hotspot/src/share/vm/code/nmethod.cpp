@@ -51,6 +51,8 @@
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
+unsigned char nmethod::_global_unloading_clock = 0;
+
 #ifdef DTRACE_ENABLED
 
 // Only bother with this argument setup if dtrace is available
@@ -446,6 +448,7 @@ const char* nmethod::compile_kind() const {
 // Fill in default values for various flag fields
 void nmethod::init_defaults() {
   _state                      = in_use;
+  _unloading_clock            = 0;
   _marked_for_reclamation     = 0;
   _has_flushed_dependencies   = 0;
   _has_unsafe_access          = 0;
@@ -464,7 +467,11 @@ void nmethod::init_defaults() {
   _oops_do_mark_link       = NULL;
   _jmethod_id              = NULL;
   _osr_link                = NULL;
-  _scavenge_root_link      = NULL;
+  if (UseG1GC) {
+    _unloading_next        = NULL;
+  } else {
+    _scavenge_root_link    = NULL;
+  }
   _scavenge_root_state     = 0;
   _compiler                = NULL;
 #if INCLUDE_RTM_OPT
@@ -1146,7 +1153,7 @@ void nmethod::cleanup_inline_caches() {
     switch(iter.type()) {
       case relocInfo::virtual_call_type:
       case relocInfo::opt_virtual_call_type: {
-        CompiledIC *ic = CompiledIC_at(iter.reloc());
+        CompiledIC *ic = CompiledIC_at(&iter);
         // Ok, to lookup references to zombies here
         CodeBlob *cb = CodeCache::find_blob_unsafe(ic->ic_destination());
         if( cb != NULL && cb->is_nmethod() ) {
@@ -1168,6 +1175,77 @@ void nmethod::cleanup_inline_caches() {
       }
     }
   }
+}
+
+void nmethod::verify_clean_inline_caches() {
+  assert_locked_or_safepoint(CompiledIC_lock);
+
+  // If the method is not entrant or zombie then a JMP is plastered over the
+  // first few bytes.  If an oop in the old code was there, that oop
+  // should not get GC'd.  Skip the first few bytes of oops on
+  // not-entrant methods.
+  address low_boundary = verified_entry_point();
+  if (!is_in_use()) {
+    low_boundary += NativeJump::instruction_size;
+    // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
+    // This means that the low_boundary is going to be a little too high.
+    // This shouldn't matter, since oops of non-entrant methods are never used.
+    // In fact, why are we bothering to look at oops in a non-entrant method??
+  }
+
+  ResourceMark rm;
+  RelocIterator iter(this, low_boundary);
+  while(iter.next()) {
+    switch(iter.type()) {
+      case relocInfo::virtual_call_type:
+      case relocInfo::opt_virtual_call_type: {
+        CompiledIC *ic = CompiledIC_at(&iter);
+        // Ok, to lookup references to zombies here
+        CodeBlob *cb = CodeCache::find_blob_unsafe(ic->ic_destination());
+        if( cb != NULL && cb->is_nmethod() ) {
+          nmethod* nm = (nmethod*)cb;
+          // Verify that inline caches pointing to both zombie and not_entrant methods are clean
+          if (!nm->is_in_use() || (nm->method()->code() != nm)) {
+            assert(ic->is_clean(), "IC should be clean");
+          }
+        }
+        break;
+      }
+      case relocInfo::static_call_type: {
+        CompiledStaticCall *csc = compiledStaticCall_at(iter.reloc());
+        CodeBlob *cb = CodeCache::find_blob_unsafe(csc->destination());
+        if( cb != NULL && cb->is_nmethod() ) {
+          nmethod* nm = (nmethod*)cb;
+          // Verify that inline caches pointing to both zombie and not_entrant methods are clean
+          if (!nm->is_in_use() || (nm->method()->code() != nm)) {
+            assert(csc->is_clean(), "IC should be clean");
+          }
+        }
+        break;
+      }
+    }
+  }
+}
+
+int nmethod::verify_icholder_relocations() {
+  int count = 0;
+
+  RelocIterator iter(this);
+  while(iter.next()) {
+    if (iter.type() == relocInfo::virtual_call_type) {
+      if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc())) {
+        CompiledIC *ic = CompiledIC_at(&iter);
+        if (TraceCompiledIC) {
+          tty->print("noticed icholder " INTPTR_FORMAT " ", p2i(ic->cached_icholder()));
+          ic->print();
+        }
+        assert(ic->cached_icholder() != NULL, "must be non-NULL");
+        count++;
+      }
+    }
+  }
+
+  return count;
 }
 
 // This is a private interface with the sweeper.
@@ -1200,6 +1278,23 @@ void nmethod::inc_decompile_count() {
   if (mdo == NULL)  return;
   // There is a benign race here.  See comments in methodData.hpp.
   mdo->inc_decompile_count();
+}
+
+void nmethod::increase_unloading_clock() {
+  _global_unloading_clock++;
+  if (_global_unloading_clock == 0) {
+    // _nmethods are allocated with _unloading_clock == 0,
+    // so 0 is never used as a clock value.
+    _global_unloading_clock = 1;
+  }
+}
+
+void nmethod::set_unloading_clock(unsigned char unloading_clock) {
+  OrderAccess::release_store((volatile jubyte*)&_unloading_clock, unloading_clock);
+}
+
+unsigned char nmethod::unloading_clock() {
+  return (unsigned char)OrderAccess::load_acquire((volatile jubyte*)&_unloading_clock);
 }
 
 void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
@@ -1247,6 +1342,10 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
     // for later on.
     CodeCache::set_needs_cache_clean(true);
   }
+
+  // Unregister must be done before the state change
+  Universe::heap()->unregister_nmethod(this);
+
   _state = unloaded;
 
   // Log the unloading.
@@ -1590,6 +1689,35 @@ void nmethod::post_compiled_method_unload() {
   set_unload_reported();
 }
 
+void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_alive) {
+  if (ic->is_icholder_call()) {
+    // The only exception is compiledICHolder oops which may
+    // yet be marked below. (We check this further below).
+    CompiledICHolder* cichk_oop = ic->cached_icholder();
+    if (cichk_oop->holder_method()->method_holder()->is_loader_alive(is_alive) &&
+        cichk_oop->holder_klass()->is_loader_alive(is_alive)) {
+      return;
+    }
+  } else {
+    Metadata* ic_oop = ic->cached_metadata();
+    if (ic_oop != NULL) {
+      if (ic_oop->is_klass()) {
+        if (((Klass*)ic_oop)->is_loader_alive(is_alive)) {
+          return;
+        }
+      } else if (ic_oop->is_method()) {
+        if (((Method*)ic_oop)->method_holder()->is_loader_alive(is_alive)) {
+          return;
+        }
+      } else {
+        ShouldNotReachHere();
+      }
+    }
+  }
+
+  ic->set_to_clean();
+}
+
 // This is called at the end of the strong tracing/marking phase of a
 // GC to unload an nmethod if it contains otherwise unreachable
 // oops.
@@ -1632,32 +1760,8 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
     RelocIterator iter(this, low_boundary);
     while(iter.next()) {
       if (iter.type() == relocInfo::virtual_call_type) {
-        CompiledIC *ic = CompiledIC_at(iter.reloc());
-        if (ic->is_icholder_call()) {
-          // The only exception is compiledICHolder oops which may
-          // yet be marked below. (We check this further below).
-          CompiledICHolder* cichk_oop = ic->cached_icholder();
-          if (cichk_oop->holder_method()->method_holder()->is_loader_alive(is_alive) &&
-              cichk_oop->holder_klass()->is_loader_alive(is_alive)) {
-            continue;
-          }
-        } else {
-          Metadata* ic_oop = ic->cached_metadata();
-          if (ic_oop != NULL) {
-            if (ic_oop->is_klass()) {
-              if (((Klass*)ic_oop)->is_loader_alive(is_alive)) {
-                continue;
-              }
-            } else if (ic_oop->is_method()) {
-              if (((Method*)ic_oop)->method_holder()->is_loader_alive(is_alive)) {
-                continue;
-              }
-            } else {
-              ShouldNotReachHere();
-            }
-          }
-        }
-        ic->set_to_clean();
+        CompiledIC *ic = CompiledIC_at(&iter);
+        clean_ic_if_metadata_is_dead(ic, is_alive);
       }
     }
   }
@@ -1693,6 +1797,175 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
 
   // Ensure that all metadata is still alive
   verify_metadata_loaders(low_boundary, is_alive);
+}
+
+template <class CompiledICorStaticCall>
+static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, BoolObjectClosure *is_alive, nmethod* from) {
+  // Ok, to lookup references to zombies here
+  CodeBlob *cb = CodeCache::find_blob_unsafe(addr);
+  if (cb != NULL && cb->is_nmethod()) {
+    nmethod* nm = (nmethod*)cb;
+
+    if (nm->unloading_clock() != nmethod::global_unloading_clock()) {
+      // The nmethod has not been processed yet.
+      return true;
+    }
+
+    // Clean inline caches pointing to both zombie and not_entrant methods
+    if (!nm->is_in_use() || (nm->method()->code() != nm)) {
+      ic->set_to_clean();
+      assert(ic->is_clean(), err_msg("nmethod " PTR_FORMAT "not clean %s", from, from->method()->name_and_sig_as_C_string()));
+    }
+  }
+
+  return false;
+}
+
+static bool clean_if_nmethod_is_unloaded(CompiledIC *ic, BoolObjectClosure *is_alive, nmethod* from) {
+  return clean_if_nmethod_is_unloaded(ic, ic->ic_destination(), is_alive, from);
+}
+
+static bool clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, BoolObjectClosure *is_alive, nmethod* from) {
+  return clean_if_nmethod_is_unloaded(csc, csc->destination(), is_alive, from);
+}
+
+bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred) {
+  ResourceMark rm;
+
+  // Make sure the oop's ready to receive visitors
+  assert(!is_zombie() && !is_unloaded(),
+         "should not call follow on zombie or unloaded nmethod");
+
+  // If the method is not entrant then a JMP is plastered over the
+  // first few bytes.  If an oop in the old code was there, that oop
+  // should not get GC'd.  Skip the first few bytes of oops on
+  // not-entrant methods.
+  address low_boundary = verified_entry_point();
+  if (is_not_entrant()) {
+    low_boundary += NativeJump::instruction_size;
+    // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
+    // (See comment above.)
+  }
+
+  // The RedefineClasses() API can cause the class unloading invariant
+  // to no longer be true. See jvmtiExport.hpp for details.
+  // Also, leave a debugging breadcrumb in local flag.
+  bool a_class_was_redefined = JvmtiExport::has_redefined_a_class();
+  if (a_class_was_redefined) {
+    // This set of the unloading_occurred flag is done before the
+    // call to post_compiled_method_unload() so that the unloading
+    // of this nmethod is reported.
+    unloading_occurred = true;
+  }
+
+  // Exception cache
+  clean_exception_cache(is_alive);
+
+  bool is_unloaded = false;
+  bool postponed = false;
+
+  RelocIterator iter(this, low_boundary);
+  while(iter.next()) {
+
+    switch (iter.type()) {
+
+    case relocInfo::virtual_call_type:
+      if (unloading_occurred) {
+        // If class unloading occurred we first iterate over all inline caches and
+        // clear ICs where the cached oop is referring to an unloaded klass or method.
+        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter), is_alive);
+      }
+
+      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      break;
+
+    case relocInfo::opt_virtual_call_type:
+      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      break;
+
+    case relocInfo::static_call_type:
+      postponed |= clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), is_alive, this);
+      break;
+
+    case relocInfo::oop_type:
+      if (!is_unloaded) {
+        // Unload check
+        oop_Relocation* r = iter.oop_reloc();
+        // Traverse those oops directly embedded in the code.
+        // Other oops (oop_index>0) are seen as part of scopes_oops.
+        assert(1 == (r->oop_is_immediate()) +
+                  (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
+              "oop must be found in exactly one place");
+        if (r->oop_is_immediate() && r->oop_value() != NULL) {
+          if (can_unload(is_alive, r->oop_addr(), unloading_occurred)) {
+            is_unloaded = true;
+          }
+        }
+      }
+      break;
+
+    }
+  }
+
+  if (is_unloaded) {
+    return postponed;
+  }
+
+  // Scopes
+  for (oop* p = oops_begin(); p < oops_end(); p++) {
+    if (*p == Universe::non_oop_word())  continue;  // skip non-oops
+    if (can_unload(is_alive, p, unloading_occurred)) {
+      is_unloaded = true;
+      break;
+    }
+  }
+
+  if (is_unloaded) {
+    return postponed;
+  }
+
+  // Ensure that all metadata is still alive
+  verify_metadata_loaders(low_boundary, is_alive);
+
+  return postponed;
+}
+
+void nmethod::do_unloading_parallel_postponed(BoolObjectClosure* is_alive, bool unloading_occurred) {
+  ResourceMark rm;
+
+  // Make sure the oop's ready to receive visitors
+  assert(!is_zombie(),
+         "should not call follow on zombie nmethod");
+
+  // If the method is not entrant then a JMP is plastered over the
+  // first few bytes.  If an oop in the old code was there, that oop
+  // should not get GC'd.  Skip the first few bytes of oops on
+  // not-entrant methods.
+  address low_boundary = verified_entry_point();
+  if (is_not_entrant()) {
+    low_boundary += NativeJump::instruction_size;
+    // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
+    // (See comment above.)
+  }
+
+  RelocIterator iter(this, low_boundary);
+  while(iter.next()) {
+
+    switch (iter.type()) {
+
+    case relocInfo::virtual_call_type:
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      break;
+
+    case relocInfo::opt_virtual_call_type:
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      break;
+
+    case relocInfo::static_call_type:
+      clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), is_alive, this);
+      break;
+    }
+  }
 }
 
 #ifdef ASSERT
@@ -1741,7 +2014,7 @@ void nmethod::verify_metadata_loaders(address low_boundary, BoolObjectClosure* i
     // compiled code is maintaining a link to dead metadata.
     address static_call_addr = NULL;
     if (iter.type() == relocInfo::opt_virtual_call_type) {
-      CompiledIC* cic = CompiledIC_at(iter.reloc());
+      CompiledIC* cic = CompiledIC_at(&iter);
       if (!cic->is_call_to_interpreted()) {
         static_call_addr = iter.addr();
       }
@@ -1793,7 +2066,7 @@ void nmethod::metadata_do(void f(Metadata*)) {
         }
       } else if (iter.type() == relocInfo::virtual_call_type) {
         // Check compiledIC holders associated with this nmethod
-        CompiledIC *ic = CompiledIC_at(iter.reloc());
+        CompiledIC *ic = CompiledIC_at(&iter);
         if (ic->is_icholder_call()) {
           CompiledICHolder* cichk = ic->cached_icholder();
           f(cichk->holder_method());
@@ -1911,7 +2184,7 @@ void nmethod::oops_do_marking_epilogue() {
     assert(cur != NULL, "not NULL-terminated");
     nmethod* next = cur->_oops_do_mark_link;
     cur->_oops_do_mark_link = NULL;
-    cur->fix_oop_relocations();
+    cur->verify_oop_relocations();
     NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark"));
     cur = next;
   }
@@ -2479,6 +2752,10 @@ public:
 };
 
 void nmethod::verify_scavenge_root_oops() {
+  if (UseG1GC) {
+    return;
+  }
+
   if (!on_scavenge_root_list()) {
     // Actually look inside, to verify the claim that it's clean.
     DebugScavengeRoot debug_scavenge_root(this);
@@ -2922,7 +3199,7 @@ void nmethod::print_calls(outputStream* st) {
     case relocInfo::virtual_call_type:
     case relocInfo::opt_virtual_call_type: {
       VerifyMutexLocker mc(CompiledIC_lock);
-      CompiledIC_at(iter.reloc())->print();
+      CompiledIC_at(&iter)->print();
       break;
     }
     case relocInfo::static_call_type:

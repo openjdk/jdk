@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
  * @bug 7084904
  * @summary Compares reflection and bean introspection
  * @author Sergey Malenkov
+ * @library ..
  */
 public class Test7084904 {
     public static void main(String[] args) throws Exception {

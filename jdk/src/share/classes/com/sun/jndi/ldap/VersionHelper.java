@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,31 +30,9 @@ import java.net.URL;
 
 abstract class VersionHelper {
 
-    private static VersionHelper helper = null;
+    private static final VersionHelper helper = new VersionHelper12();
 
     VersionHelper() {} // Disallow anyone from creating one of these.
-
-    static {
-        try {
-            Class.forName("java.net.URLClassLoader"); // 1.2 test
-            Class.forName("java.security.PrivilegedAction"); // 1.2 test
-            helper = (VersionHelper)
-                Class.forName(
-                    "com.sun.jndi.ldap.VersionHelper12").newInstance();
-        } catch (Exception e) {
-        }
-
-        // Use 1.1 helper if 1.2 test fails, or if we cannot create 1.2 helper
-        if (helper == null) {
-            try {
-                helper = (VersionHelper)
-                    Class.forName(
-                        "com.sun.jndi.ldap.VersionHelper11").newInstance();
-            } catch (Exception e) {
-                // should never happen
-            }
-        }
-    }
 
     static VersionHelper getVersionHelper() {
         return helper;

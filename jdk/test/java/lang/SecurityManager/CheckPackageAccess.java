@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  *  @test
- *  @bug 6741606 7146431 8000450 8019830 8022945
+ *  @bug 6741606 7146431 8000450 8019830 8022945 8027144 8041633
  *  @summary Make sure all restricted packages listed in the package.access
  *           property in the java.security file are blocked
  *  @run main/othervm CheckPackageAccess
@@ -83,7 +83,8 @@ public class CheckPackageAccess {
         "org.jcp.xml.dsig.internal.",
         "jdk.internal.",
         "jdk.nashorn.internal.",
-        "jdk.nashorn.tools."
+        "jdk.nashorn.tools.",
+        "com.sun.activation.registries."
     };
 
     public static void main(String[] args) throws Exception {

@@ -141,11 +141,14 @@ public class EventListenerList implements Serializable {
     public <T extends EventListener> T[] getListeners(Class<T> t) {
         Object[] lList = listenerList;
         int n = getListenerCount(lList, t);
+        @SuppressWarnings("unchecked")
         T[] result = (T[])Array.newInstance(t, n);
         int j = 0;
         for (int i = lList.length-2; i>=0; i-=2) {
             if (lList[i] == t) {
-                result[j++] = (T)lList[i+1];
+                @SuppressWarnings("unchecked")
+                T tmp = (T)lList[i+1];
+                result[j++] = tmp;
             }
         }
         return result;
@@ -172,7 +175,7 @@ public class EventListenerList implements Serializable {
         return getListenerCount(lList, t);
     }
 
-    private int getListenerCount(Object[] list, Class t) {
+    private int getListenerCount(Object[] list, Class<?> t) {
         int count = 0;
         for (int i = 0; i < list.length; i+=2) {
             if (t == (Class)list[i])
@@ -288,7 +291,9 @@ public class EventListenerList implements Serializable {
             EventListener l = (EventListener)s.readObject();
             String name = (String) listenerTypeOrNull;
             ReflectUtil.checkPackageAccess(name);
-            add((Class<EventListener>)Class.forName(name, true, cl), l);
+            @SuppressWarnings("unchecked")
+            Class<EventListener> tmp = (Class<EventListener>)Class.forName(name, true, cl);
+            add(tmp, l);
         }
     }
 

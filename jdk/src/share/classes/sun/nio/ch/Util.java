@@ -328,7 +328,7 @@ public class Util {
             initDBBConstructor();
         try {
             dbb = (MappedByteBuffer)directByteBufferConstructor.newInstance(
-              new Object[] { new Integer(size),
+              new Object[] { size,
                              addr,
                              fd,
                              unmapper });
@@ -373,7 +373,7 @@ public class Util {
             initDBBRConstructor();
         try {
             dbb = (MappedByteBuffer)directByteBufferRConstructor.newInstance(
-              new Object[] { new Integer(size),
+              new Object[] { size,
                              addr,
                              fd,
                              unmapper });
