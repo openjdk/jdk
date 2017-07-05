@@ -46,7 +46,7 @@ class Compiler: public AbstractCompiler {
 
   virtual bool is_c1()                           { return true; };
 
-  BufferBlob* build_buffer_blob();
+  BufferBlob* get_buffer_blob(ciEnv* env);
 
   // Missing feature tests
   virtual bool supports_native()                 { return true; }
