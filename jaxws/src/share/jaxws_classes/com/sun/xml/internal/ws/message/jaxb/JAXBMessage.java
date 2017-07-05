@@ -31,9 +31,11 @@ import com.sun.xml.internal.stream.buffer.XMLStreamBuffer;
 import com.sun.xml.internal.stream.buffer.XMLStreamBufferResult;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.message.AttachmentSet;
+import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.MessageHeaders;
+import com.sun.xml.internal.ws.api.message.StreamingSOAP;
 import com.sun.xml.internal.ws.encoding.SOAPBindingCodec;
 import com.sun.xml.internal.ws.message.AbstractMessageImpl;
 import com.sun.xml.internal.ws.message.AttachmentSetImpl;
@@ -45,6 +47,9 @@ import com.sun.xml.internal.ws.spi.db.XMLBridge;
 import com.sun.xml.internal.ws.streaming.XMLStreamWriterUtil;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
 import com.sun.xml.internal.ws.streaming.MtomStreamWriter;
+import com.sun.xml.internal.ws.util.xml.XMLReaderComposite;
+import com.sun.xml.internal.ws.util.xml.XMLReaderComposite.ElemInfo;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -65,13 +70,14 @@ import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
 import javax.xml.transform.Source;
 import javax.xml.ws.WebServiceException;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
  * {@link Message} backed by a JAXB bean.
  *
  * @author Kohsuke Kawaguchi
  */
-public final class JAXBMessage extends AbstractMessageImpl {
+public final class JAXBMessage extends AbstractMessageImpl implements StreamingSOAP {
     private MessageHeaders headers;
 
     /**
@@ -319,14 +325,17 @@ public final class JAXBMessage extends AbstractMessageImpl {
     public XMLStreamReader readPayload() throws XMLStreamException {
        try {
             if(infoset==null) {
-                XMLStreamBufferResult sbr = new XMLStreamBufferResult();
                                 if (rawContext != null) {
+                        XMLStreamBufferResult sbr = new XMLStreamBufferResult();
                                         Marshaller m = rawContext.createMarshaller();
                                         m.setProperty("jaxb.fragment", Boolean.TRUE);
                                         m.marshal(jaxbObject, sbr);
-                                } else
-                                        bridge.marshal(jaxbObject, sbr);
-                infoset = sbr.getXMLStreamBuffer();
+                        infoset = sbr.getXMLStreamBuffer();
+                                } else {
+                                    MutableXMLStreamBuffer buffer = new MutableXMLStreamBuffer();
+                                    writePayloadTo(buffer.createFromXMLStreamWriter());
+                                    infoset = buffer;
+                                }
             }
             XMLStreamReader reader = infoset.readAsXMLStreamReader();
             if(reader.getEventType()== START_DOCUMENT)
@@ -376,21 +385,22 @@ public final class JAXBMessage extends AbstractMessageImpl {
 
             // Get output stream and use JAXB UTF-8 writer
             OutputStream os = bridge.supportOutputStream() ? XMLStreamWriterUtil.getOutputStream(sw) : null;
-                        if (rawContext != null) {
-                                Marshaller m = rawContext.createMarshaller();
-                                m.setProperty("jaxb.fragment", Boolean.TRUE);
-                                m.setAttachmentMarshaller(am);
-                                if (os != null)
-                                        m.marshal(jaxbObject, os);
-                                else
-                                        m.marshal(jaxbObject, sw);
-                        } else {
-                                if (os != null  && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
-                                        bridge.marshal(jaxbObject, os, sw.getNamespaceContext(), am);
-                                } else {
-                                        bridge.marshal(jaxbObject, sw, am);
-                                }
-                        }
+            if (rawContext != null) {
+                Marshaller m = rawContext.createMarshaller();
+                m.setProperty("jaxb.fragment", Boolean.TRUE);
+                m.setAttachmentMarshaller(am);
+                if (os != null) {
+                    m.marshal(jaxbObject, os);
+                } else {
+                    m.marshal(jaxbObject, sw);
+                }
+            } else {
+                if (os != null && encoding != null && encoding.equalsIgnoreCase(SOAPBindingCodec.UTF8_ENCODING)) {
+                    bridge.marshal(jaxbObject, os, sw.getNamespaceContext(), am);
+                } else {
+                    bridge.marshal(jaxbObject, sw, am);
+                }
+            }
             //cleanup() is not needed since JAXB doesn't keep ref to AttachmentMarshaller
             //am.cleanup();
         } catch (JAXBException e) {
@@ -404,4 +414,33 @@ public final class JAXBMessage extends AbstractMessageImpl {
         return new JAXBMessage(this);
     }
 
+    public XMLStreamReader readEnvelope() {
+        int base = soapVersion.ordinal()*3;
+        this.envelopeTag = DEFAULT_TAGS.get(base);
+        this.bodyTag = DEFAULT_TAGS.get(base+2);
+        List<XMLStreamReader> hReaders = new java.util.ArrayList<XMLStreamReader>();
+        ElemInfo envElem =  new ElemInfo(envelopeTag, null);
+        ElemInfo bdyElem =  new ElemInfo(bodyTag, envElem);
+        for (Header h : getHeaders().asList()) {
+            try {
+                hReaders.add(h.readHeader());
+            } catch (XMLStreamException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        XMLStreamReader soapHeader = null;
+        if(hReaders.size()>0) {
+            headerTag = DEFAULT_TAGS.get(base+1);
+            ElemInfo hdrElem = new ElemInfo(headerTag, envElem);
+            soapHeader = new XMLReaderComposite(hdrElem, hReaders.toArray(new XMLStreamReader[hReaders.size()]));
+        }
+        try {
+            XMLStreamReader payload= readPayload();
+            XMLStreamReader soapBody = new XMLReaderComposite(bdyElem, new XMLStreamReader[]{payload});
+            XMLStreamReader[] soapContent = (soapHeader != null) ? new XMLStreamReader[]{soapHeader, soapBody} : new XMLStreamReader[]{soapBody};
+            return new XMLReaderComposite(envElem, soapContent);
+        } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

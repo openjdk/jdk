@@ -3234,19 +3234,22 @@ JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
  HOTSPOT_JNI_GETSTRINGCHARS_ENTRY(
                                   env, string, (uintptr_t *) isCopy);
 #endif /* USDT2 */
-  //%note jni_5
-  if (isCopy != NULL) {
-    *isCopy = JNI_TRUE;
-  }
   oop s = JNIHandles::resolve_non_null(string);
   int s_len = java_lang_String::length(s);
   typeArrayOop s_value = java_lang_String::value(s);
   int s_offset = java_lang_String::offset(s);
-  jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len + 1, mtInternal);  // add one for zero termination
-  if (s_len > 0) {
-    memcpy(buf, s_value->char_at_addr(s_offset), sizeof(jchar)*s_len);
+  jchar* buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
+  /* JNI Specification states return NULL on OOM */
+  if (buf != NULL) {
+    if (s_len > 0) {
+      memcpy(buf, s_value->char_at_addr(s_offset), sizeof(jchar)*s_len);
+    }
+    buf[s_len] = 0;
+    //%note jni_5
+    if (isCopy != NULL) {
+      *isCopy = JNI_TRUE;
+    }
   }
-  buf[s_len] = 0;
 #ifndef USDT2
   DTRACE_PROBE1(hotspot_jni, GetStringChars__return, buf);
 #else /* USDT2 */
@@ -3335,9 +3338,14 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
 #endif /* USDT2 */
   oop java_string = JNIHandles::resolve_non_null(string);
   size_t length = java_lang_String::utf8_length(java_string);
-  char* result = AllocateHeap(length + 1, mtInternal);
-  java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
-  if (isCopy != NULL) *isCopy = JNI_TRUE;
+  /* JNI Specification states return NULL on OOM */
+  char* result = AllocateHeap(length + 1, mtInternal, 0, AllocFailStrategy::RETURN_NULL);
+  if (result != NULL) {
+    java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
+    if (isCopy != NULL) {
+      *isCopy = JNI_TRUE;
+    }
+  }
 #ifndef USDT2
   DTRACE_PROBE1(hotspot_jni, GetStringUTFChars__return, result);
 #else /* USDT2 */
@@ -3591,11 +3599,16 @@ JNI_QUICK_ENTRY(ElementType*, \
      * Avoid asserts in typeArrayOop. */ \
     result = (ElementType*)get_bad_address(); \
   } else { \
-    result = NEW_C_HEAP_ARRAY(ElementType, len, mtInternal); \
-    /* copy the array to the c chunk */ \
-    memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len); \
+    /* JNI Specification states return NULL on OOM */                    \
+    result = NEW_C_HEAP_ARRAY_RETURN_NULL(ElementType, len, mtInternal); \
+    if (result != NULL) {                                                \
+      /* copy the array to the c chunk */                                \
+      memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len);      \
+      if (isCopy) {                                                      \
+        *isCopy = JNI_TRUE;                                              \
+      }                                                                  \
+    }                                                                    \
   } \
-  if (isCopy) *isCopy = JNI_TRUE; \
   DTRACE_PROBE1(hotspot_jni, Get##Result##ArrayElements__return, result);\
   return result; \
 JNI_END
@@ -3628,11 +3641,16 @@ JNI_QUICK_ENTRY(ElementType*, \
      * Avoid asserts in typeArrayOop. */ \
     result = (ElementType*)get_bad_address(); \
   } else { \
-    result = NEW_C_HEAP_ARRAY(ElementType, len, mtInternal); \
-    /* copy the array to the c chunk */ \
-    memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len); \
+    /* JNI Specification states return NULL on OOM */                    \
+    result = NEW_C_HEAP_ARRAY_RETURN_NULL(ElementType, len, mtInternal); \
+    if (result != NULL) {                                                \
+      /* copy the array to the c chunk */                                \
+      memcpy(result, a->Tag##_at_addr(0), sizeof(ElementType)*len);      \
+      if (isCopy) {                                                      \
+        *isCopy = JNI_TRUE;                                              \
+      }                                                                  \
+    }                                                                    \
   } \
-  if (isCopy) *isCopy = JNI_TRUE; \
   ReturnProbe; \
   return result; \
 JNI_END
@@ -5027,9 +5045,15 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
   tty->print_cr("Running test: " #unit_test_function_call); \
   unit_test_function_call
 
+// Forward declaration
+void TestReservedSpace_test();
+void TestReserveMemorySpecial_test();
+
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     tty->print_cr("Running internal VM tests");
+    run_unit_test(TestReservedSpace_test());
+    run_unit_test(TestReserveMemorySpecial_test());
     run_unit_test(GlobalDefinitions::test_globals());
     run_unit_test(GCTimerAllTest::all());
     run_unit_test(arrayOopDesc::test_max_array_length());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.util.Vector;
  * @author David Brownell
  * @author Janet Koenig
  * @author Kohsuke KAWAGUCHI
- * @version $Id: DTDParser.java,v 1.2 2009-04-16 15:25:49 snajper Exp $
+ * @version $Id: DTDParser.java,v 1.2 2009/04/16 15:25:49 snajper Exp $
  */
 public class DTDParser {
     public final static String TYPE_CDATA = "CDATA";
@@ -215,25 +215,25 @@ public class DTDParser {
      */
     public void parse(String uri)
             throws IOException, SAXException {
-        InputSource inSource;
+        InputSource in;
 
         init();
         // System.out.println ("parse (\"" + uri + "\")");
-        inSource = resolver.resolveEntity(null, uri);
+        in = resolver.resolveEntity(null, uri);
 
         // If custom resolver punts resolution to parser, handle it ...
-        if (inSource == null) {
-            inSource = Resolver.createInputSource(new java.net.URL(uri), false);
+        if (in == null) {
+            in = Resolver.createInputSource(new java.net.URL(uri), false);
 
             // ... or if custom resolver doesn't correctly construct the
             // input entity, patch it up enough so relative URIs work, and
             // issue a warning to minimize later confusion.
-        } else if (inSource.getSystemId() == null) {
+        } else if (in.getSystemId() == null) {
             warning("P-065", null);
-            inSource.setSystemId(uri);
+            in.setSystemId(uri);
         }
 
-        parseInternal(inSource);
+        parseInternal(in);
     }
 
     // makes sure the parser is reset to "before a document"

@@ -32,13 +32,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javax.script.Invocable;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -180,6 +176,7 @@ public class FXShell extends Application {
      *
      * @return Last evaluation result (discarded.)
      */
+    @SuppressWarnings("resource")
     private Object load(String path) {
         try {
             FileInputStream file = new FileInputStream(path);

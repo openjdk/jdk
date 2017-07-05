@@ -30,6 +30,11 @@ import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.txw2.annotation.XmlAttribute;
 import com.sun.xml.internal.txw2.annotation.XmlElement;
 
+/**
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
+ */
 @XmlElement("element")
 public interface LocalElement
     extends Element, Occurs, TypedXmlWriter

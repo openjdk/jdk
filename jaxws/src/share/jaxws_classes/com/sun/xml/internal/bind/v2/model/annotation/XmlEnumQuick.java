@@ -28,6 +28,11 @@ package com.sun.xml.internal.bind.v2.model.annotation;
 import java.lang.annotation.Annotation;
 import javax.xml.bind.annotation.XmlEnum;
 
+
+/**
+ * <p><b>Auto-generated, do not edit.</b></p>
+ *
+ */
 final class XmlEnumQuick
     extends Quick
     implements XmlEnum

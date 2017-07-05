@@ -28,6 +28,11 @@ package com.sun.xml.internal.bind.v2.model.annotation;
 import java.lang.annotation.Annotation;
 import javax.xml.bind.annotation.XmlAttribute;
 
+
+/**
+ * <p><b>Auto-generated, do not edit.</b></p>
+ *
+ */
 final class XmlAttributeQuick
     extends Quick
     implements XmlAttribute

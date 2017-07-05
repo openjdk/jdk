@@ -29,6 +29,11 @@ import javax.xml.bind.annotation.XmlNsForm;
 import javax.xml.bind.annotation.XmlSchema;
 import com.sun.codemodel.internal.JAnnotationWriter;
 
+/**
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
+ */
 public interface XmlSchemaWriter
     extends JAnnotationWriter<XmlSchema>
 {

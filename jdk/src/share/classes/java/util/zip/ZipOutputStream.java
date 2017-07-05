@@ -663,6 +663,9 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         while (off + 4 <= len) {
             int tag = get16(extra, off);
             int sz = get16(extra, off + 2);
+            if (sz < 0 || (off + 4 + sz) > len) {
+                break;
+            }
             if (tag == EXTID_EXTT || tag == EXTID_ZIP64) {
                 skipped += (sz + 4);
             }
@@ -684,10 +687,17 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
             while (off + 4 <= len) {
                 int tag = get16(extra, off);
                 int sz = get16(extra, off + 2);
+                if (sz < 0 || (off + 4 + sz) > len) {
+                    writeBytes(extra, off, len - off);
+                    return;
+                }
                 if (tag != EXTID_EXTT && tag != EXTID_ZIP64) {
                     writeBytes(extra, off, sz + 4);
                 }
                 off += (sz + 4);
+            }
+            if (off < len) {
+                writeBytes(extra, off, len - off);
             }
         }
     }

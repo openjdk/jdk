@@ -29,7 +29,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 /**
- *
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
  *
  * @version $Id: NGCCHandler.java,v 1.9 2002/09/29 02:55:48 okajima Exp $
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)

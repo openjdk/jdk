@@ -241,11 +241,10 @@ interface Sink<T> extends Consumer<T> {
      * implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
      */
-    static abstract class ChainedReference<T> implements Sink<T> {
-        @SuppressWarnings("rawtypes")
-        protected final Sink downstream;
+    static abstract class ChainedReference<T, E_OUT> implements Sink<T> {
+        protected final Sink<? super E_OUT> downstream;
 
-        public ChainedReference(Sink downstream) {
+        public ChainedReference(Sink<? super E_OUT> downstream) {
             this.downstream = Objects.requireNonNull(downstream);
         }
 
@@ -274,11 +273,10 @@ interface Sink<T> extends Consumer<T> {
      * The implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
      */
-    static abstract class ChainedInt implements Sink.OfInt {
-        @SuppressWarnings("rawtypes")
-        protected final Sink downstream;
+    static abstract class ChainedInt<E_OUT> implements Sink.OfInt {
+        protected final Sink<? super E_OUT> downstream;
 
-        public ChainedInt(Sink downstream) {
+        public ChainedInt(Sink<? super E_OUT> downstream) {
             this.downstream = Objects.requireNonNull(downstream);
         }
 
@@ -307,11 +305,10 @@ interface Sink<T> extends Consumer<T> {
      * The implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
      */
-    static abstract class ChainedLong implements Sink.OfLong {
-        @SuppressWarnings("rawtypes")
-        protected final Sink downstream;
+    static abstract class ChainedLong<E_OUT> implements Sink.OfLong {
+        protected final Sink<? super E_OUT> downstream;
 
-        public ChainedLong(Sink downstream) {
+        public ChainedLong(Sink<? super E_OUT> downstream) {
             this.downstream = Objects.requireNonNull(downstream);
         }
 
@@ -340,11 +337,10 @@ interface Sink<T> extends Consumer<T> {
      * The implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
      */
-    static abstract class ChainedDouble implements Sink.OfDouble {
-        @SuppressWarnings("rawtypes")
-        protected final Sink downstream;
+    static abstract class ChainedDouble<E_OUT> implements Sink.OfDouble {
+        protected final Sink<? super E_OUT> downstream;
 
-        public ChainedDouble(Sink downstream) {
+        public ChainedDouble(Sink<? super E_OUT> downstream) {
             this.downstream = Objects.requireNonNull(downstream);
         }
 

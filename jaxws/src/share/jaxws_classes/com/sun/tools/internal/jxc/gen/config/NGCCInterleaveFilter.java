@@ -32,6 +32,9 @@ import org.xml.sax.SAXException;
  * Dispatches incoming events into sub handlers appropriately
  * so that the interleaving semantics will be correctly realized.
  *
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */
 public abstract class NGCCInterleaveFilter implements NGCCEventSource, NGCCEventReceiver {

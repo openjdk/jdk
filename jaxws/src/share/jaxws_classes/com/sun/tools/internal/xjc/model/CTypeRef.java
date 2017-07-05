@@ -25,6 +25,7 @@
 
 package com.sun.tools.internal.xjc.model;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
 
@@ -34,6 +35,7 @@ import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
 import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
 import com.sun.xml.internal.bind.v2.model.core.TypeRef;
 import com.sun.xml.internal.bind.v2.runtime.RuntimeUtil;
+import com.sun.xml.internal.xsom.XSType;
 import com.sun.xml.internal.xsom.XmlString;
 import com.sun.xml.internal.xsom.XSElementDecl;
 import com.sun.istack.internal.Nullable;
@@ -74,11 +76,34 @@ public final class CTypeRef implements TypeRef<NType,NClass> {
     }
 
     public static QName getSimpleTypeName(XSElementDecl decl) {
-        if(decl==null)  return null;
-        QName typeName = null;
-        if(decl.getType().isSimpleType())
-            typeName = BGMBuilder.getName(decl.getType());
-        return typeName;
+        if(decl==null || !decl.getType().isSimpleType())
+            return null; // null if not simple type
+        return resolveSimpleTypeName(decl.getType());
+    }
+
+    /**
+     * Recursively search for type name.
+     *
+     * This is needed to find correct type for refs like:
+     *
+     *<xs:simpleType name="parent">
+     *  <xs:restriction base="xs:date"/>
+     *</xs:simpleType>
+     *<xs:simpleType name="child">
+     *  <xs:restriction base="parent"/>
+     *</xs:simpleType>
+     *
+     *<xs:element name="testField" type="child"/>
+     *
+     * @param declType given type
+     * @return simpleTypeName or null
+     */
+    private static QName resolveSimpleTypeName(XSType declType) {
+        QName name = BGMBuilder.getName(declType);
+        if (name != null && !XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(name.getNamespaceURI()))
+            return resolveSimpleTypeName(declType.getBaseType());
+        else
+            return name;
     }
 
     public CTypeRef(CNonElement type, QName elementName, QName typeName, boolean nillable, XmlString defaultValue) {

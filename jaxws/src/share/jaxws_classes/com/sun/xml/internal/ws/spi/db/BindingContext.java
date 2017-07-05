@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,9 @@ import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAttachmentRef;
 import javax.xml.namespace.QName;
-import javax.xml.transform.Result;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
-//import com.sun.xml.internal.bind.api.BridgeContext;
-//import com.sun.xml.internal.bind.v2.model.annotation.RuntimeAnnotationReader;
-//import com.sun.xml.internal.bind.v2.model.runtime.RuntimeTypeInfoSet;
 
 /**
  * {@link JAXBContext} enhanced with JAXB RI specific functionalities.
@@ -220,32 +216,6 @@ public interface BindingContext {
      *      the access to the manifest informatino.
      */
     public abstract @NotNull String getBuildId();
-
-    /**
-     * Generates the episode file that represents the binding known to this {@link JAXBContext},
-     * so that XJC can later do separate compilation.
-     *
-     * <p>
-     * Episode file is really just a JAXB customization file, except that currently
-     * we use the RI-specific SCD to refer to schema components.
-     *
-     * @param output
-     *      This receives the generated episode file.
-     *
-     * @since 2.1
-     */
-//    public abstract void generateEpisode(Result output);
-
-    /**
-     * Allows you to access the runtime model information of the JAXB XML/Java binding.
-     *
-     * <p>
-     * This is useful for doing a deeper integration with the JAXB RI.
-     * For more information about the model, see https://jaxb2-reflection.dev.java.net/
-     *
-     * @since 2.1.10
-     */
-//    public abstract RuntimeTypeInfoSet getRuntimeTypeInfoSet();
 
     /**
      * The property that you can specify to {@link JAXBContext#newInstance}

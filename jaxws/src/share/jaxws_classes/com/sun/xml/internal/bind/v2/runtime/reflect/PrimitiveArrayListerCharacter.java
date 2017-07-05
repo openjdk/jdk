@@ -30,10 +30,13 @@ import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
 
 /**
  * {@link Lister} for primitive type arrays.
- *
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
  * <p>
- * B y t e ArrayLister is used as the master to generate the rest of the
- * lister classes. Do not modify the generated copies.
+ *     B y t e ArrayLister is used as the master to generate the rest of the
+ *     lister classes. Do not modify the generated copies.
+ * </p>
  */
 final class PrimitiveArrayListerCharacter<BeanT> extends Lister<BeanT,char[],Character,PrimitiveArrayListerCharacter.CharacterArrayPack> {
 

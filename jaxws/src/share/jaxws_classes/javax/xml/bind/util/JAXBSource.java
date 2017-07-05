@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.transform.sax.SAXSource;
+import org.xml.sax.XMLFilter;
 
 /**
  * JAXP {@link javax.xml.transform.Source} implementation
@@ -210,7 +211,7 @@ public class JAXBSource extends SAXSource {
         // SAX allows ContentHandler to be changed during the parsing,
         // but JAXB doesn't. So this repeater will sit between those
         // two components.
-        private XMLFilterImpl repeater = new XMLFilterImpl();
+        private XMLFilter repeater = new XMLFilterImpl();
 
         public void setContentHandler(ContentHandler handler) {
             repeater.setContentHandler(handler);
@@ -240,7 +241,7 @@ public class JAXBSource extends SAXSource {
             // SAX events will be sent to the repeater, and the repeater
             // will further forward it to an appropriate component.
             try {
-                marshaller.marshal( contentObject, repeater );
+                marshaller.marshal( contentObject, (XMLFilterImpl)repeater );
             } catch( JAXBException e ) {
                 // wrap it to a SAXException
                 SAXParseException se =

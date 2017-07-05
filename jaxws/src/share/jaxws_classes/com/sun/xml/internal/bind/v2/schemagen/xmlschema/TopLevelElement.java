@@ -30,6 +30,11 @@ import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.txw2.annotation.XmlAttribute;
 import com.sun.xml.internal.txw2.annotation.XmlElement;
 
+/**
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
+ */
 @XmlElement("element")
 public interface TopLevelElement
     extends Element, TypedXmlWriter
@@ -37,10 +42,10 @@ public interface TopLevelElement
 
 
     @XmlAttribute("final")
-    public TopLevelElement _final(String value);
+    public TopLevelElement _final(String[] value);
 
     @XmlAttribute("final")
-    public TopLevelElement _final(String[] value);
+    public TopLevelElement _final(String value);
 
     @XmlAttribute("abstract")
     public TopLevelElement _abstract(boolean value);

@@ -812,7 +812,6 @@ public final class XMLSerializer extends Coordinator {
      *      Similar to 'schemaLocation' but this one works for xsi:noNamespaceSchemaLocation
      */
     public void startDocument(XmlOutput out,boolean fragment,String schemaLocation,String noNsSchemaLocation) throws IOException, SAXException, XMLStreamException {
-        setThreadAffinity();
         pushCoordinator();
         nsContext.reset();
         nse = nsContext.getCurrent();
@@ -841,7 +840,6 @@ public final class XMLSerializer extends Coordinator {
         out = null;
         clearCurrentProperty();
         popCoordinator();
-        resetThreadAffinity();
     }
 
     /**

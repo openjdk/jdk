@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,19 @@ import org.xml.sax.Attributes;
  */
 @SuppressWarnings({"PointlessArithmeticExpression"})
 public final class AttributesHolder implements Attributes {
-    protected static final int DEFAULT_CAPACITY = 8;
-    protected static final int ITEM_SIZE = 1 << 3;
+    private static final int DEFAULT_CAPACITY = 8;
+    private static final int ITEM_SIZE = 1 << 3;
 
-    protected static final int PREFIX     = 0;
-    protected static final int URI        = 1;
-    protected static final int LOCAL_NAME = 2;
-    protected static final int QNAME      = 3;
-    protected static final int TYPE       = 4;
-    protected static final int VALUE      = 5;
+    private static final int PREFIX     = 0;
+    private static final int URI        = 1;
+    private static final int LOCAL_NAME = 2;
+    private static final int QNAME      = 3;
+    private static final int TYPE       = 4;
+    private static final int VALUE      = 5;
 
-    protected int _attributeCount;
+    private int _attributeCount;
 
-    protected String[] _strings;
+    private String[] _strings;
 
     public AttributesHolder() {
         _strings = new String[DEFAULT_CAPACITY * ITEM_SIZE];

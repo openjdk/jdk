@@ -363,7 +363,7 @@ class WindowsAsynchronousServerSocketChannelImpl
     private static native void closesocket0(long socket) throws IOException;
 
     static {
-        Util.load();
+        IOUtil.load();
         initIDs();
     }
 }

@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * @author Kohsuke Kawaguchi
  */
-public abstract class Util {
+public final class Util {
     private Util() {}   // no instanciation
 
     /**
