@@ -8696,6 +8696,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * the Swing package private method {@code compWriteObjectNotify}.
      */
     private void doSwingSerialization() {
+        @SuppressWarnings("deprecation")
         Package swingPackage = Package.getPackage("javax.swing");
         // For Swing serialization to correctly work Swing needs to
         // be notified before Component does it's serialization.  This

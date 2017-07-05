@@ -1,4 +1,7 @@
 grant {
     permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.manager=java.lang.SecurityManager";
     permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.policy=*";
+
+    // test needs to export a set of internal APIs to access them from unamed module
+    permission com.sun.rmi.rmid.ExecOptionPermission "*";
 };

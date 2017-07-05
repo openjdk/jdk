@@ -31,6 +31,8 @@ import java.awt.image.BufferedImage;
  *          (single clicked, on Mac)
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library ../../../../lib/testlibrary ../
+ * @library /java/awt/patchlib
+ * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main ActionCommand
  */

@@ -43,37 +43,30 @@ extern "C" {
 }
 
 // Forward declarations
+class ArgumentBootClassPath;
 
-class SysClassPath;
-
-// Element describing System and User (-Dkey=value flags) defined property.
-
-class SystemProperty: public CHeapObj<mtInternal> {
- private:
-  char*           _key;
+// PathString is used as the underlying value container for a
+// SystemProperty and for the string that represents the system
+// boot class path, Arguments::_system_boot_class_path.
+class PathString : public CHeapObj<mtInternal> {
+ protected:
   char*           _value;
-  SystemProperty* _next;
-  bool            _writeable;
-  bool writeable()   { return _writeable; }
-
  public:
-  // Accessors
-  const char* key() const                   { return _key; }
   char* value() const                       { return _value; }
-  SystemProperty* next() const              { return _next; }
-  void set_next(SystemProperty* next)       { _next = next; }
+
   bool set_value(const char *value) {
-    if (writeable()) {
-      if (_value != NULL) {
-        FreeHeap(_value);
-      }
-      _value = AllocateHeap(strlen(value)+1, mtInternal);
-      if (_value != NULL) {
-        strcpy(_value, value);
-      }
-      return true;
+    if (_value != NULL) {
+      FreeHeap(_value);
     }
-    return false;
+    _value = AllocateHeap(strlen(value)+1, mtInternal);
+    assert(_value != NULL, "Unable to allocate space for new path value");
+    if (_value != NULL) {
+      strcpy(_value, value);
+    } else {
+      // not able to allocate
+      return false;
+    }
+    return true;
   }
 
   void append_value(const char *value) {
@@ -85,6 +78,7 @@ class SystemProperty: public CHeapObj<mtInternal> {
         len += strlen(_value);
       }
       sp = AllocateHeap(len+2, mtInternal);
+      assert(sp != NULL, "Unable to allocate space for new append path value");
       if (sp != NULL) {
         if (_value != NULL) {
           strcpy(sp, _value);
@@ -100,20 +94,61 @@ class SystemProperty: public CHeapObj<mtInternal> {
   }
 
   // Constructor
-  SystemProperty(const char* key, const char* value, bool writeable) {
-    if (key == NULL) {
-      _key = NULL;
-    } else {
-      _key = AllocateHeap(strlen(key)+1, mtInternal);
-      strcpy(_key, key);
-    }
+  PathString(const char* value) {
     if (value == NULL) {
       _value = NULL;
     } else {
       _value = AllocateHeap(strlen(value)+1, mtInternal);
       strcpy(_value, value);
     }
+  }
+};
+
+// Element describing System and User (-Dkey=value flags) defined property.
+//
+// An internal SystemProperty is one that has been removed in
+// jdk.internal.VM.saveAndRemoveProperties, like jdk.boot.class.path.append.
+//
+class SystemProperty : public PathString {
+ private:
+  char*           _key;
+  SystemProperty* _next;
+  bool            _internal;
+  bool            _writeable;
+  bool writeable()   { return _writeable; }
+
+ public:
+  // Accessors
+  char* value() const                 { return PathString::value(); }
+  const char* key() const             { return _key; }
+  bool internal() const               { return _internal; }
+  SystemProperty* next() const        { return _next; }
+  void set_next(SystemProperty* next) { _next = next; }
+
+  // A system property should only have its value set
+  // via an external interface if it is a writeable property.
+  // The internal, non-writeable property jdk.boot.class.path.append
+  // is the only exception to this rule.  It can be set externally
+  // via -Xbootclasspath/a or JVMTI OnLoad phase call to AddToBootstrapClassLoaderSearch.
+  // In those cases for jdk.boot.class.path.append, the base class
+  // set_value and append_value methods are called directly.
+  bool set_writeable_value(const char *value) {
+    if (writeable()) {
+      return set_value(value);
+    }
+    return false;
+  }
+
+  // Constructor
+  SystemProperty(const char* key, const char* value, bool writeable, bool internal = false) : PathString(value) {
+    if (key == NULL) {
+      _key = NULL;
+    } else {
+      _key = AllocateHeap(strlen(key)+1, mtInternal);
+      strcpy(_key, key);
+    }
     _next = NULL;
+    _internal = internal;
     _writeable = writeable;
   }
 };
@@ -273,7 +308,13 @@ class Arguments : AllStatic {
   static SystemProperty *_java_library_path;
   static SystemProperty *_java_home;
   static SystemProperty *_java_class_path;
-  static SystemProperty *_sun_boot_class_path;
+  static SystemProperty *_jdk_boot_class_path_append;
+
+  // The constructed value of the system class path after
+  // argument processing and JVMTI OnLoad additions via
+  // calls to AddToBootstrapClassLoaderSearch.  This is the
+  // final form before ClassLoader::setup_bootstrap_search().
+  static PathString *_system_boot_class_path;
 
   // temporary: to emit warning if the default ext dirs are not empty.
   // remove this variable when the warning is no longer needed.
@@ -298,7 +339,7 @@ class Arguments : AllStatic {
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
-  static uintx _min_heap_size;
+  static uintx  _min_heap_size;
 
   // -Xrun arguments
   static AgentLibraryList _libraryList;
@@ -322,6 +363,17 @@ class Arguments : AllStatic {
   static bool _java_compiler;
   static void set_java_compiler(bool arg) { _java_compiler = arg; }
   static bool java_compiler()   { return _java_compiler; }
+
+  // Capture the index location of -Xbootclasspath\a within sysclasspath.
+  // Used when setting up the bootstrap search path in order to
+  // mark the boot loader's append path observability boundary.
+  static int _bootclassloader_append_index;
+
+  // -Xpatch flag
+  static char** _patch_dirs;
+  static int _patch_dirs_count;
+  static void set_patch_dirs(char** dirs) { _patch_dirs = dirs; }
+  static void set_patch_dirs_count(int count) { _patch_dirs_count = count; }
 
   // -Xdebug flag
   static bool _xdebug_mode;
@@ -373,6 +425,9 @@ class Arguments : AllStatic {
   // System properties
   static bool add_property(const char* prop);
 
+  // Miscellaneous system property setter
+  static bool append_to_addmods_property(const char* module_name);
+
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
 
@@ -406,8 +461,8 @@ class Arguments : AllStatic {
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, SysClassPath* scp_p, bool* scp_assembly_required_p, Flag::Flags origin);
-  static jint finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_required);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, ArgumentBootClassPath* bcp_p, bool* bcp_assembly_required_p, Flag::Flags origin);
+  static jint finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_assembly_required);
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
@@ -569,6 +624,18 @@ class Arguments : AllStatic {
   static size_t min_heap_size()             { return _min_heap_size; }
   static void  set_min_heap_size(size_t v)  { _min_heap_size = v;  }
 
+  // -Xbootclasspath/a
+  static int  bootclassloader_append_index() {
+    return _bootclassloader_append_index;
+  }
+  static void set_bootclassloader_append_index(int value) {
+    _bootclassloader_append_index = value;
+  }
+
+  // -Xpatch
+  static char** patch_dirs()             { return _patch_dirs; }
+  static int patch_dirs_count()          { return _patch_dirs_count; }
+
   // -Xrun
   static AgentLibrary* libraries()          { return _libraryList.first(); }
   static bool init_libraries_at_startup()   { return !_libraryList.is_empty(); }
@@ -625,24 +692,35 @@ class Arguments : AllStatic {
   static void set_java_home(const char *value) { _java_home->set_value(value); }
   static void set_library_path(const char *value) { _java_library_path->set_value(value); }
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
-  static void set_sysclasspath(const char *value) { _sun_boot_class_path->set_value(value); }
-  static void append_sysclasspath(const char *value) { _sun_boot_class_path->append_value(value); }
+
+  // Set up of the underlying system boot class path
+  static void set_jdkbootclasspath_append();
+  static void set_sysclasspath(const char *value) {
+    _system_boot_class_path->set_value(value);
+    set_jdkbootclasspath_append();
+  }
+  static void append_sysclasspath(const char *value) {
+    _system_boot_class_path->append_value(value);
+    set_jdkbootclasspath_append();
+  }
 
   static char* get_java_home() { return _java_home->value(); }
   static char* get_dll_dir() { return _sun_boot_library_path->value(); }
-  static char* get_sysclasspath() { return _sun_boot_class_path->value(); }
+  static char* get_sysclasspath() { return _system_boot_class_path->value(); }
   static char* get_ext_dirs()        { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
 
   // Operation modi
-  static Mode mode()                { return _mode; }
+  static Mode mode()                        { return _mode; }
   static bool is_interpreter_only() { return mode() == _int; }
 
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
+
+  static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
 };
 
 bool Arguments::gc_selected() {

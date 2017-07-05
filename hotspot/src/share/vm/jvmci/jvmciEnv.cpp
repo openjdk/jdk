@@ -77,7 +77,9 @@ bool JVMCIEnv::check_klass_accessibility(KlassHandle accessing_klass, KlassHandl
     resolved_klass = ObjArrayKlass::cast(resolved_klass())->bottom_klass();
   }
   if (resolved_klass->is_instance_klass()) {
-    return Reflection::verify_class_access(accessing_klass(), resolved_klass(), true);
+    Reflection::VerifyClassAccessResults result =
+      Reflection::verify_class_access(accessing_klass(), resolved_klass(), true);
+    return result == Reflection::ACCESS_OK;
   }
   return true;
 }

@@ -48,12 +48,15 @@ chmod -R 777 ${TESTCLASSES}/ssl
 DEBUGOPTIONS=""
 export DEBUGOPTIONS
 
+EXTRAOPTIONS="-XaddExports:java.management/sun.management=ALL-UNNAMED,java.management/sun.management.jmxremote=ALL-UNNAMED"
+export EXTRAOPTIONS
+
 # Call the common generic test
 #
 echo -------------------------------------------------------------
 echo Launching test for `basename $0 .sh`
 echo -------------------------------------------------------------
-sh ${TESTSRC}/../RunTest.sh ${DEBUGOPTIONS} ${TESTCLASS} \
+sh ${TESTSRC}/../RunTest.sh ${DEBUGOPTIONS} ${EXTRAOPTIONS} ${TESTCLASS} \
     ${TESTCLASSES}/management_ssltest*.properties
 result=$?
 restoreFilePermissions `ls ${TESTSRC}/*_ssltest*.in`

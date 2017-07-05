@@ -212,22 +212,6 @@ public final class Util {
         robot.waitForIdle();
     }
 
-    public static Field getField(final Class klass, final String fieldName) {
-        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            public Field run() {
-                try {
-                    Field field = klass.getDeclaredField(fieldName);
-                    assert (field != null);
-                    field.setAccessible(true);
-                    return field;
-                } catch (SecurityException se) {
-                    throw new RuntimeException("Error: unexpected exception caught!", se);
-                } catch (NoSuchFieldException nsfe) {
-                    throw new RuntimeException("Error: unexpected exception caught!", nsfe);
-                }
-            }
-        });
-    }
 
     /*
      * Waits for a notification and for a boolean condition to become true.
@@ -461,6 +445,10 @@ public final class Util {
 
         try {
             final Class _clazz = clazz;
+            Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.reflect.Module.class);
+            // No MToolkit anymore: nothing to do about it.
+            // We may be called from non-X11 system, and this permission cannot be delegated to a test.
+            m_addExports.invoke(null, "sun.awt.X11", Util.class.getModule());
             Method m_getWMID = (Method)AccessController.doPrivileged(new PrivilegedAction() {
                     public Object run() {
                         try {
@@ -478,6 +466,10 @@ public final class Util {
                     }
                 });
             return ((Integer)m_getWMID.invoke(null, new Object[] {})).intValue();
+        } catch (ClassNotFoundException cnfe) {
+            cnfe.printStackTrace();
+        } catch (NoSuchMethodException nsme) {
+            nsme.printStackTrace();
         } catch (IllegalAccessException iae) {
             iae.printStackTrace();
         } catch (InvocationTargetException ite) {

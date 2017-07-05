@@ -33,10 +33,7 @@ import java.lang.instrument.Instrumentation;
 
 public class Agent {
     public static void premain(String options, Instrumentation ins) throws Exception {
-        String bootclasspath = System.getProperty("sun.boot.class.path");
-        System.out.println("bootclasspath: " + bootclasspath);
-
-        Class c = Class.forName("AgentSupport");
+        Class<?> c = Class.forName("AgentSupport");
         ClassLoader cl = c.getClassLoader();
         if (cl != null) {
             System.err.println("AgentSupport loaded by: " + cl);

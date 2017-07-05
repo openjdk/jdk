@@ -130,6 +130,14 @@ JAXP_TOPDIR:=@JAXP_TOPDIR@
 JAXWS_TOPDIR:=@JAXWS_TOPDIR@
 HOTSPOT_TOPDIR:=@HOTSPOT_TOPDIR@
 NASHORN_TOPDIR:=@NASHORN_TOPDIR@
+
+IMPORT_MODULES_CLASSES:=@IMPORT_MODULES_CLASSES@
+IMPORT_MODULES_CMDS:=@IMPORT_MODULES_CMDS@
+IMPORT_MODULES_LIBS:=@IMPORT_MODULES_LIBS@
+IMPORT_MODULES_CONF:=@IMPORT_MODULES_CONF@
+IMPORT_MODULES_SRC:=@IMPORT_MODULES_SRC@
+IMPORT_MODULES_MAKE:=@IMPORT_MODULES_MAKE@
+
 COPYRIGHT_YEAR:=@COPYRIGHT_YEAR@
 
 # New (JEP-223) version information
@@ -246,6 +254,7 @@ TESTMAKE_OUTPUTDIR=$(BUILD_OUTPUT)/test-make
 MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/make-support
 # This does not get overridden in a bootcycle build
 CONFIGURESUPPORT_OUTPUTDIR:=@CONFIGURESUPPORT_OUTPUTDIR@
+BUILDJDK_OUTPUTDIR=$(BUILD_OUTPUT)/buildjdk
 
 HOTSPOT_DIST=@HOTSPOT_DIST@
 
@@ -254,6 +263,9 @@ BUILD_HOTSPOT=@BUILD_HOTSPOT@
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.
 BOOT_JDK:=@BOOT_JDK@
+
+BUILD_JDK:=@BUILD_JDK@
+CREATE_BUILDJDK:=@CREATE_BUILDJDK@
 
 # When compiling Java source to be run by the boot jdk
 # use these extra flags, eg -source 6 -target 6
@@ -405,6 +417,8 @@ BUILD_LDCXX:=@FIXPATH@ @BUILD_LDCXX@
 BUILD_AS:=@FIXPATH@ @BUILD_AS@
 BUILD_AR:=@FIXPATH@ @BUILD_AR@
 BUILD_NM:=@FIXPATH@ @BUILD_NM@
+BUILD_OBJCOPY:=@BUILD_OBJCOPY@
+BUILD_STRIP:=@BUILD_STRIP@
 BUILD_SYSROOT_CFLAGS:=@BUILD_SYSROOT_CFLAGS@
 BUILD_SYSROOT_LDFLAGS:=@BUILD_SYSROOT_LDFLAGS@
 
@@ -502,12 +516,40 @@ SJAVAC_SERVER_JAVA=@FIXPATH@ @FIXPATH_DETACH_FLAG@ $(SJAVAC_SERVER_JAVA_CMD) \
 # overriding that value by using ?=.
 JAVAC_FLAGS?=@JAVAC_FLAGS@
 
+
+BUILD_JAVA_FLAGS:=-Xms64M -Xmx1100M
+BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
+
+# Use ?= as this can be overridden from bootcycle-spec.gmk
+BOOT_JDK_MODULAR ?= @BOOT_JDK_MODULAR@
+
+ifeq ($(BOOT_JDK_MODULAR), true)
+  INTERIM_OVERRIDE_MODULES_ARGS = -Xpatch:$(BUILDTOOLS_OUTPUTDIR)/override_modules
+  INTERIM_LANGTOOLS_ARGS = $(INTERIM_OVERRIDE_MODULES_ARGS)
+  JAVAC_MAIN_CLASS = -m jdk.compiler/com.sun.tools.javac.Main
+  JAVADOC_MAIN_CLASS = -m jdk.javadoc/jdk.javadoc.internal.tool.Main
+else
+  INTERIM_OVERRIDE_MODULES := java.compiler jdk.compiler \
+      jdk.jdeps jdk.javadoc jdk.rmic
+  INTERIM_OVERRIDE_MODULES_ARGS = \
+      -Xbootclasspath/p:$(call PathList, \
+          $(addprefix $(BUILDTOOLS_OUTPUTDIR)/override_modules/, \
+              $(INTERIM_OVERRIDE_MODULES)))
+  INTERIM_LANGTOOLS_ARGS = $(INTERIM_OVERRIDE_MODULES_ARGS) \
+      -cp $(BUILDTOOLS_OUTPUTDIR)/override_modules/jdk.compiler
+  JAVAC_MAIN_CLASS = com.sun.tools.javac.Main
+  JAVADOC_MAIN_CLASS = jdk.javadoc.internal.tool.Main
+endif
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
 # Use = assignment to be able to override in bootcycle-spec.gmk
-INTERIM_LANGTOOLS_JAR = $(BUILDTOOLS_OUTPUTDIR)/interim_langtools.jar
-INTERIM_LANGTOOLS_ARGS = "-Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR)" -cp $(INTERIM_LANGTOOLS_JAR)
-NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) com.sun.tools.javac.Main
-NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) jdk.javadoc.internal.tool.Main
+NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
+NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
+
+# JLink/Jmod are run using the BUILD_JDK, which is normally the jdk output dir.
+JLINK_KEEP_PACKAGED_MODULES:=@JLINK_KEEP_PACKAGED_MODULES@
+
+JLINK = @FIXPATH@ $(BUILD_JDK)/bin/jlink $(JAVA_TOOL_FLAGS_SMALL)
+JMOD = @FIXPATH@ $(BUILD_JDK)/bin/jmod $(JAVA_TOOL_FLAGS_SMALL)
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple

@@ -31,10 +31,7 @@ include RMICompilation.gmk
 
 ##########################################################################################
 
-BTRMIC_CP := $(call PathList, \
-    $(BUILDTOOLS_OUTPUTDIR)/interim_rmic_classes $(INTERIM_LANGTOOLS_JAR))
-BTRMIC_ARGS := -cp $(BTRMIC_CP)
-RMIC := $(JAVA) $(BTRMIC_ARGS) sun.rmi.rmic.Main
+RMIC := $(JAVA) $(INTERIM_OVERRIDE_MODULES_ARGS) sun.rmi.rmic.Main
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/modules
 # NOTE: If the smart javac dependency management is reintroduced, these classes risk

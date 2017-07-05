@@ -98,7 +98,7 @@ public final class SecurityConstants {
     public static final NetPermission GET_RESPONSECACHE_PERMISSION =
        new NetPermission("getResponseCache");
 
-    // java.lang.SecurityManager, sun.applet.AppletPanel, sun.misc.Launcher
+    // java.lang.SecurityManager, sun.applet.AppletPanel
     public static final RuntimePermission CREATE_CLASSLOADER_PERMISSION =
         new RuntimePermission("createClassLoader");
 

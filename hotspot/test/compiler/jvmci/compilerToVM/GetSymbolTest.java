@@ -26,17 +26,16 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib
- * @compile ../common/CompilerToVMHelper.java
+ * @library ../common/patches
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.tree
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.meta
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.GetSymbolTest
- * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
- *                              compiler.jvmci.common.testcases.SingleImplementer
- *                              compiler.jvmci.common.testcases.SingleImplementerInterface
- *                              compiler.jvmci.compilerToVM.GetSymbolTest
- *                              compiler.jvmci.common.CTVMUtilities
- *                              jdk.test.lib.Utils
- *                              jdk.test.lib.Asserts
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *     -Xbootclasspath/a:. compiler.jvmci.compilerToVM.GetSymbolTest
+ *                  compiler.jvmci.compilerToVM.GetSymbolTest
  */
 
 package compiler.jvmci.compilerToVM;

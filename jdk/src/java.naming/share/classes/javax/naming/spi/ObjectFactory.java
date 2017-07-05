@@ -46,6 +46,9 @@ import javax.naming.*;
   * An object factory must implement the {@code ObjectFactory} interface.
   * In addition, the factory class must be public and must have a
   * public constructor that accepts no parameters.
+  * Note that in cases where the factory is in a named module then it must be
+  * in a package which is exported by that module to the {@code java.naming}
+  * module.
   *<p>
   * The {@code getObjectInstance()} method of an object factory may
   * be invoked multiple times, possibly using different parameters.

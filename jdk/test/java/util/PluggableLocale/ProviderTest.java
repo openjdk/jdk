@@ -26,7 +26,6 @@
 
 import java.text.*;
 import java.util.*;
-import sun.text.resources.*;
 import sun.util.locale.provider.*;
 
 public class ProviderTest {

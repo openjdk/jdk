@@ -34,7 +34,6 @@ import java.security.spec.*;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import com.sun.crypto.provider.*;
 
 public class TestWithoutInit {
 
