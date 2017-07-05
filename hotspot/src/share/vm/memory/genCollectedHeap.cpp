@@ -447,7 +447,7 @@ void GenCollectedHeap::do_collection(bool  full,
             prepared_for_verification = true;
           }
           gclog_or_tty->print(" VerifyBeforeGC:");
-          Universe::verify(true);
+          Universe::verify();
         }
         COMPILER2_PRESENT(DerivedPointerTable::clear());
 
@@ -519,7 +519,7 @@ void GenCollectedHeap::do_collection(bool  full,
             total_collections() >= VerifyGCStartAt) {
           HandleMark hm;  // Discard invalid handles created during verification
           gclog_or_tty->print(" VerifyAfterGC:");
-          Universe::verify(false);
+          Universe::verify();
         }
 
         if (PrintGCDetails) {

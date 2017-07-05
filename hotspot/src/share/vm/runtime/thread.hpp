@@ -110,7 +110,7 @@ class Thread: public ThreadShadow {
   void*       _real_malloc_address;
  public:
   void* operator new(size_t size) { return allocate(size, true); }
-  void* operator new(size_t size, std::nothrow_t& nothrow_constant) { return allocate(size, false); }
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) { return allocate(size, false); }
   void  operator delete(void* p);
 
  protected:
