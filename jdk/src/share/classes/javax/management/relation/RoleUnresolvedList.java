@@ -25,6 +25,7 @@
 
 package javax.management.relation;
 
+import com.sun.jmx.mbeanserver.Util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -140,7 +141,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
                 checkTypeSafe(this);
             typeSafe = true;
         }
-        return (List<RoleUnresolved>) (List) this;
+        return Util.cast(this);
     }
 
     //

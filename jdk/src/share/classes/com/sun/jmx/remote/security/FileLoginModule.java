@@ -26,6 +26,7 @@
 package com.sun.jmx.remote.security;
 
 import com.sun.jmx.mbeanserver.GetPropertyAction;
+import com.sun.jmx.mbeanserver.Util;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -146,8 +147,8 @@ public class FileLoginModule implements LoginModule {
     // Initial state
     private Subject subject;
     private CallbackHandler callbackHandler;
-    private Map<String, ?> sharedState;
-    private Map options;
+    private Map<String, Object> sharedState;
+    private Map<String, ?> options;
     private String passwordFile;
     private String passwordFileDisplayName;
     private boolean userSuppliedPasswordFile;
@@ -172,7 +173,7 @@ public class FileLoginModule implements LoginModule {
 
         this.subject = subject;
         this.callbackHandler = callbackHandler;
-        this.sharedState = sharedState;
+        this.sharedState = Util.cast(sharedState);
         this.options = options;
 
         // initialize any configured options
@@ -454,8 +455,8 @@ public class FileLoginModule implements LoginModule {
         if (storePass &&
             !sharedState.containsKey(USERNAME_KEY) &&
             !sharedState.containsKey(PASSWORD_KEY)) {
-            ((Map) sharedState).put(USERNAME_KEY, username);
-            ((Map) sharedState).put(PASSWORD_KEY, password);
+            sharedState.put(USERNAME_KEY, username);
+            sharedState.put(PASSWORD_KEY, password);
         }
 
         // Create a new user principal

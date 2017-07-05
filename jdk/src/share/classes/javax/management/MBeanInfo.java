@@ -45,6 +45,17 @@ import static javax.management.ImmutableDescriptor.nonNullDescriptor;
  * management operations.  Instances of this class are immutable.
  * Subclasses may be mutable but this is not recommended.</p>
  *
+ * <p id="info-changed">Usually the {@code MBeanInfo} for any given MBean does
+ * not change over the lifetime of that MBean.  Dynamic MBeans can change their
+ * {@code MBeanInfo} and in that case it is recommended that they emit a {@link
+ * Notification} with a {@linkplain Notification#getType() type} of {@code
+ * "jmx.mbean.info.changed"} and a {@linkplain Notification#getUserData()
+ * userData} that is the new {@code MBeanInfo}.  This is not required, but
+ * provides a conventional way for clients of the MBean to discover the change.
+ * See also the <a href="Descriptor.html#immutableInfo">immutableInfo</a> and
+ * <a href="Descriptor.html#infoTimeout">infoTimeout</a> fields in the {@code
+ * MBeanInfo} {@link Descriptor}.</p>
+ *
  * <p>The contents of the <code>MBeanInfo</code> for a Dynamic MBean
  * are determined by its {@link DynamicMBean#getMBeanInfo
  * getMBeanInfo()} method.  This includes Open MBeans and Model
@@ -62,27 +73,49 @@ import static javax.management.ImmutableDescriptor.nonNullDescriptor;
  * constructors in that object;
  *
  * <li>{@link #getAttributes()} returns the list of all attributes
- * whose existence is deduced from the presence in the MBean interface
- * of a <code>get<i>Name</i></code>, <code>is<i>Name</i></code>, or
- * <code>set<i>Name</i></code> method that conforms to the conventions
+ * whose existence is deduced as follows:
+ * <ul>
+ * <li>if the Standard MBean is defined with an MBean interface,
+ * from <code>get<i>Name</i></code>, <code>is<i>Name</i></code>, or
+ * <code>set<i>Name</i></code> methods that conform to the conventions
  * for Standard MBeans;
+ * <li>if the Standard MBean is defined with the {@link MBean &#64;MBean} or
+ * {@link MXBean &#64;MXBean} annotation on a class, from methods with the
+ * {@link ManagedAttribute &#64;ManagedAttribute} annotation;
+ * </ul>
  *
- * <li>{@link #getOperations()} returns the list of all methods in
+ * <li>{@link #getOperations()} returns the list of all operations whose
+ * existence is deduced as follows:
+ * <ul>
+ * <li>if the Standard MBean is defined with an MBean interface, from methods in
  * the MBean interface that do not represent attributes;
+ * <li>if the Standard MBean is defined with the {@link MBean &#64;MBean} or
+ * {@link MXBean &#64;MXBean} annotation on a class, from methods with the
+ * {@link ManagedOperation &#64;ManagedOperation} annotation;
+ * </ul>
  *
- * <li>{@link #getNotifications()} returns an empty array if the MBean
- * does not implement the {@link NotificationBroadcaster} interface,
- * otherwise the result of calling {@link
+ * <li>{@link #getNotifications()} returns:
+ * <ul>
+ * <li>if the MBean implements the {@link NotificationBroadcaster} interface,
+ * the result of calling {@link
  * NotificationBroadcaster#getNotificationInfo()} on it;
+ * <li>otherwise, if there is a {@link NotificationInfo &#64;NotificationInfo}
+ * or {@link NotificationInfos &#64;NotificationInfos} annotation on the
+ * MBean interface or <code>&#64;MBean</code> or <code>&#64;MXBean</code>
+ * class, the array implied by those annotations;
+ * <li>otherwise an empty array;
+ * </ul>
  *
  * <li>{@link #getDescriptor()} returns a descriptor containing the contents
- * of any descriptor annotations in the MBean interface.
+ * of any descriptor annotations in the MBean interface (see
+ * {@link DescriptorFields &#64;DescriptorFields} and
+ * {@link DescriptorKey &#64;DescriptorKey}).
  *
  * </ul>
  *
  * <p>The description returned by {@link #getDescription()} and the
  * descriptions of the contained attributes and operations are determined
- * by the corresponding <!-- link here --> Description annotations if any;
+ * by the corresponding {@link Description} annotations if any;
  * otherwise their contents are not specified.</p>
  *
  * <p>The remaining details of the <code>MBeanInfo</code> for a
@@ -524,8 +557,8 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      * a WeakHashMap so that we don't prevent a class from being
      * garbage collected just because we know whether it's immutable.
      */
-    private static final Map<Class, Boolean> arrayGettersSafeMap =
-        new WeakHashMap<Class, Boolean>();
+    private static final Map<Class<?>, Boolean> arrayGettersSafeMap =
+        new WeakHashMap<Class<?>, Boolean>();
 
     /**
      * Return true if <code>subclass</code> is known to preserve the
@@ -537,7 +570,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      * This is obviously not an infallible test for immutability,
      * but it works for the public interfaces of the MBean*Info classes.
     */
-    static boolean arrayGettersSafe(Class subclass, Class immutableClass) {
+    static boolean arrayGettersSafe(Class<?> subclass, Class<?> immutableClass) {
         if (subclass == immutableClass)
             return true;
         synchronized (arrayGettersSafeMap) {

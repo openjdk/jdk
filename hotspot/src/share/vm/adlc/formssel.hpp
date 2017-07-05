@@ -397,7 +397,7 @@ public:
   void output(FILE *fp);
 
   // --------------------------- FILE *output_routines
-  void print_opcode(FILE *fp, Opcode::opcode_type desired_opcode);
+  bool print_opcode(FILE *fp, Opcode::opcode_type desired_opcode);
 };
 
 //------------------------------InsEncode--------------------------------------
@@ -779,10 +779,20 @@ public:
   const char *_greater_equal;
   const char *_less_equal;
   const char *_greater;
+  const char *_equal_format;
+  const char *_not_equal_format;
+  const char *_less_format;
+  const char *_greater_equal_format;
+  const char *_less_equal_format;
+  const char *_greater_format;
 
   // Public Methods
-  CondInterface(char *equal, char *not_equal, char *less, char *greater_equal,
-                char *less_equal, char *greater);
+  CondInterface(const char* equal,         const char* equal_format,
+                const char* not_equal,     const char* not_equal_format,
+                const char* less,          const char* less_format,
+                const char* greater_equal, const char* greater_equal_format,
+                const char* less_equal,    const char* less_equal_format,
+                const char* greater,       const char* greater_format);
   ~CondInterface();
 
   void dump();

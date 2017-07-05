@@ -589,7 +589,7 @@ public class DescriptorSupport
         int numberOfEntries = descriptorMap.size();
 
         String[] responseFields = new String[numberOfEntries];
-        Set returnedSet = descriptorMap.entrySet();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
 
         int i = 0;
 
@@ -598,8 +598,9 @@ public class DescriptorSupport
                     DescriptorSupport.class.getName(),
                     "getFields()", "Returning " + numberOfEntries + " fields");
         }
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext(); i++) {
-            Map.Entry currElement = (Map.Entry) iter.next();
+        for (Iterator<Map.Entry<String, Object>> iter = returnedSet.iterator();
+             iter.hasNext(); i++) {
+            Map.Entry<String, Object> currElement = iter.next();
 
             if (currElement == null) {
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
@@ -642,7 +643,7 @@ public class DescriptorSupport
         int numberOfEntries = descriptorMap.size();
 
         String[] responseFields = new String[numberOfEntries];
-        Set returnedSet = descriptorMap.entrySet();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
 
         int i = 0;
 
@@ -653,8 +654,9 @@ public class DescriptorSupport
                     "Returning " + numberOfEntries + " fields");
         }
 
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext(); i++) {
-            Map.Entry currElement = (Map.Entry) iter.next();
+        for (Iterator<Map.Entry<String, Object>> iter = returnedSet.iterator();
+             iter.hasNext(); i++) {
+            Map.Entry<String, Object> currElement = iter.next();
 
             if (( currElement == null ) || (currElement.getKey() == null)) {
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
@@ -700,9 +702,8 @@ public class DescriptorSupport
         }
 
         if (fieldNames == null) {
-            for (Iterator iter = descriptorMap.values().iterator();
-                 iter.hasNext(); i++)
-                responseFields[i] = iter.next();
+            for (Object value : descriptorMap.values())
+                responseFields[i++] = value;
         } else {
             for (i=0; i < fieldNames.length; i++) {
                 if ((fieldNames[i] == null) || (fieldNames[i].equals(""))) {
@@ -883,9 +884,9 @@ public class DescriptorSupport
      * not a String with value "t", "f", "true", "false". These String
      * values must not be case sensitive.
      * <LI> visibility fieldName, if defined, is null, or not a
-     * Numeric String or a not Numeric Value >= 1 and <= 4
+     * Numeric String or a not Numeric Value >= 1 and &lt;= 4
      * <LI> severity fieldName, if defined, is null, or not a Numeric
-     * String or not a Numeric Value >= 0 and <= 6<br>
+     * String or not a Numeric Value >= 0 and &lt;= 6<br>
      * <LI> persistPolicy fieldName, if defined, is null, or not one of
      * the following strings:<br>
      *   "OnUpdate", "OnTimer", "NoMoreOftenThan", "OnUnregister", "Always",
@@ -904,7 +905,7 @@ public class DescriptorSupport
         }
         // verify that the descriptor is valid, by iterating over each field...
 
-        Set returnedSet = descriptorMap.entrySet();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
 
         if (returnedSet == null) {   // null descriptor, not valid
             if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
@@ -925,9 +926,7 @@ public class DescriptorSupport
 
         // According to the descriptor type we validate the fields contained
 
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext();) {
-            Map.Entry currElement = (Map.Entry) iter.next();
-
+        for (Map.Entry<String, Object> currElement : returnedSet) {
             if (currElement != null) {
                 if (currElement.getValue() != null) {
                     // validate the field valued...
@@ -1083,10 +1082,9 @@ public class DescriptorSupport
      */
     public synchronized String toXMLString() {
         final StringBuilder buf = new StringBuilder("<Descriptor>");
-        Set returnedSet = descriptorMap.entrySet();
-        for (Iterator iter = returnedSet.iterator(); iter.hasNext(); ) {
-            final Map.Entry currElement = (Map.Entry) iter.next();
-            final String name = currElement.getKey().toString();
+        Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
+        for (Map.Entry<String, Object> currElement : returnedSet) {
+            final String name = currElement.getKey();
             Object value = currElement.getValue();
             String valueString = null;
             /* Set valueString to non-null if and only if this is a string that
@@ -1256,7 +1254,7 @@ public class DescriptorSupport
             }
             final Class<?> c =
                 Class.forName(className, false, contextClassLoader);
-            constr = c.getConstructor(new Class[] {String.class});
+            constr = c.getConstructor(new Class<?>[] {String.class});
         } catch (Exception e) {
             throw new XMLParseException(e,
                                         "Cannot parse value: <" + s + ">");

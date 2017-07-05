@@ -32,7 +32,7 @@ public class OrderClassLoaders extends ClassLoader {
         this.cl2 = cl2;
     }
 
-    protected Class findClass(String name) throws ClassNotFoundException {
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
         try {
             return super.findClass(name);
         } catch (ClassNotFoundException cne) {
