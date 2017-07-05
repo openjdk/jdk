@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,35 @@ template <MEMFLAGS F> void BasicHashtable<F>::reverse() {
   }
 }
 
+template <MEMFLAGS F> void BasicHashtable<F>::BucketUnlinkContext::free_entry(BasicHashtableEntry<F>* entry) {
+  entry->set_next(_removed_head);
+  _removed_head = entry;
+  if (_removed_tail == NULL) {
+    _removed_tail = entry;
+  }
+  _num_removed++;
+}
+
+template <MEMFLAGS F> void BasicHashtable<F>::bulk_free_entries(BucketUnlinkContext* context) {
+  if (context->_num_removed == 0) {
+    assert(context->_removed_head == NULL && context->_removed_tail == NULL,
+           "Zero entries in the unlink context, but elements linked from " PTR_FORMAT " to " PTR_FORMAT,
+           p2i(context->_removed_head), p2i(context->_removed_tail));
+    return;
+  }
+
+  // MT-safe add of the list of BasicHashTableEntrys from the context to the free list.
+  BasicHashtableEntry<F>* current = _free_list;
+  while (true) {
+    context->_removed_tail->set_next(current);
+    BasicHashtableEntry<F>* old = (BasicHashtableEntry<F>*)Atomic::cmpxchg_ptr(context->_removed_head, &_free_list, current);
+    if (old == current) {
+      break;
+    }
+    current = old;
+  }
+  Atomic::add(-context->_num_removed, &_number_of_entries);
+}
 
 // Copy the table to the shared space.
 

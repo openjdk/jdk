@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,11 +87,11 @@ Handle ModuleEntry::shared_protection_domain() {
 // Set the shared ProtectionDomain atomically
 void ModuleEntry::set_shared_protection_domain(ClassLoaderData *loader_data,
                                                Handle pd_h) {
-  // Create a JNI handle for the shared ProtectionDomain and save it atomically.
-  // If someone beats us setting the _pd cache, the created JNI handle is destroyed.
+  // Create a handle for the shared ProtectionDomain and save it atomically.
+  // If someone beats us setting the _pd cache, the created handle is destroyed.
   jobject obj = loader_data->add_handle(pd_h);
   if (Atomic::cmpxchg_ptr(obj, &_pd, NULL) != NULL) {
-    loader_data->remove_handle(obj);
+    loader_data->remove_handle_unsafe(obj);
   }
 }
 
@@ -158,10 +158,10 @@ void ModuleEntry::set_read_walk_required(ClassLoaderData* m_loader_data) {
       loader_data() != m_loader_data &&
       !m_loader_data->is_builtin_class_loader_data()) {
     _must_walk_reads = true;
-    if (log_is_enabled(Trace, modules)) {
+    if (log_is_enabled(Trace, module)) {
       ResourceMark rm;
-      log_trace(modules)("ModuleEntry::set_read_walk_required(): module %s reads list must be walked",
-                         (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
+      log_trace(module)("ModuleEntry::set_read_walk_required(): module %s reads list must be walked",
+                        (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
     }
   }
 }
@@ -180,10 +180,10 @@ void ModuleEntry::purge_reads() {
     // on the remaining live modules on the reads list.
     _must_walk_reads = false;
 
-    if (log_is_enabled(Trace, modules)) {
+    if (log_is_enabled(Trace, module)) {
       ResourceMark rm;
-      log_trace(modules)("ModuleEntry::purge_reads(): module %s reads list being walked",
-                         (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
+      log_trace(module)("ModuleEntry::purge_reads(): module %s reads list being walked",
+                        (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
     }
 
     // Go backwards because this removes entries that are dead.
@@ -236,8 +236,11 @@ ModuleEntryTable::~ModuleEntryTable() {
       m = m->next();
 
       ResourceMark rm;
-      log_debug(modules)("ModuleEntryTable: deleting module: %s", to_remove->name() != NULL ?
-                         to_remove->name()->as_C_string() : UNNAMED_MODULE);
+      if (to_remove->name() != NULL) {
+        log_info(module, unload)("unloading module %s", to_remove->name()->as_C_string());
+      }
+      log_debug(module)("ModuleEntryTable: deleting module: %s", to_remove->name() != NULL ?
+                        to_remove->name()->as_C_string() : UNNAMED_MODULE);
 
       // Clean out the C heap allocated reads list first before freeing the entry
       to_remove->delete_reads();
@@ -266,19 +269,19 @@ void ModuleEntryTable::create_unnamed_module(ClassLoaderData* loader_data) {
 
   // Each ModuleEntryTable has exactly one unnamed module
   if (loader_data->is_the_null_class_loader_data()) {
-    // For the boot loader, the java.lang.reflect.Module for the unnamed module
+    // For the boot loader, the java.lang.Module for the unnamed module
     // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
     // this point initially create the ModuleEntry for the unnamed module.
     _unnamed_module = new_entry(0, Handle(NULL), NULL, NULL, NULL, loader_data);
   } else {
-    // For all other class loaders the java.lang.reflect.Module for their
+    // For all other class loaders the java.lang.Module for their
     // corresponding unnamed module can be found in the java.lang.ClassLoader object.
     oop module = java_lang_ClassLoader::unnamedModule(loader_data->class_loader());
     _unnamed_module = new_entry(0, Handle(module), NULL, NULL, NULL, loader_data);
 
-    // Store pointer to the ModuleEntry in the unnamed module's java.lang.reflect.Module
+    // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module
     // object.
-    java_lang_reflect_Module::set_module_entry(module, _unnamed_module);
+    java_lang_Module::set_module_entry(module, _unnamed_module);
   }
 
   // Add to bucket 0, no name to hash on
@@ -315,9 +318,9 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
 
   if (ClassLoader::is_in_patch_mod_entries(name)) {
     entry->set_is_patched();
-    if (log_is_enabled(Trace, modules, patch)) {
+    if (log_is_enabled(Trace, module, patch)) {
       ResourceMark rm;
-      log_trace(modules, patch)("Marked module %s as patched from --patch-module", name->as_C_string());
+      log_trace(module, patch)("Marked module %s as patched from --patch-module", name->as_C_string());
     }
   }
 
@@ -388,27 +391,27 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
     fatal("Unable to finalize module definition for " JAVA_BASE_NAME);
   }
 
-  // Set java.lang.reflect.Module, version and location for java.base
+  // Set java.lang.Module, version and location for java.base
   ModuleEntry* jb_module = javabase_moduleEntry();
   assert(jb_module != NULL, JAVA_BASE_NAME " ModuleEntry not defined");
   jb_module->set_version(version);
   jb_module->set_location(location);
   // Once java.base's ModuleEntry _module field is set with the known
-  // java.lang.reflect.Module, java.base is considered "defined" to the VM.
+  // java.lang.Module, java.base is considered "defined" to the VM.
   jb_module->set_module(boot_loader_data->add_handle(module_handle));
 
-  // Store pointer to the ModuleEntry for java.base in the java.lang.reflect.Module object.
-  java_lang_reflect_Module::set_module_entry(module_handle(), jb_module);
+  // Store pointer to the ModuleEntry for java.base in the java.lang.Module object.
+  java_lang_Module::set_module_entry(module_handle(), jb_module);
 }
 
-// Within java.lang.Class instances there is a java.lang.reflect.Module field
-// that must be set with the defining module.  During startup, prior to java.base's
-// definition, classes needing their module field set are added to the fixup_module_list.
-// Their module field is set once java.base's java.lang.reflect.Module is known to the VM.
+// Within java.lang.Class instances there is a java.lang.Module field that must
+// be set with the defining module.  During startup, prior to java.base's definition,
+// classes needing their module field set are added to the fixup_module_list.
+// Their module field is set once java.base's java.lang.Module is known to the VM.
 void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to "
-          JAVA_BASE_NAME "'s definition, invalid java.lang.reflect.Module");
+          JAVA_BASE_NAME "'s definition, invalid java.lang.Module");
   }
 
   // Do the fixups for the basic primitive types

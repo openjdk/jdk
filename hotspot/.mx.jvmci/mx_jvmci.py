@@ -158,8 +158,8 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
         # JDK9 must be bootstrapped with a JDK8
         compliance = mx.JavaCompliance('8')
         jdk8 = mx.get_jdk(compliance.exactMatch, versionDescription=compliance.value)
-        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=external', '--disable-precompiled-headers',
-               '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk8.home]
+        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=external', '--disable-precompiled-headers', '--with-jvm-features=graal',
+               '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk8.home, '--with-jvm-features=graal']
         mx.run(cmd, cwd=_jdkSourceRoot)
     cmd = [mx.gmake_cmd(), 'CONF=' + _vm.debugLevel]
     if mx.get_opts().verbose:
@@ -175,66 +175,6 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
         mx.log('-----------------------------------------------------')
 
     mx.run(cmd, cwd=_jdkSourceRoot)
-
-    if 'images' in cmd:
-        jdkImageDir = join(jdkBuildDir, 'images', 'jdk')
-
-        # The OpenJDK build creates an empty cacerts file so copy one from
-        # the default JDK (which is assumed to be an OracleJDK)
-        srcCerts = join(mx.get_jdk(tag='default').home, 'lib', 'security', 'cacerts')
-        if not exists(srcCerts):
-            # Might be building with JDK8 which has cacerts under jre/
-            srcCerts = join(mx.get_jdk(tag='default').home, 'jre', 'lib', 'security', 'cacerts')
-        dstCerts = join(jdkImageDir, 'lib', 'security', 'cacerts')
-        if srcCerts != dstCerts:
-            shutil.copyfile(srcCerts, dstCerts)
-
-        _create_jdk_bundle(jdkBuildDir, _vm.debugLevel, jdkImageDir)
-
-def _get_jdk_bundle_arches():
-    """
-    Gets a list of names that will be the part of a JDK bundle's file name denoting the architecture.
-    The first element in the list is the canonical name. Symlinks should be created for the
-    remaining names.
-    """
-    cpu = mx.get_arch()
-    if cpu == 'amd64':
-        return ['x64', 'x86_64', 'amd64']
-    elif cpu == 'sparcv9':
-        return ['sparcv9']
-    mx.abort('Unsupported JDK bundle arch: ' + cpu)
-
-def _create_jdk_bundle(jdkBuildDir, debugLevel, jdkImageDir):
-    """
-    Creates a tar.gz JDK archive, an accompanying tar.gz.sha1 file with its
-    SHA1 signature plus symlinks to the archive for non-canonical architecture names.
-    """
-
-    arches = _get_jdk_bundle_arches()
-    jdkTgzPath = join(_suite.get_output_root(), 'jdk-bundles', 'jdk9-{}-{}-{}.tar.gz'.format(debugLevel, _get_openjdk_os(), arches[0]))
-    with mx.Archiver(jdkTgzPath, kind='tgz') as arc:
-        mx.log('Creating ' + jdkTgzPath)
-        for root, _, filenames in os.walk(jdkImageDir):
-            for name in filenames:
-                f = join(root, name)
-                arcname = 'jdk1.9.0/' + os.path.relpath(f, jdkImageDir)
-                arc.zf.add(name=f, arcname=arcname, recursive=False)
-
-    with open(jdkTgzPath + '.sha1', 'w') as fp:
-        mx.log('Creating ' + jdkTgzPath + '.sha1')
-        fp.write(mx.sha1OfFile(jdkTgzPath))
-
-    def _create_link(source, link_name):
-        if exists(link_name):
-            os.remove(link_name)
-        mx.log('Creating ' + link_name + ' -> ' + source)
-        os.symlink(source, link_name)
-
-    for arch in arches[1:]:
-        link_name = join(_suite.get_output_root(), 'jdk-bundles', 'jdk9-{}-{}-{}.tar.gz'.format(debugLevel, _get_openjdk_os(), arch))
-        jdkTgzName = os.path.basename(jdkTgzPath)
-        _create_link(jdkTgzName, link_name)
-        _create_link(jdkTgzName + '.sha1', link_name + '.sha1')
 
 def _runmultimake(args):
     """run the JDK make process for one or more configurations"""
@@ -363,9 +303,9 @@ class HotSpotProject(mx.NativeProject):
                         out.close('link')
 
                     out.open('link')
-                    out.element('name', data='generated')
+                    out.element('name', data='gensrc')
                     out.element('type', data='2')
-                    generated = join(_get_hotspot_build_dir(jvmVariant, debugLevel), 'generated')
+                    generated = join(_get_hotspot_build_dir(jvmVariant, debugLevel), 'gensrc')
                     out.element('locationURI', data=mx.get_eclipse_project_rel_locationURI(generated, eclProjectDir))
                     out.close('link')
 
@@ -680,18 +620,12 @@ _jvmci_bootclasspath_prepends = []
 def _get_hotspot_build_dir(jvmVariant=None, debugLevel=None):
     """
     Gets the directory in which a particular HotSpot configuration is built
-    (e.g., <JDK_REPO_ROOT>/build/macosx-x86_64-normal-server-release/hotspot/bsd_amd64_compiler2)
+    (e.g., <JDK_REPO_ROOT>/build/macosx-x86_64-normal-server-release/hotspot/variant-<variant>)
     """
     if jvmVariant is None:
         jvmVariant = _vm.jvmVariant
 
-    os = mx.get_os()
-    if os == 'darwin':
-        os = 'bsd'
-    arch = mx.get_arch()
-    buildname = {'client': 'compiler1', 'server': 'compiler2'}.get(jvmVariant, jvmVariant)
-
-    name = '{}_{}_{}'.format(os, arch, buildname)
+    name = 'variant-{}'.format(jvmVariant)
     return join(_get_jdk_build_dir(debugLevel=debugLevel), 'hotspot', name)
 
 class JVMCI9JDKConfig(mx.JDKConfig):
