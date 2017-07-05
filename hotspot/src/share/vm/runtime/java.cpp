@@ -42,7 +42,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/aprofiler.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"
@@ -507,16 +506,6 @@ void before_exit(JavaThread * thread) {
     if (Verbose) {
       ClassLoaderDataGraph::dump_on(gclog_or_tty);
     }
-  }
-
-
-  if (Arguments::has_alloc_profile()) {
-    HandleMark hm;
-    // Do one last collection to enumerate all the objects
-    // allocated since the last one.
-    Universe::heap()->collect(GCCause::_allocation_profiler);
-    AllocationProfiler::disengage();
-    AllocationProfiler::print(0);
   }
 
   if (PrintBytecodeHistogram) {

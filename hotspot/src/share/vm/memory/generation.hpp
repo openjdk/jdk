@@ -551,12 +551,6 @@ class Generation: public CHeapObj<mtGC> {
   // the heap.  This defaults to object_iterate() unless overridden.
   virtual void safe_object_iterate(ObjectClosure* cl);
 
-  // Iterate over all objects allocated in the generation since the last
-  // collection, calling "cl.do_object" on each.  The generation must have
-  // been initialized properly to support this function, or else this call
-  // will fail.
-  virtual void object_iterate_since_last_GC(ObjectClosure* cl) = 0;
-
   // Apply "cl->do_oop" to (the address of) all and only all the ref fields
   // in the current generation that contain pointers to objects in younger
   // generations. Objects allocated since the last "save_marks" call are
@@ -724,7 +718,6 @@ class OneContigSpaceCardGeneration: public CardGeneration {
   // Iteration
   void object_iterate(ObjectClosure* blk);
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
-  void object_iterate_since_last_GC(ObjectClosure* cl);
 
   void younger_refs_iterate(OopsInGenClosure* blk);
 

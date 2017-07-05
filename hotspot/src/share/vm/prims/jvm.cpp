@@ -1121,26 +1121,6 @@ JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
 JVM_END
 
 
-// Obsolete since 1.2 (Class.setProtectionDomain removed), although
-// still defined in core libraries as of 1.5.
-JVM_ENTRY(void, JVM_SetProtectionDomain(JNIEnv *env, jclass cls, jobject protection_domain))
-  JVMWrapper("JVM_SetProtectionDomain");
-  if (JNIHandles::resolve(cls) == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-  if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
-    // Call is ignored for primitive types
-    Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-
-    // cls won't be an array, as this called only from ClassLoader.defineClass
-    if (k->oop_is_instance()) {
-      oop pd = JNIHandles::resolve(protection_domain);
-      assert(pd == NULL || pd->is_oop(), "just checking");
-      java_lang_Class::set_protection_domain(k->java_mirror(), pd);
-    }
-  }
-JVM_END
-
 static bool is_authorized(Handle context, instanceKlassHandle klass, TRAPS) {
   // If there is a security manager and protection domain, check the access
   // in the protection domain, otherwise it is authorized.
