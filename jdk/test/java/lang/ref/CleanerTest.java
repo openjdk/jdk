@@ -28,9 +28,9 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -38,21 +38,30 @@ import jdk.internal.misc.CleanerImpl.PhantomCleanable;
 import jdk.internal.misc.CleanerImpl.WeakCleanable;
 import jdk.internal.misc.CleanerImpl.SoftCleanable;
 
+import sun.hotspot.WhiteBox;
+
 import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
 
 /*
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
+ * @build sun.hotspot.WhiteBox
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Xmx4m CleanerTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run testng/othervm
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *      -verbose:gc -Xmx4m CleanerTest
  */
 
 @Test
 public class CleanerTest {
     // A common CleaningService used by the test for notifications
     static final Cleaner COMMON = Cleaner.create();
+
+    // Access to WhiteBox utilities
+    static final WhiteBox whitebox = WhiteBox.getWhiteBox();
 
     /**
      * Test that sequences of the various actions on a Reference
@@ -265,50 +274,29 @@ public class CleanerTest {
     }
 
     /**
-     * Check a set of semaphores having been released by cleanup handlers.
+     * Check a semaphore having been released by cleanup handler.
      * Force a number of GC cycles to give the GC a chance to process
-     * all the References and for the cleanup actions to be run.
+     * the Reference and for the cleanup action to be run.
      *
-     * @param semaphore a varargs list of Semaphores
-     * @return true if all of the semaphores have at least 1 permit,
-     *      false otherwise.
+     * @param semaphore a Semaphore
+     * @return true if the semaphores has 1 permit, false otherwise.
      */
-    static boolean checkCleaned(Semaphore... semaphore) {
-        long[] cycles = new long[semaphore.length];
-        long total = 0;
-        for (int cycle = 0; cycle < 20; cycle++) {
-            for (int i = 0; i < semaphore.length; i++) {
-                long count = semaphore[i].availablePermits();
-                if (count > 0 && cycles[i] == 0) {
-                    System.out.printf(" Cleanable[%d] cleaned in cycle: %d%n", i, cycle);
-                    cycles[i] = cycle;
-                    total += 1;
+    static boolean checkCleaned(Semaphore semaphore) {
+        int cycle = 0;
+        for (; cycle < 3; cycle++) {
+            try {
+                if (semaphore.tryAcquire(10L, TimeUnit.MILLISECONDS)) {
+                    System.out.printf(" Cleanable cleaned in cycle: %d%n", cycle);
+                    return true;
                 }
-            }
-
-            if (total == semaphore.length) {
-                System.out.printf(" All cleanups done in cycle: %d, total: %d%n",
-                        cycle, total);
-                for (int i = 0; i < semaphore.length; i++) {
-                    long count = semaphore[i].availablePermits();
-                    Assert.assertEquals(count, 1,
-                            "Cleanable invoked more than once, semaphore " + i);
-                }
-                return true;          // all references freed
+            } catch (InterruptedException ie) {
+                // retry in outer loop
             }
             // Force GC
-            memoryPressure();
+            whitebox.fullGC();
         }
-        // Not all objects have been cleaned
-
-        for (int i = 0; i < semaphore.length; i++) {
-            if (cycles[i] != 0) {
-                System.out.printf(" Cleanable[%d] cleaned in cycle: %d%n", i, cycles[i]);
-            } else {
-                System.out.printf(" Cleanable[%d] not cleaned%n", i);
-            }
-        }
-
+        // Object has not been cleaned
+        System.out.printf(" Cleanable not cleaned%n");
         return false;   // Failing result
     }
 
@@ -454,24 +442,6 @@ public class CleanerTest {
         };
 
         return new CleanableCase(new SoftReference<>(obj, null), c1, s1, true);
-    }
-
-    /**
-     * MemoryPressure allocates memory to force a gc and to clear SoftReferences.
-     */
-    static void memoryPressure() {
-        SoftReference<Object> soft = new SoftReference<>(new Object(), null);
-        Vector<Object> root = new Vector<>();
-        try {
-            long free = 0;
-            while (soft.get() != null) {
-                long[] extra = new long[50_000];
-                root.addElement(extra);
-            }
-        } catch (OutOfMemoryError mem) {
-            // ignore
-            root = null;
-        }
     }
 
     /**

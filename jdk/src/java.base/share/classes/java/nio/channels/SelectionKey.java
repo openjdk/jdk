@@ -26,8 +26,6 @@
 package java.nio.channels;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.io.IOException;
-
 
 /**
  * A token representing the registration of a {@link SelectableChannel} with a
@@ -363,7 +361,7 @@ public abstract class SelectionKey {
 
     // -- Attachments --
 
-    private volatile Object attachment = null;
+    private volatile Object attachment;
 
     private static final AtomicReferenceFieldUpdater<SelectionKey,Object>
         attachmentUpdater = AtomicReferenceFieldUpdater.newUpdater(

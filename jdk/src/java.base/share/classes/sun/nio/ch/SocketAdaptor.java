@@ -26,13 +26,11 @@
 package sun.nio.ch;
 
 import java.io.*;
-import java.lang.ref.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
-import java.util.*;
 
 
 // Make a socket channel look like a socket.
@@ -55,7 +53,7 @@ public class SocketAdaptor
     private final SocketChannelImpl sc;
 
     // Timeout "option" value for reads
-    private volatile int timeout = 0;
+    private volatile int timeout;
 
     private SocketAdaptor(SocketChannelImpl sc) throws SocketException {
         super((SocketImpl) null);
