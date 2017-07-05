@@ -1,0 +1,3 @@
+<!NOTATION myNotation SYSTEM "somethingElse" >
+<!ENTITY myUnparsedEntity SYSTEM "something" NDATA myNotation >
+

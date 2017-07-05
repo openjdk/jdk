@@ -86,7 +86,7 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   HeapWord* start = mr.start();
   HeapWord* end = mr.end();
   size_t region_size_bytes = mr.byte_size();
-  uint index = hr->hrs_index();
+  uint index = hr->hrm_index();
 
   assert(!hr->continuesHumongous(), "should not be HC region");
   assert(hr == g1h->heap_region_containing(start), "sanity");
@@ -125,14 +125,6 @@ inline void ConcurrentMark::count_region(MemRegion mr,
   count_region(mr, hr, marked_bytes_array, task_card_bm);
 }
 
-// Counts the given memory region, which may be a single object, in the
-// task/worker counting data structures for the given worker id.
-inline void ConcurrentMark::count_region(MemRegion mr, uint worker_id) {
-  HeapWord* addr = mr.start();
-  HeapRegion* hr = _g1h->heap_region_containing_raw(addr);
-  count_region(mr, hr, worker_id);
-}
-
 // Counts the given object in the given task/worker counting data structures.
 inline void ConcurrentMark::count_object(oop obj,
                                          HeapRegion* hr,
@@ -140,17 +132,6 @@ inline void ConcurrentMark::count_object(oop obj,
                                          BitMap* task_card_bm) {
   MemRegion mr((HeapWord*)obj, obj->size());
   count_region(mr, hr, marked_bytes_array, task_card_bm);
-}
-
-// Counts the given object in the task/worker counting data
-// structures for the given worker id.
-inline void ConcurrentMark::count_object(oop obj,
-                                         HeapRegion* hr,
-                                         uint worker_id) {
-  size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
-  BitMap* task_card_bm = count_card_bitmap_for(worker_id);
-  HeapWord* addr = (HeapWord*) obj;
-  count_object(obj, hr, marked_bytes_array, task_card_bm);
 }
 
 // Attempts to mark the given object and, if successful, counts
@@ -182,63 +163,6 @@ inline bool ConcurrentMark::par_mark_and_count(oop obj,
     return true;
   }
   return false;
-}
-
-// Attempts to mark the given object and, if successful, counts
-// the object in the task/worker counting structures for the
-// given worker id.
-inline bool ConcurrentMark::par_mark_and_count(oop obj,
-                                               HeapRegion* hr,
-                                               uint worker_id) {
-  HeapWord* addr = (HeapWord*)obj;
-  if (_nextMarkBitMap->parMark(addr)) {
-    // Update the task specific count data for the object.
-    count_object(obj, hr, worker_id);
-    return true;
-  }
-  return false;
-}
-
-// As above - but we don't know the heap region containing the
-// object and so have to supply it.
-inline bool ConcurrentMark::par_mark_and_count(oop obj, uint worker_id) {
-  HeapWord* addr = (HeapWord*)obj;
-  HeapRegion* hr = _g1h->heap_region_containing_raw(addr);
-  return par_mark_and_count(obj, hr, worker_id);
-}
-
-// Similar to the above routine but we already know the size, in words, of
-// the object that we wish to mark/count
-inline bool ConcurrentMark::par_mark_and_count(oop obj,
-                                               size_t word_size,
-                                               uint worker_id) {
-  HeapWord* addr = (HeapWord*)obj;
-  if (_nextMarkBitMap->parMark(addr)) {
-    // Update the task specific count data for the object.
-    MemRegion mr(addr, word_size);
-    count_region(mr, worker_id);
-    return true;
-  }
-  return false;
-}
-
-// Unconditionally mark the given object, and unconditionally count
-// the object in the counting structures for worker id 0.
-// Should *not* be called from parallel code.
-inline bool ConcurrentMark::mark_and_count(oop obj, HeapRegion* hr) {
-  HeapWord* addr = (HeapWord*)obj;
-  _nextMarkBitMap->mark(addr);
-  // Update the task specific count data for the object.
-  count_object(obj, hr, 0 /* worker_id */);
-  return true;
-}
-
-// As above - but we don't have the heap region containing the
-// object, so we have to supply it.
-inline bool ConcurrentMark::mark_and_count(oop obj) {
-  HeapWord* addr = (HeapWord*)obj;
-  HeapRegion* hr = _g1h->heap_region_containing_raw(addr);
-  return mark_and_count(obj, hr);
 }
 
 inline bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {

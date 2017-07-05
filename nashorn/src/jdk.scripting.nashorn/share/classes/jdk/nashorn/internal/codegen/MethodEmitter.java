@@ -2233,9 +2233,8 @@ public class MethodEmitter implements Emitter {
     /**
      * Generate dynamic setter. Pop receiver and property from stack.
      *
-     * @param valueType the type of the value to set
-     * @param name      name of property
-     * @param flags     call site flags
+     * @param name  name of property
+     * @param flags call site flags
      */
      void dynamicSet(final String name, final int flags) {
          assert !isOptimistic(flags);
@@ -2462,7 +2461,6 @@ public class MethodEmitter implements Emitter {
      * Register line number at a label
      *
      * @param line  line number
-     * @param label label
      */
     void lineNumber(final int line) {
         if (context.getEnv()._debug_lines) {

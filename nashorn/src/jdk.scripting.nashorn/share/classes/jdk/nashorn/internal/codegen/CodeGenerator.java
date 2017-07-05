@@ -52,6 +52,7 @@ import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_APPLY_TO_CALL;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_DECLARE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_FAST_SCOPE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
@@ -302,6 +303,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return the method generator used
      */
     private MethodEmitter loadIdent(final IdentNode identNode, final TypeBounds resultBounds) {
+        checkTemporalDeadZone(identNode);
         final Symbol symbol = identNode.getSymbol();
 
         if (!symbol.isScope()) {
@@ -332,6 +334,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         return method;
+    }
+
+    // Any access to LET and CONST variables before their declaration must throw ReferenceError.
+    // This is called the temporal dead zone (TDZ). See https://gist.github.com/rwaldron/f0807a758aa03bcdd58a
+    private void checkTemporalDeadZone(final IdentNode identNode) {
+        if (identNode.isDead()) {
+            method.load(identNode.getSymbol().getName());
+            method.invoke(ScriptRuntime.THROW_REFERENCE_ERROR);
+        }
     }
 
     private boolean isRestOf() {
@@ -3216,27 +3227,34 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
         final Expression init = varNode.getInit();
+        final IdentNode identNode = varNode.getName();
+        final Symbol identSymbol = identNode.getSymbol();
+        assert identSymbol != null : "variable node " + varNode + " requires a name with a symbol";
+        final boolean needsScope = identSymbol.isScope();
 
         if (init == null) {
+            if (needsScope && varNode.isBlockScoped()) {
+                // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
+                method.loadCompilerConstant(SCOPE);
+                method.loadUndefined(Type.OBJECT);
+                final int flags = CALLSITE_SCOPE | getCallSiteFlags() | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
+                assert isFastScope(identSymbol);
+                storeFastScopeVar(identSymbol, flags);
+            }
             return false;
         }
 
         enterStatement(varNode);
-
-        final IdentNode identNode = varNode.getName();
-        final Symbol identSymbol = identNode.getSymbol();
-        assert identSymbol != null : "variable node " + varNode + " requires a name with a symbol";
-
         assert method != null;
 
-        final boolean needsScope = identSymbol.isScope();
         if (needsScope) {
             method.loadCompilerConstant(SCOPE);
         }
 
         if (needsScope) {
             loadExpressionUnbounded(init);
-            final int flags = CALLSITE_SCOPE | getCallSiteFlags();
+            // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
+            final int flags = CALLSITE_SCOPE | getCallSiteFlags() | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
             if (isFastScope(identSymbol)) {
                 storeFastScopeVar(identSymbol, flags);
             } else {
@@ -4343,6 +4361,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         protected abstract void evaluate();
 
         void store() {
+            if (target instanceof IdentNode) {
+                checkTemporalDeadZone((IdentNode)target);
+            }
             prologue();
             evaluate(); // leaves an operation of whatever the operationType was on the stack
             storeNonDiscard();

@@ -35,7 +35,9 @@ import java.net.URLConnection;
  * @summary "Tests unloading of anonymous classes."
  * @library /testlibrary /testlibrary/whitebox
  * @compile TestAnonymousClassUnloading.java
- * @run main ClassFileInstaller TestAnonymousClassUnloading sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller TestAnonymousClassUnloading
+ *                              sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation TestAnonymousClassUnloading
  */
 public class TestAnonymousClassUnloading {
