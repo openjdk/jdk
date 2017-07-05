@@ -61,6 +61,9 @@ public abstract class CompilerWhiteBoxTest {
     /** Value of {@code -XX:TieredStopAtLevel} */
     protected static final int TIERED_STOP_AT_LEVEL
             = Integer.parseInt(getVMOption("TieredStopAtLevel", "0"));
+    /** Flag for verbose output, true if {@code -Dverbose} specified */
+    protected static final boolean IS_VERBOSE
+            = System.getProperty("verbose") != null;
 
     /**
      * Returns value of VM option.
@@ -268,7 +271,9 @@ public abstract class CompilerWhiteBoxTest {
             }
             result += tmp == null ? 0 : tmp;
         }
-        System.out.println("method was invoked " + count + " times");
+        if (IS_VERBOSE) {
+            System.out.println("method was invoked " + count + " times");
+        }
         return result;
     }
 }
