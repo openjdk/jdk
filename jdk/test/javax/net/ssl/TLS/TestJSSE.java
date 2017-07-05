@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,58 +20,8 @@
  * questions.
  */
 
-import static java.lang.System.out;
 import java.security.Provider;
 import java.security.Security;
-
-/**
- * @test
- * @bug 8049429
- * @modules java.management
- *          jdk.crypto.ec/sun.security.ec
- * @compile CipherTestUtils.java JSSEClient.java JSSEServer.java
- * @summary Test that all cipher suites work in all versions and all client
- * authentication types. The way this is setup the server is stateless and
- * all checking is done on the client side.
- * @run main/othervm -DSERVER_PROTOCOL=SSLv3
- *        -DCLIENT_PROTOCOL=SSLv3
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=TLSv1
- *        -DCLIENT_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=TLSv1.1
- *        -DCLIENT_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=TLSv1.2
- *        -DCLIENT_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=SSLv3,TLSv1
- *        -DCLIENT_PROTOCOL=TLSv1 -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=SSLv3,TLSv1,TLSv1.1
- *        -DCLIENT_PROTOCOL=TLSv1.1 -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=SSLv3
- *        -DCLIENT_PROTOCOL=TLSv1.1,TLSv1.2
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
- *        TestJSSE javax.net.ssl.SSLHandshakeException
- * @run main/othervm -DSERVER_PROTOCOL=TLSv1
- *        -DCLIENT_PROTOCOL=TLSv1.1,TLSv1.2
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
- *        TestJSSE javax.net.ssl.SSLHandshakeException
- * @run main/othervm -DSERVER_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2
- *        -DCLIENT_PROTOCOL=TLSv1.2 -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1
- *        -DCLIENT_PROTOCOL=DEFAULT -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
- *        -DCLIENT_PROTOCOL=DEFAULT -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
- *        -DCLIENT_PROTOCOL=DEFAULT -Djdk.tls.client.protocols=TLSv1
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5 TestJSSE
- * @run main/othervm -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1
- *        -DCLIENT_PROTOCOL=DEFAULT -Djdk.tls.client.protocols=TLSv1.2
- *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
- *        TestJSSE javax.net.ssl.SSLHandshakeException
- *
- */
 
 public class TestJSSE {
 
@@ -82,72 +32,64 @@ public class TestJSSE {
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
-        String serverProtocol = System.getProperty("SERVER_PROTOCOL");
-        String clientProtocol = System.getProperty("CLIENT_PROTOCOL");
+        // enable debug output
+        System.setProperty("javax.net.debug", "ssl,record");
+
+        String srvProtocol = System.getProperty("SERVER_PROTOCOL");
+        String clnProtocol = System.getProperty("CLIENT_PROTOCOL");
         String cipher = System.getProperty("CIPHER");
-        if (serverProtocol == null
-                || clientProtocol == null
-                || cipher == null) {
-            throw new IllegalArgumentException("SERVER_PROTOCOL "
-                    + "or CLIENT_PROTOCOL or CIPHER is missing");
+        if (srvProtocol == null || clnProtocol == null || cipher == null) {
+            throw new IllegalArgumentException("Incorrect parameters");
         }
-        out.println("ServerProtocol =" + serverProtocol);
-        out.println("ClientProtocol =" + clientProtocol);
-        out.println("Cipher         =" + cipher);
-        int port = server(serverProtocol, cipher, args);
-        client(port, clientProtocol, cipher, args);
 
-    }
+        System.out.println("ServerProtocol = " + srvProtocol);
+        System.out.println("ClientProtocol = " + clnProtocol);
+        System.out.println("Cipher         = " + cipher);
 
-    public static void client(int testPort,
-            String testProtocols, String testCipher,
-            String... exception) throws Exception {
-        String expectedException = exception.length >= 1
-                ? exception[0] : null;
-        out.println("=========================================");
-        out.println(" Testing - https://" + LOCAL_IP + ":" + testPort);
-        out.println(" Testing - Protocol : " + testProtocols);
-        out.println(" Testing - Cipher : " + testCipher);
-        try {
-            CipherTestUtils.mainClient(new JSSEFactory(LOCAL_IP, testProtocols,
-                        testCipher, "Client JSSE"),
-                    testPort, expectedException);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        try (CipherTestUtils.Server srv = server(srvProtocol, cipher, args)) {
+            client(srv.getPort(), clnProtocol, cipher, args);
         }
     }
 
-    public static int server(String testProtocol, String testCipher,
-            String... exception) throws Exception {
+    public static void client(int port, String protocols, String cipher,
+            String... exceptions) throws Exception {
 
-        String expectedException = exception.length >= 1
-                ? exception[0] : null;
-        out.println(" This is Server");
-        out.println(" Testing Protocol: " + testProtocol);
-        out.println(" Testing Cipher: " + testCipher);
+        String expectedExcp = exceptions.length >= 1 ? exceptions[0] : null;
 
-        try {
-            int port = CipherTestUtils.mainServer(new JSSEFactory(
-                        null, testProtocol, testCipher, "Server JSSE"),
-                    expectedException);
+        System.out.println("This is client");
+        System.out.println("Testing protocol: " + protocols);
+        System.out.println("Testing cipher  : " + cipher);
 
-            out.println(" Testing Port: " + port);
-            return port;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        CipherTestUtils.mainClient(
+            new JSSEFactory(LOCAL_IP, protocols, cipher, "Client JSSE"),
+            port, expectedExcp);
+    }
+
+    public static CipherTestUtils.Server server(String protocol,
+                String cipher, String... exceptions) throws Exception {
+
+        String expectedExcp = exceptions.length >= 1 ? exceptions[0] : null;
+
+        System.out.println("This is server");
+        System.out.println("Testing protocol: " + protocol);
+        System.out.println("Testing cipher  : " + cipher);
+
+        return CipherTestUtils.mainServer(
+            new JSSEFactory(null, protocol, cipher, "Server JSSE"),
+            expectedExcp);
     }
 
     private static class JSSEFactory extends CipherTestUtils.PeerFactory {
 
-        final String testedCipherSuite, testedProtocol, testHost;
-        final String name;
+        private final String cipher;
+        private final String protocol;
+        private final String host;
+        private final String name;
 
-        JSSEFactory(String testHost, String testedProtocol,
-                String testedCipherSuite, String name) {
-            this.testedCipherSuite = testedCipherSuite;
-            this.testedProtocol = testedProtocol;
-            this.testHost = testHost;
+        JSSEFactory(String host, String protocol, String cipher, String name) {
+            this.cipher = cipher;
+            this.protocol = protocol;
+            this.host = host;
             this.name = name;
         }
 
@@ -158,26 +100,24 @@ public class TestJSSE {
 
         @Override
         String getTestedCipher() {
-            return testedCipherSuite;
+            return cipher;
         }
 
         @Override
         String getTestedProtocol() {
-            return testedProtocol;
+            return protocol;
         }
 
         @Override
-        CipherTestUtils.Client newClient(CipherTestUtils cipherTest, int testPort)
+        CipherTestUtils.Client newClient(CipherTestUtils cipherTest, int port)
                 throws Exception {
-            return new JSSEClient(cipherTest, testHost, testPort,
-                    testedProtocol, testedCipherSuite);
+            return new JSSEClient(cipherTest, host, port, protocol, cipher);
         }
 
         @Override
-        CipherTestUtils.Server newServer(CipherTestUtils cipherTest, int testPort)
+        CipherTestUtils.Server newServer(CipherTestUtils cipherTest, int port)
                 throws Exception {
-            return new JSSEServer(cipherTest, testPort,
-                    testedProtocol, testedCipherSuite);
+            return new JSSEServer(cipherTest, port, protocol, cipher);
         }
     }
 }
