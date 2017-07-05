@@ -1217,8 +1217,11 @@ typedef struct jvmtiInterface_1_ {
     jmethodID method,
     jlocation location);
 
-  /*   40 :  RESERVED */
-  void *reserved40;
+  /*   40 : Get Named Module */
+  jvmtiError (JNICALL *GetNamedModule) (jvmtiEnv* env,
+    jobject class_loader,
+    const char* package_name,
+    jobject* module_ptr);
 
   /*   41 : Set Field Access Watch */
   jvmtiError (JNICALL *SetFieldAccessWatch) (jvmtiEnv* env,
@@ -2144,6 +2147,12 @@ struct _jvmtiEnv {
   jvmtiError GetAllModules(jint* module_count_ptr,
             jobject** modules_ptr) {
     return functions->GetAllModules(this, module_count_ptr, modules_ptr);
+  }
+
+  jvmtiError GetNamedModule(jobject class_loader,
+            const char* package_name,
+            jobject* module_ptr) {
+    return functions->GetNamedModule(this, class_loader, package_name, module_ptr);
   }
 
   jvmtiError GetLoadedClasses(jint* class_count_ptr,

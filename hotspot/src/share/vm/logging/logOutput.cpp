@@ -83,3 +83,18 @@ void LogOutput::add_to_config_string(const LogTagSet* ts, LogLevelType level) {
     break;
   }
 }
+
+void LogOutput::describe(outputStream *out) {
+  out->print("%s ", name());
+  out->print_raw(config_string());
+  out->print(" ");
+  char delimiter[2] = {0};
+  for (size_t d = 0; d < LogDecorators::Count; d++) {
+    LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(d);
+    if (decorators().is_decorator(decorator)) {
+      out->print("%s%s", delimiter, LogDecorators::name(decorator));
+      *delimiter = ',';
+    }
+  }
+}
+

@@ -90,6 +90,71 @@ public class IncludeLocalesPluginTest {
             "",
         },
 
+        // Asterisk works exactly the same as above
+        {
+            "*",
+            "jdk.localedata",
+            List.of(
+                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
+            List.of(),
+            Arrays.stream(Locale.getAvailableLocales())
+                  // "(root)" for Locale.ROOT rather than ""
+                  .map(loc -> loc.equals(Locale.ROOT) ? "(root)" : loc.toString())
+                  .collect(Collectors.toList()),
+            "",
+        },
+
+        // World English/Spanish in Latin America
+        {
+            "--include-locales=en-001,es-419",
+            "jdk.localedata",
+            List.of(
+                "/jdk.localedata/sun/text/resources/ext/FormatData_en_AU.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_es.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_es_AR.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_150.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_AT.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_es.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_es_419.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_es_AR.class"),
+            List.of(
+                "/jdk.localedata/sun/text/resources/LineBreakIteratorData_th",
+                "/jdk.localedata/sun/text/resources/thai_dict",
+                "/jdk.localedata/sun/text/resources/WordBreakIteratorData_th",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorRules_th.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
+            List.of(
+                "(root)", "en", "en_US", "en_US_POSIX", "en_001", "en_150", "en_AG", "en_AI",
+                "en_AT", "en_AU", "en_BB", "en_BE", "en_BM", "en_BS", "en_BW", "en_BZ",
+                "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
+                "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
+                "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GY", "en_HK",
+                "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM", "en_KE",
+                "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG", "en_MO",
+                "en_MS", "en_MT", "en_MU", "en_MW", "en_MY", "en_NA", "en_NF", "en_NG",
+                "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG", "en_PH", "en_PK", "en_PN",
+                "en_PW", "en_RW", "en_SB", "en_SC", "en_SD", "en_SE", "en_SG", "en_SH",
+                "en_SI", "en_SL", "en_SS", "en_SX", "en_SZ", "en_TC", "en_TK", "en_TO",
+                "en_TT", "en_TV", "en_TZ", "en_UG", "en_VC", "en_VG", "en_VU", "en_WS",
+                "en_ZA", "en_ZM", "en_ZW", "es", "es_419", "es_AR", "es_BO", "es_BR",
+                "es_CL", "es_CO", "es_CR", "es_CU", "es_DO", "es_EC", "es_GT", "es_HN",
+                "es_MX", "es_NI", "es_PA", "es_PE", "es_PR", "es_PY", "es_SV", "es_US",
+                "es_UY", "es_VE"),
+            "",
+        },
+
         // All English and Japanese locales
         {
             "--include-locales=en,ja",
@@ -128,6 +193,35 @@ public class IncludeLocalesPluginTest {
             "",
         },
 
+        // All locales in Austria
+        {
+            "--include-locales=*-AT",
+            "jdk.localedata",
+            List.of(
+                "/jdk.localedata/sun/text/resources/ext/FormatData_de.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_de_AT.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_de.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_de_AT.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_150.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_AT.class"),
+            List.of(
+                "/jdk.localedata/sun/text/resources/LineBreakIteratorData_th",
+                "/jdk.localedata/sun/text/resources/thai_dict",
+                "/jdk.localedata/sun/text/resources/WordBreakIteratorData_th",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorRules_th.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
+            List.of(
+                "(root)", "en", "en_US", "en_US_POSIX", "en_001", "en_150", "en_AT",
+                "de", "de_AT"),
+            "",
+        },
+
         // All locales in India
         {
             "--include-locales=*-IN",
@@ -154,10 +248,11 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             List.of(
-                "(root)", "as_IN", "bn_IN", "bo_IN", "brx_IN", "en", /* "en_001", */
-                "en_IN", "en_US", "en_US_POSIX", "gu_IN", "hi_IN", "kn_IN", "kok_IN",
-                "ks_IN", "ml_IN", "mr_IN", "ne_IN", "or_IN", "pa_IN", "pa_IN_#Guru",
-                "ta_IN", "te_IN", "ur_IN"),
+                "(root)", "as_IN", "as", "bn_IN", "bn", "bo_IN", "bo", "brx_IN", "brx",
+                "en", "en_001", "en_IN", "en_US", "en_US_POSIX", "gu_IN", "gu", "hi_IN",
+                "hi", "kn_IN", "kn", "kok_IN", "kok", "ks_IN", "ks", "ml_IN", "ml",
+                "mr_IN", "mr", "ne_IN", "ne", "or_IN", "or", "pa_IN", "pa", "pa_IN_#Guru",
+                "pa__#Guru", "ta_IN", "ta", "te_IN", "te", "ur_IN", "ur"),
             "",
         },
 
@@ -203,12 +298,40 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_CN.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_POSIX", "zh_HK", "zh_HK_#Hans",
-                "zh_HK_#Hant"),
+                "(root)", "en", "en_US", "en_US_POSIX", "zh", "zh__#Hans", "zh__#Hant",
+                "zh_HK", "zh_HK_#Hans", "zh_HK_#Hant"),
+            "",
+        },
+
+        // Simplified Chinese
+        {
+            "--include-locales=zh-Hans",
+            "jdk.localedata",
+            List.of(
+                "/jdk.localedata/sun/text/resources/ext/FormatData_zh.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_CN.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_zh_SG.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
+            List.of(
+                "/jdk.localedata/sun/text/resources/LineBreakIteratorData_th",
+                "/jdk.localedata/sun/text/resources/thai_dict",
+                "/jdk.localedata/sun/text/resources/WordBreakIteratorData_th",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorRules_th.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
+                "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
+            List.of(
+                "(root)", "en", "en_US", "en_US_POSIX", "zh", "zh__#Hans", "zh_CN",
+                "zh_CN_#Hans", "zh_HK_#Hans", "zh_MO_#Hans", "zh_SG", "zh_SG_#Hans"),
             "",
         },
 
@@ -290,7 +413,7 @@ public class IncludeLocalesPluginTest {
             null,
             null,
             new PluginException(String.format(
-                PluginsResourceBundle.getMessage("include-locales.invalidtag"), "zh_HK"))
+                PluginsResourceBundle.getMessage("include-locales.invalidtag"), "zh_hk"))
                 .getMessage(),
         },
 
