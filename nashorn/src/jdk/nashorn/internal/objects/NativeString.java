@@ -52,6 +52,7 @@ import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -70,14 +71,17 @@ public final class NativeString extends ScriptObject {
 
     static final MethodHandle WRAPFILTER = findWrapFilter();
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeString(final CharSequence value) {
         this(value, Global.instance().getStringPrototype());
     }
 
     private NativeString(final CharSequence value, final ScriptObject proto) {
+        super(proto, $nasgenmap$);
         assert value instanceof String || value instanceof ConsString;
         this.value = value;
-        this.setProto(proto);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,8 @@ public:
     uint32_t value;
     struct {
       uint32_t sse3     : 1,
-                        : 2,
+               clmul    : 1,
+                        : 1,
                monitor  : 1,
                         : 1,
                vmx      : 1,
@@ -249,7 +250,8 @@ protected:
     CPU_AVX    = (1 << 17),
     CPU_AVX2   = (1 << 18),
     CPU_AES    = (1 << 19),
-    CPU_ERMS   = (1 << 20) // enhanced 'rep movsb/stosb' instructions
+    CPU_ERMS   = (1 << 20), // enhanced 'rep movsb/stosb' instructions
+    CPU_CLMUL  = (1 << 21) // carryless multiply for CRC
   } cpuFeatureFlags;
 
   enum {
@@ -429,6 +431,8 @@ protected:
       result |= CPU_AES;
     if (_cpuid_info.sef_cpuid7_ebx.bits.erms != 0)
       result |= CPU_ERMS;
+    if (_cpuid_info.std_cpuid1_ecx.bits.clmul != 0)
+      result |= CPU_CLMUL;
 
     // AMD features.
     if (is_amd()) {
@@ -555,6 +559,7 @@ public:
   static bool supports_tsc()      { return (_cpuFeatures & CPU_TSC)    != 0; }
   static bool supports_aes()      { return (_cpuFeatures & CPU_AES) != 0; }
   static bool supports_erms()     { return (_cpuFeatures & CPU_ERMS) != 0; }
+  static bool supports_clmul()    { return (_cpuFeatures & CPU_CLMUL) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&

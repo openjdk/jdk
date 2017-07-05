@@ -98,7 +98,7 @@ public:
     le_int32 applyInsertions();
 
 private:
-    le_bool filterGlyph(le_uint32 index) const;
+    le_bool filterGlyph(le_uint32 index);
     le_bool hasFeatureTag(le_bool matchGroup) const;
     le_bool nextInternal(le_uint32 delta = 1);
     le_bool prevInternal(le_uint32 delta = 1);
@@ -121,6 +121,14 @@ private:
     LEReferenceTo<MarkAttachClassDefinitionTable> markAttachClassDefinitionTable;
 
     GlyphIterator &operator=(const GlyphIterator &other); // forbid copying of this class
+
+    struct {
+      LEGlyphID   id;
+      le_bool     result;
+    } filterCache;
+    le_bool   filterCacheValid;
+
+    void filterResetCache(void);
 };
 
 U_NAMESPACE_END

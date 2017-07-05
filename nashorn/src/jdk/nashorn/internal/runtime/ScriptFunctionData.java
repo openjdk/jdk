@@ -216,6 +216,12 @@ public abstract class ScriptFunctionData {
         return composeGenericMethod(code.mostGeneric().getInvoker());
     }
 
+    final MethodHandle getGenericConstructor() {
+        ensureCodeGenerated();
+        ensureConstructor(code.mostGeneric());
+        return composeGenericMethod(code.mostGeneric().getConstructor());
+    }
+
     private CompiledFunction getBest(final MethodType callSiteType) {
         ensureCodeGenerated();
         return code.best(callSiteType);
@@ -535,8 +541,72 @@ public abstract class ScriptFunctionData {
         }
     }
 
+    Object construct(final ScriptFunction fn, final Object... arguments) throws Throwable {
+        final MethodHandle mh = getGenericConstructor();
+
+        final Object[]     args       = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
+
+        if (isVarArg(mh)) {
+            if (needsCallee(mh)) {
+                return mh.invokeExact(fn, args);
+            }
+            return mh.invokeExact(args);
+        }
+
+        final int paramCount = mh.type().parameterCount();
+        if (needsCallee(mh)) {
+            switch (paramCount) {
+            case 1:
+                return mh.invokeExact(fn);
+            case 2:
+                return mh.invokeExact(fn, getArg(args, 0));
+            case 3:
+                return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1));
+            case 4:
+                return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+            default:
+                return mh.invokeWithArguments(withArguments(fn, paramCount, args));
+            }
+        }
+
+        switch (paramCount) {
+        case 0:
+            return mh.invokeExact();
+        case 1:
+            return mh.invokeExact(getArg(args, 0));
+        case 2:
+            return mh.invokeExact(getArg(args, 0), getArg(args, 1));
+        case 3:
+            return mh.invokeExact(getArg(args, 0), getArg(args, 1), getArg(args, 2));
+        default:
+            return mh.invokeWithArguments(withArguments(null, paramCount, args));
+        }
+    }
+
     private static Object getArg(final Object[] args, final int i) {
         return i < args.length ? args[i] : UNDEFINED;
+    }
+
+    private static Object[] withArguments(final ScriptFunction fn, final int argCount, final Object[] args) {
+        final Object[] finalArgs = new Object[argCount];
+
+        int nextArg = 0;
+        if (fn != null) {
+            //needs callee
+            finalArgs[nextArg++] = fn;
+        }
+
+        // Don't add more args that there is argCount in the handle (including self and callee).
+        for (int i = 0; i < args.length && nextArg < argCount;) {
+            finalArgs[nextArg++] = args[i++];
+        }
+
+        // If we have fewer args than argCount, pad with undefined.
+        while (nextArg < argCount) {
+            finalArgs[nextArg++] = UNDEFINED;
+        }
+
+        return finalArgs;
     }
 
     private static Object[] withArguments(final ScriptFunction fn, final Object self, final int argCount, final Object[] args) {

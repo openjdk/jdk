@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,6 +443,9 @@ class Properties extends Hashtable<Object,Object> {
                         if (len == 0 || isCommentLine) {
                             return -1;
                         }
+                        if (precedingBackslash) {
+                            len--;
+                        }
                         return len;
                     }
                 }
@@ -510,6 +513,9 @@ class Properties extends Hashtable<Object,Object> {
                                   :inStream.read(inByteBuf);
                         inOff = 0;
                         if (inLimit <= 0) {
+                            if (precedingBackslash) {
+                                len--;
+                            }
                             return len;
                         }
                     }

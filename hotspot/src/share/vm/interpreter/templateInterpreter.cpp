@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -372,6 +372,12 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_exp  )
   method_entry(java_lang_math_pow  )
   method_entry(java_lang_ref_reference_get)
+
+  if (UseCRC32Intrinsics) {
+    method_entry(java_util_zip_CRC32_update)
+    method_entry(java_util_zip_CRC32_updateBytes)
+    method_entry(java_util_zip_CRC32_updateByteBuffer)
+  }
 
   initialize_method_handle_entries();
 

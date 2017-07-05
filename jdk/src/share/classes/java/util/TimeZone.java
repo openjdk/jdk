@@ -419,17 +419,6 @@ abstract public class TimeZone implements Serializable, Cloneable {
         return ZoneInfoFile.toCustomID(offset);
     }
 
-    private static class DisplayNames {
-        // Cache for managing display names per timezone per locale
-        // The structure is:
-        //   Map(key=id, value=SoftReference(Map(key=locale, value=displaynames)))
-        private static final Map<String, SoftReference<Map<Locale, String[]>>> CACHE =
-            new ConcurrentHashMap<>();
-
-        private DisplayNames() {
-        }
-    }
-
     private static String[] getDisplayNames(String id, Locale locale) {
         return TimeZoneNameUtility.retrieveDisplayNames(id, locale);
     }

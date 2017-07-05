@@ -195,6 +195,7 @@ public class Context {
         Krb5LoginModule krb5 = new Krb5LoginModule();
         Map<String, String> map = new HashMap<>();
 
+        map.put("isInitiator", "false");
         map.put("doNotPrompt", "true");
         map.put("useTicketCache", "false");
         map.put("useKeyTab", "true");
@@ -616,9 +617,10 @@ public class Context {
      */
     static public void handshake(final Context c, final Context s) throws Exception {
         byte[] t = new byte[0];
-        while (!c.x.isEstablished() || !s.x.isEstablished()) {
-            t = c.take(t);
-            t = s.take(t);
+        while (true) {
+            if (t != null || !c.x.isEstablished()) t = c.take(t);
+            if (t != null || !s.x.isEstablished()) t = s.take(t);
+            if (c.x.isEstablished() && s.x.isEstablished()) break;
         }
     }
 }

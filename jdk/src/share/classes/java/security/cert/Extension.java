@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public interface Extension {
      * that are encoded as an OCTET STRING. It does not include the OCTET
      * STRING tag and length.
      *
-     * @return a copy of the extension's value, or <code>null</code> if no
+     * @return a copy of the extension's value, or {@code null} if no
      *    extension value is present.
      */
     byte[] getValue();
@@ -95,7 +95,7 @@ public interface Extension {
      *
      * @param out the output stream
      * @exception IOException on encoding or output error.
-     * @exception NullPointerException if <code>out</code> is <code>null</code>.
+     * @exception NullPointerException if {@code out} is {@code null}.
      */
     void encode(OutputStream out) throws IOException;
 }

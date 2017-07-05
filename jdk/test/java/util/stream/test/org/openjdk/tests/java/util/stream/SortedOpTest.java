@@ -40,10 +40,10 @@ public class SortedOpTest extends OpTestCase {
     public void testSorted() {
         assertCountSum(countTo(0).stream().sorted(), 0, 0);
         assertCountSum(countTo(10).stream().sorted(), 10, 55);
-        assertCountSum(countTo(10).stream().sorted(cInteger.reverseOrder()), 10, 55);
+        assertCountSum(countTo(10).stream().sorted(cInteger.reversed()), 10, 55);
 
         List<Integer> to10 = countTo(10);
-        assertSorted(to10.stream().sorted(cInteger.reverseOrder()).iterator(), cInteger.reverseOrder());
+        assertSorted(to10.stream().sorted(cInteger.reversed()).iterator(), cInteger.reversed());
 
         Collections.reverse(to10);
         assertSorted(to10.stream().sorted().iterator());
@@ -51,7 +51,7 @@ public class SortedOpTest extends OpTestCase {
         Spliterator<Integer> s = to10.stream().sorted().spliterator();
         assertTrue(s.hasCharacteristics(Spliterator.SORTED));
 
-        s = to10.stream().sorted(cInteger.reverseOrder()).spliterator();
+        s = to10.stream().sorted(cInteger.reversed()).spliterator();
         assertFalse(s.hasCharacteristics(Spliterator.SORTED));
     }
 
@@ -87,8 +87,8 @@ public class SortedOpTest extends OpTestCase {
         assertSorted(result.iterator());
         assertContentsUnordered(data, result);
 
-        result = exerciseOps(data, s -> s.sorted(cInteger.reverseOrder()));
-        assertSorted(result.iterator(), cInteger.reverseOrder());
+        result = exerciseOps(data, s -> s.sorted(cInteger.reversed()));
+        assertSorted(result.iterator(), cInteger.reversed());
         assertContentsUnordered(data, result);
     }
 
@@ -104,23 +104,23 @@ public class SortedOpTest extends OpTestCase {
         assertContentsUnordered(data, result);
 
         result = withData(data)
-                .stream(s -> s.sorted(cInteger.reverseOrder()).sorted(cInteger.reverseOrder()),
+                .stream(s -> s.sorted(cInteger.reversed()).sorted(cInteger.reversed()),
                         new CollectorOps.TestParallelSizedOp<Integer>())
                 .exercise();
 
-        assertSorted(result, cInteger.reverseOrder());
+        assertSorted(result, cInteger.reversed());
         assertContentsUnordered(data, result);
 
         result = withData(data)
-                .stream(s -> s.sorted().sorted(cInteger.reverseOrder()),
+                .stream(s -> s.sorted().sorted(cInteger.reversed()),
                         new CollectorOps.TestParallelSizedOp<Integer>())
                 .exercise();
 
-        assertSorted(result, cInteger.reverseOrder());
+        assertSorted(result, cInteger.reversed());
         assertContentsUnordered(data, result);
 
         result = withData(data)
-                .stream(s -> s.sorted(cInteger.reverseOrder()).sorted(),
+                .stream(s -> s.sorted(cInteger.reversed()).sorted(),
                         new CollectorOps.TestParallelSizedOp<Integer>())
                 .exercise();
 

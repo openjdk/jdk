@@ -47,7 +47,7 @@ void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
     JavaThread* jt = (JavaThread*)thr;
     jt->satb_mark_queue().enqueue(pre_val);
   } else {
-    MutexLocker x(Shared_SATB_Q_lock);
+    MutexLockerEx x(Shared_SATB_Q_lock, Mutex::_no_safepoint_check_flag);
     JavaThread::satb_mark_queue_set().shared_satb_queue()->enqueue(pre_val);
   }
 }

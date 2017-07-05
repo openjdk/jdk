@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public interface Invocable  {
     /**
      * Used to call top-level procedures and functions defined in scripts.
      *
+     * @param name of the procedure or function to call
      * @param args Arguments to pass to the procedure or function
      * @return The value returned by the procedure or function
      *
@@ -79,6 +80,7 @@ public interface Invocable  {
      * the interpreter. The methods of the interface
      * may be implemented using the <code>invokeFunction</code> method.
      *
+     * @param <T> the type of the interface to return
      * @param clasz The <code>Class</code> object of the interface to return.
      *
      * @return An instance of requested interface - null if the requested interface is unavailable,
@@ -95,6 +97,7 @@ public interface Invocable  {
      * a scripting object compiled in the interpreter. The methods of the
      * interface may be implemented using the <code>invokeMethod</code> method.
      *
+     * @param <T> the type of the interface to return
      * @param thiz The scripting object whose member functions are used to implement the methods of the interface.
      * @param clasz The <code>Class</code> object of the interface to return.
      *

@@ -75,6 +75,7 @@ class Utils {
     static final File   TEST_CLS_DIR = new File(System.getProperty("test.classes"));
     static final String VERIFIER_DIR_NAME = "pack200-verifier";
     static final File   VerifierJar = new File(VERIFIER_DIR_NAME + JAR_FILE_EXT);
+    static final File   XCLASSES = new File("xclasses");
 
     private Utils() {} // all static
 
@@ -95,8 +96,7 @@ class Utils {
         }
         List<File> javaFileList = findFiles(srcDir, createFilter(JAVA_FILE_EXT));
         File tmpFile = File.createTempFile("javac", ".tmp");
-        File classesDir = new File("xclasses");
-        classesDir.mkdirs();
+        XCLASSES.mkdirs();
         FileOutputStream fos = null;
         PrintStream ps = null;
         try {
@@ -111,14 +111,14 @@ class Utils {
         }
 
         compiler("-d",
-                "xclasses",
+                XCLASSES.getName(),
                 "@" + tmpFile.getAbsolutePath());
 
         jar("cvfe",
             VerifierJar.getName(),
             "sun.tools.pack.verify.Main",
             "-C",
-            "xclasses",
+            XCLASSES.getName(),
             ".");
     }
 
@@ -175,6 +175,33 @@ class Utils {
         };
     }
 
+    /*
+     * clean up all the usual suspects
+     */
+    static void cleanup() throws IOException {
+        recursiveDelete(XCLASSES);
+        List<File> toDelete = new ArrayList<>();
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".out")));
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".bak")));
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".jar")));
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".pack")));
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".bnd")));
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".txt")));
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".idx")));
+        toDelete.addAll(Utils.findFiles(new File("."),
+                Utils.createFilter(".gidx")));
+        for (File f : toDelete) {
+            f.delete();
+        }
+    }
+
     static final FileFilter DIR_FILTER = new FileFilter() {
         public boolean accept(File pathname) {
             if (pathname.isDirectory()) {
@@ -199,6 +226,9 @@ class Utils {
             Files.createDirectories(parent);
         }
         Files.copy(src.toPath(), dst.toPath(), COPY_ATTRIBUTES, REPLACE_EXISTING);
+        if (dst.isDirectory() && !dst.canWrite()) {
+            dst.setWritable(true);
+        }
     }
 
     static String baseName(File file, String extension) {

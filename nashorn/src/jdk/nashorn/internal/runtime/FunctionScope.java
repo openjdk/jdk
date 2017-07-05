@@ -54,9 +54,8 @@ public class FunctionScope extends ScriptObject implements Scope {
      * @param arguments   arguments
      */
     public FunctionScope(final PropertyMap map, final ScriptObject callerScope, final Object arguments) {
-        super(map);
+        super(callerScope, map);
         this.arguments = arguments;
-        setProto(callerScope);
         setIsScope();
     }
 
@@ -67,9 +66,8 @@ public class FunctionScope extends ScriptObject implements Scope {
      * @param callerScope caller scope
      */
     public FunctionScope(final PropertyMap map, final ScriptObject callerScope) {
-        super(map);
+        super(callerScope, map);
         this.arguments = null;
-        setProto(callerScope);
         setIsScope();
     }
 

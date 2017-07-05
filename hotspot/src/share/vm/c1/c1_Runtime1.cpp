@@ -299,6 +299,7 @@ const char* Runtime1::name_for_address(address entry) {
 #ifdef TRACE_HAVE_INTRINSICS
   FUNCTION_CASE(entry, TRACE_TIME_METHOD);
 #endif
+  FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
 
 #undef FUNCTION_CASE
 

@@ -68,13 +68,13 @@ import java.io.IOException;
  *         PosixFilePermissions.toString(attrs.permissions()));
  * </pre>
  *
- * <h4> Dynamic Access </h4>
+ * <h2> Dynamic Access </h2>
  * <p> Where dynamic access to file attributes is required, the attributes
  * supported by this attribute view are as defined by {@link
  * BasicFileAttributeView} and {@link FileOwnerAttributeView}, and in addition,
  * the following attributes are supported:
  * <blockquote>
- * <table border="1" cellpadding="8">
+ * <table border="1" cellpadding="8" summary="Supported attributes">
  *   <tr>
  *     <th> Name </th>
  *     <th> Type </th>
@@ -102,7 +102,7 @@ import java.io.IOException;
  * #setPermissions setPermissions}, {@link #setOwner setOwner}, and {@link
  * #setGroup setGroup} methods respectively.
  *
- * <h4> Setting Initial Permissions </h4>
+ * <h2> Setting Initial Permissions </h2>
  * <p> Implementations supporting this attribute view may also support setting
  * the initial permissions when creating a file or directory. The
  * initial permissions are provided to the {@link Files#createFile createFile}

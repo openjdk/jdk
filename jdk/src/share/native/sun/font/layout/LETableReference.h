@@ -376,7 +376,7 @@ public:
    * @param success error status
    * @param atPtr location of reference - if NULL, will be at offset zero (i.e. downcast of parent). Otherwise must be a pointer within parent's bounds.
    */
-  LEReferenceTo(const LETableReference &parent, LEErrorCode &success, const void* atPtr)
+ inline LEReferenceTo(const LETableReference &parent, LEErrorCode &success, const void* atPtr)
     : LETableReference(parent, parent.ptrToOffset(atPtr, success), LE_UINTPTR_MAX, success) {
     verifyLength(0, LETableVarSizer<T>::getSize(), success);
     if(LE_FAILURE(success)) clear();
@@ -384,31 +384,31 @@ public:
   /**
    * ptr plus offset
    */
- LEReferenceTo(const LETableReference &parent, LEErrorCode &success, const void* atPtr, size_t offset)
+ inline LEReferenceTo(const LETableReference &parent, LEErrorCode &success, const void* atPtr, size_t offset)
     : LETableReference(parent, parent.ptrToOffset(atPtr, success)+offset, LE_UINTPTR_MAX, success) {
     verifyLength(0, LETableVarSizer<T>::getSize(), success);
     if(LE_FAILURE(success)) clear();
   }
-  LEReferenceTo(const LETableReference &parent, LEErrorCode &success, size_t offset)
+ inline LEReferenceTo(const LETableReference &parent, LEErrorCode &success, size_t offset)
     : LETableReference(parent, offset, LE_UINTPTR_MAX, success) {
     verifyLength(0, LETableVarSizer<T>::getSize(), success);
     if(LE_FAILURE(success)) clear();
   }
-  LEReferenceTo(const LETableReference &parent, LEErrorCode &success)
+ inline LEReferenceTo(const LETableReference &parent, LEErrorCode &success)
     : LETableReference(parent, 0, LE_UINTPTR_MAX, success) {
     verifyLength(0, LETableVarSizer<T>::getSize(), success);
     if(LE_FAILURE(success)) clear();
   }
- LEReferenceTo(const LEFontInstance *font, LETag tableTag, LEErrorCode &success)
+ inline LEReferenceTo(const LEFontInstance *font, LETag tableTag, LEErrorCode &success)
    : LETableReference(font, tableTag, success) {
     verifyLength(0, LETableVarSizer<T>::getSize(), success);
     if(LE_FAILURE(success)) clear();
   }
- LEReferenceTo(const le_uint8 *data, size_t length = LE_UINTPTR_MAX) : LETableReference(data, length) {}
- LEReferenceTo(const T *data, size_t length = LE_UINTPTR_MAX) : LETableReference((const le_uint8*)data, length) {}
-  LEReferenceTo() : LETableReference(NULL) {}
+ inline LEReferenceTo(const le_uint8 *data, size_t length = LE_UINTPTR_MAX) : LETableReference(data, length) {}
+ inline LEReferenceTo(const T *data, size_t length = LE_UINTPTR_MAX) : LETableReference((const le_uint8*)data, length) {}
+ inline LEReferenceTo() : LETableReference(NULL) {}
 
-  LEReferenceTo<T>& operator=(const T* other) {
+ inline LEReferenceTo<T>& operator=(const T* other) {
     setRaw(other);
     return *this;
   }

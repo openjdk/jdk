@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ package java.security;
  * <p> This interface represents a guard, which is an object that is used
  * to protect access to another object.
  *
- * <p>This interface contains a single method, <code>checkGuard</code>,
- * with a single <code>object</code> argument. <code>checkGuard</code> is
- * invoked (by the GuardedObject <code>getObject</code> method)
+ * <p>This interface contains a single method, {@code checkGuard},
+ * with a single {@code object} argument. {@code checkGuard} is
+ * invoked (by the GuardedObject {@code getObject} method)
  * to determine whether or not to allow access to the object.
  *
  * @see GuardedObject
@@ -44,7 +44,7 @@ public interface Guard {
 
     /**
      * Determines whether or not to allow access to the guarded object
-     * <code>object</code>. Returns silently if access is allowed.
+     * {@code object}. Returns silently if access is allowed.
      * Otherwise, throws a SecurityException.
      *
      * @param object the object being protected by the guard.
