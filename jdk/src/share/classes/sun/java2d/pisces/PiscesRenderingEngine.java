@@ -245,6 +245,7 @@ public class PiscesRenderingEngine extends RenderingEngine {
                              FloatToS15_16(coords[1]));
                 break;
             case PathIterator.SEG_CLOSE:
+                lsink.lineJoin();
                 lsink.close();
                 break;
             default:

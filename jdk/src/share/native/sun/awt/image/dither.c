@@ -169,6 +169,7 @@ initCubemap(int* cmap,
     int cubesize = cube_dim * cube_dim * cube_dim;
     unsigned char *useFlags;
     unsigned char *newILut = (unsigned char*)malloc(cubesize);
+    int cmap_mid = (cmap_len >> 1) + (cmap_len & 0x1);
     if (newILut) {
 
       useFlags = (unsigned char *)calloc(cubesize, 1);
@@ -188,7 +189,7 @@ initCubemap(int* cmap,
         currentState.iLUT           = newILut;
 
         currentState.rgb = (unsigned short *)
-                                malloc(256 * sizeof(unsigned short));
+                                malloc(cmap_len * sizeof(unsigned short));
         if (currentState.rgb == NULL) {
             free(newILut);
             free(useFlags);
@@ -199,7 +200,7 @@ initCubemap(int* cmap,
         }
 
         currentState.indices = (unsigned char *)
-                                malloc(256 * sizeof(unsigned char));
+                                malloc(cmap_len * sizeof(unsigned char));
         if (currentState.indices == NULL) {
             free(currentState.rgb);
             free(newILut);
@@ -210,18 +211,18 @@ initCubemap(int* cmap,
             return NULL;
         }
 
-        for (i = 0; i < 128; i++) {
+        for (i = 0; i < cmap_mid; i++) {
             unsigned short rgb;
             int pixel = cmap[i];
             rgb = (pixel & 0x00f80000) >> 9;
             rgb |= (pixel & 0x0000f800) >> 6;
             rgb |=  (pixel & 0xf8) >> 3;
             INSERTNEW(currentState, rgb, i);
-            pixel = cmap[255-i];
+            pixel = cmap[cmap_len - i - 1];
             rgb = (pixel & 0x00f80000) >> 9;
             rgb |= (pixel & 0x0000f800) >> 6;
             rgb |=  (pixel & 0xf8) >> 3;
-            INSERTNEW(currentState, rgb, 255-i);
+            INSERTNEW(currentState, rgb, cmap_len - i - 1);
         }
 
         if (!recurseLevel(&currentState)) {

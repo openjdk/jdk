@@ -228,31 +228,31 @@ public class JPEGImageReader extends ImageReader {
             (BufferedImage.TYPE_BYTE_GRAY);
         defaultTypes[JPEG.JCS_RGB] =
             ImageTypeSpecifier.createInterleaved
-            (JPEG.sRGB,
+            (JPEG.JCS.sRGB,
              JPEG.bOffsRGB,
              DataBuffer.TYPE_BYTE,
              false,
              false);
         defaultTypes[JPEG.JCS_RGBA] =
             ImageTypeSpecifier.createPacked
-            (JPEG.sRGB,
+            (JPEG.JCS.sRGB,
              0xff000000,
              0x00ff0000,
              0x0000ff00,
              0x000000ff,
              DataBuffer.TYPE_INT,
              false);
-        if (JPEG.YCC != null) {
+        if (JPEG.JCS.YCC != null) {
             defaultTypes[JPEG.JCS_YCC] =
                 ImageTypeSpecifier.createInterleaved
-                (JPEG.YCC,
+                (JPEG.JCS.YCC,
                  JPEG.bandOffsets[2],
                  DataBuffer.TYPE_BYTE,
                  false,
                  false);
             defaultTypes[JPEG.JCS_YCCA] =
                 ImageTypeSpecifier.createInterleaved
-                (JPEG.YCC,
+                (JPEG.JCS.YCC,
                  JPEG.bandOffsets[3],
                  DataBuffer.TYPE_BYTE,
                  true,
@@ -774,7 +774,7 @@ public class JPEGImageReader extends ImageReader {
         case JPEG.JCS_RGB:
             list.add(raw);
             list.add(getImageType(JPEG.JCS_GRAYSCALE));
-            if (JPEG.YCC != null) {
+            if (JPEG.JCS.YCC != null) {
                 list.add(getImageType(JPEG.JCS_YCC));
             }
             break;
@@ -811,7 +811,7 @@ public class JPEGImageReader extends ImageReader {
             }
 
             list.add(getImageType(JPEG.JCS_GRAYSCALE));
-            if (JPEG.YCC != null) { // Might be null if PYCC.pf not installed
+            if (JPEG.JCS.YCC != null) { // Might be null if PYCC.pf not installed
                 list.add(getImageType(JPEG.JCS_YCC));
             }
             break;
@@ -893,7 +893,7 @@ public class JPEGImageReader extends ImageReader {
                        (!cs.isCS_sRGB()) &&
                        (cm.getNumComponents() == numComponents)) {
                 // Target isn't sRGB, so convert from sRGB to the target
-                convert = new ColorConvertOp(JPEG.sRGB, cs, null);
+                convert = new ColorConvertOp(JPEG.JCS.sRGB, cs, null);
             } else if (csType != ColorSpace.TYPE_RGB) {
                 throw new IIOException("Incompatible color conversion");
             }
@@ -906,18 +906,18 @@ public class JPEGImageReader extends ImageReader {
             }
             break;
         case JPEG.JCS_YCC:
-            if (JPEG.YCC == null) { // We can't do YCC at all
+            if (JPEG.JCS.YCC == null) { // We can't do YCC at all
                 throw new IIOException("Incompatible color conversion");
             }
-            if ((cs != JPEG.YCC) &&
+            if ((cs != JPEG.JCS.YCC) &&
                 (cm.getNumComponents() == numComponents)) {
-                convert = new ColorConvertOp(JPEG.YCC, cs, null);
+                convert = new ColorConvertOp(JPEG.JCS.YCC, cs, null);
             }
             break;
         case JPEG.JCS_YCCA:
             // No conversions available; image must be YCCA
-            if ((JPEG.YCC == null) || // We can't do YCC at all
-                (cs != JPEG.YCC) ||
+            if ((JPEG.JCS.YCC == null) || // We can't do YCC at all
+                (cs != JPEG.JCS.YCC) ||
                 (cm.getNumComponents() != numComponents)) {
                 throw new IIOException("Incompatible color conversion");
             }

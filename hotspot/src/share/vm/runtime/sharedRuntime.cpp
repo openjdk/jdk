@@ -675,48 +675,6 @@ JRT_ENTRY(void, SharedRuntime::yield_all(JavaThread* thread, int attempts))
 JRT_END
 
 
-// ---------------------------------------------------------------------------------------------------------
-// Non-product code
-#ifndef PRODUCT
-
-void SharedRuntime::verify_caller_frame(frame caller_frame, methodHandle callee_method) {
-  ResourceMark rm;
-  assert (caller_frame.is_interpreted_frame(), "sanity check");
-  assert (callee_method->has_compiled_code(), "callee must be compiled");
-  methodHandle caller_method (Thread::current(), caller_frame.interpreter_frame_method());
-  jint bci = caller_frame.interpreter_frame_bci();
-  methodHandle method = find_callee_method_inside_interpreter(caller_frame, caller_method, bci);
-  assert (callee_method == method, "incorrect method");
-}
-
-methodHandle SharedRuntime::find_callee_method_inside_interpreter(frame caller_frame, methodHandle caller_method, int bci) {
-  EXCEPTION_MARK;
-  Bytecode_invoke* bytecode = Bytecode_invoke_at(caller_method, bci);
-  methodHandle staticCallee = bytecode->static_target(CATCH); // Non-product code
-
-  bytecode = Bytecode_invoke_at(caller_method, bci);
-  int bytecode_index = bytecode->index();
-  Bytecodes::Code bc = bytecode->adjusted_invoke_code();
-
-  Handle receiver;
-  if (bc == Bytecodes::_invokeinterface ||
-      bc == Bytecodes::_invokevirtual ||
-      bc == Bytecodes::_invokespecial) {
-    symbolHandle signature (THREAD, staticCallee->signature());
-    receiver = Handle(THREAD, retrieve_receiver(signature, caller_frame));
-  } else {
-    receiver = Handle();
-  }
-  CallInfo result;
-  constantPoolHandle constants (THREAD, caller_method->constants());
-  LinkResolver::resolve_invoke(result, receiver, constants, bytecode_index, bc, CATCH); // Non-product code
-  methodHandle calleeMethod = result.selected_method();
-  return calleeMethod;
-}
-
-#endif  // PRODUCT
-
-
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
   assert(obj->is_oop(), "must be a valid oop");
   assert(obj->klass()->klass_part()->has_finalizer(), "shouldn't be here otherwise");

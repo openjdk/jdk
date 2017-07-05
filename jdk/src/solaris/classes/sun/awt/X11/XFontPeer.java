@@ -27,9 +27,6 @@ package sun.awt.X11;
 import sun.awt.PlatformFont;
 import java.awt.GraphicsEnvironment;
 
-/* FIX ME */
-import sun.awt.motif.MFontConfiguration;
-
 public class XFontPeer extends PlatformFont {
 
     /*
@@ -51,10 +48,6 @@ public class XFontPeer extends PlatformFont {
 
     public XFontPeer(String name, int style){
         super(name, style);
-
-        if (fontConfig != null){
-            xfsname = ((MFontConfiguration) fontConfig).getMotifFontSet(familyName, style);
-        }
     }
 
     protected char getMissingGlyphCharacter() {

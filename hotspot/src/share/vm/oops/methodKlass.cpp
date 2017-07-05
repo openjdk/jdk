@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,9 +247,14 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
   st->print_cr(" - size of params:    %d",   m->size_of_parameters());
   st->print_cr(" - method size:       %d",   m->method_size());
   st->print_cr(" - vtable index:      %d",   m->_vtable_index);
+  st->print_cr(" - i2i entry:         " INTPTR_FORMAT, m->interpreter_entry());
+  st->print_cr(" - adapter:           " INTPTR_FORMAT, m->adapter());
+  st->print_cr(" - compiled entry     " INTPTR_FORMAT, m->from_compiled_entry());
   st->print_cr(" - code size:         %d",   m->code_size());
-  st->print_cr(" - code start:        " INTPTR_FORMAT, m->code_base());
-  st->print_cr(" - code end (excl):   " INTPTR_FORMAT, m->code_base() + m->code_size());
+  if (m->code_size() != 0) {
+    st->print_cr(" - code start:        " INTPTR_FORMAT, m->code_base());
+    st->print_cr(" - code end (excl):   " INTPTR_FORMAT, m->code_base() + m->code_size());
+  }
   if (m->method_data() != NULL) {
     st->print_cr(" - method data:       " INTPTR_FORMAT, (address)m->method_data());
   }
@@ -292,6 +297,10 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
     st->print   (" - compiled code: ");
     m->code()->print_value_on(st);
     st->cr();
+  }
+  if (m->is_native()) {
+    st->print_cr(" - native function:   " INTPTR_FORMAT, m->native_function());
+    st->print_cr(" - signature handler: " INTPTR_FORMAT, m->signature_handler());
   }
 }
 

@@ -817,21 +817,6 @@ class StubGenerator: public StubCodeGenerator {
   Label _atomic_add_stub;  // called from other stubs
 
 
-  // Support for void OrderAccess::fence().
-  //
-  address generate_fence() {
-    StubCodeMark mark(this, "StubRoutines", "fence");
-    address start = __ pc();
-
-    __ membar(Assembler::Membar_mask_bits(Assembler::LoadLoad  | Assembler::LoadStore |
-                                          Assembler::StoreLoad | Assembler::StoreStore));
-    __ retl(false);
-    __ delayed()->nop();
-
-    return start;
-  }
-
-
   //------------------------------------------------------------------------------------------------------------------------
   // The following routine generates a subroutine to throw an asynchronous
   // UnknownError when an unsafe access gets a fault that could not be
@@ -2861,7 +2846,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_cmpxchg_ptr_entry  = StubRoutines::_atomic_cmpxchg_entry;
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
     StubRoutines::_atomic_add_ptr_entry      = StubRoutines::_atomic_add_entry;
-    StubRoutines::_fence_entry               = generate_fence();
 #endif  // COMPILER2 !=> _LP64
   }
 
