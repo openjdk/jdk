@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug     4530538
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @summary Basic unit test of
  *          RuntimeMXBean.getObjectPendingFinalizationCount()
@@ -50,10 +50,10 @@ public class Pending {
     private static void printFinalizerInstanceCount() {
         if (!trace) return;
 
-        int count = sun.misc.VM.getFinalRefCount();
+        int count = jdk.internal.misc.VM.getFinalRefCount();
         System.out.println(INDENT + "Finalizable object Count = " + count);
 
-        count = sun.misc.VM.getPeakFinalRefCount();
+        count = jdk.internal.misc.VM.getPeakFinalRefCount();
         System.out.println(INDENT + "Peak Finalizable object Count = " + count);
     }
 

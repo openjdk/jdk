@@ -102,7 +102,7 @@ class ClassLinker extends BeanLinker {
         setPropertyGetter("static", FOR_CLASS, ValidationType.EXACT_CLASS);
     }
 
-    private static final MethodHandle FOR_CLASS = new Lookup(MethodHandles.lookup()).findStatic(StaticClass.class,
+    private static final MethodHandle FOR_CLASS = Lookup.PUBLIC.findStatic(StaticClass.class,
             "forClass", MethodType.methodType(StaticClass.class, Class.class));
 
 }

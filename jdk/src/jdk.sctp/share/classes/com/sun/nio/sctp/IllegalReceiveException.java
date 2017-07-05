@@ -31,7 +31,6 @@ package com.sun.nio.sctp;
  *
  * @since 1.7
  */
-@jdk.Exported
 public class IllegalReceiveException extends IllegalStateException {
     private static final long serialVersionUID = 2296619040988576224L;
 

@@ -156,12 +156,12 @@ public class StandardCharsets extends CharsetProvider {
 
     private boolean initialized = false;
 
-    /*   provider the sun.nio.cs.map property fir sjis/ms932 mapping hack 
+    /*   provider the sun.nio.cs.map property fir sjis/ms932 mapping hack
      */
     private void init() {
         if (initialized)
             return;
-        if (!sun.misc.VM.isBooted())
+        if (!jdk.internal.misc.VM.isBooted())
             return;
         initialized = true;
 

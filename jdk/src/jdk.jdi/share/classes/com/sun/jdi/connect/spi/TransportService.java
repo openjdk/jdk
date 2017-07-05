@@ -77,7 +77,6 @@ import com.sun.jdi.connect.TransportTimeoutException;
  * @since 1.5
  */
 
-@jdk.Exported
 public abstract class TransportService {
 
     /**
@@ -97,7 +96,6 @@ public abstract class TransportService {
     /**
      * The transport service capabilities.
      */
-    @jdk.Exported
     public static abstract class Capabilities {
 
         /**
@@ -231,7 +229,6 @@ public abstract class TransportService {
      * #stopListening stopListening} to stop the transport
      * service from listening on an address.
      */
-    @jdk.Exported
     public static abstract class ListenKey {
 
         /**

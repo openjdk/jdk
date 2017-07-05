@@ -397,7 +397,7 @@ public class FileCredentialsCache extends CredentialsCache
          */
 
         if (osname != null && !osname.startsWith("Windows")) {
-            long uid = sun.misc.VM.getuid();
+            long uid = jdk.internal.misc.VM.getuid();
             if (uid != -1) {
                 name = File.separator + "tmp" +
                         File.separator + stdCacheNameComponent + "_" + uid;

@@ -262,7 +262,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * if only code from the null class loader is on the stack.
      */
     private static ClassLoader latestUserDefinedLoader() {
-        return sun.misc.VM.latestUserDefinedLoader();
+        return jdk.internal.misc.VM.latestUserDefinedLoader();
     }
 
     /**

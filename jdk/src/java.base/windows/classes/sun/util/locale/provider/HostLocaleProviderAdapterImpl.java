@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,10 @@ import java.text.spi.NumberFormatProvider;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Currency;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle.Control;
 import java.util.Set;
 import java.util.TimeZone;
@@ -47,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import sun.util.spi.CalendarProvider;
@@ -81,6 +84,9 @@ public class HostLocaleProviderAdapterImpl {
     private static final int DN_LOCALE_REGION   = 4;
     private static final int DN_LOCALE_VARIANT  = 5;
 
+    // Windows Calendar IDs
+    private static final int CAL_JAPAN  = 3;
+
     // Native Calendar ID to LDML calendar type map
     private static final String[] calIDToLDML = {
         "",
@@ -95,7 +101,8 @@ public class HostLocaleProviderAdapterImpl {
         "gregory_fr",
         "gregory_ar",
         "gregory_en",
-        "gregory_fr",
+        "gregory_fr", "", "", "", "", "", "", "", "", "", "",
+        "islamic-umalqura",
     };
 
     // Caches
@@ -362,6 +369,50 @@ public class HostLocaleProviderAdapterImpl {
         };
     }
 
+    public static CalendarNameProvider getCalendarNameProvider() {
+        return new CalendarNameProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return getSupportedCalendarLocales();
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return isSupportedCalendarLocale(locale);
+            }
+
+            @Override
+            public String getDisplayName(String calendarType, int field,
+                int value, int style, Locale locale) {
+                String[] names = getCalendarDisplayStrings(removeExtensions(locale).toLanguageTag(),
+                            getCalendarIDFromLDMLType(calendarType), field, style);
+                if (names != null && value >= 0 && value < names.length) {
+                    return names[value];
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public Map<String, Integer> getDisplayNames(String calendarType,
+                int field, int style, Locale locale) {
+                Map<String, Integer> map = null;
+                String[] names = getCalendarDisplayStrings(removeExtensions(locale).toLanguageTag(),
+                            getCalendarIDFromLDMLType(calendarType), field, style);
+                if (names != null) {
+                    map = new HashMap<>();
+                    for (int value = 0; value < names.length; value++) {
+                        if (names[value] != null) {
+                            map.put(names[value], value);
+                        }
+                    }
+                    map = map.isEmpty() ? null : map;
+                }
+                return map;
+            }
+        };
+    }
+
     public static CalendarProvider getCalendarProvider() {
         return new CalendarProvider() {
             @Override
@@ -496,15 +547,7 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static boolean isSupportedCalendarLocale(Locale locale) {
-        Locale base = locale;
-
-        if (base.hasExtensions() || base.getVariant() != "") {
-            // strip off extensions and variant.
-            base = new Locale.Builder()
-                            .setLocale(locale)
-                            .clearExtensions()
-                            .build();
-        }
+        Locale base = stripVariantAndExtensions(locale);
 
         if (!supportedLocaleSet.contains(base)) {
             return false;
@@ -569,11 +612,23 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static boolean isJapaneseCalendar() {
-        return getCalendarID("ja-JP") == 3; // 3: CAL_JAPAN
+        return getCalendarID("ja-JP") == CAL_JAPAN;
+    }
+
+    private static Locale stripVariantAndExtensions(Locale locale) {
+        if (locale.hasExtensions() || locale.getVariant() != "") {
+            // strip off extensions and variant.
+            locale = new Locale.Builder()
+                            .setLocale(locale)
+                            .clearExtensions()
+                            .build();
+        }
+
+        return locale;
     }
 
     private static Locale getCalendarLocale(Locale locale) {
-        int calid = getCalendarID(locale.toLanguageTag());
+        int calid = getCalendarID(stripVariantAndExtensions(locale).toLanguageTag());
         if (calid > 0 && calid < calIDToLDML.length) {
             Locale.Builder lb = new Locale.Builder();
             String[] caltype = calIDToLDML[calid].split("_");
@@ -587,6 +642,15 @@ public class HostLocaleProviderAdapterImpl {
         }
 
         return locale;
+    }
+
+    private static int getCalendarIDFromLDMLType(String ldmlType) {
+        for (int i = 0; i < calIDToLDML.length; i++) {
+            if (calIDToLDML[i].startsWith(ldmlType)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static Locale getNumberLocale(Locale src) {
@@ -638,6 +702,9 @@ public class HostLocaleProviderAdapterImpl {
 
     // For CalendarDataProvider
     private static native int getCalendarDataValue(String langTag, int type);
+
+    // For CalendarNameProvider
+    private static native String[] getCalendarDisplayStrings(String langTag, int calid, int field, int style);
 
     // For Locale/CurrencyNameProvider
     private static native String getDisplayString(String langTag, int key, String value);
