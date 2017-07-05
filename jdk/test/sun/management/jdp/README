@@ -1,32 +1,4 @@
-The following test were contributed by dmitry.samersoff@oracle.com and will be ported in the near future:
-JdpClient.java
-JdpDoSomething.java  
-JdpTest.sh  
-JdpUnitTest.java
-
-
-JdpTest.sh:
--------------------------------------
-test_01 - basic test, check if JDP packet assembler and other
-          parts of JDP is not broken
-
-test_02 - test if JDP starts with custom parameters. (disabled)
-
-test_03 - test if jcmd is able to start jdp with
-          custom parameters (disabled)
-
-test_04 - test if JDP starts with default parameters (disabled)
-
-test_05 - test if jcmd is able to start jdp with default
-          parameters (disabled)
-
-Only test_01 is enabled at the moment.
-
-JdpUnitTest.java: contains unit tests used under development.
-
-
-==========================================================================
-The other Java-based tests in this folder are contributed by alex.schenkman@oracle.com
+The tests in this folder are contributed by alex.schenkman@oracle.com
 
 There are three Jdp test cases in this folder:
  1) Jdp is turned off.

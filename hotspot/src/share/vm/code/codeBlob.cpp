@@ -230,7 +230,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
 }
 
 void* BufferBlob::operator new(size_t s, unsigned size, bool is_critical) throw() {
-  return CodeCache::allocate(size, CodeBlobType::NonMethod, is_critical);
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod, is_critical);
 }
 
 void BufferBlob::free(BufferBlob *blob) {
@@ -336,14 +336,14 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
 
 
 void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
-  void* p = CodeCache::allocate(size, CodeBlobType::NonMethod, true);
+  void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod, true);
   if (!p) fatal("Initial size of CodeCache is too small");
   return p;
 }
 
 // operator new shared by all singletons:
 void* SingletonBlob::operator new(size_t s, unsigned size) throw() {
-  void* p = CodeCache::allocate(size, CodeBlobType::NonMethod, true);
+  void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod, true);
   if (!p) fatal("Initial size of CodeCache is too small");
   return p;
 }

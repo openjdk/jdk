@@ -38,17 +38,18 @@
 
 typedef enum {
   _t_compile,
-  _t_setup,
-  _t_buildIR,
-  _t_optimize_blocks,
-  _t_optimize_null_checks,
-  _t_rangeCheckElimination,
-  _t_emit_lir,
-  _t_linearScan,
-  _t_lirGeneration,
-  _t_lir_schedule,
-  _t_codeemit,
-  _t_codeinstall,
+    _t_setup,
+    _t_buildIR,
+      _t_hir_parse,
+      _t_gvn,
+      _t_optimize_blocks,
+      _t_optimize_null_checks,
+      _t_rangeCheckElimination,
+    _t_emit_lir,
+      _t_linearScan,
+      _t_lirGeneration,
+    _t_codeemit,
+    _t_codeinstall,
   max_phase_timers
 } TimerName;
 
@@ -56,13 +57,14 @@ static const char * timer_name[] = {
   "compile",
   "setup",
   "buildIR",
+  "parse_hir",
+  "gvn",
   "optimize_blocks",
   "optimize_null_checks",
   "rangeCheckElimination",
   "emit_lir",
   "linearScan",
   "lirGeneration",
-  "lir_schedule",
   "codeemit",
   "codeinstall"
 };
@@ -144,7 +146,10 @@ void Compilation::build_hir() {
     log->stamp();
     log->end_head();
   }
-  _hir = new IR(this, method(), osr_bci());
+  {
+    PhaseTraceTime timeit(_t_hir_parse);
+    _hir = new IR(this, method(), osr_bci());
+  }
   if (log)  log->done("parse");
   if (!_hir->is_valid()) {
     bailout("invalid parsing");
@@ -189,6 +194,7 @@ void Compilation::build_hir() {
 
   if (UseGlobalValueNumbering) {
     // No resource mark here! LoopInvariantCodeMotion can allocate ValueStack objects.
+    PhaseTraceTime timeit(_t_gvn);
     int instructions = Instruction::number_of_instructions();
     GlobalValueNumbering gvn(_hir);
     assert(instructions == Instruction::number_of_instructions(),
@@ -419,8 +425,12 @@ void Compilation::install_code(int frame_size) {
 
 
 void Compilation::compile_method() {
-  // setup compilation
-  initialize();
+  {
+    PhaseTraceTime timeit(_t_setup);
+
+    // setup compilation
+    initialize();
+  }
 
   if (!method()->can_be_compiled()) {
     // Prevent race condition 6328518.
@@ -615,24 +625,54 @@ ciKlass* Compilation::cha_exact_type(ciType* type) {
 }
 
 void Compilation::print_timers() {
-  // tty->print_cr("    Native methods         : %6.3f s, Average : %2.3f", CompileBroker::_t_native_compilation.seconds(), CompileBroker::_t_native_compilation.seconds() / CompileBroker::_total_native_compile_count);
-  float total = timers[_t_setup].seconds() + timers[_t_buildIR].seconds() + timers[_t_emit_lir].seconds() + timers[_t_lir_schedule].seconds() + timers[_t_codeemit].seconds() + timers[_t_codeinstall].seconds();
+  tty->print_cr("    C1 Compile Time:      %7.3f s",      timers[_t_compile].seconds());
+  tty->print_cr("       Setup time:          %7.3f s",    timers[_t_setup].seconds());
 
+  {
+    tty->print_cr("       Build HIR:           %7.3f s",    timers[_t_buildIR].seconds());
+    tty->print_cr("         Parse:               %7.3f s", timers[_t_hir_parse].seconds());
+    tty->print_cr("         Optimize blocks:     %7.3f s", timers[_t_optimize_blocks].seconds());
+    tty->print_cr("         GVN:                 %7.3f s", timers[_t_gvn].seconds());
+    tty->print_cr("         Null checks elim:    %7.3f s", timers[_t_optimize_null_checks].seconds());
+    tty->print_cr("         Range checks elim:   %7.3f s", timers[_t_rangeCheckElimination].seconds());
 
-  tty->print_cr("    Detailed C1 Timings");
-  tty->print_cr("       Setup time:        %6.3f s (%4.1f%%)",    timers[_t_setup].seconds(),           (timers[_t_setup].seconds() / total) * 100.0);
-  tty->print_cr("       Build IR:          %6.3f s (%4.1f%%)",    timers[_t_buildIR].seconds(),         (timers[_t_buildIR].seconds() / total) * 100.0);
-  float t_optimizeIR = timers[_t_optimize_blocks].seconds() + timers[_t_optimize_null_checks].seconds();
-  tty->print_cr("         Optimize:           %6.3f s (%4.1f%%)", t_optimizeIR,                         (t_optimizeIR / total) * 100.0);
-  tty->print_cr("         RCE:                %6.3f s (%4.1f%%)", timers[_t_rangeCheckElimination].seconds(),      (timers[_t_rangeCheckElimination].seconds() / total) * 100.0);
-  tty->print_cr("       Emit LIR:          %6.3f s (%4.1f%%)",    timers[_t_emit_lir].seconds(),        (timers[_t_emit_lir].seconds() / total) * 100.0);
-  tty->print_cr("         LIR Gen:          %6.3f s (%4.1f%%)",   timers[_t_lirGeneration].seconds(), (timers[_t_lirGeneration].seconds() / total) * 100.0);
-  tty->print_cr("         Linear Scan:      %6.3f s (%4.1f%%)",   timers[_t_linearScan].seconds(),    (timers[_t_linearScan].seconds() / total) * 100.0);
-  NOT_PRODUCT(LinearScan::print_timers(timers[_t_linearScan].seconds()));
-  tty->print_cr("       LIR Schedule:      %6.3f s (%4.1f%%)",    timers[_t_lir_schedule].seconds(),  (timers[_t_lir_schedule].seconds() / total) * 100.0);
-  tty->print_cr("       Code Emission:     %6.3f s (%4.1f%%)",    timers[_t_codeemit].seconds(),        (timers[_t_codeemit].seconds() / total) * 100.0);
-  tty->print_cr("       Code Installation: %6.3f s (%4.1f%%)",    timers[_t_codeinstall].seconds(),     (timers[_t_codeinstall].seconds() / total) * 100.0);
-  tty->print_cr("       Instruction Nodes: %6d nodes",    totalInstructionNodes);
+    double other = timers[_t_buildIR].seconds() -
+      (timers[_t_hir_parse].seconds() +
+       timers[_t_optimize_blocks].seconds() +
+       timers[_t_gvn].seconds() +
+       timers[_t_optimize_null_checks].seconds() +
+       timers[_t_rangeCheckElimination].seconds());
+    if (other > 0) {
+      tty->print_cr("         Other:               %7.3f s", other);
+    }
+  }
+
+  {
+    tty->print_cr("       Emit LIR:            %7.3f s",    timers[_t_emit_lir].seconds());
+    tty->print_cr("         LIR Gen:             %7.3f s",   timers[_t_lirGeneration].seconds());
+    tty->print_cr("         Linear Scan:         %7.3f s",   timers[_t_linearScan].seconds());
+    NOT_PRODUCT(LinearScan::print_timers(timers[_t_linearScan].seconds()));
+
+    double other = timers[_t_emit_lir].seconds() -
+      (timers[_t_lirGeneration].seconds() +
+       timers[_t_linearScan].seconds());
+    if (other > 0) {
+      tty->print_cr("         Other:               %7.3f s", other);
+    }
+  }
+
+  tty->print_cr("       Code Emission:       %7.3f s",    timers[_t_codeemit].seconds());
+  tty->print_cr("       Code Installation:   %7.3f s",    timers[_t_codeinstall].seconds());
+
+  double other = timers[_t_compile].seconds() -
+      (timers[_t_setup].seconds() +
+       timers[_t_buildIR].seconds() +
+       timers[_t_emit_lir].seconds() +
+       timers[_t_codeemit].seconds() +
+       timers[_t_codeinstall].seconds());
+  if (other > 0) {
+    tty->print_cr("       Other:               %7.3f s", other);
+  }
 
   NOT_PRODUCT(LinearScan::print_statistics());
 }

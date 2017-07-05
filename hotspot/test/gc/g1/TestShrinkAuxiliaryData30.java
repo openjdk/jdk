@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,17 @@
  */
 
 /**
- * @test Test8000311
- * @key gc
- * @bug 8000311
- * @summary G1: ParallelGCThreads==0 broken
- * @run main/othervm -XX:+UseG1GC -XX:ParallelGCThreads=0 -XX:+ResizePLAB -XX:+ExplicitGCInvokesConcurrent Test8000311
- * @author filipp.zhinkin@oracle.com
+ * @test TestShrinkAuxiliaryData30
+ * @bug 8038423
+ * @summary Checks that decommitment occurs for JVM with different
+ * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
+ * @library /testlibrary /testlibrary/whitebox
+ * @build TestShrinkAuxiliaryData TestShrinkAuxiliaryData30
+ * @run driver/timeout=720 TestShrinkAuxiliaryData30
  */
+public class TestShrinkAuxiliaryData30 {
 
-import java.util.*;
-
-public class Test8000311 {
-  public static void main(String args[]) {
-    for(int i = 0; i<100; i++) {
-      byte[] garbage = new byte[1000];
-      System.gc();
+    public static void main(String[] args) throws Exception {
+        new TestShrinkAuxiliaryData(30).test();
     }
-  }
 }
