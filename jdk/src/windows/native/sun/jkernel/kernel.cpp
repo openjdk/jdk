@@ -116,11 +116,11 @@ char* getStringPlatformChars(JNIEnv* env, jstring jstr) {
     char *result = NULL;
     size_t len;
     const jchar* utf16 = env->GetStringChars(jstr, NULL);
-    len = wcstombs(NULL, utf16, env->GetStringLength(jstr) * 4) + 1;
+    len = wcstombs(NULL, (const wchar_t*)utf16, env->GetStringLength(jstr) * 4) + 1;
     if (len == -1)
         return NULL;
     result = (char*) malloc(len);
-    if (wcstombs(result, utf16, len) == -1)
+    if (wcstombs(result, (const wchar_t*)utf16, len) == -1)
         return NULL;
     env->ReleaseStringChars(jstr, utf16);
     return result;
@@ -640,7 +640,7 @@ JNIEXPORT void JNICALL Java_sun_jkernel_DownloadManager_startBackgroundDownloadW
 }
 
 
-void getParent(const TCHAR *path, TCHAR *dest) {
+void getParent(TCHAR *path, TCHAR *dest) {
     char* lastSlash = max(strrchr(path, '\\'), strrchr(path, '/'));
     if (lastSlash == NULL) {
         *dest = NULL;
