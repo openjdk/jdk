@@ -46,7 +46,6 @@ DEPLOY_BUILD_TARGETS = sanity deploy
 # Enable 7-Zip LZMA file (de)compression for Java Kernel if it is available
 ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(PLATFORM), windows)
-    ifneq ($(KERNEL), off)
       EC_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/lzma ] ; then \
         $(ECHO) true ; \
       else \
@@ -55,7 +54,6 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(EC_TMP), true)
         DEPLOY_BUILD_TARGETS += extra-comp-all
       endif
-    endif
   endif
 endif
 

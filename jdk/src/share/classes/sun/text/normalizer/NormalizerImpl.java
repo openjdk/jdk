@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1472,19 +1472,9 @@ public final class NormalizerImpl {
                             }
                             --remove;
                         }
-                    } else if(value2!=0) {
-                        /* the composition is longer than the starter,
-                         * move the intermediate characters back one */
+                    } else if(value2!=0) { // for U+1109A, U+1109C, and U+110AB
                         starterIsSupplementary=true;
-                        /* temporarily increment for the loop boundary */
-                        ++starter;
-                        q=remove;
-                        r=++remove;
-                        while(starter<q) {
-                            args.source[--r]=args.source[--q];
-                        }
-                        args.source[starter]=(char)value2;
-                        --starter; /* undo the temporary increment */
+                        args.source[starter+1]=(char)value2;
                     /* } else { both are on the BMP, nothing more to do */
                     }
 

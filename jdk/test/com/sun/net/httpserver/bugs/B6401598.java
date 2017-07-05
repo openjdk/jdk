@@ -83,7 +83,7 @@ public class B6401598 {
                         server = HttpServer.create(new InetSocketAddress(0), 400);
                         server.createContext("/server/", new MyHandler());
                         exec = Executors.newFixedThreadPool(3);
-                        server.setExecutor(null);
+                        server.setExecutor(exec);
                         port = server.getAddress().getPort();
                         server.start();
 

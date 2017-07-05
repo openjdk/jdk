@@ -33,6 +33,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <values.h>
 
 #ifdef __solaris__
 #include <sys/sockio.h>
@@ -75,17 +76,17 @@ getnameinfo_f getnameinfo_ptr = NULL;
 #endif
 
 #ifdef __solaris__
-static int init_max_buf;
+static int init_tcp_max_buf, init_udp_max_buf;
 static int tcp_max_buf;
 static int udp_max_buf;
 
 /*
  * Get the specified parameter from the specified driver. The value
  * of the parameter is assumed to be an 'int'. If the parameter
- * cannot be obtained return the specified default value.
+ * cannot be obtained return -1
  */
 static int
-getParam(char *driver, char *param, int dflt)
+getParam(char *driver, char *param)
 {
     struct strioctl stri;
     char buf [64];
@@ -94,7 +95,7 @@ getParam(char *driver, char *param, int dflt)
 
     s = open (driver, O_RDWR);
     if (s < 0) {
-        return dflt;
+        return -1;
     }
     strncpy (buf, param, sizeof(buf));
     stri.ic_cmd = ND_GET;
@@ -102,12 +103,63 @@ getParam(char *driver, char *param, int dflt)
     stri.ic_dp = buf;
     stri.ic_len = sizeof(buf);
     if (ioctl (s, I_STR, &stri) < 0) {
-        value = dflt;
+        value = -1;
     } else {
         value = atoi(buf);
     }
     close (s);
     return value;
+}
+
+/*
+ * Iterative way to find the max value that SO_SNDBUF or SO_RCVBUF
+ * for Solaris versions that do not support the ioctl() in getParam().
+ * Ugly, but only called once (for each sotype).
+ *
+ * As an optimisation, we make a guess using the default values for Solaris
+ * assuming they haven't been modified with ndd.
+ */
+
+#define MAX_TCP_GUESS 1024 * 1024
+#define MAX_UDP_GUESS 2 * 1024 * 1024
+
+#define FAIL_IF_NOT_ENOBUFS if (errno != ENOBUFS) return -1
+
+static int findMaxBuf(int fd, int opt, int sotype) {
+    int a = 0;
+    int b = MAXINT;
+    int initial_guess;
+    int limit = -1;
+
+    if (sotype == SOCK_DGRAM) {
+        initial_guess = MAX_UDP_GUESS;
+    } else {
+        initial_guess = MAX_TCP_GUESS;
+    }
+
+    if (setsockopt(fd, SOL_SOCKET, opt, &initial_guess, sizeof(int)) == 0) {
+        initial_guess++;
+        if (setsockopt(fd, SOL_SOCKET, opt, &initial_guess,sizeof(int)) < 0) {
+            FAIL_IF_NOT_ENOBUFS;
+            return initial_guess - 1;
+        }
+        a = initial_guess;
+    } else {
+        FAIL_IF_NOT_ENOBUFS;
+        b = initial_guess - 1;
+    }
+    do {
+        int mid = a + (b-a)/2;
+        if (setsockopt(fd, SOL_SOCKET, opt, &mid, sizeof(int)) == 0) {
+            limit = mid;
+            a = mid + 1;
+        } else {
+            FAIL_IF_NOT_ENOBUFS;
+            b = mid - 1;
+        }
+    } while (b >= a);
+
+    return limit;
 }
 #endif
 
@@ -1148,7 +1200,6 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
     return rv;
 }
 
-
 /*
  * Wrapper for setsockopt system routine - performs any
  * necessary pre/post processing to deal with OS specific
@@ -1212,7 +1263,7 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 #ifdef __solaris__
     if (level == SOL_SOCKET) {
         if (opt == SO_SNDBUF || opt == SO_RCVBUF) {
-            int sotype, arglen;
+            int sotype=0, arglen;
             int *bufsize, maxbuf;
             int ret;
 
@@ -1223,16 +1274,35 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 
             /* Exceeded system limit so clamp and retry */
 
-            if (!init_max_buf) {
-                tcp_max_buf = getParam("/dev/tcp", "tcp_max_buf", 1024*1024);
-                udp_max_buf = getParam("/dev/udp", "udp_max_buf", 2048*1024);
-                init_max_buf = 1;
-            }
-
             arglen = sizeof(sotype);
             if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *)&sotype,
                            &arglen) < 0) {
                 return -1;
+            }
+
+            /*
+             * We try to get tcp_maxbuf (and udp_max_buf) using
+             * an ioctl() that isn't available on all versions of Solaris.
+             * If that fails, we use the search algorithm in findMaxBuf()
+             */
+            if (!init_tcp_max_buf && sotype == SOCK_STREAM) {
+                tcp_max_buf = getParam("/dev/tcp", "tcp_max_buf");
+                if (tcp_max_buf == -1) {
+                    tcp_max_buf = findMaxBuf(fd, opt, SOCK_STREAM);
+                    if (tcp_max_buf == -1) {
+                        return -1;
+                    }
+                }
+                init_tcp_max_buf = 1;
+            } else if (!init_udp_max_buf && sotype == SOCK_DGRAM) {
+                udp_max_buf = getParam("/dev/udp", "udp_max_buf");
+                if (udp_max_buf == -1) {
+                    udp_max_buf = findMaxBuf(fd, opt, SOCK_DGRAM);
+                    if (udp_max_buf == -1) {
+                        return -1;
+                    }
+                }
+                init_udp_max_buf = 1;
             }
 
             maxbuf = (sotype == SOCK_STREAM) ? tcp_max_buf : udp_max_buf;

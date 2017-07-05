@@ -81,17 +81,26 @@ public class MetalScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-
     public void installListeners(JScrollPane scrollPane) {
         super.installListeners(scrollPane);
         scrollBarSwapListener = createScrollBarSwapListener();
         scrollPane.addPropertyChangeListener(scrollBarSwapListener);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    protected void uninstallListeners(JComponent c) {
+        super.uninstallListeners(c);
+        c.removePropertyChangeListener(scrollBarSwapListener);
+    }
 
+    /**
+     * @deprecated - Replaced by {@link #uninstallListeners(JComponent)}
+     */
+    @Deprecated
     public void uninstallListeners(JScrollPane scrollPane) {
         super.uninstallListeners(scrollPane);
-
         scrollPane.removePropertyChangeListener(scrollBarSwapListener);
     }
 

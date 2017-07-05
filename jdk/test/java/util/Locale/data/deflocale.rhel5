@@ -518,16 +518,16 @@ display locale: ID: bn_IN, Name: Bengali (India)
 format locale: ID: bn_IN, Name: Bengali (India)
 default charset: UTF-8
 
-OS Locale:  bokmal
+OS Locale:  bokmål
 default locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
 display locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
 format locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
 default charset: ISO-8859-1
 
-OS Locale:  bokmål
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+OS Locale:  bokmal
+default locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
+display locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
+format locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
 default charset: ISO-8859-1
 
 OS Locale:  br_FR
