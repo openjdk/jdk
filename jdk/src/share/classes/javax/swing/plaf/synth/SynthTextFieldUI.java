@@ -232,7 +232,7 @@ class SynthTextFieldUI
     protected void installDefaults() {
         // Installs the text cursor on the component
         super.installDefaults();
-        updateStyle((JTextComponent)getComponent());
+        updateStyle(getComponent());
         getComponent().addFocusListener(this);
     }
 

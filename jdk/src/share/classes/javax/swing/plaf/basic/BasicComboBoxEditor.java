@@ -92,7 +92,7 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
                 return oldValue;
             } else {
                 // Must take the value from the editor and get the value and cast it to the new type.
-                Class cls = oldValue.getClass();
+                Class<?> cls = oldValue.getClass();
                 try {
                     Method method = cls.getMethod("valueOf", new Class[]{String.class});
                     newValue = method.invoke(oldValue, new Object[] { editor.getText()});

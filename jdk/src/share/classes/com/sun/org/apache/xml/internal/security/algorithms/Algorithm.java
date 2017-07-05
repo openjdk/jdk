@@ -24,7 +24,7 @@ package com.sun.org.apache.xml.internal.security.algorithms;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
-import com.sun.org.apache.xml.internal.security.utils.ElementProxy;
+import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -33,11 +33,7 @@ import org.w3c.dom.Element;
  * The Algorithm class which stores the Algorithm URI as a string.
  *
  */
-public abstract class Algorithm extends ElementProxy {
-
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(Algorithm.class.getName());
+public abstract class Algorithm extends SignatureElementProxy {
 
    /**
     *
@@ -79,7 +75,7 @@ public abstract class Algorithm extends ElementProxy {
     */
    protected void setAlgorithmURI(String algorithmURI) {
 
-      if ((this._state == MODE_CREATE) && (algorithmURI != null)) {
+      if ( (algorithmURI != null)) {
          this._constructionElement.setAttributeNS(null, Constants._ATT_ALGORITHM,
                                                 algorithmURI);
       }

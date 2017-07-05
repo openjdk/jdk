@@ -20,12 +20,9 @@
  */
 package com.sun.org.apache.xml.internal.security.signature;
 
-
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.ParserConfigurationException;
@@ -43,165 +40,174 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-
 /**
  * Handles <code>&lt;ds:SignedInfo&gt;</code> elements
  * This <code>SignedInfo<code> element includes the canonicalization algorithm,
- * a signature algorithm, and one or more references
+ * a signature algorithm, and one or more references.
+ *
  * @author Christian Geuer-Pollmann
  */
 public class SignedInfo extends Manifest {
 
-   /** Field _signatureAlgorithm */
-   private SignatureAlgorithm _signatureAlgorithm = null;
+    /** Field _signatureAlgorithm */
+    private SignatureAlgorithm _signatureAlgorithm = null;
 
-   /** Field _c14nizedBytes           */
-   private byte[] _c14nizedBytes = null;
+    /** Field _c14nizedBytes           */
+    private byte[] _c14nizedBytes = null;
 
-   /**
-    * Overwrites {@link Manifest#addDocument} because it creates another Element.
-    *
-    * @param doc the {@link Document} in which <code>XMLsignature</code> will be placed
-    * @throws XMLSecurityException
-    */
-   public SignedInfo(Document doc) throws XMLSecurityException {
-      this(doc, XMLSignature.ALGO_ID_SIGNATURE_DSA, Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS);
-   }
+    private Element c14nMethod;
+    private Element signatureMethod;
 
-   /**
-    * Constructs {@link SignedInfo} using given Canoicaliztion algorithm and Signature algorithm
-    *
-    * @param doc <code>SignedInfo</code> is placed in this document
-    * @param CanonicalizationMethodURI URI representation of the Canonicalization method
-    * @param SignatureMethodURI URI representation of the Digest and Signature algorithm
-    * @throws XMLSecurityException
-    */
-   public SignedInfo(
-           Document doc, String SignatureMethodURI, String CanonicalizationMethodURI)
+    /**
+     * Overwrites {@link Manifest#addDocument} because it creates another
+     * Element.
+     *
+     * @param doc the {@link Document} in which <code>XMLsignature</code> will
+     *    be placed
+     * @throws XMLSecurityException
+     */
+    public SignedInfo(Document doc) throws XMLSecurityException {
+        this(doc, XMLSignature.ALGO_ID_SIGNATURE_DSA,
+             Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS);
+    }
+
+    /**
+     * Constructs {@link SignedInfo} using given Canonicalization algorithm and
+     * Signature algorithm.
+     *
+     * @param doc <code>SignedInfo</code> is placed in this document
+     * @param signatureMethodURI URI representation of the Digest and
+     *    Signature algorithm
+     * @param canonicalizationMethodURI URI representation of the
+     *    Canonicalization method
+     * @throws XMLSecurityException
+     */
+    public SignedInfo(Document doc, String signatureMethodURI,
+        String canonicalizationMethodURI)
               throws XMLSecurityException {
-      this(doc, SignatureMethodURI, 0, CanonicalizationMethodURI);
-   }
+        this(doc, signatureMethodURI, 0, canonicalizationMethodURI);
+    }
 
-   /**
-    * Constructor SignedInfo
-    *
-    * @param doc
-    * @param CanonicalizationMethodURI
-    * @param SignatureMethodURI
-    * @param HMACOutputLength
-    * @throws XMLSecurityException
-    */
-   public SignedInfo(
-           Document doc, String SignatureMethodURI, int HMACOutputLength, String CanonicalizationMethodURI)
+    /**
+     * Constructor SignedInfo
+     *
+     * @param doc <code>SignedInfo</code> is placed in this document
+     * @param signatureMethodURI URI representation of the Digest and
+     *    Signature algorithm
+     * @param hMACOutputLength
+     * @param canonicalizationMethodURI URI representation of the
+     *    Canonicalization method
+     * @throws XMLSecurityException
+     */
+    public SignedInfo(Document doc, String signatureMethodURI,
+        int hMACOutputLength, String canonicalizationMethodURI)
               throws XMLSecurityException {
 
-      super(doc);
+        super(doc);
 
-      // XMLUtils.addReturnToElement(this._constructionElement);
-      {
-         Element canonElem = XMLUtils.createElementInSignatureSpace(this._doc,
+        c14nMethod = XMLUtils.createElementInSignatureSpace(this._doc,
                                 Constants._TAG_CANONICALIZATIONMETHOD);
 
-         canonElem.setAttributeNS(null, Constants._ATT_ALGORITHM,
-                                CanonicalizationMethodURI);
-         this._constructionElement.appendChild(canonElem);
-         XMLUtils.addReturnToElement(this._constructionElement);
-      }
-      {
-         if (HMACOutputLength > 0) {
+        c14nMethod.setAttributeNS(null, Constants._ATT_ALGORITHM,
+                                  canonicalizationMethodURI);
+        this._constructionElement.appendChild(c14nMethod);
+        XMLUtils.addReturnToElement(this._constructionElement);
+
+        if (hMACOutputLength > 0) {
             this._signatureAlgorithm = new SignatureAlgorithm(this._doc,
-                    SignatureMethodURI, HMACOutputLength);
-         } else {
+                    signatureMethodURI, hMACOutputLength);
+        } else {
             this._signatureAlgorithm = new SignatureAlgorithm(this._doc,
-                    SignatureMethodURI);
-         }
+                    signatureMethodURI);
+        }
 
-         this._constructionElement
-            .appendChild(this._signatureAlgorithm.getElement());
-         XMLUtils.addReturnToElement(this._constructionElement);
-      }
-   }
+        signatureMethod = this._signatureAlgorithm.getElement();
+        this._constructionElement.appendChild(signatureMethod);
+        XMLUtils.addReturnToElement(this._constructionElement);
+    }
 
-   /**
-    * @param doc
-    * @param SignatureMethodElem
-    * @param CanonicalizationMethodElem
-    * @throws XMLSecurityException
-    */
-   public SignedInfo(
-           Document doc, Element SignatureMethodElem, Element CanonicalizationMethodElem)
-              throws XMLSecurityException {
+    /**
+     * @param doc
+     * @param signatureMethodElem
+     * @param canonicalizationMethodElem
+     * @throws XMLSecurityException
+     */
+    public SignedInfo(Document doc, Element signatureMethodElem,
+        Element canonicalizationMethodElem) throws XMLSecurityException {
 
-      super(doc);
+        super(doc);
+        // Check this?
+        this.c14nMethod = canonicalizationMethodElem;
+        this._constructionElement.appendChild(c14nMethod);
+        XMLUtils.addReturnToElement(this._constructionElement);
 
-      this._constructionElement.appendChild(CanonicalizationMethodElem);
-      XMLUtils.addReturnToElement(this._constructionElement);
+        this._signatureAlgorithm =
+            new SignatureAlgorithm(signatureMethodElem, null);
 
-      this._signatureAlgorithm = new SignatureAlgorithm(SignatureMethodElem, null);
+        signatureMethod = this._signatureAlgorithm.getElement();
+        this._constructionElement.appendChild(signatureMethod);
 
-      this._constructionElement
-         .appendChild(this._signatureAlgorithm.getElement());
-      XMLUtils.addReturnToElement(this._constructionElement);
-   }
+        XMLUtils.addReturnToElement(this._constructionElement);
+    }
 
-   /**
-    * Build a {@link SignedInfo} from an {@link Element}
-    *
-    * @param element <code>SignedInfo</code>
-    * @param BaseURI the URI of the resource where the XML instance was stored
-    * @throws XMLSecurityException
-    * @see <A HREF="http://lists.w3.org/Archives/Public/w3c-ietf-xmldsig/2001OctDec/0033.html">Question</A>
-    * @see <A HREF="http://lists.w3.org/Archives/Public/w3c-ietf-xmldsig/2001OctDec/0054.html">Answer</A>
-    */
-   public SignedInfo(Element element, String BaseURI)
+    /**
+     * Build a {@link SignedInfo} from an {@link Element}
+     *
+     * @param element <code>SignedInfo</code>
+     * @param baseURI the URI of the resource where the XML instance was stored
+     * @throws XMLSecurityException
+     * @see <A HREF="http://lists.w3.org/Archives/Public/w3c-ietf-xmldsig/2001OctDec/0033.html">Question</A>
+     * @see <A HREF="http://lists.w3.org/Archives/Public/w3c-ietf-xmldsig/2001OctDec/0054.html">Answer</A>
+     */
+    public SignedInfo(Element element, String baseURI)
            throws XMLSecurityException {
 
-      // Parse the Reference children and Id attribute in the Manifest
-      super(element, BaseURI);
+        // Parse the Reference children and Id attribute in the Manifest
+        super(element, baseURI);
 
-      /* canonicalize ds:SignedInfo, reparse it into a new document
-       * and replace the original not-canonicalized ds:SignedInfo by
-       * the re-parsed canonicalized one.
-       */
-      String c14nMethodURI=this.getCanonicalizationMethodURI();
-     if (!(c14nMethodURI.equals("http://www.w3.org/TR/2001/REC-xml-c14n-20010315") ||
-                c14nMethodURI.equals("http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments") ||
-                        c14nMethodURI.equals("http://www.w3.org/2001/10/xml-exc-c14n#") ||
-                        c14nMethodURI.equals("http://www.w3.org/2001/10/xml-exc-c14n#WithComments"))) {
-        //The c14n is not a secure one and can rewrite the URIs or like that reparse the SignedInfo to be sure
-      try {
-         Canonicalizer c14nizer =
-            Canonicalizer.getInstance(this.getCanonicalizationMethodURI());
+        /* canonicalize ds:SignedInfo, reparse it into a new document
+         * and replace the original not-canonicalized ds:SignedInfo by
+         * the re-parsed canonicalized one.
+         */
+        c14nMethod = XMLUtils.getNextElement(element.getFirstChild());
+        String c14nMethodURI = this.getCanonicalizationMethodURI();
+        if (!(c14nMethodURI.equals(Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS) ||
+              c14nMethodURI.equals(Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS) ||
+              c14nMethodURI.equals(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS) ||
+              c14nMethodURI.equals(Canonicalizer.ALGO_ID_C14N_EXCL_WITH_COMMENTS))) {
+            // the c14n is not a secure one and can rewrite the URIs or like
+            // that reparse the SignedInfo to be sure
+            try {
+                Canonicalizer c14nizer =
+                Canonicalizer.getInstance(this.getCanonicalizationMethodURI());
 
-         this._c14nizedBytes =
-            c14nizer.canonicalizeSubtree(this._constructionElement);
-         javax.xml.parsers.DocumentBuilderFactory dbf =
-            javax.xml.parsers.DocumentBuilderFactory.newInstance();
+                this._c14nizedBytes =
+                    c14nizer.canonicalizeSubtree(this._constructionElement);
+                javax.xml.parsers.DocumentBuilderFactory dbf =
+                    javax.xml.parsers.DocumentBuilderFactory.newInstance();
+                dbf.setNamespaceAware(true);
+                javax.xml.parsers.DocumentBuilder db = dbf.newDocumentBuilder();
+                org.w3c.dom.Document newdoc =
+                    db.parse(new ByteArrayInputStream(this._c14nizedBytes));
+                Node imported =
+                    this._doc.importNode(newdoc.getDocumentElement(), true);
 
-         dbf.setNamespaceAware(true);
+                this._constructionElement.getParentNode().replaceChild(imported,
+                    this._constructionElement);
 
-         javax.xml.parsers.DocumentBuilder db = dbf.newDocumentBuilder();
-         org.w3c.dom.Document newdoc =
-            db.parse(new ByteArrayInputStream(this._c14nizedBytes));
-         Node imported = this._doc.importNode(newdoc.getDocumentElement(),
-                                              true);
-
-         this._constructionElement.getParentNode().replaceChild(imported,
-                 this._constructionElement);
-
-         this._constructionElement = (Element) imported;
-      } catch (ParserConfigurationException ex) {
-         throw new XMLSecurityException("empty", ex);
-      } catch (IOException ex) {
-         throw new XMLSecurityException("empty", ex);
-      } catch (SAXException ex) {
-         throw new XMLSecurityException("empty", ex);
-      }
-      }
-      this._signatureAlgorithm =
-         new SignatureAlgorithm(this.getSignatureMethodElement(),
-                                this.getBaseURI());
-   }
+                this._constructionElement = (Element) imported;
+            } catch (ParserConfigurationException ex) {
+                throw new XMLSecurityException("empty", ex);
+            } catch (IOException ex) {
+                throw new XMLSecurityException("empty", ex);
+            } catch (SAXException ex) {
+                throw new XMLSecurityException("empty", ex);
+            }
+        }
+        signatureMethod = XMLUtils.getNextElement(c14nMethod.getNextSibling());
+        this._signatureAlgorithm =
+            new SignatureAlgorithm(signatureMethod, this.getBaseURI());
+    }
 
    /**
     * Tests core validation process
@@ -294,12 +300,8 @@ public class SignedInfo extends Manifest {
     */
    public String getCanonicalizationMethodURI() {
 
-    Element el= XMLUtils.selectDsNode(this._constructionElement.getFirstChild(),
-     Constants._TAG_CANONICALIZATIONMETHOD,0);
-     if (el==null) {
-        return null;
-     }
-     return el.getAttributeNS(null, Constants._ATT_ALGORITHM);
+
+     return c14nMethod.getAttributeNS(null, Constants._ATT_ALGORITHM);
    }
 
    /**
@@ -324,8 +326,7 @@ public class SignedInfo extends Manifest {
     *
     */
    public Element getSignatureMethodElement() {
-      return XMLUtils.selectDsNode(this._constructionElement.getFirstChild(),
-        Constants._TAG_SIGNATUREMETHOD,0);
+           return signatureMethod;
    }
 
    /**
@@ -343,6 +344,9 @@ public class SignedInfo extends Manifest {
                                   .getJCEAlgorithmString());
    }
 
+   protected SignatureAlgorithm getSignatureAlgorithm() {
+           return _signatureAlgorithm;
+   }
    /**
     * Method getBaseLocalName
     * @inheritDoc
@@ -354,21 +358,16 @@ public class SignedInfo extends Manifest {
 
    public String getInclusiveNamespaces() {
 
-    Element el= XMLUtils.selectDsNode(this._constructionElement.getFirstChild(),
-     Constants._TAG_CANONICALIZATIONMETHOD,0);
-     if (el==null) {
-        return null;
-     }
 
-     String c14nMethodURI = el.getAttributeNS(null, Constants._ATT_ALGORITHM);
+
+     String c14nMethodURI = c14nMethod.getAttributeNS(null, Constants._ATT_ALGORITHM);
      if(!(c14nMethodURI.equals("http://www.w3.org/2001/10/xml-exc-c14n#") ||
                         c14nMethodURI.equals("http://www.w3.org/2001/10/xml-exc-c14n#WithComments"))) {
                 return null;
             }
 
-     Element inclusiveElement = XMLUtils.selectNode(
-             el.getFirstChild(),InclusiveNamespaces.ExclusiveCanonicalizationNamespace,
-        InclusiveNamespaces._TAG_EC_INCLUSIVENAMESPACES,0);
+     Element inclusiveElement = XMLUtils.getNextElement(
+                 c14nMethod.getFirstChild());
 
      if(inclusiveElement != null)
      {

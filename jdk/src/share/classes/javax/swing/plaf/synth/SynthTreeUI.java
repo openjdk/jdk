@@ -390,7 +390,7 @@ class SynthTreeUI extends BasicTreeUI implements PropertyChangeListener,
     }
 
     private Rectangle getDropLineRect(JTree.DropLocation loc) {
-        Rectangle rect = null;
+        Rectangle rect;
         TreePath path = loc.getPath();
         int index = loc.getChildIndex();
         boolean ltr = tree.getComponentOrientation().isLeftToRight();
@@ -523,7 +523,7 @@ class SynthTreeUI extends BasicTreeUI implements PropertyChangeListener,
         // Don't paint the renderer if editing this row.
         boolean selected = tree.isRowSelected(row);
 
-        JTree.DropLocation dropLocation = (JTree.DropLocation)tree.getDropLocation();
+        JTree.DropLocation dropLocation = tree.getDropLocation();
         boolean isDrop = dropLocation != null
                          && dropLocation.getChildIndex() == -1
                          && path == dropLocation.getPath();

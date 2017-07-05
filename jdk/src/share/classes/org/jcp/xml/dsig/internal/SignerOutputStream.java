@@ -19,7 +19,10 @@
  *
  */
 /*
- * $Id: SignerOutputStream.java,v 1.1.2.2 2005/08/12 18:01:58 mullan Exp $
+ * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ */
+/*
+ * $Id: SignerOutputStream.java,v 1.2 2008/07/24 15:20:31 mullan Exp $
  */
 package org.jcp.xml.dsig.internal;
 
@@ -29,10 +32,11 @@ import java.security.SignatureException;
 
 /**
  * Derived from Apache sources and changed to use java.security.Signature
- * objects as input instead of org.apache.xml.security.algorithms.SignatureAlgorithm
+ * objects as input instead of com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithm
  * objects.
  *
  * @author raul
+ * @author Sean Mullan
  */
 public class SignerOutputStream extends ByteArrayOutputStream {
     private final Signature sig;

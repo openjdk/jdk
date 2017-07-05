@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,19 +47,22 @@ class DefaultMenuLayout extends BoxLayout implements UIResource {
         super(target, axis);
     }
 
-    public void invalidateLayout(Container target) {
-        if (target instanceof JPopupMenu) {
-            SynthPopupMenuUI popupUI = (SynthPopupMenuUI)((JPopupMenu)target).
-                                  getUI();
-            popupUI.resetAlignmentHints();
-        }
-        super.invalidateLayout(target);
-    }
-
     public Dimension preferredLayoutSize(Container target) {
-        if (target instanceof JPopupMenu && target.getComponentCount() == 0) {
-            return new Dimension(0, 0);
+        if (target instanceof JPopupMenu) {
+            JPopupMenu popupMenu = (JPopupMenu) target;
+
+            popupMenu.putClientProperty(
+                    SynthMenuItemLayoutHelper.MAX_ACC_OR_ARROW_WIDTH, null);
+            sun.swing.MenuItemLayoutHelper.clearUsedClientProperties(popupMenu);
+
+            if (popupMenu.getComponentCount() == 0) {
+                return new Dimension(0, 0);
+            }
         }
+
+        // Make BoxLayout recalculate cached preferred sizes
+        super.invalidateLayout(target);
+
         return super.preferredLayoutSize(target);
     }
 }

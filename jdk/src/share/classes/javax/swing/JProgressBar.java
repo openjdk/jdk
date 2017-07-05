@@ -699,8 +699,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * @since 1.4
      */
     public ChangeListener[] getChangeListeners() {
-        return (ChangeListener[])listenerList.getListeners(
-                ChangeListener.class);
+        return listenerList.getListeners(ChangeListener.class);
     }
 
     /**

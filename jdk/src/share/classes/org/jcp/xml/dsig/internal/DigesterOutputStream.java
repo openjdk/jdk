@@ -19,7 +19,10 @@
  *
  */
 /*
- * $Id: DigesterOutputStream.java,v 1.1.2.2 2005/08/12 18:15:35 mullan Exp $
+ * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ */
+/*
+ * $Id: DigesterOutputStream.java,v 1.2 2008/07/24 15:20:31 mullan Exp $
  */
 package org.jcp.xml.dsig.internal;
 
@@ -35,10 +38,11 @@ import com.sun.org.apache.xml.internal.security.utils.UnsyncByteArrayOutputStrea
 /**
  * This class has been modified slightly to use java.security.MessageDigest
  * objects as input, rather than
- * org.apache.xml.security.algorithms.MessageDigestAlgorithm objects.
+ * com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm objects.
  * It also optionally caches the input bytes.
  *
  * @author raul
+ * @author Sean Mullan
  */
 public class DigesterOutputStream extends OutputStream {
     private boolean buffer = false;

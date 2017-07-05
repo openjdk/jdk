@@ -166,12 +166,10 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
      * @see AbstractUndoableEdit#die
      */
     public synchronized void discardAllEdits() {
-        Enumeration cursor = edits.elements();
-        while (cursor.hasMoreElements()) {
-            UndoableEdit e = (UndoableEdit)cursor.nextElement();
+        for (UndoableEdit e : edits) {
             e.die();
         }
-        edits = new Vector();
+        edits = new Vector<UndoableEdit>();
         indexOfNextAdd = 0;
         // PENDING(rjrjr) when vector grows a removeRange() method
         // (expected in JDK 1.2), trimEdits() will be nice and
@@ -240,7 +238,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
 //          System.out.println("Trimming " + from + " " + to + " with index " +
 //                           indexOfNextAdd);
             for (int i = to; from <= i; i--) {
-                UndoableEdit e = (UndoableEdit)edits.elementAt(i);
+                UndoableEdit e = edits.elementAt(i);
 //              System.out.println("JUM: Discarding " +
 //                                 e.getUndoPresentationName());
                 e.die();
@@ -293,7 +291,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
     protected UndoableEdit editToBeUndone() {
         int i = indexOfNextAdd;
         while (i > 0) {
-            UndoableEdit edit = (UndoableEdit)edits.elementAt(--i);
+            UndoableEdit edit = edits.elementAt(--i);
             if (edit.isSignificant()) {
                 return edit;
             }
@@ -314,7 +312,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
         int i = indexOfNextAdd;
 
         while (i < count) {
-            UndoableEdit edit = (UndoableEdit)edits.elementAt(i++);
+            UndoableEdit edit = edits.elementAt(i++);
             if (edit.isSignificant()) {
                 return edit;
             }
@@ -333,7 +331,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
     protected void undoTo(UndoableEdit edit) throws CannotUndoException {
         boolean done = false;
         while (!done) {
-            UndoableEdit next = (UndoableEdit)edits.elementAt(--indexOfNextAdd);
+            UndoableEdit next = edits.elementAt(--indexOfNextAdd);
             next.undo();
             done = next == edit;
         }
@@ -349,7 +347,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
     protected void redoTo(UndoableEdit edit) throws CannotRedoException {
         boolean done = false;
         while (!done) {
-            UndoableEdit next = (UndoableEdit)edits.elementAt(indexOfNextAdd++);
+            UndoableEdit next = edits.elementAt(indexOfNextAdd++);
             next.redo();
             done = next == edit;
         }

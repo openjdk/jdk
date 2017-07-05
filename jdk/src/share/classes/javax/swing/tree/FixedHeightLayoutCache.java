@@ -64,21 +64,21 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
     /**
      * Maps from TreePath to a FHTreeStateNode.
      */
-    private Hashtable          treePathMapping;
+    private Hashtable<TreePath, FHTreeStateNode> treePathMapping;
 
     /**
      * Used for getting path/row information.
      */
     private SearchInfo         info;
 
-    private Stack              tempStacks;
+    private Stack<Stack<TreePath>> tempStacks;
 
 
     public FixedHeightLayoutCache() {
         super();
-        tempStacks = new Stack();
+        tempStacks = new Stack<Stack<TreePath>>();
         boundsBuffer = new Rectangle();
-        treePathMapping = new Hashtable();
+        treePathMapping = new Hashtable<TreePath, FHTreeStateNode>();
         info = new SearchInfo();
         setRowHeight(1);
     }
@@ -592,7 +592,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
      * return null, if you to create a node use getNodeForPath.
      */
     private FHTreeStateNode getMapping(TreePath path) {
-        return (FHTreeStateNode)treePathMapping.get(path);
+        return treePathMapping.get(path);
     }
 
     /**
@@ -695,13 +695,13 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
                 return null;
 
             // Check all the parent paths, until a match is found.
-            Stack                paths;
+            Stack<TreePath> paths;
 
             if(tempStacks.size() == 0) {
-                paths = new Stack();
+                paths = new Stack<TreePath>();
             }
             else {
-                paths = (Stack)tempStacks.pop();
+                paths = tempStacks.pop();
             }
 
             try {
@@ -714,7 +714,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
                         // Found a match, create entries for all paths in
                         // paths.
                         while(node != null && paths.size() > 0) {
-                            path = (TreePath)paths.pop();
+                            path = paths.pop();
                             node = node.createChildFor(path.
                                                        getLastPathComponent());
                         }

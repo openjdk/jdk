@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ package java.lang;
  * @since 1.5
  */
 public class TypeNotPresentException extends RuntimeException {
+    private static final long serialVersionUID = -5101214195716534496L;
+
     private String typeName;
 
     /**

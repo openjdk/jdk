@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class BasicDesktopIconUI extends DesktopIconUI {
 
     protected JInternalFrame.JDesktopIcon desktopIcon;
     protected JInternalFrame frame;
+    private DesktopIconMover desktopIconMover;
 
     /**
      * The title pane component used in the desktop icon.
@@ -127,12 +128,21 @@ public class BasicDesktopIconUI extends DesktopIconUI {
         mouseInputListener = createMouseInputListener();
         desktopIcon.addMouseMotionListener(mouseInputListener);
         desktopIcon.addMouseListener(mouseInputListener);
+         getDesktopIconMover().installListeners();
     }
 
     protected void uninstallListeners() {
         desktopIcon.removeMouseMotionListener(mouseInputListener);
         desktopIcon.removeMouseListener(mouseInputListener);
         mouseInputListener = null;
+         getDesktopIconMover().uninstallListeners();
+    }
+
+    private DesktopIconMover getDesktopIconMover() {
+        if (desktopIconMover == null) {
+            desktopIconMover = new DesktopIconMover(desktopIcon);
+        }
+        return desktopIconMover;
     }
 
     protected void installDefaults() {
