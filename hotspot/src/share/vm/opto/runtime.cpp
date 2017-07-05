@@ -143,7 +143,7 @@ const char* OptoRuntime::stub_name(address entry) {
 // We failed the fast-path allocation.  Now we need to do a scavenge or GC
 // and try allocation again.
 
-void OptoRuntime::maybe_defer_card_mark(JavaThread* thread) {
+void OptoRuntime::new_store_pre_barrier(JavaThread* thread) {
   // After any safepoint, just before going back to compiled code,
   // we inform the GC that we will be doing initializing writes to
   // this object in the future without emitting card-marks, so
@@ -156,7 +156,7 @@ void OptoRuntime::maybe_defer_card_mark(JavaThread* thread) {
   assert(Universe::heap()->can_elide_tlab_store_barriers(),
          "compiler must check this first");
   // GC may decide to give back a safer copy of new_obj.
-  new_obj = Universe::heap()->defer_store_barrier(thread, new_obj);
+  new_obj = Universe::heap()->new_store_pre_barrier(thread, new_obj);
   thread->set_vm_result(new_obj);
 }
 
@@ -200,7 +200,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(klassOopDesc* klass, JavaThrea
 
   if (GraphKit::use_ReduceInitialCardMarks()) {
     // inform GC that we won't do card marks for initializing writes.
-    maybe_defer_card_mark(thread);
+    new_store_pre_barrier(thread);
   }
 JRT_END
 
@@ -239,7 +239,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(klassOopDesc* array_type, int len
 
   if (GraphKit::use_ReduceInitialCardMarks()) {
     // inform GC that we won't do card marks for initializing writes.
-    maybe_defer_card_mark(thread);
+    new_store_pre_barrier(thread);
   }
 JRT_END
 

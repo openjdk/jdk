@@ -39,7 +39,6 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_readFile(JNIEnv* env, jclass 
     jlong handle, jlong address, jint len, jlong offset, jlong ov)
 {
     BOOL res;
-    DWORD nread = 0;
 
     OVERLAPPED* lpOverlapped = (OVERLAPPED*)jlong_to_ptr(ov);
     lpOverlapped->Offset = (DWORD)offset;
@@ -49,7 +48,7 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_readFile(JNIEnv* env, jclass 
     res = ReadFile((HANDLE) jlong_to_ptr(handle),
                    (LPVOID) jlong_to_ptr(address),
                    (DWORD)len,
-                   &nread,
+                   NULL,
                    lpOverlapped);
 
     if (res == 0) {
@@ -62,7 +61,7 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_readFile(JNIEnv* env, jclass 
         return IOS_THROWN;
     }
 
-    return (jint)nread;
+    return IOS_UNAVAILABLE;
 }
 
 JNIEXPORT jint JNICALL
@@ -70,7 +69,6 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_writeFile(JNIEnv* env, jclass
     jlong handle, jlong address, jint len, jlong offset, jlong ov)
 {
     BOOL res;
-    DWORD nwritten = 0;
 
     OVERLAPPED* lpOverlapped = (OVERLAPPED*)jlong_to_ptr(ov);
     lpOverlapped->Offset = (DWORD)offset;
@@ -80,18 +78,18 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_writeFile(JNIEnv* env, jclass
     res = WriteFile((HANDLE)jlong_to_ptr(handle),
                    (LPVOID) jlong_to_ptr(address),
                    (DWORD)len,
-                   &nwritten,
+                   NULL,
                    lpOverlapped);
 
     if (res == 0) {
         int error = GetLastError();
-        if (error == ERROR_IO_PENDING) {
+        if (error == ERROR_IO_PENDING)
             return IOS_UNAVAILABLE;
-        }
         JNU_ThrowIOExceptionWithLastError(env, "WriteFile failed");
         return IOS_THROWN;
     }
-    return (jint)nwritten;
+
+    return IOS_UNAVAILABLE;
 }
 
 JNIEXPORT jint JNICALL

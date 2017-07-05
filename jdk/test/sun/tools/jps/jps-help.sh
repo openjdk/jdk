@@ -35,7 +35,7 @@ JPS="${TESTJAVA}/bin/jps"
 rm -f jps.out 2>/dev/null
 ${JPS} -? > jps.out 2>&1
 
-diff jps.out ${TESTSRC}/usage.out
+diff -w jps.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
   echo "Output of jps -? differ from expected output. Failed."
@@ -46,7 +46,7 @@ fi
 rm -f jps.out 2>/dev/null
 ${JPS} -help > jps.out 2>&1
 
-diff jps.out ${TESTSRC}/usage.out
+diff -w jps.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
   echo "Output of jps -help differ from expected output. Failed."

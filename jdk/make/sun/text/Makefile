@@ -29,6 +29,7 @@
 
 BUILDDIR = ../..
 
+MODULE  = localedata
 PACKAGE = sun.text
 PRODUCT = sun
 

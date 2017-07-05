@@ -54,9 +54,13 @@ JAVA="${TESTJAVA}/bin/java"
 OS=`uname -s`
 
 case "$OS" in
-  Windows* | CYGWIN_NT*)
+  Windows*)
     PS=";"
     OS="Windows"
+    ;;
+  CYGWIN*)
+    PS=";"
+    OS="CYGWIN"
     ;;
   * )
     PS=":"
@@ -67,16 +71,23 @@ startDebuggee()
 {
   OUTPUTFILE=${TESTCLASSES}/Debuggee.out
   ${JAVA} "$@" > ${OUTPUTFILE} &
-  pid="$!"
+  startpid="$!"
+  pid="${startpid}"
                                                                                                      
+  # CYGWIN startpid is not the native windows PID we want, get the WINPID
+  if [ "${OS}" = "CYGWIN" ]; then
+    sleep 2
+    ps -l -p ${startpid}
+    pid=`ps -l -p ${startpid} | tail -1 | awk '{print $4;}'`
+  fi
+  
   # MKS creates an intermediate shell to launch ${JAVA} so
-  # ${pid} is not the actual pid. We have put in a small sleep
+  # ${startpid} is not the actual pid. We have put in a small sleep
   # to give the intermediate shell process time to launch the
   # "java" process.
   if [ "$OS" = "Windows" ]; then
     sleep 2
-    realpid=`ps -o pid,ppid,comm|grep ${pid}|grep "java"|cut -c1-6`
-    pid=${realpid}
+    pid=`ps -o pid,ppid,comm|grep ${startpid}|grep "java"|cut -c1-6`
   fi
                                                                                                      
   echo "Waiting for Debuggee to initialize..."
@@ -91,7 +102,7 @@ startDebuggee()
     echo "Waiting $attempts second(s) ..."
   done
 
-  echo "Debuggee is process $pid"
+  echo "Debuggee is process $pid (startpid=${startpid})"
 }
 
 stopDebuggee()
@@ -100,7 +111,7 @@ stopDebuggee()
   if [ $? != 0 ] ; then
     echo "Error: ShutdownDebuggee failed"
     failures=`expr $failures + 1`
-    kill -9 $pid
+    kill -9 ${startpid}
   fi
 }
 
@@ -123,7 +134,7 @@ startDebuggee \
   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n \
   -classpath "${TESTCLASSES}" ProcessAttachDebuggee "${PORTFILE}"
 
-$JAVA -classpath ${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar \
+$JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
   ProcessAttachDebugger $pid 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
@@ -141,7 +152,7 @@ startDebuggee \
   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y \
   -classpath "${TESTCLASSES}" ProcessAttachDebuggee "${PORTFILE}"
 
-$JAVA -classpath ${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar \
+$JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
   ProcessAttachDebugger $pid 2>&1
 
 # The debuggee is suspended and doesn't run until the debugger
