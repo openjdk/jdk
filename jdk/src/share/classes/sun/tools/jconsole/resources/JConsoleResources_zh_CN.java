@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,6 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"ClassTab.infoLabelFormat", "<html>\u5df2\u52a0\u8f7d: {0}    \u672a\u52a0\u8f7d: {1}    \u603b\u8ba1: {2}</html>"},
         {"ClassTab.loadedClassesPlotter.accessibleName", "\u5df2\u88c5\u5165\u7c7b\u7684\u56fe\u8868\u3002"},
         {"Classes","\u7c7b"},
-        {"Clear","\u6e05\u9664"},
         {"Close","\u5173\u95ed"},
         {"Column.Name", "\u540d\u79f0"},
         {"Column.PID", "PID"},
@@ -122,7 +121,6 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Committed virtual memory","\u5206\u914d\u7684\u865a\u62df\u5185\u5b58"},
         {"Committed", "\u5206\u914d"},
         {"Compiler","\u7f16\u8bd1\u5668"},
-        {"Composite Navigation", "\u590d\u5408\u6d4f\u89c8"},
         {"CompositeData","\u590d\u5408\u6570\u636e"},
         {"Config","\u914d\u7f6e"},
         {"Connect", "\u8fde\u63a5"},
@@ -158,12 +156,9 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Detect Deadlock.toolTip", "\u68c0\u6d4b\u5230\u6b7b\u9501\u7684\u7ebf\u7a0b"},
         {"Dimension is not supported:","\u4e0d\u652f\u6301\u7ef4\uff1a"},
         {"Discard chart", "\u653e\u5f03\u56fe\u8868"},
-        {"DurationDaysHoursMinutes","{0,choice,1#{0,number,integer} day |1.0<{0,number,integer} days }" +
-                                    "{1,choice,0<{1,number,integer} hours |1#{1,number,integer} hour |1<{1,number,integer} hours }" +
-                                    "{2,choice,0<{2,number,integer} minutes|1#{2,number,integer} minute|1.0<{2,number,integer} minutes}"},
+        {"DurationDaysHoursMinutes","{0,choice,1#{0,number,integer} day |1.0<{0,number,integer} days }{1,choice,0<{1,number,integer} hours |1#{1,number,integer} hour |1<{1,number,integer} hours }{2,choice,0<{2,number,integer} minutes|1#{2,number,integer} minute|1.0<{2,number,integer} minutes}"},
 
-        {"DurationHoursMinutes","{0,choice,1#{0,number,integer} hour |1<{0,number,integer} hours }" +
-                                "{1,choice,0<{1,number,integer} minutes|1#{1,number,integer} minute|1.0<{1,number,integer} minutes}"},
+        {"DurationHoursMinutes","{0,choice,1#{0,number,integer} hour |1<{0,number,integer} hours }{1,choice,0<{1,number,integer} minutes|1#{1,number,integer} minute|1.0<{1,number,integer} minutes}"},
 
         {"DurationMinutes","{0,choice,1#{0,number,integer} minute|1.0<{0,number,integer} minutes}"},
         {"DurationSeconds","{0} \u79d2"},
@@ -201,8 +196,6 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Help.AboutDialog.title", "JConsole\uff1a\u5173\u4e8e"},
         {"Help.AboutDialog.userGuideLink", "JConsole \u7528\u6237\u6307\u5357:<br>{0}"},
         {"Help.AboutDialog.userGuideLink.mnemonic", 'U'},
-        // Note: The java.sun.com URL should be used for RC, or as soon as the page is available.
-        //{"Help.AboutDialog.UsingJMX.url", "http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html"},
         {"Help.AboutDialog.userGuideLink.url", "http://java.sun.com/javase/6/docs/technotes/guides/management/MonitoringGuide/toc.html"},
         {"HelpMenu.About.title", "\u5173\u4e8e JConsole"},
         {"HelpMenu.About.title.mnemonic", 'A'},
@@ -241,9 +234,22 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"MBeanNotificationInfo","MBeanNotificationInfo"},
         {"MBeanOperationInfo","MBeanOperationInfo"},
         {"MBeans","MBean"},
-        {"MBeansTab.refreshAttributesButton", "\u5237\u65b0"},
+        {"MBeansTab.clearNotificationsButton", "\u6e05\u9664(C)"},
+        {"MBeansTab.clearNotificationsButton.mnemonic", 'C'},
+        {"MBeansTab.clearNotificationsButton.toolTip", "\u6e05\u9664\u901a\u77e5"},
+        {"MBeansTab.compositeNavigationMultiple", "\u590d\u5408\u5bfc\u822a {0}/{1}"},
+        {"MBeansTab.compositeNavigationSingle", "\u590d\u5408\u5bfc\u822a"},
+        {"MBeansTab.refreshAttributesButton", "\u5237\u65b0(R)"},
         {"MBeansTab.refreshAttributesButton.mnemonic", 'R'},
         {"MBeansTab.refreshAttributesButton.toolTip", "\u5237\u65b0\u5c5e\u6027"},
+        {"MBeansTab.subscribeNotificationsButton", "\u8ba2\u9605(S)"},
+        {"MBeansTab.subscribeNotificationsButton.mnemonic", 'S'},
+        {"MBeansTab.subscribeNotificationsButton.toolTip", "\u5f00\u59cb\u4fa6\u542c\u901a\u77e5"},
+        {"MBeansTab.tabularNavigationMultiple", "\u8868\u683c\u5bfc\u822a {0}/{1}"},
+        {"MBeansTab.tabularNavigationSingle", "\u8868\u683c\u5bfc\u822a"},
+        {"MBeansTab.unsubscribeNotificationsButton", "\u53d6\u6d88\u8ba2\u9605(U)"},
+        {"MBeansTab.unsubscribeNotificationsButton.mnemonic", 'U'},
+        {"MBeansTab.unsubscribeNotificationsButton.toolTip", "\u505c\u6b62\u4fa6\u542c\u901a\u77e5"},
         {"Manage Hotspot MBeans in: ", "\u7ba1\u7406 Hotspot MBean \u4e8e\uff1a "},
         {"Max","\u6700\u5927\u503c"},
         {"Maximum heap size","\u5806\u5927\u5c0f\u7684\u6700\u5927\u503c"},
@@ -262,7 +268,7 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Minimize All.mnemonic", 'M'},
         {"Minus Version", "\u8fd9\u662f {0} \u7248\u672c {1}"},
         {"Monitor locked",
-"   - \u5df2\u9501\u5b9a {0}" + cr},
+             "   - \u5df2\u9501\u5b9a {0}" + cr},
         {"Motif","\u4fee\u6539"},
         {"Name Build and Mode","{0}\uff08\u5185\u90e8\u7248\u672c {1}\u3001{2}\uff09"},
         {"Name and Build","{0}\uff08\u5185\u90e8\u7248\u672c {1}\uff09"},
@@ -343,7 +349,6 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Source","\u6e90"},
         {"Stack trace",
              cr + "\u5806\u6808\u8ffd\u8e2a\uff1a " + cr},
-        {"Subscribe","\u8ba2\u9605"},
         {"Success:","\u6210\u529f\uff1a"},
         // Note: SummaryTab.headerDateTimeFormat can be one the following:
         // 1. A combination of two styles for date and time, using the
@@ -357,7 +362,6 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"SummaryTab.pendingFinalization.value", "{0} \u4e2a\u5bf9\u8c61"},
         {"SummaryTab.tabName", "VM \u6458\u8981"},
         {"SummaryTab.vmVersion","{0} \u7248\u672c {1}"},
-        {"Tabular Navigation","\u8868\u683c\u5f0f\u6d4f\u89c8"},
         {"TabularData are not supported", "\u4e0d\u652f\u6301\u8868\u683c\u5f0f\u6570\u636e"},
         {"Threads","\u7ebf\u7a0b"},
         {"ThreadTab.infoLabelFormat", "<html>\u6d3b\u52a8: {0}    \u5cf0\u503c: {1}    \u603b\u8ba1: {2}</html>"},
@@ -381,7 +385,6 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"Unavailable","\u4e0d\u53ef\u7528"},
         {"UNKNOWN","\u672a\u77e5"},
         {"Unknown Host","\u672a\u77e5\u4e3b\u673a: {0}"},
-        {"Unsubscribe","\u672a\u8ba2\u9605"},
         {"Unregister", "\u672a\u6ce8\u518c"},
         {"Uptime","\u6b63\u5e38\u8fd0\u884c\u65f6\u95f4"},
         {"Uptime: ","\u6b63\u5e38\u8fd0\u884c\u65f6\u95f4\uff1a "},
@@ -409,15 +412,11 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
         {"You cannot drop a class here", "\u60a8\u4e0d\u80fd\u5c06\u7c7b\u653e\u5728\u6b64\u5904"},
         {"collapse", "\u6298\u53e0"},
         {"connectionFailed1","\u8fde\u63a5\u5931\u8d25\uff1a\u662f\u5426\u91cd\u8bd5\uff1f"},
-        {"connectionFailed2","\u4e0e {0} \u7684\u8fde\u63a5\u672a\u6210\u529f\u3002<br>" +
-"\u662f\u5426\u8981\u91cd\u8bd5\uff1f"},
+        {"connectionFailed2","\u4e0e {0} \u7684\u8fde\u63a5\u672a\u6210\u529f\u3002<br>\u662f\u5426\u8981\u91cd\u8bd5\uff1f"},
         {"connectionLost1","\u8fde\u63a5\u65ad\u5f00\uff1a\u662f\u5426\u91cd\u65b0\u8fde\u63a5\uff1f"},
-        {"connectionLost2","\u4e0e {0} \u7684\u8fde\u63a5\u5df2\u65ad\u5f00" +
-                           "\u539f\u56e0\u662f\u5df2\u7ec8\u6b62\u8fdc\u7a0b\u8fdb\u7a0b\u3002<br>" +
-                           "\u662f\u5426\u8981\u91cd\u65b0\u8fde\u63a5\uff1f"},
+        {"connectionLost2","\u4e0e {0} \u7684\u8fde\u63a5\u5df2\u65ad\u5f00\u539f\u56e0\u662f\u5df2\u7ec8\u6b62\u8fdc\u7a0b\u8fdb\u7a0b\u3002<br>\u662f\u5426\u8981\u91cd\u65b0\u8fde\u63a5\uff1f"},
         {"connectingTo1","\u6b63\u5728\u8fde\u63a5\u81f3 {0}"},
-        {"connectingTo2","\u5f53\u524d\u6b63\u5728\u8fde\u63a5\u81f3 {0}\u3002<br>" +
-"\u8fd9\u5c06\u4f1a\u82b1\u8d39\u4e00\u4e9b\u65f6\u95f4\u3002"},
+        {"connectingTo2","\u5f53\u524d\u6b63\u5728\u8fde\u63a5\u81f3 {0}\u3002<br>\u8fd9\u5c06\u4f1a\u82b1\u8d39\u4e00\u4e9b\u65f6\u95f4\u3002"},
         {"deadlockAllTab","\u5168\u90e8"},
         {"deadlockTab","\u6b7b\u9501"},
         {"deadlockTabN","\u6b7b\u9501 {0}"},
@@ -435,7 +434,7 @@ public class JConsoleResources_zh_CN extends JConsoleResources {
              "  -version    \u8f93\u51fa\u7a0b\u5e8f\u7248\u672c" + cr +
              cr +
              "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)" + cr +
-             "  pid       \u76ee\u6807\u8fdb\u7a0b\u7684\u8fdb\u7a0b ID"+ cr +
+             "  pid       \u76ee\u6807\u8fdb\u7a0b\u7684\u8fdb\u7a0b ID" + cr +
              "  host      \u8fdc\u7a0b\u4e3b\u673a\u540d\u6216 IP \u5730\u5740" + cr +
              "  port      \u7528\u4e8e\u8fdc\u7a0b\u8fde\u63a5\u7684\u7aef\u53e3\u53f7" + cr +
              cr +

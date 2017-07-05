@@ -459,6 +459,27 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # of the country calls it "ART".
 # ...
 
+# From Alexander Krivenyshev (2010-04-09):
+# According to news reports from El Diario de la Republica Province San
+# Luis, Argentina (standard time UTC-04) will keep Daylight Saving Time
+# after April 11, 2010--will continue to have same time as rest of
+# Argentina (UTC-3) (no DST).
+#
+# Confirmaron la pr&oacute;rroga del huso horario de verano (Spanish)
+# <a href="http://www.eldiariodelarepublica.com/index.php?option=com_content&task=view&id=29383&Itemid=9">
+# http://www.eldiariodelarepublica.com/index.php?option=com_content&task=view&id=29383&Itemid=9
+# </a>
+# or (some English translation):
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_argentina08.html">
+# http://www.worldtimezone.com/dst_news/dst_news_argentina08.html
+# </a>
+
+# From Mariano Absatz (2010-04-12):
+# yes...I can confirm this...and given that San Luis keeps calling
+# UTC-03:00 "summer time", we should't just let San Luis go back to "Arg"
+# rules...San Luis is still using "Western ARgentina Time" and it got
+# stuck on Summer daylight savings time even though the summer is over.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
 # Buenos Aires (BA), Capital Federal (CF),
@@ -592,8 +613,8 @@ Zone America/Argentina/Mendoza -4:35:16 - LMT	1894 Oct 31
 #
 # San Luis (SL)
 
-Rule	SanLuis	2008	max	-	Mar	Sun>=8	0:00	0	-
-Rule	SanLuis	2007	max	-	Oct	Sun>=8	0:00	1:00	S
+Rule	SanLuis	2008	2009	-	Mar	Sun>=8	0:00	0	-
+Rule	SanLuis	2007	2009	-	Oct	Sun>=8	0:00	1:00	S
 
 Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 			-4:16:48 -	CMT	1920 May

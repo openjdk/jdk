@@ -870,6 +870,8 @@ public class BasicScrollPaneUI
                     orientation = SwingConstants.HORIZONTAL;
                 }
 
+                e.consume();
+
                 if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL) {
                     JViewport vp = scrollpane.getViewport();
                     if (vp == null) { return; }

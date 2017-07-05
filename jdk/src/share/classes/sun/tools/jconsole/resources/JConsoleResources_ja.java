@@ -114,7 +114,6 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"ClassTab.infoLabelFormat", "<html>\u30ed\u30fc\u30c9: {0}    \u30a2\u30f3\u30ed\u30fc\u30c9: {1}    \u7dcf\u6570: {2}</html>"},
         {"ClassTab.loadedClassesPlotter.accessibleName", "\u30ed\u30fc\u30c9\u3055\u308c\u305f\u30af\u30e9\u30b9\u306e\u56f3\u3002"},
         {"Classes","\u30af\u30e9\u30b9"},
-        {"Clear","\u6d88\u53bb"},
         {"Close","\u9589\u3058\u308b"},
         {"Column.Name", "\u540d\u524d"},
         {"Column.PID", "PID"},
@@ -122,7 +121,6 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Committed virtual memory","\u78ba\u5b9a\u4eee\u60f3\u30e1\u30e2\u30ea"},
         {"Committed", "\u78ba\u5b9a"},
         {"Compiler","\u30b3\u30f3\u30d1\u30a4\u30e9"},
-        {"Composite Navigation", "\u8907\u5408\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3"},
         {"CompositeData","CompositeData"},
         {"Config","\u69cb\u6210"},
         {"Connect", "\u63a5\u7d9a(C)"},
@@ -158,12 +156,9 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Detect Deadlock.toolTip", "\u30c7\u30c3\u30c9\u30ed\u30c3\u30af\u3057\u305f\u30b9\u30ec\u30c3\u30c9\u3092\u691c\u51fa\u3059\u308b"},
         {"Dimension is not supported:","\u5927\u304d\u3055\u306f\u30b5\u30dd\u30fc\u30c8\u3055\u308c\u3066\u3044\u307e\u305b\u3093:"},
         {"Discard chart", "\u56f3\u3092\u7834\u68c4\u3059\u308b"},
-        {"DurationDaysHoursMinutes","{0,choice,1#{0,number,integer} \u65e5 |1.0<{0,number,integer} \u65e5 }" +
-                                    "{1,choice,0<{1,number,integer} \u6642\u9593 |1#{1,number,integer} \u6642\u9593 |1<{1,number,integer} \u6642\u9593 }" +
-                                    "{2,choice,0<{2,number,integer} \u5206 |1#{2,number,integer} \u5206 |1.0<{2,number,integer} \u5206}"},
+        {"DurationDaysHoursMinutes","{0,choice,1#{0,number,integer} \u65e5 |1.0<{0,number,integer} \u65e5 }{1,choice,0<{1,number,integer} \u6642\u9593 |1#{1,number,integer} \u6642\u9593 |1<{1,number,integer} \u6642\u9593 }{2,choice,0<{2,number,integer} \u5206 |1#{2,number,integer} \u5206 |1.0<{2,number,integer} \u5206}"},
 
-        {"DurationHoursMinutes","{0,choice,1#{0,number,integer} \u6642\u9593 |1<{0,number,integer} \u6642\u9593 }" +
-                                "{1,choice,0<{1,number,integer} \u5206 |1#{1,number,integer} \u5206 |1.0<{1,number,integer} \u5206}"},
+        {"DurationHoursMinutes","{0,choice,1#{0,number,integer} \u6642\u9593 |1<{0,number,integer} \u6642\u9593 }{1,choice,0<{1,number,integer} \u5206 |1#{1,number,integer} \u5206 |1.0<{1,number,integer} \u5206}"},
 
         {"DurationMinutes","{0,choice,1#{0,number,integer} \u5206 |1.0<{0,number,integer} \u5206}"},
         {"DurationSeconds","{0} \u79d2"},
@@ -201,8 +196,6 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Help.AboutDialog.title", "JConsole: \u88fd\u54c1\u60c5\u5831"},
         {"Help.AboutDialog.userGuideLink", "JConsole \u30e6\u30fc\u30b6\u30fc\u30ac\u30a4\u30c9:<br>{0}"},
         {"Help.AboutDialog.userGuideLink.mnemonic", 'U'},
-        // Note: The java.sun.com URL should be used for RC, or as soon as the page is available.
-        //{"Help.AboutDialog.UsingJMX.url", "http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html"},
         {"Help.AboutDialog.userGuideLink.url", "http://java.sun.com/javase/6/docs/technotes/guides/management/MonitoringGuide/toc.html"},
         {"HelpMenu.About.title", "JConsole \u306b\u3064\u3044\u3066(A)"},
         {"HelpMenu.About.title.mnemonic", 'A'},
@@ -241,9 +234,22 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"MBeanNotificationInfo","MBeanNotificationInfo"},
         {"MBeanOperationInfo","MBeanOperationInfo"},
         {"MBeans","MBean"},
+        {"MBeansTab.clearNotificationsButton", "\u6d88\u53bb(C)"},
+        {"MBeansTab.clearNotificationsButton.mnemonic", 'C'},
+        {"MBeansTab.clearNotificationsButton.toolTip", "\u901a\u77e5\u3092\u6d88\u53bb\u3059\u308b"},
+        {"MBeansTab.compositeNavigationMultiple", "\u8907\u5408\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3 {0}/{1}"},
+        {"MBeansTab.compositeNavigationSingle", "\u8907\u5408\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3"},
         {"MBeansTab.refreshAttributesButton", "\u66f4\u65b0(R)"},
         {"MBeansTab.refreshAttributesButton.mnemonic", 'R'},
         {"MBeansTab.refreshAttributesButton.toolTip", "\u5c5e\u6027\u3092\u66f4\u65b0\u3059\u308b"},
+        {"MBeansTab.subscribeNotificationsButton", "\u767b\u9332(S)"},
+        {"MBeansTab.subscribeNotificationsButton.mnemonic", 'S'},
+        {"MBeansTab.subscribeNotificationsButton.toolTip", "\u901a\u77e5\u306e\u5f85\u6a5f\u3092\u958b\u59cb"},
+        {"MBeansTab.tabularNavigationMultiple", "\u8868\u5f62\u5f0f\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3 {0}/{1}"},
+        {"MBeansTab.tabularNavigationSingle", "\u8868\u5f62\u5f0f\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3"},
+        {"MBeansTab.unsubscribeNotificationsButton", "\u767b\u9332\u89e3\u9664(U)"},
+        {"MBeansTab.unsubscribeNotificationsButton.mnemonic", 'U'},
+        {"MBeansTab.unsubscribeNotificationsButton.toolTip", "\u901a\u77e5\u306e\u5f85\u6a5f\u3092\u505c\u6b62"},
         {"Manage Hotspot MBeans in: ", "Hotspot MBean \u3092\u7ba1\u7406: "},
         {"Max","\u6700\u5927"},
         {"Maximum heap size","\u6700\u5927\u30d2\u30fc\u30d7\u30b5\u30a4\u30ba"},
@@ -343,7 +349,6 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Source","\u30bd\u30fc\u30b9"},
         {"Stack trace",
              cr + "\u30b9\u30bf\u30c3\u30af\u30c8\u30ec\u30fc\u30b9: " + cr},
-        {"Subscribe","\u767b\u9332"},
         {"Success:","\u6210\u529f:"},
         // Note: SummaryTab.headerDateTimeFormat can be one the following:
         // 1. A combination of two styles for date and time, using the
@@ -357,7 +362,6 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"SummaryTab.pendingFinalization.value", "{0} \u30aa\u30d6\u30b8\u30a7\u30af\u30c8"},
         {"SummaryTab.tabName", "VM \u306e\u6982\u8981"},
         {"SummaryTab.vmVersion","{0} \u30d0\u30fc\u30b8\u30e7\u30f3 {1}"},
-        {"Tabular Navigation","\u8868\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3"},
         {"TabularData are not supported", "TabularData \u306f\u30b5\u30dd\u30fc\u30c8\u3055\u308c\u3066\u3044\u307e\u305b\u3093"},
         {"Threads","\u30b9\u30ec\u30c3\u30c9"},
         {"ThreadTab.infoLabelFormat", "<html>\u30e9\u30a4\u30d6: {0}    \u30d4\u30fc\u30af: {1}    \u7dcf\u6570: {2}</html>"},
@@ -381,7 +385,6 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Unavailable","\u4f7f\u7528\u4e0d\u53ef\u80fd"},
         {"UNKNOWN","UNKNOWN"},
         {"Unknown Host","\u672a\u77e5\u306e\u30db\u30b9\u30c8: {0}"},
-        {"Unsubscribe","\u767b\u9332\u89e3\u9664"},
         {"Unregister", "\u767b\u9332\u89e3\u9664"},
         {"Uptime","\u30a2\u30c3\u30d7\u30bf\u30a4\u30e0"},
         {"Uptime: ","\u30a2\u30c3\u30d7\u30bf\u30a4\u30e0: "},
@@ -409,15 +412,11 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"You cannot drop a class here", "\u30af\u30e9\u30b9\u3092\u3053\u3053\u306b\u30c9\u30ed\u30c3\u30d7\u3067\u304d\u307e\u305b\u3093"},
         {"collapse", "\u6298\u308a\u305f\u305f\u307f"},
         {"connectionFailed1","\u63a5\u7d9a\u306b\u5931\u6557\u3057\u307e\u3057\u305f: \u518d\u8a66\u884c\u3057\u307e\u3059\u304b?"},
-        {"connectionFailed2","{0} \u3078\u306e\u63a5\u7d9a\u304c\u6210\u529f\u3057\u307e\u305b\u3093\u3067\u3057\u305f\u3002<br>" +
-                             "\u3082\u3046\u4e00\u5ea6\u8a66\u3057\u307e\u3059\u304b?"},
+        {"connectionFailed2","{0} \u3078\u306e\u63a5\u7d9a\u304c\u6210\u529f\u3057\u307e\u305b\u3093\u3067\u3057\u305f\u3002<br>\u3082\u3046\u4e00\u5ea6\u8a66\u3057\u307e\u3059\u304b?"},
         {"connectionLost1","\u63a5\u7d9a\u304c\u5931\u308f\u308c\u307e\u3057\u305f: \u518d\u63a5\u7d9a\u3057\u307e\u3059\u304b?"},
-        {"connectionLost2","\u30ea\u30e2\u30fc\u30c8\u30d7\u30ed\u30bb\u30b9\u304c\u7d42\u4e86\u3057\u305f\u305f\u3081\u3001" +
-                           "{0} \u3078\u306e\u63a5\u7d9a\u304c\u5931\u308f\u308c\u307e\u3057\u305f\u3002<br>" +
-                           "\u518d\u63a5\u7d9a\u3057\u307e\u3059\u304b?"},
+        {"connectionLost2","\u30ea\u30e2\u30fc\u30c8\u30d7\u30ed\u30bb\u30b9\u304c\u7d42\u4e86\u3057\u305f\u305f\u3081\u3001{0} \u3078\u306e\u63a5\u7d9a\u304c\u5931\u308f\u308c\u307e\u3057\u305f\u3002<br>\u518d\u63a5\u7d9a\u3057\u307e\u3059\u304b?"},
         {"connectingTo1","{0} \u306b\u63a5\u7d9a\u3057\u3066\u3044\u307e\u3059"},
-        {"connectingTo2","\u73fe\u5728 {0} \u306b\u63a5\u7d9a\u3057\u3066\u3044\u307e\u3059\u3002<br>" +
-                         "\u3053\u308c\u306b\u306f\u5c11\u3057\u6642\u9593\u304c\u304b\u304b\u308a\u307e\u3059\u3002"},
+        {"connectingTo2","\u73fe\u5728 {0} \u306b\u63a5\u7d9a\u3057\u3066\u3044\u307e\u3059\u3002<br>\u3053\u308c\u306b\u306f\u5c11\u3057\u6642\u9593\u304c\u304b\u304b\u308a\u307e\u3059\u3002"},
         {"deadlockAllTab","\u3059\u3079\u3066"},
         {"deadlockTab","\u30c7\u30c3\u30c9\u30ed\u30c3\u30af"},
         {"deadlockTabN","\u30c7\u30c3\u30c9\u30ed\u30c3\u30af {0}"},
