@@ -69,12 +69,12 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
   ConcurrentMark* cm()     { return _cm; }
 
-  void set_started()       { _started = true;  }
-  void clear_started()     { _started = false; }
+  void set_started()       { assert(!_in_progress, "cycle in progress"); _started = true;  }
+  void clear_started()     { assert(_in_progress, "must be starting a cycle"); _started = false; }
   bool started()           { return _started;  }
 
-  void set_in_progress()   { _in_progress = true;  }
-  void clear_in_progress() { _in_progress = false; }
+  void set_in_progress()   { assert(_started, "must be starting a cycle"); _in_progress = true;  }
+  void clear_in_progress() { assert(!_started, "must not be starting a new cycle"); _in_progress = false; }
   bool in_progress()       { return _in_progress;  }
 
   // This flag returns true from the moment a marking cycle is

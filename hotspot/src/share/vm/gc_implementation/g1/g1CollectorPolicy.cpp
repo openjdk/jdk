@@ -72,7 +72,10 @@ static double non_young_other_cost_per_region_ms_defaults[] = {
 // </NEW PREDICTION>
 
 G1CollectorPolicy::G1CollectorPolicy() :
-  _parallel_gc_threads((ParallelGCThreads > 0) ? ParallelGCThreads : 1),
+  _parallel_gc_threads(G1CollectedHeap::use_parallel_gc_threads()
+    ? ParallelGCThreads : 1),
+
+
   _n_pauses(0),
   _recent_CH_strong_roots_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
   _recent_G1_strong_roots_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
@@ -1073,7 +1076,7 @@ void G1CollectorPolicy::print_stats (int level,
 }
 
 double G1CollectorPolicy::avg_value (double* data) {
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     double ret = 0.0;
     for (uint i = 0; i < ParallelGCThreads; ++i)
       ret += data[i];
@@ -1084,7 +1087,7 @@ double G1CollectorPolicy::avg_value (double* data) {
 }
 
 double G1CollectorPolicy::max_value (double* data) {
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     double ret = data[0];
     for (uint i = 1; i < ParallelGCThreads; ++i)
       if (data[i] > ret)
@@ -1096,7 +1099,7 @@ double G1CollectorPolicy::max_value (double* data) {
 }
 
 double G1CollectorPolicy::sum_of_values (double* data) {
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     double sum = 0.0;
     for (uint i = 0; i < ParallelGCThreads; i++)
       sum += data[i];
@@ -1110,7 +1113,7 @@ double G1CollectorPolicy::max_sum (double* data1,
                                    double* data2) {
   double ret = data1[0] + data2[0];
 
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     for (uint i = 1; i < ParallelGCThreads; ++i) {
       double data = data1[i] + data2[i];
       if (data > ret)
@@ -1126,7 +1129,7 @@ double G1CollectorPolicy::max_sum (double* data1,
 void G1CollectorPolicy::record_collection_pause_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_ms = _last_pause_time_ms;
-  bool parallel = ParallelGCThreads > 0;
+  bool parallel = G1CollectedHeap::use_parallel_gc_threads();
   double evac_ms = (end_time_sec - _cur_G1_strong_roots_end_sec) * 1000.0;
   size_t rs_size =
     _cur_collection_pause_used_regions_at_start - collection_set_size();
@@ -1941,7 +1944,7 @@ G1CollectorPolicy::recent_avg_survival_fraction_work(TruncatedSeq* surviving,
       // Further, we're now always doing parallel collection.  But I'm still
       // leaving this here as a placeholder for a more precise assertion later.
       // (DLD, 10/05.)
-      assert((true || ParallelGCThreads > 0) ||
+      assert((true || G1CollectedHeap::use_parallel_gc_threads()) ||
              _g1->evacuation_failed() ||
              recent_survival_rate <= 1.0, "Or bad frac");
       return recent_survival_rate;
@@ -1961,7 +1964,7 @@ G1CollectorPolicy::last_survival_fraction_work(TruncatedSeq* surviving,
     // Further, we're now always doing parallel collection.  But I'm still
     // leaving this here as a placeholder for a more precise assertion later.
     // (DLD, 10/05.)
-    assert((true || ParallelGCThreads > 0) ||
+    assert((true || G1CollectedHeap::use_parallel_gc_threads()) ||
            last_survival_rate <= 1.0, "Or bad frac");
     return last_survival_rate;
   } else {
@@ -2121,7 +2124,7 @@ void G1CollectorPolicy::check_other_times(int level,
 }
 
 void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
-  bool parallel = ParallelGCThreads > 0;
+  bool parallel = G1CollectedHeap::use_parallel_gc_threads();
   MainBodySummary*    body_summary = summary->main_body_summary();
   if (summary->get_total_seq()->num() > 0) {
     print_summary_sd(0, "Evacuation Pauses", summary->get_total_seq());
@@ -2559,7 +2562,7 @@ record_concurrent_mark_cleanup_end(size_t freed_bytes,
     gclog_or_tty->print_cr("  clear marked regions + work1: %8.3f ms.",
                   (clear_marked_end - start)*1000.0);
   }
-  if (ParallelGCThreads > 0) {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
     const size_t OverpartitionFactor = 4;
     const size_t MinWorkUnit = 8;
     const size_t WorkUnit =

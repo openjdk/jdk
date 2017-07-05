@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,17 @@
 #include "incls/_precompiled.incl"
 #include "incls/_permGen.cpp.incl"
 
+HeapWord* PermGen::request_expand_and_allocate(Generation* gen, size_t size,
+                                               GCCause::Cause prev_cause) {
+  if (gen->capacity() < _capacity_expansion_limit ||
+      prev_cause != GCCause::_no_gc || UseG1GC) {  // last disjunct is a temporary hack for G1
+    return gen->expand_and_allocate(size, false);
+  }
+  // We have reached the limit of capacity expansion where
+  // we will not expand further until a GC is done; request denied.
+  return NULL;
+}
+
 HeapWord* PermGen::mem_allocate_in_gen(size_t size, Generation* gen) {
   GCCause::Cause next_cause = GCCause::_permanent_generation_full;
   GCCause::Cause prev_cause = GCCause::_no_gc;
@@ -37,10 +48,14 @@ HeapWord* PermGen::mem_allocate_in_gen(size_t size, Generation* gen) {
       if ((obj = gen->allocate(size, false)) != NULL) {
         return obj;
       }
-      if (gen->capacity() < _capacity_expansion_limit ||
-          prev_cause != GCCause::_no_gc) {
-        obj = gen->expand_and_allocate(size, false);
-      }
+      // Attempt to expand and allocate the requested space:
+      // specific subtypes may use specific policy to either expand
+      // or not. The default policy (see above) is to expand until
+      // _capacity_expansion_limit, and no further unless a GC is done.
+      // Concurrent collectors may decide to kick off a concurrent
+      // collection under appropriate conditions.
+      obj = request_expand_and_allocate(gen, size, prev_cause);
+
       if (obj != NULL || prev_cause == GCCause::_last_ditch_collection) {
         return obj;
       }
@@ -119,5 +134,5 @@ void CompactingPermGen::compute_new_size() {
   if (_gen->capacity() > desired_capacity) {
     _gen->shrink(_gen->capacity() - desired_capacity);
   }
-  _capacity_expansion_limit = _gen->capacity() + MaxPermHeapExpansion;
+  set_capacity_expansion_limit(_gen->capacity() + MaxPermHeapExpansion);
 }

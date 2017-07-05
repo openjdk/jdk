@@ -45,7 +45,7 @@ JNLP_FIRST_COPYRIGHT_YEAR           = 1998
 PLUGIN2_FIRST_COPYRIGHT_YEAR        = 2007
 
 # Oracle name
-COMPANY_NAME = Oracle and/or its affiliates
+FULL_COMPANY_NAME = Oracle and/or its affiliates
 
 # Copyright address
 COMPANY_ADDRESS = 500 Oracle Parkway<br>Redwood Shores, CA 94065 USA.

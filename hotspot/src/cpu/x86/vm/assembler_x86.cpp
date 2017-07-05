@@ -7709,9 +7709,14 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
 void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
                                               Register temp_reg,
                                               Label& wrong_method_type) {
-  if (UseCompressedOops)  unimplemented();  // field accesses must decode
+  Address type_addr(mh_reg, delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg));
   // compare method type against that of the receiver
-  cmpptr(mtype_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
+  if (UseCompressedOops) {
+    load_heap_oop(temp_reg, type_addr);
+    cmpptr(mtype_reg, temp_reg);
+  } else {
+    cmpptr(mtype_reg, type_addr);
+  }
   jcc(Assembler::notEqual, wrong_method_type);
 }
 
@@ -7723,15 +7728,14 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
 void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
                                                 Register temp_reg) {
   assert_different_registers(vmslots_reg, mh_reg, temp_reg);
-  if (UseCompressedOops)  unimplemented();  // field accesses must decode
   // load mh.type.form.vmslots
   if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {
     // hoist vmslots into every mh to avoid dependent load chain
     movl(vmslots_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)));
   } else {
     Register temp2_reg = vmslots_reg;
-    movptr(temp2_reg, Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
-    movptr(temp2_reg, Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)));
+    load_heap_oop(temp2_reg, Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
+    load_heap_oop(temp2_reg, Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)));
     movl(vmslots_reg, Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)));
   }
 }
@@ -7745,9 +7749,8 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
   assert(mh_reg == rcx, "caller must put MH object in rcx");
   assert_different_registers(mh_reg, temp_reg);
 
-  if (UseCompressedOops)  unimplemented();  // field accesses must decode
-
   // pick out the interpreted side of the handler
+  // NOTE: vmentry is not an oop!
   movptr(temp_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg)));
 
   // off we go...
@@ -8238,39 +8241,45 @@ void MacroAssembler::store_klass(Register dst, Register src) {
     movptr(Address(dst, oopDesc::klass_offset_in_bytes()), src);
 }
 
+void MacroAssembler::load_heap_oop(Register dst, Address src) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    movl(dst, src);
+    decode_heap_oop(dst);
+  } else
+#endif
+    movptr(dst, src);
+}
+
+void MacroAssembler::store_heap_oop(Address dst, Register src) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    assert(!dst.uses(src), "not enough registers");
+    encode_heap_oop(src);
+    movl(dst, src);
+  } else
+#endif
+    movptr(dst, src);
+}
+
+// Used for storing NULLs.
+void MacroAssembler::store_heap_oop_null(Address dst) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    movl(dst, (int32_t)NULL_WORD);
+  } else {
+    movslq(dst, (int32_t)NULL_WORD);
+  }
+#else
+  movl(dst, (int32_t)NULL_WORD);
+#endif
+}
+
 #ifdef _LP64
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
   if (UseCompressedOops) {
     // Store to klass gap in destination
     movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
-  }
-}
-
-void MacroAssembler::load_heap_oop(Register dst, Address src) {
-  if (UseCompressedOops) {
-    movl(dst, src);
-    decode_heap_oop(dst);
-  } else {
-    movq(dst, src);
-  }
-}
-
-void MacroAssembler::store_heap_oop(Address dst, Register src) {
-  if (UseCompressedOops) {
-    assert(!dst.uses(src), "not enough registers");
-    encode_heap_oop(src);
-    movl(dst, src);
-  } else {
-    movq(dst, src);
-  }
-}
-
-// Used for storing NULLs.
-void MacroAssembler::store_heap_oop_null(Address dst) {
-  if (UseCompressedOops) {
-    movl(dst, (int32_t)NULL_WORD);
-  } else {
-    movslq(dst, (int32_t)NULL_WORD);
   }
 }
 

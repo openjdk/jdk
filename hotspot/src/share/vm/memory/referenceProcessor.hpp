@@ -85,8 +85,10 @@ class ReferenceProcessor : public CHeapObj {
 
   // The discovered ref lists themselves
 
-  // The MT'ness degree of the queues below
+  // The active MT'ness degree of the queues below
   int             _num_q;
+  // The maximum MT'ness degree of the queues below
+  int             _max_num_q;
   // Arrays of lists of oops, one per thread
   DiscoveredList* _discoveredSoftRefs;
   DiscoveredList* _discoveredWeakRefs;
@@ -95,6 +97,7 @@ class ReferenceProcessor : public CHeapObj {
 
  public:
   int num_q()                            { return _num_q; }
+  void set_mt_degree(int v)              { _num_q = v; }
   DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
   static oop  sentinel_ref()             { return _sentinelRef; }
   static oop* adr_sentinel_ref()         { return &_sentinelRef; }
@@ -244,6 +247,7 @@ class ReferenceProcessor : public CHeapObj {
     _bs(NULL),
     _is_alive_non_header(NULL),
     _num_q(0),
+    _max_num_q(0),
     _processing_is_mt(false),
     _next_id(0)
   {}
@@ -311,6 +315,9 @@ class ReferenceProcessor : public CHeapObj {
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
   static void oops_do(OopClosure* f);     // strong root(s)
+
+  // Balance each of the discovered lists.
+  void balance_all_queues();
 
   // Discover a Reference object, using appropriate discovery criteria
   bool discover_reference(oop obj, ReferenceType rt);
