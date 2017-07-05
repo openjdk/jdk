@@ -417,8 +417,15 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   for (DUIterator_Last i2min, i2 = old_tst->last_outs(i2min); i2 >= i2min; --i2)
     old_tst->last_out(i2)->set_req(0, nul_chk);
   // Clean-up any dead code
-  for (uint i3 = 0; i3 < old_tst->req(); i3++)
+  for (uint i3 = 0; i3 < old_tst->req(); i3++) {
+    Node* in = old_tst->in(i3);
     old_tst->set_req(i3, NULL);
+    if (in->outcnt() == 0) {
+      // Remove dead input node
+      in->disconnect_inputs(NULL, C);
+      block->find_remove(in);
+    }
+  }
 
   latency_from_uses(nul_chk);
   latency_from_uses(best);

@@ -83,9 +83,11 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // Note: this requires that CFLspace c'tors
   // are called serially in the order in which the locks are
   // are acquired in the program text. This is true today.
-  _freelistLock(_lockRank--, "CompactibleFreeListSpace._lock", true),
+  _freelistLock(_lockRank--, "CompactibleFreeListSpace._lock", true,
+                Monitor::_safepoint_check_sometimes),
   _parDictionaryAllocLock(Mutex::leaf - 1,  // == rank(ExpandHeap_lock) - 1
-                          "CompactibleFreeListSpace._dict_par_lock", true),
+                          "CompactibleFreeListSpace._dict_par_lock", true,
+                          Monitor::_safepoint_check_never),
   _rescan_task_size(CardTableModRefBS::card_size_in_words * BitsPerWord *
                     CMSRescanMultiple),
   _marking_task_size(CardTableModRefBS::card_size_in_words * BitsPerWord *
@@ -152,8 +154,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // Initialize locks for parallel case.
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     _indexedFreeListParLocks[i] = new Mutex(Mutex::leaf - 1, // == ExpandHeap_lock - 1
-                                            "a freelist par lock",
-                                            true);
+                                            "a freelist par lock", true, Mutex::_safepoint_check_sometimes);
     DEBUG_ONLY(
       _indexedFreeList[i].set_protecting_lock(_indexedFreeListParLocks[i]);
     )
@@ -2559,12 +2560,12 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
      x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x,   \
      x }
 
-// Initialize with default setting of CMSParPromoteBlocksToClaim, _not_
-// OldPLABSize, whose static default is different; if overridden at the
+// Initialize with default setting for CMS, _not_
+// generic OldPLABSize, whose static default is different; if overridden at the
 // command-line, this will get reinitialized via a call to
 // modify_initialization() below.
 AdaptiveWeightedAverage CFLS_LAB::_blocks_to_claim[]    =
-  VECTOR_257(AdaptiveWeightedAverage(OldPLABWeight, (float)CMSParPromoteBlocksToClaim));
+  VECTOR_257(AdaptiveWeightedAverage(OldPLABWeight, (float)CFLS_LAB::_default_dynamic_old_plab_size));
 size_t CFLS_LAB::_global_num_blocks[]  = VECTOR_257(0);
 uint   CFLS_LAB::_global_num_workers[] = VECTOR_257(0);
 

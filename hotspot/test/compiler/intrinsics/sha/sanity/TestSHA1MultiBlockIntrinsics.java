@@ -27,7 +27,7 @@ import sha.predicate.IntrinsicPredicates;
  * @test
  * @bug 8035968
  * @summary Verify that SHA-1 multi block intrinsic is actually used.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary ../
+ * @library /testlibrary /../../test/lib /compiler/testlibrary ../
  * @build TestSHA intrinsics.Verifier TestSHA1MultiBlockIntrinsics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

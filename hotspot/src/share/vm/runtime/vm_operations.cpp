@@ -391,7 +391,8 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");
 
   Thread * thr_cur = ThreadLocalStorage::get_thread_slow();
-  Monitor timer(Mutex::leaf, "VM_Exit timer", true);
+  Monitor timer(Mutex::leaf, "VM_Exit timer", true,
+                Monitor::_safepoint_check_never);
 
   // Compiler threads need longer wait because they can access VM data directly
   // while in native. If they are active and some structures being used are

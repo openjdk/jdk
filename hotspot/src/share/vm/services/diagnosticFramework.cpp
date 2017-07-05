@@ -487,7 +487,7 @@ void DCmdFactory::send_notification_internal(TRAPS) {
   }
 }
 
-Mutex* DCmdFactory::_dcmdFactory_lock = new Mutex(Mutex::leaf, "DCmdFactory", true);
+Mutex* DCmdFactory::_dcmdFactory_lock = new Mutex(Mutex::leaf, "DCmdFactory", true, Monitor::_safepoint_check_never);
 bool DCmdFactory::_send_jmx_notification = false;
 
 DCmdFactory* DCmdFactory::factory(DCmdSource source, const char* name, size_t len) {

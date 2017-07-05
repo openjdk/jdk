@@ -209,7 +209,7 @@ class Aix {
     return _can_use_16M_pages == 1 ? true : false;
   }
 
-  static address   ucontext_get_pc(ucontext_t* uc);
+  static address   ucontext_get_pc(const ucontext_t* uc);
   static intptr_t* ucontext_get_sp(ucontext_t* uc);
   static intptr_t* ucontext_get_fp(ucontext_t* uc);
   // Set PC into context. Needed for continuation after signal.

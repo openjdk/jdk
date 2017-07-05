@@ -3768,7 +3768,6 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
-#define MAX_EXIT_HANDLES PRODUCT_ONLY(32)   NOT_PRODUCT(128)
 #define EXIT_TIMEOUT     PRODUCT_ONLY(1000) NOT_PRODUCT(4000) /* 1 sec in product, 4 sec in debug */
 
 static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
@@ -3787,7 +3786,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     // _endthreadex().
     // Should be large enough to avoid blocking the exiting thread due to lack of
     // a free slot.
-    static HANDLE handles[MAX_EXIT_HANDLES];
+    static HANDLE handles[MAXIMUM_WAIT_OBJECTS];
     static int handle_count = 0;
 
     static INIT_ONCE init_once_crit_sect = INIT_ONCE_STATIC_INIT;
@@ -3809,32 +3808,34 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
           if (res == WAIT_TIMEOUT) {
             handles[j++] = handles[i];
           } else {
-            if (res != WAIT_OBJECT_0) {
-              warning("WaitForSingleObject failed in %s: %d\n", __FILE__, __LINE__);
-              // Don't keep the handle, if we failed waiting for it.
+            if (res == WAIT_FAILED) {
+              warning("WaitForSingleObject failed (%u) in %s: %d\n",
+                      GetLastError(), __FILE__, __LINE__);
             }
+            // Don't keep the handle, if we failed waiting for it.
             CloseHandle(handles[i]);
           }
         }
 
         // If there's no free slot in the array of the kept handles, we'll have to
         // wait until at least one thread completes exiting.
-        if ((handle_count = j) == MAX_EXIT_HANDLES) {
+        if ((handle_count = j) == MAXIMUM_WAIT_OBJECTS) {
           // Raise the priority of the oldest exiting thread to increase its chances
           // to complete sooner.
           SetThreadPriority(handles[0], THREAD_PRIORITY_ABOVE_NORMAL);
-          res = WaitForMultipleObjects(MAX_EXIT_HANDLES, handles, FALSE, EXIT_TIMEOUT);
-          if (res >= WAIT_OBJECT_0 && res < (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
+          res = WaitForMultipleObjects(MAXIMUM_WAIT_OBJECTS, handles, FALSE, EXIT_TIMEOUT);
+          if (res >= WAIT_OBJECT_0 && res < (WAIT_OBJECT_0 + MAXIMUM_WAIT_OBJECTS)) {
             i = (res - WAIT_OBJECT_0);
-            handle_count = MAX_EXIT_HANDLES - 1;
+            handle_count = MAXIMUM_WAIT_OBJECTS - 1;
             for (; i < handle_count; ++i) {
               handles[i] = handles[i + 1];
             }
           } else {
-            warning("WaitForMultipleObjects %s in %s: %d\n",
-                    (res == WAIT_FAILED ? "failed" : "timed out"), __FILE__, __LINE__);
+            warning("WaitForMultipleObjects %s (%u) in %s: %d\n",
+                    (res == WAIT_FAILED ? "failed" : "timed out"),
+                    GetLastError(), __FILE__, __LINE__);
             // Don't keep handles, if we failed waiting for them.
-            for (i = 0; i < MAX_EXIT_HANDLES; ++i) {
+            for (i = 0; i < MAXIMUM_WAIT_OBJECTS; ++i) {
               CloseHandle(handles[i]);
             }
             handle_count = 0;
@@ -3846,7 +3847,8 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
         hthr = GetCurrentThread();
         if (!DuplicateHandle(hproc, hthr, hproc, &handles[handle_count],
                              0, FALSE, DUPLICATE_SAME_ACCESS)) {
-          warning("DuplicateHandle failed in %s: %d\n", __FILE__, __LINE__);
+          warning("DuplicateHandle failed (%u) in %s: %d\n",
+                  GetLastError(), __FILE__, __LINE__);
         } else {
           ++handle_count;
         }
@@ -3869,9 +3871,10 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
             SetThreadPriority(handles[i], THREAD_PRIORITY_ABOVE_NORMAL);
           }
           res = WaitForMultipleObjects(handle_count, handles, TRUE, EXIT_TIMEOUT);
-          if (res < WAIT_OBJECT_0 || res >= (WAIT_OBJECT_0 + MAX_EXIT_HANDLES)) {
-            warning("WaitForMultipleObjects %s in %s: %d\n",
-                    (res == WAIT_FAILED ? "failed" : "timed out"), __FILE__, __LINE__);
+          if (res == WAIT_FAILED || res == WAIT_TIMEOUT) {
+            warning("WaitForMultipleObjects %s (%u) in %s: %d\n",
+                    (res == WAIT_FAILED ? "failed" : "timed out"),
+                    GetLastError(), __FILE__, __LINE__);
           }
           for (i = 0; i < handle_count; ++i) {
             CloseHandle(handles[i]);
@@ -3909,7 +3912,6 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   return exit_code;
 }
 
-#undef MAX_EXIT_HANDLES
 #undef EXIT_TIMEOUT
 
 void os::win32::setmode_streams() {

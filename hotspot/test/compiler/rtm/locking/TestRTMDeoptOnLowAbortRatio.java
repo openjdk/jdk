@@ -26,7 +26,7 @@
  * @test
  * @bug 8031320
  * @summary Verify that on low abort ratio method will be recompiled.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMDeoptOnLowAbortRatio
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

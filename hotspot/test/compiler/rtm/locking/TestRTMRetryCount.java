@@ -26,7 +26,7 @@
  * @test
  * @bug 8031320
  * @summary Verify that RTMRetryCount affects actual amount of retries.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMRetryCount
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

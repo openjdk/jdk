@@ -25,7 +25,7 @@
  * @test
  * @summary run NMT baseline, allocate memory and verify output from summary.diff
  * @key nmt jcmd
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build JcmdSummaryDiff
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary JcmdSummaryDiff
