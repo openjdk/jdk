@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@
 #define PR_MODEL_LP64  2
 
 #ifdef COMPILER1
-#if defined(DEBUG) || defined(FASTDEBUG)
+#ifdef ASSERT
 
 /*
  * To avoid the most part of potential link errors
@@ -84,7 +84,7 @@ address StubRoutines::_call_stub_return_address = NULL;
 
 StubQueue* AbstractInterpreter::_code = NULL;
 
-#endif /* defined(DEBUG) || defined(FASTDEBUG) */
+#endif /* ASSERT */
 #endif /* COMPILER1 */
 
 #define GEN_OFFS(Type,Name)                             \

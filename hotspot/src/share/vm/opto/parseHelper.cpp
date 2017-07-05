@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,19 +337,21 @@ void Parse::increment_and_test_invocation_counter(int limit) {
   if (!count_invocations()) return;
 
   // Get the Method* node.
-  const TypePtr* adr_type = TypeMetadataPtr::make(method());
-  Node *method_node = makecon(adr_type);
+  ciMethod* m = method();
+  address counters_adr = m->ensure_method_counters();
 
-  // Load the interpreter_invocation_counter from the Method*.
-  int offset = Method::interpreter_invocation_counter_offset_in_bytes();
-  Node* adr_node = basic_plus_adr(method_node, method_node, offset);
-  Node* cnt = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type);
+  Node* ctrl = control();
+  const TypePtr* adr_type = TypeRawPtr::make(counters_adr);
+  Node *counters_node = makecon(adr_type);
+  Node* adr_iic_node = basic_plus_adr(counters_node, counters_node,
+    MethodCounters::interpreter_invocation_counter_offset_in_bytes());
+  Node* cnt = make_load(ctrl, adr_iic_node, TypeInt::INT, T_INT, adr_type);
 
   test_counter_against_threshold(cnt, limit);
 
   // Add one to the counter and store
   Node* incr = _gvn.transform(new (C) AddINode(cnt, _gvn.intcon(1)));
-  store_to_memory( NULL, adr_node, incr, T_INT, adr_type );
+  store_to_memory( ctrl, adr_iic_node, incr, T_INT, adr_type );
 }
 
 //----------------------------method_data_addressing---------------------------

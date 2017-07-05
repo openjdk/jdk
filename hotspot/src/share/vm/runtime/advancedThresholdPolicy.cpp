@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,11 @@ void AdvancedThresholdPolicy::initialize() {
 
 // update_rate() is called from select_task() while holding a compile queue lock.
 void AdvancedThresholdPolicy::update_rate(jlong t, Method* m) {
+  JavaThread* THREAD = JavaThread::current();
   if (is_old(m)) {
     // We don't remove old methods from the queue,
     // so we can just zero the rate.
-    m->set_rate(0);
+    m->set_rate(0, THREAD);
     return;
   }
 
@@ -93,13 +94,13 @@ void AdvancedThresholdPolicy::update_rate(jlong t, Method* m) {
   if (delta_s >= TieredRateUpdateMinTime) {
     // And we must've taken the previous point at least 1ms before.
     if (delta_t >= TieredRateUpdateMinTime && delta_e > 0) {
-      m->set_prev_time(t);
-      m->set_prev_event_count(event_count);
-      m->set_rate((float)delta_e / (float)delta_t); // Rate is events per millisecond
+      m->set_prev_time(t, THREAD);
+      m->set_prev_event_count(event_count, THREAD);
+      m->set_rate((float)delta_e / (float)delta_t, THREAD); // Rate is events per millisecond
     } else
       if (delta_t > TieredRateUpdateMaxTime && delta_e == 0) {
         // If nothing happened for 25ms, zero the rate. Don't modify prev values.
-        m->set_rate(0);
+        m->set_rate(0, THREAD);
       }
   }
 }
