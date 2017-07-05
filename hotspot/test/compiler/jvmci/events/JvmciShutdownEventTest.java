@@ -34,9 +34,8 @@
  *
  * @build compiler.jvmci.common.JVMCIHelpers
  *        compiler.jvmci.events.JvmciShutdownEventListener
- * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
  * @run driver jdk.test.lib.FileInstaller ./JvmciShutdownEventTest.config
- *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
+ *     ./META-INF/services/jdk.vm.ci.services.JVMCIServiceLocator
  * @run driver ClassFileInstaller
  *      compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory

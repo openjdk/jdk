@@ -20,59 +20,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot.services;
+package jdk.vm.ci.hotspot;
 
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
-import jdk.vm.ci.services.JVMCIPermission;
 
 /**
- * Service-provider class for responding to VM events.
+ * Listener for responding to VM events.
  */
-public abstract class HotSpotVMEventListener {
-
-    private static Void checkPermission() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unused")
-    HotSpotVMEventListener(Void ignore) {
-    }
-
-    /**
-     * Initializes a new instance of this class.
-     *
-     * @throws SecurityException if a security manager has been installed and it denies
-     *             {@link JVMCIPermission}
-     */
-    protected HotSpotVMEventListener() {
-        this(checkPermission());
-    }
+public interface HotSpotVMEventListener {
 
     /**
      * Notifies this client that the VM is shutting down.
      */
-    public void notifyShutdown() {
+    default void notifyShutdown() {
     }
 
     /**
      * Notify on successful install into the code cache.
      *
-     * @param hotSpotCodeCacheProvider
-     * @param installedCode
-     * @param compiledCode
+     * @param hotSpotCodeCacheProvider the code cache into which the code was installed
+     * @param installedCode the code that was installed
+     * @param compiledCode the compiled code from which {@code installedCode} was produced
      */
-    public void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
+    default void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
     }
 
     /**
      * Notify on completion of a bootstrap.
      */
-    public void notifyBootstrapFinished() {
+    default void notifyBootstrapFinished() {
     }
 }

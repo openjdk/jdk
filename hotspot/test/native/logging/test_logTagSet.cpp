@@ -10,7 +10,7 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
- * ac_heapanied this code).
+ * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
@@ -19,8 +19,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
 #include "precompiled.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logOutput.hpp"
@@ -127,4 +127,47 @@ TEST(LogTagSet, label) {
   const LogTagSet& ts2 = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   ASSERT_NE(-1, ts2.label(buf, sizeof(buf)));
   EXPECT_STREQ("logging", buf);
+}
+
+TEST(LogTagSet, duplicates) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    char ts_name[512];
+    ts->label(ts_name, sizeof(ts_name), ",");
+
+    // verify that NO_TAG is never followed by a real tag
+    for (size_t i = 0; i < LogTag::MaxTags; i++) {
+      if (ts->tag(i) == LogTag::__NO_TAG) {
+        for (i++; i < LogTag::MaxTags; i++) {
+          EXPECT_EQ(LogTag::__NO_TAG, ts->tag(i))
+            << "NO_TAG was followed by a real tag (" << LogTag::name(ts->tag(i)) << ") in tagset " <<  ts_name;
+        }
+      }
+    }
+
+    // verify that there are no duplicate tagsets (same tags in different order)
+    for (LogTagSet* other = ts->next(); other != NULL; other = other->next()) {
+      if (ts->ntags() != other->ntags()) {
+        continue;
+      }
+      bool equal = true;
+      for (size_t i = 0; i < ts->ntags(); i++) {
+        LogTagType tag = ts->tag(i);
+        if (!other->contains(tag)) {
+          equal = false;
+          break;
+        }
+      }
+      // Since tagsets are implemented using template arguments, using both of
+      // the (logically equivalent) tagsets (t1, t2) and (t2, t1) somewhere will
+      // instantiate two different LogTagSetMappings. This causes multiple
+      // tagset instances to be created for the same logical set. We want to
+      // avoid this to save time, memory and prevent any confusion around it.
+      if (equal) {
+        char other_name[512];
+        other->label(other_name, sizeof(other_name), ",");
+        FAIL() << "duplicate LogTagSets found: '" << ts_name << "' vs '" << other_name << "' "
+          << "(tags must always be specified in the same order for each tagset)";
+      }
+    }
+  }
 }

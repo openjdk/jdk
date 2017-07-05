@@ -1687,6 +1687,12 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     Node *init2 = phi2->in( LoopNode::EntryControl );
     int stride_con2 = incr2->in(2)->get_int();
 
+    // The ratio of the two strides cannot be represented as an int
+    // if stride_con2 is min_int and stride_con is -1.
+    if (stride_con2 == min_jint && stride_con == -1) {
+      continue;
+    }
+
     // The general case here gets a little tricky.  We want to find the
     // GCD of all possible parallel IV's and make a new IV using this
     // GCD for the loop.  Then all possible IVs are simple multiples of
