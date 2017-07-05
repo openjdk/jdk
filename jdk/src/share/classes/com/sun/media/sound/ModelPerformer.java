@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ import java.util.List;
  *
  * @author Karl Helgason
  */
-public class ModelPerformer {
+public final class ModelPerformer {
 
-    private List<ModelOscillator> oscillators = new ArrayList<ModelOscillator>();
+    private final List<ModelOscillator> oscillators = new ArrayList<ModelOscillator>();
     private List<ModelConnectionBlock> connectionBlocks
             = new ArrayList<ModelConnectionBlock>();
     private int keyFrom = 0;

@@ -54,6 +54,12 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
     /* If the version supports a dual stack TCP implementation */
     private static boolean useDualStackImpl = false;
 
+    /* sun.net.useExclusiveBind */
+    private static String exclBindProp;
+
+    /* True if exclusive binding is on for Windows */
+    private static boolean exclusiveBind = true;
+
     static {
         java.security.AccessController.doPrivileged( new PrivilegedAction<Object>() {
                 public Object run() {
@@ -62,6 +68,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
                         version = Float.parseFloat(System.getProperties().getProperty("os.version"));
                         preferIPv4Stack = Boolean.parseBoolean(
                                           System.getProperties().getProperty("java.net.preferIPv4Stack"));
+                        exclBindProp = System.getProperty("sun.net.useExclusiveBind");
                     } catch (NumberFormatException e ) {
                         assert false : e;
                     }
@@ -70,7 +77,15 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
         // (version >= 6.0) implies Vista or greater.
         if (version >= 6.0 && !preferIPv4Stack) {
-            useDualStackImpl = true;
+                useDualStackImpl = true;
+        }
+
+        if (exclBindProp != null) {
+            // sun.net.useExclusiveBind is true
+            exclusiveBind = exclBindProp.length() == 0 ? true
+                    : Boolean.parseBoolean(exclBindProp);
+        } else if (version < 6.0) {
+            exclusiveBind = false;
         }
     }
 
@@ -79,9 +94,9 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
      */
     PlainSocketImpl() {
         if (useDualStackImpl) {
-            impl = new DualStackPlainSocketImpl();
+            impl = new DualStackPlainSocketImpl(exclusiveBind);
         } else {
-            impl = new TwoStacksPlainSocketImpl();
+            impl = new TwoStacksPlainSocketImpl(exclusiveBind);
         }
     }
 
@@ -90,9 +105,9 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
      */
     PlainSocketImpl(FileDescriptor fd) {
         if (useDualStackImpl) {
-            impl = new DualStackPlainSocketImpl(fd);
+            impl = new DualStackPlainSocketImpl(fd, exclusiveBind);
         } else {
-            impl = new TwoStacksPlainSocketImpl(fd);
+            impl = new TwoStacksPlainSocketImpl(fd, exclusiveBind);
         }
     }
 

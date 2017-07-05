@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class DLSModulator {
+public final class DLSModulator {
 
     // DLS1 Destinations
     public static final int CONN_DST_NONE = 0x000; // 0
@@ -102,12 +102,12 @@ public class DLSModulator {
     public static final int DST_FORMAT_CENT = 1;
     public static final int DST_FORMAT_TIMECENT = 2;
     public static final int DST_FORMAT_PERCENT = 3;
-    protected int source;
-    protected int control;
-    protected int destination;
-    protected int transform;
-    protected int scale;
-    protected int version = 1;
+    int source;
+    int control;
+    int destination;
+    int transform;
+    int scale;
+    int version = 1;
 
     public int getControl() {
         return control;

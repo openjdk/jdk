@@ -1250,14 +1250,13 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
                   avg_promoted()->deviation());
     }
 
-    gclog_or_tty->print( "  avg_promoted_padded_avg: %f"
+    gclog_or_tty->print_cr( "  avg_promoted_padded_avg: %f"
                 "  avg_pretenured_padded_avg: %f"
                 "  tenuring_thresh: %d"
                 "  target_size: " SIZE_FORMAT,
                 avg_promoted()->padded_average(),
                 _avg_pretenured->padded_average(),
                 tenuring_threshold, target_size);
-    tty->cr();
   }
 
   set_survivor_size(target_size);
@@ -1279,7 +1278,7 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
   avg_promoted()->sample(promoted + _avg_pretenured->padded_average());
 
   if (PrintAdaptiveSizePolicy) {
-    gclog_or_tty->print(
+    gclog_or_tty->print_cr(
                   "AdaptiveSizePolicy::update_averages:"
                   "  survived: "  SIZE_FORMAT
                   "  promoted: "  SIZE_FORMAT

@@ -61,7 +61,7 @@ le_uint32 LookupProcessor::applyLookupTable(const LEReferenceTo<LookupTable> &lo
 
         delta = applySubtable(lookupSubtable, lookupType, glyphIterator, fontInstance, success);
 
-        if (delta > 0 && LE_FAILURE(success)) {
+        if (delta > 0 || LE_FAILURE(success)) {
             return 1;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.util.Vector;
-
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.spi.MixerProvider;
 
@@ -36,7 +34,7 @@ import javax.sound.sampled.spi.MixerProvider;
  *
  * @author Florian Bomers
  */
-public class DirectAudioDeviceProvider extends MixerProvider {
+public final class DirectAudioDeviceProvider extends MixerProvider {
 
     // STATIC VARIABLES
 
@@ -66,16 +64,17 @@ public class DirectAudioDeviceProvider extends MixerProvider {
      * Required public no-arg constructor.
      */
     public DirectAudioDeviceProvider() {
-        //if (Printer.trace) Printer.trace("DirectAudioDeviceProvider: constructor");
-        if (Platform.isDirectAudioEnabled()) {
-            init();
-        } else {
-            infos = new DirectAudioDeviceInfo[0];
-            devices = new DirectAudioDevice[0];
+        synchronized (DirectAudioDeviceProvider.class) {
+            if (Platform.isDirectAudioEnabled()) {
+                init();
+            } else {
+                infos = new DirectAudioDeviceInfo[0];
+                devices = new DirectAudioDevice[0];
+            }
         }
     }
 
-    private synchronized static void init() {
+    private static void init() {
         // get the number of input devices
         int numDevices = nGetNumDevices();
 
@@ -94,36 +93,39 @@ public class DirectAudioDeviceProvider extends MixerProvider {
     }
 
     public Mixer.Info[] getMixerInfo() {
-        Mixer.Info[] localArray = new Mixer.Info[infos.length];
-        System.arraycopy(infos, 0, localArray, 0, infos.length);
-        return localArray;
+        synchronized (DirectAudioDeviceProvider.class) {
+            Mixer.Info[] localArray = new Mixer.Info[infos.length];
+            System.arraycopy(infos, 0, localArray, 0, infos.length);
+            return localArray;
+        }
     }
 
 
     public Mixer getMixer(Mixer.Info info) {
-        // if the default device is asked, we provide the mixer
-        // with SourceDataLine's
-        if (info == null) {
+        synchronized (DirectAudioDeviceProvider.class) {
+            // if the default device is asked, we provide the mixer
+            // with SourceDataLine's
+            if (info == null) {
+                for (int i = 0; i < infos.length; i++) {
+                    Mixer mixer = getDevice(infos[i]);
+                    if (mixer.getSourceLineInfo().length > 0) {
+                        return mixer;
+                    }
+                }
+            }
+            // otherwise get the first mixer that matches
+            // the requested info object
             for (int i = 0; i < infos.length; i++) {
-                Mixer mixer = getDevice(infos[i]);
-                if (mixer.getSourceLineInfo().length > 0) {
-                    return mixer;
+                if (infos[i].equals(info)) {
+                    return getDevice(infos[i]);
                 }
             }
         }
-        // otherwise get the first mixer that matches
-        // the requested info object
-        for (int i = 0; i < infos.length; i++) {
-            if (infos[i].equals(info)) {
-                return getDevice(infos[i]);
-            }
-        }
-
         throw new IllegalArgumentException("Mixer " + info.toString() + " not supported by this provider.");
     }
 
 
-    private Mixer getDevice(DirectAudioDeviceInfo info) {
+    private static Mixer getDevice(DirectAudioDeviceInfo info) {
         int index = info.getIndex();
         if (devices[index] == null) {
             devices[index] = new DirectAudioDevice(info);
@@ -139,12 +141,12 @@ public class DirectAudioDeviceProvider extends MixerProvider {
      * making native references to a particular device.
      * This constructor is called from native.
      */
-    static class DirectAudioDeviceInfo extends Mixer.Info {
-        private int index;
-        private int maxSimulLines;
+    static final class DirectAudioDeviceInfo extends Mixer.Info {
+        private final int index;
+        private final int maxSimulLines;
 
         // For ALSA, the deviceID contains the encoded card index, device index, and sub-device-index
-        private int deviceID;
+        private final int deviceID;
 
         private DirectAudioDeviceInfo(int index, int deviceID, int maxSimulLines,
                                       String name, String vendor,

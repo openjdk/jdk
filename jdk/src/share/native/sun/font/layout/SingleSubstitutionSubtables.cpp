@@ -69,6 +69,9 @@ le_uint32 SingleSubstitutionFormat1Subtable::process(const LEReferenceTo<SingleS
 {
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
     le_int32 coverageIndex = getGlyphCoverage(base, glyph, success);
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
 
     if (coverageIndex >= 0) {
         TTGlyphID substitute = ((TTGlyphID) LE_GET_GLYPH(glyph)) + SWAPW(deltaGlyphID);
@@ -87,6 +90,9 @@ le_uint32 SingleSubstitutionFormat2Subtable::process(const LEReferenceTo<SingleS
 {
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
     le_int32 coverageIndex = getGlyphCoverage(base, glyph, success);
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
 
     if (coverageIndex >= 0) {
         TTGlyphID substitute = SWAPW(substituteArray[coverageIndex]);

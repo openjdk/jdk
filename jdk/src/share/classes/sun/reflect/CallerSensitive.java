@@ -36,6 +36,6 @@ import static java.lang.annotation.ElementType.*;
  * @author John R. Rose
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({CONSTRUCTOR, METHOD})
+@Target({METHOD})
 public @interface CallerSensitive {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
- * @run main GenerationTests
+ * @run main/othervm GenerationTests
  * @author Sean Mullan
  */
 
@@ -487,6 +487,7 @@ public class GenerationTests {
                                                Collections.singletonList(obj),
                                                "signature", null);
         DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
+        dsc.setIdAttributeNS(nc, null, "Id");
 
         sig.sign(dsc);
 
@@ -494,6 +495,7 @@ public class GenerationTests {
 
         DOMValidateContext dvc = new DOMValidateContext
             (kvks, doc.getDocumentElement());
+        dvc.setIdAttributeNS(nc, null, "Id");
         XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
 
         if (sig.equals(sig2) == false) {

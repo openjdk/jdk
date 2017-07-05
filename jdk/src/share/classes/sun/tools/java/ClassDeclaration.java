@@ -230,10 +230,15 @@ class ClassDeclaration implements Constants {
      * Equality
      */
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof ClassDeclaration)) {
+        if (obj instanceof ClassDeclaration) {
             return type.equals(((ClassDeclaration)obj).type);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return type.hashCode();
     }
 
     /**

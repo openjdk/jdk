@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.*;
+import javax.xml.crypto.XMLCryptoContext;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -103,5 +104,17 @@ public final class Utils {
      */
     public static boolean sameDocumentURI(String uri) {
         return (uri != null && (uri.length() == 0 || uri.charAt(0) == '#'));
+    }
+
+    static boolean secureValidation(XMLCryptoContext xc) {
+        if (xc == null) {
+            return false;
+        }
+        return getBoolean(xc, "org.jcp.xml.dsig.secureValidation");
+    }
+
+    private static boolean getBoolean(XMLCryptoContext xc, String name) {
+        Boolean value = (Boolean)xc.getProperty(name);
+        return (value != null && value.booleanValue());
     }
 }

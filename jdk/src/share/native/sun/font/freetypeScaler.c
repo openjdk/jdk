@@ -1351,17 +1351,22 @@ Java_sun_font_FreetypeFontScaler_getGlyphVectorOutlineNative(
     FTScalerInfo *scalerInfo =
              (FTScalerInfo*) jlong_to_ptr(pScaler);
 
-    glyphs = (jint*) malloc(numGlyphs*sizeof(jint));
+    glyphs = NULL;
+    if (numGlyphs > 0 && 0xffffffffu / sizeof(jint) >= numGlyphs) {
+        glyphs = (jint*) malloc(numGlyphs*sizeof(jint));
+    }
     if (glyphs == NULL) {
+        // We reach here if:
+        // 1. numGlyphs <= 0,
+        // 2. overflow check failed, or
+        // 3. malloc failed.
         gp = (*env)->NewObject(env, sunFontIDs.gpClass, sunFontIDs.gpCtrEmpty);
-        if (!isNullScalerContext(context) && scalerInfo != NULL) {
-            invalidateJavaScaler(env, scaler, scalerInfo);
-        }
         return gp;
     }
 
     (*env)->GetIntArrayRegion(env, glyphArray, 0, numGlyphs, glyphs);
 
+    gpdata.numCoords = 0;
     for (i=0; i<numGlyphs;i++) {
         if (glyphs[i] >= INVISIBLE_GLYPHS) {
             continue;

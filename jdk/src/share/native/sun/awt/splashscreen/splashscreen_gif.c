@@ -28,6 +28,8 @@
 
 #include <gif_lib.h>
 
+#include "sizecalc.h"
+
 #define GIF_TRANSPARENT     0x01
 #define GIF_USER_INPUT      0x02
 #define GIF_DISPOSE_MASK    0x07
@@ -120,7 +122,7 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
     splash->height = gif->SHeight;
     splash->frameCount = gif->ImageCount;
     splash->frames = (SplashImage *)
-        malloc(sizeof(SplashImage) * gif->ImageCount);
+        SAFE_SIZE_ARRAY_ALLOC(malloc, sizeof(SplashImage), gif->ImageCount);
     if (!splash->frames) {
       free(pBitmapBits);
       free(pOldBitmapBits);
@@ -254,7 +256,7 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
         // now dispose of the previous frame correctly
 
         splash->frames[imageIndex].bitmapBits =
-            (rgbquad_t *) malloc(bufferSize);
+            (rgbquad_t *) malloc(bufferSize); // bufferSize is safe (checked above)
         if (!splash->frames[imageIndex].bitmapBits) {
             free(pBitmapBits);
             free(pOldBitmapBits);

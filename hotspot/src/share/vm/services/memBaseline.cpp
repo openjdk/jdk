@@ -130,7 +130,7 @@ bool MemBaseline::baseline_malloc_summary(const MemPointerArray* malloc_records)
       if (malloc_ptr->is_arena_record()) {
         // see if arena memory record present
         MemPointerRecord* next_malloc_ptr = (MemPointerRecordEx*)malloc_itr.peek_next();
-        if (next_malloc_ptr->is_arena_memory_record()) {
+        if (next_malloc_ptr != NULL && next_malloc_ptr->is_arena_memory_record()) {
           assert(next_malloc_ptr->is_memory_record_of_arena(malloc_ptr),
              "Arena records do not match");
           size = next_malloc_ptr->size();

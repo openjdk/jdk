@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,14 @@ import java.util.Arrays;
  *
  * @author Karl Helgason
  */
-public class SoftReverb implements SoftAudioProcessor {
+public final class SoftReverb implements SoftAudioProcessor {
 
     private final static class Delay {
 
         private float[] delaybuffer;
         private int rovepos = 0;
 
-        public Delay() {
+        Delay() {
             delaybuffer = null;
         }
 
@@ -77,7 +77,7 @@ public class SoftReverb implements SoftAudioProcessor {
         private int rovepos = 0;
         private float feedback;
 
-        public AllPass(int size) {
+        AllPass(int size) {
             delaybuffer = new float[size];
             delaybuffersize = size;
         }
@@ -127,7 +127,7 @@ public class SoftReverb implements SoftAudioProcessor {
         private float filtercoeff1 = 0;
         private float filtercoeff2 = 1;
 
-        public Comb(int size) {
+        Comb(int size) {
             delaybuffer = new float[size];
             delaybuffersize = size;
         }

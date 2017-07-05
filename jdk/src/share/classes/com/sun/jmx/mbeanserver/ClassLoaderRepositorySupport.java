@@ -27,12 +27,14 @@ package com.sun.jmx.mbeanserver;
 
 
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import javax.management.MBeanPermission;
 
 import javax.management.ObjectName;
 import javax.management.loading.PrivateClassLoader;
@@ -300,7 +302,19 @@ final class ClassLoaderRepositorySupport
     }
 
     public final ClassLoader getClassLoader(ObjectName name) {
-        return loadersWithNames.get(name);
+        ClassLoader instance = loadersWithNames.get(name);
+        if (instance != null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                Permission perm =
+                        new MBeanPermission(instance.getClass().getName(),
+                        null,
+                        name,
+                        "getClassLoader");
+                sm.checkPermission(perm);
+            }
+        }
+        return instance;
     }
 
 }

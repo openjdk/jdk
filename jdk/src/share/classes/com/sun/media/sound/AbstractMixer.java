@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,9 @@ package com.sun.media.sound;
 
 import java.util.Vector;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Control;
-import javax.sound.sampled.DataLine;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Line;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
 
 /**
@@ -95,13 +90,13 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Source lines (ports) currently open
      */
-    protected Vector sourceLines = new Vector();
+    private final Vector sourceLines = new Vector();
 
 
     /**
      * Target lines currently open.
      */
-    protected Vector targetLines = new Vector();
+    private final Vector targetLines = new Vector();
 
 
     /**
@@ -133,19 +128,19 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     // MIXER METHODS
 
 
-    public Mixer.Info getMixerInfo() {
+    public final Mixer.Info getMixerInfo() {
         return mixerInfo;
     }
 
 
-    public Line.Info[] getSourceLineInfo() {
+    public final Line.Info[] getSourceLineInfo() {
         Line.Info[] localArray = new Line.Info[sourceLineInfo.length];
         System.arraycopy(sourceLineInfo, 0, localArray, 0, sourceLineInfo.length);
         return localArray;
     }
 
 
-    public Line.Info[] getTargetLineInfo() {
+    public final Line.Info[] getTargetLineInfo() {
 
         Line.Info[] localArray = new Line.Info[targetLineInfo.length];
         System.arraycopy(targetLineInfo, 0, localArray, 0, targetLineInfo.length);
@@ -153,7 +148,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     }
 
 
-    public Line.Info[] getSourceLineInfo(Line.Info info) {
+    public final Line.Info[] getSourceLineInfo(Line.Info info) {
 
         int i;
         Vector vec = new Vector();
@@ -174,7 +169,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     }
 
 
-    public Line.Info[] getTargetLineInfo(Line.Info info) {
+    public final Line.Info[] getTargetLineInfo(Line.Info info) {
 
         int i;
         Vector vec = new Vector();
@@ -195,7 +190,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     }
 
 
-    public boolean isLineSupported(Line.Info info) {
+    public final boolean isLineSupported(Line.Info info) {
 
         int i;
 
@@ -227,7 +222,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     protected abstract void implClose();
 
 
-    public Line[] getSourceLines() {
+    public final Line[] getSourceLines() {
 
         Line[] localLines;
 
@@ -244,7 +239,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     }
 
 
-    public Line[] getTargetLines() {
+    public final Line[] getTargetLines() {
 
         Line[] localLines;
 
@@ -264,7 +259,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Default implementation always throws an exception.
      */
-    public void synchronize(Line[] lines, boolean maintainSync) {
+    public final void synchronize(Line[] lines, boolean maintainSync) {
         throw new IllegalArgumentException("Synchronization not supported by this mixer.");
     }
 
@@ -272,7 +267,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Default implementation always throws an exception.
      */
-    public void unsynchronize(Line[] lines) {
+    public final void unsynchronize(Line[] lines) {
         throw new IllegalArgumentException("Synchronization not supported by this mixer.");
     }
 
@@ -280,7 +275,8 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Default implementation always returns false.
      */
-    public boolean isSynchronizationSupported(Line[] lines, boolean maintainSync) {
+    public final boolean isSynchronizationSupported(Line[] lines,
+                                                    boolean maintainSync) {
         return false;
     }
 
@@ -290,14 +286,14 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * This implementation tries to open the mixer with its current format and buffer size settings.
      */
-    public synchronized void open() throws LineUnavailableException {
+    public final synchronized void open() throws LineUnavailableException {
         open(true);
     }
 
     /**
      * This implementation tries to open the mixer with its current format and buffer size settings.
      */
-    protected synchronized void open(boolean manual) throws LineUnavailableException {
+    final synchronized void open(boolean manual) throws LineUnavailableException {
         if (Printer.trace) Printer.trace(">> AbstractMixer: open()");
         if (!isOpen()) {
             implOpen();
@@ -322,7 +318,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * The mixer may be opened at a format different than the line's
      * format if it is a DataLine.
      */
-    protected synchronized void open(Line line) throws LineUnavailableException {
+    final synchronized void open(Line line) throws LineUnavailableException {
 
         if (Printer.trace) Printer.trace(">> AbstractMixer: open(line = " + line + ")");
 
@@ -367,7 +363,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * open target lines, if it exists in either.
      * If the list is now empty, closes the mixer.
      */
-    protected synchronized void close(Line line) {
+    final synchronized void close(Line line) {
 
         if (Printer.trace) Printer.trace(">> AbstractMixer: close(" + line + ")");
 
@@ -396,7 +392,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Close all lines and then close this mixer.
      */
-    public synchronized void close() {
+    public final synchronized void close() {
         if (Printer.trace) Printer.trace(">> AbstractMixer: close()");
         if (isOpen()) {
             // close all source lines
@@ -423,7 +419,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Starts the mixer.
      */
-    protected synchronized void start(Line line) {
+    final synchronized void start(Line line) {
 
         if (Printer.trace) Printer.trace(">> AbstractMixer: start(" + line + ")");
 
@@ -447,7 +443,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Stops the mixer if this was the last running line.
      */
-    protected synchronized void stop(Line line) {
+    final synchronized void stop(Line line) {
 
         if (Printer.trace) Printer.trace(">> AbstractMixer: stop(" + line + ")");
 
@@ -501,7 +497,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * Right now this just checks whether it's supported, but should
      * check whether it actually belongs to this mixer....
      */
-    boolean isSourceLine(Line.Info info) {
+    final boolean isSourceLine(Line.Info info) {
 
         for (int i = 0; i < sourceLineInfo.length; i++) {
             if (info.matches(sourceLineInfo[i])) {
@@ -518,7 +514,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * Right now this just checks whether it's supported, but should
      * check whether it actually belongs to this mixer....
      */
-    boolean isTargetLine(Line.Info info) {
+    final boolean isTargetLine(Line.Info info) {
 
         for (int i = 0; i < targetLineInfo.length; i++) {
             if (info.matches(targetLineInfo[i])) {
@@ -535,7 +531,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
      * matches the one specified, or null if no matching Line.Info
      * object is found.
      */
-    Line.Info getLineInfo(Line.Info info) {
+    final Line.Info getLineInfo(Line.Info info) {
         if (info == null) {
             return null;
         }

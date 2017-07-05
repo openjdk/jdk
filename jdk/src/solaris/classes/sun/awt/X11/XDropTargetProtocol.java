@@ -116,7 +116,7 @@ abstract class XDropTargetProtocol {
                                                            XClientMessageEvent xclient) {
         EmbedderRegistryEntry entry = getEmbedderRegistryEntry(toplevel);
 
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("        entry={0}", entry);
         }
         // Window not registered as an embedder for this protocol.
@@ -124,7 +124,7 @@ abstract class XDropTargetProtocol {
             return false;
         }
 
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("        entry.isOverriden()={0}", entry.isOverriden());
         }
         // Window didn't have an associated drop site, so there is no need
@@ -137,7 +137,7 @@ abstract class XDropTargetProtocol {
 
         long proxy = entry.getProxy();
 
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("        proxy={0} toplevel={1}", proxy, toplevel);
         }
         if (proxy == 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package com.sun.media.sound;
 
+import java.util.Map;
 import java.util.Vector;
+import java.util.WeakHashMap;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Control;
-import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Line;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
@@ -43,28 +44,17 @@ import javax.sound.sampled.LineUnavailableException;
  */
 abstract class AbstractLine implements Line {
 
-    protected Line.Info info;
+    protected final Line.Info info;
     protected Control[] controls;
-    protected AbstractMixer mixer;
+    AbstractMixer mixer;
     private boolean open     = false;
-    private Vector listeners = new Vector();
+    private final Vector listeners = new Vector();
 
     /**
-     * Global event thread
+     * Contains event dispatcher per thread group.
      */
-    private static final EventDispatcher eventDispatcher;
-
-    static {
-        // create and start the global event thread
-
-        // $$kk: 12.21.98:
-        // 1) probably don't want a single global event queue
-        // 2) need a way to stop this thread when the engine is done
-
-        eventDispatcher = new EventDispatcher();
-        eventDispatcher.start();
-    }
-
+    private static final Map<ThreadGroup, EventDispatcher> dispatchers =
+            new WeakHashMap<>();
 
     /**
      * Constructs a new AbstractLine.
@@ -85,18 +75,17 @@ abstract class AbstractLine implements Line {
 
     // LINE METHODS
 
-    public Line.Info getLineInfo() {
+    public final Line.Info getLineInfo() {
         return info;
     }
 
 
-    public boolean isOpen() {
+    public final boolean isOpen() {
         return open;
     }
 
 
-    public void addLineListener(LineListener listener) {
-
+    public final void addLineListener(LineListener listener) {
         synchronized(listeners) {
             if ( ! (listeners.contains(listener)) ) {
                 listeners.addElement(listener);
@@ -109,7 +98,7 @@ abstract class AbstractLine implements Line {
      * Removes an audio listener.
      * @param listener listener to remove
      */
-    public void removeLineListener(LineListener listener) {
+    public final void removeLineListener(LineListener listener) {
         listeners.removeElement(listener);
     }
 
@@ -120,8 +109,7 @@ abstract class AbstractLine implements Line {
      * array of length 0.
      * @return control set
      */
-    public Control[] getControls() {
-
+    public final Control[] getControls() {
         Control[] returnedArray = new Control[controls.length];
 
         for (int i = 0; i < controls.length; i++) {
@@ -132,8 +120,7 @@ abstract class AbstractLine implements Line {
     }
 
 
-    public boolean isControlSupported(Control.Type controlType) {
-
+    public final boolean isControlSupported(Control.Type controlType) {
         // protect against a NullPointerException
         if (controlType == null) {
             return false;
@@ -149,8 +136,7 @@ abstract class AbstractLine implements Line {
     }
 
 
-    public Control getControl(Control.Type controlType) {
-
+    public final Control getControl(Control.Type controlType) {
         // protect against a NullPointerException
         if (controlType != null) {
 
@@ -172,7 +158,7 @@ abstract class AbstractLine implements Line {
      * This method sets the open state and generates
      * events if it changes.
      */
-    protected void setOpen(boolean open) {
+    final void setOpen(boolean open) {
 
         if (Printer.trace) Printer.trace("> "+getClass().getName()+" (AbstractLine): setOpen(" + open + ")  this.open: " + this.open);
 
@@ -200,8 +186,8 @@ abstract class AbstractLine implements Line {
     /**
      * Send line events.
      */
-    protected void sendEvents(LineEvent event) {
-        eventDispatcher.sendAudioEvents(event, listeners);
+    final void sendEvents(LineEvent event) {
+        getEventDispatcher().sendAudioEvents(event, listeners);
     }
 
 
@@ -227,12 +213,23 @@ abstract class AbstractLine implements Line {
     // $$kk: 06.03.99: returns the mixer used in construction.
     // this is a hold-over from when there was a public method like
     // this on line and should be fixed!!
-    protected AbstractMixer getMixer() {
+    final AbstractMixer getMixer() {
         return mixer;
     }
 
-    protected EventDispatcher getEventDispatcher() {
-        return eventDispatcher;
+    final EventDispatcher getEventDispatcher() {
+        // create and start the global event thread
+        //TODO  need a way to stop this thread when the engine is done
+        final ThreadGroup tg = Thread.currentThread().getThreadGroup();
+        synchronized (dispatchers) {
+            EventDispatcher eventDispatcher = dispatchers.get(tg);
+            if (eventDispatcher == null) {
+                eventDispatcher = new EventDispatcher();
+                dispatchers.put(tg, eventDispatcher);
+                eventDispatcher.start();
+            }
+            return eventDispatcher;
+        }
     }
 
     // ABSTRACT METHODS
