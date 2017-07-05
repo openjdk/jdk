@@ -26,6 +26,8 @@
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "gc_implementation/parallelScavenge/psTasks.hpp"
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "oops/oop.inline.hpp"

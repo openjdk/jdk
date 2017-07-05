@@ -45,5 +45,8 @@
 #ifdef TARGET_ARCH_MODEL_ppc_64
 # include "interp_masm_ppc_64.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_aarch64
+# include "interp_masm_aarch64.hpp"
+#endif
 
 #endif // SHARE_VM_INTERPRETER_INTERP_MASM_HPP

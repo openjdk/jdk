@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ public:
 
     /* method id for WEmbeddedFrame.requestActivate() method */
     static jmethodID activateEmbeddingTopLevelMID;
+
+    /* field id for WEmbeddedFrame.isEmbeddedInIE */
+    static jfieldID isEmbeddedInIEID;
 
     AwtFrame();
     virtual ~AwtFrame();
@@ -170,6 +173,13 @@ private:
 
     /* The frame is an EmbeddedFrame. */
     BOOL m_isEmbedded;
+
+    /* Fix for JDK-8056915:
+       The embedded frame must gain focus by setting focus to its parent. */
+    BOOL m_isEmbeddedInIE;
+
+    /* Checks whether the frame is embedded in IE */
+    static BOOL IsEmbeddedInIE(HWND hwndParent);
 
     /* The frame is a LightweightFrame */
     BOOL m_isLightweight;

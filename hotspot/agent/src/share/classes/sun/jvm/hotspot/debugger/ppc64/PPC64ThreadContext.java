@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 package sun.jvm.hotspot.debugger.ppc64;
 
+import java.lang.annotation.Native;
+
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 
@@ -38,6 +40,9 @@ public abstract class PPC64ThreadContext implements ThreadContext {
   // subset of the registers' values are guaranteed to be present (and
   // must be present for the SA's stack walking to work).
 
+  // One instance of the Native annotation is enough to trigger header generation
+  // for this file.
+  @Native
   public static final int R31 = 0;
   public static final int R30 = 1;
   public static final int R29 = 2;

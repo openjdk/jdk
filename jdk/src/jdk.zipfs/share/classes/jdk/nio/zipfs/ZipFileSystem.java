@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 201, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,10 +237,10 @@ class ZipFileSystem extends FileSystem {
         String syntax = syntaxAndInput.substring(0, pos);
         String input = syntaxAndInput.substring(pos + 1);
         String expr;
-        if (syntax.equals(GLOB_SYNTAX)) {
+        if (syntax.equalsIgnoreCase(GLOB_SYNTAX)) {
             expr = toRegexPattern(input);
         } else {
-            if (syntax.equals(REGEX_SYNTAX)) {
+            if (syntax.equalsIgnoreCase(REGEX_SYNTAX)) {
                 expr = input;
             } else {
                 throw new UnsupportedOperationException("Syntax '" + syntax +

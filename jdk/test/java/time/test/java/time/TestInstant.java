@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ package test.java.time;
 import java.time.Instant;
 
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Test Instant.
@@ -72,6 +74,26 @@ public class TestInstant extends AbstractTest {
     @Test
     public void test_immutable() {
         assertImmutable(Instant.class);
+    }
+
+    @DataProvider(name="sampleEpochMillis")
+    private Object[][] provider_sampleEpochMillis() {
+        return new Object[][] {
+            {"Long.MAX_VALUE", Long.MAX_VALUE},
+            {"Long.MAX_VALUE-1", Long.MAX_VALUE - 1},
+            {"1", 1L},
+            {"0", 0L},
+            {"-1", -1L},
+            {"Long.MIN_VALUE+1", Long.MIN_VALUE + 1},
+            {"Long.MIN_VALUE", Long.MIN_VALUE}
+        };
+    }
+
+    @Test(dataProvider="sampleEpochMillis")
+    public void test_epochMillis(String name, long millis) {
+        Instant t1 = Instant.ofEpochMilli(millis);
+        long m = t1.toEpochMilli();
+        assertEquals(millis, m, name);
     }
 
 }

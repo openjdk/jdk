@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,6 +401,54 @@ public final class Collectors {
                                    (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
                                    downstream.combiner(), downstream.finisher(),
                                    downstream.characteristics());
+    }
+
+    /**
+     * Adapts a {@code Collector} accepting elements of type {@code U} to one
+     * accepting elements of type {@code T} by applying a flat mapping function
+     * to each input element before accumulation.  The flat mapping function
+     * maps an input element to a {@link Stream stream} covering zero or more
+     * output elements that are then accumulated downstream.  Each mapped stream
+     * is {@link java.util.stream.BaseStream#close() closed} after its contents
+     * have been placed downstream.  (If a mapped stream is {@code null}
+     * an empty stream is used, instead.)
+     *
+     * @apiNote
+     * The {@code flatMapping()} collectors are most useful when used in a
+     * multi-level reduction, such as downstream of a {@code groupingBy} or
+     * {@code partitioningBy}.  For example, given a stream of
+     * {@code Order}, to accumulate the set of line items for each customer:
+     * <pre>{@code
+     *     Map<String, Set<LineItem>> itemsByCustomerName
+     *         = orders.stream().collect(groupingBy(Order::getCustomerName,
+     *                                              flatMapping(order -> order.getLineItems().stream(), toSet())));
+     * }</pre>
+     *
+     * @param <T> the type of the input elements
+     * @param <U> type of elements accepted by downstream collector
+     * @param <A> intermediate accumulation type of the downstream collector
+     * @param <R> result type of collector
+     * @param mapper a function to be applied to the input elements, which
+     * returns a stream of results
+     * @param downstream a collector which will receive the elements of the
+     * stream returned by mapper
+     * @return a collector which applies the mapping function to the input
+     * elements and provides the flat mapped results to the downstream collector
+     * @since 1.9
+     */
+    public static <T, U, A, R>
+    Collector<T, ?, R> flatMapping(Function<? super T, ? extends Stream<? extends U>> mapper,
+                                   Collector<? super U, A, R> downstream) {
+        BiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
+        return new CollectorImpl<>(downstream.supplier(),
+                            (r, t) -> {
+                                try (Stream<? extends U> result = mapper.apply(t)) {
+                                    if (result != null)
+                                        result.sequential().forEach(u -> downstreamAccumulator.accept(r, u));
+                                }
+                            },
+                            downstream.combiner(), downstream.finisher(),
+                            downstream.characteristics());
     }
 
     /**

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # Store the CFLAGS etc passed to the configure script.
   ORG_CFLAGS="$CFLAGS"
   ORG_CXXFLAGS="$CXXFLAGS"
-  ORG_OBJCFLAGS="$OBJCFLAGS"
 
   # On Windows, we need to detect the visual studio installation first.
   # This will change the PATH, but we need to keep that new PATH even
@@ -232,7 +231,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
-  OBJCFLAGS="$ORG_OBJCFLAGS"
 ])
 
 # Check if a compiler is of the toolchain type we expect, and save the version
@@ -541,12 +539,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
 AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 [
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    AC_PROG_OBJC
-    BASIC_FIXUP_EXECUTABLE(OBJC)
     BASIC_PATH_PROGS(LIPO, lipo)
     BASIC_FIXUP_EXECUTABLE(LIPO)
-  else
-    OBJC=
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then

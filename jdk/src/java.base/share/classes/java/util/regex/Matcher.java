@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,16 @@
 
 package java.util.regex;
 
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * An engine that performs match operations on a {@linkplain java.lang.CharSequence
@@ -209,6 +218,11 @@ public final class Matcher implements MatchResult {
     boolean anchoringBounds = true;
 
     /**
+     * Number of times this matcher's state has been modified
+     */
+    int modCount;
+
+    /**
      * No default constructor.
      */
     Matcher() {
@@ -248,11 +262,76 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public MatchResult toMatchResult() {
-        Matcher result = new Matcher(this.parentPattern, text.toString());
-        result.first = this.first;
-        result.last = this.last;
-        result.groups = this.groups.clone();
-        return result;
+        return toMatchResult(text.toString());
+    }
+
+    private MatchResult toMatchResult(String text) {
+        return new ImmutableMatchResult(this.first,
+                                        this.last,
+                                        groupCount(),
+                                        this.groups.clone(),
+                                        text);
+    }
+
+    private static class ImmutableMatchResult implements MatchResult {
+        private final int first;
+        private final int last;
+        private final int[] groups;
+        private final int groupCount;
+        private final String text;
+
+        ImmutableMatchResult(int first, int last, int groupCount,
+                             int groups[], String text)
+        {
+            this.first = first;
+            this.last = last;
+            this.groupCount = groupCount;
+            this.groups = groups;
+            this.text = text;
+        }
+
+        @Override
+        public int start() {
+            return first;
+        }
+
+        @Override
+        public int start(int group) {
+            if (group < 0 || group > groupCount)
+                throw new IndexOutOfBoundsException("No group " + group);
+            return groups[group * 2];
+        }
+
+        @Override
+        public int end() {
+            return last;
+        }
+
+        @Override
+        public int end(int group) {
+            if (group < 0 || group > groupCount)
+                throw new IndexOutOfBoundsException("No group " + group);
+            return groups[group * 2 + 1];
+        }
+
+        @Override
+        public int groupCount() {
+            return groupCount;
+        }
+
+        @Override
+        public String group() {
+            return group(0);
+        }
+
+        @Override
+        public String group(int group) {
+            if (group < 0 || group > groupCount)
+                throw new IndexOutOfBoundsException("No group " + group);
+            if ((groups[group*2] == -1) || (groups[group*2+1] == -1))
+                return null;
+            return text.subSequence(groups[group * 2], groups[group * 2 + 1]).toString();
+        }
     }
 
     /**
@@ -284,6 +363,7 @@ public final class Matcher implements MatchResult {
             groups[i] = -1;
         for (int i = 0; i < locals.length; i++)
             locals[i] = -1;
+        modCount++;
         return this;
     }
 
@@ -308,6 +388,7 @@ public final class Matcher implements MatchResult {
         lastAppendPosition = 0;
         from = 0;
         to = getTextLength();
+        modCount++;
         return this;
     }
 
@@ -803,6 +884,7 @@ public final class Matcher implements MatchResult {
         // Append the match substitution
         sb.append(result);
         lastAppendPosition = last;
+        modCount++;
         return this;
     }
 
@@ -892,6 +974,7 @@ public final class Matcher implements MatchResult {
         // Append the match substitution
         sb.append(result);
         lastAppendPosition = last;
+        modCount++;
         return this;
     }
 
@@ -1078,6 +1161,183 @@ public final class Matcher implements MatchResult {
     }
 
     /**
+     * Replaces every subsequence of the input sequence that matches the
+     * pattern with the result of applying the given replacer function to the
+     * match result of this matcher corresponding to that subsequence.
+     * Exceptions thrown by the function are relayed to the caller.
+     *
+     * <p> This method first resets this matcher.  It then scans the input
+     * sequence looking for matches of the pattern.  Characters that are not
+     * part of any match are appended directly to the result string; each match
+     * is replaced in the result by the applying the replacer function that
+     * returns a replacement string.  Each replacement string may contain
+     * references to captured subsequences as in the {@link #appendReplacement
+     * appendReplacement} method.
+     *
+     * <p> Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * a replacement string may cause the results to be different than if it
+     * were being treated as a literal replacement string. Dollar signs may be
+     * treated as references to captured subsequences as described above, and
+     * backslashes are used to escape literal characters in the replacement
+     * string.
+     *
+     * <p> Given the regular expression <tt>dog</tt>, the input
+     * <tt>"zzzdogzzzdogzzz"</tt>, and the function
+     * <tt>mr -> mr.group().toUpperCase()</tt>, an invocation of this method on
+     * a matcher for that expression would yield the string
+     * <tt>"zzzDOGzzzDOGzzz"</tt>.
+     *
+     * <p> Invoking this method changes this matcher's state.  If the matcher
+     * is to be used in further matching operations then it should first be
+     * reset.  </p>
+     *
+     * <p> The replacer function should not modify this matcher's state during
+     * replacement.  This method will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if such modification is
+     * detected.
+     *
+     * <p> The state of each match result passed to the replacer function is
+     * guaranteed to be constant only for the duration of the replacer function
+     * call and only if the replacer function does not modify this matcher's
+     * state.
+     *
+     * @implNote
+     * This implementation applies the replacer function to this matcher, which
+     * is an instance of {@code MatchResult}.
+     *
+     * @param  replacer
+     *         The function to be applied to the match result of this matcher
+     *         that returns a replacement string.
+     * @return  The string constructed by replacing each matching subsequence
+     *          with the result of applying the replacer function to that
+     *          matched subsequence, substituting captured subsequences as
+     *          needed.
+     * @throws NullPointerException if the replacer function is null
+     * @throws ConcurrentModificationException if it is detected, on a
+     *         best-effort basis, that the replacer function modified this
+     *         matcher's state
+     * @since 1.9
+     */
+    public String replaceAll(Function<MatchResult, String> replacer) {
+        Objects.requireNonNull(replacer);
+        reset();
+        boolean result = find();
+        if (result) {
+            StringBuilder sb = new StringBuilder();
+            do {
+                int ec = modCount;
+                String replacement =  replacer.apply(this);
+                if (ec != modCount)
+                    throw new ConcurrentModificationException();
+                appendReplacement(sb, replacement);
+                result = find();
+            } while (result);
+            appendTail(sb);
+            return sb.toString();
+        }
+        return text.toString();
+    }
+
+    /**
+     * Returns a stream of match results for each subsequence of the input
+     * sequence that matches the pattern.  The match results occur in the
+     * same order as the matching subsequences in the input sequence.
+     *
+     * <p> Each match result is produced as if by {@link #toMatchResult()}.
+     *
+     * <p> This method does not reset this matcher.  Matching starts on
+     * initiation of the terminal stream operation either at the beginning of
+     * this matcher's region, or, if the matcher has not since been reset, at
+     * the first character not matched by a previous match.
+     *
+     * <p> If the matcher is to be used for further matching operations after
+     * the terminal stream operation completes then it should be first reset.
+     *
+     * <p> This matcher's state should not be modified during execution of the
+     * returned stream's pipeline.  The returned stream's source
+     * {@code Spliterator} is <em>fail-fast</em> and will, on a best-effort
+     * basis, throw a {@link java.util.ConcurrentModificationException} if such
+     * modification is detected.
+     *
+     * @return a sequential stream of match results.
+     * @since 1.9
+     */
+    public Stream<MatchResult> results() {
+        class MatchResultIterator implements Iterator<MatchResult> {
+            // -ve for call to find, 0 for not found, 1 for found
+            int state = -1;
+            // State for concurrent modification checking
+            // -1 for uninitialized
+            int expectedCount = -1;
+            // The input sequence as a string, set once only after first find
+            // Avoids repeated conversion from CharSequence for each match
+            String textAsString;
+
+            @Override
+            public MatchResult next() {
+                if (expectedCount >= 0 && expectedCount != modCount)
+                    throw new ConcurrentModificationException();
+
+                if (!hasNext())
+                    throw new NoSuchElementException();
+
+                state = -1;
+                return toMatchResult(textAsString);
+            }
+
+            @Override
+            public boolean hasNext() {
+                if (state >= 0)
+                    return state == 1;
+
+                // Defer throwing ConcurrentModificationException to when next
+                // or forEachRemaining is called.  The is consistent with other
+                // fail-fast implementations.
+                if (expectedCount >= 0 && expectedCount != modCount)
+                    return true;
+
+                boolean found = find();
+                // Capture the input sequence as a string on first find
+                if (found && state < 0)
+                    textAsString = text.toString();
+                state = found ? 1 : 0;
+                expectedCount = modCount;
+                return found;
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super MatchResult> action) {
+                if (expectedCount >= 0 && expectedCount != modCount)
+                    throw new ConcurrentModificationException();
+
+                int s = state;
+                if (s == 0)
+                    return;
+
+                // Set state to report no more elements on further operations
+                state = 0;
+                expectedCount = -1;
+
+                // Perform a first find if required
+                if (s < 0 && !find())
+                    return;
+
+                // Capture the input sequence as a string on first find
+                textAsString = text.toString();
+
+                do {
+                    int ec = modCount;
+                    action.accept(toMatchResult(textAsString));
+                    if (ec != modCount)
+                        throw new ConcurrentModificationException();
+                } while (find());
+            }
+        }
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                new MatchResultIterator(), Spliterator.ORDERED | Spliterator.NONNULL), false);
+    }
+
+    /**
      * Replaces the first subsequence of the input sequence that matches the
      * pattern with the given replacement string.
      *
@@ -1117,6 +1377,79 @@ public final class Matcher implements MatchResult {
         if (!find())
             return text.toString();
         StringBuilder sb = new StringBuilder();
+        appendReplacement(sb, replacement);
+        appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
+     * Replaces the first subsequence of the input sequence that matches the
+     * pattern with the result of applying the given replacer function to the
+     * match result of this matcher corresponding to that subsequence.
+     * Exceptions thrown by the replace function are relayed to the caller.
+     *
+     * <p> This method first resets this matcher.  It then scans the input
+     * sequence looking for a match of the pattern.  Characters that are not
+     * part of the match are appended directly to the result string; the match
+     * is replaced in the result by the applying the replacer function that
+     * returns a replacement string.  The replacement string may contain
+     * references to captured subsequences as in the {@link #appendReplacement
+     * appendReplacement} method.
+     *
+     * <p>Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * the replacement string may cause the results to be different than if it
+     * were being treated as a literal replacement string. Dollar signs may be
+     * treated as references to captured subsequences as described above, and
+     * backslashes are used to escape literal characters in the replacement
+     * string.
+     *
+     * <p> Given the regular expression <tt>dog</tt>, the input
+     * <tt>"zzzdogzzzdogzzz"</tt>, and the function
+     * <tt>mr -> mr.group().toUpperCase()</tt>, an invocation of this method on
+     * a matcher for that expression would yield the string
+     * <tt>"zzzDOGzzzdogzzz"</tt>.
+     *
+     * <p> Invoking this method changes this matcher's state.  If the matcher
+     * is to be used in further matching operations then it should first be
+     * reset.
+     *
+     * <p> The replacer function should not modify this matcher's state during
+     * replacement.  This method will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if such modification is
+     * detected.
+     *
+     * <p> The state of the match result passed to the replacer function is
+     * guaranteed to be constant only for the duration of the replacer function
+     * call and only if the replacer function does not modify this matcher's
+     * state.
+     *
+     * @implNote
+     * This implementation applies the replacer function to this matcher, which
+     * is an instance of {@code MatchResult}.
+     *
+     * @param  replacer
+     *         The function to be applied to the match result of this matcher
+     *         that returns a replacement string.
+     * @return  The string constructed by replacing the first matching
+     *          subsequence with the result of applying the replacer function to
+     *          the matched subsequence, substituting captured subsequences as
+     *          needed.
+     * @throws NullPointerException if the replacer function is null
+     * @throws ConcurrentModificationException if it is detected, on a
+     *         best-effort basis, that the replacer function modified this
+     *         matcher's state
+     * @since 1.9
+     */
+    public String replaceFirst(Function<MatchResult, String> replacer) {
+        Objects.requireNonNull(replacer);
+        reset();
+        if (!find())
+            return text.toString();
+        StringBuilder sb = new StringBuilder();
+        int ec = modCount;
+        String replacement = replacer.apply(this);
+        if (ec != modCount)
+            throw new ConcurrentModificationException();
         appendReplacement(sb, replacement);
         appendTail(sb);
         return sb.toString();
@@ -1365,6 +1698,7 @@ public final class Matcher implements MatchResult {
         if (!result)
             this.first = -1;
         this.oldLast = this.last;
+        this.modCount++;
         return result;
     }
 
@@ -1387,6 +1721,7 @@ public final class Matcher implements MatchResult {
         if (!result)
             this.first = -1;
         this.oldLast = this.last;
+        this.modCount++;
         return result;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class Compiler {
     private static final AtomicInteger counter = new AtomicInteger();
     private static final String targetDir =
         System.getProperty("lambda.separate.targetDirectory",
-            System.getProperty("java.io.tmpdir") + File.separator + "gen-separate");
+            "." + File.separator + "gen-separate");
     private static final File root = new File(targetDir);
     private static ConcurrentHashMap<String,File> cache =
             new ConcurrentHashMap<>();
@@ -189,7 +189,7 @@ public class Compiler {
                 StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
         } catch (IOException e) {
             throw new RuntimeException(
-                "IOException encountered during compilation");
+                "IOException encountered during compilation: " + e.getMessage(), e);
         }
         Boolean result = ct.call();
         if (result == Boolean.FALSE) {
