@@ -1,0 +1,2053 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11323 $"/>
+		<generation date="$Date: 2015-02-26 15:25:28 -0600 (Thu, 26 Feb 2015) $"/>
+		<language type="es"/>
+		<territory type="MX"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ba" draft="contributed">bashkir</language>
+			<language type="ug" alt="variant" draft="contributed">uyghur</language>
+		</languages>
+		<scripts>
+			<script type="Telu" draft="contributed">telugú</script>
+		</scripts>
+		<territories>
+			<territory type="005" draft="contributed">Sudamérica</territory>
+			<territory type="011" draft="contributed">África Occidental</territory>
+			<territory type="014" draft="contributed">África Oriental</territory>
+			<territory type="015" draft="contributed">África del Norte</territory>
+			<territory type="017" draft="contributed">África Central</territory>
+			<territory type="018" draft="contributed">África del Sur</territory>
+			<territory type="019" draft="contributed">Américas</territory>
+			<territory type="030" draft="contributed">Asia Oriental</territory>
+			<territory type="034" draft="contributed">Asia del Sur</territory>
+			<territory type="035" draft="contributed">Sudeste Asiático</territory>
+			<territory type="039" draft="contributed">Europa del Sur</territory>
+			<territory type="143" draft="contributed">Asia Central</territory>
+			<territory type="145" draft="contributed">Asia Occidental</territory>
+			<territory type="151" draft="contributed">Europa Oriental</territory>
+			<territory type="154" draft="contributed">Europa del Norte</territory>
+			<territory type="155" draft="contributed">Europa Occidental</territory>
+			<territory type="BD" draft="contributed">Bangladesh</territory>
+			<territory type="CC" draft="contributed">Islas Cocos (Keeling)</territory>
+			<territory type="CX" draft="contributed">Isla de Navidad</territory>
+			<territory type="GB" alt="short" draft="contributed">RU</territory>
+			<territory type="GG" draft="contributed">Guernsey</territory>
+			<territory type="HK" draft="contributed">Región Administrativa Especial de Hong Kong de la República Popular China</territory>
+			<territory type="IC" draft="contributed">Islas Canarias</territory>
+			<territory type="MO" draft="contributed">Región Administrativa Especial de Macao de la República Popular China</territory>
+			<territory type="PW" draft="contributed">Palaos</territory>
+			<territory type="QO" draft="contributed">Islas Ultramarinas</territory>
+			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
+			<territory type="UM" draft="contributed">Islas Ultramarinas Menores de Estados Unidos</territory>
+			<territory type="VI" draft="contributed">Islas Vírgenes de los Estados Unidos</territory>
+		</territories>
+		<keys>
+			<key type="calendar" draft="contributed">Calendario</key>
+			<key type="collation" draft="contributed">Orden</key>
+			<key type="currency" draft="contributed">Moneda</key>
+		</keys>
+		<types>
+			<type type="arab" key="numbers" draft="contributed">Dígitos en arábigo-índico</type>
+			<type type="arabext" key="numbers" draft="contributed">Dígitos en árabigo-índico extendido</type>
+			<type type="armn" key="numbers" draft="contributed">Números en armenio</type>
+			<type type="armnlow" key="numbers" draft="contributed">Números en armenio en minúscula</type>
+			<type type="ethi" key="numbers" draft="contributed">Números en etíope</type>
+			<type type="geor" key="numbers" draft="contributed">Números en georgiano</type>
+			<type type="gregorian" key="calendar" draft="contributed">Calendario gregoriano</type>
+			<type type="grek" key="numbers" draft="contributed">Números en griego</type>
+			<type type="greklow" key="numbers" draft="contributed">Números en griego en minúscula</type>
+			<type type="guru" key="numbers" draft="contributed">Dígitos en gurmuji</type>
+			<type type="hanidec" key="numbers" draft="contributed">Numeros decimales en chino</type>
+			<type type="hans" key="numbers" draft="contributed">Números en chino simplificado</type>
+			<type type="hansfin" key="numbers" draft="contributed">Números financieros en chino simplificado</type>
+			<type type="hant" key="numbers" draft="contributed">Números en chino tradicional</type>
+			<type type="hantfin" key="numbers" draft="contributed">Números financieros en chino tradicional</type>
+			<type type="hebr" key="numbers" draft="contributed">Números en hebreo</type>
+			<type type="jpanfin" key="numbers" draft="contributed">Números financieros en japonés</type>
+			<type type="laoo" key="numbers" draft="contributed">Dígitos en lao</type>
+			<type type="mlym" key="numbers" draft="contributed">Dígitos en malabar</type>
+			<type type="roc" key="calendar" draft="contributed">calendario minguo</type>
+			<type type="standard" key="collation" draft="contributed">Orden estándar</type>
+			<type type="taml" key="numbers" draft="contributed">Números en tamil</type>
+			<type type="tamldec" key="numbers" draft="contributed">Dígitos en tamil</type>
+			<type type="telu" key="numbers" draft="contributed">Dígitos en telugú</type>
+			<type type="tibt" key="numbers" draft="contributed">Dígitos en tibetano</type>
+			<type type="traditional" key="collation" draft="contributed">Orden tradicional</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<moreInformation draft="contributed">[...]</moreInformation>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="contributed">d MMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="contributed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="contributed">d 'de' MMM</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="contributed">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="contributed">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="contributed">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d/M/y–E, d/M/y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">ene</month>
+							<month type="2">feb</month>
+							<month type="3">mar</month>
+							<month type="4">abr</month>
+							<month type="5">may</month>
+							<month type="6">jun</month>
+							<month type="7">jul</month>
+							<month type="8">ago</month>
+							<month type="9">sep</month>
+							<month type="10">oct</month>
+							<month type="11">nov</month>
+							<month type="12">dic</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">M</day>
+							<day type="wed">M</day>
+							<day type="thu">J</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">do</day>
+							<day type="mon">lu</day>
+							<day type="tue">ma</day>
+							<day type="wed">mi</day>
+							<day type="thu">ju</day>
+							<day type="fri">vi</day>
+							<day type="sat">sá</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1er. trim.</quarter>
+							<quarter type="2">2º. trim.</quarter>
+							<quarter type="3">3er. trim.</quarter>
+							<quarter type="4">4º trim.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1T</quarter>
+							<quarter type="2">2T</quarter>
+							<quarter type="3">3T</quarter>
+							<quarter type="4">4T</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1er. trimestre</quarter>
+							<quarter type="2">2º. trimestre</quarter>
+							<quarter type="3">3er. trimestre</quarter>
+							<quarter type="4">4º trimestre</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1er. trim.</quarter>
+							<quarter type="2">2º. trim.</quarter>
+							<quarter type="3">3er. trim.</quarter>
+							<quarter type="4">4º trim.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="contributed">1T</quarter>
+							<quarter type="2" draft="contributed">2T</quarter>
+							<quarter type="3" draft="contributed">3T</quarter>
+							<quarter type="4" draft="contributed">4T</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1er. trimestre</quarter>
+							<quarter type="2">2º. trimestre</quarter>
+							<quarter type="3">3er. trimestre</quarter>
+							<quarter type="4">4º trimestre</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a.m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p.m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="contributed">dd/MM/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="contributed">dd/MM/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Ehm" draft="contributed">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm" draft="contributed">E H:mm</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="contributed">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms" draft="contributed">E H:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="Hm">H:mm</dateFormatItem>
+						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="MMd" draft="contributed">d/MM</dateFormatItem>
+						<dateFormatItem id="MMdd" draft="contributed">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">E d 'de' MMM</dateFormatItem>
+						<dateFormatItem id="yMM" draft="contributed">MM/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="contributed">EEE, d 'de' MMMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="contributed">QQQ y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">H:mm–H:mm</greatestDifference>
+							<greatestDifference id="m">H:mm–H:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">H:mm–H:mm v</greatestDifference>
+							<greatestDifference id="m">H:mm–H:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="contributed">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="contributed">E d/M – E d/M</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/M – E d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="contributed">d–d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="contributed">E d 'de' MMM – E d 'de' MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d 'de' MMM – E d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="contributed">M/y – M/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="contributed">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="contributed">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/M/y – E d/M/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d/M/y – E d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="contributed">MMM–MMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="contributed">d–d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d 'de' MMM – d 'de' MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="contributed">E d 'de' MMM – E d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d 'de' MMM – E d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d 'de' MMM 'de' y – E d 'de' MMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="y" draft="contributed">MMMM 'de' y – MMMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="contributed">era</displayName>
+			</field>
+			<field type="year">
+				<relative type="1" draft="contributed">el año próximo</relative>
+			</field>
+			<field type="year-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} a</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} a</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} a</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} a</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} a</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} a</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} trimestre</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} trimestres</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} trim.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} trim</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">+{0} T</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">+{0} T</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} T</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} T</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month">
+				<relative type="1" draft="contributed">el mes próximo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} mes</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} meses</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} m</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} m</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">+{0} m</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">+{0} m</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} m</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} m</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week">
+				<relative type="1" draft="contributed">la semana próxima</relative>
+			</field>
+			<field type="week-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} sem.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} sem.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">+{0} sem.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">+{0} sem.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} sem.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} sem.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day">
+				<relative type="-2">antier</relative>
+			</field>
+			<field type="day-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} día</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} días</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">+{0} día</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">+{0} días</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} día</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} días</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun">
+				<relative type="1" draft="contributed">el domingo próximo</relative>
+			</field>
+			<field type="mon">
+				<relative type="1" draft="contributed">el lunes próximo</relative>
+			</field>
+			<field type="tue">
+				<relative type="1" draft="contributed">el martes próximo</relative>
+			</field>
+			<field type="wed">
+				<relative type="1" draft="contributed">el miércoles próximo</relative>
+			</field>
+			<field type="wed-short">
+				<relative type="-1" draft="contributed">el miér. pasado</relative>
+				<relative type="0" draft="contributed">este miér.</relative>
+				<relative type="1" draft="contributed">el próximo miér.</relative>
+			</field>
+			<field type="thu">
+				<relative type="1" draft="contributed">el jueves próximo</relative>
+			</field>
+			<field type="fri">
+				<relative type="1" draft="contributed">el viernes próximo</relative>
+			</field>
+			<field type="fri-short">
+				<relative type="-1" draft="contributed">el vier. pasado</relative>
+				<relative type="0" draft="contributed">este vier.</relative>
+				<relative type="1" draft="contributed">el próximo vier.</relative>
+			</field>
+			<field type="sat">
+				<relative type="1" draft="contributed">el sábado próximo</relative>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="contributed">a.m./p.m.</displayName>
+			</field>
+			<field type="hour-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} h</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} n</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">+{0} h</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} h</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} h</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} min</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} min</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">+{0} min</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">+{0} min</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} min</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} min</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">en {0} s</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">en {0} s</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">+{0} s</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">+{0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="contributed">-{0} s</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">-{0} s</relativeTimePattern>
+				</relativeTime>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="contributed">Daca</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity draft="contributed">Buyumbura</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="contributed">Rio Branco</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="contributed">Belém</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="contributed">San Juan de Terranova</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity draft="contributed">Navidad</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity draft="contributed">Büsingen</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight draft="contributed">Hora de verano británica</daylight>
+				</long>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="contributed">Acra</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity draft="contributed">Conakri</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight draft="contributed">Hora de verano irlandesa</daylight>
+				</long>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="contributed">San Cristóbal</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity draft="contributed">Piongyang</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="contributed">Kyzylorda</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="contributed">Almatý</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity draft="contributed">Chisináu</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity draft="contributed">Choybalsan</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity draft="contributed">Qatar</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="contributed">Simferópol</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="contributed">Ekaterinburgo</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="contributed">Anádyr</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="contributed">Jartum</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity draft="contributed">Dusambé</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity draft="contributed">Dar es-Salaam</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity draft="contributed">Úzhgorod</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="contributed">Zaporiyia</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="contributed">Honolulu</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity draft="contributed">Taskent</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="contributed">Hora de Afganistán</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard draft="contributed">Hora de África Central</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard draft="contributed">Hora de África Oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard draft="contributed">Hora de Sudáfrica</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic draft="contributed">Hora de África Occidental</generic>
+					<standard draft="contributed">Hora estándar de África Occidental</standard>
+					<daylight draft="contributed">Hora de verano de África Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="contributed">Hora de Alaska</generic>
+					<standard draft="contributed">Hora estándar de Alaska</standard>
+					<daylight draft="contributed">Hora de verano de Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="contributed">Hora del Amazonas</generic>
+					<standard draft="contributed">Hora estándar del Amazonas</standard>
+					<daylight draft="contributed">Hora de verano del Amazonas</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="contributed">Hora del centro de Norteamérica</generic>
+					<standard draft="contributed">Hora estándar del centro de Norteamérica</standard>
+					<daylight draft="contributed">Hora de verano del centro de Norteamérica</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="contributed">Hora del este de Norteamérica</generic>
+					<standard draft="contributed">Hora estándar del este de Norteamérica</standard>
+					<daylight draft="contributed">Hora de verano del este de Norteamérica</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="contributed">Hora de la montaña de Norteamérica</generic>
+					<standard draft="contributed">Hora estándar de la montaña de Norteamérica</standard>
+					<daylight draft="contributed">Hora de verano de la montaña de Norteamérica</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="contributed">Hora del Pacífico de Norteamérica</generic>
+					<standard draft="contributed">Hora estándar del Pacífico de Norteamérica</standard>
+					<daylight draft="contributed">Hora de verano del Pacífico de Norteamérica</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="contributed">Hora de Apia</generic>
+					<standard draft="contributed">Hora estándar de Apia</standard>
+					<daylight draft="contributed">Hora de verano de Apia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="contributed">Hora de Arabia</generic>
+					<standard draft="contributed">Hora estándar de Arabia</standard>
+					<daylight draft="contributed">Hora de verano de Arabia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="contributed">Hora de Argentina</generic>
+					<standard draft="contributed">Hora estándar de Argentina</standard>
+					<daylight draft="contributed">Hora de verano de Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="contributed">Hora de Argentina Occidental</generic>
+					<standard draft="contributed">Hora estándar de Argentina Occidental</standard>
+					<daylight draft="contributed">Hora de verano de Argentina Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="contributed">Hora de Armenia</generic>
+					<standard draft="contributed">Hora estándar de Armenia</standard>
+					<daylight draft="contributed">Hora de verano de Armenia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="contributed">Hora del Atlántico</generic>
+					<standard draft="contributed">Hora estándar del Atlántico</standard>
+					<daylight draft="contributed">Hora de verano del Atlántico</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="contributed">Hora de Australia Central</generic>
+					<standard draft="contributed">Hora estándar de Australia Central</standard>
+					<daylight draft="contributed">Hora de verano de Australia Central</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="contributed">Hora de Australia Centroccidental</generic>
+					<standard draft="contributed">Hora estándar de Australia Centroccidental</standard>
+					<daylight draft="contributed">Hora de verano de Australia Centroccidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="contributed">Hora de Australia Oriental</generic>
+					<standard draft="contributed">Hora estándar de Australia Oriental</standard>
+					<daylight draft="contributed">Hora de verano de Australia Oriental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="contributed">Hora de Australia Occidental</generic>
+					<standard draft="contributed">Hora estándar de Australia Occidental</standard>
+					<daylight draft="contributed">Hora de verano de Australia Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="contributed">Hora de Azerbaiyán</generic>
+					<standard draft="contributed">Hora estándar de Azerbaiyán</standard>
+					<daylight draft="contributed">Hora de verano de Azerbaiyán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="contributed">Hora de las Azores</generic>
+					<standard draft="contributed">Hora estándar de las Azores</standard>
+					<daylight draft="contributed">Hora de verano de las Azores</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="contributed">Hora de Bangladesh</generic>
+					<standard draft="contributed">Hora estándar de Bangladesh</standard>
+					<daylight draft="contributed">Hora de verano de Bangladesh</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="contributed">Hora de Bután</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="contributed">Hora de Bolivia</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="contributed">Hora de Brasilia</generic>
+					<standard draft="contributed">Hora estándar de Brasilia</standard>
+					<daylight draft="contributed">Hora de verano de Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="contributed">Hora de Brunéi</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="contributed">Hora de Cabo Verde</generic>
+					<standard draft="contributed">Hora estándar de Cabo Verde</standard>
+					<daylight draft="contributed">Hora de verano de Cabo Verde</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="contributed">Hora estándar de Chamorro</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="contributed">Hora de Chatham</generic>
+					<standard draft="contributed">Hora estándar de Chatham</standard>
+					<daylight draft="contributed">Hora de verano de Chatham</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="contributed">Hora de Chile</generic>
+					<standard draft="contributed">Hora estándar de Chile</standard>
+					<daylight draft="contributed">Hora de verano de Chile</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic draft="contributed">Hora de China</generic>
+					<standard draft="contributed">Hora estándar de China</standard>
+					<daylight draft="contributed">Hora de verano de China</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic draft="contributed">Hora de Choybalsan</generic>
+					<standard draft="contributed">Hora estándar de Choybalsan</standard>
+					<daylight draft="contributed">Hora de verano de Choybalsan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="contributed">Hora de la isla de Navidad</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="contributed">Hora de las islas Cocos</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="contributed">Hora de Colombia</generic>
+					<standard draft="contributed">Hora estándar de Colombia</standard>
+					<daylight draft="contributed">Hora de verano de Colombia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="contributed">Hora de las islas Cook</generic>
+					<standard draft="contributed">Hora estándar de las islas Cook</standard>
+					<daylight draft="contributed">Hora de verano media de las islas Cook</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="contributed">Hora de Cuba</generic>
+					<standard draft="contributed">Hora estándar de Cuba</standard>
+					<daylight draft="contributed">Hora de verano de Cuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="contributed">Hora de Davis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="contributed">Hora de Dumont-d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="contributed">Hora de Timor Oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="contributed">Hora de la isla de Pascua</generic>
+					<standard draft="contributed">Hora estándar de la isla de Pascua</standard>
+					<daylight draft="contributed">Hora de verano de la isla de Pascua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="contributed">Hora de Ecuador</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="contributed">Hora de Europa Central</generic>
+					<standard draft="contributed">Hora estándar de Europa Central</standard>
+					<daylight draft="contributed">Hora de verano de Europa Central</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="contributed">Hora de Europa del Este</generic>
+					<standard draft="contributed">Hora estándar de Europa del Este</standard>
+					<daylight draft="contributed">Hora de verano de Europa del Este</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="contributed">Hora del Extremo Oriental de Europa</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="contributed">Hora de Europa Occidental</generic>
+					<standard draft="contributed">Hora estándar de Europa Occidental</standard>
+					<daylight draft="contributed">Hora de verano de Europa Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="contributed">Hora de las islas Malvinas</generic>
+					<standard draft="contributed">Hora estándar de las islas Malvinas</standard>
+					<daylight draft="contributed">Hora de verano de las islas Malvinas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="contributed">Hora de Fiyi</generic>
+					<standard draft="contributed">Hora estándar de Fiyi</standard>
+					<daylight draft="contributed">Hora de verano de Fiyi</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="contributed">Hora de la Guayana Francesa</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="contributed">Hora de las Tierras Australes y Antárticas Francesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="contributed">Hora de Galápagos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="contributed">Hora de Gambier</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="contributed">Hora de Georgia</generic>
+					<standard draft="contributed">Hora estándar de Georgia</standard>
+					<daylight draft="contributed">Hora de verano de Georgia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="contributed">Hora de las islas Gilbert</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="contributed">Hora del meridiano de Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="contributed">Hora de Groenlandia Oriental</generic>
+					<standard draft="contributed">Hora estándar de Groenlandia Oriental</standard>
+					<daylight draft="contributed">Hora de verano de Groenlandia Oriental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="contributed">Hora de Groenlandia Occidental</generic>
+					<standard draft="contributed">Hora estándar de Groenlandia Occidental</standard>
+					<daylight draft="contributed">Hora de verano de Groenlandia Occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="contributed">Hora estándar del Golfo</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="contributed">Hora de Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="contributed">Hora de Hawái-Aleutiano</generic>
+					<standard draft="contributed">Hora estándar de Hawái-Aleutiano</standard>
+					<daylight draft="contributed">Hora de verano de Hawái-Aleutiano</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="contributed">Hora de Hong Kong</generic>
+					<standard draft="contributed">Hora estándar de Hong Kong</standard>
+					<daylight draft="contributed">Hora de verano de Hong Kong</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic draft="contributed">Hora de Hovd</generic>
+					<standard draft="contributed">Hora estándar de Hovd</standard>
+					<daylight draft="contributed">Hora de verano de Hovd</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard draft="contributed">Hora estándar de la India</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="contributed">Hora del Océano Índico</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="contributed">Hora de Indochina</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="contributed">Hora de Indonesia Central</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="contributed">Hora de Indonesia Oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="contributed">Hora de Indonesia Occidental</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="contributed">Hora de Irán</generic>
+					<standard draft="contributed">Hora estándar de Irán</standard>
+					<daylight draft="contributed">Hora de verano de Irán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="contributed">Hora de Irkutsk</generic>
+					<standard draft="contributed">Hora estándar de Irkutsk</standard>
+					<daylight draft="contributed">Hora de verano de Irkutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic draft="contributed">Hora de Israel</generic>
+					<standard draft="contributed">Hora estándar de Israel</standard>
+					<daylight draft="contributed">Hora de verano de Israel</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic draft="contributed">Hora de Japón</generic>
+					<standard draft="contributed">Hora estándar de Japón</standard>
+					<daylight draft="contributed">Hora de verano de Japón</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="contributed">Hora de Kazajistán Oriental</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="contributed">Hora de Kazajistán Occidental</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic draft="contributed">Hora de Corea</generic>
+					<standard draft="contributed">Hora estándar de Corea</standard>
+					<daylight draft="contributed">Hora de verano de Corea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="contributed">Hora de Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="contributed">Hora de Krasnoyarsk</generic>
+					<standard draft="contributed">Hora estándar de Krasnoyarsk</standard>
+					<daylight draft="contributed">Hora de verano de Krasnoyarsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="contributed">Hora de Kirguistán</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="contributed">Hora de las Espóradas Ecuatoriales</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="contributed">Hora de Lord Howe</generic>
+					<standard draft="contributed">Hora estándar de Lord Howe</standard>
+					<daylight draft="contributed">Hora de verano de Lord Howe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard draft="contributed">Hora de la isla Macquarie</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="contributed">Hora de Magadán</generic>
+					<standard draft="contributed">Hora estándar de Magadán</standard>
+					<daylight draft="contributed">Hora de verano de Magadán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="contributed">Hora de Malasia</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="contributed">Hora de Maldivas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="contributed">Hora de las islas Marquesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="contributed">Hora de las Islas Marshall</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="contributed">Hora de Mauricio</generic>
+					<standard draft="contributed">Hora estándar de Mauricio</standard>
+					<daylight draft="contributed">Hora de verano de Mauricio</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard draft="contributed">Hora de Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Hora del noroeste</generic>
+					<standard>Hora estándar del noroeste</standard>
+					<daylight>Hora de verano del noroeste</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Hora del Pacífico</generic>
+					<standard>Hora estándar del Pacífico</standard>
+					<daylight>Hora de verano del Pacífico</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="contributed">Hora de Ulán Bator</generic>
+					<standard draft="contributed">Hora estándar de Ulán Bator</standard>
+					<daylight draft="contributed">Hora de verano de Ulán Bator</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="contributed">Hora de Moscú</generic>
+					<standard draft="contributed">Hora estándar de Moscú</standard>
+					<daylight draft="contributed">Hora de verano de Moscú</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="contributed">Hora de Myanmar</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="contributed">Hora de Nauru</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="contributed">Hora de Nepal</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="contributed">Hora de Nueva Caledonia</generic>
+					<standard draft="contributed">Hora estándar de Nueva Caledonia</standard>
+					<daylight draft="contributed">Hora de verano de Nueva Caledonia</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="contributed">Hora de Nueva Zelanda</generic>
+					<standard draft="contributed">Hora estándar de Nueva Zelanda</standard>
+					<daylight draft="contributed">Hora de verano de Nueva Zelanda</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="contributed">Hora de Terranova</generic>
+					<standard draft="contributed">Hora estándar de Terranova</standard>
+					<daylight draft="contributed">Hora de verano de Terranova</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="contributed">Hora de Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard draft="contributed">Hora de las islas Norfolk</standard>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="contributed">Hora de Fernando de Noronha</generic>
+					<standard draft="contributed">Hora estándar de Fernando de Noronha</standard>
+					<daylight draft="contributed">Hora de verano de Fernando de Noronha</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="contributed">Hora de Novosibirsk</generic>
+					<standard draft="contributed">Hora estándar de Novosibirsk</standard>
+					<daylight draft="contributed">Hora de verano de Novosibirsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="contributed">Hora de Omsk</generic>
+					<standard draft="contributed">Hora estándar de Omsk</standard>
+					<daylight draft="contributed">Hora de verano de Omsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="contributed">Hora de Pakistán</generic>
+					<standard draft="contributed">Hora estándar de Pakistán</standard>
+					<daylight draft="contributed">Hora de verano de Pakistán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="contributed">Hora de Palaos</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="contributed">Hora de Papúa Nueva Guinea</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="contributed">Hora de Paraguay</generic>
+					<standard draft="contributed">Hora estándar de Paraguay</standard>
+					<daylight draft="contributed">Hora de verano de Paraguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="contributed">Hora de Perú</generic>
+					<standard draft="contributed">Hora estándar de Perú</standard>
+					<daylight draft="contributed">Hora de verano de Perú</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="contributed">Hora de Filipinas</generic>
+					<standard draft="contributed">Hora estándar de Filipinas</standard>
+					<daylight draft="contributed">Hora de verano de Filipinas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="contributed">Hora de las islas Fénix</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="contributed">Hora de San Pedro y Miquelón</generic>
+					<standard draft="contributed">Hora estándar de San Pedro y Miquelón</standard>
+					<daylight draft="contributed">Hora de verano de San Pedro y Miquelón</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="contributed">Hora de Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="contributed">Hora de Pohnpei</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="contributed">Hora de Reunión</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="contributed">Hora de Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="contributed">Hora de Sajalín</generic>
+					<standard draft="contributed">Hora estándar de Sajalín</standard>
+					<daylight draft="contributed">Hora de verano de Sajalín</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic draft="contributed">Hora de Samoa</generic>
+					<standard draft="contributed">Hora estándar de Samoa</standard>
+					<daylight draft="contributed">Hora de verano de Samoa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="contributed">Hora de Seychelles</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="contributed">Hora de Singapur</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="contributed">Hora de las islas Salomón</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="contributed">Hora de Georgia meridional</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="contributed">Hora de Surinam</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="contributed">Hora de Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="contributed">Hora de Tahití</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="contributed">Hora de Taipéi</generic>
+					<standard draft="contributed">Hora estándar de Taipéi</standard>
+					<daylight draft="contributed">Hora de verano de Taipéi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="contributed">Hora de Tayikistán</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="contributed">Hora de Tokelau</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="contributed">Hora de Tonga</generic>
+					<standard draft="contributed">Hora estándar de Tonga</standard>
+					<daylight draft="contributed">Hora de verano de Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="contributed">Hora de Chuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="contributed">Hora de Turkmenistán</generic>
+					<standard draft="contributed">Hora estándar de Turkmenistán</standard>
+					<daylight draft="contributed">Hora de verano de Turkmenistán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="contributed">Hora de Tuvalu</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="contributed">Hora de Uruguay</generic>
+					<standard draft="contributed">Hora estándar de Uruguay</standard>
+					<daylight draft="contributed">Hora de verano de Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="contributed">Hora de Uzbekistán</generic>
+					<standard draft="contributed">Hora estándar de Uzbekistán</standard>
+					<daylight draft="contributed">Hora de verano de Uzbekistán</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="contributed">Hora de Vanuatu</generic>
+					<standard draft="contributed">Hora estándar de Vanuatu</standard>
+					<daylight draft="contributed">Hora de verano de Vanuatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="contributed">Hora de Venezuela</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="contributed">Hora de Vladivostok</generic>
+					<standard draft="contributed">Hora estándar de Vladivostok</standard>
+					<daylight draft="contributed">Hora de verano de Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="contributed">Hora de Volgogrado</generic>
+					<standard draft="contributed">Hora estándar de Volgogrado</standard>
+					<daylight draft="contributed">Hora de verano de Volgogrado</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="contributed">Hora de Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="contributed">Hora de la isla Wake</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="contributed">Hora de Wallis y Futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="contributed">Hora de Yakutsk</generic>
+					<standard draft="contributed">Hora estándar de Yakutsk</standard>
+					<daylight draft="contributed">Hora de verano de Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="contributed">Hora de Ekaterimburgo</generic>
+					<standard draft="contributed">Hora estándar de Ekaterimburgo</standard>
+					<daylight draft="contributed">Hora de verano de Ekaterimburgo</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="contributed">0k</pattern>
+					<pattern type="1000" count="other" draft="contributed">0k</pattern>
+					<pattern type="10000" count="one" draft="contributed">00k</pattern>
+					<pattern type="10000" count="other" draft="contributed">00k</pattern>
+					<pattern type="100000" count="one" draft="contributed">000k</pattern>
+					<pattern type="100000" count="other" draft="contributed">000k</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="contributed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencies>
+			<currency type="AFN">
+				<displayName draft="contributed">afgani afgano</displayName>
+				<displayName count="one" draft="contributed">afgani afgano</displayName>
+				<displayName count="other" draft="contributed">afganis afganos</displayName>
+				<symbol draft="contributed">Af</symbol>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="contributed">lek albanés</displayName>
+				<displayName count="one" draft="contributed">lek albanés</displayName>
+				<displayName count="other" draft="contributed">lekë albaneses</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName count="one" draft="contributed">dram armenio</displayName>
+				<displayName count="other" draft="contributed">dram armenios</displayName>
+			</currency>
+			<currency type="ANG">
+				<symbol draft="contributed">Naf</symbol>
+			</currency>
+			<currency type="AOA">
+				<displayName draft="contributed">kwanza angoleño</displayName>
+				<displayName count="one" draft="contributed">kwanza angoleño</displayName>
+				<displayName count="other" draft="contributed">kwanzas angoleños</displayName>
+				<symbol draft="contributed">Kz</symbol>
+			</currency>
+			<currency type="ARA">
+				<symbol draft="contributed">ARA</symbol>
+			</currency>
+			<currency type="ARS">
+				<symbol draft="contributed">$a</symbol>
+				<symbol alt="narrow" draft="contributed">$a</symbol>
+			</currency>
+			<currency type="AUD">
+				<symbol draft="contributed">AU$</symbol>
+			</currency>
+			<currency type="AWG">
+				<symbol draft="contributed">Afl.</symbol>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="contributed">taka de Bangladesh</displayName>
+				<displayName count="one" draft="contributed">taka de Bangladesh</displayName>
+				<displayName count="other" draft="contributed">taka de Bangladesh</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName draft="contributed">dólar de Brunéi</displayName>
+				<displayName count="one" draft="contributed">dólar de Brunéi</displayName>
+				<displayName count="other" draft="contributed">dólares de Brunéi</displayName>
+			</currency>
+			<currency type="BOL">
+				<symbol draft="contributed">BOL</symbol>
+			</currency>
+			<currency type="BOP">
+				<symbol draft="contributed">BOP</symbol>
+			</currency>
+			<currency type="BOV">
+				<symbol draft="contributed">BOV</symbol>
+			</currency>
+			<currency type="BRB">
+				<symbol draft="contributed">BRB</symbol>
+			</currency>
+			<currency type="BRC">
+				<symbol draft="contributed">BRC</symbol>
+			</currency>
+			<currency type="BRE">
+				<symbol draft="contributed">BRE</symbol>
+			</currency>
+			<currency type="BRN">
+				<symbol draft="contributed">BRN</symbol>
+			</currency>
+			<currency type="BRR">
+				<symbol draft="contributed">BRR</symbol>
+			</currency>
+			<currency type="BRZ">
+				<symbol draft="contributed">BRZ</symbol>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="contributed">ngultrum butanés</displayName>
+				<displayName count="one" draft="contributed">ngultrum butanés</displayName>
+				<displayName count="other" draft="contributed">ngultrum butaneses</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName draft="contributed">pula botsuano</displayName>
+				<displayName count="one" draft="contributed">pula botsuano</displayName>
+				<displayName count="other" draft="contributed">pulas botsuanos</displayName>
+			</currency>
+			<currency type="BYR">
+				<symbol alt="narrow" draft="contributed">Br</symbol>
+			</currency>
+			<currency type="CLE">
+				<symbol draft="contributed">CLE</symbol>
+			</currency>
+			<currency type="CLF">
+				<symbol draft="contributed">CLF</symbol>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="contributed">yuan chino</displayName>
+				<displayName count="one" draft="contributed">yuan chino</displayName>
+				<displayName count="other" draft="contributed">yuanes chinos</displayName>
+				<symbol draft="contributed">CN¥</symbol>
+			</currency>
+			<currency type="COU">
+				<symbol draft="contributed">COU</symbol>
+			</currency>
+			<currency type="DOP">
+				<symbol alt="narrow" draft="contributed">RD$</symbol>
+			</currency>
+			<currency type="ECS">
+				<symbol draft="contributed">ECS</symbol>
+			</currency>
+			<currency type="ECV">
+				<symbol draft="contributed">ECV</symbol>
+			</currency>
+			<currency type="ERN">
+				<displayName count="one" draft="contributed">nakfa eritreo</displayName>
+				<displayName count="other" draft="contributed">nakfas eritreos</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="contributed">birr etíope</displayName>
+				<displayName count="one" draft="contributed">birr etíope</displayName>
+				<displayName count="other" draft="contributed">birrs etíopes</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="contributed">lari georgiano</displayName>
+				<displayName count="one" draft="contributed">lari georgiano</displayName>
+				<displayName count="other" draft="contributed">laris georgianos</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="contributed">cedi ghanés</displayName>
+				<displayName count="one" draft="contributed">cedi ghanés</displayName>
+				<displayName count="other" draft="contributed">cedis ghaneses</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="contributed">dalasi gambiano</displayName>
+				<displayName count="one" draft="contributed">dalasi gambiano</displayName>
+				<displayName count="other" draft="contributed">dalasis gambianos</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="contributed">dólar de Hong Kong</displayName>
+				<displayName count="one" draft="contributed">dólar de Hong Kong</displayName>
+				<displayName count="other" draft="contributed">dólares de Hong Kong</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="contributed">kuna croata</displayName>
+				<displayName count="one" draft="contributed">kuna croata</displayName>
+				<displayName count="other" draft="contributed">kunas croatas</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="contributed">nuevo shéquel israelí</displayName>
+				<displayName count="one" draft="contributed">nuevo shéquel israelí</displayName>
+				<displayName count="other" draft="contributed">nuevos shéquels israelíes</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="contributed">yen japonés</displayName>
+				<displayName count="one" draft="contributed">yen japonés</displayName>
+				<displayName count="other" draft="contributed">yenes japoneses</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="contributed">som kirguís</displayName>
+				<displayName count="one" draft="contributed">som kirguís</displayName>
+				<displayName count="other" draft="contributed">soms kirguises</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName draft="contributed">riel camboyano</displayName>
+				<displayName count="one" draft="contributed">riel camboyano</displayName>
+				<displayName count="other" draft="contributed">rieles camboyanos</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="contributed">tenge kazajo</displayName>
+				<displayName count="one" draft="contributed">tenge kasajo</displayName>
+				<displayName count="other" draft="contributed">tenges kasajos</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="contributed">kip laosiano</displayName>
+				<displayName count="one" draft="contributed">kip laosiano</displayName>
+				<displayName count="other" draft="contributed">kips laosianos</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="contributed">rupia de Sri Lanka</displayName>
+				<displayName count="one" draft="contributed">rupia de Sri Lanka</displayName>
+				<displayName count="other" draft="contributed">rupias de Sri Lanka</displayName>
+			</currency>
+			<currency type="LVL">
+				<displayName count="one" draft="contributed">lats letón</displayName>
+				<displayName count="other" draft="contributed">lats letones</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="contributed">ariary malgache</displayName>
+				<displayName count="one" draft="contributed">ariary malgache</displayName>
+				<displayName count="other" draft="contributed">ariarys malgaches</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="contributed">kyat de Myanmar</displayName>
+				<displayName count="one" draft="contributed">kyat de Myanmar</displayName>
+				<displayName count="other" draft="contributed">kyats de Myanmar</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="contributed">tugrik mongol</displayName>
+				<displayName count="one" draft="contributed">tugrik mongol</displayName>
+				<displayName count="other" draft="contributed">tugriks mongoles</displayName>
+			</currency>
+			<currency type="MRO">
+				<displayName draft="contributed">ouguiya mauritano</displayName>
+				<displayName count="one" draft="contributed">ouguiya mauritano</displayName>
+				<displayName count="other" draft="contributed">ouguiyas mauritanos</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="contributed">rufiyaa de Maldivas</displayName>
+				<displayName count="one" draft="contributed">rufiyaa de Maldivas</displayName>
+				<displayName count="other" draft="contributed">rufiyaas de Maldivas</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName count="one" draft="contributed">kwacha malauí</displayName>
+				<displayName count="other" draft="contributed">kwaschas malauíes</displayName>
+			</currency>
+			<currency type="MXN">
+				<symbol>$</symbol>
+			</currency>
+			<currency type="MXP">
+				<symbol draft="contributed">MXP</symbol>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="contributed">ringgit malayo</displayName>
+				<displayName count="one" draft="contributed">ringgit malayo</displayName>
+				<displayName count="other" draft="contributed">ringgits malayos</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName draft="contributed">metical mozambiqueño</displayName>
+				<displayName count="one" draft="contributed">metical mozambiqueño</displayName>
+				<displayName count="other" draft="contributed">meticales mozambiqueños</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="contributed">naira nigeriano</displayName>
+				<displayName count="one" draft="contributed">naira nigeriano</displayName>
+				<displayName count="other" draft="contributed">nairas nigerianos</displayName>
+			</currency>
+			<currency type="NIC">
+				<symbol draft="contributed">NIC</symbol>
+			</currency>
+			<currency type="PEI">
+				<symbol draft="contributed">PEI</symbol>
+			</currency>
+			<currency type="PES">
+				<symbol draft="contributed">PES</symbol>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="contributed">kina de Papúa Nueva Guinea</displayName>
+				<displayName count="one" draft="contributed">kina de Papúa Nueva Guinea</displayName>
+				<displayName count="other" draft="contributed">kinas de Papúa Nueva Guinea</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="contributed">zloty polaco</displayName>
+				<displayName count="one" draft="contributed">zloty polaco</displayName>
+				<displayName count="other" draft="contributed">zlotys polacos</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>riyal de Qatar</displayName>
+				<displayName count="one">riyal de Qatar</displayName>
+				<displayName count="other">riyales de Qatar</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName count="one" draft="contributed">leu rumano</displayName>
+				<displayName count="other" draft="contributed">lei rumanos</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>riyal saudí</displayName>
+				<displayName count="one">riyal saudí</displayName>
+				<displayName count="other">riyales saudíes</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="contributed">dólar de las Islas Salomón</displayName>
+				<displayName count="one" draft="contributed">dólar de las Islas Salomón</displayName>
+				<displayName count="other" draft="contributed">dólares de las Islas Salomón</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="contributed">rupia de Seychelles</displayName>
+				<displayName count="one" draft="contributed">rupia de Seychelles</displayName>
+				<displayName count="other" draft="contributed">rupias de Seychelles</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="contributed">leone de Sierra Leona</displayName>
+				<displayName count="one" draft="contributed">leone de Sierra Leona</displayName>
+				<displayName count="other" draft="contributed">leones de Sierra Leona</displayName>
+			</currency>
+			<currency type="SRG">
+				<symbol draft="contributed">SRG</symbol>
+			</currency>
+			<currency type="STD">
+				<displayName draft="contributed">dobra de Santo Tomé y Príncipe</displayName>
+				<displayName count="one" draft="contributed">dobra de Santo Tomé y Príncipe</displayName>
+				<displayName count="other" draft="contributed">dobras de Santo Tomé y Príncipe</displayName>
+			</currency>
+			<currency type="SVC">
+				<symbol draft="contributed">SVC</symbol>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="contributed">lilangeni suazi</displayName>
+				<displayName count="one" draft="contributed">lilangeni suazi</displayName>
+				<displayName count="other" draft="contributed">lilangenis suazis</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="contributed">baht tailandés</displayName>
+				<displayName count="one" draft="contributed">baht tailandés</displayName>
+				<displayName count="other" draft="contributed">bahts tailandeses</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="contributed">manat turkmeno</displayName>
+				<displayName count="one" draft="contributed">manat turkmeno</displayName>
+				<displayName count="other" draft="contributed">manats turkmenos</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="contributed">paʻanga tongano</displayName>
+				<displayName count="one" draft="contributed">paʻanga tongano</displayName>
+				<displayName count="other" draft="contributed">paʻangas tonganos</displayName>
+			</currency>
+			<currency type="TRY">
+				<symbol alt="narrow" draft="contributed">TL</symbol>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="contributed">grivna ucraniana</displayName>
+				<displayName count="one" draft="contributed">grivna ucraniana</displayName>
+				<displayName count="other" draft="contributed">grivnas ucranianas</displayName>
+			</currency>
+			<currency type="USN">
+				<symbol draft="contributed">USN</symbol>
+			</currency>
+			<currency type="USS">
+				<symbol draft="contributed">USS</symbol>
+			</currency>
+			<currency type="UYI">
+				<symbol draft="contributed">UYI</symbol>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="contributed">som uzbeko</displayName>
+				<displayName count="one" draft="contributed">som uzbeko</displayName>
+				<displayName count="other" draft="contributed">soms uzbekos</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="contributed">dong vietnamita</displayName>
+				<displayName count="one" draft="contributed">dong vietnamita</displayName>
+				<displayName count="other" draft="contributed">dongs vietnamitas</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="contributed">vatu vanuatuense</displayName>
+				<displayName count="one" draft="contributed">vatu vanuatuense</displayName>
+				<displayName count="other" draft="contributed">vatus vanuatuenses</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="contributed">tala samoano</displayName>
+				<displayName count="one" draft="contributed">tala samoano</displayName>
+				<displayName count="other" draft="contributed">talas samoanos</displayName>
+			</currency>
+			<currency type="XPF">
+				<symbol draft="contributed">XPF</symbol>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="contributed">rand sudafricano</displayName>
+				<displayName count="one" draft="contributed">rand sudafricano</displayName>
+				<displayName count="other" draft="contributed">rands sudafricanos</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName draft="contributed">kwacha zambiano</displayName>
+				<displayName count="one" draft="contributed">kwacha zambiano</displayName>
+				<displayName count="other" draft="contributed">kwachas zambianos</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="angle-arc-minute">
+				<displayName draft="contributed">arcominutos</displayName>
+				<unitPattern count="one" draft="contributed">{0} minuto</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} minutos</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName draft="contributed">arcosegundos</displayName>
+				<unitPattern count="one" draft="contributed">{0} segundo</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} segundos</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName draft="contributed">joules</displayName>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName draft="contributed">kilojoules</displayName>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName draft="contributed">kilowatt-hora</displayName>
+				<unitPattern count="one" draft="contributed">kilowatt-hora</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kilowatts-hora</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="contributed">micrometros</displayName>
+				<unitPattern count="one" draft="contributed">{0} micrometro</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} micrometros</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="contributed">millas naúticas</displayName>
+				<unitPattern count="one" draft="contributed">{0} milla naútica</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} millas naúticas</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="contributed">pársecs</displayName>
+				<unitPattern count="one" draft="contributed">{0} pársec</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pársecs</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName draft="contributed">lux</displayName>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName draft="contributed">gigawatts</displayName>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName draft="contributed">kilowatts</displayName>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName draft="contributed">megawatts</displayName>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName draft="contributed">miliwatts</displayName>
+				<unitPattern count="one" draft="contributed">{0} miliwatt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} miliwatts</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName draft="contributed">kelvines</displayName>
+				<unitPattern count="one" draft="contributed">kelvin</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kelvines</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName draft="contributed">acre-pies</displayName>
+				<unitPattern count="one" draft="contributed">{0} acre-pie</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} acre-pies</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName draft="contributed">onzas líquidas</displayName>
+				<unitPattern count="one" draft="contributed">{0} onza líquida</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} onzas líquidas</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="acceleration-g-force">
+				<displayName draft="contributed">fuerza G</displayName>
+				<unitPattern count="one" draft="contributed">{0} G</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} G</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<unitPattern count="one" draft="contributed">{0} min</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} min</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName draft="contributed">arcseg</displayName>
+				<unitPattern count="one" draft="contributed">{0} s</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} s</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName draft="contributed">º</displayName>
+			</unit>
+			<unit type="digital-bit">
+				<displayName draft="contributed">bit</displayName>
+				<unitPattern count="one" draft="contributed">{0} bit</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bit</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName draft="contributed">byte</displayName>
+				<unitPattern count="one" draft="contributed">{0} byte</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} byte</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="contributed">días</displayName>
+				<unitPattern count="one" draft="contributed">{0} día</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} días</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="contributed">meses</displayName>
+				<unitPattern count="one" draft="contributed">{0} m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="contributed">sem</displayName>
+				<unitPattern count="one" draft="contributed">{0} sem</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} sem</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="contributed">a</displayName>
+				<unitPattern count="one" draft="contributed">{0} a</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} a</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="contributed">ua</displayName>
+				<unitPattern count="one" draft="contributed">{0} ua</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ua</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="contributed">al</displayName>
+				<unitPattern count="one" draft="contributed">{0} a. l.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} a. l.</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName draft="contributed">millas</displayName>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="contributed">Nm</displayName>
+				<unitPattern count="one" draft="contributed">{0} Nm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Nm</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="contributed">M</displayName>
+				<unitPattern count="one" draft="contributed">{0} M</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="contributed">pc</displayName>
+			</unit>
+			<unit type="length-yard">
+				<displayName draft="contributed">yd</displayName>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName draft="contributed">ozt</displayName>
+				<unitPattern count="one" draft="contributed">{0} ozt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ozt</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName draft="contributed">km/hora</displayName>
+			</unit>
+			<unit type="volume-cup">
+				<displayName draft="contributed">tza.</displayName>
+				<unitPattern count="one" draft="contributed">{0} tza.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} tzas.</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName draft="contributed">pt</displayName>
+			</unit>
+			<unit type="volume-tablespoon">
+				<unitPattern count="one" draft="contributed">{0} cda.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cdas.</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-day">
+				<displayName draft="contributed">días</displayName>
+				<unitPattern count="one" draft="contributed">{0}d</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}d</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="contributed">m</displayName>
+				<unitPattern count="one" draft="contributed">{0}m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}m</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="contributed">sem</displayName>
+				<unitPattern count="one">{0}sem</unitPattern>
+				<unitPattern count="other">{0}sem</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName draft="contributed">a</displayName>
+				<unitPattern count="one" draft="contributed">{0}a</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}a</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>
+

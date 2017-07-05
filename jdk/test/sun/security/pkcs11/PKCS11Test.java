@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
@@ -70,12 +69,44 @@ public abstract class PKCS11Test {
     // for quick checking for generic testing than many if-else statements.
     static double softoken3_version = -1;
     static double nss3_version = -1;
+    static Provider pkcs11;
 
+    // Goes through ServiceLoader instead of Provider.getInstance() since it
+    // works on all platforms
+    static {
+        ServiceLoader sl = ServiceLoader.load(java.security.Provider.class);
+        Iterator<Provider> iter = sl.iterator();
+        Provider p = null;
+        boolean found = false;
+        while (iter.hasNext()) {
+            try {
+                p = iter.next();
+                if (p.getName().equals("SunPKCS11")) {
+                    found = true;
+                    break;
+                };
+            } catch (Exception e) {
+                // ignore and move on to the next one
+            }
+        }
+        // Nothing found through ServiceLoader; fall back to reflection
+        if (!found) {
+            try {
+                Class clazz = Class.forName("sun.security.pkcs11.SunPKCS11");
+                p = (Provider) clazz.newInstance();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+        pkcs11 = p;
+    }
+
+    // Return a SunPKCS11 provider configured with the specified config file
     static Provider getSunPKCS11(String config) throws Exception {
-        Class clazz = Class.forName("sun.security.pkcs11.SunPKCS11");
-        Constructor cons = clazz.getConstructor(new Class[] {String.class});
-        Object obj = cons.newInstance(new Object[] {config});
-        return (Provider)obj;
+        if (pkcs11 == null) {
+            throw new NoSuchProviderException("No PKCS11 provider available");
+        }
+        return pkcs11.configure(config);
     }
 
     public abstract void main(Provider p) throws Exception;
@@ -85,7 +116,8 @@ public abstract class PKCS11Test {
         System.out.println("Running test with provider " + p.getName() + "...");
         main(p);
         long stop = System.currentTimeMillis();
-        System.out.println("Completed test with provider " + p.getName() + " (" + (stop - start) + " ms).");
+        System.out.println("Completed test with provider " + p.getName() +
+            " (" + (stop - start) + " ms).");
     }
 
     public static void main(PKCS11Test test) throws Exception {
@@ -576,8 +608,7 @@ public abstract class PKCS11Test {
         if ((b == null) || (b.length == 0)) {
             return a;
         }
-        T[] r = (T[])java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), a.length + b.length);
-        System.arraycopy(a, 0, r, 0, a.length);
+        T[] r = Arrays.copyOf(a, a.length + b.length);
         System.arraycopy(b, 0, r, a.length, b.length);
         return r;
     }

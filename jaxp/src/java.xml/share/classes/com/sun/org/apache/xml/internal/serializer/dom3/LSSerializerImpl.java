@@ -36,6 +36,7 @@ import java.util.Properties;
 import com.sun.org.apache.xml.internal.serializer.DOM3Serializer;
 import com.sun.org.apache.xml.internal.serializer.Encodings;
 import com.sun.org.apache.xml.internal.serializer.Serializer;
+import com.sun.org.apache.xml.internal.serializer.ToXMLStream;
 import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
 import com.sun.org.apache.xml.internal.serializer.SerializerFactory;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
@@ -218,7 +219,8 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
         // Get a serializer that seriailizes according to the properties,
         // which in this case is to xml
-        fXMLSerializer = SerializerFactory.getSerializer(configProps);
+        fXMLSerializer = new ToXMLStream();
+        fXMLSerializer.setOutputFormat(configProps);
 
         // Initialize Serializer
         fXMLSerializer.setOutputFormat(fDOMConfigProperties);
@@ -262,9 +264,6 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
         // entities
         fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                 + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_DEFAULT_TRUE);
-        // preserve entities
-        fDOMConfigProperties.setProperty(
-                OutputPropertiesFactory.S_KEY_ENTITIES, DOMConstants.S_XSL_VALUE_ENTITIES);
 
         // error-handler
         // Should we set our default ErrorHandler
@@ -290,9 +289,6 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     + DOMConstants.DOM_WELLFORMED, DOMConstants.DOM3_DEFAULT_TRUE);
             fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                     + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_DEFAULT_FALSE);
-            // preserve entities
-            fDOMConfigProperties.setProperty(
-                    OutputPropertiesFactory.S_KEY_ENTITIES, "");
             fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                     + DOMConstants.DOM_CDATA_SECTIONS,
                     DOMConstants.DOM3_DEFAULT_FALSE);
@@ -531,8 +527,6 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 if (state) {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_EXPLICIT_TRUE);
-                    fDOMConfigProperties.setProperty(
-                            OutputPropertiesFactory.S_KEY_ENTITIES, DOMConstants.S_XSL_VALUE_ENTITIES);
                 } else {
                     fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
                             + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_EXPLICIT_FALSE);
@@ -679,31 +673,29 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                     fFeatures |= WELLFORMED;
                     fFeatures |= ELEM_CONTENT_WHITESPACE;
                     fFeatures |= COMMENTS;
+
+                    // infoset
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_NAMESPACES, DOMConstants.DOM3_EXPLICIT_TRUE);
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_NAMESPACE_DECLARATIONS, DOMConstants.DOM3_EXPLICIT_TRUE);
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_COMMENTS, DOMConstants.DOM3_EXPLICIT_TRUE);
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE, DOMConstants.DOM3_EXPLICIT_TRUE);
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_WELLFORMED, DOMConstants.DOM3_EXPLICIT_TRUE);
+
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_EXPLICIT_FALSE);
+
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_CDATA_SECTIONS, DOMConstants.DOM3_EXPLICIT_FALSE);
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_VALIDATE_IF_SCHEMA, DOMConstants.DOM3_EXPLICIT_FALSE);
+                    fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
+                            + DOMConstants.DOM_DATATYPE_NORMALIZATION, DOMConstants.DOM3_EXPLICIT_FALSE);
                 }
-
-                // infoset
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_NAMESPACES, DOMConstants.DOM3_EXPLICIT_TRUE);
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_NAMESPACE_DECLARATIONS, DOMConstants.DOM3_EXPLICIT_TRUE);
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_COMMENTS, DOMConstants.DOM3_EXPLICIT_TRUE);
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE, DOMConstants.DOM3_EXPLICIT_TRUE);
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_WELLFORMED, DOMConstants.DOM3_EXPLICIT_TRUE);
-
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_ENTITIES, DOMConstants.DOM3_EXPLICIT_FALSE);
-                fDOMConfigProperties.setProperty(
-                        OutputPropertiesFactory.S_KEY_ENTITIES, "");
-
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_CDATA_SECTIONS, DOMConstants.DOM3_EXPLICIT_FALSE);
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_VALIDATE_IF_SCHEMA, DOMConstants.DOM3_EXPLICIT_FALSE);
-                fDOMConfigProperties.setProperty(DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_DATATYPE_NORMALIZATION, DOMConstants.DOM3_EXPLICIT_FALSE);
             } else if (name.equalsIgnoreCase(DOMConstants.DOM_NORMALIZE_CHARACTERS)) {
                 String msg = Utils.messages.createMessage(
                     MsgKey.ER_FEATURE_NOT_SUPPORTED,

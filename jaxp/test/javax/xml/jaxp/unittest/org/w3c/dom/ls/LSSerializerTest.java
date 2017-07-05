@@ -101,7 +101,6 @@ public class LSSerializerTest {
 
     /*
      * @bug 8080906
-     * It will fail in a Jigsaw build until JDK-8080266 is fixed.
      */
     @Test
     public void testDefaultLSSerializer() throws Exception {
@@ -134,6 +133,9 @@ public class LSSerializerTest {
         DOMImplementation impl = doc.getImplementation();
         DOMImplementationLS implLS = (DOMImplementationLS) impl.getFeature("LS", "3.0");
         LSSerializer writer = implLS.createLSSerializer();
+
+        System.out.println("Serializer is: " + implLS.getClass().getName() + " " + implLS);
+
         DOMErrorHandlerImpl eh = new DOMErrorHandlerImpl();
         writer.getDomConfig().setParameter("error-handler", eh);
 
@@ -199,6 +201,8 @@ public class LSSerializerTest {
         DOMImplementation domImplementation = documentBuilder.getDOMImplementation();
         DOMImplementationLS domImplementationLS = (DOMImplementationLS) domImplementation;
         LSSerializer lsSerializer = domImplementationLS.createLSSerializer();
+
+        System.out.println("Serializer is: " + lsSerializer.getClass().getName() + " " + lsSerializer);
 
         // get configuration
         DOMConfiguration domConfiguration = lsSerializer.getDomConfig();
@@ -293,6 +297,8 @@ public class LSSerializerTest {
         DOMImplementation domImplementation = documentBuilder.getDOMImplementation();
         DOMImplementationLS domImplementationLS = (DOMImplementationLS) domImplementation;
         LSSerializer lsSerializer = domImplementationLS.createLSSerializer();
+
+        System.out.println("Serializer is: " + lsSerializer.getClass().getName() + " " + lsSerializer);
 
         // get default serialization
         String defaultSerialization = lsSerializer.writeToString(document);

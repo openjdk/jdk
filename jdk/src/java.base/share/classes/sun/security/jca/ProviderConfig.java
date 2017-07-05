@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@ package sun.security.jca;
 
 import java.io.File;
 import java.lang.reflect.*;
+import java.util.*;
 
 import java.security.*;
 
 import sun.security.util.PropertyExpander;
 
 /**
- * Class representing a configured provider. Encapsulates configuration
- * (className plus optional argument), the provider loading logic, and
+ * Class representing a configured provider which encapsulates configuration
+ * (provider name + optional argument), the provider loading logic, and
  * the loaded Provider object itself.
  *
  * @author  Andreas Sterbenz
@@ -45,9 +46,8 @@ final class ProviderConfig {
     private final static sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("jca", "ProviderConfig");
 
-    // classname of the SunPKCS11-Solaris provider
-    private static final String P11_SOL_NAME =
-        "sun.security.pkcs11.SunPKCS11";
+    // suffix for identifying the SunPKCS11-Solaris provider
+    private static final String P11_SOL_NAME = "SunPKCS11";
 
     // config file argument of the SunPKCS11-Solaris provider
     private static final String P11_SOL_ARG  =
@@ -56,15 +56,10 @@ final class ProviderConfig {
     // maximum number of times to try loading a provider before giving up
     private final static int MAX_LOAD_TRIES = 30;
 
-    // parameters for the Provider(String) constructor,
-    // use by doLoadProvider()
-    private final static Class<?>[] CL_STRING = { String.class };
+    // could be provider name (module) or provider class name (legacy)
+    private final String provName;
 
-    // name of the provider class
-    private final String className;
-
-    // argument to the provider constructor,
-    // empty string indicates no-arg constructor
+    // argument to the Provider.configure() call, never null
     private final String argument;
 
     // number of times we have already tried to load this provider
@@ -77,20 +72,20 @@ final class ProviderConfig {
     // used to detect recursion
     private boolean isLoading;
 
-    ProviderConfig(String className, String argument) {
-        if (className.equals(P11_SOL_NAME) && argument.equals(P11_SOL_ARG)) {
+    ProviderConfig(String provName, String argument) {
+        if (provName.endsWith(P11_SOL_NAME) && argument.equals(P11_SOL_ARG)) {
             checkSunPKCS11Solaris();
         }
-        this.className = className;
+        this.provName = provName;
         this.argument = expand(argument);
     }
 
-    ProviderConfig(String className) {
-        this(className, "");
+    ProviderConfig(String provName) {
+        this(provName, "");
     }
 
     ProviderConfig(Provider provider) {
-        this.className = provider.getClass().getName();
+        this.provName = provider.getName();
         this.argument = "";
         this.provider = provider;
     }
@@ -144,19 +139,20 @@ final class ProviderConfig {
             return false;
         }
         ProviderConfig other = (ProviderConfig)obj;
-        return this.className.equals(other.className)
+        return this.provName.equals(other.provName)
             && this.argument.equals(other.argument);
+
     }
 
     public int hashCode() {
-        return className.hashCode() + argument.hashCode();
+        return provName.hashCode() + argument.hashCode();
     }
 
     public String toString() {
         if (hasArgument()) {
-            return className + "('" + argument + "')";
+            return provName + "('" + argument + "')";
         } else {
-            return className;
+            return provName;
         }
     }
 
@@ -172,21 +168,33 @@ final class ProviderConfig {
         if (shouldLoad() == false) {
             return null;
         }
-        if (isLoading) {
-            // because this method is synchronized, this can only
-            // happen if there is recursion.
-            if (debug != null) {
-                debug.println("Recursion loading provider: " + this);
-                new Exception("Call trace").printStackTrace();
+
+        // Create providers which are in java.base directly
+        if (provName.equals("SUN") || provName.equals("sun.security.provider.Sun")) {
+            p = new sun.security.provider.Sun();
+        } else if (provName.equals("SunRsaSign") || provName.equals("sun.security.rsa.SunRsaSign")) {
+            p = new sun.security.rsa.SunRsaSign();
+        } else if (provName.equals("SunJCE") || provName.equals("com.sun.crypto.provider.SunJCE")) {
+            p = new com.sun.crypto.provider.SunJCE();
+        } else if (provName.equals("SunJSSE") || provName.equals("com.sun.net.ssl.internal.ssl.Provider")) {
+            p = new com.sun.net.ssl.internal.ssl.Provider();
+        } else {
+            if (isLoading) {
+                // because this method is synchronized, this can only
+                // happen if there is recursion.
+                if (debug != null) {
+                    debug.println("Recursion loading provider: " + this);
+                    new Exception("Call trace").printStackTrace();
+                }
+                return null;
             }
-            return null;
-        }
-        try {
-            isLoading = true;
-            tries++;
-            p = doLoadProvider();
-        } finally {
-            isLoading = false;
+            try {
+                isLoading = true;
+                tries++;
+                p = doLoadProvider();
+            } finally {
+                isLoading = false;
+            }
         }
         provider = p;
         return p;
@@ -206,55 +214,39 @@ final class ProviderConfig {
         return AccessController.doPrivileged(new PrivilegedAction<Provider>() {
             public Provider run() {
                 if (debug != null) {
-                    debug.println("Loading provider: " + ProviderConfig.this);
+                    debug.println("Loading provider " + ProviderConfig.this);
                 }
+                ProviderLoader pl = new ProviderLoader();
                 try {
-                    ClassLoader cl = ClassLoader.getSystemClassLoader();
-                    Class<?> provClass;
-                    if (cl != null) {
-                        provClass = cl.loadClass(className);
-                    } else {
-                        provClass = Class.forName(className);
-                    }
-                    Object obj;
-                    if (hasArgument() == false) {
-                        obj = provClass.newInstance();
-                    } else {
-                        Constructor<?> cons = provClass.getConstructor(CL_STRING);
-                        obj = cons.newInstance(argument);
-                    }
-                    if (obj instanceof Provider) {
-                        if (debug != null) {
-                            debug.println("Loaded provider " + obj);
+                    Provider p = pl.load(provName);
+                    if (p != null) {
+                        if (hasArgument()) {
+                            p = p.configure(argument);
                         }
-                        return (Provider)obj;
+                        if (debug != null) {
+                            debug.println("Loaded provider " + p.getName());
+                        }
                     } else {
                         if (debug != null) {
-                            debug.println(className + " is not a provider");
+                            debug.println("Error loading provider " +
+                                ProviderConfig.this);
+                        }
+                        disableLoad();
+                    }
+                    return p;
+                } catch (Exception e) {
+                    if (e instanceof ProviderException) {
+                        // pass up
+                        throw e;
+                    } else {
+                        if (debug != null) {
+                            debug.println("Error loading provider " +
+                                ProviderConfig.this);
+                            e.printStackTrace();
                         }
                         disableLoad();
                         return null;
                     }
-                } catch (Exception e) {
-                    Throwable t;
-                    if (e instanceof InvocationTargetException) {
-                        t = ((InvocationTargetException)e).getCause();
-                    } else {
-                        t = e;
-                    }
-                    if (debug != null) {
-                        debug.println("Error loading provider " + ProviderConfig.this);
-                        t.printStackTrace();
-                    }
-                    // provider indicates fatal error, pass through exception
-                    if (t instanceof ProviderException) {
-                        throw (ProviderException)t;
-                    }
-                    // provider indicates that loading should not be retried
-                    if (t instanceof UnsupportedOperationException) {
-                        disableLoad();
-                    }
-                    return null;
                 } catch (ExceptionInInitializerError err) {
                     // no sufficient permission to initialize provider class
                     if (debug != null) {
@@ -289,4 +281,119 @@ final class ProviderConfig {
         });
     }
 
+    // Inner class for loading security providers listed in java.security file
+    private static final class ProviderLoader {
+        private final ServiceLoader<Provider> services;
+
+        ProviderLoader() {
+            // VM should already been booted at this point, if not
+            // - Only providers in java.base should be loaded, don't use
+            //   ServiceLoader
+            // - ClassLoader.getSystemClassLoader() will throw InternalError
+            services = ServiceLoader.load(java.security.Provider.class,
+                                          ClassLoader.getSystemClassLoader());
+        }
+
+        /**
+         * Loads the provider with the specified class name.
+         *
+         * @param name the name of the provider
+         * @return the Provider, or null if it cannot be found or loaded
+         * @throws ProviderException all other exceptions are ignored
+         */
+        public Provider load(String pn) {
+            if (debug != null) {
+                debug.println("Attempt to load " + pn + " using SL");
+            }
+            Iterator<Provider> iter = services.iterator();
+            while (iter.hasNext()) {
+                try {
+                    Provider p = iter.next();
+                    String pName = p.getName();
+                    if (debug != null) {
+                        debug.println("Found SL Provider named " + pName);
+                    }
+                    if (pName.equals(pn)) {
+                        return p;
+                    }
+                } catch (SecurityException | ServiceConfigurationError |
+                         InvalidParameterException ex) {
+                    // if provider loading fail due to security permission,
+                    // log it and move on to next provider
+                    if (debug != null) {
+                        debug.println("Encountered " + ex +
+                            " while iterating through SL, ignore and move on");
+                            ex.printStackTrace();
+                    }
+                }
+            }
+            // No success with ServiceLoader. Try loading provider the legacy,
+            // i.e. pre-module, way via reflection
+            try {
+                return legacyLoad(pn);
+            } catch (ProviderException pe) {
+                // pass through
+                throw pe;
+            } catch (Exception ex) {
+                // logged and ignored
+                if (debug != null) {
+                    debug.println("Encountered " + ex +
+                        " during legacy load of " + pn);
+                        ex.printStackTrace();
+                }
+                return null;
+            }
+        }
+
+        private Provider legacyLoad(String classname) {
+
+            if (debug != null) {
+                debug.println("Loading legacy provider: " + classname);
+            }
+
+            try {
+                Class<?> provClass =
+                    ClassLoader.getSystemClassLoader().loadClass(classname);
+
+                // only continue if the specified class extends Provider
+                if (!Provider.class.isAssignableFrom(provClass)) {
+                    if (debug != null) {
+                        debug.println(classname + " is not a provider");
+                    }
+                    return null;
+                }
+
+                Provider p = AccessController.doPrivileged
+                    (new PrivilegedExceptionAction<Provider>() {
+                    public Provider run() throws Exception {
+                        return (Provider) provClass.newInstance();
+                    }
+                });
+                return p;
+            } catch (Exception e) {
+                Throwable t;
+                if (e instanceof InvocationTargetException) {
+                    t = ((InvocationTargetException)e).getCause();
+                } else {
+                    t = e;
+                }
+                if (debug != null) {
+                    debug.println("Error loading legacy provider " + classname);
+                    t.printStackTrace();
+                }
+                // provider indicates fatal error, pass through exception
+                if (t instanceof ProviderException) {
+                    throw (ProviderException) t;
+                }
+                return null;
+            } catch (ExceptionInInitializerError | NoClassDefFoundError err) {
+                // no sufficient permission to access/initialize provider class
+                if (debug != null) {
+                    debug.println("Error loading legacy provider " + classname);
+                    err.printStackTrace();
+                }
+                return null;
+            }
+        }
+    }
 }

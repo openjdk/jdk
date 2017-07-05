@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,10 @@ package sun.security.ec;
 
 import java.util.*;
 import java.security.*;
-import sun.security.action.PutAllAction;
+import java.util.regex.Pattern;
+import sun.security.util.CurveDB;
+import sun.security.util.NamedCurve;
+import sun.security.util.ECParameters;
 
 /**
  * Provider class for the Elliptic Curve provider.
@@ -65,19 +68,206 @@ public final class SunEC extends Provider {
         }
     }
 
-    public SunEC() {
-        super("SunEC", 1.9d, "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
+    private static class ProviderService extends Provider.Service {
 
-        // if there is no security manager installed, put directly into
-        // the provider. Otherwise, create a temporary map and use a
-        // doPrivileged() call at the end to transfer the contents
-        if (System.getSecurityManager() == null) {
-            SunECEntries.putEntries(this, useFullImplementation);
-        } else {
-            Map<Object, Object> map = new HashMap<Object, Object>();
-            SunECEntries.putEntries(map, useFullImplementation);
-            AccessController.doPrivileged(new PutAllAction(this, map));
+        ProviderService(Provider p, String type, String algo, String cn) {
+            super(p, type, algo, cn, null, null);
+        }
+
+        ProviderService(Provider p, String type, String algo, String cn,
+            String[] aliases, HashMap<String, String> attrs) {
+            super(p, type, algo, cn,
+                  (aliases == null? null : Arrays.asList(aliases)), attrs);
+        }
+
+        @Override
+        public Object newInstance(Object ctrParamObj)
+            throws NoSuchAlgorithmException {
+            String type = getType();
+            if (ctrParamObj != null) {
+                throw new InvalidParameterException
+                    ("constructorParameter not used with " + type + " engines");
+            }
+
+            String algo = getAlgorithm();
+            try {
+                if (type.equals("Signature")) {
+                    boolean inP1363 = algo.endsWith("inP1363Format");
+                    if (inP1363) {
+                        algo = algo.substring(0, algo.length() - 13);
+                    }
+                    if (algo.equals("SHA1withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA1inP1363Format() :
+                            new ECDSASignature.SHA1());
+                    } else if (algo.equals("SHA224withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA224inP1363Format() :
+                            new ECDSASignature.SHA224());
+                    } else if (algo.equals("SHA256withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA256inP1363Format() :
+                            new ECDSASignature.SHA256());
+                    } else if (algo.equals("SHA384withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA384inP1363Format() :
+                            new ECDSASignature.SHA384());
+                    } else if (algo.equals("SHA512withECDSA")) {
+                        return (inP1363? new ECDSASignature.SHA512inP1363Format() :
+                            new ECDSASignature.SHA512());
+                    } else if (algo.equals("NONEwithECDSA")) {
+                        return (inP1363? new ECDSASignature.RawinP1363Format() :
+                            new ECDSASignature.Raw());
+                    }
+                } else  if (type.equals("KeyFactory")) {
+                    if (algo.equals("EC")) {
+                        return new ECKeyFactory();
+                    }
+                } else  if (type.equals("AlgorithmParameters")) {
+                    if (algo.equals("EC")) {
+                        return new sun.security.util.ECParameters();
+                    }
+                } else  if (type.equals("KeyPairGenerator")) {
+                    if (algo.equals("EC")) {
+                        return new ECKeyPairGenerator();
+                    }
+                } else  if (type.equals("KeyAgreement")) {
+                    if (algo.equals("ECDH")) {
+                        return new ECDHKeyAgreement();
+                    }
+                }
+            } catch (Exception ex) {
+                throw new NoSuchAlgorithmException("Error constructing " +
+                    type + " for " + algo + " using SunEC", ex);
+            }
+            throw new ProviderException("No impl for " + algo +
+                " " + type);
         }
     }
 
+    public SunEC() {
+        super("SunEC", 1.9d, "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                putEntries(useFullImplementation);
+                return null;
+            }
+        });
+    }
+
+    void putEntries(boolean useFullImplementation) {
+        HashMap<String, String> ATTRS = new HashMap<>(3);
+        ATTRS.put("ImplementedIn", "Software");
+        String ecKeyClasses = "java.security.interfaces.ECPublicKey" +
+                 "|java.security.interfaces.ECPrivateKey";
+        ATTRS.put("SupportedKeyClasses", ecKeyClasses);
+        ATTRS.put("KeySize", "256");
+
+        /*
+         *  Key Factory engine
+         */
+        putService(new ProviderService(this, "KeyFactory",
+            "EC", "sun.security.ec.ECKeyFactory",
+            new String[] { "EllipticCurve" }, ATTRS));
+
+        /*
+         * Algorithm Parameter engine
+         */
+        // "AlgorithmParameters.EC SupportedCurves" prop used by unit test
+        boolean firstCurve = true;
+        StringBuilder names = new StringBuilder();
+        Pattern nameSplitPattern = Pattern.compile(CurveDB.SPLIT_PATTERN);
+
+        Collection<? extends NamedCurve> supportedCurves =
+            CurveDB.getSupportedCurves();
+        for (NamedCurve namedCurve : supportedCurves) {
+            if (!firstCurve) {
+                names.append("|");
+            } else {
+                firstCurve = false;
+            }
+
+            names.append("[");
+
+            String[] commonNames = nameSplitPattern.split(namedCurve.getName());
+            for (String commonName : commonNames) {
+                names.append(commonName.trim());
+                names.append(",");
+            }
+
+            names.append(namedCurve.getObjectId());
+            names.append("]");
+        }
+
+        HashMap<String, String> apAttrs = new HashMap<>(ATTRS);
+        apAttrs.put("SupportedCurves", names.toString());
+
+        putService(new ProviderService(this, "AlgorithmParameters",
+            "EC", "sun.security.util.ECParameters",
+            new String[] { "EllipticCurve", "1.2.840.10045.2.1", "OID.1.2.840.10045.2.1" },
+            apAttrs));
+
+        /*
+         * Register the algorithms below only when the full ECC implementation
+         * is available
+         */
+        if (!useFullImplementation) {
+            return;
+        }
+
+        /*
+         * Signature engines
+         */
+        putService(new ProviderService(this, "Signature",
+            "NONEwithECDSA", "sun.security.ec.ECDSASignature$Raw",
+            null, ATTRS));
+        putService(new ProviderService(this, "Signature",
+            "SHA1withECDSA", "sun.security.ec.ECDSASignature$SHA1",
+            new String[] { "1.2.840.10045.4.1", "OID.1.2.840.10045.4.1" },
+            ATTRS));
+        putService(new ProviderService(this, "Signature",
+            "SHA224withECDSA", "sun.security.ec.ECDSASignature$SHA224",
+            new String[] { "1.2.840.10045.4.3.1", "OID.1.2.840.10045.4.3.1"},
+            ATTRS));
+        putService(new ProviderService(this, "Signature",
+            "SHA256withECDSA", "sun.security.ec.ECDSASignature$SHA256",
+            new String[] { "1.2.840.10045.4.3.2", "OID.1.2.840.10045.4.3.2"},
+            ATTRS));
+        putService(new ProviderService(this, "Signature",
+            "SHA384withECDSA", "sun.security.ec.ECDSASignature$SHA384",
+            new String[] { "1.2.840.10045.4.3.3", "OID.1.2.840.10045.4.3.3" },
+            ATTRS));
+        putService(new ProviderService(this, "Signature",
+            "SHA512withECDSA", "sun.security.ec.ECDSASignature$SHA512",
+            new String[] { "1.2.840.10045.4.3.4", "OID.1.2.840.10045.4.3.4" },
+            ATTRS));
+
+        putService(new ProviderService(this, "Signature",
+             "NONEwithECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$RawinP1363Format"));
+        putService(new ProviderService(this, "Signature",
+             "SHA1withECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$SHA1inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+             "SHA224withECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$SHA224inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+             "SHA256withECDSAinP1363Format",
+             "sun.security.ec.ECDSASignature$SHA256inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+            "SHA384withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA384inP1363Format"));
+        putService(new ProviderService(this, "Signature",
+            "SHA512withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA512inP1363Format"));
+
+        /*
+         *  Key Pair Generator engine
+         */
+        putService(new ProviderService(this, "KeyPairGenerator",
+            "EC", "sun.security.ec.ECKeyPairGenerator",
+            new String[] { "EllipticCurve" }, ATTRS));
+
+        /*
+         * Key Agreement engine
+         */
+        putService(new ProviderService(this, "KeyAgreement",
+            "ECDH", "sun.security.ec.ECDHKeyAgreement", null, ATTRS));
+    }
 }
