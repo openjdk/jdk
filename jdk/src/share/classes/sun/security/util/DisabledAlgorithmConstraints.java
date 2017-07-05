@@ -440,7 +440,7 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
 
         // Does this key constraint disable the specified key?
         public boolean disables(Key key) {
-            int size = KeyLength.getKeySize(key);
+            int size = KeyUtil.getKeySize(key);
 
             if (size == 0) {
                 return true;    // we don't allow any key of size 0.

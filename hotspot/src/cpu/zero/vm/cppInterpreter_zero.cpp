@@ -919,7 +919,8 @@ int AbstractInterpreter::layout_activation(Method* method,
                                            int       callee_locals,
                                            frame*    caller,
                                            frame*    interpreter_frame,
-                                           bool      is_top_frame) {
+                                           bool      is_top_frame,
+                                           bool      is_bottom_frame) {
   assert(popframe_extra_args == 0, "what to do?");
   assert(!is_top_frame || (!callee_locals && !callee_param_count),
          "top frame should have no caller");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,13 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 
 import java.lang.reflect.Method;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +80,8 @@ import javax.management.RuntimeErrorException;
 import javax.management.RuntimeOperationsException;
 import javax.management.ServiceNotFoundException;
 import javax.management.loading.ClassLoaderRepository;
+import sun.misc.JavaSecurityAccess;
+import sun.misc.SharedSecrets;
 
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;
@@ -137,6 +141,9 @@ public class RequiredModelMBean
     /* records the registering in MBeanServer */
     private boolean registered = false;
     private transient MBeanServer server = null;
+
+    private final static JavaSecurityAccess javaSecurityAccess = SharedSecrets.getJavaSecurityAccess();
+    final private AccessControlContext acc = AccessController.getContext();
 
     /*************************************/
     /* constructors                      */
@@ -1025,10 +1032,31 @@ public class RequiredModelMBean
 
             if (opClassName != null) {
                 try {
-                    final ClassLoader targetClassLoader =
-                        targetObject.getClass().getClassLoader();
-                    targetClass = Class.forName(opClassName, false,
-                                                targetClassLoader);
+                    AccessControlContext stack = AccessController.getContext();
+                    final Object obj = targetObject;
+                    final String className = opClassName;
+                    final ClassNotFoundException[] caughtException = new ClassNotFoundException[1];
+
+                    targetClass = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+
+                        @Override
+                        public Class<?> run() {
+                            try {
+                                ReflectUtil.checkPackageAccess(className);
+                                final ClassLoader targetClassLoader =
+                                    obj.getClass().getClassLoader();
+                                return Class.forName(className, false,
+                                                            targetClassLoader);
+                            } catch (ClassNotFoundException e) {
+                                caughtException[0] = e;
+                            }
+                            return null;
+                        }
+                    }, stack, acc);
+
+                    if (caughtException[0] != null) {
+                        throw caughtException[0];
+                    }
                 } catch (ClassNotFoundException e) {
                     final String msg =
                         "class for invoke " + opName + " not found";
@@ -1061,9 +1089,9 @@ public class RequiredModelMBean
         return result;
     }
 
-    private static Method resolveMethod(Class<?> targetClass,
+    private Method resolveMethod(Class<?> targetClass,
                                         String opMethodName,
-                                        String[] sig)
+                                        final String[] sig)
             throws ReflectionException {
         final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.FINER);
 
@@ -1078,30 +1106,45 @@ public class RequiredModelMBean
         if (sig == null)
             argClasses = null;
         else {
+            final AccessControlContext stack = AccessController.getContext();
+            final ReflectionException[] caughtException = new ReflectionException[1];
             final ClassLoader targetClassLoader = targetClass.getClassLoader();
             argClasses = new Class<?>[sig.length];
-            for (int i = 0; i < sig.length; i++) {
-                if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),"resolveMethod",
-                            "resolve type " + sig[i]);
-                }
-                argClasses[i] = (Class<?>) primitiveClassMap.get(sig[i]);
-                if (argClasses[i] == null) {
-                    try {
-                        argClasses[i] =
-                            Class.forName(sig[i], false, targetClassLoader);
-                    } catch (ClassNotFoundException e) {
+
+            javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Void>() {
+
+                @Override
+                public Void run() {
+                    for (int i = 0; i < sig.length; i++) {
                         if (tracing) {
                             MODELMBEAN_LOGGER.logp(Level.FINER,
-                                    RequiredModelMBean.class.getName(),
-                                    "resolveMethod",
-                                    "class not found");
+                                RequiredModelMBean.class.getName(),"resolveMethod",
+                                    "resolve type " + sig[i]);
                         }
-                        final String msg = "Parameter class not found";
-                        throw new ReflectionException(e, msg);
+                        argClasses[i] = (Class<?>) primitiveClassMap.get(sig[i]);
+                        if (argClasses[i] == null) {
+                            try {
+                                ReflectUtil.checkPackageAccess(sig[i]);
+                                argClasses[i] =
+                                    Class.forName(sig[i], false, targetClassLoader);
+                            } catch (ClassNotFoundException e) {
+                                if (tracing) {
+                                    MODELMBEAN_LOGGER.logp(Level.FINER,
+                                            RequiredModelMBean.class.getName(),
+                                            "resolveMethod",
+                                            "class not found");
+                                }
+                                final String msg = "Parameter class not found";
+                                caughtException[0] = new ReflectionException(e, msg);
+                            }
+                        }
                     }
+                    return null;
                 }
+            }, stack, acc);
+
+            if (caughtException[0] != null) {
+                throw caughtException[0];
             }
         }
 
@@ -1133,7 +1176,7 @@ public class RequiredModelMBean
     /* Find a method in RequiredModelMBean as determined by the given
        parameters.  Return null if there is none, or if the parameters
        exclude using it.  Called from invoke. */
-    private static Method findRMMBMethod(String opMethodName,
+    private Method findRMMBMethod(String opMethodName,
                                          Object targetObjectField,
                                          String opClassName,
                                          String[] sig) {
@@ -1155,19 +1198,29 @@ public class RequiredModelMBean
         if (opClassName == null)
             targetClass = rmmbClass;
         else {
-            try {
-                final ClassLoader targetClassLoader =
-                    rmmbClass.getClassLoader();
-                targetClass = Class.forName(opClassName, false,
-                                            targetClassLoader);
-                if (!rmmbClass.isAssignableFrom(targetClass))
-                    return null;
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
+            AccessControlContext stack = AccessController.getContext();
+            final String className = opClassName;
+            targetClass = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+
+                @Override
+                public Class<?> run() {
+                    try {
+                        ReflectUtil.checkPackageAccess(className);
+                        final ClassLoader targetClassLoader =
+                            rmmbClass.getClassLoader();
+                        Class clz = Class.forName(className, false,
+                                                    targetClassLoader);
+                        if (!rmmbClass.isAssignableFrom(clz))
+                            return null;
+                        return clz;
+                    } catch (ClassNotFoundException e) {
+                        return null;
+                    }
+                }
+            }, stack, acc);
         }
         try {
-            return resolveMethod(targetClass, opMethodName, sig);
+            return targetClass != null ? resolveMethod(targetClass, opMethodName, sig) : null;
         } catch (ReflectionException e) {
             return null;
         }
@@ -1177,12 +1230,35 @@ public class RequiredModelMBean
      * Invoke the given method, and throw the somewhat unpredictable
      * appropriate exception if the method itself gets an exception.
      */
-    private Object invokeMethod(String opName, Method method,
-                                Object targetObject, Object[] opArgs)
+    private Object invokeMethod(String opName, final Method method,
+                                final Object targetObject, final Object[] opArgs)
             throws MBeanException, ReflectionException {
         try {
-            ReflectUtil.checkPackageAccess(method.getDeclaringClass());
-            return MethodUtil.invoke(method, targetObject, opArgs);
+            final Throwable[] caughtException = new Throwable[1];
+            AccessControlContext stack = AccessController.getContext();
+            Object rslt = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Object>() {
+
+                @Override
+                public Object run() {
+                    try {
+                        ReflectUtil.checkPackageAccess(method.getDeclaringClass());
+                        return MethodUtil.invoke(method, targetObject, opArgs);
+                    } catch (InvocationTargetException e) {
+                        caughtException[0] = e;
+                    } catch (IllegalAccessException e) {
+                        caughtException[0] = e;
+                    }
+                    return null;
+                }
+            }, stack, acc);
+            if (caughtException[0] != null) {
+                if (caughtException[0] instanceof Exception) {
+                    throw (Exception)caughtException[0];
+                } else if(caughtException[0] instanceof Error) {
+                    throw (Error)caughtException[0];
+                }
+            }
+            return rslt;
         } catch (RuntimeErrorException ree) {
             throw new RuntimeOperationsException(ree,
                       "RuntimeException occurred in RequiredModelMBean "+
@@ -1567,7 +1643,7 @@ public class RequiredModelMBean
                 }
 
                 // make sure response class matches type field
-                String respType = attrInfo.getType();
+                final String respType = attrInfo.getType();
                 if (response != null) {
                     String responseClass = response.getClass().getName();
                     if (!respType.equals(responseClass)) {
@@ -1590,9 +1666,31 @@ public class RequiredModelMBean
                             // inequality may come from type subclassing
                             boolean subtype;
                             try {
-                                ClassLoader cl =
-                                    response.getClass().getClassLoader();
-                                Class<?> c = Class.forName(respType, true, cl);
+                                final Class respClass = response.getClass();
+                                final Exception[] caughException = new Exception[1];
+
+                                AccessControlContext stack = AccessController.getContext();
+
+                                Class c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+
+                                    @Override
+                                    public Class<?> run() {
+                                        try {
+                                            ReflectUtil.checkPackageAccess(respType);
+                                            ClassLoader cl =
+                                                respClass.getClassLoader();
+                                            return Class.forName(respType, true, cl);
+                                        } catch (Exception e) {
+                                            caughException[0] = e;
+                                        }
+                                        return null;
+                                    }
+                                }, stack, acc);
+
+                                if (caughException[0] != null) {
+                                    throw caughException[0];
+                                }
+
                                 subtype = c.isInstance(response);
                             } catch (Exception e) {
                                 subtype = false;
@@ -2745,16 +2843,37 @@ public class RequiredModelMBean
         return MBeanServerFactory.getClassLoaderRepository(server);
     }
 
-    private Class<?> loadClass(String className)
+    private Class<?> loadClass(final String className)
         throws ClassNotFoundException {
-        try {
-            return Class.forName(className);
-        } catch (ClassNotFoundException e) {
-            final ClassLoaderRepository clr =
-                getClassLoaderRepository();
-            if (clr == null) throw new ClassNotFoundException(className);
-            return clr.loadClass(className);
+        AccessControlContext stack = AccessController.getContext();
+        final ClassNotFoundException[] caughtException = new ClassNotFoundException[1];
+
+        Class c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+
+            @Override
+            public Class<?> run() {
+                try {
+                    ReflectUtil.checkPackageAccess(className);
+                    return Class.forName(className);
+                } catch (ClassNotFoundException e) {
+                    final ClassLoaderRepository clr =
+                        getClassLoaderRepository();
+                    try {
+                        if (clr == null) throw new ClassNotFoundException(className);
+                        return clr.loadClass(className);
+                    } catch (ClassNotFoundException ex) {
+                        caughtException[0] = ex;
+                    }
+                }
+                return null;
+            }
+        }, stack, acc);
+
+        if (caughtException[0] != null) {
+            throw caughtException[0];
         }
+
+        return c;
     }
 
 

@@ -564,7 +564,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {
-        return (ActionListener[])(getListeners(ActionListener.class));
+        return getListeners(ActionListener.class);
     }
 
     /**

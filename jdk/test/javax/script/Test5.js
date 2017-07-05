@@ -1,6 +1,5 @@
-var key;
-var count;
 
+var ScriptContext = javax.script.ScriptContext;
 print(count);
 
 switch (count) {
@@ -9,7 +8,7 @@ switch (count) {
             if (key != 'value in engine') {
                 throw "unexpected engine scope value";
             }
-            if (context.getAttribute("key", context.GLOBAL_SCOPE ) != null) {
+            if (context.getAttribute("key", ScriptContext.GLOBAL_SCOPE ) != null) {
                 throw "unexpected global scope value";
             }
             break;
@@ -19,7 +18,7 @@ switch (count) {
             if (key != 'value in engine') {
                 throw "unexpected engine scope value";
             }
-            if (context.getAttribute("key", context.GLOBAL_SCOPE ) != 
+            if (context.getAttribute("key", ScriptContext.GLOBAL_SCOPE ) != 
                 "value in global") {
                 throw "unexpected global scope value";
             }
@@ -30,7 +29,7 @@ switch (count) {
             if (key != 'value in global') {
                 throw "unexpected global scope value";
             }
-            if (context.getAttribute("key", context.GLOBAL_SCOPE ) != 
+            if (context.getAttribute("key", ScriptContext.GLOBAL_SCOPE ) != 
                 "value in global") {
                 throw "unexpected global scope value";
             }
