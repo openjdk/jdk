@@ -25,8 +25,12 @@
 
 package sun.rmi.registry;
 
+import java.io.ObjectInputFilter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.rmi.server.LogStream;
+import java.security.PrivilegedAction;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -39,7 +43,6 @@ import java.io.IOException;
 import java.net.*;
 import java.rmi.*;
 import java.rmi.server.ObjID;
-import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
@@ -54,12 +57,12 @@ import java.security.PermissionCollection;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
 import java.text.MessageFormat;
-import sun.rmi.server.LoaderHandler;
+
+import sun.rmi.runtime.Log;
+import sun.rmi.server.UnicastRef;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.UnicastServerRef2;
 import sun.rmi.transport.LiveRef;
-import sun.rmi.transport.ObjectTable;
-import sun.rmi.transport.Target;
 
 /**
  * A "registry" exists on every node that allows RMI connections to
@@ -91,6 +94,48 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     private static ResourceBundle resources = null;
 
     /**
+     * Property name of the RMI Registry serial filter to augment
+     * the built-in list of allowed types.
+     * Setting the property in the {@code conf/security/java.security} file
+     * will enable the augmented filter.
+     */
+    private static final String REGISTRY_FILTER_PROPNAME = "sun.rmi.registry.registryFilter";
+
+    /** Registry max depth of remote invocations. **/
+    private static int REGISTRY_MAX_DEPTH = 5;
+
+    /** Registry maximum array size in remote invocations. **/
+    private static int REGISTRY_MAX_ARRAY_SIZE = 10000;
+
+    /**
+     * The registryFilter created from the value of the {@code "sun.rmi.registry.registryFilter"}
+     * property.
+     */
+    private static final ObjectInputFilter registryFilter =
+            AccessController.doPrivileged((PrivilegedAction<ObjectInputFilter>)RegistryImpl::initRegistryFilter);
+
+    /**
+     * Initialize the registryFilter from the security properties or system property; if any
+     * @return an ObjectInputFilter, or null
+     */
+    @SuppressWarnings("deprecation")
+    private static ObjectInputFilter initRegistryFilter() {
+        ObjectInputFilter filter = null;
+        String props = System.getProperty(REGISTRY_FILTER_PROPNAME);
+        if (props == null) {
+            props = Security.getProperty(REGISTRY_FILTER_PROPNAME);
+        }
+        if (props != null) {
+            filter = ObjectInputFilter.Config.createFilter(props);
+            Log regLog = Log.getLog("sun.rmi.registry", "registry", -1);
+            if (regLog.isLoggable(Log.BRIEF)) {
+                regLog.log(Log.BRIEF, "registryFilter = " + filter);
+            }
+        }
+        return filter;
+    }
+
+    /**
      * Construct a new RegistryImpl on the specified port with the
      * given custom socket factory pair.
      */
@@ -105,7 +150,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                 AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                     public Void run() throws RemoteException {
                         LiveRef lref = new LiveRef(id, port, csf, ssf);
-                        setup(new UnicastServerRef2(lref));
+                        setup(new UnicastServerRef2(lref, RegistryImpl::registryFilter));
                         return null;
                     }
                 }, null, new SocketPermission("localhost:"+port, "listen,accept"));
@@ -114,7 +159,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             }
         } else {
             LiveRef lref = new LiveRef(id, port, csf, ssf);
-            setup(new UnicastServerRef2(lref));
+            setup(new UnicastServerRef2(lref, RegistryImpl::registryFilter));
         }
     }
 
@@ -130,7 +175,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                 AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                     public Void run() throws RemoteException {
                         LiveRef lref = new LiveRef(id, port);
-                        setup(new UnicastServerRef(lref));
+                        setup(new UnicastServerRef(lref, RegistryImpl::registryFilter));
                         return null;
                     }
                 }, null, new SocketPermission("localhost:"+port, "listen,accept"));
@@ -139,7 +184,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             }
         } else {
             LiveRef lref = new LiveRef(id, port);
-            setup(new UnicastServerRef(lref));
+            setup(new UnicastServerRef(lref, RegistryImpl::registryFilter));
         }
     }
 
@@ -359,6 +404,60 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             }
         }
         return paths.toArray(new URL[0]);
+    }
+
+    /**
+     * ObjectInputFilter to filter Registry input objects.
+     * The list of acceptable classes is limited to classes normally
+     * stored in a registry.
+     *
+     * @param filterInfo access to the class, array length, etc.
+     * @return  {@link ObjectInputFilter.Status#ALLOWED} if allowed,
+     *          {@link ObjectInputFilter.Status#REJECTED} if rejected,
+     *          otherwise {@link ObjectInputFilter.Status#UNDECIDED}
+     */
+    private static ObjectInputFilter.Status registryFilter(ObjectInputFilter.FilterInfo filterInfo) {
+        if (registryFilter != null) {
+            ObjectInputFilter.Status status = registryFilter.checkInput(filterInfo);
+            if (status != ObjectInputFilter.Status.UNDECIDED) {
+                // The Registry filter can override the built-in white-list
+                return status;
+            }
+        }
+
+        if (filterInfo.depth() > REGISTRY_MAX_DEPTH) {
+            return ObjectInputFilter.Status.REJECTED;
+        }
+        Class<?> clazz = filterInfo.serialClass();
+        if (clazz != null) {
+            if (clazz.isArray()) {
+                if (filterInfo.arrayLength() >= 0 && filterInfo.arrayLength() > REGISTRY_MAX_ARRAY_SIZE) {
+                    return ObjectInputFilter.Status.REJECTED;
+                }
+                do {
+                    // Arrays are allowed depending on the component type
+                    clazz = clazz.getComponentType();
+                } while (clazz.isArray());
+            }
+            if (clazz.isPrimitive()) {
+                // Arrays of primitives are allowed
+                return ObjectInputFilter.Status.ALLOWED;
+            }
+            if (String.class == clazz
+                    || java.lang.Number.class.isAssignableFrom(clazz)
+                    || Remote.class.isAssignableFrom(clazz)
+                    || java.lang.reflect.Proxy.class.isAssignableFrom(clazz)
+                    || UnicastRef.class.isAssignableFrom(clazz)
+                    || RMIClientSocketFactory.class.isAssignableFrom(clazz)
+                    || RMIServerSocketFactory.class.isAssignableFrom(clazz)
+                    || java.rmi.activation.ActivationID.class.isAssignableFrom(clazz)
+                    || java.rmi.server.UID.class.isAssignableFrom(clazz)) {
+                return ObjectInputFilter.Status.ALLOWED;
+            } else {
+                return ObjectInputFilter.Status.REJECTED;
+            }
+        }
+        return ObjectInputFilter.Status.UNDECIDED;
     }
 
     /**

@@ -124,6 +124,7 @@ namespace OT {
   struct GDEF;
   struct GSUB;
   struct GPOS;
+  struct MATH;
 }
 
 struct hb_ot_layout_lookup_accelerator_t
@@ -152,10 +153,12 @@ struct hb_ot_layout_t
   hb_blob_t *gdef_blob;
   hb_blob_t *gsub_blob;
   hb_blob_t *gpos_blob;
+  hb_blob_t *math_blob;
 
   const struct OT::GDEF *gdef;
   const struct OT::GSUB *gsub;
   const struct OT::GPOS *gpos;
+  const struct OT::MATH *math;
 
   unsigned int gsub_lookup_count;
   unsigned int gpos_lookup_count;

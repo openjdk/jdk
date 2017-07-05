@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.management.monitor;
 
 import static com.sun.jmx.defaults.JmxProperties.MONITOR_LOGGER;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import javax.management.ObjectName;
 import javax.management.MBeanNotificationInfo;
 import static javax.management.monitor.Monitor.NumericalType.*;
@@ -228,8 +228,7 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
      */
     public synchronized void start() {
         if (isActive()) {
-            MONITOR_LOGGER.logp(Level.FINER, CounterMonitor.class.getName(),
-                    "start", "the monitor is already active");
+            MONITOR_LOGGER.log(Level.TRACE, "the monitor is already active");
             return;
         }
         // Reset values.
@@ -696,7 +695,7 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
                 }
             }
         } else {
-            if (MONITOR_LOGGER.isLoggable(Level.FINER)) {
+            if (MONITOR_LOGGER.isLoggable(Level.TRACE)) {
                 final StringBuilder strb = new StringBuilder()
                 .append("The notification:")
                 .append("\n\tNotification observed object = ")
@@ -708,8 +707,7 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
                 .append("\n\tNotification derived gauge = ")
                 .append(o.getDerivedGauge())
                 .append("\nhas already been sent");
-                MONITOR_LOGGER.logp(Level.FINER, CounterMonitor.class.getName(),
-                        "updateNotifications", strb.toString());
+                MONITOR_LOGGER.log(Level.TRACE, strb::toString);
             }
         }
 
@@ -756,9 +754,7 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
                         break;
                     default:
                         // Should never occur...
-                        MONITOR_LOGGER.logp(Level.FINEST,
-                                CounterMonitor.class.getName(),
-                                "updateThreshold",
+                        MONITOR_LOGGER.log(Level.TRACE,
                                 "the threshold type is invalid");
                         break;
                 }
@@ -819,8 +815,7 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
         case LONG: o.setDerivedGauge(Long.valueOf(derived)); break;
         default:
             // Should never occur...
-            MONITOR_LOGGER.logp(Level.FINEST, CounterMonitor.class.getName(),
-                    "setDerivedGaugeWithDifference",
+            MONITOR_LOGGER.log(Level.TRACE,
                     "the threshold type is invalid");
             break;
         }

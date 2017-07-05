@@ -47,12 +47,17 @@ struct hb_shape_plan_t
   hb_feature_t *user_features;
   unsigned int num_user_features;
 
+  int *coords;
+  unsigned int num_coords;
+
   struct hb_shaper_data_t shaper_data;
 };
 
 #define HB_SHAPER_DATA_CREATE_FUNC_EXTRA_ARGS \
-        , const hb_feature_t            *user_features \
-        , unsigned int                   num_user_features
+        , const hb_feature_t *user_features \
+        , unsigned int        num_user_features \
+        , const int          *coords \
+        , unsigned int        num_coords
 #define HB_SHAPER_IMPLEMENT(shaper) HB_SHAPER_DATA_PROTOTYPE(shaper, shape_plan);
 #include "hb-shaper-list.hh"
 #undef HB_SHAPER_IMPLEMENT

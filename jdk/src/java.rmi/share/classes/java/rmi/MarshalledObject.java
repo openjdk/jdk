@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamConstants;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import sun.rmi.server.MarshalInputStream;
 import sun.rmi.server.MarshalOutputStream;
 
@@ -90,6 +94,9 @@ public final class MarshalledObject<T> implements Serializable {
      */
     private int hash;
 
+    /** Filter used when creating the instance from a stream; may be null. */
+    private transient ObjectInputFilter objectInputFilter = null;
+
     /** Indicate compatibility with 1.2 version of class. */
     private static final long serialVersionUID = 8988374069173025854L;
 
@@ -133,9 +140,25 @@ public final class MarshalledObject<T> implements Serializable {
     }
 
     /**
+     * Reads in the state of the object and saves the stream's
+     * serialization filter to be used when the object is deserialized.
+     *
+     * @param stream the stream
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a class cannot be found
+     */
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();     // read in all fields
+        objectInputFilter = stream.getObjectInputFilter();
+    }
+
+    /**
      * Returns a new copy of the contained marshalledobject.  The internal
      * representation is deserialized with the semantics used for
      * unmarshaling parameters for RMI calls.
+     * If the MarshalledObject was read from an ObjectInputStream,
+     * the filter from that stream is used to deserialize the object.
      *
      * @return a copy of the contained object
      * @exception IOException if an <code>IOException</code> occurs while
@@ -155,7 +178,7 @@ public final class MarshalledObject<T> implements Serializable {
         ByteArrayInputStream lin =
             (locBytes == null ? null : new ByteArrayInputStream(locBytes));
         MarshalledObjectInputStream in =
-            new MarshalledObjectInputStream(bin, lin);
+            new MarshalledObjectInputStream(bin, lin, objectInputFilter);
         @SuppressWarnings("unchecked")
         T obj = (T) in.readObject();
         in.close();
@@ -295,11 +318,21 @@ public final class MarshalledObject<T> implements Serializable {
          * <code>null</code>, then all annotations will be
          * <code>null</code>.
          */
-        MarshalledObjectInputStream(InputStream objIn, InputStream locIn)
+        MarshalledObjectInputStream(InputStream objIn, InputStream locIn,
+                    ObjectInputFilter filter)
             throws IOException
         {
             super(objIn);
             this.locIn = (locIn == null ? null : new ObjectInputStream(locIn));
+            if (filter != null) {
+                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    MarshalledObjectInputStream.this.setObjectInputFilter(filter);
+                    if (MarshalledObjectInputStream.this.locIn != null) {
+                        MarshalledObjectInputStream.this.locIn.setObjectInputFilter(filter);
+                    }
+                    return null;
+                });
+            }
         }
 
         /**

@@ -96,7 +96,7 @@ public final class ReflectUtil {
 
         final Class<?> declaringClass = m.getDeclaringClass();
 
-        checkPackageAccess(declaringClass);
+        privateCheckPackageAccess(sm, declaringClass);
 
         if (Modifier.isPublic(m.getModifiers()) &&
                 Modifier.isPublic(declaringClass.getModifiers()))
@@ -114,9 +114,27 @@ public final class ReflectUtil {
      * also check the package access on the proxy interfaces.
      */
     public static void checkPackageAccess(Class<?> clazz) {
-        checkPackageAccess(clazz.getName());
+        SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            privateCheckPackageAccess(s, clazz);
+        }
+    }
+
+    /**
+     * NOTE: should only be called if a SecurityManager is installed
+     */
+    private static void privateCheckPackageAccess(SecurityManager s, Class<?> clazz) {
+        while (clazz.isArray()) {
+            clazz = clazz.getComponentType();
+        }
+
+        String pkg = clazz.getPackageName();
+        if (pkg != null && !pkg.isEmpty()) {
+            s.checkPackageAccess(pkg);
+        }
+
         if (isNonPublicProxyClass(clazz)) {
-            checkProxyPackageAccess(clazz);
+            privateCheckProxyPackageAccess(s, clazz);
         }
     }
 
@@ -195,15 +213,21 @@ public final class ReflectUtil {
     public static void checkProxyPackageAccess(Class<?> clazz) {
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
-            // check proxy interfaces if the given class is a proxy class
-            if (Proxy.isProxyClass(clazz)) {
-                for (Class<?> intf : clazz.getInterfaces()) {
-                    checkPackageAccess(intf);
-                }
-            }
+            privateCheckProxyPackageAccess(s, clazz);
         }
     }
 
+    /**
+     * NOTE: should only be called if a SecurityManager is installed
+     */
+    private static void privateCheckProxyPackageAccess(SecurityManager s, Class<?> clazz) {
+        // check proxy interfaces if the given class is a proxy class
+        if (Proxy.isProxyClass(clazz)) {
+            for (Class<?> intf : clazz.getInterfaces()) {
+                privateCheckPackageAccess(s, intf);
+            }
+        }
+    }
     /**
      * Access check on the interfaces that a proxy class implements and throw
      * {@code SecurityException} if it accesses a restricted package from
@@ -220,7 +244,7 @@ public final class ReflectUtil {
             for (Class<?> intf : interfaces) {
                 ClassLoader cl = intf.getClassLoader();
                 if (needsPackageAccessCheck(ccl, cl)) {
-                    checkPackageAccess(intf);
+                    privateCheckPackageAccess(sm, intf);
                 }
             }
         }
@@ -236,10 +260,11 @@ public final class ReflectUtil {
      * package that bypasses checkPackageAccess.
      */
     public static boolean isNonPublicProxyClass(Class<?> cls) {
-        String name = cls.getName();
-        int i = name.lastIndexOf('.');
-        String pkg = (i != -1) ? name.substring(0, i) : "";
-        return Proxy.isProxyClass(cls) && !pkg.startsWith(PROXY_PACKAGE);
+        if (!Proxy.isProxyClass(cls)) {
+            return false;
+        }
+        String pkg = cls.getPackageName();
+        return pkg == null || !pkg.startsWith(PROXY_PACKAGE);
     }
 
     /**
@@ -255,7 +280,7 @@ public final class ReflectUtil {
         // check if it is a valid proxy instance
         if (proxy == null || !Proxy.isProxyClass(proxy.getClass())) {
             throw new IllegalArgumentException("Not a Proxy instance");
-}
+        }
         if (Modifier.isStatic(method.getModifiers())) {
             throw new IllegalArgumentException("Can't handle static method");
         }

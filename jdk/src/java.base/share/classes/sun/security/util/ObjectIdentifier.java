@@ -255,7 +255,13 @@ class ObjectIdentifier implements Serializable
                 + " (tag = " +  type_id + ")"
                 );
 
-        encoding = new byte[in.getDefiniteLength()];
+        int len = in.getDefiniteLength();
+        if (len > in.available()) {
+            throw new IOException("ObjectIdentifier() -- length exceeds" +
+                    "data available.  Length: " + len + ", Available: " +
+                    in.available());
+        }
+        encoding = new byte[len];
         in.getBytes(encoding);
         check(encoding);
     }

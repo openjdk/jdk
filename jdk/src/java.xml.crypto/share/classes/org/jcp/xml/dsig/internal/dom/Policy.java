@@ -31,8 +31,10 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -46,6 +48,7 @@ public final class Policy {
     private static int maxTrans = Integer.MAX_VALUE;
     private static int maxRefs = Integer.MAX_VALUE;
     private static Set<String> disallowedRefUriSchemes = new HashSet<>();
+    private static Map<String, Integer> minKeyMap = new HashMap<>();
     private static boolean noDuplicateIds = false;
     private static boolean noRMLoops = false;
 
@@ -101,6 +104,13 @@ public final class Policy {
                             scheme.toLowerCase(Locale.ROOT));
                     }
                     break;
+                case "minKeySize":
+                    if (tokens.length != 3) {
+                        error(entry);
+                    }
+                    minKeyMap.put(tokens[1],
+                                  Integer.parseUnsignedInt(tokens[2]));
+                    break;
                 case "noDuplicateIds":
                     if (tokens.length != 1) {
                         error(entry);
@@ -147,6 +157,10 @@ public final class Policy {
         return false;
     }
 
+    public static boolean restrictKey(String type, int size) {
+        return (size < minKeyMap.getOrDefault(type, 0));
+    }
+
     public static boolean restrictDuplicateIds() {
         return noDuplicateIds;
     }
@@ -169,6 +183,10 @@ public final class Policy {
 
     public static Set<String> disabledReferenceUriSchemes() {
         return Collections.<String>unmodifiableSet(disallowedRefUriSchemes);
+    }
+
+    public static int minKeySize(String type) {
+        return minKeyMap.getOrDefault(type, 0);
     }
 
     private static void error(String entry) {

@@ -32,15 +32,13 @@ import javax.security.auth.spi.*;
 import javax.naming.*;
 import javax.naming.directory.*;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.LinkedList;
-import java.util.ResourceBundle;
 
 import com.sun.security.auth.UnixPrincipal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
+import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 
 /**
@@ -152,9 +150,6 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  *
  */
 public class JndiLoginModule implements LoginModule {
-
-    private static final ResourceBundle rb =
-        ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     /** JNDI Provider */
     public final String USER_PROVIDER = "user.provider.url";
@@ -677,9 +672,9 @@ public class JndiLoginModule implements LoginModule {
 
         Callback[] callbacks = new Callback[2];
         callbacks[0] = new NameCallback(protocol + " "
-                                            + rb.getString("username."));
+                                            + getAuthResourceString("username."));
         callbacks[1] = new PasswordCallback(protocol + " " +
-                                                rb.getString("password."),
+                                                getAuthResourceString("password."),
                                             false);
 
         try {

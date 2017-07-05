@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import javax.management.MBeanPermission;
 
 import javax.management.ObjectName;
@@ -148,10 +148,9 @@ final class ClassLoaderRepositorySupport
     // from javax.management.loading.DefaultLoaderRepository
     public final Class<?> loadClassWithout(ClassLoader without, String className)
             throws ClassNotFoundException {
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    ClassLoaderRepositorySupport.class.getName(),
-                    "loadClassWithout", className + " without " + without);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
+                    className + " without " + without);
         }
 
         // without is null => just behave as loadClass
@@ -172,10 +171,9 @@ final class ClassLoaderRepositorySupport
 
     public final Class<?> loadClassBefore(ClassLoader stop, String className)
             throws ClassNotFoundException {
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    ClassLoaderRepositorySupport.class.getName(),
-                    "loadClassBefore", className + " before " + stop);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
+                    className + " before " + stop);
         }
 
         if (stop == null)
@@ -206,10 +204,8 @@ final class ClassLoaderRepositorySupport
                     continue;
                 if (cl == stop)
                     break;
-                if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-                    MBEANSERVER_LOGGER.logp(Level.FINER,
-                            ClassLoaderRepositorySupport.class.getName(),
-                            "loadClass", "Trying loader = " + cl);
+                if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                    MBEANSERVER_LOGGER.log(Level.TRACE, "Trying loader = " + cl);
                 }
                 /* We used to have a special case for "instanceof
                    MLet" here, where we invoked the method
@@ -239,10 +235,9 @@ final class ClassLoaderRepositorySupport
         //
         List<ClassLoader> excluded = search.get(className);
         if ((excluded!= null) && (excluded.contains(aloader))) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-                MBEANSERVER_LOGGER.logp(Level.FINER,
-                        ClassLoaderRepositorySupport.class.getName(),
-                        "startValidSearch", "Already requested loader = " +
+            if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                MBEANSERVER_LOGGER.log(Level.TRACE,
+                        "Already requested loader = " +
                         aloader + " class = " + className);
             }
             throw new ClassNotFoundException(className);
@@ -255,10 +250,8 @@ final class ClassLoaderRepositorySupport
             search.put(className, excluded);
         }
         excluded.add(aloader);
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    ClassLoaderRepositorySupport.class.getName(),
-                    "startValidSearch",
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
                     "loader = " + aloader + " class = " + className);
         }
     }
@@ -271,10 +264,8 @@ final class ClassLoaderRepositorySupport
         List<ClassLoader> excluded = search.get(className);
         if (excluded != null) {
             excluded.remove(aloader);
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-                MBEANSERVER_LOGGER.logp(Level.FINER,
-                        ClassLoaderRepositorySupport.class.getName(),
-                        "stopValidSearch",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                MBEANSERVER_LOGGER.log(Level.TRACE,
                         "loader = " + aloader + " class = " + className);
             }
         }

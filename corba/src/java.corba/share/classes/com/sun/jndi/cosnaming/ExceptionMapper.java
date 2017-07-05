@@ -33,6 +33,8 @@ import org.omg.CosNaming.*;
 import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
 
+import com.sun.jndi.toolkit.corba.CorbaUtils;
+
 /**
   * A convenience class to map the COS Naming exceptions to the JNDI exceptions.
   * @author Raj Krishnamurthy
@@ -202,10 +204,13 @@ public final class ExceptionMapper {
             // Not a context, use object factory to transform object.
 
             Name cname = CNNameParser.cosNameToName(resolvedName);
-            java.lang.Object resolvedObj2;
+            java.lang.Object resolvedObj2 = null;
             try {
-                resolvedObj2 = NamingManager.getObjectInstance(resolvedObj,
-                    cname, ctx, ctx._env);
+                // Check whether object factory codebase is trusted
+                if (CorbaUtils.isObjectFactoryTrusted(resolvedObj)) {
+                    resolvedObj2 = NamingManager.getObjectInstance(resolvedObj,
+                        cname, ctx, ctx._env);
+                }
             } catch (NamingException ge) {
                 throw ge;
             } catch (Exception ge) {
