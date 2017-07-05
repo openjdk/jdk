@@ -154,9 +154,15 @@ class AquaComboBoxPopup extends BasicComboPopup {
     protected JList<Object> createList() {
         return new JList<Object>(comboBox.getModel()) {
             @Override
+            @SuppressWarnings("deprecation")
             public void processMouseEvent(MouseEvent e) {
                 if (e.isMetaDown()) {
-                    e = new MouseEvent((Component)e.getSource(), e.getID(), e.getWhen(), e.getModifiers() ^ InputEvent.META_MASK, e.getX(), e.getY(), e.getXOnScreen(), e.getYOnScreen(), e.getClickCount(), e.isPopupTrigger(), MouseEvent.NOBUTTON);
+                    e = new MouseEvent((Component) e.getSource(), e.getID(),
+                                       e.getWhen(),
+                                       e.getModifiers() ^ InputEvent.META_MASK,
+                                       e.getX(), e.getY(), e.getXOnScreen(),
+                                       e.getYOnScreen(), e.getClickCount(),
+                                       e.isPopupTrigger(), MouseEvent.NOBUTTON);
                 }
                 super.processMouseEvent(e);
             }
