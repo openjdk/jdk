@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -529,6 +532,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         fComponents.put(LOCALE, null);
 
         // Restore initial security manager
+        fInitSecurityManager.setSecureProcessing(true);
         fComponents.put(SECURITY_MANAGER, fInitSecurityManager);
 
         // Set the Locale back to null.

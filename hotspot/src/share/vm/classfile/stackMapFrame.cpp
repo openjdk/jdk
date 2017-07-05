@@ -148,7 +148,7 @@ int StackMapFrame::is_assignable_to(
     VerificationType* from, VerificationType* to, int32_t len, TRAPS) const {
   int32_t i = 0;
   for (i = 0; i < len; i++) {
-    if (!to[i].is_assignable_from(from[i], verifier(), THREAD)) {
+    if (!to[i].is_assignable_from(from[i], verifier(), false, THREAD)) {
       break;
     }
   }
@@ -245,7 +245,7 @@ VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {
   }
   VerificationType top = _stack[--_stack_size];
   bool subtype = type.is_assignable_from(
-    top, verifier(), CHECK_(VerificationType::bogus_type()));
+    top, verifier(), false, CHECK_(VerificationType::bogus_type()));
   if (!subtype) {
     verifier()->verify_error(
         ErrorContext::bad_type(_offset, stack_top_ctx(),
@@ -265,7 +265,7 @@ VerificationType StackMapFrame::get_local(
     return VerificationType::bogus_type();
   }
   bool subtype = type.is_assignable_from(_locals[index],
-    verifier(), CHECK_(VerificationType::bogus_type()));
+    verifier(), false, CHECK_(VerificationType::bogus_type()));
   if (!subtype) {
     verifier()->verify_error(
         ErrorContext::bad_type(_offset,
@@ -288,14 +288,14 @@ void StackMapFrame::get_local_2(
         "get long/double overflows locals");
     return;
   }
-  bool subtype = type1.is_assignable_from(_locals[index], verifier(), CHECK);
+  bool subtype = type1.is_assignable_from(_locals[index], verifier(), false, CHECK);
   if (!subtype) {
     verifier()->verify_error(
         ErrorContext::bad_type(_offset,
             TypeOrigin::local(index, this), TypeOrigin::implicit(type1)),
         "Bad local variable type");
   } else {
-    subtype = type2.is_assignable_from(_locals[index + 1], verifier(), CHECK);
+    subtype = type2.is_assignable_from(_locals[index + 1], verifier(), false, CHECK);
     if (!subtype) {
       /* Unreachable? All local store routines convert a split long or double
        * into a TOP during the store.  So we should never end up seeing an

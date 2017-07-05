@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2003,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -33,7 +34,9 @@ public interface XSNamespaceItem {
 
     /**
      * [schema components]: a list of top-level components, i.e. element
-     * declarations, attribute declarations, etc.
+     * declarations, attribute declarations, etc. Identity-constraint
+     * definitions are also considered top-level.
+     *
      * @param objectType The type of the declaration, i.e.
      *   <code>ELEMENT_DECLARATION</code>. Note that
      *   <code>XSTypeDefinition.SIMPLE_TYPE</code> and
@@ -100,6 +103,14 @@ public interface XSNamespaceItem {
      *   a declaration does not exist.
      */
     public XSNotationDeclaration getNotationDeclaration(String name);
+
+    /**
+     * Convenience method. Returns an identity-constraint definition.
+     * @param name The name of the definition.
+     * @return An identity-constraint definition or <code>null</code> if such
+     *   a declaration does not exist.
+     */
+    public XSIDCDefinition getIDCDefinition(String name);
 
     /**
      * [document location] - a list of location URIs for the documents that

@@ -57,16 +57,10 @@ public:
     static size_t GetALength(JNIEnv* env, jstring jStr, size_t maxlen);
 
     LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-    static LRESULT CALLBACK EditProc(HWND hWnd, UINT message,
-                                     WPARAM wParam, LPARAM lParam);
 
     MsgRouting WmEnable(BOOL fEnabled);
-    MsgRouting WmContextMenu(HWND hCtrl, UINT xPos, UINT yPos);
-    MsgRouting WmNotify(UINT notifyCode);
     MsgRouting WmNcHitTest(UINT x, UINT y, LRESULT &retVal);
     MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
-
-    INLINE void SetIgnoreEnChange(BOOL b) { m_bIgnoreEnChange = b; }
 
     virtual BOOL InheritsNativeMouseWheelBehavior();
     virtual void Reshape(int x, int y, int w, int h);
@@ -81,22 +75,7 @@ public:
 protected:
 
     void EditSetSel(CHARRANGE &cr);
-    void EditGetSel(CHARRANGE &cr);
   private:
-    // RichEdit 1.0 control generates EN_CHANGE notifications not only
-    // on text changes, but also on any character formatting change.
-    // This flag is true when the latter case is detected.
-    BOOL    m_bIgnoreEnChange;
-
-    // RichEdit 1.0 control undoes a character formatting change
-    // if it is the latest. We don't create our own undo buffer,
-    // but just prohibit undo in case if the latest operation
-    // is a formatting change.
-    BOOL    m_bCanUndo;
-
-    HWND    m_hEditCtrl;
-    static WNDPROC sm_pDefWindowProc;
-
     LONG    m_lHDeltaAccum;
     LONG    m_lVDeltaAccum;
 

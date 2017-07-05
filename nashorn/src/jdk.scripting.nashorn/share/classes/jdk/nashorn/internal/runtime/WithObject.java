@@ -210,6 +210,19 @@ public final class WithObject extends ScriptObject implements Scope {
     }
 
     @Override
+    protected Object invokeNoSuchProperty(final String name, final int programPoint) {
+        FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
+        if (find != null) {
+            final Object func = find.getObjectValue();
+            if (func instanceof ScriptFunction) {
+                return ScriptRuntime.apply((ScriptFunction)func, expression, name);
+            }
+        }
+
+        return getProto().invokeNoSuchProperty(name, programPoint);
+    }
+
+    @Override
     public void setSplitState(final int state) {
         getNonWithParent().setSplitState(state);
     }

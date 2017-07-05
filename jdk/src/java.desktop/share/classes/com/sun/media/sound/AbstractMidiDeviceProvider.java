@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
         }
     }
 
-
+    @Override
     public final MidiDevice.Info[] getDeviceInfo() {
         readDeviceInfos();
         Info[] infos = getInfoCache();
@@ -126,7 +126,7 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
         return localArray;
     }
 
-
+    @Override
     public final MidiDevice getDevice(MidiDevice.Info info) {
         if (info instanceof Info) {
             readDeviceInfos();
@@ -143,9 +143,7 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
                 }
             }
         }
-
-        throw new IllegalArgumentException("MidiDevice " + info.toString()
-                                           + " not supported by this provider.");
+        throw MidiUtils.unsupportedDevice(info);
     }
 
 

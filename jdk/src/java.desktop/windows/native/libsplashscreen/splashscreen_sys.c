@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,14 @@ SplashPaint(Splash * splash, HDC hdc)
 void
 SplashRedrawWindow(Splash * splash)
 {
+    if (!SplashIsStillLooping(splash)) {
+        KillTimer(splash->hWnd, 0);
+    }
+
+    if (splash->currentFrame < 0) {
+        return;
+    }
+
     SplashUpdateScreenData(splash);
     if (splash->isLayered) {
         BLENDFUNCTION bf;
@@ -302,9 +310,6 @@ SplashRedrawWindow(Splash * splash)
         if (time < 0)
             time = 0;
         SetTimer(splash->hWnd, 0, time, NULL);
-    }
-    else {
-        KillTimer(splash->hWnd, 0);
     }
 }
 

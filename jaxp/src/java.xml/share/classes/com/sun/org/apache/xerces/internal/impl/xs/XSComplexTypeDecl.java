@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -77,7 +78,7 @@ public class XSComplexTypeDecl implements XSComplexTypeDefinition, TypeInfo {
     volatile XSCMValidator fCMValidator = null;
 
     // the content model that's sufficient for computing UPA
-    XSCMValidator fUPACMValidator = null;
+    volatile XSCMValidator fUPACMValidator = null;
 
     // list of annotations affiliated with this type
     XSObjectListImpl fAnnotations = null;
@@ -165,12 +166,28 @@ public class XSComplexTypeDecl implements XSComplexTypeDefinition, TypeInfo {
             fContentType == XSComplexTypeDecl.CONTENTTYPE_EMPTY) {
             return null;
         }
-        if (fCMValidator == null)
-            synchronized (this) {
-                if (fCMValidator == null) {
-                    fCMValidator = cmBuilder.getContentModel(this);
+        if (fCMValidator == null) {
+            fCMValidator = getContentModel(cmBuilder, false);
+        }
+        return fCMValidator;
+    }
+
+    public synchronized XSCMValidator getContentModel(CMBuilder cmBuilder, boolean forUPA) {
+        if (fCMValidator == null) {
+            if (forUPA) {
+                if (fUPACMValidator == null) {
+                    fUPACMValidator = cmBuilder.getContentModel(this, true);
+
+                    if (fUPACMValidator != null && !fUPACMValidator.isCompactedForUPA()) {
+                        fCMValidator = fUPACMValidator;
+                    }
                 }
+                return fUPACMValidator;
             }
+            else {
+                fCMValidator = cmBuilder.getContentModel(this, false);
+            }
+        }
         return fCMValidator;
     }
 

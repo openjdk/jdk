@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,9 +20,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl.xs;
-
-import java.lang.ref.SoftReference;
-import java.util.Vector;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.dv.SchemaDVFactory;
@@ -49,6 +47,7 @@ import com.sun.org.apache.xerces.internal.xs.XSAttributeDeclaration;
 import com.sun.org.apache.xerces.internal.xs.XSAttributeGroupDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSConstants;
 import com.sun.org.apache.xerces.internal.xs.XSElementDeclaration;
+import com.sun.org.apache.xerces.internal.xs.XSIDCDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSModel;
 import com.sun.org.apache.xerces.internal.xs.XSModelGroupDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSNamedMap;
@@ -59,6 +58,8 @@ import com.sun.org.apache.xerces.internal.xs.XSParticle;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSWildcard;
 import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
+import java.lang.ref.SoftReference;
+import java.util.Vector;
 import org.xml.sax.SAXException;
 
 /**
@@ -135,7 +136,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
      * Default constructor.
      *
      * @param targetNamespace
-     * @param grammarDesc the XMLGrammarDescription corresponding to this objec
+     * @param grammarDesc the XMLGrammarDescription corresponding to this object
      *          at the least a systemId should always be known.
      * @param symbolTable   needed for annotation support
      */
@@ -145,35 +146,39 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
         fGrammarDescription = grammarDesc;
         fSymbolTable = symbolTable;
 
-        // REVISIT: do we know the numbers of the following global decls
-        // when creating this grammar? If so, we can pass the numbers in,
-        // and use that number to initialize the following hashtables.
-        fGlobalAttrDecls  = new SymbolHash();
-        fGlobalAttrGrpDecls = new SymbolHash();
-        fGlobalElemDecls = new SymbolHash();
-        fGlobalGroupDecls = new SymbolHash();
-        fGlobalNotationDecls = new SymbolHash();
-        fGlobalIDConstraintDecls = new SymbolHash();
+        // REVISIT: the initial sizes being chosen for each SymbolHash
+        // may not be ideal and could still be tuned. They were chosen
+        // somewhat arbitrarily to reduce the initial footprint of
+        // SymbolHash buckets from 1,515 to 177 (about 12% of the
+        // default size).
+        fGlobalAttrDecls  = new SymbolHash(12);
+        fGlobalAttrGrpDecls = new SymbolHash(5);
+        fGlobalElemDecls = new SymbolHash(25);
+        fGlobalGroupDecls = new SymbolHash(5);
+        fGlobalNotationDecls = new SymbolHash(1);
+        fGlobalIDConstraintDecls = new SymbolHash(3);
 
         // Extended tables
-        fGlobalAttrDeclsExt  = new SymbolHash();
-        fGlobalAttrGrpDeclsExt = new SymbolHash();
-        fGlobalElemDeclsExt = new SymbolHash();
-        fGlobalGroupDeclsExt = new SymbolHash();
-        fGlobalNotationDeclsExt = new SymbolHash();
-        fGlobalIDConstraintDeclsExt = new SymbolHash();
-        fGlobalTypeDeclsExt = new SymbolHash();
+        fGlobalAttrDeclsExt  = new SymbolHash(12);
+        fGlobalAttrGrpDeclsExt = new SymbolHash(5);
+        fGlobalElemDeclsExt = new SymbolHash(25);
+        fGlobalGroupDeclsExt = new SymbolHash(5);
+        fGlobalNotationDeclsExt = new SymbolHash(1);
+        fGlobalIDConstraintDeclsExt = new SymbolHash(3);
+        fGlobalTypeDeclsExt = new SymbolHash(25);
 
         // All global elements table
-        fAllGlobalElemDecls = new SymbolHash();
+        fAllGlobalElemDecls = new SymbolHash(25);
 
         // if we are parsing S4S, put built-in types in first
         // they might get overwritten by the types from S4S, but that's
         // considered what the application wants to do.
-        if (fTargetNamespace == SchemaSymbols.URI_SCHEMAFORSCHEMA)
+        if (fTargetNamespace == SchemaSymbols.URI_SCHEMAFORSCHEMA) {
             fGlobalTypeDecls = SG_SchemaNS.fGlobalTypeDecls.makeClone();
-        else
-            fGlobalTypeDecls = new SymbolHash();
+        }
+        else {
+            fGlobalTypeDecls = new SymbolHash(25);
+        }
     } // <init>(String, XSDDescription)
 
     // Clone an existing schema grammar
@@ -232,7 +237,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             fRedefinedGroupDecls = new XSGroupDecl[grammar.fRedefinedGroupDecls.length];
             fRGLocators = new SimpleLocator[grammar.fRGLocators.length];
             System.arraycopy(grammar.fRedefinedGroupDecls, 0, fRedefinedGroupDecls, 0, fRGCount);
-            System.arraycopy(grammar.fRGLocators, 0, fRGLocators, 0, fRGCount);
+            System.arraycopy(grammar.fRGLocators, 0, fRGLocators, 0, fRGCount/2);
         }
 
         // List of imported grammars
@@ -626,19 +631,19 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             // fill complex types
             annotationType.setValues("#AnonType_" + SchemaSymbols.ELT_ANNOTATION, fTargetNamespace, SchemaGrammar.fAnyType,
                     XSConstants.DERIVATION_RESTRICTION, XSConstants.DERIVATION_NONE, (short) (XSConstants.DERIVATION_EXTENSION | XSConstants.DERIVATION_RESTRICTION),
-                    XSComplexTypeDecl.CONTENTTYPE_ELEMENT, false, annotationAttrs, null, annotationParticle, new XSObjectListImpl(null, 0));
+                    XSComplexTypeDecl.CONTENTTYPE_ELEMENT, false, annotationAttrs, null, annotationParticle, XSObjectListImpl.EMPTY_LIST);
             annotationType.setName("#AnonType_" + SchemaSymbols.ELT_ANNOTATION);
             annotationType.setIsAnonymous();
 
             documentationType.setValues("#AnonType_" + SchemaSymbols.ELT_DOCUMENTATION, fTargetNamespace, SchemaGrammar.fAnyType,
                     XSConstants.DERIVATION_RESTRICTION, XSConstants.DERIVATION_NONE, (short) (XSConstants.DERIVATION_EXTENSION | XSConstants.DERIVATION_RESTRICTION),
-                    XSComplexTypeDecl.CONTENTTYPE_MIXED, false, documentationAttrs, null, anyWCSequenceParticle, new XSObjectListImpl(null, 0));
+                    XSComplexTypeDecl.CONTENTTYPE_MIXED, false, documentationAttrs, null, anyWCSequenceParticle, XSObjectListImpl.EMPTY_LIST);
             documentationType.setName("#AnonType_" + SchemaSymbols.ELT_DOCUMENTATION);
             documentationType.setIsAnonymous();
 
             appinfoType.setValues("#AnonType_" + SchemaSymbols.ELT_APPINFO, fTargetNamespace, SchemaGrammar.fAnyType,
                     XSConstants.DERIVATION_RESTRICTION, XSConstants.DERIVATION_NONE, (short) (XSConstants.DERIVATION_EXTENSION | XSConstants.DERIVATION_RESTRICTION),
-                    XSComplexTypeDecl.CONTENTTYPE_MIXED, false, appinfoAttrs, null, anyWCSequenceParticle, new XSObjectListImpl(null, 0));
+                    XSComplexTypeDecl.CONTENTTYPE_MIXED, false, appinfoAttrs, null, anyWCSequenceParticle, XSObjectListImpl.EMPTY_LIST);
             appinfoType.setName("#AnonType_" + SchemaSymbols.ELT_APPINFO);
             appinfoType.setIsAnonymous();
 
@@ -1178,8 +1183,8 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             fDerivedBy = XSConstants.DERIVATION_RESTRICTION;
             fContentType = XSComplexTypeDecl.CONTENTTYPE_MIXED;
 
-            fParticle = null;
-            fAttrGrp = null;
+            fParticle = createParticle();
+            fAttrGrp = createAttrGrp();
         }
 
         // overridden methods
@@ -1211,11 +1216,15 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             // null implementation
         }
 
-        public XSObjectList getAttributeUses() {
+        public XSObjectList getAnnotations() {
             return XSObjectListImpl.EMPTY_LIST;
         }
 
-        public XSAttributeGroupDecl getAttrGrp() {
+        public XSNamespaceItem getNamespaceItem() {
+            return SG_SchemaNS;
+        }
+
+        private XSAttributeGroupDecl createAttrGrp() {
             XSWildcardDecl wildcard = new XSWildcardDecl();
             wildcard.fProcessContents = XSWildcardDecl.PC_LAX;
             XSAttributeGroupDecl attrGrp = new XSAttributeGroupDecl();
@@ -1223,13 +1232,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             return attrGrp;
         }
 
-        public XSWildcard getAttributeWildcard() {
-            XSWildcardDecl wildcard = new XSWildcardDecl();
-            wildcard.fProcessContents = XSWildcardDecl.PC_LAX;
-            return wildcard;
-        }
-
-        public XSParticle getParticle() {
+        private XSParticleDecl createParticle() {
             // the wildcard used in anyType (content and attribute)
             // the spec will change strict to skip for anyType
             XSWildcardDecl wildcard = new XSWildcardDecl();
@@ -1252,14 +1255,6 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             particleG.fValue = group;
 
             return particleG;
-        }
-
-        public XSObjectList getAnnotations() {
-            return XSObjectListImpl.EMPTY_LIST;
-        }
-
-        public XSNamespaceItem getNamespaceItem() {
-            return SG_SchemaNS;
         }
     }
     private static class BuiltinAttrDecl extends XSAttributeDecl {
@@ -1347,7 +1342,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
                                                   false,    // model group
                                                   false,    // particle
                                                   false,    // wildcard
-                                                  false,    // idc
+                                                  true,    // idc
                                                   true,     // notation
                                                   false,    // annotation
                                                   false,    // facet
@@ -1484,6 +1479,9 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             case XSConstants.NOTATION_DECLARATION:
                 table = fGlobalNotationDecls;
                 break;
+            case XSConstants.IDENTITY_CONSTRAINT:
+                table = this.fGlobalIDConstraintDecls;
+                break;
             }
 
             // for complex/simple types, create a special implementation,
@@ -1532,6 +1530,9 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
                 break;
             case XSConstants.NOTATION_DECLARATION:
                 table = fGlobalNotationDeclsExt;
+                break;
+            case XSConstants.IDENTITY_CONSTRAINT:
+                table = this.fGlobalIDConstraintDeclsExt;
                 break;
             }
 
@@ -1608,6 +1609,10 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
      */
     public XSNotationDeclaration getNotationDeclaration(String name) {
         return getGlobalNotationDecl(name);
+    }
+
+    public XSIDCDefinition getIDCDefinition(String name) {
+        return getIDConstraintDecl(name);
     }
 
 
