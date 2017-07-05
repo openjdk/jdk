@@ -144,8 +144,6 @@ bool G1ParScanThreadState::verify_task(StarTask ref) const {
 #endif // ASSERT
 
 void G1ParScanThreadState::trim_queue() {
-  assert(_evac_failure_cl != NULL, "not set");
-
   StarTask ref;
   do {
     // Drain the overflow stack first, so other threads can steal.
@@ -222,7 +220,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
       if (obj_ptr == NULL) {
         // This will either forward-to-self, or detect that someone else has
         // installed a forwarding pointer.
-        return _g1h->handle_evacuation_failure_par(this, old);
+        return handle_evacuation_failure_par(old, old_mark);
       }
     }
   }
@@ -236,7 +234,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     _g1_par_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
-    return _g1h->handle_evacuation_failure_par(this, old);
+    return handle_evacuation_failure_par(old, old_mark);
   }
 #endif // !PRODUCT
 
@@ -301,3 +299,36 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     return forward_ptr;
   }
 }
+
+oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
+  assert(_g1h->obj_in_cs(old),
+         err_msg("Object " PTR_FORMAT " should be in the CSet", p2i(old)));
+
+  oop forward_ptr = old->forward_to_atomic(old);
+  if (forward_ptr == NULL) {
+    // Forward-to-self succeeded. We are the "owner" of the object.
+    HeapRegion* r = _g1h->heap_region_containing(old);
+
+    if (!r->evacuation_failed()) {
+      r->set_evacuation_failed(true);
+     _g1h->hr_printer()->evac_failure(r);
+    }
+
+    _g1h->preserve_mark_during_evac_failure(_queue_num, old, m);
+
+    _scanner.set_region(r);
+    old->oop_iterate_backwards(&_scanner);
+
+    return old;
+  } else {
+    // Forward-to-self failed. Either someone else managed to allocate
+    // space for this object (old != forward_ptr) or they beat us in
+    // self-forwarding it (old == forward_ptr).
+    assert(old == forward_ptr || !_g1h->obj_in_cs(forward_ptr),
+           err_msg("Object " PTR_FORMAT " forwarded to: " PTR_FORMAT " "
+                   "should not be in the CSet",
+                   p2i(old), p2i(forward_ptr)));
+    return forward_ptr;
+  }
+}
+

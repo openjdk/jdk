@@ -22,20 +22,25 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP
-#define SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP
+// Method castToByteArray() tries to return an array of ints when an array
+// of bytes is expected.
+super class primArray
+version 52:0
+{
 
-#include "runtime/globals.hpp"
-#include "utilities/globalDefinitions.hpp"
+    public Method "<init>":"()V"
+    stack 1 locals 1
+    {
+        aload_0;
+        invokespecial Method java/lang/Object."<init>":"()V";
+        return;
+    }
 
-/*
- * Here we have compiler arguments constraints functions, which are called automatically
- * whenever flag's value changes. If the constraint fails the function should return
- * an appropriate error value.
- */
+    public static Method castToByteArray:"([I)[B"
+        stack 1 locals 1
+    {
+        aload_0;
+        areturn;
+    }
 
-Flag::Error AliasLevelConstraintFunc(bool verbose, intx* value);
-
-Flag::Error CICompilerCountConstraintFunc(bool verbose, intx* value);
-
-#endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP */
+} // end Class primArray

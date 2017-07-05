@@ -31,6 +31,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -305,330 +306,40 @@ class LibraryCallKit : public GraphKit {
   bool inline_isCompileConstant();
 };
 
-
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsics::ID id = m->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
-  ccstr disable_intr = NULL;
-
-  if ((DisableIntrinsic[0] != '\0'
-       && strstr(DisableIntrinsic, vmIntrinsics::name_at(id)) != NULL) ||
-      (method_has_option_value("DisableIntrinsic", disable_intr)
-       && strstr(disable_intr, vmIntrinsics::name_at(id)) != NULL)) {
-    // disabled by a user request on the command line:
-    // example: -XX:DisableIntrinsic=_hashCode,_getClass
-    return NULL;
-  }
-
   if (!m->is_loaded()) {
-    // do not attempt to inline unloaded methods
+    // Do not attempt to inline unloaded methods.
     return NULL;
   }
 
-  // Only a few intrinsics implement a virtual dispatch.
-  // They are expensive calls which are also frequently overridden.
-  if (is_virtual) {
-    switch (id) {
-    case vmIntrinsics::_hashCode:
-    case vmIntrinsics::_clone:
-      // OK, Object.hashCode and Object.clone intrinsics come in both flavors
-      break;
-    default:
-      return NULL;
-    }
+  C2Compiler* compiler = (C2Compiler*)CompileBroker::compiler(CompLevel_full_optimization);
+  bool is_available = false;
+
+  {
+    // For calling is_intrinsic_supported and is_intrinsic_disabled_by_flag
+    // the compiler must transition to '_thread_in_vm' state because both
+    // methods access VM-internal data.
+    VM_ENTRY_MARK;
+    methodHandle mh(THREAD, m->get_Method());
+    methodHandle ct(THREAD, method()->get_Method());
+    is_available = compiler->is_intrinsic_supported(mh, is_virtual) &&
+                   !compiler->is_intrinsic_disabled_by_flag(mh, ct);
   }
 
-  // -XX:-InlineNatives disables nearly all intrinsics:
-  if (!InlineNatives) {
-    switch (id) {
-    case vmIntrinsics::_indexOf:
-    case vmIntrinsics::_compareTo:
-    case vmIntrinsics::_equals:
-    case vmIntrinsics::_equalsC:
-    case vmIntrinsics::_getAndAddInt:
-    case vmIntrinsics::_getAndAddLong:
-    case vmIntrinsics::_getAndSetInt:
-    case vmIntrinsics::_getAndSetLong:
-    case vmIntrinsics::_getAndSetObject:
-    case vmIntrinsics::_loadFence:
-    case vmIntrinsics::_storeFence:
-    case vmIntrinsics::_fullFence:
-      break;  // InlineNatives does not control String.compareTo
-    case vmIntrinsics::_Reference_get:
-      break;  // InlineNatives does not control Reference.get
-    default:
-      return NULL;
-    }
-  }
-
-  int predicates = 0;
-  bool does_virtual_dispatch = false;
-
-  switch (id) {
-  case vmIntrinsics::_compareTo:
-    if (!SpecialStringCompareTo)  return NULL;
-    if (!Matcher::match_rule_supported(Op_StrComp))  return NULL;
-    break;
-  case vmIntrinsics::_indexOf:
-    if (!SpecialStringIndexOf)  return NULL;
-    break;
-  case vmIntrinsics::_equals:
-    if (!SpecialStringEquals)  return NULL;
-    if (!Matcher::match_rule_supported(Op_StrEquals))  return NULL;
-    break;
-  case vmIntrinsics::_equalsC:
-    if (!SpecialArraysEquals)  return NULL;
-    if (!Matcher::match_rule_supported(Op_AryEq))  return NULL;
-    break;
-  case vmIntrinsics::_arraycopy:
-    if (!InlineArrayCopy)  return NULL;
-    break;
-  case vmIntrinsics::_copyMemory:
-    if (StubRoutines::unsafe_arraycopy() == NULL)  return NULL;
-    if (!InlineArrayCopy)  return NULL;
-    break;
-  case vmIntrinsics::_hashCode:
-    if (!InlineObjectHash)  return NULL;
-    does_virtual_dispatch = true;
-    break;
-  case vmIntrinsics::_clone:
-    does_virtual_dispatch = true;
-  case vmIntrinsics::_copyOf:
-  case vmIntrinsics::_copyOfRange:
-    if (!InlineObjectCopy)  return NULL;
-    // These also use the arraycopy intrinsic mechanism:
-    if (!InlineArrayCopy)  return NULL;
-    break;
-  case vmIntrinsics::_encodeISOArray:
-    if (!SpecialEncodeISOArray)  return NULL;
-    if (!Matcher::match_rule_supported(Op_EncodeISOArray))  return NULL;
-    break;
-  case vmIntrinsics::_checkIndex:
-    // We do not intrinsify this.  The optimizer does fine with it.
-    return NULL;
-
-  case vmIntrinsics::_getCallerClass:
-    if (!InlineReflectionGetCallerClass)  return NULL;
-    if (SystemDictionary::reflect_CallerSensitive_klass() == NULL)  return NULL;
-    break;
-
-  case vmIntrinsics::_bitCount_i:
-    if (!Matcher::match_rule_supported(Op_PopCountI)) return NULL;
-    break;
-
-  case vmIntrinsics::_bitCount_l:
-    if (!Matcher::match_rule_supported(Op_PopCountL)) return NULL;
-    break;
-
-  case vmIntrinsics::_numberOfLeadingZeros_i:
-    if (!Matcher::match_rule_supported(Op_CountLeadingZerosI)) return NULL;
-    break;
-
-  case vmIntrinsics::_numberOfLeadingZeros_l:
-    if (!Matcher::match_rule_supported(Op_CountLeadingZerosL)) return NULL;
-    break;
-
-  case vmIntrinsics::_numberOfTrailingZeros_i:
-    if (!Matcher::match_rule_supported(Op_CountTrailingZerosI)) return NULL;
-    break;
-
-  case vmIntrinsics::_numberOfTrailingZeros_l:
-    if (!Matcher::match_rule_supported(Op_CountTrailingZerosL)) return NULL;
-    break;
-
-  case vmIntrinsics::_reverseBytes_c:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return NULL;
-    break;
-  case vmIntrinsics::_reverseBytes_s:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesS))  return NULL;
-    break;
-  case vmIntrinsics::_reverseBytes_i:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesI))  return NULL;
-    break;
-  case vmIntrinsics::_reverseBytes_l:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesL))  return NULL;
-    break;
-
-  case vmIntrinsics::_Reference_get:
-    // Use the intrinsic version of Reference.get() so that the value in
-    // the referent field can be registered by the G1 pre-barrier code.
-    // Also add memory barrier to prevent commoning reads from this field
-    // across safepoint since GC can change it value.
-    break;
-
-  case vmIntrinsics::_compareAndSwapObject:
-#ifdef _LP64
-    if (!UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndSwapP)) return NULL;
-#endif
-    break;
-
-  case vmIntrinsics::_compareAndSwapLong:
-    if (!Matcher::match_rule_supported(Op_CompareAndSwapL)) return NULL;
-    break;
-
-  case vmIntrinsics::_getAndAddInt:
-    if (!Matcher::match_rule_supported(Op_GetAndAddI)) return NULL;
-    break;
-
-  case vmIntrinsics::_getAndAddLong:
-    if (!Matcher::match_rule_supported(Op_GetAndAddL)) return NULL;
-    break;
-
-  case vmIntrinsics::_getAndSetInt:
-    if (!Matcher::match_rule_supported(Op_GetAndSetI)) return NULL;
-    break;
-
-  case vmIntrinsics::_getAndSetLong:
-    if (!Matcher::match_rule_supported(Op_GetAndSetL)) return NULL;
-    break;
-
-  case vmIntrinsics::_getAndSetObject:
-#ifdef _LP64
-    if (!UseCompressedOops && !Matcher::match_rule_supported(Op_GetAndSetP)) return NULL;
-    if (UseCompressedOops && !Matcher::match_rule_supported(Op_GetAndSetN)) return NULL;
-    break;
-#else
-    if (!Matcher::match_rule_supported(Op_GetAndSetP)) return NULL;
-    break;
-#endif
-
-  case vmIntrinsics::_aescrypt_encryptBlock:
-  case vmIntrinsics::_aescrypt_decryptBlock:
-    if (!UseAESIntrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_multiplyToLen:
-    if (!UseMultiplyToLenIntrinsic) return NULL;
-    break;
-
-  case vmIntrinsics::_squareToLen:
-    if (!UseSquareToLenIntrinsic) return NULL;
-    break;
-
-  case vmIntrinsics::_mulAdd:
-    if (!UseMulAddIntrinsic) return NULL;
-    break;
-
-  case vmIntrinsics::_montgomeryMultiply:
-     if (!UseMontgomeryMultiplyIntrinsic) return NULL;
-    break;
-  case vmIntrinsics::_montgomerySquare:
-     if (!UseMontgomerySquareIntrinsic) return NULL;
-    break;
-
-  case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
-  case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
-    if (!UseAESIntrinsics) return NULL;
-    // these two require the predicated logic
-    predicates = 1;
-    break;
-
-  case vmIntrinsics::_sha_implCompress:
-    if (!UseSHA1Intrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_sha2_implCompress:
-    if (!UseSHA256Intrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_sha5_implCompress:
-    if (!UseSHA512Intrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_digestBase_implCompressMB:
-    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return NULL;
-    predicates = 3;
-    break;
-
-  case vmIntrinsics::_ghash_processBlocks:
-    if (!UseGHASHIntrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_updateCRC32:
-  case vmIntrinsics::_updateBytesCRC32:
-  case vmIntrinsics::_updateByteBufferCRC32:
-    if (!UseCRC32Intrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_updateBytesCRC32C:
-  case vmIntrinsics::_updateDirectByteBufferCRC32C:
-    if (!UseCRC32CIntrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_incrementExactI:
-  case vmIntrinsics::_addExactI:
-    if (!Matcher::match_rule_supported(Op_OverflowAddI) || !UseMathExactIntrinsics) return NULL;
-    break;
-  case vmIntrinsics::_incrementExactL:
-  case vmIntrinsics::_addExactL:
-    if (!Matcher::match_rule_supported(Op_OverflowAddL) || !UseMathExactIntrinsics) return NULL;
-    break;
-  case vmIntrinsics::_decrementExactI:
-  case vmIntrinsics::_subtractExactI:
-    if (!Matcher::match_rule_supported(Op_OverflowSubI) || !UseMathExactIntrinsics) return NULL;
-    break;
-  case vmIntrinsics::_decrementExactL:
-  case vmIntrinsics::_subtractExactL:
-    if (!Matcher::match_rule_supported(Op_OverflowSubL) || !UseMathExactIntrinsics) return NULL;
-    break;
-  case vmIntrinsics::_negateExactI:
-    if (!Matcher::match_rule_supported(Op_OverflowSubI) || !UseMathExactIntrinsics) return NULL;
-    break;
-  case vmIntrinsics::_negateExactL:
-    if (!Matcher::match_rule_supported(Op_OverflowSubL) || !UseMathExactIntrinsics) return NULL;
-    break;
-  case vmIntrinsics::_multiplyExactI:
-    if (!Matcher::match_rule_supported(Op_OverflowMulI) || !UseMathExactIntrinsics) return NULL;
-    break;
-  case vmIntrinsics::_multiplyExactL:
-    if (!Matcher::match_rule_supported(Op_OverflowMulL) || !UseMathExactIntrinsics) return NULL;
-    break;
-
-  case vmIntrinsics::_getShortUnaligned:
-  case vmIntrinsics::_getCharUnaligned:
-  case vmIntrinsics::_getIntUnaligned:
-  case vmIntrinsics::_getLongUnaligned:
-  case vmIntrinsics::_putShortUnaligned:
-  case vmIntrinsics::_putCharUnaligned:
-  case vmIntrinsics::_putIntUnaligned:
-  case vmIntrinsics::_putLongUnaligned:
-    if (!UseUnalignedAccesses) return NULL;
-    break;
-
- default:
+  if (is_available) {
     assert(id <= vmIntrinsics::LAST_COMPILER_INLINE, "caller responsibility");
     assert(id != vmIntrinsics::_Object_init && id != vmIntrinsics::_invoke, "enum out of order?");
-    break;
+    return new LibraryIntrinsic(m, is_virtual,
+                                vmIntrinsics::predicates_needed(id),
+                                vmIntrinsics::does_virtual_dispatch(id),
+                                (vmIntrinsics::ID) id);
+  } else {
+    return NULL;
   }
-
-  // -XX:-InlineClassNatives disables natives from the Class class.
-  // The flag applies to all reflective calls, notably Array.newArray
-  // (visible to Java programmers as Array.newInstance).
-  if (m->holder()->name() == ciSymbol::java_lang_Class() ||
-      m->holder()->name() == ciSymbol::java_lang_reflect_Array()) {
-    if (!InlineClassNatives)  return NULL;
-  }
-
-  // -XX:-InlineThreadNatives disables natives from the Thread class.
-  if (m->holder()->name() == ciSymbol::java_lang_Thread()) {
-    if (!InlineThreadNatives)  return NULL;
-  }
-
-  // -XX:-InlineMathNatives disables natives from the Math,Float and Double classes.
-  if (m->holder()->name() == ciSymbol::java_lang_Math() ||
-      m->holder()->name() == ciSymbol::java_lang_Float() ||
-      m->holder()->name() == ciSymbol::java_lang_Double()) {
-    if (!InlineMathNatives)  return NULL;
-  }
-
-  // -XX:-InlineUnsafeOps disables natives from the Unsafe class.
-  if (m->holder()->name() == ciSymbol::sun_misc_Unsafe()) {
-    if (!InlineUnsafeOps)  return NULL;
-  }
-
-  return new LibraryIntrinsic(m, is_virtual, predicates, does_virtual_dispatch, (vmIntrinsics::ID) id);
 }
 
 //----------------------register_library_intrinsics-----------------------
@@ -812,7 +523,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_getLong:                  return inline_unsafe_access(!is_native_ptr, !is_store, T_LONG,    !is_volatile);
   case vmIntrinsics::_getFloat:                 return inline_unsafe_access(!is_native_ptr, !is_store, T_FLOAT,   !is_volatile);
   case vmIntrinsics::_getDouble:                return inline_unsafe_access(!is_native_ptr, !is_store, T_DOUBLE,  !is_volatile);
-
   case vmIntrinsics::_putObject:                return inline_unsafe_access(!is_native_ptr,  is_store, T_OBJECT,  !is_volatile);
   case vmIntrinsics::_putBoolean:               return inline_unsafe_access(!is_native_ptr,  is_store, T_BOOLEAN, !is_volatile);
   case vmIntrinsics::_putByte:                  return inline_unsafe_access(!is_native_ptr,  is_store, T_BYTE,    !is_volatile);

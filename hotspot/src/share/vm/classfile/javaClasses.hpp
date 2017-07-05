@@ -276,6 +276,7 @@ class java_lang_Class : AllStatic {
   }
   static Symbol* as_signature(oop java_class, bool intern_if_not_found, TRAPS);
   static void print_signature(oop java_class, outputStream *st);
+  static const char* as_external_name(oop java_class);
   // Testing
   static bool is_instance(oop obj);
 

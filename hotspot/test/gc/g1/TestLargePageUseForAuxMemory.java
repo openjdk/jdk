@@ -94,19 +94,40 @@ public class TestLargePageUseForAuxMemory {
         output.shouldHaveExitValue(0);
     }
 
+    private static long gcd(long x, long y) {
+        while (x > 0) {
+            long t = x;
+            x = y % x;
+            y = t;
+        }
+        return y;
+    }
+
+    private static long lcm(long x, long y) {
+        return x * (y / gcd(x, y));
+    }
+
     public static void main(String[] args) throws Exception {
         if (!Platform.isDebugBuild()) {
             System.out.println("Skip tests on non-debug builds because the required option TracePageSizes is a debug-only option.");
             return;
         }
 
+        // Size that a single card covers.
+        final int cardSize = 512;
         WhiteBox wb = WhiteBox.getWhiteBox();
         smallPageSize = wb.getVMPageSize();
         largePageSize = wb.getVMLargePageSize();
         allocGranularity = wb.getVMAllocationGranularity();
+        final long heapAlignment = lcm(cardSize * smallPageSize, largePageSize);
 
         if (largePageSize == 0) {
             System.out.println("Skip tests because large page support does not seem to be available on this platform.");
+            return;
+        }
+        if (largePageSize == smallPageSize) {
+            System.out.println("Skip tests because large page support does not seem to be available on this platform." +
+                               "Small and large page size are the same.");
             return;
         }
 
@@ -114,9 +135,6 @@ public class TestLargePageUseForAuxMemory {
         // 32 bit systems will have problems reserving such an amount of contiguous space, so skip the
         // test there.
         if (!Platform.is32bit()) {
-            // Size that a single card covers.
-            final int cardSize = 512;
-
             final long heapSizeForCardTableUsingLargePages = largePageSize * cardSize;
             final long heapSizeDiffForCardTable = Math.max(Math.max(allocGranularity * cardSize, HEAP_REGION_SIZE), largePageSize);
 
@@ -131,7 +149,8 @@ public class TestLargePageUseForAuxMemory {
         // everywhere.
         final int bitmapTranslationFactor = 8 * 8; // ObjectAlignmentInBytes * BitsPerByte
         final long heapSizeForBitmapUsingLargePages = largePageSize * bitmapTranslationFactor;
-        final long heapSizeDiffForBitmap = Math.max(Math.max(allocGranularity * bitmapTranslationFactor, HEAP_REGION_SIZE), largePageSize);
+        final long heapSizeDiffForBitmap = Math.max(Math.max(allocGranularity * bitmapTranslationFactor, HEAP_REGION_SIZE),
+                                                    Math.max(largePageSize, heapAlignment));
 
         Asserts.assertGT(heapSizeForBitmapUsingLargePages, heapSizeDiffForBitmap,
                          "To test we would require to use an invalid heap size");

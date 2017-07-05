@@ -284,11 +284,7 @@ inline oop oopDesc::obj_field(int offset) const {
     load_decode_heap_oop(obj_field_addr<narrowOop>(offset)) :
     load_decode_heap_oop(obj_field_addr<oop>(offset));
 }
-inline volatile oop oopDesc::obj_field_volatile(int offset) const {
-  volatile oop value = obj_field(offset);
-  OrderAccess::acquire();
-  return value;
-}
+
 inline void oopDesc::obj_field_put(int offset, oop value) {
   UseCompressedOops ? oop_store(obj_field_addr<narrowOop>(offset), value) :
                       oop_store(obj_field_addr<oop>(offset),       value);
