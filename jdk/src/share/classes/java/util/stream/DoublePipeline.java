@@ -168,7 +168,7 @@ abstract class DoublePipeline<E_IN>
 
     @Override
     public final PrimitiveIterator.OfDouble iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
     @Override
@@ -461,7 +461,7 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final double[] toArray() {
         return Nodes.flattenDouble((Node.OfDouble) evaluateToArrayNode(Double[]::new))
-                        .asDoubleArray();
+                        .asPrimitiveArray();
     }
 
     //

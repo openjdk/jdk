@@ -144,7 +144,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @param max the new column size limit in bytes; zero means there is no limit
      * @exception SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
-     *            or the condition max >= 0 is not satisfied
+     *            or the condition {@code max >= 0} is not satisfied
      * @see #getMaxFieldSize
      */
     void setMaxFieldSize(int max) throws SQLException;
@@ -174,7 +174,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @param max the new max rows limit; zero means there is no limit
      * @exception SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
-     *            or the condition max >= 0 is not satisfied
+     *            or the condition {@code max >= 0} is not satisfied
      * @see #getMaxRows
      */
     void setMaxRows(int max) throws SQLException;
@@ -240,7 +240,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *        there is no limit
      * @exception SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
-     *            or the condition seconds >= 0 is not satisfied
+     *            or the condition {@code seconds >= 0} is not satisfied
      * @see #getQueryTimeout
      */
     void setQueryTimeout(int seconds) throws SQLException;
@@ -385,10 +385,10 @@ public interface Statement extends Wrapper, AutoCloseable {
      * object(s) obtained with the method <code>getResultSet</code>.
      *
      * <P>There are no more results when the following is true:
-     * <PRE>
+     * <PRE>{@code
      *     // stmt is a Statement object
      *     ((stmt.getMoreResults() == false) && (stmt.getUpdateCount() == -1))
-     * </PRE>
+     * }</PRE>
      *
      * @return <code>true</code> if the next result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
@@ -452,7 +452,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @param rows the number of rows to fetch
      * @exception SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code> or the
-     *        condition  <code>rows >= 0</code> is not satisfied.
+     *        condition {@code rows >= 0} is not satisfied.
      * @since 1.2
      * @see #getFetchSize
      */
@@ -665,10 +665,10 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <code>true</code> if the next result is a <code>ResultSet</code> object.
      *
      * <P>There are no more results when the following is true:
-     * <PRE>
+     * <PRE>{@code
      *     // stmt is a Statement object
      *     ((stmt.getMoreResults(current) == false) && (stmt.getUpdateCount() == -1))
-     * </PRE>
+     * }</PRE>
      *
      * @param current one of the following <code>Statement</code>
      *        constants indicating what should happen to current
@@ -1107,7 +1107,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @param max the new max rows limit; zero means there is no limit
      * @exception SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>
-     *            or the condition max >= 0 is not satisfied
+     *            or the condition {@code max >= 0} is not satisfied
      * @see #getMaxRows
      * @since 1.8
      */

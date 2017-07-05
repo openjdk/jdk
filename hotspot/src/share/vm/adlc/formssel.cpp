@@ -235,6 +235,9 @@ bool InstructForm::is_parm(FormDict &globals) {
   return false;
 }
 
+bool InstructForm::is_ideal_negD() const {
+  return (_matrule && _matrule->_rChild && strcmp(_matrule->_rChild->_opType, "NegD") == 0);
+}
 
 // Return 'true' if this instruction matches an ideal 'Copy*' node
 int InstructForm::is_ideal_copy() const {
@@ -532,6 +535,12 @@ bool InstructForm::rematerialize(FormDict &globals, RegisterForm *registers ) {
   Form::DataType data_type = is_chain_of_constant(globals);
   if( data_type != Form::none )
     rematerialize = true;
+
+  // Ugly: until a better fix is implemented, disable rematerialization for
+  // negD nodes because they are proved to be problematic.
+  if (is_ideal_negD()) {
+    return false;
+  }
 
   // Constants
   if( _components.count() == 1 && _components[0]->is(Component::USE_DEF) )

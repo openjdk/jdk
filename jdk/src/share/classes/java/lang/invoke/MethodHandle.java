@@ -251,7 +251,7 @@ import java.util.logging.Logger;
  *
  * <h3>Usage examples</h3>
  * Here are some examples of usage:
- * <p><blockquote><pre>
+ * <p><blockquote><pre>{@code
 Object x, y; String s; int i;
 MethodType mt; MethodHandle mh;
 MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -287,7 +287,7 @@ mt = MethodType.methodType(void.class, String.class);
 mh = lookup.findVirtual(java.io.PrintStream.class, "println", mt);
 mh.invokeExact(System.out, "Hello, world.");
 // invokeExact(Ljava/io/PrintStream;Ljava/lang/String;)V
- * </pre></blockquote>
+ * }</pre></blockquote>
  * Each of the above calls to {@code invokeExact} or plain {@code invoke}
  * generates a single invokevirtual instruction with
  * the symbolic type descriptor indicated in the following comment.
@@ -754,7 +754,7 @@ public abstract class MethodHandle {
      * (The array may also be null when zero elements are required.)
      * <p>
      * Here are some simple examples of array-spreading method handles:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
 MethodHandle equals = publicLookup()
   .findVirtual(String.class, "equals", methodType(boolean.class, Object.class));
 assert( (boolean) equals.invokeExact("me", (Object)"me"));
@@ -790,7 +790,7 @@ MethodHandle caString3 = caToString.asCollector(char[].class, 3);
 assertEquals("[A, B, C]", (String) caString3.invokeExact('A', 'B', 'C'));
 MethodHandle caToString2 = caString3.asSpreader(char[].class, 2);
 assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray()));
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * @param arrayType usually {@code Object[]}, the type of the array argument from which to extract the spread arguments
      * @param arrayLength the number of arguments to spread from an incoming array argument
      * @return a new method handle which spreads its final array argument,
@@ -878,7 +878,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * number of collected arguments, use {@link #asVarargsCollector asVarargsCollector} instead.
      * <p>
      * Here are some examples of array-collecting method handles:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
 MethodHandle deepToString = publicLookup()
   .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
 assertEquals("[won]",   (String) deepToString.invokeExact(new Object[]{"won"}));
@@ -904,7 +904,7 @@ MethodHandle longsToString = publicLookup()
   .findStatic(Arrays.class, "toString", methodType(String.class, long[].class))
   .asCollector(long[].class, 1);
 assertEquals("[123]", (String) longsToString.invokeExact((long)123));
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
      * @param arrayLength the number of arguments to collect into a new array argument
      * @return a new method handle which collects some trailing argument
@@ -1041,7 +1041,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * It may (or may not) return the original variable arity method handle.
      * <p>
      * Here is an example, of a list-making variable arity method handle:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
 MethodHandle deepToString = publicLookup()
   .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
 MethodHandle ts1 = deepToString.asVarargsCollector(Object[].class);
@@ -1063,7 +1063,7 @@ assertEquals("[three, thee, tee]", asList.invoke((Object[])argv).toString());
 List ls = (List) asList.invoke((Object)argv);
 assertEquals(1, ls.size());
 assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * <p style="font-size:smaller;">
      * <em>Discussion:</em>
      * These rules are designed as a dynamically-typed variation
@@ -1134,7 +1134,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * a previous argument to {@code asVarargsCollector}.
      * <p>
      * Here is an example, of a list-making variable arity method handle:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
 MethodHandle asListVar = publicLookup()
   .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
   .asVarargsCollector(Object[].class);
@@ -1153,7 +1153,7 @@ assertEquals("[three, thee, tee]", asListVar.invoke(argv).toString());
 assertEquals("[three, thee, tee]", asListFix.invoke(argv).toString());
 assertEquals(1, ((List) asListVar.invoke((Object)argv)).size());
 assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * @return a new method handle which accepts only a fixed number of arguments
      * @see #asVarargsCollector

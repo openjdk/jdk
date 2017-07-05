@@ -831,6 +831,14 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
         return NULL;
     }
 
+    // Assumption, zfd refers to start of file. Trivially, reuse errbuf.
+    if (readFully(zfd, errbuf, 4) != -1) {  // errors will be handled later
+        if (GETSIG(errbuf) == LOCSIG)
+            zip->locsig = JNI_TRUE;
+        else
+            zip->locsig = JNI_FALSE;
+    }
+
     len = zip->len = IO_Lseek(zfd, 0, SEEK_END);
     if (len <= 0) {
         if (len == 0) { /* zip file is empty */

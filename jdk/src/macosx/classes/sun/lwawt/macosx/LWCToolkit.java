@@ -179,6 +179,11 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     @Override
+    protected SecurityWarningWindow createSecurityWarning(Window ownerWindow, LWWindowPeer ownerPeer) {
+        return new CWarningWindow(ownerWindow, ownerPeer);
+    }
+
+    @Override
     protected PlatformComponent createPlatformComponent() {
         return new CPlatformComponent();
     }

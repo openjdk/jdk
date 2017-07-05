@@ -127,6 +127,8 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "v\u00E1rias express\u00F5es CodeBase"},
         {"multiple.SignedBy.expressions","v\u00E1rias express\u00F5es SignedBy"},
+        {"duplicate.keystore.domain.name","nome do dom\u00EDnio da \u00E1rea de armazenamento de teclas duplicado: {0}"},
+        {"duplicate.keystore.name","nome da \u00E1rea de armazenamento de chaves duplicado: {0}"},
         {"SignedBy.has.empty.alias","SignedBy tem alias vazio"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "n\u00E3o \u00E9 poss\u00EDvel especificar um principal com uma classe curinga sem um nome curinga"},

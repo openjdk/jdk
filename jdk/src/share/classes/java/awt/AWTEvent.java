@@ -297,11 +297,11 @@ public abstract class AWTEvent extends EventObject {
                                     field.setAccessible(true);
                                     return field;
                                 } catch (SecurityException e) {
-                                    if (log.isLoggable(PlatformLogger.FINE)) {
+                                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                                         log.fine("AWTEvent.get_InputEvent_CanAccessSystemClipboard() got SecurityException ", e);
                                     }
                                 } catch (NoSuchFieldException e) {
-                                    if (log.isLoggable(PlatformLogger.FINE)) {
+                                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                                         log.fine("AWTEvent.get_InputEvent_CanAccessSystemClipboard() got NoSuchFieldException ", e);
                                     }
                                 }
@@ -594,7 +594,7 @@ public abstract class AWTEvent extends EventObject {
                     boolean b = field.getBoolean(this);
                     field.setBoolean(that, b);
                 } catch(IllegalAccessException e) {
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("AWTEvent.copyPrivateDataInto() got IllegalAccessException ", e);
                     }
                 }
@@ -610,7 +610,7 @@ public abstract class AWTEvent extends EventObject {
                 try {
                     field.setBoolean(this, false);
                 } catch(IllegalAccessException e) {
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("AWTEvent.dispatched() got IllegalAccessException ", e);
                     }
                 }

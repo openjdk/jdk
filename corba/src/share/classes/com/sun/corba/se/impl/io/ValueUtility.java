@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,14 @@ public class ValueUtility {
         sun.corba.SharedSecrets.setJavaCorbaAccess(new sun.corba.JavaCorbaAccess() {
             public ValueHandlerImpl newValueHandlerImpl() {
                 return ValueHandlerImpl.getInstance();
+            }
+            public Class<?> loadClass(String className) throws ClassNotFoundException {
+                if (Thread.currentThread().getContextClassLoader() != null) {
+                    return Thread.currentThread().getContextClassLoader().
+                        loadClass(className);
+                } else {
+                    return ClassLoader.getSystemClassLoader().loadClass(className);
+                }
             }
         });
     }

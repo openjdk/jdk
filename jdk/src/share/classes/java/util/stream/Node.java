@@ -242,7 +242,7 @@ interface Node<T> {
          * an instance of an Integer[] array with a length of {@link #count()}
          * and then invokes {@link #copyInto(Integer[], int)} with that
          * Integer[] array at an offset of 0.  This is not efficient and it is
-         * recommended to invoke {@link #asIntArray()}.
+         * recommended to invoke {@link #asPrimitiveArray()}.
          */
         @Override
         default Integer[] asArray(IntFunction<Integer[]> generator) {
@@ -254,7 +254,7 @@ interface Node<T> {
         /**
          * {@inheritDoc}
          *
-         * @implSpec the default implementation invokes {@link #asIntArray()} to
+         * @implSpec the default implementation invokes {@link #asPrimitiveArray()} to
          * obtain an int[] array then and copies the elements from that int[]
          * array into the boxed Integer[] array.  This is not efficient and it
          * is recommended to invoke {@link #copyInto(int[], int)}.
@@ -264,7 +264,7 @@ interface Node<T> {
             if (Tripwire.ENABLED)
                 Tripwire.trip(getClass(), "{0} calling Node.OfInt.copyInto(Integer[], int)");
 
-            int[] array = asIntArray();
+            int[] array = asPrimitiveArray();
             for (int i = 0; i < array.length; i++) {
                 boxed[offset + i] = array[i];
             }
@@ -285,7 +285,7 @@ interface Node<T> {
          *
          * @return an array containing the contents of this {@code Node}
          */
-        int[] asIntArray();
+        int[] asPrimitiveArray();
 
         /**
          * Copies the content of this {@code Node} into an int[] array, starting
@@ -362,7 +362,7 @@ interface Node<T> {
          * an instance of a Long[] array with a length of {@link #count()} and
          * then invokes {@link #copyInto(Long[], int)} with that Long[] array at
          * an offset of 0.  This is not efficient and it is recommended to
-         * invoke {@link #asLongArray()}.
+         * invoke {@link #asPrimitiveArray()}.
          */
         @Override
         default Long[] asArray(IntFunction<Long[]> generator) {
@@ -374,7 +374,7 @@ interface Node<T> {
         /**
          * {@inheritDoc}
          *
-         * @implSpec the default implementation invokes {@link #asLongArray()}
+         * @implSpec the default implementation invokes {@link #asPrimitiveArray()}
          * to obtain a long[] array then and copies the elements from that
          * long[] array into the boxed Long[] array.  This is not efficient and
          * it is recommended to invoke {@link #copyInto(long[], int)}.
@@ -384,7 +384,7 @@ interface Node<T> {
             if (Tripwire.ENABLED)
                 Tripwire.trip(getClass(), "{0} calling Node.OfInt.copyInto(Long[], int)");
 
-            long[] array = asLongArray();
+            long[] array = asPrimitiveArray();
             for (int i = 0; i < array.length; i++) {
                 boxed[offset + i] = array[i];
             }
@@ -405,7 +405,7 @@ interface Node<T> {
          *
          * @return an array containing the contents of this {@code Node}
          */
-        long[] asLongArray();
+        long[] asPrimitiveArray();
 
         /**
          * Copies the content of this {@code Node} into a long[] array, starting
@@ -485,7 +485,7 @@ interface Node<T> {
          * an instance of a Double[] array with a length of {@link #count()} and
          * then invokes {@link #copyInto(Double[], int)} with that Double[]
          * array at an offset of 0.  This is not efficient and it is recommended
-         * to invoke {@link #asDoubleArray()}.
+         * to invoke {@link #asPrimitiveArray()}.
          */
         @Override
         default Double[] asArray(IntFunction<Double[]> generator) {
@@ -497,7 +497,7 @@ interface Node<T> {
         /**
          * {@inheritDoc}
          *
-         * @implSpec the default implementation invokes {@link #asDoubleArray()}
+         * @implSpec the default implementation invokes {@link #asPrimitiveArray()}
          * to obtain a double[] array then and copies the elements from that
          * double[] array into the boxed Double[] array.  This is not efficient
          * and it is recommended to invoke {@link #copyInto(double[], int)}.
@@ -507,7 +507,7 @@ interface Node<T> {
             if (Tripwire.ENABLED)
                 Tripwire.trip(getClass(), "{0} calling Node.OfDouble.copyInto(Double[], int)");
 
-            double[] array = asDoubleArray();
+            double[] array = asPrimitiveArray();
             for (int i = 0; i < array.length; i++) {
                 boxed[offset + i] = array[i];
             }
@@ -528,7 +528,7 @@ interface Node<T> {
          *
          * @return an array containing the contents of this {@code Node}
          */
-        double[] asDoubleArray();
+        double[] asPrimitiveArray();
 
         /**
          * Copies the content of this {@code Node} into a double[] array, starting

@@ -393,6 +393,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_copyFirstPIDLEntry
     if (cb == 0)
         return 0;
 
+    if (!IS_SAFE_SIZE_ADD(cb, sizeof(SHITEMID))) {
+        return 0;
+    }
     // Allocate space for this as well as null-terminating entry.
     LPITEMIDLIST newPIDL = (LPITEMIDLIST)pMalloc->Alloc(cb + sizeof(SHITEMID));
 
@@ -433,6 +436,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_combinePIDLs
     int len1 = pidlLength(parentPIDL);
     int len2 = pidlLength(relativePIDL);
 
+    if (!IS_SAFE_SIZE_ADD(len1, len2) || !IS_SAFE_SIZE_ADD(len1 + len2, sizeof(SHITEMID))) {
+        return 0;
+    }
     LPITEMIDLIST newPIDL = (LPITEMIDLIST)pMalloc->Alloc(len1 + len2 + sizeof(SHITEMID));
     memcpy(newPIDL, parentPIDL, len1);
     memcpy(((LPBYTE) newPIDL) + len1, relativePIDL, len2);

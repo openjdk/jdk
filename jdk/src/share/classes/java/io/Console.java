@@ -75,7 +75,7 @@ import sun.nio.cs.StreamEncoder;
  * manually zero the returned character array after processing to minimize the
  * lifetime of sensitive data in memory.
  *
- * <blockquote><pre>
+ * <blockquote><pre>{@code
  * Console cons;
  * char[] passwd;
  * if ((cons = System.console()) != null &&
@@ -83,7 +83,7 @@ import sun.nio.cs.StreamEncoder;
  *     ...
  *     java.util.Arrays.fill(passwd, ' ');
  * }
- * </pre></blockquote>
+ * }</pre></blockquote>
  *
  * @author  Xueming Shen
  * @since   1.6

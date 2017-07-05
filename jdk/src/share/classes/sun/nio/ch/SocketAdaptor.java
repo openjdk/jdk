@@ -149,9 +149,10 @@ public class SocketAdaptor
 
     public InetAddress getLocalAddress() {
         if (sc.isOpen()) {
-            SocketAddress local = sc.localAddress();
-            if (local != null)
-                return ((InetSocketAddress)local).getAddress();
+            InetSocketAddress local = sc.localAddress();
+            if (local != null) {
+                return Net.getRevealedLocalAddress(local).getAddress();
+            }
         }
         return new InetSocketAddress(0).getAddress();
     }

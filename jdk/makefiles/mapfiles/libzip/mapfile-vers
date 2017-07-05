@@ -65,6 +65,7 @@ SUNWprivate_1.1 {
 		Java_java_util_zip_ZipFile_initIDs;
 		Java_java_util_zip_ZipFile_open;
 		Java_java_util_zip_ZipFile_read;
+		Java_java_util_zip_ZipFile_startsWithLOC;
 
 		ZIP_Close;
 		ZIP_CRC32;

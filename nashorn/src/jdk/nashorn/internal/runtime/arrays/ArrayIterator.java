@@ -83,6 +83,6 @@ public class ArrayIterator extends ArrayLikeIterator<Object> {
 
     @Override
     public void remove() {
-        array.delete(index, array.isStrictContext());
+        array.delete(index, false);
     }
 }

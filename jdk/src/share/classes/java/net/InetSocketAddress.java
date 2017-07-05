@@ -389,7 +389,7 @@ public class InetSocketAddress
      * Two instances of <code>InetSocketAddress</code> represent the same
      * address if both the InetAddresses (or hostnames if it is unresolved) and port
      * numbers are equal.
-     * If both addresses are unresolved, then the hostname & the port number
+     * If both addresses are unresolved, then the hostname and the port number
      * are compared.
      *
      * Note: Hostnames are case insensitive. e.g. "FooBar" and "foobar" are

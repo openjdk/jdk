@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,13 @@ import com.sun.corba.se.impl.encoding.CDRInputStream_1_0;
 import com.sun.corba.se.impl.encoding.EncapsOutputStream;
 
 import com.sun.corba.se.impl.orbutil.ORBUtility;
-import com.sun.corba.se.impl.orbutil.ORBClassLoader;
 
 import com.sun.corba.se.impl.util.RepositoryId;
 
 import com.sun.corba.se.impl.logging.InterceptorsSystemException;
 import com.sun.corba.se.impl.logging.OMGSystemException;
+
+import sun.corba.SharedSecrets;
 
 /**
  * Implementation of the RequestInfo interface as specified in
@@ -452,7 +453,8 @@ public abstract class RequestInfoImpl
 
             // Find the read method on the helper class:
             String helperClassName = className + "Helper";
-            Class helperClass = ORBClassLoader.loadClass( helperClassName );
+            Class<?> helperClass =
+                SharedSecrets.getJavaCorbaAccess().loadClass( helperClassName );
             Class[] readParams = new Class[1];
             readParams[0] = org.omg.CORBA.portable.InputStream.class;
             Method readMethod = helperClass.getMethod( "read", readParams );
@@ -512,7 +514,8 @@ public abstract class RequestInfoImpl
                 Class exceptionClass = userException.getClass();
                 String className = exceptionClass.getName();
                 String helperClassName = className + "Helper";
-                Class helperClass = ORBClassLoader.loadClass( helperClassName );
+                Class<?> helperClass =
+                    SharedSecrets.getJavaCorbaAccess().loadClass( helperClassName );
 
                 // Find insert( Any, class ) method
                 Class[] insertMethodParams = new Class[2];
@@ -656,7 +659,8 @@ public abstract class RequestInfoImpl
             // Convert the "core" service context to an
             // "IOP" ServiceContext by writing it to a
             // CDROutputStream and reading it back.
-            EncapsOutputStream out = new EncapsOutputStream(myORB);
+            EncapsOutputStream out =
+                sun.corba.OutputStreamFactory.newEncapsOutputStream(myORB);
 
             context.write( out, GIOPVersion.V1_2 );
             InputStream inputStream = out.create_input_stream();
@@ -692,8 +696,8 @@ public abstract class RequestInfoImpl
     {
         int id = 0 ;
         // Convert IOP.service_context to core.ServiceContext:
-        EncapsOutputStream outputStream = new EncapsOutputStream(
-            myORB );
+        EncapsOutputStream outputStream =
+           sun.corba.OutputStreamFactory.newEncapsOutputStream(myORB);
         InputStream inputStream = null;
         UnknownServiceContext coreServiceContext = null;
         ServiceContextHelper.write( outputStream, service_context );

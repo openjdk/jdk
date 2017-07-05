@@ -342,6 +342,184 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
         });
     }
 
+    // Support for ECMAScript Object API on mirrors
+
+    /**
+     * Return the __proto__ of this object.
+     * @return __proto__ object.
+     */
+    public Object getProto() {
+        return inGlobal(new Callable<Object>() {
+            @Override public Object call() {
+                return wrap(getScriptObject().getProto(), global);
+            }
+        });
+    }
+
+    /**
+     * ECMA 8.12.1 [[GetOwnProperty]] (P)
+     *
+     * @param key property key
+     *
+     * @return Returns the Property Descriptor of the named own property of this
+     * object, or undefined if absent.
+     */
+    public Object getOwnPropertyDescriptor(final String key) {
+        return inGlobal(new Callable<Object>() {
+            @Override public Object call() {
+                return wrap(getScriptObject().getOwnPropertyDescriptor(key), global);
+            }
+        });
+    }
+
+    /**
+     * return an array of own property keys associated with the object.
+     *
+     * @param all True if to include non-enumerable keys.
+     * @return Array of keys.
+     */
+    public String[] getOwnKeys(final boolean all) {
+        return inGlobal(new Callable<String[]>() {
+            @Override public String[] call() {
+                return getScriptObject().getOwnKeys(all);
+            }
+        });
+    }
+
+    /**
+     * Flag this script object as non extensible
+     *
+     * @return the object after being made non extensible
+     */
+    public ScriptObjectMirror preventExtensions() {
+        return inGlobal(new Callable<ScriptObjectMirror>() {
+            @Override public ScriptObjectMirror call() {
+                getScriptObject().preventExtensions();
+                return ScriptObjectMirror.this;
+            }
+        });
+    }
+
+    /**
+     * Check if this script object is extensible
+     * @return true if extensible
+     */
+    public boolean isExtensible() {
+        return inGlobal(new Callable<Boolean>() {
+            @Override public Boolean call() {
+                return getScriptObject().isExtensible();
+            }
+        });
+    }
+
+    /**
+     * ECMAScript 15.2.3.8 - seal implementation
+     * @return the sealed script object
+     */
+    public ScriptObjectMirror seal() {
+        return inGlobal(new Callable<ScriptObjectMirror>() {
+            @Override public ScriptObjectMirror call() {
+                getScriptObject().seal();
+                return ScriptObjectMirror.this;
+            }
+        });
+    }
+
+    /**
+     * Check whether this script object is sealed
+     * @return true if sealed
+     */
+    public boolean isSealed() {
+        return inGlobal(new Callable<Boolean>() {
+            @Override public Boolean call() {
+                return getScriptObject().isSealed();
+            }
+        });
+    }
+
+    /**
+     * ECMA 15.2.39 - freeze implementation. Freeze this script object
+     * @return the frozen script object
+     */
+    public ScriptObjectMirror freeze() {
+        return inGlobal(new Callable<ScriptObjectMirror>() {
+            @Override public ScriptObjectMirror call() {
+                getScriptObject().freeze();
+                return ScriptObjectMirror.this;
+            }
+        });
+    }
+
+    /**
+     * Check whether this script object is frozen
+     * @return true if frozen
+     */
+    public boolean isFrozen() {
+        return inGlobal(new Callable<Boolean>() {
+            @Override public Boolean call() {
+                return getScriptObject().isFrozen();
+            }
+        });
+    }
+
+    // ECMAScript instanceof check
+
+    /**
+     * Checking whether a script object is an instance of another by
+     * walking the proto chain
+     *
+     * @param instance instace to check
+     * @return true if 'instance' is an instance of this object
+     */
+    public boolean isInstance(final ScriptObjectMirror instance) {
+        // if not belongs to my global scope, return false
+        if (instance == null || global != instance.global) {
+            return false;
+        }
+
+        return inGlobal(new Callable<Boolean>() {
+            @Override public Boolean call() {
+                return getScriptObject().isInstance(instance.getScriptObject());
+            }
+        });
+    }
+
+    /**
+     * Utility to check if given object is ECMAScript undefined value
+     *
+     * @param obj object to check
+     * @return true if 'obj' is ECMAScript undefined value
+     */
+    public static boolean isUndefined(final Object obj) {
+        return obj == ScriptRuntime.UNDEFINED;
+    }
+
+    /**
+     * is this a function object?
+     *
+     * @return if this mirror wraps a ECMAScript function instance
+     */
+    public boolean isFunction() {
+        return getScriptObject() instanceof ScriptFunction;
+    }
+
+    /**
+     * is this a 'use strict' function object?
+     *
+     * @return true if this mirror represents a ECMAScript 'use strict' function
+     */
+    public boolean isStrictFunction() {
+        return isFunction() && ((ScriptFunction)getScriptObject()).isStrict();
+    }
+
+    /**
+     * is this an array object?
+     *
+     * @return if this mirror wraps a ECMAScript array object
+     */
+    public boolean isArray() {
+        return getScriptObject().isArray();
+    }
 
     // These are public only so that Context can access these.
 

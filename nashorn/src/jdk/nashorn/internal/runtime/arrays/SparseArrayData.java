@@ -61,13 +61,15 @@ class SparseArrayData extends ArrayData {
 
     @Override
     public Object[] asObjectArray() {
-        final Object[] objArray = new Object[Math.min((int) length(), Integer.MAX_VALUE)];
+        final int length = (int) Math.min(length(), Integer.MAX_VALUE);
+        final int underlyingLength = (int) Math.min(length, underlying.length());
+        final Object[] objArray = new Object[length];
 
-        for (int i = 0; i < underlying.length(); i++) {
+        for (int i = 0; i < underlyingLength; i++) {
             objArray[i] = underlying.getObject(i);
         }
 
-        Arrays.fill(objArray, (int) underlying.length(), objArray.length, ScriptRuntime.UNDEFINED);
+        Arrays.fill(objArray, underlyingLength, length, ScriptRuntime.UNDEFINED);
 
         for (final Map.Entry<Long, Object> entry : sparseMap.entrySet()) {
             final long key = entry.getKey();

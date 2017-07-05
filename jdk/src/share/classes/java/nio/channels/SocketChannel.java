@@ -302,7 +302,7 @@ public abstract class SocketChannel
 
     /**
      * Tells whether or not a connection operation is in progress on this
-     * channel.  </p>
+     * channel.
      *
      * @return  <tt>true</tt> if, and only if, a connection operation has been
      *          initiated on this channel but not yet completed by invoking the
@@ -492,5 +492,26 @@ public abstract class SocketChannel
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * a {@code SocketAddress} representing the
+     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
+     * local port of the channel's socket is returned.
+     *
+     * @return  The {@code SocketAddress} that the socket is bound to, or the
+     *          {@code SocketAddress} representing the loopback address if
+     *          denied by the security manager, or {@code null} if the
+     *          channel's socket is not bound
+     *
+     * @throws  ClosedChannelException     {@inheritDoc}
+     * @throws  IOException                {@inheritDoc}
+     */
+    @Override
+    public abstract SocketAddress getLocalAddress() throws IOException;
 
 }

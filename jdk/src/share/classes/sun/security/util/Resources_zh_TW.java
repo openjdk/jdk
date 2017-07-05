@@ -127,6 +127,8 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "\u591A\u91CD Codebase \u8868\u793A\u5F0F"},
         {"multiple.SignedBy.expressions","\u591A\u91CD SignedBy \u8868\u793A\u5F0F"},
+        {"duplicate.keystore.domain.name","\u91CD\u8907\u7684\u91D1\u9470\u5132\u5B58\u5EAB\u7DB2\u57DF\u540D\u7A31: {0}"},
+        {"duplicate.keystore.name","\u91CD\u8907\u7684\u91D1\u9470\u5132\u5B58\u5EAB\u540D\u7A31: {0}"},
         {"SignedBy.has.empty.alias","SignedBy \u6709\u7A7A\u5225\u540D"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "\u6C92\u6709\u842C\u7528\u5B57\u5143\u540D\u7A31\uFF0C\u7121\u6CD5\u6307\u5B9A\u542B\u6709\u842C\u7528\u5B57\u5143\u985E\u5225\u7684 Principal"},
