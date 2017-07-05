@@ -256,7 +256,8 @@ ifeq ($(OPENJDK_TARGET_OS),macosx)
      EXFILES+= $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/DefaultSelectorProvider.java \
                $(JDK_TOPDIR)/src/solaris/classes/sun/java2d/BackBufferCapsProvider.java \
                $(JDK_TOPDIR)/src/solaris/classes/java/net/DefaultInterface.java \
-               $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java
+               $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java \
+               $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java
 
      # JObjC.jar contains 1.5 byte-code...so skip it here :-(
      # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src

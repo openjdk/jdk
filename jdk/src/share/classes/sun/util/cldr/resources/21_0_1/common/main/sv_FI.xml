@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5884 $"/>
+		<generation date="$Date: 2011-05-11 05:58:32 +0900 (Wed, 11 May 2011) $"/>
+		<language type="sv"/>
+		<territory type="FI"/>
+	</identity>
+	<localeDisplayNames>
+		<variants>
+			<variant type="1996">1996 års stavning</variant>
+		</variants>
+		<types>
+			<type type="big5han" key="collation" draft="unconfirmed">kinesiska i big5-sorteringsordning</type>
+			<type type="gb2312han" key="collation" draft="unconfirmed">kinesiska i gb2312-sorteringsordning</type>
+			<type type="pinyin" key="collation" draft="unconfirmed">kinesiska i pinyin-sorteringsordning</type>
+			<type type="stroke" key="collation" draft="unconfirmed">kinesiska i strecksorteringsordning</type>
+			<type type="traditional" key="collation" draft="unconfirmed">traditionell sorteringsordning</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="US" draft="unconfirmed">imperiska enheter</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="unconfirmed">[a à b c d e é f g h i j k l m n o p q r s t u v x y z å ä ö]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ã ç ë í ñ ó š ÿ ü ž]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<fields>
+					<field type="dayperiod">
+						<displayName>dagsperiod</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<hourFormat draft="unconfirmed">+HH:mm;−HH:mm</hourFormat>
+		</timeZoneNames>
+	</dates>
+</ldml>
+

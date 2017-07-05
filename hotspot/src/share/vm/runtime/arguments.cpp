@@ -1916,7 +1916,7 @@ bool Arguments::check_vm_args_consistency() {
       (ExplicitGCInvokesConcurrent ||
        ExplicitGCInvokesConcurrentAndUnloadsClasses)) {
     jio_fprintf(defaultStream::error_stream(),
-                "error: +ExplictGCInvokesConcurrent[AndUnloadsClasses] conflicts"
+                "error: +ExplicitGCInvokesConcurrent[AndUnloadsClasses] conflicts"
                 " with -UseAsyncConcMarkSweepGC");
     status = false;
   }

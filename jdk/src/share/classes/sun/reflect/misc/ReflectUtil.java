@@ -144,4 +144,38 @@ public final class ReflectUtil {
         }
         return true;
     }
+
+    // Returns true if p is an ancestor of cl i.e. class loader 'p' can
+    // be found in the cl's delegation chain
+    private static boolean isAncestor(ClassLoader p, ClassLoader cl) {
+        ClassLoader acl = cl;
+        do {
+            acl = acl.getParent();
+            if (p == acl) {
+                return true;
+            }
+        } while (acl != null);
+        return false;
+    }
+
+    /**
+     * Returns true if package access check is needed for reflective
+     * access from a class loader 'from' to classes or members in
+     * a class defined by class loader 'to'.  This method returns true
+     * if 'from' is not the same as or an ancestor of 'to'.  All code
+     * in a system domain are granted with all permission and so this
+     * method returns false if 'from' class loader is a class loader
+     * loading system classes.  On the other hand, if a class loader
+     * attempts to access system domain classes, it requires package
+     * access check and this method will return true.
+     */
+    public static boolean needsPackageAccessCheck(ClassLoader from, ClassLoader to) {
+        if (from == null || from == to)
+            return false;
+
+        if (to == null)
+            return true;
+
+        return !isAncestor(from, to);
+    }
 }

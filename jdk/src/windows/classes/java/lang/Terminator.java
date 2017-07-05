@@ -53,13 +53,17 @@ class Terminator {
             }
         };
         handler = sh;
+
+        // When -Xrs is specified the user is responsible for
+        // ensuring that shutdown hooks are run by calling
+        // System.exit()
         try {
             Signal.handle(new Signal("INT"), sh);
+        } catch (IllegalArgumentException e) {
+        }
+        try {
             Signal.handle(new Signal("TERM"), sh);
         } catch (IllegalArgumentException e) {
-            // When -Xrs is specified the user is responsible for
-            // ensuring that shutdown hooks are run by calling
-            // System.exit()
         }
     }
 

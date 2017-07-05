@@ -2135,6 +2135,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /******************/                                                    \
                                                                           \
   declare_constant(UseTLAB)                                               \
+  declare_constant(EnableInvokeDynamic)                                   \
                                                                           \
   /**************/                                                        \
   /* Stack bias */                                                        \

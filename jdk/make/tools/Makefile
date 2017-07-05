@@ -36,6 +36,7 @@ include $(BUILDDIR)/common/Defs.gmk
 SUBDIRS =                   \
   addjsum                   \
   buildmetaindex            \
+  cldrconverter             \
   commentchecker            \
   compile_font_config       \
   compile_properties        \

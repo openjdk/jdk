@@ -25,6 +25,8 @@
 
 package javax.swing;
 
+import sun.awt.AWTAccessor;
+
 /**
  * An enumeration for keys used as client properties within the Swing
  * implementation.
@@ -85,6 +87,15 @@ enum ClientPropertyKey {
      * not implement {@code Serializable}.
      */
     private final boolean reportValueNotSerializable;
+
+    static {
+        AWTAccessor.setClientPropertyKeyAccessor(
+            new AWTAccessor.ClientPropertyKeyAccessor() {
+                public Object getJComponent_TRANSFER_HANDLER() {
+                    return JComponent_TRANSFER_HANDLER;
+                }
+            });
+    }
 
     /**
      * Constructs a key with the {@code reportValueNotSerializable} property

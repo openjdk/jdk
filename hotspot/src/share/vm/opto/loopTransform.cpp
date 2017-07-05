@@ -547,11 +547,6 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
     Node *nnn = old_new[old->_idx];
     if (!has_ctrl(nnn))
       set_idom(nnn, idom(nnn), dd-1);
-    // While we're at it, remove any SafePoints from the peeled code
-    if (old->Opcode() == Op_SafePoint) {
-      Node *nnn = old_new[old->_idx];
-      lazy_replace(nnn,nnn->in(TypeFunc::Control));
-    }
   }
 
   // Now force out all loop-invariant dominating tests.  The optimizer

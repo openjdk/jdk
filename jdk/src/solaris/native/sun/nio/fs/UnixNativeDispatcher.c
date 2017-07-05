@@ -40,13 +40,10 @@
 
 #ifdef __solaris__
 #include <strings.h>
-#include <sys/mnttab.h>
-#include <sys/mkdev.h>
 #endif
 
 #ifdef __linux__
 #include <string.h>
-#include <mntent.h>
 #endif
 
 #ifdef _ALLBSD_SOURCE
@@ -1082,106 +1079,4 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0(JNIEnv* env, jclass this,
     } while (retry);
 
     return gid;
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_getextmntent(JNIEnv* env, jclass this,
-    jlong value, jobject entry)
-{
-#ifdef __solaris__
-    struct extmnttab ent;
-#elif defined(_ALLBSD_SOURCE)
-    char buf[1024];
-    char *str;
-    char *last;
-#else
-    struct mntent ent;
-    char buf[1024];
-    int buflen = sizeof(buf);
-    struct mntent* m;
-#endif
-    FILE* fp = jlong_to_ptr(value);
-    jsize len;
-    jbyteArray bytes;
-    char* name;
-    char* dir;
-    char* fstype;
-    char* options;
-    dev_t dev;
-
-#ifdef __solaris__
-    if (getextmntent(fp, &ent, 0))
-        return -1;
-    name = ent.mnt_special;
-    dir = ent.mnt_mountp;
-    fstype = ent.mnt_fstype;
-    options = ent.mnt_mntopts;
-    dev = makedev(ent.mnt_major, ent.mnt_minor);
-    if (dev == NODEV) {
-        /* possible bug on Solaris 8 and 9 */
-        throwUnixException(env, errno);
-        return -1;
-    }
-#elif defined(_ALLBSD_SOURCE)
-again:
-    if (!(str = fgets(buf, sizeof(buf), fp)))
-        return -1;
-
-    name = strtok_r(str, " \t\n", &last);
-    if (name == NULL)
-        return -1;
-
-    // skip comments
-    if (*name == '#')
-        goto again;
-
-    dir = strtok_r((char *)NULL, " \t\n", &last);
-    fstype = strtok_r((char *)NULL, " \t\n", &last);
-    options = strtok_r((char *)NULL, " \t\n", &last);
-    if (options == NULL)
-        return -1;
-    dev = 0;
-#else
-    m = getmntent_r(fp, &ent, (char*)&buf, buflen);
-    if (m == NULL)
-        return -1;
-    name = m->mnt_fsname;
-    dir = m->mnt_dir;
-    fstype = m->mnt_type;
-    options = m->mnt_opts;
-    dev = 0;
-#endif
-
-    len = strlen(name);
-    bytes = (*env)->NewByteArray(env, len);
-    if (bytes == NULL)
-        return -1;
-    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)name);
-    (*env)->SetObjectField(env, entry, entry_name, bytes);
-
-    len = strlen(dir);
-    bytes = (*env)->NewByteArray(env, len);
-    if (bytes == NULL)
-        return -1;
-    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)dir);
-    (*env)->SetObjectField(env, entry, entry_dir, bytes);
-
-    len = strlen(fstype);
-    bytes = (*env)->NewByteArray(env, len);
-    if (bytes == NULL)
-        return -1;
-    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)fstype);
-    (*env)->SetObjectField(env, entry, entry_fstype, bytes);
-
-    len = strlen(options);
-    bytes = (*env)->NewByteArray(env, len);
-    if (bytes == NULL)
-        return -1;
-    (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)options);
-    (*env)->SetObjectField(env, entry, entry_options, bytes);
-
-    if (dev != 0)
-        (*env)->SetLongField(env, entry, entry_dev, (jlong)dev);
-
-    return 0;
 }

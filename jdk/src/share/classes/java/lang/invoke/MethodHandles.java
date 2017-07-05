@@ -1876,6 +1876,17 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
         return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
     }
 
+    // FIXME: Make this public in M1.
+    /*non-public*/ static
+    MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle collector) {
+        MethodType targetType = target.type();
+        MethodType filterType = collector.type();
+        if (filterType.returnType() != void.class &&
+            filterType.returnType() != targetType.parameterType(pos))
+            throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
+        return MethodHandleImpl.makeCollectArguments(target, collector, pos, false);
+    }
+
     /**
      * Adapts a target method handle by post-processing
      * its return value (if any) with a filter (another method handle).

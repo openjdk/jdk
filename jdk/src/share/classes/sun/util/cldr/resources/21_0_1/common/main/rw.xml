@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6355 $"/>
+		<generation date="$Date: 2012-01-14 14:15:06 +0900 (Sat, 14 Jan 2012) $"/>
+		<language type="rw"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af">Ikinyafurikaneri</language>
+			<language type="am">Inyamuhariki</language>
+			<language type="ar">Icyarabu</language>
+			<language type="as">Icyasamizi</language>
+			<language type="az">Inyazeribayijani</language>
+			<language type="be">Ikibelarusiya</language>
+			<language type="bg">Urunyabuligariya</language>
+			<language type="bh">Inyebihari</language>
+			<language type="bn">Ikibengali</language>
+			<language type="br">Inyebiritoni</language>
+			<language type="bs">Inyebosiniya</language>
+			<language type="ca">Igikatalani</language>
+			<language type="cs">Igiceke</language>
+			<language type="cy">Ikigaluwa</language>
+			<language type="da">Ikidaninwa</language>
+			<language type="de">Ikidage</language>
+			<language type="el">Ikigereki</language>
+			<language type="en">Icyongereza</language>
+			<language type="eo">Icyesiperanto</language>
+			<language type="es">Icyesipanyolo</language>
+			<language type="et">Icyesitoniya</language>
+			<language type="eu">Ikibasiki</language>
+			<language type="fa">Inyeperisi</language>
+			<language type="fi">Igifinilande</language>
+			<language type="fil">Ikinyafilipine</language>
+			<language type="fo">Inyefaroyizi</language>
+			<language type="fr">Igifaransa</language>
+			<language type="fy">Igifiriziyani</language>
+			<language type="ga">Ikirilandi</language>
+			<language type="gd">Ikigaluwa cy'Igisweduwa</language>
+			<language type="gl">Ikigalisiya</language>
+			<language type="gn">Inyaguwarani</language>
+			<language type="gu">Inyegujarati</language>
+			<language type="he">Igiheburayo</language>
+			<language type="hi">Igihindi</language>
+			<language type="hr">Igikorowasiya</language>
+			<language type="hu">Igihongiriya</language>
+			<language type="hy">Ikinyarumeniya</language>
+			<language type="ia">Ururimi Gahuzamiryango</language>
+			<language type="id">Ikinyendoziya</language>
+			<language type="ie">Uruhuzandimi</language>
+			<language type="is">Igisilande</language>
+			<language type="it">Igitaliyani</language>
+			<language type="ja">Ikiyapani</language>
+			<language type="jv">Inyejava</language>
+			<language type="ka">Inyejeworujiya</language>
+			<language type="km">Igikambodiya</language>
+			<language type="kn">Igikanada</language>
+			<language type="ko">Igikoreya</language>
+			<language type="ku">Inyekuridishi</language>
+			<language type="ky">Inkerigizi</language>
+			<language type="la">Ikilatini</language>
+			<language type="ln">Ilingala</language>
+			<language type="lo">Ikilawotiyani</language>
+			<language type="lt">Ikilituwaniya</language>
+			<language type="lv">Ikinyaletoviyani</language>
+			<language type="mk">Ikimasedoniyani</language>
+			<language type="ml">Ikimalayalami</language>
+			<language type="mn">Ikimongoli</language>
+			<language type="mr">Ikimarati</language>
+			<language type="ms">Ikimalayi</language>
+			<language type="mt">Ikimaliteze</language>
+			<language type="ne">Ikinepali</language>
+			<language type="nl">Ikinerilande</language>
+			<language type="nn">Inyenoruveji (Nyonorusiki)</language>
+			<language type="no">Ikinoruveji</language>
+			<language type="oc">Inyogusitani</language>
+			<language type="or">Inyoriya</language>
+			<language type="pa">Igipunjabi</language>
+			<language type="pl">Igipolone</language>
+			<language type="ps">Impashito</language>
+			<language type="pt">Igiporutugali</language>
+			<language type="pt_BR">Inyeporutigali (Brezili)</language>
+			<language type="pt_PT">Inyeporutigali (Igiporutigali)</language>
+			<language type="ro">Ikinyarumaniya</language>
+			<language type="ru">Ikirusiya</language>
+			<language type="rw">Kinyarwanda</language>
+			<language type="sa">Igisansikiri</language>
+			<language type="sd">Igisindi</language>
+			<language type="sh">Inyeseribiya na Korowasiya</language>
+			<language type="si">Inyesimpaleze</language>
+			<language type="sk">Igisilovaki</language>
+			<language type="sl">Ikinyasiloveniya</language>
+			<language type="so">Igisomali</language>
+			<language type="sq">Icyalubaniya</language>
+			<language type="sr">Igiseribe</language>
+			<language type="st">Inyesesoto</language>
+			<language type="su">Inyesudani</language>
+			<language type="sv">Igisuweduwa</language>
+			<language type="sw">Igiswahili</language>
+			<language type="ta">Igitamili</language>
+			<language type="te">Igitelugu</language>
+			<language type="th">Igitayi</language>
+			<language type="ti">Inyatigirinya</language>
+			<language type="tk">Inyeturukimeni</language>
+			<language type="tlh">Inyekilingoni</language>
+			<language type="tr">Igiturukiya</language>
+			<language type="tw">Inyetuwi</language>
+			<language type="ug">Ikiwiguri</language>
+			<language type="uk">Ikinyayukereni</language>
+			<language type="ur">Inyeyurudu</language>
+			<language type="uz">Inyeyuzubeki</language>
+			<language type="vi">Ikinyaviyetinamu</language>
+			<language type="xh">Inyehawusa</language>
+			<language type="yi">Inyeyidishi</language>
+			<language type="zu">Inyezulu</language>
+		</languages>
+		<territories>
+			<territory type="RW">Rwanda</territory>
+			<territory type="TO">Igitonga</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">mut.</month>
+							<month type="2">gas.</month>
+							<month type="3">wer.</month>
+							<month type="4">mat.</month>
+							<month type="5">gic.</month>
+							<month type="6">kam.</month>
+							<month type="7">nya.</month>
+							<month type="8">kan.</month>
+							<month type="9">nze.</month>
+							<month type="10">ukw.</month>
+							<month type="11">ugu.</month>
+							<month type="12">uku.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Mutarama</month>
+							<month type="2">Gashyantare</month>
+							<month type="3">Werurwe</month>
+							<month type="4">Mata</month>
+							<month type="5">Gicuransi</month>
+							<month type="6">Kamena</month>
+							<month type="7">Nyakanga</month>
+							<month type="8">Kanama</month>
+							<month type="9">Nzeli</month>
+							<month type="10">Ukwakira</month>
+							<month type="11">Ugushyingo</month>
+							<month type="12">Ukuboza</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">cyu.</day>
+							<day type="mon">mbe.</day>
+							<day type="tue">kab.</day>
+							<day type="wed">gtu.</day>
+							<day type="thu">kan.</day>
+							<day type="fri">gnu.</day>
+							<day type="sat">gnd.</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Ku cyumweru</day>
+							<day type="mon">Kuwa mbere</day>
+							<day type="tue">Kuwa kabiri</day>
+							<day type="wed">Kuwa gatatu</day>
+							<day type="thu">Kuwa kane</day>
+							<day type="fri">Kuwa gatanu</day>
+							<day type="sat">Kuwa gatandatu</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">I1</quarter>
+							<quarter type="2">I2</quarter>
+							<quarter type="3">I3</quarter>
+							<quarter type="4">I4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">igihembwe cya mbere</quarter>
+							<quarter type="2">igihembwe cya kabiri</quarter>
+							<quarter type="3">igihembwe cya gatatu</quarter>
+							<quarter type="4">igihembwe cya kane</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, y MMMM dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>yy/MM/dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group>.</group>
+		</symbols>
+		<currencies>
+			<currency type="RWF">
+				<symbol>RF</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

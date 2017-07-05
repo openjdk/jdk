@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="ts"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="cs" draft="unconfirmed">Xi Czech</language>
+			<language type="da" draft="unconfirmed">Xi Danish</language>
+			<language type="de" draft="unconfirmed">Xi Jarimani</language>
+			<language type="el" draft="unconfirmed">Xi Giriki</language>
+			<language type="en" draft="unconfirmed">Xi Nghezi</language>
+			<language type="es" draft="unconfirmed">Xi spain</language>
+			<language type="et" draft="unconfirmed">hi xi Estonia</language>
+			<language type="fi" draft="unconfirmed">Xi Finnish</language>
+			<language type="fr" draft="unconfirmed">Xi Furwa</language>
+			<language type="he" draft="unconfirmed">XiHeberu</language>
+			<language type="hu" draft="unconfirmed">hi xi Hungary</language>
+			<language type="is" draft="unconfirmed">hi xi Iceland</language>
+			<language type="it" draft="unconfirmed">Xi Ithali</language>
+			<language type="ja" draft="unconfirmed">Xi Japani</language>
+			<language type="ko" draft="unconfirmed">Xikorea</language>
+			<language type="lt" draft="unconfirmed">hi xi Lithuania</language>
+			<language type="lv" draft="unconfirmed">hi xi Latvia</language>
+			<language type="nl" draft="unconfirmed">Xi bunu</language>
+			<language type="no" draft="unconfirmed">Xi Norway</language>
+			<language type="pl" draft="unconfirmed">Xi Polixi</language>
+			<language type="pt" draft="unconfirmed">Putukezi</language>
+			<language type="ro" draft="unconfirmed">hi xi Romania</language>
+			<language type="ru" draft="unconfirmed">Xi Rhaxiya</language>
+			<language type="sv" draft="unconfirmed">Xi Swiden</language>
+			<language type="ts" draft="provisional">Xitsonga</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">‘</quotationStart>
+		<quotationEnd draft="unconfirmed">’</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">“</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">”</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Sun</month>
+							<month type="2" draft="unconfirmed">Yan</month>
+							<month type="3" draft="unconfirmed">Kul</month>
+							<month type="4" draft="unconfirmed">Dzi</month>
+							<month type="5" draft="unconfirmed">Mud</month>
+							<month type="6" draft="unconfirmed">Kho</month>
+							<month type="7" draft="unconfirmed">Maw</month>
+							<month type="8" draft="unconfirmed">Mha</month>
+							<month type="9" draft="unconfirmed">Ndz</month>
+							<month type="10" draft="unconfirmed">Nhl</month>
+							<month type="11" draft="unconfirmed">Huk</month>
+							<month type="12" draft="unconfirmed">N'w</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Sunguti</month>
+							<month type="2" draft="unconfirmed">Nyenyenyani</month>
+							<month type="3" draft="unconfirmed">Nyenyankulu</month>
+							<month type="4" draft="unconfirmed">Dzivamisoko</month>
+							<month type="5" draft="unconfirmed">Mudyaxihi</month>
+							<month type="6" draft="unconfirmed">Khotavuxika</month>
+							<month type="7" draft="unconfirmed">Mawuwani</month>
+							<month type="8" draft="unconfirmed">Mhawuri</month>
+							<month type="9" draft="unconfirmed">Ndzhati</month>
+							<month type="10" draft="unconfirmed">Nhlangula</month>
+							<month type="11" draft="unconfirmed">Hukuri</month>
+							<month type="12" draft="unconfirmed">N'wendzamhala</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Son</day>
+							<day type="mon" draft="unconfirmed">Mus</day>
+							<day type="tue" draft="unconfirmed">Bir</day>
+							<day type="wed" draft="unconfirmed">Har</day>
+							<day type="thu" draft="unconfirmed">Ne</day>
+							<day type="fri" draft="unconfirmed">Tlh</day>
+							<day type="sat" draft="unconfirmed">Mug</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Sonto</day>
+							<day type="mon" draft="unconfirmed">Musumbhunuku</day>
+							<day type="tue" draft="unconfirmed">Ravumbirhi</day>
+							<day type="wed" draft="unconfirmed">Ravunharhu</day>
+							<day type="thu" draft="unconfirmed">Ravumune</day>
+							<day type="fri" draft="unconfirmed">Ravuntlhanu</day>
+							<day type="sat" draft="unconfirmed">Mugqivela</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">K1</quarter>
+							<quarter type="2" draft="unconfirmed">K2</quarter>
+							<quarter type="3" draft="unconfirmed">K3</quarter>
+							<quarter type="4" draft="unconfirmed">K4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">Kotara yo sungula</quarter>
+							<quarter type="2" draft="unconfirmed">Kotara ya vumbirhi</quarter>
+							<quarter type="3" draft="unconfirmed">Kotara ya vunharhu</quarter>
+							<quarter type="4" draft="unconfirmed">Kotara ya vumune</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>,</decimal>
+			<group> </group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="ZAR">
+				<symbol>R</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

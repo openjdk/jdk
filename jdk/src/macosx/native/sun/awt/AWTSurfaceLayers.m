@@ -78,11 +78,10 @@
 
     // translates values to the coordinate system of the "root" layer
     CGFloat newY = windowLayer.bounds.size.height - rect.origin.y - rect.size.height;
+    CGRect newRect = CGRectMake(rect.origin.x, newY, rect.size.width, rect.size.height);
 
-    // REMIND: why do we need to inverse position?
-    CGRect newRect = CGRectMake(-rect.origin.x, -newY, rect.size.width, rect.size.height);
+    layer.frame = newRect;
 
-    layer.bounds = newRect;
     [AWTSurfaceLayers repaintLayersRecursively:layer];
 }
 

@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="es"/>
+		<territory type="419"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ps" alt="variant" draft="contributed">Pastú</language>
+			<language type="ug" alt="variant" draft="contributed">Uyghur</language>
+		</languages>
+		<scripts>
+			<script type="Hans" alt="stand-alone" draft="contributed">Han simplificado</script>
+			<script type="Hant" alt="stand-alone" draft="contributed">Han tradicional</script>
+		</scripts>
+		<keys>
+			<key type="numbers" draft="contributed">Números</key>
+		</keys>
+		<types>
+			<type type="arab" key="numbers" draft="contributed">Dígitos arábigo-índicos</type>
+			<type type="arabext" key="numbers" draft="contributed">Dígitos árabe-hindú extendidos</type>
+			<type type="armn" key="numbers" draft="contributed">Números armenios</type>
+			<type type="armnlow" key="numbers" draft="contributed">Números armenios en minúscula</type>
+			<type type="beng" key="numbers" draft="contributed">Dígitos en bengalí</type>
+			<type type="coptic" key="calendar" draft="contributed">Calendario cóptico</type>
+			<type type="deva" key="numbers" draft="contributed">Dígitos en devanagari</type>
+			<type type="dictionary" key="collation" draft="contributed">Orden de clasificación del diccionario</type>
+			<type type="ducet" key="collation" draft="contributed">Orden de clasificación de Unicode predeterminado</type>
+			<type type="ethi" key="numbers" draft="contributed">Números etíopes</type>
+			<type type="ethiopic" key="calendar" draft="contributed">Calendario etíope</type>
+			<type type="ethiopic-amete-alem" key="calendar" draft="contributed">Calendario etíope Amete Alem</type>
+			<type type="fullwide" key="numbers" draft="contributed">Dígitos en formato completo</type>
+			<type type="geor" key="numbers" draft="contributed">Números georgianos</type>
+			<type type="grek" key="numbers" draft="contributed">Números griegos</type>
+			<type type="greklow" key="numbers" draft="contributed">Números griegos en minúscula</type>
+			<type type="gujr" key="numbers" draft="contributed">Dígitos en guyaratí</type>
+			<type type="guru" key="numbers" draft="contributed">Dígitos en gurumuji</type>
+			<type type="hanidec" key="numbers" draft="contributed">Numerales decimales chinos</type>
+			<type type="hans" key="numbers" draft="contributed">Números simplificados chinos</type>
+			<type type="hansfin" key="numbers" draft="contributed">Números financieros simplificados chinos</type>
+			<type type="hant" key="numbers" draft="contributed">Números chinos tradicionales</type>
+			<type type="hantfin" key="numbers" draft="contributed">Números financieros chinos tradicionales</type>
+			<type type="hebr" key="numbers" draft="contributed">Números hebreos</type>
+			<type type="jpan" key="numbers" draft="contributed">Números en japonés</type>
+			<type type="jpanfin" key="numbers" draft="contributed">Números financieros japoneses</type>
+			<type type="khmr" key="numbers" draft="contributed">Dígitos en jemer</type>
+			<type type="knda" key="numbers" draft="contributed">Dígitos en canarés</type>
+			<type type="laoo" key="numbers" draft="contributed">Dígitos de Lao</type>
+			<type type="latn" key="numbers" draft="contributed">Dígitos occidentales</type>
+			<type type="mlym" key="numbers" draft="contributed">Dígitos malabares</type>
+			<type type="mong" key="numbers" draft="contributed">Dígitos en mongol</type>
+			<type type="mymr" key="numbers" draft="contributed">Dígitos en birmano</type>
+			<type type="orya" key="numbers" draft="contributed">Dígitos en oriya</type>
+			<type type="persian" key="calendar" draft="contributed">Calendario persa</type>
+			<type type="reformed" key="collation" draft="contributed">Orden de clasificación reformado</type>
+			<type type="roman" key="numbers" draft="contributed">Números romanos</type>
+			<type type="romanlow" key="numbers" draft="contributed">Números romanos en minúscula</type>
+			<type type="search" key="collation" draft="contributed">Búsqueda generalizada</type>
+			<type type="taml" key="numbers" draft="contributed">Números en Tamil</type>
+			<type type="telu" key="numbers" draft="contributed">Dígitos en telugu</type>
+			<type type="thai" key="numbers" draft="contributed">Dígitos en tailandés</type>
+			<type type="tibt" key="numbers" draft="contributed">Dígitos tibetanos</type>
+			<type type="unihan" key="collation" draft="contributed">Orden de clasificación de trazos radicales</type>
+		</types>
+		<transformNames>
+			<transformName type="Numeric" draft="contributed">Numéricas</transformName>
+		</transformNames>
+		<measurementSystemNames>
+			<measurementSystemName type="UK" draft="contributed">Reino Unido</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<stopwords>
+			<stopwordList type="collation" draft="provisional">artículos</stopwordList>
+		</stopwords>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<days>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">M</day>
+							<day type="wed">M</day>
+							<day type="thu">J</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="contributed">1</quarter>
+							<quarter type="2" draft="contributed">2</quarter>
+							<quarter type="3" draft="contributed">3</quarter>
+							<quarter type="4" draft="contributed">4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<fields>
+					<field type="year">
+						<relative type="-1" draft="contributed">Año pasado</relative>
+						<relative type="0" draft="contributed">Este año</relative>
+						<relative type="1" draft="contributed">Año próximo</relative>
+					</field>
+					<field type="month">
+						<relative type="-1" draft="contributed">El mes pasado</relative>
+						<relative type="0" draft="contributed">Este mes</relative>
+						<relative type="1" draft="contributed">Mes próximo</relative>
+					</field>
+					<field type="week">
+						<relative type="-1" draft="contributed">Semana pasada</relative>
+						<relative type="0" draft="contributed">Esta semana</relative>
+						<relative type="1" draft="contributed">Próxima semana</relative>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="America_Central">
+				<short>
+					<generic>CT</generic>
+					<standard>CST</standard>
+					<daylight>CDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Eastern">
+				<short>
+					<generic>ET</generic>
+					<standard>EST</standard>
+					<daylight>EDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Mountain">
+				<short>
+					<generic>MT</generic>
+					<standard>MST</standard>
+					<daylight>MDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Pacific">
+				<short>
+					<generic>PT</generic>
+					<standard>PST</standard>
+					<daylight>PDT</daylight>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" draft="contributed">0000</pattern>
+					<pattern type="10000" draft="contributed">00k</pattern>
+					<pattern type="100000" draft="contributed">000k</pattern>
+					<pattern type="1000000" draft="contributed">0.0 M</pattern>
+					<pattern type="10000000" draft="contributed">00 M</pattern>
+					<pattern type="100000000" draft="contributed">000 M</pattern>
+					<pattern type="1000000000" draft="contributed">0.0k M</pattern>
+					<pattern type="10000000000" draft="contributed">00k M</pattern>
+					<pattern type="100000000000" draft="contributed">000k M</pattern>
+					<pattern type="1000000000000" draft="contributed">0.0 B</pattern>
+					<pattern type="10000000000000" draft="contributed">00 B</pattern>
+					<pattern type="100000000000000" draft="contributed">000 B</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern draft="contributed">¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+	<units>
+		<unit type="day-future">
+			<unitPattern count="0" draft="contributed">En 0 días</unitPattern>
+			<unitPattern count="1" draft="contributed">En 1 día</unitPattern>
+			<unitPattern count="one" draft="contributed">En {0} día</unitPattern>
+			<unitPattern count="other" draft="contributed">En {0} días</unitPattern>
+		</unit>
+		<unit type="hour-future">
+			<unitPattern count="0" draft="contributed">En 0 horas</unitPattern>
+			<unitPattern count="1" draft="contributed">En 1 hora</unitPattern>
+			<unitPattern count="one" draft="contributed">En {0} hora</unitPattern>
+			<unitPattern count="other" draft="contributed">En {0} horas</unitPattern>
+		</unit>
+		<unit type="minute-future">
+			<unitPattern count="0" draft="contributed">En 0 minutos</unitPattern>
+			<unitPattern count="1" draft="contributed">En 1 minuto</unitPattern>
+			<unitPattern count="one" draft="contributed">En {0} minuto</unitPattern>
+			<unitPattern count="other" draft="contributed">En {0} minutos</unitPattern>
+		</unit>
+		<unit type="month-future">
+			<unitPattern count="0" draft="contributed">En 0 meses</unitPattern>
+			<unitPattern count="1" draft="contributed">En 1 mes</unitPattern>
+			<unitPattern count="one" draft="contributed">En {0} mes</unitPattern>
+			<unitPattern count="other" draft="contributed">En {0} meses</unitPattern>
+		</unit>
+		<unit type="second-future">
+			<unitPattern count="0" draft="contributed">En 0 segundos</unitPattern>
+			<unitPattern count="1" draft="contributed">En 1 segundo</unitPattern>
+			<unitPattern count="one" draft="contributed">En {0} segundo</unitPattern>
+			<unitPattern count="other" draft="contributed">En {0} segundos</unitPattern>
+		</unit>
+		<unit type="week-future">
+			<unitPattern count="0" draft="contributed">En 0 semanas</unitPattern>
+			<unitPattern count="1" draft="contributed">En 1 semana</unitPattern>
+			<unitPattern count="one" draft="contributed">En {0} semana</unitPattern>
+			<unitPattern count="other" draft="contributed">En {0} semanas</unitPattern>
+		</unit>
+		<unit type="year-future">
+			<unitPattern count="0" draft="contributed">En 0 años</unitPattern>
+			<unitPattern count="1" draft="contributed">En 1 año</unitPattern>
+			<unitPattern count="one" draft="contributed">En {0} año</unitPattern>
+			<unitPattern count="other" draft="contributed">En {0} años</unitPattern>
+		</unit>
+	</units>
+</ldml>
+

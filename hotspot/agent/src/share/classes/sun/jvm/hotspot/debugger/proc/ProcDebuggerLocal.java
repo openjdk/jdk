@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.debugger.proc;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.lang.reflect.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.proc.amd64.*;
@@ -86,7 +87,16 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
             pcRegIndex = AMD64ThreadContext.RIP;
             fpRegIndex = AMD64ThreadContext.RBP;
         } else {
+          try {
+            Class tfc = Class.forName("sun.jvm.hotspot.debugger.proc." +
+               cpu.toLowerCase() + ".Proc" + cpu.toUpperCase() +
+               "ThreadFactory");
+            Constructor[] ctfc = tfc.getConstructors();
+            threadFactory = (ProcThreadFactory)ctfc[0].newInstance(this);
+          } catch (Exception e) {
             throw new RuntimeException("Thread access for CPU architecture " + PlatformInfo.getCPU() + " not yet supported");
+            // Note: pcRegIndex and fpRegIndex do not appear to be referenced
+          }
         }
         if (useCache) {
             // Cache portion of the remote process's address space.
@@ -375,7 +385,11 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
         int pagesize = getPageSize0();
         if (pagesize == -1) {
             // return the hard coded default value.
-            pagesize = (PlatformInfo.getCPU().equals("x86"))? 4096 : 8192;
+            if (PlatformInfo.getCPU().equals("sparc") ||
+                PlatformInfo.getCPU().equals("amd64") )
+               pagesize = 8196;
+            else
+               pagesize = 4096;
         }
         return pagesize;
     }

@@ -44,7 +44,7 @@
 #include "io_util.h"
 #include "io_util_md.h"
 #include "zip_util.h"
-#include "zlib.h"
+#include <zlib.h>
 
 #ifdef _ALLBSD_SOURCE
 #define off64_t off_t
