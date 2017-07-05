@@ -217,14 +217,20 @@
     <run-one cond="octane.benchmark.zlib" runtime="rhino"/>
   </target>
 
+  <target name="-define-nashorn-task">
+    <ant dir="${nashorntask.dir}" inheritAll="false"/>
+    <taskdef name="nashorn" classname="jdk.nashorn.ant.NashornTask" classpath="${nashorntask.dir}/dist/nashorntask.jar"/>
+  </target>
+
   <!--
       Benchmark runners for one or more benchmarks, single
       or multiple process
   -->
 
-  <target name="octane-process-separate" if="${octane-test-sys-prop.separate.process}">
+  <target name="octane-process-separate" if="${octane-test-sys-prop.separate.process}"
+      depends="-define-nashorn-task">
     <echo message="Running each benchmark in separate processes, starting new JVMs for each."/>
-    <script language="javascript"><![CDATA[
+    <nashorn><![CDATA[
       var props = [];
 
       for (var prop in project.getProperties()) {
@@ -257,7 +263,7 @@
         task.setDynamicAttribute("runtime", runtime);
 	task.perform();
       }
-    ]]></script>
+    ]]></nashorn>
   </target>
 
   <target name="octane-process-single" unless="${octane-test-sys-prop.separate.process}">
@@ -278,14 +284,8 @@
   -->
   <target name="octane-nashorn" depends="jar">
     <property name="runtime" value="nashorn"/>
-    <!--
-       Temporarily disabled because ant script tag is broken with
-       jdk9. See also: JDK-8152533.
-
-       <antcall target="octane-process-separate"/>
-       <antcall target="octane-process-single"/>
-    -->
-    <echo message="octane target temporarily disabled"/>
+    <antcall target="octane-process-separate"/>
+    <antcall target="octane-process-single"/>
   </target>
 
   <!-- alias for 'octane' -->
@@ -318,9 +318,7 @@
   <target name="run-octane-nashorn">
     <java classname="${nashorn.shell.tool}"
           classpath="${run.test.classpath}"
-          fork="true"
-          dir=".">
-      <jvmarg line="${boot.class.path}"/>
+          fork="true">
       <jvmarg line="${run.test.jvmargs.octane} -Xms${run.test.xms} -Xmx${run.test.xmx}"/>
       <!-- pass on all properties prefixed with 'nashorn' to the runtime -->
       <syspropertyset>
@@ -391,9 +389,7 @@
   <target name="sunspider-nashorn" depends="sunspider-init">
     <java classname="${nashorn.shell.tool}"
           classpath="${run.test.classpath}"
-          fork="true"
-          dir=".">
-      <jvmarg line="${boot.class.path}"/>
+          fork="true">
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
       <arg value="-timezone=PST"/>
       <arg value="--class-cache-size=50"/>

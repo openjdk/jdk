@@ -38,7 +38,7 @@ TEST_LIB_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/lib
 $(eval $(call SetupJavaCompilation, BUILD_WB_JAR, \
     SETUP := GENERATE_USINGJDKBYTECODE, \
     SRC := $(TEST_LIB_SOURCE_DIR)/sun, \
-    BIN := $(TEST_LIB_SUPPORT), \
+    BIN := $(TEST_LIB_SUPPORT)/wb_classes, \
     JAR := $(TEST_LIB_SUPPORT)/wb.jar, \
     ADD_JAVAC_FLAGS := $(JAVAC_WARNINGS), \
 ))
@@ -49,7 +49,7 @@ TARGETS += $(BUILD_WB_JAR)
 $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
     SETUP := GENERATE_USINGJDKBYTECODE, \
     SRC := $(TEST_LIB_SOURCE_DIR)/share/classes/jdk/test/lib/hprof, \
-    BIN := $(TEST_LIB_SUPPORT), \
+    BIN := $(TEST_LIB_SUPPORT)/test-lib_classes, \
     JAR := $(TEST_LIB_SUPPORT)/test-lib.jar, \
 ))
 

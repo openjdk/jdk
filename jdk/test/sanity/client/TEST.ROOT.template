@@ -1,0 +1,24 @@
+# This file identifies the root of the test-suite hierarchy.
+# It also contains test-suite configuration information.
+
+# The list of keywords supported in the entire test suite.  The
+# "intermittent" keyword marks tests known to fail intermittently.
+# The "randomness" keyword marks tests using randomness with test
+# cases differing from run to run. (A test using a fixed random seed
+# would not count as "randomness" by this definition.) Extra care
+# should be taken to handle test failures of intermittent or
+# randomness tests.
+#
+# A "headful" test requires a graphical environment to meaningfully
+# run. Tests that are not headful are "headless." 
+
+keys=screenshots
+
+# Tests that must run in othervm mode
+othervm.dirs=sanity/client/SwingSet
+
+# Tests that cannot run concurrently
+exclusiveAccess.dirs=sanity/client/SwingSet
+
+# Tests using jtreg 4.1 b13 features
+requiredVersion=4.1 b13
