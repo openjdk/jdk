@@ -738,7 +738,7 @@ public class Basic {
      * Remove it from the list of env variables
      */
     private static String removeAixExpectedVars(String vars) {
-        return vars.replace("AIXTHREAD_GUARDPAGES=0,","");
+        return vars.replace("AIXTHREAD_GUARDPAGES=0,", "");
     }
 
     private static String sortByLinesWindowsly(String text) {
@@ -785,8 +785,8 @@ public class Basic {
                 equal(entry.getKey(), key);
                 equal(entry.getValue(), value);
             }
-            check(! kIter.hasNext() &&
-                  ! vIter.hasNext());
+            check(!kIter.hasNext() &&
+                    !vIter.hasNext());
 
         } catch (Throwable t) { unexpected(t); }
     }
@@ -815,9 +815,9 @@ public class Basic {
 
     static void checkRedirects(ProcessBuilder pb,
                                Redirect in, Redirect out, Redirect err) {
-        equal(pb.redirectInput(),  in);
+        equal(pb.redirectInput(), in);
         equal(pb.redirectOutput(), out);
-        equal(pb.redirectError(),  err);
+        equal(pb.redirectError(), err);
     }
 
     static void redirectIO(ProcessBuilder pb,
@@ -862,6 +862,7 @@ public class Basic {
         Redirect[] redirects =
             { PIPE,
               INHERIT,
+              DISCARD,
               Redirect.from(ifile),
               Redirect.to(ifile),
               Redirect.appendTo(ifile),
@@ -883,6 +884,10 @@ public class Basic {
         equal(INHERIT.type(), Redirect.Type.INHERIT);
         equal(INHERIT.toString(), "INHERIT");
         equal(INHERIT.file(), null);
+
+        equal(DISCARD.type(), Redirect.Type.WRITE);
+        equal(DISCARD.toString(), "WRITE");
+        equal(DISCARD.file(), new File((Windows.is() ? "NUL" : "/dev/null")));
 
         equal(Redirect.from(ifile).type(), Redirect.Type.READ);
         equal(Redirect.from(ifile).toString(),
@@ -926,6 +931,12 @@ public class Basic {
         checkRedirects(pb, INHERIT, INHERIT, INHERIT);
 
         //----------------------------------------------------------------
+        // Check DISCARD for stdout,stderr
+        //----------------------------------------------------------------
+        redirectIO(pb, INHERIT, DISCARD, DISCARD);
+        checkRedirects(pb, INHERIT, DISCARD, DISCARD);
+
+        //----------------------------------------------------------------
         // Check setters and getters agree
         //----------------------------------------------------------------
         pb.redirectInput(ifile);
@@ -943,7 +954,8 @@ public class Basic {
         THROWS(IllegalArgumentException.class,
                () -> pb.redirectInput(Redirect.to(ofile)),
                () -> pb.redirectOutput(Redirect.from(ifile)),
-               () -> pb.redirectError(Redirect.from(ifile)));
+               () -> pb.redirectError(Redirect.from(ifile)),
+               () -> pb.redirectInput(DISCARD));
 
         THROWS(NullPointerException.class,
                 () -> pb.redirectInput((File)null),
@@ -980,7 +992,7 @@ public class Basic {
             ProcessResults r = run(pb);
             equal(r.exitValue(), 0);
             equal(fileContents(ofile),
-                  "standard error" + "standard output");
+                    "standard error" + "standard output");
             equal(fileContents(efile), "");
             equal(r.out(), "");
             equal(r.err(), "");
@@ -1048,6 +1060,79 @@ public class Basic {
             ifile.delete();
             ofile.delete();
             efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // DISCARDing output
+        //----------------------------------------------------------------
+        {
+            setFileContents(ifile, "standard input");
+            pb.redirectOutput(DISCARD);
+            pb.redirectError(DISCARD);
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(r.out(), "");
+            equal(r.err(), "");
+        }
+
+        //----------------------------------------------------------------
+        // DISCARDing output and redirecting error
+        //----------------------------------------------------------------
+        {
+            setFileContents(ifile, "standard input");
+            setFileContents(ofile, "ofile-contents");
+            setFileContents(efile, "efile-contents");
+            pb.redirectOutput(DISCARD);
+            pb.redirectError(efile);
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile), "ofile-contents");
+            equal(fileContents(efile), "standard error");
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ofile.delete();
+            efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // DISCARDing error and redirecting output
+        //----------------------------------------------------------------
+        {
+            setFileContents(ifile, "standard input");
+            setFileContents(ofile, "ofile-contents");
+            setFileContents(efile, "efile-contents");
+            pb.redirectOutput(ofile);
+            pb.redirectError(DISCARD);
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile), "standard output");
+            equal(fileContents(efile), "efile-contents");
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ofile.delete();
+            efile.delete();
+        }
+
+        //----------------------------------------------------------------
+        // DISCARDing output and merging error into output
+        //----------------------------------------------------------------
+        {
+            setFileContents(ifile, "standard input");
+            setFileContents(ofile, "ofile-contents");
+            setFileContents(efile, "efile-contents");
+            pb.redirectOutput(DISCARD);
+            pb.redirectErrorStream(true);
+            pb.redirectError(efile);
+            ProcessResults r = run(pb);
+            equal(r.exitValue(), 0);
+            equal(fileContents(ofile), "ofile-contents");   // untouched
+            equal(fileContents(efile), "");                 // empty
+            equal(r.out(), "");
+            equal(r.err(), "");
+            ifile.delete();
+            ofile.delete();
+            efile.delete();
+            pb.redirectErrorStream(false);                  // reset for next test
         }
 
         //----------------------------------------------------------------

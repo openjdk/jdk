@@ -257,8 +257,7 @@ public class MethodEmitter {
      */
     private Type popType(final Type expected) {
         final Type type = popType();
-        assert type.isObject() && expected.isObject() ||
-            type.isEquivalentTo(expected) : type + " is not compatible with " + expected;
+        assert type.isEquivalentTo(expected) : type + " is not compatible with " + expected;
         return type;
     }
 

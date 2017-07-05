@@ -65,6 +65,7 @@ import java.util.concurrent.ConcurrentMap;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -256,6 +257,9 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
         case jdk.internal.org.objectweb.asm.Type.DOUBLE:
             return NUMBER;
         case jdk.internal.org.objectweb.asm.Type.OBJECT:
+            if (Context.isStructureClass(itype.getClassName())) {
+                return SCRIPT_OBJECT;
+            }
             try {
                 return Type.typeFor(Class.forName(itype.getClassName()));
             } catch(final ClassNotFoundException e) {
@@ -949,7 +953,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
     /**
      * This is the singleton for integer arrays
      */
-    public static final ArrayType INT_ARRAY = new ArrayType(int[].class) {
+    public static final ArrayType INT_ARRAY = putInCache(new ArrayType(int[].class) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -973,12 +977,12 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
         public Type getElementType() {
             return INT;
         }
-    };
+    });
 
     /**
      * This is the singleton for long arrays
      */
-    public static final ArrayType LONG_ARRAY = new ArrayType(long[].class) {
+    public static final ArrayType LONG_ARRAY = putInCache(new ArrayType(long[].class) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -1002,12 +1006,12 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
         public Type getElementType() {
             return LONG;
         }
-    };
+    });
 
     /**
      * This is the singleton for numeric arrays
      */
-    public static final ArrayType NUMBER_ARRAY = new ArrayType(double[].class) {
+    public static final ArrayType NUMBER_ARRAY = putInCache(new ArrayType(double[].class) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -1031,13 +1035,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
         public Type getElementType() {
             return NUMBER;
         }
-    };
-
-    /** Singleton for method handle arrays used for properties etc. */
-    public static final ArrayType METHODHANDLE_ARRAY = putInCache(new ArrayType(MethodHandle[].class));
-
-    /** This is the singleton for string arrays */
-    public static final ArrayType STRING_ARRAY = putInCache(new ArrayType(String[].class));
+    });
 
     /** This is the singleton for object arrays */
     public static final ArrayType OBJECT_ARRAY = putInCache(new ArrayType(Object[].class));
