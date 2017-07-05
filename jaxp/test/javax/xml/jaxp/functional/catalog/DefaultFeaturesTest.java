@@ -69,4 +69,3 @@ public class DefaultFeaturesTest {
                 { Feature.RESOLVE, CatalogTestUtils.RESOLVE_STRICT } };
     }
 }
-

@@ -27,15 +27,8 @@ package sun.util.calendar;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.lang.ref.SoftReference;
-import java.security.AccessController;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
@@ -79,8 +72,6 @@ public class ZoneInfo extends TimeZone {
     // this bit field is reserved for abbreviation support
     private static final long ABBR_MASK = 0xf00L;
     private static final int TRANSITION_NSHIFT = 12;
-
-    private static final CalendarSystem gcal = CalendarSystem.getGregorianCalendar();
 
     /**
      * The raw GMT offset in milliseconds between this zone and GMT.
@@ -379,6 +370,7 @@ public class ZoneInfo extends TimeZone {
             throw new IllegalArgumentException();
         }
 
+        Gregorian gcal = CalendarSystem.getGregorianCalendar();
         CalendarDate date = gcal.newCalendarDate(null);
         date.setDate(year, month + 1, day);
         if (gcal.validate(date) == false) {

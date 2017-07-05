@@ -24,11 +24,11 @@
 package catalog;
 
 import static catalog.CatalogTestUtils.catalogUriResolver;
-import static catalog.ResolutionChecker.checkNoMatch;
+import static catalog.ResolutionChecker.checkNoUriMatch;
 import static catalog.ResolutionChecker.checkUriResolution;
 
+import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogException;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
@@ -58,7 +58,7 @@ public class UriFamilyTest {
         return new Object[][] {
                 // The matched URI of the specified URI reference is defined in
                 // a uri entry.
-                { "http://remote/dtd/alice/docAlice.dtd",
+                { "http://remote/dtd/uri/alice/docAlice.dtd",
                         "http://local/base/dtd/docAliceURI.dtd" },
 
                 // The matched URI of the specified URI reference is defined in
@@ -77,11 +77,10 @@ public class UriFamilyTest {
      */
     @Test(expectedExceptions = CatalogException.class)
     public void testNoMatch() {
-        checkNoMatch(createResolver());
+        checkNoUriMatch(createResolver());
     }
 
-    private CatalogUriResolver createResolver() {
+    private CatalogResolver createResolver() {
         return catalogUriResolver("uriFamily.xml");
     }
 }
-

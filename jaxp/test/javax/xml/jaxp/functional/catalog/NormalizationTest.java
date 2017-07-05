@@ -30,7 +30,6 @@ import static catalog.ResolutionChecker.checkSysIdResolution;
 import static catalog.ResolutionChecker.checkUriResolution;
 
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
@@ -111,8 +110,7 @@ public class NormalizationTest {
         return catalogResolver(CATALOG_NORMALIZATION);
     }
 
-    private CatalogUriResolver createUriResolver() {
+    private CatalogResolver createUriResolver() {
         return catalogUriResolver(CATALOG_NORMALIZATION);
     }
 }
-

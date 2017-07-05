@@ -150,10 +150,12 @@ public final class Duration
     /**
      * The pattern for parsing.
      */
-    private static final Pattern PATTERN =
+    private static class Lazy {
+        static final Pattern PATTERN =
             Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)D)?" +
                     "(T(?:([-+]?[0-9]+)H)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)(?:[.,]([0-9]{0,9}))?S)?)?",
                     Pattern.CASE_INSENSITIVE);
+    }
 
     /**
      * The number of seconds in the duration.
@@ -387,7 +389,7 @@ public final class Duration
      */
     public static Duration parse(CharSequence text) {
         Objects.requireNonNull(text, "text");
-        Matcher matcher = PATTERN.matcher(text);
+        Matcher matcher = Lazy.PATTERN.matcher(text);
         if (matcher.matches()) {
             // check for letter T but no time sections
             if (!charMatch(text, matcher.start(3), matcher.end(3), 'T')) {
