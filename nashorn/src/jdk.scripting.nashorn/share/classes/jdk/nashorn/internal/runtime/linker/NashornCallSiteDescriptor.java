@@ -43,6 +43,7 @@ import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.StandardOperation;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
 import jdk.nashorn.internal.runtime.AccessControlContextFactory;
@@ -161,7 +162,7 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     };
 
     private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
-            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
+            AccessControlContextFactory.createAccessControlContext(SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
     @SuppressWarnings("unchecked")
     private static final Map<String, Reference<NamedOperation>>[] NAMED_OPERATIONS =

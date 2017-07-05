@@ -43,6 +43,7 @@ import java.util.concurrent.Callable;
 
 import static jdk.internal.misc.Unsafe.*;
 import static jdk.test.lib.Asserts.*;
+import static jdk.test.lib.Platform;
 
 public class UnsafeGetStableArrayElement {
     @Stable static final boolean[] STABLE_BOOLEAN_ARRAY = new boolean[16];
@@ -219,6 +220,12 @@ public class UnsafeGetStableArrayElement {
     }
 
     public static void main(String[] args) throws Exception {
+        if (Platform.isServer()) {
+            test();
+        }
+    }
+
+    static void test() throws Exception {
         // boolean[], aligned accesses
         testMatched(   Test::testZ_Z, Test::changeZ);
         testMismatched(Test::testZ_B, Test::changeZ);
