@@ -455,7 +455,7 @@ public class Hashtable<K,V>
 
         // Creates the new entry.
         Entry<K,V> e = tab[index];
-        tab[index] = new Entry<K,V>(hash, key, value, e);
+        tab[index] = new Entry<>(hash, key, value, e);
         count++;
         return null;
     }
@@ -579,7 +579,7 @@ public class Hashtable<K,V>
         if (count == 0) {
             return Collections.emptyEnumeration();
         } else {
-            return new Enumerator<T>(type, false);
+            return new Enumerator<>(type, false);
         }
     }
 
@@ -587,7 +587,7 @@ public class Hashtable<K,V>
         if (count == 0) {
             return Collections.emptyIterator();
         } else {
-            return new Enumerator<T>(type, true);
+            return new Enumerator<>(type, true);
         }
     }
 
@@ -929,7 +929,7 @@ public class Hashtable<K,V>
         }
         // Creates the new entry.
         Entry<K,V> e = tab[index];
-        tab[index] = new Entry<K,V>(hash, key, value, e);
+        tab[index] = new Entry<>(hash, key, value, e);
         count++;
     }
 
@@ -950,7 +950,7 @@ public class Hashtable<K,V>
         }
 
         protected Object clone() {
-            return new Entry<K,V>(hash, key, value,
+            return new Entry<>(hash, key, value,
                                   (next==null ? null : (Entry<K,V>) next.clone()));
         }
 

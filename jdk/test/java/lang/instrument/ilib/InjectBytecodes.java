@@ -50,7 +50,7 @@ class InjectBytecodes implements RuntimeConstants {
     private final Injector[] after  = new Injector[256];
     private final String className;
     private final String methodName;
-    private final Map<Integer,byte[]> snippets = new HashMap<Integer,byte[]>();
+    private final Map<Integer,byte[]> snippets = new HashMap<>();
 
     private int pos;
     private int newPos;

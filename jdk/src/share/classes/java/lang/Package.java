@@ -588,16 +588,13 @@ public class Package implements java.lang.reflect.AnnotatedElement {
     }
 
     // The map of loaded system packages
-    private static Map<String, Package> pkgs
-        = new HashMap<String, Package>(31);
+    private static Map<String, Package> pkgs = new HashMap<>(31);
 
     // Maps each directory or zip file name to its corresponding url
-    private static Map<String, URL> urls
-        = new HashMap<String, URL>(10);
+    private static Map<String, URL> urls = new HashMap<>(10);
 
     // Maps each code source url for a jar file to its manifest
-    private static Map<String, Manifest> mans
-        = new HashMap<String, Manifest>(10);
+    private static Map<String, Manifest> mans = new HashMap<>(10);
 
     private static native String getSystemPackage0(String name);
     private static native String[] getSystemPackages0();
