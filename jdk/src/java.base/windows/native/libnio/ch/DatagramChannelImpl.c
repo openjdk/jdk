@@ -96,7 +96,7 @@ jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd)
             break;
         }
         if (recvfrom(fd, buf, 1, MSG_PEEK,
-                     (struct sockaddr *)&sa, &addrlen) != SOCKET_ERROR) {
+                     &sa.sa, &addrlen) != SOCKET_ERROR) {
             break;
         }
         if (WSAGetLastError() != WSAECONNRESET) {
@@ -104,7 +104,7 @@ jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd)
             break;
         }
 
-        recvfrom(fd, buf, 1, 0,  (struct sockaddr *)&sa, &addrlen);
+        recvfrom(fd, buf, 1, 0, &sa.sa, &addrlen);
         got_icmp = JNI_TRUE;
     }
 
@@ -122,7 +122,7 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
 
     memset(&sa, 0, sa_len);
 
-    rv = connect((SOCKET)fd, (struct sockaddr *)&sa, sa_len);
+    rv = connect((SOCKET)fd, &sa.sa, sa_len);
     if (rv == SOCKET_ERROR) {
         handleSocketError(env, WSAGetLastError());
     } else {
@@ -153,7 +153,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
                      (char *)buf,
                      len,
                      0,
-                     (struct sockaddr *)&sa,
+                     &sa.sa,
                      &sa_len);
 
         if (n == SOCKET_ERROR) {
@@ -182,12 +182,11 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
      */
     senderAddr = (*env)->GetObjectField(env, this, dci_senderAddrID);
     if (senderAddr != NULL) {
-        if (!NET_SockaddrEqualsInetAddress(env, (struct sockaddr *)&sa,
-                                           senderAddr)) {
+        if (!NET_SockaddrEqualsInetAddress(env, &sa, senderAddr)) {
             senderAddr = NULL;
         } else {
             jint port = (*env)->GetIntField(env, this, dci_senderPortID);
-            if (port != NET_GetPortFromSockaddr((struct sockaddr *)&sa)) {
+            if (port != NET_GetPortFromSockaddr(&sa)) {
                 senderAddr = NULL;
             }
         }
@@ -195,7 +194,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
     if (senderAddr == NULL) {
         jobject isa = NULL;
         int port;
-        jobject ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
+        jobject ia = NET_SockaddrToInetAddress(env, &sa, &port);
         if (ia != NULL) {
             isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
         }
@@ -204,7 +203,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
         // update cachedSenderInetAddress/cachedSenderPort
         (*env)->SetObjectField(env, this, dci_senderAddrID, ia);
         (*env)->SetIntField(env, this, dci_senderPortID,
-                            NET_GetPortFromSockaddr((struct sockaddr *)&sa));
+                            NET_GetPortFromSockaddr(&sa));
         (*env)->SetObjectField(env, this, dci_senderID, isa);
     }
     return n;
@@ -219,21 +218,15 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
     SOCKETADDRESS sa;
-    int sa_len;
+    int sa_len = 0;
     jint rv = 0;
 
-    if (NET_InetAddressToSockaddr(env, destAddress, destPort,
-                                  (struct sockaddr *)&sa,
-                                   &sa_len, preferIPv6) != 0) {
+    if (NET_InetAddressToSockaddr(env, destAddress, destPort, &sa,
+                                  &sa_len, preferIPv6) != 0) {
       return IOS_THROWN;
     }
 
-    rv = sendto((SOCKET)fd,
-               buf,
-               len,
-               0,
-               (struct sockaddr *)&sa,
-               sa_len);
+    rv = sendto((SOCKET)fd, buf, len, 0, &sa.sa, sa_len);
     if (rv == SOCKET_ERROR) {
         int theErr = (jint)WSAGetLastError();
         if (theErr == WSAEWOULDBLOCK) {

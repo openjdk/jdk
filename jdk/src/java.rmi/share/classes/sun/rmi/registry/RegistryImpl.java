@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,59 +362,81 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     }
 
     /**
-     * Main program to start a registry. <br>
-     * The port number can be specified on the command line.
+     * Return a new RegistryImpl on the requested port and export it to serve
+     * registry requests. A classloader is initialized from the system property
+     * "env.class.path" and a security manager is set unless one is already set.
+     * <p>
+     * The returned Registry is fully functional within the current process and
+     * is usable for internal and testing purposes.
+     *
+     * @param regPort port on which the rmiregistry accepts requests;
+     *                if 0, an implementation specific port is assigned
+     * @return a RegistryImpl instance
+     * @exception RemoteException If remote operation failed.
+     * @since 9
      */
-    public static void main(String args[])
-    {
+    public static RegistryImpl createRegistry(int regPort) throws RemoteException {
         // Create and install the security manager if one is not installed
         // already.
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
 
+        /*
+         * Fix bugid 4147561: When JDK tools are executed, the value of
+         * the CLASSPATH environment variable for the shell in which they
+         * were invoked is no longer incorporated into the application
+         * class path; CLASSPATH's only effect is to be the value of the
+         * system property "env.class.path".  To preserve the previous
+         * (JDK1.1 and JDK1.2beta3) behavior of this tool, however, its
+         * CLASSPATH should still be considered when resolving classes
+         * being unmarshalled.  To effect this old behavior, a class
+         * loader that loads from the file path specified in the
+         * "env.class.path" property is created and set to be the context
+         * class loader before the remote object is exported.
+         */
+        String envcp = System.getProperty("env.class.path");
+        if (envcp == null) {
+            envcp = ".";            // preserve old default behavior
+        }
+        URL[] urls = pathToURLs(envcp);
+        ClassLoader cl = new URLClassLoader(urls);
+
+        /*
+         * Fix bugid 4242317: Classes defined by this class loader should
+         * be annotated with the value of the "java.rmi.server.codebase"
+         * property, not the "file:" URLs for the CLASSPATH elements.
+         */
+        sun.rmi.server.LoaderHandler.registerCodebaseLoader(cl);
+
+        Thread.currentThread().setContextClassLoader(cl);
+
+        RegistryImpl registryImpl = null;
         try {
-            /*
-             * Fix bugid 4147561: When JDK tools are executed, the value of
-             * the CLASSPATH environment variable for the shell in which they
-             * were invoked is no longer incorporated into the application
-             * class path; CLASSPATH's only effect is to be the value of the
-             * system property "env.class.path".  To preserve the previous
-             * (JDK1.1 and JDK1.2beta3) behavior of this tool, however, its
-             * CLASSPATH should still be considered when resolving classes
-             * being unmarshalled.  To effect this old behavior, a class
-             * loader that loads from the file path specified in the
-             * "env.class.path" property is created and set to be the context
-             * class loader before the remote object is exported.
-             */
-            String envcp = System.getProperty("env.class.path");
-            if (envcp == null) {
-                envcp = ".";            // preserve old default behavior
-            }
-            URL[] urls = pathToURLs(envcp);
-            ClassLoader cl = new URLClassLoader(urls);
+            registryImpl = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<RegistryImpl>() {
+                    public RegistryImpl run() throws RemoteException {
+                        return new RegistryImpl(regPort);
+                    }
+                }, getAccessControlContext(regPort));
+        } catch (PrivilegedActionException ex) {
+            throw (RemoteException) ex.getException();
+        }
 
-            /*
-             * Fix bugid 4242317: Classes defined by this class loader should
-             * be annotated with the value of the "java.rmi.server.codebase"
-             * property, not the "file:" URLs for the CLASSPATH elements.
-             */
-            sun.rmi.server.LoaderHandler.registerCodebaseLoader(cl);
+        return registryImpl;
+    }
 
-            Thread.currentThread().setContextClassLoader(cl);
-
+    /**
+     * Main program to start a registry. <br>
+     * The port number can be specified on the command line.
+     */
+    public static void main(String args[])
+    {
+        try {
             final int regPort = (args.length >= 1) ? Integer.parseInt(args[0])
                                                    : Registry.REGISTRY_PORT;
-            try {
-                registry = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<RegistryImpl>() {
-                        public RegistryImpl run() throws RemoteException {
-                            return new RegistryImpl(regPort);
-                        }
-                    }, getAccessControlContext(regPort));
-            } catch (PrivilegedActionException ex) {
-                throw (RemoteException) ex.getException();
-            }
+
+            registry = createRegistry(regPort);
 
             // prevent registry from exiting
             while (true) {

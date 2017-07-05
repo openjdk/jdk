@@ -496,10 +496,14 @@ public abstract class EmbeddedFrame extends Frame
      * Checks if the component is in an EmbeddedFrame. If so,
      * returns the applet found in the hierarchy or null if
      * not found.
-     * @return the parent applet or {@ null}
+     * @return the parent applet or {@code null}
      * @since 1.6
+     *
+     * @deprecated The Applet API is deprecated. See the
+     * <a href="../../java/applet/package-summary.html"> java.applet package
+     * documentation</a> for further information.
      */
-    @SuppressWarnings("deprecation")
+    @Deprecated(since = "9")
     public static Applet getAppletIfAncestorOf(Component comp) {
         Container parent = comp.getParent();
         Applet applet = null;
