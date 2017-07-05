@@ -41,7 +41,6 @@
                 JVM_DumpAllStacks;
                 JVM_DumpThreads;
                 JVM_FillInStackTrace;
-                JVM_FillStackFrames;
                 JVM_FindClassFromCaller;
                 JVM_FindClassFromClass;
                 JVM_FindClassFromBootLoader;
@@ -157,13 +156,13 @@
                 JVM_SetClassSigners;
                 JVM_SetNativeThreadName;
                 JVM_SetPrimitiveArrayElement;
-                JVM_SetMethodInfo;
                 JVM_SetThreadPriority;
                 JVM_Sleep;
                 JVM_StartThread;
                 JVM_StopThread;
                 JVM_SuspendThread;
                 JVM_SupportsCX8;
+                JVM_ToStackTraceElement;
                 JVM_TotalMemory;
                 JVM_UnloadLibrary;
                 JVM_Yield;

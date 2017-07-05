@@ -25,7 +25,7 @@
 
 package java.io;
 
-import java.security.AccessController;
+import java.util.Properties;
 import sun.security.action.GetPropertyAction;
 
 
@@ -36,12 +36,10 @@ class UnixFileSystem extends FileSystem {
     private final String javaHome;
 
     public UnixFileSystem() {
-        slash = AccessController.doPrivileged(
-            new GetPropertyAction("file.separator")).charAt(0);
-        colon = AccessController.doPrivileged(
-            new GetPropertyAction("path.separator")).charAt(0);
-        javaHome = AccessController.doPrivileged(
-            new GetPropertyAction("java.home"));
+        Properties props = GetPropertyAction.getProperties();
+        slash = props.getProperty("file.separator").charAt(0);
+        colon = props.getProperty("path.separator").charAt(0);
+        javaHome = props.getProperty("java.home");
     }
 
 

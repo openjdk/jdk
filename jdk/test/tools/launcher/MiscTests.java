@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6856415 8154212
+ * @bug 6856415 8154212 8154470
  * @summary Miscellaneous tests, Exceptions
  * @compile -XDignore.symbol.file MiscTests.java
  * @run main MiscTests
@@ -95,30 +95,34 @@ public class MiscTests extends TestHelper {
 
         TestResult tr = doExec(javaCmd,
                 "-Djava.security.manager", "-jar", testJar.getName(), "foo.bak");
-        for (String s : tr.testOutput) {
-            System.out.println(s);
-        }
         if (!tr.contains("java.security.AccessControlException:" +
                 " access denied (\"java.lang.RuntimePermission\"" +
                 " \"accessClassInPackage.sun.security.pkcs11\")")) {
-            System.out.println(tr.status);
+            System.out.println(tr);
         }
     }
 
-    static void testJLDEnvWithTool() {
-        final Map<String, String> envMap = new HashMap<>();
-        envMap.put("_JAVA_LAUNCHER_DEBUG", "true");
-        TestResult tr = doExec(envMap, javacCmd, "-version");
-        tr.checkPositive();
-        if (!tr.isOK()) {
-           System.out.println(tr);
+    static void testJLDEnv() {
+        final Map<String, String> envToSet = new HashMap<>();
+        envToSet.put("_JAVA_LAUNCHER_DEBUG", "true");
+        for (String cmd : new String[] { javaCmd, javacCmd }) {
+            TestResult tr = doExec(envToSet, cmd, "-version");
+            tr.checkPositive();
+            String javargs = cmd.equals(javacCmd) ? "on" : "off";
+            String progname = cmd.equals(javacCmd) ? "javac" : "java";
+            if (!tr.isOK()
+                || !tr.matches("\\s*debug:on$")
+                || !tr.matches("\\s*javargs:" + javargs + "$")
+                || !tr.matches("\\s*program name:" + progname + "$")) {
+                System.out.println(tr);
+            }
         }
     }
 
     public static void main(String... args) throws IOException {
         testWithClassPathSetViaProperty();
         test6856415();
-        testJLDEnvWithTool();
+        testJLDEnv();
         if (testExitValue != 0) {
             throw new Error(testExitValue + " tests failed");
         }

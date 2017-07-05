@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8055463
+ * @bug 8055463 8153272
  * @summary Test createFont APIs
- * @run CreateFontArrayTest
+ * @run main CreateFontArrayTest
  */
 
 import java.awt.Font;

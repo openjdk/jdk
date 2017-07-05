@@ -52,7 +52,6 @@ import java.security.Permission;
 import java.security.PermissionCollection;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
-import sun.misc.ManagedLocalsThread;
 import sun.net.www.ParseUtil;
 import sun.security.util.SecurityConstants;
 
@@ -858,13 +857,20 @@ public     void grab() {
  * this operation to complete before continuing, wait for the notifyAll()
  * operation on the syncObject to occur.
  */
-class AppContextCreator extends ManagedLocalsThread {
+class AppContextCreator extends Thread {
     Object syncObject = new Object();
     AppContext appContext = null;
     volatile boolean created = false;
 
+    /**
+     * Must call the 5-args super-class constructor to erase locals.
+     */
+    private AppContextCreator() {
+        throw new UnsupportedOperationException("Must erase locals");
+    }
+
     AppContextCreator(ThreadGroup group)  {
-        super(group, "AppContextCreator");
+        super(group, null, "AppContextCreator", 0, false);
     }
 
     public void run()  {

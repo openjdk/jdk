@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -645,16 +645,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
                     // StateInfo match, otherwise a StateInfo with
                     // SELECTED | ENABLED would match ENABLED, which we
                     // don't want.
-
-                    // This comes from BigInteger.bitCnt
-                    int bitCount = oState;
-                    bitCount -= (0xaaaaaaaa & bitCount) >>> 1;
-                    bitCount = (bitCount & 0x33333333) + ((bitCount >>> 2) &
-                                                      0x33333333);
-                    bitCount = bitCount + (bitCount >>> 4) & 0x0f0f0f0f;
-                    bitCount += bitCount >>> 8;
-                    bitCount += bitCount >>> 16;
-                    bitCount = bitCount & 0xff;
+                    int bitCount = Integer.bitCount(oState);
                     if (bitCount > bestCount) {
                         bestIndex = counter;
                         bestCount = bitCount;
@@ -880,21 +871,6 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
          */
         public int getComponentState() {
             return state;
-        }
-
-        /**
-         * Returns the number of states that are similar between the
-         * ComponentState this StateInfo represents and val.
-         */
-        private int getMatchCount(int val) {
-            // This comes from BigInteger.bitCnt
-            val &= state;
-            val -= (0xaaaaaaaa & val) >>> 1;
-            val = (val & 0x33333333) + ((val >>> 2) & 0x33333333);
-            val = val + (val >>> 4) & 0x0f0f0f0f;
-            val += val >>> 8;
-            val += val >>> 16;
-            return val & 0xff;
         }
 
         /**

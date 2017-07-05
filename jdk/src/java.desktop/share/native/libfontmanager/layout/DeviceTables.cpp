@@ -45,9 +45,12 @@ const le_uint16 DeviceTable::fieldBits[]     = {     2,      4,      8};
 
 le_int16 DeviceTable::getAdjustment(const LEReferenceTo<DeviceTable>&base, le_uint16 ppem, LEErrorCode &success) const
 {
+    le_int16 result = 0;
+    if (LE_FAILURE(success)) {
+        return result;
+    }
     le_uint16 start = SWAPW(startSize);
     le_uint16 format = SWAPW(deltaFormat) - 1;
-    le_int16 result = 0;
 
     if (ppem >= start && ppem <= SWAPW(endSize) && format < FORMAT_COUNT) {
         le_uint16 sizeIndex = ppem - start;

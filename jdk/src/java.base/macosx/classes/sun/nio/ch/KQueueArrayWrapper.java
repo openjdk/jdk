@@ -32,9 +32,9 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.io.FileDescriptor;
 import java.util.Iterator;
 import java.util.LinkedList;
+import sun.security.action.GetPropertyAction;
 
 /*
  * struct kevent {           // 32-bit    64-bit
@@ -84,10 +84,8 @@ class KQueueArrayWrapper {
     static {
         IOUtil.load();
         initStructSizes();
-        String datamodel = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.arch.data.model")
-        );
-        is64bit = datamodel.equals("64");
+        String datamodel = GetPropertyAction.getProperty("sun.arch.data.model");
+        is64bit = "64".equals(datamodel);
     }
 
     KQueueArrayWrapper() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.awt.image.SampleModel;
 import java.awt.image.ComponentSampleModel;
 import java.awt.image.PixelInterleavedSampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -87,7 +86,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
      */
     public ByteInterleavedRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferByte) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -104,12 +103,13 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
      * SampleModel must be of type SinglePixelPackedSampleModel
      * or InterleavedSampleModel.
      * @param sampleModel     The SampleModel that specifies the layout.
-     * @param dataBuffer      The DataBufferShort that contains the image data.
+     * @param dataBuffer      The DataBufferByte that contains the image data.
      * @param origin          The Point that specifies the origin.
      */
     public ByteInterleavedRaster(SampleModel sampleModel,
-                                  DataBuffer dataBuffer,
-                                  Point origin) {
+                                 DataBufferByte dataBuffer,
+                                 Point origin)
+    {
         this(sampleModel,
              dataBuffer,
              new Rectangle(origin.x,
@@ -178,27 +178,22 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
      * Note that this constructor should generally be called by other
      * constructors or create methods, it should not be used directly.
      * @param sampleModel     The SampleModel that specifies the layout.
-     * @param dataBuffer      The DataBufferShort that contains the image data.
+     * @param dataBuffer      The DataBufferByte that contains the image data.
      * @param aRegion         The Rectangle that specifies the image area.
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      */
     public ByteInterleavedRaster(SampleModel sampleModel,
-                                  DataBuffer dataBuffer,
-                                  Rectangle aRegion,
-                                  Point origin,
-                                  ByteInterleavedRaster parent) {
+                                 DataBufferByte dataBuffer,
+                                 Rectangle aRegion,
+                                 Point origin,
+                                 ByteInterleavedRaster parent)
+    {
         super(sampleModel, dataBuffer, aRegion, origin, parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
 
-        if (!(dataBuffer instanceof DataBufferByte)) {
-            throw new RasterFormatException("ByteInterleavedRasters must have " +
-                                            "byte DataBuffers");
-        }
-
-        DataBufferByte dbb = (DataBufferByte)dataBuffer;
-        this.data = stealData(dbb, 0);
+        this.data = stealData(dataBuffer, 0);
 
         int xOffset = aRegion.x - origin.x;
         int yOffset = aRegion.y - origin.y;
@@ -221,7 +216,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride = 1;
             this.dataOffsets = new int[1];
-            this.dataOffsets[0] = dbb.getOffset();
+            this.dataOffsets[0] = dataBuffer.getOffset();
             dataOffsets[0] += xOffset*pixelStride+yOffset*scanlineStride;
         } else {
             throw new RasterFormatException("ByteInterleavedRasters must " +
@@ -1259,7 +1254,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         int deltaY = y0 - y;
 
         return new ByteInterleavedRaster(sm,
-                                       dataBuffer,
+                                       (DataBufferByte) dataBuffer,
                                        new Rectangle(x0, y0, width, height),
                                        new Point(sampleModelTranslateX+deltaX,
                                                  sampleModelTranslateY+deltaY),

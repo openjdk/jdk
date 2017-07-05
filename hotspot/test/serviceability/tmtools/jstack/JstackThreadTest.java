@@ -25,6 +25,8 @@ import java.util.Arrays;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
+import utils.Utils;
+import java.util.concurrent.CountDownLatch;
 
 /*
  * @test JstackThreadTest
@@ -32,23 +34,22 @@ import jdk.test.lib.ProcessTools;
  * @summary jstack doesn't close quotation marks properly with threads' name greater than 1996 characters
  * @library /testlibrary
  * @build jdk.test.lib.*
- * @ignore 8153319
  * @run main JstackThreadTest
  */
 public class JstackThreadTest {
   static class NamedThread extends Thread {
-    NamedThread(String name) {
+   CountDownLatch latch;
+   NamedThread(String name, CountDownLatch latch) {
+      this.latch = latch;
       setName(name);
+
     }
     @Override
     public void run() {
-      try {
-            Thread.sleep(2000);
-          } catch(Exception e){
-            e.printStackTrace();
-          }
-        }
+     latch.countDown();
+     Utils.sleep();
     }
+   }
 
   public static void main(String[] args) throws Exception {
     StringBuilder sb = new StringBuilder();
@@ -60,8 +61,11 @@ public class JstackThreadTest {
   }
 
   private static void testWithName(String name) throws Exception {
+    //parent thread countDown latch
+    CountDownLatch latch = new CountDownLatch(1);
     // Start a thread with a long thread name
-    NamedThread thread = new NamedThread(name);
+    NamedThread thread = new NamedThread(name, latch);
+    thread.setDaemon(true);
     thread.start();
     ProcessBuilder processBuilder = new ProcessBuilder();
     JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
@@ -69,6 +73,8 @@ public class JstackThreadTest {
     launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
     processBuilder.command(launcher.getCommand());
     System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
+    // Ensuring that Jstack will always run after NamedThread
+    latch.await();
     OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
     System.out.println(output.getOutput());
     output.shouldContain("\""+ name + "\"");

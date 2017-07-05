@@ -43,6 +43,7 @@ import java.security.Permission;
 import java.security.AccessController;
 import sun.security.util.SecurityConstants;
 import sun.net.www.MessageHeader;
+import sun.security.action.GetPropertyAction;
 
 /**
  * The abstract class {@code URLConnection} is the superclass
@@ -1395,8 +1396,8 @@ public abstract class URLConnection {
      * is always the last one on the returned package list.
      */
     private String getContentHandlerPkgPrefixes() {
-        String packagePrefixList = AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction(contentPathProp, ""));
+        String packagePrefixList =
+                GetPropertyAction.getProperty(contentPathProp, "");
 
         if (packagePrefixList != "") {
             packagePrefixList += "|";

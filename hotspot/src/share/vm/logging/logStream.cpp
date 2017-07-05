@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
+#include "logging/logStream.inline.hpp"
 
 // Create a log stream without an embedded ResourceMark.
 // The function is placed here to be called out-of-line in log.hpp.

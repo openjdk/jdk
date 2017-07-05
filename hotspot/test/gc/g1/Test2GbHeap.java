@@ -25,6 +25,9 @@
  * @test Test2GbHeap
  * @bug 8031686
  * @summary Regression test to ensure we can start G1 with 2gb heap.
+ * Skip test on 32 bit Windows: it typically does not support the many and large virtual memory reservations needed.
+ * @requires (vm.gc == "G1" | vm.gc == "null")
+ * @requires !((sun.arch.data.model == "32") & (os.family == "windows"))
  * @key gc
  * @key regression
  * @library /testlibrary
@@ -48,17 +51,6 @@ public class Test2GbHeap {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments.toArray(new String[0]));
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-    // Avoid failing test for setups not supported.
-    if (output.getOutput().contains("Could not reserve enough space for 2097152KB object heap")) {
-      // Will fail on machines with too little memory (and Windows 32-bit VM), ignore such failures.
-      output.shouldHaveExitValue(1);
-    } else if (output.getOutput().contains("-XX:+UseG1GC not supported in this VM")) {
-      // G1 is not supported on embedded, ignore such failures.
-      output.shouldHaveExitValue(1);
-    } else {
-      // Normally everything should be fine.
-      output.shouldHaveExitValue(0);
-    }
+    output.shouldHaveExitValue(0);
   }
 }

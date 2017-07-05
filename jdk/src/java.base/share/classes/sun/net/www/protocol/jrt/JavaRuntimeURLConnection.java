@@ -32,10 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.util.List;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
@@ -45,6 +42,7 @@ import jdk.internal.loader.URLClassPath;
 import jdk.internal.loader.Resource;
 import sun.net.www.ParseUtil;
 import sun.net.www.URLConnection;
+import sun.security.action.GetPropertyAction;
 
 /**
  * URLConnection implementation that can be used to connect to resources
@@ -163,11 +161,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
     public Permission getPermission() throws IOException {
         Permission p = permission;
         if (p == null) {
-            // using lambda expression here leads to recursive initialization
-            PrivilegedAction<String> pa = new PrivilegedAction<String>() {
-                public String run() { return System.getProperty("java.home"); }
-            };
-            String home = AccessController.doPrivileged(pa);
+            String home = GetPropertyAction.getProperty("java.home");
             p = new FilePermission(home + File.separator + "-", "read");
             permission = p;
         }

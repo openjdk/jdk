@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.image.WritableRaster;
 import java.awt.image.RasterFormatException;
 import java.awt.image.SampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -67,10 +66,9 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      *  @param sampleModel     The SampleModel that specifies the layout.
      *  @param origin          The Point that specified the origin.
      */
-    public IntegerInterleavedRaster(SampleModel sampleModel,
-                                     Point origin) {
+    public IntegerInterleavedRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferInt) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -90,8 +88,9 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * @param origin          The Point that specifies the origin.
      */
     public IntegerInterleavedRaster(SampleModel sampleModel,
-                                     DataBuffer dataBuffer,
-                                     Point origin) {
+                                    DataBufferInt dataBuffer,
+                                    Point origin)
+    {
         this(sampleModel,
              dataBuffer,
              new Rectangle(origin.x,
@@ -121,19 +120,16 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * @param parent          The parent (if any) of this raster.
      */
     public IntegerInterleavedRaster(SampleModel sampleModel,
-                                     DataBuffer dataBuffer,
-                                     Rectangle aRegion,
-                                     Point origin,
-                                     IntegerInterleavedRaster parent){
+                                    DataBufferInt dataBuffer,
+                                    Rectangle aRegion,
+                                    Point origin,
+                                    IntegerInterleavedRaster parent)
+    {
         super(sampleModel,dataBuffer,aRegion,origin,parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
-        if (!(dataBuffer instanceof DataBufferInt)) {
-           throw new RasterFormatException("IntegerInterleavedRasters must have" +
-                "integer DataBuffers");
-        }
-        DataBufferInt dbi = (DataBufferInt)dataBuffer;
-        this.data = stealData(dbi, 0);
+
+        this.data = stealData(dataBuffer, 0);
 
         if (sampleModel instanceof SinglePixelPackedSampleModel) {
             SinglePixelPackedSampleModel sppsm =
@@ -141,7 +137,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride    = 1;
             this.dataOffsets = new int[1];
-            this.dataOffsets[0] = dbi.getOffset();
+            this.dataOffsets[0] = dataBuffer.getOffset();
             this.bandOffset = this.dataOffsets[0];
             int xOffset = aRegion.x - origin.x;
             int yOffset = aRegion.y - origin.y;
@@ -481,7 +477,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
         int deltaY = y0 - y;
 
         return new IntegerInterleavedRaster(sm,
-                                          dataBuffer,
+                                          (DataBufferInt) dataBuffer,
                                           new Rectangle(x0,y0,width,height),
                                           new Point(sampleModelTranslateX+deltaX,
                                                     sampleModelTranslateY+deltaY),

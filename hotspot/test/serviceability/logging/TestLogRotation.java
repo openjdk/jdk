@@ -102,8 +102,10 @@ public class TestLogRotation {
                 smallFilesNumber++;
             }
         }
-        if (logs.length != numberOfFiles) {
-            throw new Error("There are only " + logs.length + " logs instead " + numberOfFiles);
+        // Expect one more log file since the number-of-files doesn't include the active log file
+        int expectedNumberOfFiles = numberOfFiles + 1;
+        if (logs.length != expectedNumberOfFiles) {
+            throw new Error("There are " + logs.length + " logs instead of the expected " + expectedNumberOfFiles);
         }
         if (smallFilesNumber > 1) {
             throw new Error("There should maximum one log with size < " + logFileSizeK + "K");
