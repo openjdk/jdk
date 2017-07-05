@@ -2619,13 +2619,23 @@ public class Parser extends AbstractParser implements Loggable {
                 next();
                 expect(LPAREN);
 
-                // FIXME: ES6 catch parameter can be a BindingIdentifier or a BindingPattern
-                // We need to generalize this here!
+                // ES6 catch parameter can be a BindingIdentifier or a BindingPattern
                 // http://www.ecma-international.org/ecma-262/6.0/
-                final IdentNode exception = getIdent();
+                final String contextString = "catch argument";
+                final Expression exception = bindingIdentifierOrPattern(contextString);
+                final boolean isDestructuring = !(exception instanceof IdentNode);
+                if (isDestructuring) {
+                    verifyDestructuringBindingPattern(exception, new Consumer<IdentNode>() {
+                        @Override
+                        public void accept(final IdentNode identNode) {
+                            verifyIdent(identNode, contextString);
+                        }
+                    });
+                } else {
+                    // ECMA 12.4.1 strict mode restrictions
+                    verifyStrictIdent((IdentNode) exception, "catch argument");
+                }
 
-                // ECMA 12.4.1 strict mode restrictions
-                verifyStrictIdent(exception, "catch argument");
 
                 // Nashorn extension: catch clause can have optional
                 // condition. So, a single try can have more than one
