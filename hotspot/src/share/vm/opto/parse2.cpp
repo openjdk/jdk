@@ -795,8 +795,9 @@ float Parse::dynamic_branch_prediction(float &cnt) {
   taken = method()->scale_count(taken);
   not_taken = method()->scale_count(not_taken);
 
-  // Give up if too few counts to be meaningful
-  if (taken + not_taken < 40) {
+  // Give up if too few (or too many, in which case the sum will overflow) counts to be meaningful.
+  // We also check that individual counters are positive first, overwise the sum can become positive.
+  if (taken < 0 || not_taken < 0 || taken + not_taken < 40) {
     if (C->log() != NULL) {
       C->log()->elem("branch target_bci='%d' taken='%d' not_taken='%d'", iter().get_dest(), taken, not_taken);
     }
@@ -804,13 +805,13 @@ float Parse::dynamic_branch_prediction(float &cnt) {
   }
 
   // Compute frequency that we arrive here
-  int sum = taken + not_taken;
+  float sum = taken + not_taken;
   // Adjust, if this block is a cloned private block but the
   // Jump counts are shared.  Taken the private counts for
   // just this path instead of the shared counts.
   if( block()->count() > 0 )
     sum = block()->count();
-  cnt = (float)sum / (float)FreqCountInvocations;
+  cnt = sum / FreqCountInvocations;
 
   // Pin probability to sane limits
   float prob;

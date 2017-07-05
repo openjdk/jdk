@@ -1132,6 +1132,13 @@ void SuperWord::co_locate_pack(Node_List* pk) {
 void SuperWord::output() {
   if (_packset.length() == 0) return;
 
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("SuperWord    ");
+    lpt()->dump_head();
+  }
+#endif
+
   // MUST ENSURE main loop's initial value is properly aligned:
   //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
 

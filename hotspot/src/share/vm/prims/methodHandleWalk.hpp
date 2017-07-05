@@ -343,6 +343,7 @@ private:
   int cpool_symbol_put(int tag, Symbol* con) {
     if (con == NULL)  return 0;
     ConstantValue* cv = new ConstantValue(tag, con);
+    con->increment_refcount();
     return _constants.append(cv);
   }
 
