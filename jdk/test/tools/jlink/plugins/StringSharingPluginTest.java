@@ -52,11 +52,11 @@ import java.util.function.Consumer;
 
 import jdk.internal.jimage.decompressor.CompressedResourceHeader;
 import jdk.internal.jimage.decompressor.StringSharingDecompressor;
-import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.plugins.StringSharingPlugin;
-import jdk.tools.jlink.plugin.ModuleEntry;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.Plugin;
 import tests.Helper;
 import tests.JImageValidator;
@@ -80,7 +80,7 @@ public class StringSharingPluginTest {
         Map<String, Integer> map = new HashMap<>();
         Map<Integer, String> reversedMap = new HashMap<>();
 
-        ModulePoolImpl resources = new ModulePoolImpl(ByteOrder.nativeOrder(), new StringTable() {
+        ResourcePoolManager resources = new ResourcePoolManager(ByteOrder.nativeOrder(), new StringTable() {
             @Override
             public int addString(String str) {
                 Integer id = map.get(str);
@@ -109,7 +109,7 @@ public class StringSharingPluginTest {
                     if (path.charAt(0) != '/') {
                         path = "/" + path;
                     }
-                    ModuleEntry res = ModuleEntry.create(path, content);
+                    ResourcePoolEntry res = ResourcePoolEntry.create(path, content);
                     resources.add(res);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
@@ -120,17 +120,17 @@ public class StringSharingPluginTest {
             stream.forEach(c);
         }
         Plugin plugin = new StringSharingPlugin();
-        ModulePoolImpl result = new ModulePoolImpl(resources.getByteOrder(), resources.getStringTable());
-        plugin.visit(resources, result);
+        ResourcePoolManager resultMgr = new ResourcePoolManager(resources.byteOrder(), resources.getStringTable());
+        ResourcePool result = plugin.transform(resources.resourcePool(), resultMgr.resourcePoolBuilder());
 
         if (result.isEmpty()) {
             throw new AssertionError("No result");
         }
 
         result.entries().forEach(res -> {
-            if (res.getPath().endsWith(".class")) {
+            if (res.path().endsWith(".class")) {
                 try {
-                    byte[] uncompacted = StringSharingDecompressor.normalize(reversedMap::get, res.getBytes(),
+                    byte[] uncompacted = StringSharingDecompressor.normalize(reversedMap::get, res.contentBytes(),
                         CompressedResourceHeader.getSize());
                     JImageValidator.readClass(uncompacted);
                 } catch (IOException exp) {

@@ -66,6 +66,7 @@ public final class WithObject extends Scope {
     WithObject(final ScriptObject scope, final ScriptObject expression) {
         super(scope, null);
         this.expression = expression;
+        setIsInternal();
     }
 
     /**
@@ -99,37 +100,23 @@ public final class WithObject extends Scope {
         // With scopes can never be observed outside of Nashorn code, so all call sites that can address it will of
         // necessity have a Nashorn descriptor - it is safe to cast.
         final NashornCallSiteDescriptor ndesc = (NashornCallSiteDescriptor)desc;
-        FindProperty find = null;
         GuardedInvocation link = null;
-        ScriptObject self;
-
-        final boolean isNamedOperation;
-        final String name;
         final Operation op = desc.getOperation();
-        if (op instanceof NamedOperation) {
-            isNamedOperation = true;
-            name = ((NamedOperation)op).getName().toString();
-        } else {
-            isNamedOperation = false;
-            name = null;
-        }
 
-        self = expression;
-        if (isNamedOperation) {
-             find = self.findProperty(name, true);
-        }
+        assert op instanceof NamedOperation; // WithObject is a scope object, access is always named
+        final String name = ((NamedOperation)op).getName().toString();
+
+        FindProperty find = expression.findProperty(name, true);
 
         if (find != null) {
-            link = self.lookup(desc, request);
+            link = expression.lookup(desc, request);
             if (link != null) {
                 return fixExpressionCallSite(ndesc, link);
             }
         }
 
         final ScriptObject scope = getProto();
-        if (isNamedOperation) {
-            find = scope.findProperty(name, true);
-        }
+        find = scope.findProperty(name, true);
 
         if (find != null) {
             return fixScopeCallSite(scope.lookup(desc, request), name, find.getOwner());
@@ -137,43 +124,41 @@ public final class WithObject extends Scope {
 
         // the property is not found - now check for
         // __noSuchProperty__ and __noSuchMethod__ in expression
-        if (self != null) {
-            final String fallBack;
+        final String fallBack;
 
-            final StandardOperation firstOp = ndesc.getFirstOperation();
-            switch (firstOp) {
-            case GET_METHOD:
-                fallBack = NO_SUCH_METHOD_NAME;
-                break;
-            case GET_PROPERTY:
-            case GET_ELEMENT:
-                fallBack = NO_SUCH_PROPERTY_NAME;
-                break;
-            default:
-                fallBack = null;
-                break;
-            }
+        final StandardOperation firstOp = ndesc.getFirstOperation();
+        switch (firstOp) {
+        case GET_METHOD:
+            fallBack = NO_SUCH_METHOD_NAME;
+            break;
+        case GET_PROPERTY:
+        case GET_ELEMENT:
+            fallBack = NO_SUCH_PROPERTY_NAME;
+            break;
+        default:
+            fallBack = null;
+            break;
+        }
 
-            if (fallBack != null) {
-                find = self.findProperty(fallBack, true);
-                if (find != null) {
-                    switch (firstOp) {
-                    case GET_METHOD:
-                        link = self.noSuchMethod(desc, request);
-                        break;
-                    case GET_PROPERTY:
-                    case GET_ELEMENT:
-                        link = self.noSuchProperty(desc, request);
-                        break;
-                    default:
-                        break;
-                    }
+        if (fallBack != null) {
+            find = expression.findProperty(fallBack, true);
+            if (find != null) {
+                switch (firstOp) {
+                case GET_METHOD:
+                    link = expression.noSuchMethod(desc, request);
+                    break;
+                case GET_PROPERTY:
+                case GET_ELEMENT:
+                    link = expression.noSuchProperty(desc, request);
+                    break;
+                default:
+                    break;
                 }
             }
+        }
 
-            if (link != null) {
-                return fixExpressionCallSite(ndesc, link);
-            }
+        if (link != null) {
+            return fixExpressionCallSite(ndesc, link);
         }
 
         // still not found, may be scope can handle with it's own
@@ -204,7 +189,7 @@ public final class WithObject extends Scope {
         // (as opposed from another non-scope object in the proto chain such as Object.prototype).
         final FindProperty exprProperty = expression.findProperty(key, true, false, expression);
         if (exprProperty != null) {
-             return exprProperty;
+            return exprProperty;
         }
         return super.findProperty(key, deep, isScope, start);
     }
@@ -295,14 +280,14 @@ public final class WithObject extends Scope {
     private GuardedInvocation fixScopeCallSite(final GuardedInvocation link, final String name, final ScriptObject owner) {
         final GuardedInvocation newLink             = fixReceiverType(link, WITHSCOPEFILTER);
         final MethodHandle      expressionGuard     = expressionGuard(name, owner);
-        final MethodHandle      filterGuardReceiver = filterGuardReceiver(newLink, WITHSCOPEFILTER);
+        final MethodHandle      filteredGuard       = filterGuardReceiver(newLink, WITHSCOPEFILTER);
         return link.replaceMethods(
                 filterReceiver(
                         newLink.getInvocation(),
                         WITHSCOPEFILTER),
                 NashornGuards.combineGuards(
                         expressionGuard,
-                        filterGuardReceiver));
+                        filteredGuard));
     }
 
     private static MethodHandle filterGuardReceiver(final GuardedInvocation link, final MethodHandle receiverFilter) {

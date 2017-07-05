@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 /* @test
- * @bug 8031573 8040279
+ * @bug 8031573 8040279 8143064
  * @summary [macosx] Checkmarks of JCheckBoxMenuItems aren't rendered
  *           in high resolution on Retina
  * @author Alexander Scherbatiy
@@ -39,6 +40,9 @@ public class bug8031573 extends JApplet {
     @Override
     public void init() {
         try {
+
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
             SwingUtilities.invokeAndWait(new Runnable() {
 
                 @Override

@@ -140,7 +140,7 @@ public final class NashornGuards {
         if (!needsGuard(property, desc)) {
             return null;
         }
-        if (NashornCallSiteDescriptor.isScope(desc)) {
+        if (NashornCallSiteDescriptor.isScope(desc) && sobj.isScope()) {
             if (property != null && property.isBound() && !property.canChangeType()) {
                 // This is a declared top level variables in main script or eval, use identity guard.
                 return getIdentityGuard(sobj);
