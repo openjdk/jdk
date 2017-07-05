@@ -737,6 +737,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokehandle(JavaThread* thread)) {
       pool,
       info.resolved_method(),
       info.resolved_appendix(),
+      info.resolved_method_type(),
       pool->resolved_references());
 }
 IRT_END
@@ -765,6 +766,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
       pool,
       info.resolved_method(),
       info.resolved_appendix(),
+      info.resolved_method_type(),
       pool->resolved_references());
 }
 IRT_END

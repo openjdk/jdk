@@ -508,7 +508,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(DefNewGeneration,            _next_gen,                                     Generation*)                           \
-  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           int)                                   \
+  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                   \
   nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
   nonstatic_field(DefNewGeneration,            _eden_space,                                   EdenSpace*)                            \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
