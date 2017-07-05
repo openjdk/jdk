@@ -29,10 +29,17 @@
 
 class Atomic : AllStatic {
  public:
+  // Atomic operations on jlong types are not available on all 32-bit
+  // platforms. If atomic ops on jlongs are defined here they must only
+  // be used from code that verifies they are available at runtime and
+  // can provide an alternative action if not - see supports_cx8() for
+  // a means to test availability.
+
   // Atomically store to a location
   inline static void store    (jbyte    store_value, jbyte*    dest);
   inline static void store    (jshort   store_value, jshort*   dest);
   inline static void store    (jint     store_value, jint*     dest);
+  // See comment above about using jlong atomics on 32-bit platforms
   inline static void store    (jlong    store_value, jlong*    dest);
   inline static void store_ptr(intptr_t store_value, intptr_t* dest);
   inline static void store_ptr(void*    store_value, void*     dest);
@@ -40,17 +47,19 @@ class Atomic : AllStatic {
   inline static void store    (jbyte    store_value, volatile jbyte*    dest);
   inline static void store    (jshort   store_value, volatile jshort*   dest);
   inline static void store    (jint     store_value, volatile jint*     dest);
+  // See comment above about using jlong atomics on 32-bit platforms
   inline static void store    (jlong    store_value, volatile jlong*    dest);
   inline static void store_ptr(intptr_t store_value, volatile intptr_t* dest);
   inline static void store_ptr(void*    store_value, volatile void*     dest);
 
+  // See comment above about using jlong atomics on 32-bit platforms
   inline static jlong load(volatile jlong* src);
 
   // Atomically add to a location, return updated value
   inline static jint     add    (jint     add_value, volatile jint*     dest);
   inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
   inline static void*    add_ptr(intptr_t add_value, volatile void*     dest);
-
+  // See comment above about using jlong atomics on 32-bit platforms
          static jlong    add    (jlong    add_value, volatile jlong*    dest);
 
   // Atomically increment location
@@ -75,6 +84,7 @@ class Atomic : AllStatic {
   // barrier across the cmpxchg.  I.e., it's really a 'fence_cmpxchg_acquire'.
          static jbyte    cmpxchg    (jbyte    exchange_value, volatile jbyte*    dest, jbyte    compare_value);
   inline static jint     cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value);
+  // See comment above about using jlong atomics on 32-bit platforms
   inline static jlong    cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value);
 
          static unsigned int cmpxchg(unsigned int exchange_value,

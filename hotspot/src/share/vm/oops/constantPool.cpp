@@ -695,10 +695,6 @@ oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_oop, int inde
     result_oop = string_at_impl(this_oop, index, cache_index, CHECK_NULL);
     break;
 
-  case JVM_CONSTANT_Object:
-    result_oop = this_oop->object_at(index);
-    break;
-
   case JVM_CONSTANT_MethodHandleInError:
   case JVM_CONSTANT_MethodTypeInError:
     {
@@ -1824,8 +1820,6 @@ void ConstantPool::print_on(outputStream* st) const {
   st->print_cr(internal_name());
   if (flags() != 0) {
     st->print(" - flags: 0x%x", flags());
-    if (has_pseudo_string()) st->print(" has_pseudo_string");
-    if (has_invokedynamic()) st->print(" has_invokedynamic");
     if (has_preresolution()) st->print(" has_preresolution");
     if (on_stack()) st->print(" on_stack");
     st->cr();
@@ -1869,13 +1863,14 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
       st->print(" name_and_type_index=%d", uncached_name_and_type_ref_index_at(index));
       break;
     case JVM_CONSTANT_String :
-      unresolved_string_at(index)->print_value_on(st);
+      if (is_pseudo_string_at(index)) {
+        oop anObj = pseudo_string_at(index);
+        anObj->print_value_on(st);
+        st->print(" {0x%lx}", (address)anObj);
+      } else {
+        unresolved_string_at(index)->print_value_on(st);
+      }
       break;
-    case JVM_CONSTANT_Object : {
-      oop anObj = object_at(index);
-      anObj->print_value_on(st);
-      st->print(" {0x%lx}", (address)anObj);
-      } break;
     case JVM_CONSTANT_Integer :
       st->print("%d", int_at(index));
       break;
@@ -1939,8 +1934,6 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
 void ConstantPool::print_value_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
   st->print("constant pool [%d]", length());
-  if (has_pseudo_string()) st->print("/pseudo_string");
-  if (has_invokedynamic()) st->print("/invokedynamic");
   if (has_preresolution()) st->print("/preresolution");
   if (operands() != NULL)  st->print("/operands[%d]", operands()->length());
   print_address_on(st);
