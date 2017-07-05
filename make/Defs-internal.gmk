@@ -212,7 +212,7 @@ ifndef SKIP_DEBUG_BUILD
   SKIP_DEBUG_BUILD=true
 endif
 ifndef SKIP_FASTDEBUG_BUILD
-  SKIP_FASTDEBUG_BUILD=false
+  SKIP_FASTDEBUG_BUILD=true
 endif
 
 # Select javadoc setting GENERATE_DOCS
