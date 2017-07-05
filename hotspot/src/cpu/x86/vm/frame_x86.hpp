@@ -164,6 +164,7 @@
   // original sp we use that convention.
 
   intptr_t*     _unextended_sp;
+  void adjust_unextended_sp();
 
   intptr_t* ptr_at_addr(int offset) const {
     return (intptr_t*) addr_at(offset);
@@ -196,6 +197,9 @@
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;
+
+  // helper to update a map with callee-saved RBP
+  static void update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr);
 
 #ifndef CC_INTERP
   // deoptimization support

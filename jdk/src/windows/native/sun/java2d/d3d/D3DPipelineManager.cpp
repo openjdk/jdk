@@ -192,6 +192,14 @@ void D3DPipelineManager::NotifyAdapterEventListeners(UINT adapter,
     pMgr = D3DPipelineManager::GetInstance();
     RETURN_IF_NULL(pMgr);
     hMon = pMgr->pd3d9->GetAdapterMonitor(adapter);
+
+    /*
+     * If we don't have devices initialized yet, no sense to clear them.
+     */
+    if (!Devices::GetInstance()){
+         return;
+    }
+
     gdiScreen = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(hMon);
 
     JNU_CallStaticMethodByName(env, NULL,

@@ -50,7 +50,7 @@ public interface WatchEvent<T> {
      * An event kind, for the purposes of identification.
      *
      * @since 1.7
-     * @see StandardWatchEventKind
+     * @see StandardWatchEventKinds
      */
     public static interface Kind<T> {
         /**
@@ -98,9 +98,9 @@ public interface WatchEvent<T> {
     /**
      * Returns the context for the event.
      *
-     * <p> In the case of {@link StandardWatchEventKind#ENTRY_CREATE ENTRY_CREATE},
-     * {@link StandardWatchEventKind#ENTRY_DELETE ENTRY_DELETE}, and {@link
-     * StandardWatchEventKind#ENTRY_MODIFY ENTRY_MODIFY} events the context is
+     * <p> In the case of {@link StandardWatchEventKinds#ENTRY_CREATE ENTRY_CREATE},
+     * {@link StandardWatchEventKinds#ENTRY_DELETE ENTRY_DELETE}, and {@link
+     * StandardWatchEventKinds#ENTRY_MODIFY ENTRY_MODIFY} events the context is
      * a {@code Path} that is the {@link Path#relativize relative} path between
      * the directory registered with the watch service, and the entry that is
      * created, deleted, or modified.

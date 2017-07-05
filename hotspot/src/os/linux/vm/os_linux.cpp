@@ -2850,7 +2850,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
         char chars[257];
         long x = 0;
         if (fgets(chars, sizeof(chars), fp)) {
-          if (sscanf(chars, "%lx-%*lx", &x) == 1
+          if (sscanf(chars, "%lx-%*x", &x) == 1
               && x == (long)p) {
             if (strstr (chars, "hugepage")) {
               result = true;

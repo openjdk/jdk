@@ -2339,14 +2339,15 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState to_fill,
 }
 
 int AbstractInterpreter::layout_activation(methodOop method,
-                                                int tempcount,  //
-                                                int popframe_extra_args,
-                                                int moncount,
-                                                int callee_param_count,
-                                                int callee_locals,
-                                                frame* caller,
-                                                frame* interpreter_frame,
-                                                bool is_top_frame) {
+                                           int tempcount,  //
+                                           int popframe_extra_args,
+                                           int moncount,
+                                           int caller_actual_parameters,
+                                           int callee_param_count,
+                                           int callee_locals,
+                                           frame* caller,
+                                           frame* interpreter_frame,
+                                           bool is_top_frame) {
 
   assert(popframe_extra_args == 0, "FIX ME");
   // NOTE this code must exactly mimic what InterpreterGenerator::generate_compute_interpreter_state()

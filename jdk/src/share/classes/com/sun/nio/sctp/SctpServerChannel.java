@@ -53,7 +53,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
  *     <th>Description</th>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOption#SCTP_INIT_MAXSTREAMS
+ *     <td> {@link SctpStandardSocketOptions#SCTP_INIT_MAXSTREAMS
  *                                          SCTP_INIT_MAXSTREAMS} </td>
  *     <td> The maximum number of streams requested by the local endpoint during
  *          association initialization </td>
@@ -360,7 +360,7 @@ public abstract class SctpServerChannel
      * @throws  IOException
      *          If an I/O error occurs
      *
-     * @see SctpStandardSocketOption
+     * @see SctpStandardSocketOptions
      */
     public abstract <T> T getOption(SctpSocketOption<T> name) throws IOException;
 
@@ -388,7 +388,7 @@ public abstract class SctpServerChannel
      * @throws  IOException
      *          If an I/O error occurs
      *
-     * @see SctpStandardSocketOption
+     * @see SctpStandardSocketOptions
      */
     public abstract <T> SctpServerChannel setOption(SctpSocketOption<T> name,
                                                     T value)

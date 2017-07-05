@@ -96,11 +96,16 @@ class NativeThreadSet {
                     break;
             }
             waitingToEmpty = true;
+            boolean interrupted = false;
             while (used > 0) {
                 try {
                     wait();
-                } catch (InterruptedException ignore) { }
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
             }
+            if (interrupted)
+                Thread.currentThread().interrupt();
         }
     }
 }

@@ -49,6 +49,7 @@ SUNWprivate_1.1 {
 	    Java_sun_management_Flag_setStringValue;
 	    Java_sun_management_GarbageCollectorImpl_getCollectionCount;
 	    Java_sun_management_GarbageCollectorImpl_getCollectionTime;
+	    Java_sun_management_GarbageCollectorImpl_setNotificationEnabled;
 	    Java_sun_management_GcInfoBuilder_fillGcAttributeInfo;
 	    Java_sun_management_GcInfoBuilder_getLastGcInfo0;
 	    Java_sun_management_GcInfoBuilder_getNumGcExtAttributes;

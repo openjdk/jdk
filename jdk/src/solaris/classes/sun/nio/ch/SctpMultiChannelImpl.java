@@ -53,7 +53,7 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpMultiChannel;
 import com.sun.nio.sctp.SctpSocketOption;
-import static com.sun.nio.sctp.SctpStandardSocketOption.*;
+import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 import static sun.nio.ch.SctpResultContainer.*;
 
 /**

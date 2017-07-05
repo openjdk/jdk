@@ -31,7 +31,7 @@ import java.nio.channels.*;
 import java.net.*;
 import java.io.IOException;
 import java.util.*;
-import static java.net.StandardSocketOption.*;
+import static java.net.StandardSocketOptions.*;
 
 public class SocketOptionTests {
 

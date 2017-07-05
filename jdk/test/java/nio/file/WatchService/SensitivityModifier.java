@@ -29,7 +29,7 @@
  */
 
 import java.nio.file.*;
-import static java.nio.file.StandardWatchEventKind.*;
+import static java.nio.file.StandardWatchEventKinds.*;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.Random;

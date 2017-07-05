@@ -179,7 +179,7 @@ public abstract class MessageInfo {
      * completely received. For messages being sent {@code true} indicates that
      * the message is complete, {@code false} indicates that the message is not
      * complete. How the send channel interprets this value depends on the value
-     * of its {@link SctpStandardSocketOption#SCTP_EXPLICIT_COMPLETE
+     * of its {@link SctpStandardSocketOptions#SCTP_EXPLICIT_COMPLETE
      * SCTP_EXPLICIT_COMPLETE} socket option.
      *
      * @return  {@code true} if, and only if, the message is complete
@@ -192,7 +192,7 @@ public abstract class MessageInfo {
      * <P> For messages being sent {@code true} indicates that
      * the message is complete, {@code false} indicates that the message is not
      * complete. How the send channel interprets this value depends on the value
-     * of its {@link SctpStandardSocketOption#SCTP_EXPLICIT_COMPLETE
+     * of its {@link SctpStandardSocketOptions#SCTP_EXPLICIT_COMPLETE
      * SCTP_EXPLICIT_COMPLETE} socket option.
      *
      * @param  complete

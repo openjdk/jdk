@@ -72,7 +72,7 @@ import java.util.Iterator;
  * directory and is UTF-8 encoded.
  * <pre>
  *     Path path = FileSystems.getDefault().getPath("logs", "access.log");
- *     BufferReader reader = Files.newBufferedReader(path, StandardCharset.UTF_8);
+ *     BufferReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
  * </pre>
  *
  * <a name="interop"><h4>Interoperability</h4></a>
@@ -609,11 +609,11 @@ public interface Path
      * directory can be watched. The {@code events} parameter is the events to
      * register and may contain the following events:
      * <ul>
-     *   <li>{@link StandardWatchEventKind#ENTRY_CREATE ENTRY_CREATE} -
+     *   <li>{@link StandardWatchEventKinds#ENTRY_CREATE ENTRY_CREATE} -
      *       entry created or moved into the directory</li>
-     *   <li>{@link StandardWatchEventKind#ENTRY_DELETE ENTRY_DELETE} -
+     *   <li>{@link StandardWatchEventKinds#ENTRY_DELETE ENTRY_DELETE} -
      *        entry deleted or moved out of the directory</li>
-     *   <li>{@link StandardWatchEventKind#ENTRY_MODIFY ENTRY_MODIFY} -
+     *   <li>{@link StandardWatchEventKinds#ENTRY_MODIFY ENTRY_MODIFY} -
      *        entry in directory was modified</li>
      * </ul>
      *
@@ -622,7 +622,7 @@ public interface Path
      * that locates the directory entry that is created, deleted, or modified.
      *
      * <p> The set of events may include additional implementation specific
-     * event that are not defined by the enum {@link StandardWatchEventKind}
+     * event that are not defined by the enum {@link StandardWatchEventKinds}
      *
      * <p> The {@code modifiers} parameter specifies <em>modifiers</em> that
      * qualify how the directory is registered. This release does not define any

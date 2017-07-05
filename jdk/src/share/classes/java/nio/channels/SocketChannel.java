@@ -72,28 +72,28 @@ import java.nio.channels.spi.SelectorProvider;
  *     <th>Description</th>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_SNDBUF SO_SNDBUF} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </td>
  *     <td> The size of the socket send buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_RCVBUF SO_RCVBUF} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </td>
  *     <td> The size of the socket receive buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_KEEPALIVE SO_KEEPALIVE} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE} </td>
  *     <td> Keep connection alive </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_REUSEADDR SO_REUSEADDR} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </td>
  *     <td> Re-use address </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#SO_LINGER SO_LINGER} </td>
+ *     <td> {@link java.net.StandardSocketOptions#SO_LINGER SO_LINGER} </td>
  *     <td> Linger on close if data is present (when configured in blocking mode
  *          only) </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOption#TCP_NODELAY TCP_NODELAY} </td>
+ *     <td> {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY} </td>
  *     <td> Disable the Nagle algorithm </td>
  *   </tr>
  * </table>

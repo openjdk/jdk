@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,12 +342,35 @@ public class LogManager {
     // already been created with the given name it is returned.
     // Otherwise a new logger instance is created and registered
     // in the LogManager global namespace.
+
+    // This method will always return a non-null Logger object.
+    // Synchronization is not required here. All synchronization for
+    // adding a new Logger object is handled by addLogger().
     Logger demandLogger(String name) {
         Logger result = getLogger(name);
         if (result == null) {
-            result = new Logger(name, null);
-            addLogger(result);
-            result = getLogger(name);
+            // only allocate the new logger once
+            Logger newLogger = new Logger(name, null);
+            do {
+                if (addLogger(newLogger)) {
+                    // We successfully added the new Logger that we
+                    // created above so return it without refetching.
+                    return newLogger;
+                }
+
+                // We didn't add the new Logger that we created above
+                // because another thread added a Logger with the same
+                // name after our null check above and before our call
+                // to addLogger(). We have to refetch the Logger because
+                // addLogger() returns a boolean instead of the Logger
+                // reference itself. However, if the thread that created
+                // the other Logger is not holding a strong reference to
+                // the other Logger, then it is possible for the other
+                // Logger to be GC'ed after we saw it in addLogger() and
+                // before we can refetch it. If it has been GC'ed then
+                // we'll just loop around and try again.
+                result = getLogger(name);
+            } while (result == null);
         }
         return result;
     }

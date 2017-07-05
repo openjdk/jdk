@@ -67,6 +67,10 @@ class FilterOneArgument extends BoundMethodHandle {
         this.target = target;
     }
 
+    static {
+        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this class is deprecated
+    }
+
     public static MethodHandle make(MethodHandle filter, MethodHandle target) {
         if (filter == null)  return target;
         if (target == null)  return filter;
