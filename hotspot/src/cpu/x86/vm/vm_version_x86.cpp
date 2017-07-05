@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   address generate_getPsrInfo() {
     // Flags to test CPU type.
-    const uint32_t EFL_AC           = 0x40000;
-    const uint32_t EFL_ID           = 0x200000;
+    const uint32_t HS_EFL_AC           = 0x40000;
+    const uint32_t HS_EFL_ID           = 0x200000;
     // Values for when we don't have a CPUID instruction.
     const int      CPU_FAMILY_SHIFT = 8;
     const uint32_t CPU_FAMILY_386   = (3 << CPU_FAMILY_SHIFT);
@@ -100,7 +100,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     // if we are unable to change the AC flag, we have a 386
     //
-    __ xorl(rax, EFL_AC);
+    __ xorl(rax, HS_EFL_AC);
     __ push(rax);
     __ popf();
     __ pushf();
@@ -118,7 +118,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     __ bind(detect_486);
     __ mov(rax, rcx);
-    __ xorl(rax, EFL_ID);
+    __ xorl(rax, HS_EFL_ID);
     __ push(rax);
     __ popf();
     __ pushf();

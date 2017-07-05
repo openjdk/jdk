@@ -409,6 +409,10 @@ public class Resources extends java.util.ListResourceBundle {
         {"Please.provide.keysize.for.secret.key.generation",
                 "Please provide -keysize for secret key generation"},
 
+        {"verified.by.s.in.s", "Verified by %s in %s"},
+        {"warning.not.verified.make.sure.keystore.is.correct",
+            "WARNING: not verified. Make sure -keystore is correct."},
+
         {"Extensions.", "Extensions: "},
         {".Empty.value.", "(Empty value)"},
         {"Extension.Request.", "Extension Request:"},

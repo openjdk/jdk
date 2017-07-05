@@ -509,6 +509,7 @@ public:
   void do_ProfileCall    (ProfileCall*     x);
   void do_ProfileInvoke  (ProfileInvoke*   x);
   void do_RuntimeCall    (RuntimeCall*     x);
+  void do_MemBar         (MemBar*          x);
 };
 
 
@@ -678,6 +679,7 @@ void NullCheckVisitor::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check(); }
 void NullCheckVisitor::do_ProfileInvoke  (ProfileInvoke*   x) {}
 void NullCheckVisitor::do_RuntimeCall    (RuntimeCall*     x) {}
+void NullCheckVisitor::do_MemBar         (MemBar*          x) {}
 
 
 void NullCheckEliminator::visit(Value* p) {

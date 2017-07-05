@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,10 +314,12 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
                               pkixParam.isAnyPolicyInhibited(),
                               pkixParam.getPolicyQualifiersRejected(),
                               rootNode);
+        UntrustedChecker untrustedChecker = new UntrustedChecker();
 
         ArrayList<PKIXCertPathChecker> certPathCheckers =
             new ArrayList<PKIXCertPathChecker>();
         // add standard checkers that we will be using
+        certPathCheckers.add(untrustedChecker);
         certPathCheckers.add(algorithmChecker);
         certPathCheckers.add(keyChecker);
         certPathCheckers.add(constraintsChecker);
