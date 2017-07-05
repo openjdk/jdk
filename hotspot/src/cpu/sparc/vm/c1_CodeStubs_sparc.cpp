@@ -302,7 +302,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     assert(_obj != noreg, "must be a valid register");
     assert(_oop_index >= 0, "must have oop index");
     __ load_heap_oop(_obj, java_lang_Class::klass_offset_in_bytes(), G3);
-    __ ld_ptr(G3, instanceKlass::init_thread_offset_in_bytes() + sizeof(klassOopDesc), G3);
+    __ ld_ptr(G3, in_bytes(instanceKlass::init_thread_offset()), G3);
     __ cmp_and_brx_short(G2_thread, G3, Assembler::notEqual, Assembler::pn, call_patch);
 
     // load_klass patches may execute the patched code before it's
@@ -471,7 +471,7 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
 
   __ load_klass(src_reg, tmp_reg);
 
-  Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset_in_bytes() + sizeof(oopDesc));
+  Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset());
   __ ld(ref_type_adr, tmp_reg);
 
   // _reference_type field is of type ReferenceType (enum)

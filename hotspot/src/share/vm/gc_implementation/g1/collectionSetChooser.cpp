@@ -264,7 +264,7 @@ prepareForAddMarkedHeapRegionsPar(size_t n_regions, size_t chunkSize) {
     // or some improperly initialized variable with leads to no
     // active threads, protect against that in a product build.
     n_threads = MAX2(G1CollectedHeap::heap()->workers()->active_workers(),
-                     1);
+                     1U);
   }
   size_t max_waste = n_threads * chunkSize;
   // it should be aligned with respect to chunkSize

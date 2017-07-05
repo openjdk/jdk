@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,10 +166,10 @@ class CMBitMap : public CMBitMapRO {
 // Ideally this should be GrowableArray<> just like MSC's marking stack(s).
 class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   ConcurrentMark* _cm;
-  oop*   _base;      // bottom of stack
-  jint   _index;     // one more than last occupied index
-  jint   _capacity;  // max #elements
-  jint   _oops_do_bound;  // Number of elements to include in next iteration.
+  oop*   _base;        // bottom of stack
+  jint   _index;       // one more than last occupied index
+  jint   _capacity;    // max #elements
+  jint   _saved_index; // value of _index saved at start of GC
   NOT_PRODUCT(jint _max_depth;)  // max depth plumbed during run
 
   bool   _overflow;
@@ -247,16 +247,12 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
 
   void setEmpty()   { _index = 0; clear_overflow(); }
 
-  // Record the current size; a subsequent "oops_do" will iterate only over
-  // indices valid at the time of this call.
-  void set_oops_do_bound(jint bound = -1) {
-    if (bound == -1) {
-      _oops_do_bound = _index;
-    } else {
-      _oops_do_bound = bound;
-    }
-  }
-  jint oops_do_bound() { return _oops_do_bound; }
+  // Record the current index.
+  void note_start_of_gc();
+
+  // Make sure that we have not added any entries to the stack during GC.
+  void note_end_of_gc();
+
   // iterate over the oops in the mark stack, up to the bound recorded via
   // the call above.
   void oops_do(OopClosure* f);
@@ -374,9 +370,9 @@ class ConcurrentMark: public CHeapObj {
 protected:
   ConcurrentMarkThread* _cmThread;   // the thread doing the work
   G1CollectedHeap*      _g1h;        // the heap.
-  size_t                _parallel_marking_threads; // the number of marking
+  uint                  _parallel_marking_threads; // the number of marking
                                                    // threads we're use
-  size_t                _max_parallel_marking_threads; // max number of marking
+  uint                  _max_parallel_marking_threads; // max number of marking
                                                    // threads we'll ever use
   double                _sleep_factor; // how much we have to sleep, with
                                        // respect to the work we just did, to
@@ -412,8 +408,8 @@ protected:
                                     // last claimed region
 
   // marking tasks
-  size_t                  _max_task_num; // maximum task number
-  size_t                  _active_tasks; // task num currently active
+  uint                    _max_task_num; // maximum task number
+  uint                    _active_tasks; // task num currently active
   CMTask**                _tasks;        // task queue array (max_task_num len)
   CMTaskQueueSet*         _task_queues;  // task queue set
   ParallelTaskTerminator  _terminator;   // for termination
@@ -492,7 +488,7 @@ protected:
 
   // It should be called to indicate which phase we're in (concurrent
   // mark or remark) and how many threads are currently active.
-  void set_phase(size_t active_tasks, bool concurrent);
+  void set_phase(uint active_tasks, bool concurrent);
   // We do this after we're done with marking so that the marking data
   // structures are initialised to a sensible and predictable state.
   void set_non_marking_state();
@@ -505,8 +501,8 @@ protected:
   }
 
   // accessor methods
-  size_t parallel_marking_threads() { return _parallel_marking_threads; }
-  size_t max_parallel_marking_threads() { return _max_parallel_marking_threads;}
+  uint parallel_marking_threads() { return _parallel_marking_threads; }
+  uint max_parallel_marking_threads() { return _max_parallel_marking_threads;}
   double sleep_factor()             { return _sleep_factor; }
   double marking_task_overhead()    { return _marking_task_overhead;}
   double cleanup_sleep_factor()     { return _cleanup_sleep_factor; }
@@ -514,7 +510,7 @@ protected:
 
   HeapWord*               finger()        { return _finger;   }
   bool                    concurrent()    { return _concurrent; }
-  size_t                  active_tasks()  { return _active_tasks; }
+  uint                    active_tasks()  { return _active_tasks; }
   ParallelTaskTerminator* terminator()    { return &_terminator; }
 
   // It claims the next available region to be scanned by a marking
@@ -715,19 +711,18 @@ public:
   // Returns the number of GC threads to be used in a concurrent
   // phase based on the number of GC threads being used in a STW
   // phase.
-  size_t scale_parallel_threads(size_t n_par_threads);
+  uint scale_parallel_threads(uint n_par_threads);
 
   // Calculates the number of GC threads to be used in a concurrent phase.
-  size_t calc_parallel_marking_threads();
+  uint calc_parallel_marking_threads();
 
   // The following three are interaction between CM and
   // G1CollectedHeap
 
   // This notifies CM that a root during initial-mark needs to be
-  // grayed and it's MT-safe. Currently, we just mark it. But, in the
-  // future, we can experiment with pushing it on the stack and we can
-  // do this without changing G1CollectedHeap.
-  void grayRoot(oop p);
+  // grayed. It is MT-safe.
+  inline void grayRoot(oop obj, size_t word_size);
+
   // It's used during evacuation pauses to gray a region, if
   // necessary, and it's MT-safe. It assumes that the caller has
   // marked any objects on that region. If _should_gray_objects is
@@ -735,6 +730,7 @@ public:
   // pushed on the region stack, if it is located below the global
   // finger, otherwise we do nothing.
   void grayRegionIfNecessary(MemRegion mr);
+
   // It's used during evacuation pauses to mark and, if necessary,
   // gray a single object and it's MT-safe. It assumes the caller did
   // not mark the object. If _should_gray_objects is true and we're
@@ -791,24 +787,40 @@ public:
 
   // Mark in the previous bitmap.  NB: this is usually read-only, so use
   // this carefully!
-  void markPrev(oop p);
+  inline void markPrev(oop p);
+  inline void markNext(oop p);
   void clear(oop p);
-  // Clears marks for all objects in the given range, for both prev and
-  // next bitmaps.  NB: the previous bitmap is usually read-only, so use
-  // this carefully!
-  void clearRangeBothMaps(MemRegion mr);
+  // Clears marks for all objects in the given range, for the prev,
+  // next, or both bitmaps.  NB: the previous bitmap is usually
+  // read-only, so use this carefully!
+  void clearRangePrevBitmap(MemRegion mr);
+  void clearRangeNextBitmap(MemRegion mr);
+  void clearRangeBothBitmaps(MemRegion mr);
 
-  // Record the current top of the mark and region stacks; a
-  // subsequent oops_do() on the mark stack and
-  // invalidate_entries_into_cset() on the region stack will iterate
-  // only over indices valid at the time of this call.
-  void set_oops_do_bound() {
-    _markStack.set_oops_do_bound();
-    _regionStack.set_oops_do_bound();
+  // Notify data structures that a GC has started.
+  void note_start_of_gc() {
+    _markStack.note_start_of_gc();
   }
+
+  // Notify data structures that a GC is finished.
+  void note_end_of_gc() {
+    _markStack.note_end_of_gc();
+  }
+
   // Iterate over the oops in the mark stack and all local queues. It
   // also calls invalidate_entries_into_cset() on the region stack.
   void oops_do(OopClosure* f);
+
+  // Verify that there are no CSet oops on the stacks (taskqueues /
+  // global mark stack), enqueued SATB buffers, per-thread SATB
+  // buffers, and fingers (global / per-task). The boolean parameters
+  // decide which of the above data structures to verify. If marking
+  // is not in progress, it's a no-op.
+  void verify_no_cset_oops(bool verify_stacks,
+                           bool verify_enqueued_buffers,
+                           bool verify_thread_buffers,
+                           bool verify_fingers) PRODUCT_RETURN;
+
   // It is called at the end of an evacuation pause during marking so
   // that CM is notified of where the new end of the heap is. It
   // doesn't do anything if concurrent_marking_in_progress() is false,
@@ -873,7 +885,7 @@ public:
     return _prevMarkBitMap->isMarked(addr);
   }
 
-  inline bool do_yield_check(int worker_i = 0);
+  inline bool do_yield_check(uint worker_i = 0);
   inline bool should_yield();
 
   // Called to abort the marking cycle after a Full GC takes palce.
@@ -1166,6 +1178,7 @@ public:
   // It keeps picking SATB buffers and processing them until no SATB
   // buffers are available.
   void drain_satb_buffers();
+
   // It keeps popping regions from the region stack and processing
   // them until the region stack is empty.
   void drain_region_stack(BitMapClosure* closure);

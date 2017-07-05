@@ -1256,8 +1256,7 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
     info = state_for(x);
   }
   __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_OBJECT), result, info);
-  __ move_wide(new LIR_Address(result, Klass::java_mirror_offset_in_bytes() +
-                               klassOopDesc::klass_part_offset_in_bytes(), T_OBJECT), result);
+  __ move_wide(new LIR_Address(result, in_bytes(Klass::java_mirror_offset()), T_OBJECT), result);
 }
 
 

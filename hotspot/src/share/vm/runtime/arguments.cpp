@@ -1000,6 +1000,13 @@ void Arguments::set_mode_flags(Mode mode) {
     UseInterpreter           = false;
     BackgroundCompilation    = false;
     ClipInlining             = false;
+    // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
+    // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
+    // compile a level 4 (C2) and then continue executing it.
+    if (TieredCompilation) {
+      Tier3InvokeNotifyFreqLog = 0;
+      Tier4InvocationThreshold = 0;
+    }
     break;
   }
 }
@@ -2323,7 +2330,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #ifndef PRODUCT
     // -Xprintflags
     } else if (match_option(option, "-Xprintflags", &tail)) {
-      CommandLineFlags::printFlags();
+      CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
 #endif
     // -D
@@ -2971,13 +2978,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       IgnoreUnrecognizedVMOptions = false;
     }
     if (match_option(option, "-XX:+PrintFlagsInitial", &tail)) {
-      CommandLineFlags::printFlags();
+      CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments", &tail)) {
-      CommandLineFlags::printFlags(true);
+      CommandLineFlags::printFlags(tty, true);
       vm_exit(0);
     }
 #endif
@@ -3153,6 +3160,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (!UseBiasedLocking || EmitSync != 0) {
     UseOptoBiasInlining = false;
   }
+  if (!EliminateLocks) {
+    EliminateNestedLocks = false;
+  }
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
@@ -3170,7 +3180,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 #endif
 
   if (PrintCommandLineFlags) {
-    CommandLineFlags::printSetFlags();
+    CommandLineFlags::printSetFlags(tty);
   }
 
   // Apply CPU specific policy for the BiasedLocking

@@ -181,7 +181,7 @@ void C1_MacroAssembler::try_allocate(
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len, t1, t2);
   if (UseBiasedLocking && !len->is_valid()) {
-    ld_ptr(klass, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes(), t1);
+    ld_ptr(klass, in_bytes(Klass::prototype_header_offset()), t1);
   } else {
     set((intx)markOopDesc::prototype(), t1);
   }
@@ -252,7 +252,7 @@ void C1_MacroAssembler::initialize_object(
 #ifdef ASSERT
   {
     Label ok;
-    ld(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes(), t1);
+    ld(klass, in_bytes(Klass::layout_helper_offset()), t1);
     if (var_size_in_bytes != noreg) {
       cmp_and_brx_short(t1, var_size_in_bytes, Assembler::equal, Assembler::pt, ok);
     } else {

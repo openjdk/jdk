@@ -43,6 +43,11 @@
       movl     %ebp, %eax 
       .end
 
+  // Support for os::rdtsc()
+      .inline _raw_rdtsc,0
+      rdtsc
+      .end
+
   // Support for jint Atomic::add(jint inc, volatile jint* dest)
   // An additional bool (os::is_MP()) is passed as the last argument.
       .inline _Atomic_add,3
@@ -112,7 +117,6 @@
       movl     4(%esp), %eax   // dest
       fistpll   (%eax)
       .end
-
 
   // Support for OrderAccess::acquire()
       .inline _OrderAccess_acquire,0
