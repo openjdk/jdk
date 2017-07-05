@@ -234,14 +234,14 @@ class G1UpdateRSOrPushRefOopClosure: public ExtendedOopClosure {
   HeapRegion* _from;
   OopsInHeapRegionClosure* _push_ref_cl;
   bool _record_refs_into_cset;
-  int _worker_i;
+  uint _worker_i;
 
 public:
   G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
                                 G1RemSet* rs,
                                 OopsInHeapRegionClosure* push_ref_cl,
                                 bool record_refs_into_cset,
-                                int worker_i = 0);
+                                uint worker_i = 0);
 
   void set_from(HeapRegion* from) {
     assert(from != NULL, "from region must be non-NULL");
