@@ -28,19 +28,15 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/heapRegionSeq.hpp"
 
-inline HeapRegion* HeapRegionSeq::addr_to_region_unsafe(HeapWord* addr) const {
+inline HeapRegion* HeapRegionSeq::addr_to_region(HeapWord* addr) const {
+  assert(addr < heap_end(),
+        err_msg("addr: "PTR_FORMAT" end: "PTR_FORMAT, addr, heap_end()));
+  assert(addr >= heap_bottom(),
+        err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT, addr, heap_bottom()));
+
   HeapRegion* hr = _regions.get_by_address(addr);
   assert(hr != NULL, "invariant");
   return hr;
-}
-
-inline HeapRegion* HeapRegionSeq::addr_to_region(HeapWord* addr) const {
-  if (addr != NULL && addr < heap_end()) {
-    assert(addr >= heap_bottom(),
-          err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT, addr, heap_bottom()));
-    return addr_to_region_unsafe(addr);
-  }
-  return NULL;
 }
 
 inline HeapRegion* HeapRegionSeq::at(uint index) const {

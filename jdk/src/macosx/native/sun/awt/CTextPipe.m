@@ -147,7 +147,7 @@ void JavaCT_DrawGlyphVector
 
     CGAffineTransform invTx = CGAffineTransformInvert(strike->fTx);
 
-    NSUInteger i;
+    NSInteger i;
     for (i = 0; i < length; i++)
     {
         CGGlyph glyph = glyphs[i];
@@ -355,19 +355,31 @@ static inline void doDrawGlyphsPipe_checkForPerGlyphTransforms
     static JNF_CLASS_CACHE(jc_StandardGlyphVector_GlyphTransformInfo, "sun/font/StandardGlyphVector$GlyphTransformInfo");
     static JNF_MEMBER_CACHE(jm_StandardGlyphVector_GlyphTransformInfo_transforms, jc_StandardGlyphVector_GlyphTransformInfo, "transforms", "[D");
     jdoubleArray g_gtiTransformsArray = JNFGetObjectField(env, gti, jm_StandardGlyphVector_GlyphTransformInfo_transforms); //(*env)->GetObjectField(env, gti, g_gtiTransforms);
+    if (g_gtiTransformsArray == NULL) {
+        return;
+    } 
     jdouble *g_gvTransformsAsDoubles = (*env)->GetPrimitiveArrayCritical(env, g_gtiTransformsArray, NULL);
+    if (g_gvTransformsAsDoubles == NULL) {
+        (*env)->DeleteLocalRef(env, g_gtiTransformsArray);
+        return;
+    } 
 
     static JNF_MEMBER_CACHE(jm_StandardGlyphVector_GlyphTransformInfo_indices, jc_StandardGlyphVector_GlyphTransformInfo, "indices", "[I");
     jintArray g_gtiTXIndicesArray = JNFGetObjectField(env, gti, jm_StandardGlyphVector_GlyphTransformInfo_indices);
     jint *g_gvTXIndicesAsInts = (*env)->GetPrimitiveArrayCritical(env, g_gtiTXIndicesArray, NULL);
-
+    if (g_gvTXIndicesAsInts == NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, g_gtiTransformsArray, g_gvTransformsAsDoubles, JNI_ABORT);
+        (*env)->DeleteLocalRef(env, g_gtiTransformsArray);
+        (*env)->DeleteLocalRef(env, g_gtiTXIndicesArray);
+        return;
+    }
     // slowest case, we have per-glyph transforms, and possibly glyph substitution as well
     JavaCT_DrawGlyphVector(qsdo, strike, useSubstituion, uniChars, glyphs, advances, g_gvTXIndicesAsInts, g_gvTransformsAsDoubles, length);
 
     (*env)->ReleasePrimitiveArrayCritical(env, g_gtiTransformsArray, g_gvTransformsAsDoubles, JNI_ABORT);
-    (*env)->DeleteLocalRef(env, g_gtiTransformsArray);
-
     (*env)->ReleasePrimitiveArrayCritical(env, g_gtiTXIndicesArray, g_gvTXIndicesAsInts, JNI_ABORT);
+
+    (*env)->DeleteLocalRef(env, g_gtiTransformsArray);
     (*env)->DeleteLocalRef(env, g_gtiTXIndicesArray);
 }
 
@@ -403,6 +415,9 @@ static inline void doDrawGlyphsPipe_fillGlyphAndAdvanceBuffers
 {
     // fill the glyph buffer
     jint *glyphsAsInts = (*env)->GetPrimitiveArrayCritical(env, glyphsArray, NULL);
+    if (glyphsAsInts == NULL) {
+        return;
+    }
 
     // if a glyph code from Java is negative, that means it is really a unicode value
     // which we can use in CoreText to strike the character in another font
@@ -429,11 +444,15 @@ static inline void doDrawGlyphsPipe_fillGlyphAndAdvanceBuffers
     // fill the advance buffer
     static JNF_MEMBER_CACHE(jm_StandardGlyphVector_positions, jc_StandardGlyphVector, "positions", "[F");
     jfloatArray posArray = JNFGetObjectField(env, gVector, jm_StandardGlyphVector_positions);
-    if (posArray != NULL)
-    {
+    jfloat *positions = NULL;
+    if (posArray != NULL) {
         // in this case, the positions have already been pre-calculated for us on the Java side
-
-        jfloat *positions = (*env)->GetPrimitiveArrayCritical(env, posArray, NULL);
+        positions = (*env)->GetPrimitiveArrayCritical(env, posArray, NULL);
+        if (positions == NULL) {
+            (*env)->DeleteLocalRef(env, posArray);
+        }
+    }
+    if (positions != NULL) {
         CGPoint prev;
         prev.x = positions[0];
         prev.y = positions[1];

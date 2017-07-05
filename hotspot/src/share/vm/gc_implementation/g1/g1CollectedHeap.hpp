@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/evacuationInfo.hpp"
 #include "gc_implementation/g1/g1AllocRegion.hpp"
+#include "gc_implementation/g1/g1BiasedArray.hpp"
 #include "gc_implementation/g1/g1HRPrinter.hpp"
 #include "gc_implementation/g1/g1MonitoringSupport.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
@@ -197,6 +198,16 @@ public:
   bool do_object_b(oop p);
 };
 
+// Instances of this class are used for quick tests on whether a reference points
+// into the collection set. Each of the array's elements denotes whether the
+// corresponding region is in the collection set.
+class G1FastCSetBiasedMappedArray : public G1BiasedMappedArray<bool> {
+ protected:
+  bool default_value() const { return false; }
+ public:
+  void clear() { G1BiasedMappedArray<bool>::clear(); }
+};
+
 class RefineCardTableEntryClosure;
 
 class G1CollectedHeap : public SharedHeap {
@@ -353,26 +364,10 @@ private:
   // than the current allocation region.
   size_t _summary_bytes_used;
 
-  // This is used for a quick test on whether a reference points into
-  // the collection set or not. Basically, we have an array, with one
-  // byte per region, and that byte denotes whether the corresponding
-  // region is in the collection set or not. The entry corresponding
-  // the bottom of the heap, i.e., region 0, is pointed to by
-  // _in_cset_fast_test_base.  The _in_cset_fast_test field has been
-  // biased so that it actually points to address 0 of the address
-  // space, to make the test as fast as possible (we can simply shift
-  // the address to address into it, instead of having to subtract the
-  // bottom of the heap from the address before shifting it; basically
-  // it works in the same way the card table works).
-  bool* _in_cset_fast_test;
-
-  // The allocated array used for the fast test on whether a reference
-  // points into the collection set or not. This field is also used to
-  // free the array.
-  bool* _in_cset_fast_test_base;
-
-  // The length of the _in_cset_fast_test_base array.
-  uint _in_cset_fast_test_length;
+  // This array is used for a quick test on whether a reference points into
+  // the collection set or not. Each of the array's elements denotes whether the
+  // corresponding region is in the collection set or not.
+  G1FastCSetBiasedMappedArray _in_cset_fast_test;
 
   volatile unsigned _gc_time_stamp;
 
@@ -695,12 +690,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
-    assert(_in_cset_fast_test_base != NULL, "sanity");
-    assert(r->in_collection_set(), "invariant");
-    uint index = r->hrs_index();
-    assert(index < _in_cset_fast_test_length, "invariant");
-    assert(!_in_cset_fast_test_base[index], "invariant");
-    _in_cset_fast_test_base[index] = true;
+    _in_cset_fast_test.set_by_index(r->hrs_index(), true);
   }
 
   // This is a fast test on whether a reference points into the
@@ -709,9 +699,7 @@ public:
   inline bool in_cset_fast_test(oop obj);
 
   void clear_cset_fast_test() {
-    assert(_in_cset_fast_test_base != NULL, "sanity");
-    memset(_in_cset_fast_test_base, false,
-           (size_t) _in_cset_fast_test_length * sizeof(bool));
+    _in_cset_fast_test.clear();
   }
 
   // This is called at the start of either a concurrent cycle or a Full
@@ -1077,6 +1065,8 @@ public:
   // specified by the policy object.
   jint initialize();
 
+  virtual void stop();
+
   // Return the (conservative) maximum heap alignment for any G1 heap
   static size_t conservative_max_heap_alignment();
 
@@ -1390,16 +1380,14 @@ public:
   // space containing a given address, or else returns NULL.
   virtual Space* space_containing(const void* addr) const;
 
-  // A G1CollectedHeap will contain some number of heap regions.  This
-  // finds the region containing a given address, or else returns NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing(const T addr) const;
-
-  // Like the above, but requires "addr" to be in the heap (to avoid a
-  // null-check), and unlike the above, may return an continuing humongous
-  // region.
+  // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
   inline HeapRegion* heap_region_containing_raw(const T addr) const;
+
+  // Returns the HeapRegion that contains addr. addr must not be NULL.
+  // If addr is within a humongous continues region, it returns its humongous start region.
+  template <class T>
+  inline HeapRegion* heap_region_containing(const T addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly
@@ -1542,7 +1530,6 @@ public:
   // the region to which the object belongs. An object is dead
   // iff a) it was not allocated since the last mark and b) it
   // is not marked.
-
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_prev_marking(obj) &&
@@ -1552,7 +1539,6 @@ public:
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
   // been marked during this marking.
-
   bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_next_marking(obj) &&
@@ -1698,15 +1684,19 @@ private:
 
 public:
   G1ParGCAllocBuffer(size_t gclab_word_size);
+  virtual ~G1ParGCAllocBuffer() {
+    guarantee(_retired, "Allocation buffer has not been retired");
+  }
 
-  void set_buf(HeapWord* buf) {
+  virtual void set_buf(HeapWord* buf) {
     ParGCAllocBuffer::set_buf(buf);
     _retired = false;
   }
 
-  void retire(bool end_of_gc, bool retain) {
-    if (_retired)
+  virtual void retire(bool end_of_gc, bool retain) {
+    if (_retired) {
       return;
+    }
     ParGCAllocBuffer::retire(end_of_gc, retain);
     _retired = true;
   }
@@ -1776,6 +1766,7 @@ public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp);
 
   ~G1ParScanThreadState() {
+    retire_alloc_buffers();
     FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base, mtGC);
   }
 
@@ -1886,6 +1877,7 @@ public:
     return _surviving_young_words;
   }
 
+private:
   void retire_alloc_buffers() {
     for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
       size_t waste = _alloc_buffers[ap]->words_remaining();
@@ -1895,8 +1887,8 @@ public:
                                                  false /* retain */);
     }
   }
-private:
-  #define G1_PARTIAL_ARRAY_MASK 0x2
+
+#define G1_PARTIAL_ARRAY_MASK 0x2
 
   inline bool has_partial_array_mask(oop* ref) const {
     return ((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) == G1_PARTIAL_ARRAY_MASK;

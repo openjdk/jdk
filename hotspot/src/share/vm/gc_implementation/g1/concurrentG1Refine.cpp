@@ -29,7 +29,7 @@
 #include "gc_implementation/g1/g1HotCardCache.hpp"
 #include "runtime/java.hpp"
 
-ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
+ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h, CardTableEntryClosure* refine_closure) :
   _threads(NULL), _n_threads(0),
   _hot_card_cache(g1h)
 {
@@ -61,7 +61,7 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
 
   ConcurrentG1RefineThread *next = NULL;
   for (uint i = _n_threads - 1; i != UINT_MAX; i--) {
-    ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, worker_id_offset, i);
+    ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, refine_closure, worker_id_offset, i);
     assert(t != NULL, "Conc refine should have been created");
     if (t->osthread() == NULL) {
         vm_shutdown_during_initialization("Could not create ConcurrentG1RefineThread");

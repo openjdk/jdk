@@ -36,7 +36,6 @@ import javax.xml.soap.SOAPMessage;
 import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.SAXException;
-import com.sun.xml.internal.org.jvnet.staxex.util.SaajStaxWriter;
 
 import com.sun.xml.internal.bind.marshaller.SAX2DOMEx;
 import com.sun.xml.internal.ws.api.SOAPVersion;

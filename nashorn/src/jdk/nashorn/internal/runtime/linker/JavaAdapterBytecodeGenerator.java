@@ -64,7 +64,6 @@ import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -132,23 +131,18 @@ import sun.reflect.CallerSensitive;
  * implemented securely.
  */
 final class JavaAdapterBytecodeGenerator {
-    static final Type CONTEXT_TYPE       = Type.getType(Context.class);
-    static final Type OBJECT_TYPE        = Type.getType(Object.class);
-    static final Type SCRIPT_OBJECT_TYPE = Type.getType(ScriptObject.class);
-    static final Type GLOBAL_TYPE        = Type.getType(Global.class);
+    static final Type OBJECT_TYPE = Type.getType(Object.class);
 
-    static final String CONTEXT_TYPE_NAME = CONTEXT_TYPE.getInternalName();
     static final String OBJECT_TYPE_NAME  = OBJECT_TYPE.getInternalName();
 
     static final String INIT = "<init>";
 
     static final String GLOBAL_FIELD_NAME = "global";
 
-    static final String SCRIPT_OBJECT_TYPE_DESCRIPTOR = SCRIPT_OBJECT_TYPE.getDescriptor();
-    static final String GLOBAL_TYPE_DESCRIPTOR = GLOBAL_TYPE.getDescriptor();
+    // "global" is declared as Object instead of Global - avoid static references to internal Nashorn classes when possible.
+    static final String GLOBAL_TYPE_DESCRIPTOR = OBJECT_TYPE.getDescriptor();
 
-
-    static final String SET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE, GLOBAL_TYPE);
+    static final String SET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE, OBJECT_TYPE);
     static final String VOID_NOARG_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE);
 
     private static final Type SCRIPT_FUNCTION_TYPE = Type.getType(ScriptFunction.class);
@@ -159,7 +153,7 @@ final class JavaAdapterBytecodeGenerator {
             OBJECT_TYPE, STRING_TYPE, METHOD_TYPE_TYPE);
     private static final String GET_HANDLE_FUNCTION_DESCRIPTOR = Type.getMethodDescriptor(METHOD_HANDLE_TYPE,
             SCRIPT_FUNCTION_TYPE, METHOD_TYPE_TYPE);
-    private static final String GET_CLASS_INITIALIZER_DESCRIPTOR = Type.getMethodDescriptor(SCRIPT_OBJECT_TYPE);
+    private static final String GET_CLASS_INITIALIZER_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE);
     private static final Type RUNTIME_EXCEPTION_TYPE = Type.getType(RuntimeException.class);
     private static final Type THROWABLE_TYPE = Type.getType(Throwable.class);
     private static final Type UNSUPPORTED_OPERATION_TYPE = Type.getType(UnsupportedOperationException.class);
@@ -171,7 +165,7 @@ final class JavaAdapterBytecodeGenerator {
     private static final String UNSUPPORTED_OPERATION_TYPE_NAME = UNSUPPORTED_OPERATION_TYPE.getInternalName();
 
     private static final String METHOD_HANDLE_TYPE_DESCRIPTOR = METHOD_HANDLE_TYPE.getDescriptor();
-    private static final String GET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(GLOBAL_TYPE);
+    private static final String GET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE);
     private static final String GET_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(Class.class));
 
     // Package used when the adapter can't be defined in the adaptee's package (either because it's sealed, or because
@@ -528,11 +522,11 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     private static void invokeGetGlobal(final InstructionAdapter mv) {
-        mv.invokestatic(CONTEXT_TYPE_NAME, "getGlobal", GET_GLOBAL_METHOD_DESCRIPTOR, false);
+        mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getGlobal", GET_GLOBAL_METHOD_DESCRIPTOR, false);
     }
 
     private static void invokeSetGlobal(final InstructionAdapter mv) {
-        mv.invokestatic(CONTEXT_TYPE_NAME, "setGlobal", SET_GLOBAL_METHOD_DESCRIPTOR, false);
+        mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "setGlobal", SET_GLOBAL_METHOD_DESCRIPTOR, false);
     }
 
     /**

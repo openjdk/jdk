@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,40 +141,71 @@ abstract class AquaPainter <T extends JRSUIState> {
             paintFromSingleCachedImage(g, control, stateToPaint, boundsRect);
         }
 
+        /**
+         * Paints a native control, which identified by its size and a set of
+         * additional arguments using a cached image.
+         *
+         * @param  g Graphics to draw the control
+         * @param  control the reference to the native control
+         * @param  controlState the state of the native control
+         * @param  bounds the rectangle where the native part should be drawn.
+         *         Note: the focus can/will be drawn outside of this bounds.
+         */
         static void paintFromSingleCachedImage(final Graphics2D g,
-                final JRSUIControl control, final JRSUIState controlState,
-                final Rectangle bounds) {
+                                               final JRSUIControl control,
+                                               final JRSUIState controlState,
+                                               final Rectangle bounds) {
             if (bounds.width <= 0 || bounds.height <= 0) {
                 return;
             }
 
-            int scale = 1;
-            if (g instanceof SunGraphics2D) {
-                scale = ((SunGraphics2D) g).surfaceData.getDefaultScale();
+            int focus = 0;
+            if (controlState.is(JRSUIConstants.Focused.YES)) {
+                focus = JRSUIConstants.FOCUS_SIZE;
             }
+
+            final int imgX = bounds.x - focus;
+            final int imgY = bounds.y - focus;
+            final int imgW = bounds.width + (focus << 1);
+            final int imgH = bounds.height + (focus << 1);
             final GraphicsConfiguration config = g.getDeviceConfiguration();
             final ImageCache cache = ImageCache.getInstance();
-            final int imgW = bounds.width * scale;
-            final int imgH = bounds.height * scale;
-            AquaPixelsKey key = new AquaPixelsKey(config,
-                    imgW, imgH, scale, controlState);
-            BufferedImage img = (BufferedImage) cache.getImage(key);
+            final AquaPixelsKey key = new AquaPixelsKey(config, imgW, imgH,
+                                                        bounds, controlState);
+            Image img = cache.getImage(key);
             if (img == null) {
-                img = new BufferedImage(imgW, imgH, BufferedImage.TYPE_INT_ARGB_PRE);
+
+                Image baseImage = createImage(imgX, imgY, imgW, imgH, bounds,
+                                              control, controlState);
+
+                img = new MultiResolutionBufferedImage(baseImage,
+                        (rvWidth, rvHeight) -> createImage(imgX, imgY,
+                         rvWidth, rvHeight, bounds, control, controlState));
+
                 if (!controlState.is(JRSUIConstants.Animating.YES)) {
                     cache.setImage(key, img);
                 }
-
-                final WritableRaster raster = img.getRaster();
-                final DataBufferInt buffer = (DataBufferInt) raster.getDataBuffer();
-
-                control.set(controlState);
-                control.paint(SunWritableRaster.stealData(buffer, 0),
-                        imgW, imgH, 0, 0, bounds.width, bounds.height);
-                SunWritableRaster.markDirty(buffer);
             }
 
-            g.drawImage(img, bounds.x, bounds.y, bounds.width, bounds.height, null);
+            g.drawImage(img, imgX, imgY, imgW, imgH, null);
+        }
+
+        private static Image createImage(int imgX, int imgY, int imgW, int imgH,
+                                         final Rectangle bounds,
+                                         final JRSUIControl control,
+                                         JRSUIState controlState) {
+            BufferedImage img = new BufferedImage(imgW, imgH,
+                    BufferedImage.TYPE_INT_ARGB_PRE);
+
+            final WritableRaster raster = img.getRaster();
+            final DataBufferInt buffer = (DataBufferInt) raster.getDataBuffer();
+
+            control.set(controlState);
+            control.paint(SunWritableRaster.stealData(buffer, 0), imgW, imgH,
+                          bounds.x - imgX, bounds.y - imgY, bounds.width,
+                          bounds.height);
+            SunWritableRaster.markDirty(buffer);
+            return img;
         }
     }
 
@@ -187,21 +218,22 @@ abstract class AquaPainter <T extends JRSUIState> {
         private final GraphicsConfiguration config;
         private final int w;
         private final int h;
-        private final int scale;
+        private final Rectangle bounds;
         private final JRSUIState state;
 
         AquaPixelsKey(final GraphicsConfiguration config,
-                final int w, final int h, final int scale,
+                final int w, final int h, final Rectangle bounds,
                 final JRSUIState state) {
             this.pixelCount = w * h;
             this.config = config;
             this.w = w;
             this.h = h;
-            this.scale = scale;
+            this.bounds = bounds;
             this.state = state;
             this.hash = hash();
         }
 
+        @Override
         public int getPixelCount() {
             return pixelCount;
         }
@@ -210,7 +242,7 @@ abstract class AquaPainter <T extends JRSUIState> {
             int hash = config != null ? config.hashCode() : 0;
             hash = 31 * hash + w;
             hash = 31 * hash + h;
-            hash = 31 * hash + scale;
+            hash = 31 * hash + bounds.hashCode();
             hash = 31 * hash + state.hashCode();
             return hash;
         }
@@ -225,7 +257,7 @@ abstract class AquaPainter <T extends JRSUIState> {
             if (obj instanceof AquaPixelsKey) {
                 AquaPixelsKey key = (AquaPixelsKey) obj;
                 return config == key.config && w == key.w && h == key.h
-                        && scale == key.scale && state.equals(key.state);
+                        && bounds.equals(key.bounds) && state.equals(key.state);
             }
             return false;
         }

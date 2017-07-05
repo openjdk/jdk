@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ struct InsetsIDs insetsIDs;
 JNIEXPORT void JNICALL
 Java_java_awt_Insets_initIDs(JNIEnv *env, jclass cls)
 {
-    insetsIDs.top = (*env)->GetFieldID(env, cls, "top", "I");
-    insetsIDs.bottom = (*env)->GetFieldID(env, cls, "bottom", "I");
-    insetsIDs.left = (*env)->GetFieldID(env, cls, "left", "I");
-    insetsIDs.right = (*env)->GetFieldID(env, cls, "right", "I");
+    CHECK_NULL(insetsIDs.top = (*env)->GetFieldID(env, cls, "top", "I"));
+    CHECK_NULL(insetsIDs.bottom = (*env)->GetFieldID(env, cls, "bottom", "I"));
+    CHECK_NULL(insetsIDs.left = (*env)->GetFieldID(env, cls, "left", "I"));
+    CHECK_NULL(insetsIDs.right = (*env)->GetFieldID(env, cls, "right", "I"));
 }

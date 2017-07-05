@@ -25,13 +25,11 @@
 
 package sun.swing;
 
-import java.security.*;
 import java.lang.reflect.*;
 import java.awt.*;
 import static java.awt.RenderingHints.*;
 import java.awt.event.*;
 import java.awt.font.*;
-import java.awt.geom.*;
 import java.awt.print.PrinterGraphics;
 import java.text.CharacterIterator;
 import java.text.AttributedCharacterIterator;
@@ -48,11 +46,8 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import sun.swing.PrintColorUIResource;
-import sun.swing.ImageIconUIResource;
 import sun.print.ProxyPrintGraphics;
 import sun.awt.*;
-import sun.security.action.GetPropertyAction;
 import java.io.*;
 import java.util.*;
 import sun.font.FontDesignMetrics;
@@ -922,6 +917,77 @@ public class SwingUtilities2 {
         }
 
         return retVal;
+    }
+
+    /**
+     * This method should be used for drawing a borders over a filled rectangle.
+     * Draws vertical line, using the current color, between the points {@code
+     * (x, y1)} and {@code (x, y2)} in graphics context's coordinate system.
+     * Note: it use {@code Graphics.fillRect()} internally.
+     *
+     * @param g  Graphics to draw the line to.
+     * @param x  the <i>x</i> coordinate.
+     * @param y1 the first point's <i>y</i> coordinate.
+     * @param y2 the second point's <i>y</i> coordinate.
+     */
+    public static void drawVLine(Graphics g, int x, int y1, int y2) {
+        if (y2 < y1) {
+            final int temp = y2;
+            y2 = y1;
+            y1 = temp;
+        }
+        g.fillRect(x, y1, 1, y2 - y1 + 1);
+    }
+
+    /**
+     * This method should be used for drawing a borders over a filled rectangle.
+     * Draws horizontal line, using the current color, between the points {@code
+     * (x1, y)} and {@code (x2, y)} in graphics context's coordinate system.
+     * Note: it use {@code Graphics.fillRect()} internally.
+     *
+     * @param g  Graphics to draw the line to.
+     * @param x1 the first point's <i>x</i> coordinate.
+     * @param x2 the second point's <i>x</i> coordinate.
+     * @param y  the <i>y</i> coordinate.
+     */
+    public static void drawHLine(Graphics g, int x1, int x2, int y) {
+        if (x2 < x1) {
+            final int temp = x2;
+            x2 = x1;
+            x1 = temp;
+        }
+        g.fillRect(x1, y, x2 - x1 + 1, 1);
+    }
+
+    /**
+     * This method should be used for drawing a borders over a filled rectangle.
+     * Draws the outline of the specified rectangle. The left and right edges of
+     * the rectangle are at {@code x} and {@code x + w}. The top and bottom
+     * edges are at {@code y} and {@code y + h}. The rectangle is drawn using
+     * the graphics context's current color. Note: it use {@code
+     * Graphics.fillRect()} internally.
+     *
+     * @param g Graphics to draw the rectangle to.
+     * @param x the <i>x</i> coordinate of the rectangle to be drawn.
+     * @param y the <i>y</i> coordinate of the rectangle to be drawn.
+     * @param w the w of the rectangle to be drawn.
+     * @param h the h of the rectangle to be drawn.
+     * @see SwingUtilities2#drawVLine(java.awt.Graphics, int, int, int)
+     * @see SwingUtilities2#drawHLine(java.awt.Graphics, int, int, int)
+     */
+    public static void drawRect(Graphics g, int x, int y, int w, int h) {
+        if (w < 0 || h < 0) {
+            return;
+        }
+
+        if (h == 0 || w == 0) {
+            g.fillRect(x, y, w + 1, h + 1);
+        } else {
+            g.fillRect(x, y, w, 1);
+            g.fillRect(x + w, y, 1, h);
+            g.fillRect(x + 1, y + h, w, 1);
+            g.fillRect(x, y + 1, 1, h);
+        }
     }
 
     private static TextLayout createTextLayout(JComponent c, String s,

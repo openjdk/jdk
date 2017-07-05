@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ public class SerialJavaObject implements Serializable, Cloneable {
 
     /**
      * Constructor for <code>SerialJavaObject</code> helper class.
-     * <p>
      *
      * @param obj the Java <code>Object</code> to be serialized
      * @throws SerialException if the object is found not to be serializable

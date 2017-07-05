@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ package javax.sql;
  * <p>
  * Methods which allow a component to register a StatementEventListener with a
  * <code>PooledConnection</code> have been added to the <code>PooledConnection</code> interface.
- * <p>
+ *
  * @since 1.6
  */
 public interface StatementEventListener  extends java.util.EventListener{
@@ -72,13 +72,13 @@ public interface StatementEventListener  extends java.util.EventListener{
          * <code>PreparedStatement</code> is invalid. The driver calls this method
          * just before it throws the <code>SQLException</code>,
          * contained in the given event, to the application.
-         * <p>
-         * @param event         an event object describing the source of the event,
-         *                                      the statement that is invalid and the exception the
-         *                                      driver is about to throw.  The source of the event is
-         *                                      the <code>PooledConnection</code> which the invalid <code>PreparedStatement</code>
-         * is associated with.
-         * <p>
+         *
+         * @param event    an event object describing the source of the event,
+         *                 the statement that is invalid and the exception the
+         *                 driver is about to throw.  The source of the event is
+         *                 the <code>PooledConnection</code> which the invalid <code>PreparedStatement</code>
+         *                 is associated with.
+         *
          * @since 1.6
          */
         void statementErrorOccurred(StatementEvent event);

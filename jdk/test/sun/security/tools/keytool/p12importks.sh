@@ -44,7 +44,7 @@ case "$OS" in
 esac
 
 LANG=C
-KT=$TESTJAVA${FS}bin${FS}keytool
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS}"
 
 # Part 1: JKS keystore with same storepass and keypass
 
