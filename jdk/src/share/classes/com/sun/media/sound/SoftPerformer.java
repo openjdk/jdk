@@ -326,7 +326,7 @@ public final class SoftPerformer {
     private static KeySortComparator keySortComparator = new KeySortComparator();
 
     private String extractKeys(ModelConnectionBlock conn) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (conn.getSources() != null) {
             sb.append("[");
             ModelSource[] srcs = conn.getSources();

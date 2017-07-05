@@ -623,11 +623,11 @@ void ParallelScavengeHeap::print_gc_threads_on(outputStream* st) const {
 }
 
 void ParallelScavengeHeap::print_tracing_info() const {
-  if (TraceGen0Time) {
+  if (TraceYoungGenTime) {
     double time = PSScavenge::accumulated_time()->seconds();
     tty->print_cr("[Accumulated GC generation 0 time %3.7f secs]", time);
   }
-  if (TraceGen1Time) {
+  if (TraceOldGenTime) {
     double time = UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds();
     tty->print_cr("[Accumulated GC generation 1 time %3.7f secs]", time);
   }

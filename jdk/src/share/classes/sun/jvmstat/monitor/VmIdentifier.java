@@ -255,7 +255,7 @@ public class VmIdentifier {
      *                            a MonitorException in a future version.
      */
     public HostIdentifier getHostIdentifier() throws URISyntaxException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (getScheme() != null) {
             sb.append(getScheme()).append(":");
         }

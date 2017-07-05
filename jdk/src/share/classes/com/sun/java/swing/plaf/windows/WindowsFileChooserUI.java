@@ -690,7 +690,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     }
 
     private String fileNameString(File[] files) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (int i = 0; files != null && i < files.length; i++) {
             if (i > 0) {
                 buf.append(" ");

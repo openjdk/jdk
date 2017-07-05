@@ -285,7 +285,7 @@ class MimeType implements Serializable, Cloneable {
      */
     private String getStringValue() {
         if (myStringValue == null) {
-            StringBuffer result = new StringBuffer();
+            StringBuilder result = new StringBuilder();
             result.append (myPieces[0]);
             result.append ('/');
             result.append (myPieces[1]);
@@ -510,7 +510,7 @@ class MimeType implements Serializable, Cloneable {
         int n = s.length();
         int i;
         char c;
-        StringBuffer result = new StringBuffer (n+2);
+        StringBuilder result = new StringBuilder (n+2);
         result.append ('\"');
         for (i = 0; i < n; ++ i) {
             c = s.charAt (i);

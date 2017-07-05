@@ -93,7 +93,7 @@ public class StartManagementAgent {
         } catch(AttachOperationFailedException ex) {
             // We expect parsing of "apa" above to fail, but if the file path
             // can't be read we get a different exception message
-            if (!ex.getMessage().contains("java.lang.NumberFormatException")) {
+            if (!ex.getMessage().contains("Invalid com.sun.management.jmxremote.port number")) {
                 throw ex;
             }
         }

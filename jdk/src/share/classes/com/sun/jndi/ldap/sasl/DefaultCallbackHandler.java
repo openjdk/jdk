@@ -88,7 +88,7 @@ final class DefaultCallbackHandler implements CallbackHandler {
                             }
                         }
                         if (selected == -1) {
-                            StringBuffer allChoices = new StringBuffer();
+                            StringBuilder allChoices = new StringBuilder();
                             for (int j = 0; j <  choices.length; j++) {
                                 allChoices.append(choices[j] + ",");
                             }

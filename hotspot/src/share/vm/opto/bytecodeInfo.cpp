@@ -361,11 +361,14 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
     set_msg("not an accessor");
     return false;
   }
+
+  // Limit inlining depth in case inlining is forced or
+  // _max_inline_level was increased to compensate for lambda forms.
+  if (inline_level() > MaxForceInlineLevel) {
+    set_msg("MaxForceInlineLevel");
+    return false;
+  }
   if (inline_level() > _max_inline_level) {
-    if (callee_method->force_inline() && inline_level() > MaxForceInlineLevel) {
-      set_msg("MaxForceInlineLevel");
-      return false;
-    }
     if (!callee_method->force_inline() || !IncrementalInline) {
       set_msg("inlining too deep");
       return false;

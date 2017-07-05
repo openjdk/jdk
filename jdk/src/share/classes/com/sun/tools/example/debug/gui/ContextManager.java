@@ -333,7 +333,7 @@ public class ContextManager {
 
     private String processClasspathDefaults(String javaArgs) {
         if (javaArgs.indexOf("-classpath ") == -1) {
-            StringBuffer munged = new StringBuffer(javaArgs);
+            StringBuilder munged = new StringBuilder(javaArgs);
             SearchPath classpath = classManager.getClassPath();
             if (classpath.isEmpty()) {
                 String envcp = System.getProperty("env.class.path");

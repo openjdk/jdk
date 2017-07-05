@@ -96,7 +96,7 @@ public class KrbException extends Exception {
 
 
     public String krbErrorMessage() {
-        StringBuffer strbuf = new StringBuffer("krb_error " + returnCode);
+        StringBuilder strbuf = new StringBuilder("krb_error " + returnCode);
         String msg =  getMessage();
         if (msg != null) {
             strbuf.append(" ");
@@ -112,7 +112,7 @@ public class KrbException extends Exception {
      * If the error code is 0 then the first half is skipped.
      */
     public String getMessage() {
-        StringBuffer message = new StringBuffer();
+        StringBuilder message = new StringBuilder();
         int returnCode = returnCode();
         if (returnCode != 0) {
             message.append(returnCodeMessage());

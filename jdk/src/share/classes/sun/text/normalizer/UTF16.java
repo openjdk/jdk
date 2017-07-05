@@ -530,7 +530,7 @@ public final class UTF16
             return String.valueOf((char)ch);
         }
 
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(getLeadSurrogate(ch));
         result.append(getTrailSurrogate(ch));
         return result.toString();

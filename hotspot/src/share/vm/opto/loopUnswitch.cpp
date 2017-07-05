@@ -225,15 +225,15 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
 
   Node *cont      = _igvn.intcon(1);
   set_ctrl(cont, C->root());
-  Node* opq       = new (C) Opaque1Node(C, cont);
+  Node* opq       = new Opaque1Node(C, cont);
   register_node(opq, outer_loop, entry, dom_depth(entry));
-  Node *bol       = new (C) Conv2BNode(opq);
+  Node *bol       = new Conv2BNode(opq);
   register_node(bol, outer_loop, entry, dom_depth(entry));
-  IfNode* iff = new (C) IfNode(entry, bol, PROB_MAX, COUNT_UNKNOWN);
+  IfNode* iff = new IfNode(entry, bol, PROB_MAX, COUNT_UNKNOWN);
   register_node(iff, outer_loop, entry, dom_depth(entry));
-  ProjNode* iffast = new (C) IfTrueNode(iff);
+  ProjNode* iffast = new IfTrueNode(iff);
   register_node(iffast, outer_loop, iff, dom_depth(iff));
-  ProjNode* ifslow = new (C) IfFalseNode(iff);
+  ProjNode* ifslow = new IfFalseNode(iff);
   register_node(ifslow, outer_loop, iff, dom_depth(iff));
 
   // Clone the loop body.  The clone becomes the fast loop.  The

@@ -533,13 +533,13 @@ class Metacity implements SynthConstants {
                     // Pending: verify character encoding spec for gconf
                     Reader reader = new InputStreamReader(url.openStream(), "ISO-8859-1");
                     char[] buf = new char[1024];
-                    StringBuffer strBuf = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     int n;
                     while ((n = reader.read(buf)) >= 0) {
-                        strBuf.append(buf, 0, n);
+                        sb.append(buf, 0, n);
                     }
                     reader.close();
-                    String str = strBuf.toString();
+                    String str = sb.toString();
                     if (str != null) {
                         String strLowerCase = str.toLowerCase();
                         int i = strLowerCase.indexOf("<entry name=\"theme\"");

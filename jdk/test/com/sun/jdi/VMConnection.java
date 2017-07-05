@@ -52,61 +52,23 @@ class VMConnection {
 
         // When we run under jtreg, test.classes contains the pathname of
         // the dir in which the .class files will be placed.
-        BufferedReader reader;
         String testClasses = System.getProperty("test.classes");
         if (testClasses == null) {
             return retVal;
         }
-        retVal += "-classpath " + testClasses + " ";
-        File myFile = new File(testClasses, "@debuggeeVMOptions");
+        retVal += "-classpath " + testClasses;
 
-        if (!myFile.canRead()) {
-            // Not there - look in parent (in case we are in a subdir)
-            myFile = new File(testClasses);
-            String parentDir = myFile.getParent();
-            if (parentDir != null) {
-                myFile = new File(parentDir, "@debuggeeVMOptions");
-                if (!myFile.canRead()) {
-                    return retVal;
-                }
-            }
+        String vmOpts = System.getProperty("test.vm.opts");
+        System.out.println("vmOpts: "+vmOpts);
+        if (vmOpts != null) {
+            retVal += " " + vmOpts;
         }
-        String wholePath = myFile.getPath();
-        try {
-            reader = new BufferedReader(new FileReader(myFile));
-        } catch (FileNotFoundException ee) {
-            System.out.println("-- Error 2 trying to access file " +
-                               wholePath + ": " + ee);
-            return retVal;
+        String javaOpts = System.getProperty("test.java.opts");
+        System.out.println("javaOpts: "+javaOpts);
+        if (javaOpts != null) {
+            retVal += " " + javaOpts;
         }
 
-        String line;
-        while (true) {
-            try {
-                line = reader.readLine();
-            } catch (IOException ee) {
-                System.out.println("-- Error reading options from file " +
-                                   wholePath + ": " + ee);
-                break;
-            }
-            if (line == null) {
-                System.out.println("-- No debuggee VM options found in file " +
-                                   wholePath);
-                break;
-            }
-            line = line.trim();
-            if (line.length() != 0 && !line.startsWith("#")) {
-                System.out.println("-- Added debuggeeVM options from file " +
-                                   wholePath + ": " + line);
-                retVal += line;
-                break;
-            }
-            // Else, read he next line.
-        }
-        try {
-            reader.close();
-        } catch (IOException ee) {
-        }
         return retVal;
     }
 

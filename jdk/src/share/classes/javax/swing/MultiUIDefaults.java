@@ -190,18 +190,18 @@ class MultiUIDefaults extends UIDefaults
 
     @Override
     public synchronized String toString() {
-        StringBuffer buf = new StringBuffer();
-        buf.append("{");
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
         Enumeration keys = keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
-            buf.append(key + "=" + get(key) + ", ");
+            sb.append(key + "=" + get(key) + ", ");
         }
-        int length = buf.length();
+        int length = sb.length();
         if (length > 1) {
-            buf.delete(length-2, length);
+            sb.delete(length-2, length);
         }
-        buf.append("}");
-        return buf.toString();
+        sb.append("}");
+        return sb.toString();
     }
 }

@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id$
@@ -54,7 +54,7 @@ public class DOMSubTreeData implements NodeSetData {
         this.excludeComments = excludeComments;
     }
 
-    public Iterator iterator() {
+    public Iterator<Node> iterator() {
         return new DelayedNodeIterator(root, excludeComments);
     }
 

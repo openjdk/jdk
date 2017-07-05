@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMKeyInfoFactory.java 1333869 2012-05-04 10:42:44Z coheigea $
@@ -48,11 +48,12 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
 
     public DOMKeyInfoFactory() { }
 
+    @SuppressWarnings("rawtypes")
     public KeyInfo newKeyInfo(List content) {
         return newKeyInfo(content, null);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public KeyInfo newKeyInfo(List content, String id) {
         return new DOMKeyInfo(content, id);
     }
@@ -78,12 +79,12 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return newPGPData(keyId, null, null);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public PGPData newPGPData(byte[] keyId, byte[] keyPacket, List other) {
         return new DOMPGPData(keyId, keyPacket, other);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public PGPData newPGPData(byte[] keyPacket, List other) {
         return new DOMPGPData(keyPacket, other);
     }
@@ -92,7 +93,7 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return newRetrievalMethod(uri, null, null);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public RetrievalMethod newRetrievalMethod(String uri, String type,
         List transforms) {
         if (uri == null) {
@@ -101,7 +102,7 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return new DOMRetrievalMethod(uri, type, transforms);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public X509Data newX509Data(List content) {
         return new DOMX509Data(content);
     }

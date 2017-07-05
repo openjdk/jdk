@@ -509,7 +509,7 @@ public class GIFImageReader extends ImageReader {
             byte[] signature = new byte[6];
             stream.readFully(signature);
 
-            StringBuffer version = new StringBuffer(3);
+            StringBuilder version = new StringBuilder(3);
             version.append((char)signature[3]);
             version.append((char)signature[4]);
             version.append((char)signature[5]);

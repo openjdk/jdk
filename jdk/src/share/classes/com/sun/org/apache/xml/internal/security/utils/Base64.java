@@ -257,7 +257,7 @@ public class Base64 {
     public static final byte[] decode(Element element) throws Base64DecodingException {
 
         Node sibling = element.getFirstChild();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         while (sibling != null) {
             if (sibling.getNodeType() == Node.TEXT_NODE) {

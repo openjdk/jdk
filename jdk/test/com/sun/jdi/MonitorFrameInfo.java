@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g MonitorFrameInfo.java
- *  @run main MonitorFrameInfo
+ *  @run driver MonitorFrameInfo
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

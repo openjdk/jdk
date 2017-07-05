@@ -291,6 +291,8 @@ import javax.sql.rowset.serial.*;
 * extending class overrides and reimplements any <code>BaseRowSet</code> method and encounters
 * connectivity or underlying data source issues, that method <b>may</b> in addition throw an
 * <code>SQLException</code> object for that reason.
+*
+* @since 1.5
 */
 
 public abstract class BaseRowSet implements Serializable, Cloneable {

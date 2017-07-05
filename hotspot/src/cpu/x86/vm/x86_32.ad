@@ -1401,22 +1401,22 @@ void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
     // No transformation necessary.
     return;
   case INDIRECT:
-    new_memory = new (C) indirect_win95_safeOper( );
+    new_memory = new indirect_win95_safeOper( );
     break;
   case INDOFFSET8:
-    new_memory = new (C) indOffset8_win95_safeOper(memory->disp(NULL, NULL, 0));
+    new_memory = new indOffset8_win95_safeOper(memory->disp(NULL, NULL, 0));
     break;
   case INDOFFSET32:
-    new_memory = new (C) indOffset32_win95_safeOper(memory->disp(NULL, NULL, 0));
+    new_memory = new indOffset32_win95_safeOper(memory->disp(NULL, NULL, 0));
     break;
   case INDINDEXOFFSET:
-    new_memory = new (C) indIndexOffset_win95_safeOper(memory->disp(NULL, NULL, 0));
+    new_memory = new indIndexOffset_win95_safeOper(memory->disp(NULL, NULL, 0));
     break;
   case INDINDEXSCALE:
-    new_memory = new (C) indIndexScale_win95_safeOper(memory->scale());
+    new_memory = new indIndexScale_win95_safeOper(memory->scale());
     break;
   case INDINDEXSCALEOFFSET:
-    new_memory = new (C) indIndexScaleOffset_win95_safeOper(memory->scale(), memory->disp(NULL, NULL, 0));
+    new_memory = new indIndexScaleOffset_win95_safeOper(memory->scale(), memory->disp(NULL, NULL, 0));
     break;
   case LOAD_LONG_INDIRECT:
   case LOAD_LONG_INDOFFSET32:

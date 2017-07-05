@@ -4299,10 +4299,8 @@ int os::PlatformEvent::park(jlong millis) {
   //
   // Thread.interrupt and object.notify{All} both call Event::set.
   // That is, we treat thread.interrupt as a special case of notification.
-  // The underlying Solaris implementation, cond_timedwait, admits
-  // spurious/premature wakeups, but the JLS/JVM spec prevents the
-  // JVM from making those visible to Java code.  As such, we must
-  // filter out spurious wakeups.  We assume all ETIME returns are valid.
+  // We ignore spurious OS wakeups unless FilterSpuriousWakeups is false.
+  // We assume all ETIME returns are valid.
   //
   // TODO: properly differentiate simultaneous notify+interrupt.
   // In that case, we should propagate the notify to another waiter.

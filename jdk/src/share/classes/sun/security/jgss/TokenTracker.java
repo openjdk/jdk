@@ -336,19 +336,19 @@ public class TokenTracker {
     }
 
     public String toString() {
-        StringBuffer buf = new StringBuffer("TokenTracker: ");
-        buf.append(" initNumber=").append(initNumber);
-        buf.append(" windowStart=").append(windowStart);
-        buf.append(" expectedNumber=").append(expectedNumber);
-        buf.append(" windowStartIndex=").append(windowStartIndex);
-        buf.append("\n\tIntervals are: {");
+        StringBuilder sb = new StringBuilder("TokenTracker: ");
+        sb.append(" initNumber=").append(initNumber);
+        sb.append(" windowStart=").append(windowStart);
+        sb.append(" expectedNumber=").append(expectedNumber);
+        sb.append(" windowStartIndex=").append(windowStartIndex);
+        sb.append("\n\tIntervals are: {");
         for (int i = 0; i < list.size(); i++) {
             if (i != 0)
-                buf.append(", ");
-            buf.append(list.get(i).toString());
+                sb.append(", ");
+            sb.append(list.get(i).toString());
         }
-        buf.append('}');
-        return buf.toString();
+        sb.append('}');
+        return sb.toString();
     }
 
     /**

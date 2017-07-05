@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g CountFilterTest.java
- *  @run main CountFilterTest
+ *  @run driver CountFilterTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

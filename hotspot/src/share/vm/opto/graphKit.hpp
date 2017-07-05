@@ -309,31 +309,31 @@ class GraphKit : public Phase {
 
 
   // Some convenient shortcuts for common nodes
-  Node* IfTrue(IfNode* iff)                   { return _gvn.transform(new (C) IfTrueNode(iff));      }
-  Node* IfFalse(IfNode* iff)                  { return _gvn.transform(new (C) IfFalseNode(iff));     }
+  Node* IfTrue(IfNode* iff)                   { return _gvn.transform(new IfTrueNode(iff));      }
+  Node* IfFalse(IfNode* iff)                  { return _gvn.transform(new IfFalseNode(iff));     }
 
-  Node* AddI(Node* l, Node* r)                { return _gvn.transform(new (C) AddINode(l, r));       }
-  Node* SubI(Node* l, Node* r)                { return _gvn.transform(new (C) SubINode(l, r));       }
-  Node* MulI(Node* l, Node* r)                { return _gvn.transform(new (C) MulINode(l, r));       }
-  Node* DivI(Node* ctl, Node* l, Node* r)     { return _gvn.transform(new (C) DivINode(ctl, l, r));  }
+  Node* AddI(Node* l, Node* r)                { return _gvn.transform(new AddINode(l, r));       }
+  Node* SubI(Node* l, Node* r)                { return _gvn.transform(new SubINode(l, r));       }
+  Node* MulI(Node* l, Node* r)                { return _gvn.transform(new MulINode(l, r));       }
+  Node* DivI(Node* ctl, Node* l, Node* r)     { return _gvn.transform(new DivINode(ctl, l, r));  }
 
-  Node* AndI(Node* l, Node* r)                { return _gvn.transform(new (C) AndINode(l, r));       }
-  Node* OrI(Node* l, Node* r)                 { return _gvn.transform(new (C) OrINode(l, r));        }
-  Node* XorI(Node* l, Node* r)                { return _gvn.transform(new (C) XorINode(l, r));       }
+  Node* AndI(Node* l, Node* r)                { return _gvn.transform(new AndINode(l, r));       }
+  Node* OrI(Node* l, Node* r)                 { return _gvn.transform(new OrINode(l, r));        }
+  Node* XorI(Node* l, Node* r)                { return _gvn.transform(new XorINode(l, r));       }
 
-  Node* MaxI(Node* l, Node* r)                { return _gvn.transform(new (C) MaxINode(l, r));       }
-  Node* MinI(Node* l, Node* r)                { return _gvn.transform(new (C) MinINode(l, r));       }
+  Node* MaxI(Node* l, Node* r)                { return _gvn.transform(new MaxINode(l, r));       }
+  Node* MinI(Node* l, Node* r)                { return _gvn.transform(new MinINode(l, r));       }
 
-  Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new (C) LShiftINode(l, r));    }
-  Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new (C) RShiftINode(l, r));    }
-  Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new (C) URShiftINode(l, r));   }
+  Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new LShiftINode(l, r));    }
+  Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new RShiftINode(l, r));    }
+  Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new URShiftINode(l, r));   }
 
-  Node* CmpI(Node* l, Node* r)                { return _gvn.transform(new (C) CmpINode(l, r));       }
-  Node* CmpL(Node* l, Node* r)                { return _gvn.transform(new (C) CmpLNode(l, r));       }
-  Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new (C) CmpPNode(l, r));       }
-  Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new (C) BoolNode(cmp, relop)); }
+  Node* CmpI(Node* l, Node* r)                { return _gvn.transform(new CmpINode(l, r));       }
+  Node* CmpL(Node* l, Node* r)                { return _gvn.transform(new CmpLNode(l, r));       }
+  Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new CmpPNode(l, r));       }
+  Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
 
-  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(new (C) AddPNode(b, a, o));    }
+  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(new AddPNode(b, a, o));    }
 
   // Convert between int and long, and size_t.
   // (See macros ConvI2X, etc., in type.hpp for ConvI2X, etc.)
@@ -690,7 +690,7 @@ class GraphKit : public Phase {
   // Replace the call with the current state of the kit.  Requires
   // that the call was generated with separate io_projs so that
   // exceptional control flow can be handled properly.
-  void replace_call(CallNode* call, Node* result);
+  void replace_call(CallNode* call, Node* result, bool do_replaced_nodes = false);
 
   // helper functions for statistics
   void increment_counter(address counter_addr);   // increment a debug counter
@@ -807,7 +807,7 @@ class GraphKit : public Phase {
 
   // merge in all memory slices from new_mem, along the given path
   void merge_memory(Node* new_mem, Node* region, int new_path);
-  void make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool separate_io_proj);
+  void make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool separate_io_proj, bool deoptimize = false);
 
   // Helper functions to build synchronizations
   int next_monitor();
@@ -849,13 +849,16 @@ class GraphKit : public Phase {
 
   // implementation of object creation
   Node* set_output_for_allocation(AllocateNode* alloc,
-                                  const TypeOopPtr* oop_type);
+                                  const TypeOopPtr* oop_type,
+                                  bool deoptimize_on_exception=false);
   Node* get_layout_helper(Node* klass_node, jint& constant_value);
   Node* new_instance(Node* klass_node,
                      Node* slow_test = NULL,
-                     Node* *return_size_val = NULL);
+                     Node* *return_size_val = NULL,
+                     bool deoptimize_on_exception = false);
   Node* new_array(Node* klass_node, Node* count_val, int nargs,
-                  Node* *return_size_val = NULL);
+                  Node* *return_size_val = NULL,
+                  bool deoptimize_on_exception = false);
 
   // java.lang.String helpers
   Node* load_String_offset(Node* ctrl, Node* str);
@@ -867,7 +870,7 @@ class GraphKit : public Phase {
 
   // Handy for making control flow
   IfNode* create_and_map_if(Node* ctrl, Node* tst, float prob, float cnt) {
-    IfNode* iff = new (C) IfNode(ctrl, tst, prob, cnt);// New IfNode's
+    IfNode* iff = new IfNode(ctrl, tst, prob, cnt);// New IfNode's
     _gvn.set_type(iff, iff->Value(&_gvn)); // Value may be known at parse-time
     // Place 'if' on worklist if it will be in graph
     if (!tst->is_Con())  record_for_igvn(iff);     // Range-check and Null-check removal is later
@@ -875,7 +878,7 @@ class GraphKit : public Phase {
   }
 
   IfNode* create_and_xform_if(Node* ctrl, Node* tst, float prob, float cnt) {
-    IfNode* iff = new (C) IfNode(ctrl, tst, prob, cnt);// New IfNode's
+    IfNode* iff = new IfNode(ctrl, tst, prob, cnt);// New IfNode's
     _gvn.transform(iff);                           // Value may be known at parse-time
     // Place 'if' on worklist if it will be in graph
     if (!tst->is_Con())  record_for_igvn(iff);     // Range-check and Null-check removal is later

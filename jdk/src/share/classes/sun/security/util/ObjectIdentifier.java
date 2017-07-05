@@ -418,7 +418,7 @@ class ObjectIdentifier implements Serializable
         String s = stringForm;
         if (s == null) {
             int length = encoding.length;
-            StringBuffer sb = new StringBuffer(length * 4);
+            StringBuilder sb = new StringBuilder(length * 4);
 
             int fromPos = 0;
             for (int i = 0; i < length; i++) {

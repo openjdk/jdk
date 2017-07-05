@@ -908,25 +908,25 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
           rt->isa_oopptr() || is_immutable_value(adr),
           "raw memory operations should have control edge");
   switch (bt) {
-  case T_BOOLEAN: return new (C) LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo);
-  case T_BYTE:    return new (C) LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo);
-  case T_INT:     return new (C) LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo);
-  case T_CHAR:    return new (C) LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo);
-  case T_SHORT:   return new (C) LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo);
-  case T_LONG:    return new (C) LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo);
-  case T_FLOAT:   return new (C) LoadFNode (ctl, mem, adr, adr_type, rt,            mo);
-  case T_DOUBLE:  return new (C) LoadDNode (ctl, mem, adr, adr_type, rt,            mo);
-  case T_ADDRESS: return new (C) LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo);
+  case T_BOOLEAN: return new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo);
+  case T_BYTE:    return new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo);
+  case T_INT:     return new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo);
+  case T_CHAR:    return new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo);
+  case T_SHORT:   return new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo);
+  case T_LONG:    return new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo);
+  case T_FLOAT:   return new LoadFNode (ctl, mem, adr, adr_type, rt,            mo);
+  case T_DOUBLE:  return new LoadDNode (ctl, mem, adr, adr_type, rt,            mo);
+  case T_ADDRESS: return new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo);
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      Node* load  = gvn.transform(new (C) LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo));
-      return new (C) DecodeNNode(load, load->bottom_type()->make_ptr());
+      Node* load  = gvn.transform(new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo));
+      return new DecodeNNode(load, load->bottom_type()->make_ptr());
     } else
 #endif
     {
       assert(!adr->bottom_type()->is_ptr_to_narrowoop() && !adr->bottom_type()->is_ptr_to_narrowklass(), "should have got back a narrow oop");
-      return new (C) LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr(), mo);
+      return new LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr(), mo);
     }
   }
   ShouldNotReachHere();
@@ -935,12 +935,12 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
 
 LoadLNode* LoadLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
   bool require_atomic = true;
-  return new (C) LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, require_atomic);
+  return new LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, require_atomic);
 }
 
 LoadDNode* LoadDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
   bool require_atomic = true;
-  return new (C) LoadDNode(ctl, mem, adr, adr_type, rt, mo, require_atomic);
+  return new LoadDNode(ctl, mem, adr, adr_type, rt, mo, require_atomic);
 }
 
 
@@ -1228,33 +1228,33 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
            // Add up all the offsets making of the address of the load
             Node* result = elements[0];
             for (int i = 1; i < count; i++) {
-              result = phase->transform(new (phase->C) AddXNode(result, elements[i]));
+              result = phase->transform(new AddXNode(result, elements[i]));
             }
             // Remove the constant offset from the address and then
-            result = phase->transform(new (phase->C) AddXNode(result, phase->MakeConX(-(int)offset)));
+            result = phase->transform(new AddXNode(result, phase->MakeConX(-(int)offset)));
             // remove the scaling of the offset to recover the original index.
             if (result->Opcode() == Op_LShiftX && result->in(2) == phase->intcon(shift)) {
               // Peel the shift off directly but wrap it in a dummy node
               // since Ideal can't return existing nodes
-              result = new (phase->C) RShiftXNode(result->in(1), phase->intcon(0));
+              result = new RShiftXNode(result->in(1), phase->intcon(0));
             } else if (result->is_Add() && result->in(2)->is_Con() &&
                        result->in(1)->Opcode() == Op_LShiftX &&
                        result->in(1)->in(2) == phase->intcon(shift)) {
               // We can't do general optimization: ((X<<Z) + Y) >> Z ==> X + (Y>>Z)
               // but for boxing cache access we know that X<<Z will not overflow
               // (there is range check) so we do this optimizatrion by hand here.
-              Node* add_con = new (phase->C) RShiftXNode(result->in(2), phase->intcon(shift));
-              result = new (phase->C) AddXNode(result->in(1)->in(1), phase->transform(add_con));
+              Node* add_con = new RShiftXNode(result->in(2), phase->intcon(shift));
+              result = new AddXNode(result->in(1)->in(1), phase->transform(add_con));
             } else {
-              result = new (phase->C) RShiftXNode(result, phase->intcon(shift));
+              result = new RShiftXNode(result, phase->intcon(shift));
             }
 #ifdef _LP64
             if (bt != T_LONG) {
-              result = new (phase->C) ConvL2INode(phase->transform(result));
+              result = new ConvL2INode(phase->transform(result));
             }
 #else
             if (bt == T_LONG) {
-              result = new (phase->C) ConvI2LNode(phase->transform(result));
+              result = new ConvI2LNode(phase->transform(result));
             }
 #endif
             return result;
@@ -1385,7 +1385,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
     this_iid = base->_idx;
   }
   PhaseIterGVN* igvn = phase->is_IterGVN();
-  Node* phi = new (C) PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
+  Node* phi = new PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
   for (uint i = 1; i < region->req(); i++) {
     Node* x;
     Node* the_clone = NULL;
@@ -1408,7 +1408,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       }
       if (base_is_phi && (base->in(0) == region)) {
         Node* base_x = base->in(i); // Clone address for loads from boxed objects.
-        Node* adr_x = phase->transform(new (C) AddPNode(base_x,base_x,address->in(AddPNode::Offset)));
+        Node* adr_x = phase->transform(new AddPNode(base_x,base_x,address->in(AddPNode::Offset)));
         x->set_req(Address, adr_x);
       }
     }
@@ -1897,8 +1897,8 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if( value && !phase->type(value)->higher_equal( _type ) ) {
-    Node *result = phase->transform( new (phase->C) LShiftINode(value, phase->intcon(24)) );
-    return new (phase->C) RShiftINode(result, phase->intcon(24));
+    Node *result = phase->transform( new LShiftINode(value, phase->intcon(24)) );
+    return new RShiftINode(result, phase->intcon(24));
   }
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
@@ -1929,7 +1929,7 @@ Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem, phase);
   if (value && !phase->type(value)->higher_equal(_type))
-    return new (phase->C) AndINode(value, phase->intcon(0xFF));
+    return new AndINode(value, phase->intcon(0xFF));
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
 }
@@ -1959,7 +1959,7 @@ Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if( value && !phase->type(value)->higher_equal( _type ) )
-    return new (phase->C) AndINode(value,phase->intcon(0xFFFF));
+    return new AndINode(value,phase->intcon(0xFFFF));
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
 }
@@ -1989,8 +1989,8 @@ Node *LoadSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if( value && !phase->type(value)->higher_equal( _type ) ) {
-    Node *result = phase->transform( new (phase->C) LShiftINode(value, phase->intcon(16)) );
-    return new (phase->C) RShiftINode(result, phase->intcon(16));
+    Node *result = phase->transform( new LShiftINode(value, phase->intcon(16)) );
+    return new RShiftINode(result, phase->intcon(16));
   }
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
@@ -2022,12 +2022,12 @@ Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* a
 #ifdef _LP64
   if (adr_type->is_ptr_to_narrowklass()) {
     assert(UseCompressedClassPointers, "no compressed klasses");
-    Node* load_klass = gvn.transform(new (C) LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowklass(), MemNode::unordered));
-    return new (C) DecodeNKlassNode(load_klass, load_klass->bottom_type()->make_ptr());
+    Node* load_klass = gvn.transform(new LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowklass(), MemNode::unordered));
+    return new DecodeNKlassNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
 #endif
   assert(!adr_type->is_ptr_to_narrowklass() && !adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
-  return new (C) LoadKlassNode(ctl, mem, adr, at, tk, MemNode::unordered);
+  return new LoadKlassNode(ctl, mem, adr, at, tk, MemNode::unordered);
 }
 
 //------------------------------Value------------------------------------------
@@ -2255,7 +2255,7 @@ Node* LoadNKlassNode::Identity( PhaseTransform *phase ) {
   if( t->isa_narrowklass()) return x;
   assert (!t->isa_narrowoop(), "no narrow oop here");
 
-  return phase->transform(new (phase->C) EncodePKlassNode(x, t->make_narrowklass()));
+  return phase->transform(new EncodePKlassNode(x, t->make_narrowklass()));
 }
 
 //------------------------------Value-----------------------------------------
@@ -2350,29 +2350,29 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
 
   switch (bt) {
   case T_BOOLEAN:
-  case T_BYTE:    return new (C) StoreBNode(ctl, mem, adr, adr_type, val, mo);
-  case T_INT:     return new (C) StoreINode(ctl, mem, adr, adr_type, val, mo);
+  case T_BYTE:    return new StoreBNode(ctl, mem, adr, adr_type, val, mo);
+  case T_INT:     return new StoreINode(ctl, mem, adr, adr_type, val, mo);
   case T_CHAR:
-  case T_SHORT:   return new (C) StoreCNode(ctl, mem, adr, adr_type, val, mo);
-  case T_LONG:    return new (C) StoreLNode(ctl, mem, adr, adr_type, val, mo);
-  case T_FLOAT:   return new (C) StoreFNode(ctl, mem, adr, adr_type, val, mo);
-  case T_DOUBLE:  return new (C) StoreDNode(ctl, mem, adr, adr_type, val, mo);
+  case T_SHORT:   return new StoreCNode(ctl, mem, adr, adr_type, val, mo);
+  case T_LONG:    return new StoreLNode(ctl, mem, adr, adr_type, val, mo);
+  case T_FLOAT:   return new StoreFNode(ctl, mem, adr, adr_type, val, mo);
+  case T_DOUBLE:  return new StoreDNode(ctl, mem, adr, adr_type, val, mo);
   case T_METADATA:
   case T_ADDRESS:
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      val = gvn.transform(new (C) EncodePNode(val, val->bottom_type()->make_narrowoop()));
-      return new (C) StoreNNode(ctl, mem, adr, adr_type, val, mo);
+      val = gvn.transform(new EncodePNode(val, val->bottom_type()->make_narrowoop()));
+      return new StoreNNode(ctl, mem, adr, adr_type, val, mo);
     } else if (adr->bottom_type()->is_ptr_to_narrowklass() ||
                (UseCompressedClassPointers && val->bottom_type()->isa_klassptr() &&
                 adr->bottom_type()->isa_rawptr())) {
-      val = gvn.transform(new (C) EncodePKlassNode(val, val->bottom_type()->make_narrowklass()));
-      return new (C) StoreNKlassNode(ctl, mem, adr, adr_type, val, mo);
+      val = gvn.transform(new EncodePKlassNode(val, val->bottom_type()->make_narrowklass()));
+      return new StoreNKlassNode(ctl, mem, adr, adr_type, val, mo);
     }
 #endif
     {
-      return new (C) StorePNode(ctl, mem, adr, adr_type, val, mo);
+      return new StorePNode(ctl, mem, adr, adr_type, val, mo);
     }
   }
   ShouldNotReachHere();
@@ -2381,12 +2381,12 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
 
 StoreLNode* StoreLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
-  return new (C) StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
+  return new StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
 
 StoreDNode* StoreDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
-  return new (C) StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
+  return new StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
 
 
@@ -2779,12 +2779,12 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape){
 
   Node *zero = phase->makecon(TypeLong::ZERO);
   Node *off  = phase->MakeConX(BytesPerLong);
-  mem = new (phase->C) StoreLNode(in(0),mem,adr,atp,zero,MemNode::unordered,false);
+  mem = new StoreLNode(in(0),mem,adr,atp,zero,MemNode::unordered,false);
   count--;
   while( count-- ) {
     mem = phase->transform(mem);
-    adr = phase->transform(new (phase->C) AddPNode(base,adr,off));
-    mem = new (phase->C) StoreLNode(in(0),mem,adr,atp,zero,MemNode::unordered,false);
+    adr = phase->transform(new AddPNode(base,adr,off));
+    mem = new StoreLNode(in(0),mem,adr,atp,zero,MemNode::unordered,false);
   }
   return mem;
 }
@@ -2825,7 +2825,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 
   int unit = BytesPerLong;
   if ((offset % unit) != 0) {
-    Node* adr = new (C) AddPNode(dest, dest, phase->MakeConX(offset));
+    Node* adr = new AddPNode(dest, dest, phase->MakeConX(offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
@@ -2855,14 +2855,14 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   // Scale to the unit required by the CPU:
   if (!Matcher::init_array_count_is_in_bytes) {
     Node* shift = phase->intcon(exact_log2(unit));
-    zbase = phase->transform( new(C) URShiftXNode(zbase, shift) );
-    zend  = phase->transform( new(C) URShiftXNode(zend,  shift) );
+    zbase = phase->transform(new URShiftXNode(zbase, shift) );
+    zend  = phase->transform(new URShiftXNode(zend,  shift) );
   }
 
   // Bulk clear double-words
-  Node* zsize = phase->transform( new(C) SubXNode(zend, zbase) );
-  Node* adr = phase->transform( new(C) AddPNode(dest, dest, start_offset) );
-  mem = new (C) ClearArrayNode(ctl, mem, zsize, adr);
+  Node* zsize = phase->transform(new SubXNode(zend, zbase) );
+  Node* adr = phase->transform(new AddPNode(dest, dest, start_offset) );
+  mem = new ClearArrayNode(ctl, mem, zsize, adr);
   return phase->transform(mem);
 }
 
@@ -2886,7 +2886,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                        start_offset, phase->MakeConX(done_offset), phase);
   }
   if (done_offset < end_offset) { // emit the final 32-bit store
-    Node* adr = new (C) AddPNode(dest, dest, phase->MakeConX(done_offset));
+    Node* adr = new AddPNode(dest, dest, phase->MakeConX(done_offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
     mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
@@ -2920,16 +2920,16 @@ uint MemBarNode::cmp( const Node &n ) const {
 //------------------------------make-------------------------------------------
 MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   switch (opcode) {
-  case Op_MemBarAcquire:     return new(C) MemBarAcquireNode(C, atp, pn);
-  case Op_LoadFence:         return new(C) LoadFenceNode(C, atp, pn);
-  case Op_MemBarRelease:     return new(C) MemBarReleaseNode(C, atp, pn);
-  case Op_StoreFence:        return new(C) StoreFenceNode(C, atp, pn);
-  case Op_MemBarAcquireLock: return new(C) MemBarAcquireLockNode(C, atp, pn);
-  case Op_MemBarReleaseLock: return new(C) MemBarReleaseLockNode(C, atp, pn);
-  case Op_MemBarVolatile:    return new(C) MemBarVolatileNode(C, atp, pn);
-  case Op_MemBarCPUOrder:    return new(C) MemBarCPUOrderNode(C, atp, pn);
-  case Op_Initialize:        return new(C) InitializeNode(C, atp, pn);
-  case Op_MemBarStoreStore:  return new(C) MemBarStoreStoreNode(C, atp, pn);
+  case Op_MemBarAcquire:     return new MemBarAcquireNode(C, atp, pn);
+  case Op_LoadFence:         return new LoadFenceNode(C, atp, pn);
+  case Op_MemBarRelease:     return new MemBarReleaseNode(C, atp, pn);
+  case Op_StoreFence:        return new StoreFenceNode(C, atp, pn);
+  case Op_MemBarAcquireLock: return new MemBarAcquireLockNode(C, atp, pn);
+  case Op_MemBarReleaseLock: return new MemBarReleaseLockNode(C, atp, pn);
+  case Op_MemBarVolatile:    return new MemBarVolatileNode(C, atp, pn);
+  case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
+  case Op_Initialize:        return new InitializeNode(C, atp, pn);
+  case Op_MemBarStoreStore:  return new MemBarStoreStoreNode(C, atp, pn);
   default: ShouldNotReachHere(); return NULL;
   }
 }
@@ -2992,7 +2992,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
       // Must return either the original node (now dead) or a new node
       // (Do not return a top here, since that would break the uniqueness of top.)
-      return new (phase->C) ConINode(TypeInt::ZERO);
+      return new ConINode(TypeInt::ZERO);
     }
   }
   return NULL;
@@ -3012,7 +3012,7 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
   switch (proj->_con) {
   case TypeFunc::Control:
   case TypeFunc::Memory:
-    return new (m->C) MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
   }
   ShouldNotReachHere();
   return NULL;
@@ -3438,7 +3438,7 @@ Node* InitializeNode::make_raw_address(intptr_t offset,
   Node* addr = in(RawAddress);
   if (offset != 0) {
     Compile* C = phase->C;
-    addr = phase->transform( new (C) AddPNode(C->top(), addr,
+    addr = phase->transform( new AddPNode(C->top(), addr,
                                                  phase->MakeConX(offset)) );
   }
   return addr;
@@ -4127,7 +4127,7 @@ MergeMemNode::MergeMemNode(Node *new_base) : Node(1+Compile::AliasIdxRaw) {
 // Make a new, untransformed MergeMem with the same base as 'mem'.
 // If mem is itself a MergeMem, populate the result with the same edges.
 MergeMemNode* MergeMemNode::make(Compile* C, Node* mem) {
-  return new(C) MergeMemNode(mem);
+  return new MergeMemNode(mem);
 }
 
 //------------------------------cmp--------------------------------------------

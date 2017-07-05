@@ -60,21 +60,21 @@ void ConcurrentMarkSweepPolicy::initialize_generations() {
   if (UseParNewGC) {
     if (UseAdaptiveSizePolicy) {
       _generations[0] = new GenerationSpec(Generation::ASParNew,
-                                           _initial_gen0_size, _max_gen0_size);
+                                           _initial_young_size, _max_young_size);
     } else {
       _generations[0] = new GenerationSpec(Generation::ParNew,
-                                           _initial_gen0_size, _max_gen0_size);
+                                           _initial_young_size, _max_young_size);
     }
   } else {
     _generations[0] = new GenerationSpec(Generation::DefNew,
-                                         _initial_gen0_size, _max_gen0_size);
+                                         _initial_young_size, _max_young_size);
   }
   if (UseAdaptiveSizePolicy) {
     _generations[1] = new GenerationSpec(Generation::ASConcurrentMarkSweep,
-                            _initial_gen1_size, _max_gen1_size);
+                                         _initial_old_size, _max_old_size);
   } else {
     _generations[1] = new GenerationSpec(Generation::ConcurrentMarkSweep,
-                            _initial_gen1_size, _max_gen1_size);
+                                         _initial_old_size, _max_old_size);
   }
 
   if (_generations[0] == NULL || _generations[1] == NULL) {
