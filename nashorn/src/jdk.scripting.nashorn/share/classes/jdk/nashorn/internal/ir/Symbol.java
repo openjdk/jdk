@@ -54,17 +54,17 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int IS_VAR      = 2;
     /** Is this a parameter */
     public static final int IS_PARAM    = 3;
-    /** Is this a constant */
-    public static final int IS_CONSTANT = 4;
     /** Mask for kind flags */
-    public static final int KINDMASK = (1 << 3) - 1; // Kinds are represented by lower three bits
+    public static final int KINDMASK = (1 << 2) - 1; // Kinds are represented by lower two bits
 
     /** Is this symbol in scope */
-    public static final int IS_SCOPE                = 1 <<  3;
+    public static final int IS_SCOPE                = 1 <<  2;
     /** Is this a this symbol */
-    public static final int IS_THIS                 = 1 <<  4;
+    public static final int IS_THIS                 = 1 <<  3;
     /** Is this a let */
-    public static final int IS_LET                  = 1 <<  5;
+    public static final int IS_LET                  = 1 <<  4;
+    /** Is this a const */
+    public static final int IS_CONST                = 1 <<  5;
     /** Is this an internal symbol, never represented explicitly in source code */
     public static final int IS_INTERNAL             = 1 <<  6;
     /** Is this a function self-reference symbol */
@@ -83,6 +83,8 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int HAS_DOUBLE_VALUE        = 1 << 13;
     /** Is this symbol known to store an object value ? */
     public static final int HAS_OBJECT_VALUE        = 1 << 14;
+    /** Is this symbol seen a declaration? Used for block scoped LET and CONST symbols only. */
+    public static final int HAS_BEEN_DECLARED       = 1 << 15;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -184,13 +186,16 @@ public final class Symbol implements Comparable<Symbol> {
             sb.append(" global");
             break;
         case IS_VAR:
-            sb.append(" var");
+            if (isConst()) {
+                sb.append(" const");
+            } else if (isLet()) {
+                sb.append(" let");
+            } else {
+                sb.append(" var");
+            }
             break;
         case IS_PARAM:
             sb.append(" param");
-            break;
-        case IS_CONSTANT:
-            sb.append(" const");
             break;
         default:
             break;
@@ -202,10 +207,6 @@ public final class Symbol implements Comparable<Symbol> {
 
         if (isInternal()) {
             sb.append(" internal");
-        }
-
-        if (isLet()) {
-            sb.append(" let");
         }
 
         if (isThis()) {
@@ -410,8 +411,8 @@ public final class Symbol implements Comparable<Symbol> {
      * Check if this symbol is a constant
      * @return true if a constant
      */
-    public boolean isConstant() {
-        return (flags & KINDMASK) == IS_CONSTANT;
+    public boolean isConst() {
+        return (flags & IS_CONST) != 0;
     }
 
     /**
@@ -440,20 +441,25 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Flag this symbol as a let
-     */
-    public void setIsLet() {
-        if (!isLet()) {
-            flags |= IS_LET;
-        }
-    }
-
-    /**
      * Flag this symbol as a function's self-referencing symbol.
      * @return true if this symbol as a function's self-referencing symbol.
      */
     public boolean isFunctionSelf() {
         return (flags & IS_FUNCTION_SELF) != 0;
+    }
+
+    public boolean isBlockScoped() {
+        return isLet() || isConst();
+    }
+
+    public boolean hasBeenDeclared() {
+        return (flags & HAS_BEEN_DECLARED) != 0;
+    }
+
+    public void setHasBeenDeclared() {
+        if (!hasBeenDeclared()) {
+            flags |= HAS_BEEN_DECLARED;
+        }
     }
 
     /**

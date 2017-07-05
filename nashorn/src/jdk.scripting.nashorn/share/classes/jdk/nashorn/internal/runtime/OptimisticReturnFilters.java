@@ -191,25 +191,35 @@ public final class OptimisticReturnFilters {
     }
 
     /**
-     * Returns the argument value as an int. If the argument is not a Number object that can be exactly represented as
-     * an int, throw an {@link UnwarrantedOptimismException}.This method is only public so that generated script code
-     * can use it. See {code CodeGenerator.ENSURE_INT}.
+     * Returns the argument value as an int. If the argument is not a wrapper for a primitive numeric type
+     * with a value that can be exactly represented as an int, throw an {@link UnwarrantedOptimismException}.
+     * This method is only public so that generated script code can use it. See {code CodeGenerator.ENSURE_INT}.
      * @param arg the original argument.
      * @param programPoint the program point used in the exception
      * @return the value of the argument as an int.
-     * @throws UnwarrantedOptimismException if the argument is not a Number that can be exactly represented as an int.
+     * @throws UnwarrantedOptimismException if the argument is not a wrapper for a primitive numeric type with
+     * a value that can be exactly represented as an int.
      */
     public static int ensureInt(final Object arg, final int programPoint) {
         // NOTE: this doesn't delegate to ensureInt(double, int) as in that case if arg were a Long, it would throw a
         // (potentially imprecise) Double in the UnwarrantedOptimismException. This way, it will put the correct valued
         // Long into the exception.
-        if (arg instanceof Number) {
+        if (isPrimitiveNumberWrapper(arg)) {
             final double d = ((Number)arg).doubleValue();
             if (JSType.isRepresentableAsInt(d) && !JSType.isNegativeZero(d)) {
                 return (int)d;
             }
         }
         throw new UnwarrantedOptimismException(arg, programPoint);
+    }
+
+    private static boolean isPrimitiveNumberWrapper(final Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        final Class<?> c = obj.getClass();
+        return c == Integer.class || c == Double.class || c == Long.class ||
+               c ==   Float.class || c ==  Short.class || c == Byte.class;
     }
 
     @SuppressWarnings("unused")
@@ -236,35 +246,40 @@ public final class OptimisticReturnFilters {
     }
 
     /**
-     * Returns the argument value as a long. If the argument is not a Number object that can be exactly represented as
-     * a long, throw an {@link UnwarrantedOptimismException}.This method is only public so that generated script code
-     * can use it. See {code CodeGenerator.ENSURE_LONG}.
+     * Returns the argument value as a long. If the argument is not a wrapper for a primitive numeric type
+     * with a value that can be exactly represented as a long, throw an {@link UnwarrantedOptimismException}.
+     * This method is only public so that generated script code can use it. See {code CodeGenerator.ENSURE_LONG}.
      * @param arg the original argument.
      * @param programPoint the program point used in the exception
      * @return the value of the argument as a long.
-     * @throws UnwarrantedOptimismException if the argument is not a Number that can be exactly represented as a long.
+     * @throws UnwarrantedOptimismException if the argument is not a wrapper for a primitive numeric type with
+     * a value that can be exactly represented as a long
      */
     public static long ensureLong(final Object arg, final int programPoint) {
-        if (arg instanceof Long) {
-            // Must check for Long separately, as Long.doubleValue() isn't precise.
-            return ((Long)arg).longValue();
-        } else if (arg instanceof Number) {
-            return ensureLong(((Number)arg).doubleValue(), programPoint);
+        if (arg != null) {
+            final Class<?> c = arg.getClass();
+            if (c == Long.class) {
+                // Must check for Long separately, as Long.doubleValue() isn't precise.
+                return ((Long)arg).longValue();
+            } else if (c == Integer.class || c == Double.class || c == Float.class || c == Short.class ||
+                    c == Byte.class) {
+                return ensureLong(((Number)arg).doubleValue(), programPoint);
+            }
         }
         throw new UnwarrantedOptimismException(arg, programPoint);
     }
 
     /**
-     * Returns the argument value as a double. If the argument is not a Number object, throw an
-     * {@link UnwarrantedOptimismException}.This method is only public so that generated script code can use it. See
-     * {code CodeGenerator.ENSURE_NUMBER}.
+     * Returns the argument value as a double. If the argument is not a a wrapper for a primitive numeric type
+     * throw an {@link UnwarrantedOptimismException}.This method is only public so that generated script code
+     * can use it. See {code CodeGenerator.ENSURE_NUMBER}.
      * @param arg the original argument.
      * @param programPoint the program point used in the exception
      * @return the value of the argument as a double.
-     * @throws UnwarrantedOptimismException if the argument is not a Number that can be exactly represented as a long.
+     * @throws UnwarrantedOptimismException if the argument is not a wrapper for a primitive numeric type.
      */
     public static double ensureNumber(final Object arg, final int programPoint) {
-        if (arg instanceof Number) { // arg == null -> false
+        if (isPrimitiveNumberWrapper(arg)) {
             return ((Number)arg).doubleValue();
         }
         throw new UnwarrantedOptimismException(arg, programPoint);

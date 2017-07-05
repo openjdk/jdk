@@ -30,19 +30,17 @@
  * each resource in sun.util.resources & sun.text.resources.
  * It is used to avoid loading non-existent localized resources so that
  * jar files won't be opened unnecessary to look up them.
- *
- * @since 1.6
  */
-package sun.util.locale.provider;
+package #Package#;
 
 import java.util.HashMap;
+import java.util.Map;
+import sun.util.locale.provider.LocaleDataMetaInfo;
+import static sun.util.locale.provider.LocaleProviderAdapter.Type;
 
+public class #Lang#LocaleDataMetaInfo implements LocaleDataMetaInfo {
 
-public class LocaleDataMetaInfo {
-
-    private static final HashMap<String, String> resourceNameToLocales =
-        new HashMap<String, String>(7);
-
+    private static final Map<String, String> resourceNameToLocales = new HashMap<>(9);
 
     static {
         /* During JDK build time, #XXX_YYY# will be replaced by a string contain all the locales
@@ -52,38 +50,51 @@ public class LocaleDataMetaInfo {
            look up locale string such as "en" could be based on if it contains " en ".
         */
         resourceNameToLocales.put("FormatData",
-                                  " #FormatData_ENLocales# | #FormatData_NonENLocales# ");
+                                  " #FormatData_Locales# ");
 
         resourceNameToLocales.put("CollationData",
-                                  " #CollationData_ENLocales# | #CollationData_NonENLocales# ");
+                                  " #CollationData_Locales# ");
 
         resourceNameToLocales.put("BreakIteratorInfo",
-                                  " #BreakIteratorInfo_ENLocales# | #BreakIteratorInfo_NonENLocales# ");
+                                  " #BreakIteratorInfo_Locales# ");
 
         resourceNameToLocales.put("BreakIteratorRules",
-                                  " #BreakIteratorRules_ENLocales# | #BreakIteratorRules_NonENLocales# ");
+                                  " #BreakIteratorRules_Locales# ");
 
         resourceNameToLocales.put("TimeZoneNames",
-                                  " #TimeZoneNames_ENLocales# | #TimeZoneNames_NonENLocales# ");
+                                  " #TimeZoneNames_Locales# ");
 
         resourceNameToLocales.put("LocaleNames",
-                                  " #LocaleNames_ENLocales# | #LocaleNames_NonENLocales# ");
+                                  " #LocaleNames_Locales# ");
 
         resourceNameToLocales.put("CurrencyNames",
-                                  " #CurrencyNames_ENLocales# | #CurrencyNames_NonENLocales# ");
+                                  " #CurrencyNames_Locales# ");
 
         resourceNameToLocales.put("CalendarData",
-                                  " #CalendarData_ENLocales# | #CalendarData_NonENLocales# ");
+                                  " #CalendarData_Locales# ");
 
         resourceNameToLocales.put("AvailableLocales",
-                                  " #AvailableLocales_ENLocales# | #AvailableLocales_NonENLocales# ");
+                                  " #AvailableLocales_Locales# ");
     }
 
     /*
+     * Gets the supported locales string based on the availability of
+     * locale data resource bundles for each resource name.
+     *
      * @param resourceName the resource name
      * @return the supported locale string for the passed in resource.
      */
     public static String getSupportedLocaleString(String resourceName) {
-        return resourceNameToLocales.get(resourceName);
+        return resourceNameToLocales.getOrDefault(resourceName, "");
+    }
+
+    @Override
+    public Type getType() {
+        return Type.JRE;
+}
+
+    @Override
+    public String availableLanguageTags(String category) {
+        return getSupportedLocaleString(category);
     }
 }

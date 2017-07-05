@@ -54,23 +54,25 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     public static final int CALLSITE_OPTIMISTIC    = 1 << 3;
     /** Is this really an apply that we try to call as a call? */
     public static final int CALLSITE_APPLY_TO_CALL = 1 << 4;
+    /** Does this a callsite for a variable declaration? */
+    public static final int CALLSITE_DECLARE       = 1 << 5;
 
     /** Flags that the call site is profiled; Contexts that have {@code "profile.callsites"} boolean property set emit
      * code where call sites have this flag set. */
-    public static final int CALLSITE_PROFILE        = 1 << 5;
+    public static final int CALLSITE_PROFILE         = 1 << 6;
     /** Flags that the call site is traced; Contexts that have {@code "trace.callsites"} property set emit code where
      * call sites have this flag set. */
-    public static final int CALLSITE_TRACE          = 1 << 6;
+    public static final int CALLSITE_TRACE           = 1 << 7;
     /** Flags that the call site linkage miss (and thus, relinking) is traced; Contexts that have the keyword
      * {@code "miss"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
-    public static final int CALLSITE_TRACE_MISSES   = 1 << 7;
+    public static final int CALLSITE_TRACE_MISSES    = 1 << 8;
     /** Flags that entry/exit to/from the method linked at call site are traced; Contexts that have the keyword
      * {@code "enterexit"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
-    public static final int CALLSITE_TRACE_ENTEREXIT = 1 << 8;
+    public static final int CALLSITE_TRACE_ENTEREXIT = 1 << 9;
     /** Flags that values passed as arguments to and returned from the method linked at call site are traced; Contexts
      * that have the keyword {@code "values"} in their {@code "trace.callsites"} property emit code where call sites
      * have this flag set. */
-    public static final int CALLSITE_TRACE_VALUES   = 1 << 9;
+    public static final int CALLSITE_TRACE_VALUES    = 1 << 10;
 
     //we could have more tracing flags here, for example CALLSITE_TRACE_SCOPE, but bits are a bit precious
     //right now given the program points
@@ -82,10 +84,10 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
      * TODO: rethink if we need the various profile/trace flags or the linker can use the Context instead to query its
      * trace/profile settings.
      */
-    public static final int CALLSITE_PROGRAM_POINT_SHIFT = 10;
+    public static final int CALLSITE_PROGRAM_POINT_SHIFT = 11;
 
     /**
-     * Maximum program point value. 22 bits should be enough for anyone
+     * Maximum program point value. 21 bits should be enough for anyone
      */
     public static final int MAX_PROGRAM_POINT_VALUE = (1 << 32 - CALLSITE_PROGRAM_POINT_SHIFT) - 1;
 
@@ -122,6 +124,9 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
             } else {
                 assert (flags & CALLSITE_FAST_SCOPE) == 0 : "can't be fastscope without scope";
                 sb.append("scope ");
+            }
+            if ((flags & CALLSITE_DECLARE) != 0) {
+                sb.append("declare ");
             }
         }
         if ((flags & CALLSITE_APPLY_TO_CALL) != 0) {
@@ -326,6 +331,15 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
      */
     public static boolean isOptimistic(final CallSiteDescriptor desc) {
         return isFlag(desc, CALLSITE_OPTIMISTIC);
+    }
+
+    /**
+     * Does this callsite contain a declaration for its target?
+     * @param desc descriptor
+     * @return true if contains declaration
+     */
+    public static boolean isDeclaration(final CallSiteDescriptor desc) {
+        return isFlag(desc, CALLSITE_DECLARE);
     }
 
     /**

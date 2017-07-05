@@ -69,9 +69,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
      * Constructor
      *
      * @param codegen  code generator
-     * @param keys     keys for fields in object
-     * @param symbols  symbols for fields in object
-     * @param values   list of values corresponding to keys
+     * @param tuples   tuples for fields in object
      */
     FieldObjectCreator(final CodeGenerator codegen, final List<MapTuple<T>> tuples) {
         this(codegen, tuples, false, false);
@@ -81,9 +79,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
      * Constructor
      *
      * @param codegen      code generator
-     * @param keys         keys for fields in object
-     * @param symbols      symbols for fields in object
-     * @param values       values (or null where no value) to be written to the fields
+     * @param tuples       tuples for fields in object
      * @param isScope      is this a scope object
      * @param hasArguments does the created object have an "arguments" property
      */
@@ -165,7 +161,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
      * @param method      Script method.
      * @param key         Property key.
      * @param fieldIndex  Field number.
-     * @param value       Value to store.
+     * @param tuple       Tuple to store.
      */
     private void putField(final MethodEmitter method, final String key, final int fieldIndex, final MapTuple<T> tuple) {
         method.dup();
@@ -188,7 +184,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
      *
      * @param method Script method.
      * @param index  Slot index.
-     * @param value  Value to store.
+     * @param tuple  Tuple to store.
      */
     private void putSlot(final MethodEmitter method, final long index, final MapTuple<T> tuple) {
         method.dup();

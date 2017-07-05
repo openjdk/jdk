@@ -59,24 +59,31 @@ public class TestUseRTMLockingOptionOnSupportedConfig
                 new String[]{
                         RTMGenericCommandLineOptionTest.RTM_INSTR_ERROR,
                         unrecongnizedOption
-                }, ExitCode.OK, "-XX:+UseRTMLocking"
+                }, ExitCode.OK,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-XX:+UseRTMLocking"
         );
 
         CommandLineOptionTest.verifySameJVMStartup(null,
                 new String[]{
                         RTMGenericCommandLineOptionTest.RTM_INSTR_ERROR,
                         unrecongnizedOption
-                }, ExitCode.OK, "-XX:-UseRTMLocking"
+                }, ExitCode.OK,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-XX:-UseRTMLocking"
         );
         // verify that UseRTMLocking is of by default
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMLocking",
-                TestUseRTMLockingOptionOnSupportedConfig.DEFAULT_VALUE);
+                TestUseRTMLockingOptionOnSupportedConfig.DEFAULT_VALUE,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS);
         // verify that we can change UseRTMLocking value
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMLocking",
                 TestUseRTMLockingOptionOnSupportedConfig.DEFAULT_VALUE,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:-UseRTMLocking");
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMLocking",
-                "true", "-XX:+UseRTMLocking");
+                "true", CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-XX:+UseRTMLocking");
     }
 
     public static void main(String args[]) throws Throwable {
