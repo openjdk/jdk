@@ -63,5 +63,7 @@ typedef u8 stacktraceid;
 typedef u8 methodid;
 typedef u8 fieldid;
 
+class TraceUnicodeString;
+
 #endif // SHARE_VM_TRACE_TRACEDATATYPES_HPP
 

@@ -1163,6 +1163,7 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   newm->constMethod()->set_constMethod_size(new_const_method_size);
   newm->set_method_size(new_method_size);
   assert(newm->code_size() == new_code_length, "check");
+  assert(newm->method_parameters_length() == method_parameters_len, "check");
   assert(newm->checked_exceptions_length() == checked_exceptions_len, "check");
   assert(newm->exception_table_length() == exception_table_len, "check");
   assert(newm->localvariable_table_length() == localvariable_len, "check");
@@ -1173,6 +1174,12 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
     memcpy(newm->compressed_linenumber_table(),
            new_compressed_linenumber_table,
            new_compressed_linenumber_size);
+  }
+  // Copy method_parameters
+  if (method_parameters_len > 0) {
+    memcpy(newm->method_parameters_start(),
+           m->method_parameters_start(),
+           method_parameters_len * sizeof(MethodParametersElement));
   }
   // Copy checked_exceptions
   if (checked_exceptions_len > 0) {
