@@ -36,7 +36,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,7 +50,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import jdk.internal.jmod.JmodFile;
-import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.loader.ResourceHelper;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.util.jar.VersionedStream;
@@ -65,20 +64,16 @@ import sun.net.www.ParseUtil;
  */
 
 class ModuleReferences {
-
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
     private ModuleReferences() { }
 
     /**
-     * Creates a ModuleReference to a module or to patched module when
-     * creating modules for the boot Layer and --patch-module is specified.
+     * Creates a ModuleReference to a possibly-patched module
      */
     private static ModuleReference newModule(ModuleInfo.Attributes attrs,
                                              URI uri,
                                              Supplier<ModuleReader> supplier,
+                                             ModulePatcher patcher,
                                              HashSupplier hasher) {
-
         ModuleReference mref = new ModuleReferenceImpl(attrs.descriptor(),
                                                        uri,
                                                        supplier,
@@ -86,38 +81,42 @@ class ModuleReferences {
                                                        attrs.recordedHashes(),
                                                        hasher,
                                                        attrs.moduleResolution());
-        if (JLA.getBootLayer() == null)
-            mref = ModuleBootstrap.patcher().patchIfNeeded(mref);
+        if (patcher != null)
+            mref = patcher.patchIfNeeded(mref);
 
         return mref;
     }
 
     /**
-     * Creates a ModuleReference to a module packaged as a modular JAR.
+     * Creates a ModuleReference to a possibly-patched module in a modular JAR.
      */
-    static ModuleReference newJarModule(ModuleInfo.Attributes attrs, Path file) {
+    static ModuleReference newJarModule(ModuleInfo.Attributes attrs,
+                                        ModulePatcher patcher,
+                                        Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JarModuleReader(file, uri);
         HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
-        return newModule(attrs, uri, supplier, hasher);
+        return newModule(attrs, uri, supplier, patcher, hasher);
     }
 
     /**
-     * Creates a ModuleReference to a module packaged as a JMOD.
+     * Creates a ModuleReference to a module in a JMOD file.
      */
     static ModuleReference newJModModule(ModuleInfo.Attributes attrs, Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JModModuleReader(file, uri);
         HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
-        return newModule(attrs, uri, supplier, hasher);
+        return newModule(attrs, uri, supplier, null, hasher);
     }
 
     /**
-     * Creates a ModuleReference to an exploded module.
+     * Creates a ModuleReference to a possibly-patched exploded module.
      */
-    static ModuleReference newExplodedModule(ModuleInfo.Attributes attrs, Path dir) {
+    static ModuleReference newExplodedModule(ModuleInfo.Attributes attrs,
+                                             ModulePatcher patcher,
+                                             Path dir) {
         Supplier<ModuleReader> supplier = () -> new ExplodedModuleReader(dir);
-        return newModule(attrs, dir.toUri(), supplier, null);
+        return newModule(attrs, dir.toUri(), supplier, patcher, null);
     }
 
 
@@ -243,7 +242,8 @@ class ModuleReferences {
         }
 
         private JarEntry getEntry(String name) {
-            return jf.getJarEntry(Objects.requireNonNull(name));
+            JarEntry entry = jf.getJarEntry(Objects.requireNonNull(name));
+            return (entry == null || entry.isDirectory()) ? null : entry;
         }
 
         @Override
@@ -370,32 +370,33 @@ class ModuleReferences {
         }
 
         /**
-         * Returns a Path to access to the given resource.
-         */
-        private Path toPath(String name) {
-            Path path = Paths.get(name.replace('/', File.separatorChar));
-            if (path.getRoot() == null) {
-                return dir.resolve(path);
-            } else {
-                // drop the root component so that the resource is
-                // located relative to the module directory
-                int n = path.getNameCount();
-                return (n > 0) ? dir.resolve(path.subpath(0, n)) : null;
-            }
-        }
-
-        /**
          * Throws IOException if the module reader is closed;
          */
         private void ensureOpen() throws IOException {
             if (closed) throw new IOException("ModuleReader is closed");
         }
 
+        /**
+         * Returns a Path to access the given resource. Returns null if the
+         * resource name does not convert to a file path that locates a regular
+         * file in the module.
+         */
+        private Path toFilePath(String name) {
+            Path path = ResourceHelper.toFilePath(name);
+            if (path != null) {
+                Path file = dir.resolve(path);
+                if (Files.isRegularFile(file)) {
+                    return file;
+                }
+            }
+            return null;
+        }
+
         @Override
         public Optional<URI> find(String name) throws IOException {
             ensureOpen();
-            Path path = toPath(name);
-            if (path != null && Files.isRegularFile(path)) {
+            Path path = toFilePath(name);
+            if (path != null) {
                 try {
                     return Optional.of(path.toUri());
                 } catch (IOError e) {
@@ -409,8 +410,8 @@ class ModuleReferences {
         @Override
         public Optional<InputStream> open(String name) throws IOException {
             ensureOpen();
-            Path path = toPath(name);
-            if (path != null && Files.isRegularFile(path)) {
+            Path path = toFilePath(name);
+            if (path != null) {
                 return Optional.of(Files.newInputStream(path));
             } else {
                 return Optional.empty();
@@ -420,8 +421,8 @@ class ModuleReferences {
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
             ensureOpen();
-            Path path = toPath(name);
-            if (path != null && Files.isRegularFile(path)) {
+            Path path = toFilePath(name);
+            if (path != null) {
                 return Optional.of(ByteBuffer.wrap(Files.readAllBytes(path)));
             } else {
                 return Optional.empty();

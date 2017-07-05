@@ -213,7 +213,7 @@ public class KullaTesting {
         ModuleFinder finder = ModuleFinder.of(modPath);
         Layer parent = Layer.boot();
         Configuration cf = parent.configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of(moduleName));
+                .resolve(finder, ModuleFinder.of(), Set.of(moduleName));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = parent.defineModulesWithOneLoader(cf, scl);
         ClassLoader loader = layer.findLoader(moduleName);
