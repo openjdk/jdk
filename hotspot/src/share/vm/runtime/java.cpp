@@ -515,8 +515,8 @@ void before_exit(JavaThread * thread) {
 }
 
 void vm_exit(int code) {
-  Thread* thread = ThreadLocalStorage::thread_index() == -1 ? NULL
-    : ThreadLocalStorage::get_thread_slow();
+  Thread* thread = ThreadLocalStorage::is_initialized() ?
+    ThreadLocalStorage::get_thread_slow() : NULL;
   if (thread == NULL) {
     // we have serious problems -- just exit
     vm_direct_exit(code);
@@ -553,8 +553,9 @@ void vm_perform_shutdown_actions() {
   // Calling 'exit_globals()' will disable thread-local-storage and cause all
   // kinds of assertions to trigger in debug mode.
   if (is_init_completed()) {
-    Thread* thread = Thread::current();
-    if (thread->is_Java_thread()) {
+    Thread* thread = ThreadLocalStorage::is_initialized() ?
+                     ThreadLocalStorage::get_thread_slow() : NULL;
+    if (thread != NULL && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
       JavaThread* jt = (JavaThread*)thread;

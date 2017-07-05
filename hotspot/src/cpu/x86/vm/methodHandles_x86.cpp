@@ -385,9 +385,12 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
   // FIXME: MethodHandlesTest gets a crash if we enable OP_SPREAD_ARGS.
 }
 
+//------------------------------------------------------------------------------
+// MethodHandles::generate_method_handle_stub
+//
 // Generate an "entry" field for a method handle.
 // This determines how the method handle will respond to calls.
-void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek) {
+void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHandles::EntryKind ek, TRAPS) {
   // Here is the register state during an interpreted call,
   // as set up by generate_method_handle_interpreter_entry():
   // - rbx: garbage temp (was MethodHandle.invoke methodOop, unused)
@@ -396,14 +399,21 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   // - rsi/r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // - rdx: garbage temp, can blow away
 
-  Register rcx_recv    = rcx;
-  Register rax_argslot = rax;
-  Register rbx_temp    = rbx;
-  Register rdx_temp    = rdx;
+  const Register rcx_recv    = rcx;
+  const Register rax_argslot = rax;
+  const Register rbx_temp    = rbx;
+  const Register rdx_temp    = rdx;
 
   // This guy is set up by prepare_to_jump_from_interpreted (from interpreted calls)
   // and gen_c2i_adapter (from compiled calls):
-  Register saved_last_sp = LP64_ONLY(r13) NOT_LP64(rsi);
+  const Register saved_last_sp = LP64_ONLY(r13) NOT_LP64(rsi);
+
+  // Argument registers for _raise_exception.
+  // 32-bit: Pass first two oop/int args in registers ECX and EDX.
+  const Register rarg0_code     = LP64_ONLY(j_rarg0) NOT_LP64(rcx);
+  const Register rarg1_actual   = LP64_ONLY(j_rarg1) NOT_LP64(rdx);
+  const Register rarg2_required = LP64_ONLY(j_rarg2) NOT_LP64(rdi);
+  assert_different_registers(rarg0_code, rarg1_actual, rarg2_required, saved_last_sp);
 
   guarantee(java_dyn_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
 
@@ -437,47 +447,41 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   switch ((int) ek) {
   case _raise_exception:
     {
-      // Not a real MH entry, but rather shared code for raising an exception.
-      // Extra local arguments are pushed on stack, as required type at TOS+8,
-      // failing object (or NULL) at TOS+4, failing bytecode type at TOS.
-      // Beyond those local arguments are the PC, of course.
-      Register rdx_code = rdx_temp;
-      Register rcx_fail = rcx_recv;
-      Register rax_want = rax_argslot;
-      Register rdi_pc   = rdi;
-      __ pop(rdx_code);  // TOS+0
-      __ pop(rcx_fail);  // TOS+4
-      __ pop(rax_want);  // TOS+8
-      __ pop(rdi_pc);    // caller PC
+      // Not a real MH entry, but rather shared code for raising an
+      // exception.  Since we use a C2I adapter to set up the
+      // interpreter state, arguments are expected in compiler
+      // argument registers.
+      methodHandle mh(raise_exception_method());
+      address c2i_entry = methodOopDesc::make_adapters(mh, CHECK);
 
-      __ mov(rsp, rsi);   // cut the stack back to where the caller started
-
-      // Repush the arguments as if coming from the interpreter.
-      __ push(rdx_code);
-      __ push(rcx_fail);
-      __ push(rax_want);
+      const Register rdi_pc = rax;
+      __ pop(rdi_pc);  // caller PC
+      __ mov(rsp, saved_last_sp);  // cut the stack back to where the caller started
 
       Register rbx_method = rbx_temp;
-      Label no_method;
+      Label L_no_method;
       // FIXME: fill in _raise_exception_method with a suitable sun.dyn method
       __ movptr(rbx_method, ExternalAddress((address) &_raise_exception_method));
       __ testptr(rbx_method, rbx_method);
-      __ jccb(Assembler::zero, no_method);
-      int jobject_oop_offset = 0;
+      __ jccb(Assembler::zero, L_no_method);
+
+      const int jobject_oop_offset = 0;
       __ movptr(rbx_method, Address(rbx_method, jobject_oop_offset));  // dereference the jobject
       __ testptr(rbx_method, rbx_method);
-      __ jccb(Assembler::zero, no_method);
+      __ jccb(Assembler::zero, L_no_method);
       __ verify_oop(rbx_method);
-      __ push(rdi_pc);          // and restore caller PC
-      __ jmp(rbx_method_fie);
+
+      // 32-bit: push remaining arguments as if coming from the compiler.
+      NOT_LP64(__ push(rarg2_required));
+
+      __ push(rdi_pc);  // restore caller PC
+      __ jump(ExternalAddress(c2i_entry));  // do C2I transition
 
       // If we get here, the Java runtime did not do its job of creating the exception.
       // Do something that is at least causes a valid throw from the interpreter.
-      __ bind(no_method);
-      __ pop(rax_want);
-      __ pop(rcx_fail);
-      __ push(rax_want);
-      __ push(rcx_fail);
+      __ bind(L_no_method);
+      __ push(rarg2_required);
+      __ push(rarg1_actual);
       __ jump(ExternalAddress(Interpreter::throw_WrongMethodType_entry()));
     }
     break;
@@ -572,9 +576,11 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ bind(no_such_interface);
       // Throw an exception.
       // For historical reasons, it will be IncompatibleClassChangeError.
-      __ pushptr(Address(rdx_intf, java_mirror_offset));  // required interface
-      __ push(rcx_recv);        // bad receiver
-      __ push((int)Bytecodes::_invokeinterface);  // who is complaining?
+      __ mov(rbx_temp, rcx_recv);  // rarg2_required might be RCX
+      assert_different_registers(rarg2_required, rbx_temp);
+      __ movptr(rarg2_required, Address(rdx_intf, java_mirror_offset));  // required interface
+      __ mov(   rarg1_actual,   rbx_temp);                               // bad receiver
+      __ movl(  rarg0_code,     (int) Bytecodes::_invokeinterface);      // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
     }
     break;
@@ -669,10 +675,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ movl(rax_argslot, rcx_amh_vmargslot);  // reload argslot field
       __ movptr(rdx_temp, vmarg);
 
-      __ load_heap_oop(rbx_klass, rcx_amh_argument); // required class
-      __ push(rbx_klass);
-      __ push(rdx_temp);                             // bad object
-      __ push((int)Bytecodes::_checkcast);           // who is complaining?
+      assert_different_registers(rarg2_required, rdx_temp);
+      __ load_heap_oop(rarg2_required, rcx_amh_argument);             // required class
+      __ mov(          rarg1_actual,   rdx_temp);                     // bad object
+      __ movl(         rarg0_code,     (int) Bytecodes::_checkcast);  // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
 
       __ bind(done);
@@ -1189,16 +1195,18 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       __ bind(bad_array_klass);
       UNPUSH_RSI_RDI;
-      __ pushptr(Address(rdx_array_klass, java_mirror_offset)); // required type
-      __ pushptr(vmarg);                // bad array
-      __ push((int)Bytecodes::_aaload); // who is complaining?
+      assert(!vmarg.uses(rarg2_required), "must be different registers");
+      __ movptr(rarg2_required, Address(rdx_array_klass, java_mirror_offset));  // required type
+      __ movptr(rarg1_actual,   vmarg);                                         // bad array
+      __ movl(  rarg0_code,     (int) Bytecodes::_aaload);                      // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
 
       __ bind(bad_array_length);
       UNPUSH_RSI_RDI;
-      __ push(rcx_recv);        // AMH requiring a certain length
-      __ pushptr(vmarg);        // bad array
-      __ push((int)Bytecodes::_arraylength); // who is complaining?
+      assert(!vmarg.uses(rarg2_required), "must be different registers");
+      __ mov   (rarg2_required, rcx_recv);                       // AMH requiring a certain length
+      __ movptr(rarg1_actual,   vmarg);                          // bad array
+      __ movl(  rarg0_code,     (int) Bytecodes::_arraylength);  // who is complaining?
       __ jump(ExternalAddress(from_interpreted_entry(_raise_exception)));
 
 #undef UNPUSH_RSI_RDI
