@@ -26,7 +26,6 @@
  * @bug     4858522
  * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuTime()
  * @author  Steve Bohne
- * @modules jdk.management
  */
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 import java.io.*;
+import java.lang.ref.*;
 import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleElementVisitor9;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -55,7 +55,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.TypeElementCatalog;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.GetterSetter;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
 
 import static javax.tools.Diagnostic.Kind.*;
 
@@ -75,6 +77,10 @@ import static javax.tools.Diagnostic.Kind.*;
  * @author Jamie Ho
  */
 public abstract class Configuration {
+    /**
+     * The doclet that created this configuration.
+     */
+    public final Doclet doclet;
 
     /**
      * The factory for builders.
@@ -293,6 +299,8 @@ public abstract class Configuration {
 
     private List<GroupContainer> groups;
 
+    private final Map<TypeElement, EnumMap<Kind, Reference<VisibleMemberMap>>> typeElementMemberCache;
+
     public abstract Messages getMessages();
     public abstract Resources getResources();
 
@@ -343,13 +351,16 @@ public abstract class Configuration {
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
     /**
      * Constructs the configurations needed by the doclet.
+     * @param doclet the doclet that created this configuration
      */
-    public Configuration() {
+    public Configuration(Doclet doclet) {
+        this.doclet = doclet;
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
         metakeywords = new MetaKeywords(this);
         groups = new ArrayList<>(0);
+        typeElementMemberCache = new HashMap<>();
     }
 
     private boolean initialized = false;
@@ -441,6 +452,11 @@ public abstract class Configuration {
                 s.add(p);
             }
         }
+
+        // add entries for modules which may not have exported packages
+        modules.forEach((ModuleElement mdle) -> {
+            modulePackages.computeIfAbsent(mdle, m -> Collections.emptySet());
+        });
 
         modules.addAll(modulePackages.keySet());
         showModules = !modules.isEmpty();
@@ -1116,7 +1132,7 @@ public abstract class Configuration {
 
         @Override
         public String toString() {
-            return names.toString();
+            return Arrays.toString(names);
         }
 
         @Override
@@ -1248,5 +1264,19 @@ public abstract class Configuration {
      */
     public boolean isAllowScriptInComments() {
         return allowScriptInComments;
+    }
+
+    public VisibleMemberMap getVisibleMemberMap(TypeElement te, VisibleMemberMap.Kind kind) {
+        EnumMap<Kind, Reference<VisibleMemberMap>> cacheMap = typeElementMemberCache
+                .computeIfAbsent(te, k -> new EnumMap<>(VisibleMemberMap.Kind.class));
+
+        Reference<VisibleMemberMap> vmapRef = cacheMap.get(kind);
+        // recompute, if referent has been garbage collected
+        VisibleMemberMap vMap = vmapRef == null ? null : vmapRef.get();
+        if (vMap == null) {
+            vMap = new VisibleMemberMap(te, kind, this);
+            cacheMap.put(kind, new SoftReference<>(vMap));
+        }
+        return vMap;
     }
 }

@@ -1,4 +1,4 @@
 grant {
-  permission java.lang.StackFramePermission "retainClassReference";
+  permission java.lang.RuntimePermission "getStackWalkerWithClassReference";
 };
 

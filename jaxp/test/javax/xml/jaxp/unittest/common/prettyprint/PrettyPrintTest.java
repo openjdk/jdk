@@ -60,7 +60,7 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 6439439 8087303
+ * @bug 6439439 8087303 8174025
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true common.prettyprint.PrettyPrintTest
  * @run testng/othervm common.prettyprint.PrettyPrintTest
@@ -69,29 +69,30 @@ import org.xml.sax.SAXException;
 @Listeners({jaxp.library.FilePolicy.class})
 public class PrettyPrintTest {
     /*
-     * test CDATA, elements only, text and element, whitespace and element,
-     * xml:space property and nested xml:space property, mixed node types.
+     * test CDATA, elements only, text and element, xml:space property, mixed
+     * node types.
      */
     @DataProvider(name = "xml-data")
     public Object[][] xmlData() throws Exception {
         return new Object[][] {
-                { read("xmltest1.xml"), read("xmltest1.out") },
-                { read("xmltest2.xml"), read("xmltest2.out") },
-                { read("xmltest3.xml"), read("xmltest3.out") },
-                { read("xmltest4.xml"), read("xmltest4.out") },
-                { read("xmltest5.xml"), read("xmltest5.out") },
-                { read("xmltest6.xml"), read("xmltest6.out") },
-                { read("xmltest7.xml"), read("xmltest7.out") },
-                { read("xmltest8.xml"), read("xmltest8.out") } };
+                { "xmltest1.xml", "xmltest1.out" },
+                { "xmltest2.xml", "xmltest2.out" },
+                { "xmltest3.xml", "xmltest3.out" },
+                { "xmltest4.xml", "xmltest4.out" },
+                { "xmltest6.xml", "xmltest6.out" },
+                { "xmltest8.xml", "xmltest8.out" } };
     }
 
     /*
      * @bug 8087303
-     * Test the whitespace text nodes are serialized with pretty-print by LSSerializer and transformer correctly
+     * Test the xml document are serialized with pretty-print by
+     * LSSerializer and transformer correctly
      *
      */
     @Test(dataProvider = "xml-data")
-    public void testXMLPrettyPrint(String source, String expected) throws Exception {
+    public void testXMLPrettyPrint(String sourceFile, String expectedFile) throws Exception {
+        String source = read(sourceFile);
+        String expected = read(expectedFile);
         // test it's no change if no pretty-print
         String result = serializerWrite(toXmlDocument(source), false);
         assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)), "The actual is: " + result);
@@ -104,26 +105,100 @@ public class PrettyPrintTest {
         assertEquals(transform(toXmlDocument(source), true).replaceAll("\r\n", "\n"), expected);
     }
 
+
     /*
-     * test pure text content, and sequent Text nodes.
+     * @bug 8087303
+     * Test a single text node is serialized with pretty-print by
+     * LSSerializer and transformer correctly
+     *
      */
-    @DataProvider(name = "xml-node-data")
-    public Object[][] xmlNodeData() throws Exception {
-        return new Object[][] {
-                { newTextNode(read("nodetest1.txt")), read("nodetest1.out") },
-                { createDocWithSequentTextNodes(), read("nodetest2.out") } };
+    @Test
+    public void testSingleTextNode() throws Exception {
+        Node xml = newTextNode(read("nodetest1.txt"));
+        String expected = read("nodetest1.out");
+        assertEquals(serializerWrite(xml, true), expected);
+        assertEquals(transform(xml, true).replaceAll("\r\n", "\n"), expected);
     }
 
     /*
      * @bug 8087303
-     * Test the whitespace text nodes are serialized with pretty-print by LSSerializer and transformer correctly,
-     * doesn't compare with the source because the test data is Node object
+     * Test the transformer shall keep all whitespace text node in
+     * sequent text nodes
      *
      */
-    @Test(dataProvider = "xml-node-data")
-    public void testXMLNodePrettyPrint(Node xml, String expected) throws Exception {
-        assertEquals(serializerWrite(xml, true), expected);
+    @Test
+    public void testSequentTextNodesWithTransformer() throws Exception {
+        Node xml = createDocWithSequentTextNodes();
+        String expected = read("nodetest2.out");
         assertEquals(transform(xml, true).replaceAll("\r\n", "\n"), expected);
+    }
+
+    /*
+     * @bug 8087303
+     * Test LSSerializer shall eliminate the whitespace text node
+     * in sequent text nodes
+     *
+     */
+    @Test
+    public void testSequentTextNodesWithLSSerializer() throws Exception {
+        Node xml = createDocWithSequentTextNodes();
+        String expected = read("nodetest2ls.out");
+        assertEquals(serializerWrite(xml, true), expected);
+    }
+
+
+    /*
+     * test whitespace and element, nested xml:space property.
+     */
+    @DataProvider(name = "xml-data-whitespace-ls")
+    public Object[][] whitespaceLS() throws Exception {
+        return new Object[][] {
+                { "xmltest5.xml", "xmltest5ls.out" },
+                { "xmltest7.xml", "xmltest7ls.out" } };
+    }
+
+    /*
+     * @bug 8087303
+     * Test LSSerializer shall eliminate the whitespace text node
+     * unless xml:space="preserve"
+     *
+     */
+    @Test(dataProvider = "xml-data-whitespace-ls")
+    public void testWhitespaceWithLSSerializer(String sourceFile, String expectedFile) throws Exception {
+        String source = read(sourceFile);
+        String expected = read(expectedFile);
+        // test it's no change if no pretty-print
+        String result = serializerWrite(toXmlDocument(source), false);
+        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)), "The actual is: " + result);
+        // test pretty-print
+        assertEquals(serializerWrite(toXmlDocument(source), true), expected);
+    }
+
+    /*
+     * test whitespace and element, nested xml:space property.
+     */
+    @DataProvider(name = "xml-data-whitespace-xslt")
+    public Object[][] whitespaceXSLT() throws Exception {
+        return new Object[][] {
+                { "xmltest5.xml", "xmltest5xslt.out" },
+                { "xmltest7.xml", "xmltest7xslt.out" } };
+    }
+
+    /*
+     * @bug 8087303
+     * Test the transformer shall format the output but keep all
+     * whitespace text node even if xml:space="preserve"
+     *
+     */
+    @Test(dataProvider = "xml-data-whitespace-xslt")
+    public void testWhitespaceWithTransformer(String sourceFile, String expectedFile) throws Exception {
+        String source = read(sourceFile);
+        String expected = read(expectedFile);
+        // test it's no change if no pretty-print
+        String result = transform(toXmlDocument(source), false);
+        assertTrue(toXmlDocument(source).isEqualNode(toXmlDocument(result)), "The actual is: " + result);
+        // test pretty-print
+        assertEquals(transform(toXmlDocument(source), true).replaceAll("\r\n", "\n"), expected);
     }
 
     /*
@@ -132,12 +207,14 @@ public class PrettyPrintTest {
     @DataProvider(name = "html-data")
     public Object[][] htmlData() throws Exception {
         return new Object[][] {
-            { read("htmltest1.xml"), read("htmltest1.out") },
-            { read("htmltest2.xml"), read("htmltest2.out") },
-            { read("htmltest3.xml"), read("htmltest3.out") },
-            { read("htmltest4.xml"), read("htmltest4.out") },
-            { read("htmltest5.xml"), read("htmltest5.out") },
-            { read("htmltest6.xml"), read("htmltest6.out") } };
+            { "htmltest1.xml", "htmltest1.out" },
+            { "htmltest2.xml", "htmltest2.out" },
+            { "htmltest3.xml", "htmltest3.out" },
+            { "htmltest4.xml", "htmltest4.out" },
+            { "htmltest5.xml", "htmltest5.out" },
+            { "htmltest6.xml", "htmltest6.out" },
+            /* @bug 8174025, test whitespace between inline elements */
+            { "htmltest7.xml", "htmltest7.out" } };
     }
 
     /*
@@ -146,7 +223,9 @@ public class PrettyPrintTest {
      *
      */
     @Test(dataProvider = "html-data")
-    public void testTransformToHTML(String source, String expected) throws Exception {
+    public void testTransformToHTML(String sourceFile, String expectedFile) throws Exception {
+        String source = read(sourceFile);
+        String expected = read(expectedFile);
         // test it's no change if no pretty-print
         StringWriter writer = new StringWriter();
         getTransformer(true, false).transform(new StreamSource(new StringReader(source)), new StreamResult(writer));
@@ -156,6 +235,27 @@ public class PrettyPrintTest {
         writer = new StringWriter();
         getTransformer(true, true).transform(new StreamSource(new StringReader(source)), new StreamResult(writer));
         assertEquals(writer.toString().replaceAll("\r\n", "\n"), expected);
+    }
+
+    /*
+     * @bug 8174025
+     * Test the serializer can handle <xsl:text disable-output-escaping="yes"> correctly.
+     *
+     */
+    @Test
+    public void testDisableOutputEscaping() throws Exception {
+        final String xsl ="generate-catalog.xsl";
+        final String xml ="simple-entity-resolver-config.xml";
+        final String expectedOutput ="simple-entity-resolver-config-transformed.xml";
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Transformer transformer = factory.newTemplates(new StreamSource(new StringReader(read(xsl)))).newTransformer();
+
+        String key = "schemaBase";
+        String value = "schemas";
+        transformer.setParameter(key, value);
+        StringWriter writer = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader(read(xml))), new StreamResult(writer));
+        assertEquals(writer.toString().replaceAll("\r\n", "\n"), read(expectedOutput));
     }
 
     @Test
@@ -298,6 +398,9 @@ public class PrettyPrintTest {
         Document doc = db.newDocument();
         Node root = doc.createElement("root");
         doc.appendChild(root);
+        root.appendChild(doc.createTextNode("\n"));
+        root.appendChild(doc.createTextNode("\n"));
+        root.appendChild(doc.createTextNode("\n"));
         root.appendChild(doc.createTextNode(" "));
         root.appendChild(doc.createTextNode("t"));
         root.appendChild(doc.createTextNode("\n"));
