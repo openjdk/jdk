@@ -340,21 +340,28 @@ public final class ProcessTools {
     }
 
     /**
-     * Executes a test jvm process, waits for it to finish and returns the process output.
-     * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
+     * Executes a test java process, waits for it to finish and returns the process output.
+     * The default options from jtreg, test.vm.opts and test.java.opts, are added.
      * The java from the test.jdk is used to execute the command.
      *
      * The command line will be like:
      * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
      *
-     * The jvm process will have exited before this method returns.
+     * The java process will have exited before this method returns.
      *
      * @param cmds User specifed arguments.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
-        ProcessBuilder pb = createJavaProcessBuilder(Utils.addTestJavaOpts(cmds));
+    public static OutputAnalyzer executeTestJava(String... options) throws Exception {
+        ProcessBuilder pb = createJavaProcessBuilder(Utils.addTestJavaOpts(options));
         return executeProcess(pb);
+    }
+
+    /**
+     * @deprecated Use executeTestJava instead
+     */
+    public static OutputAnalyzer executeTestJvm(String... options) throws Exception {
+        return executeTestJava(options);
     }
 
     /**

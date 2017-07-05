@@ -56,7 +56,6 @@ import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
-import sun.util.CoreResourceBundleControl;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -464,7 +463,8 @@ public abstract class Toolkit {
      */
     private static void fallbackToLoadClassForAT(String atName) {
         try {
-            Class.forName(atName, false, ClassLoader.getSystemClassLoader()).newInstance();
+            Class<?> c = Class.forName(atName, false, ClassLoader.getSystemClassLoader());
+            c.newInstance();
         } catch (ClassNotFoundException e) {
             newAWTError(e, "Assistive Technology not found: " + atName);
         } catch (InstantiationException e) {
@@ -1373,9 +1373,7 @@ public abstract class Toolkit {
                                  new java.security.PrivilegedAction<Void>() {
             public Void run() {
                 try {
-                    resources =
-                        ResourceBundle.getBundle("sun.awt.resources.awt",
-                                                 CoreResourceBundleControl.getRBControlInstance());
+                    resources = ResourceBundle.getBundle("sun.awt.resources.awt");
                 } catch (MissingResourceException e) {
                     // No resource file; defaults will be used.
                 }

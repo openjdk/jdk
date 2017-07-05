@@ -47,7 +47,7 @@ public class TextReporter implements Reporter {
     static final int PROPNAME_WIDTH = 25;
     static final String[] PROPNAMES = { "os.name", "os.arch", "os.version",
         "java.home", "java.vm.version", "java.vm.vendor", "java.vm.name",
-        "java.compiler", "java.class.path", "sun.boot.class.path" };
+        "java.compiler", "java.class.path" };
 
     OutputStream out;
     String title;

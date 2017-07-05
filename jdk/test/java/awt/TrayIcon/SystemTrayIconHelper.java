@@ -81,6 +81,9 @@ public class SystemTrayIconHelper {
             try {
                 // sun.lwawt.macosx.CTrayIcon
                 Field f_peer = getField( java.awt.TrayIcon.class, "peer");
+                Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.reflect.Module.class);
+                m_addExports.invoke(null, "sun.lwawt.macosx", robot.getClass().getModule());
+
 
                 Object peer = f_peer.get(icon);
                 Method m_getModel = peer.getClass().getDeclaredMethod(
@@ -102,6 +105,9 @@ public class SystemTrayIconHelper {
         } else {
             try {
                 // sun.awt.X11.XTrayIconPeer
+                Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.reflect.Module.class);
+                m_addExports.invoke(null, "sun.awt.X11", robot.getClass().getModule());
+
                 Field f_peer = getField(java.awt.TrayIcon.class, "peer");
 
                 SystemTrayIconHelper.openTrayIfNeeded(robot);

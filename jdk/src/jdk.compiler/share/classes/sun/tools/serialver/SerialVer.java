@@ -27,15 +27,13 @@ package sun.tools.serialver;
 
 import java.io.*;
 import java.io.ObjectStreamClass;
-import java.util.Properties;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 import java.net.URLClassLoader;
 import java.net.URL;
 import java.net.MalformedURLException;
-import java.util.StringTokenizer;
-import sun.net.www.ParseUtil;
 
 /**
  * Supporting class for the serialver tool.
@@ -52,15 +50,12 @@ public class SerialVer {
      * Create a URL class loader that will load classes from the
      * specified classpath.
      */
-    static void initializeLoader(String cp)
-                                throws MalformedURLException, IOException {
-        URL[] urls;
-        StringTokenizer st = new StringTokenizer(cp, File.pathSeparator);
-        int count = st.countTokens();
-        urls = new URL[count];
+    static void initializeLoader(String cp) throws IOException {
+        String[] paths = cp.split(File.pathSeparator);
+        int count = paths.length;
+        URL[] urls = new URL[count];
         for (int i = 0; i < count; i++) {
-            urls[i] = ParseUtil.fileToEncodedURL(
-                new File(new File(st.nextToken()).getCanonicalPath()));
+            urls[i] = Paths.get(paths[i]).toUri().toURL();
         }
         loader = new URLClassLoader(urls);
     }

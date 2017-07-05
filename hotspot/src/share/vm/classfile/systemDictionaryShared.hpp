@@ -44,6 +44,16 @@ public:
     oop class_loader = loader_data->class_loader();
     return (class_loader == NULL);
   }
+  static bool is_shared_class_visible_for_classloader(
+                                      instanceKlassHandle ik,
+                                      Handle class_loader,
+                                      const jbyte* pkg_string,
+                                      Symbol* pkg_name,
+                                      PackageEntry* pkg_entry,
+                                      ModuleEntry* mod_entry,
+                                      TRAPS) {
+    return false;
+  }
 
   static Klass* dump_time_resolve_super_or_fail(Symbol* child_name,
                                                 Symbol* class_name,

@@ -26,64 +26,37 @@
 /*
  * @test TestStableBoolean
  * @summary tests on stable fields and arrays
- * @library /testlibrary /test/lib
- * @build TestStableBoolean StableConfiguration sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main ClassFileInstaller
- *           java/lang/invoke/StableConfiguration
- *           java/lang/invoke/TestStableBoolean
- *           java/lang/invoke/TestStableBoolean$BooleanStable
- *           java/lang/invoke/TestStableBoolean$StaticBooleanStable
- *           java/lang/invoke/TestStableBoolean$VolatileBooleanStable
- *           java/lang/invoke/TestStableBoolean$BooleanArrayDim1
- *           java/lang/invoke/TestStableBoolean$BooleanArrayDim2
- *           java/lang/invoke/TestStableBoolean$BooleanArrayDim3
- *           java/lang/invoke/TestStableBoolean$BooleanArrayDim4
- *           java/lang/invoke/TestStableBoolean$ObjectArrayLowerDim0
- *           java/lang/invoke/TestStableBoolean$ObjectArrayLowerDim1
- *           java/lang/invoke/TestStableBoolean$NestedStableField
- *           java/lang/invoke/TestStableBoolean$NestedStableField$A
- *           java/lang/invoke/TestStableBoolean$NestedStableField1
- *           java/lang/invoke/TestStableBoolean$NestedStableField1$A
- *           java/lang/invoke/TestStableBoolean$NestedStableField2
- *           java/lang/invoke/TestStableBoolean$NestedStableField2$A
- *           java/lang/invoke/TestStableBoolean$NestedStableField3
- *           java/lang/invoke/TestStableBoolean$NestedStableField3$A
- *           java/lang/invoke/TestStableBoolean$DefaultValue
- *           java/lang/invoke/TestStableBoolean$DefaultStaticValue
- *           java/lang/invoke/TestStableBoolean$ObjectArrayLowerDim2
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.vm.annotation
+ * @build sun.hotspot.WhiteBox
+ * @build compiler.stable.TestStableBoolean
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableBoolean
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableBoolean
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableBoolean
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:-FoldStableValues
+ *                         compiler.stable.TestStableBoolean
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableBoolean
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableBoolean
- *
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableBoolean
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                         -XX:-FoldStableValues
+ *                         compiler.stable.TestStableBoolean
  */
-package java.lang.invoke;
+
+package compiler.stable;
 
 import jdk.internal.vm.annotation.Stable;
-
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableBoolean {
@@ -122,12 +95,13 @@ public class TestStableBoolean {
     /* ==================================================== */
 
     static class DefaultValue {
-        public @Stable boolean v;
+        public @Stable
+        boolean v;
 
         public static final DefaultValue c = new DefaultValue();
         public static boolean get() { return c.v; }
         public static void test() throws Exception {
-                        boolean val1 = get();
+            boolean val1 = get();
             c.v = true; boolean val2 = get();
             assertEquals(val1, false);
             assertEquals(val2, true);
@@ -157,7 +131,7 @@ public class TestStableBoolean {
         public static final DefaultStaticValue c = new DefaultStaticValue();
         public static boolean get() { return c.v; }
         public static void test() throws Exception {
-                        boolean val1 = get();
+            boolean val1 = get();
             c.v = true; boolean val2 = get();
             assertEquals(val1, false);
             assertEquals(val2, true);
@@ -207,14 +181,14 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new boolean[1]; c.v[0] = true;  boolean val1 = get();
-                                      c.v[0] = false; boolean val2 = get();
+                c.v[0] = false; boolean val2 = get();
                 assertEquals(val1, true);
                 assertEquals(val2, (isServerWithStable ? true : false));
             }
 
             {
                 c.v = new boolean[20]; c.v[10] = true;  boolean val1 = get1();
-                                       c.v[10] = false; boolean val2 = get1();
+                c.v[10] = false; boolean val2 = get1();
                 assertEquals(val1, true);
                 assertEquals(val2, (isServerWithStable ? true : false));
             }
@@ -239,7 +213,7 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new boolean[1][1]; c.v[0][0] = true;  boolean val1 = get();
-                                         c.v[0][0] = false; boolean val2 = get();
+                c.v[0][0] = false; boolean val2 = get();
                 assertEquals(val1, true);
                 assertEquals(val2, (isServerWithStable ? true : false));
 
@@ -277,7 +251,7 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new boolean[1][1][1]; c.v[0][0][0] = true;  boolean val1 = get();
-                                            c.v[0][0][0] = false; boolean val2 = get();
+                c.v[0][0][0] = false; boolean val2 = get();
                 assertEquals(val1, true);
                 assertEquals(val2, (isServerWithStable ? true : false));
 
@@ -325,7 +299,7 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new boolean[1][1][1][1]; c.v[0][0][0][0] = true;  boolean val1 = get();
-                                               c.v[0][0][0][0] = false; boolean val2 = get();
+                c.v[0][0][0][0] = false; boolean val2 = get();
                 assertEquals(val1, true);
                 assertEquals(val2, (isServerWithStable ? true : false));
 
@@ -383,7 +357,7 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new boolean[1]; ((boolean[])c.v)[0] = true;  boolean val1 = get();
-                                      ((boolean[])c.v)[0] = false; boolean val2 = get();
+                ((boolean[])c.v)[0] = false; boolean val2 = get();
 
                 assertEquals(val1, true);
                 assertEquals(val2, false);
@@ -410,7 +384,7 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new boolean[1][1]; ((boolean[][])c.v)[0][0] = true;  boolean val1 = get();
-                                         ((boolean[][])c.v)[0][0] = false; boolean val2 = get();
+                ((boolean[][])c.v)[0][0] = false; boolean val2 = get();
 
                 assertEquals(val1, true);
                 assertEquals(val2, false);
@@ -418,7 +392,7 @@ public class TestStableBoolean {
 
             {
                 c.v = new boolean[1][1]; c.v[0] = new boolean[0]; boolean[] val1 = get1();
-                                         c.v[0] = new boolean[0]; boolean[] val2 = get1();
+                c.v[0] = new boolean[0]; boolean[] val2 = get1();
 
                 assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
@@ -446,7 +420,7 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new boolean[1][1][1]; ((boolean[][][])c.v)[0][0][0] = true;  boolean val1 = get();
-                                            ((boolean[][][])c.v)[0][0][0] = false; boolean val2 = get();
+                ((boolean[][][])c.v)[0][0][0] = false; boolean val2 = get();
 
                 assertEquals(val1, true);
                 assertEquals(val2, false);
@@ -454,14 +428,14 @@ public class TestStableBoolean {
 
             {
                 c.v = new boolean[1][1][1]; c.v[0][0] = new boolean[0]; boolean[] val1 = get1();
-                                            c.v[0][0] = new boolean[0]; boolean[] val2 = get1();
+                c.v[0][0] = new boolean[0]; boolean[] val2 = get1();
 
                 assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new boolean[1][1][1]; c.v[0] = new boolean[0][0]; boolean[][] val1 = get2();
-                                            c.v[0] = new boolean[0][0]; boolean[][] val2 = get2();
+                c.v[0] = new boolean[0][0]; boolean[][] val2 = get2();
 
                 assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
@@ -491,7 +465,7 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.a = true;  A val1 = get();
-                               c.v.a = false; A val2 = get();
+                c.v.a = false; A val2 = get();
 
                 assertEquals(val1.a, false);
                 assertEquals(val2.a, false);
@@ -499,7 +473,7 @@ public class TestStableBoolean {
 
             {
                 c.v = new A(); c.v.a = true;  boolean val1 = get1();
-                               c.v.a = false; boolean val2 = get1();
+                c.v.a = false; boolean val2 = get1();
                 c.v = new A(); c.v.a = false; boolean val3 = get1();
 
                 assertEquals(val1, true);
@@ -525,8 +499,8 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.next = new A(); c.v.next.next  = c.v;
-                               c.v.a = true;  c.v.next.a = true;  A val1 = get();
-                               c.v.a = false; c.v.next.a = false; A val2 = get();
+                c.v.a = true;  c.v.next.a = true;  A val1 = get();
+                c.v.a = false; c.v.next.a = false; A val2 = get();
 
                 assertEquals(val1.a, false);
                 assertEquals(val2.a, false);
@@ -534,10 +508,10 @@ public class TestStableBoolean {
 
             {
                 c.v = new A(); c.v.next = c.v;
-                               c.v.a = true;  boolean val1 = get1();
-                               c.v.a = false; boolean val2 = get1();
+                c.v.a = true;  boolean val1 = get1();
+                c.v.a = false; boolean val2 = get1();
                 c.v = new A(); c.v.next = c.v;
-                               c.v.a = false; boolean val3 = get1();
+                c.v.a = false; boolean val3 = get1();
 
                 assertEquals(val1, true);
                 assertEquals(val2, (isStableEnabled ? true : false));
@@ -563,8 +537,8 @@ public class TestStableBoolean {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.left = c.v.right = c.v;
-                               c.v.a = true;  boolean val1 = get(); boolean val2 = get1();
-                               c.v.a = false; boolean val3 = get(); boolean val4 = get1();
+                c.v.a = true;  boolean val1 = get(); boolean val2 = get1();
+                c.v.a = false; boolean val3 = get(); boolean val4 = get1();
 
                 assertEquals(val1, true);
                 assertEquals(val3, (isStableEnabled ? true : false));
@@ -594,8 +568,8 @@ public class TestStableBoolean {
             {
                 A elem = new A();
                 c.v = new A[] { elem, elem }; c.v[0].left = c.v[0].right = c.v;
-                               elem.a = true;  boolean val1 = get(); boolean val2 = get1();
-                               elem.a = false; boolean val3 = get(); boolean val4 = get1();
+                elem.a = true;  boolean val1 = get(); boolean val2 = get1();
+                elem.a = false; boolean val3 = get(); boolean val4 = get1();
 
                 assertEquals(val1, true);
                 assertEquals(val3, (isServerWithStable ? true : false));
@@ -632,4 +606,5 @@ public class TestStableBoolean {
             }
         }
     }
+
 }

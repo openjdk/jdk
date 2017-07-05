@@ -275,7 +275,6 @@ public class PolicyFile extends java.security.Policy {
 
     // contains the policy grant entries, PD cache, and alias mapping
     private AtomicReference<PolicyInfo> policyInfo = new AtomicReference<>();
-    private boolean constructed = false;
 
     private boolean expandProperties = true;
     private boolean allowSystemProperties = true;
@@ -910,9 +909,8 @@ public class PolicyFile extends java.security.Policy {
                NoSuchMethodException,
                InvocationTargetException
     {
-        //XXX we might want to keep a hash of created factories...
         Class<?> pc = Class.forName(type, false, null);
-        Permission answer = getKnownInstance(pc, name, actions);
+        Permission answer = getKnownPermission(pc, name, actions);
         if (answer != null) {
             return answer;
         }
@@ -955,12 +953,12 @@ public class PolicyFile extends java.security.Policy {
     }
 
     /**
-     * Creates one of the well-known permissions directly instead of
-     * via reflection. Keep list short to not penalize non-JDK-defined
-     * permissions.
+     * Creates one of the well-known permissions in the java.base module
+     * directly instead of via reflection. Keep list short to not penalize
+     * permissions from other modules.
      */
-    private static final Permission getKnownInstance(Class<?> claz,
-        String name, String actions) {
+    private static Permission getKnownPermission(Class<?> claz, String name,
+                                                 String actions) {
         if (claz.equals(FilePermission.class)) {
             return new FilePermission(name, actions);
         } else if (claz.equals(SocketPermission.class)) {
@@ -973,6 +971,21 @@ public class PolicyFile extends java.security.Policy {
             return new NetPermission(name, actions);
         } else if (claz.equals(AllPermission.class)) {
             return SecurityConstants.ALL_PERMISSION;
+        } else if (claz.equals(SecurityPermission.class)) {
+            return new SecurityPermission(name, actions);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Creates one of the well-known principals in the java.base module
+     * directly instead of via reflection. Keep list short to not penalize
+     * principals from other modules.
+     */
+    private static Principal getKnownPrincipal(Class<?> claz, String name) {
+        if (claz.equals(X500Principal.class)) {
+            return new X500Principal(name);
         } else {
             return null;
         }
@@ -1305,15 +1318,19 @@ public class PolicyFile extends java.security.Policy {
             try {
                 ClassLoader cl = Thread.currentThread().getContextClassLoader();
                 Class<?> pClass = Class.forName(pppe.principalClass, false, cl);
-                if (!Principal.class.isAssignableFrom(pClass)) {
-                    // not the right subtype
-                    throw new ClassCastException(pppe.principalClass +
-                                                 " is not a Principal");
-                }
+                Principal p = getKnownPrincipal(pClass, pppe.principalName);
+                if (p == null) {
+                    if (!Principal.class.isAssignableFrom(pClass)) {
+                        // not the right subtype
+                        throw new ClassCastException(pppe.principalClass +
+                                                     " is not a Principal");
+                    }
 
-                Constructor<?> c = pClass.getConstructor(PARAMS1);
-                Principal p = (Principal)c.newInstance(new Object[] {
-                                                       pppe.principalName });
+                    Constructor<?> c = pClass.getConstructor(PARAMS1);
+                    p = (Principal)c.newInstance(new Object[] {
+                                                 pppe.principalName });
+
+                }
 
                 if (debug != null) {
                     debug.println("found Principal " + p.getClass().getName());

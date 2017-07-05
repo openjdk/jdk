@@ -137,7 +137,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_ClassLoader_registerNatives;
 		Java_java_lang_Double_longBitsToDouble;
 		Java_java_lang_Double_doubleToRawLongBits;
-		Java_java_lang_reflect_Proxy_defineClass0;
 		Java_java_lang_Float_intBitsToFloat;
 		Java_java_lang_Float_floatToRawIntBits;
                 Java_java_lang_StackFrameInfo_fillInStackFrames;
@@ -165,8 +164,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_StrictMath_expm1;
 		Java_java_lang_Object_getClass;
 		Java_java_lang_Object_registerNatives;
-		Java_java_lang_Package_getSystemPackage0;
-		Java_java_lang_Package_getSystemPackages0;
 		Java_java_lang_ProcessEnvironment_environ;
 		Java_java_lang_ProcessHandleImpl_destroy0;
 		Java_java_lang_ProcessHandleImpl_getCurrentPid0;
@@ -204,11 +201,11 @@ SUNWprivate_1.1 {
 		Java_java_lang_reflect_Executable_getTypeAnnotationBytes0;
 		Java_java_lang_reflect_Field_getTypeAnnotationBytes0;
 		Java_java_lang_Runtime_freeMemory;
-                Java_java_lang_Runtime_maxMemory;
+		Java_java_lang_Runtime_maxMemory;
 		Java_java_lang_Runtime_gc;
 		Java_java_lang_Runtime_runFinalization0;
 		Java_java_lang_Runtime_totalMemory;
-                Java_java_lang_Runtime_availableProcessors;
+		Java_java_lang_Runtime_availableProcessors;
 		Java_java_lang_SecurityManager_classDepth;
 		Java_java_lang_SecurityManager_classLoaderDepth0;
 		Java_java_lang_SecurityManager_currentClassLoader0;
@@ -274,6 +271,18 @@ SUNWprivate_1.1 {
                 Java_jdk_internal_misc_VM_getgid;
                 Java_jdk_internal_misc_VM_getegid;
                 Java_jdk_internal_misc_VM_initialize;
+
+                Java_java_lang_reflect_Module_defineModule0;
+                Java_java_lang_reflect_Module_addReads0;
+                Java_java_lang_reflect_Module_addExports0;
+                Java_java_lang_reflect_Module_addExportsToAll0;
+                Java_java_lang_reflect_Module_addExportsToAllUnnamed0;
+                Java_java_lang_reflect_Module_addPackage0;
+
+		Java_jdk_internal_loader_BootLoader_getSystemPackageLocation;
+		Java_jdk_internal_loader_BootLoader_getSystemPackageNames;
+                Java_jdk_internal_loader_BootLoader_setBootLoaderUnnamedModule0;
+
 		Java_sun_misc_VMSupport_initAgentProperties;
 		Java_sun_misc_VMSupport_getVMTemporaryDirectory;
 

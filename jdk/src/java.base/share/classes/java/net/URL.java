@@ -1213,11 +1213,15 @@ public final class URL implements java.io.Serializable {
         String packagePrefixList = java.security.AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public String run() {
-                        return System.getProperty(protocolPathProp, "");
+                        return System.getProperty(protocolPathProp, null);
                     }
                 });
-        String[] packagePrefixes = packagePrefixList.split("\\|");
+        if (packagePrefixList == null) {
+            // not set
+            return null;
+        }
 
+        String[] packagePrefixes = packagePrefixList.split("\\|");
         URLStreamHandler handler = null;
         for (int i=0; handler == null && i<packagePrefixes.length; i++) {
             String packagePrefix = packagePrefixes[i].trim();
@@ -1287,9 +1291,6 @@ public final class URL implements java.io.Serializable {
     private static ThreadLocal<Object> gate = new ThreadLocal<>();
 
     private static URLStreamHandler lookupViaProviders(final String protocol) {
-        if (!jdk.internal.misc.VM.isBooted())
-            return null;
-
         if (gate.get() != null)
             throw new Error("Circular loading of URL stream handler providers detected");
 
@@ -1359,7 +1360,7 @@ public final class URL implements java.io.Serializable {
         URLStreamHandlerFactory fac;
         boolean checkedWithFactory = false;
 
-        if (isOverrideable(protocol)) {
+        if (isOverrideable(protocol) && jdk.internal.misc.VM.isBooted()) {
             // Use the factory (if any). Volatile read makes
             // URLStreamHandlerFactory appear fully initialized to current thread.
             fac = factory;

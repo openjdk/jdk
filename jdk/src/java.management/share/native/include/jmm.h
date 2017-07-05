@@ -59,7 +59,6 @@ typedef struct {
   unsigned int isThreadContentionMonitoringSupported : 1;
   unsigned int isCurrentThreadCpuTimeSupported : 1;
   unsigned int isOtherThreadCpuTimeSupported : 1;
-  unsigned int isBootClassPathSupported : 1;
   unsigned int isObjectMonitorUsageSupported : 1;
   unsigned int isSynchronizerUsageSupported : 1;
   unsigned int isThreadAllocatedMemorySupported : 1;

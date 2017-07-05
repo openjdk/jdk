@@ -21,21 +21,25 @@
  * questions.
  */
 
-package java.lang.invoke;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleHelper;
+import java.lang.invoke.MethodType;
 
 /* @test
  * @summary Assertion in LambdaFormEditor.bindArgumentType is too strong
  *
- * @run main/bootclasspath -esa java.lang.invoke.CustomizedLambdaFormTest
+ * @compile/module=java.base java/lang/invoke/MethodHandleHelper.java
+ * @run main/othervm -esa CustomizedLambdaFormTest
  */
+
 public class CustomizedLambdaFormTest {
 
     static void testExtendCustomizedBMH() throws Exception {
         // Construct BMH
-        MethodHandle mh = MethodHandles.Lookup.IMPL_LOOKUP.findVirtual(String.class, "concat",
+        MethodHandle mh = MethodHandleHelper.IMPL_LOOKUP.findVirtual(String.class, "concat",
                 MethodType.methodType(String.class, String.class))
                 .bindTo("a");
-        mh.customize();
+        MethodHandleHelper.customize(mh);
         mh.bindTo("b"); // Try to extend customized BMH
     }
 

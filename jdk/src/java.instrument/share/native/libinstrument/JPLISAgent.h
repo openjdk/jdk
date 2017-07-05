@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ typedef struct _JPLISEnvironment  JPLISEnvironment;
 #define JPLIS_INSTRUMENTIMPL_AGENTMAININVOKER_METHODSIGNATURE "(Ljava/lang/String;Ljava/lang/String;)V"
 #define JPLIS_INSTRUMENTIMPL_TRANSFORM_METHODNAME           "transform"
 #define JPLIS_INSTRUMENTIMPL_TRANSFORM_METHODSIGNATURE      \
-    "(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/Class;Ljava/security/ProtectionDomain;[BZ)[B"
+    "(Ljava/lang/ClassLoader;Ljava/lang/reflect/Module;Ljava/lang/String;Ljava/lang/Class;Ljava/security/ProtectionDomain;[BZ)[B"
 
 
 /*

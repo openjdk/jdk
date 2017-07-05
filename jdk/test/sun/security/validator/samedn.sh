@@ -25,6 +25,7 @@
 # @bug 6958869
 # @summary regression: PKIXValidator fails when multiple trust anchors
 # have same dn
+# @modules java.base/sun.security.validator
 #
 
 if [ "${TESTSRC}" = "" ] ; then
@@ -78,6 +79,7 @@ $KT -delete -alias user
 # 5. Build and run test. Make sure the CA certs are ignored for validity check.
 # Check both, one of them might be dropped out of map in old codes.
 
-$JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}CertReplace.java
-$JAVA ${TESTVMOPTS} CertReplace samedn.jks samedn1.certs || exit 1
-$JAVA ${TESTVMOPTS} CertReplace samedn.jks samedn2.certs || exit 2
+EXTRAOPTS="-XaddExports:java.base/sun.security.validator=ALL-UNNAMED"
+$JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . ${TESTSRC}${FS}CertReplace.java
+$JAVA ${TESTVMOPTS} ${EXTRAOPTS} CertReplace samedn.jks samedn1.certs || exit 1
+$JAVA ${TESTVMOPTS} ${EXTRAOPTS} CertReplace samedn.jks samedn2.certs || exit 2

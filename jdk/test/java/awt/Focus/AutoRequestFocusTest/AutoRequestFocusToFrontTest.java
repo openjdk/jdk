@@ -26,7 +26,8 @@
   @bug       6187066
   @summary   Tests the Window.autoRequestFocus property for the Window.toFront() method.
   @author    anton.tarasov: area=awt.focus
-  @library    ../../regtesthelpers
+  @library /java/awt/patchlib     ../../regtesthelpers
+  @build java.desktop/java.awt.Helper
   @build      Util
   @run       main AutoRequestFocusToFrontTest
 */

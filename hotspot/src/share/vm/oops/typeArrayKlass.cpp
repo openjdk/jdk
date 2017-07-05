@@ -70,7 +70,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   null_loader_data->add_class(ak);
 
   // Call complete_create_array_klass after all instance variables have been initialized.
-  complete_create_array_klass(ak, ak->super(), CHECK_NULL);
+  complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_module(), CHECK_NULL);
 
   return ak;
 }
