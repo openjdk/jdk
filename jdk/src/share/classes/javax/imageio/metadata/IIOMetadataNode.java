@@ -724,7 +724,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Equivalent to <code>getNodeName</code>.
      *
-     * @return the node name, as a <code>String</code
+     * @return the node name, as a <code>String</code>
      */
     public String getTagName() {
         return nodeName;

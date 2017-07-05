@@ -318,17 +318,28 @@ private:
 protected:
   template <class T> void do_oop_work(T* p) {
     HeapWord* jp = (HeapWord*)p;
-    if (jp >= _begin && jp < _end) {
-      oop obj = oopDesc::load_decode_heap_oop(p);
-      guarantee(obj == NULL ||
-                (HeapWord*)p < _boundary ||
-                (HeapWord*)obj >= _boundary,
-                "pointer on clean card crosses boundary");
-    }
+    assert(jp >= _begin && jp < _end,
+           err_msg("Error: jp " PTR_FORMAT " should be within "
+                   "[_begin, _end) = [" PTR_FORMAT "," PTR_FORMAT ")",
+                   _begin, _end));
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    guarantee(obj == NULL || (HeapWord*)obj >= _boundary,
+              err_msg("pointer " PTR_FORMAT " at " PTR_FORMAT " on "
+                      "clean card crosses boundary" PTR_FORMAT,
+                      (HeapWord*)obj, jp, _boundary));
   }
+
 public:
   VerifyCleanCardClosure(HeapWord* b, HeapWord* begin, HeapWord* end) :
-    _boundary(b), _begin(begin), _end(end) {}
+    _boundary(b), _begin(begin), _end(end) {
+    assert(b <= begin,
+           err_msg("Error: boundary " PTR_FORMAT " should be at or below begin " PTR_FORMAT,
+                   b, begin));
+    assert(begin <= end,
+           err_msg("Error: begin " PTR_FORMAT " should be strictly below end " PTR_FORMAT,
+                   begin, end));
+  }
+
   virtual void do_oop(oop* p)       { VerifyCleanCardClosure::do_oop_work(p); }
   virtual void do_oop(narrowOop* p) { VerifyCleanCardClosure::do_oop_work(p); }
 };
@@ -392,13 +403,14 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
         }
       }
       // Now traverse objects until end.
-      HeapWord* cur = start_block;
-      VerifyCleanCardClosure verify_blk(gen_boundary, begin, end);
-      while (cur < end) {
-        if (s->block_is_obj(cur) && s->obj_is_alive(cur)) {
-          oop(cur)->oop_iterate(&verify_blk);
+      if (begin < end) {
+        MemRegion mr(begin, end);
+        VerifyCleanCardClosure verify_blk(gen_boundary, begin, end);
+        for (HeapWord* cur = start_block; cur < end; cur += s->block_size(cur)) {
+          if (s->block_is_obj(cur) && s->obj_is_alive(cur)) {
+            oop(cur)->oop_iterate(&verify_blk, mr);
+          }
         }
-        cur += s->block_size(cur);
       }
       cur_entry = first_dirty;
     } else {

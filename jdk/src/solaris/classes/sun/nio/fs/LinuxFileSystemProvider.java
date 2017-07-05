@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,11 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
     {
         if (type == DosFileAttributeView.class) {
             return (V) new LinuxDosFileAttributeView(UnixPath.toUnixPath(obj),
-                                                     followLinks(options));
+                                                     Util.followLinks(options));
         }
         if (type == UserDefinedFileAttributeView.class) {
             return (V) new LinuxUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                                                             followLinks(options));
+                                                             Util.followLinks(options));
         }
         return super.getFileAttributeView(obj, type, options);
     }
@@ -72,11 +72,11 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
     {
         if (name.equals("dos")) {
             return new LinuxDosFileAttributeView(UnixPath.toUnixPath(obj),
-                                                 followLinks(options));
+                                                 Util.followLinks(options));
         }
         if (name.equals("user")) {
             return new LinuxUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                                                         followLinks(options));
+                                                         Util.followLinks(options));
         }
         return super.getFileAttributeView(obj, name, options);
     }

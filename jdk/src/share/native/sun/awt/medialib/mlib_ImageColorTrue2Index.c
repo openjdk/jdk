@@ -2623,9 +2623,10 @@ mlib_status mlib_ImageColorTrue2Index(mlib_image       *dst,
                   return MLIB_FAILURE;
               }
             }
+        default:
+          /* Unsupported type of destination image */
+          return MLIB_FAILURE;
         }
-
-        break;
       }
 
     case MLIB_SHORT:
@@ -2678,18 +2679,15 @@ mlib_status mlib_ImageColorTrue2Index(mlib_image       *dst,
                   return MLIB_FAILURE;
               }
             }
+        default:
+          /* Unsupported type of destination image */
+          return MLIB_FAILURE;
         }
-
-        break;
       }
 
     default:
       return MLIB_FAILURE;
   }
-
-  /* we need to return something to make Microsoft VC happy.
-     Return FAILURE because on success we likely to return earlier. */
-  return MLIB_FAILURE;
 }
 
 /***************************************************************/
