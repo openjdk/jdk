@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package jdk.testlibrary;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
@@ -34,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -214,55 +212,6 @@ public final class ProcessTools {
     }
 
     /**
-     * Pumps stdout and stderr from running the process into a String.
-     *
-     * @param processBuilder
-     *            ProcessHandler to run.
-     * @return Output from process.
-     * @throws IOException
-     *             If an I/O error occurs.
-     */
-    public static OutputBuffer getOutput(ProcessBuilder processBuilder)
-            throws IOException {
-        return getOutput(processBuilder.start());
-    }
-
-    /**
-     * Pumps stdout and stderr the running process into a String.
-     *
-     * @param process
-     *            Process to pump.
-     * @return Output from process.
-     * @throws IOException
-     *             If an I/O error occurs.
-     */
-    public static OutputBuffer getOutput(Process process) throws IOException {
-        ByteArrayOutputStream stderrBuffer = new ByteArrayOutputStream();
-        ByteArrayOutputStream stdoutBuffer = new ByteArrayOutputStream();
-        StreamPumper outPumper = new StreamPumper(process.getInputStream(),
-                stdoutBuffer);
-        StreamPumper errPumper = new StreamPumper(process.getErrorStream(),
-                stderrBuffer);
-
-        Future<Void> outTask = outPumper.process();
-        Future<Void> errTask = errPumper.process();
-
-        try {
-            process.waitFor();
-            outTask.get();
-            errTask.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        } catch (ExecutionException e) {
-            throw new IOException(e);
-        }
-
-        return new OutputBuffer(stdoutBuffer.toString(),
-                stderrBuffer.toString());
-    }
-
-    /**
      * Get the process id of the current running Java process
      *
      * @return Process id
@@ -343,34 +292,51 @@ public final class ProcessTools {
      * The command line will be like:
      * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
      *
+     * The jvm process will have exited before this method returns.
+     *
      * @param cmds User specifed arguments.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeTestJvm(String... cmds) throws Throwable {
+    public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
         ProcessBuilder pb = createJavaProcessBuilder(Utils.addTestJavaOpts(cmds));
         return executeProcess(pb);
     }
 
     /**
      * Executes a process, waits for it to finish and returns the process output.
+     * The process will have exited before this method returns.
      * @param pb The ProcessBuilder to execute.
-     * @return The output from the process.
+     * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
-    public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Throwable {
+    public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = null;
+        Process p = null;
+        boolean failed = false;
         try {
-            output = new OutputAnalyzer(pb.start());
+            p = pb.start();
+            output = new OutputAnalyzer(p);
+            p.waitFor();
+
             return output;
         } catch (Throwable t) {
+            failed = true;
             System.out.println("executeProcess() failed: " + t);
             throw t;
         } finally {
-            System.out.println(getProcessLog(pb, output));
+            if (p != null) {
+                p.destroyForcibly().waitFor();
+            }
+            if (failed) {
+                System.err.println(getProcessLog(pb, output));
+            }
         }
     }
 
     /**
      * Executes a process, waits for it to finish and returns the process output.
+     *
+     * The process will have exited before this method returns.
+     *
      * @param cmds The command line to execute.
      * @return The output from the process.
      */
@@ -394,6 +360,7 @@ public final class ProcessTools {
         logMsg.append("exitvalue: " + exitValue + nl);
         logMsg.append("stderr: " + stderr + nl);
         logMsg.append("stdout: " + stdout + nl);
+
         return logMsg.toString();
     }
 

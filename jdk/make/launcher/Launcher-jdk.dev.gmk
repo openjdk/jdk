@@ -25,9 +25,6 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,extcheck, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.extcheck.Main"$(COMMA) }'))
-
 $(eval $(call SetupLauncher,jar, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jar.Main"$(COMMA) }'))
 

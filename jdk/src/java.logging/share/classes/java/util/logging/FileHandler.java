@@ -150,7 +150,7 @@ import java.util.Set;
 public class FileHandler extends StreamHandler {
     private MeteredStream meter;
     private boolean append;
-    private int limit;       // zero => no limit.
+    private long limit;       // zero => no limit.
     private int count;
     private String pattern;
     private String lockFileName;
@@ -164,11 +164,11 @@ public class FileHandler extends StreamHandler {
      * (a) forwards all its output to a target stream
      * (b) keeps track of how many bytes have been written
      */
-    private class MeteredStream extends OutputStream {
+    private static final class MeteredStream extends OutputStream {
         final OutputStream out;
-        int written;
+        long written;
 
-        MeteredStream(OutputStream out, int written) {
+        MeteredStream(OutputStream out, long written) {
             this.out = out;
             this.written = written;
         }
@@ -203,9 +203,9 @@ public class FileHandler extends StreamHandler {
     }
 
     private void open(File fname, boolean append) throws IOException {
-        int len = 0;
+        long len = 0;
         if (append) {
-            len = (int)fname.length();
+            len = fname.length();
         }
         FileOutputStream fout = new FileOutputStream(fname.toString(), append);
         BufferedOutputStream bout = new BufferedOutputStream(fout);
@@ -223,7 +223,7 @@ public class FileHandler extends StreamHandler {
         String cname = getClass().getName();
 
         pattern = manager.getStringProperty(cname + ".pattern", "%h/java%u.log");
-        limit = manager.getIntProperty(cname + ".limit", 0);
+        limit = manager.getLongProperty(cname + ".limit", 0);
         if (limit < 0) {
             limit = 0;
         }
@@ -395,6 +395,39 @@ public class FileHandler extends StreamHandler {
      */
     public FileHandler(String pattern, int limit, int count, boolean append)
                                         throws IOException, SecurityException {
+        this(pattern, (long)limit, count, append);
+    }
+
+    /**
+     * Initialize a {@code FileHandler} to write to a set of files
+     * with optional append.  When (approximately) the given limit has
+     * been written to one file, another file will be opened.  The
+     * output will cycle through a set of count files.
+     * <p>
+     * The {@code FileHandler} is configured based on {@code LogManager}
+     * properties (or their default values) except that the given pattern
+     * argument is used as the filename pattern, the file limit is
+     * set to the limit argument, and the file count is set to the
+     * given count argument, and the append mode is set to the given
+     * {@code append} argument.
+     * <p>
+     * The count must be at least 1.
+     *
+     * @param pattern  the pattern for naming the output file
+     * @param limit  the maximum number of bytes to write to any one file
+     * @param count  the number of files to use
+     * @param append  specifies append mode
+     * @exception  IOException if there are IO problems opening the files.
+     * @exception  SecurityException  if a security manager exists and if
+     *             the caller does not have {@code LoggingPermission("control")}.
+     * @exception  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
+     * @exception  IllegalArgumentException if pattern is an empty string
+     *
+     * @since 1.9
+     *
+     */
+    public FileHandler(String pattern, long limit, int count, boolean append)
+                                        throws IOException {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
@@ -690,7 +723,7 @@ public class FileHandler extends StreamHandler {
         }
         super.publish(record);
         flush();
-        if (limit > 0 && meter.written >= limit) {
+        if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
             // We performed access checks in the "init" method to make sure
             // we are only initialized from trusted code.  So we assume
             // it is OK to write the target files, even if we are
