@@ -65,7 +65,7 @@ inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
   oop o = oopDesc::load_decode_heap_oop_not_null(p);
   oop new_obj = o->is_forwarded()
         ? o->forwardee()
-        : pm->copy_to_survivor_space(o, pm->depth_first());
+        : pm->copy_to_survivor_space(o);
   oopDesc::encode_store_heap_oop_not_null(p, new_obj);
 
   // We cannot mark without test, as some code passes us pointers

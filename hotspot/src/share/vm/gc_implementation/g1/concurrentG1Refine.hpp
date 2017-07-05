@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ class ConcurrentG1Refine: public CHeapObj {
   jbyte* cache_insert(jbyte* card_ptr, bool* defer);
 
   // Process the cached entries.
-  void clean_up_cache(int worker_i, G1RemSet* g1rs);
+  void clean_up_cache(int worker_i, G1RemSet* g1rs, DirtyCardQueue* into_cset_dcq);
 
   // Set up for parallel processing of the cards in the hot cache
   void clear_hot_cache_claimed_index() {

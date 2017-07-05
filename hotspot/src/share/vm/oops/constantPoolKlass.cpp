@@ -268,21 +268,6 @@ constantPoolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
   return cp->object_size();
 }
 
-void constantPoolKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_constantPool(), "should be constant pool");
-  constantPoolOop cp = (constantPoolOop) obj;
-  if (AnonymousClasses && cp->has_pseudo_string() && cp->tags() != NULL) {
-    oop* base = (oop*)cp->base();
-    for (int i = 0; i < cp->length(); ++i, ++base) {
-      if (cp->tag_at(i).is_string()) {
-        if (PSScavenge::should_scavenge(base)) {
-          pm->claim_or_forward_breadth(base);
-        }
-      }
-    }
-  }
-}
-
 void constantPoolKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_constantPool(), "should be constant pool");
   constantPoolOop cp = (constantPoolOop) obj;
