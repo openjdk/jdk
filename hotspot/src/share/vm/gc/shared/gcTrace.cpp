@@ -185,8 +185,10 @@ void OldGCTracer::report_concurrent_mode_failure() {
 }
 
 #if INCLUDE_ALL_GCS
-void G1MMUTracer::report_mmu(double timeSlice, double gcTime, double maxTime) {
-  send_g1_mmu_event(timeSlice, gcTime, maxTime);
+void G1MMUTracer::report_mmu(double time_slice_sec, double gc_time_sec, double max_time_sec) {
+  send_g1_mmu_event(time_slice_sec * MILLIUNITS,
+                    gc_time_sec * MILLIUNITS,
+                    max_time_sec * MILLIUNITS);
 }
 
 void G1NewTracer::report_yc_type(G1YCType type) {

@@ -209,8 +209,8 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *
      * @param method the method to select the implementation of
      * @param callerType the caller or context type used to perform access checks
-     * @return the method that would be selected at runtime (might be abstract) or {@code null} if
-     *         it can not be resolved
+     * @return the link-time resolved method (might be abstract) or {@code null} if it is either a
+     *         signature polymorphic method or can not be linked.
      */
     ResolvedJavaMethod resolveMethod(ResolvedJavaMethod method, ResolvedJavaType callerType);
 
