@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public class KeyAgreement {
      * algorithm.
      * See the KeyAgreement section in the <a href=
      * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @return the new <code>KeyAgreement</code> object.
@@ -196,7 +196,7 @@ public class KeyAgreement {
      * algorithm.
      * See the KeyAgreement section in the <a href=
      * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -240,7 +240,7 @@ public class KeyAgreement {
      * algorithm.
      * See the KeyAgreement section in the <a href=
      * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.
@@ -418,7 +418,7 @@ public class KeyAgreement {
      *
      * <p> If this key agreement requires any random bytes, it will get
      * them using the
-     * {@link SecureRandom <code>SecureRandom</code>}
+     * {@link java.security.SecureRandom}
      * implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of
@@ -476,7 +476,7 @@ public class KeyAgreement {
      *
      * <p> If this key agreement requires any random bytes, it will get
      * them using the
-     * {@link SecureRandom <code>SecureRandom</code>}
+     * {@link java.security.SecureRandom}
      * implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of

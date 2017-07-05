@@ -151,9 +151,9 @@ public enum StreamTestScenario implements OpTestCase.BaseStreamTestScenario {
         void _run(TestData<T, S_IN> data, Consumer<U> b, Function<S_IN, Stream<U>> m) {
             Stream<U> s = m.apply(data.parallelStream());
             Spliterator<U> sp = s.spliterator();
-            Stream<U> ss = StreamSupport.parallelStream(() -> sp,
-                                                        StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
-                                                        | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED));
+            Stream<U> ss = StreamSupport.stream(() -> sp,
+                                                StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
+                                                | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED), true);
             for (Object t : ss.toArray())
                 b.accept((U) t);
         }

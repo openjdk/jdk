@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class SaslException extends IOException {
     private Throwable _exception;
 
     /**
-     * Constructs a new instance of <tt>SaslException</tt>.
+     * Constructs a new instance of {@code SaslException}.
      * The root exception and the detailed message are null.
      */
     public SaslException () {
@@ -53,7 +53,7 @@ public class SaslException extends IOException {
     }
 
     /**
-     * Constructs a new instance of <tt>SaslException</tt> with a detailed message.
+     * Constructs a new instance of {@code SaslException} with a detailed message.
      * The root exception is null.
      * @param detail A possibly null string containing details of the exception.
      *
@@ -64,7 +64,7 @@ public class SaslException extends IOException {
     }
 
     /**
-     * Constructs a new instance of <tt>SaslException</tt> with a detailed message
+     * Constructs a new instance of {@code SaslException} with a detailed message
      * and a root exception.
      * For example, a SaslException might result from a problem with
      * the callback handler, which might throw a NoSuchCallbackException if

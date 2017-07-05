@@ -2,27 +2,29 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2006 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMSubTreeData.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id$
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -45,17 +47,15 @@ import org.w3c.dom.Node;
 public class DOMSubTreeData implements NodeSetData {
 
     private boolean excludeComments;
-    private Iterator ni;
     private Node root;
 
     public DOMSubTreeData(Node root, boolean excludeComments) {
         this.root = root;
-        this.ni = new DelayedNodeIterator(root, excludeComments);
         this.excludeComments = excludeComments;
     }
 
     public Iterator iterator() {
-        return ni;
+        return new DelayedNodeIterator(root, excludeComments);
     }
 
     public Node getRoot() {
@@ -70,10 +70,10 @@ public class DOMSubTreeData implements NodeSetData {
      * This is an Iterator that contains a backing node-set that is
      * not populated until the caller first attempts to advance the iterator.
      */
-    static class DelayedNodeIterator implements Iterator {
+    static class DelayedNodeIterator implements Iterator<Node> {
         private Node root;
-        private List nodeSet;
-        private ListIterator li;
+        private List<Node> nodeSet;
+        private ListIterator<Node> li;
         private boolean withComments;
 
         DelayedNodeIterator(Node root, boolean excludeComments) {
@@ -89,13 +89,13 @@ public class DOMSubTreeData implements NodeSetData {
             return li.hasNext();
         }
 
-        public Object next() {
+        public Node next() {
             if (nodeSet == null) {
                 nodeSet = dereferenceSameDocumentURI(root);
                 li = nodeSet.listIterator();
             }
             if (li.hasNext()) {
-                return (Node) li.next();
+                return li.next();
             } else {
                 throw new NoSuchElementException();
             }
@@ -109,11 +109,11 @@ public class DOMSubTreeData implements NodeSetData {
          * Dereferences a same-document URI fragment.
          *
          * @param node the node (document or element) referenced by the
-         *       URI fragment. If null, returns an empty set.
+         *        URI fragment. If null, returns an empty set.
          * @return a set of nodes (minus any comment nodes)
          */
-        private List dereferenceSameDocumentURI(Node node) {
-            List nodeSet = new ArrayList();
+        private List<Node> dereferenceSameDocumentURI(Node node) {
+            List<Node> nodeSet = new ArrayList<Node>();
             if (node != null) {
                 nodeSetMinusCommentNodes(node, nodeSet, null);
             }
@@ -129,8 +129,10 @@ public class DOMSubTreeData implements NodeSetData {
          * @param nodeSet the set of nodes traversed so far
          * @param the previous sibling node
          */
-        private void nodeSetMinusCommentNodes(Node node, List nodeSet,
-            Node prevSibling) {
+        @SuppressWarnings("fallthrough")
+        private void nodeSetMinusCommentNodes(Node node, List<Node> nodeSet,
+                                              Node prevSibling)
+        {
             switch (node.getNodeType()) {
                 case Node.ELEMENT_NODE :
                     NamedNodeMap attrs = node.getAttributes();
@@ -140,8 +142,15 @@ public class DOMSubTreeData implements NodeSetData {
                         }
                     }
                     nodeSet.add(node);
-                case Node.DOCUMENT_NODE :
                     Node pSibling = null;
+                    for (Node child = node.getFirstChild(); child != null;
+                        child = child.getNextSibling()) {
+                        nodeSetMinusCommentNodes(child, nodeSet, pSibling);
+                        pSibling = child;
+                    }
+                    break;
+                case Node.DOCUMENT_NODE :
+                    pSibling = null;
                     for (Node child = node.getFirstChild(); child != null;
                         child = child.getNextSibling()) {
                         nodeSetMinusCommentNodes(child, nodeSet, pSibling);
@@ -154,8 +163,11 @@ public class DOMSubTreeData implements NodeSetData {
                     // contiguous text/cdata nodes
                     if (prevSibling != null &&
                         (prevSibling.getNodeType() == Node.TEXT_NODE ||
-                         prevSibling.getNodeType() == Node.CDATA_SECTION_NODE)){                        return;
+                         prevSibling.getNodeType() == Node.CDATA_SECTION_NODE)) {
+                        return;
                     }
+                    nodeSet.add(node);
+                    break;
                 case Node.PROCESSING_INSTRUCTION_NODE :
                     nodeSet.add(node);
                     break;

@@ -1829,25 +1829,20 @@ final class Nodes {
         @Override
         public void compute() {
             SizedCollectorTask<P_IN, P_OUT, T_SINK, K> task = this;
-            while (true) {
-                Spliterator<P_IN> leftSplit;
-                if (!AbstractTask.suggestSplit(task.spliterator, task.targetSize)
-                    || ((leftSplit = task.spliterator.trySplit()) == null)) {
-                    if (task.offset + task.length >= MAX_ARRAY_SIZE)
-                        throw new IllegalArgumentException("Stream size exceeds max array size");
-                    T_SINK sink = (T_SINK) task;
-                    task.helper.wrapAndCopyInto(sink, task.spliterator);
-                    task.propagateCompletion();
-                    return;
-                }
-                else {
-                    task.setPendingCount(1);
-                    long leftSplitSize = leftSplit.estimateSize();
-                    task.makeChild(leftSplit, task.offset, leftSplitSize).fork();
-                    task = task.makeChild(task.spliterator, task.offset + leftSplitSize,
-                                          task.length - leftSplitSize);
-                }
+            Spliterator<P_IN> rightSplit = spliterator, leftSplit;
+            while (rightSplit.estimateSize() > task.targetSize &&
+                   (leftSplit = rightSplit.trySplit()) != null) {
+                task.setPendingCount(1);
+                long leftSplitSize = leftSplit.estimateSize();
+                task.makeChild(leftSplit, task.offset, leftSplitSize).fork();
+                task = task.makeChild(rightSplit, task.offset + leftSplitSize,
+                                      task.length - leftSplitSize);
             }
+            if (task.offset + task.length >= MAX_ARRAY_SIZE)
+                throw new IllegalArgumentException("Stream size exceeds max array size");
+            T_SINK sink = (T_SINK) task;
+            task.helper.wrapAndCopyInto(sink, rightSplit);
+            task.propagateCompletion();
         }
 
         abstract K makeChild(Spliterator<P_IN> spliterator, long offset, long size);

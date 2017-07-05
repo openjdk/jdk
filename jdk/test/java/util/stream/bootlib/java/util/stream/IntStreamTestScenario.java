@@ -140,9 +140,10 @@ public enum IntStreamTestScenario implements OpTestCase.BaseStreamTestScenario {
         void _run(TestData<T, S_IN> data, IntConsumer b, Function<S_IN, IntStream> m) {
             IntStream s = m.apply(data.parallelStream());
             Spliterator.OfInt sp = s.spliterator();
-            IntStream ss = StreamSupport.intParallelStream(() -> sp,
-                                                           StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
-                                                           | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED));
+            IntStream ss = StreamSupport.intStream(() -> sp,
+                                                   StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
+                                                   | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED),
+                                                   true);
             for (int t : ss.toArray())
                 b.accept(t);
         }

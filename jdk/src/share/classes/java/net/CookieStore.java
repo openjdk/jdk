@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ public interface CookieStore {
      *
      * @return          an immutable list of HttpCookie,
      *                  return empty list if no cookies match the given URI
+     *
+     * @param uri       the uri associated with the cookies to be returned
      *
      * @throws NullPointerException if <tt>uri</tt> is <tt>null</tt>
      *

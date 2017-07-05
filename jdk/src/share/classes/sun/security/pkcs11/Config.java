@@ -197,6 +197,10 @@ final class Config {
     // (false).
     private boolean useEcX963Encoding = false;
 
+    // Flag to indicate whether NSS should favour performance (false) or
+    // memory footprint (true).
+    private boolean nssOptimizeSpace = false;
+
     private Config(String filename, InputStream in) throws IOException {
         if (in == null) {
             if (filename.startsWith("--")) {
@@ -329,6 +333,10 @@ final class Config {
         return useEcX963Encoding;
     }
 
+    boolean getNssOptimizeSpace() {
+        return nssOptimizeSpace;
+    }
+
     private static String expand(final String s) throws IOException {
         try {
             return PropertyExpander.expand(s);
@@ -451,6 +459,8 @@ final class Config {
                 nssUseSecmodTrust = parseBooleanEntry(word);
             } else if (word.equals("useEcX963Encoding")) {
                 useEcX963Encoding = parseBooleanEntry(word);
+            } else if (word.equals("nssOptimizeSpace")) {
+                nssOptimizeSpace = parseBooleanEntry(word);
             } else {
                 throw new ConfigurationException
                         ("Unknown keyword '" + word + "', line " + st.lineno());

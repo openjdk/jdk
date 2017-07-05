@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
     }
 
     /**
-     * @serialData this <code>KeyImpl</code> is serialized by
+     * @serialData this {@code KeyImpl} is serialized by
      * writing out the ASN1 Encoded bytes of the encryption key.
      * The ASN1 encoding is defined in RFC4120 and as  follows:
      * EncryptionKey   ::= SEQUENCE {
