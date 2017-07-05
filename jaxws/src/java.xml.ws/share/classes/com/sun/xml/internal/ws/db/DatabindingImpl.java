@@ -84,7 +84,9 @@ public final class DatabindingImpl implements Databinding {
         modeler.setClassLoader(config.getClassLoader());
         seiModel = modeler.buildRuntimeModel();
         WSDLPort wsdlport = config.getWsdlPort();
-        packetFactory = new MessageContextFactory(seiModel.getWSBinding().getFeatures());
+        Object facProp = config.properties().get("com.sun.xml.internal.ws.api.message.MessageContextFactory");
+        packetFactory = (facProp != null && facProp instanceof MessageContextFactory)? (MessageContextFactory)facProp :
+                        new MessageContextFactory(seiModel.getWSBinding().getFeatures());
         clientConfig = isClientConfig(config);
         if (clientConfig) {
             initStubHandlers();

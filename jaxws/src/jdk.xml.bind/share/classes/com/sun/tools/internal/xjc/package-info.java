@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,28 +29,6 @@
  * <p>
  * This module contains the code that implements the schema compiler 'XJC'.
  *
- *
- * <h2>XJC Architecture Diagram</h2>
- * {@DotDiagram
-     digraph G {
-         rankdir=TB;
-
-         // data
-         node [shape=box]; // style=filled,color=lightpink];
-         schema -> "DOM forest" [label="DOMForest.parse()"];
-         "DOM forest" -> "schema OM" [label="SOM specific parser"];
-         "schema OM" -> model [label="language specific builder"];
-
-         model -> codeModel [label="BeanGenerator.generate()"];
-         codeModel -> "Java source files" [label="JCodeModel.build()"];
-         model -> outline [label="BeanGenerator.generate()"];
-
-         edge [style=dotted,label="associate"]
-         outline -> codeModel;
-         outline -> model;
-       }
- * }
- *
  * <h2>Overview</h2>
  * <p>
  * XJC consists of the following major components.
@@ -78,13 +56,5 @@
  *   and CodeModel.
  * </dl>
  *
- * {@DotDiagram
- *   digraph G {
- *      rankdir = LR;
- *      schema -> reader -> model -> backend -> outline;
- *   }
- * }
- *
- * @ArchitectureDocument
  */
 package com.sun.tools.internal.xjc;

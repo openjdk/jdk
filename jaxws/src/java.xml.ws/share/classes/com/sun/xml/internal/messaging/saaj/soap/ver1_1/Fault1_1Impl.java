@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,8 @@ import java.util.logging.Level;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPFaultElement;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPConstants;
-import javax.xml.soap.Name;
 import javax.xml.soap.Name;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocument;

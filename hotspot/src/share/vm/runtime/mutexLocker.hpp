@@ -93,6 +93,7 @@ extern Monitor* CompileThread_lock;              // a lock held by compile threa
 extern Monitor* Compilation_lock;                // a lock used to pause compilation
 extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
+extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
 extern Mutex*   MultiArray_lock;                 // a lock used to guard allocation of multi-dim arrays
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks

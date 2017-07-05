@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public class MessageContextFactory extends com.oracle.webservices.internal.api.m
 
     public com.oracle.webservices.internal.api.message.MessageContext createContext(SOAPMessage soap) {
         throwIfIllegalMessageArgument(soap);
+        if (saajFactory!= null) return packet(saajFactory.createMessage(soap));
         return packet(Messages.create(soap));
     }
 
@@ -162,6 +163,7 @@ public class MessageContextFactory extends com.oracle.webservices.internal.api.m
         if (mf != null) {
             p.setMtomFeature(mf);
         }
+        p.setSAAJFactory(saajFactory);
         return p;
     }
 

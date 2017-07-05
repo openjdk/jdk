@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import com.sun.tools.internal.xjc.reader.Const;
 /**
  * Compatibility with 1.0.
  *
- * Read &lt;xjc:dom> as &lt;jaxb:dom>.
+ * Read {@code <xjc:dom> as <jaxb:dom>}.
  *
  * @author Kohsuke Kawaguchi
  */

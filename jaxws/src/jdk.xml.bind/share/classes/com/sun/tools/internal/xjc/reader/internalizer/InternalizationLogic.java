@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public interface InternalizationLogic {
      *      The owner DOMForest object. Probably useful only
      *      to obtain context information, such as error handler.
      * @param bindings
-     *      &lt;jaxb:bindings> element or a customization element.
+     *      {@code <jaxb:bindings>} element or a customization element.
      * @return
      *      true if it's OK, false if not.
      */
@@ -82,7 +82,7 @@ public interface InternalizationLogic {
      *
      * <p>
      * For example, in XML Schema, target nodes can be any schema
-     * element but it is always the &lt;xsd:appinfo> element that
+     * element but it is always the {@code <xsd:appinfo>} element that
      * receives customization.
      *
      * @param target

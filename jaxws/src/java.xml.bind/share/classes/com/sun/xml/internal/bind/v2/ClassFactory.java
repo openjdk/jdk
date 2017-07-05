@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,25 +87,16 @@ public final class ClassFactory {
         if(consRef!=null)
             cons = consRef.get();
         if(cons==null) {
-            cons = AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>() {
-                @Override
-                public Constructor<T> run() {
-                    try {
-                        return clazz.getDeclaredConstructor(emptyClass);
-                    } catch (NoSuchMethodException e) {
-                        logger.log(Level.INFO,"No default constructor found on "+clazz,e);
-                        NoSuchMethodError exp;
-                        if(clazz.getDeclaringClass()!=null && !Modifier.isStatic(clazz.getModifiers())) {
-                            exp = new NoSuchMethodError(Messages.NO_DEFAULT_CONSTRUCTOR_IN_INNER_CLASS
-                                                                .format(clazz.getName()));
-                        } else {
-                            exp = new NoSuchMethodError(e.getMessage());
-                        }
-                        exp.initCause(e);
-                        throw exp;
+            if (System.getSecurityManager() == null) {
+                cons = tryGetDeclaredConstructor(clazz);
+            } else {
+                cons = AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>() {
+                    @Override
+                    public Constructor<T> run() {
+                        return tryGetDeclaredConstructor(clazz);
                     }
-                }
-            });
+                });
+            }
 
             int classMod = clazz.getModifiers();
 
@@ -124,6 +115,23 @@ public final class ClassFactory {
         }
 
         return cons.newInstance(emptyObject);
+    }
+
+    private static <T> Constructor<T> tryGetDeclaredConstructor(Class<T> clazz) {
+        try {
+            return clazz.getDeclaredConstructor((Class<T>[])emptyClass);
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.INFO,"No default constructor found on "+clazz,e);
+            NoSuchMethodError exp;
+            if(clazz.getDeclaringClass()!=null && !Modifier.isStatic(clazz.getModifiers())) {
+                exp = new NoSuchMethodError(Messages.NO_DEFAULT_CONSTRUCTOR_IN_INNER_CLASS
+                                                    .format(clazz.getName()));
+            } else {
+                exp = new NoSuchMethodError(e.getMessage());
+            }
+            exp.initCause(e);
+            throw exp;
+        }
     }
 
     /**

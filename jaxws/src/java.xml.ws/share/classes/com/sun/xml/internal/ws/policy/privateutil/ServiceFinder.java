@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,9 +221,9 @@ final class ServiceFinder<T> implements Iterable<T> {
     }
 
     private static void fail(final Class service, final String msg, final Throwable cause)
-        throws ServiceConfigurationError {
+            throws ServiceConfigurationError {
         final ServiceConfigurationError sce
-            = new ServiceConfigurationError(LocalizationMessages.WSP_0025_SPI_FAIL_SERVICE_MSG(service.getName(), msg));
+                = new ServiceConfigurationError(LocalizationMessages.WSP_0025_SPI_FAIL_SERVICE_MSG(service.getName(), msg));
         if (null != cause) {
             sce.initCause(cause);
         }
@@ -237,7 +237,7 @@ final class ServiceFinder<T> implements Iterable<T> {
     }*/
 
     private static void fail(final Class service, final URL u, final int line, final String msg, final Throwable cause)
-        throws ServiceConfigurationError {
+            throws ServiceConfigurationError {
         fail(service, LocalizationMessages.WSP_0024_SPI_FAIL_SERVICE_URL_LINE_MSG(u , line, msg), cause);
     }
 
@@ -248,7 +248,7 @@ final class ServiceFinder<T> implements Iterable<T> {
      */
     private static int parseLine(final Class service, final URL u, final BufferedReader r, final int lc,
                                  final List<String> names, final Set<String> returned)
-        throws IOException, ServiceConfigurationError {
+            throws IOException, ServiceConfigurationError {
         String ln = r.readLine();
         if (ln == null) {
             return -1;
@@ -293,7 +293,7 @@ final class ServiceFinder<T> implements Iterable<T> {
      */
     @SuppressWarnings({"StatementWithEmptyBody"})
     private static Iterator<String> parse(Class service, URL u, Set<String> returned)
-        throws ServiceConfigurationError {
+            throws ServiceConfigurationError {
         InputStream in = null;
         BufferedReader r = null;
         ArrayList<String> names = new ArrayList<String>();

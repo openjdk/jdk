@@ -79,7 +79,7 @@ public final class BindInfo implements Iterable<BIDeclaration> {
     private Locator location;
 
     /**
-     * Documentation taken from &lt;xs:documentation>s.
+     * Documentation taken from {@code <xs:documentation>s}.
      */
     @XmlElement(namespace=WellKnownNamespace.XML_SCHEMA)
     private Documentation documentation;
@@ -212,7 +212,7 @@ public final class BindInfo implements Iterable<BIDeclaration> {
     }
 
     /**
-     * Gets the documentation parsed from &lt;xs:documentation>s.
+     * Gets the documentation parsed from {@code <xs:documentation>}s.
      * The returned collection is to be added to {@link JDocComment#append(Object)}.
      * @return  maybe null.
      */
@@ -353,5 +353,5 @@ public final class BindInfo implements Iterable<BIDeclaration> {
     /**
      * Lazily parsed schema for the binding file.
      */
-    public static SchemaCache bindingFileSchema = new SchemaCache("binding.xsd", BindInfo.class, true);
+    public static final SchemaCache bindingFileSchema = new SchemaCache("binding.xsd", BindInfo.class, true);
 }

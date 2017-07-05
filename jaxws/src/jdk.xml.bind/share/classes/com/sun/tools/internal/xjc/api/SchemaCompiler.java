@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,10 @@ import org.xml.sax.InputSource;
  * method to get the compiled {@link JAXBModel} object.
  *
  *
- * <h2>Tips: namespace URI -> package customization</h2>
+ * <h2>Tips: namespace URI {@code -> } package customization</h2>
  * <p>
  * The caller can feed the following synthesized schema
- * to achive the namespace URI -> Java package customization:
+ * to achive the namespace URI {@code -> } Java package customization:
  * <pre>{@code
  * <schema targetNamespace="xml.namespace.uri"
  *   xmlns="http://www.w3.org/2001/XMLSchema"

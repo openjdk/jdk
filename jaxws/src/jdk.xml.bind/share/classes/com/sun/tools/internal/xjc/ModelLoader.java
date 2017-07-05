@@ -38,6 +38,8 @@ import com.sun.tools.internal.xjc.reader.internalizer.DOMForestScanner;
 import com.sun.tools.internal.xjc.reader.internalizer.InternalizationLogic;
 import com.sun.tools.internal.xjc.reader.internalizer.SCDBasedBindingSet;
 import com.sun.tools.internal.xjc.reader.internalizer.VersionChecker;
+import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGCompiler;
+import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGInternalizationLogic;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.AnnotationParserFactoryImpl;
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.CustomizationContextChecker;
@@ -52,6 +54,15 @@ import com.sun.xml.internal.xsom.parser.XMLParser;
 import com.sun.xml.internal.xsom.parser.XSOMParser;
 import javax.xml.XMLConstants;
 
+import com.sun.xml.internal.rngom.ast.builder.SchemaBuilder;
+import com.sun.xml.internal.rngom.ast.util.CheckingSchemaBuilder;
+import com.sun.xml.internal.rngom.digested.DPattern;
+import com.sun.xml.internal.rngom.digested.DSchemaBuilderImpl;
+import com.sun.xml.internal.rngom.parse.IllegalSchemaException;
+import com.sun.xml.internal.rngom.parse.Parseable;
+import com.sun.xml.internal.rngom.parse.compact.CompactParseable;
+import com.sun.xml.internal.rngom.parse.xml.SAXParseable;
+import com.sun.xml.internal.rngom.xml.sax.XMLReaderCreator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -337,7 +348,7 @@ public final class ModelLoader {
     /**
      * Parses a set of schemas inside a WSDL file.
      *
-     * A WSDL file may contain multiple &lt;xsd:schema> elements.
+     * A WSDL file may contain multiple {@code <xsd:schema>} elements.
      */
     private XSSchemaSet loadWSDL()
         throws SAXException {

@@ -25,12 +25,14 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,javap, \
-    -DEXPAND_CLASSPATH_WILDCARDS \
-    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.javap.Main"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, javap, \
+    MAIN_CLASS := com.sun.tools.javap.Main, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
+        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+))
 
-$(eval $(call SetupLauncher,jdeps, \
-    -DEXPAND_CLASSPATH_WILDCARDS \
-    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.jdeps.Main"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, jdeps, \
+    MAIN_CLASS := com.sun.tools.jdeps.Main, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
+        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+))

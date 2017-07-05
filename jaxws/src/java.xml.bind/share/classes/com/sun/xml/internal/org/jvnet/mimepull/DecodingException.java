@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,12 @@ import java.io.IOException;
 public final class DecodingException extends IOException {
 
     /**
-     * Constructor
+     * Constructs a {@code DecodingException} with the specified detail message.
+     *
+     * @param message
+     *        The detail message
      */
-    public DecodingException(String s) {
-        super(s);
+    public DecodingException(String message) {
+            super(message);
     }
 }

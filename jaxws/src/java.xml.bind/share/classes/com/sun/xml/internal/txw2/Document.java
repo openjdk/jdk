@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public final class Document {
     }
 
     /**
-     * Defines additional user object -> string conversion logic.
+     * Defines additional user object {@code ->} string conversion logic.
      *
      * <p>
      * Applications can add their own {@link DatatypeWriter} so that

@@ -250,7 +250,6 @@ public interface BindingContext {
      * and {@link Marshaller#setProperty(String, Object)}
      * to enable the c14n marshalling support in the {@link JAXBContext}.
      *
-     * @see C14nSupport_ArchitectureDocument
      * @since 2.0 EA2
      */
     public static final String CANONICALIZATION_SUPPORT = "com.sun.xml.internal.bind.c14n";

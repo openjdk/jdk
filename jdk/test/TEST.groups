@@ -27,6 +27,7 @@
 
 tier1 = \
     :jdk_lang \
+    -java/lang/ProcessHandle/TreeTest.java \
     :jdk_util \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
@@ -34,6 +35,7 @@ tier1 = \
     :jdk_math
 
 tier2 = \
+    java/lang/ProcessHandle/TreeTest.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \

@@ -211,7 +211,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   , _scratch_int_pressure(0, INTPRESSURE)
   , _scratch_float_pressure(0, FLOATPRESSURE)
 #ifndef PRODUCT
-  , _trace_spilling(TraceSpilling || C->method_has_option("TraceSpilling"))
+  , _trace_spilling(C->directive()->TraceSpillingOption)
 #endif
 {
   Compile::TracePhase tp("ctorChaitin", &timers[_t_ctorChaitin]);

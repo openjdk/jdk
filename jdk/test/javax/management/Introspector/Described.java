@@ -25,7 +25,7 @@
  *
  * Used by AnnotationSecurityTest.java
  **/
-import java.beans.ConstructorProperties;
+import javax.management.ConstructorParameters;
 
 /**
  * An MBean used by AnnotationSecurityTest.java
@@ -37,7 +37,7 @@ public class Described implements DescribedMBean {
     public Described() {}
 
     @SqeDescriptorKey("ONE PARAMETER CONSTRUCTOR Described")
-    @ConstructorProperties({"name", "unused"})
+    @ConstructorParameters({"name", "unused"})
     public Described(@SqeDescriptorKey("CONSTRUCTOR PARAMETER name")String name,
             @SqeDescriptorKey("CONSTRUCTOR PARAMETER unused")String unused) {
         this.name = name ;

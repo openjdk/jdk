@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocument;
@@ -116,7 +115,7 @@ public abstract class HeaderImpl extends ElementImpl implements SOAPHeader {
         return getHeaderElementsForActor(actor, true, false);
     }
 
-    protected Iterator getHeaderElementsForActor(
+    protected Iterator<SOAPHeaderElement> getHeaderElementsForActor(
         String actor,
         boolean detach,
         boolean mustUnderstand) {
@@ -127,15 +126,15 @@ public abstract class HeaderImpl extends ElementImpl implements SOAPHeader {
         return getHeaderElements(actor, detach, mustUnderstand);
     }
 
-    protected Iterator getHeaderElements(
+    protected Iterator<SOAPHeaderElement> getHeaderElements(
         String actor,
         boolean detach,
         boolean mustUnderstand) {
-        List elementList = new ArrayList();
+        List<SOAPHeaderElement> elementList = new ArrayList<SOAPHeaderElement>();
 
-        Iterator eachChild = getChildElements();
+        Iterator<org.w3c.dom.Node> eachChild = getChildElements();
 
-        Object currentChild = iterate(eachChild);
+        org.w3c.dom.Node currentChild = iterate(eachChild);
         while (currentChild != null) {
             if (!(currentChild instanceof SOAPHeaderElement)) {
                 currentChild = iterate(eachChild);
@@ -173,7 +172,7 @@ public abstract class HeaderImpl extends ElementImpl implements SOAPHeader {
         return elementList.listIterator();
     }
 
-    private Object iterate(Iterator each) {
+    private <T> T iterate(Iterator<T> each) {
         return each.hasNext() ? each.next() : null;
     }
 

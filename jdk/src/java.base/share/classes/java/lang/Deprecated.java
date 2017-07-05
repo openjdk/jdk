@@ -36,7 +36,7 @@ import static java.lang.annotation.ElementType.*;
  *
  * <p>Use of the &#64;Deprecated annotation on a local variable
  * declaration or on a parameter declaration or a package declaration
- * has no effect.
+ * has no effect on the warnings issued by a compiler.
  *
  * @author  Neal Gafter
  * @since 1.5

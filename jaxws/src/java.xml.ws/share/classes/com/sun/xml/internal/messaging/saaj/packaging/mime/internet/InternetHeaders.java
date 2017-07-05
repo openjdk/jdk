@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,12 +73,12 @@ import java.util.NoSuchElementException;
  */
 public final class InternetHeaders {
 
-    private final FinalArrayList headers = new FinalArrayList();
+    private final FinalArrayList<hdr> headers = new FinalArrayList<hdr>();
 
     /**
      * Lazily cerated view of header lines (Strings).
      */
-    private List headerValueView;
+    private List<String> headerValueView;
 
     /**
      * Create an empty InternetHeaders object.
@@ -119,7 +119,7 @@ public final class InternetHeaders {
         LineInputStream lis = new LineInputStream(is);
         String prevline = null; // the previous header line, as a string
         // a buffer to accumulate the header in, when we know it's needed
-        StringBuffer lineBuffer = new StringBuffer();
+        StringBuilder lineBuffer = new StringBuilder();
 
         try {
             //while ((line = lis.readLine()) != null) {
@@ -161,11 +161,11 @@ public final class InternetHeaders {
      */
     public String[] getHeader(String name) {
         // XXX - should we just step through in index order?
-        FinalArrayList v = new FinalArrayList(); // accumulate return values
+        FinalArrayList<String> v = new FinalArrayList<String>(); // accumulate return values
 
         int len = headers.size();
         for( int i=0; i<len; i++ ) {
-            hdr h = (hdr) headers.get(i);
+            hdr h = headers.get(i);
             if (name.equalsIgnoreCase(h.name)) {
                 v.add(h.getValue());
             }
@@ -173,7 +173,7 @@ public final class InternetHeaders {
         if (v.size() == 0)
             return (null);
         // convert Vector to an array for return
-        return (String[]) v.toArray(new String[v.size()]);
+        return v.toArray(new String[v.size()]);
     }
 
     /**
@@ -197,7 +197,7 @@ public final class InternetHeaders {
         if ((s.length == 1) || delimiter == null)
             return s[0];
 
-        StringBuffer r = new StringBuffer(s[0]);
+        StringBuilder r = new StringBuilder(s[0]);
         for (int i = 1; i < s.length; i++) {
             r.append(delimiter);
             r.append(s[i]);
@@ -219,7 +219,7 @@ public final class InternetHeaders {
         boolean found = false;
 
         for (int i = 0; i < headers.size(); i++) {
-            hdr h = (hdr) headers.get(i);
+            hdr h = headers.get(i);
             if (name.equalsIgnoreCase(h.name)) {
                 if (!found) {
                     int j;
@@ -252,7 +252,7 @@ public final class InternetHeaders {
     public void addHeader(String name, String value) {
         int pos = headers.size();
         for (int i = headers.size() - 1; i >= 0; i--) {
-            hdr h = (hdr) headers.get(i);
+            hdr h = headers.get(i);
             if (name.equalsIgnoreCase(h.name)) {
                 headers.add(i + 1, new hdr(name, value));
                 return;
@@ -271,7 +271,7 @@ public final class InternetHeaders {
      */
     public void removeHeader(String name) {
         for (int i = 0; i < headers.size(); i++) {
-            hdr h = (hdr) headers.get(i);
+            hdr h = headers.get(i);
             if (name.equalsIgnoreCase(h.name)) {
                 headers.remove(i);
                 i--;    // have to look at i again
@@ -285,7 +285,7 @@ public final class InternetHeaders {
      *
      * @return  Header objects
      */
-    public FinalArrayList getAllHeaders() {
+    public FinalArrayList<hdr> getAllHeaders() {
         return headers; // conceptually it should be read-only, but for performance reason I'm not wrapping it here
     }
 
@@ -302,7 +302,7 @@ public final class InternetHeaders {
         try {
             char c = line.charAt(0);
             if (c == ' ' || c == '\t') {
-                hdr h = (hdr) headers.get(headers.size() - 1);
+                hdr h = headers.get(headers.size() - 1);
                 h.line += "\r\n" + line;
             } else
                 headers.add(new hdr(line));
@@ -317,11 +317,11 @@ public final class InternetHeaders {
     /**
      * Return all the header lines as a collection
      */
-    public List getAllHeaderLines() {
+    public List<String> getAllHeaderLines() {
         if(headerValueView==null)
-            headerValueView = new AbstractList() {
-                public Object get(int index) {
-                    return ((hdr)headers.get(index)).line;
+            headerValueView = new AbstractList<String>() {
+                public String get(int index) {
+                    return headers.get(index).line;
                 }
 
                 public int size() {

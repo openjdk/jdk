@@ -41,7 +41,8 @@ public:
   // Compilation entry point for methods
   void compile_method(ciEnv* env,
                       ciMethod* target,
-                      int entry_bci);
+                      int entry_bci,
+                      DirectiveSet* directive);
 
   // sentinel value used to trigger backtracking in compile_method().
   static const char* retry_no_subsuming_loads();

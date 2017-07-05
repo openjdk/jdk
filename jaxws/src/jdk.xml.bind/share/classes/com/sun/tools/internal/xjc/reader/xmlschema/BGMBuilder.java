@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ import org.xml.sax.Locator;
 /**
  * Root of the XML Schema binder.
  *
- * <div><img src="doc-files/binding_chart.png"/></div>
+ * <div><img src="doc-files/binding_chart.png" alt=""></div>
  *
  * @author Kohsuke Kawaguchi
  */
@@ -261,7 +261,7 @@ public class BGMBuilder extends BindingComponent {
 
 
     /**
-     * Name converter that implements "XML->Java name conversion"
+     * Name converter that implements "{@code XML -> Java} name conversion"
      * as specified in the spec.
      *
      * This object abstracts the detail that we use different name

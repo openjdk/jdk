@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,12 @@ public class MIMEConfig {
     }
 
     /**
-     * @param dir
+     * @param directory
+     *          temp directory
      */
-    public final void setDir(String dir) {
-        if (tempDir == null && dir != null && !dir.equals("")) {
-            tempDir = new File(dir);
+    public final void setDir(String directory) {
+        if (tempDir == null && directory != null && !directory.equals("")) {
+            tempDir = new File(directory);
         }
     }
 
@@ -143,7 +144,9 @@ public class MIMEConfig {
                         LOGGER.log(Level.INFO, "File {0} was not deleted", tempFile.getAbsolutePath());
                     }
                 }
-            } catch(Exception ioe) {
+            } catch(RuntimeException e) {
+                memoryThreshold = -1L;      // whole attachment will be in-memory
+            } catch(Exception e) {
                 memoryThreshold = -1L;      // whole attachment will be in-memory
             }
         }

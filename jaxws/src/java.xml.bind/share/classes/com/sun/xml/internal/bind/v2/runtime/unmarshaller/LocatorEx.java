@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import org.xml.sax.Locator;
 import org.w3c.dom.Node;
 
 /**
- * Object that returns the current location that the {@link XmlVisitor} is parsing.
+ * Object that returns the current location that the {@link com.sun.xml.internal.bind.v2.runtime.unmarshaller.XmlVisitor}
+ * is parsing.
  *
  * @author Kohsuke Kawaguchi
  */
