@@ -142,20 +142,20 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
   }
 
   switch(variability) {
-  case 1:  /* V_Constant */
+  case PerfData::V_Constant:
     pl = PerfDataManager::create_long_constant(NULL_NS, (char *)name_utf,
                                                (PerfData::Units)units, value,
                                                CHECK_NULL);
     break;
 
-  case 2:  /* V_Variable */
-    pl = PerfDataManager::create_long_variable(NULL_NS, (char *)name_utf,
+  case PerfData::V_Monotonic:
+    pl = PerfDataManager::create_long_counter(NULL_NS, (char *)name_utf,
                                                (PerfData::Units)units, value,
                                                CHECK_NULL);
     break;
 
-  case 3:  /* V_Monotonic Counter */
-    pl = PerfDataManager::create_long_counter(NULL_NS, (char *)name_utf,
+  case PerfData::V_Variable:
+    pl = PerfDataManager::create_long_variable(NULL_NS, (char *)name_utf,
                                               (PerfData::Units)units, value,
                                               CHECK_NULL);
     break;

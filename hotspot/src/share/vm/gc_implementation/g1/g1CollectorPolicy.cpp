@@ -309,7 +309,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
 void G1CollectorPolicy::initialize_flags() {
   set_min_alignment(HeapRegion::GrainBytes);
-  set_max_alignment(GenRemSet::max_alignment_constraint(rem_set_name()));
+  size_t card_table_alignment = GenRemSet::max_alignment_constraint(rem_set_name());
+  set_max_alignment(MAX2(card_table_alignment, min_alignment()));
   if (SurvivorRatio < 1) {
     vm_exit_during_initialization("Invalid survivor ratio specified");
   }
