@@ -98,7 +98,9 @@ createNode(JNIEnv *env, jobject ref)
 
     /* Create weak reference to make sure we have a reference */
     weakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, ref);
-    if (weakRef == NULL) {
+    // NewWeakGlobalRef can throw OOM, clear exception here.
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
         jvmtiDeallocate(node);
         return NULL;
     }
@@ -154,6 +156,7 @@ strengthenNode(JNIEnv *env, RefNode *node)
         /*
          * NewGlobalRef on a weak ref will return NULL if the weak
          * reference has been collected or if out of memory.
+         * It never throws OOM.
          * We need to distinguish those two occurrences.
          */
         if ((strongRef == NULL) && !isSameObject(env, node->ref, NULL)) {
@@ -178,6 +181,11 @@ weakenNode(JNIEnv *env, RefNode *node)
         jweak weakRef;
 
         weakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, node->ref);
+        // NewWeakGlobalRef can throw OOM, clear exception here.
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
+
         if (weakRef != NULL) {
             JNI_FUNC_PTR(env,DeleteGlobalRef)(env, node->ref);
             node->ref      = weakRef;
@@ -452,6 +460,7 @@ commonRef_idToRef(JNIEnv *env, jlong id)
                 jobject lref;
 
                 lref = JNI_FUNC_PTR(env,NewLocalRef)(env, node->ref);
+                // NewLocalRef never throws OOM.
                 if ( lref == NULL ) {
                     /* Object was GC'd shortly after we found the node */
                     deleteNodeByID(env, node->seqNum, ALL_REFS);

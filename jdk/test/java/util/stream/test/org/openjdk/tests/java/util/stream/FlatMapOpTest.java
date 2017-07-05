@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,19 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.*;
+import java.util.function.Supplier;
+import java.util.stream.DoubleStream;
+import java.util.stream.DoubleStreamTestDataProvider;
+import java.util.stream.IntStream;
+import java.util.stream.IntStreamTestDataProvider;
+import java.util.stream.LongStream;
+import java.util.stream.LongStreamTestDataProvider;
+import java.util.stream.OpTestCase;
+import java.util.stream.Stream;
+import java.util.stream.StreamTestDataProvider;
+import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
 import static java.util.stream.ThowableHelper.checkNPE;
@@ -64,6 +75,59 @@ public class FlatMapOpTest extends OpTestCase {
 
         exerciseOps(TestData.Factory.ofArray("stringsArray", stringsArray), s -> s.flatMap(flattenChars));
         exerciseOps(TestData.Factory.ofArray("LONG_STRING", new String[] {LONG_STRING}), s -> s.flatMap(flattenChars));
+    }
+
+    @Test
+    public void testClose() {
+        AtomicInteger before = new AtomicInteger();
+        AtomicInteger onClose = new AtomicInteger();
+
+        Supplier<Stream<Integer>> s = () -> {
+            before.set(0); onClose.set(0);
+            return Stream.of(1, 2).peek(e -> before.getAndIncrement());
+        };
+
+        s.get().flatMap(i -> Stream.of(i, i).onClose(onClose::getAndIncrement)).count();
+        assertEquals(before.get(), onClose.get());
+
+        s.get().flatMapToInt(i -> IntStream.of(i, i).onClose(onClose::getAndIncrement)).count();
+        assertEquals(before.get(), onClose.get());
+
+        s.get().flatMapToLong(i -> LongStream.of(i, i).onClose(onClose::getAndIncrement)).count();
+        assertEquals(before.get(), onClose.get());
+
+        s.get().flatMapToDouble(i -> DoubleStream.of(i, i).onClose(onClose::getAndIncrement)).count();
+        assertEquals(before.get(), onClose.get());
+    }
+
+    @Test
+    public void testIntClose() {
+        AtomicInteger before = new AtomicInteger();
+        AtomicInteger onClose = new AtomicInteger();
+
+        IntStream.of(1, 2).peek(e -> before.getAndIncrement()).
+                flatMap(i -> IntStream.of(i, i).onClose(onClose::getAndIncrement)).count();
+        assertEquals(before.get(), onClose.get());
+    }
+
+    @Test
+    public void testLongClose() {
+        AtomicInteger before = new AtomicInteger();
+        AtomicInteger onClose = new AtomicInteger();
+
+        LongStream.of(1, 2).peek(e -> before.getAndIncrement()).
+                flatMap(i -> LongStream.of(i, i).onClose(onClose::getAndIncrement)).count();
+        assertEquals(before.get(), onClose.get());
+    }
+
+    @Test
+    public void testDoubleClose() {
+        AtomicInteger before = new AtomicInteger();
+        AtomicInteger onClose = new AtomicInteger();
+
+        DoubleStream.of(1, 2).peek(e -> before.getAndIncrement()).
+                flatMap(i -> DoubleStream.of(i, i).onClose(onClose::getAndIncrement)).count();
+        assertEquals(before.get(), onClose.get());
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)

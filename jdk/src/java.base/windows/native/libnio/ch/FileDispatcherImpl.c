@@ -325,17 +325,14 @@ Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
 {
     BOOL result = 0;
     HANDLE h = (HANDLE)(handleval(env, fdo));
-    LARGE_INTEGER offset;
+    FILE_END_OF_FILE_INFO eofInfo;
 
-    offset.QuadPart = size;
-    result = SetFilePointerEx(h, offset, NULL, FILE_BEGIN);
-    if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
-        return IOS_THROWN;
-    }
-
-    result = SetEndOfFile(h);
-    if (result == 0) {
+    eofInfo.EndOfFile.QuadPart = size;
+    result = SetFileInformationByHandle(h,
+                                        FileEndOfFileInfo,
+                                        &eofInfo,
+                                        sizeof(eofInfo));
+    if (result == FALSE) {
         JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
         return IOS_THROWN;
     }

@@ -4368,11 +4368,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         static void putSign(BigInteger bi, int sign) {
-            unsafe.putIntVolatile(bi, signumOffset, sign);
+            unsafe.putInt(bi, signumOffset, sign);
         }
 
         static void putMag(BigInteger bi, int[] magnitude) {
-            unsafe.putObjectVolatile(bi, magOffset, magnitude);
+            unsafe.putObject(bi, magOffset, magnitude);
         }
     }
 

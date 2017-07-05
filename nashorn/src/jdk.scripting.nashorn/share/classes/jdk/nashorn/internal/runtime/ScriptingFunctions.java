@@ -107,7 +107,7 @@ public final class ScriptingFunctions {
 
         if (file instanceof File) {
             f = (File)file;
-        } else if (file instanceof String || file instanceof ConsString) {
+        } else if (JSType.isString(file)) {
             f = new java.io.File(((CharSequence)file).toString());
         }
 

@@ -68,7 +68,6 @@ SUNWprivate_1.1 {
             Java_com_sun_media_sound_Platform_nGetExtraLibraries;
             Java_com_sun_media_sound_Platform_nGetLibraryForFeature;
             Java_com_sun_media_sound_Platform_nIsBigEndian;
-            Java_com_sun_media_sound_Platform_nIsSigned8;
             Java_com_sun_media_sound_PortMixer_nClose;
             Java_com_sun_media_sound_PortMixer_nControlGetFloatValue;
             Java_com_sun_media_sound_PortMixer_nControlGetIntValue;

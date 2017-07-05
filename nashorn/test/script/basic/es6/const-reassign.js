@@ -31,144 +31,147 @@
 "use strict";
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x = 1;\n');
+    const x = 2;
+    x = 1;
+    fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x++;\n');
+    const x = 2;
+    x++;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x--;\n');
+    const x = 2;
+    x--;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        '++x;\n');
+    const x = 2;
+    ++x;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        '--x;\n');
+    const x = 2;
+    --x;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x += 1;\n');
+    const x = 2;
+    x += 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x *= 1;\n');
+    const x = 2;
+    x *= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x /= 1;\n');
+    const x = 2;
+    x /= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x %= 1;\n');
+    const x = 2;
+    x %= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x |= 1;\n');
+    const x = 2;
+    x |= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x &= 1;\n');
+    const x = 2;
+    x &= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x ^= 1;\n');
+    const x = 2;
+    x ^= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x <<= 1;\n');
+    const x = 2;
+    x <<= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x >>= 1;\n');
+    const x = 2;
+    x >>= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'x >>>= 1;\n');
+    const x = 2;
+    x >>>= 1;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
 
 try {
-    eval('"use strict";\n' +
-        'const x = 2;\n' +
-        'delete x;\n');
+    const x = 2;
+    delete x;
     fail("const assignment didn't throw");
 } catch (e) {
-    print(e.name);
+    print(e);
 }
+
+const c = 1;
+
+try {
+    c = 2;
+    fail("const assignment didn't throw");
+} catch (e) {
+    print(e);
+}
+
+(function() {
+    try {
+        c = 2;
+        fail("const assignment didn't throw");
+    } catch (e) {
+        print(e);
+    }
+})();
