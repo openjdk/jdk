@@ -25,7 +25,7 @@
 
 package com.sun.tools.internal.xjc.generator.bean;
 
-import static com.sun.tools.internal.xjc.model.Aspect.EXPOSED;
+import static com.sun.tools.internal.xjc.outline.Aspect.EXPOSED;
 
 import java.io.Serializable;
 import java.net.URL;
@@ -90,7 +90,7 @@ import com.sun.tools.internal.xjc.model.CPropertyInfo;
 import com.sun.tools.internal.xjc.model.CTypeRef;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.model.CClassRef;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.ClassOutline;
 import com.sun.tools.internal.xjc.outline.EnumConstantOutline;
 import com.sun.tools.internal.xjc.outline.EnumOutline;

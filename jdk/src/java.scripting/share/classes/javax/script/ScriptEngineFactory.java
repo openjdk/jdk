@@ -138,6 +138,7 @@ public interface ScriptEngineFactory {
      * @return The value for the given parameter. Returns <code>null</code> if no
      * value is assigned to the key.
      *
+     * @throws NullPointerException if the key is null.
      */
     public Object getParameter(String key);
 

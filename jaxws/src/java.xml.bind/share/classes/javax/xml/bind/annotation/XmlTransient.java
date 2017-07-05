@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,12 +79,12 @@ import static java.lang.annotation.RetentionPolicy.*;
  *   }
  *
  *
- *   &lt;!-- Example: XML Schema fragment -->
- *   &lt;xs:complexType name="USAddress">
- *     &lt;xs:sequence>
- *       &lt;xs:element name="name" type="xs:string"/>
- *     &lt;/xs:sequence>
- *   &lt;/xs:complexType>
+ *   &lt;!-- Example: XML Schema fragment --&gt;
+ *   &lt;xs:complexType name="USAddress"&gt;
+ *     &lt;xs:sequence&gt;
+ *       &lt;xs:element name="name" type="xs:string"/&gt;
+ *     &lt;/xs:sequence&gt;
+ *   &lt;/xs:complexType&gt;
  * </pre>
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.

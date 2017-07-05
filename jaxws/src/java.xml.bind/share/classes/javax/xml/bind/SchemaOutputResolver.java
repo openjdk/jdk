@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,11 @@ public abstract class SchemaOutputResolver {
      *
      *      If the {@link Result} object has a system ID, it must be an
      *      absolute system ID. Those system IDs are relativized by the caller and used
-     *      for &lt;xs:import> statements.
+     *      for &lt;xs:import&gt; statements.
      *
      *      If the {@link Result} object does not have a system ID, a schema
      *      for the namespace URI is generated but it won't be explicitly
-     *      &lt;xs:import>ed from other schemas.
+     *      &lt;xs:import&gt;ed from other schemas.
      *
      *      If {@code null} is returned, the schema generation for this
      *      namespace URI will be skipped.

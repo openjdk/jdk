@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,7 @@ package javax.xml.bind.annotation;
  * The namespace qualification values are used in the annotations
  * defined in this packge. The enumeration values are mapped as follows:
  *
- * <p>
- * <table border="1" cellpadding="4" cellspacing="3">
+ * <table summary="" border="1" cellpadding="4" cellspacing="3">
  *   <tbody>
  *     <tr>
  *       <td><b>Enum Value</b></td>

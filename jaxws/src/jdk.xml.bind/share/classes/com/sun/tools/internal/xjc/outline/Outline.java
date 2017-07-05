@@ -33,7 +33,6 @@ import com.sun.codemodel.internal.JCodeModel;
 import com.sun.codemodel.internal.JPackage;
 import com.sun.codemodel.internal.JType;
 import com.sun.tools.internal.xjc.ErrorReceiver;
-import com.sun.tools.internal.xjc.model.Aspect;
 import com.sun.tools.internal.xjc.model.CClassInfo;
 import com.sun.tools.internal.xjc.model.CClassInfoParent;
 import com.sun.tools.internal.xjc.model.CElementInfo;

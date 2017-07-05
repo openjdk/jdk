@@ -391,6 +391,10 @@ class WindowsPath implements Path {
         if (!this.root.equalsIgnoreCase(other.root))
             throw new IllegalArgumentException("'other' has different root");
 
+        // this path is the empty path
+        if (this.isEmpty())
+            return other;
+
         int bn = this.getNameCount();
         int cn = other.getNameCount();
 

@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.sun.codemodel.internal.JClass;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 
 /**

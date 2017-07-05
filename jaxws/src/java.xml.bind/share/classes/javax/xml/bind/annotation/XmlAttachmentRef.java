@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,14 @@ import java.lang.annotation.Target;
  * </pre>
  * The above code maps to the following XML:
  * <pre>
- * &lt;xs:element name="foo" xmlns:ref="http://ws-i.org/profiles/basic/1.1/xsd">
- *   &lt;xs:complexType>
- *     &lt;xs:sequence>
- *       &lt;xs:element name="body" type="ref:swaRef" minOccurs="0" />
- *     &lt;/xs:sequence>
- *     &lt;xs:attribute name="data" type="ref:swaRef" use="optional" />
- *   &lt;/xs:complexType>
- * &lt;/xs:element>
+ * &lt;xs:element name="foo" xmlns:ref="http://ws-i.org/profiles/basic/1.1/xsd"&gt;
+ *   &lt;xs:complexType&gt;
+ *     &lt;xs:sequence&gt;
+ *       &lt;xs:element name="body" type="ref:swaRef" minOccurs="0" /&gt;
+ *     &lt;/xs:sequence&gt;
+ *     &lt;xs:attribute name="data" type="ref:swaRef" use="optional" /&gt;
+ *   &lt;/xs:complexType&gt;
+ * &lt;/xs:element&gt;
  * </pre>
  *
  * <p>

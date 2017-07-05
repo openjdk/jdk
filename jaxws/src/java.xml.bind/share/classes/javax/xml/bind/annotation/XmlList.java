@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,17 +53,17 @@ import static java.lang.annotation.ElementType.PARAMETER;
  * &#64;XmlRootElement
  * class Foo {
  *     &#64;XmlElement
- *     List&lt;String> data;
+ *     List&lt;String&gt; data;
  * }
  * </pre>
  *
  * would produce XML like this:
  *
  * <pre>
- * &lt;foo>
- *   &lt;data>abc</data>
- *   &lt;data>def</data>
- * &lt;/foo>
+ * &lt;foo&gt;
+ *   &lt;data&gt;abc&lt;/data&gt;
+ *   &lt;data&gt;def&lt;/data&gt;
+ * &lt;/foo&gt;
  * </pre>
  *
  * &#64;XmlList annotation, on the other hand, allows multiple values to be
@@ -74,16 +74,16 @@ import static java.lang.annotation.ElementType.PARAMETER;
  * class Foo {
  *     &#64;XmlElement
  *     &#64;XmlList
- *     List&lt;String> data;
+ *     List&lt;String&gt; data;
  * }
  * </pre>
  *
  * the above code will produce XML like this:
  *
  * <pre>
- * &lt;foo>
- *   &lt;data>abc def</data>
- * &lt;/foo>
+ * &lt;foo&gt;
+ *   &lt;data&gt;abc def&lt;/data&gt;
+ * &lt;/foo&gt;
  * </pre>
  *
  * <p>This annotation can be used with the following annotations:

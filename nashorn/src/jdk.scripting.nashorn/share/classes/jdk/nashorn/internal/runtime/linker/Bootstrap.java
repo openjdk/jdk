@@ -119,6 +119,7 @@ public final class Bootstrap {
                 return unboxReturnType(target, newType);
             }
         });
+        factory.setInternalObjectsFilter(NashornBeansLinker.createHiddenObjectFilter());
         final int relinkThreshold = Options.getIntProperty("nashorn.unstable.relink.threshold", NASHORN_DEFAULT_UNSTABLE_RELINK_THRESHOLD);
         if (relinkThreshold > -1) {
             factory.setUnstableRelinkThreshold(relinkThreshold);

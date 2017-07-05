@@ -66,19 +66,6 @@ UNPACKEXE_LANG := C
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   UNPACKEXE_LANG := C++
 endif
-UNPACKEXE_DEBUG_SYMBOLS := true
-# On windows, unpack200 is linked completely differently to all other
-# executables, using the compiler with the compiler arguments.
-# It's also linked incrementally, producing a .ilk file that needs to
-# be kept away.
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  BUILD_UNPACKEXE_LDEXE := $(CC)
-  EXE_OUT_OPTION_save := $(EXE_OUT_OPTION)
-  EXE_OUT_OPTION := -Fe
-  # With the current way unpack200 is built, debug symbols aren't supported
-  # anyway.
-  UNPACKEXE_DEBUG_SYMBOLS := false
-endif
 
 # The linker on older SuSE distros (e.g. on SLES 10) complains with:
 # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
@@ -93,35 +80,29 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     SRC := $(UNPACKEXE_SRC), \
     LANG := $(UNPACKEXE_LANG), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE) \
-        -DFULL, \
+    CFLAGS := $(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE) -DFULL, \
     CFLAGS_release := -DPRODUCT, \
     CFLAGS_linux := -fPIC, \
     CFLAGS_solaris := -KPIC, \
     CFLAGS_macosx := -fPIC, \
     MAPFILE := $(UNPACK_MAPFILE),\
-    LDFLAGS := $(UNPACKEXE_ZIPOBJS), \
-    LDFLAGS_windows := $(CXXFLAGS_JDKEXE), \
-    LDFLAGS_unix := $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
+    LDFLAGS := $(UNPACKEXE_ZIPOBJS) \
+        $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_linux := -lc, \
     LDFLAGS_solaris := $(UNPACKEXE_LDFLAGS_solaris) -lc, \
     LDFLAGS_SUFFIX := $(LIBCXX), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpackexe$(OUTPUT_SUBDIR), \
-    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpackexe$(OUTPUT_SUBDIR), \
+    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE), \
     PROGRAM := unpack200, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=unpack200.exe" \
         -D "JDK_INTERNAL_NAME=unpack200" \
         -D "JDK_FTYPE=0x1L", \
-    DEBUG_SYMBOLS := $(UNPACKEXE_DEBUG_SYMBOLS), \
+    DEBUG_SYMBOLS := true, \
     MANIFEST := $(JDK_TOPDIR)/src/jdk.runtime/windows/native/unpack200/unpack200_proto.exe.manifest))
-
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  EXE_OUT_OPTION := $(EXE_OUT_OPTION_save)
-endif
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
 
@@ -129,13 +110,6 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
 
 endif
 
-# Build into object dir and copy executable afterwards to avoid .ilk file in
-# image. The real fix would be clean up linking of unpack200 using
-# -link -incremental:no
-# like all other launchers.
-$(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE)/unpack200$(EXE_SUFFIX): $(BUILD_UNPACKEXE)
-	$(call install-file)
-
-TARGETS += $(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE)/unpack200$(EXE_SUFFIX)
+TARGETS += $(BUILD_UNPACKEXE)
 
 ################################################################################

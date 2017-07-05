@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public abstract class AttachmentUnmarshaller {
     *
     * <p>The returned <code>DataHandler</code> instance must be configured
     * to meet the following required mapping constaint.
-    * <table border="2" rules="all" cellpadding="4">
+    * <table summary="" border="2" rules="all" cellpadding="4">
     *   <thead>
     *     <tr>
     *       <th align="center" colspan="2">
@@ -100,7 +100,7 @@ public abstract class AttachmentUnmarshaller {
     *     </tr>
     *   </tbody>
     *  </table>
-    * Note that it is allowable to support additional mappings.</p>
+    * Note that it is allowable to support additional mappings.
     *
     * @param cid It is expected to be a valid lexical form of the XML Schema
     * <code>xs:anyURI</code> datatype. If <code>{@link #isXOPPackage()}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,15 +74,15 @@ import static java.lang.annotation.RetentionPolicy.*;
  *        .... other properties not shown
  *    }
  *
- *    &lt;!-- Example: XML Schema fragment -->
- *    &lt;xs:complexType name="Customer">
- *      &lt;xs:complexContent>
- *        &lt;xs:sequence>
+ *    &lt;!-- Example: XML Schema fragment --&gt;
+ *    &lt;xs:complexType name="Customer"&gt;
+ *      &lt;xs:complexContent&gt;
+ *        &lt;xs:sequence&gt;
  *          ....
- *        &lt;/xs:sequence>
- *        &lt;xs:attribute name="customerID" type="xs:ID"/>
- *      &lt;/xs:complexContent>
- *    &lt;/xs:complexType>
+ *        &lt;/xs:sequence&gt;
+ *        &lt;xs:attribute name="customerID" type="xs:ID"/&gt;
+ *      &lt;/xs:complexContent&gt;
+ *    &lt;/xs:complexType&gt;
  * </pre>
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
