@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,10 @@ import javax.sound.sampled.SourceDataLine;
  *
  * @author Karl Helgason
  */
-public class SoftSynthesizer implements AudioSynthesizer,
+public final class SoftSynthesizer implements AudioSynthesizer,
         ReferenceCountingDevice {
 
-    protected static class WeakAudioStream extends InputStream
+    protected static final class WeakAudioStream extends InputStream
     {
         private volatile AudioInputStream stream;
         public SoftAudioPusher pusher = null;
@@ -166,39 +166,39 @@ public class SoftSynthesizer implements AudioSynthesizer,
     }
 
     private static class Info extends MidiDevice.Info {
-        public Info() {
+        Info() {
             super(INFO_NAME, INFO_VENDOR, INFO_DESCRIPTION, INFO_VERSION);
         }
     }
 
-    protected static final String INFO_NAME = "Gervill";
-    protected static final String INFO_VENDOR = "OpenJDK";
-    protected static final String INFO_DESCRIPTION = "Software MIDI Synthesizer";
-    protected static final String INFO_VERSION = "1.0";
-    protected final static MidiDevice.Info info = new Info();
+    static final String INFO_NAME = "Gervill";
+    static final String INFO_VENDOR = "OpenJDK";
+    static final String INFO_DESCRIPTION = "Software MIDI Synthesizer";
+    static final String INFO_VERSION = "1.0";
+    final static MidiDevice.Info info = new Info();
 
     private static SourceDataLine testline = null;
 
     private static Soundbank defaultSoundBank = null;
 
-    protected WeakAudioStream weakstream = null;
+    WeakAudioStream weakstream = null;
 
-    protected Object control_mutex = this;
+    final Object control_mutex = this;
 
-    protected int voiceIDCounter = 0;
+    int voiceIDCounter = 0;
 
     // 0: default
     // 1: DLS Voice Allocation
-    protected int voice_allocation_mode = 0;
+    int voice_allocation_mode = 0;
 
-    protected boolean load_default_soundbank = false;
-    protected boolean reverb_light = true;
-    protected boolean reverb_on = true;
-    protected boolean chorus_on = true;
-    protected boolean agc_on = true;
+    boolean load_default_soundbank = false;
+    boolean reverb_light = true;
+    boolean reverb_on = true;
+    boolean chorus_on = true;
+    boolean agc_on = true;
 
-    protected SoftChannel[] channels;
-    protected SoftChannelProxy[] external_channels = null;
+    SoftChannel[] channels;
+    SoftChannelProxy[] external_channels = null;
 
     private boolean largemode = false;
 
@@ -371,7 +371,7 @@ public class SoftSynthesizer implements AudioSynthesizer,
         this.format = format;
     }
 
-    protected void removeReceiver(Receiver recv) {
+    void removeReceiver(Receiver recv) {
         boolean perform_close = false;
         synchronized (control_mutex) {
             if (recvslist.remove(recv)) {
@@ -383,13 +383,13 @@ public class SoftSynthesizer implements AudioSynthesizer,
             close();
     }
 
-    protected SoftMainMixer getMainMixer() {
+    SoftMainMixer getMainMixer() {
         if (!isOpen())
             return null;
         return mainmixer;
     }
 
-    protected SoftInstrument findInstrument(int program, int bank, int channel) {
+    SoftInstrument findInstrument(int program, int bank, int channel) {
 
         // Add support for GM2 banks 0x78 and 0x79
         // as specified in DLS 2.2 in Section 1.4.6
@@ -450,31 +450,31 @@ public class SoftSynthesizer implements AudioSynthesizer,
         return null;
     }
 
-    protected int getVoiceAllocationMode() {
+    int getVoiceAllocationMode() {
         return voice_allocation_mode;
     }
 
-    protected int getGeneralMidiMode() {
+    int getGeneralMidiMode() {
         return gmmode;
     }
 
-    protected void setGeneralMidiMode(int gmmode) {
+    void setGeneralMidiMode(int gmmode) {
         this.gmmode = gmmode;
     }
 
-    protected int getDeviceID() {
+    int getDeviceID() {
         return deviceid;
     }
 
-    protected float getControlRate() {
+    float getControlRate() {
         return controlrate;
     }
 
-    protected SoftVoice[] getVoices() {
+    SoftVoice[] getVoices() {
         return voices;
     }
 
-    protected SoftTuning getTuning(Patch patch) {
+    SoftTuning getTuning(Patch patch) {
         String t_id = patchToString(patch);
         SoftTuning tuning = tunings.get(t_id);
         if (tuning == null) {

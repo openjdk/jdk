@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@ import javax.sound.midi.MidiChannel;
  *
  * @author Karl Helgason
  */
-public class SoftInstrument extends Instrument {
+public final class SoftInstrument extends Instrument {
 
     private SoftPerformer[] performers;
     private ModelPerformer[] modelperformers;
-    private Object data;
-    private ModelInstrument ins;
+    private final Object data;
+    private final ModelInstrument ins;
 
     public SoftInstrument(ModelInstrument ins) {
         super(ins.getSoundbank(), ins.getPatch(), ins.getName(),

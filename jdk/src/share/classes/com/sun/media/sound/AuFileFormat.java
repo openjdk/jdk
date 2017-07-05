@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.sound.sampled.AudioFormat;
  * @author Jan Borgersen
  */
 
-class AuFileFormat extends AudioFileFormat {
+final class AuFileFormat extends AudioFileFormat {
 
     // magic numbers
     static final int AU_SUN_MAGIC =     0x2e736e64;
@@ -60,7 +60,7 @@ class AuFileFormat extends AudioFileFormat {
 
     static final int AU_HEADERSIZE       = 24;
 
-    int auType;
+    private int auType;
 
     AuFileFormat( AudioFileFormat aff ) {
 

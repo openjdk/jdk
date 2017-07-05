@@ -171,7 +171,7 @@ static LPTSTR getWindowsPropFromReg(LPTSTR subKey, LPTSTR valueName, DWORD *valu
     if (*valueType == REG_EXPAND_SZ) {
         // Pending: buffer must be null-terminated at this point
         valueChar = ExpandEnvironmentStrings(buffer, NULL, 0);
-        LPTSTR buffer2 = (LPTSTR)safe_Malloc(valueChar*sizeof(TCHAR));
+        LPTSTR buffer2 = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, valueChar, sizeof(TCHAR));
         ExpandEnvironmentStrings(buffer, buffer2, valueChar);
         free(buffer);
         return buffer2;
@@ -588,11 +588,11 @@ void AwtDesktopProperties::GetOtherParameters() {
     }
 
     LPTSTR valueName = TEXT("PlaceN");
-    LPTSTR valueNameBuf = (LPTSTR)safe_Malloc((lstrlen(valueName) + 1) * sizeof(TCHAR));
+    LPTSTR valueNameBuf = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (lstrlen(valueName) + 1), sizeof(TCHAR));
     lstrcpy(valueNameBuf, valueName);
 
     LPTSTR propKey = TEXT("win.comdlg.placesBarPlaceN");
-    LPTSTR propKeyBuf = (LPTSTR)safe_Malloc((lstrlen(propKey) + 1) * sizeof(TCHAR));
+    LPTSTR propKeyBuf = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (lstrlen(propKey) + 1), sizeof(TCHAR));
     lstrcpy(propKeyBuf, propKey);
 
     int i = 0;

@@ -2615,7 +2615,8 @@ void nmethod::print_relocations() {
                       relocation_begin()-1+ip[1]);
       for (; ip < index_end; ip++)
         tty->print_cr("  (%d ?)", ip[0]);
-      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", ip, *ip++);
+      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", ip, *ip);
+      ip++;
       tty->print_cr("reloc_end @" INTPTR_FORMAT ":", ip);
     }
   }

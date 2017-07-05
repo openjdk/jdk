@@ -490,10 +490,6 @@ public class KrbApReq {
      // Check that key is one of the permitted types
      private static void checkPermittedEType(int target) throws KrbException {
         int[] etypes = EType.getDefaults("permitted_enctypes");
-        if (etypes == null) {
-            throw new KrbException(
-                "No supported encryption types listed in permitted_enctypes");
-        }
         if (!EType.isSupported(target, etypes)) {
             throw new KrbException(EType.toString(target) +
                 " encryption type not in permitted_enctypes list");

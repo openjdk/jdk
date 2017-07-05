@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.sound.midi.Patch;
  *
  * @author Karl Helgason
  */
-public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
+public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
 
     private static boolean[] dontResetControls = new boolean[128];
     static {
@@ -90,15 +90,15 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     private static final int RPN_NULL_VALUE = (127 << 7) + 127;
     private int rpn_control = RPN_NULL_VALUE;
     private int nrpn_control = RPN_NULL_VALUE;
-    protected double portamento_time = 1; // keyschanges per control buffer time
-    protected int[] portamento_lastnote = new int[128];
-    protected int portamento_lastnote_ix = 0;
+    double portamento_time = 1; // keyschanges per control buffer time
+    int[] portamento_lastnote = new int[128];
+    int portamento_lastnote_ix = 0;
     private boolean portamento = false;
     private boolean mono = false;
     private boolean mute = false;
     private boolean solo = false;
     private boolean solomute = false;
-    private Object control_mutex;
+    private final Object control_mutex;
     private int channel;
     private SoftVoice[] voices;
     private int bank;
@@ -111,21 +111,21 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     private int pitchbend;
     private double[] co_midi_pitch = new double[1];
     private double[] co_midi_channel_pressure = new double[1];
-    protected SoftTuning tuning = new SoftTuning();
-    protected int tuning_bank = 0;
-    protected int tuning_program = 0;
-    protected SoftInstrument current_instrument = null;
-    protected ModelChannelMixer current_mixer = null;
-    protected ModelDirector current_director = null;
+    SoftTuning tuning = new SoftTuning();
+    int tuning_bank = 0;
+    int tuning_program = 0;
+    SoftInstrument current_instrument = null;
+    ModelChannelMixer current_mixer = null;
+    ModelDirector current_director = null;
 
     // Controller Destination Settings
-    protected int cds_control_number = -1;
-    protected ModelConnectionBlock[] cds_control_connections = null;
-    protected ModelConnectionBlock[] cds_channelpressure_connections = null;
-    protected ModelConnectionBlock[] cds_polypressure_connections = null;
-    protected boolean sustain = false;
-    protected boolean[][] keybasedcontroller_active = null;
-    protected double[][] keybasedcontroller_value = null;
+    int cds_control_number = -1;
+    ModelConnectionBlock[] cds_control_connections = null;
+    ModelConnectionBlock[] cds_channelpressure_connections = null;
+    ModelConnectionBlock[] cds_polypressure_connections = null;
+    boolean sustain = false;
+    boolean[][] keybasedcontroller_active = null;
+    double[][] keybasedcontroller_value = null;
 
     private class MidiControlObject implements SoftControl {
         double[] pitch = co_midi_pitch;
@@ -336,7 +336,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
 
     }
 
-    protected void initVoice(SoftVoice voice, SoftPerformer p, int voiceID,
+    void initVoice(SoftVoice voice, SoftPerformer p, int voiceID,
             int noteNumber, int velocity, int delay, ModelConnectionBlock[] connectionBlocks,
             ModelChannelMixer channelmixer, boolean releaseTriggered) {
         if (voice.active) {
@@ -414,7 +414,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     /* A special noteOn with delay parameter, which is used to
      * start note within control buffers.
      */
-    protected void noteOn(int noteNumber, int velocity, int delay) {
+    void noteOn(int noteNumber, int velocity, int delay) {
         noteNumber = restrict7Bit(noteNumber);
         velocity = restrict7Bit(velocity);
         noteOn_internal(noteNumber, velocity, delay);
@@ -707,7 +707,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
     }
 
-    protected void applyInstrumentCustomization() {
+    void applyInstrumentCustomization() {
         if (cds_control_connections == null
                 && cds_channelpressure_connections == null
                 && cds_polypressure_connections == null) {

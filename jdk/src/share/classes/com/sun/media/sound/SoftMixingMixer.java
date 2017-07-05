@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,27 +48,27 @@ import javax.sound.sampled.Control.Type;
  *
  * @author Karl Helgason
  */
-public class SoftMixingMixer implements Mixer {
+public final class SoftMixingMixer implements Mixer {
 
     private static class Info extends Mixer.Info {
-        public Info() {
+        Info() {
             super(INFO_NAME, INFO_VENDOR, INFO_DESCRIPTION, INFO_VERSION);
         }
     }
 
-    protected static final String INFO_NAME = "Gervill Sound Mixer";
+    static final String INFO_NAME = "Gervill Sound Mixer";
 
-    protected static final String INFO_VENDOR = "OpenJDK Proposal";
+    static final String INFO_VENDOR = "OpenJDK Proposal";
 
-    protected static final String INFO_DESCRIPTION = "Software Sound Mixer";
+    static final String INFO_DESCRIPTION = "Software Sound Mixer";
 
-    protected static final String INFO_VERSION = "1.0";
+    static final String INFO_VERSION = "1.0";
 
-    protected final static Mixer.Info info = new Info();
+    static final Mixer.Info info = new Info();
 
-    protected Object control_mutex = this;
+    final Object control_mutex = this;
 
-    protected boolean implicitOpen = false;
+    boolean implicitOpen = false;
 
     private boolean open = false;
 
@@ -82,15 +82,15 @@ public class SoftMixingMixer implements Mixer {
 
     private AudioInputStream pusher_stream = null;
 
-    private float controlrate = 147f;
+    private final float controlrate = 147f;
 
-    private long latency = 100000; // 100 msec
+    private final long latency = 100000; // 100 msec
 
-    private boolean jitter_correction = false;
+    private final boolean jitter_correction = false;
 
-    private List<LineListener> listeners = new ArrayList<LineListener>();
+    private final List<LineListener> listeners = new ArrayList<LineListener>();
 
-    private javax.sound.sampled.Line.Info[] sourceLineInfo;
+    private final javax.sound.sampled.Line.Info[] sourceLineInfo;
 
     public SoftMixingMixer() {
 
@@ -516,11 +516,11 @@ public class SoftMixingMixer implements Mixer {
         }
     }
 
-    protected float getControlRate() {
+    float getControlRate() {
         return controlrate;
     }
 
-    protected SoftMixingMainMixer getMainMixer() {
+    SoftMixingMainMixer getMainMixer() {
         if (!isOpen())
             return null;
         return mainmixer;

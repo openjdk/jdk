@@ -56,7 +56,7 @@ import java.io.Closeable;
 public interface Channel extends Closeable {
 
     /**
-     * Tells whether or not this channel is open.  </p>
+     * Tells whether or not this channel is open.
      *
      * @return <tt>true</tt> if, and only if, this channel is open
      */

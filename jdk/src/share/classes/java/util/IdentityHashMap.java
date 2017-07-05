@@ -27,6 +27,8 @@ package java.util;
 
 import java.io.*;
 import java.lang.reflect.Array;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -1335,6 +1337,42 @@ public class IdentityHashMap<K,V>
         }
         tab[i] = k;
         tab[i + 1] = value;
+    }
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        int expectedModCount = modCount;
+
+        Object[] t = table;
+        for (int index = 0; index < t.length; index += 2) {
+            Object k = t[index];
+            if (k != null) {
+                action.accept((K) unmaskNull(k), (V) t[index + 1]);
+            }
+
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        int expectedModCount = modCount;
+
+        Object[] t = table;
+        for (int index = 0; index < t.length; index += 2) {
+            Object k = t[index];
+            if (k != null) {
+                t[index + 1] = function.apply((K) unmaskNull(k), (V) t[index + 1]);
+            }
+
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
     }
 
     /**

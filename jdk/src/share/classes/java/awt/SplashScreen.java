@@ -219,7 +219,7 @@ public final class SplashScreen {
                     }
                 }
                 catch(java.net.MalformedURLException e) {
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("MalformedURLException caught in the getImageURL() method", e);
                     }
                 }

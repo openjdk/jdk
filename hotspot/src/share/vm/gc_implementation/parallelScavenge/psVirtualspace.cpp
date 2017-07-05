@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,8 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
   }
 
   char* const base_addr = committed_high_addr();
-  bool result = special() || os::commit_memory(base_addr, bytes, alignment());
+  bool result = special() ||
+         os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
   if (result) {
     _committed_high_addr += bytes;
   }
@@ -154,7 +155,7 @@ PSVirtualSpace::expand_into(PSVirtualSpace* other_space, size_t bytes) {
   if (tmp_bytes > 0) {
     char* const commit_base = committed_high_addr();
     if (other_space->special() ||
-        os::commit_memory(commit_base, tmp_bytes, alignment())) {
+        os::commit_memory(commit_base, tmp_bytes, alignment(), !ExecMem)) {
       // Reduce the reserved region in the other space.
       other_space->set_reserved(other_space->reserved_low_addr() + tmp_bytes,
                                 other_space->reserved_high_addr(),
@@ -269,7 +270,8 @@ bool PSVirtualSpaceHighToLow::expand_by(size_t bytes) {
   }
 
   char* const base_addr = committed_low_addr() - bytes;
-  bool result = special() || os::commit_memory(base_addr, bytes, alignment());
+  bool result = special() ||
+         os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
   if (result) {
     _committed_low_addr -= bytes;
   }
@@ -322,7 +324,7 @@ size_t PSVirtualSpaceHighToLow::expand_into(PSVirtualSpace* other_space,
   if (tmp_bytes > 0) {
     char* const commit_base = committed_low_addr() - tmp_bytes;
     if (other_space->special() ||
-        os::commit_memory(commit_base, tmp_bytes, alignment())) {
+        os::commit_memory(commit_base, tmp_bytes, alignment(), !ExecMem)) {
       // Reduce the reserved region in the other space.
       other_space->set_reserved(other_space->reserved_low_addr(),
                                 other_space->reserved_high_addr() - tmp_bytes,

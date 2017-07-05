@@ -266,7 +266,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                                 ((XAWTXSettings)xs).dispose();
                             }
                             freeXKB();
-                            if (log.isLoggable(PlatformLogger.FINE)) {
+                            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                                 dumpPeers();
                             }
                         }
@@ -524,7 +524,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     static void processException(Throwable thr) {
-        if (log.isLoggable(PlatformLogger.WARNING)) {
+        if (log.isLoggable(PlatformLogger.Level.WARNING)) {
             log.warning("Exception on Toolkit thread", thr);
         }
     }
@@ -586,7 +586,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     continue;
                 }
 
-                if (eventLog.isLoggable(PlatformLogger.FINER)) {
+                if (eventLog.isLoggable(PlatformLogger.Level.FINER)) {
                     eventLog.finer("{0}", ev);
                 }
 
@@ -602,13 +602,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         }
                     }
                 }
-                if( keyEventLog.isLoggable(PlatformLogger.FINE) && (ev.get_type() == XConstants.KeyPress || ev.get_type() == XConstants.KeyRelease) ) {
+                if( keyEventLog.isLoggable(PlatformLogger.Level.FINE) && (ev.get_type() == XConstants.KeyPress || ev.get_type() == XConstants.KeyRelease) ) {
                     keyEventLog.fine("before XFilterEvent:"+ev);
                 }
                 if (XlibWrapper.XFilterEvent(ev.getPData(), w)) {
                     continue;
                 }
-                if( keyEventLog.isLoggable(PlatformLogger.FINE) && (ev.get_type() == XConstants.KeyPress || ev.get_type() == XConstants.KeyRelease) ) {
+                if( keyEventLog.isLoggable(PlatformLogger.Level.FINE) && (ev.get_type() == XConstants.KeyPress || ev.get_type() == XConstants.KeyRelease) ) {
                     keyEventLog.fine("after XFilterEvent:"+ev); // IS THIS CORRECT?
                 }
 
@@ -1321,7 +1321,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     static void dumpPeers() {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Mapped windows:");
             Iterator iter = winMap.entrySet().iterator();
             while (iter.hasNext()) {
@@ -1417,7 +1417,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
             } catch (InterruptedException ie) {
             // Note: the returned timeStamp can be incorrect in this case.
-                if (log.isLoggable(PlatformLogger.FINE)) {
+                if (log.isLoggable(PlatformLogger.Level.FINE)) {
                     log.fine("Catched exception, timeStamp may not be correct (ie = " + ie + ")");
                 }
             }
@@ -1584,7 +1584,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             name = "gnome." + name;
             setDesktopProperty(name, e.getValue());
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("name = " + name + " value = " + e.getValue());
             }
 
@@ -1773,7 +1773,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         } finally {
             awtUnlock();
         }
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("metaMask = " + metaMask);
             log.fine("altMask = " + altMask);
             log.fine("numLockMask = " + numLockMask);
@@ -1795,11 +1795,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
         awtLock();
         try {
-            if (timeoutTaskLog.isLoggable(PlatformLogger.FINER)) {
+            if (timeoutTaskLog.isLoggable(PlatformLogger.Level.FINER)) {
                 timeoutTaskLog.finer("Removing task " + task);
             }
             if (timeoutTasks == null) {
-                if (timeoutTaskLog.isLoggable(PlatformLogger.FINER)) {
+                if (timeoutTaskLog.isLoggable(PlatformLogger.Level.FINER)) {
                     timeoutTaskLog.finer("Task is not scheduled");
                 }
                 return;
@@ -1846,7 +1846,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
         awtLock();
         try {
-            if (timeoutTaskLog.isLoggable(PlatformLogger.FINER)) {
+            if (timeoutTaskLog.isLoggable(PlatformLogger.Level.FINER)) {
                 timeoutTaskLog.finer("XToolkit.schedule(): current time={0}" +
                                      ";  interval={1}" +
                                      ";  task being added={2}" + ";  tasks before addition={3}",
@@ -1893,7 +1893,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * Called from run() under awtLock.
      */
     private static void callTimeoutTasks() {
-        if (timeoutTaskLog.isLoggable(PlatformLogger.FINER)) {
+        if (timeoutTaskLog.isLoggable(PlatformLogger.Level.FINER)) {
             timeoutTaskLog.finer("XToolkit.callTimeoutTasks(): current time={0}" +
                                  ";  tasks={1}", Long.valueOf(System.currentTimeMillis()), timeoutTasks);
         }
@@ -1911,7 +1911,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             for (Iterator iter = tasks.iterator(); iter.hasNext();) {
                 Runnable task = (Runnable)iter.next();
 
-                if (timeoutTaskLog.isLoggable(PlatformLogger.FINER)) {
+                if (timeoutTaskLog.isLoggable(PlatformLogger.Level.FINER)) {
                     timeoutTaskLog.finer("XToolkit.callTimeoutTasks(): current time={0}" +
                                          ";  about to run task={1}", Long.valueOf(currentTime), task);
                 }
@@ -1986,7 +1986,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
          */
 
         long current_time_utc = System.currentTimeMillis();
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("reset_time=" + reset_time_utc + ", current_time=" + current_time_utc
                       + ", server_offset=" + server_offset + ", wrap_time=" + WRAP_TIME_MILLIS);
         }
@@ -1995,7 +1995,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             reset_time_utc = System.currentTimeMillis() - getCurrentServerTime();
         }
 
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("result = " + (reset_time_utc + server_offset));
         }
         return reset_time_utc + server_offset;
@@ -2074,14 +2074,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
         if (prop == null) {
             backingStoreType = XConstants.NotUseful;
-            if (backingStoreLog.isLoggable(PlatformLogger.CONFIG)) {
+            if (backingStoreLog.isLoggable(PlatformLogger.Level.CONFIG)) {
                 backingStoreLog.config("The system property sun.awt.backingStore is not set" +
                                        ", by default backingStore=NotUseful");
             }
             return;
         }
 
-        if (backingStoreLog.isLoggable(PlatformLogger.CONFIG)) {
+        if (backingStoreLog.isLoggable(PlatformLogger.Level.CONFIG)) {
             backingStoreLog.config("The system property sun.awt.backingStore is " + prop);
         }
         prop = prop.toLowerCase();
@@ -2093,7 +2093,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             backingStoreType = XConstants.NotUseful;
         }
 
-        if (backingStoreLog.isLoggable(PlatformLogger.CONFIG)) {
+        if (backingStoreLog.isLoggable(PlatformLogger.Level.CONFIG)) {
             backingStoreLog.config("backingStore(as provided by the system property)=" +
                                    ( backingStoreType == XConstants.NotUseful ? "NotUseful"
                                      : backingStoreType == XConstants.WhenMapped ?
@@ -2103,7 +2103,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         if (sun.java2d.x11.X11SurfaceData.isDgaAvailable()) {
             backingStoreType = XConstants.NotUseful;
 
-            if (backingStoreLog.isLoggable(PlatformLogger.CONFIG)) {
+            if (backingStoreLog.isLoggable(PlatformLogger.Level.CONFIG)) {
                 backingStoreLog.config("DGA is available, backingStore=NotUseful");
             }
 
@@ -2118,7 +2118,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         == XConstants.NotUseful) {
                     backingStoreType = XConstants.NotUseful;
 
-                    if (backingStoreLog.isLoggable(PlatformLogger.CONFIG)) {
+                    if (backingStoreLog.isLoggable(PlatformLogger.Level.CONFIG)) {
                         backingStoreLog.config("Backing store is not available on the screen " +
                                                i + ", backingStore=NotUseful");
                     }
@@ -2396,7 +2396,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             // Wait for selection notify for oops on win
             long event_number = getEventNumber();
             XAtom atom = XAtom.get("WM_S0");
-            if (eventLog.isLoggable(PlatformLogger.FINER)) {
+            if (eventLog.isLoggable(PlatformLogger.Level.FINER)) {
                 eventLog.finer("WM_S0 selection owner {0}", XlibWrapper.XGetSelectionOwner(getDisplay(), atom.getAtom()));
             }
             XlibWrapper.XConvertSelection(getDisplay(), atom.getAtom(),

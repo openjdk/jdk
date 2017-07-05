@@ -116,7 +116,20 @@ public final class Source {
      * @throws IOException if source cannot be loaded
      */
     public Source(final String name, final URL url) throws IOException {
-        this(name, baseURL(url, null), readFully(url.openStream()), url);
+        this(name, baseURL(url, null), readFully(url), url);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param name  source name
+     * @param url   url from which source can be loaded
+     * @param cs    Charset used to convert bytes to chars
+     *
+     * @throws IOException if source cannot be loaded
+     */
+    public Source(final String name, final URL url, final Charset cs) throws IOException {
+        this(name, baseURL(url, null), readFully(url, cs), url);
     }
 
     /**
@@ -129,6 +142,19 @@ public final class Source {
      */
     public Source(final String name, final File file) throws IOException {
         this(name, dirName(file, null), readFully(file), getURLFromFile(file));
+    }
+
+    /**
+     * Constructor
+     *
+     * @param name  source name
+     * @param file  file from which source can be loaded
+     * @param cs    Charset used to convert bytes to chars
+     *
+     * @throws IOException if source cannot be loaded
+     */
+    public Source(final String name, final File file, final Charset cs) throws IOException {
+        this(name, dirName(file, null), readFully(file, cs), getURLFromFile(file));
     }
 
     @Override
@@ -344,6 +370,53 @@ public final class Source {
     }
 
     /**
+     * Read all of the source until end of file. Return it as char array
+     *
+     * @param file  source file
+     * @param cs Charset used to convert bytes to chars
+     * @return source as content
+     *
+     * @throws IOException if source could not be read
+     */
+    public static char[] readFully(final File file, final Charset cs) throws IOException {
+        if (!file.isFile()) {
+            throw new IOException(file + " is not a file"); //TODO localize?
+        }
+
+        final byte[] buf = Files.readAllBytes(file.toPath());
+        if (cs != null) {
+            return new String(buf, cs).toCharArray();
+        } else {
+            return byteToCharArray(buf);
+        }
+    }
+
+    /**
+     * Read all of the source until end of stream from the given URL. Return it as char array
+     *
+     * @param url URL to read content from
+     * @return source as content
+     *
+     * @throws IOException if source could not be read
+     */
+    public static char[] readFully(final URL url) throws IOException {
+        return readFully(url.openStream());
+    }
+
+    /**
+     * Read all of the source until end of file. Return it as char array
+     *
+     * @param url URL to read content from
+     * @param cs Charset used to convert bytes to chars
+     * @return source as content
+     *
+     * @throws IOException if source could not be read
+     */
+    public static char[] readFully(final URL url, final Charset cs) throws IOException {
+        return readFully(url.openStream(), cs);
+    }
+
+    /**
      * Get the base url. This is currently used for testing only
      * @param url a URL
      * @return base URL for url
@@ -389,6 +462,14 @@ public final class Source {
             idx = name.lastIndexOf('\\');
         }
         return (idx != -1)? name.substring(0, idx + 1) : defaultValue;
+    }
+
+    private static char[] readFully(final InputStream is, final Charset cs) throws IOException {
+        if (cs != null) {
+            return new String(readBytes(is), cs).toCharArray();
+        } else {
+            return readFully(is);
+        }
     }
 
     private static char[] readFully(final InputStream is) throws IOException {

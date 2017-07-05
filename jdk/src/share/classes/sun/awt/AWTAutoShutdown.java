@@ -375,7 +375,7 @@ public final class AWTAutoShutdown implements Runnable {
     }
 
     final void dumpPeers(final PlatformLogger aLog) {
-        if (aLog.isLoggable(PlatformLogger.FINE)) {
+        if (aLog.isLoggable(PlatformLogger.Level.FINE)) {
             synchronized (activationLock) {
                 synchronized (mainLock) {
                     aLog.fine("Mapped peers:");

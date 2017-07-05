@@ -231,20 +231,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                                          ObjectName objectName,
                                          Class<T> interfaceClass,
                                          boolean notificationBroadcaster) {
-        final InvocationHandler handler =
-            new MBeanServerInvocationHandler(connection, objectName);
-        final Class<?>[] interfaces;
-        if (notificationBroadcaster) {
-            interfaces =
-                new Class<?>[] {interfaceClass, NotificationEmitter.class};
-        } else
-            interfaces = new Class<?>[] {interfaceClass};
-
-        Object proxy =
-            Proxy.newProxyInstance(interfaceClass.getClassLoader(),
-                                   interfaces,
-                                   handler);
-        return interfaceClass.cast(proxy);
+        return JMX.newMBeanProxy(connection, objectName, interfaceClass, notificationBroadcaster);
     }
 
     public Object invoke(Object proxy, Method method, Object[] args)

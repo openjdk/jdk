@@ -121,7 +121,7 @@ public final class NativeJavaImporter extends ScriptObject {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final Object value = createProperty(name);
         if(value != null) {
-            set(name, value, isStrictContext());
+            set(name, value, false);
             return true;
         }
         return false;

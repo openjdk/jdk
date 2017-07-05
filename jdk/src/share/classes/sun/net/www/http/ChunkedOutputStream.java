@@ -125,7 +125,7 @@ public class ChunkedOutputStream extends PrintStream {
         completeHeader = getHeader(preferredChunkDataSize);
 
         /* start with an initial buffer */
-        buf = new byte[preferredChunkDataSize + 32];
+        buf = new byte[preferredChunkGrossSize];
         reset();
     }
 

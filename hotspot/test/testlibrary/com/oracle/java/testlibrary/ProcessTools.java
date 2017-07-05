@@ -112,10 +112,8 @@ public final class ProcessTools {
    * @return String[] with platform specific arguments, empty if there are none
    */
   public static String[] getPlatformSpecificVMArgs() {
-    String osName = System.getProperty("os.name");
-    String dataModel = System.getProperty("sun.arch.data.model");
 
-    if (osName.equals("SunOS") && dataModel.equals("64")) {
+    if (Platform.is64bit() && Platform.isSolaris()) {
       return new String[] { "-d64" };
     }
 
