@@ -44,6 +44,9 @@ final public class AllocationStrategy implements Serializable {
     /** Number of fields in the allocated object */
     private final int fieldCount;
 
+    /** Whether to use dual field representation */
+    private final boolean dualFields;
+
     /** Name of class where allocator function resides */
     private transient String allocatorClassName;
 
@@ -53,15 +56,17 @@ final public class AllocationStrategy implements Serializable {
     /**
      * Construct an allocation strategy with the given map and class name.
      * @param fieldCount number of fields in the allocated object
+     * @param dualFields whether to use dual field representation
      */
-    public AllocationStrategy(final int fieldCount) {
+    public AllocationStrategy(final int fieldCount, final boolean dualFields) {
         this.fieldCount = fieldCount;
+        this.dualFields = dualFields;
     }
 
     private String getAllocatorClassName() {
         if (allocatorClassName == null) {
             // These classes get loaded, so an interned variant of their name is most likely around anyway.
-            allocatorClassName = Compiler.binaryName(ObjectClassGenerator.getClassName(fieldCount)).intern();
+            allocatorClassName = Compiler.binaryName(ObjectClassGenerator.getClassName(fieldCount, dualFields)).intern();
         }
         return allocatorClassName;
     }

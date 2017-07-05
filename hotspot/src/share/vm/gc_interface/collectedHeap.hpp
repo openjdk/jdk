@@ -185,8 +185,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
  public:
   enum Name {
-    Abstract,
-    SharedHeap,
     GenCollectedHeap,
     ParallelScavengeHeap,
     G1CollectedHeap
@@ -196,7 +194,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     return _filler_array_max_size;
   }
 
-  virtual CollectedHeap::Name kind() const { return CollectedHeap::Abstract; }
+  virtual Name kind() const = 0;
 
   /**
    * Returns JNI error code JNI_ENOMEM if memory could not be allocated,
@@ -290,12 +288,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   bool is_in_closed_subset_or_null(const void* p) const {
     return p == NULL || is_in_closed_subset(p);
   }
-
-#ifdef ASSERT
-  // Returns true if "p" is in the part of the
-  // heap being collected.
-  virtual bool is_in_partial_collection(const void *p) = 0;
-#endif
 
   // An object is scavengable if its location may move during a scavenge.
   // (A scavenge is a GC which is not a full GC.)

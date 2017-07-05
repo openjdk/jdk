@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * Tests for JSType methods.
  *
  * @test
- * @run testng jdk.nashorn.internal.runtime.JSTypeTest
+ * @run testng jdk.nashorn.internal.runtime.test.JSTypeTest
  */
 public class JSTypeTest {
     /**

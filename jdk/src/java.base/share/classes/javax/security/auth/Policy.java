@@ -322,7 +322,7 @@ public abstract class Policy {
      *                  in conjunction with the provided
      *                  {@code CodeSource}, determines the Permissions
      *                  returned by this method.  This parameter
-     *                  may be {@code null}. <p>
+     *                  may be {@code null}.
      *
      * @param cs the code specified by its {@code CodeSource}
      *                  that determines, in conjunction with the provided

@@ -31,7 +31,8 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_ARGUMENTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JAVA_THIS;
-import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_PREFIX;
+import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_DUAL_FIELD_PREFIX;
+import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_SINGLE_FIELD_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
@@ -99,18 +100,10 @@ public final class ObjectClassGenerator implements Loggable {
      */
     private final DebugLogger log;
 
-    /**
-     * Should the runtime only use java.lang.Object slots for fields? If this is false, the representation
-     * will be a primitive 64-bit long value used for all primitives and a java.lang.Object for references.
-     * This introduces a larger number of method handles in the system, as we need to have different getters
-     * and setters for the different fields.
-     *
-     * This is engineered to plug into the TaggedArray implementation, when it's done.
-     */
-    public static final boolean OBJECT_FIELDS_ONLY = Options.getBooleanProperty("nashorn.fields.objects");
-
-    /** The field types in the system */
-    private static final List<Type> FIELD_TYPES = new LinkedList<>();
+    /** Field types for object-only fields */
+    private static final Type[] FIELD_TYPES_OBJECT = new Type[] { Type.OBJECT };
+    /** Field types for dual primitive/object fields */
+    private static final Type[] FIELD_TYPES_DUAL   = new Type[] { Type.LONG, Type.OBJECT };
 
     /** What type is the primitive type in dual representation */
     public static final Type PRIMITIVE_FIELD_TYPE = Type.LONG;
@@ -118,33 +111,27 @@ public final class ObjectClassGenerator implements Loggable {
     private static final MethodHandle GET_DIFFERENT           = findOwnMH("getDifferent", Object.class, Object.class, Class.class, MethodHandle.class, MethodHandle.class, int.class);
     private static final MethodHandle GET_DIFFERENT_UNDEFINED = findOwnMH("getDifferentUndefined", Object.class, int.class);
 
-    /**
-     * The list of field types that we support - one type creates one field. This is currently either
-     * LONG + OBJECT or just OBJECT for classic mode.
-     */
-    static {
-        if (!OBJECT_FIELDS_ONLY) {
-            FIELD_TYPES.add(PRIMITIVE_FIELD_TYPE);
-        }
-        FIELD_TYPES.add(Type.OBJECT);
-    }
     private static boolean initialized = false;
 
     /** The context */
     private final Context context;
 
+    private final boolean dualFields;
+
     /**
      * Constructor
      *
      * @param context a context
+     * @param dualFields whether to use dual fields representation
      */
-    public ObjectClassGenerator(final Context context) {
+    public ObjectClassGenerator(final Context context, final boolean dualFields) {
         this.context = context;
+        this.dualFields = dualFields;
         assert context != null;
         this.log = initLogger(context);
         if (!initialized) {
             initialized = true;
-            if (OBJECT_FIELDS_ONLY) {
+            if (!dualFields) {
                 log.warning("Running with object fields only - this is a deprecated configuration.");
             }
         }
@@ -176,16 +163,30 @@ public final class ObjectClassGenerator implements Loggable {
         throw new AssertionError("cannot pack" + n);
     }
 
+    private static String getPrefixName(final boolean dualFields) {
+        return dualFields ? JS_OBJECT_DUAL_FIELD_PREFIX.symbolName() : JS_OBJECT_SINGLE_FIELD_PREFIX.symbolName();
+    }
+
+    private static String getPrefixName(final String className) {
+        if (className.startsWith(JS_OBJECT_DUAL_FIELD_PREFIX.symbolName())) {
+            return getPrefixName(true);
+        } else if (className.startsWith(JS_OBJECT_SINGLE_FIELD_PREFIX.symbolName())) {
+            return getPrefixName(false);
+        }
+        throw new AssertionError("Not a structure class: " + className);
+    }
+
     /**
      * Returns the class name for JavaScript objects with fieldCount fields.
      *
      * @param fieldCount Number of fields to allocate.
-     *
+     * @param dualFields whether to use dual fields representation
      * @return The class name.
      */
-    public static String getClassName(final int fieldCount) {
-        return fieldCount != 0 ? SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName() + fieldCount :
-                                 SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName();
+    public static String getClassName(final int fieldCount, final boolean dualFields) {
+        final String prefix = getPrefixName(dualFields);
+        return fieldCount != 0 ? SCRIPTS_PACKAGE + '/' + prefix + fieldCount :
+                                 SCRIPTS_PACKAGE + '/' + prefix;
     }
 
     /**
@@ -194,22 +195,23 @@ public final class ObjectClassGenerator implements Loggable {
      *
      * @param fieldCount Number of fields to allocate.
      * @param paramCount Number of parameters to allocate
-     *
+     * @param dualFields whether to use dual fields representation
      * @return The class name.
      */
-    public static String getClassName(final int fieldCount, final int paramCount) {
-        return SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName() + fieldCount + SCOPE_MARKER + paramCount;
+    public static String getClassName(final int fieldCount, final int paramCount, final boolean dualFields) {
+        return SCRIPTS_PACKAGE + '/' + getPrefixName(dualFields) + fieldCount + SCOPE_MARKER + paramCount;
     }
 
     /**
      * Returns the number of fields in the JavaScript scope class. Its name had to be generated using either
-     * {@link #getClassName(int)} or {@link #getClassName(int, int)}.
+     * {@link #getClassName(int, boolean)} or {@link #getClassName(int, int, boolean)}.
      * @param clazz the JavaScript scope class.
      * @return the number of fields in the scope class.
      */
     public static int getFieldCount(final Class<?> clazz) {
         final String name = clazz.getSimpleName();
-        final String prefix = JS_OBJECT_PREFIX.symbolName();
+        final String prefix = getPrefixName(name);
+
         if (prefix.equals(name)) {
             return 0;
         }
@@ -238,8 +240,8 @@ public final class ObjectClassGenerator implements Loggable {
      * @param className  name of class
      * @param fieldNames fields to initialize to undefined, where applicable
      */
-    private static void initializeToUndefined(final MethodEmitter init, final String className, final List<String> fieldNames) {
-        if (!OBJECT_FIELDS_ONLY) {
+    private void initializeToUndefined(final MethodEmitter init, final String className, final List<String> fieldNames) {
+        if (dualFields) {
             // no need to initialize anything to undefined in the dual field world
             // - then we have a constant getter for undefined for any unknown type
             return;
@@ -292,7 +294,7 @@ public final class ObjectClassGenerator implements Loggable {
      * @return Byte codes for generated class.
      */
     public byte[] generate(final int fieldCount) {
-        final String       className    = getClassName(fieldCount);
+        final String       className    = getClassName(fieldCount, dualFields);
         final String       superName    = className(ScriptObject.class);
         final ClassEmitter classEmitter = newClassEmitter(className, superName);
 
@@ -322,7 +324,7 @@ public final class ObjectClassGenerator implements Loggable {
      * @return Byte codes for generated class.
      */
     public byte[] generate(final int fieldCount, final int paramCount) {
-        final String       className    = getClassName(fieldCount, paramCount);
+        final String       className    = getClassName(fieldCount, paramCount, dualFields);
         final String       superName    = className(FunctionScope.class);
         final ClassEmitter classEmitter = newClassEmitter(className, superName);
         final List<String> initFields   = addFields(classEmitter, fieldCount);
@@ -353,11 +355,11 @@ public final class ObjectClassGenerator implements Loggable {
      *
      * @return List fields that need to be initialized.
      */
-    private static List<String> addFields(final ClassEmitter classEmitter, final int fieldCount) {
+    private List<String> addFields(final ClassEmitter classEmitter, final int fieldCount) {
         final List<String> initFields = new LinkedList<>();
-
+        final Type[] fieldTypes = dualFields ? FIELD_TYPES_DUAL : FIELD_TYPES_OBJECT;
         for (int i = 0; i < fieldCount; i++) {
-            for (final Type type : FIELD_TYPES) {
+            for (final Type type : fieldTypes) {
                 final String fieldName = getFieldName(i, type);
                 classEmitter.field(fieldName, type.getTypeClass());
 
@@ -533,13 +535,10 @@ public final class ObjectClassGenerator implements Loggable {
     private static MethodHandle getterForType(final Class<?> forType, final MethodHandle primitiveGetter, final MethodHandle objectGetter) {
         switch (getAccessorTypeIndex(forType)) {
         case TYPE_INT_INDEX:
-            assert !OBJECT_FIELDS_ONLY : "this can only happen with dual fields";
             return MH.explicitCastArguments(primitiveGetter, primitiveGetter.type().changeReturnType(int.class));
         case TYPE_LONG_INDEX:
-            assert !OBJECT_FIELDS_ONLY : "this can only happen with dual fields";
             return primitiveGetter;
         case TYPE_DOUBLE_INDEX:
-            assert !OBJECT_FIELDS_ONLY : "this can only happen with dual fields";
             return MH.filterReturnValue(primitiveGetter, UNPACK_DOUBLE);
         case TYPE_OBJECT_INDEX:
             return objectGetter;
@@ -557,7 +556,7 @@ public final class ObjectClassGenerator implements Loggable {
         final boolean isPrimitiveStorage = forType != null && forType.isPrimitive();
 
         //which is the primordial getter
-        final MethodHandle getter = OBJECT_FIELDS_ONLY ? objectGetter : isPrimitiveStorage ? primitiveGetter : objectGetter;
+        final MethodHandle getter = primitiveGetter == null ? objectGetter : isPrimitiveStorage ? primitiveGetter : objectGetter;
 
         if (forType == null) {
             if (isOptimistic) {
@@ -580,8 +579,7 @@ public final class ObjectClassGenerator implements Loggable {
             return MH.dropArguments(GET_UNDEFINED.get(ti), 0, Object.class);
         }
 
-        assert forType != null;
-        assert !OBJECT_FIELDS_ONLY || forType == Object.class : forType;
+        assert primitiveGetter != null || forType == Object.class : forType;
 
         if (isOptimistic) {
             if (fti < ti) {
@@ -635,8 +633,6 @@ public final class ObjectClassGenerator implements Loggable {
             return tgetter;
         }
 
-        assert !OBJECT_FIELDS_ONLY;
-        //final MethodType pmt = primitiveGetter.type();
         assert primitiveGetter != null;
         final MethodType tgetterType = tgetter.type();
         switch (fti) {
@@ -727,15 +723,13 @@ public final class ObjectClassGenerator implements Loggable {
         final int fti = getAccessorTypeIndex(forType);
         final int ti  = getAccessorTypeIndex(type);
 
-        if (fti == TYPE_OBJECT_INDEX || OBJECT_FIELDS_ONLY) {
+        if (fti == TYPE_OBJECT_INDEX || primitiveSetter == null) {
             if (ti == TYPE_OBJECT_INDEX) {
                 return objectSetter;
             }
 
             return MH.asType(objectSetter, objectSetter.type().changeParameterType(1, type));
         }
-
-        assert !OBJECT_FIELDS_ONLY;
 
         final MethodType pmt = primitiveSetter.type();
 
@@ -832,8 +826,8 @@ public final class ObjectClassGenerator implements Loggable {
      * @param thisProperties number of properties assigned to "this"
      * @return the allocation strategy
      */
-    static AllocationStrategy createAllocationStrategy(final int thisProperties) {
+    static AllocationStrategy createAllocationStrategy(final int thisProperties, final boolean dualFields) {
         final int paddedFieldCount = getPaddedFieldCount(thisProperties);
-        return new AllocationStrategy(paddedFieldCount);
+        return new AllocationStrategy(paddedFieldCount, dualFields);
     }
 }
