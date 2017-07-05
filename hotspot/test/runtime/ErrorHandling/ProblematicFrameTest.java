@@ -19,38 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_RUNTIME_ARGUMENTS_EXT_HPP
-#define SHARE_VM_RUNTIME_ARGUMENTS_EXT_HPP
+/*
+ * @test
+ * @bug 8050167
+ * @summary Test that error is not occurred during printing problematic frame
+ * @library /testlibrary
+ * @build com.oracle.java.testlibrary.*
+ * @run driver ProblematicFrameTest
+ */
 
-#include "memory/allocation.hpp"
-#include "runtime/arguments.hpp"
+import com.oracle.java.testlibrary.*;
 
-class ArgumentsExt: AllStatic {
-public:
-  static inline void select_gc_ergonomically();
-  static inline bool check_gc_consistency_user();
-  static inline bool check_gc_consistency_ergo();
-  static inline bool check_vm_args_consistency();
-  static        void process_options(const JavaVMInitArgs* args) {}
-};
+import sun.misc.Unsafe;
+import com.oracle.java.testlibrary.Utils;
 
-void ArgumentsExt::select_gc_ergonomically() {
-  Arguments::select_gc_ergonomically();
+public class ProblematicFrameTest {
+    private static class Crasher {
+        public static void main(String[] args) {
+            Utils.getUnsafe().getInt(0);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xmx64m", "-XX:-TransmitErrorReport", Crasher.class.getName());
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotMatch("error occurred during error reporting \\(printing problematic frame\\)");
+    }
 }
-
-bool ArgumentsExt::check_gc_consistency_user() {
-  return Arguments::check_gc_consistency_user();
-}
-
-bool ArgumentsExt::check_gc_consistency_ergo() {
-  return Arguments::check_gc_consistency_ergo();
-}
-
-bool ArgumentsExt::check_vm_args_consistency() {
-  return Arguments::check_vm_args_consistency();
-}
-
-#endif // SHARE_VM_RUNTIME_ARGUMENTS_EXT_HPP

@@ -27,9 +27,6 @@
 
 #include "runtime/os.hpp"
 
-// Register function to be called by before_exit
-extern "C" { void register_on_exit_function(void (*func)(void)) ;}
-
 // Execute code before all handles are released and thread is killed; prologue to vm_exit
 extern void before_exit(JavaThread * thread);
 
