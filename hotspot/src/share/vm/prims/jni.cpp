@@ -3840,7 +3840,9 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 #if INCLUDE_ALL_GCS
 #include "gc/g1/heapRegionRemSet.hpp"
 #endif
+#include "compiler/directivesParser.hpp"
 #include "memory/guardedMemory.hpp"
+#include "utilities/json.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
 #if INCLUDE_VM_STRUCTS
@@ -3904,6 +3906,8 @@ void execute_internal_vm_tests() {
     run_unit_test(ObjectMonitor::sanity_checks());
     run_unit_test(Test_linked_list());
     run_unit_test(TestChunkedList_test());
+    run_unit_test(JSONTest::test());
+    run_unit_test(DirectivesParser::test());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif

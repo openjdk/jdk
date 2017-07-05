@@ -463,6 +463,22 @@ public final class Byte extends Number implements Comparable<Byte> {
     }
 
     /**
+     * Compares two {@code byte} values numerically treating the values
+     * as unsigned.
+     *
+     * @param  x the first {@code byte} to compare
+     * @param  y the second {@code byte} to compare
+     * @return the value {@code 0} if {@code x == y}; a value less
+     *         than {@code 0} if {@code x < y} as unsigned values; and
+     *         a value greater than {@code 0} if {@code x > y} as
+     *         unsigned values
+     * @since 9
+     */
+    public static int compareUnsigned(byte x, byte y) {
+        return Byte.toUnsignedInt(x) - Byte.toUnsignedInt(y);
+    }
+
+    /**
      * Converts the argument to an {@code int} by an unsigned
      * conversion.  In an unsigned conversion to an {@code int}, the
      * high-order 24 bits of the {@code int} are zero and the

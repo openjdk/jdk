@@ -1504,6 +1504,8 @@ private:
   void movb(Address dst, int imm8);
   void movb(Register dst, Address src);
 
+  void movddup(XMMRegister dst, XMMRegister src);
+
   void kmovql(KRegister dst, KRegister src);
   void kmovql(KRegister dst, Register src);
   void kmovdl(KRegister dst, Register src);
@@ -1767,6 +1769,10 @@ private:
   void rclq(Register dst, int imm8);
 
   void rcrq(Register dst, int imm8);
+
+  void rcpps(XMMRegister dst, XMMRegister src);
+
+  void rcpss(XMMRegister dst, XMMRegister src);
 
   void rdtsc();
 
@@ -2140,6 +2146,11 @@ private:
   // they always clear upper 128 bits. It should be used before calling
   // runtime code and native libraries.
   void vzeroupper();
+
+  // AVX support for vectorized conditional move (double). The following two instructions used only coupled.
+  void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
+  void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.

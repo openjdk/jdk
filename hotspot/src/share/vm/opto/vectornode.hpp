@@ -44,6 +44,13 @@ class VectorNode : public TypeNode {
     init_req(2, n2);
   }
 
+  VectorNode(Node* n1, Node* n2, Node* n3, const TypeVect* vt) : TypeNode(vt, 4) {
+    init_class_id(Class_Vector);
+    init_req(1, n1);
+    init_req(2, n2);
+    init_req(3, n3);
+  }
+
   const TypeVect* vect_type() const { return type()->is_vect(); }
   uint length() const { return vect_type()->length(); } // Vector length
   uint length_in_bytes() const { return vect_type()->length_in_bytes(); }
@@ -250,6 +257,14 @@ public:
 class MulVDNode : public VectorNode {
 public:
   MulVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------CMoveVDNode--------------------------------------
+// Vector multiply double
+class CMoveVDNode : public VectorNode {
+public:
+  CMoveVDNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
   virtual int Opcode() const;
 };
 

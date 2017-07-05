@@ -326,9 +326,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     // methods access VM-internal data.
     VM_ENTRY_MARK;
     methodHandle mh(THREAD, m->get_Method());
-    methodHandle ct(THREAD, method()->get_Method());
     is_available = compiler->is_intrinsic_supported(mh, is_virtual) &&
-                   !vmIntrinsics::is_disabled_by_flags(mh, ct);
+                   !C->directive()->is_intrinsic_disabled(mh) &&
+                   !vmIntrinsics::is_disabled_by_flags(mh);
+
   }
 
   if (is_available) {
@@ -1368,7 +1369,6 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
   case vmIntrinsics::_dsqrt:  n = new SqrtDNode(C, control(),  arg);  break;
-  case vmIntrinsics::_dlog:   n = new LogDNode(C, control(),   arg);  break;
   case vmIntrinsics::_dlog10: n = new Log10DNode(C, control(), arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
@@ -1752,7 +1752,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dtan:   return Matcher::has_match_rule(Op_TanD)   ? inline_trig(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan),   "TAN");
 
-  case vmIntrinsics::_dlog:   return Matcher::has_match_rule(Op_LogD)   ? inline_math(id) :
+  case vmIntrinsics::_dlog:
+    return StubRoutines::dlog() != NULL ?
+    runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
   case vmIntrinsics::_dlog10: return Matcher::has_match_rule(Op_Log10D) ? inline_math(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");

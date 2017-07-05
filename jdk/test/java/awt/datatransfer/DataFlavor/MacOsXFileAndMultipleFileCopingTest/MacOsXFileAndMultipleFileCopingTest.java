@@ -23,10 +23,9 @@
 
 /*
   @test
-  @bug 8081787
-  @summary MalformedURLException is thrown during reading data for application/x-java-url;class=java.net.URL flavor
+  @bug 8081787 8136763
   @author Mikhail Cherkasov
-  @run main/manual XJavaUrlDataFlavorTest
+  @run main/manual MacOsXFileAndMultipleFileCopingTest
 */
 
 import javax.swing.*;
@@ -36,17 +35,24 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
 
-public class XJavaUrlDataFlavorTest {
+public class MacOsXFileAndMultipleFileCopingTest {
     private static void init() {
         String[] instructions =
                 {"Test for MacOS X only:",
                         "1. The aim is to test that java works fine with \"application/" +
-                                "x-java-url;class=java.net.URL\"falvor.",
+                                "x-java-url;class=java.net.URL\"falvor and support coping of multiple files",
                         "2. Open finder and select any file.",
                         "3. Press CMD+C or press \"Copy\" in context menu",
-                        "4. Focus window with \"Test\" Button.",
+                        "4. Focus window with \"Test URL\" Button.",
                         "5. If you see URL for selected file, then test PASSED,",
-                        "otherwise test FAILED."
+                        "otherwise test FAILED.",
+
+                        "6. Open finder again and select several files.",
+                        "7. Press CMD+C or press \"Copy\" in context menu",
+                        "8. Focus window with \"Test multiple files coping\" Button.",
+                        "9. If you see list of selected files, then test PASSED,",
+                        "otherwise test FAILED.",
+
                 };
 
         Sysout.createDialog();
@@ -57,22 +63,36 @@ public class XJavaUrlDataFlavorTest {
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 
         frame.add(panel);
-        Button testButton = new Button("Test");
-        final TextField textField = new TextField(40);
-        testButton.addActionListener(new AbstractAction() {
+        Button testUrlBtn = new Button("Test URL");
+        final TextArea textArea = new TextArea(5, 80);
+        testUrlBtn.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 try {
                     Clipboard board = Toolkit.getDefaultToolkit().getSystemClipboard();
-                    URL url = (URL)board.getData(new DataFlavor("application/x-java-url;class=java.net.URL"));
-                    textField.setText(url.toString());
+                    URL url = (URL) board.getData(new DataFlavor("application/x-java-url;class=java.net.URL"));
+                    textArea.setText(url.toString());
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
         });
-        panel.add(testButton);
-        panel.add(textField);
+        panel.add(testUrlBtn);
+        Button testUriList = new Button("Test multiple files coping");
+        testUriList.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                try {
+                    Clipboard board = Toolkit.getDefaultToolkit().getSystemClipboard();
+                        String files = (String) board.getData(new DataFlavor("text/uri-list;class=java.lang.String"));
+                    textArea.setText(files);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        panel.add(testUriList);
+        panel.add(textArea);
         frame.setBounds(200, 200, 400, 400);
         frame.setVisible(true);
 
@@ -100,6 +120,9 @@ public class XJavaUrlDataFlavorTest {
     private static int sleepTime = 300000;
 
     public static void main(String args[]) throws InterruptedException {
+        if (!System.getProperty("os.name").startsWith("Mac")) {
+            return;
+        }
         mainThread = Thread.currentThread();
         try {
             init();
@@ -336,9 +359,9 @@ class TestDialog extends Dialog implements ActionListener {
     //ManualMainTest
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand() == "pass") {
-            XJavaUrlDataFlavorTest.pass();
+            MacOsXFileAndMultipleFileCopingTest.pass();
         } else {
-            XJavaUrlDataFlavorTest.fail();
+            MacOsXFileAndMultipleFileCopingTest.fail();
         }
     }
 

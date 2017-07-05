@@ -32,9 +32,11 @@
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/oopMap.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "runtime/thread.hpp"
 
 class CompileTask;
+class DirectiveSet;
 
 // ciEnv
 //
@@ -352,6 +354,7 @@ public:
   // The compiler task which has created this env.
   // May be useful to find out compile_id, comp_level, etc.
   CompileTask* task() { return _task; }
+
   // Handy forwards to the task:
   int comp_level();   // task()->comp_level()
   uint compile_id();  // task()->compile_id()
@@ -367,9 +370,9 @@ public:
                        ExceptionHandlerTable*    handler_table,
                        ImplicitExceptionTable*   inc_table,
                        AbstractCompiler*         compiler,
-                       int                       comp_level,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
+                       DirectiveSet*             directives,
                        RTMState                  rtm_state = NoRTM);
 
 
