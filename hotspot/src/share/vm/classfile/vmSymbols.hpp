@@ -678,6 +678,10 @@
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
    do_name(     checkIndex_name,                                 "checkIndex")                                          \
                                                                                                                         \
+  /* java/lang/ref/Reference */                                                                                         \
+  do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
+                                                                                                                        \
+                                                                                                                        \
   do_class(sun_misc_AtomicLongCSImpl,     "sun/misc/AtomicLongCSImpl")                                                  \
   do_intrinsic(_get_AtomicLong,           sun_misc_AtomicLongCSImpl, get_name, void_long_signature,              F_R)   \
   /*   (symbols get_name and void_long_signature defined above) */                                                      \
