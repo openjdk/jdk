@@ -842,27 +842,35 @@ public class XBaseWindow {
                 | XConstants.ButtonMotionMask);
             final int ownerEvents = 1;
 
-            int ptrGrab = XlibWrapper.XGrabPointer(XToolkit.getDisplay(),
-                getContentWindow(), ownerEvents, eventMask, XConstants.GrabModeAsync,
-                XConstants.GrabModeAsync, XConstants.None, (XWM.isMotif() ? XToolkit.arrowCursor : XConstants.None),
-                XConstants.CurrentTime);
-            // Check grab results to be consistent with X server grab
-            if (ptrGrab != XConstants.GrabSuccess) {
-                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
-                XAwtState.setGrabWindow(null);
-                grabLog.fine("    Grab Failure - mouse");
-                return false;
-            }
 
-            int keyGrab = XlibWrapper.XGrabKeyboard(XToolkit.getDisplay(),
-                getContentWindow(), ownerEvents, XConstants.GrabModeAsync, XConstants.GrabModeAsync,
-                XConstants.CurrentTime);
-            if (keyGrab != XConstants.GrabSuccess) {
-                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
-                XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), XConstants.CurrentTime);
-                XAwtState.setGrabWindow(null);
-                grabLog.fine("    Grab Failure - keyboard");
-                return false;
+            //6714678: IDE (Netbeans, Eclipse, JDeveloper) Debugger hangs
+            //process on Linux
+            //The user must pass the sun.awt.disablegrab property to disable
+            //taking grabs. This prevents hanging of the GUI when a breakpoint
+            //is hit while a popup window taking the grab is open.
+            if (!XToolkit.getSunAwtDisableGrab()) {
+                int ptrGrab = XlibWrapper.XGrabPointer(XToolkit.getDisplay(),
+                        getContentWindow(), ownerEvents, eventMask, XConstants.GrabModeAsync,
+                        XConstants.GrabModeAsync, XConstants.None, (XWM.isMotif() ? XToolkit.arrowCursor : XConstants.None),
+                        XConstants.CurrentTime);
+                // Check grab results to be consistent with X server grab
+                if (ptrGrab != XConstants.GrabSuccess) {
+                    XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
+                    XAwtState.setGrabWindow(null);
+                    grabLog.fine("    Grab Failure - mouse");
+                    return false;
+                }
+
+                int keyGrab = XlibWrapper.XGrabKeyboard(XToolkit.getDisplay(),
+                        getContentWindow(), ownerEvents, XConstants.GrabModeAsync, XConstants.GrabModeAsync,
+                        XConstants.CurrentTime);
+                if (keyGrab != XConstants.GrabSuccess) {
+                    XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
+                    XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), XConstants.CurrentTime);
+                    XAwtState.setGrabWindow(null);
+                    grabLog.fine("    Grab Failure - keyboard");
+                    return false;
+                }
             }
             if (prevGrabWindow != null) {
                 prevGrabWindow.ungrabInputImpl();
@@ -882,8 +890,10 @@ public class XBaseWindow {
             grabLog.log(Level.FINE, "UnGrab input on {0}", new Object[] {grabWindow});
             if (grabWindow != null) {
                 grabWindow.ungrabInputImpl();
-                XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
-                XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), XConstants.CurrentTime);
+                if (!XToolkit.getSunAwtDisableGrab()) {
+                    XlibWrapper.XUngrabPointer(XToolkit.getDisplay(), XConstants.CurrentTime);
+                    XlibWrapper.XUngrabKeyboard(XToolkit.getDisplay(), XConstants.CurrentTime);
+                }
                 XAwtState.setGrabWindow(null);
                 // we need to call XFlush() here to force ungrab
                 // see 6384219 for details

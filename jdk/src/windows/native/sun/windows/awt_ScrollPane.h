@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ public:
     virtual void Reshape(int x, int y, int w, int h);
     virtual void BeginValidate() {}
     virtual void EndValidate() {}
-    BOOL ActMouseMessage(MSG* pMsg);
 
     /*
      * Fix for bug 4046446

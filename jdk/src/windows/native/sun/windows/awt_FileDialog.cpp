@@ -101,7 +101,8 @@ LRESULT CALLBACK FileDialogWndProc(HWND hWnd, UINT message,
         }
     }
 
-    return ComCtl32Util::GetInstance().DefWindowProc(NULL, hWnd, message, wParam, lParam);
+    WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(hWnd, NativeDialogWndProcProp));
+    return ComCtl32Util::GetInstance().DefWindowProc(lpfnWndProc, hWnd, message, wParam, lParam);
 }
 
 static UINT_PTR CALLBACK
@@ -135,16 +136,19 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
             }
 
             // subclass dialog's parent to receive additional messages
-            ComCtl32Util::GetInstance().SubclassHWND(parent,
-                                                     FileDialogWndProc);
+            WNDPROC lpfnWndProc = ComCtl32Util::GetInstance().SubclassHWND(parent,
+                                                                           FileDialogWndProc);
+            ::SetProp(parent, NativeDialogWndProcProp, reinterpret_cast<HANDLE>(lpfnWndProc));
 
             break;
         }
         case WM_DESTROY: {
+            WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(parent, NativeDialogWndProcProp));
             ComCtl32Util::GetInstance().UnsubclassHWND(parent,
                                                        FileDialogWndProc,
-                                                       NULL);
+                                                       lpfnWndProc);
             ::RemoveProp(parent, ModalDialogPeerProp);
+            ::RemoveProp(parent, NativeDialogWndProcProp);
             break;
         }
         case WM_NOTIFY: {

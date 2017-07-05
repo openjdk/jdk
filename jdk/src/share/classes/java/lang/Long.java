@@ -510,7 +510,7 @@ public final class Long extends Number implements Comparable<Long> {
      *             contain a parsable {@code long}.
      */
     public static Long valueOf(String s, int radix) throws NumberFormatException {
-        return new Long(parseLong(s, radix));
+        return Long.valueOf(parseLong(s, radix));
     }
 
     /**
@@ -537,7 +537,7 @@ public final class Long extends Number implements Comparable<Long> {
      */
     public static Long valueOf(String s) throws NumberFormatException
     {
-        return new Long(parseLong(s, 10));
+        return Long.valueOf(parseLong(s, 10));
     }
 
     private static class LongCache {
@@ -650,7 +650,7 @@ public final class Long extends Number implements Comparable<Long> {
 
         try {
             result = Long.valueOf(nm.substring(index), radix);
-            result = negative ? new Long(-result.longValue()) : result;
+            result = negative ? Long.valueOf(-result.longValue()) : result;
         } catch (NumberFormatException e) {
             // If number is Long.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be
@@ -869,7 +869,7 @@ public final class Long extends Number implements Comparable<Long> {
      */
     public static Long getLong(String nm, long val) {
         Long result = Long.getLong(nm, null);
-        return (result == null) ? new Long(val) : result;
+        return (result == null) ? Long.valueOf(val) : result;
     }
 
     /**

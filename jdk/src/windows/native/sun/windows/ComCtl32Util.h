@@ -40,6 +40,10 @@ class ComCtl32Util
 
         void InitLibraries();
 
+        INLINE BOOL IsToolTipControlInitialized() {
+            return m_bToolTipControlInitialized;
+        }
+
         WNDPROC SubclassHWND(HWND hwnd, WNDPROC _WindowProc);
         // DefWindowProc is the same as returned from SubclassHWND
         void UnsubclassHWND(HWND hwnd, WNDPROC _WindowProc, WNDPROC _DefWindowProc);
@@ -49,6 +53,8 @@ class ComCtl32Util
     private:
         ComCtl32Util();
         ~ComCtl32Util();
+
+        BOOL m_bToolTipControlInitialized;
 
         // comctl32.dll version 6 window proc
         static LRESULT CALLBACK SharedWindowProc(HWND hwnd, UINT message,
