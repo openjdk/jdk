@@ -990,9 +990,11 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0
       case MIB_IF_TYPE_FDDI:
       case IF_TYPE_IEEE80211:
         len = ifRowP->dwPhysAddrLen;
-        ret = (*env)->NewByteArray(env, len);
-        if (!IS_NULL(ret)) {
-          (*env)->SetByteArrayRegion(env, ret, 0, len, (jbyte *) ifRowP->bPhysAddr);
+        if (len > 0) {
+            ret = (*env)->NewByteArray(env, len);
+            if (!IS_NULL(ret)) {
+              (*env)->SetByteArrayRegion(env, ret, 0, len, (jbyte *) ifRowP->bPhysAddr);
+            }
         }
         break;
       }

@@ -542,11 +542,13 @@ cmsBool FixWhiteMisalignment(cmsPipeline* Lut, cmsColorSpaceSignature EntryColor
 
             cmsToneCurve* InversePostLin = cmsReverseToneCurve(Curves[i]);
             if (InversePostLin == NULL) {
-                WhiteOut[i] = 0;
-                continue;
+                WhiteOut[i] = WhitePointOut[i];
+
+            } else {
+
+                WhiteOut[i] = cmsEvalToneCurve16(InversePostLin, WhitePointOut[i]);
+                cmsFreeToneCurve(InversePostLin);
             }
-            WhiteOut[i] = cmsEvalToneCurve16(InversePostLin, WhitePointOut[i]);
-            cmsFreeToneCurve(InversePostLin);
         }
     }
     else {
@@ -1666,44 +1668,102 @@ static _cmsOptimizationCollection DefaultOptimization[] = {
 };
 
 // The linked list head
-static _cmsOptimizationCollection* OptimizationCollection = DefaultOptimization;
+_cmsOptimizationPluginChunkType _cmsOptimizationPluginChunk = { NULL };
+
+
+// Duplicates the zone of memory used by the plug-in in the new context
+static
+void DupPluginOptimizationList(struct _cmsContext_struct* ctx,
+                               const struct _cmsContext_struct* src)
+{
+   _cmsOptimizationPluginChunkType newHead = { NULL };
+   _cmsOptimizationCollection*  entry;
+   _cmsOptimizationCollection*  Anterior = NULL;
+   _cmsOptimizationPluginChunkType* head = (_cmsOptimizationPluginChunkType*) src->chunks[OptimizationPlugin];
+
+    _cmsAssert(ctx != NULL);
+    _cmsAssert(head != NULL);
+
+    // Walk the list copying all nodes
+   for (entry = head->OptimizationCollection;
+        entry != NULL;
+        entry = entry ->Next) {
+
+            _cmsOptimizationCollection *newEntry = ( _cmsOptimizationCollection *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(_cmsOptimizationCollection));
+
+            if (newEntry == NULL)
+                return;
+
+            // We want to keep the linked list order, so this is a little bit tricky
+            newEntry -> Next = NULL;
+            if (Anterior)
+                Anterior -> Next = newEntry;
+
+            Anterior = newEntry;
+
+            if (newHead.OptimizationCollection == NULL)
+                newHead.OptimizationCollection = newEntry;
+    }
+
+  ctx ->chunks[OptimizationPlugin] = _cmsSubAllocDup(ctx->MemPool, &newHead, sizeof(_cmsOptimizationPluginChunkType));
+}
+
+void  _cmsAllocOptimizationPluginChunk(struct _cmsContext_struct* ctx,
+                                         const struct _cmsContext_struct* src)
+{
+  if (src != NULL) {
+
+        // Copy all linked list
+       DupPluginOptimizationList(ctx, src);
+    }
+    else {
+        static _cmsOptimizationPluginChunkType OptimizationPluginChunkType = { NULL };
+        ctx ->chunks[OptimizationPlugin] = _cmsSubAllocDup(ctx ->MemPool, &OptimizationPluginChunkType, sizeof(_cmsOptimizationPluginChunkType));
+    }
+}
+
 
 // Register new ways to optimize
-cmsBool  _cmsRegisterOptimizationPlugin(cmsContext id, cmsPluginBase* Data)
+cmsBool  _cmsRegisterOptimizationPlugin(cmsContext ContextID, cmsPluginBase* Data)
 {
     cmsPluginOptimization* Plugin = (cmsPluginOptimization*) Data;
+    _cmsOptimizationPluginChunkType* ctx = ( _cmsOptimizationPluginChunkType*) _cmsContextGetClientChunk(ContextID, OptimizationPlugin);
     _cmsOptimizationCollection* fl;
 
     if (Data == NULL) {
 
-        OptimizationCollection = DefaultOptimization;
+        ctx->OptimizationCollection = NULL;
         return TRUE;
     }
 
     // Optimizer callback is required
     if (Plugin ->OptimizePtr == NULL) return FALSE;
 
-    fl = (_cmsOptimizationCollection*) _cmsPluginMalloc(id, sizeof(_cmsOptimizationCollection));
+    fl = (_cmsOptimizationCollection*) _cmsPluginMalloc(ContextID, sizeof(_cmsOptimizationCollection));
     if (fl == NULL) return FALSE;
 
     // Copy the parameters
     fl ->OptimizePtr = Plugin ->OptimizePtr;
 
     // Keep linked list
-    fl ->Next = OptimizationCollection;
-    OptimizationCollection = fl;
+    fl ->Next = ctx->OptimizationCollection;
+
+    // Set the head
+    ctx ->OptimizationCollection = fl;
 
     // All is ok
     return TRUE;
 }
 
 // The entry point for LUT optimization
-cmsBool _cmsOptimizePipeline(cmsPipeline**    PtrLut,
+cmsBool _cmsOptimizePipeline(cmsContext ContextID,
+                             cmsPipeline**    PtrLut,
                              int              Intent,
                              cmsUInt32Number* InputFormat,
                              cmsUInt32Number* OutputFormat,
                              cmsUInt32Number* dwFlags)
 {
+    _cmsOptimizationPluginChunkType* ctx = ( _cmsOptimizationPluginChunkType*) _cmsContextGetClientChunk(ContextID, OptimizationPlugin);
     _cmsOptimizationCollection* Opts;
     cmsBool AnySuccess = FALSE;
 
@@ -1733,8 +1793,8 @@ cmsBool _cmsOptimizePipeline(cmsPipeline**    PtrLut,
     if (*dwFlags & cmsFLAGS_NOOPTIMIZE)
         return FALSE;
 
-    // Try built-in optimizations and plug-in
-    for (Opts = OptimizationCollection;
+    // Try plug-in optimizations
+    for (Opts = ctx->OptimizationCollection;
          Opts != NULL;
          Opts = Opts ->Next) {
 
@@ -1742,6 +1802,17 @@ cmsBool _cmsOptimizePipeline(cmsPipeline**    PtrLut,
             if (Opts ->OptimizePtr(PtrLut, Intent, InputFormat, OutputFormat, dwFlags)) {
 
                 return TRUE;    // Optimized!
+            }
+    }
+
+   // Try built-in optimizations
+    for (Opts = DefaultOptimization;
+         Opts != NULL;
+         Opts = Opts ->Next) {
+
+            if (Opts ->OptimizePtr(PtrLut, Intent, InputFormat, OutputFormat, dwFlags)) {
+
+                return TRUE;
             }
     }
 

@@ -96,6 +96,9 @@ protected:
   static int  _features;
   static const char* _features_str;
 
+  static unsigned int _L2_cache_line_size;
+  static unsigned int L2_cache_line_size() { return _L2_cache_line_size; }
+
   static void print_features();
   static int  determine_features();
   static int  platform_features(int features);
@@ -167,9 +170,8 @@ public:
 
   static const char* cpu_features()     { return _features_str; }
 
-  static intx prefetch_data_size()  {
-    return is_T4() && !is_T7() ? 32 : 64;  // default prefetch block size on sparc
-  }
+  // default prefetch block size on sparc
+  static intx prefetch_data_size()      { return L2_cache_line_size();  }
 
   // Prefetch
   static intx prefetch_copy_interval_in_bytes() {
