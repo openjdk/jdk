@@ -473,7 +473,7 @@ private:
 
   // The number of bytes in the collection set before the pause. Set from
   // the incrementally built collection set at the start of an evacuation
-  // pause, and incremented in finalize_cset() when adding old regions
+  // pause, and incremented in finalize_old_cset_part() when adding old regions
   // (if any) to the collection set.
   size_t _collection_set_bytes_used_before;
 
@@ -634,7 +634,7 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms);
+  void record_collection_pause_end(double pause_time_ms, size_t cards_scanned);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -689,7 +689,8 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  void finalize_cset(double target_pause_time_ms);
+  double finalize_young_cset_part(double target_pause_time_ms);
+  virtual void finalize_old_cset_part(double time_remaining_ms);
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
@@ -865,8 +866,8 @@ public:
     return _recorded_survivor_regions;
   }
 
-  void record_thread_age_table(ageTable* age_table) {
-    _survivors_age_table.merge_par(age_table);
+  void record_age_table(ageTable* age_table) {
+    _survivors_age_table.merge(age_table);
   }
 
   void update_max_gc_locker_expansion();

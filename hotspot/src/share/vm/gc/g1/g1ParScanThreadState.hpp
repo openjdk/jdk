@@ -82,7 +82,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   }
 
  public:
-  G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id);
+  G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, size_t young_cset_length);
   ~G1ParScanThreadState();
 
   void set_ref_processor(ReferenceProcessor* rp) { _scanner.set_ref_processor(rp); }
@@ -120,6 +120,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
     // age -1 regions (i.e. non-young ones)
     return _surviving_young_words + 1;
   }
+
+  void flush(size_t* surviving_young_words);
 
  private:
   #define G1_PARTIAL_ARRAY_MASK 0x2
@@ -187,6 +189,50 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markOop m);
+};
+
+class G1ParScanThreadStateSet : public StackObj {
+  G1CollectedHeap* _g1h;
+  G1ParScanThreadState** _states;
+  size_t* _surviving_young_words_total;
+  size_t* _cards_scanned;
+  size_t _total_cards_scanned;
+  uint _n_workers;
+  bool _flushed;
+
+ public:
+  G1ParScanThreadStateSet(G1CollectedHeap* g1h, uint n_workers, size_t young_cset_length) :
+      _g1h(g1h),
+      _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
+      _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length, mtGC)),
+      _cards_scanned(NEW_C_HEAP_ARRAY(size_t, n_workers, mtGC)),
+      _total_cards_scanned(0),
+      _n_workers(n_workers),
+      _flushed(false) {
+    for (uint i = 0; i < n_workers; ++i) {
+      _states[i] = new_par_scan_state(i, young_cset_length);
+    }
+    memset(_surviving_young_words_total, 0, young_cset_length * sizeof(size_t));
+    memset(_cards_scanned, 0, n_workers * sizeof(size_t));
+  }
+
+  ~G1ParScanThreadStateSet() {
+    assert(_flushed, "thread local state from the per thread states should have been flushed");
+    FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
+    FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
+    FREE_C_HEAP_ARRAY(size_t, _cards_scanned);
+  }
+
+  void flush();
+
+  G1ParScanThreadState* state_for_worker(uint worker_id);
+
+  void add_cards_scanned(uint worker_id, size_t cards_scanned);
+  size_t total_cards_scanned() const;
+  const size_t* surviving_young_words() const;
+
+ private:
+  G1ParScanThreadState* new_par_scan_state(uint worker_id, size_t young_cset_length);
 };
 
 #endif // SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_HPP
