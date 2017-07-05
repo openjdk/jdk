@@ -38,6 +38,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.AccessController;
+import java.util.Objects;
 import static sun.net.www.protocol.http.HttpURLConnection.HTTP_CONNECT;
 
 /**
@@ -193,11 +194,12 @@ class DigestAuthentication extends AuthenticationInfo {
      */
     public DigestAuthentication(boolean isProxy, URL url, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params) {
+                                Parameters params, String authenticatorKey) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               url,
-              realm);
+              realm,
+              Objects.requireNonNull(authenticatorKey));
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;
@@ -205,12 +207,13 @@ class DigestAuthentication extends AuthenticationInfo {
 
     public DigestAuthentication(boolean isProxy, String host, int port, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params) {
+                                Parameters params, String authenticatorKey) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               host,
               port,
-              realm);
+              realm,
+              Objects.requireNonNull(authenticatorKey));
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;

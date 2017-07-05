@@ -25,6 +25,7 @@
  * @test
  * @bug     6276988
  * @summary All enum constants in a class should share a single "universe".
+ * @modules java.base/java.util:open
  */
 
 import java.lang.reflect.Field;

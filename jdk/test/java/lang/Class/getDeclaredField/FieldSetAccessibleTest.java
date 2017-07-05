@@ -58,9 +58,9 @@ import jdk.internal.module.Modules;
 /**
  * @test
  * @bug 8065552
- * @summary test that all fields returned by getDeclaredFields() can be
- *          set accessible if the right permission is granted; this test
- *          loads all the classes in the BCL, get their declared fields,
+ * @summary test that all public fields returned by getDeclaredFields() can
+ *          be set accessible if the right permission is granted; this test
+ *          loads all classes and get their declared fields
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
  * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest UNSECURE
@@ -81,24 +81,30 @@ public class FieldSetAccessibleTest {
 
 
     // Test that all fields for any given class can be made accessibles
-    static void testSetFieldsAccessible(Class<?> c, boolean expectException) {
+    static void testSetFieldsAccessible(Class<?> c) {
+        Module self = FieldSetAccessibleTest.class.getModule();
+        Module target = c.getModule();
+        String pn = c.getPackageName();
+        boolean exported = self.canRead(target) && target.isExported(pn, self);
         for (Field f : c.getDeclaredFields()) {
             fieldCount.incrementAndGet();
-            boolean expect = expectException;
-            if ((c == Module.class || c == AccessibleObject.class) &&
-                !Modifier.isPublic(f.getModifiers())) {
-                expect = true;
-            }
+
+            // setAccessible succeeds only if it's exported and the member
+            // is public and of a public class, or it's opened
+            // otherwise it would fail.
+            boolean isPublic = Modifier.isPublic(f.getModifiers()) &&
+                Modifier.isPublic(c.getModifiers());
+            boolean access = (exported && isPublic) || target.isOpen(pn, self);
             try {
                 f.setAccessible(false);
                 f.setAccessible(true);
-                if (expect) {
+                if (!access) {
                     throw new RuntimeException(
                         String.format("Expected InaccessibleObjectException is not thrown "
                                       + "for field %s in class %s%n", f.getName(), c.getName()));
                 }
             } catch (InaccessibleObjectException expected) {
-                if (!expect) {
+                if (access) {
                     throw new RuntimeException(expected);
                 }
             }
@@ -110,18 +116,17 @@ public class FieldSetAccessibleTest {
     public static boolean test(Class<?> c, boolean addExports) {
         Module self = FieldSetAccessibleTest.class.getModule();
         Module target = c.getModule();
-        String pn = c.getPackage().getName();
+        String pn = c.getPackageName();
         boolean exported = self.canRead(target) && target.isExported(pn, self);
         if (addExports && !exported) {
             Modules.addExports(target, pn, self);
             exported = true;
         }
-        boolean expectException = !exported;
 
         classCount.incrementAndGet();
 
         // Call getDeclaredFields() and try to set their accessible flag.
-        testSetFieldsAccessible(c, expectException);
+        testSetFieldsAccessible(c);
 
         // add more tests here...
 

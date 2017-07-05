@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 /* @test
    @bug 7010561
    @summary Tab text position with Synth based LaF is different to Java 5/6
+   @modules java.desktop/javax.swing.plaf.basic:open
    @author Pavel Porvatov
 */
 public class bug7010561 {

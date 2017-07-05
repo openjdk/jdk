@@ -31,21 +31,23 @@ module jdk.jlink {
 
     uses jdk.tools.jlink.plugin.Plugin;
 
-    provides java.util.spi.ToolProvider with jdk.tools.jmod.Main.JmodToolProvider;
-    provides java.util.spi.ToolProvider with jdk.tools.jlink.internal.Main.JlinkToolProvider;
+    provides java.util.spi.ToolProvider with
+        jdk.tools.jmod.Main.JmodToolProvider,
+        jdk.tools.jlink.internal.Main.JlinkToolProvider;
 
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.FileCopierPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.StripDebugPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludePlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.StripNativeCommandsPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.OrderResourcesPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ExcludeVMPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.IncludeLocalesPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ReleaseInfoPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with jdk.tools.jlink.internal.plugins.ClassForNamePlugin;
+    provides jdk.tools.jlink.plugin.Plugin with
+        jdk.tools.jlink.internal.plugins.FileCopierPlugin,
+        jdk.tools.jlink.internal.plugins.StripDebugPlugin,
+        jdk.tools.jlink.internal.plugins.ExcludePlugin,
+        jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin,
+        jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin,
+        jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin,
+        jdk.tools.jlink.internal.plugins.StripNativeCommandsPlugin,
+        jdk.tools.jlink.internal.plugins.OrderResourcesPlugin,
+        jdk.tools.jlink.internal.plugins.DefaultCompressPlugin,
+        jdk.tools.jlink.internal.plugins.ExcludeVMPlugin,
+        jdk.tools.jlink.internal.plugins.IncludeLocalesPlugin,
+        jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin,
+        jdk.tools.jlink.internal.plugins.ReleaseInfoPlugin,
+        jdk.tools.jlink.internal.plugins.ClassForNamePlugin;
  }

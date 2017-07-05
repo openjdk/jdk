@@ -32,7 +32,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,23 +44,23 @@ import java.util.Set;
 public final class ModuleHashes {
 
     /**
-     * A supplier of an encoded message digest.
+     * A supplier of a message digest.
      */
     public static interface HashSupplier {
-        String generate(String algorithm);
+        byte[] generate(String algorithm);
     }
 
 
     private final String algorithm;
-    private final Map<String, String> nameToHash;
+    private final Map<String, byte[]> nameToHash;
 
     /**
      * Creates a {@code ModuleHashes}.
      *
      * @param algorithm   the algorithm used to create the hashes
-     * @param nameToHash  the map of module name to hash value (in string form)
+     * @param nameToHash  the map of module name to hash value
      */
-    public ModuleHashes(String algorithm, Map<String, String> nameToHash) {
+    public ModuleHashes(String algorithm, Map<String, byte[]> nameToHash) {
         this.algorithm = algorithm;
         this.nameToHash = Collections.unmodifiableMap(nameToHash);
     }
@@ -81,28 +80,28 @@ public final class ModuleHashes {
     }
 
     /**
-     * Returns the hash string for the given module name, {@code null}
+     * Returns the hash for the given module name, {@code null}
      * if there is no hash recorded for the module.
      */
-    public String hashFor(String mn) {
+    public byte[] hashFor(String mn) {
         return nameToHash.get(mn);
     }
 
     /**
-     * Returns unmodifiable map of module name to hash string.
+     * Returns unmodifiable map of module name to hash
      */
-    public Map<String, String> hashes() {
+    public Map<String, byte[]> hashes() {
         return nameToHash;
     }
 
     /**
      * Computes the hash for the given file with the given message digest
-     * algorithm. Returns the results a base64-encoded String.
+     * algorithm.
      *
      * @throws UncheckedIOException if an I/O error occurs
      * @throws RuntimeException if the algorithm is not available
      */
-    public static String computeHashAsString(Path file, String algorithm) {
+    public static byte[] computeHash(Path file, String algorithm) {
         try {
             MessageDigest md = MessageDigest.getInstance(algorithm);
 
@@ -118,8 +117,7 @@ public final class ModuleHashes {
                 }
             }
 
-            byte[] bytes = md.digest();
-            return Base64.getEncoder().encodeToString(bytes);
+            return md.digest();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         } catch (IOException ioe) {
@@ -133,14 +131,14 @@ public final class ModuleHashes {
      * the entry name, typically the module name. The map value is the file
      * path to the entry (module artifact).
      *
-     * @return ModuleHashes encapsulate the hashes
+     * @return ModuleHashes that encapsulates the hashes
      */
     public static ModuleHashes generate(Map<String, Path> map, String algorithm) {
-        Map<String, String> nameToHash = new HashMap<>();
+        Map<String, byte[]> nameToHash = new HashMap<>();
         for (Map.Entry<String, Path> entry: map.entrySet()) {
             String name = entry.getKey();
             Path path = entry.getValue();
-            nameToHash.put(name, computeHashAsString(path, algorithm));
+            nameToHash.put(name, computeHash(path, algorithm));
         }
         return new ModuleHashes(algorithm, nameToHash);
     }

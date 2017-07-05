@@ -32,8 +32,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import java.util.Collection;
-
 import junit.framework.Test;
 
 /**
@@ -58,11 +56,7 @@ public class CollectionTest extends JSR166TestCase {
                                         impl));
     }
 
-    /** A test of the CollectionImplementation implementation ! */
-    public void testEmptyMeansEmpty() {
-        assertTrue(impl.emptyCollection().isEmpty());
-        assertEquals(0, impl.emptyCollection().size());
-    }
-
-    // public void testCollectionDebugFail() { fail(); }
+//     public void testCollectionDebugFail() {
+//         fail(impl.klazz().getSimpleName());
+//     }
 }

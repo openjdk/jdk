@@ -31,6 +31,7 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.nio.CharBuffer;
 import java.util.AbstractCollection;
 import java.util.AbstractList;
 import java.util.AbstractSet;
@@ -884,6 +885,7 @@ public class SpliteratorTraversingAndSplittingTest {
             cdb.add("new CharSequenceImpl(\"%s\")", CharSequenceImpl::new);
             cdb.add("new StringBuilder(\"%s\")", StringBuilder::new);
             cdb.add("new StringBuffer(\"%s\")", StringBuffer::new);
+            cdb.add("CharBuffer.wrap(\"%s\".toCharArray())", s -> CharBuffer.wrap(s.toCharArray()));
         }
 
 

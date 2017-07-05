@@ -34,7 +34,7 @@ import java.nio.file.Paths;
  * @bug 8014196
  * @summary ktab creates a file with zero kt_vno
  * @requires os.family == "windows"
- * @modules java.security.jgss/sun.security.krb5.internal.ktab
+ * @modules java.security.jgss/sun.security.krb5.internal.ktab:+open
  *          java.security.jgss/sun.security.krb5.internal.tools
  */
 public class KtabZero {

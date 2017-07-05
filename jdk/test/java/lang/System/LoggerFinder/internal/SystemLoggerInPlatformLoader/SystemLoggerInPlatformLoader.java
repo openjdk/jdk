@@ -34,6 +34,7 @@ import java.lang.reflect.Method;
  * @test 8163162
  * @summary Checks that LazyLoggers are returned for System.Logger instances
  *          created by modules in the platform class loader.
+ * @modules java.base/java.lang:open
  * @build systempkg.log.SystemLoggerAccessor SystemLoggerInPlatformLoader
  * @run main/othervm SystemLoggerInPlatformLoader
  * @author danielfuchs

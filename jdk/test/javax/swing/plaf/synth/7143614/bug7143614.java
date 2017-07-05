@@ -26,6 +26,7 @@
  * @bug 7143614
  * @summary Issues with Synth Look&Feel
  * @author Pavel Porvatov
+ * @modules java.desktop/javax.swing.plaf.synth:open
  * @modules java.desktop/sun.awt
  */
 

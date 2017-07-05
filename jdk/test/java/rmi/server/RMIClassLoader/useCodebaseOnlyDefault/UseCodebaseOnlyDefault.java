@@ -27,7 +27,7 @@
  * @summary Tests proper parsing and defaulting of the
  * "java.rmi.server.useCodebaseOnly" property.
  *
- * @modules java.rmi/sun.rmi.server
+ * @modules java.rmi/sun.rmi.server:+open
  * @run main/othervm UseCodebaseOnlyDefault true
  * @run main/othervm -Djava.rmi.server.useCodebaseOnly=xyzzy UseCodebaseOnlyDefault true
  * @run main/othervm -Djava.rmi.server.useCodebaseOnly UseCodebaseOnlyDefault true

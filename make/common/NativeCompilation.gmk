@@ -568,17 +568,21 @@ define SetupNativeCompilationBody
   # Sort to remove dupliates and provide a reproducable order on the input files to the linker.
   $1_ALL_OBJS := $$(sort $$($1_EXPECTED_OBJS) $$($1_EXTRA_OBJECT_FILES))
 
-  # Pickup extra OPENJDK_TARGET_OS_TYPE and/or OPENJDK_TARGET_OS dependent variables for CFLAGS.
-  $1_EXTRA_CFLAGS:=$$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CFLAGS_$(OPENJDK_TARGET_OS))
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS, and/or OPENJDK_TARGET_OS plus
+  # OPENJDK_TARGET_CPU pair dependent variables for CFLAGS.
+  $1_EXTRA_CFLAGS:=$$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CFLAGS_$(OPENJDK_TARGET_OS)) \
+      $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU))
   ifneq ($(DEBUG_LEVEL),release)
     # Pickup extra debug dependent variables for CFLAGS
     $1_EXTRA_CFLAGS+=$$($1_CFLAGS_debug)
     $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)_debug)
     $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS)_debug)
+    $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU)_debug)
   else
     $1_EXTRA_CFLAGS+=$$($1_CFLAGS_release)
     $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)_release)
     $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS)_release)
+    $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU)_release)
   endif
 
   # Pickup extra OPENJDK_TARGET_OS_TYPE and/or OPENJDK_TARGET_OS dependent variables for CXXFLAGS.

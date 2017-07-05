@@ -36,6 +36,7 @@ public final class Specialization {
     private final MethodHandle mh;
     private final Class<? extends LinkLogic> linkLogicClass;
     private final boolean isOptimistic;
+    private final boolean convertsNumericArgs;
 
     /**
      * Constructor
@@ -43,7 +44,7 @@ public final class Specialization {
      * @param mh  invoker method handler
      */
     public Specialization(final MethodHandle mh) {
-        this(mh, false);
+        this(mh, false, true);
     }
 
     /**
@@ -52,9 +53,10 @@ public final class Specialization {
      * @param mh  invoker method handler
      * @param isOptimistic is this an optimistic native method, i.e. can it throw {@link UnwarrantedOptimismException}
      *   which would have to lead to a relink and return value processing
+     * @param convertsNumericArgs true if it is safe to convert arguments to numbers
      */
-    public Specialization(final MethodHandle mh, final boolean isOptimistic) {
-        this(mh, null, isOptimistic);
+    public Specialization(final MethodHandle mh, final boolean isOptimistic, final boolean convertsNumericArgs) {
+        this(mh, null, isOptimistic, convertsNumericArgs);
     }
 
     /**
@@ -65,10 +67,13 @@ public final class Specialization {
      *  if this can be linked on its first encounter, which is needed as per our standard linker semantics
      * @param isOptimistic is this an optimistic native method, i.e. can it throw {@link UnwarrantedOptimismException}
      *   which would have to lead to a relink and return value processing
+     * @param convertsNumericArgs true if it is safe to convert arguments to numbers
      */
-    public Specialization(final MethodHandle mh, final Class<? extends LinkLogic> linkLogicClass, final boolean isOptimistic) {
+    public Specialization(final MethodHandle mh, final Class<? extends LinkLogic> linkLogicClass,
+                          final boolean isOptimistic, final boolean convertsNumericArgs) {
         this.mh             = mh;
         this.isOptimistic   = isOptimistic;
+        this.convertsNumericArgs = convertsNumericArgs;
         if (linkLogicClass != null) {
             //null out the "empty" link logic class for optimization purposes
             //we only use the empty instance because we can't default class annotations
@@ -108,6 +113,16 @@ public final class Specialization {
      */
     public boolean isOptimistic() {
         return isOptimistic;
+    }
+
+    /**
+     * Check if this function converts arguments for numeric parameters to numbers
+     * so it's safe to pass booleans as 0 and 1
+     *
+     * @return true if it is safe to convert arguments to numbers
+     */
+    public boolean convertsNumericArgs() {
+        return convertsNumericArgs;
     }
 
 }

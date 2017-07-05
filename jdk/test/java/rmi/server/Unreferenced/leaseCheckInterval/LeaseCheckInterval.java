@@ -43,7 +43,6 @@
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary JavaVM LeaseCheckInterval_Stub SelfTerminator
  * @run main/othervm LeaseCheckInterval
- * @key intermittent
  */
 
 import java.rmi.Remote;
@@ -88,9 +87,8 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
             UnicastRemoteObject.exportObject(obj);
             System.err.println("exported remote object");
 
-            int registryPort = TestLibrary.getUnusedRandomPort();
-            Registry localRegistry =
-                LocateRegistry.createRegistry(registryPort);
+            Registry localRegistry = TestLibrary.createRegistryOnEphemeralPort();
+            int registryPort = TestLibrary.getRegistryPort(localRegistry);
             System.err.println("created local registry");
 
             localRegistry.bind(BINDING, obj);

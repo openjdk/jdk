@@ -26,7 +26,7 @@
  * @bug 8048194
  * @modules java.base/sun.security.util
  *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.jgss.spnego
+ *          java.security.jgss/sun.security.jgss.spnego:+open
  * @run main/othervm NotPreferredMech
  * @summary GSSContext.acceptSecContext fails when a supported mech is not initiator preferred
  */

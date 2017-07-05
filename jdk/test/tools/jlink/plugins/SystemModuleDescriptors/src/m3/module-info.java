@@ -22,4 +22,5 @@
  */
 
 module m3 {
+    requires m4;
 }

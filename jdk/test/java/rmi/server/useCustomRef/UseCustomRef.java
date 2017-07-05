@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class UseCustomRef
 
             System.err.println("creating Registry...");
 
-            registry = TestLibrary.createRegistryOnUnusedPort();
+            registry = TestLibrary.createRegistryOnEphemeralPort();
             int port = TestLibrary.getRegistryPort(registry);
             /*
              * create object with custom ref and bind in registry

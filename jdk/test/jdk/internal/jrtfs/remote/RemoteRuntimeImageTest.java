@@ -64,7 +64,7 @@ public class RemoteRuntimeImageTest {
         String java = jdk8Path.resolve("bin/java").toAbsolutePath().toString();
         String javac = jdk8Path.resolve("bin/javac").toAbsolutePath().toString();
         Files.createDirectories(Paths.get(".", CLASSES_DIR));
-        String jrtJar = Paths.get(TEST_JAVAHOME, JRTFS_JAR).toAbsolutePath().toString();
+        String jrtJar = Paths.get(TEST_JAVAHOME, "lib", JRTFS_JAR).toAbsolutePath().toString();
 
         // Compose command-lines for compiling and executing tests
         List<List<String>> cmds = Arrays.asList(

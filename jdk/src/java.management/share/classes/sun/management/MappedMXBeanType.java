@@ -625,26 +625,6 @@ public abstract class MappedMXBeanType {
                 // that has no from method to be embeded in another class.
             }
 
-            // check if a static "toCompositeData" method exists
-            try {
-                toMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
-                    public Method run() throws NoSuchMethodException {
-                        Method m = javaClass.getDeclaredMethod("toCompositeData", javaClass);
-                        if (m != null
-                                && CompositeData.class.isAssignableFrom(m.getReturnType())
-                                && Modifier.isStatic(m.getModifiers())) {
-                            m.setAccessible(true);
-                            return m;
-                        } else {
-                            return null;
-                        }
-                    }
-                });
-            } catch (PrivilegedActionException e) {
-                // ignore NoSuchMethodException since we allow classes
-                // that has no from method to be embeded in another class.
-            }
-
             if (COMPOSITE_DATA_CLASS.isAssignableFrom(c)) {
                 // c implements CompositeData - set openType to null
                 // defer generating the CompositeType
