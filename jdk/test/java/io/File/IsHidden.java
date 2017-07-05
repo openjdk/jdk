@@ -27,7 +27,7 @@
  */
 
 import java.io.*;
-
+import java.nio.file.attribute.DosFileAttributeView;
 
 public class IsHidden {
 
@@ -41,15 +41,20 @@ public class IsHidden {
         System.err.println(path + " ==> " + x);
     }
 
+    private static void setHidden(File f, boolean value) throws IOException {
+        f.toPath().getFileAttributeView(DosFileAttributeView.class).setHidden(value);
+    }
+
     private static void testWin32() throws Exception {
         File f = new File(dir, "test");
         f.deleteOnExit();
         f.createNewFile();
-        String name = f.getCanonicalPath();
-        Process p = Runtime.getRuntime().exec("cmd.exe /c attrib +H " + name);
-        p.waitFor();
-        ck(name, true);
-
+        setHidden(f, true);
+        try {
+            ck(f.getPath(), true);
+        } finally {
+            setHidden(f, false);
+        }
         ck(".foo", false);
         ck("foo", false);
     }

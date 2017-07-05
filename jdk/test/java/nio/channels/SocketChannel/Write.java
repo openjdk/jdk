@@ -37,8 +37,6 @@ import sun.misc.*;
 
 public class Write {
 
-    static int port = 40170;
-
     static Random generator = new Random();
 
     static int testSize = 15;
@@ -46,20 +44,12 @@ public class Write {
     public static void main(String[] args) throws Exception {
         WriteServer sv = new WriteServer();
         sv.start();
-        do {
-            try {
-                Thread.currentThread().sleep(200);
-            } catch (InterruptedException x) {
-                if (sv.finish(8000) == 0)
-                    throw new Exception("Failed: Error in server thread");
-            }
-        } while (!sv.ready);
-        bufferTest();
+        bufferTest(sv.port());
         if (sv.finish(8000) == 0)
             throw new Exception("Failed" );
     }
 
-    static void bufferTest() throws Exception {
+    static void bufferTest(int port) throws Exception {
         ByteBuffer[] bufs = new ByteBuffer[testSize];
         for(int i=0; i<testSize; i++) {
             String source =
@@ -94,14 +84,18 @@ public class Write {
 
 class WriteServer extends TestThread {
 
-    static int port = 40170;
-
     static Random generator = new Random();
 
-    volatile boolean ready = false;
 
-    WriteServer() {
+    final ServerSocketChannel ssc;
+
+    WriteServer() throws IOException {
         super("WriteServer");
+        this.ssc = ServerSocketChannel.open().bind(new InetSocketAddress(0));
+    }
+
+    int port() {
+        return ssc.socket().getLocalPort();
     }
 
     void go() throws Exception {
@@ -112,15 +106,10 @@ class WriteServer extends TestThread {
         ByteBuffer buf = ByteBuffer.allocateDirect(5);
 
         // Get a connection from client
-        ServerSocketChannel ssc = ServerSocketChannel.open();
         SocketChannel sc = null;
 
         try {
             ssc.configureBlocking(false);
-            InetAddress lh = InetAddress.getLocalHost();
-            InetSocketAddress isa = new InetSocketAddress(lh, port);
-            ssc.socket().bind(isa);
-            ready = true;
 
             for (;;) {
                 sc = ssc.accept();

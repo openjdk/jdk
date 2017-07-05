@@ -35,9 +35,6 @@ ifndef JDK_MAKE_SHARED_DIR
   JDK_MAKE_SHARED_DIR = $(JDK_TOPDIR)/make/common/shared
 endif
 
-ifndef CONTROL_TOPDIR
-  CONTROL_TOPDIR=$(TOPDIR)
-endif
 ifndef HOTSPOT_TOPDIR
   HOTSPOT_TOPDIR=$(TOPDIR)/hotspot
 endif

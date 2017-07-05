@@ -45,11 +45,11 @@ ifdef HAVE_JPRT_SAVE_BUNDLES
 endif
 
 jprt_build_fastdebug: fastdebug_build
-	( $(CD) $(OUTPUTDIR)-fastdebug/j2sdk-image && \
+	( $(CD) $(OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-fastdebug/j2sdk-image && \
 	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 jprt_build_debug: debug_build
-	( $(CD) $(OUTPUTDIR)-debug/j2sdk-image && \
+	( $(CD) $(OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-debug/j2sdk-image && \
 	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 ################################################################

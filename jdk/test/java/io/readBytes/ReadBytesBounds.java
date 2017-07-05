@@ -57,24 +57,28 @@ public class ReadBytesBounds {
     }
 
     public static void main(String argv[]) throws Throwable {
-        byte b[] = new byte[32];
-        testRead(-1, -1, false);
-        testRead(-1,  0, false);
-        testRead( 0, -1, false);
-        testRead( 0, 33, false);
-        testRead(33,  0, false);
-        testRead(33,  4, false);
-        testRead( 0, 32, true);
-        testRead(32,  0, true);
-        testRead(32,  4, false);
-        testRead( 4, 16, true);
-        testRead( 1, 31, true);
-        testRead( 0,  0, true);
-        testRead(31,  Integer.MAX_VALUE, false);
-        testRead( 0,  Integer.MAX_VALUE, false);
-        testRead(-1,  Integer.MAX_VALUE, false);
-        testRead(-4,  Integer.MIN_VALUE, false);
-        testRead( 0,  Integer.MIN_VALUE, false);
+        try {
+            testRead(-1, -1, false);
+            testRead(-1,  0, false);
+            testRead( 0, -1, false);
+            testRead( 0, 33, false);
+            testRead(33,  0, false);
+            testRead(33,  4, false);
+            testRead( 0, 32, true);
+            testRead(32,  0, true);
+            testRead(32,  4, false);
+            testRead( 4, 16, true);
+            testRead( 1, 31, true);
+            testRead( 0,  0, true);
+            testRead(31,  Integer.MAX_VALUE, false);
+            testRead( 0,  Integer.MAX_VALUE, false);
+            testRead(-1,  Integer.MAX_VALUE, false);
+            testRead(-4,  Integer.MIN_VALUE, false);
+            testRead( 0,  Integer.MIN_VALUE, false);
+        } finally {
+            fis.close();
+            raf.close();
+        }
     }
 
     static void testRead(int off, int len, boolean expected) throws Throwable {

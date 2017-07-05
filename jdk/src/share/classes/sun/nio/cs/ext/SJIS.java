@@ -114,14 +114,14 @@ public class SJIS
 
         private JIS_X_0201.Encoder jis0201;
 
-        short[] j0208Index1;
-        String[] j0208Index2;
+        private static final short[] j0208Index1 =
+            JIS_X_0208_Encoder.getIndex1();
+        private static final String[] j0208Index2 =
+            JIS_X_0208_Encoder.getIndex2();
 
         protected Encoder(Charset cs) {
             super(cs);
             jis0201 = new JIS_X_0201.Encoder(cs);
-            j0208Index1 = super.getIndex1();
-            j0208Index2 = super.getIndex2();
         }
 
         protected int encodeSingle(char inputChar) {

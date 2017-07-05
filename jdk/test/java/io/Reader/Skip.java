@@ -35,12 +35,16 @@ public class Skip {
         File f = new File(System.getProperty("test.src", "."),
                           "SkipInput.txt");
         FileReader fr = new FileReader(f);
-        long nchars = 8200;
-        long actual = fr.skip(nchars);
+        try {
+            long nchars = 8200;
+            long actual = fr.skip(nchars);
 
-        if (actual > nchars) {
-            throw new Exception
-                ("Should skip " + nchars + ", but skipped " +actual+" chars");
+            if (actual > nchars) {
+                throw new Exception
+                    ("Should skip " + nchars + ", but skipped " +actual+" chars");
+            }
+        } finally {
+            fr.close();
         }
     }
 }

@@ -36,8 +36,8 @@ public class LeadingSlash {
             File file = null;
             try {
                 file = File.createTempFile("bug", "4487368");
-                new FileInputStream("\\" + file.getPath());
-                new FileOutputStream("\\" + file.getPath());
+                new FileInputStream("\\" + file.getPath()).close();
+                new FileOutputStream("\\" + file.getPath()).close();
             } finally {
                 if (file != null)
                     file.delete();

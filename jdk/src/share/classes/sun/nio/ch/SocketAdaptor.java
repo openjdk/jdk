@@ -404,11 +404,7 @@ public class SocketAdaptor
     }
 
     public void close() throws IOException {
-        try {
-            sc.close();
-        } catch (Exception x) {
-            Net.translateToSocketException(x);
-        }
+        sc.close();
     }
 
     public void shutdownInput() throws IOException {

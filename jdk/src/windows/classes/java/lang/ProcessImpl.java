@@ -159,7 +159,7 @@ final class ProcessImpl extends Process {
         new java.security.PrivilegedAction<Void>() {
         public Void run() {
             if (stdHandles[0] == -1L)
-                stdin_stream = new ProcessBuilder.NullOutputStream();
+                stdin_stream = ProcessBuilder.NullOutputStream.INSTANCE;
             else {
                 FileDescriptor stdin_fd = new FileDescriptor();
                 fdAccess.setHandle(stdin_fd, stdHandles[0]);
@@ -168,7 +168,7 @@ final class ProcessImpl extends Process {
             }
 
             if (stdHandles[1] == -1L)
-                stdout_stream = new ProcessBuilder.NullInputStream();
+                stdout_stream = ProcessBuilder.NullInputStream.INSTANCE;
             else {
                 FileDescriptor stdout_fd = new FileDescriptor();
                 fdAccess.setHandle(stdout_fd, stdHandles[1]);
@@ -177,7 +177,7 @@ final class ProcessImpl extends Process {
             }
 
             if (stdHandles[2] == -1L)
-                stderr_stream = new ProcessBuilder.NullInputStream();
+                stderr_stream = ProcessBuilder.NullInputStream.INSTANCE;
             else {
                 FileDescriptor stderr_fd = new FileDescriptor();
                 fdAccess.setHandle(stderr_fd, stdHandles[2]);

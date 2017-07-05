@@ -120,6 +120,12 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
     rv = connect((SOCKET)fd, (struct sockaddr *)&sa, sa_len);
     if (rv == SOCKET_ERROR) {
         handleSocketError(env, WSAGetLastError());
+    } else {
+        /* Disable WSAECONNRESET errors as socket is no longer connected */
+        BOOL enable = FALSE;
+        DWORD bytesReturned = 0;
+        WSAIoctl((SOCKET)fd, SIO_UDP_CONNRESET, &enable, sizeof(enable),
+                 NULL, 0, &bytesReturned, NULL, NULL);
     }
 }
 

@@ -29,7 +29,7 @@
  * @author  Mandy Chung
  *
  * @build ThreadExecutionSynchronizer
- * @run main Locks
+ * @run main/othervm Locks
  */
 
 import java.lang.management.*;

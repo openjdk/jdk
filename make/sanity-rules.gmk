@@ -281,7 +281,6 @@ endif
 	@$(ECHO) "Build Directory Structure:" >> $(MESSAGE_FILE)
 	@$(ECHO) "   CWD = `$(PWD)`" >> $(MESSAGE_FILE)
 	@$(ECHO) "   TOPDIR = $(TOPDIR)"  >> $(MESSAGE_FILE)
-	@$(ECHO) "   CONTROL_TOPDIR = $(CONTROL_TOPDIR)"  >> $(MESSAGE_FILE)
 ifeq ($(LANGTOOLS_SRC_AVAILABLE), true)
 	@$(ECHO) "   LANGTOOLS_TOPDIR = $(LANGTOOLS_TOPDIR)"  >> $(MESSAGE_FILE)
 endif

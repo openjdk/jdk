@@ -34,8 +34,12 @@ public class EvolvedClass {
 
         // Deserialize in to new class object
         FileInputStream fi = new FileInputStream("parents.ser");
-        ObjectInputStream si = new ObjectInputStream(fi);
-        cnew = (ASubClass) si.readObject();
+        try {
+            ObjectInputStream si = new ObjectInputStream(fi);
+            cnew = (ASubClass) si.readObject();
+        } finally {
+            fi.close();
+        }
 
         System.out.println("Printing the deserialized class: ");
         System.out.println();

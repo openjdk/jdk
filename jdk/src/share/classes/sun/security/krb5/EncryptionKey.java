@@ -188,24 +188,13 @@ public class EncryptionKey
             etypes = EType.getBuiltInDefaults();
         }
 
-        // set the preferred etype for preauth
-        if ((pa_exists) && (pa_etype != EncryptedData.ETYPE_NULL)) {
-            if (DEBUG) {
-                System.out.println("Pre-Authentication: " +
-                        "Set preferred etype = " + pa_etype);
-            }
-            if (EType.isSupported(pa_etype)) {
-                // reset etypes to preferred value
-                etypes = new int[1];
-                etypes[0] = pa_etype;
-            }
-        }
-
         EncryptionKey[] encKeys = new EncryptionKey[etypes.length];
         for (int i = 0; i < etypes.length; i++) {
             if (EType.isSupported(etypes[i])) {
+                byte[] s2kparams = (pa_exists && etypes[i] == pa_etype)
+                        ? pa_s2kparams : null;
                 encKeys[i] = new EncryptionKey(
-                        stringToKey(password, salt, pa_s2kparams, etypes[i]),
+                        stringToKey(password, salt, s2kparams, etypes[i]),
                         etypes[i], null);
             } else {
                 if (DEBUG) {

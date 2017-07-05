@@ -80,20 +80,30 @@ public class Read {
         }
 
         // read in objects written by Write.main()
-        oin = new ObjectInputStream(new FileInputStream("tmp.ser"));
-        oin.readObject();
+        FileInputStream in = new FileInputStream("tmp.ser");
         try {
+            oin = new ObjectInputStream(in);
             oin.readObject();
-            throw new Error();
-        } catch (ObjectStreamException ex) {
+            try {
+                oin.readObject();
+                throw new Error();
+            } catch (ObjectStreamException ex) {
+            }
+        } finally {
+            in.close();
         }
 
-        oin = new ObjectInputStream(new FileInputStream("tmp.ser"));
-        oin.readObject();
+        in = new FileInputStream("tmp.ser");
         try {
-            oin.readUnshared();
-            throw new Error();
-        } catch (ObjectStreamException ex) {
+            oin = new ObjectInputStream(in);
+            oin.readObject();
+            try {
+                oin.readUnshared();
+                throw new Error();
+            } catch (ObjectStreamException ex) {
+            }
+        } finally {
+            in.close();
         }
     }
 }

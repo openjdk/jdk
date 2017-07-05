@@ -26,6 +26,7 @@
    @summary runFinalizersOnExit(true) causes JIT to be unloaded and
             crashes the VM.  Interim fix for 1.2 beta4 -- don't unload
             native libraries loaded by system classes.
+   @run main/othervm ExitFinalizersAndJIT
 */
 
 public class ExitFinalizersAndJIT {

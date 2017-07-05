@@ -32,6 +32,7 @@ import java.util.Locale;
 
 import javax.swing.UIManager;
 import sun.swing.SwingUtilities2;
+import static sun.swing.SwingUtilities2.IMPLIED_CR;
 
 /**
  * A GlyphView is a styled chunk of text that represents a view
@@ -1061,7 +1062,6 @@ public class GlyphView extends View implements TabableView, Cloneable {
     int length;
     // if it is an implied newline character
     boolean impliedCR;
-    private static final String IMPLIED_CR = "CR";
     boolean skipWidth;
 
     /**

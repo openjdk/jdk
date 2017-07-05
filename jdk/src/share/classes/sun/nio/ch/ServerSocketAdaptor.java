@@ -144,11 +144,7 @@ public class ServerSocketAdaptor                        // package-private
     }
 
     public void close() throws IOException {
-        try {
-            ssc.close();
-        } catch (Exception x) {
-            Net.translateException(x);
-        }
+        ssc.close();
     }
 
     public ServerSocketChannel getChannel() {
