@@ -599,7 +599,6 @@ CCACHE
 USE_PRECOMPILED_HEADER
 SJAVAC_SERVER_DIR
 ENABLE_SJAVAC
-SJAVAC_SERVER_CORES
 SJAVAC_SERVER_JAVA
 JOBS
 MEMORY_SIZE
@@ -682,6 +681,8 @@ STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
 COMPILER_NAME
+JTREGEXE
+JT_HOME
 LIPO
 ac_ct_OBJDUMP
 OBJDUMP
@@ -1005,6 +1006,7 @@ with_msvcr_dll
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
+with_jtreg
 with_extra_cflags
 with_extra_cxxflags
 with_extra_ldflags
@@ -1025,7 +1027,6 @@ with_num_cores
 with_memory_size
 with_jobs
 with_sjavac_server_java
-with_sjavac_server_cores
 enable_sjavac
 enable_precompiled_headers
 enable_ccache
@@ -1764,6 +1765,7 @@ Optional Packages:
                           [probed]
   --with-dxsdk-include    the DirectX SDK include directory (Windows only)
                           [probed]
+  --with-jtreg            Regression Test Harness [probed]
   --with-extra-cflags     extra flags to be used when compiling jdk c-files
   --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
   --with-extra-ldflags    extra flags to be used when linking jdk
@@ -1796,9 +1798,6 @@ Optional Packages:
   --with-sjavac-server-java
                           use this java binary for running the sjavac
                           background server [Boot JDK java]
-  --with-sjavac-server-cores
-                          use at most this number of concurrent threads on the
-                          sjavac server [probed]
   --with-ccache-dir       where to store ccache files [~/.ccache]
 
 Some influential environment variables:
@@ -3077,6 +3076,9 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
+# Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
+# If so, then append $1 to $2\
+# Also set JVM_ARG_OK to true/false depending on outcome.
 
 
 # This will make sure the given variable points to a full and proper
@@ -3725,6 +3727,9 @@ fi
 
 
 
+# Setup the JTREG paths
+
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -3775,7 +3780,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1367502949
+DATE_WHEN_GENERATED=1369723814
 
 ###############################################################################
 #
@@ -7389,17 +7394,20 @@ $as_echo "$as_me: Rewriting SRC_ROOT to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$SRC_ROOT"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of SRC_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of SRC_ROOT, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of SRC_ROOT, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of SRC_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    SRC_ROOT="`cd "$path"; $THEPWDCMD`"
   fi
 
 
@@ -7508,17 +7516,20 @@ $as_echo "$as_me: Rewriting CURDIR to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$CURDIR"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of CURDIR, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CURDIR, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of CURDIR, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of CURDIR, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    CURDIR="`cd "$path"; $THEPWDCMD`"
   fi
 
 
@@ -8104,17 +8115,20 @@ $as_echo "$as_me: Rewriting OUTPUT_ROOT to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$OUTPUT_ROOT"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of OUTPUT_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OUTPUT_ROOT, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of OUTPUT_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    OUTPUT_ROOT="`cd "$path"; $THEPWDCMD`"
   fi
 
 
@@ -11161,17 +11175,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -11490,17 +11507,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -11633,17 +11653,20 @@ $as_echo "$as_me: Rewriting JAVA_HOME_PROCESSED to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$JAVA_HOME_PROCESSED"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    JAVA_HOME_PROCESSED="`cd "$path"; $THEPWDCMD`"
   fi
 
         if test ! -d "$JAVA_HOME_PROCESSED"; then
@@ -11802,17 +11825,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -11987,17 +12013,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12312,17 +12341,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12524,17 +12556,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12701,17 +12736,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12906,17 +12944,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13083,17 +13124,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13288,17 +13332,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13465,17 +13512,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13670,17 +13720,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13847,17 +13900,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14039,17 +14095,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14214,17 +14273,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14407,17 +14469,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14582,17 +14647,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14774,17 +14842,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14949,17 +15020,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15142,17 +15216,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15317,17 +15394,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15491,17 +15571,20 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$BOOT_JDK"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15705,73 +15788,115 @@ if test "x$with_boot_jdk_jvmargs" = x; then
 
     # Minimum amount of heap memory.
 
-    # Test if -Xms64M is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -Xms64M to boot_jdk_jvmargs
-    FOUND_WARN=`$JAVA -Xms64M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -Xms64M -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -Xms64M" >&5
+    $ECHO "Command: $JAVA -Xms64M -version" >&5
+    OUTPUT=`$JAVA -Xms64M -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         boot_jdk_jvmargs="$boot_jdk_jvmargs -Xms64M"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
     if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
         # Why does macosx need more heap? Its the huge JDK batch.
 
-    # Test if -Xmx1600M is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -Xmx1600M to boot_jdk_jvmargs
-    FOUND_WARN=`$JAVA -Xmx1600M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -Xmx1600M -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -Xmx1600M" >&5
+    $ECHO "Command: $JAVA -Xmx1600M -version" >&5
+    OUTPUT=`$JAVA -Xmx1600M -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         boot_jdk_jvmargs="$boot_jdk_jvmargs -Xmx1600M"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
     else
 
-    # Test if -Xmx1100M is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -Xmx1100M to boot_jdk_jvmargs
-    FOUND_WARN=`$JAVA -Xmx1100M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -Xmx1100M -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -Xmx1100M" >&5
+    $ECHO "Command: $JAVA -Xmx1100M -version" >&5
+    OUTPUT=`$JAVA -Xmx1100M -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         boot_jdk_jvmargs="$boot_jdk_jvmargs -Xmx1100M"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
     fi
     # When is adding -client something that speeds up the JVM?
     # ADD_JVM_ARG_IF_OK([-client],boot_jdk_jvmargs,[$JAVA])
 
-    # Test if -XX:PermSize=32m is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -XX:PermSize=32m to boot_jdk_jvmargs
-    FOUND_WARN=`$JAVA -XX:PermSize=32m -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -XX:PermSize=32m -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -XX:PermSize=32m" >&5
+    $ECHO "Command: $JAVA -XX:PermSize=32m -version" >&5
+    OUTPUT=`$JAVA -XX:PermSize=32m -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:PermSize=32m"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
 
-    # Test if -XX:MaxPermSize=160m is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -XX:MaxPermSize=160m to boot_jdk_jvmargs
-    FOUND_WARN=`$JAVA -XX:MaxPermSize=160m -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -XX:MaxPermSize=160m -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -XX:MaxPermSize=160m" >&5
+    $ECHO "Command: $JAVA -XX:MaxPermSize=160m -version" >&5
+    OUTPUT=`$JAVA -XX:MaxPermSize=160m -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:MaxPermSize=160m"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
 
-    # Test if -XX:ThreadStackSize=$STACK_SIZE is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -XX:ThreadStackSize=$STACK_SIZE to boot_jdk_jvmargs
-    FOUND_WARN=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
+    $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
+    OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:ThreadStackSize=$STACK_SIZE"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
     # Disable special log output when a debug build is used as Boot JDK...
 
-    # Test if -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput to boot_jdk_jvmargs
-    FOUND_WARN=`$JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput" >&5
+    $ECHO "Command: $JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version" >&5
+    OUTPUT=`$JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
 fi
@@ -16131,6 +16256,157 @@ AR_OUT_OPTION='rcs$(SPACE)'
 
 
 # Locate the actual tools
+
+
+# Check whether --with-jtreg was given.
+if test "${with_jtreg+set}" = set; then :
+  withval=$with_jtreg;
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTReg Regression Test Harness" >&5
+$as_echo_n "checking for JTReg Regression Test Harness... " >&6; }
+
+  if test "x$with_jtreg" != x; then
+    JT_HOME="$with_jtreg"
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$JT_HOME"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of JT_HOME" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    JT_HOME="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting JT_HOME to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$JT_HOME"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    JT_HOME="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting JT_HOME to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$JT_HOME"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of JT_HOME, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    JT_HOME="`cd "$path"; $THEPWDCMD`"
+  fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JT_HOME" >&5
+$as_echo "$JT_HOME" >&6; }
+
+    # jtreg win32 script works for everybody
+    JTREGEXE="$JT_HOME/win32/bin/jtreg"
+    if test ! -f "$JTREGEXE"; then
+      as_fn_error $? "JTReg executable does not exist: $JTREGEXE" "$LINENO" 5
+    fi
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+
+
+
+
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
 
@@ -17088,17 +17364,20 @@ $as_echo "$as_me: Rewriting MSVCR_DLL to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$MSVCR_DLL"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of MSVCR_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVCR_DLL, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of MSVCR_DLL, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of MSVCR_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    MSVCR_DLL="`cd "$path"; $THEPWDCMD`"
   fi
 
 
@@ -17242,17 +17521,20 @@ $as_echo "$as_me: Rewriting dxsdk_path to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$dxsdk_path"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of dxsdk_path, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of dxsdk_path, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of dxsdk_path, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of dxsdk_path, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    dxsdk_path="`cd "$path"; $THEPWDCMD`"
   fi
 
 
@@ -17377,17 +17659,20 @@ $as_echo "$as_me: Rewriting DXSDK_LIB_PATH to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$DXSDK_LIB_PATH"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of DXSDK_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DXSDK_LIB_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of DXSDK_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of DXSDK_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    DXSDK_LIB_PATH="`cd "$path"; $THEPWDCMD`"
   fi
 
 
@@ -17510,17 +17795,20 @@ $as_echo "$as_me: Rewriting DXSDK_INCLUDE_PATH to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$DXSDK_INCLUDE_PATH"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    DXSDK_INCLUDE_PATH="`cd "$path"; $THEPWDCMD`"
   fi
 
 
@@ -28199,6 +28487,8 @@ $as_echo "$as_me: Rewriting LIPO to \"$new_complete\"" >&6;}
 
 fi
 
+
+
 # Restore old path without tools dir
 PATH="$OLD_PATH"
 
@@ -30828,17 +31118,20 @@ $as_echo "$as_me: Rewriting with_freetype to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$with_freetype"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of with_freetype, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_freetype, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of with_freetype, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of with_freetype, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    with_freetype="`cd "$path"; $THEPWDCMD`"
   fi
 
 	    FREETYPE2_LIBS="-L$with_freetype/lib -lfreetype"
@@ -31127,17 +31420,20 @@ $as_echo "$as_me: Rewriting FREETYPELOCATION to \"$new_path\"" >&6;}
   else
     # We're on a posix platform. Hooray! :)
     path="$FREETYPELOCATION"
-
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of FREETYPELOCATION, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FREETYPELOCATION, which resolves as \"$path\", is invalid." >&5
 $as_echo "$as_me: The path of FREETYPELOCATION, which resolves as \"$path\", is invalid." >&6;}
       as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of FREETYPELOCATION, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    FREETYPELOCATION="`cd "$path"; $THEPWDCMD`"
   fi
 
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype in some standard windows locations" >&5
@@ -32664,192 +32960,183 @@ else
     SJAVAC_SERVER_JAVA=""
     # Hotspot specific options.
 
-    # Test if -verbosegc is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -verbosegc to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$JAVA -verbosegc -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -verbosegc -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -verbosegc" >&5
+    $ECHO "Command: $JAVA -verbosegc -version" >&5
+    OUTPUT=`$JAVA -verbosegc -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -verbosegc"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
     # JRockit specific options.
 
-    # Test if -Xverbose:gc is a valid argument to $JAVA (often is $JAVA passed as $JAVA)
-    # If so, then append -Xverbose:gc to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$JAVA -Xverbose:gc -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$JAVA -Xverbose:gc -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -Xverbose:gc" >&5
+    $ECHO "Command: $JAVA -Xverbose:gc -version" >&5
+    OUTPUT=`$JAVA -Xverbose:gc -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xverbose:gc"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
     SJAVAC_SERVER_JAVA="$JAVA $SJAVAC_SERVER_JAVA"
 fi
 
 
+if test "$MEMORY_SIZE" -gt "2500"; then
 
-# Check whether --with-sjavac-server-cores was given.
-if test "${with_sjavac_server_cores+set}" = set; then :
-  withval=$with_sjavac_server_cores;
-fi
-
-if test "x$with_sjavac_server_cores" != x; then
-    SJAVAC_SERVER_CORES="$with_sjavac_server_cores"
-else
-    if test "$NUM_CORES" -gt 16; then
-        # We set this arbitrary limit because we want to limit the heap
-        # size of the javac server.
-        # In the future we will make the javac compilers in the server
-        # share more and more state, thus enabling us to use more and
-        # more concurrent threads in the server.
-        SJAVAC_SERVER_CORES="16"
-    else
-        SJAVAC_SERVER_CORES="$NUM_CORES"
-    fi
-
-    if test "$MEMORY_SIZE" -gt "17000"; then
-        MAX_HEAP_MEM=10000
-
-    # Test if -d64 is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -d64 to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -d64" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -d64 -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -d64"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
+    if test "$JVM_ARG_OK" = true; then
+        JVM_64BIT=true
+	JVM_ARG_OK=false
+    fi
+    fi
 
-    # Test if -Xms10G -Xmx10G is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -Xms10G -Xmx10G to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version 2>&1 | grep " version \""`
+if test "$JVM_64BIT" = true; then
+    if test "$MEMORY_SIZE" -gt "17000"; then
+
+    $ECHO "Check if jvm arg is ok: -Xms10G -Xmx10G" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
-    elif test "$MEMORY_SIZE" -gt "10000"; then
-        MAX_HEAP_MEM=6000
-
-    # Test if -d64 is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -d64 to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -d64"
     fi
+    if test "$MEMORY_SIZE" -gt "10000" && test "$JVM_ARG_OK" = false; then
 
-
-    # Test if -Xms6G -Xmx6G is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -Xms6G -Xmx6G to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -Xms6G -Xmx6G" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
-    elif test "$MEMORY_SIZE" -gt "5000"; then
-        MAX_HEAP_MEM=3000
-
-    # Test if -d64 is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -d64 to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -d64"
     fi
+    if test "$MEMORY_SIZE" -gt "5000" && test "$JVM_ARG_OK" = false; then
 
-
-    # Test if -Xms1G -Xmx3G is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -Xms1G -Xmx3G to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -Xms1G -Xmx3G" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
-    elif test "$MEMORY_SIZE" -gt "3800"; then
-        MAX_HEAP_MEM=2500
+    fi
+    if test "$MEMORY_SIZE" -gt "3800" && test "$JVM_ARG_OK" = false; then
 
-    # Test if -Xms1G -Xmx2500M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -Xms1G -Xmx2500M to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: -Xms1G -Xmx2500M" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M"
-    fi
-
-    elif test "$MEMORY_SIZE" -gt "1900"; then
-        MAX_HEAP_MEM=1200
-
-    # Test if -Xms700M -Xmx1400M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -Xms700M -Xmx1400M to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms700M -Xmx1400M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms700M -Xmx1400M -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms700M -Xmx1400M"
-    fi
-
-    elif test "$MEMORY_SIZE" -gt "1000"; then
-        MAX_HEAP_MEM=900
-
-    # Test if -Xms400M -Xmx1100M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -Xms400M -Xmx1100M to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M"
-    fi
-
+	JVM_ARG_OK=true
     else
-        MAX_HEAP_MEM=512
-
-    # Test if -Xms256M -Xmx512M is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -Xms256M -Xmx512M to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M"
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
     fi
 
-    fi
-
-
-    # Test if -XX:PermSize=32m is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -XX:PermSize=32m to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -XX:PermSize=32m -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -XX:PermSize=32m -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -XX:PermSize=32m"
-    fi
-
-
-    # Test if -XX:MaxPermSize=160m is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -XX:MaxPermSize=160m to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -XX:MaxPermSize=160m -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -XX:MaxPermSize=160m -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -XX:MaxPermSize=160m"
-    fi
-
-
-    # Test if -XX:ThreadStackSize=$STACK_SIZE is a valid argument to $SJAVAC_SERVER_JAVA (often is $JAVA passed as $SJAVAC_SERVER_JAVA)
-    # If so, then append -XX:ThreadStackSize=$STACK_SIZE to SJAVAC_SERVER_JAVA
-    FOUND_WARN=`$SJAVAC_SERVER_JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$SJAVAC_SERVER_JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1 | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -XX:ThreadStackSize=$STACK_SIZE"
-    fi
-
-
-    MAX_COMPILERS_IN_HEAP=`expr $MAX_HEAP_MEM / 501`
-    if test "$SJAVAC_SERVER_CORES" -gt "$MAX_COMPILERS_IN_HEAP"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if number of server cores must be reduced" >&5
-$as_echo_n "checking if number of server cores must be reduced... " >&6; }
-        SJAVAC_SERVER_CORES="$MAX_COMPILERS_IN_HEAP"
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, to $SJAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB" >&5
-$as_echo "yes, to $SJAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB" >&6; }
     fi
 fi
+if test "$MEMORY_SIZE" -gt "2500" && test "$JVM_ARG_OK" = false; then
 
+    $ECHO "Check if jvm arg is ok: -Xms1000M -Xmx1500M" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms1000M -Xmx1500M -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -Xms1000M -Xmx1500M -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1000M -Xmx1500M"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
+    fi
+
+fi
+if test "$MEMORY_SIZE" -gt "1000" && test "$JVM_ARG_OK" = false; then
+
+    $ECHO "Check if jvm arg is ok: -Xms400M -Xmx1100M" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
+    fi
+
+fi
+if test "$JVM_ARG_OK" = false; then
+
+    $ECHO "Check if jvm arg is ok: -Xms256M -Xmx512M" >&5
+    $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version" >&5
+    OUTPUT=`$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+        SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&5
+	$ECHO "$OUTPUT" >&5
+	JVM_ARG_OK=false
+    fi
+
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use sjavac" >&5
 $as_echo_n "checking whether to use sjavac... " >&6; }

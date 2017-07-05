@@ -88,7 +88,6 @@ class MarkSweep : AllStatic {
   // Used for java/lang/ref handling
   class IsAliveClosure: public BoolObjectClosure {
    public:
-    virtual void do_object(oop p);
     virtual bool do_object_b(oop p);
   };
 

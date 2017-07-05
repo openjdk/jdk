@@ -55,17 +55,6 @@ FreeList<Chunk>::FreeList() :
 }
 
 template <class Chunk>
-FreeList<Chunk>::FreeList(Chunk* fc) :
-  _head(fc), _tail(fc)
-#ifdef ASSERT
-  , _protecting_lock(NULL)
-#endif
-{
-  _size         = fc->size();
-  _count        = 1;
-}
-
-template <class Chunk>
 void FreeList<Chunk>::link_head(Chunk* v) {
   assert_proper_lock_protection();
   set_head(v);
