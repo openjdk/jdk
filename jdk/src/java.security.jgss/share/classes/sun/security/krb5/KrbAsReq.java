@@ -35,6 +35,7 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.Nonce;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import java.io.IOException;
+import java.time.Instant;
 
 /**
  * This class encapsulates the KRB-AS-REQ message that the client
@@ -64,7 +65,6 @@ public class KrbAsReq {
         if (options == null) {
             options = new KDCOptions();
         }
-
         // check if they are valid arguments. The optional fields should be
         // consistent with settings in KDCOptions. Mar 17 2000
         if (options.get(KDCOptions.FORWARDED) ||
@@ -81,12 +81,6 @@ public class KrbAsReq {
             //          throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
         } else {
             if (from != null)  from = null;
-        }
-        if (options.get(KDCOptions.RENEWABLE)) {
-            //  if (rtime == null)
-            //          throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-        } else {
-            if (rtime != null)  rtime = null;
         }
 
         PAData[] paData = null;
@@ -109,8 +103,10 @@ public class KrbAsReq {
             System.out.println(">>> KrbAsReq creating message");
         }
 
+        Config cfg = Config.getInstance();
+
         // check to use addresses in tickets
-        if (addresses == null && Config.getInstance().useAddresses()) {
+        if (addresses == null && cfg.useAddresses()) {
             addresses = HostAddresses.getLocalAddresses();
         }
 
@@ -120,7 +116,26 @@ public class KrbAsReq {
         }
 
         if (till == null) {
-            till = new KerberosTime(0); // Choose KDC maximum allowed
+            String d = cfg.get("libdefaults", "ticket_lifetime");
+            if (d != null) {
+                till = new KerberosTime(Instant.now().plusSeconds(Config.duration(d)));
+            } else {
+                till = new KerberosTime(0); // Choose KDC maximum allowed
+            }
+        }
+
+        if (rtime == null) {
+            String d = cfg.get("libdefaults", "renew_lifetime");
+            if (d != null) {
+                rtime = new KerberosTime(Instant.now().plusSeconds(Config.duration(d)));
+            }
+        }
+
+        if (rtime != null) {
+            options.set(KDCOptions.RENEWABLE, true);
+            if (till.greaterThan(rtime)) {
+                rtime = till;
+            }
         }
 
         // enc-authorization-data and additional-tickets never in AS-REQ

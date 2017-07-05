@@ -34,6 +34,8 @@ import java.util.concurrent.TimeoutException;
  */
 public class JavaVM {
 
+    public static final long POLLTIME_MS = 100L;
+
     protected Process vm = null;
 
     private String classname = "";
@@ -192,23 +194,21 @@ public class JavaVM {
             throws InterruptedException, TimeoutException {
         if (vm == null)
             throw new IllegalStateException("can't wait for JavaVM that isn't running");
-        long startTime = System.currentTimeMillis();
-        long rem = timeout;
+        long deadline = computeDeadline(System.currentTimeMillis(), timeout);
 
-        do {
+        while (true) {
             try {
                 int status = vm.exitValue();
                 outPipe.join();
                 errPipe.join();
                 return status;
-            } catch (IllegalThreadStateException ex) {
-                if (rem > 0) {
-                    Thread.sleep(Math.min(rem, 100));
-                }
-            }
-            rem = timeout - (System.currentTimeMillis() - startTime);
-        } while (rem > 0);
-        throw new TimeoutException();
+            } catch (IllegalThreadStateException ignore) { }
+
+            if (System.currentTimeMillis() > deadline)
+                throw new TimeoutException();
+
+            Thread.sleep(POLLTIME_MS);
+        }
     }
 
     /**
@@ -217,5 +217,22 @@ public class JavaVM {
     public int execute() throws IOException, InterruptedException {
         start();
         return waitFor();
+    }
+
+    /**
+     * Computes a deadline from a timestamp and a timeout value.
+     * Maximum timeout (before multipliers are applied) is one hour.
+     */
+    public static long computeDeadline(long timestamp, long timeout) {
+        final long MAX_TIMEOUT_MS = 3_600_000L;
+
+        if (timeout < 0L || timeout > MAX_TIMEOUT_MS) {
+            throw new IllegalArgumentException("timeout " + timeout + "ms out of range");
+        }
+
+        // TODO apply test.timeout.factor (and possibly jcov.sleep.multiplier)
+        // here instead of upstream
+
+        return timestamp + timeout;
     }
 }

@@ -65,7 +65,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
 G1ParScanThreadState::~G1ParScanThreadState() {
   _g1_par_allocator->retire_alloc_buffers();
   delete _g1_par_allocator;
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base, mtGC);
+  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }
 
 void

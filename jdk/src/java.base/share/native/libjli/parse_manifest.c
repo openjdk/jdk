@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,15 +588,16 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
     }
     lp = manifest;
     while ((rc = parse_nv_pair(&lp, &name, &value)) > 0) {
-        if (JLI_StrCaseCmp(name, "Manifest-Version") == 0)
+        if (JLI_StrCaseCmp(name, "Manifest-Version") == 0) {
             info->manifest_version = value;
-        else if (JLI_StrCaseCmp(name, "Main-Class") == 0)
+        } else if (JLI_StrCaseCmp(name, "Main-Class") == 0) {
             info->main_class = value;
-        else if (JLI_StrCaseCmp(name, "JRE-Version") == 0)
-            info->jre_version = value;
-        else if (JLI_StrCaseCmp(name, "JRE-Restrict-Search") == 0) {
-            if (JLI_StrCaseCmp(value, "true") == 0)
-                info->jre_restrict_search = 1;
+        } else if (JLI_StrCaseCmp(name, "JRE-Version") == 0) {
+            /*
+             * Manifest specification overridden by command line option
+             * so we will silently override there with no specification.
+             */
+            info->jre_version = 0;
         } else if (JLI_StrCaseCmp(name, "Splashscreen-Image") == 0) {
             info->splashscreen_image_file_name = value;
         }

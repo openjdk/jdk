@@ -79,25 +79,25 @@ class XArrayDataViewer {
             String textColor = String.format("%06x",
                                              foreground.getRGB() & 0xFFFFFF);
             StringBuilder sb = new StringBuilder();
-            sb.append("<html><body text=#"+textColor+"><table width=\"100%\">");
+            sb.append("<html><body text=#").append(textColor).append("><table width=\"100%\">");
             for (int i = 0; i < arr.length; i++) {
                 if (i % 2 == 0) {
-                    sb.append("<tr style=\"background-color: " +
-                            evenRowColorStr + "\"><td><pre>" +
-                            (arr[i] == null ?
-                                arr[i] : htmlize(arr[i].toString())) +
-                            "</pre></td></tr>");
+                    sb.append("<tr style=\"background-color: ")
+                            .append(evenRowColorStr).append("\"><td><pre>")
+                            .append(arr[i] == null ?
+                                    arr[i] : htmlize(arr[i].toString()))
+                      .append("</pre></td></tr>");
                 } else {
-                    sb.append("<tr style=\"background-color: " +
-                            oddRowColorStr + "\"><td><pre>" +
-                            (arr[i] == null ?
-                                arr[i] : htmlize(arr[i].toString())) +
-                            "</pre></td></tr>");
+                    sb.append("<tr style=\"background-color: ")
+                            .append(oddRowColorStr).append("\"><td><pre>")
+                            .append(arr[i] == null ?
+                                    arr[i] : htmlize(arr[i].toString()))
+                            .append("</pre></td></tr>");
                 }
             }
             if (arr.length == 0) {
-                sb.append("<tr style=\"background-color: " +
-                        evenRowColorStr + "\"><td></td></tr>");
+                sb.append("<tr style=\"background-color: ")
+                        .append(evenRowColorStr).append("\"><td></td></tr>");
             }
             sb.append("</table></body></html>");
             arrayEditor.setText(sb.toString());

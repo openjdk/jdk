@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
     // mechanism id
     private final long mechanism;
 
+    @SuppressWarnings("deprecation")
     private TlsPrfParameterSpec spec;
 
     private P11Key p11Key;
@@ -79,6 +80,7 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
         if (params instanceof TlsPrfParameterSpec == false) {

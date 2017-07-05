@@ -138,7 +138,6 @@ public:
   }
 
   void verify();
-  void verify_aligned_region_empty(MemRegion mr);
 
   void clear(MemRegion mr) { _ct_bs->clear(mr); }
   void clear_into_younger(Generation* old_gen);

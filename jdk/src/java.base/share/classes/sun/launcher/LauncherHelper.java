@@ -369,10 +369,9 @@ public enum LauncherHelper {
     static void appendVmErgoMessage(boolean isServerClass, String vm) {
         outBuf = outBuf.append(getLocalizedMessage("java.launcher.ergo.message1",
                 vm));
-        outBuf = (isServerClass)
-             ? outBuf.append(",\n" +
-                getLocalizedMessage("java.launcher.ergo.message2") + "\n\n")
-             : outBuf.append(".\n\n");
+        outBuf = (isServerClass) ? outBuf.append(",\n")
+                .append(getLocalizedMessage("java.launcher.ergo.message2"))
+                .append("\n\n") : outBuf.append(".\n\n");
     }
 
     /**

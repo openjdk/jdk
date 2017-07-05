@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
     private long mechanism;
 
     // parameter spec
+    @SuppressWarnings("deprecation")
     private TlsKeyMaterialParameterSpec spec;
 
     // master secret as a P11Key
@@ -82,6 +83,7 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
         if (params instanceof TlsKeyMaterialParameterSpec == false) {
@@ -107,6 +109,7 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    @SuppressWarnings("deprecation")
     protected SecretKey engineGenerateKey() {
         if (spec == null) {
             throw new IllegalStateException

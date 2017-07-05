@@ -721,7 +721,8 @@ class CMSCollector: public CHeapObj<mtGC> {
 
  private:
   // Support for parallelizing young gen rescan in CMS remark phase
-  Generation* _young_gen;  // the younger gen
+  ParNewGeneration* _young_gen;  // the younger gen
+
   HeapWord** _top_addr;    // ... Top of Eden
   HeapWord** _end_addr;    // ... End of Eden
   Mutex*     _eden_chunk_lock;
@@ -1151,9 +1152,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Overrides for parallel promotion.
   virtual oop par_promote(int thread_num,
                           oop obj, markOop m, size_t word_sz);
-  // This one should not be called for CMS.
-  virtual void par_promote_alloc_undo(int thread_num,
-                                      HeapWord* obj, size_t word_sz);
   virtual void par_promote_alloc_done(int thread_num);
   virtual void par_oop_since_save_marks_iterate_done(int thread_num);
 
@@ -1256,8 +1254,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   virtual const char* short_name() const { return "CMS"; }
   void        print() const;
   void printOccupancy(const char* s);
-  bool must_be_youngest() const { return false; }
-  bool must_be_oldest()   const { return true; }
 
   // Resize the generation after a compacting GC.  The
   // generation can be treated as a contiguous space
