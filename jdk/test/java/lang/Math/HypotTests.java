@@ -28,8 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.DoubleConsts;
-
 public class HypotTests {
     private HypotTests(){}
 
@@ -87,7 +85,7 @@ public class HypotTests {
         // Verify hypot(x, 0.0) is close to x over the entire exponent
         // range.
         for(int i = DoubleConsts.MIN_SUB_EXPONENT;
-            i <= DoubleConsts.MAX_EXPONENT;
+            i <= Double.MAX_EXPONENT;
             i++) {
             double input = Math.scalb(2, i);
             failures += testHypotCase(input, 0.0, input);
@@ -125,7 +123,7 @@ public class HypotTests {
         for(int i = 0; i < 1000; i++) {
             double d = rand.nextDouble();
             // Scale d to have an exponent equal to MAX_EXPONENT -15
-            d = Math.scalb(d, DoubleConsts.MAX_EXPONENT
+            d = Math.scalb(d, Double.MAX_EXPONENT
                                  -15 - Tests.ilogb(d));
             for(int j = 0; j <= 13; j += 1) {
                 failures += testHypotCase(3*d, 4*d, 5*d, 2.5);

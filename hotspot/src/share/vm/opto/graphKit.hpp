@@ -829,17 +829,13 @@ class GraphKit : public Phase {
   Node* gen_checkcast( Node *subobj, Node* superkls,
                        Node* *failure_control = NULL );
 
-  // Generate a subtyping check.  Takes as input the subtype and supertype.
-  // Returns 2 values: sets the default control() to the true path and
-  // returns the false path.  Only reads from constant memory taken from the
-  // default memory; does not write anything.  It also doesn't take in an
-  // Object; if you wish to check an Object you need to load the Object's
-  // class prior to coming here.
-  Node* gen_subtype_check(Node* subklass, Node* superklass);
-
-  // Static parse-time type checking logic for gen_subtype_check:
-  enum { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
-  int static_subtype_check(ciKlass* superk, ciKlass* subk);
+  Node* gen_subtype_check(Node* subklass, Node* superklass) {
+    MergeMemNode* mem = merged_memory();
+    Node* ctrl = control();
+    Node* n = Phase::gen_subtype_check(subklass, superklass, &ctrl, mem, &_gvn);
+    set_control(ctrl);
+    return n;
+  }
 
   // Exact type check used for predicted calls and casts.
   // Rewrites (*casted_receiver) to be casted to the stronger type.

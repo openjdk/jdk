@@ -71,7 +71,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      */
     public IdentNode(final long token, final int finish, final String name) {
         super(token, finish);
-        this.name = name.intern();
+        this.name = name;
         this.type = null;
         this.flags = 0;
         this.programPoint = INVALID_PROGRAM_POINT;

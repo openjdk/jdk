@@ -33,7 +33,7 @@
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
   _g1h(g1h), _hot_cache(NULL), _use_cache(false), _card_counts(g1h) {}
 
-void G1HotCardCache::initialize() {
+void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
   if (default_use_cache()) {
     _use_cache = true;
 
@@ -49,7 +49,7 @@ void G1HotCardCache::initialize() {
     _hot_cache_par_chunk_size = MAX2(1, _hot_cache_size / (int)n_workers);
     _hot_cache_par_claimed_idx = 0;
 
-    _card_counts.initialize();
+    _card_counts.initialize(card_counts_storage);
   }
 }
 
@@ -135,11 +135,8 @@ void G1HotCardCache::drain(uint worker_i,
   // above, are discarded prior to re-enabling the cache near the end of the GC.
 }
 
-void G1HotCardCache::resize_card_counts(size_t heap_capacity) {
-  _card_counts.resize(heap_capacity);
-}
-
 void G1HotCardCache::reset_card_counts(HeapRegion* hr) {
+  assert(!hr->isHumongous(), "Should have been cleared");
   _card_counts.clear_region(hr);
 }
 

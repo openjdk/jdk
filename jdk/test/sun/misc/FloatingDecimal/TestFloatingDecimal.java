@@ -58,6 +58,9 @@ public class sun.misc.FloatingDecimal {
  * @test
  * @bug 7032154
  * @summary unit tests of sun.misc.FloatingDecimal
+ * @library ../../../java/lang/Math
+ * @build DoubleConsts FloatConsts
+ * @run main TestFloatingDecimal
  * @author Brian Burkhalter
  */
 public class TestFloatingDecimal {

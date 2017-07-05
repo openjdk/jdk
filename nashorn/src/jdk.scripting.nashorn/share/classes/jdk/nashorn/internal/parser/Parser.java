@@ -116,6 +116,7 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.Timing;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -222,7 +223,7 @@ public class Parser extends AbstractParser implements Loggable {
      * @param name the name for the first parsed function.
      */
     public void setFunctionName(final String name) {
-        defaultNames.push(new IdentNode(0, 0, name));
+        defaultNames.push(createIdentNode(0, 0, name));
     }
 
     /**
@@ -257,7 +258,7 @@ public class Parser extends AbstractParser implements Loggable {
      */
     public FunctionNode parse(final String scriptName, final int startPos, final int len, final boolean allowPropertyFunction) {
         final boolean isTimingEnabled = env.isTimingEnabled();
-        final long t0 = isTimingEnabled ? System.currentTimeMillis() : 0L;
+        final long t0 = isTimingEnabled ? System.nanoTime() : 0L;
         log.info(this, " begin for '", scriptName, "'");
 
         try {
@@ -278,8 +279,8 @@ public class Parser extends AbstractParser implements Loggable {
         } finally {
             final String end = this + " end '" + scriptName + "'";
             if (isTimingEnabled) {
-                env._timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
-                log.info(end, "' in ", System.currentTimeMillis() - t0, " ms");
+                env._timing.accumulateTime(toString(), System.nanoTime() - t0);
+                log.info(end, "' in ", Timing.toMillisPrint(System.nanoTime() - t0), " ms");
             } else {
                 log.info(end);
             }
@@ -2243,7 +2244,7 @@ loop:
                 }
             }
 
-            propertyName =  new IdentNode(propertyToken, finish, ident).setIsPropertyName();
+            propertyName =  createIdentNode(propertyToken, finish, ident).setIsPropertyName();
         } else {
             propertyName = propertyName();
         }
@@ -2261,7 +2262,7 @@ loop:
     private PropertyFunction propertyGetterFunction(final long getSetToken, final int functionLine) {
         final PropertyKey getIdent = propertyName();
         final String getterName = getIdent.getPropertyName();
-        final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
+        final IdentNode getNameNode = createIdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
         expect(LPAREN);
         expect(RPAREN);
         final FunctionNode functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER, functionLine);
@@ -2272,7 +2273,7 @@ loop:
     private PropertyFunction propertySetterFunction(final long getSetToken, final int functionLine) {
         final PropertyKey setIdent = propertyName();
         final String setterName = setIdent.getPropertyName();
-        final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
+        final IdentNode setNameNode = createIdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
         expect(LPAREN);
         // be sloppy and allow missing setter parameter even though
         // spec does not permit it!

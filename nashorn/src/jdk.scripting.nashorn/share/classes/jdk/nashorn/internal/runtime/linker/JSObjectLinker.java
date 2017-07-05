@@ -81,7 +81,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
         final GuardedInvocation inv;
         if (self instanceof JSObject) {
-            inv = lookup(desc);
+            inv = lookup(desc, request, linkerServices);
         } else if (self instanceof Map || self instanceof Bindings) {
             // guard to make sure the Map or Bindings does not turn into JSObject later!
             final GuardedInvocation beanInv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
@@ -110,7 +110,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     }
 
 
-    private static GuardedInvocation lookup(final CallSiteDescriptor desc) {
+    private GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request, final LinkerServices linkerServices) throws Exception {
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
         final int c = desc.getNameTokenCount();
 
@@ -118,7 +118,14 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
             case "getProp":
             case "getElem":
             case "getMethod":
-                return c > 2 ? findGetMethod(desc) : findGetIndexMethod();
+                if (c > 2) {
+                    return findGetMethod(desc);
+                } else {
+                    // For indexed get, we want get GuardedInvocation beans linker and pass it.
+                    // JSObjectLinker.get uses this fallback getter for explicit signature method access.
+                    final GuardedInvocation beanInv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
+                    return findGetIndexMethod(beanInv);
+                }
             case "setProp":
             case "setElem":
                 return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
@@ -137,8 +144,9 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
     }
 
-    private static GuardedInvocation findGetIndexMethod() {
-        return new GuardedInvocation(JSOBJECTLINKER_GET, IS_JSOBJECT_GUARD);
+    private static GuardedInvocation findGetIndexMethod(final GuardedInvocation inv) {
+        final MethodHandle getter = MH.insertArguments(JSOBJECTLINKER_GET, 0, inv.getInvocation());
+        return inv.replaceMethods(getter, inv.getGuard());
     }
 
     private static GuardedInvocation findSetMethod(final CallSiteDescriptor desc) {
@@ -170,7 +178,8 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     }
 
     @SuppressWarnings("unused")
-    private static Object get(final Object jsobj, final Object key) {
+    private static Object get(final MethodHandle fallback, final Object jsobj, final Object key)
+        throws Throwable {
         if (key instanceof Integer) {
             return ((JSObject)jsobj).getSlot((Integer)key);
         } else if (key instanceof Number) {
@@ -179,7 +188,13 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
                 return ((JSObject)jsobj).getSlot(index);
             }
         } else if (key instanceof String) {
-            return ((JSObject)jsobj).getMember((String)key);
+            final String name = (String)key;
+            // get with method name and signature. delegate it to beans linker!
+            if (name.indexOf('(') != -1) {
+                return fallback.invokeExact(jsobj, key);
+            } else {
+                return ((JSObject)jsobj).getMember(name);
+            }
         }
         return null;
     }
@@ -238,7 +253,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
     // method handles of the current class
     private static final MethodHandle IS_JSOBJECT_GUARD  = findOwnMH_S("isJSObject", boolean.class, Object.class);
-    private static final MethodHandle JSOBJECTLINKER_GET = findOwnMH_S("get", Object.class, Object.class, Object.class);
+    private static final MethodHandle JSOBJECTLINKER_GET = findOwnMH_S("get", Object.class, MethodHandle.class, Object.class, Object.class);
     private static final MethodHandle JSOBJECTLINKER_PUT = findOwnMH_S("put", Void.TYPE, Object.class, Object.class, Object.class);
 
     // method handles of JSObject class
