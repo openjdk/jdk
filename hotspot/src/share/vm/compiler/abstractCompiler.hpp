@@ -75,8 +75,8 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   //
   // The second parameter, 'compilation_context', is needed to implement functionality
   // related to the DisableIntrinsic command-line flag. The DisableIntrinsic flag can
-  // be used to prohibit the C2 compiler (but not the C1 compiler) to use an intrinsic.
-  // There are three ways to disable an intrinsic using the DisableIntrinsic flag:
+  // be used to prohibit the compilers to use an intrinsic. There are three ways to
+  // disable an intrinsic using the DisableIntrinsic flag:
   //
   // (1) -XX:DisableIntrinsic=_hashCode,_getClass
   //     Disables intrinsification of _hashCode and _getClass globally
@@ -96,7 +96,8 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // compilation context is aClass::aMethod and java.lang.ref.Reference::get,
   // respectively.
   virtual bool is_intrinsic_available(methodHandle method, methodHandle compilation_context) {
-    return false;
+    return is_intrinsic_supported(method) &&
+           !vmIntrinsics::is_disabled_by_flags(method, compilation_context);
   }
 
   // Determines if an intrinsic is supported by the compiler, that is,
@@ -108,13 +109,6 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // the ones listed in the method. Overriding methods should conform
   // to this behavior.
   virtual bool is_intrinsic_supported(methodHandle method) {
-    return false;
-  }
-
-  // Implements compiler-specific processing of command-line flags.
-  // Processing of command-line flags common to all compilers is implemented
-  // in vmIntrinsicss::is_disabled_by_flag.
-  virtual bool is_intrinsic_disabled_by_flag(methodHandle method) {
     return false;
   }
 

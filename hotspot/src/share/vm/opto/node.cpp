@@ -1489,16 +1489,6 @@ jfloat Node::getf() const {
 
 #ifndef PRODUCT
 
-//----------------------------NotANode----------------------------------------
-// Used in debugging code to avoid walking across dead or uninitialized edges.
-static inline bool NotANode(const Node* n) {
-  if (n == NULL)                   return true;
-  if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
-  if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
-  return false;
-}
-
-
 //------------------------------find------------------------------------------
 // Find a neighbor of this Node with the given _idx
 // If idx is negative, find its absolute value, following both _in and _out.
@@ -1636,11 +1626,11 @@ void Node::set_debug_orig(Node* orig) {
 
 //------------------------------dump------------------------------------------
 // Dump a Node
-void Node::dump(const char* suffix, outputStream *st) const {
+void Node::dump(const char* suffix, bool mark, outputStream *st) const {
   Compile* C = Compile::current();
   bool is_new = C->node_arena()->contains(this);
   C->_in_dump_cnt++;
-  st->print("%c%d\t%s\t=== ", is_new ? ' ' : 'o', _idx, Name());
+  st->print("%c%d%s\t%s\t=== ", is_new ? ' ' : 'o', _idx, mark ? " >" : "", Name());
 
   // Dump the required and precedence inputs
   dump_req(st);
@@ -1760,42 +1750,60 @@ void Node::dump_out(outputStream *st) const {
   st->print("]] ");
 }
 
-//------------------------------dump_nodes-------------------------------------
-static void dump_nodes(const Node* start, int d, bool only_ctrl) {
-  Node* s = (Node*)start; // remove const
-  if (NotANode(s)) return;
-
-  uint depth = (uint)ABS(d);
-  int direction = d;
-  Compile* C = Compile::current();
-  GrowableArray <Node *> nstack(C->unique());
-
-  nstack.append(s);
+//----------------------------collect_nodes_i----------------------------------
+// Collects nodes from an Ideal graph, starting from a given start node and
+// moving in a given direction until a certain depth (distance from the start
+// node) is reached. Duplicates are ignored.
+// Arguments:
+//   nstack:        the nodes are collected into this array.
+//   start:         the node at which to start collecting.
+//   direction:     if this is a positive number, collect input nodes; if it is
+//                  a negative number, collect output nodes.
+//   depth:         collect nodes up to this distance from the start node.
+//   include_start: whether to include the start node in the result collection.
+//   only_ctrl:     whether to regard control edges only during traversal.
+//   only_data:     whether to regard data edges only during traversal.
+static void collect_nodes_i(GrowableArray<Node*> *nstack, const Node* start, int direction, uint depth, bool include_start, bool only_ctrl, bool only_data) {
+  Node* s = (Node*) start; // remove const
+  nstack->append(s);
   int begin = 0;
   int end = 0;
   for(uint i = 0; i < depth; i++) {
-    end = nstack.length();
+    end = nstack->length();
     for(int j = begin; j < end; j++) {
-      Node* tp  = nstack.at(j);
+      Node* tp  = nstack->at(j);
       uint limit = direction > 0 ? tp->len() : tp->outcnt();
       for(uint k = 0; k < limit; k++) {
         Node* n = direction > 0 ? tp->in(k) : tp->raw_out(k);
 
         if (NotANode(n))  continue;
         // do not recurse through top or the root (would reach unrelated stuff)
-        if (n->is_Root() || n->is_top())  continue;
+        if (n->is_Root() || n->is_top()) continue;
         if (only_ctrl && !n->is_CFG()) continue;
+        if (only_data && n->is_CFG()) continue;
 
-        bool on_stack = nstack.contains(n);
+        bool on_stack = nstack->contains(n);
         if (!on_stack) {
-          nstack.append(n);
+          nstack->append(n);
         }
       }
     }
     begin = end;
   }
-  end = nstack.length();
-  if (direction > 0) {
+  if (!include_start) {
+    nstack->remove(s);
+  }
+}
+
+//------------------------------dump_nodes-------------------------------------
+static void dump_nodes(const Node* start, int d, bool only_ctrl) {
+  if (NotANode(start)) return;
+
+  GrowableArray <Node *> nstack(Compile::current()->unique());
+  collect_nodes_i(&nstack, start, d, (uint) ABS(d), true, only_ctrl, false);
+
+  int end = nstack.length();
+  if (d > 0) {
     for(int j = end-1; j >= 0; j--) {
       nstack.at(j)->dump();
     }
@@ -1815,6 +1823,221 @@ void Node::dump(int d) const {
 // Dump a Node's control history to depth
 void Node::dump_ctrl(int d) const {
   dump_nodes(this, d, true);
+}
+
+//-----------------------------dump_compact------------------------------------
+void Node::dump_comp() const {
+  this->dump_comp("\n");
+}
+
+//-----------------------------dump_compact------------------------------------
+// Dump a Node in compact representation, i.e., just print its name and index.
+// Nodes can specify additional specifics to print in compact representation by
+// implementing dump_compact_spec.
+void Node::dump_comp(const char* suffix, outputStream *st) const {
+  Compile* C = Compile::current();
+  C->_in_dump_cnt++;
+  st->print("%s(%d)", Name(), _idx);
+  this->dump_compact_spec(st);
+  if (suffix) {
+    st->print("%s", suffix);
+  }
+  C->_in_dump_cnt--;
+}
+
+//----------------------------dump_related-------------------------------------
+// Dump a Node's related nodes - the notion of "related" depends on the Node at
+// hand and is determined by the implementation of the virtual method rel.
+void Node::dump_related() const {
+  Compile* C = Compile::current();
+  GrowableArray <Node *> in_rel(C->unique());
+  GrowableArray <Node *> out_rel(C->unique());
+  this->related(&in_rel, &out_rel, false);
+  for (int i = in_rel.length() - 1; i >= 0; i--) {
+    in_rel.at(i)->dump();
+  }
+  this->dump("\n", true);
+  for (int i = 0; i < out_rel.length(); i++) {
+    out_rel.at(i)->dump();
+  }
+}
+
+//----------------------------dump_related-------------------------------------
+// Dump a Node's related nodes up to a given depth (distance from the start
+// node).
+// Arguments:
+//   d_in:  depth for input nodes.
+//   d_out: depth for output nodes (note: this also is a positive number).
+void Node::dump_related(uint d_in, uint d_out) const {
+  Compile* C = Compile::current();
+  GrowableArray <Node *> in_rel(C->unique());
+  GrowableArray <Node *> out_rel(C->unique());
+
+  // call collect_nodes_i directly
+  collect_nodes_i(&in_rel, this, 1, d_in, false, false, false);
+  collect_nodes_i(&out_rel, this, -1, d_out, false, false, false);
+
+  for (int i = in_rel.length() - 1; i >= 0; i--) {
+    in_rel.at(i)->dump();
+  }
+  this->dump("\n", true);
+  for (int i = 0; i < out_rel.length(); i++) {
+    out_rel.at(i)->dump();
+  }
+}
+
+//------------------------dump_related_compact---------------------------------
+// Dump a Node's related nodes in compact representation. The notion of
+// "related" depends on the Node at hand and is determined by the implementation
+// of the virtual method rel.
+void Node::dump_related_compact() const {
+  Compile* C = Compile::current();
+  GrowableArray <Node *> in_rel(C->unique());
+  GrowableArray <Node *> out_rel(C->unique());
+  this->related(&in_rel, &out_rel, true);
+  int n_in = in_rel.length();
+  int n_out = out_rel.length();
+
+  this->dump_comp(n_in == 0 ? "\n" : "  ");
+  for (int i = 0; i < n_in; i++) {
+    in_rel.at(i)->dump_comp(i == n_in - 1 ? "\n" : "  ");
+  }
+  for (int i = 0; i < n_out; i++) {
+    out_rel.at(i)->dump_comp(i == n_out - 1 ? "\n" : "  ");
+  }
+}
+
+//------------------------------related----------------------------------------
+// Collect a Node's related nodes. The default behaviour just collects the
+// inputs and outputs at depth 1, including both control and data flow edges,
+// regardless of whether the presentation is compact or not. For data nodes,
+// the default is to collect all data inputs (till level 1 if compact), and
+// outputs till level 1.
+void Node::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
+  if (this->is_CFG()) {
+    collect_nodes_i(in_rel, this, 1, 1, false, false, false);
+    collect_nodes_i(out_rel, this, -1, 1, false, false, false);
+  } else {
+    if (compact) {
+      this->collect_nodes(in_rel, 1, false, true);
+    } else {
+      this->collect_nodes_in_all_data(in_rel, false);
+    }
+    this->collect_nodes(out_rel, -1, false, false);
+  }
+}
+
+//---------------------------collect_nodes-------------------------------------
+// An entry point to the low-level node collection facility, to start from a
+// given node in the graph. The start node is by default not included in the
+// result.
+// Arguments:
+//   ns:   collect the nodes into this data structure.
+//   d:    the depth (distance from start node) to which nodes should be
+//         collected. A value >0 indicates input nodes, a value <0, output
+//         nodes.
+//   ctrl: include only control nodes.
+//   data: include only data nodes.
+void Node::collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const {
+  if (ctrl && data) {
+    // ignore nonsensical combination
+    return;
+  }
+  collect_nodes_i(ns, this, d, (uint) ABS(d), false, ctrl, data);
+}
+
+//--------------------------collect_nodes_in-----------------------------------
+static void collect_nodes_in(Node* start, GrowableArray<Node*> *ns, bool primary_is_data, bool collect_secondary) {
+  // The maximum depth is determined using a BFS that visits all primary (data
+  // or control) inputs and increments the depth at each level.
+  uint d_in = 0;
+  GrowableArray<Node*> nodes(Compile::current()->unique());
+  nodes.push(start);
+  int nodes_at_current_level = 1;
+  int n_idx = 0;
+  while (nodes_at_current_level > 0) {
+    // Add all primary inputs reachable from the current level to the list, and
+    // increase the depth if there were any.
+    int nodes_at_next_level = 0;
+    bool nodes_added = false;
+    while (nodes_at_current_level > 0) {
+      nodes_at_current_level--;
+      Node* current = nodes.at(n_idx++);
+      for (uint i = 0; i < current->len(); i++) {
+        Node* n = current->in(i);
+        if (NotANode(n)) {
+          continue;
+        }
+        if ((primary_is_data && n->is_CFG()) || (!primary_is_data && !n->is_CFG())) {
+          continue;
+        }
+        if (!nodes.contains(n)) {
+          nodes.push(n);
+          nodes_added = true;
+          nodes_at_next_level++;
+        }
+      }
+    }
+    if (nodes_added) {
+      d_in++;
+    }
+    nodes_at_current_level = nodes_at_next_level;
+  }
+  start->collect_nodes(ns, d_in, !primary_is_data, primary_is_data);
+  if (collect_secondary) {
+    // Now, iterate over the secondary nodes in ns and add the respective
+    // boundary reachable from them.
+    GrowableArray<Node*> sns(Compile::current()->unique());
+    for (GrowableArrayIterator<Node*> it = ns->begin(); it != ns->end(); ++it) {
+      Node* n = *it;
+      n->collect_nodes(&sns, 1, primary_is_data, !primary_is_data);
+      for (GrowableArrayIterator<Node*> d = sns.begin(); d != sns.end(); ++d) {
+        ns->append_if_missing(*d);
+      }
+      sns.clear();
+    }
+  }
+}
+
+//---------------------collect_nodes_in_all_data-------------------------------
+// Collect the entire data input graph. Include the control boundary if
+// requested.
+// Arguments:
+//   ns:   collect the nodes into this data structure.
+//   ctrl: if true, include the control boundary.
+void Node::collect_nodes_in_all_data(GrowableArray<Node*> *ns, bool ctrl) const {
+  collect_nodes_in((Node*) this, ns, true, ctrl);
+}
+
+//--------------------------collect_nodes_in_all_ctrl--------------------------
+// Collect the entire control input graph. Include the data boundary if
+// requested.
+//   ns:   collect the nodes into this data structure.
+//   data: if true, include the control boundary.
+void Node::collect_nodes_in_all_ctrl(GrowableArray<Node*> *ns, bool data) const {
+  collect_nodes_in((Node*) this, ns, false, data);
+}
+
+//------------------collect_nodes_out_all_ctrl_boundary------------------------
+// Collect the entire output graph until hitting control node boundaries, and
+// include those.
+void Node::collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const {
+  // Perform a BFS and stop at control nodes.
+  GrowableArray<Node*> nodes(Compile::current()->unique());
+  nodes.push((Node*) this);
+  while (nodes.length() > 0) {
+    Node* current = nodes.pop();
+    if (NotANode(current)) {
+      continue;
+    }
+    ns->append_if_missing(current);
+    if (!current->is_CFG()) {
+      for (DUIterator i = current->outs(); current->has_out(i); i++) {
+        nodes.push(current->out(i));
+      }
+    }
+  }
+  ns->remove((Node*) this);
 }
 
 // VERIFICATION CODE
@@ -2172,6 +2395,11 @@ void TypeNode::dump_spec(outputStream *st) const {
     // standard dump does this in Verbose and WizardMode
     st->print(" #"); _type->dump_on(st);
   }
+}
+
+void TypeNode::dump_compact_spec(outputStream *st) const {
+  st->print("#");
+  _type->dump_on(st);
 }
 #endif
 uint TypeNode::hash() const {

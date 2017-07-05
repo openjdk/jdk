@@ -160,21 +160,23 @@ public class PropertyDescriptor extends FeatureDescriptor {
         setPropertyType(info.getPropertyType());
         setConstrained(info.isConstrained());
         setBound(bound && info.is(PropertyInfo.Name.bound));
-        if (info.is(PropertyInfo.Name.expert)) {
-            setValue(PropertyInfo.Name.expert.name(), Boolean.TRUE); // compatibility
-            setExpert(true);
-        }
-        if (info.is(PropertyInfo.Name.hidden)) {
-            setValue(PropertyInfo.Name.hidden.name(), Boolean.TRUE); // compatibility
-            setHidden(true);
-        }
-        if (info.is(PropertyInfo.Name.preferred)) {
-            setPreferred(true);
-        }
-        Object visual = info.get(PropertyInfo.Name.visualUpdate);
-        if (visual != null) {
-            setValue(PropertyInfo.Name.visualUpdate.name(), visual);
-        }
+
+        boolean isExpert = info.is(PropertyInfo.Name.expert);
+        setValue(PropertyInfo.Name.expert.name(), isExpert); // compatibility
+        setExpert(isExpert);
+
+        boolean isHidden = info.is(PropertyInfo.Name.hidden);
+        setValue(PropertyInfo.Name.hidden.name(), isHidden); // compatibility
+        setHidden(isHidden);
+
+        setPreferred(info.is(PropertyInfo.Name.preferred));
+
+        boolean isRequired = info.is(PropertyInfo.Name.required);
+        setValue(PropertyInfo.Name.required.name(), isRequired);
+
+        boolean visual = info.is(PropertyInfo.Name.visualUpdate);
+        setValue(PropertyInfo.Name.visualUpdate.name(), visual);
+
         Object description = info.get(PropertyInfo.Name.description);
         if (description != null) {
             setShortDescription(description.toString());

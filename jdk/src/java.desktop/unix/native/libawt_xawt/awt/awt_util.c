@@ -98,5 +98,8 @@ awtJNI_ThreadYield(JNIEnv *env) {
 
     (*env)->CallStaticVoidMethod(env, threadClass, yieldMethodID);
     DASSERT(!((*env)->ExceptionOccurred(env)));
+    if ((*env)->ExceptionCheck(env)) {
+        return JNI_FALSE;
+    }
     return JNI_TRUE;
 } /* awtJNI_ThreadYield() */

@@ -133,7 +133,7 @@ import java.util.stream.$Streamtype$Stream;
  * <h2> Access to binary data </h2>
  *
  * <p> This class defines methods for reading and writing values of all other
- * primitive types, except <tt>boolean</tt>.  Primitive values are translated
+ * primitive types, except {@code boolean}.  Primitive values are translated
  * to (or from) sequences of bytes according to the buffer's current byte
  * order, which may be retrieved and modified via the {@link #order order}
  * methods.  Specific byte orders are represented by instances of the {@link
@@ -151,8 +151,8 @@ import java.util.stream.$Streamtype$Stream;
  *  void  {@link #putFloat(float) putFloat(float f)}
  *  void  {@link #putFloat(int,float) putFloat(int index, float f)}</pre></blockquote>
  *
- * <p> Corresponding methods are defined for the types <tt>char</tt>,
- * <tt>short</tt>, <tt>int</tt>, <tt>long</tt>, and <tt>double</tt>.  The index
+ * <p> Corresponding methods are defined for the types {@code char,
+ * short, int, long}, and {@code double}.  The index
  * parameters of the absolute <i>get</i> and <i>put</i> methods are in terms of
  * bytes rather than of the type being read or written.
  *
@@ -167,8 +167,7 @@ import java.util.stream.$Streamtype$Stream;
  * #asFloatBuffer() asFloatBuffer} method, for example, creates an instance of
  * the {@link FloatBuffer} class that is backed by the byte buffer upon which
  * the method is invoked.  Corresponding view-creation methods are defined for
- * the types <tt>char</tt>, <tt>short</tt>, <tt>int</tt>, <tt>long</tt>, and
- * <tt>double</tt>.
+ * the types {@code char, short, int, long}, and {@code double}.
  *
  * <p> View buffers have three important advantages over the families of
  * type-specific <i>get</i> and <i>put</i> methods described above:
@@ -196,7 +195,7 @@ import java.util.stream.$Streamtype$Stream;
  *
  * <p> Like a byte buffer, $a$ $type$ buffer is either <a
  * href="ByteBuffer.html#direct"><i>direct</i> or <i>non-direct</i></a>.  A
- * $type$ buffer created via the <tt>wrap</tt> methods of this class will
+ * $type$ buffer created via the {@code wrap} methods of this class will
  * be non-direct.  $A$ $type$ buffer created as a view of a byte buffer will
  * be direct if, and only if, the byte buffer itself is direct.  Whether or not
  * $a$ $type$ buffer is direct may be determined by invoking the {@link
@@ -208,7 +207,7 @@ import java.util.stream.$Streamtype$Stream;
  *
  * <p> This class implements the {@link CharSequence} interface so that
  * character buffers may be used wherever character sequences are accepted, for
- * example in the regular-expression package <tt>{@link java.util.regex}</tt>.
+ * example in the regular-expression package {@link java.util.regex}.
  * </p>
  *
 #end[char]
@@ -306,7 +305,7 @@ public abstract class $Type$Buffer
      * @return  The new $type$ buffer
      *
      * @throws  IllegalArgumentException
-     *          If the <tt>capacity</tt> is a negative integer
+     *          If the {@code capacity} is a negative integer
      */
     public static $Type$Buffer allocateDirect(int capacity) {
         return new Direct$Type$Buffer(capacity);
@@ -335,7 +334,7 @@ public abstract class $Type$Buffer
      * @return  The new $type$ buffer
      *
      * @throws  IllegalArgumentException
-     *          If the <tt>capacity</tt> is a negative integer
+     *          If the {@code capacity} is a negative integer
      */
     public static $Type$Buffer allocate(int capacity) {
         if (capacity < 0)
@@ -349,8 +348,8 @@ public abstract class $Type$Buffer
      * <p> The new buffer will be backed by the given $type$ array;
      * that is, modifications to the buffer will cause the array to be modified
      * and vice versa.  The new buffer's capacity will be
-     * <tt>array.length</tt>, its position will be <tt>offset</tt>, its limit
-     * will be <tt>offset + length</tt>, its mark will be undefined, and its
+     * {@code array.length}, its position will be {@code offset}, its limit
+     * will be {@code offset + length}, its mark will be undefined, and its
      * byte order will be
 #if[byte]
      * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
@@ -366,19 +365,19 @@ public abstract class $Type$Buffer
      *
      * @param  offset
      *         The offset of the subarray to be used; must be non-negative and
-     *         no larger than <tt>array.length</tt>.  The new buffer's position
+     *         no larger than {@code array.length}.  The new buffer's position
      *         will be set to this value.
      *
      * @param  length
      *         The length of the subarray to be used;
      *         must be non-negative and no larger than
-     *         <tt>array.length - offset</tt>.
-     *         The new buffer's limit will be set to <tt>offset + length</tt>.
+     *         {@code array.length - offset}.
+     *         The new buffer's limit will be set to {@code offset + length}.
      *
      * @return  The new $type$ buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
+     *          If the preconditions on the {@code offset} and {@code length}
      *          parameters do not hold
      */
     public static $Type$Buffer wrap($type$[] array,
@@ -397,7 +396,7 @@ public abstract class $Type$Buffer
      * <p> The new buffer will be backed by the given $type$ array;
      * that is, modifications to the buffer will cause the array to be modified
      * and vice versa.  The new buffer's capacity and limit will be
-     * <tt>array.length</tt>, its position will be zero, its mark will be
+     * {@code array.length}, its position will be zero, its mark will be
      * undefined, and its byte order will be
 #if[byte]
      * {@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
@@ -458,8 +457,8 @@ public abstract class $Type$Buffer
      *
      * <p> The content of the new, read-only buffer will be the content of the
      * given character sequence.  The buffer's capacity will be
-     * <tt>csq.length()</tt>, its position will be <tt>start</tt>, its limit
-     * will be <tt>end</tt>, and its mark will be undefined.  </p>
+     * {@code csq.length()}, its position will be {@code start}, its limit
+     * will be {@code end}, and its mark will be undefined.  </p>
      *
      * @param  csq
      *         The character sequence from which the new character buffer is to
@@ -467,19 +466,19 @@ public abstract class $Type$Buffer
      *
      * @param  start
      *         The index of the first character to be used;
-     *         must be non-negative and no larger than <tt>csq.length()</tt>.
+     *         must be non-negative and no larger than {@code csq.length()}.
      *         The new buffer's position will be set to this value.
      *
      * @param  end
      *         The index of the character following the last character to be
-     *         used; must be no smaller than <tt>start</tt> and no larger
-     *         than <tt>csq.length()</tt>.
+     *         used; must be no smaller than {@code start} and no larger
+     *         than {@code csq.length()}.
      *         The new buffer's limit will be set to this value.
      *
      * @return  The new character buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <tt>start</tt> and <tt>end</tt>
+     *          If the preconditions on the {@code start} and {@code end}
      *          parameters do not hold
      */
     public static CharBuffer wrap(CharSequence csq, int start, int end) {
@@ -495,7 +494,7 @@ public abstract class $Type$Buffer
      *
      * <p> The content of the new, read-only buffer will be the content of the
      * given character sequence.  The new buffer's capacity and limit will be
-     * <tt>csq.length()</tt>, its position will be zero, and its mark will be
+     * {@code csq.length()}, its position will be zero, and its mark will be
      * undefined.  </p>
      *
      * @param  csq
@@ -624,7 +623,7 @@ public abstract class $Type$Buffer
      * @return  The $type$ at the given index
      *
      * @throws  IndexOutOfBoundsException
-     *          If <tt>index</tt> is negative
+     *          If {@code index} is negative
      *          or not smaller than the buffer's limit
      */
     public abstract $type$ get(int index);
@@ -657,7 +656,7 @@ public abstract class $Type$Buffer
      * @return  This buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If <tt>index</tt> is negative
+     *          If {@code index} is negative
      *          or not smaller than the buffer's limit
      *
      * @throws  ReadOnlyBufferException
@@ -674,17 +673,17 @@ public abstract class $Type$Buffer
      * <p> This method transfers $type$s from this buffer into the given
      * destination array.  If there are fewer $type$s remaining in the
      * buffer than are required to satisfy the request, that is, if
-     * <tt>length</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>, then no
+     * {@code length}&nbsp;{@code >}&nbsp;{@code remaining()}, then no
      * $type$s are transferred and a {@link BufferUnderflowException} is
      * thrown.
      *
-     * <p> Otherwise, this method copies <tt>length</tt> $type$s from this
+     * <p> Otherwise, this method copies {@code length} $type$s from this
      * buffer into the given array, starting at the current position of this
      * buffer and at the given offset in the array.  The position of this
-     * buffer is then incremented by <tt>length</tt>.
+     * buffer is then incremented by {@code length}.
      *
      * <p> In other words, an invocation of this method of the form
-     * <tt>src.get(dst,&nbsp;off,&nbsp;len)</tt> has exactly the same effect as
+     * <code>src.get(dst,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
      * <pre>{@code
@@ -701,21 +700,21 @@ public abstract class $Type$Buffer
      * @param  offset
      *         The offset within the array of the first $type$ to be
      *         written; must be non-negative and no larger than
-     *         <tt>dst.length</tt>
+     *         {@code dst.length}
      *
      * @param  length
      *         The maximum number of $type$s to be written to the given
      *         array; must be non-negative and no larger than
-     *         <tt>dst.length - offset</tt>
+     *         {@code dst.length - offset}
      *
      * @return  This buffer
      *
      * @throws  BufferUnderflowException
-     *          If there are fewer than <tt>length</tt> $type$s
+     *          If there are fewer than {@code length} $type$s
      *          remaining in this buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
+     *          If the preconditions on the {@code offset} and {@code length}
      *          parameters do not hold
      */
     public $Type$Buffer get($type$[] dst, int offset, int length) {
@@ -733,7 +732,7 @@ public abstract class $Type$Buffer
      *
      * <p> This method transfers $type$s from this buffer into the given
      * destination array.  An invocation of this method of the form
-     * <tt>src.get(a)</tt> behaves in exactly the same way as the invocation
+     * {@code src.get(a)} behaves in exactly the same way as the invocation
      *
      * <pre>
      *     src.get(a, 0, a.length) </pre>
@@ -744,7 +743,7 @@ public abstract class $Type$Buffer
      * @return  This buffer
      *
      * @throws  BufferUnderflowException
-     *          If there are fewer than <tt>length</tt> $type$s
+     *          If there are fewer than {@code length} $type$s
      *          remaining in this buffer
      */
     public $Type$Buffer get($type$[] dst) {
@@ -760,17 +759,17 @@ public abstract class $Type$Buffer
      * <p> This method transfers the $type$s remaining in the given source
      * buffer into this buffer.  If there are more $type$s remaining in the
      * source buffer than in this buffer, that is, if
-     * <tt>src.remaining()</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>,
+     * {@code src.remaining()}&nbsp;{@code >}&nbsp;{@code remaining()},
      * then no $type$s are transferred and a {@link
      * BufferOverflowException} is thrown.
      *
      * <p> Otherwise, this method copies
-     * <i>n</i>&nbsp;=&nbsp;<tt>src.remaining()</tt> $type$s from the given
+     * <i>n</i>&nbsp;=&nbsp;{@code src.remaining()} $type$s from the given
      * buffer into this buffer, starting at each buffer's current position.
      * The positions of both buffers are then incremented by <i>n</i>.
      *
      * <p> In other words, an invocation of this method of the form
-     * <tt>dst.put(src)</tt> has exactly the same effect as the loop
+     * {@code dst.put(src)} has exactly the same effect as the loop
      *
      * <pre>
      *     while (src.hasRemaining())
@@ -814,17 +813,17 @@ public abstract class $Type$Buffer
      * <p> This method transfers $type$s into this buffer from the given
      * source array.  If there are more $type$s to be copied from the array
      * than remain in this buffer, that is, if
-     * <tt>length</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>, then no
+     * {@code length}&nbsp;{@code >}&nbsp;{@code remaining()}, then no
      * $type$s are transferred and a {@link BufferOverflowException} is
      * thrown.
      *
-     * <p> Otherwise, this method copies <tt>length</tt> $type$s from the
+     * <p> Otherwise, this method copies {@code length} $type$s from the
      * given array into this buffer, starting at the given offset in the array
      * and at the current position of this buffer.  The position of this buffer
-     * is then incremented by <tt>length</tt>.
+     * is then incremented by {@code length}.
      *
      * <p> In other words, an invocation of this method of the form
-     * <tt>dst.put(src,&nbsp;off,&nbsp;len)</tt> has exactly the same effect as
+     * <code>dst.put(src,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
      * <pre>{@code
@@ -840,12 +839,12 @@ public abstract class $Type$Buffer
      *
      * @param  offset
      *         The offset within the array of the first $type$ to be read;
-     *         must be non-negative and no larger than <tt>array.length</tt>
+     *         must be non-negative and no larger than {@code array.length}
      *
      * @param  length
      *         The number of $type$s to be read from the given array;
      *         must be non-negative and no larger than
-     *         <tt>array.length - offset</tt>
+     *         {@code array.length - offset}
      *
      * @return  This buffer
      *
@@ -853,7 +852,7 @@ public abstract class $Type$Buffer
      *          If there is insufficient space in this buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
+     *          If the preconditions on the {@code offset} and {@code length}
      *          parameters do not hold
      *
      * @throws  ReadOnlyBufferException
@@ -874,7 +873,7 @@ public abstract class $Type$Buffer
      *
      * <p> This method transfers the entire content of the given source
      * $type$ array into this buffer.  An invocation of this method of the
-     * form <tt>dst.put(a)</tt> behaves in exactly the same way as the
+     * form {@code dst.put(a)} behaves in exactly the same way as the
      * invocation
      *
      * <pre>
@@ -903,18 +902,18 @@ public abstract class $Type$Buffer
      * <p> This method transfers $type$s from the given string into this
      * buffer.  If there are more $type$s to be copied from the string than
      * remain in this buffer, that is, if
-     * <tt>end&nbsp;-&nbsp;start</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>,
+     * <code>end&nbsp;-&nbsp;start</code>&nbsp;{@code >}&nbsp;{@code remaining()},
      * then no $type$s are transferred and a {@link
      * BufferOverflowException} is thrown.
      *
      * <p> Otherwise, this method copies
-     * <i>n</i>&nbsp;=&nbsp;<tt>end</tt>&nbsp;-&nbsp;<tt>start</tt> $type$s
+     * <i>n</i>&nbsp;=&nbsp;{@code end}&nbsp;-&nbsp;{@code start} $type$s
      * from the given string into this buffer, starting at the given
-     * <tt>start</tt> index and at the current position of this buffer.  The
+     * {@code start} index and at the current position of this buffer.  The
      * position of this buffer is then incremented by <i>n</i>.
      *
      * <p> In other words, an invocation of this method of the form
-     * <tt>dst.put(src,&nbsp;start,&nbsp;end)</tt> has exactly the same effect
+     * <code>dst.put(src,&nbsp;start,&nbsp;end)</code> has exactly the same effect
      * as the loop
      *
      * <pre>{@code
@@ -931,12 +930,12 @@ public abstract class $Type$Buffer
      * @param  start
      *         The offset within the string of the first $type$ to be read;
      *         must be non-negative and no larger than
-     *         <tt>string.length()</tt>
+     *         {@code string.length()}
      *
      * @param  end
      *         The offset within the string of the last $type$ to be read,
      *         plus one; must be non-negative and no larger than
-     *         <tt>string.length()</tt>
+     *         {@code string.length()}
      *
      * @return  This buffer
      *
@@ -944,7 +943,7 @@ public abstract class $Type$Buffer
      *          If there is insufficient space in this buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <tt>start</tt> and <tt>end</tt>
+     *          If the preconditions on the {@code start} and {@code end}
      *          parameters do not hold
      *
      * @throws  ReadOnlyBufferException
@@ -966,7 +965,7 @@ public abstract class $Type$Buffer
      *
      * <p> This method transfers the entire content of the given source string
      * into this buffer.  An invocation of this method of the form
-     * <tt>dst.put(s)</tt> behaves in exactly the same way as the invocation
+     * {@code dst.put(s)} behaves in exactly the same way as the invocation
      *
      * <pre>
      *     dst.put(s, 0, s.length()) </pre>
@@ -995,11 +994,11 @@ public abstract class $Type$Buffer
      * Tells whether or not this buffer is backed by an accessible $type$
      * array.
      *
-     * <p> If this method returns <tt>true</tt> then the {@link #array() array}
+     * <p> If this method returns {@code true} then the {@link #array() array}
      * and {@link #arrayOffset() arrayOffset} methods may safely be invoked.
      * </p>
      *
-     * @return  <tt>true</tt> if, and only if, this buffer
+     * @return  {@code true} if, and only if, this buffer
      *          is backed by an array and is not read-only
      */
     public final boolean hasArray() {
@@ -1038,7 +1037,7 @@ public abstract class $Type$Buffer
      * element of the buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
      * <p> If this buffer is backed by an array then buffer position <i>p</i>
-     * corresponds to array index <i>p</i>&nbsp;+&nbsp;<tt>arrayOffset()</tt>.
+     * corresponds to array index <i>p</i>&nbsp;+&nbsp;{@code arrayOffset()}.
      *
      * <p> Invoke the {@link #hasArray hasArray} method before invoking this
      * method in order to ensure that this buffer has an accessible backing
@@ -1166,11 +1165,11 @@ public abstract class $Type$Buffer
      *
      * <p> The $type$s between the buffer's current position and its limit,
      * if any, are copied to the beginning of the buffer.  That is, the
-     * $type$ at index <i>p</i>&nbsp;=&nbsp;<tt>position()</tt> is copied
+     * $type$ at index <i>p</i>&nbsp;=&nbsp;{@code position()} is copied
      * to index zero, the $type$ at index <i>p</i>&nbsp;+&nbsp;1 is copied
      * to index one, and so forth until the $type$ at index
-     * <tt>limit()</tt>&nbsp;-&nbsp;1 is copied to index
-     * <i>n</i>&nbsp;=&nbsp;<tt>limit()</tt>&nbsp;-&nbsp;<tt>1</tt>&nbsp;-&nbsp;<i>p</i>.
+     * {@code limit()}&nbsp;-&nbsp;1 is copied to index
+     * <i>n</i>&nbsp;=&nbsp;{@code limit()}&nbsp;-&nbsp;{@code 1}&nbsp;-&nbsp;<i>p</i>.
      * The buffer's position is then set to <i>n+1</i> and its limit is set to
      * its capacity.  The mark, if defined, is discarded.
      *
@@ -1183,7 +1182,7 @@ public abstract class $Type$Buffer
      *
      * <p> Invoke this method after writing data from a buffer in case the
      * write was incomplete.  The following loop, for example, copies bytes
-     * from one channel to another via the buffer <tt>buf</tt>:
+     * from one channel to another via the buffer {@code buf}:
      *
      * <blockquote><pre>{@code
      *   buf.clear();          // Prepare buffer for use
@@ -1206,7 +1205,7 @@ public abstract class $Type$Buffer
     /**
      * Tells whether or not this $type$ buffer is direct.
      *
-     * @return  <tt>true</tt> if, and only if, this buffer is direct
+     * @return  {@code true} if, and only if, this buffer is direct
      */
     public abstract boolean isDirect();
 
@@ -1239,8 +1238,8 @@ public abstract class $Type$Buffer
      * Returns the current hash code of this buffer.
      *
      * <p> The hash code of a $type$ buffer depends only upon its remaining
-     * elements; that is, upon the elements from <tt>position()</tt> up to, and
-     * including, the element at <tt>limit()</tt>&nbsp;-&nbsp;<tt>1</tt>.
+     * elements; that is, upon the elements from {@code position()} up to, and
+     * including, the element at {@code limit()}&nbsp;-&nbsp;{@code 1}.
      *
      * <p> Because buffer hash codes are content-dependent, it is inadvisable
      * to use buffers as keys in hash maps or similar data structures unless it
@@ -1289,7 +1288,7 @@ public abstract class $Type$Buffer
      *
      * @param  ob  The object to which this buffer is to be compared
      *
-     * @return  <tt>true</tt> if, and only if, this buffer is equal to the
+     * @return  {@code true} if, and only if, this buffer is equal to the
      *           given object
      */
     public boolean equals(Object ob) {
@@ -1368,7 +1367,7 @@ public abstract class $Type$Buffer
      *
      * <p> The first character of the resulting string will be the character at
      * this buffer's position, while the last character will be the character
-     * at index <tt>limit()</tt>&nbsp;-&nbsp;1.  Invoking this method does not
+     * at index {@code limit()}&nbsp;-&nbsp;1.  Invoking this method does not
      * change the buffer's position. </p>
      *
      * @return  The specified string
@@ -1388,7 +1387,7 @@ public abstract class $Type$Buffer
      * <p> When viewed as a character sequence, the length of a character
      * buffer is simply the number of characters between the position
      * (inclusive) and the limit (exclusive); that is, it is equivalent to
-     * <tt>remaining()</tt>. </p>
+     * {@code remaining()}. </p>
      *
      * @return  The length of this character buffer
      */
@@ -1402,13 +1401,13 @@ public abstract class $Type$Buffer
      *
      * @param  index
      *         The index of the character to be read, relative to the position;
-     *         must be non-negative and smaller than <tt>remaining()</tt>
+     *         must be non-negative and smaller than {@code remaining()}
      *
      * @return  The character at index
-     *          <tt>position()&nbsp;+&nbsp;index</tt>
+     *          <code>position()&nbsp;+&nbsp;index</code>
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on <tt>index</tt> do not hold
+     *          If the preconditions on {@code index} do not hold
      */
     public final char charAt(int index) {
         return get(position() + checkIndex(index, 1));
@@ -1422,26 +1421,26 @@ public abstract class $Type$Buffer
      * content of this buffer is mutable then modifications to one buffer will
      * cause the other to be modified.  The new buffer's capacity will be that
      * of this buffer, its position will be
-     * <tt>position()</tt>&nbsp;+&nbsp;<tt>start</tt>, and its limit will be
-     * <tt>position()</tt>&nbsp;+&nbsp;<tt>end</tt>.  The new buffer will be
+     * {@code position()}&nbsp;+&nbsp;{@code start}, and its limit will be
+     * {@code position()}&nbsp;+&nbsp;{@code end}.  The new buffer will be
      * direct if, and only if, this buffer is direct, and it will be read-only
      * if, and only if, this buffer is read-only.  </p>
      *
      * @param  start
      *         The index, relative to the current position, of the first
      *         character in the subsequence; must be non-negative and no larger
-     *         than <tt>remaining()</tt>
+     *         than {@code remaining()}
      *
      * @param  end
      *         The index, relative to the current position, of the character
      *         following the last character in the subsequence; must be no
-     *         smaller than <tt>start</tt> and no larger than
-     *         <tt>remaining()</tt>
+     *         smaller than {@code start} and no larger than
+     *         {@code remaining()}
      *
      * @return  The new character buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on <tt>start</tt> and <tt>end</tt>
+     *          If the preconditions on {@code start} and {@code end}
      *          do not hold
      */
     public abstract CharBuffer subSequence(int start, int end);
@@ -1453,21 +1452,21 @@ public abstract class $Type$Buffer
      * Appends the specified character sequence  to this
      * buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> An invocation of this method of the form <tt>dst.append(csq)</tt>
+     * <p> An invocation of this method of the form {@code dst.append(csq)}
      * behaves in exactly the same way as the invocation
      *
      * <pre>
      *     dst.put(csq.toString()) </pre>
      *
-     * <p> Depending on the specification of <tt>toString</tt> for the
-     * character sequence <tt>csq</tt>, the entire sequence may not be
+     * <p> Depending on the specification of {@code toString} for the
+     * character sequence {@code csq}, the entire sequence may not be
      * appended.  For instance, invoking the {@link $Type$Buffer#toString()
      * toString} method of a character buffer will return a subsequence whose
      * content depends upon the buffer's position and limit.
      *
      * @param  csq
-     *         The character sequence to append.  If <tt>csq</tt> is
-     *         <tt>null</tt>, then the four characters <tt>"null"</tt> are
+     *         The character sequence to append.  If {@code csq} is
+     *         {@code null}, then the four characters {@code "null"} are
      *         appended to this character buffer.
      *
      * @return  This buffer
@@ -1491,8 +1490,8 @@ public abstract class $Type$Buffer
      * Appends a subsequence of the  specified character sequence  to this
      * buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> An invocation of this method of the form <tt>dst.append(csq, start,
-     * end)</tt> when <tt>csq</tt> is not <tt>null</tt>, behaves in exactly the
+     * <p> An invocation of this method of the form {@code dst.append(csq, start,
+     * end)} when {@code csq} is not {@code null}, behaves in exactly the
      * same way as the invocation
      *
      * <pre>
@@ -1500,9 +1499,9 @@ public abstract class $Type$Buffer
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
-     *         appended.  If <tt>csq</tt> is <tt>null</tt>, then characters
-     *         will be appended as if <tt>csq</tt> contained the four
-     *         characters <tt>"null"</tt>.
+     *         appended.  If {@code csq} is {@code null}, then characters
+     *         will be appended as if {@code csq} contained the four
+     *         characters {@code "null"}.
      *
      * @return  This buffer
      *
@@ -1510,9 +1509,9 @@ public abstract class $Type$Buffer
      *          If there is insufficient space in this buffer
      *
      * @throws  IndexOutOfBoundsException
-     *          If <tt>start</tt> or <tt>end</tt> are negative, <tt>start</tt>
-     *          is greater than <tt>end</tt>, or <tt>end</tt> is greater than
-     *          <tt>csq.length()</tt>
+     *          If {@code start} or {@code end} are negative, {@code start}
+     *          is greater than {@code end}, or {@code end} is greater than
+     *          {@code csq.length()}
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
@@ -1528,7 +1527,7 @@ public abstract class $Type$Buffer
      * Appends the specified $type$  to this
      * buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> An invocation of this method of the form <tt>dst.append($x$)</tt>
+     * <p> An invocation of this method of the form {@code dst.append($x$)}
      * behaves in exactly the same way as the invocation
      *
      * <pre>
@@ -1562,7 +1561,7 @@ public abstract class $Type$Buffer
      * Retrieves this buffer's byte order.
      *
      * <p> The byte order of $a$ $type$ buffer created by allocation or by
-     * wrapping an existing <tt>$type$</tt> array is the {@link
+     * wrapping an existing {@code $type$} array is the {@link
      * ByteOrder#nativeOrder native order} of the underlying
      * hardware.  The byte order of $a$ $type$ buffer created as a <a
      * href="ByteBuffer.html#views">view</a> of a byte buffer is that of the

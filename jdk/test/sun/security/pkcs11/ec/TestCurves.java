@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,21 @@ public class TestCurves extends PKCS11Test {
         if (isNSS(p) && getNSSVersion() >= 3.11 && getNSSVersion() < 3.12) {
             System.out.println("NSS 3.11 has a DER issue that recent " +
                     "version do not.");
+            return;
+        }
+
+        /*
+         * Use Solaris SPARC 11.2 or later to avoid an intermittent failure
+         * when running SunPKCS11-Solaris (8044554)
+         */
+        if (p.getName().equals("SunPKCS11-Solaris") &&
+            System.getProperty("os.name").equals("SunOS") &&
+            System.getProperty("os.arch").equals("sparcv9") &&
+            System.getProperty("os.version").compareTo("5.11") <= 0 &&
+            getDistro().compareTo("11.2") < 0) {
+
+            System.out.println("SunPKCS11-Solaris provider requires " +
+                "Solaris SPARC 11.2 or later, skipping");
             return;
         }
 

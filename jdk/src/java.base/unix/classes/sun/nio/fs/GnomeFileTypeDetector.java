@@ -67,7 +67,7 @@ public class GnomeFileTypeDetector
 
     // GIO
     private static native boolean initializeGio();
-    private static native byte[] probeGio(long pathAddress);
+    private static synchronized native byte[] probeGio(long pathAddress);
 
     static {
         AccessController.doPrivileged(new PrivilegedAction<>() {

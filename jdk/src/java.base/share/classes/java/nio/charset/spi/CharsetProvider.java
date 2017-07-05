@@ -42,13 +42,13 @@ import java.util.Iterator;
  * loader}.
  *
  * <p> A charset provider identifies itself with a provider-configuration file
- * named <tt>java.nio.charset.spi.CharsetProvider</tt> in the resource
- * directory <tt>META-INF/services</tt>.  The file should contain a list of
+ * named {@code java.nio.charset.spi.CharsetProvider} in the resource
+ * directory {@code META-INF/services}.  The file should contain a list of
  * fully-qualified concrete charset-provider class names, one per line.  A line
- * is terminated by any one of a line feed (<tt>'\n'</tt>), a carriage return
- * (<tt>'\r'</tt>), or a carriage return followed immediately by a line feed.
+ * is terminated by any one of a line feed ({@code '\n'}), a carriage return
+ * ({@code '\r'}), or a carriage return followed immediately by a line feed.
  * Space and tab characters surrounding each name, as well as blank lines, are
- * ignored.  The comment character is <tt>'#'</tt> (<tt>'&#92;u0023'</tt>); on
+ * ignored.  The comment character is {@code '#'} (<code>'&#92;u0023'</code>); on
  * each line all characters following the first comment character are ignored.
  * The file must be encoded in UTF-8.
  *
@@ -83,7 +83,7 @@ public abstract class CharsetProvider {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}<tt>("charsetProvider")</tt>
+     *          {@link RuntimePermission}{@code ("charsetProvider")}
      */
     protected CharsetProvider() {
         this(checkPermission());
@@ -107,7 +107,7 @@ public abstract class CharsetProvider {
      *         a canonical name or an alias
      *
      * @return  A charset object for the named charset,
-     *          or <tt>null</tt> if the named charset
+     *          or {@code null} if the named charset
      *          is not supported by this provider
      */
     public abstract Charset charsetForName(String charsetName);

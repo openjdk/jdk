@@ -44,7 +44,7 @@ import java.util.stream.StreamSupport;
  * collections, "wrappers", which return a new collection backed by a
  * specified collection, and a few other odds and ends.
  *
- * <p>The methods of this class all throw a <tt>NullPointerException</tt>
+ * <p>The methods of this class all throw a {@code NullPointerException}
  * if the collections or class objects provided to them are null.
  *
  * <p>The documentation for the polymorphic algorithms contained in this class
@@ -52,17 +52,17 @@ import java.util.stream.StreamSupport;
  * descriptions should be regarded as <i>implementation notes</i>, rather than
  * parts of the <i>specification</i>.  Implementors should feel free to
  * substitute other algorithms, so long as the specification itself is adhered
- * to.  (For example, the algorithm used by <tt>sort</tt> does not have to be
+ * to.  (For example, the algorithm used by {@code sort} does not have to be
  * a mergesort, but it does have to be <i>stable</i>.)
  *
  * <p>The "destructive" algorithms contained in this class, that is, the
  * algorithms that modify the collection on which they operate, are specified
- * to throw <tt>UnsupportedOperationException</tt> if the collection does not
- * support the appropriate mutation primitive(s), such as the <tt>set</tt>
+ * to throw {@code UnsupportedOperationException} if the collection does not
+ * support the appropriate mutation primitive(s), such as the {@code set}
  * method.  These algorithms may, but are not required to, throw this
  * exception if an invocation would have no effect on the collection.  For
- * example, invoking the <tt>sort</tt> method on an unmodifiable list that is
- * already sorted may or may not throw <tt>UnsupportedOperationException</tt>.
+ * example, invoking the {@code sort} method on an unmodifiable list that is
+ * already sorted may or may not throw {@code UnsupportedOperationException}.
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -195,10 +195,10 @@ public class Collections {
      * @param  list the list to be searched.
      * @param  key the key to be searched for.
      * @return the index of the search key, if it is contained in the list;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the list: the index of the first
-     *         element greater than the key, or <tt>list.size()</tt> if all
+     *         element greater than the key, or {@code list.size()} if all
      *         elements in the list are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -296,13 +296,13 @@ public class Collections {
      * @param  list the list to be searched.
      * @param  key the key to be searched for.
      * @param  c the comparator by which the list is ordered.
-     *         A <tt>null</tt> value indicates that the elements'
+     *         A {@code null} value indicates that the elements'
      *         {@linkplain Comparable natural ordering} should be used.
      * @return the index of the search key, if it is contained in the list;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <code>(-(<i>insertion point</i>) - 1)</code>.  The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the list: the index of the first
-     *         element greater than the key, or <tt>list.size()</tt> if all
+     *         element greater than the key, or {@code list.size()} if all
      *         elements in the list are less than the specified key.  Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
@@ -368,7 +368,7 @@ public class Collections {
      *
      * @param  list the list whose elements are to be reversed.
      * @throws UnsupportedOperationException if the specified list or
-     *         its list-iterator does not support the <tt>set</tt> operation.
+     *         its list-iterator does not support the {@code set} operation.
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void reverse(List<?> list) {
@@ -416,7 +416,7 @@ public class Collections {
      *
      * @param  list the list to be shuffled.
      * @throws UnsupportedOperationException if the specified list or
-     *         its list-iterator does not support the <tt>set</tt> operation.
+     *         its list-iterator does not support the {@code set} operation.
      */
     public static void shuffle(List<?> list) {
         Random rnd = r;
@@ -448,7 +448,7 @@ public class Collections {
      * @param  list the list to be shuffled.
      * @param  rnd the source of randomness to use to shuffle the list.
      * @throws UnsupportedOperationException if the specified list or its
-     *         list-iterator does not support the <tt>set</tt> operation.
+     *         list-iterator does not support the {@code set} operation.
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void shuffle(List<?> list, Random rnd) {
@@ -483,7 +483,7 @@ public class Collections {
      * @param list The list in which to swap elements.
      * @param i the index of one element to be swapped.
      * @param j the index of the other element to be swapped.
-     * @throws IndexOutOfBoundsException if either <tt>i</tt> or <tt>j</tt>
+     * @throws IndexOutOfBoundsException if either {@code i} or {@code j}
      *         is out of range (i &lt; 0 || i &gt;= list.size()
      *         || j &lt; 0 || j &gt;= list.size()).
      * @since 1.4
@@ -516,7 +516,7 @@ public class Collections {
      * @param  list the list to be filled with the specified element.
      * @param  obj The element with which to fill the specified list.
      * @throws UnsupportedOperationException if the specified list or its
-     *         list-iterator does not support the <tt>set</tt> operation.
+     *         list-iterator does not support the {@code set} operation.
      */
     public static <T> void fill(List<? super T> list, T obj) {
         int size = list.size();
@@ -548,7 +548,7 @@ public class Collections {
      * @throws IndexOutOfBoundsException if the destination list is too small
      *         to contain the entire source List.
      * @throws UnsupportedOperationException if the destination list's
-     *         list-iterator does not support the <tt>set</tt> operation.
+     *         list-iterator does not support the {@code set} operation.
      */
     public static <T> void copy(List<? super T> dest, List<? extends T> src) {
         int srcSize = src.size();
@@ -572,11 +572,11 @@ public class Collections {
     /**
      * Returns the minimum element of the given collection, according to the
      * <i>natural ordering</i> of its elements.  All elements in the
-     * collection must implement the <tt>Comparable</tt> interface.
+     * collection must implement the {@code Comparable} interface.
      * Furthermore, all elements in the collection must be <i>mutually
-     * comparable</i> (that is, <tt>e1.compareTo(e2)</tt> must not throw a
-     * <tt>ClassCastException</tt> for any elements <tt>e1</tt> and
-     * <tt>e2</tt> in the collection).<p>
+     * comparable</i> (that is, {@code e1.compareTo(e2)} must not throw a
+     * {@code ClassCastException} for any elements {@code e1} and
+     * {@code e2} in the collection).<p>
      *
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
@@ -607,9 +607,9 @@ public class Collections {
      * Returns the minimum element of the given collection, according to the
      * order induced by the specified comparator.  All elements in the
      * collection must be <i>mutually comparable</i> by the specified
-     * comparator (that is, <tt>comp.compare(e1, e2)</tt> must not throw a
-     * <tt>ClassCastException</tt> for any elements <tt>e1</tt> and
-     * <tt>e2</tt> in the collection).<p>
+     * comparator (that is, {@code comp.compare(e1, e2)} must not throw a
+     * {@code ClassCastException} for any elements {@code e1} and
+     * {@code e2} in the collection).<p>
      *
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
@@ -617,7 +617,7 @@ public class Collections {
      * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose minimum element is to be determined.
      * @param  comp the comparator with which to determine the minimum element.
-     *         A <tt>null</tt> value indicates that the elements' <i>natural
+     *         A {@code null} value indicates that the elements' <i>natural
      *         ordering</i> should be used.
      * @return the minimum element of the given collection, according
      *         to the specified comparator.
@@ -645,11 +645,11 @@ public class Collections {
     /**
      * Returns the maximum element of the given collection, according to the
      * <i>natural ordering</i> of its elements.  All elements in the
-     * collection must implement the <tt>Comparable</tt> interface.
+     * collection must implement the {@code Comparable} interface.
      * Furthermore, all elements in the collection must be <i>mutually
-     * comparable</i> (that is, <tt>e1.compareTo(e2)</tt> must not throw a
-     * <tt>ClassCastException</tt> for any elements <tt>e1</tt> and
-     * <tt>e2</tt> in the collection).<p>
+     * comparable</i> (that is, {@code e1.compareTo(e2)} must not throw a
+     * {@code ClassCastException} for any elements {@code e1} and
+     * {@code e2} in the collection).<p>
      *
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
@@ -680,9 +680,9 @@ public class Collections {
      * Returns the maximum element of the given collection, according to the
      * order induced by the specified comparator.  All elements in the
      * collection must be <i>mutually comparable</i> by the specified
-     * comparator (that is, <tt>comp.compare(e1, e2)</tt> must not throw a
-     * <tt>ClassCastException</tt> for any elements <tt>e1</tt> and
-     * <tt>e2</tt> in the collection).<p>
+     * comparator (that is, {@code comp.compare(e1, e2)} must not throw a
+     * {@code ClassCastException} for any elements {@code e1} and
+     * {@code e2} in the collection).<p>
      *
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
@@ -690,7 +690,7 @@ public class Collections {
      * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose maximum element is to be determined.
      * @param  comp the comparator with which to determine the maximum element.
-     *         A <tt>null</tt> value indicates that the elements' <i>natural
+     *         A {@code null} value indicates that the elements' <i>natural
      *        ordering</i> should be used.
      * @return the maximum element of the given collection, according
      *         to the specified comparator.
@@ -717,32 +717,32 @@ public class Collections {
 
     /**
      * Rotates the elements in the specified list by the specified distance.
-     * After calling this method, the element at index <tt>i</tt> will be
-     * the element previously at index <tt>(i - distance)</tt> mod
-     * <tt>list.size()</tt>, for all values of <tt>i</tt> between <tt>0</tt>
-     * and <tt>list.size()-1</tt>, inclusive.  (This method has no effect on
+     * After calling this method, the element at index {@code i} will be
+     * the element previously at index {@code (i - distance)} mod
+     * {@code list.size()}, for all values of {@code i} between {@code 0}
+     * and {@code list.size()-1}, inclusive.  (This method has no effect on
      * the size of the list.)
      *
-     * <p>For example, suppose <tt>list</tt> comprises<tt> [t, a, n, k, s]</tt>.
-     * After invoking <tt>Collections.rotate(list, 1)</tt> (or
-     * <tt>Collections.rotate(list, -4)</tt>), <tt>list</tt> will comprise
-     * <tt>[s, t, a, n, k]</tt>.
+     * <p>For example, suppose {@code list} comprises{@code  [t, a, n, k, s]}.
+     * After invoking {@code Collections.rotate(list, 1)} (or
+     * {@code Collections.rotate(list, -4)}), {@code list} will comprise
+     * {@code [s, t, a, n, k]}.
      *
      * <p>Note that this method can usefully be applied to sublists to
      * move one or more elements within a list while preserving the
      * order of the remaining elements.  For example, the following idiom
-     * moves the element at index <tt>j</tt> forward to position
-     * <tt>k</tt> (which must be greater than or equal to <tt>j</tt>):
+     * moves the element at index {@code j} forward to position
+     * {@code k} (which must be greater than or equal to {@code j}):
      * <pre>
      *     Collections.rotate(list.subList(j, k+1), -1);
      * </pre>
-     * To make this concrete, suppose <tt>list</tt> comprises
-     * <tt>[a, b, c, d, e]</tt>.  To move the element at index <tt>1</tt>
-     * (<tt>b</tt>) forward two positions, perform the following invocation:
+     * To make this concrete, suppose {@code list} comprises
+     * {@code [a, b, c, d, e]}.  To move the element at index {@code 1}
+     * ({@code b}) forward two positions, perform the following invocation:
      * <pre>
      *     Collections.rotate(l.subList(1, 4), -1);
      * </pre>
-     * The resulting list is <tt>[a, c, d, b, e]</tt>.
+     * The resulting list is {@code [a, c, d, b, e]}.
      *
      * <p>To move more than one element forward, increase the absolute value
      * of the rotation distance.  To move elements backward, use a positive
@@ -755,8 +755,8 @@ public class Collections {
      * element is swapped into the first element.  If necessary, the process
      * is repeated on the second and successive elements, until the rotation
      * is complete.  If the specified list is large and doesn't implement the
-     * <tt>RandomAccess</tt> interface, this implementation breaks the
-     * list into two sublist views around index <tt>-distance mod size</tt>.
+     * {@code RandomAccess} interface, this implementation breaks the
+     * list into two sublist views around index {@code -distance mod size}.
      * Then the {@link #reverse(List)} method is invoked on each sublist view,
      * and finally it is invoked on the entire list.  For a more complete
      * description of both algorithms, see Section 2.3 of Jon Bentley's
@@ -765,9 +765,9 @@ public class Collections {
      * @param list the list to be rotated.
      * @param distance the distance to rotate the list.  There are no
      *        constraints on this value; it may be zero, negative, or
-     *        greater than <tt>list.size()</tt>.
+     *        greater than {@code list.size()}.
      * @throws UnsupportedOperationException if the specified list or
-     *         its list-iterator does not support the <tt>set</tt> operation.
+     *         its list-iterator does not support the {@code set} operation.
      * @since 1.4
      */
     public static void rotate(List<?> list, int distance) {
@@ -817,21 +817,21 @@ public class Collections {
 
     /**
      * Replaces all occurrences of one specified value in a list with another.
-     * More formally, replaces with <tt>newVal</tt> each element <tt>e</tt>
-     * in <tt>list</tt> such that
-     * <tt>(oldVal==null ? e==null : oldVal.equals(e))</tt>.
+     * More formally, replaces with {@code newVal} each element {@code e}
+     * in {@code list} such that
+     * {@code (oldVal==null ? e==null : oldVal.equals(e))}.
      * (This method has no effect on the size of the list.)
      *
      * @param  <T> the class of the objects in the list
      * @param list the list in which replacement is to occur.
      * @param oldVal the old value to be replaced.
-     * @param newVal the new value with which <tt>oldVal</tt> is to be
+     * @param newVal the new value with which {@code oldVal} is to be
      *        replaced.
-     * @return <tt>true</tt> if <tt>list</tt> contained one or more elements
-     *         <tt>e</tt> such that
-     *         <tt>(oldVal==null ?  e==null : oldVal.equals(e))</tt>.
+     * @return {@code true} if {@code list} contained one or more elements
+     *         {@code e} such that
+     *         {@code (oldVal==null ?  e==null : oldVal.equals(e))}.
      * @throws UnsupportedOperationException if the specified list or
-     *         its list-iterator does not support the <tt>set</tt> operation.
+     *         its list-iterator does not support the {@code set} operation.
      * @since  1.4
      */
     public static <T> boolean replaceAll(List<T> list, T oldVal, T newVal) {
@@ -877,7 +877,7 @@ public class Collections {
     /**
      * Returns the starting position of the first occurrence of the specified
      * target list within the specified source list, or -1 if there is no
-     * such occurrence.  More formally, returns the lowest index <tt>i</tt>
+     * such occurrence.  More formally, returns the lowest index {@code i}
      * such that {@code source.subList(i, i+target.size()).equals(target)},
      * or -1 if there is no such index.  (Returns -1 if
      * {@code target.size() > source.size()})
@@ -887,8 +887,8 @@ public class Collections {
      * location in turn.
      *
      * @param source the list in which to search for the first occurrence
-     *        of <tt>target</tt>.
-     * @param target the list to search for as a subList of <tt>source</tt>.
+     *        of {@code target}.
+     * @param target the list to search for as a subList of {@code source}.
      * @return the starting position of the first occurrence of the specified
      *         target list within the specified source list, or -1 if there
      *         is no such occurrence.
@@ -930,7 +930,7 @@ public class Collections {
     /**
      * Returns the starting position of the last occurrence of the specified
      * target list within the specified source list, or -1 if there is no such
-     * occurrence.  More formally, returns the highest index <tt>i</tt>
+     * occurrence.  More formally, returns the highest index {@code i}
      * such that {@code source.subList(i, i+target.size()).equals(target)},
      * or -1 if there is no such index.  (Returns -1 if
      * {@code target.size() > source.size()})
@@ -940,8 +940,8 @@ public class Collections {
      * location in turn.
      *
      * @param source the list in which to search for the last occurrence
-     *        of <tt>target</tt>.
-     * @param target the list to search for as a subList of <tt>source</tt>.
+     *        of {@code target}.
+     * @param target the list to search for as a subList of {@code source}.
      * @return the starting position of the last occurrence of the specified
      *         target list within the specified source list, or -1 if there
      *         is no such occurrence.
@@ -993,11 +993,11 @@ public class Collections {
      * collections.  Query operations on the returned collection "read through"
      * to the specified collection, and attempts to modify the returned
      * collection, whether direct or via its iterator, result in an
-     * <tt>UnsupportedOperationException</tt>.<p>
+     * {@code UnsupportedOperationException}.<p>
      *
      * The returned collection does <i>not</i> pass the hashCode and equals
      * operations through to the backing collection, but relies on
-     * <tt>Object</tt>'s <tt>equals</tt> and <tt>hashCode</tt> methods.  This
+     * {@code Object}'s {@code equals} and {@code hashCode} methods.  This
      * is necessary to preserve the contracts of these operations in the case
      * that the backing collection is a set or a list.<p>
      *
@@ -1105,7 +1105,7 @@ public class Collections {
      * modules to provide users with "read-only" access to internal sets.
      * Query operations on the returned set "read through" to the specified
      * set, and attempts to modify the returned set, whether direct or via its
-     * iterator, result in an <tt>UnsupportedOperationException</tt>.<p>
+     * iterator, result in an {@code UnsupportedOperationException}.<p>
      *
      * The returned set will be serializable if the specified set
      * is serializable.
@@ -1136,8 +1136,8 @@ public class Collections {
      * sorted sets.  Query operations on the returned sorted set "read
      * through" to the specified sorted set.  Attempts to modify the returned
      * sorted set, whether direct, via its iterator, or via its
-     * <tt>subSet</tt>, <tt>headSet</tt>, or <tt>tailSet</tt> views, result in
-     * an <tt>UnsupportedOperationException</tt>.<p>
+     * {@code subSet}, {@code headSet}, or {@code tailSet} views, result in
+     * an {@code UnsupportedOperationException}.<p>
      *
      * The returned sorted set will be serializable if the specified sorted set
      * is serializable.
@@ -1273,7 +1273,7 @@ public class Collections {
      * lists.  Query operations on the returned list "read through" to the
      * specified list, and attempts to modify the returned list, whether
      * direct or via its iterator, result in an
-     * <tt>UnsupportedOperationException</tt>.<p>
+     * {@code UnsupportedOperationException}.<p>
      *
      * The returned list will be serializable if the specified list
      * is serializable. Similarly, the returned list will implement
@@ -1419,7 +1419,7 @@ public class Collections {
      * maps.  Query operations on the returned map "read through"
      * to the specified map, and attempts to modify the returned
      * map, whether direct or via its collection views, result in an
-     * <tt>UnsupportedOperationException</tt>.<p>
+     * {@code UnsupportedOperationException}.<p>
      *
      * The returned map will be serializable if the specified map
      * is serializable.
@@ -1769,8 +1769,8 @@ public class Collections {
      * sorted maps.  Query operations on the returned sorted map "read through"
      * to the specified sorted map.  Attempts to modify the returned
      * sorted map, whether direct, via its collection views, or via its
-     * <tt>subMap</tt>, <tt>headMap</tt>, or <tt>tailMap</tt> views, result in
-     * an <tt>UnsupportedOperationException</tt>.<p>
+     * {@code subMap}, {@code headMap}, or {@code tailMap} views, result in
+     * an {@code UnsupportedOperationException}.<p>
      *
      * The returned sorted map will be serializable if the specified sorted map
      * is serializable.
@@ -2148,8 +2148,8 @@ public class Collections {
      * through the returned sorted set (or its views).<p>
      *
      * It is imperative that the user manually synchronize on the returned
-     * sorted set when iterating over it or any of its <tt>subSet</tt>,
-     * <tt>headSet</tt>, or <tt>tailSet</tt> views.
+     * sorted set when iterating over it or any of its {@code subSet},
+     * {@code headSet}, or {@code tailSet} views.
      * <pre>
      *  SortedSet s = Collections.synchronizedSortedSet(new TreeSet());
      *      ...
@@ -2700,8 +2700,8 @@ public class Collections {
      *
      * It is imperative that the user manually synchronize on the returned
      * sorted map when iterating over any of its collection views, or the
-     * collections views of any of its <tt>subMap</tt>, <tt>headMap</tt> or
-     * <tt>tailMap</tt> views.
+     * collections views of any of its {@code subMap}, {@code headMap} or
+     * {@code tailMap} views.
      * <pre>
      *  SortedMap m = Collections.synchronizedSortedMap(new TreeMap());
      *      ...
@@ -4406,7 +4406,7 @@ public class Collections {
      * </pre>
      *
      * @implNote
-     * Implementations of this method need not create a separate <tt>List</tt>
+     * Implementations of this method need not create a separate {@code List}
      * object for each call.   Using this method is likely to have comparable
      * cost to using the like-named field.  (Unlike this method, the field does
      * not provide type safety.)
@@ -4846,7 +4846,7 @@ public class Collections {
      * @param <K> the class of the map keys
      * @param <V> the class of the map values
      * @param key the sole key to be stored in the returned map.
-     * @param value the value to which the returned map maps <tt>key</tt>.
+     * @param value the value to which the returned map maps {@code key}.
      * @return an immutable map containing only the specified key-value
      *         mapping.
      * @since 1.3
@@ -4964,17 +4964,17 @@ public class Collections {
     // Miscellaneous
 
     /**
-     * Returns an immutable list consisting of <tt>n</tt> copies of the
+     * Returns an immutable list consisting of {@code n} copies of the
      * specified object.  The newly allocated data object is tiny (it contains
      * a single reference to the data object).  This method is useful in
-     * combination with the <tt>List.addAll</tt> method to grow lists.
+     * combination with the {@code List.addAll} method to grow lists.
      * The returned list is serializable.
      *
      * @param  <T> the class of the object to copy and of the objects
      *         in the returned list.
      * @param  n the number of elements in the returned list.
      * @param  o the element to appear repeatedly in the returned list.
-     * @return an immutable list consisting of <tt>n</tt> copies of the
+     * @return an immutable list consisting of {@code n} copies of the
      *         specified object.
      * @throws IllegalArgumentException if {@code n < 0}
      * @see    List#addAll(Collection)
@@ -5095,7 +5095,7 @@ public class Collections {
      * @param  <T> the class of the objects compared by the comparator
      * @return A comparator that imposes the reverse of the <i>natural
      *         ordering</i> on a collection of objects that implement
-     *         the <tt>Comparable</tt> interface.
+     *         the {@code Comparable} interface.
      * @see Comparable
      */
     @SuppressWarnings("unchecked")
@@ -5259,14 +5259,14 @@ public class Collections {
     /**
      * Returns the number of elements in the specified collection equal to the
      * specified object.  More formally, returns the number of elements
-     * <tt>e</tt> in the collection such that
-     * <tt>(o == null ? e == null : o.equals(e))</tt>.
+     * {@code e} in the collection such that
+     * {@code Objects.equals(o, e)}.
      *
      * @param c the collection in which to determine the frequency
-     *     of <tt>o</tt>
+     *     of {@code o}
      * @param o the object whose frequency is to be determined
      * @return the number of elements in {@code c} equal to {@code o}
-     * @throws NullPointerException if <tt>c</tt> is null
+     * @throws NullPointerException if {@code c} is null
      * @since 1.5
      */
     public static int frequency(Collection<?> c, Object o) {
@@ -5377,7 +5377,7 @@ public class Collections {
      * Adds all of the specified elements to the specified collection.
      * Elements to be added may be specified individually or as an array.
      * The behavior of this convenience method is identical to that of
-     * <tt>c.addAll(Arrays.asList(elements))</tt>, but this method is likely
+     * {@code c.addAll(Arrays.asList(elements))}, but this method is likely
      * to run significantly faster under most implementations.
      *
      * <p>When elements are specified individually, this method provides a
@@ -5387,16 +5387,16 @@ public class Collections {
      * </pre>
      *
      * @param  <T> the class of the elements to add and of the collection
-     * @param c the collection into which <tt>elements</tt> are to be inserted
-     * @param elements the elements to insert into <tt>c</tt>
-     * @return <tt>true</tt> if the collection changed as a result of the call
-     * @throws UnsupportedOperationException if <tt>c</tt> does not support
-     *         the <tt>add</tt> operation
-     * @throws NullPointerException if <tt>elements</tt> contains one or more
-     *         null values and <tt>c</tt> does not permit null elements, or
-     *         if <tt>c</tt> or <tt>elements</tt> are <tt>null</tt>
+     * @param c the collection into which {@code elements} are to be inserted
+     * @param elements the elements to insert into {@code c}
+     * @return {@code true} if the collection changed as a result of the call
+     * @throws UnsupportedOperationException if {@code c} does not support
+     *         the {@code add} operation
+     * @throws NullPointerException if {@code elements} contains one or more
+     *         null values and {@code c} does not permit null elements, or
+     *         if {@code c} or {@code elements} are {@code null}
      * @throws IllegalArgumentException if some property of a value in
-     *         <tt>elements</tt> prevents it from being added to <tt>c</tt>
+     *         {@code elements} prevents it from being added to {@code c}
      * @see Collection#addAll(Collection)
      * @since 1.5
      */
@@ -5418,9 +5418,9 @@ public class Collections {
      * HashMap} or {@link TreeMap}).
      *
      * <p>Each method invocation on the set returned by this method results in
-     * exactly one method invocation on the backing map or its <tt>keySet</tt>
-     * view, with one exception.  The <tt>addAll</tt> method is implemented
-     * as a sequence of <tt>put</tt> invocations on the backing map.
+     * exactly one method invocation on the backing map or its {@code keySet}
+     * view, with one exception.  The {@code addAll} method is implemented
+     * as a sequence of {@code put} invocations on the backing map.
      *
      * <p>The specified map must be empty at the time this method is invoked,
      * and should not be accessed directly after this method returns.  These
@@ -5436,7 +5436,7 @@ public class Collections {
      *        returned set
      * @param map the backing map
      * @return the set backed by the map
-     * @throws IllegalArgumentException if <tt>map</tt> is not empty
+     * @throws IllegalArgumentException if {@code map} is not empty
      * @since 1.6
      */
     public static <E> Set<E> newSetFromMap(Map<E, Boolean> map) {
@@ -5505,10 +5505,10 @@ public class Collections {
 
     /**
      * Returns a view of a {@link Deque} as a Last-in-first-out (Lifo)
-     * {@link Queue}. Method <tt>add</tt> is mapped to <tt>push</tt>,
-     * <tt>remove</tt> is mapped to <tt>pop</tt> and so on. This
+     * {@link Queue}. Method {@code add} is mapped to {@code push},
+     * {@code remove} is mapped to {@code pop} and so on. This
      * view can be useful when you would like to use a method
-     * requiring a <tt>Queue</tt> but you need Lifo ordering.
+     * requiring a {@code Queue} but you need Lifo ordering.
      *
      * <p>Each method invocation on the queue returned by this method
      * results in exactly one method invocation on the backing deque, with

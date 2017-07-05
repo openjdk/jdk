@@ -28,10 +28,10 @@ package java.util;
 /**
  * An object that implements the Enumeration interface generates a
  * series of elements, one at a time. Successive calls to the
- * <code>nextElement</code> method return successive elements of the
+ * {@code nextElement} method return successive elements of the
  * series.
  * <p>
- * For example, to print all elements of a <tt>Vector&lt;E&gt;</tt> <i>v</i>:
+ * For example, to print all elements of a {@code Vector<E>} <i>v</i>:
  * <pre>
  *   for (Enumeration&lt;E&gt; e = v.elements(); e.hasMoreElements();)
  *       System.out.println(e.nextElement());</pre>
@@ -39,7 +39,7 @@ package java.util;
  * Methods are provided to enumerate through the elements of a
  * vector, the keys of a hashtable, and the values in a hashtable.
  * Enumerations are also used to specify the input streams to a
- * <code>SequenceInputStream</code>.
+ * {@code SequenceInputStream}.
  *
  * @apiNote
  * The functionality of this interface is duplicated by the {@link Iterator}
@@ -65,9 +65,9 @@ public interface Enumeration<E> {
     /**
      * Tests if this enumeration contains more elements.
      *
-     * @return  <code>true</code> if and only if this enumeration object
+     * @return  {@code true} if and only if this enumeration object
      *           contains at least one more element to provide;
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      */
     boolean hasMoreElements();
 
