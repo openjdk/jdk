@@ -93,6 +93,11 @@ class BaselineOutputer : public StackObj {
 
   virtual void done_category_summary() = 0;
 
+  virtual void start_virtual_memory_map() = 0;
+  virtual void reserved_memory_region(MEMFLAGS type, address base, address end, size_t size, address pc) = 0;
+  virtual void committed_memory_region(address base, address end, size_t size, address pc) = 0;
+  virtual void done_virtual_memory_map() = 0;
+
   /*
    *  Report callsite information
    */
@@ -136,6 +141,7 @@ class BaselineReporter : public StackObj {
 
  private:
   void report_summaries(const MemBaseline& baseline);
+  void report_virtual_memory_map(const MemBaseline& baseline);
   void report_callsites(const MemBaseline& baseline);
 
   void diff_summaries(const MemBaseline& cur, const MemBaseline& prev);
@@ -250,6 +256,13 @@ class BaselineTTYOutputer : public BaselineOutputer {
                           int arena_count_diff);
 
   void done_category_summary();
+
+  // virtual memory map
+  void start_virtual_memory_map();
+  void reserved_memory_region(MEMFLAGS type, address base, address end, size_t size, address pc);
+  void committed_memory_region(address base, address end, size_t size, address pc);
+  void done_virtual_memory_map();
+
 
   /*
    *  Report callsite information

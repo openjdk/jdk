@@ -65,7 +65,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeDispose(long nsWindowPtr);
     private static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
-    private static native int nativeGetNSWindowDisplayID_AppKitThread(long nsWindowPtr);
+    private static native int nativeGetNSWindowDisplayID(long nsWindowPtr);
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
@@ -444,7 +444,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public GraphicsDevice getGraphicsDevice() {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         CGraphicsEnvironment cge = (CGraphicsEnvironment)ge;
-        int displayID = nativeGetNSWindowDisplayID_AppKitThread(getNSWindowPtr());
+        int displayID = nativeGetNSWindowDisplayID(getNSWindowPtr());
         GraphicsDevice gd = cge.getScreenDevice(displayID);
         if (gd == null) {
             // this could possibly happen during device removal

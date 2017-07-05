@@ -105,6 +105,7 @@ public class Basic {
             System.err.println("GC " + i);
             Thread.sleep(10);
             System.gc();
+            System.runFinalization();
 
             showReferences();
             while ((r = q2.poll()) != null) {

@@ -87,22 +87,32 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
     *linux*)
       VAR_OS=linux
       VAR_OS_API=posix
+      VAR_OS_ENV=linux
       ;;
     *solaris*)
       VAR_OS=solaris
       VAR_OS_API=posix
+      VAR_OS_ENV=solaris
       ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix
+      VAR_OS_ENV=macosx
       ;;
     *bsd*)
       VAR_OS=bsd
       VAR_OS_API=posix
+      VAR_OS_ENV=bsd
       ;;
-    *cygwin*|*windows*)
+    *cygwin*)
       VAR_OS=windows
       VAR_OS_API=winapi
+      VAR_OS_ENV=windows.cygwin
+      ;;
+    *mingw*)
+      VAR_OS=windows
+      VAR_OS_API=winapi
+      VAR_OS_ENV=windows.msys
       ;;
     *)
       AC_MSG_ERROR([unsupported operating system $1])
@@ -128,11 +138,33 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
     AC_SUBST(OPENJDK_BUILD_AUTOCONF_NAME)
 
     # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
+    PLATFORM_EXTRACT_VARS_FROM_OS($build_os)
+    PLATFORM_EXTRACT_VARS_FROM_CPU($build_cpu)
+    # ..and setup our own variables. (Do this explicitely to facilitate searching)
+    OPENJDK_BUILD_OS="$VAR_OS"
+    OPENJDK_BUILD_OS_API="$VAR_OS_API"
+    OPENJDK_BUILD_OS_ENV="$VAR_OS_ENV"
+    OPENJDK_BUILD_CPU="$VAR_CPU"
+    OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
+    OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"
+    OPENJDK_BUILD_CPU_ENDIAN="$VAR_CPU_ENDIAN"
+    AC_SUBST(OPENJDK_BUILD_OS)
+    AC_SUBST(OPENJDK_BUILD_OS_API)
+    AC_SUBST(OPENJDK_BUILD_CPU)
+    AC_SUBST(OPENJDK_BUILD_CPU_ARCH)
+    AC_SUBST(OPENJDK_BUILD_CPU_BITS)
+    AC_SUBST(OPENJDK_BUILD_CPU_ENDIAN)
+
+    AC_MSG_CHECKING([openjdk-build os-cpu])
+    AC_MSG_RESULT([$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU])
+
+    # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
     PLATFORM_EXTRACT_VARS_FROM_OS($host_os)
     PLATFORM_EXTRACT_VARS_FROM_CPU($host_cpu)
     # ... and setup our own variables. (Do this explicitely to facilitate searching)
     OPENJDK_TARGET_OS="$VAR_OS"
     OPENJDK_TARGET_OS_API="$VAR_OS_API"
+    OPENJDK_TARGET_OS_ENV="$VAR_OS_ENV"
     OPENJDK_TARGET_CPU="$VAR_CPU"
     OPENJDK_TARGET_CPU_ARCH="$VAR_CPU_ARCH"
     OPENJDK_TARGET_CPU_BITS="$VAR_CPU_BITS"
@@ -144,22 +176,8 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
     AC_SUBST(OPENJDK_TARGET_CPU_BITS)
     AC_SUBST(OPENJDK_TARGET_CPU_ENDIAN)
 
-    # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
-    PLATFORM_EXTRACT_VARS_FROM_OS($build_os)
-    PLATFORM_EXTRACT_VARS_FROM_CPU($build_cpu)
-    # ..and setup our own variables. (Do this explicitely to facilitate searching)
-    OPENJDK_BUILD_OS="$VAR_OS"
-    OPENJDK_BUILD_OS_API="$VAR_OS_API"
-    OPENJDK_BUILD_CPU="$VAR_CPU"
-    OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
-    OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"
-    OPENJDK_BUILD_CPU_ENDIAN="$VAR_CPU_ENDIAN"
-    AC_SUBST(OPENJDK_BUILD_OS)
-    AC_SUBST(OPENJDK_BUILD_OS_API)
-    AC_SUBST(OPENJDK_BUILD_CPU)
-    AC_SUBST(OPENJDK_BUILD_CPU_ARCH)
-    AC_SUBST(OPENJDK_BUILD_CPU_BITS)
-    AC_SUBST(OPENJDK_BUILD_CPU_ENDIAN)
+    AC_MSG_CHECKING([openjdk-target os-cpu])
+    AC_MSG_RESULT([$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
 ])
 
 # Check if a reduced build (32-bit on 64-bit platforms) is requested, and modify behaviour
@@ -208,7 +226,7 @@ AC_DEFUN([PLATFORM_SETUP_TARGET_CPU_BITS],
   fi
   AC_SUBST(COMPILE_TYPE)
 
-AC_MSG_CHECKING([for compilation type])
+AC_MSG_CHECKING([compilation type])
 AC_MSG_RESULT([$COMPILE_TYPE])
 ])
 
@@ -299,7 +317,11 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
 
     if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
         A_LP64="LP64:="
-        ADD_LP64="-D_LP64=1"
+        # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in 
+        # unpack200.exe
+        if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xmacosx; then
+            ADD_LP64="-D_LP64=1"
+        fi
     fi
     AC_SUBST(LP64,$A_LP64)
 

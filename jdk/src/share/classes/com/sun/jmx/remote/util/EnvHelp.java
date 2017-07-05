@@ -665,97 +665,57 @@ public class EnvHelp {
      * Computes a boolean value from a string value retrieved from a
      * property in the given map.
      *
-     * @param env the environment map.
-     * @param prop the name of the property in the environment map whose
-     * returned string value must be converted into a boolean value.
-     * @param systemProperty if true, consult a system property of the
-     * same name if there is no entry in the environment map.
+     * @param stringBoolean the string value that must be converted
+     * into a boolean value.
      *
      * @return
      *   <ul>
-     *   <li>{@code false} if {@code env.get(prop)} is {@code null}</li>
+     *   <li>{@code false} if {@code stringBoolean} is {@code null}</li>
      *   <li>{@code false} if
-     *       {@code ((String)env.get(prop)).equalsIgnoreCase("false")}
+     *       {@code stringBoolean.equalsIgnoreCase("false")}
      *       is {@code true}</li>
      *   <li>{@code true} if
-     *       {@code ((String)env.get(prop)).equalsIgnoreCase("true")}
+     *       {@code stringBoolean.equalsIgnoreCase("true")}
      *       is {@code true}</li>
      *   </ul>
      *
-     * @throws IllegalArgumentException if {@code env} is {@code null} or
-     * {@code env.get(prop)} is not {@code null} and
+     * @throws IllegalArgumentException if
      * {@code ((String)env.get(prop)).equalsIgnoreCase("false")} and
      * {@code ((String)env.get(prop)).equalsIgnoreCase("true")} are
      * {@code false}.
-     * @throws ClassCastException if {@code env.get(prop)} cannot be cast
-     * to {@code String}.
      */
-    public static boolean computeBooleanFromString(
-            Map<String, ?> env, String prop, boolean systemProperty) {
-
-        if (env == null)
-            throw new IllegalArgumentException("env map cannot be null");
-
+    public static boolean computeBooleanFromString(String stringBoolean) {
         // returns a default value of 'false' if no property is found...
-        return computeBooleanFromString(env,prop,systemProperty,false);
+        return computeBooleanFromString(stringBoolean,false);
     }
 
     /**
      * Computes a boolean value from a string value retrieved from a
      * property in the given map.
      *
-     * @param env the environment map.
-     * @param prop the name of the property in the environment map whose
-     * returned string value must be converted into a boolean value.
-     * @param systemProperty if true, consult a system property of the
-     * same name if there is no entry in the environment map.
+     * @param stringBoolean the string value that must be converted
+     * into a boolean value.
      * @param defaultValue a default value to return in case no property
      *        was defined.
      *
      * @return
      *   <ul>
-     *   <li>{@code defaultValue} if {@code env.get(prop)} is {@code null}
-     *       and {@code systemProperty} is {@code false}</li>
-     *   <li>{@code defaultValue} if {@code env.get(prop)} is {@code null}
-     *       and {@code systemProperty} is {@code true} and
-     *       {@code System.getProperty(prop)} is {@code null}</li>
-     *   <li>{@code false} if {@code env.get(prop)} is {@code null}
-     *       and {@code systemProperty} is {@code true} and
-     *       {@code System.getProperty(prop).equalsIgnoreCase("false")}
-     *       is {@code true}</li>
-     *   <li>{@code true} if {@code env.get(prop)} is {@code null}
-     *       and {@code systemProperty} is {@code true} and
-     *       {@code System.getProperty(prop).equalsIgnoreCase("true")}
-     *       is {@code true}</li>
+     *   <li>{@code defaultValue} if {@code stringBoolean}
+     *   is {@code null}</li>
      *   <li>{@code false} if
-     *       {@code ((String)env.get(prop)).equalsIgnoreCase("false")}
+     *       {@code stringBoolean.equalsIgnoreCase("false")}
      *       is {@code true}</li>
      *   <li>{@code true} if
-     *       {@code ((String)env.get(prop)).equalsIgnoreCase("true")}
+     *       {@code stringBoolean.equalsIgnoreCase("true")}
      *       is {@code true}</li>
      *   </ul>
      *
-     * @throws IllegalArgumentException if {@code env} is {@code null} or
-     * {@code env.get(prop)} is not {@code null} and
+     * @throws IllegalArgumentException if
      * {@code ((String)env.get(prop)).equalsIgnoreCase("false")} and
      * {@code ((String)env.get(prop)).equalsIgnoreCase("true")} are
      * {@code false}.
-     * @throws ClassCastException if {@code env.get(prop)} cannot be cast
-     * to {@code String}.
      */
-    public static boolean computeBooleanFromString(
-            Map<String, ?> env, String prop,
-            boolean systemProperty, boolean defaultValue) {
-
-        if (env == null)
-            throw new IllegalArgumentException("env map cannot be null");
-
-        String stringBoolean = (String) env.get(prop);
-        if (stringBoolean == null && systemProperty) {
-            stringBoolean =
-                    AccessController.doPrivileged(new GetPropertyAction(prop));
-        }
-
+    public static boolean computeBooleanFromString( String stringBoolean, boolean defaultValue) {
         if (stringBoolean == null)
             return defaultValue;
         else if (stringBoolean.equalsIgnoreCase("true"))
@@ -763,8 +723,8 @@ public class EnvHelp {
         else if (stringBoolean.equalsIgnoreCase("false"))
             return false;
         else
-            throw new IllegalArgumentException(prop +
-                " must be \"true\" or \"false\" instead of \"" +
+            throw new IllegalArgumentException(
+                "Property value must be \"true\" or \"false\" instead of \"" +
                 stringBoolean + "\"");
     }
 

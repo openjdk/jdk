@@ -297,6 +297,7 @@ class HandleMark {
   void set_previous_handle_mark(HandleMark* mark) { _previous_handle_mark = mark; }
   HandleMark* previous_handle_mark() const        { return _previous_handle_mark; }
 
+  size_t size_in_bytes() const { return _size_in_bytes; }
  public:
   HandleMark();                            // see handles_inline.hpp
   HandleMark(Thread* thread)                      { initialize(thread); }

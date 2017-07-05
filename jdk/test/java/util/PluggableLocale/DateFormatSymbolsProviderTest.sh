@@ -23,6 +23,6 @@
 #!/bin/sh
 #
 # @test
-# @bug 4052440
+# @bug 4052440 7200341
 # @summary DateFormatSymbolsProvider tests
 # @run shell ExecTest.sh foo DateFormatSymbolsProviderTest true

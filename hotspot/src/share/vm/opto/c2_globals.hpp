@@ -439,6 +439,9 @@
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
                                                                             \
+  develop(bool, ExitEscapeAnalysisOnTimeout, true,                          \
+          "Exit or throw assert in EA when it reaches time limit")          \
+                                                                            \
   notproduct(bool, PrintEscapeAnalysis, false,                              \
           "Print the results of escape analysis")                           \
                                                                             \

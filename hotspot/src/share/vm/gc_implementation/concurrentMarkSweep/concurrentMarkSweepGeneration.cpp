@@ -9143,7 +9143,7 @@ void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
     size_t shrinkable_size_in_bytes = chunk_at_end->size();
     size_t aligned_shrinkable_size_in_bytes =
       align_size_down(shrinkable_size_in_bytes, os::vm_page_size());
-    assert(unallocated_start <= chunk_at_end->end(),
+    assert(unallocated_start <= (HeapWord*) chunk_at_end->end(),
       "Inconsistent chunk at end of space");
     size_t bytes = MIN2(desired_bytes, aligned_shrinkable_size_in_bytes);
     size_t word_size_before = heap_word_size(_virtual_space.committed_size());
@@ -9210,7 +9210,7 @@ void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
 
     assert(_cmsSpace->unallocated_block() <= _cmsSpace->end(),
       "Inconsistency at end of space");
-    assert(chunk_at_end->end() == _cmsSpace->end(),
+    assert(chunk_at_end->end() == (uintptr_t*) _cmsSpace->end(),
       "Shrinking is inconsistent");
     return;
   }

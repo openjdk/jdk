@@ -33,129 +33,13 @@
 ifndef _MAKEBASE_GMK
 _MAKEBASE_GMK := 1
 
-ifeq (,$(findstring 3.81,$(MAKE_VERSION)))
-    ifeq (,$(findstring 3.82,$(MAKE_VERSION)))
-        $(error This version of GNU Make is too low ($(MAKE_VERSION)). Please upgrade to 3.81 or newer.)
-    endif
-endif
-
-ifneq (,$(CYGPATH))
-    # Cygwin styff, if needed but most is going to be
-    # done in configure!
-    ifeq (yes,$(CHECK_FOR_VCINSTALLDIR))
-        ifeq (,$(VCINSTALLDIR)) 
-            $(info Could not find compiler paths!)
-            $(info You probably configured the build from within a)
-            $(info VS command prompt, but you are not using such a)
-            $(info prompt right now.)
-            $(info If you instead run configure from a plain cygwin shell, it)
-            $(info will attempt to setup VS for you! Please try that.)
-            $(error Giving up for now.)
-        endif
-    endif
-endif
-
-# The build times report is turned off by setting REPORT_BUILD_TIMES to nothing.
-# This is necessary for the target clean which will erase the
-# directories where the buildtimes are stored.
-REPORT_BUILD_TIMES=1
-# Store the build times in this directory.
-BUILDTIMESDIR=$(OUTPUT_ROOT)/tmp/buildtimes
-
-# Record starting time for build of a sub repository.
-define RecordStartTime
-$(MKDIR) -p $(BUILDTIMESDIR)
-$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$1
-$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_start_$1_human_readable
-endef
-
-# Indicate that we started to build a sub repository and record starting time. 
-define MakeStart
-$(call RecordStartTime,$1)
-$(BUILD_LOG_WRAPPER) $(PRINTF) "\n\n%s\n%s\n##### %-60.60s #####\n%s\n\n" \
-"########################################################################" \
-"########################################################################" \
-"Entering $1 for target(s) $2" \
-"########################################################################"
-endef
-
-# Record ending time and calculate the difference and store it in a
-# easy to read format. Handles builds that cross midnight. Expects
-# that a build will never take 24 hours or more. 
-define RecordEndTime
-$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_end_$1
-$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_end_$1_human_readable
-$(ECHO) `$(CAT) $(BUILDTIMESDIR)/build_time_start_$1` `$(CAT) $(BUILDTIMESDIR)/build_time_end_$1` $1 | \
-  $(NAWK) '{ F=$$7; T=$$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); \
-             M=int((D-H*3600)/60); S=D-H*3600-M*60; printf("%02d:%02d:%02d %s\n",H,M,S,$$15); }' \
-  > $(BUILDTIMESDIR)/build_time_diff_$1
-endef
-
-# Check if the current target is the final target, as specified by
-# the user on the command line. If so, call PrintEndMessage.
-define CheckIfFinished
-$(if $(filter $@,$(MAKECMDGOALS)),$(call PrintEndMessage))
-# If no taget is given, "all" is default. Check for that, too.
-# At most one of the tests can be true.
-$(if $(MAKECMDGOALS),,$(if $(filter $@,all),$(call PrintEndMessage)))
-endef
-
-# Indicate that we are done.
-# Record ending time and print out the total time it took to build.
-define MakeFinish 
-$(if $(REPORT_BUILD_TIMES),$(call RecordEndTime,$1),) 
-$(BUILD_LOG_WRAPPER) $(PRINTF) "%s\n##### %-60.60s #####\n%s\n##### %-60.60s #####\n%s\n\n" \
-"########################################################################" \
-"Leaving $1 for target(s) $2" \
-"########################################################################" \
-$(if $(REPORT_BUILD_TIMES),"Build time `$(CAT) $(BUILDTIMESDIR)/build_time_diff_$1` for target(s) $2","") \
-"########################################################################"
-$(call CheckIfFinished)
-endef
-
-# Find all build_time_* files and print their contents in a list sorted
-# on the name of the sub repository.
-define ReportBuildTimes
-$(BUILD_LOG_WRAPPER) $(PRINTF) -- "-- Build times ----------\nTarget %s\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" \
-"$1" \
-"`$(CAT) $(BUILDTIMESDIR)/build_time_start_TOTAL_human_readable`" \
-"`$(CAT) $(BUILDTIMESDIR)/build_time_end_TOTAL_human_readable`" \
-"`$(LS) $(BUILDTIMESDIR)/build_time_diff_* | $(GREP) -v _TOTAL | $(XARGS) $(CAT) | $(SORT) -k 2`" \
-"`$(CAT) $(BUILDTIMESDIR)/build_time_diff_TOTAL`"
-endef
-
-define ResetTimers
-$$(shell $(MKDIR) -p $(BUILDTIMESDIR) &&  $(RM) $(BUILDTIMESDIR)/build_time_*)
-endef
-
-define StartTimer
-	$(call RecordStartTime,TOTAL)
-endef
-
-define StopTimer
-	$(if $(REPORT_BUILD_TIMES),$(call RecordEndTime,TOTAL) && $(call ReportBuildTimes,$1),)
-endef
-
-# Hook to be called as the very first thing when running a normal build
-define AtRootMakeStart
-	$(if $(findstring --jobserver,$(MAKEFLAGS)), $(error make -j is not supported, use make JOBS=n))
-	$(call PrintStartMessage)
-	$(call StartTimer)
-endef
-
-# Hook to be called as the very last thing for targets that are "top level" targets
-define AtRootMakeEnd
-	$(call StopTimer)
-	$(call CheckIfFinished)
-endef
-
 # If the variable that you want to send to stdout for piping into a file or otherwise,
 # is potentially long, for example the a list of file paths, eg a list of all package directories.
 # Then you need to use ListPathsSafely, which optimistically splits the output into several shell
 # calls as well as use compression on recurrent file paths segments, to get around the potential
 # command line length problem that exists in cygwin and other shells.
-compress_pre:=$(strip $(shell cat $(SRC_ROOT)/common/makefiles/compress.pre))
-compress_post:=$(strip $(shell cat $(SRC_ROOT)/common/makefiles/compress.post))
+compress_pre:=$(strip $(shell $(CAT) $(SRC_ROOT)/common/makefiles/support/ListPathsSafely-pre-compress.incl))
+compress_post:=$(strip $(shell $(CAT) $(SRC_ROOT)/common/makefiles/support/ListPathsSafely-post-compress.incl))
 compress_paths=$(compress_pre)\
 $(subst $(SRC_ROOT),X97,\
 $(subst $(OUTPUT_ROOT),X98,\
@@ -163,7 +47,7 @@ $(subst X,X00,\
 $(subst $(SPACE),\n,$(strip $1)))))\
 $(compress_post)
 
-decompress_paths=sed -f $(SRC_ROOT)/common/makefiles/uncompress.sed -e 's|X99|\\n|g' \
+decompress_paths=$(SED) -f $(SRC_ROOT)/common/makefiles/support/ListPathsSafely-uncompress.sed -e 's|X99|\\n|g' \
 		     -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
 		     -e 's|X00|X|g' | tr '\n' '$2'
 
@@ -384,14 +268,67 @@ $(ECHO) $1/$(HGTIP_FILENAME)
 endef
 
 define SetupLogging
-    ifneq ($(findstring $(LOG),debug trace),)
+    ifeq ($$(LOG), trace)
         # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
+        # For each target executed, will print
+        # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
+        # but with a limit of 20 on <ALL NEWER PREREQUISITES>, to avoid cluttering logs too much (and causing a crash on Cygwin).
         OLD_SHELL:=$$(SHELL)
-        SHELL = $$(warning Building $$@$$(if $$<, (from $$<))$(if $$?, ($$? newer)))$$(OLD_SHELL) -x
+        WRAPPER_SHELL:=$$(OLD_SHELL) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(TIME),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(OLD_SHELL)
+        SHELL=$$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
+    endif
+    # Never remove warning messages; this is just for completeness
+    LOG_WARN= 
+    ifneq ($$(findstring $$(LOG),info debug trace),)
+        LOG_INFO=
+    else
+        LOG_INFO=> /dev/null
+    endif
+    ifneq ($$(findstring $$(LOG),debug trace),)
+        LOG_DEBUG=
+    else
+        LOG_DEBUG=> /dev/null
+    endif
+    ifneq ($$(findstring $$(LOG),trace),)
+        LOG_TRACE=
+    else
+        LOG_TRACE=> /dev/null
     endif
 endef
 
 # Make sure logging is setup for everyone that includes MakeBase.gmk.
 $(eval $(call SetupLogging))
+
+# This is to be called by all SetupFoo macros
+define LogSetupMacroEntry
+    $(if $(26),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
+    $(if $(findstring $(LOG),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
+endef
+
+# Make directory without forking mkdir if not needed
+define MakeDir
+    ifneq ($$(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),$$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9))
+        $$(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)
+    endif
+endef
+
+ifeq ($(OPENJDK_TARGET_OS),solaris)
+# On Solaris, if the target is a symlink and exists, cp won't overwrite.
+define install-file
+	$(MKDIR) -p $(@D)
+	$(RM) '$@'
+	$(CP) -f -r -P '$<' '$(@D)'
+endef
+else ifeq ($(OPENJDK_TARGET_OS),macosx)
+define install-file
+	$(MKDIR) -p $(@D)
+	$(CP) -fpRP '$<' '$@'
+endef
+else
+define install-file
+	$(MKDIR) -p $(@D)
+	$(CP) -fP '$<' '$@'
+endef
+endif
 
 endif # _MAKEBASE_GMK

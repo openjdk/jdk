@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,6 +329,7 @@ public class MethodHandles {
      *     where {@code defcPkg} is the package of {@code defc}.
      * </ul>
      */
+    // FIXME in MR1: clarify that the bytecode behavior of a caller-ID method (like Class.forName) is relative to the lookupClass used to create the method handle, not the dynamic caller of the method handle
     public static final
     class Lookup {
         /** The class on behalf of whom the lookup is being performed. */
@@ -1209,6 +1210,7 @@ return mh1;
             if (method.isMethodHandleInvoke())
                 return fakeMethodHandleInvoke(method);
             MethodHandle mh = DirectMethodHandle.make(refc, method);
+            mh = maybeBindCaller(method, mh);
             mh = mh.setVarargs(method);
             if (doRestrict)
                 mh = restrictReceiver(method, mh, lookupClass());
@@ -1216,6 +1218,16 @@ return mh1;
         }
         private MethodHandle fakeMethodHandleInvoke(MemberName method) {
             return throwException(method.getReturnType(), UnsupportedOperationException.class);
+        }
+        private MethodHandle maybeBindCaller(MemberName method, MethodHandle mh) throws IllegalAccessException {
+            if (allowedModes == TRUSTED || !MethodHandleNatives.isCallerSensitive(method))
+                return mh;
+            Class<?> hostClass = lookupClass;
+            if ((allowedModes & PRIVATE) == 0)  // caller must use full-power lookup
+                hostClass = null;
+            MethodHandle cbmh = MethodHandleImpl.bindCaller(mh, hostClass);
+            // Note: caller will apply varargs after this step happens.
+            return cbmh;
         }
         private MethodHandle getDirectField(byte refKind, Class<?> refc, MemberName field) throws IllegalAccessException {
             checkField(refKind, refc, field);
@@ -1229,6 +1241,7 @@ return mh1;
         private MethodHandle getDirectConstructor(Class<?> refc, MemberName ctor) throws IllegalAccessException {
             assert(ctor.isConstructor());
             checkAccess(REF_newInvokeSpecial, refc, ctor);
+            assert(!MethodHandleNatives.isCallerSensitive(ctor));  // maybeBindCaller not relevant here
             return DirectMethodHandle.make(ctor).setVarargs(ctor);
         }
 
