@@ -27,7 +27,6 @@
  * @summary simple test for the Boot-Class-Path manifest attribute
  * @author Gabriel Adauto, Wily Technology, Robert Field, Sun Microsystems
  *
- * @modules java.instrument
  * @run build AppendToBootstrapClassPathTest ExampleForBootClassPath
  * @run shell AppendToBootstrapClassPathSetUp.sh
  * @run shell MakeJAR.sh bootclasspathAgent

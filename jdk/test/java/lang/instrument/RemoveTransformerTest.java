@@ -27,7 +27,6 @@
  * @summary simple remove of a transformer that was added
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build RemoveTransformerTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar RemoveTransformerTest RemoveTransformerTest

@@ -51,10 +51,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
         -D "JDK_FTYPE=0x2L", \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_solaris := -ldoor, \
-    LDFLAGS_windows := /ORDER:@$(JDK_TOPDIR)/make/mapfiles/libattach/reorder-windows-$(OPENJDK_TARGET_CPU), \
-    LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX), \
-    LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB) advapi32.lib psapi.lib, \
+    LDFLAGS_windows := -order:@$(JDK_TOPDIR)/make/mapfiles/libattach/reorder-windows-$(OPENJDK_TARGET_CPU), \
+    LIBS := $(JDKLIB_LIBS), \
+    LIBS_solaris := -ldoor, \
+    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib psapi.lib, \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libattach, \
     DEBUG_SYMBOLS := true))
 
