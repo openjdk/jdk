@@ -31,8 +31,6 @@
  */
 
 import static java.util.concurrent.Executors.defaultThreadFactory;
-import static java.util.concurrent.Executors.newFixedThreadPool;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

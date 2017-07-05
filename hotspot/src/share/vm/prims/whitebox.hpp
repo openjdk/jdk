@@ -33,9 +33,22 @@
 #include "oops/symbol.hpp"
 #include "runtime/interfaceSupport.hpp"
 
+// Unconditionally clear pedantic pending JNI checks
+class ClearPendingJniExcCheck : public StackObj {
+private:
+  JavaThread* _thread;
+public:
+  ClearPendingJniExcCheck(JNIEnv* env) : _thread(JavaThread::thread_from_jni_environment(env)) {}
+  ~ClearPendingJniExcCheck() {
+    _thread->clear_pending_jni_exception_check();
+  }
+};
+
 // Entry macro to transition from JNI to VM state.
 
-#define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header)
+#define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header) \
+  ClearPendingJniExcCheck _clearCheck(env);
+
 #define WB_END JNI_END
 #define WB_METHOD_DECLARE(result_type) extern "C" result_type JNICALL
 

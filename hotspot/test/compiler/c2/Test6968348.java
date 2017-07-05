@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,11 @@ import jdk.internal.misc.Unsafe;
 import java.lang.reflect.Field;
 
 public class Test6968348 {
-    static Unsafe unsafe;
+    static Unsafe unsafe = Unsafe.getUnsafe();
     static final long[] buffer = new long[4096];
     static int array_long_base_offset;
 
     public static void main(String[] args) throws Exception {
-        Class c = Test6968348.class.getClassLoader().loadClass("jdk.internal.misc.Unsafe");
-        Field f = c.getDeclaredField("theUnsafe");
-        f.setAccessible(true);
-        unsafe = (Unsafe)f.get(c);
         array_long_base_offset = unsafe.arrayBaseOffset(long[].class);
 
         for (int n = 0; n < 100000; n++) {

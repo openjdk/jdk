@@ -722,7 +722,7 @@ final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapperObject 
     /**
      * Determines if {@code type} contains signature polymorphic methods.
      */
-    private static boolean isSignaturePolymorphicHolder(final HotSpotResolvedObjectTypeImpl type) {
+    static boolean isSignaturePolymorphicHolder(final ResolvedJavaType type) {
         String name = type.getName();
         if (signaturePolymorphicHolders == null) {
             signaturePolymorphicHolders = compilerToVM().getSignaturePolymorphicHolders();

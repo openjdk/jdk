@@ -186,7 +186,9 @@ public class BasicImageReader implements AutoCloseable {
 
         if (result.getMajorVersion() != ImageHeader.MAJOR_VERSION ||
             result.getMinorVersion() != ImageHeader.MINOR_VERSION) {
-            throw new IOException("The image file \"" + name + "\" is not the correct version");
+            throw new IOException("The image file \"" + name + "\" is not " +
+                "the correct version. Major: " + result.getMajorVersion() +
+                ". Minor: " + result.getMinorVersion());
         }
 
         return result;
@@ -318,11 +320,11 @@ public class BasicImageReader implements AutoCloseable {
 
     private ByteBuffer readBuffer(long offset, long size) {
         if (offset < 0 || Integer.MAX_VALUE <= offset) {
-            throw new IndexOutOfBoundsException("offset");
+            throw new IndexOutOfBoundsException("Bad offset: " + offset);
         }
 
         if (size < 0 || Integer.MAX_VALUE <= size) {
-            throw new IndexOutOfBoundsException("size");
+            throw new IndexOutOfBoundsException("Bad size: " + size);
         }
 
         if (MAP_ALL) {
@@ -382,11 +384,13 @@ public class BasicImageReader implements AutoCloseable {
         long uncompressedSize = loc.getUncompressedSize();
 
         if (compressedSize < 0 || Integer.MAX_VALUE < compressedSize) {
-            throw new IndexOutOfBoundsException("Compressed size");
+            throw new IndexOutOfBoundsException(
+                "Bad compressed size: " + compressedSize);
         }
 
         if (uncompressedSize < 0 || Integer.MAX_VALUE < uncompressedSize) {
-            throw new IndexOutOfBoundsException("Uncompressed size");
+            throw new IndexOutOfBoundsException(
+                "Bad uncompressed size: " + uncompressedSize);
         }
 
         if (compressedSize == 0) {

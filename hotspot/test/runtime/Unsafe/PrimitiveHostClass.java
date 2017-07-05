@@ -39,16 +39,7 @@ import jdk.internal.misc.Unsafe;
 
 public class PrimitiveHostClass {
 
-    static final Unsafe U;
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            U = (Unsafe) theUnsafe.get(null);
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
-    }
+    static final Unsafe U = Unsafe.getUnsafe();
 
     public static void testVMAnonymousClass(Class<?> hostClass) {
 
