@@ -891,7 +891,10 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # Another source (specifying the time for start and end in the decree):
 # http://www.lemag.ma/Heure-d-ete-au-Maroc-jusqu-au-27-octobre_a75620.html
 
-# From Paul Eggert (2013-10-03):
+# From Sebastien Willemijns (2014-03-18):
+# http://www.afriquinfos.com/articles/2014/3/18/maroc-heure-dete-avancez-tous-horloges-247891.asp
+
+# From Paul Eggert (2014-03-19):
 # To estimate what the Moroccan government will do in future years,
 # transition dates for 2014 through 2038 were determined by running
 # the following program under GNU Emacs 24.3:

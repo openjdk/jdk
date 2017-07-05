@@ -37,6 +37,7 @@ import java.security.PrivilegedActionException;
 
 import sun.security.action.*;
 
+@SuppressWarnings("serial") // JDK implementation class
 class AppletProps extends Frame {
 
     TextField proxyHost;
@@ -194,7 +195,7 @@ class AppletProps extends Frame {
 
 /* 4066432 */
 /* Dialog class to display property-related errors to user */
-
+@SuppressWarnings("serial") // JDK implementation class
 class AppletPropsErrorDialog extends Dialog {
     public AppletPropsErrorDialog(Frame parent, String title, String message,
                 String buttonText) {

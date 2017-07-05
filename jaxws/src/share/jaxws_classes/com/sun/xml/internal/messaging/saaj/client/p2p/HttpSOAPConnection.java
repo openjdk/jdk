@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,7 +621,8 @@ class HttpSOAPConnection extends SOAPConnection {
 
             String plain = user + ":";
             byte[] nameBytes = plain.getBytes();
-            byte[] passwdBytes = password.getBytes();
+            byte[] passwdBytes = (password == null ? new byte[0] : password
+                    .getBytes());
 
             // concatenate user name and password bytes and encode them
             byte[] concat = new byte[nameBytes.length + passwdBytes.length];

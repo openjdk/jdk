@@ -543,16 +543,16 @@ jobject createNetworkInterface
      * Create a NetworkInterface object and populate it
      */
     netifObj = (*env)->NewObject(env, ni_class, ni_ctor);
+    CHECK_NULL_RETURN(netifObj, NULL);
     name = (*env)->NewStringUTF(env, ifs->name);
+    CHECK_NULL_RETURN(name, NULL);
     if (ifs->dNameIsUnicode) {
         displayName = (*env)->NewString(env, (PWCHAR)ifs->displayName,
                                        (jsize)wcslen ((PWCHAR)ifs->displayName));
     } else {
         displayName = (*env)->NewStringUTF(env, ifs->displayName);
     }
-    if (netifObj == NULL || name == NULL || displayName == NULL) {
-        return NULL;
-    }
+    CHECK_NULL_RETURN(displayName, NULL);
     (*env)->SetObjectField(env, netifObj, ni_nameID, name);
     (*env)->SetObjectField(env, netifObj, ni_displayNameID, displayName);
     (*env)->SetIntField(env, netifObj, ni_indexID, ifs->index);
@@ -682,23 +682,28 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
 
     /* get the name as a C string */
     name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
+    if (name_utf != NULL) {
 
-    /* Search by name */
-    curr = ifList;
-    while (curr != NULL) {
-        if (strcmp(name_utf, curr->name) == 0) {
-            break;
+        /* Search by name */
+        curr = ifList;
+        while (curr != NULL) {
+            if (strcmp(name_utf, curr->name) == 0) {
+                break;
+            }
+            curr = curr->next;
         }
-        curr = curr->next;
-    }
 
-    /* if found create a NetworkInterface */
-    if (curr != NULL) {;
-        netifObj = createNetworkInterface(env, curr, -1, NULL);
-    }
+        /* if found create a NetworkInterface */
+        if (curr != NULL) {;
+            netifObj = createNetworkInterface(env, curr, -1, NULL);
+        }
 
-    /* release the UTF string */
-    (*env)->ReleaseStringUTFChars(env, name, name_utf);
+        /* release the UTF string */
+        (*env)->ReleaseStringUTFChars(env, name, name_utf);
+    } else {
+        if (!(*env)->ExceptionCheck(env))
+            JNU_ThrowOutOfMemoryError(env, NULL);
+    }
 
     /* release the interface list */
     free_netif(ifList);

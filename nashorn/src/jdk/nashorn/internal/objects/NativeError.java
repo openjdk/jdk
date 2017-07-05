@@ -126,7 +126,7 @@ public final class NativeError extends ScriptObject {
      * @return NativeError instance
      */
     @Constructor
-    public static Object constructor(final boolean newObj, final Object self, final Object msg) {
+    public static NativeError constructor(final boolean newObj, final Object self, final Object msg) {
         return new NativeError(msg);
     }
 

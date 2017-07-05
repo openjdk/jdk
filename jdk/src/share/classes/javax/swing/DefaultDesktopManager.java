@@ -47,6 +47,7 @@ import java.beans.PropertyVetoException;
   * @author David Kloba
   * @author Steve Wilson
   */
+@SuppressWarnings("serial") // No Interesting Non-Transient State
 public class DefaultDesktopManager implements DesktopManager, java.io.Serializable {
     final static String HAS_BEEN_ICONIFIED_PROPERTY = "wasIconOnce";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,14 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
+import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -172,43 +175,187 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
      *
      * @param sdef service definition
      */
-    public final void initWSDLMap(ServiceDefinition sdef) {
-        this.serviceDefinition = sdef;
-        if(sdef==null) {
+    public final void initWSDLMap(final ServiceDefinition serviceDefinition) {
+        this.serviceDefinition = serviceDefinition;
+        if(serviceDefinition==null) {
             wsdls = Collections.emptyMap();
             revWsdls = Collections.emptyMap();
         } else {
-            wsdls = new HashMap<String, SDDocument>();  // wsdl=1 --> Doc
-            // Sort WSDL, Schema documents based on SystemId so that the same
-            // document gets wsdl=x mapping
-            Map<String, SDDocument> systemIds = new TreeMap<String, SDDocument>();
-            for (SDDocument sdd : sdef) {
-                if (sdd == sdef.getPrimary()) { // No sorting for Primary WSDL
-                    wsdls.put("wsdl", sdd);
-                    wsdls.put("WSDL", sdd);
-                } else {
-                    systemIds.put(sdd.getURL().toString(), sdd);
-                }
-            }
+            wsdls = new AbstractMap<String, SDDocument>() {
+                private Map<String, SDDocument> delegate = null;
 
-            int wsdlnum = 1;
-            int xsdnum = 1;
-            for (Entry<String, SDDocument> e : systemIds.entrySet()) {
-                SDDocument sdd = e.getValue();
-                if (sdd.isWSDL()) {
-                    wsdls.put("wsdl="+(wsdlnum++),sdd);
-                }
-                if (sdd.isSchema()) {
-                    wsdls.put("xsd="+(xsdnum++),sdd);
-                }
-            }
+                private synchronized Map<String, SDDocument> delegate() {
+                    if (delegate != null)
+                        return delegate;
 
-            revWsdls = new HashMap<SDDocument,String>();    // Doc --> wsdl=1
-            for (Entry<String,SDDocument> e : wsdls.entrySet()) {
-                if (!e.getKey().equals("WSDL")) {           // map Doc --> wsdl, not WSDL
-                    revWsdls.put(e.getValue(),e.getKey());
+                    delegate = new HashMap<String, SDDocument>();  // wsdl=1 --> Doc
+                    // Sort WSDL, Schema documents based on SystemId so that the same
+                    // document gets wsdl=x mapping
+                    Map<String, SDDocument> systemIds = new TreeMap<String, SDDocument>();
+                    for (SDDocument sdd : serviceDefinition) {
+                        if (sdd == serviceDefinition.getPrimary()) { // No sorting for Primary WSDL
+                            delegate.put("wsdl", sdd);
+                            delegate.put("WSDL", sdd);
+                        } else {
+                            systemIds.put(sdd.getURL().toString(), sdd);
+                        }
+                    }
+
+                    int wsdlnum = 1;
+                    int xsdnum = 1;
+                    for (Entry<String, SDDocument> e : systemIds.entrySet()) {
+                        SDDocument sdd = e.getValue();
+                        if (sdd.isWSDL()) {
+                            delegate.put("wsdl="+(wsdlnum++),sdd);
+                        }
+                        if (sdd.isSchema()) {
+                            delegate.put("xsd="+(xsdnum++),sdd);
+                        }
+                    }
+
+                    return delegate;
                 }
-            }
+
+                @Override
+                public void clear() {
+                    delegate().clear();
+                }
+
+                @Override
+                public boolean containsKey(Object arg0) {
+                    return delegate().containsKey(arg0);
+                }
+
+                @Override
+                public boolean containsValue(Object arg0) {
+                    return delegate.containsValue(arg0);
+                }
+
+                @Override
+                public SDDocument get(Object arg0) {
+                    return delegate().get(arg0);
+                }
+
+                @Override
+                public boolean isEmpty() {
+                    return delegate().isEmpty();
+                }
+
+                @Override
+                public Set<String> keySet() {
+                    return delegate().keySet();
+                }
+
+                @Override
+                public SDDocument put(String arg0, SDDocument arg1) {
+                    return delegate().put(arg0, arg1);
+                }
+
+                @Override
+                public void putAll(
+                        Map<? extends String, ? extends SDDocument> arg0) {
+                    delegate().putAll(arg0);
+                }
+
+                @Override
+                public SDDocument remove(Object arg0) {
+                    return delegate().remove(arg0);
+                }
+
+                @Override
+                public int size() {
+                    return delegate().size();
+                }
+
+                @Override
+                public Collection<SDDocument> values() {
+                    return delegate().values();
+                }
+
+                @Override
+                public Set<java.util.Map.Entry<String, SDDocument>> entrySet() {
+                    return delegate().entrySet();
+                }
+            };
+
+            revWsdls = new AbstractMap<SDDocument, String>() {
+                private Map<SDDocument, String> delegate = null;
+
+                private synchronized Map<SDDocument, String> delegate() {
+                    if (delegate != null)
+                        return delegate;
+
+                    delegate = new HashMap<SDDocument,String>();    // Doc --> wsdl=1
+                    for (Entry<String,SDDocument> e : wsdls.entrySet()) {
+                        if (!e.getKey().equals("WSDL")) {           // map Doc --> wsdl, not WSDL
+                            delegate.put(e.getValue(),e.getKey());
+                        }
+                    }
+
+                    return delegate;
+                }
+
+                @Override
+                public void clear() {
+                    delegate().clear();
+                }
+
+                @Override
+                public boolean containsKey(Object key) {
+                    return delegate().containsKey(key);
+                }
+
+                @Override
+                public boolean containsValue(Object value) {
+                    return delegate().containsValue(value);
+                }
+
+                @Override
+                public Set<Entry<SDDocument, String>> entrySet() {
+                    return delegate().entrySet();
+                }
+
+                @Override
+                public String get(Object key) {
+                    return delegate().get(key);
+                }
+
+                @Override
+                public boolean isEmpty() {
+                    // TODO Auto-generated method stub
+                    return super.isEmpty();
+                }
+
+                @Override
+                public Set<SDDocument> keySet() {
+                    return delegate().keySet();
+                }
+
+                @Override
+                public String put(SDDocument key, String value) {
+                    return delegate().put(key, value);
+                }
+
+                @Override
+                public void putAll(Map<? extends SDDocument, ? extends String> m) {
+                    delegate().putAll(m);
+                }
+
+                @Override
+                public String remove(Object key) {
+                    return delegate().remove(key);
+                }
+
+                @Override
+                public int size() {
+                    return delegate().size();
+                }
+
+                @Override
+                public Collection<String> values() {
+                    return delegate().values();
+                }
+            };
         }
     }
 
@@ -981,7 +1128,9 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
             }
         }
         try {
-            setPublishStatus(Boolean.getBoolean(HttpAdapter.class.getName() + ".publishStatusPage"));
+            if (System.getProperty(HttpAdapter.class.getName() + ".publishStatusPage") != null) {
+                setPublishStatus(Boolean.getBoolean(HttpAdapter.class.getName() + ".publishStatusPage"));
+            }
         } catch (SecurityException se) {
             if (LOGGER.isLoggable(Level.CONFIG)) {
                 LOGGER.log(Level.CONFIG, "Cannot read ''{0}'' property, using defaults.",

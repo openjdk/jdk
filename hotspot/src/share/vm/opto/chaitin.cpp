@@ -37,6 +37,7 @@
 #include "opto/indexSet.hpp"
 #include "opto/machnode.hpp"
 #include "opto/memnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
 

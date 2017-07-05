@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.swing.*;
 import javax.swing.plaf.*;
 import sun.swing.SwingUtilities2;
 import sun.swing.PrintColorUIResource;
-import sun.swing.SwingLazyValue;
 
 /**
  * The default theme for the {@code MetalLookAndFeel}.
@@ -51,6 +50,7 @@ import sun.swing.SwingLazyValue;
  * @since 1.5
  * @see MetalLookAndFeel#setCurrentTheme
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class OceanTheme extends DefaultMetalTheme {
     private static final ColorUIResource PRIMARY1 =
                               new ColorUIResource(0x6382BF);
@@ -98,6 +98,7 @@ public class OceanTheme extends DefaultMetalTheme {
 
     // InternalFrame Icon
     // Delegates to different icons based on button state
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class IFIcon extends IconUIResource {
         private Icon pressed;
 
@@ -129,9 +130,8 @@ public class OceanTheme extends DefaultMetalTheme {
      * @throws NullPointerException if {@code table} is {@code null}
      */
     public void addCustomEntriesToTable(UIDefaults table) {
-        Object focusBorder = new SwingLazyValue(
-                      "javax.swing.plaf.BorderUIResource$LineBorderUIResource",
-                      new Object[] {getPrimary1()});
+        UIDefaults.LazyValue focusBorder = t ->
+            new BorderUIResource.LineBorderUIResource(getPrimary1());
         // .30 0 DDE8F3 white secondary2
         java.util.List buttonGradient = Arrays.asList(
                  new Object[] {new Float(.3f), new Float(0f),

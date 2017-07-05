@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,12 +245,18 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
                  * getBytes() is called on a ByteInputStream.
                  */
                 if (!(is instanceof ByteInputStream)) {
-                    ByteOutputStream bout = new ByteOutputStream();
-                    bout.write(is);
+                    ByteOutputStream bout = null;
+                    try {
+                        bout = new ByteOutputStream();
+                        bout.write(is);
 
-                    // source.setInputStream(new ByteInputStream(...))
-                    FastInfosetReflection.FastInfosetSource_setInputStream(
-                        source, bout.newInputStream());
+                        // source.setInputStream(new ByteInputStream(...))
+                        FastInfosetReflection.FastInfosetSource_setInputStream(
+                                source, bout.newInputStream());
+                    } finally {
+                        if (bout != null)
+                            bout.close();
+                    }
                 }
                 this.source = source;
             }
@@ -811,4 +817,6 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     public String getSourceCharsetEncoding() {
         return sourceCharsetEncoding;
     }
+
+    public abstract String getSOAPNamespace();
 }

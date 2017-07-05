@@ -325,7 +325,7 @@ public class BasicButtonUI extends ButtonUI{
 
     /**
      * Method which renders the text of the current button.
-     * <p>
+     *
      * @param g Graphics context
      * @param b Current button to render
      * @param textRect Bounding rectangle to render the text.

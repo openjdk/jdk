@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import sun.swing.SwingUtilities2;
 /**
  * @author Scott Violet
  */
+@SuppressWarnings("serial") // Superclass not serializable
 public class GTKLookAndFeel extends SynthLookAndFeel {
     private static final boolean IS_22;
 
@@ -336,10 +337,9 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         // populate the table with the values from basic.
         super.initComponentDefaults(table);
 
-        Integer zero =  Integer.valueOf(0);
-        Object zeroBorder = new sun.swing.SwingLazyValue(
-            "javax.swing.plaf.BorderUIResource$EmptyBorderUIResource",
-            new Object[] {zero, zero, zero, zero});
+        UIDefaults.LazyValue zeroBorder =
+            t -> new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
+
         Object focusBorder = new GTKStyle.GTKLazyValue(
             "com.sun.java.swing.plaf.gtk.GTKPainter$ListTableFocusBorder",
             "getUnselectedCellBorder");

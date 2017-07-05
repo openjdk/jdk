@@ -271,7 +271,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     * by catching {@link IOException}s internally. Unchecked exceptions
     * and errors are not caught. Calling close on an already closed
     * loader has no effect.
-    * <p>
+    *
     * @exception IOException if closing any file opened by this class loader
     * resulted in an IOException. Any such exceptions are caught internally.
     * If only one is caught, then it is re-thrown. If more than one exception

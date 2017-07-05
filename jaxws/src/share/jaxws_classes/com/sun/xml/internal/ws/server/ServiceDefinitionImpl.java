@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import com.sun.xml.internal.ws.api.server.ServiceDefinition;
 import com.sun.xml.internal.ws.wsdl.SDDocumentResolver;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -47,7 +48,7 @@ import java.util.Map;
  * @author Kohsuke Kawaguchi
  */
 public final class ServiceDefinitionImpl implements ServiceDefinition, SDDocumentResolver {
-    private final List<SDDocumentImpl> docs;
+    private final Collection<SDDocumentImpl> docs;
 
     private final Map<String,SDDocumentImpl> bySystemId;
     private final @NotNull SDDocumentImpl primaryWsdl;
@@ -65,12 +66,20 @@ public final class ServiceDefinitionImpl implements ServiceDefinition, SDDocumen
      *      There must be at least one entry.
      *      The first document is considered {@link #getPrimary() primary}.
      */
-    public ServiceDefinitionImpl(List<SDDocumentImpl> docs, @NotNull SDDocumentImpl primaryWsdl) {
+    public ServiceDefinitionImpl(Collection<SDDocumentImpl> docs, @NotNull SDDocumentImpl primaryWsdl) {
         assert docs.contains(primaryWsdl);
         this.docs = docs;
         this.primaryWsdl = primaryWsdl;
+        this.bySystemId = new HashMap<String, SDDocumentImpl>();
+    }
 
-        this.bySystemId = new HashMap<String, SDDocumentImpl>(docs.size());
+    private boolean isInitialized = false;
+
+    private synchronized void init() {
+        if (isInitialized)
+            return;
+        isInitialized = true;
+
         for (SDDocumentImpl doc : docs) {
             bySystemId.put(doc.getURL().toExternalForm(),doc);
             doc.setFilters(filters);
@@ -95,6 +104,7 @@ public final class ServiceDefinitionImpl implements ServiceDefinition, SDDocumen
     }
 
     public Iterator<SDDocument> iterator() {
+        init();
         return (Iterator)docs.iterator();
     }
 
@@ -106,6 +116,7 @@ public final class ServiceDefinitionImpl implements ServiceDefinition, SDDocumen
      *      null if none is found.
      */
     public SDDocument resolve(String systemId) {
+        init();
         return bySystemId.get(systemId);
     }
 }

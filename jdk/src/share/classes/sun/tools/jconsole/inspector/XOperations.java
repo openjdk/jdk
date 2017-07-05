@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import sun.tools.jconsole.MBeansTab;
 import sun.tools.jconsole.JConsole;
 import sun.tools.jconsole.Messages;
 
+@SuppressWarnings("serial") // JDK implementation class
 public abstract class XOperations extends JPanel implements ActionListener {
 
     public final static String OPERATION_INVOCATION_EVENT =

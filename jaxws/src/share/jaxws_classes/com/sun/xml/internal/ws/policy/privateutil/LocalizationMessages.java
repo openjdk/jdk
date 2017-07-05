@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,18 @@ public final class LocalizationMessages {
      */
     public static String WSP_0081_UNABLE_TO_INSERT_CHILD(Object arg0, Object arg1) {
         return localizer.localize(localizableWSP_0081_UNABLE_TO_INSERT_CHILD(arg0, arg1));
+    }
+
+    public static Localizable localizableWSP_0096_ERROR_WHILE_COMBINE(Object arg0) {
+        return messageFactory.getMessage("WSP_0096_ERROR_WHILE_COMBINE", arg0);
+    }
+
+    /**
+     * WSP0096: Error while combining {0}.
+     *
+     */
+    public static String WSP_0096_ERROR_WHILE_COMBINE(Object arg0) {
+        return localizer.localize(localizableWSP_0096_ERROR_WHILE_COMBINE(arg0));
     }
 
     public static Localizable localizableWSP_0018_UNABLE_TO_ACCESS_POLICY_SOURCE_MODEL(Object arg0) {

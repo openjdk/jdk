@@ -48,7 +48,6 @@
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; }
 
 - (BOOL)runPageSetup {
     __block BOOL fResult = NO;
@@ -86,8 +85,8 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
         fResult = [self safePrintLoop:printerView withEnv:env];
     } else {
         // Retain these so they don't go away while we're in Java
-        CFRetain(self); // GC
-        if (printerView) CFRetain(printerView); // GC
+        [self retain];
+        [printerView retain];
 
         static JNF_CLASS_CACHE(jc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
         static JNF_STATIC_MEMBER_CACHE(jm_detachPrintLoop, jc_CPrinterJob, "detachPrintLoop", "(JJ)V");
@@ -134,8 +133,8 @@ JNF_COCOA_ENTER(env);
     [model safePrintLoop:arg withEnv:env];
 
     // These are to match the retains in runPrintLoopWithView:
-    if (model) CFRelease(model); // GC
-    if (arg) CFRelease(arg); // GC
+    [model release];
+    [arg release];
 
 JNF_COCOA_EXIT(env);
 }

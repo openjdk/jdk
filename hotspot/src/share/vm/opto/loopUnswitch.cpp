@@ -25,7 +25,9 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 
 //================= Loop Unswitching =====================

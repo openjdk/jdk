@@ -759,21 +759,21 @@ public class WeakHashMap<K,V>
 
     private abstract class HashIterator<T> implements Iterator<T> {
         private int index;
-        private Entry<K,V> entry = null;
-        private Entry<K,V> lastReturned = null;
+        private Entry<K,V> entry;
+        private Entry<K,V> lastReturned;
         private int expectedModCount = modCount;
 
         /**
          * Strong reference needed to avoid disappearance of key
          * between hasNext and next
          */
-        private Object nextKey = null;
+        private Object nextKey;
 
         /**
          * Strong reference needed to avoid disappearance of key
          * between nextEntry() and any use of the entry
          */
-        private Object currentKey = null;
+        private Object currentKey;
 
         HashIterator() {
             index = isEmpty() ? 0 : table.length;
@@ -848,7 +848,7 @@ public class WeakHashMap<K,V>
 
     // Views
 
-    private transient Set<Map.Entry<K,V>> entrySet = null;
+    private transient Set<Map.Entry<K,V>> entrySet;
 
     /**
      * Returns a {@link Set} view of the keys contained in this map.

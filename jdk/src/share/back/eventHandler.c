@@ -1682,7 +1682,7 @@ HandlerNode *
 eventHandler_createPermanentInternal(EventIndex ei, HandlerFunction func)
 {
     return createInternal(ei, func, NULL,
-                          NULL, NULL, (jlocation)NULL, JNI_TRUE);
+                          NULL, NULL, 0, JNI_TRUE);
 }
 
 HandlerNode *
@@ -1691,7 +1691,7 @@ eventHandler_createInternalThreadOnly(EventIndex ei,
                                       jthread thread)
 {
     return createInternal(ei, func, thread,
-                          NULL, NULL, (jlocation)NULL, JNI_FALSE);
+                          NULL, NULL, 0, JNI_FALSE);
 }
 
 HandlerNode *

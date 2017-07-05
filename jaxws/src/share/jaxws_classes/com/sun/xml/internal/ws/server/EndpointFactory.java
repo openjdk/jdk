@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,11 +89,16 @@ import javax.xml.ws.soap.SOAPBinding;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -189,12 +194,23 @@ public class EndpointFactory {
             invoker = InstanceResolver.createDefault(implType).createInvoker();
         }
 
-        List<SDDocumentSource> md = new ArrayList<SDDocumentSource>();
-        if(metadata!=null)
+        // Performance analysis indicates that reading and parsing imported schemas is
+        // a major component of Endpoint creation time.  Therefore, modify SDDocumentSource
+        // handling to delay iterating collection as long as possible.
+        Collection<SDDocumentSource> md = new CollectionCollection<SDDocumentSource>();
+        if(primaryWsdl!=null) {
+            if(metadata!=null) {
+                Iterator<? extends SDDocumentSource> it = metadata.iterator();
+                if (it.hasNext() && primaryWsdl.equals(it.next()))
+                    md.addAll(metadata);
+                else {
+                    md.add(primaryWsdl);
+                    md.addAll(metadata);
+                }
+            } else
+                md.add(primaryWsdl);
+        } else if(metadata!=null)
             md.addAll(metadata);
-
-        if(primaryWsdl!=null && !md.contains(primaryWsdl))
-            md.add(primaryWsdl);
 
         if(container==null)
             container = ContainerResolver.getInstance().getContainer();
@@ -227,7 +243,7 @@ public class EndpointFactory {
         }
 
         // Categorises the documents as WSDL, Schema etc
-        List<SDDocumentImpl> docList = categoriseMetadata(md, serviceName, portTypeName);
+        Collection<SDDocumentImpl> docList = categoriseMetadata(md.iterator(), serviceName, portTypeName);
         // Finds the primary WSDL and makes sure that metadata doesn't have
         // two concrete or abstract WSDLs
         SDDocumentImpl primaryDoc = primaryWsdl != null ? SDDocumentImpl.create(primaryWsdl,serviceName,portTypeName) : findPrimary(docList);
@@ -326,50 +342,87 @@ public class EndpointFactory {
      *
      * @param primaryDoc primary WSDL doc
      * @param docList complete metadata
-     * @return new metadata that doesn't contain extraneous documnets.
+     * @return new metadata that doesn't contain extraneous documents.
      */
-    private static List<SDDocumentImpl> findMetadataClosure(SDDocumentImpl primaryDoc, List<SDDocumentImpl> docList, EntityResolver resolver) {
-        // create a map for old metadata
-        Map<String, SDDocumentImpl> oldMap = new HashMap<String, SDDocumentImpl>();
-        for(SDDocumentImpl doc : docList) {
-            oldMap.put(doc.getSystemId().toString(), doc);
-        }
-        // create a map for new metadata
-        Map<String, SDDocumentImpl> newMap = new HashMap<String, SDDocumentImpl>();
-        newMap.put(primaryDoc.getSystemId().toString(), primaryDoc);
+    private static Collection<SDDocumentImpl> findMetadataClosure(
+            final SDDocumentImpl primaryDoc, final Collection<SDDocumentImpl> docList, final EntityResolver resolver) {
+        return new AbstractCollection<SDDocumentImpl>() {
+            @Override
+            public Iterator<SDDocumentImpl> iterator() {
+                // create a map for old metadata
+                Map<String, SDDocumentImpl> oldMap = new HashMap<String, SDDocumentImpl>();
+                Iterator<SDDocumentImpl> oldDocs = docList.iterator();
 
-        List<String> remaining = new ArrayList<String>();
-        remaining.addAll(primaryDoc.getImports());
-        while(!remaining.isEmpty()) {
-            String url = remaining.remove(0);
-            SDDocumentImpl doc = oldMap.get(url);
-            if (doc == null) {
-                // old metadata doesn't have this imported doc, may be external
-                if (resolver != null) {
-                        try {
-                                InputSource source = resolver.resolveEntity(null, url);
-                                if (source != null) {
-                                        MutableXMLStreamBuffer xsb = new MutableXMLStreamBuffer();
-                                        XMLStreamReader reader = XmlUtil.newXMLInputFactory(true).createXMLStreamReader(source.getByteStream());
-                                        xsb.createFromXMLStreamReader(reader);
+                // create a map for new metadata
+                Map<String, SDDocumentImpl> newMap = new HashMap<String, SDDocumentImpl>();
+                newMap.put(primaryDoc.getSystemId().toString(), primaryDoc);
 
-                                        SDDocumentSource sdocSource = SDDocumentImpl.create(new URL(url), xsb);
-                                        doc = SDDocumentImpl.create(sdocSource, null, null);
-                                }
-                        } catch (Exception ex) {
-                                ex.printStackTrace();
+                List<String> remaining = new ArrayList<String>();
+                remaining.addAll(primaryDoc.getImports());
+                while(!remaining.isEmpty()) {
+                    String url = remaining.remove(0);
+                    SDDocumentImpl doc = oldMap.get(url);
+                    if (doc == null) {
+                        while (oldDocs.hasNext()) {
+                            SDDocumentImpl old = oldDocs.next();
+                            String id = old.getSystemId().toString();
+                            oldMap.put(id, old);
+                            if (id.equals(url)) {
+                                doc = old;
+                                break;
+                            }
                         }
+
+                        if (doc == null) {
+                            // old metadata doesn't have this imported doc, may be external
+                                if (resolver != null) {
+                                        try {
+                                                InputSource source = resolver.resolveEntity(null, url);
+                                                if (source != null) {
+                                                        MutableXMLStreamBuffer xsb = new MutableXMLStreamBuffer();
+                                                        XMLStreamReader reader = XmlUtil.newXMLInputFactory(true).createXMLStreamReader(source.getByteStream());
+                                                        xsb.createFromXMLStreamReader(reader);
+
+                                                        SDDocumentSource sdocSource = SDDocumentImpl.create(new URL(url), xsb);
+                                                        doc = SDDocumentImpl.create(sdocSource, null, null);
+                                                }
+                                        } catch (Exception ex) {
+                                                ex.printStackTrace();
+                                        }
+                                }
+                        }
+                    }
+                    // Check if new metadata already contains this doc
+                    if (doc != null && !newMap.containsKey(url)) {
+                        newMap.put(url, doc);
+                        remaining.addAll(doc.getImports());
+                    }
                 }
+
+                return newMap.values().iterator();
             }
-            // Check if new metadata already contains this doc
-            if (doc != null && !newMap.containsKey(url)) {
-                newMap.put(url, doc);
-                remaining.addAll(doc.getImports());
+
+            @Override
+            public int size() {
+                int size = 0;
+                Iterator<SDDocumentImpl> it = iterator();
+                while (it.hasNext()) {
+                    it.next();
+                    size++;
+                }
+                return size;
             }
-        }
-        List<SDDocumentImpl> newMetadata = new ArrayList<SDDocumentImpl>();
-        newMetadata.addAll(newMap.values());
-        return newMetadata;
+
+            @Override
+            public void clear() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return docList.isEmpty();
+            }
+        };
     }
 
     private static <T> void processHandlerAnnotation(WSBinding binding, Class<T> implType, QName serviceName, QName portName) {
@@ -599,7 +652,7 @@ public class EndpointFactory {
      * Generates the WSDL and XML Schema for the endpoint if necessary
      * It generates WSDL only for SOAP1.1, and for XSOAP1.2 bindings
      */
-    private static SDDocumentImpl generateWSDL(WSBinding binding, AbstractSEIModelImpl seiModel, List<SDDocumentImpl> docs,
+    private static SDDocumentImpl generateWSDL(WSBinding binding, AbstractSEIModelImpl seiModel, Collection<SDDocumentImpl> docs,
                                                Container container, Class implType) {
         BindingID bindingId = binding.getBindingId();
         if (!bindingId.canGenerateWSDL()) {
@@ -634,14 +687,59 @@ public class EndpointFactory {
     /**
      * Builds {@link SDDocumentImpl} from {@link SDDocumentSource}.
      */
-    private static List<SDDocumentImpl> categoriseMetadata(
-        List<SDDocumentSource> src, QName serviceName, QName portTypeName) {
+    private static Collection<SDDocumentImpl> categoriseMetadata(
+        final Iterator<SDDocumentSource> src, final QName serviceName, final QName portTypeName) {
 
-        List<SDDocumentImpl> r = new ArrayList<SDDocumentImpl>(src.size());
-        for (SDDocumentSource doc : src) {
-            r.add(SDDocumentImpl.create(doc,serviceName,portTypeName));
-        }
-        return r;
+        return new AbstractCollection<SDDocumentImpl>() {
+            private final Collection<SDDocumentImpl> theConverted = new ArrayList<SDDocumentImpl>();
+
+            @Override
+            public boolean add(SDDocumentImpl arg0) {
+                return theConverted.add(arg0);
+            }
+
+            @Override
+            public Iterator<SDDocumentImpl> iterator() {
+                return new Iterator<SDDocumentImpl>() {
+                    private Iterator<SDDocumentImpl> convIt = theConverted.iterator();
+                    @Override
+                    public boolean hasNext() {
+                        if (convIt != null && convIt.hasNext())
+                            return true;
+                        return src.hasNext();
+                    }
+
+                    @Override
+                    public SDDocumentImpl next() {
+                        if (convIt != null && convIt.hasNext())
+                            return convIt.next();
+                        convIt = null;
+                        if (!src.hasNext())
+                            throw new NoSuchElementException();
+                        SDDocumentImpl next = SDDocumentImpl.create(src.next(),serviceName,portTypeName);
+                        theConverted.add(next);
+                        return next;
+                    }
+
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+
+            @Override
+            public int size() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                if (!theConverted.isEmpty())
+                    return false;
+                return !src.hasNext();
+            }
+        };
     }
 
     /**
@@ -675,7 +773,7 @@ public class EndpointFactory {
      * @return primay wsdl document, null if is not there in the docList
      *
      */
-    private static @Nullable SDDocumentImpl findPrimary(@NotNull List<SDDocumentImpl> docList) {
+    private static @Nullable SDDocumentImpl findPrimary(@NotNull Collection<SDDocumentImpl> docList) {
         SDDocumentImpl primaryDoc = null;
         boolean foundConcrete = false;
         boolean foundAbstract = false;
@@ -710,7 +808,7 @@ public class EndpointFactory {
      * @param container container in which this service is running
      * @return non-null wsdl port object
      */
-    private static @NotNull WSDLPort getWSDLPort(SDDocumentSource primaryWsdl, List<? extends SDDocumentSource> metadata,
+    private static @NotNull WSDLPort getWSDLPort(SDDocumentSource primaryWsdl, Collection<? extends SDDocumentSource> metadata,
                                                      @NotNull QName serviceName, @NotNull QName portName, Container container,
                                                      EntityResolver resolver) {
         URL wsdlUrl = primaryWsdl.getSystemId();
@@ -746,13 +844,12 @@ public class EndpointFactory {
      * {@link XMLEntityResolver} that can resolve to {@link SDDocumentSource}s.
      */
     private static final class EntityResolverImpl implements XMLEntityResolver {
-        private Map<String,SDDocumentSource> metadata = new HashMap<String,SDDocumentSource>();
+        private Iterator<? extends SDDocumentSource> origMetadata;
+        private Map<String,SDDocumentSource> metadata = new ConcurrentHashMap<String,SDDocumentSource>();
         private EntityResolver resolver;
 
-        public EntityResolverImpl(List<? extends SDDocumentSource> metadata, EntityResolver resolver) {
-            for (SDDocumentSource doc : metadata) {
-                this.metadata.put(doc.getSystemId().toExternalForm(),doc);
-            }
+        public EntityResolverImpl(Collection<? extends SDDocumentSource> metadata, EntityResolver resolver) {
+            this.origMetadata = metadata.iterator();
             this.resolver = resolver;
         }
 
@@ -761,6 +858,15 @@ public class EndpointFactory {
                 SDDocumentSource doc = metadata.get(systemId);
                 if (doc != null)
                     return new Parser(doc);
+                synchronized(this) {
+                    while(origMetadata.hasNext()) {
+                        doc = origMetadata.next();
+                        String extForm = doc.getSystemId().toExternalForm();
+                        this.metadata.put(extForm,doc);
+                        if (systemId.equals(extForm))
+                            return new Parser(doc);
+                    }
+                }
             }
             if (resolver != null) {
                 try {
@@ -780,4 +886,72 @@ public class EndpointFactory {
 
     private static final Logger logger = Logger.getLogger(
         com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".server.endpoint");
+
+    private static class CollectionCollection<T> extends AbstractCollection<T> {
+
+        private final Collection<Collection<? extends T>> cols = new ArrayList<Collection<? extends T>>();
+
+        @Override
+        public Iterator<T> iterator() {
+            final Iterator<Collection<? extends T>> colIt = cols.iterator();
+            return new Iterator<T>() {
+                private Iterator<? extends T> current = null;
+
+                @Override
+                public boolean hasNext() {
+                    if (current == null || !current.hasNext()) {
+                        do {
+                            if (!colIt.hasNext())
+                                return false;
+                            current = colIt.next().iterator();
+                        } while (!current.hasNext());
+                        return true;
+                    }
+                    return true;
+                }
+
+                @Override
+                public T next() {
+                    if (!hasNext())
+                        throw new NoSuchElementException();
+                    return current.next();
+                }
+
+                @Override
+                public void remove() {
+                    if (current == null)
+                        throw new IllegalStateException();
+                    current.remove();
+                }
+            };
+        }
+
+        @Override
+        public int size() {
+            int size = 0;
+            for (Collection<? extends T> c : cols)
+                size += c.size();
+            return size;
+        }
+
+        @Override
+        public boolean add(T arg0) {
+            return cols.add(Collections.singleton(arg0));
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> arg0) {
+            return cols.add(arg0);
+        }
+
+        @Override
+        public void clear() {
+            cols.clear();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return !iterator().hasNext();
+        }
+    }
 }

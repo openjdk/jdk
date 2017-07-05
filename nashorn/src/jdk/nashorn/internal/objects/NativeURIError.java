@@ -93,7 +93,7 @@ public final class NativeURIError extends ScriptObject {
      * @return new URIError
      */
     @Constructor(name = "URIError")
-    public static Object constructor(final boolean newObj, final Object self, final Object msg) {
+    public static NativeURIError constructor(final boolean newObj, final Object self, final Object msg) {
         return new NativeURIError(msg);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.corba.se.spi.orb;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map ;
 import java.util.HashMap ;
 import java.util.Properties ;
@@ -97,8 +99,7 @@ import com.sun.corba.se.impl.logging.OMGSystemException ;
 
 import com.sun.corba.se.impl.presentation.rmi.PresentationManagerImpl ;
 
-import sun.awt.AppContext;
-import sun.corba.SharedSecrets;
+import sun.misc.JavaAWTAccess;
 
 public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     implements Broker, TypeCodeFactory
@@ -170,6 +171,13 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     // representing LogDomain and ExceptionGroup.
     private Map wrapperMap ;
 
+    static class Holder {
+        static final PresentationManager defaultPresentationManager =
+            setupPresentationManager();
+    }
+
+    private static final Map<Object, PresentationManager> pmContexts = new HashMap<>();
+
     private static Map staticWrapperMap = new ConcurrentHashMap();
 
     protected MonitoringManager monitoringManager;
@@ -201,8 +209,9 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
 
                         try {
                             // First try the configured class name, if any
-                            Class<?> cls = SharedSecrets.getJavaCorbaAccess().loadClass( className ) ;
-                            sff = (PresentationManager.StubFactoryFactory)cls.newInstance() ;
+                            Class<?> cls =
+                                sun.corba.SharedSecrets.getJavaCorbaAccess().loadClass(className);
+                            sff = (PresentationManager.StubFactoryFactory)cls.newInstance();
                         } catch (Exception exc) {
                             // Use the default. Log the error as a warning.
                             staticWrapper.errorInSettingDynamicStubFactoryFactory(
@@ -235,13 +244,34 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
      */
     public static PresentationManager getPresentationManager()
     {
-        AppContext ac = AppContext.getAppContext();
-        PresentationManager pm = (PresentationManager) ac.get(PresentationManager.class);
-        if (pm == null) {
-            pm = setupPresentationManager();
-            ac.put(PresentationManager.class, pm);
+        SecurityManager sm = System.getSecurityManager();
+        JavaAWTAccess javaAwtAccess = sun.misc.SharedSecrets.getJavaAWTAccess();
+        if (sm != null && javaAwtAccess != null) {
+            Object appletContext;
+            try {
+                Class<?> clazz = JavaAWTAccess.class;
+                Method method = clazz.getMethod("getAppletContext");
+                appletContext = method.invoke(javaAwtAccess);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                InternalError err = new InternalError();
+                err.initCause(e);
+                throw err;
+            }
+
+            if (appletContext != null) {
+                synchronized (pmContexts) {
+                    PresentationManager pm = pmContexts.get(appletContext);
+                    if (pm == null) {
+                        pm = setupPresentationManager();
+                        pmContexts.put(appletContext, pm);
+                    }
+                    return pm;
+                }
+            }
         }
-        return pm;
+
+        // No security manager or AppletAppContext
+        return Holder.defaultPresentationManager;
     }
 
     /** Get the appropriate StubFactoryFactory.  This

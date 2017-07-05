@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.*;
  * <p><b>This API is a Sun Microsystems internal API  and is subject
  * to change without notice.</b></p>
  */
-
+@SuppressWarnings("serial") // JDK implementation class
 abstract public class Enumerated  implements Serializable {
 
   /**

@@ -1,72 +1,98 @@
-." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH native2ascii 1 "07 May 2011"
-
-.LP
-.SH "名前"
-native2ascii \- ネイティブ \- ASCII コンバータ
-.LP
-.LP
-サポートされる文字エンコーディングの文字のファイルを ASCII または Unicode エスケープあるいはその両方のファイルに変換します。その逆の変換も行います。
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: native2ascii
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 国際化ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "native2ascii" "1" "2013年11月21日" "JDK 8" "国際化ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+native2ascii \- サポートされている任意の文字エンコーディングの文字を含むファイルを、ASCIIおよびUnicodeでエスケープされたファイルに変換して(またはその逆)、ローカライズ可能なアプリケーションを作成します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f4native2ascii\fP\f2 [options] [inputfile [outputfile]]\fP
-.fl
+\fInative2ascii\fR [ \fIinputfile\fR ] [ \fIoutputfile\fR ]
 .fi
-
-.LP
-.SH "説明"
-.LP
-.LP
-\f2native2ascii\fP Java 実行環境でサポートされる文字エンコーディングにエンコードされたファイルを、ASCII でエンコードされたファイルに変換します。ASCII 文字セットの一部でないすべての文字で Unicode エスケープ (「\\uxxxx」の表記) を使用します。このプロセスは、ISO\-8859\-1 文字セットに含まれない文字が含まれているプロパティーファイルで必要です。このツールは、その逆の変換を実行することもできます。
-.LP
-.LP
-\f2outputfile\fP を省略した場合、標準出力に出力されます。さらに、 \f2inputfile\fP を省略した場合、標準入力から入力されます。
-.LP
-.SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-reverse 
-逆の処理を行います。つまり、ISO\-8859\-1 で Unicode エスケープを使ってエンコードされたファイルを、Java 実行環境でサポートされる文字エンコーディングのファイルに変換します。
-.br
-.br
-.TP 3
-\-encoding encoding_name 
-変換処理で使用する文字エンコーディングの名前を指定します。このオプションが存在しない場合は、デフォルトの文字エンコーディング ( \f2java.nio.charset.Charset.defaultCharset\fP メソッドで定義される) が使用されます。 \f2encoding_name\fP 文字列は、
-.na
-\f4「サポートされている文字列エンコーディング」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/intl/encoding.doc.htmlドキュメントに示されている、Java 実行環境でサポートされる文字エンコーディングの名前にする必要があります。
-.br
-.br
-.TP 3
-\-Joption 
-Java 仮想マシンに \f2option\fP を渡します。\f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+.if n \{\
 .RE
-
-.LP
- 
+.\}
+.PP
+\fIinputfile\fR
+.RS 4
+ASCIIに変換するエンコードされたファイル。
+.RE
+.PP
+\fIoutputfile\fR
+.RS 4
+変換されたASCIIファイル。
+.RE
+.SH "説明"
+.PP
+\fInative2ascii\fRコマンドは、ASCIIキャラクタ・セットに含まれないすべての文字にUnicodeエスケープ(\fI\eu\fR\fIxxxx\fR)表記法を使用して、Java Runtime Environment (JRE)でサポートされているエンコードされたファイルを、ASCIIでエンコードされたファイルに変換します。このプロセスは、ISO\-8859\-1文字セットに含まれない文字が含まれているプロパティ・ファイルで必要です。このツールは、その逆の変換を実行することもできます。
+.PP
+\fIoutputfile\fR値を省略した場合、標準出力に出力されます。さらに、\fIinputfile\fR値を省略した場合、標準入力から入力されます。
+.SH "オプション"
+.PP
+\-reverse
+.RS 4
+逆の処理を行います。つまり、ISO\-8859\-1でUnicodeエスケープを使用してエンコードされたファイルを、JREでサポートされる文字エンコーディングのファイルに変換します。
+.RE
+.PP
+\-encoding \fIencoding_name\fR
+.RS 4
+変換処理で使用する文字エンコーディングの名前を指定します。このオプションが存在しない場合は、デフォルトの文字エンコーディング(\fIjava\&.nio\&.charset\&.Charset\&.defaultCharset\fRメソッドで定義された)が使用されます。\fIencoding_name\fR文字列は、JREでサポートされている文字エンコーディングの名前にする必要があります。http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/intl/encoding\&.doc\&.htmlにある
+「サポートされているエンコーディング」を参照してください
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+Java仮想マシン(JVM)に\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.RE
+.br
+'pl 8.5i
+'bp

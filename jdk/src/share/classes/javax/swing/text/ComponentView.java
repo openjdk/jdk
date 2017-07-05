@@ -374,6 +374,7 @@ public class ComponentView extends View  {
      * cached between the associated view and the
      * container hosting this component).
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     class Invalidator extends Container implements PropertyChangeListener {
 
         // NOTE: When we remove this class we are going to have to some

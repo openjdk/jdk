@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -492,9 +492,11 @@ public class SAAJMessage extends Message {
      * the {@link com.sun.xml.internal.ws.api.message.Message} implementation itself.
      */
     public Message copy() {
+        Message result = null;
         try {
+            access();
             if (!parsedMessage) {
-                return new SAAJMessage(readAsSOAPMessage());
+                result = new SAAJMessage(readAsSOAPMessage());
             } else {
                 SOAPMessage msg = soapVersion.getMessageFactory().createMessage();
                 SOAPBody newBody = msg.getSOAPPart().getEnvelope().getBody();
@@ -503,8 +505,9 @@ public class SAAJMessage extends Message {
                     newBody.appendChild(n);
                 }
                 addAttributes(newBody, bodyAttrs);
-                return new SAAJMessage(getHeaders(), getAttachments(), msg, soapVersion);
+                result = new SAAJMessage(getHeaders(), getAttachments(), msg, soapVersion);
             }
+            return result.copyFrom(this);
         } catch (SOAPException e) {
             throw new WebServiceException(e);
         }

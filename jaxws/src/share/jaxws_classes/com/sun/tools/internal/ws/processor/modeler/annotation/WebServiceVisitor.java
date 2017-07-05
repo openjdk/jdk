@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import com.sun.tools.internal.ws.util.ClassNameInfo;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAPStyle;
 import com.sun.xml.internal.ws.model.RuntimeModeler;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.jws.Oneway;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
@@ -609,12 +608,6 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
     }
 
     protected boolean isLegalSei(TypeElement interfaceElement) {
-        for (VariableElement field : ElementFilter.fieldsIn(interfaceElement.getEnclosedElements()))
-            if (field.getConstantValue() != null) {
-                builder.processError(WebserviceapMessages.WEBSERVICEAP_SEI_CANNOT_CONTAIN_CONSTANT_VALUES(
-                        interfaceElement.getQualifiedName(), field.getSimpleName()));
-                return false;
-            }
         return methodsAreLegal(interfaceElement);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,15 @@ import org.xml.sax.SAXNotSupportedException;
  * Pool of SAXParser objects
  */
 public class ParserPool {
-    private final BlockingQueue queue;
+    private final BlockingQueue<SAXParser> queue;
     private SAXParserFactory factory;
-    private int capacity;
 
     public ParserPool(int capacity) {
-        this.capacity = capacity;
-        queue = new ArrayBlockingQueue(capacity);
+        queue = new ArrayBlockingQueue<SAXParser>(capacity);
         //factory = SAXParserFactory.newInstance();
         factory = new com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl();
         factory.setNamespaceAware(true);
-        for (int i=0; i < capacity; i++) {
+        for (int i = 0; i < capacity; i++) {
            try {
                 queue.put(factory.newSAXParser());
             } catch (InterruptedException ex) {
@@ -75,8 +73,8 @@ public class ParserPool {
 
     }
 
-    public void put(SAXParser parser) {
-        queue.offer(parser);
+    public boolean put(SAXParser parser) {
+        return queue.offer(parser);
     }
 
     public void returnParser(SAXParser saxParser) {

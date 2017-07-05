@@ -267,6 +267,20 @@ ifndef OPENJDK
       $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS_API_DIR)/classes
 endif
 
+# No SCTP implementation on Mac OS X or AIX. These classes should be excluded.
+SCTP_IMPL_CLASSES = \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/AssociationChange.java\
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/AssociationImpl.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/PeerAddrChange.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/ResultContainer.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpNet.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpNotification.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SendFailed.java \
+    $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/Shutdown.java
+
 MACOSX_SRC_DIRS :=
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/classes
@@ -278,9 +292,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java \
       $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
       $(JDK_TOPDIR)/src/solaris/classes/sun/nio/fs/GnomeFileTypeDetector.java \
-      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
-      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
-      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
+  EXFILES += $(SCTP_IMPL_CLASSES)
 
 endif
 
@@ -302,9 +314,7 @@ ifeq ($(OPENJDK_TARGET_OS),aix)
      AIX_SRC_DIRS += $(JDK_TOPDIR)/src/aix/classes
 
   # these files are duplicated in AIX_SRC_DIRS
-  EXFILES += $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
-      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
-      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
+  EXFILES += $(SCTP_IMPL_CLASSES)
 endif
 
 # The JDK_USER_DEFINED_FILTER is a poor man's incremental build: by specifying

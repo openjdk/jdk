@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,8 @@ public class TypeConstraintException extends java.lang.RuntimeException {
      * Exception reference
      *
      */
-    private volatile Throwable linkedException;
+    private Throwable linkedException;
 
-    static final long serialVersionUID = -3059799699420143848L;
 
     /**
      * Construct a TypeConstraintException with the specified detail message.  The
@@ -142,7 +141,7 @@ public class TypeConstraintException extends java.lang.RuntimeException {
      *                  indicates that the linked exception does not exist or
      *                  is unknown).
      */
-    public void setLinkedException( Throwable exception ) {
+    public synchronized void setLinkedException( Throwable exception ) {
         this.linkedException = exception;
     }
 

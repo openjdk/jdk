@@ -116,7 +116,7 @@ public final class NativeDebug extends ScriptObject {
      * @return true if reference identity
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object identical(final Object self, final Object obj1, final Object obj2) {
+    public static boolean identical(final Object self, final Object obj1, final Object obj2) {
         return obj1 == obj2;
     }
 
@@ -144,7 +144,7 @@ public final class NativeDebug extends ScriptObject {
      * @return return {@link Object#equals(Object)} for objects.
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object equals(final Object self, final Object obj1, final Object obj2) {
+    public static boolean equals(final Object self, final Object obj1, final Object obj2) {
         return Objects.equals(obj1, obj2);
     }
 
@@ -156,7 +156,7 @@ public final class NativeDebug extends ScriptObject {
      * @return Java string representation of {@code obj}
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object toJavaString(final Object self, final Object obj) {
+    public static String toJavaString(final Object self, final Object obj) {
         return Objects.toString(obj);
     }
 
@@ -168,7 +168,7 @@ public final class NativeDebug extends ScriptObject {
      * @return string representation
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object toIdentString(final Object self, final Object obj) {
+    public static String toIdentString(final Object self, final Object obj) {
         if (obj == null) {
             return "null";
         }
@@ -185,7 +185,7 @@ public final class NativeDebug extends ScriptObject {
      * @return listener count
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object getListenerCount(final Object self, final Object obj) {
+    public static int getListenerCount(final Object self, final Object obj) {
         return (obj instanceof ScriptObject) ? PropertyListeners.getListenerCount((ScriptObject) obj) : 0;
     }
 

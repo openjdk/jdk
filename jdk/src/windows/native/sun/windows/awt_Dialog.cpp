@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include "jni_util.h"
 #include "awt_Toolkit.h"
 #include "awt_Dialog.h"
 #include "awt_Window.h"
@@ -457,18 +458,25 @@ void AwtDialog::ModalActivateNextWindow(HWND dialogHWnd,
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    jclass wwindowPeerCls = env->FindClass("sun/awt/windows/WWindowPeer");
-    jmethodID getActiveWindowsMID = env->GetStaticMethodID(wwindowPeerCls,
-                                                           "getActiveWindowHandles", "()[J");
-    DASSERT(getActiveWindowsMID != NULL);
-    jlongArray windows = (jlongArray)(env->CallStaticObjectMethod(wwindowPeerCls,
-                                                                  getActiveWindowsMID));
+    jboolean exc;
+    jlongArray windows = (jlongArray) JNU_CallStaticMethodByName
+                                            (env,
+                                             &exc,
+                                             "sun/awt/windows/WWindowPeer",
+                                             "getActiveWindowHandles",
+                                             "()[J").l;
+    if (exc == JNI_TRUE) {
+        throw std::bad_alloc();
+    }
     if (windows == NULL) {
         return;
     }
 
     jboolean isCopy;
     jlong *ws = env->GetLongArrayElements(windows, &isCopy);
+    if (ws == NULL) {
+        throw std::bad_alloc();
+    }
     int windowsCount = env->GetArrayLength(windows);
     for (int i = windowsCount - 1; i >= 0; i--) {
         HWND w = (HWND)ws[i];
@@ -744,11 +752,13 @@ Java_java_awt_Dialog_initIDs(JNIEnv *env, jclass cls)
     /* java.awt.Dialog fields and methods */
     AwtDialog::titleID
         = env->GetFieldID(cls, "title", "Ljava/lang/String;");
+    DASSERT(AwtDialog::titleID != NULL);
+    CHECK_NULL(AwtDialog::titleID);
+
     AwtDialog::undecoratedID
         = env->GetFieldID(cls,"undecorated","Z");
-
     DASSERT(AwtDialog::undecoratedID != NULL);
-    DASSERT(AwtDialog::titleID != NULL);
+    CHECK_NULL(AwtDialog::undecoratedID);
 
     CATCH_BAD_ALLOC;
 }

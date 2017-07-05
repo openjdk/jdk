@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import com.sun.xml.internal.messaging.saaj.packaging.mime.*;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.util.*;
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-import com.sun.xml.internal.messaging.saaj.util.FinalArrayList;
 
 /**
  * The MimeMultipart class is an implementation of the abstract Multipart
@@ -393,13 +392,12 @@ public  class BMMimeMultipart extends MimeMultipart {
         int i;
         int l = pattern.length;
         int lx = l -1;
-        int bufferLength = 0;
         BitSet eof = new BitSet(1);
         long[] posVector = new long[1];
 
         while (true) {
             is.mark(l);
-            bufferLength = readNext(is, buffer, l, eof, posVector, sin);
+            readNext(is, buffer, l, eof, posVector, sin);
             if (eof.get(0)) {
                 // End of stream
                 return false;
@@ -561,7 +559,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                 if (prevBuffer[s-1] == (byte)13) {
                     // if buffer[0] == (byte)10
                     if (buffer[0] == (byte)10) {
-                        int j=lx-1;
+                        int j;
                         for(j = lx-1; j > 0; j--) {
                             if (buffer[j+1] != pattern[j]) {
                                 break;
@@ -695,7 +693,6 @@ public  class BMMimeMultipart extends MimeMultipart {
      * Iterates through all the parts and outputs each Mime part
      * separated by a boundary.
      */
-    byte[] buf = new byte[1024];
 
     public void writeTo(OutputStream os)
             throws IOException, MessagingException {
@@ -715,19 +712,25 @@ public  class BMMimeMultipart extends MimeMultipart {
         if (in != null) {
             OutputUtil.writeln(bnd, os); // put out boundary
             if ((os instanceof ByteOutputStream) && lazyAttachments) {
-                ((ByteOutputStream)os).write(in);
+                ((ByteOutputStream) os).write(in);
             } else {
-                ByteOutputStream baos = new ByteOutputStream(in.available());
-                baos.write(in);
-                baos.writeTo(os);
-                // reset the inputstream so that we can support a
-                //getAttachment later
-                in = baos.newInputStream();
+                ByteOutputStream baos = null;
+                try {
+                    baos = new ByteOutputStream(in.available());
+                    baos.write(in);
+                    baos.writeTo(os);
+                    // reset the inputstream so that we can support a
+                    // getAttachment later
+                    in = baos.newInputStream();
+                } finally {
+                    if (baos != null)
+                        baos.close();
+                }
             }
 
             // this will endup writing the end boundary
         } else {
-        // put out last boundary
+            // put out last boundary
             OutputUtil.writeAsAscii(bnd, os);
             OutputUtil.writeAsAscii("--", os);
         }

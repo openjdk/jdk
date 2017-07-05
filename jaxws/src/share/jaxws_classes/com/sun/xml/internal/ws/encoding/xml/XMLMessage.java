@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,7 @@ public final class XMLMessage {
         }
 
         public Message copy() {
-            return getMessage().copy();
+            return getMessage().copy().copyFrom(getMessage());
         }
 
         protected void writePayloadTo(ContentHandler contentHandler, ErrorHandler errorHandler, boolean fragment) throws SAXException {
@@ -449,7 +449,7 @@ public final class XMLMessage {
         }
 
         public Message copy() {
-            return getMessage().copy();
+            return getMessage().copy().copyFrom(getMessage());
         }
 
         protected void writePayloadTo(ContentHandler contentHandler, ErrorHandler errorHandler, boolean fragment) throws SAXException {
@@ -507,6 +507,7 @@ public final class XMLMessage {
             super(that.soapVersion);
             this.ds = that.ds;
             this.headerList = HeaderList.copy(that.headerList);
+            this.copyFrom(that);
         }
 
         public boolean hasUnconsumedDataSource() {
@@ -560,7 +561,7 @@ public final class XMLMessage {
         }
 
         public Message copy() {
-            return new UnknownContent(this);
+            return new UnknownContent(this).copyFrom(this);
         }
 
     }

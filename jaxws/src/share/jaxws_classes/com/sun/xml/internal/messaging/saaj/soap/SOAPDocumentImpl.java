@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,11 +107,11 @@ public class SOAPDocumentImpl extends DocumentImpl implements SOAPDocument {
     }
 
     public org.w3c.dom.Text createTextNode(String data) {
-        return new TextImpl(this, data);
+        return new SOAPTextImpl(this, data);
     }
 
     public Comment createComment(String data) {
-        return new CommentImpl(this, data);
+        return new SOAPCommentImpl(this, data);
     }
 
     public CDATASection createCDATASection(String data) throws DOMException {

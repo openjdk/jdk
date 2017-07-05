@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import com.sun.xml.internal.ws.message.AbstractMessageImpl;
 import com.sun.xml.internal.ws.message.PayloadElementSniffer;
 import com.sun.xml.internal.ws.spi.db.BindingContext;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
-import com.sun.xml.internal.ws.streaming.MtomStreamWriter;
+import com.sun.xml.internal.org.jvnet.staxex.util.MtomStreamWriter;
 import com.sun.xml.internal.ws.streaming.XMLStreamWriterUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -87,6 +87,7 @@ public class JAXBDispatchMessage extends AbstractMessageImpl {
         jaxbObject = that.jaxbObject;
         rawContext = that.rawContext;
         bridge = that.bridge;
+        copyFrom(that);
     }
 
     public JAXBDispatchMessage(JAXBContext rawContext, Object jaxbObject, SOAPVersion soapVersion) {
@@ -178,7 +179,7 @@ public class JAXBDispatchMessage extends AbstractMessageImpl {
 
     @Override
     public Message copy() {
-        return new JAXBDispatchMessage(this);
+        return new JAXBDispatchMessage(this).copyFrom(this);
     }
 
     @Override

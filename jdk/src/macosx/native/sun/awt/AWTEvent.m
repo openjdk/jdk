@@ -28,6 +28,7 @@
 #import <sys/time.h>
 #include <Carbon/Carbon.h>
 
+#import "jni_util.h" 
 #import "LWCToolkit.h"
 #import "ThreadUtilities.h"
 
@@ -687,6 +688,7 @@ JNF_COCOA_ENTER(env);
 
     jboolean copy = JNI_FALSE;
     jint *data = (*env)->GetIntArrayElements(env, inData, &copy);
+    CHECK_NULL_RETURN(data, postsTyped);
 
     // in  = [testChar, testDeadChar, modifierFlags, keyCode]
     jchar testChar = (jchar)data[0];
@@ -727,6 +729,7 @@ JNF_COCOA_ENTER(env);
 
     jboolean copy = JNI_FALSE;
     jint *data = (*env)->GetIntArrayElements(env, inData, &copy);
+    CHECK_NULL(data);
 
     // in  = [modifierFlags, keyCode]
     jint modifierFlags = data[0];
