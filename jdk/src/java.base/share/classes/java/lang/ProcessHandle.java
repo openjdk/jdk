@@ -78,6 +78,16 @@ import java.util.stream.Stream;
  * The methods of this class throw {@link java.lang.UnsupportedOperationException}
  * if the operating system does not allow access to query or kill a process.
  *
+ * <p>
+ * The {@code ProcessHandle} static factory methods return instances that are
+ * <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>,
+ * immutable and thread-safe.
+ * Use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on these instances of
+ * {@code ProcessHandle} may have unpredictable results and should be avoided.
+ * Use {@link #equals(Object) equals} or
+ * {@link #compareTo(ProcessHandle) compareTo} methods to compare ProcessHandles.
+ *
  * @see Process
  * @since 1.9
  */
@@ -86,6 +96,9 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
     /**
      * Returns the native process ID of the process. The native process ID is an
      * identification number that the operating system assigns to the process.
+     * The operating system may reuse the process ID after a process terminates.
+     * Use {@link #equals(Object) equals} or
+     * {@link #compareTo(ProcessHandle) compareTo} to compare ProcessHandles.
      *
      * @return the native process ID of the process
      * @throws UnsupportedOperationException if the implementation
@@ -337,7 +350,43 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * @return {@code true} if the process represented by this
      *         {@code ProcessHandle} object has not yet terminated
      */
-   boolean isAlive();
+    boolean isAlive();
+
+    /**
+     * Returns a hash code value for this ProcessHandle.
+     * The hashcode value follows the general contract for {@link Object#hashCode()}.
+     * The value is a function of the {@link #getPid getPid()} value and
+     * may be a function of additional information to uniquely identify the process.
+     * If two ProcessHandles are equal according to the {@link #equals(Object) equals}
+     * method, then calling the hashCode method on each of the two objects
+     * must produce the same integer result.
+     *
+     * @return a hash code value for this object
+     */
+    @Override
+    int hashCode();
+
+    /**
+     * Returns {@code true} if {@code other} object is non-null, is of the
+     * same implementation, and represents the same system process;
+     * otherwise it returns {@code false}.
+     * @implNote
+     * It is implementation specific whether ProcessHandles with the same PID
+     * represent the same system process. ProcessHandle implementations
+     * should contain additional information to uniquely identify the process.
+     * For example, the start time of the process could be used
+     * to determine if the PID has been re-used.
+     * The implementation of {@code equals} should return {@code true} for two
+     * ProcessHandles with the same PID unless there is information to
+     * distinguish them.
+     *
+     * @param other another object
+     * @return {@code true} if the {@code other} object is non-null,
+     *         is of the same implementation class and represents
+     *         the same system process; otherwise returns {@code false}
+     */
+    @Override
+    boolean equals(Object other);
 
     /**
      * Compares this ProcessHandle with the specified ProcessHandle for order.

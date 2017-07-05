@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- *******************************************************************************
- * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
- *******************************************************************************
- */
+
+/**
+*******************************************************************************
+* Copyright (C) 1996-2014, International Business Machines Corporation and
+* others. All Rights Reserved.
+*******************************************************************************
+*/
 
 package sun.text.normalizer;
 
-import java.io.IOException;
-import java.util.MissingResourceException;
-
 /**
- * <p>
- * The UCharacter class provides extensions to the
- * <a href="http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/Character.html">
+ * <p>The UCharacter class provides extensions to the
+ * <a href="http://java.sun.com/j2se/1.5/docs/api/java/lang/Character.html">
  * java.lang.Character</a> class. These extensions provide support for
  * more Unicode properties and together with the <a href=../text/UTF16.html>UTF16</a>
  * class, provide support for supplementary characters (those with code
  * points above U+FFFF).
  * Each ICU release supports the latest version of Unicode available at that time.
- * </p>
- * <p>
- * Code points are represented in these API using ints. While it would be
+ *
+ * <p>Code points are represented in these API using ints. While it would be
  * more convenient in Java to have a separate primitive datatype for them,
  * ints suffice in the meantime.
- * </p>
- * <p>
- * To use this class please add the jar file name icu4j.jar to the
+ *
+ * <p>To use this class please add the jar file name icu4j.jar to the
  * class path, since it contains data files which supply the information used
  * by this file.<br>
  * E.g. In Windows <br>
@@ -64,9 +54,8 @@ import java.util.MissingResourceException;
  * unames.icu from the icu4j source subdirectory
  * <i>$ICU4J_SRC/src/com.ibm.icu.impl.data</i> to your class directory
  * <i>$ICU4J_CLASS/com.ibm.icu.impl.data</i>.
- * </p>
- * <p>
- * Aside from the additions for UTF-16 support, and the updated Unicode
+ *
+ * <p>Aside from the additions for UTF-16 support, and the updated Unicode
  * properties, the main differences between UCharacter and Character are:
  * <ul>
  * <li> UCharacter is not designed to be a char wrapper and does not have
@@ -87,8 +76,9 @@ import java.util.MissingResourceException;
  *      as having numeric values.  This is a semantic change from ICU4J 1.3.1.
  * </ul>
  * <p>
- * Further detail differences can be determined from the program
- *        <a href="http://source.icu-project.org/repos/icu/icu4j/trunk/src/com/ibm/icu/dev/test/lang/UCharacterCompare.java">
+ * Further detail on differences can be determined using the program
+ *        <a href=
+ * "http://source.icu-project.org/repos/icu/icu4j/trunk/src/com/ibm/icu/dev/test/lang/UCharacterCompare.java">
  *        com.ibm.icu.dev.test.lang.UCharacterCompare</a>
  * </p>
  * <p>
@@ -103,8 +93,11 @@ import java.util.MissingResourceException;
  * </p>
  * <p>
  * For more information see
- * "About the Unicode Character Database" (http://www.unicode.org/ucd/)
- * and the ICU User Guide chapter on Properties (http://www.icu-project.org/userguide/properties.html).
+ * <a href="http://www.unicode/org/ucd/">"About the Unicode Character Database"</a>
+ * (http://www.unicode.org/ucd/)
+ * and the <a href="http://www.icu-project.org/userguide/properties.html">ICU
+ * User Guide chapter on Properties</a>
+ * (http://www.icu-project.org/userguide/properties.html).
  * </p>
  * <p>
  * There are also functions that provide easy migration from C/POSIX functions
@@ -128,12 +121,15 @@ import java.util.MissingResourceException;
  * Annex C: Compatibility Properties of UTS #18 Unicode Regular Expressions
  * (http://www.unicode.org/reports/tr18/#Compatibility_Properties).
  * </p>
- * <pre>{@code
+ * <p>
  * API access for C/POSIX character classes is as follows:
+ * <pre>{@code
  * - alpha:     isUAlphabetic(c) or hasBinaryProperty(c, UProperty.ALPHABETIC)
  * - lower:     isULowercase(c) or hasBinaryProperty(c, UProperty.LOWERCASE)
  * - upper:     isUUppercase(c) or hasBinaryProperty(c, UProperty.UPPERCASE)
- * - punct:     ((1<<getType(c)) & ((1<<DASH_PUNCTUATION)|(1<<START_PUNCTUATION)|(1<<END_PUNCTUATION)|(1<<CONNECTOR_PUNCTUATION)|(1<<OTHER_PUNCTUATION)|(1<<INITIAL_PUNCTUATION)|(1<<FINAL_PUNCTUATION)))!=0
+ * - punct:     ((1<<getType(c)) & ((1<<DASH_PUNCTUATION)|(1<<START_PUNCTUATION)|
+ *               (1<<END_PUNCTUATION)|(1<<CONNECTOR_PUNCTUATION)|(1<<OTHER_PUNCTUATION)|
+ *               (1<<INITIAL_PUNCTUATION)|(1<<FINAL_PUNCTUATION)))!=0
  * - digit:     isDigit(c) or getType(c)==DECIMAL_DIGIT_NUMBER
  * - xdigit:    hasBinaryProperty(c, UProperty.POSIX_XDIGIT)
  * - alnum:     hasBinaryProperty(c, UProperty.POSIX_ALNUM)
@@ -143,21 +139,22 @@ import java.util.MissingResourceException;
  * - graph:     hasBinaryProperty(c, UProperty.POSIX_GRAPH)
  * - print:     hasBinaryProperty(c, UProperty.POSIX_PRINT)
  * }</pre>
+ * </p>
  * <p>
  * The C/POSIX character classes are also available in UnicodeSet patterns,
  * using patterns like [:graph:] or \p{graph}.
  * </p>
- * <p>
- * Note: There are several ICU (and Java) whitespace functions.
- * Comparison:
- * - isUWhiteSpace=UCHAR_WHITE_SPACE: Unicode White_Space property;
+ *
+ * There are several ICU (and Java) whitespace functions.
+ * Comparison:<ul>
+ * <li> isUWhiteSpace=UCHAR_WHITE_SPACE: Unicode White_Space property;
  *       most of general categories "Z" (separators) + most whitespace ISO controls
  *       (including no-break spaces, but excluding IS1..IS4 and ZWSP)
- * - isWhitespace: Java isWhitespace; Z + whitespace ISO controls but excluding no-break spaces
- * - isSpaceChar: just Z (including no-break spaces)
+ * <li> isWhitespace: Java isWhitespace; Z + whitespace ISO controls but excluding no-break spaces
+ * <li> isSpaceChar: just Z (including no-break spaces)</ul>
  * </p>
  * <p>
- * This class is not subclassable
+ * This class is not subclassable.
  * </p>
  * @author Syn Wee Quek
  * @stable ICU 2.1
@@ -166,6 +163,19 @@ import java.util.MissingResourceException;
 
 public final class UCharacter
 {
+
+    /**
+     * Joining Group constants.
+     * @see UProperty#JOINING_GROUP
+     * @stable ICU 2.4
+     */
+    public static interface JoiningGroup
+    {
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int NO_JOINING_GROUP = 0;
+    }
 
     /**
      * Numeric Type constants.
@@ -177,7 +187,61 @@ public final class UCharacter
         /**
          * @stable ICU 2.4
          */
+        public static final int NONE = 0;
+        /**
+         * @stable ICU 2.4
+         */
         public static final int DECIMAL = 1;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int DIGIT = 2;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int NUMERIC = 3;
+        /**
+         * @stable ICU 2.4
+         */
+        public static final int COUNT = 4;
+    }
+
+    /**
+     * Hangul Syllable Type constants.
+     *
+     * @see UProperty#HANGUL_SYLLABLE_TYPE
+     * @stable ICU 2.6
+     */
+    public static interface HangulSyllableType
+    {
+        /**
+         * @stable ICU 2.6
+         */
+        public static final int NOT_APPLICABLE      = 0;   /*[NA]*/ /*See note !!*/
+        /**
+         * @stable ICU 2.6
+         */
+        public static final int LEADING_JAMO        = 1;   /*[L]*/
+        /**
+         * @stable ICU 2.6
+         */
+        public static final int VOWEL_JAMO          = 2;   /*[V]*/
+        /**
+         * @stable ICU 2.6
+         */
+        public static final int TRAILING_JAMO       = 3;   /*[T]*/
+        /**
+         * @stable ICU 2.6
+         */
+        public static final int LV_SYLLABLE         = 4;   /*[LV]*/
+        /**
+         * @stable ICU 2.6
+         */
+        public static final int LVT_SYLLABLE        = 5;   /*[LVT]*/
+        /**
+         * @stable ICU 2.6
+         */
+        public static final int COUNT               = 6;
     }
 
     // public data members -----------------------------------------------
@@ -192,22 +256,15 @@ public final class UCharacter
      * The highest Unicode code point value (scalar value) according to the
      * Unicode Standard.
      * This is a 21-bit value (21 bits, rounded up).<br>
-     * Up-to-date Unicode implementation of java.lang.Character.MIN_VALUE
+     * Up-to-date Unicode implementation of java.lang.Character.MAX_VALUE
      * @stable ICU 2.1
      */
     public static final int MAX_VALUE = UTF16.CODEPOINT_MAX_VALUE;
 
-    /**
-     * The minimum value for Supplementary code points
-     * @stable ICU 2.1
-     */
-    public static final int SUPPLEMENTARY_MIN_VALUE =
-        UTF16.SUPPLEMENTARY_MIN_VALUE;
-
     // public methods ----------------------------------------------------
 
     /**
-     * Retrieves the numeric value of a decimal digit code point.
+     * Returns the numeric value of a decimal digit code point.
      * <br>This method observes the semantics of
      * <code>java.lang.Character.digit()</code>.  Note that this
      * will return positive values for code points for which isDigit
@@ -231,15 +288,54 @@ public final class UCharacter
      */
     public static int digit(int ch, int radix)
     {
-        // when ch is out of bounds getProperty == 0
-        int props = getProperty(ch);
-        int value;
-        if (getNumericType(props) == NumericType.DECIMAL) {
-            value = UCharacterProperty.getUnsignedValue(props);
+        if (2 <= radix && radix <= 36) {
+            int value = digit(ch);
+            if (value < 0) {
+                // ch is not a decimal digit, try latin letters
+                value = UCharacterProperty.getEuropeanDigit(ch);
+            }
+            return (value < radix) ? value : -1;
         } else {
-            value = getEuropeanDigit(ch);
+            return -1;  // invalid radix
         }
-        return (0 <= value && value < radix) ? value : -1;
+    }
+
+    /**
+     * Returns the numeric value of a decimal digit code point.
+     * <br>This is a convenience overload of <code>digit(int, int)</code>
+     * that provides a decimal radix.
+     * <br><em>Semantic Change:</em> In release 1.3.1 and prior, this
+     * treated numeric letters and other numbers as digits.  This has
+     * been changed to conform to the java semantics.
+     * @param ch the code point to query
+     * @return the numeric value represented by the code point,
+     * or -1 if the code point is not a decimal digit or if its
+     * value is too large for a decimal radix
+     * @stable ICU 2.1
+     */
+    public static int digit(int ch)
+    {
+        return UCharacterProperty.INSTANCE.digit(ch);
+    }
+
+    /**
+     * Returns a value indicating a code point's Unicode category.
+     * Up-to-date Unicode implementation of java.lang.Character.getType()
+     * except for the above mentioned code points that had their category
+     * changed.<br>
+     * Return results are constants from the interface
+     * <a href=UCharacterCategory.html>UCharacterCategory</a><br>
+     * <em>NOTE:</em> the UCharacterCategory values are <em>not</em> compatible with
+     * those returned by java.lang.Character.getType.  UCharacterCategory values
+     * match the ones used in ICU4C, while java.lang.Character type
+     * values, though similar, skip the value 17.</p>
+     * @param ch code point whose type is to be determined
+     * @return category which is a value of UCharacterCategory
+     * @stable ICU 2.1
+     */
+    public static int getType(int ch)
+    {
+        return UCharacterProperty.INSTANCE.getType(ch);
     }
 
     /**
@@ -254,7 +350,67 @@ public final class UCharacter
      */
     public static int getDirection(int ch)
     {
-        return gBdp.getClass(ch);
+        return UBiDiProps.INSTANCE.getClass(ch);
+    }
+
+    /**
+     * Maps the specified code point to a "mirror-image" code point.
+     * For code points with the "mirrored" property, implementations sometimes
+     * need a "poor man's" mapping to another code point such that the default
+     * glyph may serve as the mirror-image of the default glyph of the
+     * specified code point.<br>
+     * This is useful for text conversion to and from codepages with visual
+     * order, and for displays without glyph selection capabilities.
+     * @param ch code point whose mirror is to be retrieved
+     * @return another code point that may serve as a mirror-image substitute,
+     *         or ch itself if there is no such mapping or ch does not have the
+     *         "mirrored" property
+     * @stable ICU 2.1
+     */
+    public static int getMirror(int ch)
+    {
+        return UBiDiProps.INSTANCE.getMirror(ch);
+    }
+
+    /**
+     * Maps the specified character to its paired bracket character.
+     * For Bidi_Paired_Bracket_Type!=None, this is the same as getMirror(int).
+     * Otherwise c itself is returned.
+     * See http://www.unicode.org/reports/tr9/
+     *
+     * @param c the code point to be mapped
+     * @return the paired bracket code point,
+     *         or c itself if there is no such mapping
+     *         (Bidi_Paired_Bracket_Type=None)
+     *
+     * @see UProperty#BIDI_PAIRED_BRACKET
+     * @see UProperty#BIDI_PAIRED_BRACKET_TYPE
+     * @see #getMirror(int)
+     * @stable ICU 52
+     */
+    public static int getBidiPairedBracket(int c) {
+        return UBiDiProps.INSTANCE.getPairedBracket(c);
+    }
+
+    /**
+     * Returns the combining class of the argument codepoint
+     * @param ch code point whose combining is to be retrieved
+     * @return the combining class of the codepoint
+     * @stable ICU 2.1
+     */
+    public static int getCombiningClass(int ch)
+    {
+        return Normalizer2.getNFDInstance().getCombiningClass(ch);
+    }
+
+    /**
+     * Returns the version of Unicode data used.
+     * @return the unicode version number used
+     * @stable ICU 2.1
+     */
+    public static VersionInfo getUnicodeVersion()
+    {
+        return UCharacterProperty.INSTANCE.m_unicodeVersion_;
     }
 
     /**
@@ -275,7 +431,7 @@ public final class UCharacter
     }
 
     /**
-     * <p>Get the "age" of the code point.</p>
+     * Returns the "age" of the code point.</p>
      * <p>The "age" is the Unicode version when the code point was first
      * designated (as a non-character or for Private Use) or assigned a
      * character.
@@ -289,143 +445,95 @@ public final class UCharacter
     public static VersionInfo getAge(int ch)
     {
         if (ch < MIN_VALUE || ch > MAX_VALUE) {
-        throw new IllegalArgumentException("Codepoint out of bounds");
+            throw new IllegalArgumentException("Codepoint out of bounds");
         }
-        return PROPERTY_.getAge(ch);
-    }
-
-    // private variables -------------------------------------------------
-
-    /**
-     * Database storing the sets of character property
-     */
-    private static final UCharacterProperty PROPERTY_;
-    /**
-     * For optimization
-     */
-    private static final char[] PROPERTY_TRIE_INDEX_;
-    private static final char[] PROPERTY_TRIE_DATA_;
-    private static final int PROPERTY_INITIAL_VALUE_;
-
-    private static final UBiDiProps gBdp;
-
-    // block to initialise character property database
-    static
-    {
-        try
-        {
-            PROPERTY_ = UCharacterProperty.getInstance();
-            PROPERTY_TRIE_INDEX_ = PROPERTY_.m_trieIndex_;
-            PROPERTY_TRIE_DATA_ = PROPERTY_.m_trieData_;
-            PROPERTY_INITIAL_VALUE_ = PROPERTY_.m_trieInitialValue_;
-        }
-        catch (Exception e)
-        {
-            throw new MissingResourceException(e.getMessage(),"","");
-        }
-
-        UBiDiProps bdp;
-        try {
-            bdp=UBiDiProps.getSingleton();
-        } catch(IOException e) {
-            bdp=UBiDiProps.getDummy();
-        }
-        gBdp=bdp;
+        return UCharacterProperty.INSTANCE.getAge(ch);
     }
 
     /**
-     * Shift to get numeric type
+     * Returns the property value for an Unicode property type of a code point.
+     * Also returns binary and mask property values.</p>
+     * <p>Unicode, especially in version 3.2, defines many more properties than
+     * the original set in UnicodeData.txt.</p>
+     * <p>The properties APIs are intended to reflect Unicode properties as
+     * defined in the Unicode Character Database (UCD) and Unicode Technical
+     * Reports (UTR). For details about the properties see
+     * http://www.unicode.org/.</p>
+     * <p>For names of Unicode properties see the UCD file PropertyAliases.txt.
+     * </p>
+     * <pre>
+     * Sample usage:
+     * int ea = UCharacter.getIntPropertyValue(c, UProperty.EAST_ASIAN_WIDTH);
+     * int ideo = UCharacter.getIntPropertyValue(c, UProperty.IDEOGRAPHIC);
+     * boolean b = (ideo == 1) ? true : false;
+     * </pre>
+     * @param ch code point to test.
+     * @param type UProperty selector constant, identifies which binary
+     *        property to check. Must be
+     *        UProperty.BINARY_START &lt;= type &lt; UProperty.BINARY_LIMIT or
+     *        UProperty.INT_START &lt;= type &lt; UProperty.INT_LIMIT or
+     *        UProperty.MASK_START &lt;= type &lt; UProperty.MASK_LIMIT.
+     * @return numeric value that is directly the property value or,
+     *         for enumerated properties, corresponds to the numeric value of
+     *         the enumerated constant of the respective property value
+     *         enumeration type (cast to enum type if necessary).
+     *         Returns 0 or 1 (for false / true) for binary Unicode properties.
+     *         Returns a bit-mask for mask properties.
+     *         Returns 0 if 'type' is out of bounds or if the Unicode version
+     *         does not have data for the property at all, or not for this code
+     *         point.
+     * @see UProperty
+     * @see #hasBinaryProperty
+     * @see #getIntPropertyMinValue
+     * @see #getIntPropertyMaxValue
+     * @see #getUnicodeVersion
+     * @stable ICU 2.4
      */
-    private static final int NUMERIC_TYPE_SHIFT_ = 5;
-    /**
-     * Mask to get numeric type
-     */
-    private static final int NUMERIC_TYPE_MASK_ = 0x7 << NUMERIC_TYPE_SHIFT_;
-
-    // private methods ---------------------------------------------------
-
-    /**
-     * Getting the digit values of characters like 'A' - 'Z', normal,
-     * half-width and full-width. This method assumes that the other digit
-     * characters are checked by the calling method.
-     * @param ch character to test
-     * @return -1 if ch is not a character of the form 'A' - 'Z', otherwise
-     *         its corresponding digit will be returned.
-     */
-    private static int getEuropeanDigit(int ch) {
-        if ((ch > 0x7a && ch < 0xff21)
-            || ch < 0x41 || (ch > 0x5a && ch < 0x61)
-            || ch > 0xff5a || (ch > 0xff3a && ch < 0xff41)) {
-            return -1;
-        }
-        if (ch <= 0x7a) {
-            // ch >= 0x41 or ch < 0x61
-            return ch + 10 - ((ch <= 0x5a) ? 0x41 : 0x61);
-        }
-        // ch >= 0xff21
-        if (ch <= 0xff3a) {
-            return ch + 10 - 0xff21;
-        }
-        // ch >= 0xff41 && ch <= 0xff5a
-        return ch + 10 - 0xff41;
+     // for BiDiBase.java
+    public static int getIntPropertyValue(int ch, int type) {
+        return UCharacterProperty.INSTANCE.getIntPropertyValue(ch, type);
     }
 
-    /**
-     * Gets the numeric type of the property argument
-     * @param props 32 bit property
-     * @return the numeric type
-     */
-    private static int getNumericType(int props)
-    {
-        return (props & NUMERIC_TYPE_MASK_) >> NUMERIC_TYPE_SHIFT_;
-    }
+    // private constructor -----------------------------------------------
 
     /**
-     * Gets the property value at the index.
-     * This is optimized.
-     * Note this is alittle different from CharTrie the index m_trieData_
-     * is never negative.
-     * This is a duplicate of UCharacterProperty.getProperty. For optimization
-     * purposes, this method calls the trie data directly instead of through
-     * UCharacterProperty.getProperty.
-     * @param ch code point whose property value is to be retrieved
-     * @return property value of code point
-     * @stable ICU 2.6
+     * Private constructor to prevent instantiation
      */
-    private static final int getProperty(int ch)
-    {
-        if (ch < UTF16.LEAD_SURROGATE_MIN_VALUE
-            || (ch > UTF16.LEAD_SURROGATE_MAX_VALUE
-                && ch < UTF16.SUPPLEMENTARY_MIN_VALUE)) {
-            // BMP codepoint 0000..D7FF or DC00..FFFF
-            try { // using try for ch < 0 is faster than using an if statement
-                return PROPERTY_TRIE_DATA_[
-                              (PROPERTY_TRIE_INDEX_[ch >> 5] << 2)
-                              + (ch & 0x1f)];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                return PROPERTY_INITIAL_VALUE_;
-            }
-        }
-        if (ch <= UTF16.LEAD_SURROGATE_MAX_VALUE) {
-            // lead surrogate D800..DBFF
-            return PROPERTY_TRIE_DATA_[
-                              (PROPERTY_TRIE_INDEX_[(0x2800 >> 5) + (ch >> 5)] << 2)
-                              + (ch & 0x1f)];
-        }
-        // for optimization
-        if (ch <= UTF16.CODEPOINT_MAX_VALUE) {
-            // supplementary code point 10000..10FFFF
-            // look at the construction of supplementary characters
-            // trail forms the ends of it.
-            return PROPERTY_.m_trie_.getSurrogateValue(
-                                      UTF16.getLeadSurrogate(ch),
-                                      (char)(ch & 0x3ff));
-        }
-        // return m_dataOffset_ if there is an error, in this case we return
-        // the default value: m_initialValue_
-        // we cannot assume that m_initialValue_ is at offset 0
-        // this is for optimization.
-        return PROPERTY_INITIAL_VALUE_;
-    }
+    private UCharacter() { }
 
+      /*
+       * Copied from UCharacterEnums.java
+       */
+
+        /**
+         * Character type Mn
+         * @stable ICU 2.1
+         */
+        public static final byte NON_SPACING_MARK        = 6;
+        /**
+         * Character type Me
+         * @stable ICU 2.1
+         */
+        public static final byte ENCLOSING_MARK          = 7;
+        /**
+         * Character type Mc
+         * @stable ICU 2.1
+         */
+        public static final byte COMBINING_SPACING_MARK  = 8;
+        /**
+         * Character type count
+         * @stable ICU 2.1
+         */
+        public static final byte CHAR_CATEGORY_COUNT     = 30;
+
+        /**
+         * Directional type R
+         * @stable ICU 2.1
+         */
+        public static final int RIGHT_TO_LEFT              = 1;
+        /**
+         * Directional type AL
+         * @stable ICU 2.1
+         */
+        public static final int RIGHT_TO_LEFT_ARABIC       = 13;
 }

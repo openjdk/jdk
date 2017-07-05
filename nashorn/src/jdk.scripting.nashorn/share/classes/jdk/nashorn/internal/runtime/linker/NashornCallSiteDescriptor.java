@@ -274,7 +274,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
      * {@code NashornCallSiteDescriptor}. This allows for graceful interoperability when linking Nashorn with code
      * generated outside of Nashorn.
      * @param flag the tested flag
-     * @return true if the flag is set, false otherwise (it will be false if the decriptor is not a Nashorn call site
+     * @return true if the flag is set, false otherwise (it will be false if the descriptor is not a Nashorn call site
      * descriptor).
      */
     private static boolean isFlag(final CallSiteDescriptor desc, final int flag) {

@@ -34,9 +34,9 @@ import javax.net.ssl.*;
 import java.security.Key;
 
 import java.util.Set;
-import java.util.HashSet;
 
 import sun.security.util.DisabledAlgorithmConstraints;
+import static sun.security.util.DisabledAlgorithmConstraints.*;
 import sun.security.ssl.CipherSuite.*;
 
 /**
@@ -46,10 +46,15 @@ import sun.security.ssl.CipherSuite.*;
  * for the syntax of the disabled algorithm string.
  */
 final class SSLAlgorithmConstraints implements AlgorithmConstraints {
+
     private final static AlgorithmConstraints tlsDisabledAlgConstraints =
-            new TLSDisabledAlgConstraints();
+            new DisabledAlgorithmConstraints(PROPERTY_TLS_DISABLED_ALGS,
+                    new SSLAlgorithmDecomposer());
+
     private final static AlgorithmConstraints x509DisabledAlgConstraints =
-            new X509DisabledAlgConstraints();
+            new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS,
+                    new SSLAlgorithmDecomposer(true));
+
     private AlgorithmConstraints userAlgConstraints = null;
     private AlgorithmConstraints peerAlgConstraints = null;
 
@@ -266,213 +271,4 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             return permits(primitives, algorithm, parameters);
         }
     }
-
-    static private class BasicDisabledAlgConstraints
-            extends DisabledAlgorithmConstraints {
-        BasicDisabledAlgConstraints(String propertyName) {
-            super(propertyName);
-        }
-
-        protected Set<String> decomposes(KeyExchange keyExchange,
-                        boolean forCertPathOnly) {
-            Set<String> components = new HashSet<>();
-            switch (keyExchange) {
-                case K_NULL:
-                    if (!forCertPathOnly) {
-                        components.add("NULL");
-                    }
-                    break;
-                case K_RSA:
-                    components.add("RSA");
-                    break;
-                case K_RSA_EXPORT:
-                    components.add("RSA");
-                    components.add("RSA_EXPORT");
-                    break;
-                case K_DH_RSA:
-                    components.add("RSA");
-                    components.add("DH");
-                    components.add("DiffieHellman");
-                    components.add("DH_RSA");
-                    break;
-                case K_DH_DSS:
-                    components.add("DSA");
-                    components.add("DSS");
-                    components.add("DH");
-                    components.add("DiffieHellman");
-                    components.add("DH_DSS");
-                    break;
-                case K_DHE_DSS:
-                    components.add("DSA");
-                    components.add("DSS");
-                    components.add("DH");
-                    components.add("DHE");
-                    components.add("DiffieHellman");
-                    components.add("DHE_DSS");
-                    break;
-                case K_DHE_RSA:
-                    components.add("RSA");
-                    components.add("DH");
-                    components.add("DHE");
-                    components.add("DiffieHellman");
-                    components.add("DHE_RSA");
-                    break;
-                case K_DH_ANON:
-                    if (!forCertPathOnly) {
-                        components.add("ANON");
-                        components.add("DH");
-                        components.add("DiffieHellman");
-                        components.add("DH_ANON");
-                    }
-                    break;
-                case K_ECDH_ECDSA:
-                    components.add("ECDH");
-                    components.add("ECDSA");
-                    components.add("ECDH_ECDSA");
-                    break;
-                case K_ECDH_RSA:
-                    components.add("ECDH");
-                    components.add("RSA");
-                    components.add("ECDH_RSA");
-                    break;
-                case K_ECDHE_ECDSA:
-                    components.add("ECDHE");
-                    components.add("ECDSA");
-                    components.add("ECDHE_ECDSA");
-                    break;
-                case K_ECDHE_RSA:
-                    components.add("ECDHE");
-                    components.add("RSA");
-                    components.add("ECDHE_RSA");
-                    break;
-                case K_ECDH_ANON:
-                    if (!forCertPathOnly) {
-                        components.add("ECDH");
-                        components.add("ANON");
-                        components.add("ECDH_ANON");
-                    }
-                    break;
-                default:
-                    if (ClientKeyExchangeService.find(keyExchange.name) != null) {
-                        if (!forCertPathOnly) {
-                            components.add(keyExchange.name);
-                        }
-                    }
-                    // otherwise ignore
-            }
-
-            return components;
-        }
-
-        protected Set<String> decomposes(BulkCipher bulkCipher) {
-            Set<String> components = new HashSet<>();
-
-            if (bulkCipher.transformation != null) {
-                components.addAll(super.decomposes(bulkCipher.transformation));
-            }
-
-            return components;
-        }
-
-        protected Set<String> decomposes(MacAlg macAlg) {
-            Set<String> components = new HashSet<>();
-
-            if (macAlg == CipherSuite.MacAlg.M_MD5) {
-                components.add("MD5");
-                components.add("HmacMD5");
-            } else if (macAlg == CipherSuite.MacAlg.M_SHA) {
-                components.add("SHA1");
-                components.add("SHA-1");
-                components.add("HmacSHA1");
-            } else if (macAlg == CipherSuite.MacAlg.M_SHA256) {
-                components.add("SHA256");
-                components.add("SHA-256");
-                components.add("HmacSHA256");
-            } else if (macAlg == CipherSuite.MacAlg.M_SHA384) {
-                components.add("SHA384");
-                components.add("SHA-384");
-                components.add("HmacSHA384");
-            }
-
-            return components;
-        }
-    }
-
-    static private class TLSDisabledAlgConstraints
-            extends BasicDisabledAlgConstraints {
-
-        TLSDisabledAlgConstraints() {
-            super(DisabledAlgorithmConstraints.PROPERTY_TLS_DISABLED_ALGS);
-        }
-
-        @Override
-        protected Set<String> decomposes(String algorithm) {
-            if (algorithm.startsWith("SSL_") || algorithm.startsWith("TLS_")) {
-                CipherSuite cipherSuite = null;
-                try {
-                    cipherSuite = CipherSuite.valueOf(algorithm);
-                } catch (IllegalArgumentException iae) {
-                    // ignore: unknown or unsupported ciphersuite
-                }
-
-                if (cipherSuite != null) {
-                    Set<String> components = new HashSet<>();
-
-                    if(cipherSuite.keyExchange != null) {
-                        components.addAll(
-                            decomposes(cipherSuite.keyExchange, false));
-                    }
-
-                    if (cipherSuite.cipher != null) {
-                        components.addAll(decomposes(cipherSuite.cipher));
-                    }
-
-                    if (cipherSuite.macAlg != null) {
-                        components.addAll(decomposes(cipherSuite.macAlg));
-                    }
-
-                    return components;
-                }
-            }
-
-            return super.decomposes(algorithm);
-        }
-    }
-
-    static private class X509DisabledAlgConstraints
-            extends BasicDisabledAlgConstraints {
-
-        X509DisabledAlgConstraints() {
-            super(DisabledAlgorithmConstraints.PROPERTY_CERTPATH_DISABLED_ALGS);
-        }
-
-        @Override
-        protected Set<String> decomposes(String algorithm) {
-            if (algorithm.startsWith("SSL_") || algorithm.startsWith("TLS_")) {
-                CipherSuite cipherSuite = null;
-                try {
-                    cipherSuite = CipherSuite.valueOf(algorithm);
-                } catch (IllegalArgumentException iae) {
-                    // ignore: unknown or unsupported ciphersuite
-                }
-
-                if (cipherSuite != null) {
-                    Set<String> components = new HashSet<>();
-
-                    if(cipherSuite.keyExchange != null) {
-                        components.addAll(
-                            decomposes(cipherSuite.keyExchange, true));
-                    }
-
-                    // Certification path algorithm constraints do not apply
-                    // to cipherSuite.cipher and cipherSuite.macAlg.
-
-                    return components;
-                }
-            }
-
-            return super.decomposes(algorithm);
-        }
-    }
 }
-

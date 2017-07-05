@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,11 +120,7 @@ class CFileDialog implements FileDialogPeer {
         if (visible) {
             // Java2 Dialog class requires peer to run code in a separate thread
             // and handles keeping the call modal
-            if (System.getSecurityManager() == null) {
-                new Thread(new Task()).start();
-            } else {
-                new ManagedLocalsThread(new Task()).start();
-            }
+            new ManagedLocalsThread(new Task()).start();
         }
         // We hide ourself before "show" returns - setVisible(false)
         // doesn't apply

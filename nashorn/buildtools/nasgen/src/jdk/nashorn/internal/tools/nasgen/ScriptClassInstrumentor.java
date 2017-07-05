@@ -64,7 +64,6 @@ import jdk.nashorn.internal.tools.nasgen.MemberInfo.Kind;
  * 2) add "Map" type static field named "$map".
  * 3) add static initializer block to initialize map.
  */
-
 public class ScriptClassInstrumentor extends ClassVisitor {
     private final ScriptClassInfo scriptClassInfo;
     private final int memberCount;
@@ -266,7 +265,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
      */
     public static void main(final String[] args) throws IOException {
         if (args.length != 1) {
-            System.err.println("Usage: " + ScriptClassInfoCollector.class.getName() + " <class>");
+            System.err.println("Usage: " + ScriptClassInstrumentor.class.getName() + " <class>");
             System.exit(1);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         // After this line we should not change the component's text
         firstChangeSkipped = true;
+        AWTAccessor.getComponentAccessor().setPeer(xtext, this);
     }
 
     @Override
@@ -102,7 +103,6 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         XToolkit.specialPeerMap.remove(xtext);
         // visible caret has a timer thread which must be stopped
         xtext.getCaret().setVisible(false);
-        xtext.removeNotify();
         super.dispose();
     }
 
@@ -259,7 +259,9 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         }
         background = c;
         if (xtext != null) {
-            xtext.setBackground(c);
+            if (xtext.getBackground() != c) {
+                xtext.setBackground(c);
+            }
             xtext.setSelectedTextColor(c);
         }
         repaintText();
@@ -269,7 +271,9 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     public void setForeground(Color c) {
         foreground = c;
         if (xtext != null) {
-            xtext.setForeground(foreground);
+            if (xtext.getForeground() != c) {
+                xtext.setForeground(foreground);
+            }
             xtext.setSelectionColor(foreground);
             xtext.setCaretColor(foreground);
         }
@@ -280,7 +284,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     public void setFont(Font f) {
         synchronized (getStateLock()) {
             font = f;
-            if (xtext != null) {
+            if (xtext != null && xtext.getFont() != f) {
                 xtext.setFont(font);
             }
         }

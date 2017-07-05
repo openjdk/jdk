@@ -155,7 +155,7 @@ void G1StringDedupQueue::unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* c
 void G1StringDedupQueue::print_statistics(outputStream* st) {
   st->print_cr(
     "   [Queue]\n"
-    "      [Dropped: "UINTX_FORMAT"]", _queue->_dropped);
+    "      [Dropped: " UINTX_FORMAT "]", _queue->_dropped);
 }
 
 void G1StringDedupQueue::verify() {

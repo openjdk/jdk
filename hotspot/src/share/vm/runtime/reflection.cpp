@@ -1002,8 +1002,9 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
                 vmSymbols::throwable_void_signature(),
                 &args);
   } else {
-    if (rtype == T_BOOLEAN || rtype == T_BYTE || rtype == T_CHAR || rtype == T_SHORT)
+    if (rtype == T_BOOLEAN || rtype == T_BYTE || rtype == T_CHAR || rtype == T_SHORT) {
       narrow((jvalue*) result.get_value_addr(), rtype, CHECK_NULL);
+    }
     return box((jvalue*) result.get_value_addr(), rtype, THREAD);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,9 +119,10 @@ class XXX {
      *
      * <p> The new buffer's position will be zero, its capacity and its limit
      * will be the number of bytes remaining in this buffer divided by
-     * $nbytes$, and its mark will be undefined.  The new buffer will be direct
-     * if, and only if, this buffer is direct, and it will be read-only if, and
-     * only if, this buffer is read-only.  </p>
+     * $nbytes$, its mark will be undefined, and its byte order will be that
+     * of the byte buffer at the moment the view is created.  The new buffer
+     * will be direct if, and only if, this buffer is direct, and it will be
+     * read-only if, and only if, this buffer is read-only.  </p>
      *
      * @return  A new $type$ buffer
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,6 @@ typedef struct {
     sun_java2d_opengl_OGLContext_OGLContextCaps_LAST_SHARED_CAP
 #define CAPS_EXT_FBOBJECT    \
     sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_FBOBJECT
-#define CAPS_STORED_ALPHA    \
-    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_STORED_ALPHA
 #define CAPS_DOUBLEBUFFERED  \
     sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_DOUBLEBUFFERED
 #define CAPS_EXT_LCD_SHADER  \

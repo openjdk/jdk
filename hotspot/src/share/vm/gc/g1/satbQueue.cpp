@@ -200,8 +200,8 @@ void ObjPtrQueue::print(const char* name) {
 
 void ObjPtrQueue::print(const char* name,
                         void** buf, size_t index, size_t sz) {
-  gclog_or_tty->print_cr("  SATB BUFFER [%s] buf: "PTR_FORMAT" "
-                         "index: "SIZE_FORMAT" sz: "SIZE_FORMAT,
+  gclog_or_tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " "
+                         "index: " SIZE_FORMAT " sz: " SIZE_FORMAT,
                          name, p2i(buf), index, sz);
 }
 #endif // PRODUCT
