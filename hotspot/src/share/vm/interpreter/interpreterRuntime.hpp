@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ class InterpreterRuntime: AllStatic {
     // pass method to avoid calling unsafe bcp_to_method (partial fix 4926272)
     return Bytecodes::code_at(method(thread), bcp(thread));
   }
-  static bool      already_resolved(JavaThread *thread) { return cache_entry(thread)->is_resolved(code(thread)); }
   static Bytecode  bytecode(JavaThread *thread)      { return Bytecode(method(thread), bcp(thread)); }
   static int       get_index_u1(JavaThread *thread, Bytecodes::Code bc)
                                                         { return bytecode(thread).get_index_u1(bc); }
@@ -117,20 +116,23 @@ class InterpreterRuntime: AllStatic {
   static void    note_no_trap(JavaThread* thread, Method *method, int trap_bci) {}
 #endif // CC_INTERP
 
+  static void resolve_from_cache(JavaThread* thread, Bytecodes::Code bytecode);
+ private:
   // Statics & fields
-  static void    resolve_get_put(JavaThread* thread, Bytecodes::Code bytecode);
+  static void resolve_get_put(JavaThread* thread, Bytecodes::Code bytecode);
 
+  // Calls
+  static void resolve_invoke(JavaThread* thread, Bytecodes::Code bytecode);
+  static void resolve_invokehandle (JavaThread* thread);
+  static void resolve_invokedynamic(JavaThread* thread);
+
+ public:
   // Synchronization
   static void    monitorenter(JavaThread* thread, BasicObjectLock* elem);
   static void    monitorexit (JavaThread* thread, BasicObjectLock* elem);
 
   static void    throw_illegal_monitor_state_exception(JavaThread* thread);
   static void    new_illegal_monitor_state_exception(JavaThread* thread);
-
-  // Calls
-  static void    resolve_invoke       (JavaThread* thread, Bytecodes::Code bytecode);
-  static void    resolve_invokehandle (JavaThread* thread);
-  static void    resolve_invokedynamic(JavaThread* thread);
 
   // Breakpoints
   static void _breakpoint(JavaThread* thread, Method* method, address bcp);

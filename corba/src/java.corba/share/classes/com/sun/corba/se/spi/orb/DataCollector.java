@@ -58,7 +58,7 @@ public interface DataCollector {
      * mappings in the resulting properties.  Also, -ORBInitialServices
      * is handled specially in applet mode: they are converted from
      * relative to absolute URLs.
-     * @raises IllegalStateException if setPropertyNames has not
+     * @throws IllegalStateException if setPropertyNames has not
      * been called.
      */
     Properties getProperties() ;

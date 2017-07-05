@@ -477,8 +477,6 @@ class ConstantPoolCache: public MetaspaceObj {
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
-  void adjust_method_entries(Method** old_methods, Method** new_methods,
-                             int methods_length, bool* trace_name_printed);
   void adjust_method_entries(InstanceKlass* holder, bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
   void dump_cache();

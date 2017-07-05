@@ -31,7 +31,7 @@ import org.omg.CORBA_2_3.portable.OutputStream ;
 /** ObjectAdapterIdNumber is used to represent pre-JDK 1.4 POA adapter
  * IDs.  The POA ID was simply represented as a single integer, which was
  * mapped to the actual POA instance.  Here, we just represent these
- * internally as arrays of the form { "OldRootPOA", "<number>" },
+ * internally as arrays of the form {@code { "OldRootPOA", "<number>" }},
  * and provide an extra method to get the number back.
  */
 public class ObjectAdapterIdNumber extends ObjectAdapterIdArray {

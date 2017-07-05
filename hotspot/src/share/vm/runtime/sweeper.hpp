@@ -54,7 +54,6 @@ class WhiteBox;
 //     nmethod's space is freed.
 
 class NMethodSweeper : public AllStatic {
-  friend class WhiteBox;
  private:
   enum MethodStateChange {
     None,
@@ -71,6 +70,7 @@ class NMethodSweeper : public AllStatic {
 
   static volatile int  _sweep_started;            // Flag to control conc sweeper
   static volatile bool _should_sweep;             // Indicates if we should invoke the sweeper
+  static volatile bool _force_sweep;              // Indicates if we should force a sweep
   static volatile int _bytes_changed;             // Counts the total nmethod size if the nmethod changed from:
                                                   //   1) alive       -> not_entrant
                                                   //   2) not_entrant -> zombie
@@ -117,6 +117,7 @@ class NMethodSweeper : public AllStatic {
   static void mark_active_nmethods();      // Invoked at the end of each safepoint
   static void sweeper_loop();
   static void notify(int code_blob_type);  // Possibly start the sweeper thread.
+  static void force_sweep();
 
   static int hotness_counter_reset_val();
   static void report_state_change(nmethod* nm);

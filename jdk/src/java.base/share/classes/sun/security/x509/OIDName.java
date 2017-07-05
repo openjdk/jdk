@@ -55,7 +55,7 @@ public class OIDName implements GeneralNameInterface {
     /**
      * Create the OIDName object with the specified name.
      *
-     * @param name the OIDName.
+     * @param oid the OIDName.
      */
     public OIDName(ObjectIdentifier oid) {
         this.oid = oid;
@@ -143,7 +143,7 @@ public class OIDName implements GeneralNameInterface {
      * certification path verification.
      *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is not exact match, but narrowing and widening are
      *          not supported for this name type.
      */
@@ -166,7 +166,7 @@ public class OIDName implements GeneralNameInterface {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {

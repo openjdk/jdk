@@ -247,7 +247,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * read input stream as HEX-encoded DER-encoded bytes
      *
      * @param in InputStream to read
-     * @returns DerValue corresponding to decoded HEX-encoded bytes
+     * @return DerValue corresponding to decoded HEX-encoded bytes
      * @throws IOException if stream can not be interpreted as RFC1421
      *                     encoded bytes
      */
@@ -289,8 +289,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * Construct an initialized X509 Certificate. The certificate is stored
      * in raw form and has to be signed to be useful.
      *
-     * @params info the X509CertificateInfo which the Certificate is to be
-     *              created from.
+     * @param certInfo the X509CertificateInfo which the Certificate is to be
+     *             created from.
      */
     public X509CertImpl(X509CertInfo certInfo) {
         this.info = certInfo;

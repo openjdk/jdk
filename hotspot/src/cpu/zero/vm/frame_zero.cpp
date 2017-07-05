@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -213,7 +213,7 @@ void frame::zero_print_on_error(int           frame_index,
     valuebuf[buflen - 1] = '\0';
 
     // Print the result
-    st->print_cr(" " PTR_FORMAT ": %-21s = %s", addr, fieldbuf, valuebuf);
+    st->print_cr(" " PTR_FORMAT ": %-21s = %s", p2i(addr), fieldbuf, valuebuf);
   }
 }
 

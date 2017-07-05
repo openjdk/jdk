@@ -153,9 +153,6 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
         String GST[] = new String[] {"Heure normale du Golfe", "GST",
                                      "Heure avanc\u00e9e du Golfe", "GDT",
                                      "Golfe", "GT"} ;
-        String HAST[] = new String[] {"Heure normale d'Hawa\u00ef-Al\u00e9outiennes", "HAST",
-                                      "Heure avanc\u00e9e d'Hawa\u00ef-Al\u00e9outiennes", "HADT",
-                                      "Hawa\u00EF-Iles Al\u00E9outiennes", "HAT"} ;
         String HKT[] =  new String[] {"Heure de Hong Kong", "HKT",
                                       "Heure d'\u00e9t\u00e9 de Hong Kong", "HKST",
                                       "Heure de Hong-Kong", "HKT"};
@@ -372,7 +369,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
             {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
             {"Africa/Windhoek", WAT},
-            {"America/Adak", HAST},
+            {"America/Adak", HST},
             {"America/Anguilla", AST},
             {"America/Antigua", AST},
             {"America/Araguaina", BRT},
@@ -394,7 +391,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                                "Heure d'\u00e9t\u00e9 du Paraguay", "PYST",
                                                "Heure du Paraguay", "PYT"}},
             {"America/Atikokan", EST},
-            {"America/Atka", HAST},
+            {"America/Atka", HST},
             {"America/Bahia", BRT},
             {"America/Bahia_Banderas", CST},
             {"America/Barbados", AST},
@@ -1024,7 +1021,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
             {"UCT", UTC},
             {"Universal", UTC},
             {"US/Alaska", AKST},
-            {"US/Aleutian", HAST},
+            {"US/Aleutian", HST},
             {"US/Arizona", MST},
             {"US/Central", CST},
             {"US/Eastern", EST},

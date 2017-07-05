@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary test that redefineClasses and isRedefineClassesSupported behave correctly when redefine is not enabled
  * @author Robert Field, Sun Microsystems -- as modified from the work of Gabriel Adauto, Wily Technology
  *
+ * @modules java.instrument
  * @run build RedefineClassesDisabledTest
  * @run shell RedefineSetUp.sh
  * @run shell MakeJAR.sh basicAgent

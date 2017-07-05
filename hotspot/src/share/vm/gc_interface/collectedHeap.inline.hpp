@@ -236,12 +236,6 @@ oop CollectedHeap::array_allocate_nozero(KlassHandle klass,
   return (oop)obj;
 }
 
-inline void CollectedHeap::oop_iterate_no_header(OopClosure* cl) {
-  NoHeaderExtendedOopClosure no_header_cl(cl);
-  oop_iterate(&no_header_cl);
-}
-
-
 inline HeapWord* CollectedHeap::align_allocation_or_fail(HeapWord* addr,
                                                          HeapWord* end,
                                                          unsigned short alignment_in_bytes) {

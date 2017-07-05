@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,6 +298,7 @@ JVM_handle_linux_signal(int sig,
         goto report_and_die;
       }
 
+      CodeBlob *cb = NULL;
       // Handle signal from NativeJump::patch_verified_entry().
       if (( TrapBasedNotEntrantChecks && sig == SIGTRAP && nativeInstruction_at(pc)->is_sigtrap_zombie_not_entrant()) ||
           (!TrapBasedNotEntrantChecks && sig == SIGILL  && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant())) {
@@ -313,7 +314,10 @@ JVM_handle_linux_signal(int sig,
                // especially when we try to read from the safepoint polling page. So the check
                //   (address)info->si_addr == os::get_standard_polling_page()
                // doesn't work for us. We use:
-               ((NativeInstruction*)pc)->is_safepoint_poll()) {
+               ((NativeInstruction*)pc)->is_safepoint_poll() &&
+               CodeCache::contains((void*) pc) &&
+               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               cb->is_nmethod()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));
         }

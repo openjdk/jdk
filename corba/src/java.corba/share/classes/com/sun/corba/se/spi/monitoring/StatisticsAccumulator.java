@@ -27,11 +27,8 @@ package com.sun.corba.se.spi.monitoring;
 import java.util.*;
 
 /**
- * <p>
- *
  * @author Hemanth Puttaswamy
- * </p>
- * <p>
+ *
  * StatisticsAccumulator accumulates the samples provided by the user and
  * computes the value of minimum, maximum, sum and sample square sum. When
  * the StatisticMonitoredAttribute calls getValue(), it will compute all
@@ -42,7 +39,6 @@ import java.util.*;
  * Users can easily extend this class and provide the implementation of
  * toString() method to format the stats as desired. By default all the stats
  * are printed in a single line.
- * </p>
  */
 public class StatisticsAccumulator {
 
@@ -72,19 +68,12 @@ public class StatisticsAccumulator {
 
 
 /**
- * <p>
  * User will use this method to just register a sample with the
  * StatisticsAccumulator. This is the only method that User will use to
  * expose the statistics, internally the StatisticMonitoredAttribute will
  * collect the information when requested from the ASAdmin.
- * </p>
- * <p>
- *
- * </p>
- * <p>
  *
  * @param value a double value to make it more precise
- * </p>
  */
     public void sample(double value) {
         sampleCount++;
@@ -137,19 +126,11 @@ public class StatisticsAccumulator {
     }
 
 /**
- * <p>
  * Construct the Statistics Accumulator by providing the unit as a String.
- * The examples of units are &quot;Hours&quot;, &quot;Minutes&quot;,
- * &quot;Seconds&quot;, &quot;MilliSeconds&quot;, &quot;Micro Seconds&quot;
- * etc.,
- * </p>
- * <p>
+ * The examples of units are "Hours", "Minutes",
+ * "Seconds", "MilliSeconds", "Micro Seconds" etc.
  *
- * @return a StatisticsAccumulator with ...
- * </p>
- * <p>
  * @param unit a String representing the units for the samples collected
- * </p>
  */
     public StatisticsAccumulator( String unit ) {
         this.unit = unit;

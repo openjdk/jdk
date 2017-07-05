@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 inline void PSScavenge::save_to_space_top_before_gc() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _to_space_top_before_gc = heap->young_gen()->to_space()->top();
 }
 
@@ -56,7 +56,7 @@ inline bool PSScavenge::should_scavenge(T* p, MutableSpace* to_space) {
 template <class T>
 inline bool PSScavenge::should_scavenge(T* p, bool check_to_space) {
   if (check_to_space) {
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     return should_scavenge(p, heap->young_gen()->to_space());
   }
   return should_scavenge(p);
@@ -97,7 +97,6 @@ class PSScavengeFromKlassClosure: public OopClosure {
     ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
     assert(!psh->is_in_reserved(p), "GC barrier needed");
     if (PSScavenge::should_scavenge(p)) {
-      assert(!Universe::heap()->is_in_reserved(p), "Not from meta-data?");
       assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
 
       oop o = *p;

@@ -50,7 +50,9 @@ endif
 $(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
 	@echo $(LOG_INFO) Making signal interposition lib...
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
-                         $(LFLAGS_JSIG) -o $@ $(JSIGSRCDIR)/jsig.c -ldl
+	                 $(EXTRA_CFLAGS) \
+                         $(LFLAGS_JSIG) $(EXTRA_LDFLAGS) \
+	                 -o $@ $(JSIGSRCDIR)/jsig.c -ldl
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJSIG_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJSIG_DEBUGINFO) $@

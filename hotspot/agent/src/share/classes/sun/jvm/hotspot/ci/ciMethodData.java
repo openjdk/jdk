@@ -148,7 +148,7 @@ public class ciMethodData extends ciMetadata implements MethodDataInterface<ciKl
   ParametersTypeData<ciKlass,ciMethod> parametersTypeData() {
     Address base = getAddress().addOffsetTo(origField.getOffset());
     int di = (int)parametersTypeDataDi.getValue(base);
-    if (di == -1) {
+    if (di == -1 || di == -2) {
       return null;
     }
     DataLayout dataLayout = new DataLayout(dataField.getValue(getAddress()), di);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,28 +115,28 @@ public abstract class LazyCompositeData
     protected abstract CompositeData getCompositeData();
 
     // Helper methods
-    static String getString(CompositeData cd, String itemName) {
+    public static String getString(CompositeData cd, String itemName) {
         if (cd == null)
             throw new IllegalArgumentException("Null CompositeData");
 
         return (String) cd.get(itemName);
     }
 
-    static boolean getBoolean(CompositeData cd, String itemName) {
+    public static boolean getBoolean(CompositeData cd, String itemName) {
         if (cd == null)
             throw new IllegalArgumentException("Null CompositeData");
 
         return ((Boolean) cd.get(itemName)).booleanValue();
     }
 
-    static long getLong(CompositeData cd, String itemName) {
+    public static long getLong(CompositeData cd, String itemName) {
         if (cd == null)
             throw new IllegalArgumentException("Null CompositeData");
 
         return ((Long) cd.get(itemName)).longValue();
     }
 
-    static int getInt(CompositeData cd, String itemName) {
+    public static int getInt(CompositeData cd, String itemName) {
         if (cd == null)
             throw new IllegalArgumentException("Null CompositeData");
 

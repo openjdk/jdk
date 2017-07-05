@@ -330,8 +330,12 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, uint worker_id, Heap
         assert(!hrclaimer->is_region_claimed(ch_index),
                "Must not have been claimed yet because claiming of humongous continuation first claims the start region");
 
-        // There's no need to actually claim the continues humongous region, but we can do it in an assert as an extra precaution.
-        assert(hrclaimer->claim_region(ch_index), "We should always be able to claim the continuesHumongous part of the humongous object");
+        // Claim the region so no other worker tries to process the region. When a worker processes a
+        // starts_humongous region it may also process the associated continues_humongous regions.
+        // The continues_humongous regions can be changed to free regions. Unless this worker claims
+        // all of these regions, other workers might try claim and process these newly free regions.
+        bool claim_result = hrclaimer->claim_region(ch_index);
+        guarantee(claim_result, "We should always be able to claim the continuesHumongous part of the humongous object");
 
         bool res2 = blk->doHeapRegion(chr);
         if (res2) {

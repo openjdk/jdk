@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.testlibrary.LockFreeLogManager;
+import jdk.testlibrary.Utils;
 
 /**
  * ThreadStateController allows a thread to request this thread to transition
@@ -73,7 +74,7 @@ public class ThreadStateController extends Thread {
 
     public static void pause(long ms) {
         try {
-            Thread.sleep(ms);
+            Thread.sleep(Utils.adjustTimeout(ms));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -135,7 +136,7 @@ public class ThreadStateController extends Thread {
                         try {
                             // this thread has escaped the BLOCKED state
                             // release the lock and a short wait before continue
-                            lock.wait(10);
+                            lock.wait(Utils.adjustTimeout(10));
                         } catch (InterruptedException e) {
                             // ignore
                             interrupted.incrementAndGet();
@@ -165,7 +166,7 @@ public class ThreadStateController extends Thread {
                             getId(), getName(), iterations.get(), interrupted.get());
                         try {
                             stateChange(nextState);
-                            lock.wait(10000);
+                            lock.wait(Integer.MAX_VALUE);
                             log("%d:   %s wakes up from timed waiting (iterations %d interrupted %d)%n",
                                 getId(), getName(), iterations.get(), interrupted.get());
                         } catch (InterruptedException e) {
@@ -185,7 +186,8 @@ public class ThreadStateController extends Thread {
                 case S_TIMED_PARKED: {
                     log("%d: %s is going to timed park (iterations %d)%n",
                         getId(), getName(), iterations.get());
-                    long deadline = System.currentTimeMillis() + 10000*1000;
+                    long deadline = System.currentTimeMillis() +
+                                        Utils.adjustTimeout(10000*1000);
                     stateChange(nextState);
                     LockSupport.parkUntil(deadline);
                     break;
@@ -195,7 +197,7 @@ public class ThreadStateController extends Thread {
                         getId(), getName(), iterations.get(), interrupted.get());
                     try {
                         stateChange(nextState);
-                        Thread.sleep(1000000);
+                        Thread.sleep(Utils.adjustTimeout(1000000));
                     } catch (InterruptedException e) {
                         // finish sleeping
                         interrupted.incrementAndGet();

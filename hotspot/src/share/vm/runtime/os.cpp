@@ -813,16 +813,16 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   st->cr();
 }
 
-void os::print_environment_variables(outputStream* st, const char** env_list,
-                                     char* buffer, int len) {
+void os::print_environment_variables(outputStream* st, const char** env_list) {
   if (env_list) {
     st->print_cr("Environment Variables:");
 
     for (int i = 0; env_list[i] != NULL; i++) {
-      if (getenv(env_list[i], buffer, len)) {
+      char *envvar = ::getenv(env_list[i]);
+      if (envvar != NULL) {
         st->print("%s", env_list[i]);
         st->print("=");
-        st->print_cr("%s", buffer);
+        st->print_cr("%s", envvar);
       }
     }
   }

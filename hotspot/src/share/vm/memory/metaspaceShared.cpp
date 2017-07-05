@@ -30,6 +30,8 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "memory/filemap.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/metaspace.hpp"
@@ -104,15 +106,33 @@ static void remove_unshareable_in_classes() {
   }
 }
 
-// Walk all methods in the class list and assign a fingerprint.
-// so that this part of the ConstMethod* is read only.
-static void calculate_fingerprints() {
+static void rewrite_nofast_bytecode(Method* method) {
+  RawBytecodeStream bcs(method);
+  while (!bcs.is_last_bytecode()) {
+    Bytecodes::Code opcode = bcs.raw_next();
+    switch (opcode) {
+    case Bytecodes::_getfield:      *bcs.bcp() = Bytecodes::_nofast_getfield;      break;
+    case Bytecodes::_putfield:      *bcs.bcp() = Bytecodes::_nofast_putfield;      break;
+    case Bytecodes::_aload_0:       *bcs.bcp() = Bytecodes::_nofast_aload_0;       break;
+    case Bytecodes::_iload:         *bcs.bcp() = Bytecodes::_nofast_iload;         break;
+    default: break;
+    }
+  }
+}
+
+// Walk all methods in the class list to ensure that they won't be modified at
+// run time. This includes:
+// [1] Rewrite all bytecodes as needed, so that the ConstMethod* will not be modified
+//     at run time by RewriteBytecodes/RewriteFrequentPairs
+// [2] Assign a fingerprint, so one doesn't need to be assigned at run-time.
+static void rewrite_nofast_bytecodes_and_calculate_fingerprints() {
   for (int i = 0; i < _global_klass_objects->length(); i++) {
     Klass* k = _global_klass_objects->at(i);
     if (k->oop_is_instance()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       for (int i = 0; i < ik->methods()->length(); i++) {
         Method* m = ik->methods()->at(i);
+        rewrite_nofast_bytecode(m);
         Fingerprinter fp(m);
         // The side effect of this call sets method's fingerprint field.
         fp.fingerprint();
@@ -476,9 +496,10 @@ void VM_PopulateDumpSharedSpace::doit() {
     tty->print_cr("    type array classes = %5d", num_type_array);
   }
 
-  // Update all the fingerprints in the shared methods.
-  tty->print("Calculating fingerprints ... ");
-  calculate_fingerprints();
+
+  // Ensure the ConstMethods won't be modified at run-time
+  tty->print("Updating ConstMethods ... ");
+  rewrite_nofast_bytecodes_and_calculate_fingerprints();
   tty->print_cr("done. ");
 
   // Remove all references outside the metadata

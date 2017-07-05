@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6211220 6616825
  * @summary Test that jmx.serial.form=1.0 works for ObjectName
  * @author Eamonn McManus, Daniel Fuchs
+ * @modules java.management
  * @run clean SerialCompatTest
  * @run build SerialCompatTest
  * @run main/othervm -Djdk.jmx.mbeans.allowNonPublic=true -Djmx.serial.form=1.0 SerialCompatTest

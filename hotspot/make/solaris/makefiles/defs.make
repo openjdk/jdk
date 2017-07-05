@@ -224,17 +224,17 @@ LIBRARY_SUFFIX=so
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.$(LIBRARY_SUFFIX)
-EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
+EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.diz
+    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.diz
   else
-    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
+    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.debuginfo
   endif
 endif
 
-EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
-EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
+EXPORT_SERVER_DIR = $(EXPORT_LIB_ARCH_DIR)/server
+EXPORT_CLIENT_DIR = $(EXPORT_LIB_ARCH_DIR)/client
 
 ifeq ($(JVM_VARIANT_SERVER),true)
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
@@ -295,12 +295,12 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
   endif
 endif
 
-EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX)
+EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX)
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libsaproc.diz
   else
-    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libsaproc.debuginfo
   endif
 endif
 EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar

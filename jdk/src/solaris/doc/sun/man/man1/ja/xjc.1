@@ -2,10 +2,10 @@
 .\" Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: xjc
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Java Web�����ӥ����ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Java Webサービス・ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "xjc" "1" "2013ǯ11��21��" "JDK 8" "Java Web�����ӥ����ġ���"
+.TH "xjc" "1" "2013年11月21日" "JDK 8" "Java Webサービス・ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-xjc \- XML�������ޡ��ե�������������դ���Java���饹�˥���ѥ��뤷�ޤ���
-.SH "����"
+xjc \- XMLスキーマ・ファイルを完全注釈付きのJavaクラスにコンパイルします。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,23 +64,23 @@ xjc \- XML�������ޡ��ե�������������դ���Java���饹�˥���ѥ��뤷�ޤ���
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 schema \fIfile/URL/dir/jar \&.\&.\&.\fR
 .RS 4
-XML�������ޡ��ե�����ξ�ꡣ\fIdir\fR�����ꤵ��Ƥ�����ϡ����٤ƤΥ������ޡ��ե����뤬����ѥ��뤵��ޤ���\fIjar\fR�����ꤵ��Ƥ�����ϡ�\fI/META\-INF/sun\-jaxb\&.episode\fR�Х���ǥ��󥰡��ե����뤬����ѥ��뤵��ޤ���
+XMLスキーマ・ファイルの場所。\fIdir\fRが指定されている場合は、すべてのスキーマ・ファイルがコンパイルされます。\fIjar\fRが指定されている場合は、\fI/META\-INF/sun\-jaxb\&.episode\fRバインディング・ファイルがコンパイルされます。
 .RE
 .PP
 \-b \fIbindinfo\fR
 .RS 4
-�Х���ǥ��󥰡��ե�����ξ�ꡣ
+バインディング・ファイルの場所。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-�ץ�åȥե������bin�ǥ��쥯�ȥ�ˤ���Ŭ�ڤ�\fIxjc\fR�����롦������ץȤ���Ѥ��ơ��Х���ǥ��󥰡�����ѥ����ư���ޤ����Х���ǥ��󥰡�����ѥ����¹Ԥ���Ant�������⤢��ޤ���http://jaxb\&.java\&.net/nonav/2\&.1\&.3/docs/xjcTask\&.html��
-Using the XJC with Ant�򻲾Ȥ��Ƥ�������
-.SH "���ץ����"
+プラットフォームのbinディレクトリにある適切な\fIxjc\fRシェル・スクリプトを使用して、バインディング・コンパイラを起動します。バインディング・コンパイラを実行するAntタスクもあります。http://jaxb\&.java\&.net/nonav/2\&.1\&.3/docs/xjcTask\&.htmlの
+Using the XJC with Antを参照してください
+.SH "オプション"
 .sp
 .RS 4
 .ie n \{\
@@ -90,7 +90,7 @@ Using the XJC with Ant�򻲾Ȥ��Ƥ�������
 .sp -1
 .IP \(bu 2.3
 .\}
-��ɸ�४�ץ����⻲�Ȥ��Ƥ�������
+非標準オプションも参照してください
 .RE
 .sp
 .RS 4
@@ -101,167 +101,167 @@ Using the XJC with Ant�򻲾Ȥ��Ƥ�������
 .sp -1
 .IP \(bu 2.3
 .\}
-��侩�Ǻ�����줿���ץ����⻲�Ȥ��Ƥ�������
+非推奨で削除されたオプションも参照してください
 .RE
 .PP
 \-nv
 .RS 4
-�ǥե���ȤǤϡ�XJC�Х���ǥ��󥰡�����ѥ���ϡ����������������ޤ�����������˸�̩�ʸ��ڤ�¹Ԥ��ޤ������Υ��ץ�������Ѥ���ȡ���̩�ʥ������޸��ڤ�̵���ˤʤ�ޤ�������ϡ��Х���ǥ��󥰡�����ѥ��餬���ڤ���ڼ¹Ԥ��ʤ��Ȥ������ȤǤϤ���ޤ��󡣤�긷̩�Ǥʤ����ڤ�¹Ԥ���Ȥ������ȤǤ���
+デフォルトでは、XJCバインディング・コンパイラは、ソース・スキーマを処理する前に厳密な検証を実行します。このオプションを使用すると、厳密なスキーマ検証か無効になります。これは、バインディング・コンパイラが検証を一切実行しないということではありません。より厳密でない検証を実行するということです。
 .RE
 .PP
 \-extension
 .RS 4
-�ǥե���ȤǤϡ�XJC�Х���ǥ��󥰡�����ѥ���ϡ�JAXB���ͤ�Compatibility�ξϤ���������Ƥ���롼���̩�˶������ޤ�����ϿE\&.2�ˤϡ�JAXB v1\&.0�Ǵ����ˤϥ��ݡ��Ȥ���Ƥ��ʤ���Ϣ��W3C XML�������޵�ǽ���������Ƥ��ޤ������ˤ�äƤϡ����Υ����å���ͭ���ˤʤ�\fI\-extension\fR�⡼�ɤǤ����ε�ǽ�����ѤǤ����礬����ޤ����ޤ����ǥե���Ȥθ�̩�ʥ⡼�ɤǤϡ����ͤ��������Ƥ���Х���ǥ��󥰡��������ޥ����Τߤ����ѤǤ��ޤ���\fI\-extension\fR�����å�����ꤹ��С�JAXB Vendor Extension����ѤǤ��ޤ���
+デフォルトでは、XJCバインディング・コンパイラは、JAXB仕様のCompatibilityの章で説明されているルールを厳密に強制します。付録E\&.2には、JAXB v1\&.0で完全にはサポートされていない一連のW3C XMLスキーマ機能が定義されています。場合によっては、このスイッチで有効になる\fI\-extension\fRモードでそれらの機能が使用できる場合があります。また、デフォルトの厳密なモードでは、仕様に定義されているバインディング・カスタマイズのみが使用できます。\fI\-extension\fRスイッチを指定すれば、JAXB Vendor Extensionを使用できます。
 .RE
 .PP
 \-b \fIfile\fR
 .RS 4
-�������볰���Х���ǥ��󥰡��ե������1�Ĥޤ���ʣ�����ꤷ�ޤ����Х���ǥ��󥰡��ե����뤴�Ȥ�\fI\-b\fR�����å�����ꤹ��ɬ�פ�����ޤ��������Х���ǥ��󥰡��ե�����ι�ʸ�Ͻ���Ǥ���ʣ���Υ������ޤΥ������ޥ������ޤޤ��1�ĤΥХ���ǥ��󥰡��ե��������Ѥ����ꡢ�����Υ������ޥ�����ʣ���ΥХ���ǥ��󥰡��ե������ʬ�䤷����Ǥ��ޤ���������򼨤��ޤ���\fIxjc schema1\&.xsd schema2\&.xsd schema3\&.xsd \-b bindings123\&.xjb\fR
-\fIxjc schema1\&.xsd schema2\&.xsd schema3\&.xsd \-b bindings1\&.xjb \-b bindings2\&.xjb \-b bindings3\&.xjb\fR�ޤ������ޥ�ɥ饤��˥������ޡ��ե�����ȥХ���ǥ��󥰡��ե��������ꤹ����֤�Ǥ�դǤ���
+処理する外部バインディング・ファイルを1つまたは複数指定します。バインディング・ファイルごとに\fI\-b\fRスイッチを指定する必要があります。外部バインディング・ファイルの構文は柔軟です。複数のスキーマのカスタマイズが含まれる1つのバインディング・ファイルを使用したり、それらのカスタマイズを複数のバインディング・ファイルに分割したりできます。次に例を示します。\fIxjc schema1\&.xsd schema2\&.xsd schema3\&.xsd \-b bindings123\&.xjb\fR
+\fIxjc schema1\&.xsd schema2\&.xsd schema3\&.xsd \-b bindings1\&.xjb \-b bindings2\&.xjb \-b bindings3\&.xjb\fRまた、コマンドラインにスキーマ・ファイルとバインディング・ファイルを指定する順番は任意です。
 .RE
 .PP
 \-d \fIdir\fR
 .RS 4
-�ǥե���ȤǤϡ�XJC�Х���ǥ��󥰡�����ѥ���ϡ�Java����ƥ�ġ����饹�򸽺ߤΥǥ��쥯�ȥ���������ޤ������Υ��ץ�������Ѥ���ȡ����ؽ��ϥǥ��쥯�ȥ�����Ǥ��ޤ������ϥǥ��쥯�ȥ�Ϥ��Ǥ�¸�ߤ��Ƥ���ɬ�פ�����ޤ���XJC�Х���ǥ��󥰡�����ѥ���ǤϺ�������ޤ���
+デフォルトでは、XJCバインディング・コンパイラは、Javaコンテンツ・クラスを現在のディレクトリに生成します。このオプションを使用すると、代替出力ディレクトリを指定できます。出力ディレクトリはすでに存在している必要があります。XJCバインディング・コンパイラでは作成されません。
 .RE
 .PP
 \-p \fIpkg\fR
 .RS 4
-���Υ��ޥ�ɥ饤�󡦥��ץ����ǥ������åȡ��ѥå���������ꤷ����硢���λ������Ƥϡ��ѥå�����̾���Ф��뤹�٤ƤΥХ���ǥ��󥰡��������ޥ����䡢���ͤǵ��ꤵ��Ƥ���ǥե���ȤΥѥå�����̾���르�ꥺ�����ͥ�褵��ޤ���
+このコマンドライン・オプションでターゲット・パッケージを指定した場合、その指定内容は、パッケージ名に対するすべてのバインディング・カスタマイズや、仕様で規定されているデフォルトのパッケージ名アルゴリズムよりも優先されます。
 .RE
 .PP
 \-httpproxy \fIproxy\fR
 .RS 4
-\fI[user[:password]@]proxyHost[:proxyPort]\fR������HTTP�ޤ���HTTPS�ץ���������ꤷ�ޤ����Ť�\fI\-host\fR�����\fI\-port\fR���ץ����ϡ����̸ߴ����Τ���˰���³��RI�ǥ��ݡ��Ȥ���ޤ�������侩�Ȥʤ�ޤ��������Υ��ץ����ǻ��ꤵ�줿�ѥ���ɤϡ�top���ޥ�ɤ���Ѥ���¾�Υ桼������ɽ���Ǥ�������Ǥ����������ƥ������ˤϡ�\fI\-httpproxyfile\fR����Ѥ��Ƥ���������
+\fI[user[:password]@]proxyHost[:proxyPort]\fR形式でHTTPまたはHTTPSプロキシを指定します。古い\fI\-host\fRおよび\fI\-port\fRオプションは、下位互換性のために引き続きRIでサポートされますが、非推奨となりました。このオプションで指定されたパスワードは、topコマンドを使用する他のユーザーが表示できる引数です。セキュリティを高めるには、\fI\-httpproxyfile\fRを使用してください。
 .RE
 .PP
 \-httpproxyfile file
 .RS 4
-�ե��������Ѥ��ơ�HTTP�ޤ���HTTPS�ץ���������ꤷ�ޤ���������\fI\-httpproxy\fR���ץ�����Ʊ���Ǥ��������Υե�������˻��ꤵ�줿�ѥ���ɤ�¾�Υ桼������ɽ�����뤳�ȤϤǤ��ޤ���
+ファイルを使用して、HTTPまたはHTTPSプロキシを指定します。形式は\fI\-httpproxy\fRオプションと同じですが、このファイル内に指定されたパスワードを他のユーザーが表示することはできません。
 .RE
 .PP
 \-classpath arg
 .RS 4
-\fIjxb:javaType\fR�����xjc:\fIsuperClass\fR�������ޥ��������Ѥ��륯�饤����ȡ����ץꥱ�������Υ��饹���ե�����θ���������ꤷ�ޤ���
+\fIjxb:javaType\fRおよびxjc:\fIsuperClass\fRカスタマイズが使用するクライアント・アプリケーションのクラス・ファイルの検索場所を指定します。
 .RE
 .PP
 \-catalog file
 .RS 4
-��������ƥ��ƥ����Ȥ��褹�륫���������ե��������ꤷ�ޤ���TR9401��XCatalog�����OASIS XML Catalog�γƷ��������ݡ��Ȥ���ޤ���http://xerces\&.apache\&.org/xml\-commons/components/resolver/resolver\-article\&.html��
-XML Entity and URI Resolvers�򻲾Ȥ��Ƥ�������
+外部エンティティ参照を解決するカタログ・ファイルを指定します。TR9401、XCatalogおよびOASIS XML Catalogの各形式がサポートされます。http://xerces\&.apache\&.org/xml\-commons/components/resolver/resolver\-article\&.htmlの
+XML Entity and URI Resolversを参照してください
 .RE
 .PP
 \-readOnly
 .RS 4
-�ǥե���ȤǤϡ�XJC�Х���ǥ��󥰡�����ѥ���ϡ���������Java���������ե���������ߤ����ݸ�ޤ��󡣤��Υ��ץ�������Ѥ���ȡ�XJC�Х���ǥ��󥰡�����ѥ�������������Java����������Ū���ɼ�����Ѥˤ��ޤ���
+デフォルトでは、XJCバインディング・コンパイラは、生成するJavaソース・ファイルを書込みから保護しません。このオプションを使用すると、XJCバインディング・コンパイラは生成されるJavaソースを強制的に読取り専用にします。
 .RE
 .PP
 \-npa
 .RS 4
-\fI**/package\-info\&.java\fR�ؤΥѥå���������٥��������������������ޤ������Υ����å�����Ѥ����������륳���ɤǤϡ����������᤬¾�������ѥ��饹������������ޤ���
+\fI**/package\-info\&.java\fRへのパッケージ・レベルの注釈の生成を抑制します。このスイッチを使用して生成するコードでは、これらの注釈が他の生成済クラスに内部化されます。
 .RE
 .PP
 \-no\-header
 .RS 4
-¿���Υ��ȥ����ॹ����פ�ޤ�ե����롦�إå����������Ȥ��������������ޤ����������Ѥ���ȡ��������줿�����ɤ�\fIdiff\fR���ޥ�ɤȤθߴ�������궯���ʤ�ޤ���
+多少のメモとタイムスタンプを含むファイル・ヘッダー・コメントの生成を抑制します。これを使用すると、生成されたコードと\fIdiff\fRコマンドとの互換性がより強くなります。
 .RE
 .PP
 \-target 2\&.0
 .RS 4
-JAXB 2\&.1��ǽ�˰�¸���륳���ɤ��������ʤ��褦�ˤ��ޤ�������ˤ�ꡢ�������줿�����ɤ�JAXB 2\&.0��󥿥���Ķ�(Java SE 6�ʤ�)�Ǽ¹ԤǤ���褦�ˤʤ�ޤ���
+JAXB 2\&.1機能に依存するコードを生成しないようにします。これにより、生成されたコードをJAXB 2\&.0ランタイム環境(Java SE 6など)で実行できるようになります。
 .RE
 .PP
 \-xmlschema
 .RS 4
-���ϥ������ޤ�W3C XML�������ޤȤ��ư����ޤ�(�ǥե����)�����Υ����å�����ꤷ�ʤ���硢���ϥ������ޤ�W3C XML�������ޤ�Ʊ���褦�˰����ޤ���
+入力スキーマをW3C XMLスキーマとして扱います(デフォルト)。このスイッチを指定しない場合、入力スキーマはW3C XMLスキーマと同じように扱われます。
 .RE
 .PP
 \-relaxing
 .RS 4
-���ϥ������ޤ�RELAX NG�Ȥ��ư����ޤ�(�Ū�����̤���ݡ���)��RELAX NG�������ޤΥ��ݡ��Ȥ�JAXB Vendor Extension�Ȥ����󶡤���Ƥ��ޤ���
+入力スキーマをRELAX NGとして扱います(試験的および未サポート)。RELAX NGスキーマのサポートはJAXB Vendor Extensionとして提供されています。
 .RE
 .PP
 \-relaxing\-compact
 .RS 4
-���ϥ������ޤ�RELAX NG���̹�ʸ�Ȥ��ƽ������ޤ�(�Ū�����̤���ݡ���)��RELAX NG�������ޤΥ��ݡ��Ȥ�JAXB Vendor Extension�Ȥ����󶡤���Ƥ��ޤ���
+入力スキーマをRELAX NG圧縮構文として処理します(試験的および未サポート)。RELAX NGスキーマのサポートはJAXB Vendor Extensionとして提供されています。
 .RE
 .PP
 \-dtd
 .RS 4
-���ϥ������ޤ�XML DTD�Ȥ��ư����ޤ�(�Ū�����̤���ݡ���)��RELAX NG�������ޤΥ��ݡ��Ȥ�JAXB Vendor Extension�Ȥ����󶡤���Ƥ��ޤ���
+入力スキーマをXML DTDとして扱います(試験的および未サポート)。RELAX NGスキーマのサポートはJAXB Vendor Extensionとして提供されています。
 .RE
 .PP
 \-wsdl
 .RS 4
-���Ϥ�WSDL�Ȥ��ư��������������Υ������ޤ򥳥�ѥ��뤷�ޤ�(�Ū�����̤���ݡ���)��
+入力をWSDLとして扱い、その内部のスキーマをコンパイルします(試験的および未サポート)。
 .RE
 .PP
 \-quiet
 .RS 4
-��Ľ�����ٹ�ʤɡ�����ѥ���ν��Ϥ��������ޤ���
+進捗情報や警告など、コンパイラの出力を抑制します。
 .RE
 .PP
 \-verbose
 .RS 4
-�����å���������Ϥ���������Υ��顼ȯ�����˥����å����ȥ졼����ɽ�������ꤹ��ʤɡ������ƾ�Ĺ�ˤʤ�ޤ���
+情報メッセージを出力したり特定のエラー発生時にスタック・トレースを表示したりするなど、きわめて冗長になります。
 .RE
 .PP
 \-help
 .RS 4
-����ѥ��顦�����å��Υ��ޥ꡼��ɽ�����ޤ���
+コンパイラ・スイッチのサマリーを表示します。
 .RE
 .PP
 \-version
 .RS 4
-����ѥ���ΥС����������ɽ�����ޤ���
+コンパイラのバージョン情報を表示します。
 .RE
 .PP
 \fIschema file/URL/dir\fR
 .RS 4
-����ѥ����оݤȤʤ�1�Ĥޤ���ʣ���Υ������ޡ��ե��������ꤷ�ޤ����ǥ��쥯�ȥ����ꤹ���硢\fIxjc\fR���ޥ�ɤϤ��٤ƤΥ������ޡ��ե�����򥹥���󤷤ƥ���ѥ��뤷�ޤ���
+コンパイル対象となる1つまたは複数のスキーマ・ファイルを指定します。ディレクトリを指定する場合、\fIxjc\fRコマンドはすべてのスキーマ・ファイルをスキャンしてコンパイルします。
 .RE
-.SS "��ɸ�४�ץ����"
+.SS "非標準オプション"
 .PP
 \-XLocator
 .RS 4
-�������줿�����ɤǤϡ������󲽤θ��Java Bean���󥹥��󥹤˴ޤޤ�륽����XML�˴ؤ���SAX Locator���󤬸�������ޤ���
+生成されたコードでは、非整列化の後にJava Beanインスタンスに含まれるソースXMLに関するSAX Locator情報が公開されます。
 .RE
 .PP
 \-Xsync\-methods
 .RS 4
-�������줿���٤ƤΥ᥽�åɡ������˥����\fIsynchronized\fR������ɤ��ޤ���ޤ���
+生成されたすべてのメソッド・シグニチャに\fIsynchronized\fRキーワードが含められます。
 .RE
 .PP
 \-mark\-generated
 .RS 4
-�������줿�����ɤ�����\fI@javax\&.annotation\&.Generated\fR���դ��ޤ���
+生成されたコードに注釈\fI@javax\&.annotation\&.Generated\fRを付けます。
 .RE
 .PP
 \-episode file
 .RS 4
-����ѥ��뤴�Ȥ˻��ꤵ�줿���ԥ����ɡ��ե�������������ޤ���
+コンパイルごとに指定されたエピソード・ファイルを生成します。
 .RE
-.SS "��侩�Ǻ�����줿���ץ����"
+.SS "非推奨で削除されたオプション"
 .PP
 \-host & \-port
 .RS 4
-�����Υ��ץ�����\fI\-httpproxy\fR���ץ������֤��������ޤ����������Υ��ץ����ϡ����̸ߴ�������ݤ��뤿��˥��ݡ��Ȥ���ޤ������ɥ�����Ȥˤϵ��ܤ��줺������Υ�꡼���Ǻ��������ǽ���⤢��ޤ���
+これらのオプションは\fI\-httpproxy\fRオプションで置き換えられました。これらのオプションは、下位互換性を確保するためにサポートされますが、ドキュメントには記載されず、将来のリリースで削除される可能性もあります。
 .RE
 .PP
 \-use\-runtime
 .RS 4
-JAXB 2\&.0���ͤǤϡ��ܿ����Τ����󥿥���Ķ���������줿���ᡢJAXB RI��\fI**/impl/runtime \fR�ѥå���������������ɬ�פ��ʤ��ʤ�ޤ��������Τ��ᡢ���Υ����å������פȤʤꡢ�������ޤ�����
+JAXB 2\&.0仕様では、移植性のあるランタイム環境が定義されたため、JAXB RIが\fI**/impl/runtime \fRパッケージを生成する必要がなくなりました。このため、このスイッチは不要となり、削除されました。
 .RE
 .PP
 \-source
 .RS 4
-\fI\-source\fR�ߴ��������å��ϡ�JAXB 2\&.0�κǽ��Early Access�Ǥ�Ƴ������ޤ��������Υ����å���JAXB 2\&.0�κ���Υ�꡼������������ޤ���1\&.0\&.x�����ɤ���������ɬ�פ�������ϡ�1\&.0\&.x�����ɡ��١����Υ��󥹥ȡ������Ѥ��Ƥ���������
+\fI\-source\fR互換性スイッチは、JAXB 2\&.0の最初のEarly Access版で導入されました。このスイッチはJAXB 2\&.0の今後のリリースから削除されます。1\&.0\&.xコードを生成する必要がある場合は、1\&.0\&.xコード・ベースのインストールを使用してください。
 .RE
-.SH "����ѥ��������"
+.SH "コンパイラの制限"
 .PP
-�̾�ϡ���Ϣ���뤹�٤ƤΥ������ޤ�Ʊ���Х���ǥ��󥰡�����ѥ��顦�����å�����ꤷ��1�Ĥ�ñ�̤Ȥ��ƥ���ѥ��뤹��Τ��Ǥ�����Ǥ���\fIxjc\fR���ޥ�ɤμ¹Ի��ˤϡ��������¥ꥹ�Ȥ�α�դ��Ƥ�������������������ΤۤȤ�ɤϡ�\fIxjc\fR���ޥ�ɤ��٤��ƤӽФ���ʣ���Υ������ޤ򥳥�ѥ��뤹����ˤΤ����ƤϤޤ�ޤ���
+通常は、関連するすべてのスキーマを、同じバインディング・コンパイラ・スイッチを指定して1つの単位としてコンパイルするのが最も安全です。\fIxjc\fRコマンドの実行時には、次の制限リストに留意してください。これらの問題のほとんどは、\fIxjc\fRコマンドを何度か呼び出して複数のスキーマをコンパイルする場合にのみ当てはまります。
 .PP
-ʣ���Υ������ޤ�Ʊ���˥���ѥ��뤹����ϡ��������åȤ�Java�ѥå�����̾�˼���ͥ���̤Υ롼�뤬Ŭ�Ѥ���뤳�Ȥ����դ��Ƥ���������
+複数のスキーマを同時にコンパイルする場合は、ターゲットのJavaパッケージ名に次の優先順位のルールが適用されることに注意してください。
 .sp
 .RS 4
 .ie n \{\
@@ -271,7 +271,7 @@ JAXB 2\&.0���ͤǤϡ��ܿ����Τ����󥿥���Ķ���������줿���ᡢJAXB RI��\fI**/i
 .sp -1
 .IP "  1." 4.2
 .\}
-\fI\-p\fR���ץ���󤬺Ǥ�ͥ�褵��ޤ���
+\fI\-p\fRオプションが最も優先されます。
 .RE
 .sp
 .RS 4
@@ -282,7 +282,7 @@ JAXB 2\&.0���ͤǤϡ��ܿ����Τ����󥿥���Ķ���������줿���ᡢJAXB RI��\fI**/i
 .sp -1
 .IP "  2." 4.2
 .\}
-\fIjaxb:package\fR�Υ������ޥ�����
+\fIjaxb:package\fRのカスタマイズ。
 .RE
 .sp
 .RS 4
@@ -293,7 +293,7 @@ JAXB 2\&.0���ͤǤϡ��ܿ����Τ����󥿥���Ķ���������줿���ᡢJAXB RI��\fI**/i
 .sp -1
 .IP "  3." 4.2
 .\}
-\fItargetNamespace\fR���������Ƥ�����ϡ�\fIt\fR\fIargetNamespace\fR����ͤ��������Ƥ���Java�ѥå�����̾�Υ��르�ꥺ���Ŭ�Ѥ��ޤ���
+\fItargetNamespace\fRが宣言されている場合は、\fIt\fR\fIargetNamespace\fRを仕様で定義されているJavaパッケージ名のアルゴリズムに適用します。
 .RE
 .sp
 .RS 4
@@ -304,15 +304,15 @@ JAXB 2\&.0���ͤǤϡ��ܿ����Τ����󥿥���Ķ���������줿���ᡢJAXB RI��\fI**/i
 .sp -1
 .IP "  4." 4.2
 .\}
-\fItargetNamespace\fR���������Ƥ��ʤ����ϡ�\fIgenerated\fR�Ȥ���̾���Υϡ��ɥ����ɤ��줿�ѥå���������Ѥ��ޤ���
+\fItargetNamespace\fRが宣言されていない場合は、\fIgenerated\fRという名前のハードコードされたパッケージを使用します。
 .RE
 .PP
-1�ĤΥ͡��ॹ�ڡ�����ʣ����\fIjaxb:schemaBindings\fR����Ĥ��ȤϤǤ��ʤ����ᡢ�ۤʤ�Java�ѥå������˥���ѥ��餵���Ʊ�쥿�����åȡ��͡��ॹ�ڡ�����2�ĤΥ������ޤ���Ĥ��ȤϤǤ��ޤ���
+1つのネームスペースが複数の\fIjaxb:schemaBindings\fRを持つことはできないため、異なるJavaパッケージにコンパイラされる同一ターゲット・ネームスペースが2つのスキーマを持つことはできません。
 .PP
-Ʊ��Java�ѥå������˥���ѥ��餵��륹�����ޤϤ��٤ơ�Ʊ����XJC�Х���ǥ��󥰡�����ѥ�������������ɬ�פ�����ޤ����̡��˥���ѥ��뤹��ȡ�ͽ�ۤɤ���˵�ǽ���ޤ���
+同じJavaパッケージにコンパイラされるスキーマはすべて、同時にXJCバインディング・コンパイラに送信される必要があります。別々にコンパイルすると、予想どおりに機能しません。
 .PP
-ʣ���Υ������ޡ��ե�����ˤޤ����������ִ����롼�פϡ�Ʊ���˥���ѥ��뤹��ɬ�פ�����ޤ���
-.SH "��Ϣ����"
+複数のスキーマ・ファイルにまたがる要素置換グループは、同時にコンパイルする必要があります。
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\
@@ -322,7 +322,7 @@ JAXB 2\&.0���ͤǤϡ��ܿ����Τ����󥿥���Ķ���������줿���ᡢJAXB RI��\fI**/i
 .sp -1
 .IP \(bu 2.3
 .\}
-http://jaxb\&.java\&.net/nonav/2\&.2\&.3u1/docs/xjc\&.html��
+http://jaxb\&.java\&.net/nonav/2\&.2\&.3u1/docs/xjc\&.htmlの
 Binding Compiler (xjc)
 .RE
 .sp
@@ -334,7 +334,7 @@ Binding Compiler (xjc)
 .sp -1
 .IP \(bu 2.3
 .\}
-http://www\&.oracle\&.com/technetwork/articles/javase/index\-140168\&.html��
+http://www\&.oracle\&.com/technetwork/articles/javase/index\-140168\&.htmlの
 Java Architecture for XML Binding (JAXB)
 .RE
 .br

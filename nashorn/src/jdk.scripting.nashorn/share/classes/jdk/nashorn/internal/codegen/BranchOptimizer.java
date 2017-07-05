@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.codegen.Condition.GT;
 import static jdk.nashorn.internal.codegen.Condition.LE;
 import static jdk.nashorn.internal.codegen.Condition.LT;
 import static jdk.nashorn.internal.codegen.Condition.NE;
+import static jdk.nashorn.internal.parser.TokenType.NOT;
 
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -57,21 +58,11 @@ final class BranchOptimizer {
     }
 
     private void branchOptimizer(final UnaryNode unaryNode, final Label label, final boolean state) {
-        final Expression rhs = unaryNode.getExpression();
-
-        switch (unaryNode.tokenType()) {
-        case NOT:
-            branchOptimizer(rhs, label, !state);
-            return;
-        default:
-            if (unaryNode.getType().isBoolean()) {
-                branchOptimizer(rhs, label, state);
-                return;
-            }
-            break;
+        if (unaryNode.isTokenType(NOT)) {
+            branchOptimizer(unaryNode.getExpression(), label, !state);
+        } else {
+            loadTestAndJump(unaryNode, label, state);
         }
-
-        loadTestAndJump(unaryNode, label, state);
     }
 
     private void branchOptimizer(final BinaryNode binaryNode, final Label label, final boolean state) {

@@ -26,15 +26,16 @@
 #define SHARE_VM_MEMORY_GENCOLLECTEDHEAP_HPP
 
 #include "gc_implementation/shared/adaptiveSizePolicy.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/collectorPolicy.hpp"
 #include "memory/generation.hpp"
-#include "memory/sharedHeap.hpp"
 
 class SubTasksDone;
+class FlexibleWorkGang;
 
-// A "GenCollectedHeap" is a SharedHeap that uses generational
+// A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
-class GenCollectedHeap : public SharedHeap {
+class GenCollectedHeap : public CollectedHeap {
   friend class GenCollectorPolicy;
   friend class Generation;
   friend class DefNewGeneration;
@@ -51,19 +52,9 @@ class GenCollectedHeap : public SharedHeap {
   friend class GCCauseSetter;
   friend class VMStructs;
 public:
-  enum SomeConstants {
-    max_gens = 10
-  };
-
   friend class VM_PopulateDumpSharedSpace;
 
- protected:
-  // Fields:
-  static GenCollectedHeap* _gch;
-
- private:
-  int _n_gens;
-
+private:
   Generation* _young_gen;
   Generation* _old_gen;
 
@@ -92,6 +83,8 @@ public:
 
   // In block contents verification, the number of header words to skip
   NOT_PRODUCT(static size_t _skip_header_HeapWords;)
+
+  FlexibleWorkGang* _workers;
 
 protected:
   // Helper functions for allocation
@@ -124,6 +117,8 @@ protected:
 
 public:
   GenCollectedHeap(GenCollectorPolicy *policy);
+
+  FlexibleWorkGang* workers() const { return _workers; }
 
   GCStats* gc_stats(int level) const;
 
@@ -178,9 +173,6 @@ public:
   HeapWord** top_addr() const;
   HeapWord** end_addr() const;
 
-  // Does this heap support heap inspection? (+PrintClassHistogram)
-  virtual bool supports_heap_inspection() const { return true; }
-
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.
@@ -223,6 +215,7 @@ public:
   }
 
   // Iteration functions.
+  void oop_iterate_no_header(OopClosure* cl);
   void oop_iterate(ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl);
@@ -280,11 +273,6 @@ public:
   // only and may need to be re-examined in case other
   // kinds of collectors are implemented in the future.
   virtual bool can_elide_initializing_store_barrier(oop new_obj) {
-    // We wanted to assert that:-
-    // assert(UseSerialGC || UseConcMarkSweepGC,
-    //       "Check can_elide_initializing_store_barrier() for this collector");
-    // but unfortunately the flag UseSerialGC need not necessarily always
-    // be set when DefNew+Tenured are being used.
     return is_in_young(new_obj);
   }
 
@@ -331,7 +319,6 @@ public:
     _old_gen->update_gc_stats(current_level, full);
   }
 
-  // Override.
   bool no_gc_in_progress() { return !is_gc_active(); }
 
   // Override.
@@ -363,17 +350,10 @@ public:
   // If "old_to_young" determines the order.
   void generation_iterate(GenClosure* cl, bool old_to_young);
 
-  void space_iterate(SpaceClosure* cl);
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
   virtual bool is_maximal_no_gc() const;
-
-  int n_gens() const {
-    assert(_n_gens == gen_policy()->number_of_generations(), "Sanity");
-    return _n_gens;
-  }
 
   // This function returns the "GenRemSet" object that allows us to scan
   // generations in a fully generational heap.
@@ -531,8 +511,8 @@ private:
   void record_gen_tops_before_GC() PRODUCT_RETURN;
 
 protected:
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue(bool full);
+  void gc_epilogue(bool full);
 };
 
 #endif // SHARE_VM_MEMORY_GENCOLLECTEDHEAP_HPP

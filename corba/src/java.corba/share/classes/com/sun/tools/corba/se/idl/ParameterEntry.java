@@ -88,7 +88,7 @@ public class ParameterEntry extends SymtabEntry
   } // generate
 
   /** Access the parameter generator.
-      @returns an object which implements the ParameterGen interface.
+      @return an object which implements the ParameterGen interface.
       @see ParameterGen */
   public Generator generator ()
   {

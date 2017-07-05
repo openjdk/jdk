@@ -27,6 +27,7 @@
  *  @bug 8071657
  *  @summary  JDI: Add support for static and default methods in interfaces
  *
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run build InterfaceMethodsTest
  *  @run driver InterfaceMethodsTest

@@ -42,8 +42,9 @@ public class DenseIntMapImpl
             throw new IllegalArgumentException( "Key must be >= 0." ) ;
     }
 
-    /** If key >= 0, return the value bound to key, or null if none.
-     * Throws IllegalArgumentException if key <0.
+    /**
+     * If {@code key >= 0}, return the value bound to key, or null if none.
+     * Throws IllegalArgumentException if {@code key < 0}.
      */
     public Object get( int key )
     {
@@ -56,8 +57,9 @@ public class DenseIntMapImpl
         return result ;
     }
 
-    /** If key >= 0, bind value to the key.
-     * Throws IllegalArgumentException if key <0.
+    /**
+     * If {@code key >= 0}, bind value to the key.
+     * Throws IllegalArgumentException if {@code key < 0}.
      */
     public void set( int key, Object value )
     {

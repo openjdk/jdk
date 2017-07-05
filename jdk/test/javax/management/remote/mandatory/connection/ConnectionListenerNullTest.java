@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4943248
  * @summary Tests that NullPointerException is thrown when listener is null.
  * @author Daniel Fuchs
+ * @modules java.management
  * @run clean ConnectionListenerNullTest
  * @run build ConnectionListenerNullTest
  * @run main ConnectionListenerNullTest

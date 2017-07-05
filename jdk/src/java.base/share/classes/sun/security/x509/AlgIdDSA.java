@@ -39,7 +39,7 @@ import sun.security.util.*;
  * NIST/IETF standard DER encoding.  These are used to implement the Digital
  * Signature Standard (DSS), FIPS 186.
  *
- * <P><em><b>NOTE:</b>  DSS/DSA Algorithm IDs may be created without these
+ * <P><em><b>NOTE:</b></em>  DSS/DSA Algorithm IDs may be created without these
  * parameters.  Use of DSS/DSA in modes where parameters are
  * either implicit (e.g. a default applicable to a site or a larger scope),
  * or are derived from some Certificate Authority's DSS certificate, is
@@ -49,8 +49,8 @@ import sun.security.util.*;
  * that we have a certificate called <code>currentCert</code> which doesn't
  * contain DSS/DSA parameters and we need to derive DSS/DSA parameters
  * from a CA's certificate called <code>caCert</code>.
- * <p>
- * <code><pre>
+ *
+ * <pre>{@code
  * // key containing parameters to use
  * DSAPublicKey cAKey = (DSAPublicKey)(caCert.getPublicKey());
  * // key without parameters
@@ -63,7 +63,7 @@ import sun.security.util.*;
  *                                            cAKeyParams.getQ(),
  *                                            cAKeyParams.getG());
  * DSAPublicKey usableKey = kf.generatePublic(ks);
- * </pre></code>
+ * }</pre>
  *
  * @see java.security.interfaces.DSAParams
  * @see java.security.interfaces.DSAPublicKey

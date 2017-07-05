@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@
 //
 #define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct) \
                                                                                     \
+  /* Use 64K pages for virtual memory (shmat). */                                   \
+  product(bool, Use64KPages, true,                                                  \
+          "Use 64K pages if available.")                                            \
+                                                                                    \
   /* If UseLargePages == true allow or deny usage of 16M pages. 16M pages are  */   \
   /* a scarce resource and there may be situations where we do not want the VM */   \
   /* to run with 16M pages. (Will fall back to 64K pages).                     */   \
@@ -55,7 +59,7 @@ define_pd_global(intx, AttachListenerTimeout, 1000);
 // Defines Aix-specific default values. The flags are available on all
 // platforms, but they may have different default values on other platforms.
 //
-define_pd_global(bool, UseLargePages, true);
+define_pd_global(bool, UseLargePages, false);
 define_pd_global(bool, UseLargePagesIndividualAllocation, false);
 define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, true) ;
