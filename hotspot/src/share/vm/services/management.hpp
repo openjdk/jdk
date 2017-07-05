@@ -49,6 +49,8 @@ private:
   static klassOop           _memoryManagerMXBean_klass;
   static klassOop           _garbageCollectorMXBean_klass;
   static klassOop           _managementFactory_klass;
+  static klassOop           _garbageCollectorImpl_klass;
+  static klassOop           _gcInfo_klass;
 
   static klassOop load_and_initialize_klass(Symbol* sh, TRAPS);
 
@@ -86,6 +88,8 @@ public:
   static klassOop java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
   static klassOop sun_management_Sensor_klass(TRAPS);
   static klassOop sun_management_ManagementFactory_klass(TRAPS);
+  static klassOop sun_management_GarbageCollectorImpl_klass(TRAPS);
+  static klassOop com_sun_management_GcInfo_klass(TRAPS);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, objArrayHandle monitors_array, typeArrayHandle depths_array, objArrayHandle synchronizers_array, TRAPS);

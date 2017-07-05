@@ -488,6 +488,18 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
         paintContentBorder(tabContentContext, g, tabPlacement, selectedIndex);
     }
 
+    protected void paintTabArea(Graphics g, int tabPlacement,
+                                int selectedIndex) {
+        // This can be invoked from ScrollabeTabPanel
+        Insets insets = tabPane.getInsets();
+        int x = insets.left;
+        int y = insets.top;
+        int width = tabPane.getWidth() - insets.left - insets.right;
+        int height = tabPane.getHeight() - insets.top - insets.bottom;
+
+        paintTabArea(tabAreaContext, g, tabPlacement, selectedIndex,
+                     new Rectangle(x, y, width, height));
+    }
 
     private void paintTabArea(SynthContext ss, Graphics g,
                                 int tabPlacement, int selectedIndex,

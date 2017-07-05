@@ -28,7 +28,7 @@ package sun.nio.ch;
 import java.nio.channels.*;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.net.StandardSocketOption;
+import java.net.StandardSocketOptions;
 import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -214,8 +214,8 @@ abstract class AsynchronousServerSocketChannelImpl
 
         private static Set<SocketOption<?>> defaultOptions() {
             HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(2);
-            set.add(StandardSocketOption.SO_RCVBUF);
-            set.add(StandardSocketOption.SO_REUSEADDR);
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            set.add(StandardSocketOptions.SO_REUSEADDR);
             return Collections.unmodifiableSet(set);
         }
     }

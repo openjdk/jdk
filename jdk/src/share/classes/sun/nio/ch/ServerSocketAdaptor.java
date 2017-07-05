@@ -169,7 +169,7 @@ public class ServerSocketAdaptor                        // package-private
 
     public void setReuseAddress(boolean on) throws SocketException {
         try {
-            ssc.setOption(StandardSocketOption.SO_REUSEADDR, on);
+            ssc.setOption(StandardSocketOptions.SO_REUSEADDR, on);
         } catch (IOException x) {
             Net.translateToSocketException(x);
         }
@@ -177,7 +177,7 @@ public class ServerSocketAdaptor                        // package-private
 
     public boolean getReuseAddress() throws SocketException {
         try {
-            return ssc.getOption(StandardSocketOption.SO_REUSEADDR).booleanValue();
+            return ssc.getOption(StandardSocketOptions.SO_REUSEADDR).booleanValue();
         } catch (IOException x) {
             Net.translateToSocketException(x);
             return false;       // Never happens
@@ -197,7 +197,7 @@ public class ServerSocketAdaptor                        // package-private
         if (size <= 0)
             throw new IllegalArgumentException("size cannot be 0 or negative");
         try {
-            ssc.setOption(StandardSocketOption.SO_RCVBUF, size);
+            ssc.setOption(StandardSocketOptions.SO_RCVBUF, size);
         } catch (IOException x) {
             Net.translateToSocketException(x);
         }
@@ -205,7 +205,7 @@ public class ServerSocketAdaptor                        // package-private
 
     public int getReceiveBufferSize() throws SocketException {
         try {
-            return ssc.getOption(StandardSocketOption.SO_RCVBUF).intValue();
+            return ssc.getOption(StandardSocketOptions.SO_RCVBUF).intValue();
         } catch (IOException x) {
             Net.translateToSocketException(x);
             return -1;          // Never happens

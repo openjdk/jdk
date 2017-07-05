@@ -96,7 +96,7 @@ public class Reader {
             family = StandardProtocolFamily.INET6;
         }
         DatagramChannel dc = DatagramChannel.open(family)
-            .setOption(StandardSocketOption.SO_REUSEADDR, true)
+            .setOption(StandardSocketOptions.SO_REUSEADDR, true)
             .bind(new InetSocketAddress(target.port()));
 
         if (includeList.isEmpty()) {

@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import sun.invoke.util.Wrapper;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * matched between a method handle and all its callers,
  * and the JVM's operations enforce this matching at, specifically
  * during calls to {@link MethodHandle#invokeExact MethodHandle.invokeExact}
- * and {@link MethodHandle#invokeGeneric MethodHandle.invokeGeneric}, and during execution
+ * and {@link MethodHandle#invoke MethodHandle.invoke}, and during execution
  * of {@code invokedynamic} instructions.
  * <p>
  * The structure is a return type accompanied by any number of parameter types.
@@ -262,18 +263,18 @@ class MethodType implements java.io.Serializable {
      * Finds or creates a method type whose components are {@code Object} with an optional trailing {@code Object[]} array.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All parameters and the return type will be {@code Object},
-     * except the final varargs parameter if any, which will be {@code Object[]}.
-     * @param objectArgCount number of parameters (excluding the varargs parameter if any)
-     * @param varargs whether there will be a varargs parameter, of type {@code Object[]}
-     * @return a totally generic method type, given only its count of parameters and varargs
-     * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255
+     * except the final array parameter if any, which will be {@code Object[]}.
+     * @param objectArgCount number of parameters (excluding the final array parameter if any)
+     * @param finalArray whether there will be a trailing array parameter, of type {@code Object[]}
+     * @return a generally applicable method type, for all calls of the given fixed argument count and a collected array of further arguments
+     * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255 (or 254, if {@code finalArray})
      * @see #genericMethodType(int)
      */
     public static
-    MethodType genericMethodType(int objectArgCount, boolean varargs) {
+    MethodType genericMethodType(int objectArgCount, boolean finalArray) {
         MethodType mt;
         checkSlotCount(objectArgCount);
-        int ivarargs = (!varargs ? 0 : 1);
+        int ivarargs = (!finalArray ? 0 : 1);
         int ootIndex = objectArgCount*2 + ivarargs;
         if (ootIndex < objectOnlyTypes.length) {
             mt = objectOnlyTypes[ootIndex];
@@ -294,7 +295,7 @@ class MethodType implements java.io.Serializable {
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * All parameters and the return type will be Object.
      * @param objectArgCount number of parameters
-     * @return a totally generic method type, given only its count of parameters
+     * @return a generally applicable method type, for all calls of the given argument count
      * @throws IllegalArgumentException if {@code objectArgCount} is negative or greater than 255
      * @see #genericMethodType(int, boolean)
      */
@@ -624,6 +625,30 @@ class MethodType implements java.io.Serializable {
         sb.append(")");
         sb.append(rtype.getSimpleName());
         return sb.toString();
+    }
+
+
+    /*non-public*/
+    boolean isConvertibleTo(MethodType newType) {
+        if (!canConvert(returnType(), newType.returnType()))
+            return false;
+        int argc = parameterCount();
+        if (argc != newType.parameterCount())
+            return false;
+        for (int i = 0; i < argc; i++) {
+            if (!canConvert(newType.parameterType(i), parameterType(i)))
+                return false;
+        }
+        return true;
+    }
+    private static boolean canConvert(Class<?> src, Class<?> dst) {
+        if (src == dst || dst == void.class)  return true;
+        if (src.isPrimitive() && dst.isPrimitive()) {
+        if (!Wrapper.forPrimitiveType(dst)
+                .isConvertibleFrom(Wrapper.forPrimitiveType(src)))
+            return false;
+        }
+        return true;
     }
 
     /// Queries which have to do with the bytecode architecture

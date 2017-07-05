@@ -318,21 +318,21 @@ public class SocketAdaptor
     }
 
     public void setTcpNoDelay(boolean on) throws SocketException {
-        setBooleanOption(StandardSocketOption.TCP_NODELAY, on);
+        setBooleanOption(StandardSocketOptions.TCP_NODELAY, on);
     }
 
     public boolean getTcpNoDelay() throws SocketException {
-        return getBooleanOption(StandardSocketOption.TCP_NODELAY);
+        return getBooleanOption(StandardSocketOptions.TCP_NODELAY);
     }
 
     public void setSoLinger(boolean on, int linger) throws SocketException {
         if (!on)
             linger = -1;
-        setIntOption(StandardSocketOption.SO_LINGER, linger);
+        setIntOption(StandardSocketOptions.SO_LINGER, linger);
     }
 
     public int getSoLinger() throws SocketException {
-        return getIntOption(StandardSocketOption.SO_LINGER);
+        return getIntOption(StandardSocketOptions.SO_LINGER);
     }
 
     public void sendUrgentData(int data) throws IOException {
@@ -366,46 +366,46 @@ public class SocketAdaptor
         // size 0 valid for SocketChannel, invalid for Socket
         if (size <= 0)
             throw new IllegalArgumentException("Invalid send size");
-        setIntOption(StandardSocketOption.SO_SNDBUF, size);
+        setIntOption(StandardSocketOptions.SO_SNDBUF, size);
     }
 
     public int getSendBufferSize() throws SocketException {
-        return getIntOption(StandardSocketOption.SO_SNDBUF);
+        return getIntOption(StandardSocketOptions.SO_SNDBUF);
     }
 
     public void setReceiveBufferSize(int size) throws SocketException {
         // size 0 valid for SocketChannel, invalid for Socket
         if (size <= 0)
             throw new IllegalArgumentException("Invalid receive size");
-        setIntOption(StandardSocketOption.SO_RCVBUF, size);
+        setIntOption(StandardSocketOptions.SO_RCVBUF, size);
     }
 
     public int getReceiveBufferSize() throws SocketException {
-        return getIntOption(StandardSocketOption.SO_RCVBUF);
+        return getIntOption(StandardSocketOptions.SO_RCVBUF);
     }
 
     public void setKeepAlive(boolean on) throws SocketException {
-        setBooleanOption(StandardSocketOption.SO_KEEPALIVE, on);
+        setBooleanOption(StandardSocketOptions.SO_KEEPALIVE, on);
     }
 
     public boolean getKeepAlive() throws SocketException {
-        return getBooleanOption(StandardSocketOption.SO_KEEPALIVE);
+        return getBooleanOption(StandardSocketOptions.SO_KEEPALIVE);
     }
 
     public void setTrafficClass(int tc) throws SocketException {
-        setIntOption(StandardSocketOption.IP_TOS, tc);
+        setIntOption(StandardSocketOptions.IP_TOS, tc);
     }
 
     public int getTrafficClass() throws SocketException {
-        return getIntOption(StandardSocketOption.IP_TOS);
+        return getIntOption(StandardSocketOptions.IP_TOS);
     }
 
     public void setReuseAddress(boolean on) throws SocketException {
-        setBooleanOption(StandardSocketOption.SO_REUSEADDR, on);
+        setBooleanOption(StandardSocketOptions.SO_REUSEADDR, on);
     }
 
     public boolean getReuseAddress() throws SocketException {
-        return getBooleanOption(StandardSocketOption.SO_REUSEADDR);
+        return getBooleanOption(StandardSocketOptions.SO_REUSEADDR);
     }
 
     public void close() throws IOException {
