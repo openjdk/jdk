@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public class TableSorter extends DefaultTableModel implements MouseListener {
         // update row heights in XMBeanAttributes (required by expandable cells)
         if (attrs != null) {
             for (int i = 0; i < getRowCount(); i++) {
-                Vector<?> data = (Vector) dataVector.elementAt(i);
+                Vector<?> data = dataVector.elementAt(i);
                 attrs.updateRowHeight(data.elementAt(1), i);
             }
         }
@@ -217,17 +217,17 @@ public class TableSorter extends DefaultTableModel implements MouseListener {
             }
     }
 
-    private Vector<Object> getRow(int row) {
+    private Vector<?> getRow(int row) {
         return dataVector.elementAt(row);
     }
 
     @SuppressWarnings("unchecked")
-    private void setRow(Vector<Object> data, int row) {
+    private void setRow(Vector<?> data, int row) {
         dataVector.setElementAt(data,row);
     }
 
     private void swap(int i, int j, int column) {
-        Vector<Object> data = getRow(i);
+        Vector<?> data = getRow(i);
         setRow(getRow(j),i);
         setRow(data,j);
 

@@ -25,9 +25,9 @@
 
 package sun.util.locale.provider;
 
-import java.io.File;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.text.spi.DateFormatProvider;
@@ -37,6 +37,7 @@ import java.text.spi.NumberFormatProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,8 +58,6 @@ import sun.util.spi.CalendarProvider;
  * @author Masayoshi Okutsu
  */
 public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements ResourceBundleBasedAdapter {
-
-    private static final String LOCALE_DATA_JAR_NAME = "localedata.jar";
 
     private final ConcurrentMap<String, Set<String>> langtagSets
         = new ConcurrentHashMap<>();
@@ -356,24 +355,54 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     }
 
     protected Set<String> createLanguageTagSet(String category) {
-        String supportedLocaleString = LocaleDataMetaInfo.getSupportedLocaleString(category);
+        String supportedLocaleString = createSupportedLocaleString(category);
         if (supportedLocaleString == null) {
             return Collections.emptySet();
         }
         Set<String> tagset = new HashSet<>();
         StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
         while (tokens.hasMoreTokens()) {
-            String token = tokens.nextToken();
-            if (token.equals("|")) {
-                if (isNonENLangSupported()) {
-                    continue;
-                }
-                break;
-            }
-            tagset.add(token);
+            tagset.add(tokens.nextToken());
         }
 
         return tagset;
+    }
+
+    private static String createSupportedLocaleString(String category) {
+        // Directly call English tags, as we know it's in the base module.
+        String supportedLocaleString = EnLocaleDataMetaInfo.getSupportedLocaleString(category);
+
+        // Use ServiceLoader to dynamically acquire installed locales' tags.
+        try {
+            String nonENTags = AccessController.doPrivileged(new PrivilegedExceptionAction<String>() {
+                @Override
+                public String run() {
+                    String tags = null;
+                    for (LocaleDataMetaInfo ldmi :
+                         ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
+                        if (ldmi.getType() == LocaleProviderAdapter.Type.JRE) {
+                            String t = ldmi.availableLanguageTags(category);
+                            if (t != null) {
+                                if (tags == null) {
+                                    tags = t;
+                                } else {
+                                    tags += " " + t;
+                                }
+                            }
+                        }
+                    }
+                    return tags;
+                }
+            });
+
+            if (nonENTags != null) {
+                supportedLocaleString += " " + nonENTags;
+            }
+        }  catch (Exception e) {
+            // catch any exception, and ignore them as if non-EN locales do not exist.
+        }
+
+        return supportedLocaleString;
     }
 
     /**
@@ -387,27 +416,17 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
 
     private static Locale[] createAvailableLocales() {
         /*
-         * Gets the locale string list from LocaleDataMetaInfo class and then
+         * Gets the locale string list from LocaleDataMetaInfo classes and then
          * contructs the Locale array and a set of language tags based on the
          * locale string returned above.
          */
-        String supportedLocaleString = LocaleDataMetaInfo.getSupportedLocaleString("AvailableLocales");
+        String supportedLocaleString = createSupportedLocaleString("AvailableLocales");
 
         if (supportedLocaleString.length() == 0) {
             throw new InternalError("No available locales for JRE");
         }
 
-        /*
-         * Look for "|" and construct a new locale string list.
-         */
-        int barIndex = supportedLocaleString.indexOf('|');
-        StringTokenizer localeStringTokenizer;
-        if (isNonENLangSupported()) {
-            localeStringTokenizer = new StringTokenizer(supportedLocaleString.substring(0, barIndex)
-                    + supportedLocaleString.substring(barIndex + 1));
-        } else {
-            localeStringTokenizer = new StringTokenizer(supportedLocaleString.substring(0, barIndex));
-        }
+        StringTokenizer localeStringTokenizer = new StringTokenizer(supportedLocaleString);
 
         int length = localeStringTokenizer.countTokens();
         Locale[] locales = new Locale[length + 1];
@@ -430,39 +449,4 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         }
         return locales;
     }
-
-    private static volatile Boolean isNonENSupported = null;
-
-    /*
-     * Returns true if the non EN resources jar file exists in jre
-     * extension directory. @returns true if the jar file is there. Otherwise,
-     * returns false.
-     */
-    private static boolean isNonENLangSupported() {
-        if (isNonENSupported == null) {
-            synchronized (JRELocaleProviderAdapter.class) {
-                if (isNonENSupported == null) {
-                    final String sep = File.separator;
-                    String localeDataJar =
-                            java.security.AccessController.doPrivileged(
-                            new sun.security.action.GetPropertyAction("java.home"))
-                            + sep + "lib" + sep + "ext" + sep + LOCALE_DATA_JAR_NAME;
-
-                    /*
-                     * Peek at the installed extension directory to see if
-                     * localedata.jar is installed or not.
-                     */
-                    final File f = new File(localeDataJar);
-                    isNonENSupported =
-                        AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                            @Override
-                            public Boolean run() {
-                                return f.exists();
                             }
-                        });
-               }
-            }
-        }
-        return isNonENSupported;
-    }
-}

@@ -246,8 +246,14 @@ static jobjectArray toFilenamesArray(JNIEnv *env, GSList* list, jstring* jcurren
         }
 
         str = (*env)->NewStringUTF(env, entry);
-        if (str && !(*env)->ExceptionCheck(env)) {
+        if((*env)->ExceptionCheck(env)){
+            break;
+        }
+        if (str) {
             (*env)->SetObjectArrayElement(env, array, i, str);
+            if((*env)->ExceptionCheck(env)){
+                break;
+            }
         }
     }
 

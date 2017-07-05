@@ -1,0 +1,12 @@
+test 1
+ReferenceError: "a" is not defined
+1
+test 2
+ReferenceError: "a" is not defined
+2
+test 3
+ReferenceError: "a" is not defined
+3
+test 4
+undefined
+4
