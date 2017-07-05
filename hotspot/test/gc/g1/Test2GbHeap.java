@@ -34,8 +34,8 @@
 
 import java.util.ArrayList;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class Test2GbHeap {
   public static void main(String[] args) throws Exception {

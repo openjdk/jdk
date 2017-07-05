@@ -1018,7 +1018,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           // NOTE we use pc() not original_pc() because we already know they are
           // identical otherwise we'd have never entered this block of code
 
-          OopMap* map = caller_code->oop_map_for_return_address(caller_frame.pc());
+          const ImmutableOopMap* map = caller_code->oop_map_for_return_address(caller_frame.pc());
           assert(map != NULL, "null check");
           map->print();
           tty->cr();

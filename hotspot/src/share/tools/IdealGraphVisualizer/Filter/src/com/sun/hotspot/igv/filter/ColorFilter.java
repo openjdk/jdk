@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,9 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.Connection;
-import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.OutputSlot;
-import com.sun.hotspot.igv.graph.Selector;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
+import com.sun.hotspot.igv.graph.*;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,16 +41,18 @@ public class ColorFilter extends AbstractFilter {
 
     public ColorFilter(String name) {
         this.name = name;
-        colorRules = new ArrayList<ColorRule>();
+        colorRules = new ArrayList<>();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void apply(Diagram diagram) {
 
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<Figure>(diagram.getFigures());
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(diagram.getFigures());
         for (ColorRule rule : colorRules) {
             if (rule.getSelector() != null) {
                 List<Figure> figures = rule.getSelector().selected(diagram);

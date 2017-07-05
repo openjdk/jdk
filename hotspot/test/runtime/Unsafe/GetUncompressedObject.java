@@ -25,12 +25,13 @@
  * @bug 8022853
  * @library /testlibrary
  * @modules java.base/sun.misc
+ * @build jdk.test.lib.*
  * @run main GetUncompressedObject
  */
 
-import static com.oracle.java.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.misc.Unsafe;
 
 public class GetUncompressedObject {

@@ -196,8 +196,8 @@ public
     /**
      * Gets the object associated with the specified key in the Cache.
      * @param key the key in the hash table
-     * @returns the element for the key or null if the key
-     *          is not defined in the hash table.
+     * @return the element for the key or null if the key
+     *         is not defined in the hash table.
      * @see Cache#put
      */
     public synchronized Object get(Object key) {

@@ -35,8 +35,8 @@
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
 
 public class TestSummarizeRSetStatsThreads {
 

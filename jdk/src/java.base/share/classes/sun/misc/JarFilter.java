@@ -29,10 +29,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 
 /**
- * <p>
  * This class checks that only jar and zip files are included in the file list.
  * This class is used in extension installation support (ExtensionDependency).
- * <p>
  *
  * @deprecated this class will be removed in a future release.
  * @author  Michael Colburn

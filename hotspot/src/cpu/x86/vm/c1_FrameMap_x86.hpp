@@ -152,6 +152,16 @@
     return range;
   }
 
+  static int get_num_caller_save_xmms(void) {
+    int num_caller_save_xmm_regs = nof_caller_save_xmm_regs;
+#ifdef _LP64
+    if (UseAVX < 3) {
+      num_caller_save_xmm_regs = num_caller_save_xmm_regs / 2;
+    }
+#endif
+    return num_caller_save_xmm_regs;
+  }
+
   static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }
   static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg);  }
   static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg); }

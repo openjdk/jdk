@@ -120,7 +120,7 @@ public abstract class CharacterDecoder {
     /**
      * This method does an actual decode. It takes the decoded bytes and
      * writes them to the OutputStream. The integer <i>l</i> tells the
-     * method how many bytes are required. This is always <= bytesPerAtom().
+     * method how many bytes are required. This is always {@literal <=} bytesPerAtom().
      */
     protected void decodeAtom(PushbackInputStream aStream, OutputStream bStream, int l) throws IOException {
         throw new CEStreamExhausted();

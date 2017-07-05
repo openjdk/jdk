@@ -172,7 +172,7 @@ reg_class no_reg();
 // Class for all pointer registers (including RSP and RBP)
 reg_class any_reg_with_rbp(RAX, RAX_H,
                            RDX, RDX_H,
-                           RBP, RBP_H,               
+                           RBP, RBP_H,
                            RDI, RDI_H,
                            RSI, RSI_H,
                            RCX, RCX_H,
@@ -189,7 +189,7 @@ reg_class any_reg_with_rbp(RAX, RAX_H,
 
 // Class for all pointer registers (including RSP, but excluding RBP)
 reg_class any_reg_no_rbp(RAX, RAX_H,
-                         RDX, RDX_H,                
+                         RDX, RDX_H,
                          RDI, RDI_H,
                          RSI, RSI_H,
                          RCX, RCX_H,
@@ -205,10 +205,10 @@ reg_class any_reg_no_rbp(RAX, RAX_H,
                          R15, R15_H);
 
 // Dynamic register class that selects at runtime between register classes
-// any_reg_no_rbp and any_reg_with_rbp (depending on the value of the flag PreserveFramePointer). 
+// any_reg_no_rbp and any_reg_with_rbp (depending on the value of the flag PreserveFramePointer).
 // Equivalent to: return PreserveFramePointer ? any_reg_no_rbp : any_reg_with_rbp;
 reg_class_dynamic any_reg(any_reg_no_rbp, any_reg_with_rbp, %{ PreserveFramePointer %});
-                  
+
 // Class for all pointer registers (excluding RSP)
 reg_class ptr_reg_with_rbp(RAX, RAX_H,
                            RDX, RDX_H,
@@ -226,7 +226,7 @@ reg_class ptr_reg_with_rbp(RAX, RAX_H,
 
 // Class for all pointer registers (excluding RSP and RBP)
 reg_class ptr_reg_no_rbp(RAX, RAX_H,
-                         RDX, RDX_H,                         
+                         RDX, RDX_H,
                          RDI, RDI_H,
                          RSI, RSI_H,
                          RCX, RCX_H,
@@ -536,7 +536,11 @@ source %{
 #define __ _masm.
 
 static int clear_avx_size() {
-  return (Compile::current()->max_vector_size() > 16) ? 3 : 0;  // vzeroupper
+  if(UseAVX > 2) {
+    return 0; // vzeroupper is ignored
+  } else {
+    return (Compile::current()->max_vector_size() > 16) ? 3 : 0;  // vzeroupper
+  }
 }
 
 // !!!!! Special hack to get all types of calls to specify the byte offset
@@ -545,7 +549,7 @@ static int clear_avx_size() {
 int MachCallStaticJavaNode::ret_addr_offset()
 {
   int offset = 5; // 5 bytes from start of call to where return address points
-  offset += clear_avx_size();  
+  offset += clear_avx_size();
   return offset;
 }
 
@@ -860,7 +864,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("subq    rsp, #%d\t# Create frame",framesize);
     st->print("\n\t");
     framesize -= wordSize;
-    st->print("movq    [rsp + #%d], rbp\t# Save rbp",framesize);    
+    st->print("movq    [rsp + #%d], rbp\t# Save rbp",framesize);
     if (PreserveFramePointer) {
       st->print("\n\t");
       st->print("movq    rbp, [rsp + #%d]\t# Save the caller's SP into rbp", (framesize + wordSize));
@@ -1070,6 +1074,11 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
       __ vmovdqu(xmm0, Address(rsp, src_offset));
       __ vmovdqu(Address(rsp, dst_offset), xmm0);
       __ vmovdqu(xmm0, Address(rsp, -32));
+    case Op_VecZ:
+      __ evmovdqu(Address(rsp, -64), xmm0, 2);
+      __ evmovdqu(xmm0, Address(rsp, src_offset), 2);
+      __ evmovdqu(Address(rsp, dst_offset), xmm0, 2);
+      __ evmovdqu(xmm0, Address(rsp, -64), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -1101,6 +1110,13 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
                 "vmovdqu xmm0, [rsp + #%d]\n\t"
                 "vmovdqu [rsp + #%d], xmm0\n\t"
                 "vmovdqu xmm0, [rsp - #32]",
+                src_offset, dst_offset);
+      break;
+    case Op_VecZ:
+      st->print("vmovdqu [rsp - #64], xmm0\t# 512-bit mem-mem spill\n\t"
+                "vmovdqu xmm0, [rsp + #%d]\n\t"
+                "vmovdqu [rsp + #%d], xmm0\n\t"
+                "vmovdqu xmm0, [rsp - #64]",
                 src_offset, dst_offset);
       break;
     default:
@@ -1136,7 +1152,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
   if (bottom_type()->isa_vect() != NULL) {
     uint ireg = ideal_reg();
     assert((src_first_rc != rc_int && dst_first_rc != rc_int), "sanity");
-    assert((ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY), "sanity");
+    assert((ireg == Op_VecS || ireg == Op_VecD || ireg == Op_VecX || ireg == Op_VecY || ireg == Op_VecZ ), "sanity");
     if( src_first_rc == rc_stack && dst_first_rc == rc_stack ) {
       // mem -> mem
       int src_offset = ra_->reg2offset(src_first);
@@ -1573,7 +1589,7 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
   return MachNode::size(ra_); // too many variables; just compute it
                               // the hard way
 }
- 
+
 
 //=============================================================================
 
@@ -2832,7 +2848,7 @@ frame
       RAX_H_num     // Op_RegL
     };
     // Excluded flags and vector registers.
-    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 5, "missing type");
+    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 6, "missing type");
     return OptoRegPair(hi[ideal_reg], lo[ideal_reg]);
   %}
 %}
@@ -3335,7 +3351,7 @@ operand no_rax_rdx_RegI()
 // Pointer Register
 operand any_RegP()
 %{
-  constraint(ALLOC_IN_RC(any_reg));  
+  constraint(ALLOC_IN_RC(any_reg));
   match(RegP);
   match(rax_RegP);
   match(rbx_RegP);
@@ -3589,20 +3605,51 @@ operand rFlagsRegUCF() %{
 %}
 
 // Float register operands
-operand regF()
-%{
-  constraint(ALLOC_IN_RC(float_reg));
-  match(RegF);
+operand regF() %{
+   constraint(ALLOC_IN_RC(float_reg));
+   match(RegF);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
+// Double register operands
+operand regD() %{
+   constraint(ALLOC_IN_RC(double_reg));
+   match(RegD);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
+// Vectors
+operand vecS() %{
+  constraint(ALLOC_IN_RC(vectors_reg));
+  match(VecS);
 
   format %{ %}
   interface(REG_INTER);
 %}
 
-// Double register operands
-operand regD()
-%{
-  constraint(ALLOC_IN_RC(double_reg));
-  match(RegD);
+operand vecD() %{
+  constraint(ALLOC_IN_RC(vectord_reg));
+  match(VecD);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecX() %{
+  constraint(ALLOC_IN_RC(vectorx_reg));
+  match(VecX);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vecY() %{
+  constraint(ALLOC_IN_RC(vectory_reg));
+  match(VecY);
 
   format %{ %}
   interface(REG_INTER);
@@ -4947,7 +4994,7 @@ instruct loadI2L_immU31(rRegL dst, memory mem, immU31 mask, rFlagsReg cr) %{
 %}
 
 // Load Unsigned Integer into Long Register
-instruct loadUI2L(rRegL dst, memory mem, immL_32bits mask) 
+instruct loadUI2L(rRegL dst, memory mem, immL_32bits mask)
 %{
   match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
 
@@ -10374,7 +10421,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
 
   format %{ "xorq    rax, rax\t# ClearArray:\n\t"
             "rep     stosq\t# Store rax to *rdi++ while rcx--" %}
-  ins_encode %{ 
+  ins_encode %{
     __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -10389,7 +10436,7 @@ instruct rep_fast_stosb(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dum
   format %{ "xorq    rax, rax\t# ClearArray:\n\t"
             "shlq    rcx,3\t# Convert doublewords to bytes\n\t"
             "rep     stosb\t# Store rax to *rdi++ while rcx--" %}
-  ins_encode %{ 
+  ins_encode %{
     __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
   %}
   ins_pipe( pipe_slow );

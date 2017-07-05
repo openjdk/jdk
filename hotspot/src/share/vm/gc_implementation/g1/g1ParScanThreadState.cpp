@@ -29,7 +29,7 @@
 #include "gc_implementation/g1/g1StringDedup.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
   : _g1h(g1h),
@@ -95,8 +95,9 @@ G1ParScanThreadState::print_termination_stats(int i,
   const double elapsed_ms = elapsed_time() * 1000.0;
   const double s_roots_ms = strong_roots_time() * 1000.0;
   const double term_ms    = term_time() * 1000.0;
-  const size_t alloc_buffer_waste = _g1_par_allocator->alloc_buffer_waste();
-  const size_t undo_waste         = _g1_par_allocator->undo_waste();
+  size_t alloc_buffer_waste = 0;
+  size_t undo_waste = 0;
+  _g1_par_allocator->waste(alloc_buffer_waste, undo_waste);
   st->print_cr("%3d %9.2f %9.2f %6.2f "
                "%9.2f %6.2f " SIZE_FORMAT_W(8) " "
                SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7) " " SIZE_FORMAT_W(7),

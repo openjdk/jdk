@@ -32,14 +32,14 @@
  * @run driver RandomGeneratorTest DIFFERENT_SEED
  */
 
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
- * The test verifies correctness of work {@link com.oracle.java.testlibrary.Utils#getRandomInstance()}.
+ * The test verifies correctness of work {@link jdk.test.lib.Utils#getRandomInstance()}.
  * Test works in three modes: same seed provided, no seed provided and
  * different seed provided. In the first case the test expects that all random numbers
  * will be repeated in all next iterations. For other two modes test expects that

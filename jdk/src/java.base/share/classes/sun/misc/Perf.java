@@ -67,13 +67,13 @@ public final class Perf {
      * <code>AccessController.doPrivileged(PrivilegedAction)</code>.
      * <p> Here is a suggested idiom for use of this class:
      *
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
      * class MyTrustedClass {
      *   private static final Perf perf =
      *       AccessController.doPrivileged(new Perf.GetPerfAction<Perf>());
      *   ...
      * }
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * <p>
      * In the presence of a security manager, the <code>MyTrustedClass</code>
      * class in the above example will need to be granted the
@@ -171,8 +171,7 @@ public final class Perf {
      * The attach mode specifies the access permissions requested for the
      * instrumentation buffer of the target virtual machine. The permitted
      * access permissions are:
-     * <p>
-     * <bl>
+     * <ul>
      * <li>"r"  - Read only access. This Java virtual machine has only
      * read access to the instrumentation buffer for the target Java
      * virtual machine.
@@ -180,7 +179,7 @@ public final class Perf {
      * write access to the instrumentation buffer for the target Java virtual
      * machine. This mode is currently not supported and is reserved for
      * future enhancements.
-     * </bl>
+     * </ul>
      *
      * @param   lvmid            an integer that uniquely identifies the
      *                           target local Java virtual machine.

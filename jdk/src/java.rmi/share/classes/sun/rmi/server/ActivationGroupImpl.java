@@ -345,7 +345,7 @@ public class ActivationGroupImpl extends ActivationGroup {
     * request.
     *
     * @param id the object's activation identifier
-    * @returns true if the operation succeeds (the operation will
+    * @return true if the operation succeeds (the operation will
     * succeed if the object in currently known to be active and is
     * either already unexported or is currently exported and has no
     * pending/executing calls); false is returned if the object has
@@ -430,7 +430,7 @@ public class ActivationGroupImpl extends ActivationGroup {
      * hasn't already done so.
      *
      * @param id the object's identifier
-     * @param obj the remote object implementation
+     * @param impl the remote object implementation
      * @exception UnknownObjectException if object is not registered
      * @exception RemoteException if call informing monitor fails
      */

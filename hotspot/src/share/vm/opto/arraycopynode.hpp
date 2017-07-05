@@ -124,6 +124,10 @@ public:
     ParmLimit
   };
 
+  // Results from escape analysis for non escaping inputs
+  const TypeOopPtr* _src_type;
+  const TypeOopPtr* _dest_type;
+
   static ArrayCopyNode* make(GraphKit* kit, bool may_throw,
                              Node* src, Node* src_offset,
                              Node* dest,  Node* dest_offset,
@@ -154,11 +158,12 @@ public:
   virtual bool guaranteed_safepoint()  { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
+
   bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
 };
-
 #endif // SHARE_VM_OPTO_ARRAYCOPYNODE_HPP

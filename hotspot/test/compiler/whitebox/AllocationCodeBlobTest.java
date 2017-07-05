@@ -28,8 +28,8 @@ import java.util.ArrayList;
 
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.BlobType;
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.InfiniteLoop;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.InfiniteLoop;
 
 /*
  * @test AllocationCodeBlobTest

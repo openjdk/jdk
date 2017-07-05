@@ -101,7 +101,7 @@ public class SerialNumber {
      * Return the SerialNumber as user readable string.
      */
     public String toString() {
-        return ("SerialNumber: [" + Debug.toHexString(serialNum) + "]");
+        return "SerialNumber: [" + Debug.toHexString(serialNum) + ']';
     }
 
     /**

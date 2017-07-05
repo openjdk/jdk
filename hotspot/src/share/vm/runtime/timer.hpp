@@ -123,6 +123,7 @@ class TraceCPUTime: public StackObj {
 class TimeHelper {
  public:
   static double counter_to_seconds(jlong counter);
+  static double counter_to_millis(jlong counter);
 };
 
 #endif // SHARE_VM_RUNTIME_TIMER_HPP

@@ -32,7 +32,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
  *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+SegmentedCodeCache -XX:CompileCommand=compileonly,null::*
- *     -Dcom.oracle.java.testlibrary.iterations=10 UsageThresholdExceededTest
+ *     -Djdk.test.lib.iterations=10 UsageThresholdExceededTest
  * @summary verifying that getUsageThresholdCount() returns correct value
  *     after threshold has been hit several times
  */

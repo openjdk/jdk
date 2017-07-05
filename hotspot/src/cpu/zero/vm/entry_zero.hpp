@@ -26,6 +26,8 @@
 #ifndef CPU_ZERO_VM_ENTRY_ZERO_HPP
 #define CPU_ZERO_VM_ENTRY_ZERO_HPP
 
+#include "interpreter/cppInterpreter.hpp"
+
 class ZeroEntry {
  public:
   ZeroEntry() {

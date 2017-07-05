@@ -537,7 +537,7 @@ public interface Collection<E> extends Iterable<E> {
      * @implSpec
      * The default implementation creates a
      * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
-     * from the collections's {@code Iterator}.  The spliterator inherits the
+     * from the collection's {@code Iterator}.  The spliterator inherits the
      * <em>fail-fast</em> properties of the collection's iterator.
      * <p>
      * The created {@code Spliterator} reports {@link Spliterator#SIZED}.

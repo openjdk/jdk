@@ -36,7 +36,24 @@ inline bool is_FloatRegister() {
 }
 
 inline bool is_XMMRegister() {
-  return value() >= ConcreteRegisterImpl::max_fpr && value() < ConcreteRegisterImpl::max_xmm;
+  int uarch_max_xmm = ConcreteRegisterImpl::max_xmm;
+
+#ifdef _LP64
+  if (UseAVX < 3) {
+    int half_xmm = (XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers) / 2;
+    uarch_max_xmm -= half_xmm;
+  }
+#endif
+
+  return (value() >= ConcreteRegisterImpl::max_fpr && value() < uarch_max_xmm);
+}
+
+inline bool is_KRegister() {
+  if (UseAVX > 2) {
+    return value() >= ConcreteRegisterImpl::max_xmm && value() < ConcreteRegisterImpl::max_kpr;
+  } else {
+    return false;
+  }
 }
 
 inline Register as_Register() {
@@ -59,7 +76,13 @@ inline FloatRegister as_FloatRegister() {
 inline XMMRegister as_XMMRegister() {
   assert( is_XMMRegister() && is_even(value()), "must be" );
   // Yuk
-  return ::as_XMMRegister((value() - ConcreteRegisterImpl::max_fpr) >> 3);
+  return ::as_XMMRegister((value() - ConcreteRegisterImpl::max_fpr) >> 4);
+}
+
+inline KRegister as_KRegister() {
+  assert(is_KRegister(), "must be");
+  // Yuk
+  return ::as_KRegister((value() - ConcreteRegisterImpl::max_xmm));
 }
 
 inline   bool is_concrete() {

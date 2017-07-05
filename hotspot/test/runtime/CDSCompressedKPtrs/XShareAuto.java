@@ -31,7 +31,7 @@
  * @run main XShareAuto
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class XShareAuto {
     public static void main(String[] args) throws Exception {

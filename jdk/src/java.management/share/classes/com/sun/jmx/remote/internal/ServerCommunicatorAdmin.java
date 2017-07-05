@@ -57,8 +57,8 @@ public abstract class ServerCommunicatorAdmin {
      * <code>rspOutgoing</code> to inform that a response is sent out
      * for the received request.
      * @return the value of the termination flag:
-     * <ul><code>true</code> if the connection is already being terminated,
-     * <br><code>false</code> otherwise.</ul>
+     *         true if the connection is already being terminated,
+     *         false otherwise.
      */
     public boolean reqIncoming() {
         if (logger.traceOn()) {
@@ -80,8 +80,8 @@ public abstract class ServerCommunicatorAdmin {
     /**
      * Tells that a response is sent out for a received request.
      * @return the value of the termination flag:
-     * <ul><code>true</code> if the connection is already being terminated,
-     * <br><code>false</code> otherwise.</ul>
+     *         true if the connection is already being terminated,
+     *         false otherwise.
      */
     public boolean rspOutgoing() {
         if (logger.traceOn()) {

@@ -21,10 +21,13 @@
  * questions.
  */
 
+import static jdk.testlibrary.Asserts.assertTrue;
+import static jdk.testlibrary.Asserts.fail;
+
 import java.io.File;
 import java.util.Arrays;
 
-import static jdk.testlibrary.Asserts.*;
+import jdk.test.lib.hprof.HprofParser;
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
@@ -34,8 +37,13 @@ import jdk.testlibrary.ProcessTools;
  * @bug 6321286
  * @summary Unit test for jmap utility
  * @library /lib/testlibrary
+ * @library /../../test/lib/share/classes
  * @modules java.management
  * @build jdk.testlibrary.*
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.module.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.utils.*
  * @run main BasicJMapTest
  */
 public class BasicJMapTest {
@@ -60,24 +68,38 @@ public class BasicJMapTest {
     }
 
     private static void testDump() throws Exception {
-        File dump = new File("java_pid$" + ProcessTools.getProcessId() + ".hprof");
-        OutputAnalyzer output = jmap("-dump:format=b,file=" + dump.getName());
-        output.shouldHaveExitValue(0);
-        output.shouldContain("Heap dump file created");
-        verifyDumpFile(dump);
+        dump(false);
     }
 
     private static void testDumpLive() throws Exception {
-        File dump = new File("java_pid$" + ProcessTools.getProcessId() + ".hprof");
-        OutputAnalyzer output = jmap("-dump:live,format=b,file=" + dump.getName());
+        dump(true);
+    }
+
+    private static void dump(boolean live) throws Exception {
+        File dump = new File("jmap.dump." + System.currentTimeMillis() + ".hprof");
+        if (dump.exists()) {
+            dump.delete();
+        }
+        OutputAnalyzer output;
+        if (live) {
+            output = jmap("-dump:live,format=b,file=" + dump.getName());
+        } else {
+            output = jmap("-dump:format=b,file=" + dump.getName());
+        }
         output.shouldHaveExitValue(0);
         output.shouldContain("Heap dump file created");
         verifyDumpFile(dump);
+        dump.delete();
     }
 
     private static void verifyDumpFile(File dump) {
-        assertTrue(dump.exists() && dump.isFile(), "Could not create dump file");
-        dump.delete();
+        assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
+        try {
+            HprofParser.parse(dump);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Could not parse dump file " + dump.getAbsolutePath());
+        }
     }
 
     private static OutputAnalyzer jmap(String... toolArgs) throws Exception {

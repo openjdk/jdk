@@ -29,10 +29,8 @@
 #include "interpreter/cppInterpreter.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "memory/resourceArea.hpp"
-#ifdef ZERO
 #ifdef TARGET_ARCH_zero
 # include "entry_zero.hpp"
-#endif
 #endif
 
 // This file contains the platform-independent parts

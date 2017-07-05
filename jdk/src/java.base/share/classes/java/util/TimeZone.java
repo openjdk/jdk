@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,6 +293,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
             throw new NullPointerException();
         }
         this.ID = ID;
+        this.zoneId = null;   // invalidate cache
     }
 
     /**
@@ -544,7 +545,23 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @since 1.8
      */
     public ZoneId toZoneId() {
+        ZoneId zId = zoneId;
+        if (zId == null) {
+            zoneId = zId = toZoneId0();
+        }
+        return zId;
+    }
+
+    private ZoneId toZoneId0() {
         String id = getID();
+        TimeZone defaultZone = defaultTimeZone;
+        // are we not defaultTimeZone but our id is equal to default's?
+        if (defaultZone != this &&
+            defaultZone != null && id.equals(defaultZone.getID())) {
+            // delegate to default TZ which is effectively immutable
+            return defaultZone.toZoneId();
+        }
+        // derive it ourselves
         if (ZoneInfoFile.useOldMapping() && id.length() == 3) {
             if ("EST".equals(id))
                 return ZoneId.of("America/New_York");
@@ -710,7 +727,12 @@ abstract public class TimeZone implements Serializable, Cloneable {
             sm.checkPermission(new PropertyPermission
                                ("user.timezone", "write"));
         }
-        defaultTimeZone = zone;
+        // by saving a defensive clone and returning a clone in getDefault() too,
+        // the defaultTimeZone instance is isolated from user code which makes it
+        // effectively immutable. This is important to avoid races when the
+        // following is evaluated in ZoneId.systemDefault():
+        // TimeZone.getDefault().toZoneId().
+        defaultTimeZone = (zone == null) ? null : (TimeZone) zone.clone();
     }
 
     /**
@@ -735,9 +757,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
     public Object clone()
     {
         try {
-            TimeZone other = (TimeZone) super.clone();
-            other.ID = ID;
-            return other;
+            return super.clone();
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
         }
@@ -759,6 +779,12 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @serial
      */
     private String           ID;
+
+    /**
+     * Cached {@link ZoneId} for this TimeZone
+     */
+    private transient ZoneId zoneId;
+
     private static volatile TimeZone defaultTimeZone;
 
     static final String         GMT_ID        = "GMT";
