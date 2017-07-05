@@ -1598,11 +1598,11 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     boolean dotLTR;
     boolean markLTR;
     transient Handler handler = new Handler();
-    transient private int[] flagXPoints = new int[3];
-    transient private int[] flagYPoints = new int[3];
+    private transient int[] flagXPoints = new int[3];
+    private transient int[] flagYPoints = new int[3];
     private transient NavigationFilter.FilterBypass filterBypass;
-    static private transient Action selectWord = null;
-    static private transient Action selectLine = null;
+    private static transient Action selectWord = null;
+    private static transient Action selectLine = null;
     /**
      * This is used to indicate if the caret currently owns the selection.
      * This is always false if the system does not support the system

@@ -63,8 +63,8 @@ class GTKPainter extends SynthPainter {
         ShadowType.ETCHED_IN, ShadowType.OUT
     };
 
-    private final static GTKEngine ENGINE = GTKEngine.INSTANCE;
-    final static GTKPainter INSTANCE = new GTKPainter();
+    private static final GTKEngine ENGINE = GTKEngine.INSTANCE;
+    static final GTKPainter INSTANCE = new GTKPainter();
 
     private GTKPainter() {
     }

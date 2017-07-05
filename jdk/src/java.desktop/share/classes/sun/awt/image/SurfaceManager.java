@@ -51,7 +51,7 @@ import sun.java2d.loops.CompositeType;
  */
 public abstract class SurfaceManager {
 
-    public static abstract class ImageAccessor {
+    public abstract static class ImageAccessor {
         public abstract SurfaceManager getSurfaceManager(Image img);
         public abstract void setSurfaceManager(Image img, SurfaceManager mgr);
     }

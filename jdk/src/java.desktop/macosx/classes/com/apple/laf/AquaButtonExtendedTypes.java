@@ -63,7 +63,7 @@ public class AquaButtonExtendedTypes {
         return logicalPosition;
     }
 
-    static abstract class TypeSpecifier {
+    abstract static class TypeSpecifier {
         final String name;
         final boolean setIconFont;
 
@@ -138,7 +138,7 @@ public class AquaButtonExtendedTypes {
         return typeDefinitions.get().get(name);
     }
 
-    protected final static RecyclableSingleton<Map<String, TypeSpecifier>> typeDefinitions = new RecyclableSingleton<Map<String, TypeSpecifier>>() {
+    protected static final RecyclableSingleton<Map<String, TypeSpecifier>> typeDefinitions = new RecyclableSingleton<Map<String, TypeSpecifier>>() {
         protected Map<String, TypeSpecifier> getInstance() {
             return getAllTypes();
         }

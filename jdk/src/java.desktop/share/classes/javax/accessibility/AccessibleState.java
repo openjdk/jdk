@@ -353,7 +353,7 @@ public class AccessibleState extends AccessibleBundle {
      *
      * @since 1.5
      */
-    static public final AccessibleState TRUNCATED
+    public static final AccessibleState TRUNCATED
            =  new AccessibleState("truncated");
 
     /**

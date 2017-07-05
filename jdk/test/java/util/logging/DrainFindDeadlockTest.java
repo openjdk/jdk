@@ -35,7 +35,7 @@ import java.util.Map;
  * @summary check for deadlock between findLogger() and drainLoggerRefQueueBounded()
  * @author jim.gish@oracle.com
  * @build DrainFindDeadlockTest
- * @run main/othervm/timeout=10 DrainFindDeadlockTest
+ * @run main/othervm DrainFindDeadlockTest
  * @key randomness
  */
 
@@ -109,9 +109,13 @@ public class DrainFindDeadlockTest {
         public void run() {
             System.out.println("Running " + Thread.currentThread().getName());
 
-            for (int i=0; i < MAX_ITERATIONS; i++) {
-                logger = Logger.getLogger("DrainFindDeadlockTest"+i);
-                DrainFindDeadlockTest.randomDelay();
+            try {
+                for (int i=0; i < MAX_ITERATIONS; i++) {
+                    logger = Logger.getLogger("DrainFindDeadlockTest"+i);
+                    DrainFindDeadlockTest.randomDelay();
+                }
+            } finally {
+                System.out.println("Completed " + Thread.currentThread().getName());
             }
         }
     }
@@ -120,13 +124,17 @@ public class DrainFindDeadlockTest {
         @Override
         public void run() {
             System.out.println("Running " + Thread.currentThread().getName());
-            for (int i=0; i < MAX_ITERATIONS; i++) {
-                try {
-                    mgr.readConfiguration();
-                } catch (IOException | SecurityException ex) {
-                    throw new RuntimeException("FAILED: test setup problem", ex);
+            try {
+                for (int i=0; i < MAX_ITERATIONS; i++) {
+                    try {
+                        mgr.readConfiguration();
+                    } catch (IOException | SecurityException ex) {
+                        throw new RuntimeException("FAILED: test setup problem", ex);
+                    }
+                    DrainFindDeadlockTest.randomDelay();
                 }
-                DrainFindDeadlockTest.randomDelay();
+            } finally {
+                System.out.println("Completed " + Thread.currentThread().getName());
             }
         }
     }
@@ -185,12 +193,16 @@ public class DrainFindDeadlockTest {
         @Override
         public void run() {
             System.out.println("Running " + Thread.currentThread().getName());
-            for (int i=0; i < MAX_ITERATIONS*2; i++) {
-                checkState(t1, t2);
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ex) {
-                };
+            try {
+                for (int i=0; i < MAX_ITERATIONS*2; i++) {
+                    checkState(t1, t2);
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException ex) {
+                    }
+                }
+            } finally {
+                System.out.println("Completed " + Thread.currentThread().getName());
             }
         }
     }

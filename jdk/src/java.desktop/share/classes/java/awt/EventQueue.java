@@ -47,8 +47,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import java.security.AccessControlContext;
 
-import sun.misc.SharedSecrets;
-import sun.misc.JavaSecurityAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaSecurityAccess;
 
 /**
  * <code>EventQueue</code> is a platform-independent class
@@ -139,7 +139,7 @@ public class EventQueue {
      * Dummy runnable to wake up EDT from getNextEvent() after
      push/pop is performed
      */
-    private final static Runnable dummyRunnable = new Runnable() {
+    private static final Runnable dummyRunnable = new Runnable() {
         public void run() {
         }
     };

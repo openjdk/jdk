@@ -34,14 +34,14 @@
  */
 
 package java.util.concurrent.atomic;
-import java.util.function.IntUnaryOperator;
-import java.util.function.IntBinaryOperator;
-import sun.misc.Unsafe;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntUnaryOperator;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
@@ -363,11 +363,11 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
-     * Standard hotspot implementation using intrinsics
+     * Standard hotspot implementation using intrinsics.
      */
     private static class AtomicIntegerFieldUpdaterImpl<T>
             extends AtomicIntegerFieldUpdater<T> {
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
         private final long offset;
         private final Class<T> tclass;
         private final Class<?> cclass;
@@ -391,7 +391,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
                 ClassLoader ccl = caller.getClassLoader();
                 if ((ccl != null) && (ccl != cl) &&
                     ((cl == null) || !isAncestor(cl, ccl))) {
-                  sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+                    sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
                 }
             } catch (PrivilegedActionException pae) {
                 throw new RuntimeException(pae.getException());
@@ -409,7 +409,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
             this.cclass = (Modifier.isProtected(modifiers) &&
                            caller != tclass) ? caller : null;
             this.tclass = tclass;
-            offset = unsafe.objectFieldOffset(field);
+            offset = U.objectFieldOffset(field);
         }
 
         /**
@@ -437,32 +437,32 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
         public boolean compareAndSet(T obj, int expect, int update) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.compareAndSwapInt(obj, offset, expect, update);
+            return U.compareAndSwapInt(obj, offset, expect, update);
         }
 
         public boolean weakCompareAndSet(T obj, int expect, int update) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.compareAndSwapInt(obj, offset, expect, update);
+            return U.compareAndSwapInt(obj, offset, expect, update);
         }
 
         public void set(T obj, int newValue) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            unsafe.putIntVolatile(obj, offset, newValue);
+            U.putIntVolatile(obj, offset, newValue);
         }
 
         public void lazySet(T obj, int newValue) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            unsafe.putOrderedInt(obj, offset, newValue);
+            U.putOrderedInt(obj, offset, newValue);
         }
 
         public final int get(T obj) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.getIntVolatile(obj, offset);
+            return U.getIntVolatile(obj, offset);
         }
 
         public int getAndSet(T obj, int newValue) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.getAndSetInt(obj, offset, newValue);
+            return U.getAndSetInt(obj, offset, newValue);
         }
 
         public int getAndIncrement(T obj) {
@@ -475,7 +475,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
         public int getAndAdd(T obj, int delta) {
             if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
-            return unsafe.getAndAddInt(obj, offset, delta);
+            return U.getAndAddInt(obj, offset, delta);
         }
 
         public int incrementAndGet(T obj) {
@@ -483,7 +483,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
         }
 
         public int decrementAndGet(T obj) {
-             return getAndAdd(obj, -1) - 1;
+            return getAndAdd(obj, -1) - 1;
         }
 
         public int addAndGet(T obj, int delta) {

@@ -1081,7 +1081,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
 
     static String encoding = null;
 
-    static private Reader makeReader(InputStream is) {
+    private static Reader makeReader(InputStream is) {
         if (encoding != null) {
             try {
                 return new BufferedReader(new InputStreamReader(is, encoding));

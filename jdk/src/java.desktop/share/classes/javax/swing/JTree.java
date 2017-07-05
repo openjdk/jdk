@@ -155,12 +155,12 @@ public class JTree extends JComponent implements Scrollable, Accessible
     /**
      * The model that defines the tree displayed by this object.
      */
-    transient protected TreeModel        treeModel;
+    protected transient TreeModel        treeModel;
 
     /**
      * Models the set of selected nodes in this tree.
      */
-    transient protected TreeSelectionModel selectionModel;
+    protected transient TreeSelectionModel selectionModel;
 
     /**
      * True if the root node is displayed, false if its children are
@@ -172,7 +172,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * The cell used to draw nodes. If <code>null</code>, the UI uses a default
      * <code>cellRenderer</code>.
      */
-    transient protected TreeCellRenderer  cellRenderer;
+    protected transient TreeCellRenderer  cellRenderer;
 
     /**
      * Height to use for each display row. If this is &lt;= 0 the renderer
@@ -189,7 +189,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * information must be determined by visiting all the parent
      * paths and seeing if they are visible.
      */
-    transient private Hashtable<TreePath, Boolean> expandedState;
+    private transient Hashtable<TreePath, Boolean> expandedState;
 
 
     /**
@@ -227,7 +227,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * Editor for the entries.  Default is <code>null</code>
      * (tree is not editable).
      */
-    transient protected TreeCellEditor          cellEditor;
+    protected transient TreeCellEditor          cellEditor;
 
     /**
      * Is the tree editable? Default is false.
@@ -277,13 +277,13 @@ public class JTree extends JComponent implements Scrollable, Accessible
     /**
      * Updates the <code>expandedState</code>.
      */
-    transient protected TreeModelListener       treeModelListener;
+    protected transient TreeModelListener       treeModelListener;
 
     /**
      * Used when <code>setExpandedState</code> is invoked,
      * will be a <code>Stack</code> of <code>Stack</code>s.
      */
-    transient private Stack<Stack<TreePath>> expandedStack;
+    private transient Stack<Stack<TreePath>> expandedStack;
 
     /**
      * Lead selection path, may not be <code>null</code>.
@@ -459,40 +459,40 @@ public class JTree extends JComponent implements Scrollable, Accessible
     // Bound property names
     //
     /** Bound property name for <code>cellRenderer</code>. */
-    public final static String        CELL_RENDERER_PROPERTY = "cellRenderer";
+    public static final String        CELL_RENDERER_PROPERTY = "cellRenderer";
     /** Bound property name for <code>treeModel</code>. */
-    public final static String        TREE_MODEL_PROPERTY = "model";
+    public static final String        TREE_MODEL_PROPERTY = "model";
     /** Bound property name for <code>rootVisible</code>. */
-    public final static String        ROOT_VISIBLE_PROPERTY = "rootVisible";
+    public static final String        ROOT_VISIBLE_PROPERTY = "rootVisible";
     /** Bound property name for <code>showsRootHandles</code>. */
-    public final static String        SHOWS_ROOT_HANDLES_PROPERTY = "showsRootHandles";
+    public static final String        SHOWS_ROOT_HANDLES_PROPERTY = "showsRootHandles";
     /** Bound property name for <code>rowHeight</code>. */
-    public final static String        ROW_HEIGHT_PROPERTY = "rowHeight";
+    public static final String        ROW_HEIGHT_PROPERTY = "rowHeight";
     /** Bound property name for <code>cellEditor</code>. */
-    public final static String        CELL_EDITOR_PROPERTY = "cellEditor";
+    public static final String        CELL_EDITOR_PROPERTY = "cellEditor";
     /** Bound property name for <code>editable</code>. */
-    public final static String        EDITABLE_PROPERTY = "editable";
+    public static final String        EDITABLE_PROPERTY = "editable";
     /** Bound property name for <code>largeModel</code>. */
-    public final static String        LARGE_MODEL_PROPERTY = "largeModel";
+    public static final String        LARGE_MODEL_PROPERTY = "largeModel";
     /** Bound property name for selectionModel. */
-    public final static String        SELECTION_MODEL_PROPERTY = "selectionModel";
+    public static final String        SELECTION_MODEL_PROPERTY = "selectionModel";
     /** Bound property name for <code>visibleRowCount</code>. */
-    public final static String        VISIBLE_ROW_COUNT_PROPERTY = "visibleRowCount";
+    public static final String        VISIBLE_ROW_COUNT_PROPERTY = "visibleRowCount";
     /** Bound property name for <code>messagesStopCellEditing</code>. */
-    public final static String        INVOKES_STOP_CELL_EDITING_PROPERTY = "invokesStopCellEditing";
+    public static final String        INVOKES_STOP_CELL_EDITING_PROPERTY = "invokesStopCellEditing";
     /** Bound property name for <code>scrollsOnExpand</code>. */
-    public final static String        SCROLLS_ON_EXPAND_PROPERTY = "scrollsOnExpand";
+    public static final String        SCROLLS_ON_EXPAND_PROPERTY = "scrollsOnExpand";
     /** Bound property name for <code>toggleClickCount</code>. */
-    public final static String        TOGGLE_CLICK_COUNT_PROPERTY = "toggleClickCount";
+    public static final String        TOGGLE_CLICK_COUNT_PROPERTY = "toggleClickCount";
     /** Bound property name for <code>leadSelectionPath</code>.
      * @since 1.3 */
-    public final static String        LEAD_SELECTION_PATH_PROPERTY = "leadSelectionPath";
+    public static final String        LEAD_SELECTION_PATH_PROPERTY = "leadSelectionPath";
     /** Bound property name for anchor selection path.
      * @since 1.3 */
-    public final static String        ANCHOR_SELECTION_PATH_PROPERTY = "anchorSelectionPath";
+    public static final String        ANCHOR_SELECTION_PATH_PROPERTY = "anchorSelectionPath";
     /** Bound property name for expands selected paths property
      * @since 1.3 */
-    public final static String        EXPANDS_SELECTED_PATHS_PROPERTY = "expandsSelectedPaths";
+    public static final String        EXPANDS_SELECTED_PATHS_PROPERTY = "expandsSelectedPaths";
 
 
     /**
@@ -3322,7 +3322,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
          *
          * @return single instance of {@code EmptySelectionModel}
          */
-        static public EmptySelectionModel sharedInstance() {
+        public static EmptySelectionModel sharedInstance() {
             return sharedInstance;
         }
 

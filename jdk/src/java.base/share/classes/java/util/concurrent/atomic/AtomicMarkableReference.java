@@ -97,7 +97,7 @@ public class AtomicMarkableReference<V> {
      * Typical usage is {@code boolean[1] holder; ref = v.get(holder); }.
      *
      * @param markHolder an array of size of at least one. On return,
-     * {@code markholder[0]} will hold the value of the mark.
+     * {@code markHolder[0]} will hold the value of the mark.
      * @return the current value of the reference
      */
     public V get(boolean[] markHolder) {
@@ -190,23 +190,18 @@ public class AtomicMarkableReference<V> {
 
     // Unsafe mechanics
 
-    private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-    private static final long pairOffset =
-        objectFieldOffset(UNSAFE, "pair", AtomicMarkableReference.class);
-
-    private boolean casPair(Pair<V> cmp, Pair<V> val) {
-        return UNSAFE.compareAndSwapObject(this, pairOffset, cmp, val);
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final long PAIR;
+    static {
+        try {
+            PAIR = U.objectFieldOffset
+                (AtomicMarkableReference.class.getDeclaredField("pair"));
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
     }
 
-    static long objectFieldOffset(sun.misc.Unsafe UNSAFE,
-                                  String field, Class<?> klazz) {
-        try {
-            return UNSAFE.objectFieldOffset(klazz.getDeclaredField(field));
-        } catch (NoSuchFieldException e) {
-            // Convert Exception to corresponding Error
-            NoSuchFieldError error = new NoSuchFieldError(field);
-            error.initCause(e);
-            throw error;
-        }
+    private boolean casPair(Pair<V> cmp, Pair<V> val) {
+        return U.compareAndSwapObject(this, PAIR, cmp, val);
     }
 }

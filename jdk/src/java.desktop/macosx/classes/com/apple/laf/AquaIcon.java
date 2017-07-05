@@ -73,7 +73,7 @@ public class AquaIcon {
         public void initIconPainter(final AquaPainter<? extends JRSUIState> painter);
     }
 
-    static abstract class JRSUIIcon implements Icon, UIResource {
+    abstract static class JRSUIIcon implements Icon, UIResource {
         protected final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIState.getInstance());
 
         public void paintIcon(final Component c, final Graphics g, final int x, final int y) {
@@ -81,7 +81,7 @@ public class AquaIcon {
         }
     }
 
-    static abstract class DynamicallySizingJRSUIIcon extends JRSUIIcon {
+    abstract static class DynamicallySizingJRSUIIcon extends JRSUIIcon {
         protected final SizeDescriptor sizeDescriptor;
         protected SizeVariant sizeVariant;
 
@@ -109,7 +109,7 @@ public class AquaIcon {
         }
     }
 
-    static abstract class CachingScalingIcon implements Icon, UIResource {
+    abstract static class CachingScalingIcon implements Icon, UIResource {
         int width;
         int height;
         Image image;
@@ -167,7 +167,7 @@ public class AquaIcon {
 
     }
 
-    static abstract class ScalingJRSUIIcon implements Icon, UIResource {
+    abstract static class ScalingJRSUIIcon implements Icon, UIResource {
         final int width;
         final int height;
 

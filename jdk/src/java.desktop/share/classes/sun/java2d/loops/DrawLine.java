@@ -44,9 +44,9 @@ import sun.java2d.SurfaceData;
  */
 public class DrawLine extends GraphicsPrimitive
 {
-    public final static String methodSignature = "DrawLine(...)".toString();
+    public static final String methodSignature = "DrawLine(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static DrawLine locate(SurfaceType srctype,
                                   CompositeType comptype,

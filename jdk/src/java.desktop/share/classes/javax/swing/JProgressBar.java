@@ -190,15 +190,15 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
     /**
      * The default minimum for a progress bar is 0.
      */
-    static final private int defaultMinimum = 0;
+    private static final int defaultMinimum = 0;
     /**
      * The default maximum for a progress bar is 100.
      */
-    static final private int defaultMaximum = 100;
+    private static final int defaultMaximum = 100;
     /**
      * The default orientation for a progress bar is <code>HORIZONTAL</code>.
      */
-    static final private int defaultOrientation = HORIZONTAL;
+    private static final int defaultOrientation = HORIZONTAL;
 
     /**
      * Only one <code>ChangeEvent</code> is needed per instance since the

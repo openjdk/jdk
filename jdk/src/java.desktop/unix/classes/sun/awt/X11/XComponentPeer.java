@@ -210,7 +210,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * Descendants should use this method to determine whether or not native window
      * has focus.
      */
-    final public boolean hasFocus() {
+    public final boolean hasFocus() {
         return bHasFocus;
     }
 
@@ -242,7 +242,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     private static Class<?> seClass;
     private static Constructor<?> seCtor;
 
-    final static AWTEvent wrapInSequenced(AWTEvent event) {
+    static final AWTEvent wrapInSequenced(AWTEvent event) {
         try {
             if (seClass == null) {
                 seClass = Class.forName("java.awt.SequencedEvent");
@@ -283,7 +283,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
     @SuppressWarnings("deprecation")
-    final public boolean requestFocus(Component lightweightChild, boolean temporary,
+    public final boolean requestFocus(Component lightweightChild, boolean temporary,
                                       boolean focusedWindowChangeAllowed, long time,
                                       CausedFocusEvent.Cause cause)
     {

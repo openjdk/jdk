@@ -335,67 +335,67 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * Returns the resolution in dots per inch across the width
      * of the page.
      */
-    abstract protected double getXRes();
+    protected abstract double getXRes();
 
     /**
      * Returns the resolution in dots per inch down the height
      * of the page.
      */
-    abstract protected double getYRes();
+    protected abstract double getYRes();
 
     /**
      * Must be obtained from the current printer.
      * Value is in device pixels.
      * Not adjusted for orientation of the paper.
      */
-    abstract protected double getPhysicalPrintableX(Paper p);
+    protected abstract double getPhysicalPrintableX(Paper p);
 
     /**
      * Must be obtained from the current printer.
      * Value is in device pixels.
      * Not adjusted for orientation of the paper.
      */
-    abstract protected double getPhysicalPrintableY(Paper p);
+    protected abstract double getPhysicalPrintableY(Paper p);
 
     /**
      * Must be obtained from the current printer.
      * Value is in device pixels.
      * Not adjusted for orientation of the paper.
      */
-    abstract protected double getPhysicalPrintableWidth(Paper p);
+    protected abstract double getPhysicalPrintableWidth(Paper p);
 
     /**
      * Must be obtained from the current printer.
      * Value is in device pixels.
      * Not adjusted for orientation of the paper.
      */
-    abstract protected double getPhysicalPrintableHeight(Paper p);
+    protected abstract double getPhysicalPrintableHeight(Paper p);
 
     /**
      * Must be obtained from the current printer.
      * Value is in device pixels.
      * Not adjusted for orientation of the paper.
      */
-    abstract protected double getPhysicalPageWidth(Paper p);
+    protected abstract double getPhysicalPageWidth(Paper p);
 
     /**
      * Must be obtained from the current printer.
      * Value is in device pixels.
      * Not adjusted for orientation of the paper.
      */
-    abstract protected double getPhysicalPageHeight(Paper p);
+    protected abstract double getPhysicalPageHeight(Paper p);
 
     /**
      * Begin a new page.
      */
-    abstract protected void startPage(PageFormat format, Printable painter,
+    protected abstract void startPage(PageFormat format, Printable painter,
                                       int index, boolean paperChanged)
         throws PrinterException;
 
     /**
      * End a page.
      */
-    abstract protected void endPage(PageFormat format, Printable painter,
+    protected abstract void endPage(PageFormat format, Printable painter,
                                     int index)
         throws PrinterException;
 
@@ -406,7 +406,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * page. The width and height of the band is
      * specified by the caller.
      */
-    abstract protected void printBand(byte[] data, int x, int y,
+    protected abstract void printBand(byte[] data, int x, int y,
                                       int width, int height)
         throws PrinterException;
 

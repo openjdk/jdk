@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
 import java.time.Clock;
 
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * LogRecord objects are used to pass logging requests between

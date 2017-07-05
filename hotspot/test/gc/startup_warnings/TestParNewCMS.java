@@ -40,7 +40,7 @@ public class TestParNewCMS {
   public static void main(String args[]) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("warning: The UseParNewGC flag is deprecated and will likely be removed in a future release");
+    output.shouldContain("warning: Option UseParNewGC was deprecated in version");
     output.shouldNotContain("error");
     output.shouldHaveExitValue(0);
   }

@@ -60,7 +60,7 @@ public abstract class AbstractCellEditor implements CellEditor, Serializable {
     /**
      * The change event.
      */
-    transient protected ChangeEvent changeEvent = null;
+    protected transient ChangeEvent changeEvent = null;
 
     // Force this to be implemented.
     // public Object  getCellEditorValue()

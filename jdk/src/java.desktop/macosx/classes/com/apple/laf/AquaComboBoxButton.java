@@ -35,10 +35,10 @@ import apple.laf.JRSUIConstants.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxButton extends JButton {
-    final protected JComboBox<Object> comboBox;
-    final protected JList<?> list;
-    final protected CellRendererPane rendererPane;
-    final protected AquaComboBoxUI ui;
+    protected final JComboBox<Object> comboBox;
+    protected final JList<?> list;
+    protected final CellRendererPane rendererPane;
+    protected final AquaComboBoxUI ui;
 
     protected final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIState.getInstance());
     boolean isPopDown;

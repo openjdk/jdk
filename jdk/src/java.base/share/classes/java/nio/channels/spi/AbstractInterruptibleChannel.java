@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import jdk.internal.misc.SharedSecrets;
 import sun.nio.ch.Interruptible;
 
 
@@ -206,9 +207,8 @@ public abstract class AbstractInterruptibleChannel
     }
 
 
-    // -- sun.misc.SharedSecrets --
+    // -- jdk.internal.misc.SharedSecrets --
     static void blockedOn(Interruptible intr) {         // package-private
-        sun.misc.SharedSecrets.getJavaLangAccess().blockedOn(Thread.currentThread(),
-                                                             intr);
+        SharedSecrets.getJavaLangAccess().blockedOn(Thread.currentThread(), intr);
     }
 }

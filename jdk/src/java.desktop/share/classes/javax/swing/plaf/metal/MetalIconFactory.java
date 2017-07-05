@@ -1617,7 +1617,7 @@ public class MetalIconFactory implements Serializable {
     }  // End class TreeFloppyDriveIcon
 
 
-    static private final Dimension folderIcon16Size = new Dimension( 16, 16 );
+    private static final Dimension folderIcon16Size = new Dimension( 16, 16 );
 
     /**
      * Utility class for caching icon images.  This is necessary because
@@ -1787,7 +1787,7 @@ public class MetalIconFactory implements Serializable {
     }
 
 
-    static private final Dimension fileIcon16Size = new Dimension( 16, 16 );
+    private static final Dimension fileIcon16Size = new Dimension( 16, 16 );
 
     /**
      * <p>
@@ -1887,7 +1887,7 @@ public class MetalIconFactory implements Serializable {
     }
 
 
-    static private final Dimension treeControlSize = new Dimension( 18, 18 );
+    private static final Dimension treeControlSize = new Dimension( 18, 18 );
 
     /**
      * <p>
@@ -2052,9 +2052,9 @@ public class MetalIconFactory implements Serializable {
   // Menu Icons
   //
 
-    static private final Dimension menuArrowIconSize = new Dimension( 4, 8 );
-    static private final Dimension menuCheckIconSize = new Dimension( 10, 10 );
-    static private final int xOff = 4;
+    private static final Dimension menuArrowIconSize = new Dimension( 4, 8 );
+    private static final Dimension menuCheckIconSize = new Dimension( 10, 10 );
+    private static final int xOff = 4;
 
     private static class MenuArrowIcon implements Icon, UIResource, Serializable
     {

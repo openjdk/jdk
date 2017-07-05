@@ -222,9 +222,11 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   address entry_point = __ pc();
 
   if (VerifyMethodHandles) {
+    assert(Method::intrinsic_id_size_in_bytes() == 2, "assuming Method::_intrinsic_id is u2");
+
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ cmpb(Address(rbx_method, Method::intrinsic_id_offset_in_bytes()), (int) iid);
+    __ cmpw(Address(rbx_method, Method::intrinsic_id_offset_in_bytes()), (int) iid);
     __ jcc(Assembler::equal, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
         iid == vmIntrinsics::_linkToSpecial) {

@@ -356,7 +356,7 @@ delegates to be registered with concrete classes.
  *
  * @author Sergey A. Malenkov
  */
-private static abstract class java_util_Collections extends PersistenceDelegate {
+private abstract static class java_util_Collections extends PersistenceDelegate {
     protected boolean mutatesTo(Object oldInstance, Object newInstance) {
         if (!super.mutatesTo(oldInstance, newInstance)) {
             return false;
@@ -1319,7 +1319,7 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
     }
 
     @SuppressWarnings("rawtypes")
-    public synchronized static PersistenceDelegate getPersistenceDelegate(Class type) {
+    public static synchronized PersistenceDelegate getPersistenceDelegate(Class type) {
         if (type == null) {
             return nullPersistenceDelegate;
         }

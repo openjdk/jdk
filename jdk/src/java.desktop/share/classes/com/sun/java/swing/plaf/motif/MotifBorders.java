@@ -263,7 +263,7 @@ public class MotifBorders {
         Color frameShadow;
 
         // The width of the border
-        public final static int BORDER_SIZE = 5;
+        public static final int BORDER_SIZE = 5;
 
         /** Constructs an FrameBorder for the JComponent <b>comp</b>.
         */
@@ -446,7 +446,7 @@ public class MotifBorders {
         JInternalFrame frame;
 
         // The size of the bounding box for Motif frame corners.
-        public final static int CORNER_SIZE = 24;
+        public static final int CORNER_SIZE = 24;
 
         /** Constructs an InternalFrameBorder for the InternalFrame
           * <b>aFrame</b>.
@@ -634,10 +634,10 @@ public class MotifBorders {
         protected Color  highlightColor;
 
         // Space between the border and text
-        static protected final int TEXT_SPACING = 2;
+        protected static final int TEXT_SPACING = 2;
 
         // Space for the separator under the title
-        static protected final int GROOVE_HEIGHT = 2;
+        protected static final int GROOVE_HEIGHT = 2;
 
         /**
          * Creates a MotifPopupMenuBorder instance

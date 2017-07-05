@@ -39,10 +39,10 @@ import sun.font.GlyphList;
  */
 public class DrawGlyphListLCD extends GraphicsPrimitive {
 
-    public final static String
+    public static final String
         methodSignature = "DrawGlyphListLCD(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static DrawGlyphListLCD locate(SurfaceType srctype,
                                            CompositeType comptype,

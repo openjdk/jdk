@@ -21,22 +21,27 @@
  * questions.
  */
 
-/* @test
-   @bug 6921687 8079428
-   @summary Mnemonic disappears after repeated attempts to open menu items using
-   mnemonics
-   @author Semyon Sadetsky
-   @library /lib/testlibrary
-   @build jdk.testlibrary.OSInfo
-   @run main bug6921687
-  */
-
-
-import jdk.testlibrary.OSInfo;
-import javax.swing.*;
-import java.awt.*;
+/*
+ * @test
+ * @bug 6921687 8079428
+ * @summary Mnemonic disappears after repeated attempts to open menu items using
+ *          mnemonics
+ * @author Semyon Sadetsky
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.Platform
+ * @requires (os.family == "windows")
+ * @modules java.desktop/com.sun.java.swing.plaf.windows
+ * @run main bug6921687
+ */
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
-
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import jdk.testlibrary.Platform;
 
 public class bug6921687 {
 
@@ -44,24 +49,24 @@ public class bug6921687 {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+        if (!Platform.isWindows()) {
             System.out.println("Only Windows platform test. Test is skipped.");
             System.out.println("ok");
             return;
         }
-        lafClass = Class.forName(UIManager.getSystemLookAndFeelClassName());
-        UIManager.setLookAndFeel((LookAndFeel) lafClass.newInstance());
+        final String lafClassName = UIManager.getSystemLookAndFeelClassName();
+        lafClass  = Class.forName(lafClassName);
+        UIManager.setLookAndFeel(lafClassName);
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    frame = new JFrame();
-                    frame.setUndecorated(true);
-                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    setup(frame);
-                }
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame();
+                frame.setUndecorated(true);
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                setup(frame);
             });
 
             final Robot robot = new Robot();
+            robot.waitForIdle();
             robot.setAutoDelay(20);
             robot.keyPress(KeyEvent.VK_ALT);
             robot.keyPress(KeyEvent.VK_F);
@@ -108,6 +113,5 @@ public class bug6921687 {
 
         frame.setSize(350, 250);
         frame.setVisible(true);
-
     }
 }

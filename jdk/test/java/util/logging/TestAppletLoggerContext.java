@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.LoggingPermission;
-import sun.misc.JavaAWTAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaAWTAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /*
  * @test
@@ -42,7 +42,7 @@ import sun.misc.SharedSecrets;
  * @summary  NPE when using Logger.getAnonymousLogger or
  *           LogManager.getLogManager().getLogger
  *
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingApplet
  * @run main/othervm -Dtest.security=on TestAppletLoggerContext  LoadingApplet
  * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingMain

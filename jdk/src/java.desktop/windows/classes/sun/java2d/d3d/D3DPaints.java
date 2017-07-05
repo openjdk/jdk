@@ -158,7 +158,7 @@ abstract class D3DPaints {
 
 /****************** Shared MultipleGradientPaint support ********************/
 
-    private static abstract class MultiGradient extends D3DPaints {
+    private abstract static class MultiGradient extends D3DPaints {
 
         /**
          * Note that this number is lower than the MULTI_MAX_FRACTIONS

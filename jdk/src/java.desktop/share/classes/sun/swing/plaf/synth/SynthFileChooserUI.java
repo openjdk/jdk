@@ -228,8 +228,8 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
     protected void paint(SynthContext context, Graphics g) {
     }
 
-    abstract public void setFileName(String fileName);
-    abstract public String getFileName();
+    public abstract void setFileName(String fileName);
+    public abstract String getFileName();
 
     protected void doSelectedFileChanged(PropertyChangeEvent e) {
     }

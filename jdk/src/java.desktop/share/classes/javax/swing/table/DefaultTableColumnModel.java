@@ -73,7 +73,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
     protected EventListenerList listenerList = new EventListenerList();
 
     /** Change event (only one needed) */
-    transient protected ChangeEvent changeEvent = null;
+    protected transient ChangeEvent changeEvent = null;
 
     /** Column selection allowed in this column model */
     protected boolean columnSelectionAllowed;

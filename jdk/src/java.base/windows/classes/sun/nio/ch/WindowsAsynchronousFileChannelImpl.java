@@ -31,8 +31,8 @@ import java.nio.ByteBuffer;
 import java.nio.BufferOverflowException;
 import java.io.IOException;
 import java.io.FileDescriptor;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.

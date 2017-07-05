@@ -593,7 +593,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      * A toolbar-specific separator. An object with dimension but
      * no contents used to divide buttons on a tool bar into groups.
      */
-    static public class Separator extends JSeparator
+    public static class Separator extends JSeparator
     {
         private Dimension separatorSize;
 

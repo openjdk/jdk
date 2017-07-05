@@ -50,7 +50,7 @@ public abstract class SurfaceManagerFactory {
      *
      * @return the surface manager factory
      */
-    public synchronized static SurfaceManagerFactory getInstance() {
+    public static synchronized SurfaceManagerFactory getInstance() {
 
         if (instance == null) {
             throw new IllegalStateException("No SurfaceManagerFactory set.");
@@ -65,7 +65,7 @@ public abstract class SurfaceManagerFactory {
      *
      * @param factory the factory to set
      */
-    public synchronized static void setInstance(SurfaceManagerFactory factory) {
+    public static synchronized void setInstance(SurfaceManagerFactory factory) {
 
         if (factory == null) {
             // We don't want to allow setting this to null at any time.

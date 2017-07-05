@@ -46,6 +46,8 @@ import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * java.lang.Process subclass in the UNIX environment.
@@ -57,8 +59,8 @@ import java.security.PrivilegedExceptionAction;
  * @since   1.5
  */
 final class ProcessImpl extends Process {
-    private static final sun.misc.JavaIOFileDescriptorAccess fdAccess
-        = sun.misc.SharedSecrets.getJavaIOFileDescriptorAccess();
+    private static final JavaIOFileDescriptorAccess fdAccess
+        = SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // Linux platforms support a normal (non-forcible) kill signal.
     static final boolean SUPPORTS_NORMAL_TERMINATION = true;
