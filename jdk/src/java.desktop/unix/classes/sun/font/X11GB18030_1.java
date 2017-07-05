@@ -55,7 +55,7 @@ public class X11GB18030_1 extends Charset {
         protected int encodeSingle(char inputChar) {
             return -1;
         }
-        private final static String innerIndex0=
+        private static final String innerIndex0=
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
@@ -569,7 +569,7 @@ public class X11GB18030_1 extends Charset {
             "\u0DD2\u0DD3\u0DD4\u0DD5\u0DD6\u0DD7\u0DD8\u0DD9"+
             "\u0DDA\u0DDB\u0DDC\u0DDD\u0DDE\u0DDF\u0DE0\u0DE1";
 
-        private final static String innerIndex1=
+        private static final String innerIndex1=
             "\u0DE2\u0DE3\u0DE4\u0DE5\u0DE6\u0DE7\u0DE8\u0DE9"+
             "\u0DEA\u0DEB\u0DEC\u0DED\u0DEE\u0DEF\u0DF0\u0DF1"+
             "\u0DF2\u0DF3\u0DF4\u0DF5\u0DF6\u0DF7\u0DF8\u0DF9"+
@@ -1083,7 +1083,7 @@ public class X11GB18030_1 extends Charset {
             "\u1DD2\u1DD3\u1DD4\u1DD5\u1DD6\u1DD7\u1DD8\u1DD9"+
             "\u1DDA\u1DDB\u1DDC\u1DDD\u1DDE\u1DDF\u1DE0\u1DE1";
 
-        private final static String innerIndex2=
+        private static final String innerIndex2=
             "\u1DE2\u1DE3\u1DE4\u1DE5\u1DE6\u1DE7\u1DE8\u1DE9"+
             "\u1DEA\u1DEB\u1DEC\u1DED\u1DEE\u1DEF\u1DF0\u1DF1"+
             "\u1DF2\u1DF3\u1DF4\u1DF5\u1DF6\u1DF7\u1DF8\u1DF9"+
@@ -1597,7 +1597,7 @@ public class X11GB18030_1 extends Charset {
             "\u2CA2\u2CA3\u2CA4\u2CA5\u2CA6\u2CA7\u2CA8\u2CA9"+
             "\u2CAA\u2CAB\u2CAC\u2CAD\u2CAE\u2CAF\u2CB0\u2CB1";
 
-        private final static String innerIndex3=
+        private static final String innerIndex3=
             "\u2CB2\u2CB3\u2CB4\u2CB5\u2CB6\u2CB7\u2CB8\u2CB9"+
             "\u2CBA\u2CBB\u2CBC\u2CBD\u2CBE\u2CBF\u2CC0\u2CC1"+
             "\u2CC2\u2CC3\u2CC4\u2CC5\u2CC6\u2CC7\u2CC8\u2CC9"+
@@ -2111,7 +2111,7 @@ public class X11GB18030_1 extends Charset {
             "\u3B79\u3B7A\u3B7B\u3B7C\u3B7D\u3B7E\u3B7F\u3B80"+
             "\u3B81\u3B82\u3B83\u3B84\u3B85\u3B86\u3B87\u3B88";
 
-        private final static String innerIndex4=
+        private static final String innerIndex4=
             "\u3B89\u3B8A\u3B8B\u3B8C\u3B8D\u3B8E\u3B8F\u3B90"+
             "\u3B91\u3B92\u3B93\u3B94\u3B95\u3B96\u3B97\u3B98"+
             "\u3B99\u3B9A\u3B9B\u3B9C\u3B9D\u3B9E\u3B9F\u3BA0"+
@@ -2625,7 +2625,7 @@ public class X11GB18030_1 extends Charset {
             "\u4AAD\u4AAE\u4AAF\u4AB0\u4AB1\u4AB2\u4AB3\u4AB4"+
             "\u4AB5\u4AB6\u4AB7\u4AB8\u4AB9\u4ABA\u4ABB\u4ABC";
 
-        private final static String innerIndex5=
+        private static final String innerIndex5=
             "\u4ABD\u4ABE\u4ABF\u4AC0\u4AC1\u4AC2\u4AC3\u4AC4"+
             "\u4AC5\u4AC6\u4AC7\u4AC8\u4AC9\u4ACA\u4ACB\u4ACC"+
             "\u4ACD\u4ACE\u4ACF\u4AD0\u4AD1\u4AD2\u4AD3\u4AD4"+
@@ -3139,7 +3139,7 @@ public class X11GB18030_1 extends Charset {
             "\u5AAD\u5AAE\u5AAF\u5AB0\u5AB1\u5AB2\u5AB3\u5AB4"+
             "\u5AB5\u5AB6\u5AB7\u5AB8\u5AB9\u5ABA\u5ABB\u5ABC";
 
-        private final static String innerIndex6=
+        private static final String innerIndex6=
             "\u5ABD\u5ABE\u5ABF\u5AC0\u5AC1\u5AC2\u5AC3\u5AC4"+
             "\u5AC5\u5AC6\u5AC7\u5AC8\u5AC9\u5ACA\u5ACB\u5ACC"+
             "\u5ACD\u5ACE\u5ACF\u5AD0\u5AD1\u5AD2\u5AD3\u5AD4"+
@@ -3653,7 +3653,7 @@ public class X11GB18030_1 extends Charset {
             "\u6AAD\u6AAE\u6AAF\u6AB0\u6AB1\u6AB2\u6AB3\u6AB4"+
             "\u6AB5\u6AB6\u6AB7\u6AB8\u6AB9\u6ABA\u6ABB\u6ABC";
 
-        private final static String innerIndex7=
+        private static final String innerIndex7=
             "\u6ABD\u6ABE\u6ABF\u6AC0\u6AC1\u6AC2\u6AC3\u6AC4"+
             "\u6AC5\u6AC6\u6AC7\u6AC8\u6AC9\u6ACA\u6ACB\u6ACC"+
             "\u6ACD\u6ACE\u6ACF\u6AD0\u6AD1\u6AD2\u6AD3\u6AD4"+
@@ -4167,7 +4167,7 @@ public class X11GB18030_1 extends Charset {
             "\u7AAD\u7AAE\u7AAF\u7AB0\u7AB1\u7AB2\u7AB3\u7AB4"+
             "\u7AB5\u7AB6\u7AB7\u7AB8\u7AB9\u7ABA\u7ABB\u7ABC";
 
-        private final static String innerIndex8=
+        private static final String innerIndex8=
             "\u7ABD\u7ABE\u7ABF\u7AC0\u7AC1\u7AC2\u7AC3\u7AC4"+
             "\u7AC5\u7AC6\u7AC7\u7AC8\u7AC9\u7ACA\u7ACB\u7ACC"+
             "\u7ACD\u7ACE\u7ACF\u7AD0\u7AD1\u7AD2\u7AD3\u7AD4"+
@@ -4681,7 +4681,7 @@ public class X11GB18030_1 extends Charset {
             "\u8999\u899A\u899B\u899C\u899D\u899E\u899F\u89A0"+
             "\u89A1\u89A2\u89A3\u89A4\u89A5\u89A6\u89A7\u89A8";
 
-        private final static String innerIndex9=
+        private static final String innerIndex9=
             "\u89A9\u89AA\u89AB\u89AC\u89AD\u89AE\u89AF\u89B0"+
             "\u89B1\u89B2\u89B3\u89B4\u89B5\u89B6\u89B7\u89B8"+
             "\u89B9\u89BA\u89BB\u89BC\u89BD\u89BE\u89BF\u89C0"+
@@ -5195,7 +5195,7 @@ public class X11GB18030_1 extends Charset {
             "\u9950\u9951\u9952\u9953\u9954\u9955\u9956\u9957"+
             "\u9958\u9959\u995A\u995B\u995C\u995D\u995E\u995F";
 
-        private final static String innerIndex10=
+        private static final String innerIndex10=
             "\u9960\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
@@ -5229,7 +5229,7 @@ public class X11GB18030_1 extends Charset {
             "\u99EC\u99ED\u99EE\u99EF\u99F0\u99F1\u99F2\u99F3"+
             "\u99F4\u99F5\u99F6\u99F7\u99F8\u0000\u99FA\u99FB";
 
-        private final static short index1[] = {
+        private static final short index1[] = {
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
             17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
             33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
@@ -5248,7 +5248,7 @@ public class X11GB18030_1 extends Charset {
             145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160
         };
 
-        private final static String index2[] = {
+        private static final String index2[] = {
             innerIndex0,
             innerIndex1,
             innerIndex2,

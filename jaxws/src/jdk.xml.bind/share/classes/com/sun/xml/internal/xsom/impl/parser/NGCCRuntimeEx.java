@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import com.sun.xml.internal.xsom.impl.parser.state.NGCCRuntime;
 import com.sun.xml.internal.xsom.impl.parser.state.Schema;
 import com.sun.xml.internal.xsom.impl.util.Uri;
 import com.sun.xml.internal.xsom.parser.AnnotationParser;
-import org.relaxng.datatype.ValidationContext;
+import com.sun.xml.internal.org.relaxng.datatype.ValidationContext;
 import org.xml.sax.Attributes;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;

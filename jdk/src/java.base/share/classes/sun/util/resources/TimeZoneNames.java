@@ -430,6 +430,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Eirunepe", ACT},
             {"America/El_Salvador", CST},
             {"America/Ensenada", PST},
+            {"America/Fort_Nelson", MST},
             {"America/Fort_Wayne", EST},
             {"America/Fortaleza", BRT},
             {"America/Glace_Bay", AST},

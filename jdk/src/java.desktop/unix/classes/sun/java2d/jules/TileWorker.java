@@ -28,7 +28,7 @@ package sun.java2d.jules;
 import java.util.*;
 
 public class TileWorker implements Runnable {
-    final static int RASTERIZED_TILE_SYNC_GRANULARITY = 8;
+    static final int RASTERIZED_TILE_SYNC_GRANULARITY = 8;
     final ArrayList<JulesTile> rasterizedTileConsumerCache =
          new ArrayList<JulesTile>();
     final LinkedList<JulesTile> rasterizedBuffers = new LinkedList<JulesTile>();

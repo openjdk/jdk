@@ -102,8 +102,8 @@ public class Type1Font extends FileFont {
 
     private String psName = null;
 
-    static private HashMap<String, String> styleAbbreviationsMapping;
-    static private HashSet<String> styleNameTokes;
+    private static HashMap<String, String> styleAbbreviationsMapping;
+    private static HashSet<String> styleNameTokes;
 
     static {
         styleAbbreviationsMapping = new HashMap<>();

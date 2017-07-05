@@ -42,7 +42,7 @@ public final class MidiOutDeviceProvider extends AbstractMidiDeviceProvider {
     /** Cache of open MIDI output devices on the system. */
     private static MidiDevice[] devices = null;
 
-    private final static boolean enabled;
+    private static final boolean enabled;
 
     // STATIC
 

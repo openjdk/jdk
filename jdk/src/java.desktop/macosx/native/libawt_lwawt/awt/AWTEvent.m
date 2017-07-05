@@ -23,18 +23,15 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
-#import <sys/time.h>
-#include <Carbon/Carbon.h>
-
-#import "jni_util.h" 
-#import "LWCToolkit.h"
-#import "ThreadUtilities.h"
-
 #import "java_awt_event_InputEvent.h"
 #import "java_awt_event_KeyEvent.h"
-#import "java_awt_event_MouseEvent.h"
+#import "LWCToolkit.h"
+
+#import "jni_util.h"
+
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import <sys/time.h>
+#import <Carbon/Carbon.h>
 
 /*
  * Table to map typed characters to their Java virtual key equivalent and back.

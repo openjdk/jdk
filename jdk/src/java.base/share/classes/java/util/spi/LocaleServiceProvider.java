@@ -140,8 +140,10 @@ import java.util.Locale;
  * desired locale sensitive service is not available, then the runtime looks for CLDR,
  * JRE in that order.
  * <p>
- * The default order for looking up the preferred locale providers is "CLDR,JRE,SPI",
- * so specifying "CLDR,JRE,SPI" is identical to the default behavior.
+ * The default order for looking up the preferred locale providers is "CLDR,JRE",
+ * so specifying "CLDR,JRE" is identical to the default behavior. Applications which
+ * require implementations of the locale sensitive services must explicitly specify
+ * "SPI" in order for the Java runtime to load them from the classpath.
  *
  * @since        1.6
  */

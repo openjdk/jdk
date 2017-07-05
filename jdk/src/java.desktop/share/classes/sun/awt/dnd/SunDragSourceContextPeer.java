@@ -81,12 +81,12 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
      * dispatch constants
      */
 
-    protected final static int DISPATCH_ENTER   = 1;
-    protected final static int DISPATCH_MOTION  = 2;
-    protected final static int DISPATCH_CHANGED = 3;
-    protected final static int DISPATCH_EXIT    = 4;
-    protected final static int DISPATCH_FINISH  = 5;
-    protected final static int DISPATCH_MOUSE_MOVED  = 6;
+    protected static final int DISPATCH_ENTER   = 1;
+    protected static final int DISPATCH_MOTION  = 2;
+    protected static final int DISPATCH_CHANGED = 3;
+    protected static final int DISPATCH_EXIT    = 4;
+    protected static final int DISPATCH_FINISH  = 5;
+    protected static final int DISPATCH_MOUSE_MOVED  = 6;
 
     /**
      * construct a new SunDragSourceContextPeer

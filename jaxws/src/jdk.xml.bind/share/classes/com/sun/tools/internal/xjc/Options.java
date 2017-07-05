@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -562,14 +562,6 @@ public class Options
             schemaLanguage = Language.DTD;
             return 1;
         }
-        if (args[i].equals("-relaxng")) {
-            schemaLanguage = Language.RELAXNG;
-            return 1;
-        }
-        if (args[i].equals("-relaxng-compact")) {
-            schemaLanguage = Language.RELAXNG_COMPACT;
-            return 1;
-        }
         if (args[i].equals("-xmlschema")) {
             schemaLanguage = Language.XMLSCHEMA;
             return 1;
@@ -869,10 +861,6 @@ public class Options
         if ((grammars != null) && (grammars.size() > 0)) {
             String name = grammars.get(0).getSystemId().toLowerCase();
 
-            if (name.endsWith(".rng"))
-                return Language.RELAXNG;
-            if (name.endsWith(".rnc"))
-                return Language.RELAXNG_COMPACT;
             if (name.endsWith(".dtd"))
                 return Language.DTD;
             if (name.endsWith(".wsdl"))

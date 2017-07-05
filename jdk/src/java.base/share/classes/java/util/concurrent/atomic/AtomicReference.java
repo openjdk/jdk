@@ -34,9 +34,9 @@
  */
 
 package java.util.concurrent.atomic;
-import java.util.function.UnaryOperator;
+
 import java.util.function.BinaryOperator;
-import sun.misc.Unsafe;
+import java.util.function.UnaryOperator;
 
 /**
  * An object reference that may be updated atomically. See the {@link
@@ -49,14 +49,16 @@ import sun.misc.Unsafe;
 public class AtomicReference<V> implements java.io.Serializable {
     private static final long serialVersionUID = -1848883965231344442L;
 
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long valueOffset;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final long VALUE;
 
     static {
         try {
-            valueOffset = unsafe.objectFieldOffset
+            VALUE = U.objectFieldOffset
                 (AtomicReference.class.getDeclaredField("value"));
-        } catch (Exception ex) { throw new Error(ex); }
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
     }
 
     private volatile V value;
@@ -101,7 +103,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(V newValue) {
-        unsafe.putOrderedObject(this, valueOffset, newValue);
+        U.putOrderedObject(this, VALUE, newValue);
     }
 
     /**
@@ -113,7 +115,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(V expect, V update) {
-        return unsafe.compareAndSwapObject(this, valueOffset, expect, update);
+        return U.compareAndSwapObject(this, VALUE, expect, update);
     }
 
     /**
@@ -129,7 +131,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @return {@code true} if successful
      */
     public final boolean weakCompareAndSet(V expect, V update) {
-        return unsafe.compareAndSwapObject(this, valueOffset, expect, update);
+        return U.compareAndSwapObject(this, VALUE, expect, update);
     }
 
     /**
@@ -140,7 +142,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      */
     @SuppressWarnings("unchecked")
     public final V getAndSet(V newValue) {
-        return (V)unsafe.getAndSetObject(this, valueOffset, newValue);
+        return (V)U.getAndSetObject(this, VALUE, newValue);
     }
 
     /**

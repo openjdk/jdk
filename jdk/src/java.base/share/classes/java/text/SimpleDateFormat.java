@@ -1722,7 +1722,7 @@ public class SimpleDateFormat extends DateFormat {
             }
             return (start + zoneNames[nameIndex].length());
         }
-        return 0;
+        return -start;
     }
 
     /**

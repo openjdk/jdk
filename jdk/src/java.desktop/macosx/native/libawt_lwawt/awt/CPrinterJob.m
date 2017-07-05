@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,14 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
 static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject dstPrinterJob, jobject dstPageable);
 static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobject srcPageable, NSPrintInfo* dst);
 
+
+#ifdef __MAC_10_9 // code for SDK 10.9 or newer
+#define NS_PORTRAIT NSPaperOrientationPortrait
+#define NS_LANDSCAPE NSPaperOrientationLandscape
+#else // code for SDK 10.8 or older
+#define NS_PORTRAIT NSPortraitOrientation
+#define NS_LANDSCAPE NSLandscapeOrientation
+#endif
 
 static NSPrintInfo* createDefaultNSPrintInfo(JNIEnv* env, jstring printer)
 {
@@ -143,12 +151,12 @@ static void nsPrintInfoToJavaPaper(JNIEnv* env, NSPrintInfo* src, jobject dst)
 
     NSSize paperSize = [src paperSize];
     switch ([src orientation]) {
-        case NSPortraitOrientation:
+        case NS_PORTRAIT:
             jPaperW = paperSize.width;
             jPaperH = paperSize.height;
             break;
 
-        case NSLandscapeOrientation:
+        case NS_LANDSCAPE:
             jPaperW = paperSize.height;
             jPaperH = paperSize.width;
             break;
@@ -217,13 +225,12 @@ static void nsPrintInfoToJavaPageFormat(JNIEnv* env, NSPrintInfo* src, jobject d
     static JNF_CTOR_CACHE(jm_Paper_ctor, sjc_Paper, "()V");
 
     jint jOrientation;
-    NSPrintingOrientation nsOrientation = [src orientation];
-    switch (nsOrientation) {
-        case NSPortraitOrientation:
+    switch ([src orientation]) {
+        case NS_PORTRAIT:
             jOrientation = java_awt_print_PageFormat_PORTRAIT;
             break;
 
-        case NSLandscapeOrientation:
+        case NS_LANDSCAPE:
             jOrientation = java_awt_print_PageFormat_LANDSCAPE; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
             break;
 
@@ -273,20 +280,20 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
 
     switch (JNFCallIntMethod(env, srcPageFormat, jm_getOrientation)) { // AWT_THREADING Safe (!appKit)
         case java_awt_print_PageFormat_PORTRAIT:
-            [dstPrintInfo setOrientation:NSPortraitOrientation];
+            [dstPrintInfo setOrientation:NS_PORTRAIT];
             break;
 
         case java_awt_print_PageFormat_LANDSCAPE:
-            [dstPrintInfo setOrientation:NSLandscapeOrientation]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+            [dstPrintInfo setOrientation:NS_LANDSCAPE]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
             break;
 
         // AppKit printing doesn't support REVERSE_LANDSCAPE. Radar 2960295.
         case java_awt_print_PageFormat_REVERSE_LANDSCAPE:
-            [dstPrintInfo setOrientation:NSLandscapeOrientation]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
+            [dstPrintInfo setOrientation:NS_LANDSCAPE]; //+++gdb Are LANDSCAPE and REVERSE_LANDSCAPE still inverted?
             break;
 
         default:
-            [dstPrintInfo setOrientation:NSPortraitOrientation];
+            [dstPrintInfo setOrientation:NS_PORTRAIT];
             break;
     }
 

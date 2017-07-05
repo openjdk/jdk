@@ -75,8 +75,8 @@ public class XMenuItemPeer implements MenuItemPeer {
     /*
      * Size constants
      */
-    private final static int SEPARATOR_WIDTH = 20;
-    private final static int SEPARATOR_HEIGHT = 5;
+    private static final int SEPARATOR_WIDTH = 20;
+    private static final int SEPARATOR_HEIGHT = 5;
 
     /************************************************
      *

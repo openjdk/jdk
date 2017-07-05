@@ -122,9 +122,9 @@ define SetupArchiveBody
       $1_GREP_INCLUDES:=| ( $(GREP) $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_INCLUDE_PATTERNS)) \
           || test "$$$$?" = "1" )
     else
-      $1_GREP_INCLUDE_OUTPUT:=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include $$(NEWLINE) \
-          $$(call ListPathsSafely,$1_GREP_INCLUDE_PATTERNS,\n, \
-          >> $$($1_BIN)/_the.$$($1_JARNAME)_include)
+      $1_GREP_INCLUDE_OUTPUT = \
+          $$(eval $$(call ListPathsSafely,$1_GREP_INCLUDE_PATTERNS, \
+              $$($1_BIN)/_the.$$($1_JARNAME)_include))
       $1_GREP_INCLUDES:=| ( $(GREP) -f $$($1_BIN)/_the.$$($1_JARNAME)_include \
           || test "$$$$?" = "1" )
     endif
@@ -138,9 +138,9 @@ define SetupArchiveBody
       $1_GREP_EXCLUDES:=| ( $(GREP) -v $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_EXCLUDE_PATTERNS)) \
           || test "$$$$?" = "1" )
     else
-      $1_GREP_EXCLUDE_OUTPUT=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude $$(NEWLINE) \
-          $$(call ListPathsSafely,$1_GREP_EXCLUDE_PATTERNS,\n, \
-          >> $$($1_BIN)/_the.$$($1_JARNAME)_exclude)
+      $1_GREP_EXCLUDE_OUTPUT = \
+          $$(eval $$(call ListPathsSafely,$1_GREP_EXCLUDE_PATTERNS, \
+              $$($1_BIN)/_the.$$($1_JARNAME)_exclude))
       $1_GREP_EXCLUDES:=| ( $(GREP) -v -f $$($1_BIN)/_the.$$($1_JARNAME)_exclude \
           || test "$$$$?" = "1" )
     endif
@@ -190,13 +190,12 @@ define SetupArchiveBody
   # The EXTRA_FILES_RESOLVED varible must be set in the macro so that it's evaluated
   # in the recipe when the files are guaranteed to exist.
   $1_CAPTURE_EXTRA_FILES=\
-      $(RM) $$($1_BIN)/_the.$$($1_JARNAME)_contents.extra $$(NEWLINE) \
-      $$(eval $1_EXTRA_FILES_RESOLVED:=$$(call DoubleDollar, $$(call DoubleDollar, \
+      $$(eval $1_EXTRA_FILES_RESOLVED:=$$(call DoubleDollar, \
           $$(wildcard $$(foreach src, $$($1_SRCS), \
-          $$(addprefix $$(src)/, $$($1_EXTRA_FILES))) $$($1_EXTRA_FILES))))) \
+          $$(addprefix $$(src)/, $$($1_EXTRA_FILES))) $$($1_EXTRA_FILES)))) \
       $$(if $$($1_EXTRA_FILES_RESOLVED), \
-        $$(call ListPathsSafely,$1_EXTRA_FILES_RESOLVED,\n, \
-            >> $$($1_BIN)/_the.$$($1_JARNAME)_contents.extra) $$(NEWLINE) \
+        $$(eval $$(call ListPathsSafely,$1_EXTRA_FILES_RESOLVED, \
+            $$($1_BIN)/_the.$$($1_JARNAME)_contents.extra)) \
         $(SED) $$(foreach src,$$($1_SRCS), -e 's|$$(src)/|-C $$(src) |g') \
             $$($1_BIN)/_the.$$($1_JARNAME)_contents.extra \
             >> $$($1_BIN)/_the.$$($1_JARNAME)_contents $$(NEWLINE))
@@ -577,7 +576,7 @@ define SetupJavaCompilationBody
 
     $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$(@D) $$(dir $$($1_SJAVAC_PORTFILE))
-	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
+	$$(eval $$(call ListPathsSafely,$1_SRCS, $$($1_BIN)/_the.$1_batch.tmp))
 	$(ECHO) Compiling $1
 	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_SJAVAC) \
@@ -636,8 +635,7 @@ define SetupJavaCompilationBody
     # When not using sjavac, pass along all sources to javac using an @file.
     $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$(@D)
-	$(RM) $$($1_BIN)/_the.$1_batch $$($1_BIN)/_the.$1_batch.tmp
-	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
+	$$(eval $$(call ListPathsSafely,$1_SRCS, $$($1_BIN)/_the.$1_batch.tmp))
 	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.$1_batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
 	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) \

@@ -78,7 +78,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
     private native void setInsets();
 
     @Override
-    public native synchronized void setScrollPosition(int x, int y);
+    public synchronized native void setScrollPosition(int x, int y);
 
     @Override
     public int getHScrollbarHeight() {
@@ -112,7 +112,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         setInsets();
     }
 
-    native synchronized void setSpans(int viewWidth, int viewHeight,
+    synchronized native void setSpans(int viewWidth, int viewHeight,
                                       int childWidth, int childHeight);
 
     /**

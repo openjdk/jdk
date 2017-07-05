@@ -29,8 +29,9 @@ import java.security.AccessController;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
-import sun.misc.JavaLangRefAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaNioAccess;
+import jdk.internal.misc.JavaLangRefAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.misc.Unsafe;
 import sun.misc.VM;
 
@@ -702,11 +703,11 @@ class Bits {                            // package-private
 
     static {
         // setup access to this package in SharedSecrets
-        sun.misc.SharedSecrets.setJavaNioAccess(
-            new sun.misc.JavaNioAccess() {
+        SharedSecrets.setJavaNioAccess(
+            new JavaNioAccess() {
                 @Override
-                public sun.misc.JavaNioAccess.BufferPool getDirectBufferPool() {
-                    return new sun.misc.JavaNioAccess.BufferPool() {
+                public JavaNioAccess.BufferPool getDirectBufferPool() {
+                    return new JavaNioAccess.BufferPool() {
                         @Override
                         public String getName() {
                             return "direct";

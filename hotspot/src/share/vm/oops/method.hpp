@@ -72,7 +72,7 @@ class Method : public Metadata {
   int               _result_index;               // C++ interpreter needs for converting results to/from stack
 #endif
   u2                _method_size;                // size of this object
-  u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
+  u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
 
   // Flags
   enum Flags {
@@ -653,7 +653,7 @@ class Method : public Metadata {
   // for code generation
   static int method_data_offset_in_bytes()       { return offset_of(Method, _method_data); }
   static int intrinsic_id_offset_in_bytes()      { return offset_of(Method, _intrinsic_id); }
-  static int intrinsic_id_size_in_bytes()        { return sizeof(u1); }
+  static int intrinsic_id_size_in_bytes()        { return sizeof(u2); }
 
   // Static methods that are used to implement member methods where an exposed this pointer
   // is needed due to possible GCs
@@ -777,7 +777,7 @@ class Method : public Metadata {
 
   // Support for inlining of intrinsic methods
   vmIntrinsics::ID intrinsic_id() const          { return (vmIntrinsics::ID) _intrinsic_id;           }
-  void     set_intrinsic_id(vmIntrinsics::ID id) {                           _intrinsic_id = (u1) id; }
+  void     set_intrinsic_id(vmIntrinsics::ID id) {                           _intrinsic_id = (u2) id; }
 
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
   void init_intrinsic_id();     // updates from _none if a match

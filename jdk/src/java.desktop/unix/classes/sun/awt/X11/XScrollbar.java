@@ -51,7 +51,7 @@ abstract class XScrollbar {
     private XScrollRepeater i_scroller = new XScrollRepeater(null);
 
     // Thumb length is always >= MIN_THUMB_H
-    private final static int MIN_THUMB_H = 5;
+    private static final int MIN_THUMB_H = 5;
 
     private static final int ARROW_IND = 1;
 
@@ -115,7 +115,7 @@ abstract class XScrollbar {
         }
     }
 
-    abstract protected void rebuildArrows();
+    protected abstract void rebuildArrows();
 
     public void setSize(int width, int height) {
         if (log.isLoggable(PlatformLogger.Level.FINER)) {

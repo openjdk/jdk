@@ -233,7 +233,7 @@ public abstract class WComponentPeer extends WObjectPeer
         paintArea.paint(target, shouldClearRectBeforePaint());
     }
 
-    native synchronized void updateWindow();
+    synchronized native void updateWindow();
 
     @Override
     public void paint(Graphics g) {
@@ -566,7 +566,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     // fallback default font object
-    final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
+    static final Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 
     @Override
     public Graphics getGraphics() {

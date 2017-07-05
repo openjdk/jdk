@@ -89,6 +89,9 @@ import com.sun.corba.se.impl.logging.OMGSystemException ;
 
 import com.sun.corba.se.impl.presentation.rmi.PresentationManagerImpl ;
 
+import jdk.internal.misc.JavaAWTAccess;
+import jdk.internal.misc.SharedSecrets;
+
 public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     implements Broker, TypeCodeFactory
 {
@@ -202,7 +205,7 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     public static PresentationManager getPresentationManager()
     {
         SecurityManager sm = System.getSecurityManager();
-        sun.misc.JavaAWTAccess javaAwtAccess = sun.misc.SharedSecrets.getJavaAWTAccess();
+        JavaAWTAccess javaAwtAccess = SharedSecrets.getJavaAWTAccess();
         if (sm != null && javaAwtAccess != null) {
             final Object appletContext = javaAwtAccess.getAppletContext();
             if (appletContext != null) {

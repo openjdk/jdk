@@ -106,13 +106,13 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     protected boolean   updateTableInRealTime;
 
     /** The index of the column being resized. <code>null</code> if not resizing. */
-    transient protected TableColumn     resizingColumn;
+    protected transient TableColumn     resizingColumn;
 
     /** The index of the column being dragged. <code>null</code> if not dragging. */
-    transient protected TableColumn     draggedColumn;
+    protected transient TableColumn     draggedColumn;
 
     /** The distance from its original position the column has been dragged. */
-    transient protected int     draggedDistance;
+    protected transient int     draggedDistance;
 
     /**
       *  The default renderer to be used when a <code>TableColumn</code>

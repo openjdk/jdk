@@ -107,9 +107,10 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             return null;
         }
 
-        final GuardedInvocation inv;
+        GuardedInvocation inv;
         if (jsObjectClass.isInstance(self)) {
             inv = lookup(desc, request, linkerServices);
+            inv = inv.replaceMethods(linkerServices.filterInternalObjects(inv.getInvocation()), inv.getGuard());
         } else {
             throw new AssertionError(); // Should never reach here.
         }

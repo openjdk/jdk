@@ -1885,7 +1885,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * its use should be performed under the protection of
      * Document.render.
      */
-    public static abstract class Iterator {
+    public abstract static class Iterator {
 
         /**
          * Return the attributes for this tag.
