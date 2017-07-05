@@ -73,10 +73,9 @@ import java.io.*;
  */
 
 public class StreamHandler extends Handler {
-    private LogManager manager = LogManager.getLogManager();
     private OutputStream output;
     private boolean doneHeader;
-    private Writer writer;
+    private volatile Writer writer;
 
     // Private method to configure a StreamHandler from LogManager
     // properties and/or default values as specified in the class
@@ -169,7 +168,8 @@ public class StreamHandler extends Handler {
      * @exception  UnsupportedEncodingException if the named encoding is
      *          not supported.
      */
-    public void setEncoding(String encoding)
+    @Override
+    public synchronized void setEncoding(String encoding)
                         throws SecurityException, java.io.UnsupportedEncodingException {
         super.setEncoding(encoding);
         if (output == null) {
@@ -201,6 +201,7 @@ public class StreamHandler extends Handler {
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
+    @Override
     public synchronized void publish(LogRecord record) {
         if (!isLoggable(record)) {
             return;
@@ -240,6 +241,7 @@ public class StreamHandler extends Handler {
      * @return true if the <tt>LogRecord</tt> would be logged.
      *
      */
+    @Override
     public boolean isLoggable(LogRecord record) {
         if (writer == null || record == null) {
             return false;
@@ -250,6 +252,7 @@ public class StreamHandler extends Handler {
     /**
      * Flush any buffered messages.
      */
+    @Override
     public synchronized void flush() {
         if (writer != null) {
             try {
@@ -294,6 +297,7 @@ public class StreamHandler extends Handler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
+    @Override
     public synchronized void close() throws SecurityException {
         flushAndClose();
     }

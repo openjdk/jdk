@@ -377,6 +377,12 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     private ByteArrayOutputStream heldRecordBuffer = null;
 
+    /*
+     * Whether local cipher suites preference in server side should be
+     * honored during handshaking?
+     */
+    private boolean preferLocalCipherSuites = false;
+
     //
     // CONSTRUCTORS AND INITIALIZATION CODE
     //
@@ -482,7 +488,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             boolean sessionCreation, ProtocolList protocols,
             String identificationProtocol,
             AlgorithmConstraints algorithmConstraints,
-            Collection<SNIMatcher> sniMatchers) throws IOException {
+            Collection<SNIMatcher> sniMatchers,
+            boolean preferLocalCipherSuites) throws IOException {
 
         super();
         doClientAuth = clientAuth;
@@ -490,6 +497,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         this.identificationProtocol = identificationProtocol;
         this.algorithmConstraints = algorithmConstraints;
         this.sniMatchers = sniMatchers;
+        this.preferLocalCipherSuites = preferLocalCipherSuites;
         init(context, serverMode);
 
         /*
@@ -1284,6 +1292,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                     protocolVersion, connectionState == cs_HANDSHAKE,
                     secureRenegotiation, clientVerifyData, serverVerifyData);
             handshaker.setSNIMatchers(sniMatchers);
+            handshaker.setUseCipherSuitesOrder(preferLocalCipherSuites);
         } else {
             handshaker = new ClientHandshaker(this, sslContext,
                     enabledProtocols,
@@ -2502,6 +2511,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         params.setAlgorithmConstraints(algorithmConstraints);
         params.setSNIMatchers(sniMatchers);
         params.setServerNames(serverNames);
+        params.setUseCipherSuitesOrder(preferLocalCipherSuites);
 
         return params;
     }
@@ -2516,6 +2526,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         // the super implementation does not handle the following parameters
         identificationProtocol = params.getEndpointIdentificationAlgorithm();
         algorithmConstraints = params.getAlgorithmConstraints();
+        preferLocalCipherSuites = params.getUseCipherSuitesOrder();
 
         List<SNIServerName> sniNames = params.getServerNames();
         if (sniNames != null) {
@@ -2532,6 +2543,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             if (roleIsServer) {
                 handshaker.setSNIMatchers(sniMatchers);
+                handshaker.setUseCipherSuitesOrder(preferLocalCipherSuites);
             } else {
                 handshaker.setSNIServerNames(serverNames);
             }

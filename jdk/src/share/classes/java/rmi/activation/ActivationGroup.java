@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,8 @@ public abstract class ActivationGroup
      *
      * @param   groupID the group's identifier
      * @throws  RemoteException if this group could not be exported
+     * @throws  UnsupportedOperationException if and only if activation is
+     *          not supported by this implementation
      * @since   1.2
      */
     protected ActivationGroup(ActivationGroupID groupID)
@@ -267,6 +269,8 @@ public abstract class ActivationGroup
      * (Note: The default implementation of the security manager
      * <code>checkSetFactory</code>
      * method requires the RuntimePermission "setFactory")
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @see SecurityManager#checkSetFactory
      * @since 1.2
      */
@@ -345,6 +349,8 @@ public abstract class ActivationGroup
     /**
      * Returns the current activation group's identifier.  Returns null
      * if no group is currently active for this VM.
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @return the activation group's identifier
      * @since 1.2
      */
@@ -394,6 +400,8 @@ public abstract class ActivationGroup
      * (Note: The default implementation of the security manager
      * <code>checkSetFactory</code>
      * method requires the RuntimePermission "setFactory")
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @see #getSystem
      * @see SecurityManager#checkSetFactory
      * @since 1.2
@@ -428,6 +436,8 @@ public abstract class ActivationGroup
      * @exception ActivationException if activation system cannot be
      *  obtained or is not bound
      * (means that it is not running)
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @see #setSystem
      * @since 1.2
      */

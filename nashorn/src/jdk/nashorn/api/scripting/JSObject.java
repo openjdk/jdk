@@ -25,73 +25,210 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+
 /**
- * netscape.javascript.JSObject-like interface for nashorn script objects.
+ * This is the base class for nashorn ScriptObjectMirror class.
+ *
+ * This class can also be subclassed by an arbitrary Java class. Nashorn will
+ * treat objects of such classes just like nashorn script objects. Usual nashorn
+ * operations like obj[i], obj.foo, obj.func(), delete obj.foo will be glued
+ * to appropriate method call of this class.
  */
 public abstract class JSObject {
     /**
-     * Call a JavaScript function
+     * Call this object as a JavaScript function. This is equivalent to
+     * 'func.apply(thiz, args)' in JavaScript.
      *
-     * @param functionName name of function
+     * @param thiz 'this' object to be passed to the function
      * @param args arguments to method
      * @return result of call
      */
-    public abstract Object call(String functionName, Object... args);
+    public Object call(Object thiz, Object... args) {
+        throw new UnsupportedOperationException("call");
+    }
 
     /**
-     * Call a JavaScript method as a constructor. This is equivalent to
-     * calling new obj.Method(arg1, arg2...) in JavaScript.
+     * Call this 'constructor' JavaScript function to create a new object.
+     * This is equivalent to 'new func(arg1, arg2...)' in JavaScript.
      *
-     * @param functionName name of function
      * @param args arguments to method
      * @return result of constructor call
      */
-    public abstract Object newObject(String functionName, Object... args);
+    public Object newObject(Object... args) {
+        throw new UnsupportedOperationException("newObject");
+    }
 
     /**
-     * Evaluate a JavaScript expression
+     * Evaluate a JavaScript expression.
      *
      * @param s JavaScript expression to evaluate
      * @return evaluation result
      */
-    public abstract Object eval(String s);
+    public Object eval(String s) {
+        throw new UnsupportedOperationException("eval");
+    }
 
     /**
-     * Retrieves a named member of a JavaScript object.
+     * Call a JavaScript function member of this object.
+     *
+     * @param name name of the member function to call
+     * @param args arguments to be passed to the member function
+     * @return result of call
+     */
+    public Object callMember(String name, Object... args) {
+        throw new UnsupportedOperationException("call");
+    }
+
+    /**
+     * Retrieves a named member of this JavaScript object.
      *
      * @param name of member
      * @return member
      */
-    public abstract Object getMember(String name);
+    public Object getMember(String name) {
+        return null;
+    }
 
     /**
-     * Retrieves an indexed member of a JavaScript object.
+     * Retrieves an indexed member of this JavaScript object.
      *
-     * @param index index of member slot
+     * @param index index slot to retrieve
      * @return member
      */
-    public abstract Object getSlot(int index);
+    public Object getSlot(int index) {
+        return null;
+    }
 
     /**
-     * Remove a named member from a JavaScript object
+     * Does this object have a named member?
      *
      * @param name name of member
+     * @return true if this object has a member of the given name
      */
-    public abstract void removeMember(String name);
+    public boolean hasMember(String name) {
+        return false;
+    }
 
     /**
-     * Set a named member in a JavaScript object
+     * Does this object have a indexed property?
      *
-     * @param name  name of member
-     * @param value value of member
+     * @param slot index to check
+     * @return true if this object has a slot
      */
-    public abstract void setMember(String name, Object value);
+    public boolean hasSlot(int slot) {
+        return false;
+    }
 
     /**
-     * Set an indexed member in a JavaScript object
+     * Remove a named member from this JavaScript object
      *
-     * @param index index of member slot
-     * @param value value of member
+     * @param name name of the member
      */
-    public abstract void setSlot(int index, Object value);
+    public void removeMember(String name) {
+    }
+
+    /**
+     * Set a named member in this JavaScript object
+     *
+     * @param name  name of the member
+     * @param value value of the member
+     */
+    public void setMember(String name, Object value) {
+    }
+
+    /**
+     * Set an indexed member in this JavaScript object
+     *
+     * @param index index of the member slot
+     * @param value value of the member
+     */
+    public void setSlot(int index, Object value) {
+    }
+
+    // property and value iteration
+
+    /**
+     * Returns the set of all property names of this object.
+     *
+     * @return set of property names
+     */
+    @SuppressWarnings("unchecked")
+    public Set<String> keySet() {
+        return Collections.EMPTY_SET;
+    }
+
+    /**
+     * Returns the set of all property values of this object.
+     *
+     * @return set of property values.
+     */
+    @SuppressWarnings("unchecked")
+    public Collection<Object> values() {
+        return Collections.EMPTY_SET;
+    }
+
+    // JavaScript instanceof check
+
+    /**
+     * Checking whether the given object is an instance of 'this' object.
+     *
+     * @param instance instace to check
+     * @return true if the given 'instance' is an instance of this 'function' object
+     */
+    public boolean isInstance(final Object instance) {
+        return false;
+    }
+
+    /**
+     * Checking whether this object is an instance of the given 'clazz' object.
+     *
+     * @param clazz clazz to check
+     * @return true if this object is an instance of the given 'clazz'
+     */
+    public boolean isInstanceOf(final Object clazz) {
+        if (clazz instanceof JSObject) {
+            return ((JSObject)clazz).isInstance(this);
+        }
+
+        return false;
+    }
+
+    /**
+     * ECMA [[Class]] property
+     *
+     * @return ECMA [[Class]] property value of this object
+     */
+    public String getClassName() {
+        return getClass().getName();
+    }
+
+    /**
+     * Is this a function object?
+     *
+     * @return if this mirror wraps a ECMAScript function instance
+     */
+    public boolean isFunction() {
+        return false;
+    }
+
+    /**
+     * Is this a 'use strict' function object?
+     *
+     * @return true if this mirror represents a ECMAScript 'use strict' function
+     */
+    public boolean isStrictFunction() {
+        return false;
+    }
+
+    /**
+     * Is this an array object?
+     *
+     * @return if this mirror wraps a ECMAScript array object
+     */
+    public boolean isArray() {
+        return false;
+    }
 }

@@ -565,7 +565,7 @@ public final class MethodHandleFactory {
 
         @Override
         public MethodHandle asSpreader(final MethodHandle handle, final Class<?> arrayType, final int arrayLength) {
-            final MethodHandle mh = super.asCollector(handle, arrayType, arrayLength);
+            final MethodHandle mh = super.asSpreader(handle, arrayType, arrayLength);
             return debug(mh, "asSpreader", handle, arrayType, arrayLength);
         }
 

@@ -954,7 +954,6 @@ public interface PreparedStatement extends Statement {
      * the JDBC driver does not support this data type
      * @see Types
      *
-     * @since 1.6
      */
     void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)
             throws SQLException;

@@ -252,7 +252,7 @@ public class LocaleResources {
 
     String[] getTimeZoneNames(String key, int size) {
         String[] names = null;
-        String cacheKey = TIME_ZONE_NAMES + key;
+        String cacheKey = TIME_ZONE_NAMES + size + '.' + key;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);

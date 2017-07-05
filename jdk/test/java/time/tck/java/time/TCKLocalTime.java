@@ -283,17 +283,6 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // now()
-    //-----------------------------------------------------------------------
-    @Test
-    public void now() {
-        LocalTime expected = LocalTime.now(Clock.systemDefaultZone());
-        LocalTime test = LocalTime.now();
-        long diff = Math.abs(test.toNanoOfDay() - expected.toNanoOfDay());
-        assertTrue(diff < 100000000);  // less than 0.1 secs
-    }
-
-    //-----------------------------------------------------------------------
     // now(ZoneId)
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=NullPointerException.class)

@@ -157,23 +157,6 @@ public class TCKDateTimeTextPrinting {
 
     //-----------------------------------------------------------------------
     @Test
-    public void test_print_appendText2arg_french_long() throws Exception {
-        DateTimeFormatter f = builder.appendText(MONTH_OF_YEAR, TextStyle.FULL).toFormatter(Locale.FRENCH);
-        LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
-        String text = f.format(dt);
-        assertEquals(text, "janvier");
-    }
-
-    @Test
-    public void test_print_appendText2arg_french_short() throws Exception {
-        DateTimeFormatter f = builder.appendText(MONTH_OF_YEAR, TextStyle.SHORT).toFormatter(Locale.FRENCH);
-        LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
-        String text = f.format(dt);
-        assertEquals(text, "janv.");
-    }
-
-    //-----------------------------------------------------------------------
-    @Test
     public void test_appendTextMap() throws Exception {
         Map<Long, String> map = new HashMap<Long, String>();
         map.put(1L, "JNY");

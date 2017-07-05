@@ -25,34 +25,56 @@
 
 package java.nio.file;
 
-import java.nio.file.attribute.*;
-import java.nio.file.spi.FileSystemProvider;
-import java.nio.file.spi.FileTypeDetector;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.io.Closeable;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.*;
-import java.util.function.BiPredicate;
-import java.util.stream.CloseableStream;
-import java.util.stream.DelegatingStream;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.FileStoreAttributeView;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.spi.FileSystemProvider;
+import java.nio.file.spi.FileTypeDetector;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.BiPredicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * This class consists exclusively of static methods that operate on files,
@@ -72,6 +94,21 @@ public final class Files {
      */
     private static FileSystemProvider provider(Path path) {
         return path.getFileSystem().provider();
+    }
+
+    /**
+     * Convert a Closeable to a Runnable by converting checked IOException
+     * to UncheckedIOException
+     */
+    private static Runnable asUncheckedRunnable(Closeable c) {
+        return () -> {
+            try {
+                c.close();
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
     }
 
     // -- File contents --
@@ -3228,29 +3265,7 @@ public final class Files {
     // -- Stream APIs --
 
     /**
-     * Implementation of CloseableStream
-     */
-    private static class DelegatingCloseableStream<T> extends DelegatingStream<T>
-        implements CloseableStream<T>
-    {
-        private final Closeable closeable;
-
-        DelegatingCloseableStream(Closeable c, Stream<T> delegate) {
-            super(delegate);
-            this.closeable = c;
-        }
-
-        public void close() {
-            try {
-                closeable.close();
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-        }
-    }
-
-    /**
-     * Return a lazily populated {@code CloseableStream}, the elements of
+     * Return a lazily populated {@code Stream}, the elements of
      * which are the entries in the directory.  The listing is not recursive.
      *
      * <p> The elements of the stream are {@link Path} objects that are
@@ -3264,10 +3279,13 @@ public final class Files {
      * reflect updates to the directory that occur after returning from this
      * method.
      *
-     * <p> When not using the try-with-resources construct, then the stream's
-     * {@link CloseableStream#close close} method should be invoked after the
-     * operation is completed so as to free any resources held for the open
-     * directory. Operating on a closed stream behaves as if the end of stream
+     * <p> The returned stream encapsulates a {@link DirectoryStream}.
+     * If timely disposal of file system resources is required, the
+     * {@code try}-with-resources construct should be used to ensure that the
+     * stream's {@link Stream#close close} method is invoked after the stream
+     * operations are completed.
+     *
+     * <p> Operating on a closed stream behaves as if the end of stream
      * has been reached. Due to read-ahead, one or more elements may be
      * returned after the stream has been closed.
      *
@@ -3278,7 +3296,7 @@ public final class Files {
      *
      * @param   dir  The path to the directory
      *
-     * @return  The {@code CloseableStream} describing the content of the
+     * @return  The {@code Stream} describing the content of the
      *          directory
      *
      * @throws  NotDirectoryException
@@ -3294,43 +3312,54 @@ public final class Files {
      * @see     #newDirectoryStream(Path)
      * @since   1.8
      */
-    public static CloseableStream<Path> list(Path dir) throws IOException {
+    public static Stream<Path> list(Path dir) throws IOException {
         DirectoryStream<Path> ds = Files.newDirectoryStream(dir);
-        final Iterator<Path> delegate = ds.iterator();
+        try {
+            final Iterator<Path> delegate = ds.iterator();
 
-        // Re-wrap DirectoryIteratorException to UncheckedIOException
-        Iterator<Path> it = new Iterator<Path>() {
-            public boolean hasNext() {
-                try {
-                    return delegate.hasNext();
-                } catch (DirectoryIteratorException e) {
-                    throw new UncheckedIOException(e.getCause());
+            // Re-wrap DirectoryIteratorException to UncheckedIOException
+            Iterator<Path> it = new Iterator<Path>() {
+                @Override
+                public boolean hasNext() {
+                    try {
+                        return delegate.hasNext();
+                    } catch (DirectoryIteratorException e) {
+                        throw new UncheckedIOException(e.getCause());
+                    }
                 }
-            }
-            public Path next() {
-                try {
-                    return delegate.next();
-                } catch (DirectoryIteratorException e) {
-                    throw new UncheckedIOException(e.getCause());
+                @Override
+                public Path next() {
+                    try {
+                        return delegate.next();
+                    } catch (DirectoryIteratorException e) {
+                        throw new UncheckedIOException(e.getCause());
+                    }
                 }
-            }
-        };
+            };
 
-        Stream<Path> s = StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(it, Spliterator.DISTINCT),
-                false);
-        return new DelegatingCloseableStream<>(ds, s);
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.DISTINCT), false)
+                                .onClose(asUncheckedRunnable(ds));
+        } catch (Error|RuntimeException e) {
+            try {
+                ds.close();
+            } catch (IOException ex) {
+                try {
+                    e.addSuppressed(ex);
+                } catch (Throwable ignore) {}
+            }
+            throw e;
+        }
     }
 
     /**
-     * Return a {@code CloseableStream} that is lazily populated with {@code
+     * Return a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
      * file tree is traversed <em>depth-first</em>, the elements in the stream
      * are {@link Path} objects that are obtained as if by {@link
      * Path#resolve(Path) resolving} the relative path against {@code start}.
      *
      * <p> The {@code stream} walks the file tree as elements are consumed.
-     * The {@code CloseableStream} returned is guaranteed to have at least one
+     * The {@code Stream} returned is guaranteed to have at least one
      * element, the starting file itself. For each file visited, the stream
      * attempts to read its {@link BasicFileAttributes}. If the file is a
      * directory and can be opened successfully, entries in the directory, and
@@ -3370,10 +3399,11 @@ public final class Files {
      * <p> When a security manager is installed and it denies access to a file
      * (or directory), then it is ignored and not included in the stream.
      *
-     * <p> When not using the try-with-resources construct, then the stream's
-     * {@link CloseableStream#close close} method should be invoked after the
-     * operation is completed so as to free any resources held for the open
-     * directory. Operate the stream after it is closed will throw an
+     * <p> The returned stream encapsulates one or more {@link DirectoryStream}s.
+     * If timely disposal of file system resources is required, the
+     * {@code try}-with-resources construct should be used to ensure that the
+     * stream's {@link Stream#close close} method is invoked after the stream
+     * operations are completed.  Operating on a closed stream will result in an
      * {@link java.lang.IllegalStateException}.
      *
      * <p> If an {@link IOException} is thrown when accessing the directory
@@ -3388,7 +3418,7 @@ public final class Files {
      * @param   options
      *          options to configure the traversal
      *
-     * @return  the {@link CloseableStream} of {@link Path}
+     * @return  the {@link Stream} of {@link Path}
      *
      * @throws  IllegalArgumentException
      *          if the {@code maxDepth} parameter is negative
@@ -3401,21 +3431,22 @@ public final class Files {
      *          if an I/O error is thrown when accessing the starting file.
      * @since   1.8
      */
-    public static CloseableStream<Path> walk(Path start, int maxDepth,
-                                             FileVisitOption... options)
-        throws IOException
-    {
+    public static Stream<Path> walk(Path start, int maxDepth,
+                                    FileVisitOption... options)
+            throws IOException {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
-
-        Stream<Path> s = StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT),
-                false).
-                map(entry -> entry.file());
-        return new DelegatingCloseableStream<>(iterator, s);
+        try {
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT), false)
+                                .onClose(iterator::close)
+                                .map(entry -> entry.file());
+        } catch (Error|RuntimeException e) {
+            iterator.close();
+            throw e;
+        }
     }
 
     /**
-     * Return a {@code CloseableStream} that is lazily populated with {@code
+     * Return a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
      * file tree is traversed <em>depth-first</em>, the elements in the stream
      * are {@link Path} objects that are obtained as if by {@link
@@ -3428,12 +3459,19 @@ public final class Files {
      * </pre></blockquote>
      * In other words, it visits all levels of the file tree.
      *
+     * <p> The returned stream encapsulates one or more {@link DirectoryStream}s.
+     * If timely disposal of file system resources is required, the
+     * {@code try}-with-resources construct should be used to ensure that the
+     * stream's {@link Stream#close close} method is invoked after the stream
+     * operations are completed.  Operating on a closed stream will result in an
+     * {@link java.lang.IllegalStateException}.
+     *
      * @param   start
      *          the starting file
      * @param   options
      *          options to configure the traversal
      *
-     * @return  the {@link CloseableStream} of {@link Path}
+     * @return  the {@link Stream} of {@link Path}
      *
      * @throws  SecurityException
      *          If the security manager denies access to the starting file.
@@ -3446,15 +3484,14 @@ public final class Files {
      * @see     #walk(Path, int, FileVisitOption...)
      * @since   1.8
      */
-    public static CloseableStream<Path> walk(Path start,
-                                             FileVisitOption... options)
-        throws IOException
-    {
+    public static Stream<Path> walk(Path start,
+                                    FileVisitOption... options)
+            throws IOException {
         return walk(start, Integer.MAX_VALUE, options);
     }
 
     /**
-     * Return a {@code CloseableStream} that is lazily populated with {@code
+     * Return a {@code Stream} that is lazily populated with {@code
      * Path} by searching for files in a file tree rooted at a given starting
      * file.
      *
@@ -3463,11 +3500,18 @@ public final class Files {
      * {@link BiPredicate} is invoked with its {@link Path} and {@link
      * BasicFileAttributes}. The {@code Path} object is obtained as if by
      * {@link Path#resolve(Path) resolving} the relative path against {@code
-     * start} and is only included in the returned {@link CloseableStream} if
+     * start} and is only included in the returned {@link Stream} if
      * the {@code BiPredicate} returns true. Compare to calling {@link
      * java.util.stream.Stream#filter filter} on the {@code Stream}
      * returned by {@code walk} method, this method may be more efficient by
      * avoiding redundant retrieval of the {@code BasicFileAttributes}.
+     *
+     * <p> The returned stream encapsulates one or more {@link DirectoryStream}s.
+     * If timely disposal of file system resources is required, the
+     * {@code try}-with-resources construct should be used to ensure that the
+     * stream's {@link Stream#close close} method is invoked after the stream
+     * operations are completed.  Operating on a closed stream will result in an
+     * {@link java.lang.IllegalStateException}.
      *
      * <p> If an {@link IOException} is thrown when accessing the directory
      * after returned from this method, it is wrapped in an {@link
@@ -3484,7 +3528,7 @@ public final class Files {
      * @param   options
      *          options to configure the traversal
      *
-     * @return  the {@link CloseableStream} of {@link Path}
+     * @return  the {@link Stream} of {@link Path}
      *
      * @throws  IllegalArgumentException
      *          if the {@code maxDepth} parameter is negative
@@ -3499,24 +3543,25 @@ public final class Files {
      * @see     #walk(Path, int, FileVisitOption...)
      * @since   1.8
      */
-    public static CloseableStream<Path> find(Path start,
-                                             int maxDepth,
-                                             BiPredicate<Path, BasicFileAttributes> matcher,
-                                             FileVisitOption... options)
-        throws IOException
-    {
+    public static Stream<Path> find(Path start,
+                                    int maxDepth,
+                                    BiPredicate<Path, BasicFileAttributes> matcher,
+                                    FileVisitOption... options)
+            throws IOException {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
-
-        Stream<Path> s = StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT),
-                false).
-                filter(entry -> matcher.test(entry.file(), entry.attributes())).
-                map(entry -> entry.file());
-        return new DelegatingCloseableStream<>(iterator, s);
+        try {
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT), false)
+                                .onClose(iterator::close)
+                                .filter(entry -> matcher.test(entry.file(), entry.attributes()))
+                                .map(entry -> entry.file());
+        } catch (Error|RuntimeException e) {
+            iterator.close();
+            throw e;
+        }
     }
 
     /**
-     * Read all lines from a file as a {@code CloseableStream}.  Unlike {@link
+     * Read all lines from a file as a {@code Stream}.  Unlike {@link
      * #readAllLines(Path, Charset) readAllLines}, this method does not read
      * all lines into a {@code List}, but instead populates lazily as the stream
      * is consumed.
@@ -3528,22 +3573,24 @@ public final class Files {
      * <p> After this method returns, then any subsequent I/O exception that
      * occurs while reading from the file or when a malformed or unmappable byte
      * sequence is read, is wrapped in an {@link UncheckedIOException} that will
-     * be thrown form the
+     * be thrown from the
      * {@link java.util.stream.Stream} method that caused the read to take
      * place. In case an {@code IOException} is thrown when closing the file,
      * it is also wrapped as an {@code UncheckedIOException}.
      *
-     * <p> When not using the try-with-resources construct, then stream's
-     * {@link CloseableStream#close close} method should be invoked after
-     * operation is completed so as to free any resources held for the open
-     * file.
+     * <p> The returned stream encapsulates a {@link Reader}.  If timely
+     * disposal of file system resources is required, the try-with-resources
+     * construct should be used to ensure that the stream's
+     * {@link Stream#close close} method is invoked after the stream operations
+     * are completed.
+     *
      *
      * @param   path
      *          the path to the file
      * @param   cs
      *          the charset to use for decoding
      *
-     * @return  the lines from the file as a {@code CloseableStream}
+     * @return  the lines from the file as a {@code Stream}
      *
      * @throws  IOException
      *          if an I/O error occurs opening the file
@@ -3557,10 +3604,19 @@ public final class Files {
      * @see     java.io.BufferedReader#lines()
      * @since   1.8
      */
-    public static CloseableStream<String> lines(Path path, Charset cs)
-        throws IOException
-    {
+    public static Stream<String> lines(Path path, Charset cs) throws IOException {
         BufferedReader br = Files.newBufferedReader(path, cs);
-        return new DelegatingCloseableStream<>(br, br.lines());
+        try {
+            return br.lines().onClose(asUncheckedRunnable(br));
+        } catch (Error|RuntimeException e) {
+            try {
+                br.close();
+            } catch (IOException ex) {
+                try {
+                    e.addSuppressed(ex);
+                } catch (Throwable ignore) {}
+            }
+            throw e;
+        }
     }
 }
