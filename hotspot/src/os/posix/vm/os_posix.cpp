@@ -259,3 +259,52 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
 FILE* os::open(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
+
+os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
+  assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");
+}
+
+/*
+ * See the caveats for this class in os_posix.hpp
+ * Protects the callback call so that SIGSEGV / SIGBUS jumps back into this
+ * method and returns false. If none of the signals are raised, returns true.
+ * The callback is supposed to provide the method that should be protected.
+ */
+bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
+  assert(Thread::current()->is_Watcher_thread(), "Only for WatcherThread");
+  assert(!WatcherThread::watcher_thread()->has_crash_protection(),
+      "crash_protection already set?");
+
+  if (sigsetjmp(_jmpbuf, 1) == 0) {
+    // make sure we can see in the signal handler that we have crash protection
+    // installed
+    WatcherThread::watcher_thread()->set_crash_protection(this);
+    cb.call();
+    // and clear the crash protection
+    WatcherThread::watcher_thread()->set_crash_protection(NULL);
+    return true;
+  }
+  // this happens when we siglongjmp() back
+  WatcherThread::watcher_thread()->set_crash_protection(NULL);
+  return false;
+}
+
+void os::WatcherThreadCrashProtection::restore() {
+  assert(WatcherThread::watcher_thread()->has_crash_protection(),
+      "must have crash protection");
+
+  siglongjmp(_jmpbuf, 1);
+}
+
+void os::WatcherThreadCrashProtection::check_crash_protection(int sig,
+    Thread* thread) {
+
+  if (thread != NULL &&
+      thread->is_Watcher_thread() &&
+      WatcherThread::watcher_thread()->has_crash_protection()) {
+
+    if (sig == SIGSEGV || sig == SIGBUS) {
+      WatcherThread::watcher_thread()->crash_protection()->restore();
+    }
+  }
+}

@@ -41,6 +41,7 @@
 #include "prims/jvmtiRawMonitor.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -516,8 +517,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   jint                 _curr_len;
   unsigned char *      _curr_data;
   JvmtiEnv *           _curr_env;
-  jint *               _cached_length_ptr;
-  unsigned char **     _cached_data_ptr;
+  JvmtiCachedClassFileData ** _cached_class_file_ptr;
   JvmtiThreadState *   _state;
   KlassHandle *        _h_class_being_redefined;
   JvmtiClassLoadKind   _load_kind;
@@ -526,8 +526,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   inline JvmtiClassFileLoadHookPoster(Symbol* h_name, Handle class_loader,
                                       Handle h_protection_domain,
                                       unsigned char **data_ptr, unsigned char **end_ptr,
-                                      unsigned char **cached_data_ptr,
-                                      jint *cached_length_ptr) {
+                                      JvmtiCachedClassFileData **cache_ptr) {
     _h_name = h_name;
     _class_loader = class_loader;
     _h_protection_domain = h_protection_domain;
@@ -537,8 +536,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _curr_len = *end_ptr - *data_ptr;
     _curr_data = *data_ptr;
     _curr_env = NULL;
-    _cached_length_ptr = cached_length_ptr;
-    _cached_data_ptr = cached_data_ptr;
+    _cached_class_file_ptr = cache_ptr;
 
     _state = _thread->jvmti_thread_state();
     if (_state != NULL) {
@@ -615,15 +613,20 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     }
     if (new_data != NULL) {
       // this agent has modified class data.
-      if (caching_needed && *_cached_data_ptr == NULL) {
+      if (caching_needed && *_cached_class_file_ptr == NULL) {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
-        *_cached_data_ptr = (unsigned char *)os::malloc(_curr_len, mtInternal);
-        if (*_cached_data_ptr == NULL) {
-          vm_exit_out_of_memory(_curr_len, OOM_MALLOC_ERROR, "unable to allocate cached copy of original class bytes");
+        JvmtiCachedClassFileData *p;
+        p = (JvmtiCachedClassFileData *)os::malloc(
+          offset_of(JvmtiCachedClassFileData, data) + _curr_len, mtInternal);
+        if (p == NULL) {
+          vm_exit_out_of_memory(offset_of(JvmtiCachedClassFileData, data) + _curr_len,
+            OOM_MALLOC_ERROR,
+            "unable to allocate cached copy of original class bytes");
         }
-        memcpy(*_cached_data_ptr, _curr_data, _curr_len);
-        *_cached_length_ptr = _curr_len;
+        p->length = _curr_len;
+        memcpy(p->data, _curr_data, _curr_len);
+        *_cached_class_file_ptr = p;
       }
 
       if (_curr_data != *_data_ptr) {
@@ -662,13 +665,11 @@ void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                             Handle h_protection_domain,
                                             unsigned char **data_ptr,
                                             unsigned char **end_ptr,
-                                            unsigned char **cached_data_ptr,
-                                            jint *cached_length_ptr) {
+                                            JvmtiCachedClassFileData **cache_ptr) {
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
                                       h_protection_domain,
                                       data_ptr, end_ptr,
-                                      cached_data_ptr,
-                                      cached_length_ptr);
+                                      cache_ptr);
   poster.post();
 }
 

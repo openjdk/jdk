@@ -3647,8 +3647,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   // If RedefineClasses() was used before the retransformable
   // agent attached, then the cached class bytes may not be the
   // original class bytes.
-  unsigned char *cached_class_file_bytes = NULL;
-  jint cached_class_file_length;
+  JvmtiCachedClassFileData *cached_class_file = NULL;
   Handle class_loader(THREAD, loader_data->class_loader());
   bool has_default_methods = false;
   ResourceMark rm(THREAD);
@@ -3680,10 +3679,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       if (h_class_being_redefined != NULL) {
         instanceKlassHandle ikh_class_being_redefined =
           instanceKlassHandle(THREAD, (*h_class_being_redefined)());
-        cached_class_file_bytes =
-          ikh_class_being_redefined->get_cached_class_file_bytes();
-        cached_class_file_length =
-          ikh_class_being_redefined->get_cached_class_file_len();
+        cached_class_file = ikh_class_being_redefined->get_cached_class_file();
       }
     }
 
@@ -3691,9 +3687,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     unsigned char* end_ptr = cfs->buffer() + cfs->length();
 
     JvmtiExport::post_class_file_load_hook(name, class_loader(), protection_domain,
-                                           &ptr, &end_ptr,
-                                           &cached_class_file_bytes,
-                                           &cached_class_file_length);
+                                           &ptr, &end_ptr, &cached_class_file);
 
     if (ptr != cfs->buffer()) {
       // JVMTI agent has modified class file data.
@@ -4011,10 +4005,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       }
     }
 
-    if (cached_class_file_bytes != NULL) {
+    if (cached_class_file != NULL) {
       // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
-      this_klass->set_cached_class_file(cached_class_file_bytes,
-                                        cached_class_file_length);
+      this_klass->set_cached_class_file(cached_class_file);
     }
 
     // Fill in field values obtained by parse_classfile_attributes
