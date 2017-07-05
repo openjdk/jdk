@@ -38,7 +38,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 abstract public class ArrayLikeIterator<T> implements Iterator<T> {
 
     /** current element index in iteration */
-    protected int index;
+    protected long index;
 
     /** should undefined elements be included in the iteration? */
     protected final boolean includeUndefined;
@@ -65,7 +65,7 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
      * Go the the next valid element index of the iterator
      * @return next index
      */
-    protected int bumpIndex() {
+    protected long bumpIndex() {
         return index++;
     }
 
@@ -73,7 +73,7 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
      * Return the next valid element index of the iterator
      * @return next index
      */
-    public int nextIndex() {
+    public long nextIndex() {
         return index;
     }
 
@@ -86,7 +86,7 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
      * Get the length of the iteration
      * @return length
      */
-    public abstract int getLength();
+    public abstract long getLength();
 
     /**
      * ArrayLikeIterator factory

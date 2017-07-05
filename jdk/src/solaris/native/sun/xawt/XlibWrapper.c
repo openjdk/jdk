@@ -1946,13 +1946,16 @@ secondary_loop_event(Display* dpy, XEvent* event, char* arg) {
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11_XlibWrapper_XNextSecondaryLoopEvent(JNIEnv *env, jclass clazz,
                                                      jlong display, jlong ptr) {
+    uint32_t timeout = 1;
+
     AWT_CHECK_HAVE_LOCK();
     exitSecondaryLoop = False;
     while (!exitSecondaryLoop) {
         if (XCheckIfEvent((Display*) jlong_to_ptr(display), (XEvent*) jlong_to_ptr(ptr), secondary_loop_event, NULL)) {
             return JNI_TRUE;
         }
-        AWT_WAIT(AWT_SECONDARY_LOOP_TIMEOUT);
+        timeout = (timeout < AWT_SECONDARY_LOOP_TIMEOUT) ? (timeout << 1) : AWT_SECONDARY_LOOP_TIMEOUT;
+        AWT_WAIT(timeout);
     }
     return JNI_FALSE;
 }

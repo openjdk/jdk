@@ -35,7 +35,7 @@ final class ReverseMapIterator extends MapIterator {
 
     ReverseMapIterator(final ScriptObject obj, final boolean includeUndefined) {
         super(obj, includeUndefined);
-        this.index = JSType.toInt32(obj.getLength()) - 1;
+        this.index = JSType.toUint32(obj.getLength()) - 1;
     }
 
     @Override
@@ -49,7 +49,7 @@ final class ReverseMapIterator extends MapIterator {
     }
 
     @Override
-    protected int bumpIndex() {
+    protected long bumpIndex() {
         return index--;
     }
 }
