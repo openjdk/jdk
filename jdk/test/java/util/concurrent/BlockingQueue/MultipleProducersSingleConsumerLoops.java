@@ -87,11 +87,35 @@ public class MultipleProducersSingleConsumerLoops {
             throw new Error();
    }
 
+    static final class LTQasSQ<T> extends LinkedTransferQueue<T> {
+        LTQasSQ() { super(); }
+        public void put(T x) {
+            try { super.transfer(x); }
+            catch (InterruptedException ex) { throw new Error(); }
+        }
+        private final static long serialVersionUID = 42;
+    }
+
+    static final class HalfSyncLTQ<T> extends LinkedTransferQueue<T> {
+        HalfSyncLTQ() { super(); }
+        public void put(T x) {
+            if (ThreadLocalRandom.current().nextBoolean())
+                super.put(x);
+            else {
+                try { super.transfer(x); }
+                catch (InterruptedException ex) { throw new Error(); }
+            }
+        }
+        private final static long serialVersionUID = 42;
+    }
+
     static void oneTest(int producers, int iters) throws Exception {
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), producers, iters);
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), producers, iters);
         oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), producers, iters);
-//         oneRun(new LinkedTransferQueue<Integer>(), producers, iters);
+        oneRun(new LinkedTransferQueue<Integer>(), producers, iters);
+        oneRun(new LTQasSQ<Integer>(), producers, iters);
+        oneRun(new HalfSyncLTQ<Integer>(), producers, iters);
 
         // Don't run PBQ since can legitimately run out of memory
         //        if (print)

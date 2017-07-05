@@ -29,6 +29,9 @@
 class PermanentGenerationSpec;
 
 // This is the "generation" view of a CompactingPermGen.
+// NOTE: the shared spaces used for CDS are here handled in
+// a somewhat awkward and potentially buggy fashion, see CR 6801625.
+// This infelicity should be fixed, see CR 6897789.
 class CompactingPermGenGen: public OneContigSpaceCardGeneration {
   friend class VMStructs;
   // Abstractly, this is a subtype that gets access to protected fields.
@@ -47,7 +50,7 @@ private:
   OffsetTableContigSpace* _ro_space;
   OffsetTableContigSpace* _rw_space;
 
-  // With shared spaces there is a dicotomy in the use of the
+  // With shared spaces there is a dichotomy in the use of the
   // _virtual_space of the generation.  There is a portion of the
   // _virtual_space that is used for the unshared part of the
   // permanent generation and a portion that is reserved for the shared part.

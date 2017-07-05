@@ -178,10 +178,10 @@ public class BiggernYours {
             new ConcurrentLinkedQueue() {
                 public int size() {return randomize(super.size());}});
 
-//         testCollections(
-//             new LinkedTransferQueue(),
-//             new LinkedTransferQueue() {
-//                 public int size() {return randomize(super.size());}});
+        testCollections(
+            new LinkedTransferQueue(),
+            new LinkedTransferQueue() {
+                public int size() {return randomize(super.size());}});
 
         testCollections(
             new LinkedBlockingQueue(),

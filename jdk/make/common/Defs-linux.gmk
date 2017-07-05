@@ -116,8 +116,16 @@ CFLAGS_REQUIRED_sparcv9 += -m64 -mcpu=v9
 LDFLAGS_COMMON_sparcv9  += -m64 -mcpu=v9
 CFLAGS_REQUIRED_sparc   += -m32 -mcpu=v9
 LDFLAGS_COMMON_sparc    += -m32 -mcpu=v9
-CFLAGS_REQUIRED         =  $(CFLAGS_REQUIRED_$(ARCH))
-LDFLAGS_COMMON          += $(LDFLAGS_COMMON_$(ARCH))
+ifeq ($(ZERO_BUILD), true)
+  CFLAGS_REQUIRED       =  $(ZERO_ARCHFLAG)
+  ifeq ($(ZERO_ENDIANNESS), little)
+    CFLAGS_REQUIRED     += -D_LITTLE_ENDIAN
+  endif
+  LDFLAGS_COMMON        += $(ZERO_ARCHFLAG)
+else
+  CFLAGS_REQUIRED       =  $(CFLAGS_REQUIRED_$(ARCH))
+  LDFLAGS_COMMON        += $(LDFLAGS_COMMON_$(ARCH))
+endif
 
 # If this is a --hash-style=gnu system, use --hash-style=both
 #   The gnu .hash section won't work on some Linux systems like SuSE 10.
@@ -217,7 +225,7 @@ endif
 
 EXTRA_LIBS += -lc
 
-LDFLAGS_DEFS_OPTION  = -z defs
+LDFLAGS_DEFS_OPTION  = -Xlinker -z -Xlinker defs
 LDFLAGS_COMMON  += $(LDFLAGS_DEFS_OPTION)
 
 #
