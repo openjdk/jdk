@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ BEGIN
             VALUE "CompanyName",      XSTR(JDK_COMPANY)       "\0"
             VALUE "FileDescription",  XSTR(JDK_COMPONENT)     "\0"
             VALUE "FileVersion",      XSTR(JDK_VER)           "\0"
-            VALUE "Full Version",     XSTR(JDK_BUILD_ID)      "\0"
+            VALUE "Full Version",     XSTR(JDK_VERSION_STRING) "\0"
 	    VALUE "InternalName",     XSTR(JDK_INTERNAL_NAME) "\0"
             VALUE "LegalCopyright",   XSTR(JDK_COPYRIGHT)     "\0"
             VALUE "OriginalFilename", XSTR(JDK_FNAME)         "\0"

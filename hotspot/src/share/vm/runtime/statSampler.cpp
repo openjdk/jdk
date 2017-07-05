@@ -223,6 +223,7 @@ static const char* property_counters_ss[] = {
   "java.vm.name",
   "java.vm.vendor",
   "java.vm.info",
+  "jdk.debug",
   "java.library.path",
   "java.class.path",
   "java.version",

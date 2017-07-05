@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ final class JsseJce {
         private static final long serialVersionUID = -3284138292032213752L;
 
         SunCertificates(final Provider p) {
-            super("SunCertificates", 1.9d, "SunJSSE internal");
+            super("SunCertificates", 9.0d, "SunJSSE internal");
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 @Override
                 public Object run() {
