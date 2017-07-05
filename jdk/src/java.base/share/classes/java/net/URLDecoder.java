@@ -106,8 +106,8 @@ public class URLDecoder {
     }
 
     /**
-     * Decodes a {@code application/x-www-form-urlencoded} string using a specific
-     * encoding scheme.
+     * Decodes an {@code application/x-www-form-urlencoded} string using
+     * a specific encoding scheme.
      * The supplied encoding is used to determine
      * what characters are represented by any consecutive sequences of the
      * form "<i>{@code %xy}</i>".

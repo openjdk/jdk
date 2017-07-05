@@ -81,9 +81,11 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
@@ -1157,10 +1159,11 @@ public final class DateTimeFormatterBuilder {
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
      * for the locale set in the {@link DateTimeFormatter}.
-     * If the temporal object being printed represents an instant, then the text
-     * will be the summer or winter time text as appropriate.
+     * If the temporal object being printed represents an instant, or if it is a
+     * local date-time that is not in a daylight saving gap or overlap then
+     * the text will be the summer or winter time text as appropriate.
      * If the lookup for text does not find any suitable result, then the
-     * {@link ZoneId#getId() ID} will be printed instead.
+     * {@link ZoneId#getId() ID} will be printed.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
      * <p>
@@ -1177,7 +1180,7 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder appendZoneText(TextStyle textStyle) {
-        appendInternal(new ZoneTextPrinterParser(textStyle, null));
+        appendInternal(new ZoneTextPrinterParser(textStyle, null, false));
         return this;
     }
 
@@ -1193,10 +1196,11 @@ public final class DateTimeFormatterBuilder {
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
      * for the locale set in the {@link DateTimeFormatter}.
-     * If the temporal object being printed represents an instant, then the text
+     * If the temporal object being printed represents an instant, or if it is a
+     * local date-time that is not in a daylight saving gap or overlap, then the text
      * will be the summer or winter time text as appropriate.
      * If the lookup for text does not find any suitable result, then the
-     * {@link ZoneId#getId() ID} will be printed instead.
+     * {@link ZoneId#getId() ID} will be printed.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
      * <p>
@@ -1220,7 +1224,70 @@ public final class DateTimeFormatterBuilder {
     public DateTimeFormatterBuilder appendZoneText(TextStyle textStyle,
                                                    Set<ZoneId> preferredZones) {
         Objects.requireNonNull(preferredZones, "preferredZones");
-        appendInternal(new ZoneTextPrinterParser(textStyle, preferredZones));
+        appendInternal(new ZoneTextPrinterParser(textStyle, preferredZones, false));
+        return this;
+    }
+    //----------------------------------------------------------------------
+    /**
+     * Appends the generic time-zone name, such as 'Pacific Time', to the formatter.
+     * <p>
+     * This appends an instruction to format/parse the generic textual
+     * name of the zone to the builder. The generic name is the same throughout the whole
+     * year, ignoring any daylight saving changes. For example, 'Pacific Time' is the
+     * generic name, whereas 'Pacific Standard Time' and 'Pacific Daylight Time' are the
+     * specific names, see {@link #appendZoneText(TextStyle)}.
+     * <p>
+     * During formatting, the zone is obtained using a mechanism equivalent
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
+     * If the zone is a {@code ZoneOffset} it will be printed using the
+     * result of {@link ZoneOffset#getId()}.
+     * If the zone is not an offset, the textual name will be looked up
+     * for the locale set in the {@link DateTimeFormatter}.
+     * If the lookup for text does not find any suitable result, then the
+     * {@link ZoneId#getId() ID} will be printed.
+     * If the zone cannot be obtained then an exception is thrown unless the
+     * section of the formatter is optional.
+     * <p>
+     * During parsing, either the textual zone name, the zone ID or the offset
+     * is accepted. Many textual zone names are not unique, such as CST can be
+     * for both "Central Standard Time" and "China Standard Time". In this
+     * situation, the zone id will be determined by the region information from
+     * formatter's  {@link DateTimeFormatter#getLocale() locale} and the standard
+     * zone id for that area, for example, America/New_York for the America Eastern zone.
+     * The {@link #appendGenericZoneText(TextStyle, Set)} may be used
+     * to specify a set of preferred {@link ZoneId} in this situation.
+     *
+     * @param textStyle  the text style to use, not null
+     * @return this, for chaining, not null
+     */
+    public DateTimeFormatterBuilder appendGenericZoneText(TextStyle textStyle) {
+        appendInternal(new ZoneTextPrinterParser(textStyle, null, true));
+        return this;
+    }
+
+    /**
+     * Appends the generic time-zone name, such as 'Pacific Time', to the formatter.
+     * <p>
+     * This appends an instruction to format/parse the generic textual
+     * name of the zone to the builder. The generic name is the same throughout the whole
+     * year, ignoring any daylight saving changes. For example, 'Pacific Time' is the
+     * generic name, whereas 'Pacific Standard Time' and 'Pacific Daylight Time' are the
+     * specific names, see {@link #appendZoneText(TextStyle)}.
+     * <p>
+     * This method also allows a set of preferred {@link ZoneId} to be
+     * specified for parsing. The matched preferred zone id will be used if the
+     * textural zone name being parsed is not unique.
+     * <p>
+     * See {@link #appendGenericZoneText(TextStyle)} for details about
+     * formatting and parsing.
+     *
+     * @param textStyle  the text style to use, not null
+     * @param preferredZones  the set of preferred zone ids, not null
+     * @return this, for chaining, not null
+     */
+    public DateTimeFormatterBuilder appendGenericZoneText(TextStyle textStyle,
+                                                          Set<ZoneId> preferredZones) {
+        appendInternal(new ZoneTextPrinterParser(textStyle, preferredZones, true));
         return this;
     }
 
@@ -1416,6 +1483,7 @@ public final class DateTimeFormatterBuilder {
      *   N       nano-of-day                 number            1234000000
      *
      *   V       time-zone ID                zone-id           America/Los_Angeles; Z; -08:30
+     *   v       generic time-zone name      zone-name         PT, Pacific Time
      *   z       time-zone name              zone-name         Pacific Standard Time; PST
      *   O       localized zone-offset       offset-O          GMT+8; GMT+08:00; UTC-08:00;
      *   X       zone-offset 'Z' for zero    offset-X          Z; -08; -0830; -08:30; -083015; -08:30:15
@@ -1537,6 +1605,8 @@ public final class DateTimeFormatterBuilder {
      *  Pattern  Count  Equivalent builder methods
      *  -------  -----  --------------------------
      *    VV      2      appendZoneId()
+     *    v       1      appendGenericZoneText(TextStyle.SHORT)
+     *    vvvv    4      appendGenericZoneText(TextStyle.FULL)
      *    z       1      appendZoneText(TextStyle.SHORT)
      *    zz      2      appendZoneText(TextStyle.SHORT)
      *    zzz     3      appendZoneText(TextStyle.SHORT)
@@ -1643,6 +1713,14 @@ public final class DateTimeFormatterBuilder {
                         throw new IllegalArgumentException("Pattern letter count must be 2: " + cur);
                     }
                     appendZoneId();
+                } else if (cur == 'v') {
+                    if (count == 1) {
+                        appendGenericZoneText(TextStyle.SHORT);
+                    } else if (count == 4) {
+                        appendGenericZoneText(TextStyle.FULL);
+                    } else {
+                        throw new IllegalArgumentException("Wrong number of  pattern letters: " + cur);
+                    }
                 } else if (cur == 'Z') {
                     if (count < 4) {
                         appendOffset("+HHMM", "+0000");
@@ -1894,6 +1972,8 @@ public final class DateTimeFormatterBuilder {
         // 310 - z - time-zone names, matches LDML and SimpleDateFormat 1 to 4
         // 310 - Z - matches SimpleDateFormat and LDML
         // 310 - V - time-zone id, matches LDML
+        // 310 - v - general timezone names, not matching exactly with LDML because LDML specify to fall back
+        //           to 'VVVV' if general-nonlocation unavailable but here it's not falling back because of lack of data
         // 310 - p - prefix for padding
         // 310 - X - matches LDML, almost matches SDF for 1, exact match 2&3, extended 4&5
         // 310 - x - matches LDML
@@ -1901,7 +1981,6 @@ public final class DateTimeFormatterBuilder {
         // LDML - U - cycle year name, not supported by 310 yet
         // LDML - l - deprecated
         // LDML - j - not relevant
-        // LDML - v,V - extended time-zone names
     }
 
     //-----------------------------------------------------------------------
@@ -3723,9 +3802,12 @@ public final class DateTimeFormatterBuilder {
         /** The preferred zoneid map */
         private Set<String> preferredZones;
 
-        ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones) {
+        /**  Display in generic time-zone format. True in case of pattern letter 'v' */
+        private final boolean isGeneric;
+        ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones, boolean isGeneric) {
             super(TemporalQueries.zone(), "ZoneText(" + textStyle + ")");
             this.textStyle = Objects.requireNonNull(textStyle, "textStyle");
+            this.isGeneric = isGeneric;
             if (preferredZones != null && preferredZones.size() != 0) {
                 this.preferredZones = new HashSet<>();
                 for (ZoneId id : preferredZones) {
@@ -3788,11 +3870,21 @@ public final class DateTimeFormatterBuilder {
             String zname = zone.getId();
             if (!(zone instanceof ZoneOffset)) {
                 TemporalAccessor dt = context.getTemporal();
-                String name = getDisplayName(zname,
-                                             dt.isSupported(ChronoField.INSTANT_SECONDS)
-                                             ? (zone.getRules().isDaylightSavings(Instant.from(dt)) ? DST : STD)
-                                             : GENERIC,
-                                             context.getLocale());
+                int type = GENERIC;
+                if (!isGeneric) {
+                    if (dt.isSupported(ChronoField.INSTANT_SECONDS)) {
+                        type = zone.getRules().isDaylightSavings(Instant.from(dt)) ? DST : STD;
+                    } else if (dt.isSupported(ChronoField.EPOCH_DAY) &&
+                               dt.isSupported(ChronoField.NANO_OF_DAY)) {
+                        LocalDate date = LocalDate.ofEpochDay(dt.getLong(ChronoField.EPOCH_DAY));
+                        LocalTime time = LocalTime.ofNanoOfDay(dt.getLong(ChronoField.NANO_OF_DAY));
+                        LocalDateTime ldt = date.atTime(time);
+                        if (zone.getRules().getTransition(ldt) == null) {
+                            type = zone.getRules().isDaylightSavings(ldt.atZone(zone).toInstant()) ? DST : STD;
+                        }
+                    }
+                }
+                String name = getDisplayName(zname, type, context.getLocale());
                 if (name != null) {
                     zname = name;
                 }

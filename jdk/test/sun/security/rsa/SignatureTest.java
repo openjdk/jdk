@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 import static javax.crypto.Cipher.PRIVATE_KEY;
 import static javax.crypto.Cipher.PUBLIC_KEY;
-import jdk.testlibrary.RandomFactory;
 
 /**
  * @test
@@ -49,36 +49,13 @@ import jdk.testlibrary.RandomFactory;
  * @summary Create a signature for RSA and get its signed data. re-initiate
  *          the signature with the public key. The signature can be verified
  *          by acquired signed data.
- * @key randomness
- * @library ../../../lib/testlibrary
- * @run main SignatureTest MD2withRSA 512
- * @run main SignatureTest MD5withRSA 512
- * @run main SignatureTest SHA1withRSA 512
- * @run main SignatureTest SHA256withRSA 512
- * @run main SignatureTest MD2withRSA 768
- * @run main SignatureTest MD5withRSA 768
- * @run main SignatureTest SHA1withRSA 768
- * @run main SignatureTest SHA256withRSA 768
- * @run main SignatureTest MD2withRSA 1024
- * @run main SignatureTest MD5withRSA 1024
- * @run main SignatureTest SHA1withRSA 1024
- * @run main SignatureTest SHA256withRSA 1024
- * @run main SignatureTest MD2withRSA 2048
- * @run main SignatureTest MD5withRSA 2048
- * @run main SignatureTest SHA1withRSA 2048
- * @run main SignatureTest SHA256withRSA 2048
- * @run main/timeout=240 SignatureTest MD2withRSA 4096
- * @run main/timeout=240 SignatureTest MD5withRSA 4096
- * @run main/timeout=240 SignatureTest SHA1withRSA 4096
- * @run main/timeout=240 SignatureTest SHA256withRSA 4096
- * @run main/timeout=240 SignatureTest MD2withRSA 5120
- * @run main/timeout=240 SignatureTest MD5withRSA 5120
- * @run main/timeout=240 SignatureTest SHA1withRSA 5120
- * @run main/timeout=240 SignatureTest SHA256withRSA 5120
- * @run main/timeout=240 SignatureTest MD2withRSA 6144
- * @run main/timeout=240 SignatureTest MD5withRSA 6144
- * @run main/timeout=240 SignatureTest SHA1withRSA 6144
- * @run main/timeout=240 SignatureTest SHA256withRSA 6144
+ * @run main SignatureTest 512
+ * @run main SignatureTest 768
+ * @run main SignatureTest 1024
+ * @run main SignatureTest 2048
+ * @run main/timeout=240 SignatureTest 4096
+ * @run main/timeout=240 SignatureTest 5120
+ * @run main/timeout=240 SignatureTest 6144
  */
 public class SignatureTest {
     /**
@@ -101,12 +78,19 @@ public class SignatureTest {
      */
     private static final int UPDATE_TIMES_HUNDRED = 100;
 
+    /**
+     * Signature algorithms to test
+     */
+    private static final String[] SIGN_ALG = {"MD2withRSA", "MD5withRSA",
+        "SHA1withRSA", "SHA256withRSA"};
+
     public static void main(String[] args) throws Exception {
-        String testAlg = args[0];
-        int testSize = Integer.parseInt(args[1]);
+        int testSize = Integer.parseInt(args[0]);
 
         byte[] data = new byte[100];
-        RandomFactory.getRandom().nextBytes(data);
+        IntStream.range(0, data.length).forEach(j -> {
+            data[j] = (byte) j;
+        });
 
         // create a key pair
         KeyPair kpair = generateKeys(KEYALG, testSize);
@@ -115,16 +99,17 @@ public class SignatureTest {
         // For signature algorithm, create and verify a signature
 
         Arrays.stream(privs).forEach(priv
-                -> Arrays.stream(pubs).forEach(pub -> {
-                    try {
-                        checkSignature(data, (PublicKey) pub, (PrivateKey) priv,
-                                testAlg);
-                    } catch (NoSuchAlgorithmException | InvalidKeyException
-                            | SignatureException | NoSuchProviderException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-                ));
+                -> Arrays.stream(pubs).forEach(pub
+                -> Arrays.stream(SIGN_ALG).forEach(testAlg -> {
+            try {
+                checkSignature(data, (PublicKey) pub, (PrivateKey) priv,
+                        testAlg);
+            } catch (NoSuchAlgorithmException | InvalidKeyException |
+                    SignatureException | NoSuchProviderException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        )));
 
     }
 
