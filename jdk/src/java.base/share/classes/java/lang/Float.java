@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package java.lang;
 
 import jdk.internal.math.FloatingDecimal;
-import jdk.internal.math.FloatConsts;
-import jdk.internal.math.DoubleConsts;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
@@ -282,15 +280,15 @@ public final class Float extends Number implements Comparable<Float> {
      * @author Joseph D. Darcy
      */
     public static String toHexString(float f) {
-        if (Math.abs(f) < FloatConsts.MIN_NORMAL
+        if (Math.abs(f) < Float.MIN_NORMAL
             &&  f != 0.0f ) {// float subnormal
             // Adjust exponent to create subnormal double, then
             // replace subnormal double exponent with subnormal float
             // exponent
             String s = Double.toHexString(Math.scalb((double)f,
                                                      /* -1022+126 */
-                                                     DoubleConsts.MIN_EXPONENT-
-                                                     FloatConsts.MIN_EXPONENT));
+                                                     Double.MIN_EXPONENT-
+                                                     Float.MIN_EXPONENT));
             return s.replaceFirst("p-1022$", "p-126");
         }
         else // double string will be the same as float string
@@ -489,7 +487,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @since 1.8
      */
      public static boolean isFinite(float f) {
-        return Math.abs(f) <= FloatConsts.MAX_VALUE;
+        return Math.abs(f) <= Float.MAX_VALUE;
     }
 
     /**

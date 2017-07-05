@@ -450,8 +450,14 @@ public abstract class JAXBContext {
      *      in an empty map.
      *
      * @return a new instance of a {@code JAXBContext}
-     * @throws JAXBException if an error was encountered while creating the
-     *                       {@code JAXBContext}. See {@link #newInstance(String, ClassLoader)} for details.
+     * @throws JAXBException
+     *      if an error was encountered while creating the {@code JAXBContext} such as
+     * <ol>
+     *   <li>failure to locate either ObjectFactory.class or jaxb.index in the packages</li>
+     *   <li>an ambiguity among global elements contained in the contextPath</li>
+     *   <li>failure to locate a value for the context factory provider property</li>
+     *   <li>mixing schema derived packages from different providers on the same contextPath</li>
+     * </ol>
      * @since 1.6, JAXB 2.0
      */
     public static JAXBContext newInstance( String contextPath,

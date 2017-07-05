@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,8 @@ int ArrayKlass::static_size(int header_size) {
   // If this assert fails, see comments in base_create_array_klass.
   header_size = InstanceKlass::header_size();
   int vtable_len = Universe::base_vtable_size();
-#ifdef _LP64
-  int size = header_size + align_object_offset(vtable_len);
-#else
   int size = header_size + vtable_len;
-#endif
-  return align_object_size(size);
+  return align_metadata_size(size);
 }
 
 
@@ -85,10 +81,10 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
 ArrayKlass::ArrayKlass(Symbol* name) :
   _dimension(1),
   _higher_dimension(NULL),
-  _lower_dimension(NULL),
-  // Arrays don't add any new methods, so their vtable is the same size as
-  // the vtable of klass Object.
-  _vtable_len(Universe::base_vtable_size()) {
+  _lower_dimension(NULL) {
+    // Arrays don't add any new methods, so their vtable is the same size as
+    // the vtable of klass Object.
+    set_vtable_length(Universe::base_vtable_size());
     set_name(name);
     set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
     set_layout_helper(Klass::_lh_neutral_value);
@@ -120,19 +116,6 @@ bool ArrayKlass::compute_is_subtype_of(Klass* k) {
          || k == SystemDictionary::Cloneable_klass()
          || k == SystemDictionary::Serializable_klass();
 }
-
-
-inline intptr_t* ArrayKlass::start_of_vtable() const {
-  // all vtables start at the same place, that's why we use InstanceKlass::header_size here
-  return ((intptr_t*)this) + InstanceKlass::header_size();
-}
-
-
-klassVtable* ArrayKlass::vtable() const {
-  KlassHandle kh(Thread::current(), this);
-  return new klassVtable(kh, start_of_vtable(), vtable_length() / vtableEntry::size());
-}
-
 
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   if (length < 0) {

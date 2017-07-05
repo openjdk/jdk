@@ -40,7 +40,6 @@ class LogFileStreamOutput : public LogOutput {
     for (size_t i = 0; i < LogDecorators::Count; i++) {
       _decorator_padding[i] = 0;
     }
-    _decorator_padding[LogDecorators::level_decorator] = 7;
   }
 
  public:

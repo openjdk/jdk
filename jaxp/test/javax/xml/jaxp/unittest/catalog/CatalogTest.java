@@ -23,6 +23,7 @@
 package catalog;
 
 import java.io.IOException;
+import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogManager;
@@ -41,15 +42,36 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248, 8144966, 8146606
+ * @bug 8081248, 8144966, 8146606, 8146237
  * @summary Tests basic Catalog functions.
  */
 
 public class CatalogTest {
+    /**
+     * @bug 8146237
+     * PREFER from Features API taking precedence over catalog file
+     */
+    @Test
+    public void testJDK8146237() {
+        String catalogFile = getClass().getResource("JDK8146237_catalog.xml").getFile();
+
+        try {
+            CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, "system").build();
+            Catalog catalog = CatalogManager.catalog(features, catalogFile);
+            CatalogResolver catalogResolver = CatalogManager.catalogResolver(catalog);
+            String actualSystemId = catalogResolver.resolveEntity("-//FOO//DTD XML Dummy V0.0//EN", "http://www.oracle.com/alt1sys.dtd").getSystemId();
+            Assert.assertTrue(actualSystemId.contains("dummy.dtd"), "Resulting id should contain dummy.dtd, indicating a match by publicId");
+
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
+        }
+    }
+
     /*
        @bug 8146606
        Verifies that the resulting systemId does not contain duplicate slashes
     */
+    @Test
     public void testRewriteSystem() {
         String catalog = getClass().getResource("rewriteCatalog.xml").getFile();
 
@@ -67,6 +89,7 @@ public class CatalogTest {
        @bug 8146606
        Verifies that the resulting systemId does not contain duplicate slashes
     */
+    @Test
     public void testRewriteUri() {
         String catalog = getClass().getResource("rewriteCatalog.xml").getFile();
 

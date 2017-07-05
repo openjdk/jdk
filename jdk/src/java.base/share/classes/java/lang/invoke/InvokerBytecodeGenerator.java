@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -611,6 +611,31 @@ class InvokerBytecodeGenerator {
         return true;
     }
 
+    static String className(String cn) {
+        assert checkClassName(cn): "Class not found: " + cn;
+        return cn;
+    }
+
+    static boolean checkClassName(String cn) {
+        Type tp = Type.getType(cn);
+        // additional sanity so only valid "L;" descriptors work
+        if (tp.getSort() != Type.OBJECT) {
+            return false;
+        }
+        try {
+            Class<?> c = Class.forName(tp.getClassName(), false, null);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    static final String  LF_HIDDEN_SIG = className("Ljava/lang/invoke/LambdaForm$Hidden;");
+    static final String  LF_COMPILED_SIG = className("Ljava/lang/invoke/LambdaForm$Compiled;");
+    static final String  FORCEINLINE_SIG = className("Ljdk/internal/vm/annotation/ForceInline;");
+    static final String  DONTINLINE_SIG = className("Ljdk/internal/vm/annotation/DontInline;");
+    static final String  INJECTEDPROFILE_SIG = className("Ljava/lang/invoke/InjectedProfile;");
+
     /**
      * Generate an invoker method for the passed {@link LambdaForm}.
      */
@@ -618,16 +643,16 @@ class InvokerBytecodeGenerator {
         classFilePrologue();
 
         // Suppress this method in backtraces displayed to the user.
-        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+        mv.visitAnnotation(LF_HIDDEN_SIG, true);
 
         // Mark this method as a compiled LambdaForm
-        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Compiled;", true);
+        mv.visitAnnotation(LF_COMPILED_SIG, true);
 
         if (lambdaForm.forceInline) {
             // Force inlining of this invoker method.
-            mv.visitAnnotation("Ljdk/internal/vm/annotation/ForceInline;", true);
+            mv.visitAnnotation(FORCEINLINE_SIG, true);
         } else {
-            mv.visitAnnotation("Ljdk/internal/vm/annotation/DontInline;", true);
+            mv.visitAnnotation(DONTINLINE_SIG, true);
         }
 
         if (lambdaForm.customized != null) {
@@ -656,7 +681,7 @@ class InvokerBytecodeGenerator {
                     if (PROFILE_GWT) {
                         assert(name.arguments[0] instanceof Name &&
                                nameRefersTo((Name)name.arguments[0], MethodHandleImpl.class, "profileBoolean"));
-                        mv.visitAnnotation("Ljava/lang/invoke/InjectedProfile;", true);
+                        mv.visitAnnotation(INJECTEDPROFILE_SIG, true);
                     }
                     onStack = emitSelectAlternative(name, lambdaForm.names[i+1]);
                     i++;  // skip MH.invokeBasic of the selectAlternative result
@@ -1306,10 +1331,10 @@ class InvokerBytecodeGenerator {
         classFilePrologue();
 
         // Suppress this method in backtraces displayed to the user.
-        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+        mv.visitAnnotation(LF_HIDDEN_SIG, true);
 
         // Don't inline the interpreter entry.
-        mv.visitAnnotation("Ljdk/internal/vm/annotation/DontInline;", true);
+        mv.visitAnnotation(DONTINLINE_SIG, true);
 
         // create parameter array
         emitIconstInsn(invokerType.parameterCount());
@@ -1365,10 +1390,10 @@ class InvokerBytecodeGenerator {
         classFilePrologue();
 
         // Suppress this method in backtraces displayed to the user.
-        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+        mv.visitAnnotation(LF_HIDDEN_SIG, true);
 
         // Force inlining of this invoker method.
-        mv.visitAnnotation("Ljdk/internal/vm/annotation/ForceInline;", true);
+        mv.visitAnnotation(FORCEINLINE_SIG, true);
 
         // Load receiver
         emitAloadInsn(0);

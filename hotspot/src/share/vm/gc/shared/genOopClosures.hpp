@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,23 +146,15 @@ class FilteringClosure: public ExtendedOopClosure {
   HeapWord*   _boundary;
   ExtendedOopClosure* _cl;
  protected:
-  template <class T> inline void do_oop_work(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      if ((HeapWord*)obj < _boundary) {
-        _cl->do_oop(p);
-      }
-    }
-  }
+  template <class T> inline void do_oop_work(T* p);
  public:
   FilteringClosure(HeapWord* boundary, ExtendedOopClosure* cl) :
     ExtendedOopClosure(cl->ref_processor()), _boundary(boundary),
     _cl(cl) {}
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p)       { FilteringClosure::do_oop_work(p); }
-  inline void do_oop_nv(narrowOop* p) { FilteringClosure::do_oop_work(p); }
+  inline void do_oop_nv(oop* p);
+  inline void do_oop_nv(narrowOop* p);
   virtual bool do_metadata()          { return do_metadata_nv(); }
   inline bool do_metadata_nv()        { assert(!_cl->do_metadata(), "assumption broken, must change to 'return _cl->do_metadata()'"); return false; }
 };

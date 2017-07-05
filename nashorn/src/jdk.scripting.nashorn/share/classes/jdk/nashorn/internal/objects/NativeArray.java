@@ -1718,6 +1718,50 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     }
 
     /**
+     * ECMA6 22.1.3.4 Array.prototype.entries ( )
+     *
+     * @param self the self reference
+     * @return an iterator over the array's entries
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object entries(final Object self) {
+        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.KEY_VALUE, Global.instance());
+    }
+
+    /**
+     * ECMA6 22.1.3.13 Array.prototype.keys ( )
+     *
+     * @param self the self reference
+     * @return an iterator over the array's keys
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object keys(final Object self) {
+        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.KEY, Global.instance());
+    }
+
+    /**
+     * ECMA6 22.1.3.29 Array.prototype.values ( )
+     *
+     * @param self the self reference
+     * @return an iterator over the array's values
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object values(final Object self) {
+        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.VALUE, Global.instance());
+    }
+
+    /**
+     * 22.1.3.30 Array.prototype [ @@iterator ] ( )
+     *
+     * @param self the self reference
+     * @return an iterator over the array's values
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, name = "@@iterator")
+    public static Object getIterator(final Object self) {
+        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.VALUE, Global.instance());
+    }
+
+    /**
      * Determine if Java bulk array operations may be used on the underlying
      * storage. This is possible only if the object's prototype chain is empty
      * or each of the prototypes in the chain is empty.
