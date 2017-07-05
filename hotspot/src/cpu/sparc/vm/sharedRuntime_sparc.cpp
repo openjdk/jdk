@@ -851,10 +851,10 @@ void AdapterGenerator::gen_c2i_adapter(
       __ set(reg2offset(r_1) + extraspace + bias, ld_off);
 #else
       int ld_off = reg2offset(r_1) + extraspace + bias;
+#endif // _LP64
 #ifdef ASSERT
       G1_forced = true;
 #endif // ASSERT
-#endif // _LP64
       r_1 = G1_scratch->as_VMReg();// as part of the load/store shuffle
       if (!r_2->is_valid()) __ ld (base, ld_off, G1_scratch);
       else                  __ ldx(base, ld_off, G1_scratch);
@@ -865,9 +865,11 @@ void AdapterGenerator::gen_c2i_adapter(
       if (sig_bt[i] == T_OBJECT || sig_bt[i] == T_ARRAY) {
         store_c2i_object(r, base, st_off);
       } else if (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
+#ifndef _LP64
         if (TieredCompilation) {
           assert(G1_forced || sig_bt[i] != T_LONG, "should not use register args for longs");
         }
+#endif // _LP64
         store_c2i_long(r, base, st_off, r_2->is_stack());
       } else {
         store_c2i_int(r, base, st_off);

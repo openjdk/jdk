@@ -62,7 +62,10 @@ CLASSSHARINGDATA_DIR   = $(BUILDDIR)/tools/sharing
 # Needed to do file copy
 ABS_BUILDDIR :=$(call FullPath,$(BUILDDIR))
 
-SUBDIRS = fonts sajdi
+SUBDIRS_desktop = fonts
+SUBDIRS_tools   = sajdi
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all clean clobber::
 	$(SUBDIRS-loop)
 

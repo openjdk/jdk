@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,8 @@ void PcDesc::print(nmethod* code) {
     tty->print("  ");
     sd->method()->print_short_name(tty);
     tty->print("  @%d", sd->bci());
-    tty->print("  reexecute=%s", sd->should_reexecute()?"true":"false");
+    if (sd->should_reexecute())
+      tty->print("  reexecute=true");
     tty->cr();
   }
 #endif

@@ -692,7 +692,6 @@ java/net/URLConnection/TimeoutTest.java 		 	generic-all
 java/net/URLConnection/ZeroContentLength.java		 	generic-all
 
 # Solaris 11 i586 fails with samevm, not sure why
-java/net/Authenticator/B4769350.java				generic-all
 java/net/HttpURLConnection/HttpResponseCode.java		generic-all
 java/net/ResponseCache/B6181108.java				generic-all
 java/net/ResponseCache/ResponseCacheTest.java			generic-all

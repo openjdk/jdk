@@ -67,8 +67,10 @@ ifdef DISABLE_INTREE_EC
   INTREE_EC =
 endif
 
-SUBDIRS = $(INTREE_EC) other action util tools jgss krb5 smartcardio \
-	  $(PKCS11) $(JGSS_WRAPPER) $(MSCAPI)
+SUBDIRS       = $(INTREE_EC) other action util krb5
+SUBDIRS_misc  = jgss $(PKCS11) $(JGSS_WRAPPER) $(MSCAPI) smartcardio
+SUBDIRS_tools = tools
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)

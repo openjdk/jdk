@@ -44,6 +44,7 @@
  * The GConf-2 settings used are:
  * - /system/http_proxy/use_http_proxy          boolean
  * - /system/http_proxy/use_authentcation       boolean
+ * - /system/http_proxy/use_same_proxy          boolean
  * - /system/http_proxy/host                    string
  * - /system/http_proxy/authentication_user     string
  * - /system/http_proxy/authentication_password string
@@ -158,6 +159,7 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
   char *mode = NULL;
   int pport = 0;
   int use_proxy;
+  int use_same_proxy = 0;
   const char* urlhost;
   jobject isa = NULL;
   jobject proxy = NULL;
@@ -179,6 +181,15 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
          * entries.
          */
 
+        use_same_proxy = (*my_get_bool_func)(gconf_client, "/system/http_proxy/use_same_proxy", NULL);
+        if (use_same_proxy) {
+          use_proxy = (*my_get_bool_func)(gconf_client, "/system/http_proxy/use_http_proxy", NULL);
+          if (use_proxy) {
+            phost = (*my_get_string_func)(gconf_client, "/system/http_proxy/host", NULL);
+            pport = (*my_get_int_func)(gconf_client, "/system/http_proxy/port", NULL);
+          }
+        }
+
         /**
          * HTTP:
          * /system/http_proxy/use_http_proxy (boolean)
@@ -188,8 +199,10 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
         if (strcasecmp(cproto, "http") == 0) {
           use_proxy = (*my_get_bool_func)(gconf_client, "/system/http_proxy/use_http_proxy", NULL);
           if (use_proxy) {
-            phost = (*my_get_string_func)(gconf_client, "/system/http_proxy/host", NULL);
-            pport = (*my_get_int_func)(gconf_client, "/system/http_proxy/port", NULL);
+            if (!use_same_proxy) {
+              phost = (*my_get_string_func)(gconf_client, "/system/http_proxy/host", NULL);
+              pport = (*my_get_int_func)(gconf_client, "/system/http_proxy/port", NULL);
+            }
             CHECK_NULL(type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID));
           }
         }
@@ -203,8 +216,10 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
         if (strcasecmp(cproto, "https") == 0) {
           mode =  (*my_get_string_func)(gconf_client, "/system/proxy/mode", NULL);
           if (mode != NULL && (strcasecmp(mode,"manual") == 0)) {
-            phost = (*my_get_string_func)(gconf_client, "/system/proxy/secure_host", NULL);
-            pport = (*my_get_int_func)(gconf_client, "/system/proxy/secure_port", NULL);
+            if (!use_same_proxy) {
+              phost = (*my_get_string_func)(gconf_client, "/system/proxy/secure_host", NULL);
+              pport = (*my_get_int_func)(gconf_client, "/system/proxy/secure_port", NULL);
+            }
             use_proxy = (phost != NULL);
             if (use_proxy)
               type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
@@ -220,8 +235,10 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
         if (strcasecmp(cproto, "ftp") == 0) {
           mode =  (*my_get_string_func)(gconf_client, "/system/proxy/mode", NULL);
           if (mode != NULL && (strcasecmp(mode,"manual") == 0)) {
-            phost = (*my_get_string_func)(gconf_client, "/system/proxy/ftp_host", NULL);
-            pport = (*my_get_int_func)(gconf_client, "/system/proxy/ftp_port", NULL);
+            if (!use_same_proxy) {
+              phost = (*my_get_string_func)(gconf_client, "/system/proxy/ftp_host", NULL);
+              pport = (*my_get_int_func)(gconf_client, "/system/proxy/ftp_port", NULL);
+            }
             use_proxy = (phost != NULL);
             if (use_proxy)
               type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
@@ -237,8 +254,10 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
         if (strcasecmp(cproto, "gopher") == 0) {
           mode =  (*my_get_string_func)(gconf_client, "/system/proxy/mode", NULL);
           if (mode != NULL && (strcasecmp(mode,"manual") == 0)) {
-            phost = (*my_get_string_func)(gconf_client, "/system/proxy/gopher_host", NULL);
-            pport = (*my_get_int_func)(gconf_client, "/system/proxy/gopher_port", NULL);
+            if (!use_same_proxy) {
+              phost = (*my_get_string_func)(gconf_client, "/system/proxy/gopher_host", NULL);
+              pport = (*my_get_int_func)(gconf_client, "/system/proxy/gopher_port", NULL);
+            }
             use_proxy = (phost != NULL);
             if (use_proxy)
               type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
@@ -254,8 +273,10 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
         if (strcasecmp(cproto, "socks") == 0) {
           mode =  (*my_get_string_func)(gconf_client, "/system/proxy/mode", NULL);
           if (mode != NULL && (strcasecmp(mode,"manual") == 0)) {
-            phost = (*my_get_string_func)(gconf_client, "/system/proxy/socks_host", NULL);
-            pport = (*my_get_int_func)(gconf_client, "/system/proxy/socks_port", NULL);
+            if (!use_same_proxy) {
+              phost = (*my_get_string_func)(gconf_client, "/system/proxy/socks_host", NULL);
+              pport = (*my_get_int_func)(gconf_client, "/system/proxy/socks_port", NULL);
+            }
             use_proxy = (phost != NULL);
             if (use_proxy)
               type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_socksID);
