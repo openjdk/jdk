@@ -456,7 +456,7 @@ public class TimestampCheck {
                 .shouldMatch("Timestamp signature algorithm: .*key.*weak");
         verify(file, "-J-Djava.security.debug=jar")
                 .shouldHaveExitValue(0)
-                .shouldMatch("SignatureException:.*Disabled");
+                .shouldMatch("SignatureException:.*disabled");
     }
 
     static void checkHalfWeak(String file) throws Throwable {

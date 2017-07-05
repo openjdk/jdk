@@ -362,7 +362,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
         String module = "/" + entry.moduleName() + "/";
         String filename = entry.path().substring(module.length());
 
-        // Remove radical native|config|...
+        // Remove radical lib|config|...
         return filename.substring(filename.indexOf('/') + 1);
     }
 
