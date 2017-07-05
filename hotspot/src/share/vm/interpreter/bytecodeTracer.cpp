@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,9 +100,9 @@ class BytecodePrinter: public BytecodeClosure {
     Bytecodes::Code code;
     if (is_wide()) {
       // bcp wasn't advanced if previous bytecode was _wide.
-      code = Bytecodes::code_at(bcp+1);
+      code = Bytecodes::code_at(method(), bcp+1);
     } else {
-      code = Bytecodes::code_at(bcp);
+      code = Bytecodes::code_at(method(), bcp);
     }
     _code = code;
      int bci = bcp - method->code_base();
@@ -127,11 +127,11 @@ class BytecodePrinter: public BytecodeClosure {
   void trace(methodHandle method, address bcp, outputStream* st) {
     _current_method = method();
     ResourceMark rm;
-    Bytecodes::Code code = Bytecodes::code_at(bcp);
+    Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
     // Set is_wide
     _is_wide = (code == Bytecodes::_wide);
     if (is_wide()) {
-      code = Bytecodes::code_at(bcp+1);
+      code = Bytecodes::code_at(method(), bcp+1);
     }
     _code = code;
     int bci = bcp - method->code_base();

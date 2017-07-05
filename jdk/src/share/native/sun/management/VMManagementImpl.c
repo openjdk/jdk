@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,9 @@ Java_sun_management_VMManagementImpl_initOptionalSupportFields
         setStaticBooleanField(env, cls, "objectMonitorUsageSupport", JNI_FALSE);
         setStaticBooleanField(env, cls, "synchronizerUsageSupport", JNI_FALSE);
     }
+
+    value = mos.isThreadAllocatedMemorySupported;
+    setStaticBooleanField(env, cls, "threadAllocatedMemorySupport", value);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -199,6 +202,13 @@ Java_sun_management_VMManagementImpl_isThreadCpuTimeEnabled
   (JNIEnv *env, jobject dummy)
 {
     return jmm_interface->GetBoolAttribute(env, JMM_THREAD_CPU_TIME);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_management_VMManagementImpl_isThreadAllocatedMemoryEnabled
+  (JNIEnv *env, jobject dummy)
+{
+    return jmm_interface->GetBoolAttribute(env, JMM_THREAD_ALLOCATED_MEMORY);
 }
 
 JNIEXPORT jint JNICALL

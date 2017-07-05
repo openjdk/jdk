@@ -214,6 +214,7 @@ Java_sun_awt_Win32FontManager_deRegisterFontWithPlatform(JNIEnv *env,
 #define EUDCKEY_ZH_CN  L"EUDC\\936"
 #define EUDCKEY_ZH_TW  L"EUDC\\950"
 #define EUDCKEY_KO_KR  L"EUDC\\949"
+#define EUDCKEY_EN_US  L"EUDC\\1252"
 #define LANGID_JA_JP   0x411
 #define LANGID_ZH_CN   0x0804
 #define LANGID_ZH_SG   0x1004
@@ -221,6 +222,7 @@ Java_sun_awt_Win32FontManager_deRegisterFontWithPlatform(JNIEnv *env,
 #define LANGID_ZH_HK   0x0c04
 #define LANGID_ZH_MO   0x1404
 #define LANGID_KO_KR   0x0412
+#define LANGID_EN_US   0x0409
 
 
 JNIEXPORT jstring JNICALL
@@ -237,6 +239,9 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
     LANGID langID = GetSystemDefaultLangID();
     //lookup for encoding ID, EUDC only supported in
     //codepage 932, 936, 949, 950 (and unicode)
+    // On Windows 7, at least for me, it shows up in Cp1252 if
+    // I create a custom font. Might as well support that as it makes
+    // verification easier.
     if (langID == LANGID_JA_JP) {
         eudcKey = EUDCKEY_JA_JP;
     } else if (langID == LANGID_ZH_CN || langID == LANGID_ZH_SG) {
@@ -246,6 +251,8 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
       eudcKey = EUDCKEY_ZH_TW;
     } else if (langID == LANGID_KO_KR) {
         eudcKey = EUDCKEY_KO_KR;
+    } else if (langID == LANGID_EN_US) {
+        eudcKey = EUDCKEY_EN_US;
     } else {
         return NULL;
     }

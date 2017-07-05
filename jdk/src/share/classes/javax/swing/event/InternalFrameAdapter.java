@@ -32,8 +32,7 @@ package javax.swing.event;
  * equivalent to the WindowAdapter class in the AWT.
  * <p>
  * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/events/internalframelistener.html">How to Write an Internal Frame Listener</a>
- * in <em>The Java Tutorial</em> and
- * <a href="http://www.awl.com/cp/javaseries/jcl1_2.html">The Java Class Libraries (update)</a>
+ * in <em>The Java Tutorial</em>
  *
  * @see InternalFrameEvent
  * @see InternalFrameListener

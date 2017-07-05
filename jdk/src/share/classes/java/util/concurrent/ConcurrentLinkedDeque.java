@@ -869,6 +869,8 @@ public class ConcurrentLinkedDeque<E>
 
     /**
      * Inserts the specified element at the front of this deque.
+     * As the deque is unbounded, this method will never throw
+     * {@link IllegalStateException}.
      *
      * @throws NullPointerException if the specified element is null
      */
@@ -878,6 +880,8 @@ public class ConcurrentLinkedDeque<E>
 
     /**
      * Inserts the specified element at the end of this deque.
+     * As the deque is unbounded, this method will never throw
+     * {@link IllegalStateException}.
      *
      * <p>This method is equivalent to {@link #add}.
      *
@@ -889,8 +893,9 @@ public class ConcurrentLinkedDeque<E>
 
     /**
      * Inserts the specified element at the front of this deque.
+     * As the deque is unbounded, this method will never return {@code false}.
      *
-     * @return {@code true} always
+     * @return {@code true} (as specified by {@link Deque#offerFirst})
      * @throws NullPointerException if the specified element is null
      */
     public boolean offerFirst(E e) {
@@ -900,10 +905,11 @@ public class ConcurrentLinkedDeque<E>
 
     /**
      * Inserts the specified element at the end of this deque.
+     * As the deque is unbounded, this method will never return {@code false}.
      *
      * <p>This method is equivalent to {@link #add}.
      *
-     * @return {@code true} always
+     * @return {@code true} (as specified by {@link Deque#offerLast})
      * @throws NullPointerException if the specified element is null
      */
     public boolean offerLast(E e) {
@@ -983,6 +989,7 @@ public class ConcurrentLinkedDeque<E>
 
     /**
      * Inserts the specified element at the tail of this deque.
+     * As the deque is unbounded, this method will never return {@code false}.
      *
      * @return {@code true} (as specified by {@link Queue#offer})
      * @throws NullPointerException if the specified element is null
@@ -993,6 +1000,8 @@ public class ConcurrentLinkedDeque<E>
 
     /**
      * Inserts the specified element at the tail of this deque.
+     * As the deque is unbounded, this method will never throw
+     * {@link IllegalStateException} or return {@code false}.
      *
      * @return {@code true} (as specified by {@link Collection#add})
      * @throws NullPointerException if the specified element is null

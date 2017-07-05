@@ -169,8 +169,7 @@ final class ExtensionType {
         return name;
     }
 
-    static List<ExtensionType> knownExtensions =
-                                            new ArrayList<ExtensionType>(9);
+    static List<ExtensionType> knownExtensions = new ArrayList<>(9);
 
     static ExtensionType get(int id) {
         for (ExtensionType ext : knownExtensions) {
@@ -674,7 +673,7 @@ final class SupportedEllipticPointFormatsExtension extends HelloExtension {
     }
 
     public String toString() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         for (byte format : formats) {
             list.add(toString(format));
         }

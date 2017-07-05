@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,18 @@ class JavaThread;
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class ObjPtrQueue: public PtrQueue {
 public:
-  ObjPtrQueue(PtrQueueSet* qset_, bool perm = false) :
+  ObjPtrQueue(PtrQueueSet* qset, bool perm = false) :
     // SATB queues are only active during marking cycles. We create
     // them with their active field set to false. If a thread is
     // created during a cycle and its SATB queue needs to be activated
     // before the thread starts running, we'll need to set its active
     // field to true. This is done in JavaThread::initialize_queues().
-    PtrQueue(qset_, perm, false /* active */) { }
+    PtrQueue(qset, perm, false /* active */) { }
+
+  // Overrides PtrQueue::should_enqueue_buffer(). See the method's
+  // definition for more information.
+  virtual bool should_enqueue_buffer();
+
   // Apply the closure to all elements, and reset the index to make the
   // buffer empty.
   void apply_closure(ObjectClosure* cl);
