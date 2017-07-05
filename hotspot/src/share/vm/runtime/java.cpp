@@ -56,6 +56,8 @@
 #include "runtime/task.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_operations.hpp"
+#include "services/memReporter.hpp"
+#include "services/memTracker.hpp"
 #include "trace/tracing.hpp"
 #include "trace/traceEventTypes.hpp"
 #include "utilities/dtrace.hpp"
@@ -359,6 +361,15 @@ void print_statistics() {
   }
 #endif // COMPILER2
 #endif // ENABLE_ZAP_DEAD_LOCALS
+  // Native memory tracking data
+  if (PrintNMTStatistics) {
+    if (MemTracker::is_on()) {
+      BaselineTTYOutputer outputer(tty);
+      MemTracker::print_memory_usage(outputer, K, false);
+    } else {
+      tty->print_cr(MemTracker::reason());
+    }
+  }
 }
 
 #else // PRODUCT MODE STATISTICS
@@ -375,6 +386,16 @@ void print_statistics() {
 #endif
   if (PrintBiasedLockingStatistics) {
     BiasedLocking::print_counters();
+  }
+
+  // Native memory tracking data
+  if (PrintNMTStatistics) {
+    if (MemTracker::is_on()) {
+      BaselineTTYOutputer outputer(tty);
+      MemTracker::print_memory_usage(outputer, K, false);
+    } else {
+      tty->print_cr(MemTracker::reason());
+    }
   }
 }
 

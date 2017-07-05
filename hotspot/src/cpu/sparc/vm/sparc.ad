@@ -1838,6 +1838,12 @@ const bool Matcher::match_rule_supported(int opcode) {
   case Op_PopCountL:
     if (!UsePopCountInstruction)
       return false;
+  case Op_CompareAndSwapL:
+#ifdef _LP64
+  case Op_CompareAndSwapP:
+#endif
+    if (!VM_Version::supports_cx8())
+      return false;
     break;
   }
 
@@ -7199,6 +7205,7 @@ instruct storeLConditional( iRegP mem_ptr, iRegL oldval, g3RegL newval, flagsReg
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL_bool(iRegP mem_ptr, iRegL oldval, iRegL newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
+  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
@@ -7230,6 +7237,9 @@ instruct compareAndSwapI_bool(iRegP mem_ptr, iRegI oldval, iRegI newval, iRegI r
 %}
 
 instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
+#ifdef _LP64
+  predicate(VM_Version::supports_cx8());
+#endif
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
   format %{
@@ -7261,6 +7271,38 @@ instruct compareAndSwapN_bool(iRegP mem_ptr, iRegN oldval, iRegN newval, iRegI r
   %}
   ins_encode( enc_casi(mem_ptr, oldval, newval),
               enc_iflags_ne_to_boolean(res) );
+  ins_pipe( long_memory_op );
+%}
+
+instruct xchgI( memory mem, iRegI newval) %{
+  match(Set newval (GetAndSetI mem newval));
+  format %{ "SWAP  [$mem],$newval" %}
+  size(4);
+  ins_encode %{
+    __ swap($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( long_memory_op );
+%}
+
+#ifndef _LP64
+instruct xchgP( memory mem, iRegP newval) %{
+  match(Set newval (GetAndSetP mem newval));
+  format %{ "SWAP  [$mem],$newval" %}
+  size(4);
+  ins_encode %{
+    __ swap($mem$$Address, $newval$$Register);
+  %}
+  ins_pipe( long_memory_op );
+%}
+#endif
+
+instruct xchgN( memory mem, iRegN newval) %{
+  match(Set newval (GetAndSetN mem newval));
+  format %{ "SWAP  [$mem],$newval" %}
+  size(4);
+  ins_encode %{
+    __ swap($mem$$Address, $newval$$Register);
+  %}
   ins_pipe( long_memory_op );
 %}
 
