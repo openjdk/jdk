@@ -115,7 +115,7 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
                   LE_DEBUG_BAD_FONT("off end of ligature substitution header");
                   return newState; // get out! bad font
               }
-              if(componentGlyph > glyphStorage.getGlyphCount()) {
+              if(componentGlyph >= glyphStorage.getGlyphCount()) {
                 LE_DEBUG_BAD_FONT("preposterous componentGlyph");
                 currGlyph++;
                 return newState; // get out! bad font

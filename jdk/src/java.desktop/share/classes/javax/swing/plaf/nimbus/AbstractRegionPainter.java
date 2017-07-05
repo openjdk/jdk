@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,8 +495,16 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * control points and bezier curve anchors.
      */
     protected static class PaintContext {
+        /**
+         * Cache mode.
+         */
         protected static enum CacheMode {
-            NO_CACHING, FIXED_SIZES, NINE_SQUARE_SCALE
+            /** No caching.*/
+            NO_CACHING,
+            /** Fixed sizes.*/
+            FIXED_SIZES,
+            /** Nine square scale.*/
+            NINE_SQUARE_SCALE
         }
 
         private static Insets EMPTY_INSETS = new Insets(0, 0, 0, 0);
@@ -632,6 +640,9 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
         // check if we can scale to the requested size
         Dimension canvas = ctx.canvasSize;
         Insets insets = ctx.stretchingInsets;
+        if (insets.left + insets.right > w || insets.top + insets.bottom > h) {
+            return;
+        }
 
         if (w <= (canvas.width * ctx.maxHorizontalScaleFactor) && h <= (canvas.height * ctx.maxVerticalScaleFactor)) {
             // get image at canvas size

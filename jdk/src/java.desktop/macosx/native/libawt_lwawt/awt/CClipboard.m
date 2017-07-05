@@ -107,6 +107,19 @@
     }
 }
 
+- (BOOL) checkPasteboardWithoutNotification:(id)application {
+    AWT_ASSERT_APPKIT_THREAD;
+    
+    NSInteger newChangeCount = [[NSPasteboard generalPasteboard] changeCount];
+    
+    if (self.changeCount != newChangeCount) {
+        self.changeCount = newChangeCount;    
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
 @end
 
 /*
@@ -260,21 +273,20 @@ JNF_COCOA_EXIT(env);
     return returnValue;
 }
 
-/*
- * Class:     sun_lwawt_macosx_CClipboard
- * Method:    checkPasteboard
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CClipboard_checkPasteboard
-(JNIEnv *env, jobject inObject )
-{
-JNF_COCOA_ENTER(env);
-
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [[CClipboard sharedClipboard] checkPasteboard:nil];
-    }];
-        
-JNF_COCOA_EXIT(env);
-}
-
-
+/*                                                                                            
+ * Class:     sun_lwawt_macosx_CClipboard                                                     
+ * Method:    checkPasteboard                                                                 
+ * Signature: ()V                                                                             
+ */                                                                                           
+JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CClipboard_checkPasteboardWithoutNotification
+(JNIEnv *env, jobject inObject)                                                               
+{                                                                                             
+    __block BOOL ret = NO;                                                                    
+    JNF_COCOA_ENTER(env);                                                                     
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){                                
+        ret = [[CClipboard sharedClipboard] checkPasteboardWithoutNotification:nil];          
+    }];                                                                                       
+                                                                                              
+    JNF_COCOA_EXIT(env);                                                                      
+    return ret;                                                                               
+}                                                                                             

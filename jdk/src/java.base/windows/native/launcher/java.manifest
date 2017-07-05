@@ -4,12 +4,12 @@
           xmlns:asmv3="urn:schemas-microsoft-com:asm.v3"
 >
 <assemblyIdentity
-    version="IMVERSION"
+    name=""
+    version=""
     processorArchitecture="X86"
-    name="Oracle Corporation, Java(tm) 2 Standard Edition"
     type="win32"
 />
-<description>Java(TM) SE PROGRAM process</description>
+<description>Java(TM) SE process</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity

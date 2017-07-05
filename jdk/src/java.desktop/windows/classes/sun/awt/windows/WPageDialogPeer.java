@@ -25,6 +25,8 @@
 
 package sun.awt.windows;
 
+import sun.misc.ManagedLocalsThread;
+
 final class WPageDialogPeer extends WPrintDialogPeer {
 
     WPageDialogPeer(WPageDialog target) {
@@ -39,20 +41,22 @@ final class WPageDialogPeer extends WPrintDialogPeer {
 
     @Override
     public void show() {
-        new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    // Call pageSetup even with no printer installed, this
-                    // will display Windows error dialog and return false.
-                    try {
-                        ((WPrintDialog)target).setRetVal(_show());
-                    } catch (Exception e) {
-                     // No exception should be thrown by native dialog code,
-                     // but if it is we need to trap it so the thread does
-                     // not hide is called and the thread doesn't hang.
-                    }
-                    ((WPrintDialog)target).setVisible(false);
-                }
-            }).start();
+        Runnable runnable = () -> {
+            // Call pageSetup even with no printer installed, this
+            // will display Windows error dialog and return false.
+            try {
+                ((WPrintDialog)target).setRetVal(_show());
+            } catch (Exception e) {
+                // No exception should be thrown by native dialog code,
+                // but if it is we need to trap it so the thread does
+                // not hide is called and the thread doesn't hang.
+            }
+            ((WPrintDialog)target).setVisible(false);
+        };
+        if (System.getSecurityManager() == null) {
+            new Thread(runnable).start();
+        } else {
+            new ManagedLocalsThread(runnable).start();
+        }
     }
 }

@@ -25,6 +25,8 @@
 
 package com.sun.media.sound;
 
+import sun.misc.ManagedLocalsThread;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -139,7 +141,11 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                      pusher = null;
                      jitter_stream = null;
                      sourceDataLine = null;
-                     new Thread(runnable).start();
+                     if (System.getSecurityManager() == null) {
+                        new Thread(runnable).start();
+                     } else {
+                         new ManagedLocalsThread(runnable).start();
+                     }
                  }
                  return len;
              }

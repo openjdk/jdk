@@ -6,3 +6,7 @@ grant codeBase "jrt:/jdk.crypto.mscapi" {
         permission java.security.SecurityPermission "clearProviderProperties.SunMSCAPI";
         permission java.security.SecurityPermission "removeProviderProperty.SunMSCAPI";
 };
+
+grant codeBase "jrt:/jdk.accessibility" {
+        permission java.security.AllPermission;
+};

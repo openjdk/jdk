@@ -68,6 +68,7 @@ import javax.print.attribute.*;
 import sun.awt.AppContext;
 
 
+import sun.misc.ManagedLocalsThread;
 import sun.swing.PrintingStatus;
 import sun.swing.SwingUtilities2;
 import sun.swing.text.TextComponentPrintable;
@@ -2363,7 +2364,11 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             runnablePrinting.run();
         } else {
             if (isEventDispatchThread) {
-                (new Thread(runnablePrinting)).start();
+                if (System.getSecurityManager() == null) {
+                    new Thread(runnablePrinting).start();
+                } else {
+                    new ManagedLocalsThread(runnablePrinting).start();
+                }
                 printingStatus.showModal(true);
             } else {
                 printingStatus.showModal(false);
