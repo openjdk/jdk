@@ -25,12 +25,12 @@ package com.sun.org.apache.xml.internal.security.encryption;
 import java.util.Iterator;
 
 /**
- * <code>ReferenceList</code> is an element that contains pointers from a key
- * value of an <code>EncryptedKey</code> to items encrypted by that key value
- * (<code>EncryptedData</code> or <code>EncryptedKey</code> elements).
+ * {@code ReferenceList} is an element that contains pointers from a key
+ * value of an {@code EncryptedKey} to items encrypted by that key value
+ * ({@code EncryptedData} or {@code EncryptedKey} elements).
  * <p>
  * It is defined as follows:
- * <xmp>
+ * <pre>{@code
  * <element name='ReferenceList'>
  *     <complexType>
  *         <choice minOccurs='1' maxOccurs='unbounded'>
@@ -39,7 +39,7 @@ import java.util.Iterator;
  *         </choice>
  *     </complexType>
  * </element>
- * </xmp>
+ * }</pre>
  *
  * @author Axl Mattheus
  * @see Reference
@@ -56,54 +56,54 @@ public interface ReferenceList {
      * Adds a reference to this reference list.
      *
      * @param reference the reference to add.
-     * @throws IllegalAccessException if the <code>Reference</code> is not an
-     *   instance of <code>DataReference</code> or <code>KeyReference</code>.
+     * @throws IllegalAccessException if the {@code Reference} is not an
+     *   instance of {@code DataReference} or {@code KeyReference}.
      */
     void add(Reference reference);
 
     /**
-     * Removes a reference from the <code>ReferenceList</code>.
+     * Removes a reference from the {@code ReferenceList}.
      *
      * @param reference the reference to remove.
      */
     void remove(Reference reference);
 
     /**
-     * Returns the size of the <code>ReferenceList</code>.
+     * Returns the size of the {@code ReferenceList}.
      *
-     * @return the size of the <code>ReferenceList</code>.
+     * @return the size of the {@code ReferenceList}.
      */
     int size();
 
     /**
-     * Indicates if the <code>ReferenceList</code> is empty.
+     * Indicates if the {@code ReferenceList} is empty.
      *
-     * @return <code><b>true</b></code> if the <code>ReferenceList</code> is
-     *     empty, else <code><b>false</b></code>.
+     * @return <b>{@code true}</b> if the {@code ReferenceList} is
+     *     empty, else <b>{@code false}</b>.
      */
     boolean isEmpty();
 
     /**
-     * Returns an <code>Iterator</code> over all the <code>Reference</code>s
-     * contained in this <code>ReferenceList</code>.
+     * Returns an {@code Iterator} over all the {@code Reference}s
+     * contained in this {@code ReferenceList}.
      *
      * @return Iterator.
      */
     Iterator<Reference> getReferences();
 
     /**
-     * <code>DataReference</code> factory method. Returns a
-     * <code>DataReference</code>.
+     * {@code DataReference} factory method. Returns a
+     * {@code DataReference}.
      * @param uri
-     * @return a <code>DataReference</code>.
+     * @return a {@code DataReference}.
      */
     Reference newDataReference(String uri);
 
     /**
-     * <code>KeyReference</code> factory method. Returns a
-     * <code>KeyReference</code>.
+     * {@code KeyReference} factory method. Returns a
+     * {@code KeyReference}.
      * @param uri
-     * @return a <code>KeyReference</code>.
+     * @return a {@code KeyReference}.
      */
     Reference newKeyReference(String uri);
 }

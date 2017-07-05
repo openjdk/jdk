@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.java.accessibility.util.java.awt;
+package com.sun.java.accessibility.util.internal;
 
 import java.lang.*;
 import java.util.*;

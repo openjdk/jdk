@@ -26,12 +26,12 @@ import java.util.Iterator;
 import org.w3c.dom.Element;
 
 /**
- * <code>EncryptionMethod</code> describes the encryption algorithm applied to
+ * {@code EncryptionMethod} describes the encryption algorithm applied to
  * the cipher data. If the element is absent, the encryption algorithm must be
  * known by the recipient or the decryption will fail.
  * <p>
  * It is defined as follows:
- * <xmp>
+ * <pre>{@code
  * <complexType name='EncryptionMethodType' mixed='true'>
  *     <sequence>
  *         <element name='KeySize' minOccurs='0' type='xenc:KeySizeType'/>
@@ -40,7 +40,7 @@ import org.w3c.dom.Element;
  *     </sequence>
  *     <attribute name='Algorithm' type='anyURI' use='required'/>
  * </complexType>
- * </xmp>
+ * }</pre>
  *
  * @author Axl Mattheus
  */
@@ -108,10 +108,10 @@ public interface EncryptionMethod {
 
     /**
      * Returns an iterator over all the additional elements contained in the
-     * <code>EncryptionMethod</code>.
+     * {@code EncryptionMethod}.
      *
-     * @return an <code>Iterator</code> over all the additional information
-     *   about the <code>EncryptionMethod</code>.
+     * @return an {@code Iterator} over all the additional information
+     *   about the {@code EncryptionMethod}.
      */
     Iterator<Element> getEncryptionMethodInformation();
 
@@ -126,7 +126,7 @@ public interface EncryptionMethod {
      * Removes encryption method information.
      *
      * @param information the information to remove from the
-     *   <code>EncryptionMethod</code>.
+     *   {@code EncryptionMethod}.
      */
     void removeEncryptionMethodInformation(Element information);
 }

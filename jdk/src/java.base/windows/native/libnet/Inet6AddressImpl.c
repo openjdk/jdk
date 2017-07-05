@@ -31,6 +31,8 @@
 #include <malloc.h>
 #include <sys/types.h>
 #include <process.h>
+#include <iphlpapi.h>
+#include <icmpapi.h>
 
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
@@ -332,139 +334,61 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
  * Returns true is an ECHO_REPLY is received, otherwise, false.
  */
 static jboolean
-ping6(JNIEnv *env, jint fd, struct SOCKADDR_IN6* him, jint timeout,
-      struct SOCKADDR_IN6* netif, jint ttl) {
-    jint size;
-    jint n, len, i;
-    char sendbuf[1500];
-    char auxbuf[1500];
-    unsigned char recvbuf[1500];
-    struct icmp6_hdr *icmp6;
-    struct SOCKADDR_IN6 sa_recv;
-    unsigned short pid, seq;
-    int read_rv = 0;
-    WSAEVENT hEvent;
-    struct ip6_pseudo_hdr *pseudo_ip6;
-    int timestamp;
-    int tmout2;
+ping6(JNIEnv *env,
+      struct sockaddr_in6* src,
+      struct sockaddr_in6* dest,
+      jint timeout)
+{
+    HANDLE hIcmpFile;
+    DWORD dwRetVal = 0;
+    char SendData[32] = {0};
+    LPVOID ReplyBuffer = NULL;
+    DWORD ReplySize = 0;
+    IP_OPTION_INFORMATION ipInfo = {255, 0, 0, 0, NULL};
+    struct sockaddr_in6 sa6Source;
 
-    /* Initialize the sequence number to a suitable random number and
-       shift right one place to allow sufficient room for increamenting. */
-    seq = ((unsigned short)rand()) >> 1;
-
-    /* icmp_id is a 16 bit data type, therefore down cast the pid */
-    pid = (unsigned short) _getpid();
-
-    size = 60*1024;
-    setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char *)&size, sizeof(size));
-    /**
-     * A TTL was specified, let's set the socket option.
-     */
-    if (ttl > 0) {
-      setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, (const char *) &ttl, sizeof(ttl));
+    hIcmpFile = Icmp6CreateFile();
+    if (hIcmpFile == INVALID_HANDLE_VALUE) {
+        NET_ThrowNew(env, WSAGetLastError(), "Unable to open handle");
+        return JNI_FALSE;
     }
 
-    /**
-     * A network interface was specified, let's bind to it.
-     */
-    if (netif != NULL) {
-      if (NET_Bind(fd, (struct sockaddr*)netif, sizeof(struct sockaddr_in6)) < 0){
-        NET_ThrowNew(env, WSAGetLastError(), "Can't bind socket to interface");
-        closesocket(fd);
+    ReplySize = sizeof(ICMPV6_ECHO_REPLY) + sizeof(SendData);
+    ReplyBuffer = (VOID*) malloc(ReplySize);
+    if (ReplyBuffer == NULL) {
+        IcmpCloseHandle(hIcmpFile);
+        NET_ThrowNew(env, WSAGetLastError(), "Unable to allocate memory");
         return JNI_FALSE;
-      }
     }
 
-    /*
-     * Make the socket non blocking
-     */
-    hEvent = WSACreateEvent();
-    WSAEventSelect(fd, hEvent, FD_READ|FD_CONNECT|FD_CLOSE);
+    //define local source information
+    sa6Source.sin6_addr = in6addr_any;
+    sa6Source.sin6_family = AF_INET6;
+    sa6Source.sin6_flowinfo = 0;
+    sa6Source.sin6_port = 0;
 
-    /**
-     * send 1 ICMP REQUEST every second until either we get a valid reply
-     * or the timeout expired.
-     */
-    do {
-      /* let's tag the ECHO packet with our pid so we can identify it */
-      timestamp = GetCurrentTime();
-      memset(sendbuf, 0, 1500);
-      icmp6 = (struct icmp6_hdr *) sendbuf;
-      icmp6->icmp6_type = ICMP6_ECHO_REQUEST;
-      icmp6->icmp6_code = 0;
-      icmp6->icmp6_id = htons(pid);
-      icmp6->icmp6_seq = htons(seq);
-      icmp6->icmp6_cksum = 0;
-      memcpy((icmp6 + 1), &timestamp, sizeof(int));
-      if (netif != NULL) {
-        memset(auxbuf, 0, 1500);
-        pseudo_ip6 = (struct ip6_pseudo_hdr*) auxbuf;
-        memcpy(&pseudo_ip6->ip6_src, &netif->sin6_addr, sizeof(struct in6_addr));
-        memcpy(&pseudo_ip6->ip6_dst, &him->sin6_addr, sizeof(struct in6_addr));
-        pseudo_ip6->ip6_plen= htonl( 64 );
-        pseudo_ip6->ip6_nxt = htonl( IPPROTO_ICMPV6 );
-        memcpy(auxbuf + sizeof(struct ip6_pseudo_hdr), icmp6, 64);
-        /**
-         * We shouldn't have to do that as computing the checksum is supposed
-         * to be done by the IPv6 stack. Unfortunately windows, here too, is
-         * uterly broken, or non compliant, so let's do it.
-         * Problem is to compute the checksum I need to know the source address
-         * which happens only if I know the interface to be used...
-         */
-        icmp6->icmp6_cksum = in_cksum((u_short *)pseudo_ip6, sizeof(struct ip6_pseudo_hdr) + 64);
-      }
+    dwRetVal = Icmp6SendEcho2(hIcmpFile,    // HANDLE IcmpHandle,
+                              NULL,         // HANDLE Event,
+                              NULL,         // PIO_APC_ROUTINE ApcRoutine,
+                              NULL,         // PVOID ApcContext,
+                              &sa6Source,   // struct sockaddr_in6 *SourceAddress,
+                              dest,         // struct sockaddr_in6 *DestinationAddress,
+                              SendData,     // LPVOID RequestData,
+                              sizeof(SendData), // WORD RequestSize,
+                              &ipInfo,      // PIP_OPTION_INFORMATION RequestOptions,
+                              ReplyBuffer,  // LPVOID ReplyBuffer,
+                              ReplySize,    // DWORD ReplySize,
+                              timeout);     // DWORD Timeout
 
-      /**
-       * Ping!
-       */
-      n = sendto(fd, sendbuf, 64, 0, (struct sockaddr*) him, sizeof(struct sockaddr_in6));
-      if (n < 0 && (WSAGetLastError() == WSAEINTR || WSAGetLastError() == WSAEADDRNOTAVAIL)) {
-        // Happens when using a "tunnel interface" for instance.
-        // Or trying to send a packet on a different scope.
-        closesocket(fd);
-        WSACloseEvent(hEvent);
+    free(ReplyBuffer);
+    IcmpCloseHandle(hIcmpFile);
+
+
+    if (dwRetVal != 0) {
+        return JNI_TRUE;
+    } else {
         return JNI_FALSE;
-      }
-      if (n < 0 && WSAGetLastError() != WSAEWOULDBLOCK) {
-        NET_ThrowNew(env, WSAGetLastError(), "Can't send ICMP packet");
-        closesocket(fd);
-        WSACloseEvent(hEvent);
-        return JNI_FALSE;
-      }
-
-      tmout2 = timeout > 1000 ? 1000 : timeout;
-      do {
-        tmout2 = NET_Wait(env, fd, NET_WAIT_READ, tmout2);
-
-        if (tmout2 >= 0) {
-          len = sizeof(sa_recv);
-          memset(recvbuf, 0, 1500);
-          /**
-           * For some unknown reason, besides plain stupidity, windows
-           * truncates the first 4 bytes of the icmpv6 header some we can't
-           * check for the ICMP_ECHOREPLY value.
-           * we'll check the other values, though
-           */
-          n = recvfrom(fd, recvbuf + 4, sizeof(recvbuf) - 4, 0, (struct sockaddr*) &sa_recv, &len);
-          icmp6 = (struct icmp6_hdr *) (recvbuf);
-          memcpy(&i, (icmp6 + 1), sizeof(int));
-          /**
-           * Is that the reply we were expecting?
-           */
-          if (n >= 8 && ntohs(icmp6->icmp6_seq) == seq &&
-              ntohs(icmp6->icmp6_id) == pid && i == timestamp) {
-            closesocket(fd);
-            WSACloseEvent(hEvent);
-            return JNI_TRUE;
-          }
-        }
-      } while (tmout2 > 0);
-      timeout -= 1000;
-      seq++;
-    } while (timeout > 0);
-    closesocket(fd);
-    WSACloseEvent(hEvent);
-    return JNI_FALSE;
+    }
 }
 #endif /* AF_INET6 */
 
@@ -482,11 +406,10 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
                                            jint ttl, jint if_scope) {
 #ifdef AF_INET6
     jbyte caddr[16];
-    jint fd, sz;
+    jint sz;
     struct sockaddr_in6 him6;
     struct sockaddr_in6* netif = NULL;
     struct sockaddr_in6 inf6;
-    WSAEVENT hEvent;
     int len = 0;
     int connect_rv = -1;
 
@@ -518,6 +441,7 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
       him6.sin6_scope_id = scope;
     }
     len = sizeof(struct sockaddr_in6);
+
     /**
      * A network interface was specified, let's convert the address
      */
@@ -532,122 +456,8 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
       netif = &inf6;
     }
 
-#if 0
-    /*
-     * Windows implementation of ICMP & RAW sockets is too unreliable for now.
-     * Therefore it's best not to try it at all and rely only on TCP
-     * We may revisit and enable this code in the future.
-     */
+    return ping6(env, netif, &him6, timeout);
 
-    /*
-     * Right now, windows doesn't generate the ICMP checksum automatically
-     * so we have to compute it, but we can do it only if we know which
-     * interface will be used. Therefore, don't try to use ICMP if no
-     * interface was specified.
-     * When ICMPv6 support improves in windows, we may change this.
-     */
-    if (!(IS_NULL(ifArray))) {
-      /*
-       * If we can create a RAW socket, then when can use the ICMP ECHO_REQUEST
-       * otherwise we'll try a tcp socket to the Echo port (7).
-       * Note that this is empiric, and not connecting could mean it's blocked
-       * or the echo servioe has been disabled.
-       */
-      fd = NET_Socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
-
-      if (fd != -1) { /* Good to go, let's do a ping */
-        return ping6(env, fd, &him6, timeout, netif, ttl);
-      }
-    }
-#endif
-
-    /* No good, let's fall back on TCP */
-    fd = NET_Socket(AF_INET6, SOCK_STREAM, 0);
-    if (fd == SOCKET_ERROR) {
-        /* note: if you run out of fds, you may not be able to load
-         * the exception class, and get a NoClassDefFoundError
-         * instead.
-         */
-        NET_ThrowNew(env, errno, "Can't create socket");
-        return JNI_FALSE;
-    }
-
-    /**
-     * A TTL was specified, let's set the socket option.
-     */
-    if (ttl > 0) {
-      setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, (const char *)&ttl, sizeof(ttl));
-    }
-
-    /**
-     * A network interface was specified, let's bind to it.
-     */
-    if (netif != NULL) {
-      if (NET_Bind(fd, (struct sockaddr*)netif, sizeof(struct sockaddr_in6)) < 0) {
-        NET_ThrowNew(env, WSAGetLastError(), "Can't bind socket to interface");
-        closesocket(fd);
-        return JNI_FALSE;
-      }
-    }
-
-    /**
-     * Make the socket non blocking.
-     */
-    hEvent = WSACreateEvent();
-    WSAEventSelect(fd, hEvent, FD_READ|FD_CONNECT|FD_CLOSE);
-
-    /* no need to use NET_Connect as non-blocking */
-    him6.sin6_port = htons((short) 7); /* Echo port */
-    connect_rv = connect(fd, (struct sockaddr *)&him6, len);
-
-    /**
-     * connection established or refused immediately, either way it means
-     * we were able to reach the host!
-     */
-    if (connect_rv == 0 || WSAGetLastError() == WSAECONNREFUSED) {
-        WSACloseEvent(hEvent);
-        closesocket(fd);
-        return JNI_TRUE;
-    } else {
-        int optlen;
-
-        switch (WSAGetLastError()) {
-        case WSAEHOSTUNREACH:   /* Host Unreachable */
-        case WSAENETUNREACH:    /* Network Unreachable */
-        case WSAENETDOWN:       /* Network is down */
-        case WSAEPFNOSUPPORT:   /* Protocol Family unsupported */
-          WSACloseEvent(hEvent);
-          closesocket(fd);
-          return JNI_FALSE;
-        }
-
-        if (WSAGetLastError() != WSAEWOULDBLOCK) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
-                                         "connect failed");
-            WSACloseEvent(hEvent);
-            closesocket(fd);
-            return JNI_FALSE;
-        }
-
-        timeout = NET_Wait(env, fd, NET_WAIT_CONNECT, timeout);
-
-        if (timeout >= 0) {
-          /* has connection been established? */
-          optlen = sizeof(connect_rv);
-          if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
-                         &optlen) <0) {
-            connect_rv = WSAGetLastError();
-          }
-
-          if (connect_rv == 0 || connect_rv == WSAECONNREFUSED) {
-            WSACloseEvent(hEvent);
-            closesocket(fd);
-            return JNI_TRUE;
-          }
-        }
-    }
-    WSACloseEvent(hEvent);
-    closesocket(fd);
 #endif /* AF_INET6 */
     return JNI_FALSE;
 }
