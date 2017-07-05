@@ -61,18 +61,10 @@ public class WFontConfiguration extends FontConfiguration {
              * been opened and its fonts loaded.
              * Also note this usage is only enabled if a private flag is set.
              */
-            if ("98".equals(osName) || "Me".equals(osName)) {
-                localeMap.put("dialoginput.plain.japanese", "\uff2d\uff33 \u660e\u671d");
-                localeMap.put("dialoginput.bold.japanese", "\uff2d\uff33 \u660e\u671d");
-                localeMap.put("dialoginput.italic.japanese", "\uff2d\uff33 \u660e\u671d");
-                localeMap.put("dialoginput.bolditalic.japanese", "\uff2d\uff33 \u660e\u671d");
-            } else {
-
-                localeMap.put("dialoginput.plain.japanese", "MS Mincho");
-                localeMap.put("dialoginput.bold.japanese", "MS Mincho");
-                localeMap.put("dialoginput.italic.japanese", "MS Mincho");
-                localeMap.put("dialoginput.bolditalic.japanese", "MS Mincho");
-            }
+            localeMap.put("dialoginput.plain.japanese", "MS Mincho");
+            localeMap.put("dialoginput.bold.japanese", "MS Mincho");
+            localeMap.put("dialoginput.italic.japanese", "MS Mincho");
+            localeMap.put("dialoginput.bolditalic.japanese", "MS Mincho");
         }
         reorderMap = new HashMap();
         reorderMap.put("UTF-8.hi", "devanagari");

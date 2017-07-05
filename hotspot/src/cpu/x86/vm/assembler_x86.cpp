@@ -1438,26 +1438,12 @@ void Assembler::lock() {
   }
 }
 
-// Serializes memory.
+// Emit mfence instruction
 void Assembler::mfence() {
-    // Memory barriers are only needed on multiprocessors
-  if (os::is_MP()) {
-    if( LP64_ONLY(true ||) VM_Version::supports_sse2() ) {
-      emit_byte( 0x0F );                // MFENCE; faster blows no regs
-      emit_byte( 0xAE );
-      emit_byte( 0xF0 );
-    } else {
-      // All usable chips support "locked" instructions which suffice
-      // as barriers, and are much faster than the alternative of
-      // using cpuid instruction. We use here a locked add [esp],0.
-      // This is conveniently otherwise a no-op except for blowing
-      // flags (which we save and restore.)
-      pushf();                // Save eflags register
-      lock();
-      addl(Address(rsp, 0), 0);// Assert the lock# signal here
-      popf();                 // Restore eflags register
-    }
-  }
+  NOT_LP64(assert(VM_Version::supports_sse2(), "unsupported");)
+  emit_byte( 0x0F );
+  emit_byte( 0xAE );
+  emit_byte( 0xF0 );
 }
 
 void Assembler::mov(Register dst, Register src) {
@@ -2187,6 +2173,31 @@ void Assembler::orl(Register dst, Register src) {
   emit_arith(0x0B, 0xC0, dst, src);
 }
 
+void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
+  assert(VM_Version::supports_sse4_2(), "");
+
+  InstructionMark im(this);
+  emit_byte(0x66);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x3A);
+  emit_byte(0x61);
+  emit_operand(dst, src);
+  emit_byte(imm8);
+}
+
+void Assembler::pcmpestri(XMMRegister dst, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_sse4_2(), "");
+
+  emit_byte(0x66);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x3A);
+  emit_byte(0x61);
+  emit_byte(0xC0 | encode);
+  emit_byte(imm8);
+}
+
 // generic
 void Assembler::pop(Register dst) {
   int encode = prefix_and_encode(dst->encoding());
@@ -2342,6 +2353,29 @@ void Assembler::psrlq(XMMRegister dst, int shift) {
   emit_byte(0x73);
   emit_byte(0xC0 | encode);
   emit_byte(shift);
+}
+
+void Assembler::ptest(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_sse4_1(), "");
+
+  InstructionMark im(this);
+  emit_byte(0x66);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x38);
+  emit_byte(0x17);
+  emit_operand(dst, src);
+}
+
+void Assembler::ptest(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_sse4_1(), "");
+
+  emit_byte(0x66);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x38);
+  emit_byte(0x17);
+  emit_byte(0xC0 | encode);
 }
 
 void Assembler::punpcklbw(XMMRegister dst, XMMRegister src) {
@@ -7218,7 +7252,7 @@ void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
 // On failure, execution transfers to the given label.
 void MacroAssembler::lookup_interface_method(Register recv_klass,
                                              Register intf_klass,
-                                             RegisterConstant itable_index,
+                                             RegisterOrConstant itable_index,
                                              Register method_result,
                                              Register scan_temp,
                                              Label& L_no_such_interface) {
@@ -7303,7 +7337,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure,
                                                    Label* L_slow_path,
-                                        RegisterConstant super_check_offset) {
+                                        RegisterOrConstant super_check_offset) {
   assert_different_registers(sub_klass, super_klass, temp_reg);
   bool must_load_sco = (super_check_offset.constant_or_zero() == -1);
   if (super_check_offset.is_register()) {
@@ -7352,7 +7386,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   if (must_load_sco) {
     // Positive movl does right thing on LP64.
     movl(temp_reg, super_check_offset_addr);
-    super_check_offset = RegisterConstant(temp_reg);
+    super_check_offset = RegisterOrConstant(temp_reg);
   }
   Address super_check_addr(sub_klass, super_check_offset, Address::times_1, 0);
   cmpptr(super_klass, super_check_addr); // load displayed supertype
@@ -7550,12 +7584,12 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
 }
 
 
-RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
-                                               Register tmp,
-                                               int offset) {
+RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
+                                                      Register tmp,
+                                                      int offset) {
   intptr_t value = *delayed_value_addr;
   if (value != 0)
-    return RegisterConstant(value + offset);
+    return RegisterOrConstant(value + offset);
 
   // load indirectly to solve generation ordering problem
   movptr(tmp, ExternalAddress((address) delayed_value_addr));
@@ -7571,7 +7605,7 @@ RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
   if (offset != 0)
     addptr(tmp, offset);
 
-  return RegisterConstant(tmp);
+  return RegisterOrConstant(tmp);
 }
 
 

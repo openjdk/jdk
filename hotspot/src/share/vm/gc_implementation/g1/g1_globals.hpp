@@ -185,14 +185,8 @@
   product(intx, G1InefficientPausePct, 80,                                  \
           "Threshold of an 'inefficient' pauses (as % of cum efficiency.")  \
                                                                             \
-  product(intx, G1RSPopLimit, 32768,                                        \
-          "Limit that defines popularity.  Should go away! XXX")            \
-                                                                            \
   develop(bool, G1RSCountHisto, false,                                      \
           "If true, print a histogram of RS occupancies after each pause")  \
-                                                                            \
-  product(intx, G1ObjPopLimit, 256,                                         \
-          "Limit that defines popularity for an object.")                   \
                                                                             \
   product(bool, G1TraceFileOverwrite, false,                                \
           "Allow the trace file to be overwritten")                         \
@@ -200,16 +194,6 @@
   develop(intx, G1PrintRegionLivenessInfo, 0,                               \
           "When > 0, print the occupancies of the <n> best and worst"       \
           "regions.")                                                       \
-                                                                            \
-  develop(bool, G1TracePopularity, false,                                   \
-          "When true, provide detailed tracing of popularity.")             \
-                                                                            \
-  product(bool, G1SummarizePopularity, false,                               \
-          "When true, provide end-of-run-summarization of popularity.")     \
-                                                                            \
-  product(intx, G1NumPopularRegions, 1,                                     \
-          "Number of regions reserved to hold popular objects.  "           \
-          "Should go away later.")                                          \
                                                                             \
   develop(bool, G1PrintParCleanupStats, false,                              \
           "When true, print extra stats about parallel cleanup.")           \
