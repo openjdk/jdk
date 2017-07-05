@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,16 @@
 
 package java.awt;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URI;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.awt.AWTPermission;
-import java.awt.GraphicsEnvironment;
-import java.awt.HeadlessException;
 import java.awt.peer.DesktopPeer;
-import sun.awt.SunToolkit;
-import sun.awt.HeadlessToolkit;
+import java.io.File;
 import java.io.FilePermission;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+
+import sun.awt.SunToolkit;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -122,7 +119,11 @@ public class Desktop {
      * Suppresses default constructor for noninstantiability.
      */
     private Desktop() {
-        peer = Toolkit.getDefaultToolkit().createDesktopPeer(this);
+        Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
+        // same cast as in isDesktopSupported()
+        if (defaultToolkit instanceof SunToolkit) {
+            peer = ((SunToolkit) defaultToolkit).createDesktopPeer(this);
+        }
     }
 
     /**

@@ -57,6 +57,7 @@ import javax.swing.plaf.*;
 import static javax.swing.ClientPropertyKey.*;
 import javax.accessibility.*;
 
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIClientPropertyKey;
@@ -4218,9 +4219,10 @@ public abstract class JComponent extends Container implements Serializable,
      * @param c  the {@code Component} to be checked
      * @return true if this component is lightweight
      */
-    @SuppressWarnings("deprecation")
     public static boolean isLightweightComponent(Component c) {
-        return c.getPeer() instanceof LightweightPeer;
+        // TODO we cannot call c.isLightweight() because it is incorrectly
+        // overriden in DelegateContainer on osx.
+        return AWTAccessor.getComponentAccessor().isLightweight(c);
     }
 
 
@@ -5033,7 +5035,6 @@ public abstract class JComponent extends Container implements Serializable,
         this.paintingChild = paintingChild;
     }
 
-    @SuppressWarnings("deprecation")
     void _paintImmediately(int x, int y, int w, int h) {
         Graphics g;
         Container c;
@@ -5159,7 +5160,7 @@ public abstract class JComponent extends Container implements Serializable,
         }
 
         // If the clip width or height is negative, don't bother painting
-        if(c == null || c.getPeer() == null ||
+        if(c == null || !c.isDisplayable() ||
                         paintImmediatelyClip.width <= 0 ||
                         paintImmediatelyClip.height <= 0) {
             recycleRectangle(paintImmediatelyClip);

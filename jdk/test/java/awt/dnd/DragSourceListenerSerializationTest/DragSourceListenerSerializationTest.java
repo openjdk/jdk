@@ -74,7 +74,6 @@ public class DragSourceListenerSerializationTest {
                 new Point(100, 100),
                 Arrays.asList(me));
         DragSourceContext dsc = new DragSourceContext(
-                Toolkit.getDefaultToolkit().createDragSourceContextPeer(dge),
                 dge,
                 new Cursor(Cursor.HAND_CURSOR),
                 null, null, new StringSelection("TEXT"), null);

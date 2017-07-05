@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,15 +58,14 @@ class WPrintDialog extends Dialog {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized(getTreeLock()) {
             Container parent = getParent();
-            if (parent != null && parent.getPeer() == null) {
+            if (parent != null && !parent.isDisplayable()) {
                 parent.addNotify();
             }
 
-            if (getPeer() == null) {
+            if (!isDisplayable()) {
                 ComponentPeer peer = ((WToolkit)Toolkit.getDefaultToolkit()).
                     createWPrintDialog(this);
                 setPeer(peer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,6 +730,15 @@ public class LayerUI<V extends Component>
      * This method is to be overridden instead of {@code JLayer.imageUpdate}.
      * <p>
      * <b>Note:</b> This method is usually called <b>not</b> on the Event Dispatching Thread.
+     *
+     * @param img the image being observed
+     * @param infoflags see imageUpdate for information
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @param w the width
+     * @param h the height
+     * @param l a {@code JLayer} component
+     * @return false if the infoflags indicate that the image is completely loaded; true otherwise
      */
     public boolean imageUpdate(Image img, int infoflags, int x, int y, int w, int h, JLayer<? extends V> l) {
         return l.imageUpdate(img, infoflags, x, y, w, h);

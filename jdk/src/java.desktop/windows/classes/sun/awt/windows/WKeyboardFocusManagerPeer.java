@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package sun.awt.windows;
 import java.awt.Window;
 import java.awt.Component;
 import java.awt.peer.ComponentPeer;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.KeyboardFocusManagerPeerImpl;
 import sun.awt.CausedFocusEvent;
 
@@ -46,9 +49,9 @@ final class WKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void setCurrentFocusOwner(Component comp) {
-        setNativeFocusOwner(comp != null ? comp.getPeer() : null);
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        setNativeFocusOwner(comp != null ? acc.getPeer(comp) : null);
     }
 
     @Override

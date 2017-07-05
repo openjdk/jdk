@@ -26,7 +26,6 @@
 package sun.awt;
 
 import java.awt.AWTEvent;
-
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
@@ -34,9 +33,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import sun.awt.util.ThreadGroupUtils;
 import sun.misc.InnocuousThread;
 import sun.util.logging.PlatformLogger;
-import sun.awt.util.ThreadGroupUtils;
 
 /**
  * This class is to let AWT shutdown automatically when a user is done
@@ -218,10 +217,7 @@ public final class AWTAutoShutdown implements Runnable {
         synchronized (activationLock) {
             synchronized (mainLock) {
                 if (!isReadyToShutdown() && blockerThread == null) {
-                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                        activateBlockerThread();
-                        return null;
-                    });
+                    activateBlockerThread();
                 } else {
                     mainLock.notifyAll();
                     timeoutPassed = false;
@@ -337,21 +333,22 @@ public final class AWTAutoShutdown implements Runnable {
     /**
      * Creates and starts a new blocker thread. Doesn't return until
      * the new blocker thread starts.
-     *
-     * Must be called with {@link sun.security.util.SecurityConstants#MODIFY_THREADGROUP_PERMISSION}
      */
     private void activateBlockerThread() {
-        Thread thread;
-        String name =  "AWT-Shutdown";
-        if (System.getSecurityManager() == null) {
-            thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this, name);
-        } else {
-            thread = new InnocuousThread(this, name);
-        }
-        thread.setContextClassLoader(null);
-        thread.setDaemon(false);
-        blockerThread = thread;
-        thread.start();
+        AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+            Thread thread;
+            String name = "AWT-Shutdown";
+            if (System.getSecurityManager() == null) {
+                thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this,
+                                    name);
+            } else {
+                thread = new InnocuousThread(this, name);
+            }
+            thread.setContextClassLoader(null);
+            thread.setDaemon(false);
+            blockerThread = thread;
+            return thread;
+        }).start();
         try {
             /* Wait for the blocker thread to start. */
             mainLock.wait();

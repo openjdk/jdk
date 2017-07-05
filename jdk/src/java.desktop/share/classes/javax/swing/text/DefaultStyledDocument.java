@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * structure (i.e. the structure reported by the
      * <code>getDefaultRootElement</code> method.  If the
      * document contained any data it will first be removed.
+     * @param data the element data
      */
     protected void create(ElementSpec[] data) {
         try {
@@ -1104,6 +1105,9 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      */
     public static final int BUFFER_SIZE_DEFAULT = 4096;
 
+    /**
+     * The element buffer.
+     */
     protected ElementBuffer buffer;
 
     /** Styles listening to. */
@@ -2524,6 +2528,12 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * Element.
      */
     public static class AttributeUndoableEdit extends AbstractUndoableEdit {
+        /**
+         * Constructs an {@code AttributeUndoableEdit}.
+         * @param element the element
+         * @param newAttributes the new attributes
+         * @param isReplacing true if all the attributes in the element were removed first.
+         */
         public AttributeUndoableEdit(Element element, AttributeSet newAttributes,
                               boolean isReplacing) {
             super();
@@ -2561,13 +2571,21 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             as.addAttributes(copy);
         }
 
-        // AttributeSet containing additional entries, must be non-mutable!
+        /**
+         * AttributeSet containing additional entries, must be non-mutable!
+         */
         protected AttributeSet newAttributes;
-        // Copy of the AttributeSet the Element contained.
+        /**
+         * Copy of the AttributeSet the Element contained.
+         */
         protected AttributeSet copy;
-        // true if all the attributes in the element were removed first.
+        /**
+         * true if all the attributes in the element were removed first.
+         */
         protected boolean isReplacing;
-        // Efected Element.
+        /**
+         * Affected Element.
+         */
         protected Element element;
     }
 

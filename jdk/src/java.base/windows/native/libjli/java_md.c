@@ -970,7 +970,7 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
 }
 
 void
-PostJVMInit(JNIEnv *env, jstring mainClass, JavaVM *vm)
+PostJVMInit(JNIEnv *env, jclass mainClass, JavaVM *vm)
 {
     // stubbed out for windows and *nixes.
 }

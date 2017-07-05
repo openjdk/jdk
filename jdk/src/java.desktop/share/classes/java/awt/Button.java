@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,13 +168,12 @@ public class Button extends Component implements Accessible {
      * application to change the look of the button without changing
      * its functionality.
      *
-     * @see     java.awt.Toolkit#createButton(java.awt.Button)
      * @see     java.awt.Component#getToolkit()
      */
     public void addNotify() {
         synchronized(getTreeLock()) {
             if (peer == null)
-                peer = getToolkit().createButton(this);
+                peer = getComponentFactory().createButton(this);
             super.addNotify();
         }
     }
