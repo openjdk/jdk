@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,21 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4495188
- * @summary static and policy permissions should not be checked separately
+/**
+ * Verify that JSAdapter __getIds__ works as expected.
  *
- * @run main/othervm/policy=CombinedPerms.policy CombinedPerms
+ * @test
+ * @run
  */
 
-import java.security.*;
-import java.net.*;
-import java.util.*;
-
-public class CombinedPerms {
-
-    public static void main(String[] args) throws Exception {
-
-        String host = "localhost";
-
-        URL u = new URL("file:/tmp/duke");
-        CodeSource cs =
-            new CodeSource(u, (java.security.cert.Certificate[]) null);
-        Permissions p = new Permissions();
-        p.add(new SocketPermission(host, "connect"));
-        ProtectionDomain pd = new ProtectionDomain(cs, p, null, null);
-
-        if (pd.implies(new SocketPermission(host, "connect,accept"))) {
-            System.out.println("Test Passed");
-        } else {
-            throw new SecurityException("Test Failed");
-        }
+var obj = new JSAdapter() {
+    __getIds__: function() {
+        print("__getIds__ called");
+        return [ "foo", "bar" ];
     }
+};
+
+// calls __getIds__
+for (i in obj) {
+    print(i);
 }
