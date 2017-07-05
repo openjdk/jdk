@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
 
 

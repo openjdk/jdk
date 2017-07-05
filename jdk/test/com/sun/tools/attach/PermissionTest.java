@@ -34,7 +34,7 @@ import jdk.testlibrary.ProcessThread;
  * @bug 6173612 6273707 6277253 6335921 6348630 6342019 6381757
  * @summary Basic unit tests for the VM attach mechanism.
  * @library /lib/testlibrary
- * @run build Application Shutdown
+ * @run build jdk.testlibrary.* Application Shutdown
  * @run main PermissionTest
  *
  * Unit test for Attach API -

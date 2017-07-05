@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ import sun.management.MemoryNotifInfoCompositeData;
  *       Subsequent crossing of the usage threshold value does not cause
  *       further notification until the memory usage has returned
  *       to become less than the usage threshold value.
- *       <p></li>
+ *       </li>
  *   <li>A {@link #MEMORY_COLLECTION_THRESHOLD_EXCEEDED
  *       collection usage threshold exceeded notification}.
  *       <br>This notification will be emitted when

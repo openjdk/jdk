@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
@@ -403,7 +404,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(Label& stack_ov
   BLOCK_COMMENT("compute_interpreter_state {");
 
   // access_flags = method->access_flags();
-  // TODO: PPC port: assert(4 == methodOopDesc::sz_access_flags(), "unexpected field size");
+  // TODO: PPC port: assert(4 == sizeof(AccessFlags), "unexpected field size");
   __ lwa(access_flags, method_(access_flags));
 
   // parameter_count = method->constMethod->size_of_parameters();
@@ -419,10 +420,8 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(Label& stack_ov
   // TODO: PPC port: assert(2 == ConstMethod::sz_max_stack(), "unexpected field size");
   __ lhz(max_stack, in_bytes(ConstMethod::max_stack_offset()), max_stack);
 
-  if (EnableInvokeDynamic) {
-    // Take into account 'extra_stack_entries' needed by method handles (see method.hpp).
+  // Take into account 'extra_stack_entries' needed by method handles (see method.hpp).
     __ addi(max_stack, max_stack, Method::extra_stack_entries());
-  }
 
   // mem_stack_limit = thread->stack_limit();
   __ ld(mem_stack_limit, thread_(stack_overflow_limit));
@@ -1055,7 +1054,7 @@ address CppInterpreterGenerator::generate_native_entry(void) {
   assert(access_flags->is_nonvolatile(),
          "access_flags must be in a non-volatile register");
   // Type check.
-  // TODO: PPC port: assert(4 == methodOopDesc::sz_access_flags(), "unexpected field size");
+  // TODO: PPC port: assert(4 == sizeof(AccessFlags), "unexpected field size");
   __ lwz(access_flags, method_(access_flags));
 
   // We don't want to reload R19_method and access_flags after calls
@@ -1838,7 +1837,7 @@ address CppInterpreterGenerator::generate_normal_entry(void) {
   // Interpreter state fields.
   const Register msg               = R24_tmp4;
 
-  // MethodOop fields.
+  // Method fields.
   const Register parameter_count   = R25_tmp5;
   const Register result_index      = R26_tmp6;
 
@@ -2023,7 +2022,7 @@ address CppInterpreterGenerator::generate_normal_entry(void) {
   __ add(R17_tos, R17_tos, parameter_count);
 
   // Result stub address array index
-  // TODO: PPC port: assert(4 == methodOopDesc::sz_result_index(), "unexpected field size");
+  // TODO: PPC port: assert(4 == sizeof(AccessFlags), "unexpected field size");
   __ lwa(result_index, method_(result_index));
 
   __ li(msg, BytecodeInterpreter::method_resume);
@@ -2709,7 +2708,7 @@ address CppInterpreterGenerator::generate_normal_entry(void) {
   __ ld(R3_ARG1, state_(_result._osr._osr_buf));
   __ mtctr(R12_scratch2);
 
-  // Load method oop, gc may move it during execution of osr'd method.
+  // Load method, gc may move it during execution of osr'd method.
   __ ld(R22_tmp2, state_(_method));
   // Load message 'call_method'.
   __ li(R23_tmp3, BytecodeInterpreter::call_method);

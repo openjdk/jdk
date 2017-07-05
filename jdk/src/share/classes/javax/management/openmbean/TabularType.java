@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class TabularType extends OpenType<TabularData> {
      * The Java class name of tabular data values this tabular type represents
      * (ie the class name returned by the {@link OpenType#getClassName() getClassName} method)
      * is set to the string value returned by <code>TabularData.class.getName()</code>.
-     * <p>
+     *
      * @param  typeName  The name given to the tabular type this instance represents; cannot be a null or empty string.
      * <br>&nbsp;
      * @param  description  The human readable description of the tabular type this instance represents;

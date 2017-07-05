@@ -898,7 +898,7 @@ source_hpp %{
   // To keep related declarations/definitions/uses close together,
   // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
-  // Returns true if Node n is followed by a MemBar node that 
+  // Returns true if Node n is followed by a MemBar node that
   // will do an acquire. If so, this node must not do the acquire
   // operation.
   bool followed_by_acquire(const Node *n);
@@ -908,7 +908,7 @@ source %{
 
 // Optimize load-acquire.
 //
-// Check if acquire is unnecessary due to following operation that does 
+// Check if acquire is unnecessary due to following operation that does
 // acquire anyways.
 // Walk the pattern:
 //
@@ -919,12 +919,12 @@ source %{
 //  Proj(ctrl)  Proj(mem)
 //       |         |
 //   MemBarRelease/Volatile
-// 
+//
 bool followed_by_acquire(const Node *load) {
   assert(load->is_Load(), "So far implemented only for loads.");
 
   // Find MemBarAcquire.
-  const Node *mba = NULL;         
+  const Node *mba = NULL;
   for (DUIterator_Fast imax, i = load->fast_outs(imax); i < imax; i++) {
     const Node *out = load->fast_out(i);
     if (out->Opcode() == Op_MemBarAcquire) {
@@ -937,7 +937,7 @@ bool followed_by_acquire(const Node *load) {
 
   // Find following MemBar node.
   //
-  // The following node must be reachable by control AND memory 
+  // The following node must be reachable by control AND memory
   // edge to assure no other operations are in between the two nodes.
   //
   // So first get the Proj node, mem_proj, to use it to iterate forward.
@@ -1135,6 +1135,7 @@ class CallStubImpl {
 
  public:
 
+  // Emit call stub, compiled java to interpreter.
   static void emit_trampoline_stub(MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset);
 
   // Size of call trampoline stub.
@@ -2755,7 +2756,7 @@ encode %{
       // inputs for new nodes
       m1->add_req(NULL, n_toc);
       m2->add_req(NULL, m1);
-      
+
       // operands for new nodes
       m1->_opnds[0] = new (C) iRegPdstOper(); // dst
       m1->_opnds[1] = op_src;                 // src
@@ -2763,29 +2764,29 @@ encode %{
       m2->_opnds[0] = new (C) iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;                 // src
       m2->_opnds[2] = new (C) iRegLdstOper(); // base
-      
+
       // Initialize ins_attrib TOC fields.
       m1->_const_toc_offset = -1;
       m2->_const_toc_offset_hi_node = m1;
-      
+
       // Register allocation for new nodes.
       ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      
+
       nodes->push(m1);
       nodes->push(m2);
       assert(m2->bottom_type()->isa_ptr(), "must be ptr");
     } else {
       loadConPNode *m2 = new (C) loadConPNode();
-      
+
       // inputs for new nodes
       m2->add_req(NULL, n_toc);
-      
+
       // operands for new nodes
       m2->_opnds[0] = new (C) iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;                 // src
       m2->_opnds[2] = new (C) iRegPdstOper(); // toc
-      
+
       // Register allocation for new nodes.
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
@@ -2977,17 +2978,17 @@ encode %{
       n_sub_base->_opnds[1] = op_crx;
       n_sub_base->_opnds[2] = op_src;
       n_sub_base->_bottom_type = _bottom_type;
-   
+
       n_shift->add_req(n_region, n_sub_base);
       n_shift->_opnds[0] = op_dst;
       n_shift->_opnds[1] = op_dst;
       n_shift->_bottom_type = _bottom_type;
-   
+
       ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
       ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
       ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
       ra_->set_pair(n_move->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-   
+
       nodes->push(n_move);
       nodes->push(n_compare);
       nodes->push(n_sub_base);
@@ -3064,20 +3065,20 @@ encode %{
     } else {
       // before Power 7
       cond_add_baseNode *n_add_base = new (C) cond_add_baseNode();
-     
+
       n_add_base->add_req(n_region, n_compare, n_shift);
       n_add_base->_opnds[0] = op_dst;
       n_add_base->_opnds[1] = op_crx;
       n_add_base->_opnds[2] = op_dst;
       n_add_base->_bottom_type = _bottom_type;
-     
+
       assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
       ra_->set_oop(n_add_base, true);
-     
+
       ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
       ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
       ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-     
+
       nodes->push(n_compare);
       nodes->push(n_shift);
       nodes->push(n_add_base);
@@ -3634,11 +3635,11 @@ encode %{
     // Req...
     for (uint i = 0; i < req(); ++i) {
       // The expanded node does not need toc any more.
-      // Add the inline cache constant here instead.  This expresses the 
+      // Add the inline cache constant here instead. This expresses the
       // register of the inline cache must be live at the call.
       // Else we would have to adapt JVMState by -1.
       if (i == mach_constant_base_node_input()) {
-        call->add_req(loadConLNodes_IC._last);        
+        call->add_req(loadConLNodes_IC._last);
       } else {
         call->add_req(in(i));
       }
@@ -3666,6 +3667,8 @@ encode %{
   %}
 
   // Compound version of call dynamic
+  // Toc is only passed so that it can be used in ins_encode statement.
+  // In the code we have to use $constanttablebase.
   enc_class enc_java_dynamic_call(method meth, iRegLdst toc) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     MacroAssembler _masm(&cbuf);
@@ -3673,14 +3676,17 @@ encode %{
 
     Register Rtoc = (ra_) ? $constanttablebase : R2_TOC;
 #if 0
+    int vtable_index = this->_vtable_index;
     if (_vtable_index < 0) {
       // Must be invalid_vtable_index, not nonvirtual_vtable_index.
       assert(_vtable_index == Method::invalid_vtable_index, "correct sentinel value");
       Register ic_reg = as_Register(Matcher::inline_cache_reg_encode());
-      AddressLiteral meta = __ allocate_metadata_address((Metadata *)Universe::non_oop_word());
 
+      // Virtual call relocation will point to ic load.
       address virtual_call_meta_addr = __ pc();
-      __ load_const_from_method_toc(ic_reg, meta, Rtoc);
+      // Load a clear inline cache.
+      AddressLiteral empty_ic((address) Universe::non_oop_word());
+      __ load_const_from_method_toc(ic_reg, empty_ic, Rtoc);
       // CALL to fixup routine.  Fixup routine uses ScopeDesc info
       // to determine who we intended to call.
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
@@ -3713,7 +3719,6 @@ encode %{
              "Fix constant in ret_addr_offset()");
     }
 #endif
-    guarantee(0, "Fix handling of toc edge: messes up derived/base pairs.");
     Unimplemented();  // ret_addr_offset not yet fixed. Depends on compressed oops (load klass!).
   %}
 
@@ -5439,7 +5444,7 @@ instruct loadI_ac(iRegIdst dst, memory mem) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Match loading integer and casting it to unsigned int in 
+// Match loading integer and casting it to unsigned int in
 // long register.
 // LoadI + ConvI2L + AndL 0xffffffff.
 instruct loadUI2L(iRegLdst dst, memory mem, immL_32bits mask) %{
@@ -6081,7 +6086,7 @@ instruct loadConNKlass_hi(iRegNdst dst, immNKlass src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// This needs a match rule so that build_oop_map knows this is 
+// This needs a match rule so that build_oop_map knows this is
 // not a narrow oop.
 instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   match(Set dst src1);
@@ -6705,7 +6710,7 @@ instruct cond_set_0_oop(iRegNdst dst, flagsReg crx, iRegPsrc src1) %{
   size(4);
   ins_encode %{
     // This is a Power7 instruction for which no machine description exists.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound); 
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -6850,7 +6855,7 @@ instruct cond_set_0_ptr(iRegPdst dst, flagsReg crx, iRegPsrc src1) %{
   size(4);
   ins_encode %{
     // This is a Power7 instruction for which no machine description exists.
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound); 
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7067,7 +7072,7 @@ instruct decodeNKlass_notNull_addBase_Ex(iRegPdst dst, iRegLsrc base, iRegNsrc s
     n1->_bottom_type = _bottom_type;
 
     decodeNKlass_shiftNode *n2 = new (C) decodeNKlass_shiftNode();
-    n2->add_req(n_region, n2);
+    n2->add_req(n_region, n1);
     n2->_opnds[0] = op_dst;
     n2->_opnds[1] = op_dst;
     n2->_bottom_type = _bottom_type;
@@ -7202,7 +7207,7 @@ instruct membar_volatile() %{
 //  inline_unsafe_load_store).
 //
 // Add this node again if we found a good solution for inline_unsafe_load_store().
-// Don't forget to look at the implementation of post_store_load_barrier again, 
+// Don't forget to look at the implementation of post_store_load_barrier again,
 // we did other fixes in that method.
 //instruct unnecessary_membar_volatile() %{
 //  match(MemBarVolatile);
@@ -7240,7 +7245,7 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsReg crx, iRegIdst dst, iRegIsrc src) %{
     // exists. Anyways, the scheduler should be off on Power7.
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
-    __ isel($dst$$Register, $crx$$CondRegister, 
+    __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7286,7 +7291,7 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsReg crx, iRegLdst dst, iRegLsrc src) %{
     // exists. Anyways, the scheduler should be off on Power7.
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
-    __ isel($dst$$Register, $crx$$CondRegister, 
+    __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7332,7 +7337,7 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsReg crx, iRegNdst dst, iRegNsrc src) %{
     // exists. Anyways, the scheduler should be off on Power7.
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
-    __ isel($dst$$Register, $crx$$CondRegister, 
+    __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7379,7 +7384,7 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsReg crx, iRegPdst dst, iRegPsrc src) %{
     // exists. Anyways, the scheduler should be off on Power7.
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     int cc        = $cmp$$cmpcode;
-    __ isel($dst$$Register, $crx$$CondRegister, 
+    __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -7525,8 +7530,8 @@ instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, 
-                MacroAssembler::MemBarFenceAfter, MacroAssembler::cmpxchgx_hint_atomic_update(), 
+    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+                MacroAssembler::MemBarFenceAfter, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, true);
   %}
   ins_pipe(pipe_class_default);
@@ -7932,7 +7937,23 @@ instruct subL_reg_imm16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
 
 // Turn the sign-bit of a long into a 64-bit mask, 0x0...0 for
 // positive longs and 0xF...F for negative ones.
-instruct signmask64I_regI(iRegIdst dst, iRegIsrc src) %{
+instruct signmask64I_regL(iRegIdst dst, iRegLsrc src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE src);
+  predicate(false);
+
+  format %{ "SRADI   $dst, $src, #63" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_sradi);
+    __ sradi($dst$$Register, $src$$Register, 0x3f);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Turn the sign-bit of a long into a 64-bit mask, 0x0...0 for
+// positive longs and 0xF...F for negative ones.
+instruct signmask64L_regL(iRegLdst dst, iRegLsrc src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE src);
   predicate(false);
@@ -8896,7 +8917,7 @@ instruct andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src1, immIpowerOf2 src2) %
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rlwinm);
-    __ rlwinm($dst$$Register, $src1$$Register, 0, 
+    __ rlwinm($dst$$Register, $src1$$Register, 0,
               (31-log2_long((jlong) $src2$$constant)) & 0x1f, (31-log2_long((jlong) $src2$$constant)) & 0x1f);
   %}
   ins_pipe(pipe_class_default);
@@ -9622,14 +9643,14 @@ instruct cmpLTMask_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_cost(DEFAULT_COST*4);
 
   expand %{
-    iRegIdst src1s;
-    iRegIdst src2s;
-    iRegIdst diff;
-    sxtI_reg(src1s, src1); // ensure proper sign extention
-    sxtI_reg(src2s, src2); // ensure proper sign extention
-    subI_reg_reg(diff, src1s, src2s);
+    iRegLdst src1s;
+    iRegLdst src2s;
+    iRegLdst diff;
+    convI2L_reg(src1s, src1); // Ensure proper sign extension.
+    convI2L_reg(src2s, src2); // Ensure proper sign extension.
+    subL_reg_reg(diff, src1s, src2s);
     // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64I_regI(dst, diff);
+    signmask64I_regL(dst, diff);
   %}
 %}
 
@@ -10866,7 +10887,7 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
   format %{ "PartialSubtypeCheck $result = ($subklass instanceOf $superklass) tmp: $tmp_klass, $tmp_arrayptr" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
-    __ check_klass_subtype_slow_path($subklass$$Register, $superklass$$Register, $tmp_arrayptr$$Register, 
+    __ check_klass_subtype_slow_path($subklass$$Register, $superklass$$Register, $tmp_arrayptr$$Register,
                                      $tmp_klass$$Register, NULL, $result$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -11181,18 +11202,18 @@ instruct minI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_cost(DEFAULT_COST*6);
 
   expand %{
-    iRegIdst src1s;
-    iRegIdst src2s;
-    iRegIdst diff;
-    iRegIdst sm;
-    iRegIdst doz; // difference or zero
-    sxtI_reg(src1s, src1); // Ensure proper sign extention.
-    sxtI_reg(src2s, src2); // Ensure proper sign extention.
-    subI_reg_reg(diff, src2s, src1s);
+    iRegLdst src1s;
+    iRegLdst src2s;
+    iRegLdst diff;
+    iRegLdst sm;
+    iRegLdst doz; // difference or zero
+    convI2L_reg(src1s, src1); // Ensure proper sign extension.
+    convI2L_reg(src2s, src2); // Ensure proper sign extension.
+    subL_reg_reg(diff, src2s, src1s);
     // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64I_regI(sm, diff);
-    andI_reg_reg(doz, diff, sm); // <=0
-    addI_reg_reg(dst, doz, src1s);
+    signmask64L_regL(sm, diff);
+    andL_reg_reg(doz, diff, sm); // <=0
+    addI_regL_regL(dst, doz, src1s);
   %}
 %}
 
@@ -11201,19 +11222,18 @@ instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_cost(DEFAULT_COST*6);
 
   expand %{
-    immI_minus1 m1 %{ -1 %}
-    iRegIdst src1s;
-    iRegIdst src2s;
-    iRegIdst diff;
-    iRegIdst sm;
-    iRegIdst doz; // difference or zero
-    sxtI_reg(src1s, src1); // Ensure proper sign extention.
-    sxtI_reg(src2s, src2); // Ensure proper sign extention.
-    subI_reg_reg(diff, src2s, src1s);
+    iRegLdst src1s;
+    iRegLdst src2s;
+    iRegLdst diff;
+    iRegLdst sm;
+    iRegLdst doz; // difference or zero
+    convI2L_reg(src1s, src1); // Ensure proper sign extension.
+    convI2L_reg(src2s, src2); // Ensure proper sign extension.
+    subL_reg_reg(diff, src2s, src1s);
     // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64I_regI(sm, diff);
-    andcI_reg_reg(doz, sm, m1, diff); // >=0
-    addI_reg_reg(dst, doz, src1s);
+    signmask64L_regL(sm, diff);
+    andcL_reg_reg(doz, diff, sm); // >=0
+    addI_regL_regL(dst, doz, src1s);
   %}
 %}
 

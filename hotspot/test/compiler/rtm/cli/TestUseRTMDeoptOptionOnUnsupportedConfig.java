@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMDeopt option processing on CPUs without rtm support
  *          or on VMs without rtm locking support.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
  * @build TestUseRTMDeoptOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

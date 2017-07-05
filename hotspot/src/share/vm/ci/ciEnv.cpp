@@ -51,6 +51,7 @@
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1

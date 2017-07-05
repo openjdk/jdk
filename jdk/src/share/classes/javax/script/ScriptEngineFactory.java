@@ -160,7 +160,6 @@ public interface ScriptEngineFactory {
      *      return ret;
      * }
      * } </pre>
-     * <p>
      *
      * @param obj The name representing the object whose method is to be invoked. The
      * name is the one used to create bindings using the <code>put</code> method of
