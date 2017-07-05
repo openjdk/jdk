@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,13 @@
 #define fixup_after_potential_safepoint()       \
   method = istate->method()
 
-#define CALL_VM_NOCHECK(func)                   \
+#define CALL_VM_NOCHECK_NOFIX(func)             \
   thread->set_last_Java_frame();                \
   func;                                         \
-  thread->reset_last_Java_frame();              \
+  thread->reset_last_Java_frame();
+
+#define CALL_VM_NOCHECK(func)                   \
+  CALL_VM_NOCHECK_NOFIX(func)                   \
   fixup_after_potential_safepoint()
 
 int CppInterpreter::normal_entry(methodOop method, intptr_t UNUSED, TRAPS) {
@@ -176,6 +179,25 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
       Interpreter::invoke_osr(
         method, istate->osr_entry(), istate->osr_buf(), THREAD);
       return;
+    }
+    else if (istate->msg() == BytecodeInterpreter::call_method_handle) {
+      oop method_handle = istate->callee();
+
+      // Trim back the stack to put the parameters at the top
+      stack->set_sp(istate->stack() + 1);
+
+      // Make the call
+      process_method_handle(method_handle, THREAD);
+      fixup_after_potential_safepoint();
+
+      // Convert the result
+      istate->set_stack(stack->sp() - 1);
+
+      // Restore the stack
+      stack->set_sp(istate->stack_limit() + 1);
+
+      // Resume the interpreter
+      istate->set_msg(BytecodeInterpreter::method_resume);
     }
     else {
       ShouldNotReachHere();
@@ -606,6 +628,549 @@ int CppInterpreter::empty_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   // No deoptimized frames on the stack
   return 0;
 }
+
+int CppInterpreter::method_handle_entry(methodOop method,
+                                        intptr_t UNUSED, TRAPS) {
+  JavaThread *thread = (JavaThread *) THREAD;
+  ZeroStack *stack = thread->zero_stack();
+  int argument_slots = method->size_of_parameters();
+  int result_slots = type2size[result_type_of(method)];
+  intptr_t *vmslots = stack->sp();
+  intptr_t *unwind_sp = vmslots + argument_slots;
+
+  // Find the MethodType
+  address p = (address) method;
+  for (jint* pc = method->method_type_offsets_chain(); (*pc) != -1; pc++) {
+    p = *(address*)(p + (*pc));
+  }
+  oop method_type = (oop) p;
+
+  // The MethodHandle is in the slot after the arguments
+  oop form = java_lang_invoke_MethodType::form(method_type);
+  int num_vmslots = java_lang_invoke_MethodTypeForm::vmslots(form);
+  assert(argument_slots == num_vmslots + 1, "should be");
+  oop method_handle = VMSLOTS_OBJECT(num_vmslots);
+
+  // InvokeGeneric requires some extra shuffling
+  oop mhtype = java_lang_invoke_MethodHandle::type(method_handle);
+  bool is_exact = mhtype == method_type;
+  if (!is_exact) {
+    if (method->intrinsic_id() == vmIntrinsics::_invokeExact) {
+      CALL_VM_NOCHECK_NOFIX(
+        InterpreterRuntime::throw_WrongMethodTypeException(
+          thread, method_type, mhtype));
+      // NB all oops trashed!
+      assert(HAS_PENDING_EXCEPTION, "should do");
+      stack->set_sp(unwind_sp);
+      return 0;
+    }
+    assert(method->intrinsic_id() == vmIntrinsics::_invokeGeneric, "should be");
+
+    // Load up an adapter from the calling type
+    // NB the x86 code for this (in methodHandles_x86.cpp, search for
+    // "genericInvoker") is really really odd.  I'm hoping it's trying
+    // to accomodate odd VM/class library combinations I can ignore.
+    oop adapter = java_lang_invoke_MethodTypeForm::genericInvoker(form);
+    if (adapter == NULL) {
+      CALL_VM_NOCHECK_NOFIX(
+        InterpreterRuntime::throw_WrongMethodTypeException(
+          thread, method_type, mhtype));
+      // NB all oops trashed!
+      assert(HAS_PENDING_EXCEPTION, "should do");
+      stack->set_sp(unwind_sp);
+      return 0;
+    }
+
+    // Adapters are shared among form-families of method-type.  The
+    // type being called is passed as a trusted first argument so that
+    // the adapter knows the actual types of its arguments and return
+    // values.
+    insert_vmslots(num_vmslots + 1, 1, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // NB all oops trashed!
+      stack->set_sp(unwind_sp);
+      return 0;
+    }
+
+    vmslots = stack->sp();
+    num_vmslots++;
+    SET_VMSLOTS_OBJECT(method_type, num_vmslots);
+
+    method_handle = adapter;
+  }
+
+  // Start processing
+  process_method_handle(method_handle, THREAD);
+  if (HAS_PENDING_EXCEPTION)
+    result_slots = 0;
+
+  // If this is an invokeExact then the eventual callee will not
+  // have unwound the method handle argument so we have to do it.
+  // If a result is being returned the it will be above the method
+  // handle argument we're unwinding.
+  if (is_exact) {
+    intptr_t result[2];
+    for (int i = 0; i < result_slots; i++)
+      result[i] = stack->pop();
+    stack->pop();
+    for (int i = result_slots - 1; i >= 0; i--)
+      stack->push(result[i]);
+  }
+
+  // Check
+  assert(stack->sp() == unwind_sp - result_slots, "should be");
+
+  // No deoptimized frames on the stack
+  return 0;
+}
+
+void CppInterpreter::process_method_handle(oop method_handle, TRAPS) {
+  JavaThread *thread = (JavaThread *) THREAD;
+  ZeroStack *stack = thread->zero_stack();
+  intptr_t *vmslots = stack->sp();
+
+  bool direct_to_method = false;
+  BasicType src_rtype = T_ILLEGAL;
+  BasicType dst_rtype = T_ILLEGAL;
+
+  MethodHandleEntry *entry =
+    java_lang_invoke_MethodHandle::vmentry(method_handle);
+  MethodHandles::EntryKind entry_kind =
+    (MethodHandles::EntryKind) (((intptr_t) entry) & 0xffffffff);
+
+  methodOop method = NULL;
+  switch (entry_kind) {
+  case MethodHandles::_invokestatic_mh:
+    direct_to_method = true;
+    break;
+
+  case MethodHandles::_invokespecial_mh:
+  case MethodHandles::_invokevirtual_mh:
+  case MethodHandles::_invokeinterface_mh:
+    {
+      oop receiver =
+        VMSLOTS_OBJECT(
+          java_lang_invoke_MethodHandle::vmslots(method_handle) - 1);
+      if (receiver == NULL) {
+          stack->set_sp(calculate_unwind_sp(stack, method_handle));
+          CALL_VM_NOCHECK_NOFIX(
+            throw_exception(
+              thread, vmSymbols::java_lang_NullPointerException()));
+          // NB all oops trashed!
+          assert(HAS_PENDING_EXCEPTION, "should do");
+          return;
+      }
+      if (entry_kind != MethodHandles::_invokespecial_mh) {
+        int index = java_lang_invoke_DirectMethodHandle::vmindex(method_handle);
+        instanceKlass* rcvrKlass =
+          (instanceKlass *) receiver->klass()->klass_part();
+        if (entry_kind == MethodHandles::_invokevirtual_mh) {
+          method = (methodOop) rcvrKlass->start_of_vtable()[index];
+        }
+        else {
+          oop iclass = java_lang_invoke_MethodHandle::vmtarget(method_handle);
+          itableOffsetEntry* ki =
+            (itableOffsetEntry *) rcvrKlass->start_of_itable();
+          int i, length = rcvrKlass->itable_length();
+          for (i = 0; i < length; i++, ki++ ) {
+            if (ki->interface_klass() == iclass)
+              break;
+          }
+          if (i == length) {
+            stack->set_sp(calculate_unwind_sp(stack, method_handle));
+            CALL_VM_NOCHECK_NOFIX(
+              throw_exception(
+                thread, vmSymbols::java_lang_IncompatibleClassChangeError()));
+            // NB all oops trashed!
+            assert(HAS_PENDING_EXCEPTION, "should do");
+            return;
+          }
+          itableMethodEntry* im = ki->first_method_entry(receiver->klass());
+          method = im[index].method();
+          if (method == NULL) {
+            stack->set_sp(calculate_unwind_sp(stack, method_handle));
+            CALL_VM_NOCHECK_NOFIX(
+              throw_exception(
+                thread, vmSymbols::java_lang_AbstractMethodError()));
+            // NB all oops trashed!
+            assert(HAS_PENDING_EXCEPTION, "should do");
+            return;
+          }
+        }
+      }
+    }
+    direct_to_method = true;
+    break;
+
+  case MethodHandles::_bound_ref_direct_mh:
+  case MethodHandles::_bound_int_direct_mh:
+  case MethodHandles::_bound_long_direct_mh:
+    direct_to_method = true;
+    // fall through
+  case MethodHandles::_bound_ref_mh:
+  case MethodHandles::_bound_int_mh:
+  case MethodHandles::_bound_long_mh:
+    {
+      BasicType arg_type  = T_ILLEGAL;
+      int       arg_mask  = -1;
+      int       arg_slots = -1;
+      MethodHandles::get_ek_bound_mh_info(
+        entry_kind, arg_type, arg_mask, arg_slots);
+      int arg_slot =
+        java_lang_invoke_BoundMethodHandle::vmargslot(method_handle);
+
+      // Create the new slot(s)
+      intptr_t *unwind_sp = calculate_unwind_sp(stack, method_handle);
+      insert_vmslots(arg_slot, arg_slots, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        // all oops trashed
+        stack->set_sp(unwind_sp);
+        return;
+      }
+      vmslots = stack->sp();
+
+      // Store bound argument into new stack slot
+      oop arg = java_lang_invoke_BoundMethodHandle::argument(method_handle);
+      if (arg_type == T_OBJECT) {
+        assert(arg_slots == 1, "should be");
+        SET_VMSLOTS_OBJECT(arg, arg_slot);
+      }
+      else {
+        jvalue arg_value;
+        arg_type = java_lang_boxing_object::get_value(arg, &arg_value);
+        switch (arg_type) {
+        case T_BOOLEAN:
+          SET_VMSLOTS_INT(arg_value.z, arg_slot);
+          break;
+        case T_CHAR:
+          SET_VMSLOTS_INT(arg_value.c, arg_slot);
+          break;
+        case T_BYTE:
+          SET_VMSLOTS_INT(arg_value.b, arg_slot);
+          break;
+        case T_SHORT:
+          SET_VMSLOTS_INT(arg_value.s, arg_slot);
+          break;
+        case T_INT:
+          SET_VMSLOTS_INT(arg_value.i, arg_slot);
+          break;
+        case T_FLOAT:
+          SET_VMSLOTS_FLOAT(arg_value.f, arg_slot);
+          break;
+        case T_LONG:
+          SET_VMSLOTS_LONG(arg_value.j, arg_slot + 1);
+          break;
+        case T_DOUBLE:
+          SET_VMSLOTS_DOUBLE(arg_value.d, arg_slot + 1);
+          break;
+        default:
+          tty->print_cr("unhandled type %s", type2name(arg_type));
+          ShouldNotReachHere();
+        }
+      }
+    }
+    break;
+
+  case MethodHandles::_adapter_retype_only:
+  case MethodHandles::_adapter_retype_raw:
+    src_rtype = result_type_of_handle(
+      java_lang_invoke_MethodHandle::vmtarget(method_handle));
+    dst_rtype = result_type_of_handle(method_handle);
+    break;
+
+  case MethodHandles::_adapter_check_cast:
+    {
+      int arg_slot =
+        java_lang_invoke_AdapterMethodHandle::vmargslot(method_handle);
+      oop arg = VMSLOTS_OBJECT(arg_slot);
+      if (arg != NULL) {
+        klassOop objKlassOop = arg->klass();
+        klassOop klassOf = java_lang_Class::as_klassOop(
+          java_lang_invoke_AdapterMethodHandle::argument(method_handle));
+
+        if (objKlassOop != klassOf &&
+            !objKlassOop->klass_part()->is_subtype_of(klassOf)) {
+          ResourceMark rm(THREAD);
+          const char* objName = Klass::cast(objKlassOop)->external_name();
+          const char* klassName = Klass::cast(klassOf)->external_name();
+          char* message = SharedRuntime::generate_class_cast_message(
+            objName, klassName);
+
+          stack->set_sp(calculate_unwind_sp(stack, method_handle));
+          CALL_VM_NOCHECK_NOFIX(
+            throw_exception(
+              thread, vmSymbols::java_lang_ClassCastException(), message));
+          // NB all oops trashed!
+          assert(HAS_PENDING_EXCEPTION, "should do");
+          return;
+        }
+      }
+    }
+    break;
+
+  case MethodHandles::_adapter_dup_args:
+    {
+      int arg_slot =
+        java_lang_invoke_AdapterMethodHandle::vmargslot(method_handle);
+      int conv =
+        java_lang_invoke_AdapterMethodHandle::conversion(method_handle);
+      int num_slots = -MethodHandles::adapter_conversion_stack_move(conv);
+      assert(num_slots > 0, "should be");
+
+      // Create the new slot(s)
+      intptr_t *unwind_sp = calculate_unwind_sp(stack, method_handle);
+      stack->overflow_check(num_slots, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        // all oops trashed
+        stack->set_sp(unwind_sp);
+        return;
+      }
+
+      // Duplicate the arguments
+      for (int i = num_slots - 1; i >= 0; i--)
+        stack->push(*VMSLOTS_SLOT(arg_slot + i));
+
+      vmslots = stack->sp(); // unused, but let the compiler figure that out
+    }
+    break;
+
+  case MethodHandles::_adapter_drop_args:
+    {
+      int arg_slot =
+        java_lang_invoke_AdapterMethodHandle::vmargslot(method_handle);
+      int conv =
+        java_lang_invoke_AdapterMethodHandle::conversion(method_handle);
+      int num_slots = MethodHandles::adapter_conversion_stack_move(conv);
+      assert(num_slots > 0, "should be");
+
+      remove_vmslots(arg_slot, num_slots, THREAD); // doesn't trap
+      vmslots = stack->sp(); // unused, but let the compiler figure that out
+    }
+    break;
+
+  case MethodHandles::_adapter_opt_swap_1:
+  case MethodHandles::_adapter_opt_swap_2:
+  case MethodHandles::_adapter_opt_rot_1_up:
+  case MethodHandles::_adapter_opt_rot_1_down:
+  case MethodHandles::_adapter_opt_rot_2_up:
+  case MethodHandles::_adapter_opt_rot_2_down:
+    {
+      int arg1 =
+        java_lang_invoke_AdapterMethodHandle::vmargslot(method_handle);
+      int conv =
+        java_lang_invoke_AdapterMethodHandle::conversion(method_handle);
+      int arg2 = MethodHandles::adapter_conversion_vminfo(conv);
+
+      int swap_bytes = 0, rotate = 0;
+      MethodHandles::get_ek_adapter_opt_swap_rot_info(
+        entry_kind, swap_bytes, rotate);
+      int swap_slots = swap_bytes >> LogBytesPerWord;
+
+      intptr_t tmp;
+      switch (rotate) {
+      case 0: // swap
+        for (int i = 0; i < swap_slots; i++) {
+          tmp = *VMSLOTS_SLOT(arg1 + i);
+          SET_VMSLOTS_SLOT(VMSLOTS_SLOT(arg2 + i), arg1 + i);
+          SET_VMSLOTS_SLOT(&tmp, arg2 + i);
+        }
+        break;
+
+      case 1: // up
+        assert(arg1 - swap_slots > arg2, "should be");
+
+        tmp = *VMSLOTS_SLOT(arg1);
+        for (int i = arg1 - swap_slots; i >= arg2; i--)
+          SET_VMSLOTS_SLOT(VMSLOTS_SLOT(i), i + swap_slots);
+        SET_VMSLOTS_SLOT(&tmp, arg2);
+
+        break;
+
+      case -1: // down
+        assert(arg2 - swap_slots > arg1, "should be");
+
+        tmp = *VMSLOTS_SLOT(arg1);
+        for (int i = arg1 + swap_slots; i <= arg2; i++)
+          SET_VMSLOTS_SLOT(VMSLOTS_SLOT(i), i - swap_slots);
+        SET_VMSLOTS_SLOT(&tmp, arg2);
+        break;
+
+      default:
+        ShouldNotReachHere();
+      }
+    }
+    break;
+
+  case MethodHandles::_adapter_opt_i2l:
+    {
+      int arg_slot =
+        java_lang_invoke_AdapterMethodHandle::vmargslot(method_handle);
+      int arg = VMSLOTS_INT(arg_slot);
+      intptr_t *unwind_sp = calculate_unwind_sp(stack, method_handle);
+      insert_vmslots(arg_slot, 1, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        // all oops trashed
+        stack->set_sp(unwind_sp);
+        return;
+      }
+      vmslots = stack->sp();
+      arg_slot++;
+      SET_VMSLOTS_LONG(arg, arg_slot);
+    }
+    break;
+
+  case MethodHandles::_adapter_opt_unboxi:
+  case MethodHandles::_adapter_opt_unboxl:
+    {
+      int arg_slot =
+        java_lang_invoke_AdapterMethodHandle::vmargslot(method_handle);
+      oop arg = VMSLOTS_OBJECT(arg_slot);
+      jvalue arg_value;
+      BasicType arg_type = java_lang_boxing_object::get_value(arg, &arg_value);
+      if (arg_type == T_LONG || arg_type == T_DOUBLE) {
+        intptr_t *unwind_sp = calculate_unwind_sp(stack, method_handle);
+        insert_vmslots(arg_slot, 1, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          // all oops trashed
+          stack->set_sp(unwind_sp);
+          return;
+        }
+        vmslots = stack->sp();
+        arg_slot++;
+      }
+      switch (arg_type) {
+      case T_BOOLEAN:
+        SET_VMSLOTS_INT(arg_value.z, arg_slot);
+        break;
+      case T_CHAR:
+        SET_VMSLOTS_INT(arg_value.c, arg_slot);
+        break;
+      case T_BYTE:
+        SET_VMSLOTS_INT(arg_value.b, arg_slot);
+        break;
+      case T_SHORT:
+        SET_VMSLOTS_INT(arg_value.s, arg_slot);
+        break;
+      case T_INT:
+        SET_VMSLOTS_INT(arg_value.i, arg_slot);
+        break;
+      case T_FLOAT:
+        SET_VMSLOTS_FLOAT(arg_value.f, arg_slot);
+        break;
+      case T_LONG:
+        SET_VMSLOTS_LONG(arg_value.j, arg_slot);
+        break;
+      case T_DOUBLE:
+        SET_VMSLOTS_DOUBLE(arg_value.d, arg_slot);
+        break;
+      default:
+        tty->print_cr("unhandled type %s", type2name(arg_type));
+        ShouldNotReachHere();
+      }
+    }
+    break;
+
+  default:
+    tty->print_cr("unhandled entry_kind %s",
+                  MethodHandles::entry_name(entry_kind));
+    ShouldNotReachHere();
+  }
+
+  // Continue along the chain
+  if (direct_to_method) {
+    if (method == NULL) {
+      method =
+        (methodOop) java_lang_invoke_MethodHandle::vmtarget(method_handle);
+    }
+    address entry_point = method->from_interpreted_entry();
+    Interpreter::invoke_method(method, entry_point, THREAD);
+  }
+  else {
+    process_method_handle(
+      java_lang_invoke_MethodHandle::vmtarget(method_handle), THREAD);
+  }
+  // NB all oops now trashed
+
+  // Adapt the result type, if necessary
+  if (src_rtype != dst_rtype && !HAS_PENDING_EXCEPTION) {
+    switch (dst_rtype) {
+    case T_VOID:
+      for (int i = 0; i < type2size[src_rtype]; i++)
+        stack->pop();
+      return;
+
+    case T_INT:
+      switch (src_rtype) {
+      case T_VOID:
+        stack->overflow_check(1, CHECK);
+        stack->push(0);
+        return;
+
+      case T_BOOLEAN:
+      case T_CHAR:
+      case T_BYTE:
+      case T_SHORT:
+        return;
+      }
+    }
+
+    tty->print_cr("unhandled conversion:");
+    tty->print_cr("src_rtype = %s", type2name(src_rtype));
+    tty->print_cr("dst_rtype = %s", type2name(dst_rtype));
+    ShouldNotReachHere();
+  }
+}
+
+// The new slots will be inserted before slot insert_before.
+// Slots < insert_before will have the same slot number after the insert.
+// Slots >= insert_before will become old_slot + num_slots.
+void CppInterpreter::insert_vmslots(int insert_before, int num_slots, TRAPS) {
+  JavaThread *thread = (JavaThread *) THREAD;
+  ZeroStack *stack = thread->zero_stack();
+
+  // Allocate the space
+  stack->overflow_check(num_slots, CHECK);
+  stack->alloc(num_slots * wordSize);
+  intptr_t *vmslots = stack->sp();
+
+  // Shuffle everything up
+  for (int i = 0; i < insert_before; i++)
+    SET_VMSLOTS_SLOT(VMSLOTS_SLOT(i + num_slots), i);
+}
+
+void CppInterpreter::remove_vmslots(int first_slot, int num_slots, TRAPS) {
+  JavaThread *thread = (JavaThread *) THREAD;
+  ZeroStack *stack = thread->zero_stack();
+  intptr_t *vmslots = stack->sp();
+
+  // Move everything down
+  for (int i = first_slot - 1; i >= 0; i--)
+    SET_VMSLOTS_SLOT(VMSLOTS_SLOT(i), i + num_slots);
+
+  // Deallocate the space
+  stack->set_sp(stack->sp() + num_slots);
+}
+
+BasicType CppInterpreter::result_type_of_handle(oop method_handle) {
+  oop method_type = java_lang_invoke_MethodHandle::type(method_handle);
+  oop return_type = java_lang_invoke_MethodType::rtype(method_type);
+  return java_lang_Class::as_BasicType(return_type, (klassOop *) NULL);
+}
+
+intptr_t* CppInterpreter::calculate_unwind_sp(ZeroStack* stack,
+                                              oop method_handle) {
+  oop method_type = java_lang_invoke_MethodHandle::type(method_handle);
+  oop form = java_lang_invoke_MethodType::form(method_type);
+  int argument_slots = java_lang_invoke_MethodTypeForm::vmslots(form);
+
+  return stack->sp() + argument_slots;
+}
+
+IRT_ENTRY(void, CppInterpreter::throw_exception(JavaThread* thread,
+                                                Symbol*     name,
+                                                char*       message))
+  THROW_MSG(name, message);
+IRT_END
 
 InterpreterFrame *InterpreterFrame::build(const methodOop method, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
