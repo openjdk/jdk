@@ -23,36 +23,33 @@
 # questions.
 #
 
+
+# This file is responsible for extracting the x11 native struct offsets to
+# the xawt Java library. This is done by compiling and running a native
+# binary, which dumps output to a text file. The offsets differ on 32 and 64
+# bit systems, so care must be taken here.
+
+# Note: Some of the more complex logic here is most likely not needed anymore.
+
 GENSRC_X11WRAPPERS :=
 GENSRC_X11WRAPPERS_TMP := $(JDK_OUTPUTDIR)/gensrc_x11wrappers
 
 GENSRC_SIZER_SRC := $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
 
-GENSRC_SIZES :=
+# Normal case is to generate version according to target bits
+GENSRC_SIZES := sizes.$(OPENJDK_TARGET_CPU_BITS)
 
-ifeq ($(OPENJDK_TARGET_OS)-$(LIBARCH), solaris-i386)
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
+ifneq ($(OPENJDK_TARGET_OS), linux)
+# On all 64-bit systems except Linux, generate both 32 and 64 bit versions
 GENSRC_SIZES := sizes.32 sizes.64
-else ifeq ($(OPENJDK_TARGET_OS), solaris)
-isalist:=$(shell isainfo)
-ifneq (,$(findstring sparcv9, $(isalist)))
-# On sparcv9 we generate both 32 and 64-bit sizers in spite of ARCH_DATA_MODEL.
-GENSRC_SIZES := sizes.32 sizes.64
+endif
 else
-ifneq (,$(findstring amd64, $(isalist)))
-# On amd64 we generate both 32 and 64-bit sizers in spite of ARCH_DATA_MODEL.
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-x86)
+# As a special case, solaris on x86 (32-bit) also generates the 64-bit version
 GENSRC_SIZES := sizes.32 sizes.64
-else # !sparcv9 : includes (32-bit) sparc, i586
-GENSRC_SIZES := sizes.32
-endif # amd64
-endif # sparcv9
-else # !solaris
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-GENSRC_SIZES := sizes.32 sizes.64
-else # !macosx
-GENSRC_SIZES := sizes.$(ARCH_DATA_MODEL)
-endif # !macosx
-endif # solaris
-
+endif
+endif
 
 ##########################################################################################
 
@@ -62,40 +59,44 @@ $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.c : $(GENSRC_SIZER_SRC)/xlibtypes.txt
 	$(TOOL_WRAPPERGENERATOR) $(@D) $< "sizer" $*
 
 $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.exe : $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.c
-	(cd $(@D) && $(HOST_CC) -m$* -o $@ $< \
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
+	(cd $(@D) && $(BUILD_CC) -m$* -o $@.tmp $< \
               -I$(JDK_OUTPUTDIR)/include \
               -I$(JDK_TOPDIR)/src/share/javavm/export \
-              -I$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/javavm/export \
+              -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export \
               -I$(JDK_TOPDIR)//src/share/native/common \
-              -I$(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/native/common \
+              -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/common \
               -I$(JDK_TOPDIR)/src/solaris/native/sun/awt \
 	      -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
 	      -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils -lc)
-
-ifeq ($(OPENJDK_TARGET_OS)-$(LIBARCH), solaris-i386)
-
-$(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.32 : $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.32.exe
-	$< > $@.tmp
 	$(MV) $@.tmp $@
 
-$(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 : $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/sun/awt/X11/generator/sizes.64-$(OPENJDK_TARGET_OS)-$(LIBARCH)
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
-else
-
+# Run the generated sizer binary to create the sizes text file
 $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.% : $(GENSRC_X11WRAPPERS_TMP)/sizer/sizer.%.exe
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
 	$< > $@.tmp
 	$(MV) $@.tmp $@
 
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-x86)
+  # On solaris-x86 we also need to create the 64-bit version, but we can't run a 64-bit binary
+  # As a workaround, copy this from a pre-generated file.
+$(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 : $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator/sizes.64-solaris-i386
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
 endif
 
 $(GENSRC_X11WRAPPERS_TMP)/classes/_the.classes : $(foreach S,$(GENSRC_SIZES),$(GENSRC_X11WRAPPERS_TMP)/sizer/$(S))
+	$(RM) $@
 	$(MKDIR) -p $(@D)/sun/awt/X11
 	$(RM) $(@D)/sun/awt/X11/*
 	$(TOOL_WRAPPERGENERATOR) $(@D)/sun/awt/X11 $(GENSRC_SIZER_SRC)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes
-ifeq ($(OPENJDK_TARGET_OS)-$(LIBARCH), solaris-amd64)
-	$(ECHO) COMPARING $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 and $(GENSRC_SIZER_SRC)/sizes.64-$(OPENJDK_TARGET_OS)-i386
-	$(DIFF) $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 $(GENSRC_SIZER_SRC)/sizes.64-$(OPENJDK_TARGET_OS)-i386
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), solaris-x86_64)
+  # On solaris-x86_64, as a safety measure, compare the generated file with the checked-in version 
+	$(ECHO) COMPARING $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 and $(GENSRC_SIZER_SRC)/sizes.64-solaris-i386
+	$(DIFF) $(GENSRC_X11WRAPPERS_TMP)/sizer/sizes.64 $(GENSRC_SIZER_SRC)/sizes.64-solaris-i386
 endif
 	$(TOUCH) $@
 

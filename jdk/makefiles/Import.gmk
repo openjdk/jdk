@@ -41,12 +41,8 @@ IMPORT_BINARIES := CORBA
 
 # Put the libraries here. Different locations for different target apis.
 ifeq ($(OPENJDK_TARGET_OS_API),posix)
-    ifneq ($(OPENJDK_TARGET_OS),macosx)
-        INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/lib/$(LIBARCH)
-    else
-        INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/lib
-    endif
-    HOTSPOT_LIB_DIR:=$(HOTSPOT_DIST)/jre/lib/$(LIBARCH)
+    INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+    HOTSPOT_LIB_DIR:=$(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)
 else
     INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/bin
     HOTSPOT_LIB_DIR:=$(HOTSPOT_DIST)/jre/bin
@@ -65,6 +61,7 @@ IMPORT_TARGET_CLASSES += $(JDK_OUTPUTDIR)/classes/_the.$1.classes.imported
 $(JDK_OUTPUTDIR)/classes/_the.$1.classes.imported : $$($1_DIST)/lib/classes.jar $$($1_CLASSES_DEP)
 	$(ECHO) Importing $1 classes.jar
 	$(MKDIR) -p $$(@D)
+	$(RM) $$@ $$@.tmp
 	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
 	$(MV) $$@.tmp $$@
 endef
@@ -76,6 +73,7 @@ IMPORT_TARGET_SOURCES += $(JDK_OUTPUTDIR)/impsrc/_the.$1.src.imported
 $(JDK_OUTPUTDIR)/impsrc/_the.$1.src.imported : $$($1_DIST)/lib/src.zip $$($1_SOURCES_DEP)
 	$(ECHO) Importing $1 src.zip
 	$(MKDIR) -p $$(@D)
+	$(RM) $$@ $$@.tmp
 	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
 	$(MV) $$@.tmp $$@
 endef
@@ -87,6 +85,7 @@ IMPORT_TARGET_BINARIES += $(JDK_OUTPUTDIR)/_the.$1.binaries.imported
 $(JDK_OUTPUTDIR)/_the.$1.binaries.imported : $$($1_DIST)/lib/bin.zip $$($1_BINARIES_DEP)
 	$(ECHO) Importing $1 bin.zip
 	$(MKDIR) -p $$(@D)
+	$(RM) $$@ $$@.tmp
 	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
 	$(MV) $$@.tmp $$@
 endef
@@ -103,23 +102,26 @@ IMPORT_TARGET_FILES += $(IMPORT_TARGET_CLASSES) $(IMPORT_TARGET_SOURCES) $(IMPOR
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
 define do-install-file
-	$(MKDIR) -p $$(@D)
+	$(MKDIR) -p '$$(@D)'
+	$(RM) '$$@'
 	$(CP) -r -P '$$<' '$$(@D)'
 endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
 define do-install-file
-	$(MKDIR) -p $$(@D)
+	$(MKDIR) -p '$$(@D)'
+	$(RM) '$$@'
 	$(CP) -pRP '$$<' '$$@'
 endef
 else
 define do-install-file
-	$(MKDIR) -p $$(@D)
+	$(MKDIR) -p '$$(@D)'
+	$(RM) '$$@'
 	$(CP) -P '$$<' '$$@'
 endef
 endif
 
 define CopyDir
-        $1_SRC_FILES := $(shell $(FIND) $2 -type f)
+        $1_SRC_FILES := $(shell $(FIND) $2 -type f -a ! -name "wb.jar")
         $1_DST_FILES := $$(patsubst $2/%,$3/%,$$($1_SRC_FILES))
         IMPORT_TARGET_FILES += $$($1_DST_FILES)
 $3/% : $2/%
@@ -136,8 +138,8 @@ endef
 $(eval $(call CopyDir,HOTSPOT0, $(HOTSPOT_LIB_DIR), $(INSTALL_LIBRARIES_HERE)))
 $(eval $(call CopyDir,HOTSPOT1, $(HOTSPOT_DIST)/lib, $(JDK_OUTPUTDIR)/lib))
 
-JSIG_DEBUGINFO := $(wildcard $(HOTSPOT_DIST)/jre/lib/$(LIBARCH)/libjsig.debuginfo) \
-                  $(wildcard $(HOTSPOT_DIST)/jre/lib/$(LIBARCH)/libjsig.diz)
+JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
+                  $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
     ifeq ($(JVM_VARIANT_SERVER), true)
@@ -155,64 +157,75 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 endif
 
 $(INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
-	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
 $(INSTALL_LIBRARIES_HERE)/server/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
-	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
 $(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
-	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+	$(RM) $@
 ifeq (REALLY_WEIRD,1)
 	$(LN) -s ../$(@F) $@
 else
 #
 # TODO: Check if this is what they really want...a zip containing a symlink
 #
-	$(RM) -f $(basename $@).debuginfo
+	$(RM) $@.tmp $(basename $@).debuginfo
 	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
-	$(ZIP) -q -y $@ $(basename $@).debuginfo
-	$(RM) -f $(basename $@).debuginfo
+	$(ZIP) -q -y $@.tmp $(basename $@).debuginfo
+	$(RM) $(basename $@).debuginfo
+	$(MV) $@.tmp $@
 endif
 
 $(INSTALL_LIBRARIES_HERE)/client/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
-	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
 $(INSTALL_LIBRARIES_HERE)/client/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
-	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
 $(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
-	$(RM) -f $@
+	$(MKDIR) -p $(@D)
+	$(RM) $@
 ifeq (REALLY_WEIRD,1)
 	$(LN) -s ../$(@F) $@
 else
 #
 # TODO: Check if this is what they really want...a zip containing a symlink
 #
-	$(RM) -f $(basename $@).debuginfo
+	$(RM) $@.tmp $(basename $@).debuginfo
 	$(LN) -s ../$(basename $(@F)).debuginfo $(basename $@).debuginfo
-	$(ZIP) -q -y $@ $(basename $@).debuginfo
-	$(RM) -f $(basename $@).debuginfo
+	$(ZIP) -q -y $@.tmp $(basename $@).debuginfo
+	$(RM) $(basename $@).debuginfo
+	$(MV) $@.tmp $@
 endif
 
 #######
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
 define install-file
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p '$(@D)'
+	$(RM) '$@'
 	$(CP) -r -P '$<' '$(@D)'
 endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
 define install-file
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p '$(@D)'
+	$(RM) '$@'
 	$(CP) -pRP '$<' '$@'
 endef
 else
 define install-file
-	$(MKDIR) -p $(@D)
+	$(MKDIR) -p '$(@D)'
+	$(RM) '$@'
 	$(CP) -P '$<' '$@'
 endef
 endif
