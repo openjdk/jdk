@@ -109,12 +109,12 @@ import java.util.concurrent.locks.LockSupport;
  * async event-style tasks that are not usually joined, in which case
  * there is little difference among choice of methods.
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of task execution methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER> <b>Call from non-fork/join clients</b></td>
- *    <td ALIGN=CENTER> <b>Call from within fork/join computations</b></td>
+ *    <td style="text-align:center"> <b>Call from non-fork/join clients</b></td>
+ *    <td style="text-align:center"> <b>Call from within fork/join computations</b></td>
  *  </tr>
  *  <tr>
  *    <td> <b>Arrange async execution</b></td>

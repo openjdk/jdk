@@ -1,6 +1,6 @@
 ## Mesa 3-D Graphics Library v4.1
 
-### Mesa 3-D Graphics Library License
+### Mesa License
 <pre>
 
 Mesa 3-D graphics library

@@ -24,7 +24,7 @@
 /*
  * @test ProviderTest.java
  * @summary Tests jar services provider are called
- * @modules java.management.rmi
+ *
  * @run clean ProviderTest provider.JMXConnectorProviderImpl provider.JMXConnectorServerProviderImpl
  * @run build ProviderTest provider.JMXConnectorProviderImpl provider.JMXConnectorServerProviderImpl
  * @run main ProviderTest

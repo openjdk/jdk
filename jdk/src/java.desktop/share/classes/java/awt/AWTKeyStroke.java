@@ -350,6 +350,7 @@ public class AWTKeyStroke implements Serializable {
      * @throws NullPointerException if {@code anEvent} is null
      * @return the {@code AWTKeyStroke} that precipitated the event
      */
+    @SuppressWarnings("deprecation")
     public static AWTKeyStroke getAWTKeyStrokeForEvent(KeyEvent anEvent) {
         int id = anEvent.getID();
         switch(id) {
@@ -397,6 +398,7 @@ public class AWTKeyStroke implements Serializable {
      * @throws IllegalArgumentException if {@code s} is {@code null},
      *        or is formatted incorrectly
      */
+    @SuppressWarnings("deprecation")
     public static AWTKeyStroke getAWTKeyStroke(String s) {
         if (s == null) {
             throw new IllegalArgumentException("String cannot be null");
@@ -708,6 +710,7 @@ public class AWTKeyStroke implements Serializable {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static int mapOldModifiers(int modifiers) {
         if ((modifiers & InputEvent.SHIFT_MASK) != 0) {
             modifiers |= InputEvent.SHIFT_DOWN_MASK;
@@ -737,6 +740,7 @@ public class AWTKeyStroke implements Serializable {
         return modifiers;
     }
 
+    @SuppressWarnings("deprecation")
     private static int mapNewModifiers(int modifiers) {
         if ((modifiers & InputEvent.SHIFT_DOWN_MASK) != 0) {
             modifiers |= InputEvent.SHIFT_MASK;

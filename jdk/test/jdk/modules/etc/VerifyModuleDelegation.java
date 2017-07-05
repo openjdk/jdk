@@ -31,8 +31,6 @@
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.Set;
 import static java.util.stream.Collectors.toSet;
 
@@ -46,10 +44,10 @@ public class VerifyModuleDelegation {
     private static final String JAVA_BASE = "java.base";
 
     private static final ModuleDescriptor BASE
-        = ModuleDescriptor.module(JAVA_BASE).build();
+        = ModuleDescriptor.newModule(JAVA_BASE).build();
 
     private static final Set<ModuleDescriptor> MREFS
-            = Layer.boot().modules().stream().map(Module::getDescriptor)
+            = ModuleLayer.boot().modules().stream().map(Module::getDescriptor)
                 .collect(toSet());
 
     private void check(ModuleDescriptor md, ModuleDescriptor ref) {
@@ -69,7 +67,7 @@ public class VerifyModuleDelegation {
 
     @Test
     public void checkLoaderDelegation() {
-        Layer boot = Layer.boot();
+        ModuleLayer boot = ModuleLayer.boot();
         MREFS.stream()
              .forEach(md -> md.requires().stream().forEach(req ->
                  {

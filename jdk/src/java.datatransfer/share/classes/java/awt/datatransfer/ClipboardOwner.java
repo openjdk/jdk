@@ -39,6 +39,7 @@ package java.awt.datatransfer;
  * @see java.awt.datatransfer.Clipboard
  *
  * @author      Amy Fowler
+ * @since 1.1
  */
 
 public interface ClipboardOwner {

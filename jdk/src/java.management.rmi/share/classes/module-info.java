@@ -24,28 +24,30 @@
  */
 
 /**
- * Defines the RMI Connector for the Java Management Extensions (JMX) Remote API.
- * <P>
- * The {@linkplain javax.management.remote.rmi RMI connector} is a connector
- * for the JMX Remote API that uses RMI to transmit client requests to a remote
- * MBean server.
+ * Defines the {@linkplain javax.management.remote.rmi RMI connector}
+ * for the Java Management Extensions (JMX) Remote API.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Providers:</dt>
+ * <dd>This module provides
+ * {@link javax.management.remote.JMXConnectorProvider} service
+ * that creates the JMX connector clients using RMI protocol.
+ * Instances of {@code JMXConnector} can be obtained via the
+ * {@link javax.management.remote.JMXConnectorFactory#newJMXConnector
+ * JMXConnectorFactory.newJMXConnector} factory method.
+ * It also provides {@link javax.management.remote.JMXConnectorServerProvider} service
+ * that creates the JMX connector servers using RMI protocol.
+ * Instances of {@code JMXConnectorServer} can be obtained via the
+ * {@link javax.management.remote.JMXConnectorServerFactory#newJMXConnectorServer
+ * JMXConnectorServerFactory.newJMXConnectorServer} factory method.
+ * </dd>
+ * </dl>
  *
  * @provides javax.management.remote.JMXConnectorProvider
- *           A provider of {@code JMXConnector} for the RMI protocol.<br>
- *           Instances of {@code JMXConnector} using the RMI protocol
- *           are usually created by the {@link
- *           javax.management.remote.JMXConnectorFactory} which will locate
- *           and load the appropriate {@code JMXConnectorProvider} service
- *           implementation for the given protocol.
- *
  * @provides javax.management.remote.JMXConnectorServerProvider
- *           A provider of {@code JMXConnectorServer} for the RMI protocol.<br>
- *           Instances of {@code JMXConnectorServer} using the RMI protocol
- *           are usually created by the {@link
- *           javax.management.remote.JMXConnectorServerFactory} which will locate
- *           and load the appropriate {@code JMXConnectorServerProvider} service
- *           implementation for the given protocol.
  *
+ * @moduleGraph
+ * @since 9
  */
 module java.management.rmi {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -717,7 +717,9 @@ public final class ToHTMLStream extends ToStream
      */
     public final void endDocument() throws org.xml.sax.SAXException
     {
-        flushCharactersBuffer();
+        if (m_doIndent) {
+            flushCharactersBuffer();
+        }
         flushPending();
         if (m_doIndent && !m_isprevtext)
         {
@@ -776,9 +778,11 @@ public final class ToHTMLStream extends ToStream
         Attributes atts)
         throws SAXException
     {
-        // will add extra one if having namespace but no matter
-        m_childNodeNum++;
-        flushCharactersBuffer();
+        if (m_doIndent) {
+            // will add extra one if having namespace but no matter
+            m_childNodeNum++;
+            flushCharactersBuffer();
+        }
         ElemContext elemContext = m_elemContext;
 
         // clean up any pending things first
@@ -839,8 +843,10 @@ public final class ToHTMLStream extends ToStream
             writer.write('<');
             writer.write(name);
 
-            m_childNodeNumStack.push(m_childNodeNum);
-            m_childNodeNum = 0;
+            if (m_doIndent) {
+                m_childNodeNumStack.add(m_childNodeNum);
+                m_childNodeNum = 0;
+            }
 
             if (m_tracer != null)
                 firePseudoAttributes();
@@ -915,7 +921,9 @@ public final class ToHTMLStream extends ToStream
         final String name)
         throws org.xml.sax.SAXException
     {
-        flushCharactersBuffer();
+        if (m_doIndent) {
+            flushCharactersBuffer();
+        }
         // deal with any pending issues
         if (m_cdataTagOpen)
             closeCDATA();
@@ -997,12 +1005,11 @@ public final class ToHTMLStream extends ToStream
                 }
             }
 
-            m_childNodeNum = m_childNodeNumStack.pop();
-            // clean up because the element has ended
-            if ((elemFlags & ElemDesc.WHITESPACESENSITIVE) != 0)
-                m_ispreserve = true;
-            m_isprevtext = false;
-
+            if (m_doIndent) {
+                m_childNodeNum = m_childNodeNumStack.remove(m_childNodeNumStack.size() - 1);
+                // clean up because the element has ended
+                m_isprevtext = false;
+            }
             // fire off the end element event
             if (m_tracer != null)
                 super.fireEndElem(name);
@@ -1018,11 +1025,6 @@ public final class ToHTMLStream extends ToStream
             }
 
             // some more clean because the element has ended.
-            if (!elemContext.m_startTagOpen)
-            {
-                if (m_doIndent && !m_preserves.isEmpty())
-                    m_preserves.pop();
-            }
             m_elemContext = elemContext.m_prev;
 //            m_isRawStack.pop();
         }
@@ -1525,7 +1527,6 @@ public final class ToHTMLStream extends ToStream
                     closeStartTag();
                     m_elemContext.m_startTagOpen = false;
                 }
-                m_ispreserve = true;
 
 //              With m_ispreserve just set true it looks like shouldIndent()
 //              will always return false, so drop any possible indentation.
@@ -1602,8 +1603,6 @@ public final class ToHTMLStream extends ToStream
                     m_elemContext.m_startTagOpen = false;
                 }
 
-                m_ispreserve = true;
-
                 if (shouldIndent())
                     indent();
 
@@ -1640,8 +1639,10 @@ public final class ToHTMLStream extends ToStream
     public void processingInstruction(String target, String data)
         throws org.xml.sax.SAXException
     {
-        m_childNodeNum++;
-        flushCharactersBuffer();
+        if (m_doIndent) {
+            m_childNodeNum++;
+            flushCharactersBuffer();
+        }
         // Process any pending starDocument and startElement first.
         flushPending();
 
@@ -1790,11 +1791,6 @@ public final class ToHTMLStream extends ToStream
              */
             if (m_StringOfCDATASections != null)
                 m_elemContext.m_isCdataSection = isCdataSection();
-            if (m_doIndent)
-            {
-                m_isprevtext = false;
-                m_preserves.push(m_ispreserve);
-            }
 
             }
             catch(IOException e)

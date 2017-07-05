@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,13 +452,13 @@ public abstract class Pack200 {
         String CODE_ATTRIBUTE_PFX       = "pack.code.attribute.";
 
         /**
-         * The unpacker's progress as a percentage, as periodically
-         * updated by the unpacker.
+         * The packer's progress as a percentage, as periodically
+         * updated by the packer.
          * Values of 0 - 100 are normal, and -1 indicates a stall.
          * Progress can be monitored by polling the value of this
          * property.
          * <p>
-         * At a minimum, the unpacker must set progress to 0
+         * At a minimum, the packer must set progress to 0
          * at the beginning of a packing operation, and to 100
          * at the end.
          */
@@ -623,7 +623,7 @@ public abstract class Pack200 {
          * property.
          * <p>
          * At a minimum, the unpacker must set progress to 0
-         * at the beginning of a packing operation, and to 100
+         * at the beginning of an unpacking operation, and to 100
          * at the end.
          */
         String PROGRESS         = "unpack.progress";
@@ -631,7 +631,7 @@ public abstract class Pack200 {
         /**
          * Get the set of this engine's properties. This set is
          * a "live view", so that changing its
-         * contents immediately affects the Packer engine, and
+         * contents immediately affects the Unpacker engine, and
          * changes from the engine (such as progress indications)
          * are immediately visible in the map.
          *

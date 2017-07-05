@@ -182,6 +182,7 @@ import sun.security.util.ResourcesMgr;
  * </ul>
  * </ol>
  *
+ * @since 1.4
  * @see java.security.Security
  * @see javax.security.auth.AuthPermission
  * @see javax.security.auth.Subject
