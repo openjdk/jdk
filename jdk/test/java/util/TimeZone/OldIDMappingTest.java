@@ -51,17 +51,7 @@ public class OldIDMappingTest {
             throw new RuntimeException("-old or -new must be specified; got " + arg);
         }
 
-        // Get a Field for TzIDOldMapping in sun.util.calendar.
-        Map<String, String> oldmap = null;
-        try {
-            Class<?> oldmapClass = Class.forName("sun.util.calendar.TzIDOldMapping");
-            Field map = oldmapClass.getDeclaredField("MAP");
-            map.setAccessible(true);
-            oldmap = (Map<String, String>) map.get(null);
-        } catch (Exception e) {
-            throw new RuntimeException("can't get TzIDOldMapping.MAP", e);
-        }
-
+        Map<String, String> oldmap = TzIDOldMapping.MAP;
         String prop = System.getProperty(MAPPING_PROPERTY_NAME);
         System.out.println(MAPPING_PROPERTY_NAME + "=" + prop);
 

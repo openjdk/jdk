@@ -65,7 +65,7 @@ import static org.testng.Assert.assertTrue;
 
 import java.text.ParsePosition;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeBuilder;
+import java.time.temporal.TemporalAccessor;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -88,7 +88,7 @@ public class TestZoneOffsetParser extends AbstractTestPrinterParser {
     @Test(dataProvider="error")
     public void test_parse_error(String pattern, String noOffsetText, String text, int pos, Class<?> expected) {
         try {
-            getFormatter(pattern, noOffsetText).parseToBuilder(text, new ParsePosition(pos));
+            getFormatter(pattern, noOffsetText).parseUnresolved(text, new ParsePosition(pos));
         } catch (RuntimeException ex) {
             assertTrue(expected.isInstance(ex));
         }
@@ -97,59 +97,59 @@ public class TestZoneOffsetParser extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     public void test_parse_exactMatch_UTC() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("Z", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("Z", pos);
         assertEquals(pos.getIndex(), 1);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_startStringMatch_UTC() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("ZOTHER", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("ZOTHER", pos);
         assertEquals(pos.getIndex(), 1);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_midStringMatch_UTC() throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("OTHERZOTHER", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("OTHERZOTHER", pos);
         assertEquals(pos.getIndex(), 6);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_endStringMatch_UTC() throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("OTHERZ", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("OTHERZ", pos);
         assertEquals(pos.getIndex(), 6);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     //-----------------------------------------------------------------------
     public void test_parse_exactMatch_UTC_EmptyUTC() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "").parseToBuilder("", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "").parseUnresolved("", pos);
         assertEquals(pos.getIndex(), 0);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_startStringMatch_UTC_EmptyUTC() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "").parseToBuilder("OTHER", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "").parseUnresolved("OTHER", pos);
         assertEquals(pos.getIndex(), 0);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_midStringMatch_UTC_EmptyUTC() throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "").parseToBuilder("OTHEROTHER", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "").parseUnresolved("OTHEROTHER", pos);
         assertEquals(pos.getIndex(), 5);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_endStringMatch_UTC_EmptyUTC() throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "").parseToBuilder("OTHER", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "").parseUnresolved("OTHER", pos);
         assertEquals(pos.getIndex(), 5);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     //-----------------------------------------------------------------------
@@ -231,65 +231,65 @@ public class TestZoneOffsetParser extends AbstractTestPrinterParser {
     @Test(dataProvider="offsets")
     public void test_parse_exactMatch(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(pattern, "Z").parseToBuilder(parse, pos);
+        TemporalAccessor parsed = getFormatter(pattern, "Z").parseUnresolved(parse, pos);
         assertEquals(pos.getIndex(), parse.length());
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_parse_startStringMatch(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(pattern, "Z").parseToBuilder(parse + ":OTHER", pos);
+        TemporalAccessor parsed = getFormatter(pattern, "Z").parseUnresolved(parse + ":OTHER", pos);
         assertEquals(pos.getIndex(), parse.length());
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_parse_midStringMatch(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter(pattern, "Z").parseToBuilder("OTHER" + parse + ":OTHER", pos);
+        TemporalAccessor parsed = getFormatter(pattern, "Z").parseUnresolved("OTHER" + parse + ":OTHER", pos);
         assertEquals(pos.getIndex(), parse.length() + 5);
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_parse_endStringMatch(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter(pattern, "Z").parseToBuilder("OTHER" + parse, pos);
+        TemporalAccessor parsed = getFormatter(pattern, "Z").parseUnresolved("OTHER" + parse, pos);
         assertEquals(pos.getIndex(), parse.length() + 5);
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_parse_exactMatch_EmptyUTC(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(pattern, "").parseToBuilder(parse, pos);
+        TemporalAccessor parsed = getFormatter(pattern, "").parseUnresolved(parse, pos);
         assertEquals(pos.getIndex(), parse.length());
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_parse_startStringMatch_EmptyUTC(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(pattern, "").parseToBuilder(parse + ":OTHER", pos);
+        TemporalAccessor parsed = getFormatter(pattern, "").parseUnresolved(parse + ":OTHER", pos);
         assertEquals(pos.getIndex(), parse.length());
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_parse_midStringMatch_EmptyUTC(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter(pattern, "").parseToBuilder("OTHER" + parse + ":OTHER", pos);
+        TemporalAccessor parsed = getFormatter(pattern, "").parseUnresolved("OTHER" + parse + ":OTHER", pos);
         assertEquals(pos.getIndex(), parse.length() + 5);
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     @Test(dataProvider="offsets")
     public void test_parse_endStringMatch_EmptyUTC(String pattern, String parse, ZoneOffset expected) throws Exception {
         ParsePosition pos = new ParsePosition(5);
-        DateTimeBuilder dtb = getFormatter(pattern, "").parseToBuilder("OTHER" + parse, pos);
+        TemporalAccessor parsed = getFormatter(pattern, "").parseUnresolved("OTHER" + parse, pos);
         assertEquals(pos.getIndex(), parse.length() + 5);
-        assertParsed(dtb, expected);
+        assertParsed(parsed, expected);
     }
 
     //-----------------------------------------------------------------------
@@ -322,9 +322,9 @@ public class TestZoneOffsetParser extends AbstractTestPrinterParser {
     @Test(dataProvider="bigOffsets")
     public void test_parse_bigOffsets(String pattern, String parse, long offsetSecs) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(pattern, "").parseToBuilder(parse, pos);
+        TemporalAccessor parsed = getFormatter(pattern, "").parseUnresolved(parse, pos);
         assertEquals(pos.getIndex(), parse.length());
-        assertEquals(dtb.getLong(OFFSET_SECONDS), offsetSecs);
+        assertEquals(parsed.getLong(OFFSET_SECONDS), offsetSecs);
     }
 
     //-----------------------------------------------------------------------
@@ -393,8 +393,9 @@ public class TestZoneOffsetParser extends AbstractTestPrinterParser {
     @Test(dataProvider="badOffsets")
     public void test_parse_invalid(String pattern, String parse, int expectedPosition) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(pattern, "Z").parseToBuilder(parse, pos);
+        TemporalAccessor parsed = getFormatter(pattern, "Z").parseUnresolved(parse, pos);
         assertEquals(pos.getErrorIndex(), expectedPosition);
+        assertEquals(parsed, null);
     }
 
     //-----------------------------------------------------------------------
@@ -403,41 +404,41 @@ public class TestZoneOffsetParser extends AbstractTestPrinterParser {
     public void test_parse_caseSensitiveUTC_matchedCase() throws Exception {
         setCaseSensitive(true);
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("Z", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("Z", pos);
         assertEquals(pos.getIndex(), 1);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_caseSensitiveUTC_unmatchedCase() throws Exception {
         setCaseSensitive(true);
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("z", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("z", pos);
         assertEquals(pos.getErrorIndex(), 0);
-        assertEquals(dtb, null);
+        assertEquals(parsed, null);
     }
 
     public void test_parse_caseInsensitiveUTC_matchedCase() throws Exception {
         setCaseSensitive(false);
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("Z", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("Z", pos);
         assertEquals(pos.getIndex(), 1);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
     public void test_parse_caseInsensitiveUTC_unmatchedCase() throws Exception {
         setCaseSensitive(false);
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter("+HH:MM:ss", "Z").parseToBuilder("z", pos);
+        TemporalAccessor parsed = getFormatter("+HH:MM:ss", "Z").parseUnresolved("z", pos);
         assertEquals(pos.getIndex(), 1);
-        assertParsed(dtb, ZoneOffset.UTC);
+        assertParsed(parsed, ZoneOffset.UTC);
     }
 
-    private void assertParsed(DateTimeBuilder dtb, ZoneOffset expectedOffset) {
+    private void assertParsed(TemporalAccessor parsed, ZoneOffset expectedOffset) {
         if (expectedOffset == null) {
-            assertEquals(dtb, null);
+            assertEquals(parsed, null);
         } else {
-            assertEquals(dtb.getFieldValueMap().size(), 1);
-            assertEquals(dtb.getLong(OFFSET_SECONDS), (long) expectedOffset.getTotalSeconds());
+            assertEquals(parsed.isSupported(OFFSET_SECONDS), true);
+            assertEquals(parsed.getLong(OFFSET_SECONDS), (long) expectedOffset.getTotalSeconds());
         }
     }
 

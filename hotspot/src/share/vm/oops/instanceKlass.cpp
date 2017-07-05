@@ -166,20 +166,19 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
 volatile int InstanceKlass::_total_instanceKlass_count = 0;
 
 Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
-                                                int vtable_len,
-                                                int itable_len,
-                                                int static_field_size,
-                                                int nonstatic_oop_map_size,
-                                                ReferenceType rt,
-                                                AccessFlags access_flags,
-                                                Symbol* name,
+                                              int vtable_len,
+                                              int itable_len,
+                                              int static_field_size,
+                                              int nonstatic_oop_map_size,
+                                              ReferenceType rt,
+                                              AccessFlags access_flags,
+                                              Symbol* name,
                                               Klass* super_klass,
-                                                KlassHandle host_klass,
-                                                TRAPS) {
+                                              bool is_anonymous,
+                                              TRAPS) {
 
   int size = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
-                                 access_flags.is_interface(),
-                                 !host_klass.is_null());
+                                 access_flags.is_interface(), is_anonymous);
 
   // Allocation
   InstanceKlass* ik;
@@ -187,25 +186,25 @@ Klass* InstanceKlass::allocate_instance_klass(ClassLoaderData* loader_data,
     if (name == vmSymbols::java_lang_Class()) {
       ik = new (loader_data, size, THREAD) InstanceMirrorKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, !host_klass.is_null());
+        access_flags, is_anonymous);
     } else if (name == vmSymbols::java_lang_ClassLoader() ||
           (SystemDictionary::ClassLoader_klass_loaded() &&
           super_klass != NULL &&
           super_klass->is_subtype_of(SystemDictionary::ClassLoader_klass()))) {
       ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, !host_klass.is_null());
+        access_flags, is_anonymous);
     } else {
       // normal class
       ik = new (loader_data, size, THREAD) InstanceKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, !host_klass.is_null());
+        access_flags, is_anonymous);
     }
   } else {
     // reference klass
     ik = new (loader_data, size, THREAD) InstanceRefKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, !host_klass.is_null());
+        access_flags, is_anonymous);
   }
 
   Atomic::inc(&_total_instanceKlass_count);
@@ -2793,7 +2792,10 @@ void InstanceKlass::print_on(outputStream* st) const {
     st->print("%s", source_debug_extension());
     st->cr();
   }
-  st->print(BULLET"annotations:       "); annotations()->print_value_on(st); st->cr();
+  st->print(BULLET"class annotations:       "); class_annotations()->print_value_on(st); st->cr();
+  st->print(BULLET"class type annotations:  "); class_type_annotations()->print_value_on(st); st->cr();
+  st->print(BULLET"field annotations:       "); fields_annotations()->print_value_on(st); st->cr();
+  st->print(BULLET"field type annotations:  "); fields_type_annotations()->print_value_on(st); st->cr();
   {
     ResourceMark rm;
     // PreviousVersionInfo objects returned via PreviousVersionWalker

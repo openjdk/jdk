@@ -47,7 +47,7 @@ public
 class Main {
     String program;
     PrintStream out, err;
-    String fname, mname, ename;
+    String fname, mname, ename, pname;
     String zname = "";
     String[] files;
     String rootjar = null;
@@ -77,6 +77,9 @@ class Main {
 
     static final String MANIFEST_DIR = "META-INF/";
     static final String VERSION = "1.0";
+
+    // valid values for Profile attribute
+    private static final String[] PROFILES = { "compact1", "compact2", "compact3" };
 
     private static ResourceBundle rsrc;
 
@@ -184,6 +187,14 @@ class Main {
                     if (ename != null) {
                         addMainClass(manifest, ename);
                     }
+                    if (pname != null) {
+                        if (!addProfileName(manifest, pname)) {
+                            if (in != null) {
+                                in.close();
+                            }
+                            return false;
+                        }
+                    }
                 }
                 OutputStream out;
                 if (fname != null) {
@@ -230,7 +241,7 @@ class Main {
                 if (manifest != null) {
                     manifest.close();
                 }
-                if (fname != null) {
+                if (ok && fname != null) {
                     // on Win32, we need this delete
                     inputFile.delete();
                     if (!tmpFile.renameTo(inputFile)) {
@@ -361,6 +372,9 @@ class Main {
                 case 'e':
                      ename = args[count++];
                      break;
+                case 'p':
+                     pname = args[count++];
+                     break;
                 default:
                     error(formatMsg("error.illegal.option",
                                 String.valueOf(flags.charAt(i))));
@@ -410,7 +424,7 @@ class Main {
             usageError();
             return false;
         } else if (uflag) {
-            if ((mname != null) || (ename != null)) {
+            if ((mname != null) || (ename != null) || (pname != null)) {
                 /* just want to update the manifest */
                 return true;
             } else {
@@ -544,7 +558,7 @@ class Main {
                 || (Mflag && isManifestEntry)) {
                 continue;
             } else if (isManifestEntry && ((newManifest != null) ||
-                        (ename != null))) {
+                        (ename != null) || (pname != null))) {
                 foundManifest = true;
                 if (newManifest != null) {
                     // Don't read from the newManifest InputStream, as we
@@ -563,7 +577,9 @@ class Main {
                 if (newManifest != null) {
                     old.read(newManifest);
                 }
-                updateManifest(old, zos);
+                if (!updateManifest(old, zos)) {
+                    return false;
+                }
             } else {
                 if (!entryMap.containsKey(name)) { // copy the old stuff
                     // do our own compression
@@ -596,10 +612,14 @@ class Main {
                 Manifest m = new Manifest(newManifest);
                 updateOk = !isAmbiguousMainClass(m);
                 if (updateOk) {
-                    updateManifest(m, zos);
+                    if (!updateManifest(m, zos)) {
+                        updateOk = false;
+                    }
                 }
-            } else if (ename != null) {
-                updateManifest(new Manifest(), zos);
+            } else if (ename != null || pname != null) {
+                if (!updateManifest(new Manifest(), zos)) {
+                    updateOk = false;
+                }
             }
         }
         zis.close();
@@ -623,13 +643,18 @@ class Main {
         zos.closeEntry();
     }
 
-    private void updateManifest(Manifest m, ZipOutputStream zos)
+    private boolean updateManifest(Manifest m, ZipOutputStream zos)
         throws IOException
     {
         addVersion(m);
         addCreatedBy(m);
         if (ename != null) {
             addMainClass(m, ename);
+        }
+        if (pname != null) {
+            if (!addProfileName(m, pname)) {
+                return false;
+            }
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
         e.setTime(System.currentTimeMillis());
@@ -641,6 +666,7 @@ class Main {
         if (vflag) {
             output(getMsg("out.update.manifest"));
         }
+        return true;
     }
 
 
@@ -685,6 +711,28 @@ class Main {
 
         // overrides any existing Main-Class attribute
         global.put(Attributes.Name.MAIN_CLASS, mainApp);
+    }
+
+    private boolean addProfileName(Manifest m, String profile) {
+        // check profile name
+        boolean found = false;
+        int i = 0;
+        while (i < PROFILES.length) {
+            if (profile.equals(PROFILES[i])) {
+                found = true;
+                break;
+            }
+            i++;
+        }
+        if (!found) {
+            error(formatMsg("error.bad.pvalue", profile));
+            return false;
+        }
+
+        // overrides any existing Profile attribute
+        Attributes global = m.getMainAttributes();
+        global.put(Attributes.Name.PROFILE, profile);
+        return true;
     }
 
     private boolean isAmbiguousMainClass(Manifest m) {

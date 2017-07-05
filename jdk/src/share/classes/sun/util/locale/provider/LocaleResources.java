@@ -332,23 +332,61 @@ public class LocaleResources {
     }
 
     public String getDateTimePattern(int timeStyle, int dateStyle, Calendar cal) {
-        String pattern;
-
         if (cal == null) {
             cal = Calendar.getInstance(locale);
         }
-        String calType = cal.getCalendarType();
+        return getDateTimePattern(null, timeStyle, dateStyle, cal.getCalendarType());
+    }
+
+    /**
+     * Returns a date-time format pattern
+     * @param timeStyle style of time; one of FULL, LONG, MEDIUM, SHORT in DateFormat,
+     *                  or -1 if not required
+     * @param dateStyle style of time; one of FULL, LONG, MEDIUM, SHORT in DateFormat,
+     *                  or -1 if not required
+     * @param calType   the calendar type for the pattern
+     * @return the pattern string
+     */
+    public String getCldrDateTimePattern(int timeStyle, int dateStyle, String calType) {
+        calType = CalendarDataUtility.normalizeCalendarType(calType);
+        String pattern;
+        pattern = getDateTimePattern("cldr.", timeStyle, dateStyle, calType);
+        if (pattern == null) {
+            pattern = getDateTimePattern(null, timeStyle, dateStyle, calType);
+        }
+        return pattern;
+    }
+
+    private String getDateTimePattern(String prefix, int timeStyle, int dateStyle, String calType) {
+        String pattern;
         String timePattern = null;
         String datePattern = null;
+
         if (timeStyle >= 0) {
-            timePattern = getDateTimePattern("TimePatterns", timeStyle, calType);
+            if (prefix != null) {
+                timePattern = getDateTimePattern(prefix, "TimePatterns", timeStyle, calType);
+            }
+            if (timePattern == null) {
+                timePattern = getDateTimePattern(null, "TimePatterns", timeStyle, calType);
+            }
         }
         if (dateStyle >= 0) {
-            datePattern = getDateTimePattern("DatePatterns", dateStyle, calType);
+            if (prefix != null) {
+                datePattern = getDateTimePattern(prefix, "DatePatterns", dateStyle, calType);
+            }
+            if (datePattern == null) {
+                datePattern = getDateTimePattern(null, "DatePatterns", dateStyle, calType);
+            }
         }
         if (timeStyle >= 0) {
             if (dateStyle >= 0) {
-                String dateTimePattern = getDateTimePattern("DateTimePatterns", 0, calType);
+                String dateTimePattern = null;
+                if (prefix != null) {
+                    dateTimePattern = getDateTimePattern(prefix, "DateTimePatterns", 0, calType);
+                }
+                if (dateTimePattern == null) {
+                    dateTimePattern = getDateTimePattern(null, "DateTimePatterns", 0, calType);
+                }
                 switch (dateTimePattern) {
                 case "{1} {0}":
                     pattern = datePattern + " " + timePattern;
@@ -396,27 +434,40 @@ public class LocaleResources {
         return localeData.getDateFormatData(locale);
     }
 
-    private String getDateTimePattern(String key, int styleIndex, String calendarType) {
-        String resourceKey = "gregory".equals(calendarType) ? key : calendarType + "." + key;
-        String cacheKey = DATE_TIME_PATTERN + resourceKey;
-        String[] patterns = null;
+    private String getDateTimePattern(String prefix, String key, int styleIndex, String calendarType) {
+        StringBuilder sb = new StringBuilder();
+        if (prefix != null) {
+            sb.append(prefix);
+        }
+        if (!"gregory".equals(calendarType)) {
+            sb.append(calendarType).append('.');
+        }
+        sb.append(key);
+        String resourceKey = sb.toString();
+        String cacheKey = sb.insert(0, DATE_TIME_PATTERN).toString();
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);
+        Object value = NULLOBJECT;
 
-        if (data == null || ((patterns = (String[]) data.get()) == null)) {
+        if (data == null || ((value = data.get()) == null)) {
             ResourceBundle r = localeData.getDateFormatData(locale);
             if (r.containsKey(resourceKey)) {
-                patterns = r.getStringArray(resourceKey);
+                value = r.getStringArray(resourceKey);
             } else {
                 assert !resourceKey.equals(key);
-                patterns = r.getStringArray(key);
+                if (r.containsKey(key)) {
+                    value = r.getStringArray(key);
+                }
             }
             cache.put(cacheKey,
-                      new ResourceReference(cacheKey, (Object) patterns, referenceQueue));
+                      new ResourceReference(cacheKey, value, referenceQueue));
         }
-
-        return patterns[styleIndex];
+        if (value == NULLOBJECT) {
+            assert prefix != null;
+            return null;
+        }
+        return ((String[])value)[styleIndex];
     }
 
     private static class ResourceReference extends SoftReference<Object> {

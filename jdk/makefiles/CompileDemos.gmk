@@ -421,6 +421,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPOLLER,\
 		CFLAGS:=$(CFLAGS_JDKLIB) $(SHARED_LIBRARY_FLAGS) \
                         -I$(JDK_OUTPUTDIR)/democlasses/jni/Poller, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB), \
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/demoobjs/jni/Poller,\
                 OUTPUT_DIR:=$(JDK_OUTPUTDIR)/demoobjs, \
 		LIBRARY:=Poller))

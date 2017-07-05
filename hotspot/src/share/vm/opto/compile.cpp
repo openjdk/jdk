@@ -409,6 +409,13 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       remove_macro_node(n);
     }
   }
+  // Remove useless expensive node
+  for (int i = C->expensive_count()-1; i >= 0; i--) {
+    Node* n = C->expensive_node(i);
+    if (!useful.member(n)) {
+      remove_expensive_node(n);
+    }
+  }
   // clean up the late inline lists
   remove_useless_late_inlines(&_string_late_inlines, useful);
   remove_useless_late_inlines(&_late_inlines, useful);
@@ -1061,6 +1068,7 @@ void Compile::Init(int aliaslevel) {
   _intrinsics = NULL;
   _macro_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _predicate_opaqs = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _expensive_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 
@@ -1926,6 +1934,10 @@ void Compile::Optimize() {
   print_method("Incremental Inline", 2);
 
   if (failing())  return;
+
+  // No more new expensive nodes will be added to the list from here
+  // so keep only the actual candidates for optimizations.
+  cleanup_expensive_nodes(igvn);
 
   // Perform escape analysis
   if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
@@ -3010,6 +3022,15 @@ bool Compile::final_graph_reshaping() {
     return true;
   }
 
+  // Expensive nodes have their control input set to prevent the GVN
+  // from freely commoning them. There's no GVN beyond this point so
+  // no need to keep the control input. We want the expensive nodes to
+  // be freely moved to the least frequent code path by gcm.
+  assert(OptimizeExpensiveOps || expensive_count() == 0, "optimization off but list non empty?");
+  for (int i = 0; i < expensive_count(); i++) {
+    _expensive_nodes->at(i)->set_req(0, NULL);
+  }
+
   Final_Reshape_Counts frc;
 
   // Visit everybody reachable!
@@ -3523,5 +3544,128 @@ void Compile::dump_inlining() {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       tty->print(_print_inlining_list->at(i).ss()->as_string());
     }
+  }
+}
+
+int Compile::cmp_expensive_nodes(Node* n1, Node* n2) {
+  if (n1->Opcode() < n2->Opcode())      return -1;
+  else if (n1->Opcode() > n2->Opcode()) return 1;
+
+  assert(n1->req() == n2->req(), err_msg_res("can't compare %s nodes: n1->req() = %d, n2->req() = %d", NodeClassNames[n1->Opcode()], n1->req(), n2->req()));
+  for (uint i = 1; i < n1->req(); i++) {
+    if (n1->in(i) < n2->in(i))      return -1;
+    else if (n1->in(i) > n2->in(i)) return 1;
+  }
+
+  return 0;
+}
+
+int Compile::cmp_expensive_nodes(Node** n1p, Node** n2p) {
+  Node* n1 = *n1p;
+  Node* n2 = *n2p;
+
+  return cmp_expensive_nodes(n1, n2);
+}
+
+void Compile::sort_expensive_nodes() {
+  if (!expensive_nodes_sorted()) {
+    _expensive_nodes->sort(cmp_expensive_nodes);
+  }
+}
+
+bool Compile::expensive_nodes_sorted() const {
+  for (int i = 1; i < _expensive_nodes->length(); i++) {
+    if (cmp_expensive_nodes(_expensive_nodes->adr_at(i), _expensive_nodes->adr_at(i-1)) < 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Compile::should_optimize_expensive_nodes(PhaseIterGVN &igvn) {
+  if (_expensive_nodes->length() == 0) {
+    return false;
+  }
+
+  assert(OptimizeExpensiveOps, "optimization off?");
+
+  // Take this opportunity to remove dead nodes from the list
+  int j = 0;
+  for (int i = 0; i < _expensive_nodes->length(); i++) {
+    Node* n = _expensive_nodes->at(i);
+    if (!n->is_unreachable(igvn)) {
+      assert(n->is_expensive(), "should be expensive");
+      _expensive_nodes->at_put(j, n);
+      j++;
+    }
+  }
+  _expensive_nodes->trunc_to(j);
+
+  // Then sort the list so that similar nodes are next to each other
+  // and check for at least two nodes of identical kind with same data
+  // inputs.
+  sort_expensive_nodes();
+
+  for (int i = 0; i < _expensive_nodes->length()-1; i++) {
+    if (cmp_expensive_nodes(_expensive_nodes->adr_at(i), _expensive_nodes->adr_at(i+1)) == 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
+  if (_expensive_nodes->length() == 0) {
+    return;
+  }
+
+  assert(OptimizeExpensiveOps, "optimization off?");
+
+  // Sort to bring similar nodes next to each other and clear the
+  // control input of nodes for which there's only a single copy.
+  sort_expensive_nodes();
+
+  int j = 0;
+  int identical = 0;
+  int i = 0;
+  for (; i < _expensive_nodes->length()-1; i++) {
+    assert(j <= i, "can't write beyond current index");
+    if (_expensive_nodes->at(i)->Opcode() == _expensive_nodes->at(i+1)->Opcode()) {
+      identical++;
+      _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
+      continue;
+    }
+    if (identical > 0) {
+      _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
+      identical = 0;
+    } else {
+      Node* n = _expensive_nodes->at(i);
+      igvn.hash_delete(n);
+      n->set_req(0, NULL);
+      igvn.hash_insert(n);
+    }
+  }
+  if (identical > 0) {
+    _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
+  } else if (_expensive_nodes->length() >= 1) {
+    Node* n = _expensive_nodes->at(i);
+    igvn.hash_delete(n);
+    n->set_req(0, NULL);
+    igvn.hash_insert(n);
+  }
+  _expensive_nodes->trunc_to(j);
+}
+
+void Compile::add_expensive_node(Node * n) {
+  assert(!_expensive_nodes->contains(n), "duplicate entry in expensive list");
+  assert(n->is_expensive(), "expensive nodes with non-null control here only");
+  assert(!n->is_CFG() && !n->is_Mem(), "no cfg or memory nodes here");
+  if (OptimizeExpensiveOps) {
+    _expensive_nodes->append(n);
+  } else {
+    // Clear control input and let IGVN optimize expensive nodes if
+    // OptimizeExpensiveOps is off.
+    n->set_req(0, NULL);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import sun.swing.*;
 
 /**
  * <p>This class contains utilities useful for regression testing.
@@ -211,5 +213,34 @@ public class Util {
         }
 
         return result.get(0);
+    }
+    /**
+     * Gets key codes from system mnemonic key mask
+     * @return key codes list
+     */
+    public static ArrayList<Integer> getSystemMnemonicKeyCodes() {
+        return Util.getKeyCodesFromKeyMask(SwingUtilities2.getSystemMnemonicKeyMask());
+    }
+
+    /**
+     * Gets the key codes list from modifiers
+     * @param modifiers an integer combination of the modifier constants
+     * @return key codes list
+     */
+    public static ArrayList<Integer> getKeyCodesFromKeyMask(int modifiers) {
+        ArrayList<Integer> result = new ArrayList<>();
+        if ((modifiers & InputEvent.CTRL_MASK) != 0) {
+            result.add(KeyEvent.VK_CONTROL);
+        }
+        if ((modifiers & InputEvent.ALT_MASK) != 0) {
+            result.add(KeyEvent.VK_ALT);
+        }
+        if ((modifiers & InputEvent.SHIFT_MASK) != 0) {
+            result.add(KeyEvent.VK_SHIFT);
+        }
+        if ((modifiers & InputEvent.META_MASK) != 0) {
+            result.add(KeyEvent.VK_META);
+        }
+        return result;
     }
 }
