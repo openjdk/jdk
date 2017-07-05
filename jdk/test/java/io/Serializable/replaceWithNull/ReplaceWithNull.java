@@ -23,7 +23,6 @@
 
 /* @test
  * @bug 4065313
- * @clean A ReplaceWithNull MyObjectOutputStream
  * @summary Ensure that it is okay to replace an object with null.
  */
 import java.io.*;

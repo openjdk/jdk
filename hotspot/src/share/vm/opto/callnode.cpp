@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1538,10 +1538,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // If we are locking an unescaped object, the lock/unlock is unnecessary
     //
     ConnectionGraph *cgr = phase->C->congraph();
-    PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
-    if (cgr != NULL)
-      es = cgr->escape_state(obj_node());
-    if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
+    if (cgr != NULL && cgr->not_global_escape(obj_node())) {
       assert(!is_eliminated() || is_coarsened(), "sanity");
       // The lock could be marked eliminated by lock coarsening
       // code during first IGVN before EA. Replace coarsened flag
@@ -1680,10 +1677,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // If we are unlocking an unescaped object, the lock/unlock is unnecessary.
     //
     ConnectionGraph *cgr = phase->C->congraph();
-    PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
-    if (cgr != NULL)
-      es = cgr->escape_state(obj_node());
-    if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
+    if (cgr != NULL && cgr->not_global_escape(obj_node())) {
       assert(!is_eliminated() || is_coarsened(), "sanity");
       // The lock could be marked eliminated by lock coarsening
       // code during first IGVN before EA. Replace coarsened flag

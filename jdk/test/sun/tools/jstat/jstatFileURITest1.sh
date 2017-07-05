@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,12 @@ Windows*)
     # characters into forward slash characters in an effort to convert
     # TESTSRC into a canonical form useable as URI path.
     cp ${TESTSRC}/hsperfdata_3433 .
-    ${JSTAT} -J-XX:+UsePerfData -gcutil file:/`pwd`/hsperfdata_3433 2>&1 | awk -f ${TESTSRC}/fileURITest1.awk
+    ${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcutil file:/`pwd`/hsperfdata_3433 2>&1 | awk -f ${TESTSRC}/fileURITest1.awk
     RC=$?
     rm -f hsperfdata_3433 2>&1 > /dev/null
     ;;
 *)
-    ${JSTAT} -J-XX:+UsePerfData -gcutil file:${TESTSRC}/hsperfdata_3433 2>&1 | awk -f ${TESTSRC}/fileURITest1.awk
+    ${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcutil file:${TESTSRC}/hsperfdata_3433 2>&1 | awk -f ${TESTSRC}/fileURITest1.awk
     RC=$?
     ;;
 esac
