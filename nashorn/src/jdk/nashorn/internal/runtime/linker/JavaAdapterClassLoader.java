@@ -34,7 +34,6 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
-
 import jdk.internal.dynalink.beans.StaticClass;
 
 /**

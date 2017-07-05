@@ -144,7 +144,7 @@ Object.defineProperty(Object.prototype, "__proto__", {
         return Object.getPrototypeOf(this);
     },
     set: function(x) {
-        throw new TypeError("__proto__ set not supported");
+        Object.setPrototypeOf(this, x);
     }
 });
 

@@ -197,8 +197,7 @@ public final class KerberosPrincipal
      * {@code KerberosPrincipal} and the two
      * {@code KerberosPrincipal} instances are equivalent.
      * More formally two {@code KerberosPrincipal} instances are equal
-     * if the values returned by {@code getName()} are equal and the
-     * values returned by {@code getNameType()} are equal.
+     * if the values returned by {@code getName()} are equal.
      *
      * @param other the Object to compare to
      * @return true if the Object passed in represents the same principal
@@ -211,15 +210,10 @@ public final class KerberosPrincipal
 
         if (! (other instanceof KerberosPrincipal)) {
             return false;
-        } else {
-            String myFullName = getName();
-            String otherFullName = ((KerberosPrincipal) other).getName();
-            if (nameType == ((KerberosPrincipal)other).nameType &&
-                myFullName.equals(otherFullName)) {
-                 return true;
-            }
         }
-        return false;
+        String myFullName = getName();
+        String otherFullName = ((KerberosPrincipal) other).getName();
+        return myFullName.equals(otherFullName);
     }
 
     /**

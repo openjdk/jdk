@@ -54,60 +54,66 @@ public class SensitivityModifier {
     @SuppressWarnings("unchecked")
     static void doTest(Path top) throws Exception {
         FileSystem fs = top.getFileSystem();
-        WatchService watcher = fs.newWatchService();
+        try (WatchService watcher = fs.newWatchService()) {
 
-        // create directories and files
-        int nDirs = 5 + rand.nextInt(20);
-        int nFiles = 50 + rand.nextInt(50);
-        Path[] dirs = new Path[nDirs];
-        Path[] files = new Path[nFiles];
-        for (int i=0; i<nDirs; i++) {
-            dirs[i] = Files.createDirectory(top.resolve("dir" + i));
-        }
-        for (int i=0; i<nFiles; i++) {
-            Path dir = dirs[rand.nextInt(nDirs)];
-            files[i] = Files.createFile(dir.resolve("file" + i));
-        }
-
-        // register the directories (random sensitivity)
-        register(dirs, watcher);
-
-        // sleep a bit here to ensure that modification to the first file
-        // can be detected by polling implementations (ie: last modified time
-        // may not change otherwise).
-        try { Thread.sleep(1000); } catch (InterruptedException e) { }
-
-        // modify files and check that events are received
-        for (int i=0; i<10; i++) {
-            Path file = files[rand.nextInt(nFiles)];
-            System.out.println("Modify: " + file);
-            try (OutputStream out = Files.newOutputStream(file)) {
-                out.write(new byte[100]);
+            // create directories and files
+            int nDirs = 5 + rand.nextInt(20);
+            int nFiles = 50 + rand.nextInt(50);
+            Path[] dirs = new Path[nDirs];
+            Path[] files = new Path[nFiles];
+            for (int i=0; i<nDirs; i++) {
+                dirs[i] = Files.createDirectory(top.resolve("dir" + i));
             }
-            System.out.println("Waiting for event...");
-            WatchKey key = watcher.take();
-            WatchEvent<?> event = key.pollEvents().iterator().next();
-            if (event.kind() != ENTRY_MODIFY)
-                throw new RuntimeException("Unexpected event: " + event);
-            Path name = ((WatchEvent<Path>)event).context();
-            if (!name.equals(file.getFileName()))
-                throw new RuntimeException("Unexpected context: " + name);
-            System.out.println("Event OK");
+            for (int i=0; i<nFiles; i++) {
+                Path dir = dirs[rand.nextInt(nDirs)];
+                files[i] = Files.createFile(dir.resolve("file" + i));
+            }
 
-            // drain events (to avoid interference)
-            do {
-                key.pollEvents();
-                key.reset();
-                key = watcher.poll(1, TimeUnit.SECONDS);
-            } while (key != null);
-
-            // re-register the directories to force changing their sensitivity
-            // level
+            // register the directories (random sensitivity)
             register(dirs, watcher);
-        }
 
-        // done
-        watcher.close();
+            // sleep a bit here to ensure that modification to the first file
+            // can be detected by polling implementations (ie: last modified time
+            // may not change otherwise).
+            try { Thread.sleep(1000); } catch (InterruptedException e) { }
+
+            // modify files and check that events are received
+            for (int i=0; i<10; i++) {
+                Path file = files[rand.nextInt(nFiles)];
+                System.out.println("Modify: " + file);
+                try (OutputStream out = Files.newOutputStream(file)) {
+                    out.write(new byte[100]);
+                }
+
+                System.out.println("Waiting for event(s)...");
+                boolean eventReceived = false;
+                WatchKey key = watcher.take();
+                do {
+                    for (WatchEvent<?> event: key.pollEvents()) {
+                        if (event.kind() != ENTRY_MODIFY)
+                            throw new RuntimeException("Unexpected event: " + event);
+                        Path name = ((WatchEvent<Path>)event).context();
+                        if (name.equals(file.getFileName())) {
+                            eventReceived = true;
+                            break;
+                        }
+                    }
+                    key.reset();
+                    key = watcher.poll(1, TimeUnit.SECONDS);
+                } while (key != null && !eventReceived);
+
+                // we should have received at least one ENTRY_MODIFY event
+                if (eventReceived) {
+                    System.out.println("Event OK");
+                } else {
+                    throw new RuntimeException("No ENTRY_MODIFY event received for " + file);
+                }
+
+                // re-register the directories to force changing their sensitivity
+                // level
+                register(dirs, watcher);
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
