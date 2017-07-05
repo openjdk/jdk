@@ -57,7 +57,7 @@ SaslServerFactory{
     /**
      * Returns a new instance of the NTLM SASL client mechanism.
      * Argument checks are performed in SaslClient's constructor.
-     * @returns a new SaslClient ; otherwise null if unsuccessful.
+     * @return a new SaslClient; otherwise null if unsuccessful.
      * @throws SaslException If there is an error creating the NTLM
      * SASL client.
      */
@@ -86,7 +86,7 @@ SaslServerFactory{
     /**
      * Returns a new instance of the NTLM SASL server mechanism.
      * Argument checks are performed in SaslServer's constructor.
-     * @returns a new SaslServer ; otherwise null if unsuccessful.
+     * @return a new SaslServer; otherwise null if unsuccessful.
      * @throws SaslException If there is an error creating the NTLM
      * SASL server.
      */
@@ -116,7 +116,7 @@ SaslServerFactory{
     /**
       * Returns the authentication mechanisms that this factory can produce.
       *
-      * @returns String[] {"NTLM"} if policies in env match those of this
+      * @return String[] {"NTLM"} if policies in env match those of this
       * factory.
       */
     public String[] getMechanismNames(Map<String,?> env) {

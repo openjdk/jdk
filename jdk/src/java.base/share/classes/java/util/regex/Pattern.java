@@ -565,7 +565,7 @@ import java.util.stream.StreamSupport;
  * <p>
  * <b><a name="usc">Scripts</a></b> are specified either with the prefix {@code Is}, as in
  * {@code IsHiragana}, or by using  the {@code script} keyword (or its short
- * form {@code sc})as in {@code script=Hiragana} or {@code sc=Hiragana}.
+ * form {@code sc}) as in {@code script=Hiragana} or {@code sc=Hiragana}.
  * <p>
  * The script names supported by <code>Pattern</code> are the valid script names
  * accepted and defined by
@@ -1299,18 +1299,22 @@ public final class Pattern
         if (slashEIndex == -1)
             return "\\Q" + s + "\\E";
 
-        StringBuilder sb = new StringBuilder(s.length() * 2);
+        int lenHint = s.length();
+        lenHint = (lenHint < Integer.MAX_VALUE - 8 - lenHint) ?
+                (lenHint << 1) : (Integer.MAX_VALUE - 8);
+
+        StringBuilder sb = new StringBuilder(lenHint);
         sb.append("\\Q");
-        slashEIndex = 0;
         int current = 0;
-        while ((slashEIndex = s.indexOf("\\E", current)) != -1) {
-            sb.append(s.substring(current, slashEIndex));
+        do {
+            sb.append(s, current, slashEIndex)
+                    .append("\\E\\\\E\\Q");
             current = slashEIndex + 2;
-            sb.append("\\E\\\\E\\Q");
-        }
-        sb.append(s.substring(current, s.length()));
-        sb.append("\\E");
-        return sb.toString();
+        } while ((slashEIndex = s.indexOf("\\E", current)) != -1);
+
+        return sb.append(s, current, s.length())
+                .append("\\E")
+                .toString();
     }
 
     /**
@@ -1367,14 +1371,16 @@ public final class Pattern
     }
 
     /**
-     * The pattern is converted to normalizedD form and then a pure group
-     * is constructed to match canonical equivalences of the characters.
+     * The pattern is converted to normalized form ({@linkplain
+     * java.text.Normalizer.Form.NFD NFD}, canonical decomposition)
+     * and then a pure group is constructed to match canonical
+     * equivalences of the characters.
      */
     private void normalize() {
         boolean inCharClass = false;
         int lastCodePoint = -1;
 
-        // Convert pattern into normalizedD form
+        // Convert pattern into normalized form
         normalizedPattern = Normalizer.normalize(pattern, Normalizer.Form.NFD);
         patternLength = normalizedPattern.length();
 

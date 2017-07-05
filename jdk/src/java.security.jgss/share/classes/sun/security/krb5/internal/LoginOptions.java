@@ -36,7 +36,7 @@ import java.io.IOException;
 /**
  * Implements the ASN.1 KDCOptions type.
  *
- * <xmp>
+ * <pre>{@code
  * KDCOptions   ::= KerberosFlags
  *      -- reserved(0),
  *      -- forwardable(1),
@@ -64,7 +64,7 @@ import java.io.IOException;
  * KerberosFlags ::= BIT STRING (SIZE (32..MAX))
  *                   -- minimum number of bits shall be sent,
  *                   -- but no fewer than 32
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

@@ -1971,6 +1971,26 @@ void os::Solaris::print_distro_info(outputStream* st) {
   st->cr();
 }
 
+void os::get_summary_os_info(char* buf, size_t buflen) {
+  strncpy(buf, "Solaris", buflen);  // default to plain solaris
+  FILE* fp = fopen("/etc/release", "r");
+  if (fp != NULL) {
+    char tmp[256];
+    // Only get the first line and chop out everything but the os name.
+    if (fgets(tmp, sizeof(tmp), fp)) {
+      char* ptr = tmp;
+      // skip past whitespace characters
+      while (*ptr != '\0' && (*ptr == ' ' || *ptr == '\t' || *ptr == '\n')) ptr++;
+      if (*ptr != '\0') {
+        char* nl = strchr(ptr, '\n');
+        if (nl != NULL) *nl = '\0';
+        strncpy(buf, ptr, buflen);
+      }
+    }
+    fclose(fp);
+  }
+}
+
 void os::Solaris::print_libversion_info(outputStream* st) {
   st->print("  (T2 libthread)");
   st->cr();
@@ -1996,6 +2016,22 @@ static bool check_addr0(outputStream* st) {
     ::close(fd);
   }
   return status;
+}
+
+void os::get_summary_cpu_info(char* buf, size_t buflen) {
+  // Get MHz with system call. We don't seem to already have this.
+  processor_info_t stats;
+  processorid_t id = getcpuid();
+  int clock = 0;
+  if (processor_info(id, &stats) != -1) {
+    clock = stats.pi_clock;  // pi_processor_type isn't more informative than below
+  }
+#ifdef AMD64
+  snprintf(buf, buflen, "x86 64 bit %d MHz", clock);
+#else
+  // must be sparc
+  snprintf(buf, buflen, "Sparcv9 64 bit %d MHz", clock);
+#endif
 }
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {

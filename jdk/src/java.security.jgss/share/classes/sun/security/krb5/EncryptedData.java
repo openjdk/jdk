@@ -259,20 +259,20 @@ public class EncryptedData implements Cloneable {
     /**
      * Returns an ASN.1 encoded EncryptedData type.
      *
-     * <xmp>
+     * <pre>{@code
      * EncryptedData   ::= SEQUENCE {
      *     etype   [0] Int32 -- EncryptionType --,
      *     kvno    [1] UInt32 OPTIONAL,
      *     cipher  [2] OCTET STRING -- ciphertext
      * }
-     * </xmp>
+     * }</pre>
      *
      * <p>
      * This definition reflects the Network Working Group RFC 4120
      * specification available at
      * <a href="http://www.ietf.org/rfc/rfc4120.txt">
      * http://www.ietf.org/rfc/rfc4120.txt</a>.
-     * <p>
+     *
      * @return byte array of encoded EncryptedData object.
      * @exception Asn1Exception if an error occurs while decoding an
      * ASN1 encoded data.

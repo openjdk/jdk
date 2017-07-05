@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,11 @@
 #include <string.h>
 #endif
 
+/*
+ * For reference see for example the GFileInfo section at
+ * https://developer.gnome.org/gio/unstable/.
+ */
+
 /* Definitions for GIO */
 
 #define G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE "standard::content-type"
@@ -66,18 +71,6 @@ static g_object_unref_func g_object_unref;
 static g_file_new_for_path_func g_file_new_for_path;
 static g_file_query_info_func g_file_query_info;
 static g_file_info_get_content_type_func g_file_info_get_content_type;
-
-
-/* Definitions for GNOME VFS */
-
-typedef int gboolean;
-
-typedef gboolean (*gnome_vfs_init_function)(void);
-typedef const char* (*gnome_vfs_mime_type_from_name_function)
-    (const char* filename);
-
-static gnome_vfs_init_function gnome_vfs_init;
-static gnome_vfs_mime_type_from_name_function gnome_vfs_mime_type_from_name;
 
 
 #include "sun_nio_fs_GnomeFileTypeDetector.h"
@@ -127,7 +120,7 @@ Java_sun_nio_fs_GnomeFileTypeDetector_initializeGio
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGio
+Java_sun_nio_fs_GnomeFileTypeDetector_probeGio
     (JNIEnv* env, jclass this, jlong pathAddress)
 {
     char* path = (char*)jlong_to_ptr(pathAddress);
@@ -152,53 +145,4 @@ Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGio
     (*g_object_unref)(gfile);
 
     return result;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_nio_fs_GnomeFileTypeDetector_initializeGnomeVfs
-    (JNIEnv* env, jclass this)
-{
-    void* vfs_handle;
-
-    vfs_handle = dlopen("libgnomevfs-2.so", RTLD_LAZY);
-    if (vfs_handle == NULL) {
-        vfs_handle = dlopen("libgnomevfs-2.so.0", RTLD_LAZY);
-    }
-    if (vfs_handle == NULL) {
-        return JNI_FALSE;
-    }
-
-    gnome_vfs_init = (gnome_vfs_init_function)dlsym(vfs_handle, "gnome_vfs_init");
-    gnome_vfs_mime_type_from_name = (gnome_vfs_mime_type_from_name_function)
-        dlsym(vfs_handle, "gnome_vfs_mime_type_from_name");
-
-    if (gnome_vfs_init == NULL ||
-        gnome_vfs_mime_type_from_name == NULL)
-    {
-        dlclose(vfs_handle);
-        return JNI_FALSE;
-    }
-
-    (*gnome_vfs_init)();
-    return JNI_TRUE;
-}
-
-JNIEXPORT jbyteArray JNICALL
-Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGnomeVfs
-    (JNIEnv* env, jclass this, jlong pathAddress)
-{
-    char* path = (char*)jlong_to_ptr(pathAddress);
-    const char* mime = (*gnome_vfs_mime_type_from_name)(path);
-
-    if (mime == NULL) {
-        return NULL;
-    } else {
-        jbyteArray result;
-        jsize len = strlen(mime);
-        result = (*env)->NewByteArray(env, len);
-        if (result != NULL) {
-            (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)mime);
-        }
-        return result;
-    }
 }

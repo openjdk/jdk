@@ -37,10 +37,10 @@ import javax.naming.NamingException;
   * that do not support subtypes of Context, but which can act as
   * intermediate contexts for resolution purposes.
   *<p>
-  * A <tt>Name</tt> parameter passed to any method is owned
+  * A {@code Name} parameter passed to any method is owned
   * by the caller.  The service provider will not modify the object
   * or keep a reference to it.
-  * A <tt>ResolveResult</tt> object returned by any
+  * A {@code ResolveResult} object returned by any
   * method is owned by the caller.  The caller may subsequently modify it;
   * the service provider may not.
   *

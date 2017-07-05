@@ -1859,7 +1859,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        return notAFunction();
+        return notAFunction(desc);
     }
 
     /**
@@ -1872,11 +1872,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        return notAFunction();
+        return notAFunction(desc);
     }
 
-    private GuardedInvocation notAFunction() {
-        throw typeError("not.a.function", ScriptRuntime.safeToString(this));
+    private GuardedInvocation notAFunction(final CallSiteDescriptor desc) {
+        throw typeError("not.a.function", NashornCallSiteDescriptor.getFunctionErrorMessage(desc, this));
     }
 
     /**

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6467152 6716076 6829503
+ * @bug     6467152 6716076 6829503 8132550
  * @summary deadlock occurs in LogManager initialization and JVM termination
  * @author  Serguei Spitsyn / Hitachi / Martin Buchholz
  *

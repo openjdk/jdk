@@ -44,15 +44,15 @@ already deployed ones--can be accessed in a common way.
 This package is for applications and service providers that deal with
 LDAPv3 extended operations and controls, as defined by
 <a href=http://www.ietf.org/rfc/rfc2251.txt>RFC 2251</a>.
-The core interface in this package is <tt>LdapContext</tt>, which defines
+The core interface in this package is <code>LdapContext</code>, which defines
 methods on a context for performing extended operations and handling
 controls.
 
 <h4>Extended Operations</h4>
 <p>
-This package defines the interface <tt>ExtendedRequest</tt>
+This package defines the interface <code>ExtendedRequest</code>
 to represent the argument to an extended operation,
-and the interface <tt>ExtendedResponse</tt> to represent the result
+and the interface <code>ExtendedResponse</code> to represent the result
 of the extended operation.
 An extended response is always paired with an extended request
 but not necessarily vice versa. That is, you can have an extended request
@@ -73,7 +73,7 @@ BER values.
 <p>
 For example, suppose an LDAP server supports a "get time" extended operation.
 It would supply classes such as
-<tt>GetTimeRequest</tt> and <tt>GetTimeResponse</tt>,
+<code>GetTimeRequest</code> and <code>GetTimeResponse</code>,
 so that applications can use this feature.
 An application would use these classes as follows:
 <blockquote><pre>
@@ -82,7 +82,7 @@ GetTimeResponse resp =
 long time = resp.getTime();
 </pre></blockquote>
 <p>
-The <tt>GetTimeRequest</tt> and <tt>GetTimeResponse</tt> classes might
+The <code>GetTimeRequest</code> and <code>GetTimeResponse</code> classes might
 be defined as follows:
 <blockquote><pre>
 public class GetTimeRequest implements ExtendedRequest {
@@ -105,7 +105,7 @@ public class GetTimeRequest implements ExtendedRequest {
 public class GetTimeResponse() implements ExtendedResponse {
     long time;
     // called by GetTimeRequest.createExtendedResponse()
-    public GetTimeResponse(String id, byte[] berValue, int offset, int length) 
+    public GetTimeResponse(String id, byte[] berValue, int offset, int length)
         throws NamingException {
         // check validity of id
         long time =  ... // decode berValue to get time
@@ -127,7 +127,7 @@ public class GetTimeResponse() implements ExtendedResponse {
 
 <h4>Controls</h4>
 
-This package defines the interface <tt>Control</tt> to represent an LDAPv3
+This package defines the interface <code>Control</code> to represent an LDAPv3
 control. It can be a control that is sent to an LDAP server
 (<em>request control</em>) or a control returned by an LDAP server
 (<em>response control</em>).  Unlike extended requests and responses,
@@ -149,8 +149,8 @@ encoding and decoding BER values.
 <p>
 For example, suppose an LDAP server supports a "signed results"
 request control, which when sent with a request, asks the
-server to digitally sign the results of an operation. 
-It would supply a class <tt>SignedResultsControl</tt>  so that applications
+server to digitally sign the results of an operation.
+It would supply a class <code>SignedResultsControl</code>  so that applications
 can use this feature.
 An application  would use this class as follows:
 <blockquote>
@@ -160,7 +160,7 @@ ectx.setRequestControls(reqCtls);
 NamingEnumeration enum = ectx.search(...);
 </pre>
 </blockquote>
-The <tt>SignedResultsControl</tt> class might be defined as follows:
+The <code>SignedResultsControl</code> class might be defined as follows:
 <blockquote><pre>
 public class SignedResultsControl implements Control {
     // User-friendly constructor 
@@ -180,19 +180,19 @@ public class SignedResultsControl implements Control {
 </pre></blockquote>
 <p>
 When a service provider receives response controls, it uses
-the <tt>ControlFactory</tt> class to produce specific classes 
-that implement the <tt>Control</tt> interface.
+the <code>ControlFactory</code> class to produce specific classes
+that implement the <code>Control</code> interface.
 <p>
 An LDAP server can send back response controls with an LDAP operation
 and also with enumeration results, such as those returned
 by a list or search operation.
-The <tt>LdapContext</tt> provides a method (<tt>getResponseControls()</tt>)
+The <code>LdapContext</code> provides a method (<code>getResponseControls()</code>)
 for getting the response controls sent with an LDAP operation,
-while the <tt>HasControls</tt> interface is used to retrieve
+while the <code>HasControls</code> interface is used to retrieve
 response controls associated with enumeration results.
 <p>
 For example, suppose an LDAP server sends back a "change ID" control in response
-to a successful modification. It would supply a class <tt>ChangeIDControl</tt>
+to a successful modification. It would supply a class <code>ChangeIDControl</code>
 so that the application can use this feature.
 An application would perform an update, and then try to get the change ID.
 <blockquote><pre>
@@ -211,8 +211,8 @@ if (respCtls != null) {
     }
 }
 </pre></blockquote>
-The vendor might supply the following <tt>ChangeIDControl</tt> and
-<tt>VendorXControlFactory</tt> classes. The <tt>VendorXControlFactory</tt>
+The vendor might supply the following <code>ChangeIDControl</code> and
+<code>VendorXControlFactory</code> classes. The <code>VendorXControlFactory</code>
 will be used by the service provider when the provider receives response
 controls from the LDAP server.
 <blockquote><pre>
@@ -245,7 +245,7 @@ public class VendorXControlFactory extends ControlFactory {
 
     public Control getControlInstance(Control orig) throws NamingException {
         if (isOneOfMyControls(orig.getID())) {
-	    ... 
+	    ...
 
 	    // determine which of ours it is and call its constructor
 	    return (new ChangeIDControl(orig.getID(), orig.getEncodedValue()));

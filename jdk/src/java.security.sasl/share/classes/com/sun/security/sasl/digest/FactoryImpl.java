@@ -60,7 +60,7 @@ SaslServerFactory{
      *
      * @throws SaslException If there is an error creating the DigestMD5
      * SASL client.
-     * @returns a new SaslClient ; otherwise null if unsuccessful.
+     * @return a new SaslClient; otherwise null if unsuccessful.
      */
     public SaslClient createSaslClient(String[] mechs,
          String authorizationId, String protocol, String serverName,
@@ -90,7 +90,7 @@ SaslServerFactory{
      *
      * @throws SaslException If there is an error creating the DigestMD5
      * SASL server.
-     * @returns a new SaslServer ; otherwise null if unsuccessful.
+     * @return a new SaslServer; otherwise null if unsuccessful.
      */
     public SaslServer createSaslServer(String mech,
          String protocol, String serverName, Map<String,?> props, CallbackHandler cbh)
@@ -114,7 +114,7 @@ SaslServerFactory{
     /**
       * Returns the authentication mechanisms that this factory can produce.
       *
-      * @returns String[] {"DigestMD5"} if policies in env match those of this
+      * @return String[] {"DigestMD5"} if policies in env match those of this
       * factory.
       */
     public String[] getMechanismNames(Map<String,?> env) {

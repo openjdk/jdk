@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,10 @@ final class HelloExtensions {
                 extension = new RenegotiationInfoExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_MAX_FRAGMENT_LENGTH) {
                 extension = new MaxFragmentLengthExtension(s, extlen);
+            } else if (extType == ExtensionType.EXT_STATUS_REQUEST) {
+                extension = new CertStatusReqExtension(s, extlen);
+            } else if (extType == ExtensionType.EXT_STATUS_REQUEST_V2) {
+                extension = new CertStatusReqListV2Extension(s, extlen);
             } else {
                 extension = new UnknownExtension(s, extlen, extType);
             }

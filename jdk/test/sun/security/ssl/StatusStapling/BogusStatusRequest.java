@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,21 @@
  * questions.
  */
 
-/*
- * @test
- * @modules java.xml/com.sun.org.apache.xerces.internal.impl
- *          java.xml/com.sun.org.apache.xalan.internal
- * @bug 6979306
- * @summary Test JAXP component version.
- */
+package sun.security.ssl;
 
-import org.testng.annotations.Test;
+import java.io.IOException;
 
-public class Bug6979306Test {
+final class BogusStatusRequest implements StatusRequest {
+    BogusStatusRequest() { }
 
-    @Test
-    public void test() {
-        String[] input = {};
-        com.sun.org.apache.xerces.internal.impl.Version.main(input);
-        com.sun.org.apache.xalan.internal.Version._main(input);
+    @Override
+    public int length() { return 0; }
+
+    @Override
+    public void send(HandshakeOutStream s) throws IOException { }
+
+    @Override
+    public String toString() {
+        return "BogusStatusRequest";
     }
-
 }

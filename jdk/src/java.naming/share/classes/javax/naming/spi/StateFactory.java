@@ -34,14 +34,14 @@ import java.util.Hashtable;
   * The JNDI framework allows for object implementations to
   * be loaded in dynamically via <em>object factories</em>.
   * For example, when looking up a printer bound in the name space,
-  * if the print service binds printer names to <tt>Reference</tt>s, the printer
-  * <tt>Reference</tt> could be used to create a printer object, so that
+  * if the print service binds printer names to {@code Reference}s, the printer
+  * {@code Reference} could be used to create a printer object, so that
   * the caller of lookup can directly operate on the printer object
   * after the lookup.
-  * <p>An <tt>ObjectFactory</tt> is responsible
+  * <p>An {@code ObjectFactory} is responsible
   * for creating objects of a specific type.  In the above example,
-  * you may have a <tt>PrinterObjectFactory</tt> for creating
-  * <tt>Printer</tt> objects.
+  * you may have a {@code PrinterObjectFactory} for creating
+  * {@code Printer} objects.
   * <p>
   * For the reverse process, when an object is bound into the namespace,
   * JNDI provides <em>state factories</em>.
@@ -50,23 +50,23 @@ import java.util.Hashtable;
   * <blockquote><pre>
   * ctx.rebind("inky", printer);
   * </pre></blockquote>
-  * The service provider for <tt>ctx</tt> uses a state factory
-  * to obtain the state of <tt>printer</tt> for binding into its namespace.
-  * A state factory for the <tt>Printer</tt> type object might return
+  * The service provider for {@code ctx} uses a state factory
+  * to obtain the state of {@code printer} for binding into its namespace.
+  * A state factory for the {@code Printer} type object might return
   * a more compact object for storage in the naming system.
   *<p>
-  * A state factory must implement the <tt>StateFactory</tt> interface.
+  * A state factory must implement the {@code StateFactory} interface.
   * In addition, the factory class must be public and must have a
   * public constructor that accepts no parameters.
   *<p>
-  * The <tt>getStateToBind()</tt> method of a state factory may
+  * The {@code getStateToBind()} method of a state factory may
   * be invoked multiple times, possibly using different parameters.
   * The implementation is thread-safe.
   *<p>
-  * <tt>StateFactory</tt> is intended for use with service providers
-  * that implement only the <tt>Context</tt> interface.
-  * <tt>DirStateFactory</tt> is intended for use with service providers
-  * that implement the <tt>DirContext</tt> interface.
+  * {@code StateFactory} is intended for use with service providers
+  * that implement only the {@code Context} interface.
+  * {@code DirStateFactory} is intended for use with service providers
+  * that implement the {@code DirContext} interface.
   *
   * @author Rosanna Lee
   * @author Scott Seligman
@@ -81,18 +81,18 @@ public interface StateFactory {
 /**
  * Retrieves the state of an object for binding.
  *<p>
- * <tt>NamingManager.getStateToBind()</tt>
+ * {@code NamingManager.getStateToBind()}
  * successively loads in state factories and invokes this method
  * on them until one produces a non-null answer.
- * <tt>DirectoryManager.getStateToBind()</tt>
+ * {@code DirectoryManager.getStateToBind()}
  * successively loads in state factories.  If a factory implements
- * <tt>DirStateFactory</tt>, then <tt>DirectoryManager</tt>
- * invokes <tt>DirStateFactory.getStateToBind()</tt>; otherwise
- * it invokes <tt>StateFactory.getStateToBind()</tt>.
+ * {@code DirStateFactory}, then {@code DirectoryManager}
+ * invokes {@code DirStateFactory.getStateToBind()}; otherwise
+ * it invokes {@code StateFactory.getStateToBind()}.
  *<p> When an exception
  * is thrown by a factory, the exception is passed on to the caller
- * of <tt>NamingManager.getStateToBind()</tt> and
- * <tt>DirectoryManager.getStateToBind()</tt>.
+ * of {@code NamingManager.getStateToBind()} and
+ * {@code DirectoryManager.getStateToBind()}.
  * The search for other factories
  * that may produce a non-null answer is halted.
  * A factory should only throw an exception if it is sure that
@@ -110,7 +110,7 @@ public interface StateFactory {
  * against concurrent access, since context implementations are not
  * guaranteed to be thread-safe.
  * <p>
- * The <tt>name</tt> and <tt>environment</tt> parameters
+ * The {@code name} and {@code environment} parameters
  * are owned by the caller.
  * The implementation will not modify these objects or keep references
  * to them, although it may keep references to clones or copies.

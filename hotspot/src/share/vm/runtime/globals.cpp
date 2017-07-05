@@ -770,7 +770,7 @@ static Flag::Error get_status_error(Flag::Error status_range, Flag::Error status
 
 static Flag::Error apply_constraint_and_check_range_bool(const char* name, bool* new_value, bool verbose = true) {
   Flag::Error status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     status = constraint->apply_bool(new_value, verbose);
   }
@@ -789,7 +789,7 @@ Flag::Error CommandLineFlags::boolAtPut(const char* name, size_t len, bool* valu
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_bool()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_bool(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_bool(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   bool old_value = result->get_bool();
   trace_flag_changed<EventBooleanFlagChanged, bool>(name, old_value, *value, origin);
@@ -817,7 +817,7 @@ static Flag::Error apply_constraint_and_check_range_int(const char* name, int* n
     range_status = range->check_int(*new_value, verbose);
   }
   Flag::Error constraint_status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     constraint_status = constraint->apply_int(new_value, verbose);
   }
@@ -836,7 +836,7 @@ Flag::Error CommandLineFlags::intAtPut(const char* name, size_t len, int* value,
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_int()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_int(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_int(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   int old_value = result->get_int();
   trace_flag_changed<EventIntFlagChanged, s4>(name, old_value, *value, origin);
@@ -862,7 +862,7 @@ static Flag::Error apply_constraint_and_check_range_uint(const char* name, uint*
     range_status = range->check_uint(*new_value, verbose);
   }
   Flag::Error constraint_status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     constraint_status = constraint->apply_uint(new_value, verbose);
   }
@@ -881,7 +881,7 @@ Flag::Error CommandLineFlags::uintAtPut(const char* name, size_t len, uint* valu
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_uint()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_uint(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_uint(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   uint old_value = result->get_uint();
   trace_flag_changed<EventUnsignedIntFlagChanged, u4>(name, old_value, *value, origin);
@@ -915,7 +915,7 @@ static Flag::Error apply_constraint_and_check_range_intx(const char* name, intx*
     range_status = range->check_intx(*new_value, verbose);
   }
   Flag::Error constraint_status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     constraint_status = constraint->apply_intx(new_value, verbose);
   }
@@ -926,7 +926,7 @@ Flag::Error CommandLineFlags::intxAtPut(const char* name, size_t len, intx* valu
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_intx()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_intx(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_intx(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   intx old_value = result->get_intx();
   trace_flag_changed<EventLongFlagChanged, intx>(name, old_value, *value, origin);
@@ -962,7 +962,7 @@ static Flag::Error apply_constraint_and_check_range_uintx(const char* name, uint
     range_status = range->check_uintx(*new_value, verbose);
   }
   Flag::Error constraint_status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     constraint_status = constraint->apply_uintx(new_value, verbose);
   }
@@ -973,7 +973,7 @@ Flag::Error CommandLineFlags::uintxAtPut(const char* name, size_t len, uintx* va
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_uintx()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_uintx(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_uintx(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   uintx old_value = result->get_uintx();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
@@ -1009,7 +1009,7 @@ static Flag::Error apply_constraint_and_check_range_uint64_t(const char* name, u
     range_status = range->check_uint64_t(*new_value, verbose);
   }
   Flag::Error constraint_status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     constraint_status = constraint->apply_uint64_t(new_value, verbose);
   }
@@ -1020,7 +1020,7 @@ Flag::Error CommandLineFlags::uint64_tAtPut(const char* name, size_t len, uint64
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_uint64_t()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_uint64_t(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_uint64_t(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   uint64_t old_value = result->get_uint64_t();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
@@ -1056,7 +1056,7 @@ static Flag::Error apply_constraint_and_check_range_size_t(const char* name, siz
     range_status = range->check_size_t(*new_value, verbose);
   }
   Flag::Error constraint_status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     constraint_status = constraint->apply_size_t(new_value, verbose);
   }
@@ -1067,7 +1067,7 @@ Flag::Error CommandLineFlags::size_tAtPut(const char* name, size_t len, size_t* 
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_size_t()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_size_t(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_size_t(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   size_t old_value = result->get_size_t();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
@@ -1103,7 +1103,7 @@ static Flag::Error apply_constraint_and_check_range_double(const char* name, dou
     range_status = range->check_double(*new_value, verbose);
   }
   Flag::Error constraint_status = Flag::SUCCESS;
-  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+  CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find_if_needs_check(name);
   if (constraint != NULL) {
     constraint_status = constraint->apply_double(new_value, verbose);
   }
@@ -1114,7 +1114,7 @@ Flag::Error CommandLineFlags::doubleAtPut(const char* name, size_t len, double* 
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return Flag::INVALID_FLAG;
   if (!result->is_double()) return Flag::WRONG_FORMAT;
-  Flag::Error check = apply_constraint_and_check_range_double(name, value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_double(name, value, !CommandLineFlagConstraintList::validated_after_ergo());
   if (check != Flag::SUCCESS) return check;
   double old_value = result->get_double();
   trace_flag_changed<EventDoubleFlagChanged, double>(name, old_value, *value, origin);
@@ -1127,7 +1127,7 @@ Flag::Error CommandLineFlags::doubleAtPut(const char* name, size_t len, double* 
 Flag::Error CommandLineFlagsEx::doubleAtPut(CommandLineFlagWithType flag, double value, Flag::Flags origin) {
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_double(), "wrong flag type");
-  Flag::Error check = apply_constraint_and_check_range_double(faddr->_name, &value, !CommandLineFlags::finishedInitializing());
+  Flag::Error check = apply_constraint_and_check_range_double(faddr->_name, &value);
   if (check != Flag::SUCCESS) return check;
   trace_flag_changed<EventDoubleFlagChanged, double>(faddr->_name, faddr->get_double(), value, origin);
   faddr->set_double(value);
@@ -1208,129 +1208,6 @@ void CommandLineFlags::printSetFlags(outputStream* out) {
   }
   out->cr();
   FREE_C_HEAP_ARRAY(Flag*, array);
-}
-
-bool CommandLineFlags::_finished_initializing = false;
-
-bool CommandLineFlags::check_all_ranges_and_constraints() {
-
-//#define PRINT_RANGES_AND_CONSTRAINTS_SIZES
-#ifdef PRINT_RANGES_AND_CONSTRAINTS_SIZES
-  {
-    size_t size_ranges = sizeof(CommandLineFlagRangeList);
-    for (int i=0; i<CommandLineFlagRangeList::length(); i++) {
-      size_ranges += sizeof(CommandLineFlagRange);
-      CommandLineFlagRange* range = CommandLineFlagRangeList::at(i);
-      const char* name = range->name();
-      Flag* flag = Flag::find_flag(name, strlen(name), true, true);
-      if (flag->is_intx()) {
-        size_ranges += 2*sizeof(intx);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_uintx()) {
-        size_ranges += 2*sizeof(uintx);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_uint64_t()) {
-        size_ranges += 2*sizeof(uint64_t);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_size_t()) {
-        size_ranges += 2*sizeof(size_t);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      } else if (flag->is_double()) {
-        size_ranges += 2*sizeof(double);
-        size_ranges += sizeof(CommandLineFlagRange*);
-      }
-    }
-    fprintf(stderr, "Size of %d ranges: " SIZE_FORMAT " bytes\n",
-            CommandLineFlagRangeList::length(), size_ranges);
-  }
-  {
-    size_t size_constraints = sizeof(CommandLineFlagConstraintList);
-    for (int i=0; i<CommandLineFlagConstraintList::length(); i++) {
-      size_constraints += sizeof(CommandLineFlagConstraint);
-      CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::at(i);
-      const char* name = constraint->name();
-      Flag* flag = Flag::find_flag(name, strlen(name), true, true);
-      if (flag->is_bool()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_bool);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_intx()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_intx);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_uintx()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_uintx);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_uint64_t()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_uint64_t);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_size_t()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_size_t);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_double()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_double);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      }
-    }
-    fprintf(stderr, "Size of %d constraints: " SIZE_FORMAT " bytes\n",
-            CommandLineFlagConstraintList::length(), size_constraints);
-  }
-#endif // PRINT_RANGES_AND_CONSTRAINTS_SIZES
-
-  _finished_initializing = true;
-
-  bool status = true;
-  for (int i=0; i<CommandLineFlagRangeList::length(); i++) {
-    CommandLineFlagRange* range = CommandLineFlagRangeList::at(i);
-    const char* name = range->name();
-    Flag* flag = Flag::find_flag(name, strlen(name), true, true);
-    if (flag != NULL) {
-      if (flag->is_intx()) {
-        intx value = flag->get_intx();
-        if (range->check_intx(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_uintx()) {
-        uintx value = flag->get_uintx();
-        if (range->check_uintx(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_uint64_t()) {
-        uint64_t value = flag->get_uint64_t();
-        if (range->check_uint64_t(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_size_t()) {
-        size_t value = flag->get_size_t();
-        if (range->check_size_t(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_double()) {
-        double value = flag->get_double();
-        if (range->check_double(value, true) != Flag::SUCCESS) status = false;
-      }
-    }
-  }
-  for (int i=0; i<CommandLineFlagConstraintList::length(); i++) {
-    CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::at(i);
-    const char*name = constraint->name();
-    Flag* flag = Flag::find_flag(name, strlen(name), true, true);
-    if (flag != NULL) {
-      if (flag->is_bool()) {
-        bool value = flag->get_bool();
-        if (constraint->apply_bool(&value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_intx()) {
-        intx value = flag->get_intx();
-        if (constraint->apply_intx(&value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_uintx()) {
-        uintx value = flag->get_uintx();
-        if (constraint->apply_uintx(&value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_uint64_t()) {
-        uint64_t value = flag->get_uint64_t();
-        if (constraint->apply_uint64_t(&value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_size_t()) {
-        size_t value = flag->get_size_t();
-        if (constraint->apply_size_t(&value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_double()) {
-        double value = flag->get_double();
-        if (constraint->apply_double(&value, true) != Flag::SUCCESS) status = false;
-      }
-    }
-  }
-
-  Arguments::post_final_range_and_constraint_check(status);
-
-  return status;
 }
 
 #ifndef PRODUCT

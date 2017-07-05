@@ -49,14 +49,14 @@ public class InitialDirContext extends InitialContext implements DirContext {
      * Constructs an initial DirContext with the option of not
      * initializing it.  This may be used by a constructor in
      * a subclass when the value of the environment parameter
-     * is not yet known at the time the <tt>InitialDirContext</tt>
+     * is not yet known at the time the {@code InitialDirContext}
      * constructor is called.  The subclass's constructor will
      * call this constructor, compute the value of the environment,
-     * and then call <tt>init()</tt> before returning.
+     * and then call {@code init()} before returning.
      *
      * @param lazy
      *          true means do not initialize the initial DirContext; false
-     *          is equivalent to calling <tt>new InitialDirContext()</tt>
+     *          is equivalent to calling {@code new InitialDirContext()}
      * @throws  NamingException if a naming exception is encountered
      *
      * @see InitialContext#init(Hashtable)
@@ -69,7 +69,7 @@ public class InitialDirContext extends InitialContext implements DirContext {
     /**
      * Constructs an initial DirContext.
      * No environment properties are supplied.
-     * Equivalent to <tt>new InitialDirContext(null)</tt>.
+     * Equivalent to {@code new InitialDirContext(null)}.
      *
      * @throws  NamingException if a naming exception is encountered
      *
@@ -82,12 +82,12 @@ public class InitialDirContext extends InitialContext implements DirContext {
     /**
      * Constructs an initial DirContext using the supplied environment.
      * Environment properties are discussed in the
-     * <tt>javax.naming.InitialContext</tt> class description.
+     * {@code javax.naming.InitialContext} class description.
      *
-     * <p> This constructor will not modify <tt>environment</tt>
+     * <p> This constructor will not modify {@code environment}
      * or save a reference to it, but may save a clone.
      * Caller should not modify mutable keys and values in
-     * <tt>environment</tt> after it has been passed to the constructor.
+     * {@code environment} after it has been passed to the constructor.
      *
      * @param environment
      *          environment used to create the initial DirContext.
