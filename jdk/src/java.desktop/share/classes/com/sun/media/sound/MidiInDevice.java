@@ -25,9 +25,8 @@
 
 package com.sun.media.sound;
 
-import javax.sound.midi.*;
-
-
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Transmitter;
 
 /**
  * MidiInDevice class representing functionality of MidiIn devices.
@@ -40,18 +39,14 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
 
     private volatile Thread midiInThread;
 
-    // CONSTRUCTOR
-
     MidiInDevice(AbstractMidiDeviceProvider.Info info) {
         super(info);
         if(Printer.trace) Printer.trace("MidiInDevice CONSTRUCTOR");
     }
 
-
-    // IMPLEMENTATION OF ABSTRACT MIDI DEVICE METHODS
-
     // $$kk: 06.24.99: i have this both opening and starting the midi in device.
     // may want to separate these??
+    @Override
     protected synchronized void implOpen() throws MidiUnavailableException {
         if (Printer.trace) Printer.trace("> MidiInDevice: implOpen()");
 
@@ -75,9 +70,9 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
         if (Printer.trace) Printer.trace("< MidiInDevice: implOpen() completed");
     }
 
-
     // $$kk: 06.24.99: i have this both stopping and closing the midi in device.
     // may want to separate these??
+    @Override
     protected synchronized void implClose() {
         if (Printer.trace) Printer.trace("> MidiInDevice: implClose()");
         long oldId = id;
@@ -98,7 +93,7 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
         if (Printer.trace) Printer.trace("< MidiInDevice: implClose() completed");
     }
 
-
+    @Override
     public long getMicrosecondPosition() {
         long timestamp = -1;
         if (isOpen()) {
@@ -107,22 +102,21 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
         return timestamp;
     }
 
-
     // OVERRIDES OF ABSTRACT MIDI DEVICE METHODS
 
-
+    @Override
     protected boolean hasTransmitters() {
         return true;
     }
 
-
+    @Override
     protected Transmitter createTransmitter() {
         return new MidiInTransmitter();
     }
 
     /**
       * An own class to distinguish the class name from
-      * the transmitter of other devices
+      * the transmitter of other devices.
       */
     private final class MidiInTransmitter extends BasicTransmitter {
         private MidiInTransmitter() {
@@ -130,8 +124,7 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
         }
     }
 
-    // RUNNABLE METHOD
-
+    @Override
     public void run() {
         // while the device is started, keep trying to get messages.
         // this thread returns from native code whenever stop() or close() is called
@@ -148,9 +141,6 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
         // let the thread exit
         midiInThread = null;
     }
-
-
-    // CALLBACKS FROM NATIVE
 
     /**
      * Callback from native code when a short MIDI event is received from hardware.
@@ -179,8 +169,6 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
         getTransmitterList().sendMessage(data, timeStamp);
     }
 
-    // NATIVE METHODS
-
     private native long nOpen(int index) throws MidiUnavailableException;
     private native void nClose(long id);
 
@@ -190,6 +178,4 @@ final class MidiInDevice extends AbstractMidiDevice implements Runnable {
 
     // go into native code and get messages. May be blocking
     private native void nGetMessages(long id);
-
-
 }

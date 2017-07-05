@@ -46,7 +46,7 @@ final class WaveFileFormat extends StandardFileFormat {
 
     //$$fb 2002-04-16: Fix for 4636355: RIFF audio headers could be _more_ spec compliant
     /**
-     * fmt_ chunk size in bytes
+     * fmt_ chunk size in bytes.
      */
     private static final int STANDARD_FMT_CHUNK_SIZE = 16;
 

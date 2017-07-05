@@ -22,9 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.Map;
+
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Synthesizer;
 import javax.sound.sampled.AudioFormat;
@@ -53,7 +55,7 @@ public interface AudioSynthesizer extends Synthesizer {
      * @return current audio data format
      * @see AudioFormat
      */
-    public AudioFormat getFormat();
+    AudioFormat getFormat();
 
     /**
      * Gets information about the possible properties for the synthesizer.
@@ -63,8 +65,7 @@ public interface AudioSynthesizer extends Synthesizer {
      * describing possible properties. This array may be an empty array if
      * no properties are required.
      */
-    public AudioSynthesizerPropertyInfo[] getPropertyInfo(
-            Map<String, Object> info);
+    AudioSynthesizerPropertyInfo[] getPropertyInfo(Map<String, Object> info);
 
     /**
      * Opens the synthesizer and starts rendering audio into
@@ -93,7 +94,7 @@ public interface AudioSynthesizer extends Synthesizer {
      * @see #close
      * @see #isOpen
      */
-    public void open(SourceDataLine line, Map<String, Object> info)
+    void open(SourceDataLine line, Map<String, Object> info)
             throws MidiUnavailableException;
 
     /**
@@ -123,6 +124,7 @@ public interface AudioSynthesizer extends Synthesizer {
      * @see #close
      * @see #isOpen
      */
-    public AudioInputStream openStream(AudioFormat targetFormat,
-            Map<String, Object> info) throws MidiUnavailableException;
+    AudioInputStream openStream(AudioFormat targetFormat,
+                                Map<String, Object> info)
+            throws MidiUnavailableException;
 }

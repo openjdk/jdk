@@ -25,9 +25,10 @@
 
 package com.sun.media.sound;
 
-import javax.sound.midi.*;
-
-
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.ShortMessage;
 
 /**
  * MidiOutDevice class representing functionality of MidiOut devices.
@@ -38,16 +39,12 @@ import javax.sound.midi.*;
  */
 final class MidiOutDevice extends AbstractMidiDevice {
 
-    // CONSTRUCTOR
-
     MidiOutDevice(AbstractMidiDeviceProvider.Info info) {
                 super(info);
                 if(Printer.trace) Printer.trace("MidiOutDevice CONSTRUCTOR");
     }
 
-
-    // IMPLEMENTATION OF ABSTRACT MIDI DEVICE METHODS
-
+    @Override
     protected synchronized void implOpen() throws MidiUnavailableException {
         if (Printer.trace) Printer.trace("> MidiOutDevice: implOpen()");
         int index = ((AbstractMidiDeviceProvider.Info)getDeviceInfo()).getIndex();
@@ -58,7 +55,7 @@ final class MidiOutDevice extends AbstractMidiDevice {
         if (Printer.trace) Printer.trace("< MidiOutDevice: implOpen(): completed.");
     }
 
-
+    @Override
     protected synchronized void implClose() {
         if (Printer.trace) Printer.trace("> MidiOutDevice: implClose()");
         // prevent further action
@@ -72,7 +69,7 @@ final class MidiOutDevice extends AbstractMidiDevice {
         if (Printer.trace) Printer.trace("< MidiOutDevice: implClose(): completed");
     }
 
-
+    @Override
     public long getMicrosecondPosition() {
         long timestamp = -1;
         if (isOpen()) {
@@ -81,28 +78,23 @@ final class MidiOutDevice extends AbstractMidiDevice {
         return timestamp;
     }
 
-
-
-    // OVERRIDES OF ABSTRACT MIDI DEVICE METHODS
-
     /** Returns if this device supports Receivers.
         This implementation always returns true.
         @return true, if the device supports Receivers, false otherwise.
     */
+    @Override
     protected boolean hasReceivers() {
         return true;
     }
 
-
+    @Override
     protected Receiver createReceiver() {
         return new MidiOutReceiver();
     }
 
-
-    // INNER CLASSES
-
     final class MidiOutReceiver extends AbstractReceiver {
 
+        @Override
         void implSend(final MidiMessage message, final long timeStamp) {
             final int length = message.getLength();
             final int status = message.getStatus();
@@ -159,12 +151,7 @@ final class MidiOutDevice extends AbstractMidiDevice {
                 nSendShortMessage(id, packedMsg, timeStamp);
             }
         }
-
-
     } // class MidiOutReceiver
-
-
-    // NATIVE METHODS
 
     private native long nOpen(int index) throws MidiUnavailableException;
     private native void nClose(long id);

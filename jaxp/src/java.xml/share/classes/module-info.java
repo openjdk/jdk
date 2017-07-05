@@ -23,6 +23,10 @@
  * questions.
  */
 
+/**
+ * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
+ * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
+ */
 module java.xml {
     exports javax.xml;
     exports javax.xml.catalog;

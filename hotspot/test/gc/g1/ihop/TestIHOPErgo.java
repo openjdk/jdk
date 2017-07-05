@@ -24,6 +24,7 @@
  /*
  * @test TestIHOPErgo
  * @bug 8148397
+ * @key stress
  * @summary Test checks that behavior of Adaptive and Static IHOP at concurrent cycle initiation
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder

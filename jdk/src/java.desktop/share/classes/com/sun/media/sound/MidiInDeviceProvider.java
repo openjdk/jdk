@@ -27,7 +27,6 @@ package com.sun.media.sound;
 
 import javax.sound.midi.MidiDevice;
 
-
 /**
  * MIDI input device provider.
  *
@@ -44,15 +43,11 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
 
     private static final boolean enabled;
 
-    // STATIC
-
     static {
         // initialize
         Platform.initialize();
         enabled = Platform.isMidiIOEnabled();
     }
-
-    // CONSTRUCTOR
 
     /**
      * Required public no-arg constructor.
@@ -63,6 +58,7 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
 
     // implementation of abstract methods in AbstractMidiDeviceProvider
 
+    @Override
     AbstractMidiDeviceProvider.Info createInfo(int index) {
         if (!enabled) {
             return null;
@@ -70,6 +66,7 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
         return new MidiInDeviceInfo(index, MidiInDeviceProvider.class);
     }
 
+    @Override
     MidiDevice createDevice(AbstractMidiDeviceProvider.Info info) {
         if (enabled && (info instanceof MidiInDeviceInfo)) {
             return new MidiInDevice(info);
@@ -77,6 +74,7 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
         return null;
     }
 
+    @Override
     int getNumDevices() {
         if (!enabled) {
             if (Printer.debug)Printer.debug("MidiInDevice not enabled, returning 0 devices");
@@ -87,13 +85,14 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
         return numDevices;
     }
 
+    @Override
     MidiDevice[] getDeviceCache() { return devices; }
+    @Override
     void setDeviceCache(MidiDevice[] devices) { MidiInDeviceProvider.devices = devices; }
+    @Override
     Info[] getInfoCache() { return infos; }
+    @Override
     void setInfoCache(Info[] infos) { MidiInDeviceProvider.infos = infos; }
-
-
-    // INNER CLASSES
 
     /**
      * Info class for MidiInDevices.  Adds the
@@ -114,9 +113,6 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
         }
 
     } // class MidiInDeviceInfo
-
-
-    // NATIVE METHODS
 
     private static native int nGetNumDevices();
     private static native String nGetName(int index);

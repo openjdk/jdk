@@ -255,7 +255,8 @@ public class SALauncher {
         }
 
         buildAttachArgs(newArgs, pid, exe, core, false);
-        JStack.main(newArgs.toArray(new String[newArgs.size()]));
+        JStack jstack = new JStack(false, false);
+        jstack.runWithArgs(newArgs.toArray(new String[newArgs.size()]));
     }
 
     private static void runJMAP(String[] oldArgs) {

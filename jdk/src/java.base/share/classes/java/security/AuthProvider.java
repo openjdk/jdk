@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,24 @@ public abstract class AuthProvider extends Provider {
      * @param name the provider name.
      * @param version the provider version number.
      * @param info a description of the provider and its services.
+     * @deprecated use {@link #AuthProvider(String, String, String)} instead.
      */
+    @Deprecated(since="9")
     protected AuthProvider(String name, double version, String info) {
-        super(name, version, info);
+        super(name, Double.toString(version), info);
+    }
+
+    /**
+     * Constructs a provider with the specified name, version string,
+     * and information.
+     *
+     * @param name the provider name.
+     * @param versionStr the provider version string.
+     * @param info a description of the provider and its services.
+     * @since 9
+     */
+    protected AuthProvider(String name, String versionStr, String info) {
+        super(name, versionStr, info);
     }
 
     /**

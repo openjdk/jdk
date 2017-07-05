@@ -28,6 +28,7 @@ package com.sun.org.apache.xpath.internal.jaxp;
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xml.internal.dtm.DTM;
+import com.sun.org.apache.xpath.internal.axes.LocPathIterator;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import java.io.IOException;
@@ -73,6 +74,12 @@ class XPathImplUtil {
     XObject eval(Object contextItem, com.sun.org.apache.xpath.internal.XPath xpath)
             throws javax.xml.transform.TransformerException {
         com.sun.org.apache.xpath.internal.XPathContext xpathSupport;
+        if (contextItem == null && xpath.getExpression() instanceof LocPathIterator) {
+            // the operation must have no dependency on the context that is null
+            throw new TransformerException(XSLMessages.createXPATHMessage(
+                    XPATHErrorResources.ER_CONTEXT_CAN_NOT_BE_NULL,
+                    new Object[] {}));
+        }
         if (functionResolver != null) {
             JAXPExtensionsProvider jep = new JAXPExtensionsProvider(
                     functionResolver, featureSecureProcessing, featureManager);

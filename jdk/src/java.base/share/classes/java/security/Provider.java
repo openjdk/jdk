@@ -67,14 +67,14 @@ import java.util.function.Function;
  * <tr><td>{@code Provider.id name}</td>
   *    <td>{@code String.valueOf(provider.getName())}</td>
  * <tr><td>{@code Provider.id version}</td>
- *     <td>{@code String.valueOf(provider.getVersion())}</td>
+ *     <td>{@code String.valueOf(provider.getVersionStr())}</td>
  * <tr><td>{@code Provider.id info}</td>
        <td>{@code String.valueOf(provider.getInfo())}</td>
  * <tr><td>{@code Provider.id className}</td>
  *     <td>{@code provider.getClass().getName()}</td>
  * </table>
  *
- * <p>Each provider has a name and a version number. A provider normally
+ * <p>Each provider has a name and a version string. A provider normally
  * identifies itself with a file named {@code java.security.Provider}
  * in the resource directory {@code META-INF/services}.
  * Security providers are looked up via the {@link ServiceLoader} mechanism
@@ -102,11 +102,10 @@ import java.util.function.Function;
 public abstract class Provider extends Properties {
 
     // Declare serialVersionUID to be compatible with JDK1.1
-    static final long serialVersionUID = -4298000515446427739L;
+    private static final long serialVersionUID = -4298000515446427739L;
 
     private static final sun.security.util.Debug debug =
-        sun.security.util.Debug.getInstance
-        ("provider", "Provider");
+        sun.security.util.Debug.getInstance("provider", "Provider");
 
     /**
      * The provider name.
@@ -129,6 +128,12 @@ public abstract class Provider extends Properties {
      */
     private double version;
 
+    /**
+     * The provider version string.
+     *
+     * @serial
+     */
+    private String versionStr;
 
     private transient Set<Map.Entry<Object,Object>> entrySet = null;
     private transient int entrySetCallCount = 0;
@@ -174,19 +179,83 @@ public abstract class Provider extends Properties {
         }
     }
 
+    private static double parseVersionStr(String s) {
+        try {
+            int firstDotIdx = s.indexOf('.');
+            int nextDotIdx = s.indexOf('.', firstDotIdx + 1);
+            if (nextDotIdx != -1) {
+                s = s.substring(0, nextDotIdx);
+            }
+            int endIdx = s.indexOf('-');
+            if (endIdx > 0) {
+                s = s.substring(0, endIdx);
+            }
+            endIdx = s.indexOf('+');
+            if (endIdx > 0) {
+                s = s.substring(0, endIdx);
+            }
+            return Double.parseDouble(s);
+        } catch (NullPointerException | NumberFormatException e) {
+            return 0d;
+        }
+    }
+
     /**
      * Constructs a provider with the specified name, version number,
-     * and information.
+     * and information. Calling this constructor is equivalent to call the
+     * {@link #Provider(String, String, String)} with {@code name}
+     * name, {@code Double.toString(version)}, and {@code info}.
      *
      * @param name the provider name.
      *
      * @param version the provider version number.
      *
      * @param info a description of the provider and its services.
+     *
+     * @deprecated use {@link #Provider(String, String, String)} instead.
      */
+    @Deprecated(since="9")
     protected Provider(String name, double version, String info) {
         this.name = name;
         this.version = version;
+        this.versionStr = Double.toString(version);
+        this.info = info;
+        putId();
+        initialized = true;
+    }
+
+    /**
+     * Constructs a provider with the specified name, version string,
+     * and information.
+     *
+     * <p>The version string contains a version number optionally followed
+     * by other information separated by one of the characters of '+', '-'.
+     *
+     * The format for the version number is:
+     *
+     * <blockquote><pre>
+     *     ^[0-9]+(\.[0-9]+)*
+     * </pre></blockquote>
+     *
+     * <p>In order to return the version number in a double, when there are
+     * more than two components (separated by '.' as defined above), only
+     * the first two components are retained. The resulting string is then
+     * passed to {@link Double#valueOf(String)} to generate version number,
+     * i.e. {@link #getVersion}.
+     * <p>If the conversion failed, value 0 will be used.
+     *
+     * @param name the provider name.
+     *
+     * @param versionStr the provider version string.
+     *
+     * @param info a description of the provider and its services.
+     *
+     * @since 9
+     */
+    protected Provider(String name, String versionStr, String info) {
+        this.name = name;
+        this.versionStr = versionStr;
+        this.version = parseVersionStr(versionStr);
         this.info = info;
         putId();
         initialized = true;
@@ -250,9 +319,23 @@ public abstract class Provider extends Properties {
      * Returns the version number for this provider.
      *
      * @return the version number for this provider.
+     *
+     * @deprecated use {@link #getVersionStr} instead.
      */
+    @Deprecated(since="9")
     public double getVersion() {
         return version;
+    }
+
+    /**
+     * Returns the version string for this provider.
+     *
+     * @return the version string for this provider.
+     *
+     * @since 9
+     */
+    public String getVersionStr() {
+        return versionStr;
     }
 
     /**
@@ -266,14 +349,14 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Returns a string with the name and the version number
+     * Returns a string with the name and the version string
      * of this provider.
      *
-     * @return the string with the name and the version number
+     * @return the string with the name and the version string
      * for this provider.
      */
     public String toString() {
-        return name + " version " + version;
+        return name + " version " + versionStr;
     }
 
     /*
@@ -601,7 +684,7 @@ public abstract class Provider extends Properties {
     public synchronized Object compute(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("Compute " + name + " provider property " + key);
@@ -632,7 +715,7 @@ public abstract class Provider extends Properties {
     public synchronized Object computeIfAbsent(Object key, Function<? super Object,
             ? extends Object> mappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("ComputeIfAbsent " + name + " provider property " +
@@ -662,7 +745,7 @@ public abstract class Provider extends Properties {
     public synchronized Object computeIfPresent(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("ComputeIfPresent " + name + " provider property " +
@@ -695,7 +778,7 @@ public abstract class Provider extends Properties {
     public synchronized Object merge(Object key, Object value,  BiFunction<? super Object,
             ? super Object, ? extends Object>  remappingFunction) {
         check("putProviderProperty." + name);
-        check("removeProviderProperty" + name);
+        check("removeProviderProperty." + name);
 
         if (debug != null) {
             debug.println("Merge " + name + " provider property " + key);
@@ -787,11 +870,21 @@ public abstract class Provider extends Properties {
     private void putId() {
         // note: name and info may be null
         super.put("Provider.id name", String.valueOf(name));
-        super.put("Provider.id version", String.valueOf(version));
+        super.put("Provider.id version", String.valueOf(versionStr));
         super.put("Provider.id info", String.valueOf(info));
         super.put("Provider.id className", this.getClass().getName());
     }
 
+   /**
+    * Reads the {@code ObjectInputStream} for the default serializable fields.
+    * If the serialized field {@code versionStr} is found in the STREAM FIELDS,
+    * its String value will be used to populate both the version string and
+    * version number. If {@code versionStr} is not found, but {@code version}
+    * is, then its double value will be used to populate both fields.
+    *
+    * @param in the {@code ObjectInputStream} to read
+    * @serial
+    */
     private void readObject(ObjectInputStream in)
                 throws IOException, ClassNotFoundException {
         Map<Object,Object> copy = new HashMap<>();
@@ -800,6 +893,13 @@ public abstract class Provider extends Properties {
         }
         defaults = null;
         in.defaultReadObject();
+        if (this.versionStr == null) {
+            // set versionStr based on version when not found in serialized bytes
+            this.versionStr = Double.toString(this.version);
+        } else {
+            // otherwise, set version based on versionStr
+            this.version = parseVersionStr(this.versionStr);
+        }
         implClear();
         initialized = true;
         putAll(copy);
@@ -904,8 +1004,8 @@ public abstract class Provider extends Properties {
             if (!checkLegacy(key)) {
                 return null;
             }
-            legacyStrings.computeIfAbsent((String) key,
-                    (Function<? super String, ? extends String>) remappingFunction);
+            legacyStrings.compute((String) key,
+                    (BiFunction<? super String,? super String, ? extends String>) remappingFunction);
         }
         return super.compute(key, remappingFunction);
     }
@@ -1913,7 +2013,5 @@ public abstract class Provider extends Properties {
             return provider.getName() + ": " + type + "." + algorithm
                 + " -> " + className + aString + attrs + "\r\n";
         }
-
     }
-
 }

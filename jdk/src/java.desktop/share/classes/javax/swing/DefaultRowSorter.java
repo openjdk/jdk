@@ -81,11 +81,6 @@ import java.util.List;
  * sort order is unsorted (the same as the model), and columns are
  * sortable by default.
  * <p>
- * If the underlying model structure changes (the
- * <code>modelStructureChanged</code> method is invoked) the following
- * are reset to their default values: <code>Comparator</code>s by column,
- * current sort order and whether a column is sortable.
- * <p>
  * <code>DefaultRowSorter</code> is an abstract class.  Concrete
  * subclasses must provide access to the underlying data by invoking
  * {@code setModelWrapper}. The {@code setModelWrapper} method
