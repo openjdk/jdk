@@ -570,10 +570,12 @@ public:
   static uint cores_per_cpu()  {
     uint result = 1;
     if (is_intel()) {
-      if (supports_processor_topology()) {
+      bool supports_topology = supports_processor_topology();
+      if (supports_topology) {
         result = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus /
                  _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
-      } else {
+      }
+      if (!supports_topology || result == 0) {
         result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
       }
     } else if (is_amd()) {

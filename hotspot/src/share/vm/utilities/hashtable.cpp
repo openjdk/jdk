@@ -149,7 +149,7 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
     // allocated by os::malloc
     if (!UseSharedSpaces ||
         !FileMapInfo::current_info()->is_in_shared_space(_buckets)) {
-       FREE_C_HEAP_ARRAY(HashtableBucket, _buckets, F);
+       FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
     }
     _buckets = NULL;
   }

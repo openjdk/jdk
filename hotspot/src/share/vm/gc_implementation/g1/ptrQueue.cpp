@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ void PtrQueueSet::reduce_free_list() {
     assert(_buf_free_list != NULL, "_buf_free_list_sz must be wrong.");
     void* b = BufferNode::make_block_from_node(_buf_free_list);
     _buf_free_list = _buf_free_list->next();
-    FREE_C_HEAP_ARRAY(char, b, mtGC);
+    FREE_C_HEAP_ARRAY(char, b);
     _buf_free_list_sz --;
     n--;
   }

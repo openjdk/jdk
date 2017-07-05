@@ -35,7 +35,6 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 
 /**
  * This class encapsulates a Kerberos TGS-REQ that is sent from the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,7 +427,7 @@ bool GenericTaskQueue<E, F, N>::pop_global(volatile E& t) {
 
 template<class E, MEMFLAGS F, unsigned int N>
 GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
-  FREE_C_HEAP_ARRAY(E, _elems, F);
+  FREE_C_HEAP_ARRAY(E, _elems);
 }
 
 // OverflowTaskQueue is a TaskQueue that also includes an overflow stack for

@@ -68,8 +68,7 @@ public class Asserts {
      * @see #assertLessThan(T, T, String)
      */
     public static <T extends Comparable<T>> void assertLessThan(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " < " + format(rhs);
-        assertLessThan(lhs, rhs, msg);
+        assertLessThan(lhs, rhs, null);
     }
 
     /**
@@ -81,7 +80,7 @@ public class Asserts {
      * @throws RuntimeException if the assertion isn't valid.
      */
     public static <T extends Comparable<T>>void assertLessThan(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) < 0, msg);
+        assertTrue(compare(lhs, rhs, msg) < 0, getMessage(lhs, rhs, "<", msg));
     }
 
     /**
@@ -108,8 +107,7 @@ public class Asserts {
      * @see #assertLessThanOrEqual(T, T, String)
      */
     public static <T extends Comparable<T>> void assertLessThanOrEqual(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " <= " + format(rhs);
-        assertLessThanOrEqual(lhs, rhs, msg);
+        assertLessThanOrEqual(lhs, rhs, null);
     }
 
     /**
@@ -121,7 +119,7 @@ public class Asserts {
      * @throws RuntimeException if the assertion isn't valid.
      */
     public static <T extends Comparable<T>> void assertLessThanOrEqual(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) <= 0, msg);
+        assertTrue(compare(lhs, rhs, msg) <= 0, getMessage(lhs, rhs, "<=", msg));
     }
 
     /**
@@ -148,8 +146,7 @@ public class Asserts {
      * @see #assertEquals(T, T, String)
      */
     public static void assertEquals(Object lhs, Object rhs) {
-        String msg = "Expected " + format(lhs) + " to equal " + format(rhs);
-        assertEquals(lhs, rhs, msg);
+        assertEquals(lhs, rhs, null);
     }
 
     /**
@@ -166,7 +163,7 @@ public class Asserts {
                 error(msg);
             }
         } else {
-            assertTrue(lhs.equals(rhs), msg);
+            assertTrue(lhs.equals(rhs), getMessage(lhs, rhs, "==", msg));
         }
     }
 
@@ -194,8 +191,7 @@ public class Asserts {
      * @see #assertGreaterThanOrEqual(T, T, String)
      */
     public static <T extends Comparable<T>> void assertGreaterThanOrEqual(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " >= " + format(rhs);
-        assertGreaterThanOrEqual(lhs, rhs, msg);
+        assertGreaterThanOrEqual(lhs, rhs, null);
     }
 
     /**
@@ -207,7 +203,7 @@ public class Asserts {
      * @throws RuntimeException if the assertion isn't valid.
      */
     public static <T extends Comparable<T>> void assertGreaterThanOrEqual(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) >= 0, msg);
+        assertTrue(compare(lhs, rhs, msg) >= 0, getMessage(lhs, rhs, ">=", msg));
     }
 
     /**
@@ -234,8 +230,7 @@ public class Asserts {
      * @see #assertGreaterThan(T, T, String)
      */
     public static <T extends Comparable<T>> void assertGreaterThan(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " > " + format(rhs);
-        assertGreaterThan(lhs, rhs, msg);
+        assertGreaterThan(lhs, rhs, null);
     }
 
     /**
@@ -247,7 +242,7 @@ public class Asserts {
      * @throws RuntimeException if the assertion isn't valid.
      */
     public static <T extends Comparable<T>> void assertGreaterThan(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) > 0, msg);
+        assertTrue(compare(lhs, rhs, msg) > 0, getMessage(lhs, rhs, ">", msg));
     }
 
     /**
@@ -274,8 +269,7 @@ public class Asserts {
      * @see #assertNotEquals(T, T, String)
      */
     public static void assertNotEquals(Object lhs, Object rhs) {
-        String msg = "Expected " + format(lhs) + " to not equal " + format(rhs);
-        assertNotEquals(lhs, rhs, msg);
+        assertNotEquals(lhs, rhs, null);
     }
 
     /**
@@ -292,7 +286,7 @@ public class Asserts {
                 error(msg);
             }
         } else {
-            assertFalse(lhs.equals(rhs), msg);
+            assertFalse(lhs.equals(rhs), getMessage(lhs, rhs,"!=", msg));
         }
     }
 
@@ -450,4 +444,8 @@ public class Asserts {
         throw new RuntimeException(msg);
     }
 
+    private static String getMessage(Object lhs, Object rhs, String op, String msg) {
+        return (msg == null ? "" : msg + " ") + "(assert failed: " + format(lhs) + " " + op +  " " + format(rhs) + ")";
+    }
 }
+

@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObject
 import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_GETSLOT;
 import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_SETMEMBER;
 import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_SETSLOT;
+import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObjectHandles.JSOBJECT_CALL;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -131,6 +132,8 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             case "setProp":
             case "setElem":
                 return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
+            case "call":
+                return findCallMethod(desc);
             default:
                 return null;
         }
@@ -154,6 +157,11 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
 
     private static GuardedInvocation findSetIndexMethod() {
         return new GuardedInvocation(JSOBJECTLINKER_PUT, IS_JSOBJECT_GUARD);
+    }
+
+    private static GuardedInvocation findCallMethod(final CallSiteDescriptor desc) {
+        final MethodHandle call = MH.insertArguments(JSOBJECT_CALL, 1, "call");
+        return new GuardedInvocation(MH.asCollector(call, Object[].class, desc.getMethodType().parameterCount() - 1), IS_JSOBJECT_GUARD);
     }
 
     @SuppressWarnings("unused")
@@ -215,6 +223,7 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
         static final MethodHandle JSOBJECT_GETSLOT       = findJSObjectMH_V("getSlot", Object.class, int.class).asType(MH.type(Object.class, Object.class, int.class));
         static final MethodHandle JSOBJECT_SETMEMBER     = findJSObjectMH_V("setMember", Void.TYPE, String.class, Object.class).asType(MH.type(Void.TYPE, Object.class, String.class, Object.class));
         static final MethodHandle JSOBJECT_SETSLOT       = findJSObjectMH_V("setSlot", Void.TYPE, int.class, Object.class).asType(MH.type(Void.TYPE, Object.class, int.class, Object.class));
+        static final MethodHandle JSOBJECT_CALL          = findJSObjectMH_V("call", Object.class, String.class, Object[].class).asType(MH.type(Object.class, Object.class, String.class, Object[].class));
 
         private static MethodHandle findJSObjectMH_V(final String name, final Class<?> rtype, final Class<?>... types) {
             checkJSObjectClass();

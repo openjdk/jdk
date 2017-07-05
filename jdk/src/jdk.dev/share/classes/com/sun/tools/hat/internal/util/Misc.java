@@ -97,11 +97,11 @@ public class Misc {
             } else if (ch == '&') {
                 sb.append("&amp;");
             } else if (ch < ' ') {
-                sb.append("&#" + Integer.toString(ch) + ";");
+                sb.append("&#").append((int)ch).append(';');
             } else {
                 int c = (ch & 0xFFFF);
                 if (c > 127) {
-                    sb.append("&#" + Integer.toString(c) + ";");
+                    sb.append("&#").append(c).append(';');
                 } else {
                     sb.append(ch);
                 }

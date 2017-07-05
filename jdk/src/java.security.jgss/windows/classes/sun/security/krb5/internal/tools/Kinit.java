@@ -36,7 +36,6 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.*;
 import java.io.IOException;
 import java.util.Arrays;
-import javax.security.auth.kerberos.KerberosPrincipal;
 import sun.security.util.Password;
 import javax.security.auth.kerberos.KeyTab;
 
@@ -53,22 +52,9 @@ public class Kinit {
 
     /**
      * The main method is used to accept user command line input for ticket
-     * request.
-     * <p>
-     * Usage: kinit [-A] [-f] [-p] [-c cachename] [[-k [-t keytab_file_name]]
-     * [principal] [password]
-     * <ul>
-     * <li>    -A        do not include addresses
-     * <li>    -f        forwardable
-     * <li>    -p        proxiable
-     * <li>    -c        cache name (i.e., FILE://c:\temp\mykrb5cc)
-     * <li>    -k        use keytab
-     * <li>    -t        keytab file name
-     * <li>    principal the principal name (i.e., duke@java.sun.com)
-     * <li>    password  the principal's Kerberos password
-     * </ul>
-     * <p>
-     * Use java sun.security.krb5.tools.Kinit -help to bring up help menu.
+     * request. Read {@link KinitOptions#printHelp} for usages or call
+     *    java sun.security.krb5.internal.tools.Kinit -help
+     * to bring up help menu.
      * <p>
      * We currently support only file-based credentials cache to
      * store the tickets obtained from the KDC.
@@ -146,6 +132,49 @@ public class Kinit {
         } else {
             options = new KinitOptions(args);
         }
+        switch (options.action) {
+            case 1:
+                acquire();
+                break;
+            case 2:
+                renew();
+                break;
+            default:
+                throw new KrbException("kinit does not support action "
+                        + options.action);
+        }
+    }
+
+    private void renew()
+            throws IOException, RealmException, KrbException {
+
+        PrincipalName principal = options.getPrincipal();
+        String realm = principal.getRealmAsString();
+        CredentialsCache cache = CredentialsCache.getInstance(options.cachename);
+
+        if (cache == null) {
+            throw new IOException("Unable to find existing cache file " +
+                    options.cachename);
+        }
+        sun.security.krb5.internal.ccache.Credentials credentials =
+                cache.getCreds(PrincipalName.tgsService(realm, realm));
+
+        credentials = credentials.setKrbCreds()
+                .renew()
+                .toCCacheCreds();
+
+        cache = CredentialsCache.create(principal, options.cachename);
+        if (cache == null) {
+            throw new IOException("Unable to create the cache file " +
+                    options.cachename);
+        }
+        cache.update(credentials);
+        cache.save();
+    }
+
+    private void acquire()
+            throws IOException, RealmException, KrbException {
+
         String princName = null;
         PrincipalName principal = options.getPrincipal();
         if (principal != null) {
@@ -215,6 +244,9 @@ public class Kinit {
 
         if (options.getAddressOption())
             builder.setAddresses(HostAddresses.getLocalAddresses());
+
+        builder.setTill(options.lifetime);
+        builder.setRTime(options.renewable_lifetime);
 
         builder.action();
 

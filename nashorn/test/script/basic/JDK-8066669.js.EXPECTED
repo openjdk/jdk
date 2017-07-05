@@ -1,0 +1,13 @@
+{null=0, 1=2, false=true, foo=bar}
+object null
+number 1
+boolean false
+string foo
+string bar
+number 2
+boolean true
+number 0
+bar
+null
+null
+{null=0, 1=2, false=true, foo=baz}
