@@ -2894,6 +2894,457 @@ instruct storeV64(memory mem, vecZ src) %{
   ins_pipe( pipe_slow );
 %}
 
+// ====================LEGACY REPLICATE=======================================
+
+instruct Repl4B_mem(vecS dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "punpcklbw $dst,$mem\n\t"
+            "pshuflw $dst,$dst,0x00\t! replicate4B" %}
+  ins_encode %{
+    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8B_mem(vecD dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "punpcklbw $dst,$mem\n\t"
+            "pshuflw $dst,$dst,0x00\t! replicate8B" %}
+  ins_encode %{
+    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 16 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB src));
+  format %{ "movd    $dst,$src\n\t"
+            "punpcklbw $dst,$dst\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "punpcklqdq $dst,$dst\t! replicate16B" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "punpcklbw $dst,$mem\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "punpcklqdq $dst,$dst\t! replicate16B" %}
+  ins_encode %{
+    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 32 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB src));
+  format %{ "movd    $dst,$src\n\t"
+            "punpcklbw $dst,$dst\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate32B" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 32 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "punpcklbw $dst,$mem\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate32B" %}
+  ins_encode %{
+    __ punpcklbw($dst$$XMMRegister, $mem$$Address);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B_imm(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 16 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\t! replicate16B($con)" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B_imm(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 32 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! lreplicate32B($con)" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4S(vecD dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshuflw $dst,$dst,0x00\t! replicate4S" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4S_mem(vecD dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS (LoadS mem)));
+  format %{ "pshuflw $dst,$mem,0x00\t! replicate4S" %}
+  ins_encode %{
+    __ pshuflw($dst$$XMMRegister, $mem$$Address, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8S(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "punpcklqdq $dst,$dst\t! replicate8S" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8S_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 0 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS (LoadS mem)));
+  format %{ "pshuflw $dst,$mem,0x00\n\t"
+            "punpcklqdq $dst,$dst\t! replicate8S" %}
+  ins_encode %{
+    __ pshuflw($dst$$XMMRegister, $mem$$Address, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8S_imm(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\t! replicate8S($con)" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 16 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshuflw $dst,$dst,0x00\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate16S" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 16 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS (LoadS mem)));
+  format %{ "pshuflw $dst,$mem,0x00\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate16S" %}
+  ins_encode %{
+    __ pshuflw($dst$$XMMRegister, $mem$$Address, 0x00);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S_imm(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 16 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate16S($con)" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4I(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshufd  $dst,$dst,0x00\t! replicate4I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4I_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX > 0 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI (LoadI mem)));
+  format %{ "pshufd  $dst,$mem,0x00\t! replicate4I" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI src));
+  format %{ "movd    $dst,$src\n\t"
+            "pshufd  $dst,$dst,0x00\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI (LoadI mem)));
+  format %{ "pshufd  $dst,$mem,0x00\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4I_imm(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI con));
+  format %{ "movq    $dst,[$constantaddress]\t! replicate4I($con)\n\t"
+            "punpcklqdq $dst,$dst" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I_imm(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI con));
+  format %{ "movq    $dst,[$constantaddress]\t! replicate8I($con)\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Long could be loaded into xmm register directly from memory.
+instruct Repl2L_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 2 && !VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateL (LoadL mem)));
+  format %{ "movq    $dst,$mem\n\t"
+            "punpcklqdq $dst,$dst\t! replicate2L" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate long (8 byte) scalar to be vector
+#ifdef _LP64
+instruct Repl4L(vecY dst, rRegL src) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL src));
+  format %{ "movdq   $dst,$src\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    __ movdq($dst$$XMMRegister, $src$$Register);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#else // _LP64
+instruct Repl4L(vecY dst, eRegL src, regD tmp) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL src));
+  effect(TEMP dst, USE src, TEMP tmp);
+  format %{ "movdl   $dst,$src.lo\n\t"
+            "movdl   $tmp,$src.hi\n\t"
+            "punpckldq $dst,$tmp\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
+    __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif // _LP64
+
+instruct Repl4L_imm(vecY dst, immL con) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L($con)" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $constantaddress($con));
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4L_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL (LoadL mem)));
+  format %{ "movq    $dst,$mem\n\t"
+            "punpcklqdq $dst,$dst\n\t"
+            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl2F_mem(vecD dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 2 && UseAVX > 0 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateF (LoadF mem)));
+  format %{ "pshufd  $dst,$mem,0x00\t! replicate2F" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4F_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && UseAVX > 0 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateF (LoadF mem)));
+  format %{ "pshufd  $dst,$mem,0x00\t! replicate4F" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8F(vecY dst, regF src) %{
+  predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateF src));
+  format %{ "pshufd  $dst,$src,0x00\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate8F" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8F_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateF (LoadF mem)));
+  format %{ "pshufd  $dst,$mem,0x00\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate8F" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl2D_mem(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 2 && UseAVX > 0 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateD (LoadD mem)));
+  format %{ "pshufd  $dst,$mem,0x44\t! replicate2D" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $mem$$Address, 0x44);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4D(vecY dst, regD src) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateD src));
+  format %{ "pshufd  $dst,$src,0x44\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate4D" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4D_mem(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateD (LoadD mem)));
+  format %{ "pshufd  $dst,$mem,0x44\n\t"
+            "vinsertf128h $dst,$dst,$dst\t! replicate4D" %}
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $mem$$Address, 0x44);
+    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// ====================GENERIC REPLICATE==========================================
+
 // Replicate byte scalar to be vector
 instruct Repl4B(vecS dst, rRegI src) %{
   predicate(n->as_Vector()->length() == 4);
@@ -2923,60 +3374,6 @@ instruct Repl8B(vecD dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct Repl16B(vecX dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateB src));
-  format %{ "movd    $dst,$src\n\t"
-            "punpcklbw $dst,$dst\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\t! replicate16B" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl32B(vecY dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 32);
-  match(Set dst (ReplicateB src));
-  format %{ "movd    $dst,$src\n\t"
-            "punpcklbw $dst,$dst\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate32B" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl64B(vecZ dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 64);
-  match(Set dst (ReplicateB src));
-  format %{ "movd    $dst,$src\n\t"
-            "punpcklbw $dst,$dst\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate32B\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate632B" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // Replicate byte scalar immediate to be vector by loading from const table.
 instruct Repl4B_imm(vecS dst, immI con) %{
   predicate(n->as_Vector()->length() == 4);
@@ -2994,48 +3391,6 @@ instruct Repl8B_imm(vecD dst, immI con) %{
   format %{ "movq    $dst,[$constantaddress]\t! replicate8B($con)" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16B_imm(vecX dst, immI con) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateB con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\t! replicate16B($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl32B_imm(vecY dst, immI con) %{
-  predicate(n->as_Vector()->length() == 32);
-  match(Set dst (ReplicateB con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lreplicate32B($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl64B_imm(vecZ dst, immI con) %{
-  predicate(n->as_Vector()->length() == 64);
-  match(Set dst (ReplicateB con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate32B($con)\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate32B($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3083,18 +3438,6 @@ instruct Repl32B_zero(vecY dst, immI0 zero) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct Repl64B_zero(vecZ dst, immI0 zero) %{
-  predicate(n->as_Vector()->length() == 64);
-  match(Set dst (ReplicateB zero));
-  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate64B zero" %}
-  ins_encode %{
-    // Use vxorpd since AVX does not have vpxor for 512-bit (EVEX will have it).
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Replicate char/short (2 byte) scalar to be vector
 instruct Repl2S(vecS dst, rRegI src) %{
   predicate(n->as_Vector()->length() == 2);
@@ -3106,66 +3449,6 @@ instruct Repl2S(vecS dst, rRegI src) %{
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
   %}
   ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl4S(vecD dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateS src));
-  format %{ "movd    $dst,$src\n\t"
-            "pshuflw $dst,$dst,0x00\t! replicate4S" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl8S(vecX dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateS src));
-  format %{ "movd    $dst,$src\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\t! replicate8S" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16S(vecY dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateS src));
-  format %{ "movd    $dst,$src\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate16S" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl32S(vecZ dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 32);
-  match(Set dst (ReplicateS src));
-  format %{ "movd    $dst,$src\n\t"
-            "pshuflw $dst,$dst,0x00\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate16S\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate16S" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
 %}
 
 // Replicate char/short (2 byte) scalar immediate to be vector by loading from const table.
@@ -3187,48 +3470,6 @@ instruct Repl4S_imm(vecD dst, immI con) %{
     __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
   %}
   ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl8S_imm(vecX dst, immI con) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateS con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\t! replicate8S($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16S_imm(vecY dst, immI con) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateS con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate16S($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl32S_imm(vecZ dst, immI con) %{
-  predicate(n->as_Vector()->length() == 32);
-  match(Set dst (ReplicateS con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate16S($con)\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate16S($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
 %}
 
 // Replicate char/short (2 byte) scalar zero to be vector
@@ -3274,18 +3515,6 @@ instruct Repl16S_zero(vecY dst, immI0 zero) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct Repl32S_zero(vecZ dst, immI0 zero) %{
-  predicate(n->as_Vector()->length() == 32);
-  match(Set dst (ReplicateS zero));
-  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate32S zero" %}
-  ins_encode %{
-    // Use vxorpd since AVX does not have vpxor for 512-bit (EVEX will have it).
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Replicate integer (4 byte) scalar to be vector
 instruct Repl2I(vecD dst, rRegI src) %{
   predicate(n->as_Vector()->length() == 2);
@@ -3297,101 +3526,6 @@ instruct Repl2I(vecD dst, rRegI src) %{
     __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
   %}
   ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl4I(vecX dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateI src));
-  format %{ "movd    $dst,$src\n\t"
-            "pshufd  $dst,$dst,0x00\t! replicate4I" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8I(vecY dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateI src));
-  format %{ "movd    $dst,$src\n\t"
-            "pshufd  $dst,$dst,0x00\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16I(vecZ dst, rRegI src) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateI src));
-  format %{ "movd    $dst,$src\n\t"
-            "pshufd  $dst,$dst,0x00\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate8I\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate8I" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Replicate integer (4 byte) scalar immediate to be vector by loading from const table.
-instruct Repl2I_imm(vecD dst, immI con) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateI con));
-  format %{ "movq    $dst,[$constantaddress]\t! replicate2I($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl4I_imm(vecX dst, immI con) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateI con));
-  format %{ "movq    $dst,[$constantaddress]\t! replicate4I($con)\n\t"
-            "punpcklqdq $dst,$dst" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8I_imm(vecY dst, immI con) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateI con));
-  format %{ "movq    $dst,[$constantaddress]\t! replicate8I($con)\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16I_imm(vecZ dst, immI con) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateI con));
-  format %{ "movq    $dst,[$constantaddress]\t! replicate16I($con)\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
 %}
 
 // Integer could be loaded into xmm register directly from memory.
@@ -3407,46 +3541,15 @@ instruct Repl2I_mem(vecD dst, memory mem) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct Repl4I_mem(vecX dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateI (LoadI mem)));
-  format %{ "movd    $dst,$mem\n\t"
-            "pshufd  $dst,$dst,0x00\t! replicate4I" %}
+// Replicate integer (4 byte) scalar immediate to be vector by loading from const table.
+instruct Repl2I_imm(vecD dst, immI con) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI con));
+  format %{ "movq    $dst,[$constantaddress]\t! replicate2I($con)" %}
   ins_encode %{
-    __ movdl($dst$$XMMRegister, $mem$$Address);
-    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
   %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8I_mem(vecY dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateI (LoadI mem)));
-  format %{ "movd    $dst,$mem\n\t"
-            "pshufd  $dst,$dst,0x00\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $mem$$Address);
-    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16I_mem(vecZ dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateI (LoadI mem)));
-  format %{ "movd    $dst,$mem\n\t"
-            "pshufd  $dst,$dst,0x00\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate8I\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate8I" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $mem$$Address);
-    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
+  ins_pipe( fpu_reg_reg );
 %}
 
 // Replicate integer (4 byte) scalar zero to be vector
@@ -3482,18 +3585,6 @@ instruct Repl8I_zero(vecY dst, immI0 zero) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct Repl16I_zero(vecZ dst, immI0 zero) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateI zero));
-  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate16I zero" %}
-  ins_encode %{
-    // Use vxorpd since AVX does not have vpxor for 512-bit (AVX2 will have it).
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Replicate long (8 byte) scalar to be vector
 #ifdef _LP64
 instruct Repl2L(vecX dst, rRegL src) %{
@@ -3504,36 +3595,6 @@ instruct Repl2L(vecX dst, rRegL src) %{
   ins_encode %{
     __ movdq($dst$$XMMRegister, $src$$Register);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl4L(vecY dst, rRegL src) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateL src));
-  format %{ "movdq   $dst,$src\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
-  ins_encode %{
-    __ movdq($dst$$XMMRegister, $src$$Register);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8L(vecZ dst, rRegL src) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateL src));
-  format %{ "movdq   $dst,$src\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate4L\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate4L" %}
-  ins_encode %{
-    __ movdq($dst$$XMMRegister, $src$$Register);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3554,45 +3615,6 @@ instruct Repl2L(vecX dst, eRegL src, regD tmp) %{
   %}
   ins_pipe( pipe_slow );
 %}
-
-instruct Repl4L(vecY dst, eRegL src, regD tmp) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateL src));
-  effect(TEMP dst, USE src, TEMP tmp);
-  format %{ "movdl   $dst,$src.lo\n\t"
-            "movdl   $tmp,$src.hi\n\t"
-            "punpckldq $dst,$tmp\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
-    __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8L(vecZ dst, eRegL src, regD tmp) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateL src));
-  effect(TEMP dst, USE src, TEMP tmp);
-  format %{ "movdl   $dst,$src.lo\n\t"
-            "movdl   $tmp,$src.hi\n\t"
-            "punpckldq $dst,$tmp\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate4L\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate4L" %}
-  ins_encode %{
-    __ movdl($dst$$XMMRegister, $src$$Register);
-    __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
-    __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
 #endif // _LP64
 
 // Replicate long (8 byte) scalar immediate to be vector by loading from const table.
@@ -3604,79 +3626,6 @@ instruct Repl2L_imm(vecX dst, immL con) %{
   ins_encode %{
     __ movq($dst$$XMMRegister, $constantaddress($con));
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl4L_imm(vecY dst, immL con) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateL con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress($con));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8L_imm(vecZ dst, immL con) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateL con));
-  format %{ "movq    $dst,[$constantaddress]\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate4L($con)\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate4L($con)" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $constantaddress($con));
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Long could be loaded into xmm register directly from memory.
-instruct Repl2L_mem(vecX dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateL (LoadL mem)));
-  format %{ "movq    $dst,$mem\n\t"
-            "punpcklqdq $dst,$dst\t! replicate2L" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl4L_mem(vecY dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateL (LoadL mem)));
-  format %{ "movq    $dst,$mem\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8L_mem(vecZ dst, memory mem) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateL (LoadL mem)));
-  format %{ "movq    $dst,$mem\n\t"
-            "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lower replicate4L\n\t"
-            "vinserti64x4h $dst k0,$dst,$dst\t! upper replicate4L" %}
-  ins_encode %{
-    __ movq($dst$$XMMRegister, $mem$$Address);
-    __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3704,18 +3653,6 @@ instruct Repl4L_zero(vecY dst, immL0 zero) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct Repl8L_zero(vecZ dst, immL0 zero) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateL zero));
-  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate8L zero" %}
-  ins_encode %{
-    // Use vxorpd since AVX does not have vpxor for 512-bit (EVEX will have it).
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Replicate float (4 byte) scalar to be vector
 instruct Repl2F(vecD dst, regF src) %{
   predicate(n->as_Vector()->length() == 2);
@@ -3733,32 +3670,6 @@ instruct Repl4F(vecX dst, regF src) %{
   format %{ "pshufd  $dst,$dst,0x00\t! replicate4F" %}
   ins_encode %{
     __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8F(vecY dst, regF src) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateF src));
-  format %{ "pshufd  $dst,$src,0x00\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate8F" %}
-  ins_encode %{
-    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl16F(vecZ dst, regF src) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateF src));
-  format %{ "pshufd  $dst,$src,0x00\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! lower replicate8F\n\t"
-            "vinsertf64x4h $dst k0,$dst,$dst\t! lower replicate8F" %}
-  ins_encode %{
-    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3795,17 +3706,6 @@ instruct Repl8F_zero(vecY dst, immF0 zero) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct Repl16F_zero(vecZ dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (ReplicateF zero));
-  format %{ "vxorps  $dst k0,$dst,$dst\t! replicate16F zero" %}
-  ins_encode %{
-    int vector_len = 2;
-    __ vxorps($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 // Replicate double (8 bytes) scalar to be vector
 instruct Repl2D(vecX dst, regD src) %{
   predicate(n->as_Vector()->length() == 2);
@@ -3813,32 +3713,6 @@ instruct Repl2D(vecX dst, regD src) %{
   format %{ "pshufd  $dst,$src,0x44\t! replicate2D" %}
   ins_encode %{
     __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl4D(vecY dst, regD src) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateD src));
-  format %{ "pshufd  $dst,$src,0x44\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate4D" %}
-  ins_encode %{
-    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct Repl8D(vecZ dst, regD src) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateD src));
-  format %{ "pshufd  $dst,$src,0x44\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! lower replicate4D\n\t"
-            "vinsertf64x4h $dst k0,$dst,$dst\t! upper replicate4D" %}
-  ins_encode %{
-    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinsertf64x4h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3865,8 +3739,636 @@ instruct Repl4D_zero(vecY dst, immD0 zero) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct Repl8D_zero(vecZ dst, immD0 zero) %{
-  predicate(n->as_Vector()->length() == 8);
+// ====================EVEX REPLICATE=============================================
+
+instruct Repl4B_mem_evex(vecS dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "vpbroadcastb  $dst,$mem\t! replicate4B" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastb($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8B_mem_evex(vecD dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "vpbroadcastb  $dst,$mem\t! replicate8B" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastb($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B_evex(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 16 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB src));
+  format %{ "vpbroadcastb $dst,$src\t! replicate16B" %}
+  ins_encode %{
+   int vector_len = 0;
+    __ evpbroadcastb($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B_mem_evex(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 16 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "vpbroadcastb  $dst,$mem\t! replicate16B" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastb($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B_evex(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 32 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB src));
+  format %{ "vpbroadcastb $dst,$src\t! replicate32B" %}
+  ins_encode %{
+   int vector_len = 1;
+    __ evpbroadcastb($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B_mem_evex(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 32 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "vpbroadcastb  $dst,$mem\t! replicate32B" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastb($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl64B_evex(vecZ dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 64 && UseAVX > 2);
+  match(Set dst (ReplicateB src));
+  format %{ "vpbroadcastb $dst,$src\t! upper replicate64B" %}
+  ins_encode %{
+   int vector_len = 2;
+    __ evpbroadcastb($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl64B_mem_evex(vecZ dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 64 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB (LoadB mem)));
+  format %{ "vpbroadcastb  $dst,$mem\t! replicate64B" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastb($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16B_imm_evex(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 16 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastb $dst,$dst\t! replicate16B" %}
+  ins_encode %{
+   int vector_len = 0;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ evpbroadcastb($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32B_imm_evex(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 32 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateB con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastb $dst,$dst\t! replicate32B" %}
+  ins_encode %{
+   int vector_len = 1;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ evpbroadcastb($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl64B_imm_evex(vecZ dst, immI con) %{
+  predicate(n->as_Vector()->length() == 64 && UseAVX > 2);
+  match(Set dst (ReplicateB con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastb $dst,$dst\t! upper replicate64B" %}
+  ins_encode %{
+   int vector_len = 2;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
+    __ evpbroadcastb($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl64B_zero_evex(vecZ dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 64 && UseAVX > 2);
+  match(Set dst (ReplicateB zero));
+  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate64B zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 512-bit (EVEX will have it).
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4S_evex(vecD dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS src));
+  format %{ "vpbroadcastw $dst,$src\t! replicate4S" %}
+  ins_encode %{
+   int vector_len = 0;
+    __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4S_mem_evex(vecD dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS (LoadS mem)));
+  format %{ "vpbroadcastw  $dst,$mem\t! replicate4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastw($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8S_evex(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS src));
+  format %{ "vpbroadcastw $dst,$src\t! replicate8S" %}
+  ins_encode %{
+   int vector_len = 0;
+    __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8S_mem_evex(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS (LoadS mem)));
+  format %{ "vpbroadcastw  $dst,$mem\t! replicate8S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastw($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S_evex(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 16 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS src));
+  format %{ "vpbroadcastw $dst,$src\t! replicate16S" %}
+  ins_encode %{
+   int vector_len = 1;
+    __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S_mem_evex(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 16 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS (LoadS mem)));
+  format %{ "vpbroadcastw  $dst,$mem\t! replicate16S" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastw($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32S_evex(vecZ dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 32 && UseAVX > 2);
+  match(Set dst (ReplicateS src));
+  format %{ "vpbroadcastw $dst,$src\t! replicate32S" %}
+  ins_encode %{
+   int vector_len = 2;
+    __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32S_mem_evex(vecZ dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 32 && UseAVX > 2);
+  match(Set dst (ReplicateS (LoadS mem)));
+  format %{ "vpbroadcastw  $dst,$mem\t! replicate32S" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastw($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8S_imm_evex(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastw $dst,$dst\t! replicate8S" %}
+  ins_encode %{
+   int vector_len = 0;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ evpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16S_imm_evex(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 16 && VM_Version::supports_avx512vlbw());
+  match(Set dst (ReplicateS con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastw $dst,$dst\t! replicate16S" %}
+  ins_encode %{
+   int vector_len = 1;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ evpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32S_imm_evex(vecZ dst, immI con) %{
+  predicate(n->as_Vector()->length() == 32 && UseAVX > 2);
+  match(Set dst (ReplicateS con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastw $dst,$dst\t! replicate32S" %}
+  ins_encode %{
+   int vector_len = 2;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
+    __ evpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl32S_zero_evex(vecZ dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 32 && UseAVX > 2);
+  match(Set dst (ReplicateS zero));
+  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate32S zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 512-bit (EVEX will have it).
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4I_evex(vecX dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI src));
+  format %{ "vpbroadcastd  $dst,$src\t! replicate4I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastd($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4I_mem_evex(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI (LoadI mem)));
+  format %{ "vpbroadcastd  $dst,$mem\t! replicate4I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I_evex(vecY dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI src));
+  format %{ "vpbroadcastd  $dst,$src\t! replicate8I" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastd($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I_mem_evex(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI (LoadI mem)));
+  format %{ "vpbroadcastd  $dst,$mem\t! replicate8I" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16I_evex(vecZ dst, rRegI src) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
+  match(Set dst (ReplicateI src));
+  format %{ "vpbroadcastd  $dst,$src\t! replicate16I" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastd($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16I_mem_evex(vecZ dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
+  match(Set dst (ReplicateI (LoadI mem)));
+  format %{ "vpbroadcastd  $dst,$mem\t! replicate16I" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4I_imm_evex(vecX dst, immI con) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI con));
+  format %{ "movq    $dst,[$constantaddress]\t! replicate8I($con)\n\t"
+            "vpbroadcastd  $dst,$dst\t! replicate4I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ evpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8I_imm_evex(vecY dst, immI con) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateI con));
+  format %{ "movq    $dst,[$constantaddress]\t! replicate8I($con)\n\t"
+            "vpbroadcastd  $dst,$dst\t! replicate8I" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ evpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16I_imm_evex(vecZ dst, immI con) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
+  match(Set dst (ReplicateI con));
+  format %{ "movq    $dst,[$constantaddress]\t! replicate16I($con)\n\t"
+            "vpbroadcastd  $dst,$dst\t! replicate16I" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
+    __ evpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16I_zero_evex(vecZ dst, immI0 zero) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
+  match(Set dst (ReplicateI zero));
+  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate16I zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 512-bit (AVX2 will have it).
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Replicate long (8 byte) scalar to be vector
+#ifdef _LP64
+instruct Repl4L_evex(vecY dst, rRegL src) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL src));
+  format %{ "vpbroadcastq  $dst,$src\t! replicate4L" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastq($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8L_evex(vecZ dst, rRegL src) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateL src));
+  format %{ "vpbroadcastq  $dst,$src\t! replicate8L" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastq($dst$$XMMRegister, $src$$Register, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#else // _LP64
+instruct Repl4L_evex(vecY dst, eRegL src, regD tmp) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL src));
+  effect(TEMP dst, USE src, TEMP tmp);
+  format %{ "movdl   $dst,$src.lo\n\t"
+            "movdl   $tmp,$src.hi\n\t"
+            "punpckldq $dst,$tmp\n\t"
+            "vpbroadcastq  $dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
+    __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
+    __ evpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8L_evex(vecZ dst, eRegL src, regD tmp) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateL src));
+  effect(TEMP dst, USE src, TEMP tmp);
+  format %{ "movdl   $dst,$src.lo\n\t"
+            "movdl   $tmp,$src.hi\n\t"
+            "punpckldq $dst,$tmp\n\t"
+            "vpbroadcastq  $dst,$dst\t! replicate8L" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
+    __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
+    __ evpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif // _LP64
+
+instruct Repl4L_imm_evex(vecY dst, immL con) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastq  $dst,$dst\t! replicate4L" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ movq($dst$$XMMRegister, $constantaddress($con));
+    __ evpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8L_imm_evex(vecZ dst, immL con) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateL con));
+  format %{ "movq    $dst,[$constantaddress]\n\t"
+            "vpbroadcastq  $dst,$dst\t! replicate8L" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ movq($dst$$XMMRegister, $constantaddress($con));
+    __ evpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl2L_mem_evex(vecX dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 2 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL (LoadL mem)));
+  format %{ "vpbroadcastd  $dst,$mem\t! replicate2L" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ evpbroadcastq($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4L_mem_evex(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateL (LoadL mem)));
+  format %{ "vpbroadcastd  $dst,$mem\t! replicate4L" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastq($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8L_mem_evex(vecZ dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateL (LoadL mem)));
+  format %{ "vpbroadcastd  $dst,$mem\t! replicate8L" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastq($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8L_zero_evex(vecZ dst, immL0 zero) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateL zero));
+  format %{ "vpxor   $dst k0,$dst,$dst\t! replicate8L zero" %}
+  ins_encode %{
+    // Use vxorpd since AVX does not have vpxor for 512-bit (EVEX will have it).
+    int vector_len = 2;
+    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl8F_evex(vecY dst, regF src) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateF src));
+  format %{ "vbroadcastss $dst,$src\t! replicate8F" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastss($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8F_mem_evex(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateF (LoadF mem)));
+  format %{ "vbroadcastss  $dst,$mem\t! replicate8F" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastss($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16F_evex(vecZ dst, regF src) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
+  match(Set dst (ReplicateF src));
+  format %{ "vbroadcastss $dst,$src\t! replicate16F" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastss($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16F_mem_evex(vecZ dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
+  match(Set dst (ReplicateF (LoadF mem)));
+  format %{ "vbroadcastss  $dst,$mem\t! replicate16F" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastss($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl16F_zero_evex(vecZ dst, immF0 zero) %{
+  predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
+  match(Set dst (ReplicateF zero));
+  format %{ "vxorps  $dst k0,$dst,$dst\t! replicate16F zero" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vxorps($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_len);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+instruct Repl4D_evex(vecY dst, regD src) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateD src));
+  format %{ "vbroadcastsd $dst,$src\t! replicate4D" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastsd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl4D_mem_evex(vecY dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 4 && VM_Version::supports_avx512vl());
+  match(Set dst (ReplicateD (LoadD mem)));
+  format %{ "vbroadcastsd  $dst,$mem\t! replicate4D" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ evpbroadcastsd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8D_evex(vecZ dst, regD src) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateD src));
+  format %{ "vbroadcastsd $dst,$src\t! replicate8D" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastsd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8D_mem_evex(vecZ dst, memory mem) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
+  match(Set dst (ReplicateD (LoadD mem)));
+  format %{ "vbroadcastsd  $dst,$mem\t! replicate8D" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ evpbroadcastsd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct Repl8D_zero_evex(vecZ dst, immD0 zero) %{
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
   match(Set dst (ReplicateD zero));
   format %{ "vxorpd  $dst k0,$dst,$dst,vect512\t! replicate8D zero" %}
   ins_encode %{
@@ -4972,6 +5474,17 @@ instruct vadd4B_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vadd4B_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVB src (LoadVector mem)));
+  format %{ "vpaddb  $dst,$src,$mem\t! add packed4B" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpaddb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vadd8B(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (AddVB dst src));
@@ -4989,6 +5502,17 @@ instruct vadd8B_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpaddb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd8B_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (AddVB src (LoadVector mem)));
+  format %{ "vpaddb  $dst,$src,$mem\t! add packed8B" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpaddb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5091,6 +5615,17 @@ instruct vadd2S_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vadd2S_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVS src (LoadVector mem)));
+  format %{ "vpaddw  $dst,$src,$mem\t! add packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpaddw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vadd4S(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (AddVS dst src));
@@ -5108,6 +5643,17 @@ instruct vadd4S_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpaddw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd4S_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (AddVS src (LoadVector mem)));
+  format %{ "vpaddw  $dst,$src,$mem\t! add packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpaddw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5206,6 +5752,17 @@ instruct vadd2I_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpaddd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2I_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVI src (LoadVector mem)));
+  format %{ "vpaddd  $dst,$src,$mem\t! add packed2I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpaddd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5381,6 +5938,17 @@ instruct vadd2F_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vaddps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vadd2F_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (AddVF src (LoadVector mem)));
+  format %{ "vaddps  $dst,$src,$mem\t! add packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vaddps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5562,6 +6130,17 @@ instruct vsub4B_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vsub4B_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVB src (LoadVector mem)));
+  format %{ "vpsubb  $dst,$src,$mem\t! sub packed4B" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsubb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vsub8B(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (SubVB dst src));
@@ -5579,6 +6158,17 @@ instruct vsub8B_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpsubb($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub8B_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SubVB src (LoadVector mem)));
+  format %{ "vpsubb  $dst,$src,$mem\t! sub packed8B" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsubb($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5681,6 +6271,17 @@ instruct vsub2S_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vsub2S_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVS src (LoadVector mem)));
+  format %{ "vpsubw  $dst,$src,$mem\t! sub packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsubw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vsub4S(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (SubVS dst src));
@@ -5698,6 +6299,17 @@ instruct vsub4S_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpsubw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub4S_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SubVS src (LoadVector mem)));
+  format %{ "vpsubw  $dst,$src,$mem\t! sub packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsubw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5796,6 +6408,17 @@ instruct vsub2I_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpsubd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2I_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVI src (LoadVector mem)));
+  format %{ "vpsubd  $dst,$src,$mem\t! sub packed2I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsubd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5971,6 +6594,17 @@ instruct vsub2F_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vsubps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsub2F_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SubVF src (LoadVector mem)));
+  format %{ "vsubps  $dst,$src,$mem\t! sub packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsubps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6152,6 +6786,17 @@ instruct vmul2S_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vmul2S_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVS src (LoadVector mem)));
+  format %{ "vpmullw $dst,$src,$mem\t! mul packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpmullw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vmul4S(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (MulVS dst src));
@@ -6169,6 +6814,17 @@ instruct vmul4S_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpmullw($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul4S_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (MulVS src (LoadVector mem)));
+  format %{ "vpmullw $dst,$src,$mem\t! mul packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpmullw($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6271,13 +6927,13 @@ instruct vmul2I_reg(vecD dst, vecD src1, vecD src2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul2L_reg(vecX dst, vecX src1, vecX src2) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 2 && VM_Version::supports_avx512dq());
-  match(Set dst (MulVL src1 src2));
-  format %{ "vpmullq $dst,$src1,$src2\t! mul packed2L" %}
+instruct vmul2I_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVI src (LoadVector mem)));
+  format %{ "vpmulld $dst,$src,$mem\t! mul packed2I" %}
   ins_encode %{
     int vector_len = 0;
-    __ vpmullq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+    __ vpmulld($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6314,6 +6970,28 @@ instruct vmul4I_mem(vecX dst, vecX src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vmul2L_reg(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 2 && VM_Version::supports_avx512dq());
+  match(Set dst (MulVL src1 src2));
+  format %{ "vpmullq $dst,$src1,$src2\t! mul packed2L" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpmullq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul2L_mem(vecX dst, vecX src, memory mem) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 2 && VM_Version::supports_avx512dq());
+  match(Set dst (MulVL src (LoadVector mem)));
+  format %{ "vpmullq $dst,$src,$mem\t! mul packed2L" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpmullq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vmul4L_reg(vecY dst, vecY src1, vecY src2) %{
   predicate(UseAVX > 2 && n->as_Vector()->length() == 4 && VM_Version::supports_avx512dq());
   match(Set dst (MulVL src1 src2));
@@ -6336,17 +7014,6 @@ instruct vmul4L_mem(vecY dst, vecY src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul8I_reg(vecY dst, vecY src1, vecY src2) %{
-  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
-  match(Set dst (MulVI src1 src2));
-  format %{ "vpmulld $dst,$src1,$src2\t! mul packed8I" %}
-  ins_encode %{
-    int vector_len = 1;
-    __ vpmulld($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vmul8L_reg(vecZ dst, vecZ src1, vecZ src2) %{
   predicate(UseAVX > 2 && n->as_Vector()->length() == 8 && VM_Version::supports_avx512dq());
   match(Set dst (MulVL src1 src2));
@@ -6358,12 +7025,23 @@ instruct vmul8L_reg(vecZ dst, vecZ src1, vecZ src2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul16I_reg(vecZ dst, vecZ src1, vecZ src2) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
-  match(Set dst (MulVI src1 src2));
-  format %{ "vpmulld $dst,$src1,$src2\t! mul packed16I" %}
+instruct vmul8L_mem(vecZ dst, vecZ src, memory mem) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 8 && VM_Version::supports_avx512dq());
+  match(Set dst (MulVL src (LoadVector mem)));
+  format %{ "vpmullq $dst,$src,$mem\t! mul packed8L" %}
   ins_encode %{
     int vector_len = 2;
+    __ vpmullq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul8I_reg(vecY dst, vecY src1, vecY src2) %{
+  predicate(UseAVX > 1 && n->as_Vector()->length() == 8);
+  match(Set dst (MulVI src1 src2));
+  format %{ "vpmulld $dst,$src1,$src2\t! mul packed8I" %}
+  ins_encode %{
+    int vector_len = 1;
     __ vpmulld($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
@@ -6380,13 +7058,13 @@ instruct vmul8I_mem(vecY dst, vecY src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul8L_mem(vecZ dst, vecZ src, memory mem) %{
-  predicate(UseAVX > 2 && n->as_Vector()->length() == 8 && VM_Version::supports_avx512dq());
-  match(Set dst (MulVL src (LoadVector mem)));
-  format %{ "vpmullq $dst,$src,$mem\t! mul packed8L" %}
+instruct vmul16I_reg(vecZ dst, vecZ src1, vecZ src2) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
+  match(Set dst (MulVI src1 src2));
+  format %{ "vpmulld $dst,$src1,$src2\t! mul packed16I" %}
   ins_encode %{
     int vector_len = 2;
-    __ vpmullq($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+    __ vpmulld($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6420,6 +7098,17 @@ instruct vmul2F_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vmulps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmul2F_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (MulVF src (LoadVector mem)));
+  format %{ "vmulps  $dst,$src,$mem\t! mul packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vmulps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6597,6 +7286,17 @@ instruct vdiv2F_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vdivps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vdiv2F_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (DivVF src (LoadVector mem)));
+  format %{ "vdivps  $dst,$src,$mem\t! div packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vdivps($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7878,6 +8578,17 @@ instruct vand4B_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vand4B_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (AndV src (LoadVector mem)));
+  format %{ "vpand   $dst,$src,$mem\t! and vectors (4 bytes)" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpand($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vand8B(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length_in_bytes() == 8);
   match(Set dst (AndV dst src));
@@ -7895,6 +8606,17 @@ instruct vand8B_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpand($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vand8B_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (AndV src (LoadVector mem)));
+  format %{ "vpand   $dst,$src,$mem\t! and vectors (8 bytes)" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpand($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7998,6 +8720,17 @@ instruct vor4B_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vor4B_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (OrV src (LoadVector mem)));
+  format %{ "vpor    $dst,$src,$mem\t! or vectors (4 bytes)" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vor8B(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length_in_bytes() == 8);
   match(Set dst (OrV dst src));
@@ -8015,6 +8748,17 @@ instruct vor8B_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vor8B_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (OrV src (LoadVector mem)));
+  format %{ "vpor    $dst,$src,$mem\t! or vectors (8 bytes)" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8118,6 +8862,17 @@ instruct vxor4B_reg(vecS dst, vecS src1, vecS src2) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vxor4B_mem(vecS dst, vecS src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 4);
+  match(Set dst (XorV src (LoadVector mem)));
+  format %{ "vpxor   $dst,$src,$mem\t! xor vectors (4 bytes)" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpxor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vxor8B(vecD dst, vecD src) %{
   predicate(n->as_Vector()->length_in_bytes() == 8);
   match(Set dst (XorV dst src));
@@ -8135,6 +8890,17 @@ instruct vxor8B_reg(vecD dst, vecD src1, vecD src2) %{
   ins_encode %{
     int vector_len = 0;
     __ vpxor($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vxor8B_mem(vecD dst, vecD src, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (XorV src (LoadVector mem)));
+  format %{ "vpxor   $dst,$src,$mem\t! xor vectors (8 bytes)" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpxor($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

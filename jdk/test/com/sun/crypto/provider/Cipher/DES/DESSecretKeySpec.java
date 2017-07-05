@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,11 @@ public class DESSecretKeySpec {
         System.out.println("Testing DES key");
         SecretKeySpec skey = new SecretKeySpec(key, "DES");
         c = Cipher.getInstance("DES/CBC/PKCS5Padding", "SunJCE");
-        SecretKeyFactory.getInstance("DES").generateSecret(skey);
+        SecretKeyFactory.getInstance("DES", "SunJCE").generateSecret(skey);
 
         System.out.println("Testing DESede key");
         skey = new SecretKeySpec(key, "DESede");
         c = Cipher.getInstance("DESede/CBC/PKCS5Padding", "SunJCE");
-        SecretKeyFactory.getInstance("TripleDES").generateSecret(skey);
+        SecretKeyFactory.getInstance("TripleDES", "SunJCE").generateSecret(skey);
     }
 }

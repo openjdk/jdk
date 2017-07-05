@@ -24,14 +24,6 @@
 /*
  * @test
  * @bug 6853328 7172701
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @run main/othervm OkAsDelegate false true true false false false
  *      FORWARDABLE ticket not allowed, always fail
  * @run main/othervm OkAsDelegate true false false false false false

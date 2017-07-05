@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 package sun.jvm.hotspot.utilities;
 
 public interface AltPlatformInfo {
-  // Additional cpu types can be tested via this interface
 
+  // Additional cpu types can be tested via this interface
   public boolean knownCPU(String cpu);
+
+  // Mangle a cpu name if necessary
+  public String getCPU(String cpu);
 }

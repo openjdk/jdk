@@ -37,6 +37,7 @@
 #include "utilities/stack.inline.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/g1/g1MarkSweep.hpp"
 #endif // INCLUDE_ALL_GCS
 
 inline void MarkSweep::mark_object(oop obj) {
@@ -57,6 +58,15 @@ inline void MarkSweep::mark_object(oop obj) {
   }
 }
 
+inline bool MarkSweep::is_archive_object(oop object) {
+#if INCLUDE_ALL_GCS
+  return (G1MarkSweep::archive_check_enabled() &&
+          G1MarkSweep::in_archive_range(object));
+#else
+  return false;
+#endif
+}
+
 inline void MarkSweep::follow_klass(Klass* klass) {
   oop op = klass->klass_holder();
   MarkSweep::mark_and_push(&op);
@@ -74,7 +84,8 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!obj->mark()->is_marked()) {
+    if (!obj->mark()->is_marked() &&
+        !is_archive_object(obj)) {
       mark_object(obj);
       follow_object(obj);
     }
@@ -87,7 +98,8 @@ template <class T> inline void MarkSweep::mark_and_push(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!obj->mark()->is_marked()) {
+    if (!obj->mark()->is_marked() &&
+        !is_archive_object(obj)) {
       mark_object(obj);
       _marking_stack.push(obj);
     }
@@ -111,15 +123,18 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
     oop new_obj = oop(obj->mark()->decode_pointer());
-    assert(new_obj != NULL ||                         // is forwarding ptr?
+    assert(is_archive_object(obj) ||                  // no forwarding of archive objects
+           new_obj != NULL ||                         // is forwarding ptr?
            obj->mark() == markOopDesc::prototype() || // not gc marked?
            (UseBiasedLocking && obj->mark()->has_bias_pattern()),
-                                                      // not gc marked?
+           // not gc marked?
            "should be forwarded");
     if (new_obj != NULL) {
-      assert(Universe::heap()->is_in_reserved(new_obj),
-             "should be in object space");
-      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+      if (!is_archive_object(obj)) {
+        assert(Universe::heap()->is_in_reserved(new_obj),
+              "should be in object space");
+        oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+      }
     }
   }
 }

@@ -27,6 +27,7 @@ import sun.hotspot.code.BlobType;
 
 /*
  * @test UsageThresholdIncreasedTest
+ * @ignore 8129937
  * @library /testlibrary /../../test/lib
  * @modules java.base/sun.misc
  *          java.management

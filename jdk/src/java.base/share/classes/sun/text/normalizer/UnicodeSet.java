@@ -1850,7 +1850,7 @@ public class UnicodeSet implements UnicodeMatcher {
             syntaxError(chars, "Invalid property pattern");
         }
         chars.jumpahead(pos.getIndex());
-        rebuiltPat.append(patStr.substring(0, pos.getIndex()));
+        rebuiltPat.append(patStr, 0, pos.getIndex());
     }
 
     //----------------------------------------------------------------

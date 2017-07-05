@@ -1439,7 +1439,8 @@ static address resolve_function_descriptor_to_code_pointer(address p) {
 }
 
 bool os::dll_address_to_function_name(address addr, char *buf,
-                                      int buflen, int *offset) {
+                                      int buflen, int *offset,
+                                      bool demangle) {
   if (offset) {
     *offset = -1;
   }
@@ -1454,7 +1455,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   }
 
   // Go through Decoder::decode to call getFuncName which reads the name from the traceback table.
-  return Decoder::decode(addr, buf, buflen, offset);
+  return Decoder::decode(addr, buf, buflen, offset, demangle);
 }
 
 static int getModuleName(codeptr_t pc,                    // [in] program counter
@@ -1653,7 +1654,7 @@ void os::print_memory_info(outputStream* st) {
   }
 }
 
-void os::pd_print_cpu_info(outputStream* st) {
+void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
   st->print("total %d", os::processor_count());
@@ -3760,10 +3761,6 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
   fetcher.run();
   return fetcher.result();
 }
-
-// Not neede on Aix.
-// int os::Aix::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime) {
-// }
 
 ////////////////////////////////////////////////////////////////////////////////
 // debug support

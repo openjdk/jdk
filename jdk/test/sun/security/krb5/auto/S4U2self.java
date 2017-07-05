@@ -25,14 +25,6 @@
  * @test
  * @bug 6355584
  * @summary Introduce constrained Kerberos delegation
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file S4U2self.java
  * @run main/othervm -Dsun.security.krb5.debug=false S4U2self krb5 0
  * @run main/othervm/fail -Dsun.security.krb5.debug=false S4U2self krb5 1

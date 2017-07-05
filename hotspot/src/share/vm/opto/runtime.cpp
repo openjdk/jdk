@@ -987,7 +987,25 @@ const TypeFunc* OptoRuntime::mulAdd_Type() {
   return TypeFunc::make(domain, range);
 }
 
+// GHASH block processing
+const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
+    int argcnt = 4;
 
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;    // state
+    fields[argp++] = TypePtr::NOTNULL;    // subkeyH
+    fields[argp++] = TypePtr::NOTNULL;    // data
+    fields[argp++] = TypeInt::INT;        // blocks
+    assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms+0] = NULL; // void
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+    return TypeFunc::make(domain, range);
+}
 
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
