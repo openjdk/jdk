@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,29 +81,27 @@ public abstract class HttpServerProvider {
         if (cn == null)
             return false;
         try {
-            Class c = Class.forName(cn, true,
+            Class<?> c = Class.forName(cn, true,
                                     ClassLoader.getSystemClassLoader());
             provider = (HttpServerProvider)c.newInstance();
             return true;
-        } catch (ClassNotFoundException x) {
-            throw new ServiceConfigurationError(x);
-        } catch (IllegalAccessException x) {
-            throw new ServiceConfigurationError(x);
-        } catch (InstantiationException x) {
-            throw new ServiceConfigurationError(x);
-        } catch (SecurityException x) {
+        } catch (ClassNotFoundException |
+                 IllegalAccessException |
+                 InstantiationException |
+                 SecurityException x) {
             throw new ServiceConfigurationError(x);
         }
     }
 
     private static boolean loadProviderAsService() {
-        Iterator i = Service.providers(HttpServerProvider.class,
+        @SuppressWarnings("unchecked")
+        Iterator<HttpServerProvider> i = Service.providers(HttpServerProvider.class,
                                        ClassLoader.getSystemClassLoader());
         for (;;) {
             try {
                 if (!i.hasNext())
                     return false;
-                provider = (HttpServerProvider)i.next();
+                provider = i.next();
                 return true;
             } catch (ServiceConfigurationError sce) {
                 if (sce.getCause() instanceof SecurityException) {

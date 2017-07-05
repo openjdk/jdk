@@ -79,9 +79,14 @@ enum {
   // Note that the class-related ACC_ANNOTATION bit conflicts with these flags.
   JVM_ACC_FIELD_ACCESS_WATCHED       = 0x00002000,  // field access is watched by JVMTI
   JVM_ACC_FIELD_MODIFICATION_WATCHED = 0x00008000,  // field modification is watched by JVMTI
+  JVM_ACC_FIELD_INTERNAL             = 0x00000400,  // internal field, same as JVM_ACC_ABSTRACT
+
+  JVM_ACC_FIELD_INTERNAL_FLAGS       = JVM_ACC_FIELD_ACCESS_WATCHED |
+                                       JVM_ACC_FIELD_MODIFICATION_WATCHED |
+                                       JVM_ACC_FIELD_INTERNAL,
 
                                                     // flags accepted by set_field_flags()
-  JVM_ACC_FIELD_FLAGS                = 0x00008000 | JVM_ACC_WRITTEN_FLAGS
+  JVM_ACC_FIELD_FLAGS                = JVM_RECOGNIZED_FIELD_MODIFIERS | JVM_ACC_FIELD_INTERNAL_FLAGS
 
 };
 
@@ -150,13 +155,17 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool is_field_access_watched() const  { return (_flags & JVM_ACC_FIELD_ACCESS_WATCHED) != 0; }
   bool is_field_modification_watched() const
                                         { return (_flags & JVM_ACC_FIELD_MODIFICATION_WATCHED) != 0; }
+  bool is_internal() const              { return (_flags & JVM_ACC_FIELD_INTERNAL) != 0; }
 
   // get .class file flags
   jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
 
   // Initialization
   void add_promoted_flags(jint flags)   { _flags |= (flags & JVM_ACC_PROMOTED_FLAGS); }
-  void set_field_flags(jint flags)      { _flags = (flags & JVM_ACC_FIELD_FLAGS); }
+  void set_field_flags(jint flags)      {
+    assert((flags & JVM_ACC_FIELD_FLAGS) == flags, "only recognized flags");
+    _flags = (flags & JVM_ACC_FIELD_FLAGS);
+  }
   void set_flags(jint flags)            { _flags = (flags & JVM_ACC_WRITTEN_FLAGS); }
 
   void set_queued_for_compilation()    { atomic_set_bits(JVM_ACC_QUEUED); }
@@ -218,8 +227,8 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
                                        }
 
   // Conversion
-  jshort as_short()                    { return (jshort)_flags; }
-  jint   as_int()                      { return _flags; }
+  jshort as_short() const              { return (jshort)_flags; }
+  jint   as_int() const                { return _flags; }
 
   inline friend AccessFlags accessFlags_from(jint flags);
 

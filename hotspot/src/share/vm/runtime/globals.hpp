@@ -50,6 +50,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "globals_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "globals_bsd.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "globals_linux_x86.hpp"
 #endif
@@ -74,6 +77,12 @@
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "globals_linux_ppc.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_bsd_x86
+# include "globals_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "globals_bsd_zero.hpp"
+#endif
 #ifdef COMPILER1
 #ifdef TARGET_ARCH_x86
 # include "c1_globals_x86.hpp"
@@ -96,6 +105,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "c1_globals_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "c1_globals_bsd.hpp"
+#endif
 #endif
 #ifdef COMPILER2
 #ifdef TARGET_ARCH_x86
@@ -115,6 +127,9 @@
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "c2_globals_windows.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "c2_globals_bsd.hpp"
 #endif
 #endif
 #ifdef SHARK
@@ -474,6 +489,12 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
+                                                                            \
+  product(bool, UseNUMAInterleaving, false,                                 \
+          "Interleave memory across NUMA nodes if available")               \
+                                                                            \
+  product(uintx, NUMAInterleaveGranularity, 2*M,                            \
+          "Granularity to use for NUMA interleaving on Windows OS")         \
                                                                             \
   product(bool, ForceNUMA, false,                                           \
           "Force NUMA optimizations on single-node/UMA systems")            \
@@ -1979,6 +2000,18 @@ class CommandLineFlags {
   product(bool, TLABStats, true,                                            \
           "Print various TLAB related information")                         \
                                                                             \
+  product(bool, UseBlockZeroing, false,                                     \
+          "Use special cpu instructions for block zeroing")                 \
+                                                                            \
+  product(intx, BlockZeroingLowLimit, 2048,                                 \
+          "Minimum size in bytes when block zeroing will be used")          \
+                                                                            \
+  product(bool, UseBlockCopy, false,                                        \
+          "Use special cpu instructions for block copy")                    \
+                                                                            \
+  product(intx, BlockCopyLowLimit, 2048,                                    \
+          "Minimum size in bytes when block copy will be used")             \
+                                                                            \
   product(bool, PrintRevisitStats, false,                                   \
           "Print revisit (klass and MDO) stack related information")        \
                                                                             \
@@ -2912,6 +2945,12 @@ class CommandLineFlags {
   product(intx,  ReadPrefetchInstr, 0,                                      \
           "Prefetch instruction to prefetch ahead")                         \
                                                                             \
+  product(uintx,  ArraycopySrcPrefetchDistance, 0,                          \
+          "Distance to prefetch source array in arracopy")                  \
+                                                                            \
+  product(uintx,  ArraycopyDstPrefetchDistance, 0,                          \
+          "Distance to prefetch destination array in arracopy")             \
+                                                                            \
   /* deoptimization */                                                      \
   develop(bool, TraceDeoptimization, false,                                 \
           "Trace deoptimization")                                           \
@@ -3481,6 +3520,9 @@ class CommandLineFlags {
   product(intx, Tier3InvokeNotifyFreqLog, 10,                               \
           "C1 with MDO profiling (tier 3) invocation notification "         \
           "frequency.")                                                     \
+                                                                            \
+  product(intx, Tier23InlineeNotifyFreqLog, 20,                             \
+          "Inlinee invocation (tiers 2 and 3) notification frequency")      \
                                                                             \
   product(intx, Tier0BackedgeNotifyFreqLog, 10,                             \
           "Interpreter (tier 0) invocation notification frequency.")        \

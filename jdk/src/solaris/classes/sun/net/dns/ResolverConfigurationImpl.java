@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public class ResolverConfigurationImpl
         sl = java.security.AccessController.doPrivileged(
                  new java.security.PrivilegedAction<LinkedList<String>>() {
                     public LinkedList<String> run() {
-                        LinkedList ll;
+                        LinkedList<String> ll;
 
                         // first try search keyword (max 6 domains)
                         ll = resolvconf("search", 6, 1);
@@ -173,7 +173,7 @@ public class ResolverConfigurationImpl
 
         String localDomain = localDomain0();
         if (localDomain != null && localDomain.length() > 0) {
-            sl = new LinkedList();
+            sl = new LinkedList<String>();
             sl.add(localDomain);
             return sl;
         }
@@ -198,7 +198,7 @@ public class ResolverConfigurationImpl
         }
 
         // no local domain so try fallback (RPC) domain or
-        // hostname
+        // hostName
 
         sl = new LinkedList<>();
         String domain = fallbackDomain0();
@@ -216,22 +216,26 @@ public class ResolverConfigurationImpl
         opts = new OptionsImpl();
     }
 
+    @SuppressWarnings("unchecked")
     public List<String> searchlist() {
         synchronized (lock) {
             loadConfig();
 
             // List is mutable so return a shallow copy
-            return (List)searchlist.clone();
+            return (List<String>)searchlist.clone();
         }
     }
 
+    @SuppressWarnings("unchecked")
     public List<String> nameservers() {
         synchronized (lock) {
             loadConfig();
 
             // List is mutable so return a shallow copy
-            return (List)nameservers.clone();
-         }
+
+          return (List<String>)nameservers.clone();
+
+        }
     }
 
     public Options options() {

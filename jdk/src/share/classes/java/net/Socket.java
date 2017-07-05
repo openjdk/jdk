@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,13 +459,10 @@ class Socket implements java.io.Closeable {
         oldImpl = AccessController.doPrivileged
                                 (new PrivilegedAction<Boolean>() {
             public Boolean run() {
-                Class[] cl = new Class[2];
-                cl[0] = SocketAddress.class;
-                cl[1] = Integer.TYPE;
-                Class clazz = impl.getClass();
+                Class<?> clazz = impl.getClass();
                 while (true) {
                     try {
-                        clazz.getDeclaredMethod("connect", cl);
+                        clazz.getDeclaredMethod("connect", SocketAddress.class, int.class);
                         return Boolean.FALSE;
                     } catch (NoSuchMethodException e) {
                         clazz = clazz.getSuperclass();

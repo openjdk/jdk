@@ -63,7 +63,7 @@ CS_PRUNE_GENERATED	= -o -name '${OSNAME}_*_core' -o \
 # space-separated list of identifiers to include only those systems.
 ifdef	CS_OS
 CS_PRUNE_OS	= $(patsubst %,-o -name '*%*',\
-		    $(filter-out ${CS_OS},linux macos solaris windows))
+		    $(filter-out ${CS_OS},bsd linux macos solaris windows))
 endif
 
 # CPU-specific files for all processors are included by default.  Set CS_CPU 

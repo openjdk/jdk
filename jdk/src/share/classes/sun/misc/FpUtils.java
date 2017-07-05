@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,10 +125,6 @@ public class FpUtils {
      */
     private FpUtils() {}
 
-    // Constants used in scalb
-    static double twoToTheDoubleScaleUp = powerOfTwoD(512);
-    static double twoToTheDoubleScaleDown = powerOfTwoD(-512);
-
     // Helper Methods
 
     // The following helper methods are used in the implementation of
@@ -137,49 +133,22 @@ public class FpUtils {
 
     /**
      * Returns unbiased exponent of a {@code double}.
+     * @deprecated Use Math.getExponent.
      */
+    @Deprecated
     public static int getExponent(double d){
-        /*
-         * Bitwise convert d to long, mask out exponent bits, shift
-         * to the right and then subtract out double's bias adjust to
-         * get true exponent value.
-         */
-        return (int)(((Double.doubleToRawLongBits(d) & DoubleConsts.EXP_BIT_MASK) >>
-                      (DoubleConsts.SIGNIFICAND_WIDTH - 1)) - DoubleConsts.EXP_BIAS);
+        return Math.getExponent(d);
     }
 
     /**
      * Returns unbiased exponent of a {@code float}.
+     * @deprecated Use Math.getExponent.
      */
+    @Deprecated
     public static int getExponent(float f){
-        /*
-         * Bitwise convert f to integer, mask out exponent bits, shift
-         * to the right and then subtract out float's bias adjust to
-         * get true exponent value
-         */
-        return ((Float.floatToRawIntBits(f) & FloatConsts.EXP_BIT_MASK) >>
-                (FloatConsts.SIGNIFICAND_WIDTH - 1)) - FloatConsts.EXP_BIAS;
+        return Math.getExponent(f);
     }
 
-    /**
-     * Returns a floating-point power of two in the normal range.
-     */
-    static double powerOfTwoD(int n) {
-        assert(n >= DoubleConsts.MIN_EXPONENT && n <= DoubleConsts.MAX_EXPONENT);
-        return Double.longBitsToDouble((((long)n + (long)DoubleConsts.EXP_BIAS) <<
-                                        (DoubleConsts.SIGNIFICAND_WIDTH-1))
-                                       & DoubleConsts.EXP_BIT_MASK);
-    }
-
-    /**
-     * Returns a floating-point power of two in the normal range.
-     */
-    static float powerOfTwoF(int n) {
-        assert(n >= FloatConsts.MIN_EXPONENT && n <= FloatConsts.MAX_EXPONENT);
-        return Float.intBitsToFloat(((n + FloatConsts.EXP_BIAS) <<
-                                     (FloatConsts.SIGNIFICAND_WIDTH-1))
-                                    & FloatConsts.EXP_BIT_MASK);
-    }
 
     /**
      * Returns the first floating-point argument with the sign of the
@@ -195,13 +164,11 @@ public class FpUtils {
      * @return a value with the magnitude of {@code magnitude}
      * and the sign of {@code sign}.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.copySign.
      */
+    @Deprecated
     public static double rawCopySign(double magnitude, double sign) {
-        return Double.longBitsToDouble((Double.doubleToRawLongBits(sign) &
-                                        (DoubleConsts.SIGN_BIT_MASK)) |
-                                       (Double.doubleToRawLongBits(magnitude) &
-                                        (DoubleConsts.EXP_BIT_MASK |
-                                         DoubleConsts.SIGNIF_BIT_MASK)));
+        return Math.copySign(magnitude, sign);
     }
 
     /**
@@ -218,13 +185,11 @@ public class FpUtils {
      * @return a value with the magnitude of {@code magnitude}
      * and the sign of {@code sign}.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.copySign.
      */
+    @Deprecated
     public static float rawCopySign(float magnitude, float sign) {
-        return Float.intBitsToFloat((Float.floatToRawIntBits(sign) &
-                                     (FloatConsts.SIGN_BIT_MASK)) |
-                                    (Float.floatToRawIntBits(magnitude) &
-                                     (FloatConsts.EXP_BIT_MASK |
-                                      FloatConsts.SIGNIF_BIT_MASK)));
+        return Math.copySign(magnitude, sign);
     }
 
     /* ***************************************************************** */
@@ -237,9 +202,11 @@ public class FpUtils {
      * @param d the {@code double} value to be tested
      * @return {@code true} if the argument is a finite
      * floating-point value, {@code false} otherwise.
+     * @deprecated Use Double.isFinite.
      */
+    @Deprecated
     public static boolean isFinite(double d) {
-        return Math.abs(d) <= DoubleConsts.MAX_VALUE;
+        return Double.isFinite(d);
     }
 
     /**
@@ -250,9 +217,11 @@ public class FpUtils {
      * @param f the {@code float} value to be tested
      * @return {@code true} if the argument is a finite
      * floating-point value, {@code false} otherwise.
+     * @deprecated Use Float.isFinite.
      */
+     @Deprecated
      public static boolean isFinite(float f) {
-        return Math.abs(f) <= FloatConsts.MAX_VALUE;
+         return Float.isFinite(f);
     }
 
     /**
@@ -558,82 +527,11 @@ public class FpUtils {
      * @param scale_factor power of 2 used to scale {@code d}
      * @return {@code d * }2<sup>{@code scale_factor}</sup>
      * @author Joseph D. Darcy
+     * @deprecated Use Math.scalb.
      */
+    @Deprecated
     public static double scalb(double d, int scale_factor) {
-        /*
-         * This method does not need to be declared strictfp to
-         * compute the same correct result on all platforms.  When
-         * scaling up, it does not matter what order the
-         * multiply-store operations are done; the result will be
-         * finite or overflow regardless of the operation ordering.
-         * However, to get the correct result when scaling down, a
-         * particular ordering must be used.
-         *
-         * When scaling down, the multiply-store operations are
-         * sequenced so that it is not possible for two consecutive
-         * multiply-stores to return subnormal results.  If one
-         * multiply-store result is subnormal, the next multiply will
-         * round it away to zero.  This is done by first multiplying
-         * by 2 ^ (scale_factor % n) and then multiplying several
-         * times by by 2^n as needed where n is the exponent of number
-         * that is a covenient power of two.  In this way, at most one
-         * real rounding error occurs.  If the double value set is
-         * being used exclusively, the rounding will occur on a
-         * multiply.  If the double-extended-exponent value set is
-         * being used, the products will (perhaps) be exact but the
-         * stores to d are guaranteed to round to the double value
-         * set.
-         *
-         * It is _not_ a valid implementation to first multiply d by
-         * 2^MIN_EXPONENT and then by 2 ^ (scale_factor %
-         * MIN_EXPONENT) since even in a strictfp program double
-         * rounding on underflow could occur; e.g. if the scale_factor
-         * argument was (MIN_EXPONENT - n) and the exponent of d was a
-         * little less than -(MIN_EXPONENT - n), meaning the final
-         * result would be subnormal.
-         *
-         * Since exact reproducibility of this method can be achieved
-         * without any undue performance burden, there is no
-         * compelling reason to allow double rounding on underflow in
-         * scalb.
-         */
-
-        // magnitude of a power of two so large that scaling a finite
-        // nonzero value by it would be guaranteed to over or
-        // underflow; due to rounding, scaling down takes takes an
-        // additional power of two which is reflected here
-        final int MAX_SCALE = DoubleConsts.MAX_EXPONENT + -DoubleConsts.MIN_EXPONENT +
-                              DoubleConsts.SIGNIFICAND_WIDTH + 1;
-        int exp_adjust = 0;
-        int scale_increment = 0;
-        double exp_delta = Double.NaN;
-
-        // Make sure scaling factor is in a reasonable range
-
-        if(scale_factor < 0) {
-            scale_factor = Math.max(scale_factor, -MAX_SCALE);
-            scale_increment = -512;
-            exp_delta = twoToTheDoubleScaleDown;
-        }
-        else {
-            scale_factor = Math.min(scale_factor, MAX_SCALE);
-            scale_increment = 512;
-            exp_delta = twoToTheDoubleScaleUp;
-        }
-
-        // Calculate (scale_factor % +/-512), 512 = 2^9, using
-        // technique from "Hacker's Delight" section 10-2.
-        int t = (scale_factor >> 9-1) >>> 32 - 9;
-        exp_adjust = ((scale_factor + t) & (512 -1)) - t;
-
-        d *= powerOfTwoD(exp_adjust);
-        scale_factor -= exp_adjust;
-
-        while(scale_factor != 0) {
-            d *= exp_delta;
-            scale_factor -= scale_increment;
-        }
-        return d;
+        return Math.scalb(d, scale_factor);
     }
 
     /**
@@ -667,28 +565,11 @@ public class FpUtils {
      * @param scale_factor power of 2 used to scale {@code f}
      * @return {@code f * }2<sup>{@code scale_factor}</sup>
      * @author Joseph D. Darcy
+     * @deprecated Use Math.scalb.
      */
-     public static float scalb(float f, int scale_factor) {
-        // magnitude of a power of two so large that scaling a finite
-        // nonzero value by it would be guaranteed to over or
-        // underflow; due to rounding, scaling down takes takes an
-        // additional power of two which is reflected here
-        final int MAX_SCALE = FloatConsts.MAX_EXPONENT + -FloatConsts.MIN_EXPONENT +
-                              FloatConsts.SIGNIFICAND_WIDTH + 1;
-
-        // Make sure scaling factor is in a reasonable range
-        scale_factor = Math.max(Math.min(scale_factor, MAX_SCALE), -MAX_SCALE);
-
-        /*
-         * Since + MAX_SCALE for float fits well within the double
-         * exponent range and + float -> double conversion is exact
-         * the multiplication below will be exact. Therefore, the
-         * rounding that occurs when the double product is cast to
-         * float will be the correctly rounded float result.  Since
-         * all operations other than the final multiply will be exact,
-         * it is not necessary to declare this method strictfp.
-         */
-        return (float)((double)f*powerOfTwoD(scale_factor));
+    @Deprecated
+    public static float scalb(float f, int scale_factor) {
+        return Math.scalb(f, scale_factor);
     }
 
     /**
@@ -730,65 +611,11 @@ public class FpUtils {
      * @return The floating-point number adjacent to {@code start} in the
      * direction of {@code direction}.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.nextAfter
      */
+    @Deprecated
     public static double nextAfter(double start, double direction) {
-        /*
-         * The cases:
-         *
-         * nextAfter(+infinity, 0)  == MAX_VALUE
-         * nextAfter(+infinity, +infinity)  == +infinity
-         * nextAfter(-infinity, 0)  == -MAX_VALUE
-         * nextAfter(-infinity, -infinity)  == -infinity
-         *
-         * are naturally handled without any additional testing
-         */
-
-        // First check for NaN values
-        if (isNaN(start) || isNaN(direction)) {
-            // return a NaN derived from the input NaN(s)
-            return start + direction;
-        } else if (start == direction) {
-            return direction;
-        } else {        // start > direction or start < direction
-            // Add +0.0 to get rid of a -0.0 (+0.0 + -0.0 => +0.0)
-            // then bitwise convert start to integer.
-            long transducer = Double.doubleToRawLongBits(start + 0.0d);
-
-            /*
-             * IEEE 754 floating-point numbers are lexicographically
-             * ordered if treated as signed- magnitude integers .
-             * Since Java's integers are two's complement,
-             * incrementing" the two's complement representation of a
-             * logically negative floating-point value *decrements*
-             * the signed-magnitude representation. Therefore, when
-             * the integer representation of a floating-point values
-             * is less than zero, the adjustment to the representation
-             * is in the opposite direction than would be expected at
-             * first .
-             */
-            if (direction > start) { // Calculate next greater value
-                transducer = transducer + (transducer >= 0L ? 1L:-1L);
-            } else  { // Calculate next lesser value
-                assert direction < start;
-                if (transducer > 0L)
-                    --transducer;
-                else
-                    if (transducer < 0L )
-                        ++transducer;
-                    /*
-                     * transducer==0, the result is -MIN_VALUE
-                     *
-                     * The transition from zero (implicitly
-                     * positive) to the smallest negative
-                     * signed magnitude value must be done
-                     * explicitly.
-                     */
-                    else
-                        transducer = DoubleConsts.SIGN_BIT_MASK | 1L;
-            }
-
-            return Double.longBitsToDouble(transducer);
-        }
+        return Math.nextAfter(start, direction);
     }
 
     /**
@@ -830,65 +657,11 @@ public class FpUtils {
      * @return The floating-point number adjacent to {@code start} in the
      * direction of {@code direction}.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.nextAfter.
      */
-     public static float nextAfter(float start, double direction) {
-        /*
-         * The cases:
-         *
-         * nextAfter(+infinity, 0)  == MAX_VALUE
-         * nextAfter(+infinity, +infinity)  == +infinity
-         * nextAfter(-infinity, 0)  == -MAX_VALUE
-         * nextAfter(-infinity, -infinity)  == -infinity
-         *
-         * are naturally handled without any additional testing
-         */
-
-        // First check for NaN values
-        if (isNaN(start) || isNaN(direction)) {
-            // return a NaN derived from the input NaN(s)
-            return start + (float)direction;
-        } else if (start == direction) {
-            return (float)direction;
-        } else {        // start > direction or start < direction
-            // Add +0.0 to get rid of a -0.0 (+0.0 + -0.0 => +0.0)
-            // then bitwise convert start to integer.
-            int transducer = Float.floatToRawIntBits(start + 0.0f);
-
-            /*
-             * IEEE 754 floating-point numbers are lexicographically
-             * ordered if treated as signed- magnitude integers .
-             * Since Java's integers are two's complement,
-             * incrementing" the two's complement representation of a
-             * logically negative floating-point value *decrements*
-             * the signed-magnitude representation. Therefore, when
-             * the integer representation of a floating-point values
-             * is less than zero, the adjustment to the representation
-             * is in the opposite direction than would be expected at
-             * first.
-             */
-            if (direction > start) {// Calculate next greater value
-                transducer = transducer + (transducer >= 0 ? 1:-1);
-            } else  { // Calculate next lesser value
-                assert direction < start;
-                if (transducer > 0)
-                    --transducer;
-                else
-                    if (transducer < 0 )
-                        ++transducer;
-                    /*
-                     * transducer==0, the result is -MIN_VALUE
-                     *
-                     * The transition from zero (implicitly
-                     * positive) to the smallest negative
-                     * signed magnitude value must be done
-                     * explicitly.
-                     */
-                    else
-                        transducer = FloatConsts.SIGN_BIT_MASK | 1;
-            }
-
-            return Float.intBitsToFloat(transducer);
-        }
+    @Deprecated
+    public static float nextAfter(float start, double direction) {
+        return Math.nextAfter(start, direction);
     }
 
     /**
@@ -915,15 +688,11 @@ public class FpUtils {
      * @return The adjacent floating-point value closer to positive
      * infinity.
      * @author Joseph D. Darcy
+     * @deprecated use Math.nextUp.
      */
+    @Deprecated
     public static double nextUp(double d) {
-        if( isNaN(d) || d == Double.POSITIVE_INFINITY)
-            return d;
-        else {
-            d += 0.0d;
-            return Double.longBitsToDouble(Double.doubleToRawLongBits(d) +
-                                           ((d >= 0.0d)?+1L:-1L));
-        }
+        return Math.nextUp(d);
     }
 
     /**
@@ -950,15 +719,11 @@ public class FpUtils {
      * @return The adjacent floating-point value closer to positive
      * infinity.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.nextUp.
      */
-     public static float nextUp(float f) {
-        if( isNaN(f) || f == FloatConsts.POSITIVE_INFINITY)
-            return f;
-        else {
-            f += 0.0f;
-            return Float.intBitsToFloat(Float.floatToRawIntBits(f) +
-                                        ((f >= 0.0f)?+1:-1));
-        }
+    @Deprecated
+    public static float nextUp(float f) {
+        return Math.nextUp(f);
     }
 
     /**
@@ -985,17 +750,11 @@ public class FpUtils {
      * @return The adjacent floating-point value closer to negative
      * infinity.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.nextDown.
      */
+    @Deprecated
     public static double nextDown(double d) {
-        if( isNaN(d) || d == Double.NEGATIVE_INFINITY)
-            return d;
-        else {
-            if (d == 0.0)
-                return -Double.MIN_VALUE;
-            else
-                return Double.longBitsToDouble(Double.doubleToRawLongBits(d) +
-                                               ((d > 0.0d)?-1L:+1L));
-        }
+        return Math.nextDown(d);
     }
 
     /**
@@ -1022,17 +781,11 @@ public class FpUtils {
      * @return The adjacent floating-point value closer to negative
      * infinity.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.nextDown.
      */
+    @Deprecated
     public static double nextDown(float f) {
-        if( isNaN(f) || f == Float.NEGATIVE_INFINITY)
-            return f;
-        else {
-            if (f == 0.0f)
-                return -Float.MIN_VALUE;
-            else
-                return Float.intBitsToFloat(Float.floatToRawIntBits(f) +
-                                            ((f > 0.0f)?-1:+1));
-        }
+        return Math.nextDown(f);
     }
 
     /**
@@ -1047,9 +800,11 @@ public class FpUtils {
      * and the sign of {@code sign}.
      * @author Joseph D. Darcy
      * @since 1.5
+     * @deprecated Use StrictMath.copySign.
      */
+    @Deprecated
     public static double copySign(double magnitude, double sign) {
-        return rawCopySign(magnitude, (isNaN(sign)?1.0d:sign));
+        return StrictMath.copySign(magnitude, sign);
     }
 
     /**
@@ -1063,9 +818,11 @@ public class FpUtils {
      * @return a value with the magnitude of {@code magnitude}
      * and the sign of {@code sign}.
      * @author Joseph D. Darcy
+     * @deprecated Use StrictMath.copySign.
      */
-     public static float copySign(float magnitude, float sign) {
-        return rawCopySign(magnitude, (isNaN(sign)?1.0f:sign));
+    @Deprecated
+    public static float copySign(float magnitude, float sign) {
+        return StrictMath.copySign(magnitude, sign);
     }
 
     /**
@@ -1090,33 +847,11 @@ public class FpUtils {
      * @return the size of an ulp of the argument
      * @author Joseph D. Darcy
      * @since 1.5
+     * @deprecated Use Math.ulp.
      */
+    @Deprecated
     public static double ulp(double d) {
-        int exp = getExponent(d);
-
-        switch(exp) {
-        case DoubleConsts.MAX_EXPONENT+1:       // NaN or infinity
-            return Math.abs(d);
-
-        case DoubleConsts.MIN_EXPONENT-1:       // zero or subnormal
-            return Double.MIN_VALUE;
-
-        default:
-            assert exp <= DoubleConsts.MAX_EXPONENT && exp >= DoubleConsts.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= DoubleConsts.MIN_EXPONENT) {
-                return powerOfTwoD(exp);
-            }
-            else {
-                // return a subnormal result; left shift integer
-                // representation of Double.MIN_VALUE appropriate
-                // number of positions
-                return Double.longBitsToDouble(1L <<
-                (exp - (DoubleConsts.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1)) ));
-            }
-        }
+        return Math.ulp(d);
     }
 
     /**
@@ -1141,33 +876,11 @@ public class FpUtils {
      * @return the size of an ulp of the argument
      * @author Joseph D. Darcy
      * @since 1.5
+     * @deprecated Use Math.ulp.
      */
+     @Deprecated
      public static float ulp(float f) {
-        int exp = getExponent(f);
-
-        switch(exp) {
-        case FloatConsts.MAX_EXPONENT+1:        // NaN or infinity
-            return Math.abs(f);
-
-        case FloatConsts.MIN_EXPONENT-1:        // zero or subnormal
-            return FloatConsts.MIN_VALUE;
-
-        default:
-            assert exp <= FloatConsts.MAX_EXPONENT && exp >= FloatConsts.MIN_EXPONENT;
-
-            // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
-            exp = exp - (FloatConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= FloatConsts.MIN_EXPONENT) {
-                return powerOfTwoF(exp);
-            }
-            else {
-                // return a subnormal result; left shift integer
-                // representation of FloatConsts.MIN_VALUE appropriate
-                // number of positions
-                return Float.intBitsToFloat(1 <<
-                (exp - (FloatConsts.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1)) ));
-            }
-        }
+        return Math.ulp(f);
      }
 
     /**
@@ -1186,9 +899,11 @@ public class FpUtils {
      * @return the signum function of the argument
      * @author Joseph D. Darcy
      * @since 1.5
+     * @deprecated Use Math.signum.
      */
+    @Deprecated
     public static double signum(double d) {
-        return (d == 0.0 || isNaN(d))?d:copySign(1.0, d);
+        return Math.signum(d);
     }
 
     /**
@@ -1207,9 +922,10 @@ public class FpUtils {
      * @return the signum function of the argument
      * @author Joseph D. Darcy
      * @since 1.5
+     * @deprecated Use Math.signum.
      */
+    @Deprecated
     public static float signum(float f) {
-        return (f == 0.0f || isNaN(f))?f:copySign(1.0f, f);
+        return Math.signum(f);
     }
-
 }

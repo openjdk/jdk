@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 public class CubeRootTests {
@@ -95,14 +94,14 @@ public class CubeRootTests {
 
         // Test cbrt(2^(3n)) = 2^n.
         for(int i = 18; i <= DoubleConsts.MAX_EXPONENT/3; i++) {
-            failures += testCubeRootCase(FpUtils.scalb(1.0, 3*i),
-                                         FpUtils.scalb(1.0, i) );
+            failures += testCubeRootCase(Math.scalb(1.0, 3*i),
+                                         Math.scalb(1.0, i) );
         }
 
         // Test cbrt(2^(-3n)) = 2^-n.
-        for(int i = -1; i >= FpUtils.ilogb(Double.MIN_VALUE)/3; i--) {
-            failures += testCubeRootCase(FpUtils.scalb(1.0, 3*i),
-                                         FpUtils.scalb(1.0, i) );
+        for(int i = -1; i >= DoubleConsts.MIN_SUB_EXPONENT/3; i--) {
+            failures += testCubeRootCase(Math.scalb(1.0, 3*i),
+                                         Math.scalb(1.0, i) );
         }
 
         // Test random perfect cubes.  Create double values with
@@ -110,10 +109,10 @@ public class CubeRootTests {
         // significant bits in the significand set; 17*3 = 51, which
         // is less than the number of bits in a double's significand.
         long exponentBits1 =
-            Double.doubleToLongBits(FpUtils.scalb(1.0, 55)) &
+            Double.doubleToLongBits(Math.scalb(1.0, 55)) &
             DoubleConsts.EXP_BIT_MASK;
         long exponentBits2=
-            Double.doubleToLongBits(FpUtils.scalb(1.0, -55)) &
+            Double.doubleToLongBits(Math.scalb(1.0, -55)) &
             DoubleConsts.EXP_BIT_MASK;
         for(int i = 0; i < 100; i++) {
             // Take 16 bits since the 17th bit is implicit in the
@@ -177,16 +176,16 @@ public class CubeRootTests {
 
             err = d - StrictMath.pow(y1, 3);
             if (err != 0.0) {
-                if(FpUtils.isNaN(err)) {
+                if(Double.isNaN(err)) {
                     failures++;
                     System.err.println("Encountered unexpected NaN value: d = " + d +
                                        "\tcbrt(d) = " + y1);
                 } else {
                     if (err < 0.0) {
-                        err_adjacent = StrictMath.pow(FpUtils.nextUp(y1), 3) - d;
+                        err_adjacent = StrictMath.pow(Math.nextUp(y1), 3) - d;
                     }
                     else  { // (err > 0.0)
-                        err_adjacent = StrictMath.pow(FpUtils.nextAfter(y1,0.0), 3) - d;
+                        err_adjacent = StrictMath.pow(Math.nextAfter(y1,0.0), 3) - d;
                     }
 
                     if (Math.abs(err) > Math.abs(err_adjacent)) {
@@ -200,16 +199,16 @@ public class CubeRootTests {
 
             err = d - StrictMath.pow(y2, 3);
             if (err != 0.0) {
-                if(FpUtils.isNaN(err)) {
+                if(Double.isNaN(err)) {
                     failures++;
                     System.err.println("Encountered unexpected NaN value: d = " + d +
                                        "\tcbrt(d) = " + y2);
                 } else {
                     if (err < 0.0) {
-                        err_adjacent = StrictMath.pow(FpUtils.nextUp(y2), 3) - d;
+                        err_adjacent = StrictMath.pow(Math.nextUp(y2), 3) - d;
                     }
                     else  { // (err > 0.0)
-                        err_adjacent = StrictMath.pow(FpUtils.nextAfter(y2,0.0), 3) - d;
+                        err_adjacent = StrictMath.pow(Math.nextAfter(y2,0.0), 3) - d;
                     }
 
                     if (Math.abs(err) > Math.abs(err_adjacent)) {
@@ -242,13 +241,13 @@ public class CubeRootTests {
 
             // Test near cbrt(2^(3n)) = 2^n.
             for(int i = 18; i <= DoubleConsts.MAX_EXPONENT/3; i++) {
-                double pc = FpUtils.scalb(1.0, 3*i);
+                double pc = Math.scalb(1.0, 3*i);
 
                 pcNeighbors[2] = pc;
-                pcNeighbors[1] = FpUtils.nextDown(pc);
-                pcNeighbors[0] = FpUtils.nextDown(pcNeighbors[1]);
-                pcNeighbors[3] = FpUtils.nextUp(pc);
-                pcNeighbors[4] = FpUtils.nextUp(pcNeighbors[3]);
+                pcNeighbors[1] = Math.nextDown(pc);
+                pcNeighbors[0] = Math.nextDown(pcNeighbors[1]);
+                pcNeighbors[3] = Math.nextUp(pc);
+                pcNeighbors[4] = Math.nextUp(pcNeighbors[3]);
 
                 for(int j = 0; j < pcNeighbors.length; j++) {
                     pcNeighborsCbrt[j] =           Math.cbrt(pcNeighbors[j]);
@@ -280,14 +279,14 @@ public class CubeRootTests {
             }
 
             // Test near cbrt(2^(-3n)) = 2^-n.
-            for(int i = -1; i >= FpUtils.ilogb(Double.MIN_VALUE)/3; i--) {
-                double pc = FpUtils.scalb(1.0, 3*i);
+            for(int i = -1; i >= DoubleConsts.MIN_SUB_EXPONENT/3; i--) {
+                double pc = Math.scalb(1.0, 3*i);
 
                 pcNeighbors[2] = pc;
-                pcNeighbors[1] = FpUtils.nextDown(pc);
-                pcNeighbors[0] = FpUtils.nextDown(pcNeighbors[1]);
-                pcNeighbors[3] = FpUtils.nextUp(pc);
-                pcNeighbors[4] = FpUtils.nextUp(pcNeighbors[3]);
+                pcNeighbors[1] = Math.nextDown(pc);
+                pcNeighbors[0] = Math.nextDown(pcNeighbors[1]);
+                pcNeighbors[3] = Math.nextUp(pc);
+                pcNeighbors[4] = Math.nextUp(pcNeighbors[3]);
 
                 for(int j = 0; j < pcNeighbors.length; j++) {
                     pcNeighborsCbrt[j] =           Math.cbrt(pcNeighbors[j]);

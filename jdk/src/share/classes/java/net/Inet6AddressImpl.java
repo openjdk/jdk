@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,10 @@ class Inet6AddressImpl implements InetAddressImpl {
              * be either an IPv6 address or an IPv4 address (case of a dual
              * stack system).
              */
-            java.util.Enumeration it = netif.getInetAddresses();
+            java.util.Enumeration<InetAddress> it = netif.getInetAddresses();
             InetAddress inetaddr = null;
             while (it.hasMoreElements()) {
-                inetaddr = (InetAddress) it.nextElement();
+                inetaddr = it.nextElement();
                 if (inetaddr.getClass().isInstance(addr)) {
                     ifaddr = inetaddr.getAddress();
                     if (inetaddr instanceof Inet6Address) {

@@ -52,8 +52,8 @@ class DiscoveredList;
 
 class ReferenceProcessor : public CHeapObj {
  protected:
-  // End of list marker
-  static oop  _sentinelRef;
+  // Compatibility with pre-4965777 JDK's
+  static bool _pending_list_uses_discovered_field;
   MemRegion   _span; // (right-open) interval of heap
                      // subject to wkref discovery
   bool        _discovering_refs;      // true when discovery enabled
@@ -106,8 +106,6 @@ class ReferenceProcessor : public CHeapObj {
   int max_num_q()                        { return _max_num_q; }
   void set_active_mt_degree(int v)       { _num_q = v; }
   DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
-  static oop  sentinel_ref()             { return _sentinelRef; }
-  static oop* adr_sentinel_ref()         { return &_sentinelRef; }
   ReferencePolicy* setup_policy(bool always_clear) {
     _current_soft_ref_policy = always_clear ?
       _always_clear_soft_ref_policy : _default_soft_ref_policy;
@@ -115,7 +113,6 @@ class ReferenceProcessor : public CHeapObj {
     return _current_soft_ref_policy;
   }
 
- public:
   // Process references with a certain reachability level.
   void process_discovered_reflist(DiscoveredList               refs_lists[],
                                   ReferencePolicy*             policy,
@@ -230,6 +227,7 @@ class ReferenceProcessor : public CHeapObj {
                                         HeapWord* discovered_addr);
   void verify_ok_to_handle_reflists() PRODUCT_RETURN;
 
+  void clear_discovered_references(DiscoveredList& refs_list);
   void abandon_partial_discovered_list(DiscoveredList& refs_list);
 
   // Calculate the number of jni handles.
@@ -300,6 +298,13 @@ class ReferenceProcessor : public CHeapObj {
   bool discovery_is_atomic() const { return _discovery_is_atomic; }
   void set_atomic_discovery(bool atomic) { _discovery_is_atomic = atomic; }
 
+  // whether the JDK in which we are embedded is a pre-4965777 JDK,
+  // and thus whether or not it uses the discovered field to chain
+  // the entries in the pending list.
+  static bool pending_list_uses_discovered_field() {
+    return _pending_list_uses_discovered_field;
+  }
+
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }
   void set_mt_discovery(bool mt) { _discovery_is_mt = mt; }
@@ -314,7 +319,6 @@ class ReferenceProcessor : public CHeapObj {
 
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
-  static void oops_do(OopClosure* f);     // strong root(s)
 
   // Balance each of the discovered lists.
   void balance_all_queues();
@@ -340,7 +344,6 @@ class ReferenceProcessor : public CHeapObj {
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
-  static void verify();
 
   // clear the discovered lists (unlinking each entry).
   void clear_discovered_references() PRODUCT_RETURN;
@@ -524,12 +527,10 @@ protected:
   EnqueueTask(ReferenceProcessor& ref_processor,
               DiscoveredList      refs_lists[],
               HeapWord*           pending_list_addr,
-              oop                 sentinel_ref,
               int                 n_queues)
     : _ref_processor(ref_processor),
       _refs_lists(refs_lists),
       _pending_list_addr(pending_list_addr),
-      _sentinel_ref(sentinel_ref),
       _n_queues(n_queues)
   { }
 
@@ -540,7 +541,6 @@ protected:
   ReferenceProcessor& _ref_processor;
   DiscoveredList*     _refs_lists;
   HeapWord*           _pending_list_addr;
-  oop                 _sentinel_ref;
   int                 _n_queues;
 };
 

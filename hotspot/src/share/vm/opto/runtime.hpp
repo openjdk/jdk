@@ -114,6 +114,7 @@ class OptoRuntime : public AllStatic {
   // References to generated stubs
   static address _new_instance_Java;
   static address _new_array_Java;
+  static address _new_array_nozero_Java;
   static address _multianewarray2_Java;
   static address _multianewarray3_Java;
   static address _multianewarray4_Java;
@@ -143,6 +144,7 @@ class OptoRuntime : public AllStatic {
 
   // Allocate storage for a objArray or typeArray
   static void new_array_C(klassOopDesc* array_klass, int len, JavaThread *thread);
+  static void new_array_nozero_C(klassOopDesc* array_klass, int len, JavaThread *thread);
 
   // Post-slow-path-allocation, pre-initializing-stores step for
   // implementing ReduceInitialCardMarks
@@ -208,6 +210,7 @@ private:
   // access to runtime stubs entry points for java code
   static address new_instance_Java()                     { return _new_instance_Java; }
   static address new_array_Java()                        { return _new_array_Java; }
+  static address new_array_nozero_Java()                 { return _new_array_nozero_Java; }
   static address multianewarray2_Java()                  { return _multianewarray2_Java; }
   static address multianewarray3_Java()                  { return _multianewarray3_Java; }
   static address multianewarray4_Java()                  { return _multianewarray4_Java; }

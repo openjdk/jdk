@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,8 @@ extern "C" {
 }
 
 class GenericGrowableArray : public ResourceObj {
+  friend class VMStructs;
+
  protected:
   int    _len;          // current length
   int    _max;          // maximum length
@@ -136,6 +138,8 @@ class GenericGrowableArray : public ResourceObj {
 };
 
 template<class E> class GrowableArray : public GenericGrowableArray {
+  friend class VMStructs;
+
  private:
   E*     _data;         // data array
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,7 +365,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             if (currentTrap != null) {
                 currentTrap.addJVMS(atts.getValue("method"), Integer.parseInt(atts.getValue("bci")));
             } else {
-                System.err.println("Missing uncommon_trap for jvms");
+                // Ignore <eliminate_allocation type='667'> and <eliminate_lock lock='1'>
             }
         } else if (qname.equals("nmethod")) {
             String id = makeId(atts);
@@ -391,6 +391,11 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
                     throw new InternalError("call site and parse don't match");
                 }
             }
+        } else if (qname.equals("parse_done")) {
+            CallSite call = scopes.pop();
+            call.setEndNodes(Integer.parseInt(search(atts, "nodes")));
+            call.setTimeStamp(Double.parseDouble(search(atts, "stamp")));
+            scopes.push(call);
         }
     }
 
