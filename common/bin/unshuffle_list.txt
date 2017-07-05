@@ -1293,10 +1293,7 @@ jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/j2secmod_md.h : jdk/src/win
 jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/p11_md.c : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.c
 jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/p11_md.h : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.h
 jdk/src/jdk.deploy.osx/macosx/classes/com/apple/concurrent/package.html : jdk/src/macosx/classes/com/apple/concurrent/package.html
-jdk/src/jdk.deploy.osx/macosx/classes/apple/applescript : jdk/src/macosx/classes/apple/applescript
-jdk/src/jdk.deploy.osx/macosx/classes/apple/security : jdk/src/macosx/classes/apple/security
 jdk/src/jdk.deploy.osx/macosx/classes/com/apple/concurrent : jdk/src/macosx/classes/com/apple/concurrent
-jdk/src/jdk.deploy.osx/macosx/native/libapplescriptengine : jdk/src/macosx/native/apple/applescript
 jdk/src/jdk.deploy.osx/macosx/native/libosx/CFileManager.m : jdk/src/macosx/native/com/apple/eio/CFileManager.m
 jdk/src/jdk.deploy.osx/macosx/native/libosx/Dispatch.m : jdk/src/macosx/native/com/apple/concurrent/Dispatch.m
 jdk/src/jdk.deploy.osx/macosx/native/libosx/JavaAppLauncher.m : jdk/src/macosx/native/apple/launcher/JavaAppLauncher.m

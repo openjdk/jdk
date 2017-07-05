@@ -129,7 +129,7 @@ esac
 
 # Special handling of arch model.
 case "${Platform_arch_model}" in
-	"x86_32") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} *x86_64*" ;;
+	"x86_32") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} *x86_64* ${JVMCI_SPECIFIC_FILES}" ;;
 	"x86_64") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} *x86_32*" ;;
 esac
 

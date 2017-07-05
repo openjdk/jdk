@@ -1,0 +1,6 @@
+#Wed Sep 01 16:13:40 PDT 2010
+content-types/enabled=true
+content-types/org.eclipse.cdt.core.cxxHeader/file-extensions=hpp,incl
+content-types/org.eclipse.cdt.core.cxxSource/file-extensions=cpp
+eclipse.preferences.version=1
+
