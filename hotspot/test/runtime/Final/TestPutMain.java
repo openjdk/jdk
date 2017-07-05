@@ -19,31 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import java.util.ArrayList;
-
-/* @test TestMetaspaceInitialization
- * @bug 8024945
- * @summary Tests to initialize metaspace with a very low MetaspaceSize
- * @modules java.base/jdk.internal.misc
+/*
+ * @test
+ * @bug 8160527
+ * @summary The VM does not always perform checks added by 8157181 when updating final instance fields
  * @library /testlibrary
- * @run main/othervm -XX:MetaspaceSize=0 TestMetaspaceInitialization
+ * @compile TestPutField.jasm
+ * @compile TestPutStatic.jasm
+ * @compile TestPutMain.java
+ * @run main/othervm TestPutMain
  */
-public class TestMetaspaceInitialization {
-    private class Internal {
-        public int x;
-        public Internal(int x) {
-            this.x = x;
-        }
-    }
 
-    private void test() {
-        ArrayList<Internal> l = new ArrayList<>();
-        l.add(new Internal(17));
-    }
+import jdk.test.lib.Asserts;
 
+public class TestPutMain {
     public static void main(String[] args) {
-        new TestMetaspaceInitialization().test();
+        boolean exception = false;
+        try {
+            TestPutField.test();
+        } catch (java.lang.IllegalAccessError e) {
+            exception = true;
+        }
+
+        Asserts.assertTrue(exception, "FAILED: Expected IllegalAccessError for illegal update to final instance field was not thrown.");
+
+        exception = false;
+        try {
+            TestPutStatic.test();
+        } catch (java.lang.IllegalAccessError e) {
+            exception = true;
+        }
+
+        Asserts.assertTrue(exception, "FAILED: Expected IllegalAccessError for illegal update to final static field was not thrown.");
+
+        System.out.println("PASSED: Expected IllegalAccessError was thrown.");
     }
 }
