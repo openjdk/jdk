@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,8 @@ import javax.crypto.spec.SecretKeySpec;
  * @summary Check if doFinal and update operation result in same Mac
  * @author Yu-Ching Valerie Peng, Bill Situ, Alexander Fomin
  * @library ..
- * @run main MacSameTest
+ * @run main/othervm MacSameTest
+ * @run main/othervm MacSameTest sm
  * @key randomness
  */
 public class MacSameTest extends PKCS11Test {
@@ -57,7 +58,7 @@ public class MacSameTest extends PKCS11Test {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
-        main(new MacSameTest());
+        main(new MacSameTest(), args);
     }
 
     @Override
