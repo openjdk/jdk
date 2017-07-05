@@ -374,7 +374,7 @@ CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
             return NULL;
         }
 
-        for (i = 0; (i < ckLength) && (i < 4) ; i++) {
+        for (i = 0; (i < ckLength) && (i < 2) ; i++) {
             ckpDate->month[i] = jCharToCKChar(jTempChars[i]);
         }
         free(jTempChars);
@@ -398,7 +398,7 @@ CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
             return NULL;
         }
 
-        for (i = 0; (i < ckLength) && (i < 4) ; i++) {
+        for (i = 0; (i < ckLength) && (i < 2) ; i++) {
             ckpDate->day[i] = jCharToCKChar(jTempChars[i]);
         }
         free(jTempChars);
