@@ -228,19 +228,17 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
   // created nmethod will notify normally and nmethods which are freed
   // can be safely skipped.
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  nmethod* current = CodeCache::first_nmethod();
-  while (current != NULL) {
-    // Only notify for live nmethods
-    if (current->is_alive()) {
-      // Lock the nmethod so it can't be freed
-      nmethodLocker nml(current);
+  // Iterate over non-profiled and profiled nmethods
+  NMethodIterator iter;
+  while(iter.next_alive()) {
+    nmethod* current = iter.method();
+    // Lock the nmethod so it can't be freed
+    nmethodLocker nml(current);
 
-      // Don't hold the lock over the notify or jmethodID creation
-      MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      current->get_and_cache_jmethod_id();
-      JvmtiExport::post_compiled_method_load(current);
-    }
-    current = CodeCache::next_nmethod(current);
+    // Don't hold the lock over the notify or jmethodID creation
+    MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    current->get_and_cache_jmethod_id();
+    JvmtiExport::post_compiled_method_load(current);
   }
   return JVMTI_ERROR_NONE;
 }

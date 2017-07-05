@@ -74,10 +74,9 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  _reserved = MemRegion((HeapWord*)heap_rs.base(),
-                        (HeapWord*)(heap_rs.base() + heap_rs.size()));
+  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  CardTableExtension* const barrier_set = new CardTableExtension(_reserved, 3);
+  CardTableExtension* const barrier_set = new CardTableExtension(reserved_region(), 3);
   barrier_set->initialize();
   _barrier_set = barrier_set;
   oopDesc::set_bs(_barrier_set);

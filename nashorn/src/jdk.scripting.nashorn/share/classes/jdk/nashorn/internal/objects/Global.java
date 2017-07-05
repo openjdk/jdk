@@ -561,6 +561,7 @@ public final class Global extends ScriptObject implements Scope {
      *
      * @param engine ScriptEngine to initialize
      */
+    @SuppressWarnings("hiding")
     public void initBuiltinObjects(final ScriptEngine engine) {
         if (this.builtinObject != null) {
             // already initialized, just return
@@ -905,10 +906,12 @@ public final class Global extends ScriptObject implements Scope {
         }
 
         switch (nameStr) {
-            case "context":
-                return sctxt;
-            case "engine":
-                return global.engine;
+        case "context":
+            return sctxt;
+        case "engine":
+            return global.engine;
+        default:
+            break;
         }
 
         if (self == UNDEFINED) {
@@ -1715,6 +1718,7 @@ public final class Global extends ScriptObject implements Scope {
         return func;
     }
 
+    @SuppressWarnings("hiding")
     private void init(final ScriptEngine engine) {
         assert Context.getGlobal() == this : "this global is not set as current";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"New.prompt.", "\u65B0 {0}: "},
         {"Passwords.must.differ", "\u5FC5\u9808\u662F\u4E0D\u540C\u7684\u5BC6\u78BC"},
         {"Re.enter.new.prompt.", "\u91CD\u65B0\u8F38\u5165\u65B0 {0}: "},
-        {"Re.enter.passpword.", "\u91CD\u65B0\u8F38\u5165\u5BC6\u78BC:"},
+        {"Re.enter.password.", "\u91CD\u65B0\u8F38\u5165\u5BC6\u78BC:"},
         {"Re.enter.new.password.", "\u91CD\u65B0\u8F38\u5165\u65B0\u5BC6\u78BC: "},
         {"They.don.t.match.Try.again", "\u5B83\u5011\u4E0D\u76F8\u7B26\u3002\u8ACB\u91CD\u8A66"},
         {"Enter.prompt.alias.name.", "\u8F38\u5165 {0} \u5225\u540D\u540D\u7A31:  "},

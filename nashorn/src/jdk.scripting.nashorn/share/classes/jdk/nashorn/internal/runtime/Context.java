@@ -64,9 +64,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
-
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -161,7 +159,7 @@ public final class Context {
         }
 
         /**
-         * Return the context for this installer
+         * Return the script environment for this installer
          * @return ScriptEnvironment
          */
         @Override
@@ -224,6 +222,20 @@ public final class Context {
                 return context.codeStore.load(source, functionKey);
             }
             return null;
+        }
+
+        @Override
+        public CodeInstaller<ScriptEnvironment> withNewLoader() {
+            return new ContextCodeInstaller(context, context.createNewLoader(), codeSource);
+        }
+
+        @Override
+        public boolean isCompatibleWith(final CodeInstaller<ScriptEnvironment> other) {
+            if (other instanceof ContextCodeInstaller) {
+                final ContextCodeInstaller cci = (ContextCodeInstaller)other;
+                return cci.context == context && cci.codeSource == codeSource;
+            }
+            return false;
         }
     }
 
@@ -1390,7 +1402,7 @@ public final class Context {
      * logic to e.g. multiple switchpoint classes.
      */
     public static final class BuiltinSwitchPoint extends SwitchPoint {
-
+        //empty
     }
 
     /**

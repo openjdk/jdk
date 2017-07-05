@@ -179,7 +179,7 @@ public:
 
   // For now.  Could "expand" some tables in the future, so that this made
   // sense.
-  void add_reference(OopOrNarrowOopStar from, int tid);
+  void add_reference(OopOrNarrowOopStar from, uint tid);
 
   // Removes any entries shown by the given bitmaps to contain only dead
   // objects.
@@ -301,7 +301,7 @@ public:
   }
 
   // Used in the parallel case.
-  void add_reference(OopOrNarrowOopStar from, int tid) {
+  void add_reference(OopOrNarrowOopStar from, uint tid) {
     _other_regions.add_reference(from, tid);
   }
 

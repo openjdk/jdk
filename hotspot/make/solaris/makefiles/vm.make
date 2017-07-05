@@ -130,7 +130,7 @@ ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 505), 1)
 # Not sure what the 'designed for' comment is referring too above.
 #   The order may not be too significant anymore, but I have placed this
 #   older libm before libCrun, just to make sure it's found and used first.
-LIBS += -lsocket -lsched -ldl $(LIBM) -lCrun -lthread -ldoor -lc -ldemangle
+LIBS += -lsocket -lsched -ldl $(LIBM) -lCrun -lthread -ldoor -lc -ldemangle -lnsl
 else
 ifeq ($(COMPILER_REV_NUMERIC), 502)
 # SC6.1 has it's own libm.so: specifying anything else provokes a name conflict.
@@ -249,11 +249,12 @@ JVM_OBJ_FILES = $(Obj_Files) $(DTRACE_OBJS)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT) vm.def
+mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT) vm.def mapfile_ext
 	rm -f $@
 	cat $(MAPFILE) $(MAPFILE_DTRACE_OPT) \
 	    | $(NAWK) '{                                         \
 	              if ($$0 ~ "INSERT VTABLE SYMBOLS HERE") {  \
+	                  system ("cat mapfile_ext");            \
 	                  system ("cat vm.def");                 \
 	              } else {                                   \
 	                  print $$0;                             \
@@ -267,6 +268,13 @@ mapfile_extended : mapfile $(MAPFILE_DTRACE_OPT)
 vm.def: $(Obj_Files)
 	sh $(GAMMADIR)/make/solaris/makefiles/build_vm_def.sh *.o > $@
 
+mapfile_ext:
+	rm -f $@
+	touch $@
+	if [ -f $(HS_ALT_MAKE)/solaris/makefiles/mapfile-ext ]; then \
+	  cat $(HS_ALT_MAKE)/solaris/makefiles/mapfile-ext > $@; \
+	fi
+
 ifeq ($(LINK_INTO),AOUT)
   LIBJVM.o                 =
   LIBJVM_MAPFILE           =
@@ -276,6 +284,7 @@ else
   LIBJVM_MAPFILE$(LDNOMAP) = mapfile_extended
   LFLAGS_VM$(LDNOMAP)      += $(MAPFLAG:FILENAME=$(LIBJVM_MAPFILE))
   LFLAGS_VM                += $(SONAMEFLAG:SONAME=$(LIBJVM))
+  LFLAGS_VM                += -Wl,-z,defs
 ifndef USE_GCC
   LIBS_VM                  = $(LIBS)
 else

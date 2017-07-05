@@ -443,7 +443,7 @@ public final class OptimisticTypesPersistence {
                 // does not increase filesDeleted
             }
             files[i] = null; // gc eligible
-        };
+        }
     }
 
     private static Path[] getAllRegularFilesInLastModifiedOrder() throws IOException {
@@ -454,7 +454,7 @@ public final class OptimisticTypesPersistence {
                 @Override
                 public boolean test(final Path path) {
                     return !Files.isDirectory(path);
-                };
+                }
             })
             .map(new Function<Path, PathAndTime>() {
                 @Override

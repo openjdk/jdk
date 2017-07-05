@@ -105,13 +105,13 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public ArrayData copy() {
-        return new IntArrayData(array.clone(), (int) length());
+        return new IntArrayData(array.clone(), (int)length);
     }
 
     @Override
     public Object asArrayOfType(final Class<?> componentType) {
         if (componentType == int.class) {
-            return array.length == length() ? array.clone() : Arrays.copyOf(array, (int) length());
+            return array.length == length ? array.clone() : Arrays.copyOf(array, (int)length);
         }
         return super.asArrayOfType(componentType);
     }
@@ -183,7 +183,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public ArrayData shiftRight(final int by) {
-        final ArrayData newData = ensure(by + length() - 1);
+        final ArrayData newData = ensure(by + length - 1);
         if (newData != this) {
             newData.shiftRight(by);
             return newData;
@@ -229,7 +229,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
     @Override
     public ArrayData set(final int index, final int value, final boolean strict) {
         array[index] = value;
-        setLength(Math.max(index + 1, length()));
+        setLength(Math.max(index + 1, length));
 
         return this;
     }
@@ -238,7 +238,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
     public ArrayData set(final int index, final long value, final boolean strict) {
         if (JSType.isRepresentableAsInt(value)) {
             array[index] = JSType.toInt32(value);
-            setLength(Math.max(index + 1, length()));
+            setLength(Math.max(index + 1, length));
             return this;
         }
 
@@ -249,7 +249,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
     public ArrayData set(final int index, final double value, final boolean strict) {
         if (JSType.isRepresentableAsInt(value)) {
             array[index] = (int)(long)value;
-            setLength(Math.max(index + 1, length()));
+            setLength(Math.max(index + 1, length));
             return this;
         }
 
@@ -298,7 +298,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public boolean has(final int index) {
-        return 0 <= index && index < length();
+        return 0 <= index && index < length;
     }
 
     @Override
@@ -313,11 +313,11 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public Object pop() {
-        if (length() == 0) {
+        if (length == 0) {
             return ScriptRuntime.UNDEFINED;
         }
 
-        final int newLength = (int) length() - 1;
+        final int newLength = (int)length - 1;
         final int elem = array[newLength];
         array[newLength] = 0;
         setLength(newLength);
@@ -327,7 +327,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public ArrayData slice(final long from, final long to) {
-        final long start     = from < 0 ? from + length() : from;
+        final long start     = from < 0 ? from + length : from;
         final long newLength = to - start;
 
         return new IntArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)newLength);
@@ -335,18 +335,18 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public final ArrayData push(final boolean strict, final int item) {
-        final long      length = length();
-        final ArrayData newData = ensure(length);
+        final long      len     = length;
+        final ArrayData newData = ensure(len);
         if (newData == this) {
-            array[(int)length] = item;
+            array[(int)len] = item;
             return this;
         }
-        return newData.set((int)length, item, strict);
+        return newData.set((int)len, item, strict);
     }
 
     @Override
     public ArrayData fastSplice(final int start, final int removed, final int added) throws UnsupportedOperationException {
-        final long oldLength = length();
+        final long oldLength = length;
         final long newLength = oldLength - removed + added;
         if (newLength > SparseArrayData.MAX_DENSE_LENGTH && newLength > array.length) {
             throw new UnsupportedOperationException();

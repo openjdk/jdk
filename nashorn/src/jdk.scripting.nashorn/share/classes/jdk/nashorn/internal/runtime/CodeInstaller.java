@@ -100,4 +100,21 @@ public interface CodeInstaller<T> {
      * @return compiled script data
      */
     public StoredScript loadScript(Source source, String functionKey);
+
+    /**
+     * Returns a new code installer that shares most of the functionality of this code installer, but uses a
+     * new, independent class loader.
+     * @return a new code installer with a new independent class loader.
+     */
+    public CodeInstaller<T> withNewLoader();
+
+    /**
+     * Returns true if this code installer is compatible with the other code installer. Compatibility is expected to be
+     * an equivalence relation, and installers are supposed to be compatible with those they create using
+     * {@link #withNewLoader()}.
+     * @param other the other code installer tested for compatibility with this code installer.
+     * @return true if this code installer is compatible with the other code installer.
+     */
+    public boolean isCompatibleWith(CodeInstaller<T> other);
+
 }
