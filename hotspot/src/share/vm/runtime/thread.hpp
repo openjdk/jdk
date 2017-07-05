@@ -113,8 +113,9 @@ class Thread: public ThreadShadow {
   // Support for forcing alignment of thread objects for biased locking
   void*       _real_malloc_address;
  public:
-  void* operator new(size_t size) { return allocate(size, true); }
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) { return allocate(size, false); }
+  void* operator new(size_t size) throw() { return allocate(size, true); }
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
+    return allocate(size, false); }
   void  operator delete(void* p);
 
  protected:

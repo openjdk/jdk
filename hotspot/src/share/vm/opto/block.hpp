@@ -105,15 +105,53 @@ class CFGElement : public ResourceObj {
 // any optimization pass.  They are created late in the game.
 class Block : public CFGElement {
   friend class VMStructs;
- public:
+
+private:
   // Nodes in this block, in order
   Node_List _nodes;
+
+public:
+
+  // Get the node at index 'at_index', if 'at_index' is out of bounds return NULL
+  Node* get_node(uint at_index) const {
+    return _nodes[at_index];
+  }
+
+  // Get the number of nodes in this block
+  uint number_of_nodes() const {
+    return _nodes.size();
+  }
+
+  // Map a node 'node' to index 'to_index' in the block, if the index is out of bounds the size of the node list is increased
+  void map_node(Node* node, uint to_index) {
+    _nodes.map(to_index, node);
+  }
+
+  // Insert a node 'node' at index 'at_index', moving all nodes that are on a higher index one step, if 'at_index' is out of bounds we crash
+  void insert_node(Node* node, uint at_index) {
+    _nodes.insert(at_index, node);
+  }
+
+  // Remove a node at index 'at_index'
+  void remove_node(uint at_index) {
+    _nodes.remove(at_index);
+  }
+
+  // Push a node 'node' onto the node list
+  void push_node(Node* node) {
+    _nodes.push(node);
+  }
+
+  // Pop the last node off the node list
+  Node* pop_node() {
+    return _nodes.pop();
+  }
 
   // Basic blocks have a Node which defines Control for all Nodes pinned in
   // this block.  This Node is a RegionNode.  Exception-causing Nodes
   // (division, subroutines) and Phi functions are always pinned.  Later,
   // every Node will get pinned to some block.
-  Node *head() const { return _nodes[0]; }
+  Node *head() const { return get_node(0); }
 
   // CAUTION: num_preds() is ONE based, so that predecessor numbers match
   // input edges to Regions and Phis.
@@ -274,28 +312,11 @@ class Block : public CFGElement {
 
   // Add an instruction to an existing block.  It must go after the head
   // instruction and before the end instruction.
-  void add_inst( Node *n ) { _nodes.insert(end_idx(),n); }
+  void add_inst( Node *n ) { insert_node(n, end_idx()); }
   // Find node in block
   uint find_node( const Node *n ) const;
   // Find and remove n from block list
   void find_remove( const Node *n );
-
-  // helper function that adds caller save registers to MachProjNode
-  void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe);
-  // Schedule a call next in the block
-  uint sched_call(Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call);
-
-  // Perform basic-block local scheduling
-  Node *select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot);
-  void set_next_call( Node *n, VectorSet &next_call, PhaseCFG* cfg);
-  void needed_for_next_call(Node *this_call, VectorSet &next_call, PhaseCFG* cfg);
-  bool schedule_local(PhaseCFG *cfg, Matcher &m, GrowableArray<int> &ready_cnt, VectorSet &next_call);
-  // Cleanup if any code lands between a Call and his Catch
-  void call_catch_cleanup(PhaseCFG* cfg, Compile *C);
-  // Detect implicit-null-check opportunities.  Basically, find NULL checks
-  // with suitable memory ops nearby.  Use the memory op to do the NULL check.
-  // I can generate a memory op if there is not one nearby.
-  void implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowed_reasons);
 
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
@@ -327,10 +348,6 @@ class Block : public CFGElement {
 
   // Examine block's code shape to predict if it is not commonly executed.
   bool has_uncommon_code() const;
-
-  // Use frequency calculations and code shape to predict if the block
-  // is uncommon.
-  bool is_uncommon(PhaseCFG* cfg) const;
 
 #ifndef PRODUCT
   // Debugging print of basic block
@@ -413,6 +430,27 @@ class PhaseCFG : public Phase {
   // Pick a block between early and late that is a cheaper alternative
   // to late. Helper for schedule_late.
   Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
+
+  bool schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call);
+  void set_next_call(Block* block, Node* n, VectorSet& next_call);
+  void needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call);
+
+  // Perform basic-block local scheduling
+  Node* select(Block* block, Node_List& worklist, GrowableArray<int>& ready_cnt, VectorSet& next_call, uint sched_slot);
+
+  // Schedule a call next in the block
+  uint sched_call(Block* block, uint node_cnt, Node_List& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call);
+
+  // Cleanup if any code lands between a Call and his Catch
+  void call_catch_cleanup(Block* block);
+
+  Node* catch_cleanup_find_cloned_def(Block* use_blk, Node* def, Block* def_blk, int n_clone_idx);
+  void  catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx);
+
+  // Detect implicit-null-check opportunities.  Basically, find NULL checks
+  // with suitable memory ops nearby.  Use the memory op to do the NULL check.
+  // I can generate a memory op if there is not one nearby.
+  void implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons);
 
   // Perform a Depth First Search (DFS).
   // Setup 'vertex' as DFS to vertex mapping.
@@ -530,6 +568,10 @@ class PhaseCFG : public Phase {
     return (_node_to_block_mapping.lookup(node->_idx) != NULL);
   }
 
+  // Use frequency calculations and code shape to predict if the block
+  // is uncommon.
+  bool is_uncommon(const Block* block);
+
 #ifdef ASSERT
   Unique_Node_List _raw_oops;
 #endif
@@ -550,7 +592,7 @@ class PhaseCFG : public Phase {
 
   // Insert a node into a block at index and map the node to the block
   void insert(Block *b, uint idx, Node *n) {
-    b->_nodes.insert( idx, n );
+    b->insert_node(n , idx);
     map_node_to_block(n, b);
   }
 

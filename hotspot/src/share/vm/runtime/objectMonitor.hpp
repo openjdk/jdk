@@ -312,10 +312,10 @@ public:
  public:
   static int Knob_Verbose;
   static int Knob_SpinLimit;
-  void* operator new (size_t size) {
+  void* operator new (size_t size) throw() {
     return AllocateHeap(size, mtInternal);
   }
-  void* operator new[] (size_t size) {
+  void* operator new[] (size_t size) throw() {
     return operator new (size);
   }
   void operator delete(void* p) {

@@ -74,16 +74,19 @@ class PhaseTraceTime: public TraceTime {
  private:
   JavaThread* _thread;
   CompileLog* _log;
+  TimerName _timer;
 
  public:
   PhaseTraceTime(TimerName timer)
-  : TraceTime("", &timers[timer], CITime || CITimeEach, Verbose), _log(NULL) {
+  : TraceTime("", &timers[timer], CITime || CITimeEach, Verbose),
+    _log(NULL), _timer(timer)
+  {
     if (Compilation::current() != NULL) {
       _log = Compilation::current()->log();
     }
 
     if (_log != NULL) {
-      _log->begin_head("phase name='%s'", timer_name[timer]);
+      _log->begin_head("phase name='%s'", timer_name[_timer]);
       _log->stamp();
       _log->end_head();
     }
@@ -91,7 +94,7 @@ class PhaseTraceTime: public TraceTime {
 
   ~PhaseTraceTime() {
     if (_log != NULL)
-      _log->done("phase");
+      _log->done("phase name='%s'", timer_name[_timer]);
   }
 };
 

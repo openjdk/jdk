@@ -51,9 +51,8 @@ public class CDSCompressedKPtrs {
         output.shouldHaveExitValue(0);
 
       } catch (RuntimeException e) {
-        // Report 'passed' if CDS was turned off because we could not allocate
-        // the klass metaspace at an address that would work with CDS.
-        output.shouldContain("Could not allocate metaspace at a compatible address");
+        // Report 'passed' if CDS was turned off.
+        output.shouldContain("Unable to use shared archive");
         output.shouldHaveExitValue(1);
       }
     }

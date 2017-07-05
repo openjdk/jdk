@@ -149,18 +149,11 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
 // many regions in the heap (based on the min heap size).
 #define TARGET_REGION_NUMBER          2048
 
-void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
-  // region_size in bytes
+void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size) {
   uintx region_size = G1HeapRegionSize;
   if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
-    // We base the automatic calculation on the min heap size. This
-    // can be problematic if the spread between min and max is quite
-    // wide, imagine -Xms128m -Xmx32g. But, if we decided it based on
-    // the max size, the region size might be way too large for the
-    // min size. Either way, some users might have to set the region
-    // size manually for some -Xms / -Xmx combos.
-
-    region_size = MAX2(min_heap_size / TARGET_REGION_NUMBER,
+    size_t average_heap_size = (initial_heap_size + max_heap_size) / 2;
+    region_size = MAX2(average_heap_size / TARGET_REGION_NUMBER,
                        (uintx) MIN_REGION_SIZE);
   }
 
