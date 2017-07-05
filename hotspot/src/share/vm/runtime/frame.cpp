@@ -1043,7 +1043,7 @@ void frame::oops_interpreted_arguments_do(symbolHandle signature, bool is_static
   finder.oops_do();
 }
 
-void frame::oops_code_blob_do(OopClosure* f, const RegisterMap* reg_map) {
+void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* reg_map) {
   assert(_cb != NULL, "sanity check");
   if (_cb->oop_maps() != NULL) {
     OopMapSet::oops_do(this, reg_map, f);
@@ -1058,21 +1058,9 @@ void frame::oops_code_blob_do(OopClosure* f, const RegisterMap* reg_map) {
   // oops referenced from nmethods active on thread stacks so as to
   // prevent them from being collected. However, this visit should be
   // restricted to certain phases of the collection only. The
-  // closure answers whether it wants nmethods to be traced.
-  // (All CodeBlob subtypes other than NMethod currently have
-  // an empty oops_do() method.
-  if (f->do_nmethods()) {
-    _cb->oops_do(f);
-  }
-}
-
-void frame::nmethods_code_blob_do() {
-  assert(_cb != NULL, "sanity check");
-
-  // If we see an activation belonging to a non_entrant nmethod, we mark it.
-  if (_cb->is_nmethod() && ((nmethod *)_cb)->is_not_entrant()) {
-    ((nmethod*)_cb)->mark_as_seen_on_stack();
-  }
+  // closure decides how it wants nmethods to be traced.
+  if (cf != NULL)
+    cf->do_code_blob(_cb);
 }
 
 class CompiledArgumentOopFinder: public SignatureInfo {
@@ -1201,18 +1189,18 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
 }
 
 
-void frame::oops_do_internal(OopClosure* f, RegisterMap* map, bool use_interpreter_oop_map_cache) {
+void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
          if (is_interpreted_frame())    { oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
   } else if (is_entry_frame())          { oops_entry_do      (f, map);
-  } else if (CodeCache::contains(pc())) { oops_code_blob_do  (f, map);
+  } else if (CodeCache::contains(pc())) { oops_code_blob_do  (f, cf, map);
   } else {
     ShouldNotReachHere();
   }
 }
 
-void frame::nmethods_do() {
+void frame::nmethods_do(CodeBlobClosure* cf) {
   if (_cb != NULL && _cb->is_nmethod()) {
-    nmethods_code_blob_do();
+    cf->do_code_blob(_cb);
   }
 }
 
@@ -1358,7 +1346,7 @@ void frame::verify(const RegisterMap* map) {
     }
   }
   COMPILER2_PRESENT(assert(DerivedPointerTable::is_empty(), "must be empty before verify");)
-  oops_do_internal(&VerifyOopClosure::verify_oop, (RegisterMap*)map, false);
+  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, (RegisterMap*)map, false);
 }
 
 

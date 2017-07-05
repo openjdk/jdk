@@ -611,7 +611,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->encoding()));
+                           new ConstantOopWriteValue(cik->constant_encoding()));
       Compile::set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index();
@@ -702,13 +702,13 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   case Type::AryPtr:
   case Type::InstPtr:
   case Type::KlassPtr:          // fall through
-    array->append(new ConstantOopWriteValue(t->isa_oopptr()->const_oop()->encoding()));
+    array->append(new ConstantOopWriteValue(t->isa_oopptr()->const_oop()->constant_encoding()));
     break;
   case Type::NarrowOop:
     if (t == TypeNarrowOop::NULL_PTR) {
       array->append(new ConstantOopWriteValue(NULL));
     } else {
-      array->append(new ConstantOopWriteValue(t->make_ptr()->isa_oopptr()->const_oop()->encoding()));
+      array->append(new ConstantOopWriteValue(t->make_ptr()->isa_oopptr()->const_oop()->constant_encoding()));
     }
     break;
   case Type::Int:
@@ -871,7 +871,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                new ConstantOopWriteValue(cik->encoding()));
+                                new ConstantOopWriteValue(cik->constant_encoding()));
           Compile::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index();
@@ -890,7 +890,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
         }
       } else {
         const TypePtr *tp = obj_node->bottom_type()->make_ptr();
-        scval = new ConstantOopWriteValue(tp->is_instptr()->const_oop()->encoding());
+        scval = new ConstantOopWriteValue(tp->is_instptr()->const_oop()->constant_encoding());
       }
 
       OptoReg::Name box_reg = BoxLockNode::stack_slot(box_node);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,33 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-// Implementation of all inlined member functions defined in oop.hpp
-// We need a separate file to avoid circular references
+/**
+ * @test
+ * @bug 6877254
+ * @summary Implement StoreCMNode::Ideal to promote its OopStore above the MergeMem
+ *
+ * @run main/othervm -server -Xcomp -XX:+UseConcMarkSweepGC Test
+ */
 
-// Separate this out to break dependency.
-inline bool oopDesc::is_perm() const {
-  return Universe::heap()->is_in_permanent(this);
-}
+public class Test {
+    static byte var_1;
+    static String var_2 = "";
+    static byte var_3;
+    static float var_4 = 0;
 
-// Check for NULL also.
-inline bool oopDesc::is_perm_or_null() const {
-  return this == NULL || is_perm();
-}
+    public static void main(String[] args) {
+        int i = 0;
 
-inline bool oopDesc::is_scavengable() const {
-  return Universe::heap()->is_scavengable(this);
+        for (String var_tmp = var_2; i < 11; var_1 = 0, i++) {
+            var_2 = var_2;
+            var_4 *= (var_4 *= (var_3 = 0));
+        }
+
+        System.out.println("var_1 = " + var_1);
+        System.out.println("var_2 = " + var_2);
+        System.out.println("var_3 = " + var_3);
+        System.out.println("var_4 = " + var_4);
+    }
 }

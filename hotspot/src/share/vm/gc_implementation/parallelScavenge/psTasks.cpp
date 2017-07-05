@@ -66,7 +66,7 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
     case threads:
     {
       ResourceMark rm;
-      Threads::oops_do(&roots_closure);
+      Threads::oops_do(&roots_closure, NULL);
     }
     break;
 
@@ -90,6 +90,14 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
       JvmtiExport::oops_do(&roots_closure);
       break;
 
+
+    case code_cache:
+      {
+        CodeBlobToOopClosure each_scavengable_code_blob(&roots_closure, /*do_marking=*/ true);
+        CodeCache::scavenge_root_nmethods_do(&each_scavengable_code_blob);
+      }
+      break;
+
     default:
       fatal("Unknown root type");
   }
@@ -107,12 +115,13 @@ void ThreadRootsTask::do_it(GCTaskManager* manager, uint which) {
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
   PSScavengeRootsClosure roots_closure(pm);
+  CodeBlobToOopClosure roots_in_blobs(&roots_closure, /*do_marking=*/ true);
 
   if (_java_thread != NULL)
-    _java_thread->oops_do(&roots_closure);
+    _java_thread->oops_do(&roots_closure, &roots_in_blobs);
 
   if (_vm_thread != NULL)
-    _vm_thread->oops_do(&roots_closure);
+    _vm_thread->oops_do(&roots_closure, &roots_in_blobs);
 
   // Do the real work
   pm->drain_stacks(false);

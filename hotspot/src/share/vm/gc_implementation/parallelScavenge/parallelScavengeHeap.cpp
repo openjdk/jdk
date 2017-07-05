@@ -962,6 +962,14 @@ void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   _old_gen->resize(desired_free_space);
 }
 
+ParallelScavengeHeap::ParStrongRootsScope::ParStrongRootsScope() {
+  // nothing particular
+}
+
+ParallelScavengeHeap::ParStrongRootsScope::~ParStrongRootsScope() {
+  // nothing particular
+}
+
 #ifndef PRODUCT
 void ParallelScavengeHeap::record_gen_tops_before_GC() {
   if (ZapUnusedHeapArea) {

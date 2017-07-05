@@ -299,7 +299,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   stream()->write_int(sender_stream_offset);
 
   // serialize scope
-  jobject method_enc = (method == NULL)? NULL: method->encoding();
+  jobject method_enc = (method == NULL)? NULL: method->constant_encoding();
   stream()->write_int(oop_recorder()->find_index(method_enc));
   stream()->write_bci(bci);
   assert(method == NULL ||

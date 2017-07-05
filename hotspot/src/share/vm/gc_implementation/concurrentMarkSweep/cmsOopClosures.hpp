@@ -47,20 +47,15 @@ class MarkRefsIntoClosure: public OopsInGenClosure {
  private:
   const MemRegion _span;
   CMSBitMap*      _bitMap;
-  const bool      _should_do_nmethods;
  protected:
   DO_OOP_WORK_DEFN
  public:
-  MarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap,
-                      bool should_do_nmethods);
+  MarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { MarkRefsIntoClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { MarkRefsIntoClosure::do_oop_work(p); }
   bool do_header() { return true; }
-  virtual const bool do_nmethods() const {
-    return _should_do_nmethods;
-  }
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
@@ -73,20 +68,16 @@ class MarkRefsIntoVerifyClosure: public OopsInGenClosure {
   const MemRegion _span;
   CMSBitMap*      _verification_bm;
   CMSBitMap*      _cms_bm;
-  const bool      _should_do_nmethods;
  protected:
   DO_OOP_WORK_DEFN
  public:
   MarkRefsIntoVerifyClosure(MemRegion span, CMSBitMap* verification_bm,
-                            CMSBitMap* cms_bm, bool should_do_nmethods);
+                            CMSBitMap* cms_bm);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { MarkRefsIntoVerifyClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { MarkRefsIntoVerifyClosure::do_oop_work(p); }
   bool do_header() { return true; }
-  virtual const bool do_nmethods() const {
-    return _should_do_nmethods;
-  }
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
@@ -228,7 +219,6 @@ class MarkRefsIntoAndScanClosure: public OopsInGenClosure {
   inline void do_oop_nv(oop* p)       { MarkRefsIntoAndScanClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { MarkRefsIntoAndScanClosure::do_oop_work(p); }
   bool do_header() { return true; }
-  virtual const bool do_nmethods() const { return true; }
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
@@ -273,7 +263,6 @@ class Par_MarkRefsIntoAndScanClosure: public OopsInGenClosure {
   inline void do_oop_nv(oop* p)       { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
   bool do_header() { return true; }
-  virtual const bool do_nmethods() const { return true; }
   // When ScanMarkedObjectsAgainClosure is used,
   // it passes [Par_]MarkRefsIntoAndScanClosure to oop_oop_iterate(),
   // and this delegation is used.
