@@ -226,7 +226,7 @@ void DCmdParser::check(TRAPS) {
 }
 
 void DCmdParser::print_help(outputStream* out, const char* cmd_name) {
-  out->print("\nSyntax : %s %s", cmd_name, _options == NULL ? "" : "[options]");
+  out->print("Syntax : %s %s", cmd_name, _options == NULL ? "" : "[options]");
   GenDCmdArgument* arg = _arguments_list;
   while (arg != NULL) {
     if (arg->is_mandatory()) {
@@ -371,6 +371,30 @@ void DCmd::parse_and_execute(outputStream* out, const char* cmdline,
       command->execute(CHECK);
     }
   }
+}
+
+void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {
+  _dcmdparser.parse(line, delim, CHECK);
+}
+
+void DCmdWithParser::print_help(const char* name) {
+  _dcmdparser.print_help(output(), name);
+}
+
+void DCmdWithParser::reset(TRAPS) {
+  _dcmdparser.reset(CHECK);
+}
+
+void DCmdWithParser::cleanup() {
+  _dcmdparser.cleanup();
+}
+
+GrowableArray<const char*>* DCmdWithParser::argument_name_array() {
+  return _dcmdparser.argument_name_array();
+}
+
+GrowableArray<DCmdArgumentInfo*>* DCmdWithParser::argument_info_array() {
+  return _dcmdparser.argument_info_array();
 }
 
 Mutex* DCmdFactory::_dcmdFactory_lock = new Mutex(Mutex::leaf, "DCmdFactory", true);

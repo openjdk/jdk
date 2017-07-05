@@ -40,9 +40,16 @@ OS = $(Platform_os_family)
 
 SOURCE.AD = $(OUTDIR)/$(OS)_$(Platform_arch_model).ad 
 
-SOURCES.AD = \
+ifeq ("${Platform_arch_model}", "${Platform_arch}")
+  SOURCES.AD = \
   $(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(ARCH)/vm/$(Platform_arch_model).ad) \
   $(call altsrc-replace,$(HS_COMMON_SRC)/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad)
+else
+  SOURCES.AD = \
+  $(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(ARCH)/vm/$(Platform_arch_model).ad) \
+  $(call altsrc-replace,$(HS_COMMON_SRC)/cpu/$(ARCH)/vm/$(Platform_arch).ad) \
+  $(call altsrc-replace,$(HS_COMMON_SRC)/os_cpu/$(OS)_$(ARCH)/vm/$(OS)_$(Platform_arch_model).ad)
+endif
 
 EXEC	= $(OUTDIR)/adlc
 

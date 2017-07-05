@@ -745,15 +745,9 @@ void SharkTopLevelBlock::call_register_finalizer(Value *receiver) {
     SharkType::oop_type(),
     "klass");
 
-  Value *klass_part = builder()->CreateAddressOfStructEntry(
-    klass,
-    in_ByteSize(klassOopDesc::klass_part_offset_in_bytes()),
-    SharkType::klass_type(),
-    "klass_part");
-
   Value *access_flags = builder()->CreateValueOfStructEntry(
-    klass_part,
-    in_ByteSize(Klass::access_flags_offset_in_bytes()),
+    klass,
+    Klass::access_flags_offset(),
     SharkType::jint_type(),
     "access_flags");
 

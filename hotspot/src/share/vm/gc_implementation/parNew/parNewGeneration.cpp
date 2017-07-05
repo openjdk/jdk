@@ -590,7 +590,7 @@ void ParNewGenTask::set_for_termination(int active_workers) {
 // called after a task is started.  So "i" is based on
 // first-come-first-served.
 
-void ParNewGenTask::work(int i) {
+void ParNewGenTask::work(uint worker_id) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   // Since this is being done in a separate thread, need new resource
   // and handle marks.
@@ -601,8 +601,8 @@ void ParNewGenTask::work(int i) {
 
   Generation* old_gen = gch->next_gen(_gen);
 
-  ParScanThreadState& par_scan_state = _state_set->thread_state(i);
-  assert(_state_set->is_valid(i), "Should not have been called");
+  ParScanThreadState& par_scan_state = _state_set->thread_state(worker_id);
+  assert(_state_set->is_valid(worker_id), "Should not have been called");
 
   par_scan_state.set_young_old_boundary(_young_old_boundary);
 
@@ -755,7 +755,7 @@ public:
                          ParScanThreadStateSet& state_set);
 
 private:
-  virtual void work(int i);
+  virtual void work(uint worker_id);
   virtual void set_for_termination(int active_workers) {
     _state_set.terminator()->reset_for_reuse(active_workers);
   }
@@ -781,13 +781,13 @@ ParNewRefProcTaskProxy::ParNewRefProcTaskProxy(
 {
 }
 
-void ParNewRefProcTaskProxy::work(int i)
+void ParNewRefProcTaskProxy::work(uint worker_id)
 {
   ResourceMark rm;
   HandleMark hm;
-  ParScanThreadState& par_scan_state = _state_set.thread_state(i);
+  ParScanThreadState& par_scan_state = _state_set.thread_state(worker_id);
   par_scan_state.set_young_old_boundary(_young_old_boundary);
-  _task.work(i, par_scan_state.is_alive_closure(),
+  _task.work(worker_id, par_scan_state.is_alive_closure(),
              par_scan_state.keep_alive_closure(),
              par_scan_state.evacuate_followers_closure());
 }
@@ -802,9 +802,9 @@ public:
       _task(task)
   { }
 
-  virtual void work(int i)
+  virtual void work(uint worker_id)
   {
-    _task.work(i);
+    _task.work(worker_id);
   }
 };
 
