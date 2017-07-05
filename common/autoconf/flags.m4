@@ -136,8 +136,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
       SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
       SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-      SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
-      SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
+      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
+      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
       SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
       SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
