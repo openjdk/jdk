@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,19 +284,20 @@ class Assembler : public AbstractAssembler {
     MTCTR_OPCODE  = (MTSPR_OPCODE | 9 << SPR_0_4_SHIFT),
     MFCTR_OPCODE  = (MFSPR_OPCODE | 9 << SPR_0_4_SHIFT),
 
-    MTTFHAR_OPCODE   = (MTSPR_OPCODE | 128 << SPR_0_4_SHIFT),
-    MFTFHAR_OPCODE   = (MFSPR_OPCODE | 128 << SPR_0_4_SHIFT),
-    MTTFIAR_OPCODE   = (MTSPR_OPCODE | 129 << SPR_0_4_SHIFT),
-    MFTFIAR_OPCODE   = (MFSPR_OPCODE | 129 << SPR_0_4_SHIFT),
-    MTTEXASR_OPCODE  = (MTSPR_OPCODE | 130 << SPR_0_4_SHIFT),
-    MFTEXASR_OPCODE  = (MFSPR_OPCODE | 130 << SPR_0_4_SHIFT),
-    MTTEXASRU_OPCODE = (MTSPR_OPCODE | 131 << SPR_0_4_SHIFT),
-    MFTEXASRU_OPCODE = (MFSPR_OPCODE | 131 << SPR_0_4_SHIFT),
+    // Attention: Higher and lower half are inserted in reversed order.
+    MTTFHAR_OPCODE   = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
+    MFTFHAR_OPCODE   = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
+    MTTFIAR_OPCODE   = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 1 << SPR_0_4_SHIFT),
+    MFTFIAR_OPCODE   = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 1 << SPR_0_4_SHIFT),
+    MTTEXASR_OPCODE  = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 2 << SPR_0_4_SHIFT),
+    MFTEXASR_OPCODE  = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 2 << SPR_0_4_SHIFT),
+    MTTEXASRU_OPCODE = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 3 << SPR_0_4_SHIFT),
+    MFTEXASRU_OPCODE = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 3 << SPR_0_4_SHIFT),
 
-    MTVRSAVE_OPCODE  = (MTSPR_OPCODE | 256 << SPR_0_4_SHIFT),
-    MFVRSAVE_OPCODE  = (MFSPR_OPCODE | 256 << SPR_0_4_SHIFT),
+    MTVRSAVE_OPCODE  = (MTSPR_OPCODE | 8 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
+    MFVRSAVE_OPCODE  = (MFSPR_OPCODE | 8 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
 
-    MFTB_OPCODE   = (MFSPR_OPCODE | 268 << SPR_0_4_SHIFT),
+    MFTB_OPCODE   = (MFSPR_OPCODE | 8 << SPR_5_9_SHIFT | 12 << SPR_0_4_SHIFT),
 
     MTCRF_OPCODE  = (31u << OPCODE_SHIFT | 144u << 1),
     MFCR_OPCODE   = (31u << OPCODE_SHIFT | 19u << 1),
@@ -1494,6 +1495,26 @@ class Assembler : public AbstractAssembler {
   inline void mftexasr(Register d);
   inline void mftexasru(Register d);
 
+  // TEXASR bit description
+  enum transaction_failure_reason {
+    // Upper half (TEXASRU):
+    tm_failure_persistent =  7, // The failure is likely to recur on each execution.
+    tm_disallowed         =  8, // The instruction is not permitted.
+    tm_nesting_of         =  9, // The maximum transaction level was exceeded.
+    tm_footprint_of       = 10, // The tracking limit for transactional storage accesses was exceeded.
+    tm_self_induced_cf    = 11, // A self-induced conflict occurred in Suspended state.
+    tm_non_trans_cf       = 12, // A conflict occurred with a non-transactional access by another processor.
+    tm_trans_cf           = 13, // A conflict occurred with another transaction.
+    tm_translation_cf     = 14, // A conflict occurred with a TLB invalidation.
+    tm_inst_fetch_cf      = 16, // An instruction fetch was performed from a block that was previously written transactionally.
+    tm_tabort             = 31, // Termination was caused by the execution of an abort instruction.
+    // Lower half:
+    tm_suspended          = 32, // Failure was recorded in Suspended state.
+    tm_failure_summary    = 36, // Failure has been detected and recorded.
+    tm_tfiar_exact        = 37, // Value in the TFIAR is exact.
+    tm_rot                = 38, // Rollback-only transaction.
+  };
+
   // PPC 1, section 2.4.1 Branch Instructions
   inline void b(  address a, relocInfo::relocType rt = relocInfo::none);
   inline void b(  Label& L);
@@ -1581,6 +1602,7 @@ class Assembler : public AbstractAssembler {
   inline void bnectrl(ConditionRegister crx, relocInfo::relocType rt = relocInfo::none);
 
   // condition register logic instructions
+  // NOTE: There's a preferred form: d and s2 should point into the same condition register.
   inline void crand( int d, int s1, int s2);
   inline void crnand(int d, int s1, int s2);
   inline void cror(  int d, int s1, int s2);
@@ -1589,6 +1611,19 @@ class Assembler : public AbstractAssembler {
   inline void creqv( int d, int s1, int s2);
   inline void crandc(int d, int s1, int s2);
   inline void crorc( int d, int s1, int s2);
+
+  // More convenient version.
+  int condition_register_bit(ConditionRegister cr, Condition c) {
+    return 4 * (int)(intptr_t)cr + c;
+  }
+  void crand( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
+  void crnand(ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
+  void cror(  ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
+  void crxor( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
+  void crnor( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
+  void creqv( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
+  void crandc(ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
+  void crorc( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
 
   // icache and dcache related instructions
   inline void icbi(  Register s1, Register s2);
@@ -1673,6 +1708,10 @@ class Assembler : public AbstractAssembler {
   inline void smt_prio_low();
   inline void smt_prio_medium_low();
   inline void smt_prio_medium();
+  // >= Power7
+  inline void smt_yield();
+  inline void smt_mdoio();
+  inline void smt_mdoom();
 
   // trap instructions
   inline void twi_0(Register a); // for load with acquire semantics use load+twi_0+isync (trap can't occur)
@@ -1958,6 +1997,7 @@ class Assembler : public AbstractAssembler {
   inline void tbeginrot_(); // R=1 Rollback-Only Transaction
   inline void tend_();    // A=0
   inline void tendall_(); // A=1
+  inline void tabort_();
   inline void tabort_(Register a);
   inline void tabortwc_(int t, Register a, Register b);
   inline void tabortwci_(int t, Register a, int si);
@@ -1966,6 +2006,10 @@ class Assembler : public AbstractAssembler {
   inline void tsuspend_(); // tsr with L=0
   inline void tresume_();  // tsr with L=1
   inline void tcheck(int f);
+
+  static bool is_tbegin(int x) {
+    return TBEGIN_OPCODE == (x & (0x3f << OPCODE_SHIFT | 0x3ff << 1));
+  }
 
   // The following encoders use r0 as second operand. These instructions
   // read r0 as '0'.
