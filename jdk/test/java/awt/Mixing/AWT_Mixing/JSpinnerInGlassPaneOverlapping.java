@@ -35,9 +35,10 @@ import javax.swing.event.ChangeListener;
 @test
 @summary Simple Overlapping test for javax.swing.JSpinner
 @author sergey.grinev@oracle.com: area=awt.mixing
-@library ../../regtesthelpers
+@library /java/awt/patchlib  ../../regtesthelpers
 @modules java.desktop/sun.awt
          java.desktop/java.awt.peer
+@build java.desktop/java.awt.Helper
 @build Util
 @run main JSpinnerInGlassPaneOverlapping
  */

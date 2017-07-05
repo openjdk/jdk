@@ -21,8 +21,12 @@
  * questions.
  */
 
-/**
- * @see IsSunMSCAPIAvailable.sh
+/*
+ * @test
+ * @bug 6318171 6931562
+ * @requires os.family == "windows"
+ * @modules jdk.crypto.mscapi/sun.security.mscapi
+ * @run main/othervm IsSunMSCAPIAvailable
  */
 
 import java.security.Provider;

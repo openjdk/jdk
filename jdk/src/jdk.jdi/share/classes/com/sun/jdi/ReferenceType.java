@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,30 @@ public interface ReferenceType
      * loader.
      */
     ClassLoaderReference classLoader();
+
+    /**
+     * Gets the module object which contains the class corresponding
+     * to this type.
+     *
+     * Not all target virtual machines support this operation.
+     * Use {@link VirtualMachine#canGetModuleInfo()}
+     * to determine if the operation is supported.
+     *
+     * @implSpec
+     * The default implementation throws {@code UnsupportedOperationException}.
+     *
+     * @return a {@link ModuleReference} which mirrors the module in the target VM.
+     *
+     * @throws java.lang.UnsupportedOperationException if
+     * the target virtual machine does not support this
+     * operation.
+     *
+     * @since 9
+     */
+    default ModuleReference module() {
+        throw new java.lang.UnsupportedOperationException(
+            "The method module() must be implemented");
+    }
 
     /**
      * Gets an identifying name for the source corresponding to the

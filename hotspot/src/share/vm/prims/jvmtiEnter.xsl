@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -517,7 +517,7 @@ static jvmtiError JNICALL
   }</xsl:text>
       </xsl:if>
       <xsl:if test="contains(@phase,'start')">
-        <xsl:text>  if(JvmtiEnv::get_phase()!=JVMTI_PHASE_START &amp;&amp; JvmtiEnv::get_phase()!=JVMTI_PHASE_LIVE) {
+        <xsl:text>  if(JvmtiEnv::get_phase(env)!=JVMTI_PHASE_START &amp;&amp; JvmtiEnv::get_phase()!=JVMTI_PHASE_LIVE) {
 </xsl:text>
     <xsl:if test="$trace='Trace'">
       <xsl:text>    if (trace_flags) {

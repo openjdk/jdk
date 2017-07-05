@@ -34,6 +34,7 @@ import org.testng.annotations.Test;
  * Tests for JSType methods.
  *
  * @test
+ * @modules jdk.scripting.nashorn/jdk.nashorn.internal.runtime
  * @run testng jdk.nashorn.internal.runtime.test.ConsStringTest
  */
 public class ConsStringTest {

@@ -38,7 +38,7 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 
 ############################################################################
 
-MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
+MAIN_MODULES += java.se.ee java.smartcardio jdk.httpserver jdk.sctp \
                jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom \
                jdk.accessibility jdk.internal.le jdk.dynalink \
                jdk.scripting.nashorn jdk.scripting.nashorn.shell \
@@ -49,10 +49,10 @@ PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk
                jdk.localedata jdk.naming.dns jdk.naming.rmi jdk.zipfs
 
 # tools
-TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev \
+TOOLS_MODULES += jdk.attach jdk.compiler \
                jdk.javadoc jdk.jcmd jdk.jconsole jdk.hotspot.agent jdk.jartool \
-               jdk.jdeps jdk.jdi jdk.jdwp.agent jdk.jshell jdk.policytool jdk.rmic \
-               jdk.xml.bind jdk.xml.ws
+               jdk.jdeps jdk.jdi jdk.jdwp.agent jdk.jlink jdk.jshell \
+               jdk.policytool jdk.rmic jdk.xml.bind jdk.xml.ws jdk.internal.opt
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   PROVIDER_MODULES += jdk.crypto.mscapi
@@ -65,104 +65,151 @@ endif
 JRE_MODULES := $(filter-out $(MODULES_FILTER), $(MAIN_MODULES) $(PROVIDER_MODULES))
 JDK_MODULES := $(filter-out $(MODULES_FILTER), $(JRE_MODULES) $(TOOLS_MODULES))
 
-# compact3 builds have additional modules
-JDK_COMPACT3_MODULES := java.compact3 java.smartcardio jdk.httpserver jdk.naming.dns \
-                       jdk.naming.rmi jdk.sctp jdk.security.auth jdk.management
+# Param 1 - Name of module
+define ReadImportMetaData
+  ifneq ($$(wildcard $(IMPORT_MODULES_MAKE)/$$(strip $1)/build.properties), )
+    include_in_jre :=
+    include_in_jdk :=
+    include $(IMPORT_MODULES_MAKE)/$$(strip $1)/build.properties
+    ifeq ($$(include_in_jre), true)
+      JRE_MODULES += $1
+    endif
+    ifeq ($$(include_in_jdk), true)
+      JDK_MODULES += $1
+    endif
+  else
+    # Default to include in all
+    JRE_MODULES += $1
+    JDK_MODULES += $1
+  endif
+endef
+
+IMPORTED_MODULES := $(call FindImportedModules)
+$(foreach m, $(IMPORTED_MODULES), $(eval $(call ReadImportMetaData, $m)))
+
+# Compact builds have additional modules
+COMPACT_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec
+JRE_COMPACT1_MODULES := $(COMPACT_EXTRA_MODULES) java.compact1
+JRE_COMPACT2_MODULES := $(JRE_COMPACT1_MODULES) java.compact2 jdk.xml.dom jdk.httpserver
+JRE_COMPACT3_MODULES := $(JRE_COMPACT2_MODULES) java.compact3 java.smartcardio jdk.management \
+                        jdk.naming.dns jdk.naming.rmi jdk.sctp jdk.security.auth
 
 # Replacing double-comma with a single comma is to workaround the issue
 # with some version of make on windows that doesn't substitute spaces
 # with one comma properly as with make 4.0
-define SubstComma
-  $(subst $(COMMA)$(COMMA),$(COMMA),$(subst $(SPACE),$(COMMA),$(strip $1)))
-endef
+SubstComma = \
+    $(strip \
+        $(subst $(COMMA)$(COMMA),$(COMMA),$(subst $(SPACE),$(COMMA),$(strip $1))) \
+    )
+
 JRE_MODULES_LIST := $(call SubstComma, $(JRE_MODULES))
 JDK_MODULES_LIST := $(call SubstComma, $(JDK_MODULES))
+JRE_COMPACT1_MODULES_LIST := $(call SubstComma, $(JRE_COMPACT1_MODULES))
+JRE_COMPACT2_MODULES_LIST := $(call SubstComma, $(JRE_COMPACT2_MODULES))
+JRE_COMPACT3_MODULES_LIST := $(call SubstComma, $(JRE_COMPACT3_MODULES))
+
+################################################################################
+# Release file
+
+BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
+
+# Common way to emit a line into the release or info file
+define info-file-item # name value
+  $(PRINTF) '%s="%s"\n' $1 $2 >> $@
+endef
+
+# Param 1 - The file containing the MODULES list
+define create-info-file
+  $(call info-file-item, "JAVA_VERSION", "$(VERSION_NUMBER)")
+  $(call info-file-item, "JAVA_FULL_VERSION", "$(VERSION_STRING)")
+  $(call info-file-item, "OS_NAME", "$(REQUIRED_OS_NAME)")
+  $(call info-file-item, "OS_VERSION", "$(REQUIRED_OS_VERSION)")
+  $(call info-file-item, "OS_ARCH", "$(OPENJDK_TARGET_CPU_LEGACY)")
+  $(if $(JDK_ARCH_ABI_PROP_NAME), \
+    $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
+  $(call info-file-item, "SOURCE", "$(strip $(ALL_SOURCE_TIPS))")
+endef
+
+# Param 1 - The file containing the MODULES list
+define prepare-info-file
+  $(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+  $(MKDIR) -p $(@D)
+  $(RM) $@
+endef
+
+define info-file
+  $(call prepare-info-file)
+  $(call create-info-file)
+endef
+
+# Create a variable dependency file common for all release info files.
+INFO_FILE_VARDEPS := $(call DependOnVariable, create-info-file)
+
+ALL_SOURCE_TIPS = $(shell \
+    if [ -f $(SUPPORT_OUTPUTDIR)/source_tips ] ; then \
+      $(CAT) $(SUPPORT_OUTPUTDIR)/source_tips ; \
+    fi)
+
+$(BASE_RELEASE_FILE): $(INFO_FILE_VARDEPS) $(SUPPORT_OUTPUTDIR)/source_tips
+	$(info-file)
 
 ################################################################################
 
-JRE_SORTED_MODULES := $(SUPPORT_OUTPUTDIR)/jre-sorted-modules
-JDK_SORTED_MODULES := $(SUPPORT_OUTPUTDIR)/jdk-sorted-modules
-JRE_COMPACT1_SORTED_MODULES := $(SUPPORT_OUTPUTDIR)/compact1-sorted-modules
-JRE_COMPACT2_SORTED_MODULES := $(SUPPORT_OUTPUTDIR)/compact2-sorted-modules
-JRE_COMPACT3_SORTED_MODULES := $(SUPPORT_OUTPUTDIR)/compact3-sorted-modules
-
-
-MODULES_CMDS := $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped
-MODULES_LIBS := $(SUPPORT_OUTPUTDIR)/modules_libs-stripped
-MODULES_CONF := $(SUPPORT_OUTPUTDIR)/modules_conf
-
-JIMAGE_TOOL := $(JAVA_SMALL) \
-    -Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes \
-    -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.module.ImageBuilder \
-    --cmds $(MODULES_CMDS) \
-    --libs $(MODULES_LIBS) \
-    --configs $(MODULES_CONF) \
-    --classes $(JDK_OUTPUTDIR)/modules \
-    --endian $(OPENJDK_TARGET_CPU_ENDIAN) \
-    #
-
-MODULES_XML += $(SRC_ROOT)/modules.xml
-DEPENDENCIES := $(call CacheFind, \
-    $(SUPPORT_OUTPUTDIR)/modules_cmds \
-    $(SUPPORT_OUTPUTDIR)/modules_conf \
-    $(SUPPORT_OUTPUTDIR)/modules_libs) \
-    $(wildcard $(JDK_OUTPUTDIR)/modules/*/_*) \
-    $(MODULES_XML)
-    #
+JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
 
 # Use this file inside the image as target for make rule
 JIMAGE_TARGET_FILE := bin/java$(EXE_SUFFIX)
 
-$(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(DEPENDENCIES) \
-    $(call DependOnVariable, JDK_MODULES_LIST)
+JLINK_TOOL := $(JLINK) --modulepath $(IMAGES_OUTPUTDIR)/jmods \
+              --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
+              --release-info $(BASE_RELEASE_FILE)
+
+ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
+  JLINK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
+endif
+
+$(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
+    $(call DependOnVariable, JDK_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jdk jimage
-	$(RM) -r $(JDK_IMAGE_DIR) $(JDK_SORTED_MODULES)
-	$(JIMAGE_TOOL) --mods $(JDK_MODULES_LIST) --output $(JDK_IMAGE_DIR) \
-	    $(MODULES_XML) > $(JDK_SORTED_MODULES)
+	$(RM) -r $(JDK_IMAGE_DIR)
+	$(JLINK_TOOL) --output $(JDK_IMAGE_DIR) \
+	    --addmods $(JDK_MODULES_LIST) $(JLINK_EXTRA_OPTS)
 	$(TOUCH) $@
 
-$(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(DEPENDENCIES) \
-    $(call DependOnVariable, JRE_MODULES_LIST)
+$(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
+    $(call DependOnVariable, JRE_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre jimage
-	$(RM) -r $(JRE_IMAGE_DIR) $(JRE_SORTED_MODULES)
-	$(JIMAGE_TOOL) --mods $(JRE_MODULES_LIST) --output $(JRE_IMAGE_DIR) \
-	    $(MODULES_XML) > $(JRE_SORTED_MODULES)
+	$(RM) -r $(JRE_IMAGE_DIR)
+	$(JLINK_TOOL) --output $(JRE_IMAGE_DIR) \
+	    --addmods $(JRE_MODULES_LIST)
 	$(TOUCH) $@
 
 JRE_COMPACT1_IMAGE_DIR := $(JRE_IMAGE_DIR)-compact1
 JRE_COMPACT2_IMAGE_DIR := $(JRE_IMAGE_DIR)-compact2
 JRE_COMPACT3_IMAGE_DIR := $(JRE_IMAGE_DIR)-compact3
 
-COMPACT_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec
-
-$(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(DEPENDENCIES) \
-    $(call DependOnVariable, JRE_COMPACT1_MODULES_LIST)
+$(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
+    $(call DependOnVariable, JRE_COMPACT1_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact1 jimage
-	$(RM) -r $(JRE_COMPACT1_IMAGE_DIR) $(JRE_COMPACT1_SORTED_MODULES)
-	$(JIMAGE_TOOL) \
-	    --mods $(call SubstComma, java.compact1 $(COMPACT_EXTRA_MODULES)) \
-	    --output $(JRE_COMPACT1_IMAGE_DIR) \
-	    $(MODULES_XML) > $(JRE_COMPACT1_SORTED_MODULES)
+	$(RM) -r $(JRE_COMPACT1_IMAGE_DIR)
+	$(JLINK_TOOL) --addmods $(JRE_COMPACT1_MODULES_LIST) \
+	    --output $(JRE_COMPACT1_IMAGE_DIR)
 	$(TOUCH) $@
 
-$(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(DEPENDENCIES) \
-    $(call DependOnVariable, JRE_COMPACT2_MODULES_LIST)
+$(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
+    $(call DependOnVariable, JRE_COMPACT2_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact2 jimage
-	$(RM) -r $(JRE_COMPACT2_IMAGE_DIR) $(JRE_COMPACT2_SORTED_MODULES)
-	$(JIMAGE_TOOL) \
-	    --mods $(call SubstComma, java.compact2 $(COMPACT_EXTRA_MODULES)) \
-	    --output $(JRE_COMPACT2_IMAGE_DIR) \
-	    $(MODULES_XML) > $(JRE_COMPACT2_SORTED_MODULES)
+	$(RM) -r $(JRE_COMPACT2_IMAGE_DIR)
+	$(JLINK_TOOL) --addmods $(JRE_COMPACT2_MODULES_LIST) \
+	    --output $(JRE_COMPACT2_IMAGE_DIR)
 	$(TOUCH) $@
 
-$(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(DEPENDENCIES) \
-    $(call DependOnVariable, JRE_COMPACT3_MODULES_LIST)
+$(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
+    $(call DependOnVariable, JRE_COMPACT3_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact3 jimage
-	$(RM) -r $(JRE_COMPACT3_IMAGE_DIR) $(JRE_COMPACT3_SORTED_MODULES)
-	$(JIMAGE_TOOL) \
-	    --mods $(call SubstComma, $(JDK_COMPACT3_MODULES) $(COMPACT_EXTRA_MODULES)) \
-	    --output $(JRE_COMPACT3_IMAGE_DIR) \
-	    $(MODULES_XML) > $(JRE_COMPACT3_SORTED_MODULES)
+	$(RM) -r $(JRE_COMPACT3_IMAGE_DIR)
+	$(JLINK_TOOL) --addmods $(JRE_COMPACT3_MODULES_LIST) \
+	    --output $(JRE_COMPACT3_IMAGE_DIR)
 	$(TOUCH) $@
 
 TOOL_JRE_TARGETS := $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
@@ -346,79 +393,6 @@ JRE_TARGETS += $(JRE_DOC_TARGETS)
 JDK_TARGETS += $(JDK_DOC_TARGETS)
 
 ################################################################################
-# Release file
-
-JRE_INFO_FILE := $(JRE_IMAGE_DIR)/release
-JDK_INFO_FILE := $(JDK_IMAGE_DIR)/release
-JRE_COMPACT1_INFO_FILE := $(JRE_COMPACT1_IMAGE_DIR)/release
-JRE_COMPACT2_INFO_FILE := $(JRE_COMPACT2_IMAGE_DIR)/release
-JRE_COMPACT3_INFO_FILE := $(JRE_COMPACT3_IMAGE_DIR)/release
-
-# Common way to emit a line into the release or info file
-define info-file-item # name value
-  $(PRINTF) '%s="%s"\n' $1 $2 >> $@
-endef
-
-# Param 1 - The file containing the MODULES list
-define create-info-file
-  $(call info-file-item, "JAVA_VERSION", "$(VERSION_NUMBER)")
-  $(call info-file-item, "JAVA_FULL_VERSION", "$(VERSION_STRING)")
-  $(call info-file-item, "OS_NAME", "$(REQUIRED_OS_NAME)")
-  $(call info-file-item, "OS_VERSION", "$(REQUIRED_OS_VERSION)")
-  $(call info-file-item, "OS_ARCH", "$(OPENJDK_TARGET_CPU_LEGACY)")
-  $(if $(JDK_ARCH_ABI_PROP_NAME), \
-    $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
-  $(call info-file-item, "SOURCE", "$(strip $(ALL_SOURCE_TIPS))")
-  $(call info-file-item, "MODULES", "`$(CAT) $1`")
-endef
-
-# Param 1 - The file containing the MODULES list
-define prepare-info-file
-  $(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@))
-  $(MKDIR) -p $(@D)
-  $(RM) $@
-endef
-
-define info-file
-  $(call prepare-info-file, $1)
-  $(call create-info-file, $1)
-endef
-
-# Create a variable dependency file common for all release info files. The
-# sorted module list will only change if the image is regenerated, which will
-# trigger a rebuild of these files anyway.
-INFO_FILE_VARDEPS := $(call DependOnVariable, create-info-file)
-
-ALL_SOURCE_TIPS = $(shell \
-    if [ -f $(SUPPORT_OUTPUTDIR)/source_tips ] ; then \
-      $(CAT) $(SUPPORT_OUTPUTDIR)/source_tips ; \
-    fi)
-
-$(JRE_INFO_FILE): $(INFO_FILE_VARDEPS) $(SUPPORT_OUTPUTDIR)/source_tips
-	$(call info-file, $(JRE_SORTED_MODULES))
-
-$(JDK_INFO_FILE): $(INFO_FILE_VARDEPS) $(SUPPORT_OUTPUTDIR)/source_tips
-	$(call info-file, $(JDK_SORTED_MODULES))
-
-$(JRE_COMPACT1_INFO_FILE): $(INFO_FILE_VARDEPS) $(SUPPORT_OUTPUTDIR)/source_tips
-	$(call info-file, $(JRE_COMPACT1_SORTED_MODULES))
-	$(call info-file-item, "JAVA_PROFILE", "compact1")
-
-$(JRE_COMPACT2_INFO_FILE): $(INFO_FILE_VARDEPS) $(SUPPORT_OUTPUTDIR)/source_tips
-	$(call info-file, $(JRE_COMPACT2_SORTED_MODULES))
-	$(call info-file-item, "JAVA_PROFILE", "compact2")
-
-$(JRE_COMPACT3_INFO_FILE): $(INFO_FILE_VARDEPS) $(SUPPORT_OUTPUTDIR)/source_tips
-	$(call info-file, $(JRE_COMPACT3_SORTED_MODULES))
-	$(call info-file-item, "JAVA_PROFILE", "compact3")
-
-JRE_TARGETS += $(JRE_INFO_FILE)
-JDK_TARGETS += $(JDK_INFO_FILE)
-JRE_COMPACT1_TARGETS += $(JRE_COMPACT1_INFO_FILE)
-JRE_COMPACT2_TARGETS += $(JRE_COMPACT2_INFO_FILE)
-JRE_COMPACT3_TARGETS += $(JRE_COMPACT3_INFO_FILE)
-
-################################################################################
 # src.zip
 
 $(JDK_IMAGE_DIR)/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
@@ -435,7 +409,7 @@ ifneq ($(findstring images, $(MAKECMDGOALS)), )
       DEST := $(JDK_IMAGE_DIR)/demo, \
       FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demos/image), \
           $(call DoubleDollar, $(call DoubleDollar, \
-          $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
+      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
           -type f -a ! \( -name "_the*" -o -name "javac_state" \) )))), \
   ))
 
@@ -445,7 +419,7 @@ endif
 ################################################################################
 # /sample dir
 
-$(eval $(call SetupCopyFiles, COPY_SAMPLES, \
+$(eval $(call SetupCopyFiles,COPY_SAMPLES, \
     SRC := $(SUPPORT_OUTPUTDIR)/sample/image, \
     DEST := $(JDK_IMAGE_DIR)/sample, \
     FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample/image), \

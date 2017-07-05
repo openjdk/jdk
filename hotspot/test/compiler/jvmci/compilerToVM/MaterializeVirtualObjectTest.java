@@ -26,22 +26,34 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib
+ * @library ../common/patches
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.tree
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.meta
  * @ignore 8139703
- * @compile ../common/CompilerToVMHelper.java
- * @build sun.hotspot.WhiteBox MaterializeVirtualObjectTest
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *     -XX:CompileCommand=exclude,*::check -XX:+DoEscapeAnalysis -Xbatch
- *     -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
- *     compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *     -XX:CompileCommand=exclude,*::check -XX:+DoEscapeAnalysis -Xbatch
- *     -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
- *     compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:CompileCommand=exclude,*::check
+ *                   -XX:+DoEscapeAnalysis
+ *                   -Xbatch
+ *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
+ *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:CompileCommand=exclude,*::check
+ *                   -XX:+DoEscapeAnalysis
+ *                   -Xbatch
+ *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
+ *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  */
 
 package compiler.jvmci.compilerToVM;

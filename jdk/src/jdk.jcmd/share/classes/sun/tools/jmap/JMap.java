@@ -25,7 +25,6 @@
 
 package sun.tools.jmap;
 
-import java.lang.reflect.Method;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +32,8 @@ import java.io.InputStream;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
+import jdk.internal.vm.agent.spi.ToolProvider;
+import jdk.internal.vm.agent.spi.ToolProviderFinder;
 
 /*
  * This class is the main class for the JMap utility. It parses its arguments
@@ -149,15 +150,15 @@ public class JMap {
     // Invoke SA tool  with the given arguments
     private static void runTool(String option, String args[]) throws Exception {
         String[][] tools = {
-            { "-pmap",          "sun.jvm.hotspot.tools.PMap"             },
-            { "-heap",          "sun.jvm.hotspot.tools.HeapSummary"      },
-            { "-heap:format=b", "sun.jvm.hotspot.tools.HeapDumper"       },
-            { "-histo",         "sun.jvm.hotspot.tools.ObjectHistogram"  },
-            { "-clstats",       "sun.jvm.hotspot.tools.ClassLoaderStats" },
-            { "-finalizerinfo", "sun.jvm.hotspot.tools.FinalizerInfo"    },
+            { "-pmap",          "pmap"             },
+            { "-heap",          "heapSummary"      },
+            { "-heap:format=b", "heapDumper"       },
+            { "-histo",         "objectHistogram"  },
+            { "-clstats",       "classLoaderStats" },
+            { "-finalizerinfo", "finalizerInfo"    },
         };
 
-        String tool = null;
+        String name = null;
 
         // -dump option needs to be handled in a special way
         if (option.startsWith(DUMP_OPTION_PREFIX)) {
@@ -168,7 +169,7 @@ public class JMap {
             }
 
             // tool for heap dumping
-            tool = "sun.jvm.hotspot.tools.HeapDumper";
+            name = "heapDumper";
 
             // HeapDumper -f <file>
             args = prepend(fn, args);
@@ -177,43 +178,24 @@ public class JMap {
             int i=0;
             while (i < tools.length) {
                 if (option.equals(tools[i][0])) {
-                    tool = tools[i][1];
+                    name = tools[i][1];
                     break;
                 }
                 i++;
             }
         }
-        if (tool == null) {
+        if (name == null) {
             usage(1);   // no mapping to tool
         }
 
-        // Tool not available on this  platform.
-        Class<?> c = loadClass(tool);
-        if (c == null) {
+        // Tool not available on this platform.
+        ToolProvider tool = ToolProviderFinder.find(name);
+        if (tool == null) {
             usage(1);
         }
 
         // invoke the main method with the arguments
-        Class<?>[] argTypes = { String[].class } ;
-        Method m = c.getDeclaredMethod("main", argTypes);
-
-        Object[] invokeArgs = { args };
-        m.invoke(null, invokeArgs);
-    }
-
-    // loads the given class using the system class loader
-    private static Class<?> loadClass(String name) {
-        //
-        // We specify the system clas loader so as to cater for development
-        // environments where this class is on the boot class path but sa-jdi.jar
-        // is on the system class path. Once the JDK is deployed then both
-        // tools.jar and sa-jdi.jar are on the system class path.
-        //
-        try {
-            return Class.forName(name, true,
-                                 ClassLoader.getSystemClassLoader());
-        } catch (Exception x)  { }
-        return null;
+        tool.run(args);
     }
 
     private static final String LIVE_OBJECTS_OPTION = "-live";
@@ -340,8 +322,7 @@ public class JMap {
 
     // returns true if SA is available
     private static boolean haveSA() {
-        Class<?> c = loadClass("sun.jvm.hotspot.tools.HeapSummary");
-        return (c != null);
+        return ToolProviderFinder.find("heapSummary") != null;
     }
 
     // print usage message

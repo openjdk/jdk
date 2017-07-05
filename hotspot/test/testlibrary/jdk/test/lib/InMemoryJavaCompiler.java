@@ -128,12 +128,13 @@ public class InMemoryJavaCompiler {
      *
      * @param className The name of the class
      * @param sourceCode The source code for the class with name {@code className}
+     * @param options additional command line options
      * @throws RuntimeException if the compilation did not succeed
      * @return The resulting byte code from the compilation
      */
-    public static byte[] compile(String className, CharSequence sourceCode) {
+    public static byte[] compile(String className, CharSequence sourceCode, String... options) {
         MemoryJavaFileObject file = new MemoryJavaFileObject(className, sourceCode);
-        CompilationTask task = getCompilationTask(file);
+        CompilationTask task = getCompilationTask(file, options);
 
         if(!task.call()) {
             throw new RuntimeException("Could not compile " + className + " with source code " + sourceCode);
@@ -146,7 +147,7 @@ public class InMemoryJavaCompiler {
         return ToolProvider.getSystemJavaCompiler();
     }
 
-    private static CompilationTask getCompilationTask(MemoryJavaFileObject file) {
-        return getCompiler().getTask(null, new FileManagerWrapper(file), null, null, null, Arrays.asList(file));
+    private static CompilationTask getCompilationTask(MemoryJavaFileObject file, String... options) {
+        return getCompiler().getTask(null, new FileManagerWrapper(file), null, Arrays.asList(options), null, Arrays.asList(file));
     }
 }

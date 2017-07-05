@@ -68,14 +68,14 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LDFLAGS_macosx := -Wl$(COMMA)-all_load, \
     LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
     LIBS := $(JDKLIB_LIBS), \
-    LIBS_unix := -ljava $(LIBZ), \
+    LIBS_unix := -ljava -ljvm $(LIBZ), \
     LIBS_linux := -ljli $(LIBDL), \
     LIBS_solaris := -ljli $(LIBDL), \
     LIBS_aix := -liconv -ljli_static $(LIBDL), \
     LIBS_macosx := -liconv -framework Cocoa -framework Security \
         -framework ApplicationServices \
         $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a, \
-    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib \
+    LIBS_windows := jvm.lib $(WIN_JAVA_LIB) advapi32.lib \
         $(SUPPORT_OUTPUTDIR)/native/java.base/jli_static.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \

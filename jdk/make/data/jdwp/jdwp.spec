@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -569,6 +569,21 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error VM_DEAD)
         )
     )
+    (Command AllModules=22
+        "Returns all modules in the target VM."
+        "<p>Since JDWP version 9."
+        (Out
+        )
+        (Reply
+            (Repeat modules "The number of the modules that follow."
+                (moduleID module "One of the modules.")
+            )
+        )
+        (ErrorSet
+            (Error NOT_IMPLEMENTED)
+            (Error VM_DEAD)
+        )
+    )
 )
 
 (CommandSet ReferenceType=2
@@ -1026,6 +1041,22 @@ JDWP "Java(tm) Debug Wire Protocol"
                                      "support the retrieval of constant pool information.")
             (Error ABSENT_INFORMATION "The Constant Pool information is "
                                       "absent for primitive and array types.")
+            (Error VM_DEAD)
+        )
+    )
+    (Command Module=19
+        "Returns the module that this reference type belongs to."
+        "<p>Since JDWP version 9."
+        (Out
+            (referenceType refType "The reference type.")
+        )
+        (Reply
+            (moduleID module "The module this reference type belongs to.")
+        )
+        (ErrorSet
+            (Error INVALID_CLASS   "refType is not the ID of a reference type.")
+            (Error INVALID_OBJECT  "refType is not a known ID.")
+            (Error NOT_IMPLEMENTED)
             (Error VM_DEAD)
         )
     )
@@ -2647,6 +2678,54 @@ JDWP "Java(tm) Debug Wire Protocol"
         )
     )
 )
+(CommandSet ModuleReference=18
+    (Command Name=1
+        "Returns the name of this module."
+        "<p>Since JDWP version 9."
+        (Out
+            (moduleID module "This module.")
+        )
+        (Reply
+            (string name  "The module's name.")
+        )
+        (ErrorSet
+            (Error INVALID_MODULE)
+            (Error NOT_IMPLEMENTED)
+            (Error VM_DEAD)
+        )
+    )
+    (Command ClassLoader=2
+        "Returns the class loader of this module."
+        "<p>Since JDWP version 9."
+        (Out
+            (moduleID module "This module.")
+        )
+        (Reply
+            (classLoaderObject classLoader  "The module's class loader.")
+        )
+        (ErrorSet
+            (Error INVALID_MODULE)
+            (Error NOT_IMPLEMENTED)
+            (Error VM_DEAD)
+        )
+    )
+    (Command CanRead=3
+        "Returns true if this module can read the source module; false otherwise."
+        "<p>Since JDWP version 9."
+        (Out
+            (moduleID module "This module.")
+            (moduleID sourceModule "The source module.")
+        )
+        (Reply
+            (boolean canRead  "true if this module can read the source module; false otherwise.")
+        )
+        (ErrorSet
+            (Error INVALID_MODULE  "This module or sourceModule is not the ID of a module.")
+            (Error NOT_IMPLEMENTED)
+            (Error VM_DEAD)
+        )
+    )
+)
 (CommandSet Event=64
     (Command Composite=100
         "Several events may occur at a given time in the target VM. "
@@ -3054,6 +3133,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Constant INVALID_SLOT           =35  "Invalid slot.")
     (Constant DUPLICATE              =40  "Item already set.")
     (Constant NOT_FOUND              =41  "Desired element not found.")
+    (Constant INVALID_MODULE         =42  "Invalid module.")
     (Constant INVALID_MONITOR        =50  "Invalid monitor.")
     (Constant NOT_MONITOR_OWNER      =51  "This thread doesn't own the monitor.")
     (Constant INTERRUPT              =52  "The call has been interrupted before completion.")

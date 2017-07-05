@@ -42,6 +42,7 @@ package sun.util.locale.provider;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Module;
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.LinkedHashSet;
@@ -115,6 +116,10 @@ public class LocaleResources {
        }
 
        return biInfo;
+    }
+
+    Module getBreakIteratorDataModule() {
+       return localeData.getBreakIteratorInfo(locale).getClass().getModule();
     }
 
     int getCalendarData(String key) {

@@ -47,7 +47,7 @@ $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/idlj_classes, \
     COPY := .prp, \
     INCLUDES := com/sun/tools/corba/se/idl, \
-    EXCLUDE_FILES := ResourceBundleUtil.java))
+    EXCLUDE_FILES := ResourceBundleUtil.java module-info.java))
 
 # Force the language to english for predictable source code generation.
 TOOL_IDLJ_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/idlj_classes \

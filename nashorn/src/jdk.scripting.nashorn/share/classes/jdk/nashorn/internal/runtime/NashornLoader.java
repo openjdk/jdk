@@ -30,25 +30,40 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.lang.reflect.Module;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.Permissions;
 import java.security.SecureClassLoader;
+import java.util.HashSet;
+import java.util.Set;
+import jdk.internal.module.Modules;
 
 /**
  * Superclass for Nashorn class loader classes.
  */
 abstract class NashornLoader extends SecureClassLoader {
-    private static final String OBJECTS_PKG        = "jdk.nashorn.internal.objects";
-    private static final String RUNTIME_PKG        = "jdk.nashorn.internal.runtime";
-    private static final String RUNTIME_ARRAYS_PKG = "jdk.nashorn.internal.runtime.arrays";
-    private static final String RUNTIME_LINKER_PKG = "jdk.nashorn.internal.runtime.linker";
-    private static final String SCRIPTS_PKG        = "jdk.nashorn.internal.scripts";
+    protected static final String OBJECTS_PKG        = "jdk.nashorn.internal.objects";
+    protected static final String RUNTIME_PKG        = "jdk.nashorn.internal.runtime";
+    protected static final String RUNTIME_ARRAYS_PKG = "jdk.nashorn.internal.runtime.arrays";
+    protected static final String RUNTIME_LINKER_PKG = "jdk.nashorn.internal.runtime.linker";
+    protected static final String SCRIPTS_PKG        = "jdk.nashorn.internal.scripts";
+    protected static final String OBJECTS_PKG_INTERNAL        = "jdk/nashorn/internal/objects";
+    protected static final String RUNTIME_PKG_INTERNAL        = "jdk/nashorn/internal/runtime";
+    protected static final String RUNTIME_ARRAYS_PKG_INTERNAL = "jdk/nashorn/internal/runtime/arrays";
+    protected static final String RUNTIME_LINKER_PKG_INTERNAL = "jdk/nashorn/internal/runtime/linker";
+    protected static final String SCRIPTS_PKG_INTERNAL        = "jdk/nashorn/internal/scripts";
+
+    protected static final Module nashornModule = NashornLoader.class.getModule();
 
     private static final Permission[] SCRIPT_PERMISSIONS;
 
+    private static final Set<String> scriptsPkgSet = new HashSet<>();
+
     static {
+        scriptsPkgSet.add(SCRIPTS_PKG);
+
         /*
          * Generated classes get access to runtime, runtime.linker, objects, scripts packages.
          * Note that the actual scripts can not access these because Java.type, Packages
@@ -67,6 +82,22 @@ abstract class NashornLoader extends SecureClassLoader {
 
     NashornLoader(final ClassLoader parent) {
         super(parent);
+    }
+
+    protected static Module defineModule(final String moduleName, final ClassLoader loader) {
+        return Modules.defineModule(loader, moduleName, scriptsPkgSet);
+    }
+
+    protected static void addReadsModule(final Module from, final Module to) {
+        Modules.addReads(from, to);
+    }
+
+    protected static void addModuleExports(final Module from, final String pkg, final Module to) {
+        if (to == null) {
+            Modules.addExportsToAll(from, pkg);
+        } else {
+            Modules.addExports(from, pkg, to);
+        }
     }
 
     protected static void checkPackageAccess(final String name) {

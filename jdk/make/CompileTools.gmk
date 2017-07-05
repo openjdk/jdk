@@ -32,42 +32,12 @@ include SetupJavaCompilers.gmk
 
 ################################################################################
 
-JIMAGE_PKGS := \
-    jdk/internal/jimage \
-    jdk/internal/jrtfs \
-    #
-
-$(eval $(call SetupJavaCompilation,BUILD_INTERIM_JIMAGE, \
-    SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(JDK_TOPDIR)/src/java.base/share/classes, \
-    INCLUDES := $(JIMAGE_PKGS), \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes))
-
-TARGETS += $(BUILD_INTERIM_JIMAGE)
-
-# Because of the explicit INCLUDES in the compilation setup above, the service provider
-# file will not be copied unless META-INF/services would also be added to the INCLUDES.
-# Adding META-INF/services would include all files in that directory when only the one
-# is needed, which is why this explicit copy is defined instead.
-$(eval $(call SetupCopyFiles,COPY_JIMAGE_SERVICE_PROVIDER, \
-    SRC := $(JDK_TOPDIR)/src/java.base/share/classes, \
-    DEST := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes, \
-    FILES := META-INF/services/java.nio.file.spi.FileSystemProvider))
-
-TARGETS += $(COPY_JIMAGE_SERVICE_PROVIDER)
-
-################################################################################
-
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
     SETUP := GENERATE_OLDBYTECODE, \
-    ADD_JAVAC_FLAGS := -Xbootclasspath/p:$(call PathList, \
-        $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes \
-        $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes), \
     SRC := $(JDK_TOPDIR)/make/src/classes $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes, \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
-    COPY := boot.modules ext.modules))
-
-$(BUILD_TOOLS_JDK): $(BUILD_INTERIM_JIMAGE) $(COPY_JIMAGE_SERVICE_PROVIDER)
+    EXCLUDES := build/tools/deps \
+                build/tools/jigsaw, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes))
 
 TARGETS += $(BUILD_TOOLS_JDK)
 
