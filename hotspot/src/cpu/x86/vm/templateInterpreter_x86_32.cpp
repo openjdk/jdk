@@ -538,7 +538,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 // Allocate monitor and lock method (asm interpreter)
 // rbx, - Method*
 //
-void InterpreterGenerator::lock_method(void) {
+void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
   const Address access_flags      (rbx, Method::access_flags_offset());
   const Address monitor_block_top (rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
@@ -697,15 +697,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
     __ jmp(rdi);
 
     __ bind(slow_path);
-    (void) generate_normal_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
 #endif // INCLUDE_ALL_GCS
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 /**
@@ -753,12 +752,10 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
-
-    (void) generate_native_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return generate_native_entry(false);
+  return NULL;
 }
 
 /**
@@ -790,18 +787,25 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
     const Register buf = rdx;  // source java byte array address
     const Register len = rdi;  // length
 
+    // value              x86_32
+    // interp. arg ptr    ESP + 4
+    // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
+    //                                         3           2      1        0
+    // int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
+    //                                              4         2,3      1        0
+
     // Arguments are reversed on java expression stack
-    __ movl(len,   Address(rsp,   wordSize)); // Length
+    __ movl(len,   Address(rsp,   4 + 0)); // Length
     // Calculate address of start element
     if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
-      __ movptr(buf, Address(rsp, 3*wordSize)); // long buf
-      __ addptr(buf, Address(rsp, 2*wordSize)); // + offset
-      __ movl(crc,   Address(rsp, 5*wordSize)); // Initial CRC
+      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long buf
+      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+      __ movl(crc,   Address(rsp, 4 + 4 * wordSize)); // Initial CRC
     } else {
-      __ movptr(buf, Address(rsp, 3*wordSize)); // byte[] array
+      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
       __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ addptr(buf, Address(rsp, 2*wordSize)); // + offset
-      __ movl(crc,   Address(rsp, 4*wordSize)); // Initial CRC
+      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+      __ movl(crc,   Address(rsp, 4 + 3 * wordSize)); // Initial CRC
     }
 
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()), crc, buf, len);
@@ -814,12 +818,57 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+    return entry;
+  }
+  return NULL;
+}
 
-    (void) generate_native_entry(false);
+/**
+* Method entry for static native methods:
+*   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
+*   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
+*/
+address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  if (UseCRC32CIntrinsics) {
+    address entry = __ pc();
+    // Load parameters
+    const Register crc = rax;  // crc
+    const Register buf = rcx;  // source java byte array address
+    const Register len = rdx;  // length
+    const Register end = len;
+
+    // value              x86_32
+    // interp. arg ptr    ESP + 4
+    // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int end)
+    //                                         3           2      1        0
+    // int java.util.zip.CRC32.updateByteBuffer(int crc, long address, int off, int end)
+    //                                              4         2,3          1        0
+
+    // Arguments are reversed on java expression stack
+    __ movl(end, Address(rsp, 4 + 0)); // end
+    __ subl(len, Address(rsp, 4 + 1 * wordSize));  // end - offset == length
+    // Calculate address of start element
+    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long address
+      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+      __ movl(crc, Address(rsp, 4 + 4 * wordSize)); // Initial CRC
+    } else {
+      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
+      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
+      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
+      __ movl(crc, Address(rsp, 4 + 3 * wordSize)); // Initial CRC
+    }
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32C()), crc, buf, len);
+    // result in rax
+    // _areturn
+    __ pop(rdi);                // get return address
+    __ mov(rsp, rsi);           // set sp to sender sp
+    __ jmp(rdi);
 
     return entry;
   }
-  return generate_native_entry(false);
+  return NULL;
 }
 
 /**
@@ -827,10 +876,8 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
  *    java.lang.Float.intBitsToFloat(int bits)
  */
 address InterpreterGenerator::generate_Float_intBitsToFloat_entry() {
-  address entry;
-
   if (UseSSE >= 1) {
-    entry = __ pc();
+    address entry = __ pc();
 
     // rsi: the sender's SP
 
@@ -844,11 +891,10 @@ address InterpreterGenerator::generate_Float_intBitsToFloat_entry() {
     __ pop(rdi); // get return address
     __ mov(rsp, rsi); // set rsp to the sender's SP
     __ jmp(rdi);
-  } else {
-    entry = generate_native_entry(false);
+    return entry;
   }
 
-  return entry;
+  return NULL;
 }
 
 /**
@@ -856,10 +902,8 @@ address InterpreterGenerator::generate_Float_intBitsToFloat_entry() {
  *    java.lang.Float.floatToRawIntBits(float value)
  */
 address InterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
-  address entry;
-
   if (UseSSE >= 1) {
-    entry = __ pc();
+    address entry = __ pc();
 
     // rsi: the sender's SP
 
@@ -873,11 +917,10 @@ address InterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
     __ pop(rdi); // get return address
     __ mov(rsp, rsi); // set rsp to the sender's SP
     __ jmp(rdi);
-  } else {
-    entry = generate_native_entry(false);
+    return entry;
   }
 
-  return entry;
+  return NULL;
 }
 
 
@@ -886,10 +929,8 @@ address InterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
  *    java.lang.Double.longBitsToDouble(long bits)
  */
 address InterpreterGenerator::generate_Double_longBitsToDouble_entry() {
-  address entry;
-
    if (UseSSE >= 2) {
-     entry = __ pc();
+     address entry = __ pc();
 
      // rsi: the sender's SP
 
@@ -903,11 +944,10 @@ address InterpreterGenerator::generate_Double_longBitsToDouble_entry() {
      __ pop(rdi); // get return address
      __ mov(rsp, rsi); // set rsp to the sender's SP
      __ jmp(rdi);
-   } else {
-     entry = generate_native_entry(false);
+     return entry;
    }
 
-   return entry;
+   return NULL;
 }
 
 /**
@@ -915,10 +955,8 @@ address InterpreterGenerator::generate_Double_longBitsToDouble_entry() {
  *    java.lang.Double.doubleToRawLongBits(double value)
  */
 address InterpreterGenerator::generate_Double_doubleToRawLongBits_entry() {
-  address entry;
-
   if (UseSSE >= 2) {
-    entry = __ pc();
+    address entry = __ pc();
 
     // rsi: the sender's SP
 
@@ -933,11 +971,10 @@ address InterpreterGenerator::generate_Double_doubleToRawLongBits_entry() {
     __ pop(rdi); // get return address
     __ mov(rsp, rsi); // set rsp to the sender's SP
     __ jmp(rdi);
-  } else {
-    entry = generate_native_entry(false);
+    return entry;
   }
 
-  return entry;
+  return NULL;
 }
 
 //

@@ -26,6 +26,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -124,6 +125,7 @@ void ConcurrentMarkSweepThread::run() {
   while (!_should_terminate) {
     sleepBeforeNextCycle();
     if (_should_terminate) break;
+    GCIdMark gc_id_mark;
     GCCause::Cause cause = _collector->_full_gc_requested ?
       _collector->_full_gc_cause : GCCause::_cms_concurrent_mark;
     _collector->collect_in_background(cause);

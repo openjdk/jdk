@@ -54,9 +54,9 @@ public:
   enum ConstraintType {
     // Will be validated during argument processing (Arguments::parse_argument).
     AtParse         = 0,
-    // Will be validated by CommandLineFlags::check_constraints_of_after_ergo().
-    AfterErgo      = 1,
-    // Will be validated by CommandLineFlags::check_constraints_of_after_memory_init().
+    // Will be validated inside Threads::create_vm(), right after Arguments::apply_ergo().
+    AfterErgo       = 1,
+    // Will be validated inside universe_init(), right after Metaspace::global_initialize().
     AfterMemoryInit = 2
   };
 

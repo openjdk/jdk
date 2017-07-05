@@ -31,6 +31,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/runtime.hpp"
+#include "opto/chaitin.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 // Optimization - Graph Style
@@ -443,7 +444,13 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 // remaining cases (most), choose the instruction with the greatest latency
 // (that is, the most number of pseudo-cycles required to the end of the
 // routine). If there is a tie, choose the instruction with the most inputs.
-Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot) {
+Node* PhaseCFG::select(
+  Block* block,
+  Node_List &worklist,
+  GrowableArray<int> &ready_cnt,
+  VectorSet &next_call,
+  uint sched_slot,
+  intptr_t* recalc_pressure_nodes) {
 
   // If only a single entry on the stack, use it
   uint cnt = worklist.size();
@@ -458,6 +465,7 @@ Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &re
   uint score   = 0; // Bigger is better
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
+  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -537,7 +545,47 @@ Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &re
     }
 
     uint n_latency = get_latency_for_node(n);
-    uint n_score   = n->req();   // Many inputs get high score to break ties
+    uint n_score = n->req();   // Many inputs get high score to break ties
+
+    if (OptoRegScheduling && block_size_threshold_ok) {
+      if (recalc_pressure_nodes[n->_idx] == 0x7fff7fff) {
+        _regalloc->_scratch_int_pressure.init(_regalloc->_sched_int_pressure.high_pressure_limit());
+        _regalloc->_scratch_float_pressure.init(_regalloc->_sched_float_pressure.high_pressure_limit());
+        // simulate the notion that we just picked this node to schedule
+        n->add_flag(Node::Flag_is_scheduled);
+        // now caculate its effect upon the graph if we did
+        adjust_register_pressure(n, block, recalc_pressure_nodes, false);
+        // return its state for finalize in case somebody else wins
+        n->remove_flag(Node::Flag_is_scheduled);
+        // now save the two final pressure components of register pressure, limiting pressure calcs to short size
+        short int_pressure = (short)_regalloc->_scratch_int_pressure.current_pressure();
+        short float_pressure = (short)_regalloc->_scratch_float_pressure.current_pressure();
+        recalc_pressure_nodes[n->_idx] = int_pressure;
+        recalc_pressure_nodes[n->_idx] |= (float_pressure << 16);
+      }
+
+      if (_scheduling_for_pressure) {
+        latency = n_latency;
+        if (n_choice != 3) {
+          // Now evaluate each register pressure component based on threshold in the score.
+          // In general the defining register type will dominate the score, ergo we will not see register pressure grow on both banks
+          // on a single instruction, but we might see it shrink on both banks.
+          // For each use of register that has a register class that is over the high pressure limit, we build n_score up for
+          // live ranges that terminate on this instruction.
+          if (_regalloc->_sched_int_pressure.current_pressure() > _regalloc->_sched_int_pressure.high_pressure_limit()) {
+            short int_pressure = (short)recalc_pressure_nodes[n->_idx];
+            n_score = (int_pressure < 0) ? ((score + n_score) - int_pressure) : (int_pressure > 0) ? 1 : n_score;
+          }
+          if (_regalloc->_sched_float_pressure.current_pressure() > _regalloc->_sched_float_pressure.high_pressure_limit()) {
+            short float_pressure = (short)(recalc_pressure_nodes[n->_idx] >> 16);
+            n_score = (float_pressure < 0) ? ((score + n_score) - float_pressure) : (float_pressure > 0) ? 1 : n_score;
+          }
+        } else {
+          // make sure we choose these candidates
+          score = 0;
+        }
+      }
+    }
 
     // Keep best latency found
     cand_cnt++;
@@ -562,6 +610,100 @@ Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &re
   return n;
 }
 
+//-------------------------adjust_register_pressure----------------------------
+void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_pressure_nodes, bool finalize_mode) {
+  PhaseLive* liveinfo = _regalloc->get_live();
+  IndexSet* liveout = liveinfo->live(block);
+  // first adjust the register pressure for the sources
+  for (uint i = 1; i < n->req(); i++) {
+    bool lrg_ends = false;
+    Node *src_n = n->in(i);
+    if (src_n == NULL) continue;
+    if (!src_n->is_Mach()) continue;
+    uint src = _regalloc->_lrg_map.find(src_n);
+    if (src == 0) continue;
+    LRG& lrg_src = _regalloc->lrgs(src);
+    // detect if the live range ends or not
+    if (liveout->member(src) == false) {
+      lrg_ends = true;
+      for (DUIterator_Fast jmax, j = src_n->fast_outs(jmax); j < jmax; j++) {
+        Node* m = src_n->fast_out(j); // Get user
+        if (m == n) continue;
+        if (!m->is_Mach()) continue;
+        MachNode *mach = m->as_Mach();
+        bool src_matches = false;
+        int iop = mach->ideal_Opcode();
+
+        switch (iop) {
+        case Op_StoreB:
+        case Op_StoreC:
+        case Op_StoreCM:
+        case Op_StoreD:
+        case Op_StoreF:
+        case Op_StoreI:
+        case Op_StoreL:
+        case Op_StoreP:
+        case Op_StoreN:
+        case Op_StoreVector:
+        case Op_StoreNKlass:
+          for (uint k = 1; k < m->req(); k++) {
+            Node *in = m->in(k);
+            if (in == src_n) {
+              src_matches = true;
+              break;
+            }
+          }
+          break;
+
+        default:
+          src_matches = true;
+          break;
+        }
+
+        // If we have a store as our use, ignore the non source operands
+        if (src_matches == false) continue;
+
+        // Mark every unscheduled use which is not n with a recalculation
+        if ((get_block_for_node(m) == block) && (!m->is_scheduled())) {
+          if (finalize_mode && !m->is_Phi()) {
+            recalc_pressure_nodes[m->_idx] = 0x7fff7fff;
+          }
+          lrg_ends = false;
+        }
+      }
+    }
+    // if none, this live range ends and we can adjust register pressure
+    if (lrg_ends) {
+      if (finalize_mode) {
+        _regalloc->lower_pressure(block, 0, lrg_src, NULL, _regalloc->_sched_int_pressure, _regalloc->_sched_float_pressure);
+      } else {
+        _regalloc->lower_pressure(block, 0, lrg_src, NULL, _regalloc->_scratch_int_pressure, _regalloc->_scratch_float_pressure);
+      }
+    }
+  }
+
+  // now add the register pressure from the dest and evaluate which heuristic we should use:
+  // 1.) The default, latency scheduling
+  // 2.) Register pressure scheduling based on the high pressure limit threshold for int or float register stacks
+  uint dst = _regalloc->_lrg_map.find(n);
+  if (dst != 0) {
+    LRG& lrg_dst = _regalloc->lrgs(dst);
+    if (finalize_mode) {
+      _regalloc->raise_pressure(block, lrg_dst, _regalloc->_sched_int_pressure, _regalloc->_sched_float_pressure);
+      // check to see if we fall over the register pressure cliff here
+      if (_regalloc->_sched_int_pressure.current_pressure() > _regalloc->_sched_int_pressure.high_pressure_limit()) {
+        _scheduling_for_pressure = true;
+      } else if (_regalloc->_sched_float_pressure.current_pressure() > _regalloc->_sched_float_pressure.high_pressure_limit()) {
+        _scheduling_for_pressure = true;
+      } else {
+        // restore latency scheduling mode
+        _scheduling_for_pressure = false;
+      }
+    } else {
+      _regalloc->raise_pressure(block, lrg_dst, _regalloc->_scratch_int_pressure, _regalloc->_scratch_float_pressure);
+    }
+  }
+}
 
 //------------------------------set_next_call----------------------------------
 void PhaseCFG::set_next_call(Block* block, Node* n, VectorSet& next_call) {
@@ -644,7 +786,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
         continue;
       }
       if( m->is_Phi() ) continue;
-      int m_cnt = ready_cnt.at(m->_idx)-1;
+      int m_cnt = ready_cnt.at(m->_idx) - 1;
       ready_cnt.at_put(m->_idx, m_cnt);
       if( m_cnt == 0 )
         worklist.push(m);
@@ -711,7 +853,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
 
 //------------------------------schedule_local---------------------------------
 // Topological sort within a block.  Someday become a real scheduler.
-bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call) {
+bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call, intptr_t *recalc_pressure_nodes) {
   // Already "sorted" are the block start Node (as the first entry), and
   // the block-ending Node and any trailing control projections.  We leave
   // these alone.  PhiNodes and ParmNodes are made to follow the block start
@@ -733,10 +875,24 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return true;
   }
 
+  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+
+  // We track the uses of local definitions as input dependences so that
+  // we know when a given instruction is avialable to be scheduled.
+  uint i;
+  if (OptoRegScheduling && block_size_threshold_ok) {
+    for (i = 1; i < block->number_of_nodes(); i++) { // setup nodes for pressure calc
+      Node *n = block->get_node(i);
+      n->remove_flag(Node::Flag_is_scheduled);
+      if (!n->is_Phi()) {
+        recalc_pressure_nodes[n->_idx] = 0x7fff7fff;
+      }
+    }
+  }
+
   // Move PhiNodes and ParmNodes from 1 to cnt up to the start
   uint node_cnt = block->end_idx();
   uint phi_cnt = 1;
-  uint i;
   for( i = 1; i<node_cnt; i++ ) { // Scan for Phi
     Node *n = block->get_node(i);
     if( n->is_Phi() ||          // Found a PhiNode or ParmNode
@@ -744,6 +900,10 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       // Move guy at 'phi_cnt' to the end; makes a hole at phi_cnt
       block->map_node(block->get_node(phi_cnt), i);
       block->map_node(n, phi_cnt++);  // swap Phi/Parm up front
+      if (OptoRegScheduling && block_size_threshold_ok) {
+        // mark n as scheduled
+        n->add_flag(Node::Flag_is_scheduled);
+      }
     } else {                    // All others
       // Count block-local inputs to 'n'
       uint cnt = n->len();      // Input count
@@ -791,12 +951,18 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
 
   // All the prescheduled guys do not hold back internal nodes
   uint i3;
-  for(i3 = 0; i3<phi_cnt; i3++ ) {  // For all pre-scheduled
+  for (i3 = 0; i3 < phi_cnt; i3++) {  // For all pre-scheduled
     Node *n = block->get_node(i3);       // Get pre-scheduled
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* m = n->fast_out(j);
       if (get_block_for_node(m) == block) { // Local-block user
         int m_cnt = ready_cnt.at(m->_idx)-1;
+        if (OptoRegScheduling && block_size_threshold_ok) {
+          // mark m as scheduled
+          if (m_cnt < 0) {
+            m->add_flag(Node::Flag_is_scheduled);
+          }
+        }
         ready_cnt.at_put(m->_idx, m_cnt);   // Fix ready count
       }
     }
@@ -825,6 +991,18 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   while (delay.size()) {
     Node* d = delay.pop();
     worklist.push(d);
+  }
+
+  if (OptoRegScheduling && block_size_threshold_ok) {
+    // To stage register pressure calculations we need to examine the live set variables
+    // breaking them up by register class to compartmentalize the calculations.
+    uint float_pressure = Matcher::float_pressure(FLOATPRESSURE);
+    _regalloc->_sched_int_pressure.init(INTPRESSURE);
+    _regalloc->_sched_float_pressure.init(float_pressure);
+    _regalloc->_scratch_int_pressure.init(INTPRESSURE);
+    _regalloc->_scratch_float_pressure.init(float_pressure);
+
+    _regalloc->compute_entry_block_pressure(block);
   }
 
   // Warm up the 'next_call' heuristic bits
@@ -858,8 +1036,17 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
 #endif
 
     // Select and pop a ready guy from worklist
-    Node* n = select(block, worklist, ready_cnt, next_call, phi_cnt);
+    Node* n = select(block, worklist, ready_cnt, next_call, phi_cnt, recalc_pressure_nodes);
     block->map_node(n, phi_cnt++);    // Schedule him next
+
+    if (OptoRegScheduling && block_size_threshold_ok) {
+      n->add_flag(Node::Flag_is_scheduled);
+
+      // Now adjust the resister pressure with the node we selected
+      if (!n->is_Phi()) {
+        adjust_register_pressure(n, block, recalc_pressure_nodes, true);
+      }
+    }
 
 #ifndef PRODUCT
     if (trace_opto_pipelining()) {
@@ -906,7 +1093,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
         assert(m->is_MachProj() && n->is_Mach() && n->as_Mach()->has_call(), "unexpected node types");
         continue;
       }
-      int m_cnt = ready_cnt.at(m->_idx)-1;
+      int m_cnt = ready_cnt.at(m->_idx) - 1;
       ready_cnt.at_put(m->_idx, m_cnt);
       if( m_cnt == 0 )
         worklist.push(m);
@@ -925,6 +1112,12 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return false;
   }
 
+  if (OptoRegScheduling && block_size_threshold_ok) {
+    _regalloc->compute_exit_block_pressure(block);
+    block->_reg_pressure = _regalloc->_sched_int_pressure.final_pressure();
+    block->_freg_pressure = _regalloc->_sched_float_pressure.final_pressure();
+  }
+
 #ifndef PRODUCT
   if (trace_opto_pipelining()) {
     tty->print_cr("#");
@@ -933,10 +1126,16 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       tty->print("# ");
       block->get_node(i)->fast_dump();
     }
+    tty->print_cr("# ");
+
+    if (OptoRegScheduling && block_size_threshold_ok) {
+      tty->print_cr("# pressure info : %d", block->_pre_order);
+      _regalloc->print_pressure_info(_regalloc->_sched_int_pressure, "int register info");
+      _regalloc->print_pressure_info(_regalloc->_sched_float_pressure, "float register info");
+    }
     tty->cr();
   }
 #endif
-
 
   return true;
 }

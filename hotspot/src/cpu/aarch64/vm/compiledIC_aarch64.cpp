@@ -51,13 +51,15 @@ bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
 // ----------------------------------------------------------------------------
 
 #define __ _masm.
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
+address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
   // mov rmethod, 0
   // jmp -4 # to self
 
-  address mark = cbuf.insts_mark();  // Get mark within main instrs section.
+  if (mark == NULL) {
+    mark = cbuf.insts_mark();  // Get mark within main instrs section.
+  }
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a stub.

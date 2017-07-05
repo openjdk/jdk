@@ -30,8 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/copy.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+#include "oops/oop.inline.hpp"
 
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
 
@@ -424,6 +423,30 @@ void Relocation::set_value(address x) {
   ShouldNotReachHere();
 }
 
+void Relocation::const_set_data_value(address x) {
+#ifdef _LP64
+  if (format() == relocInfo::narrow_oop_in_const) {
+    *(narrowOop*)addr() = oopDesc::encode_heap_oop((oop) x);
+  } else {
+#endif
+    *(address*)addr() = x;
+#ifdef _LP64
+  }
+#endif
+}
+
+void Relocation::const_verify_data_value(address x) {
+#ifdef _LP64
+  if (format() == relocInfo::narrow_oop_in_const) {
+    assert(*(narrowOop*)addr() == oopDesc::encode_heap_oop((oop) x), "must agree");
+  } else {
+#endif
+    assert(*(address*)addr() == x, "must agree");
+#ifdef _LP64
+  }
+#endif
+}
+
 
 RelocationHolder Relocation::spec_simple(relocInfo::relocType rtype) {
   if (rtype == relocInfo::none)  return RelocationHolder::none;
@@ -447,7 +470,7 @@ int32_t Relocation::runtime_address_to_index(address runtime_address) {
     // Known "miscellaneous" non-stub pointers:
     // os::get_polling_page(), SafepointSynchronize::address_of_state()
     if (PrintRelocations) {
-      tty->print_cr("random unregistered address in relocInfo: " INTPTR_FORMAT, runtime_address);
+      tty->print_cr("random unregistered address in relocInfo: " INTPTR_FORMAT, p2i(runtime_address));
     }
 #ifndef _LP64
     return (int32_t) (intptr_t)runtime_address;
@@ -580,7 +603,8 @@ void static_stub_Relocation::pack_data_to(CodeSection* dest) {
 
 void static_stub_Relocation::unpack_data() {
   address base = binding()->section_start(CodeBuffer::SECT_INSTS);
-  _static_call = address_from_scaled_offset(unpack_1_int(), base);
+  jint offset = unpack_1_int();
+  _static_call = address_from_scaled_offset(offset, base);
 }
 
 void trampoline_stub_Relocation::pack_data_to(CodeSection* dest ) {
@@ -794,7 +818,8 @@ address opt_virtual_call_Relocation::static_stub() {
   RelocIterator iter(code());
   while (iter.next()) {
     if (iter.type() == relocInfo::static_stub_type) {
-      if (iter.static_stub_reloc()->static_call() == static_call_addr) {
+      static_stub_Relocation* stub_reloc = iter.static_stub_reloc();
+      if (stub_reloc->static_call() == static_call_addr) {
         return iter.addr();
       }
     }
@@ -816,7 +841,8 @@ address static_call_Relocation::static_stub() {
   RelocIterator iter(code());
   while (iter.next()) {
     if (iter.type() == relocInfo::static_stub_type) {
-      if (iter.static_stub_reloc()->static_call() == static_call_addr) {
+      static_stub_Relocation* stub_reloc = iter.static_stub_reloc();
+      if (stub_reloc->static_call() == static_call_addr) {
         return iter.addr();
       }
     }
@@ -925,7 +951,7 @@ void RelocIterator::print_current() {
     return;
   }
   tty->print("relocInfo@" INTPTR_FORMAT " [type=%d(%s) addr=" INTPTR_FORMAT " offset=%d",
-             _current, type(), reloc_type_string((relocInfo::relocType) type()), _addr, _current->addr_offset());
+             p2i(_current), type(), reloc_type_string((relocInfo::relocType) type()), p2i(_addr), _current->addr_offset());
   if (current()->format() != 0)
     tty->print(" format=%d", current()->format());
   if (datalen() == 1) {
@@ -951,11 +977,11 @@ void RelocIterator::print_current() {
         oop_value = r->oop_value();
       }
       tty->print(" | [oop_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " offset=%d]",
-                 oop_addr, (address)raw_oop, r->offset());
+                 p2i(oop_addr), p2i(raw_oop), r->offset());
       // Do not print the oop by default--we want this routine to
       // work even during GC or other inconvenient times.
       if (WizardMode && oop_value != NULL) {
-        tty->print("oop_value=" INTPTR_FORMAT ": ", (address)oop_value);
+        tty->print("oop_value=" INTPTR_FORMAT ": ", p2i(oop_value));
         oop_value->print_value_on(tty);
       }
       break;
@@ -972,9 +998,9 @@ void RelocIterator::print_current() {
         metadata_value = r->metadata_value();
       }
       tty->print(" | [metadata_addr=" INTPTR_FORMAT " *=" INTPTR_FORMAT " offset=%d]",
-                 metadata_addr, (address)raw_metadata, r->offset());
+                 p2i(metadata_addr), p2i(raw_metadata), r->offset());
       if (metadata_value != NULL) {
-        tty->print("metadata_value=" INTPTR_FORMAT ": ", (address)metadata_value);
+        tty->print("metadata_value=" INTPTR_FORMAT ": ", p2i(metadata_value));
         metadata_value->print_value_on(tty);
       }
       break;
@@ -984,33 +1010,33 @@ void RelocIterator::print_current() {
   case relocInfo::section_word_type:
     {
       DataRelocation* r = (DataRelocation*) reloc();
-      tty->print(" | [target=" INTPTR_FORMAT "]", r->value()); //value==target
+      tty->print(" | [target=" INTPTR_FORMAT "]", p2i(r->value())); //value==target
       break;
     }
   case relocInfo::static_call_type:
   case relocInfo::runtime_call_type:
     {
       CallRelocation* r = (CallRelocation*) reloc();
-      tty->print(" | [destination=" INTPTR_FORMAT "]", r->destination());
+      tty->print(" | [destination=" INTPTR_FORMAT "]", p2i(r->destination()));
       break;
     }
   case relocInfo::virtual_call_type:
     {
       virtual_call_Relocation* r = (virtual_call_Relocation*) reloc();
       tty->print(" | [destination=" INTPTR_FORMAT " cached_value=" INTPTR_FORMAT "]",
-                 r->destination(), r->cached_value());
+                 p2i(r->destination()), p2i(r->cached_value()));
       break;
     }
   case relocInfo::static_stub_type:
     {
       static_stub_Relocation* r = (static_stub_Relocation*) reloc();
-      tty->print(" | [static_call=" INTPTR_FORMAT "]", r->static_call());
+      tty->print(" | [static_call=" INTPTR_FORMAT "]", p2i(r->static_call()));
       break;
     }
   case relocInfo::trampoline_stub_type:
     {
       trampoline_stub_Relocation* r = (trampoline_stub_Relocation*) reloc();
-      tty->print(" | [trampoline owner=" INTPTR_FORMAT "]", r->owner());
+      tty->print(" | [trampoline owner=" INTPTR_FORMAT "]", p2i(r->owner()));
       break;
     }
   }
@@ -1029,7 +1055,7 @@ void RelocIterator::print() {
     got_next = (skip_next || next());
     skip_next = false;
 
-    tty->print("         @" INTPTR_FORMAT ": ", scan);
+    tty->print("         @" INTPTR_FORMAT ": ", p2i(scan));
     relocInfo* newscan = _current+1;
     if (!has_current())  newscan -= 1;  // nothing to scan here!
     while (scan < newscan) {

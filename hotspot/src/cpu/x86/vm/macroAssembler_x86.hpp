@@ -907,14 +907,14 @@ class MacroAssembler: public Assembler {
   // all corner cases and may result in NaN and require fallback to a
   // runtime call.
   void fast_pow();
-  void fast_exp();
+  void fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
   void increase_precision();
   void restore_precision();
 
-  // computes exp(x). Fallback to runtime call included.
-  void exp_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(true, num_fpu_regs_in_use); }
   // computes pow(x,y). Fallback to runtime call included.
-  void pow_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(false, num_fpu_regs_in_use); }
+  void pow_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(num_fpu_regs_in_use); }
 
 private:
 
@@ -925,7 +925,7 @@ private:
   void pow_exp_core_encoding();
 
   // computes pow(x,y) or exp(x). Fallback to runtime call included.
-  void pow_or_exp(bool is_exp, int num_fpu_regs_in_use);
+  void pow_or_exp(int num_fpu_regs_in_use);
 
   // these are private because users should be doing movflt/movdbl
 
@@ -970,6 +970,10 @@ public:
   void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, AddressLiteral src);
+
+  void mulpd(XMMRegister dst, XMMRegister src)    { Assembler::mulpd(dst, src); }
+  void mulpd(XMMRegister dst, Address src)        { Assembler::mulpd(dst, src); }
+  void mulpd(XMMRegister dst, AddressLiteral src);
 
   void mulsd(XMMRegister dst, XMMRegister src)    { Assembler::mulsd(dst, src); }
   void mulsd(XMMRegister dst, Address src)        { Assembler::mulsd(dst, src); }
@@ -1278,9 +1282,42 @@ public:
                Register raxReg);
 #endif
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp);
+  // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic
+  // Note on a naming convention:
+  // Prefix w = register only used on a Westmere+ architecture
+  // Prefix n = register only used on a Nehalem architecture
+#ifdef _LP64
+  void crc32c_ipl_alg4(Register in_out, uint32_t n,
+                       Register tmp1, Register tmp2, Register tmp3);
+#else
+  void crc32c_ipl_alg4(Register in_out, uint32_t n,
+                       Register tmp1, Register tmp2, Register tmp3,
+                       XMMRegister xtmp1, XMMRegister xtmp2);
+#endif
+  void crc32c_pclmulqdq(XMMRegister w_xtmp1,
+                        Register in_out,
+                        uint32_t const_or_pre_comp_const_index, bool is_pclmulqdq_supported,
+                        XMMRegister w_xtmp2,
+                        Register tmp1,
+                        Register n_tmp2, Register n_tmp3);
+  void crc32c_rec_alt2(uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported, Register in_out, Register in1, Register in2,
+                       XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                       Register tmp1, Register tmp2,
+                       Register n_tmp3);
+  void crc32c_proc_chunk(uint32_t size, uint32_t const_or_pre_comp_const_index_u1, uint32_t const_or_pre_comp_const_index_u2, bool is_pclmulqdq_supported,
+                         Register in_out1, Register in_out2, Register in_out3,
+                         Register tmp1, Register tmp2, Register tmp3,
+                         XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                         Register tmp4, Register tmp5,
+                         Register n_tmp6);
+  void crc32c_ipl_alg2_alt2(Register in_out, Register in1, Register in2,
+                            Register tmp1, Register tmp2, Register tmp3,
+                            Register tmp4, Register tmp5, Register tmp6,
+                            XMMRegister w_xtmp1, XMMRegister w_xtmp2, XMMRegister w_xtmp3,
+                            bool is_pclmulqdq_supported);
   // Fold 128-bit data chunk
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset);
   void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf);

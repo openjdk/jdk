@@ -78,7 +78,11 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
     assert(((nmethod*)_cb)->insts_contains(_pc), "original PC must be in nmethod");
     _deopt_state = is_deoptimized;
   } else {
-    _deopt_state = not_deoptimized;
+    if (_cb->is_deoptimization_stub()) {
+      _deopt_state = is_deoptimized;
+    } else {
+      _deopt_state = not_deoptimized;
+    }
   }
 }
 

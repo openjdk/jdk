@@ -50,19 +50,21 @@ public class MakeJavaSecurity {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length < 3) {
+        if (args.length < 4) {
             System.err.println("Usage: java MakeJavaSecurity " +
                                "[input java.security file name] " +
                                "[output java.security file name] " +
                                "[openjdk target os] " +
+                               "[openjdk target cpu architecture]" +
                                "[more restricted packages file name?]");
-            System.exit(1);
+
+                    System.exit(1);
         }
 
         // more restricted packages
         List<String> extraLines;
-        if (args.length == 4) {
-            extraLines = Files.readAllLines(Paths.get(args[3]));
+        if (args.length == 5) {
+            extraLines = Files.readAllLines(Paths.get(args[4]));
         } else {
             extraLines = Collections.emptyList();
         }
@@ -96,7 +98,11 @@ public class MakeJavaSecurity {
                 mode = 0;
                 iter.remove();
             } else if (line.startsWith("#ifdef ")) {
-                mode = line.endsWith(args[2])?1:2;
+                if (line.indexOf('-') > 0) {
+                    mode = line.endsWith(args[2]+"-"+args[3]) ? 1 : 2;
+                } else {
+                    mode = line.endsWith(args[2]) ? 1 : 2;
+                }
                 iter.remove();
             } else if (line.startsWith("#ifndef ")) {
                 mode = line.endsWith(args[2])?2:1;

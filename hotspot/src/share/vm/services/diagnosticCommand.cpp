@@ -39,8 +39,6 @@
 #include "utilities/macros.hpp"
 #include "oops/objArrayOop.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void DCmdRegistrant::register_dcmds(){
   // Registration of the diagnostic commands
   // First argument specifies which interfaces will export the command
@@ -695,12 +693,17 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     // command line with -D or by managmenent.properties
     // file.
 #define PUT_OPTION(a) \
-    if ( (a).is_set() ){ \
-        options.print(\
-               ( *((a).type()) == 'I' ) ? "%scom.sun.management.%s=%d" : "%scom.sun.management.%s=%s",\
-                comma, (a).name(), (a).value()); \
-        comma[0] = ','; \
-    }
+    do { \
+        if ( (a).is_set() ){ \
+            if ( *((a).type()) == 'I' ) { \
+                options.print("%scom.sun.management.%s=" JLONG_FORMAT, comma, (a).name(), (jlong)((a).value())); \
+            } else { \
+                options.print("%scom.sun.management.%s=%s", comma, (a).name(), (char*)((a).value())); \
+            } \
+            comma[0] = ','; \
+        }\
+    } while(0);
+
 
     PUT_OPTION(_config_file);
     PUT_OPTION(_jmxremote_port);

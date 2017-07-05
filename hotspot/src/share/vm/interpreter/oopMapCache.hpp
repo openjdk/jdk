@@ -141,9 +141,6 @@ class InterpreterOopMap: ResourceObj {
 
   int expression_stack_size() const              { return _expression_stack_size; }
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-  void iterate_all(OffsetClosure* oop_closure, OffsetClosure* value_closure, OffsetClosure* dead_closure);
-#endif
 };
 
 class OopMapCache : public CHeapObj<mtClass> {

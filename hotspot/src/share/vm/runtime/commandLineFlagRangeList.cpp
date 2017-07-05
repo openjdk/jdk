@@ -29,6 +29,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/os.hpp"
+#include "runtime/task.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 
@@ -278,7 +279,7 @@ void emit_range_double(const char* name, double min, double max) {
 // Generate func argument to pass into emit_range_xxx functions
 #define EMIT_RANGE_CHECK(a, b)                               , a, b
 
-#define INITIAL_RANGES_SIZE 128
+#define INITIAL_RANGES_SIZE 204
 GrowableArray<CommandLineFlagRange*>* CommandLineFlagRangeList::_ranges = NULL;
 
 // Check the ranges of all flags that have them
@@ -308,6 +309,18 @@ void CommandLineFlagRangeList::init(void) {
                                 EMIT_RANGE_NOTPRODUCT_FLAG,
                                 EMIT_RANGE_CHECK,
                                 IGNORE_CONSTRAINT));
+
+#if INCLUDE_JVMCI
+  emit_range_no(NULL JVMCI_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
+                                 EMIT_RANGE_PD_DEVELOPER_FLAG,
+                                 EMIT_RANGE_PRODUCT_FLAG,
+                                 EMIT_RANGE_PD_PRODUCT_FLAG,
+                                 EMIT_RANGE_DIAGNOSTIC_FLAG,
+                                 EMIT_RANGE_EXPERIMENTAL_FLAG,
+                                 EMIT_RANGE_NOTPRODUCT_FLAG,
+                                 EMIT_RANGE_CHECK,
+                                 IGNORE_CONSTRAINT));
+#endif // INCLUDE_JVMCI
 
 #ifdef COMPILER1
   emit_range_no(NULL C1_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,

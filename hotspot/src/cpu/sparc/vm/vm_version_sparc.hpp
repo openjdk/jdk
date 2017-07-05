@@ -29,6 +29,7 @@
 #include "runtime/vm_version.hpp"
 
 class VM_Version: public Abstract_VM_Version {
+  friend class VMStructs;
 protected:
   enum Feature_Flag {
     v8_instructions      = 0,
