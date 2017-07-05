@@ -117,7 +117,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   bool can_be_deoptimized() const;
 
   // returns the frame size in stack slots
-  int frame_size() const;
+  int frame_size(RegisterMap* map) const;
 
   // returns the sending frame
   frame sender(RegisterMap* map) const;
