@@ -147,16 +147,17 @@ public class TestIBMBugs {
     }
 
     private static void bug6569191 () throws Exception {
-        byte[] bs = new byte[] { (byte)0x81, (byte)0xad,
-                                 (byte)0x81, (byte)0xae,
-                                 (byte)0x81, (byte)0xaf,
-                                 (byte)0x81, (byte)0xb0,
-                                 (byte)0x85, (byte)0x81,
-                                 (byte)0x85, (byte)0x87,
-                                 (byte)0x85, (byte)0xe0,
-                                 (byte)0x85, (byte)0xf0 };
+        byte[] bs = new byte[] { (byte)0x81, (byte)0xad,  // fffd ff6d
+                                 (byte)0x81, (byte)0xae,  // fffd ff6e
+                                 (byte)0x81, (byte)0xaf,  // fffd ff6f
+                                 (byte)0x81, (byte)0xb0,  // fffd ff70
+                                 (byte)0x85, (byte)0x81,  // fffd ->
+                                 (byte)0x85, (byte)0x87,  // 2266 ->
+                                 (byte)0x85, (byte)0xe0,  // 32a4 ->
+                                 (byte)0x85, (byte)0xf0 };// 7165 fffd
         String s = new String(bs, "Cp943");
-        if (!"\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd"
+        // see DoubleByte for how the unmappables are handled
+        if (!"\ufffd\uff6d\ufffd\uff6e\ufffd\uff6f\ufffd\uff70\ufffd\u2266\u32a4\u7165\ufffd"
             .equals(s))
             throw new Exception("Cp943 failed");
     }

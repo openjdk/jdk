@@ -219,7 +219,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
         // Number of helper threads, that did not finish yet.
         private int threadsToFinish;
 
-        // IOException which occured during the last run.
+        // IOException which occurred during the last run.
         IOException exception = null;
 
         // Called before polling.

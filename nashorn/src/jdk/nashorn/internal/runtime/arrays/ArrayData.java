@@ -461,7 +461,23 @@ public abstract class ArrayData {
      */
     public abstract ArrayData slice(long from, long to);
 
-    private static Class<?> widestType(final Object... items) {
+    /**
+     * Fast splice operation. This just modifies the array according to the number of
+     * elements added and deleted but does not insert the added elements. Throws
+     * {@code UnsupportedOperationException} if fast splice operation is not supported
+     * for this class or arguments.
+     *
+     * @param start start index of splice operation
+     * @param removed number of removed elements
+     * @param added number of added elements
+     * @throws UnsupportedOperationException if fast splice is not supported for the class or arguments.
+     */
+    public ArrayData fastSplice(final int start, final int removed, final int added) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+
+    static Class<?> widestType(final Object... items) {
         assert items.length > 0;
 
         Class<?> widest = Integer.class;

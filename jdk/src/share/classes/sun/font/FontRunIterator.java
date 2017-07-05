@@ -90,10 +90,10 @@ public final class FontRunIterator {
      * problems: we optimize latin-1 and cjk text assuming a fixed
      * width for each character.  since latin-1 digits and punctuation
      * are common, following this algorithm they will change to match
-     * the fonts used for the preceeding text, and potentially change metrics.
+     * the fonts used for the preceding text, and potentially change metrics.
      *
      * this also seems to have the potential for changing arbitrary runs of text, e.g.
-     * any number of digits and spaces can change depending on the preceeding (or following!)
+     * any number of digits and spaces can change depending on the preceding (or following!)
      * non-COMMON character's font assignment.  this is not good.
      *
      * since the goal is to enable layout to be performed using as few physical fonts as

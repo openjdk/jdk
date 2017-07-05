@@ -663,7 +663,7 @@ public class FormView extends ComponentView implements ActionListener {
 
                     if (type != null && type.equals("submit") &&
                         next != getElement()) {
-                        // do nothing - this submit isnt the trigger
+                        // do nothing - this submit is not the trigger
                     } else if (type == null || !type.equals("image")) {
                         // images only result in data if they triggered
                         // the submit and they require that the mouse click

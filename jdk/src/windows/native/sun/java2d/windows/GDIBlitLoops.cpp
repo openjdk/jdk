@@ -161,7 +161,7 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
                 // yet created the byteGrayPalette, create it now and copy
                 // it into our temporary bmi structure.
                 // REMIND: byteGrayPalette is a leak since we do not have
-                // a mechansim to free it up.  This should be fine, since it
+                // a mechanism to free it up.  This should be fine, since it
                 // is only 256 bytes for any process and only gets malloc'd
                 // when using ByteGray surfaces.  Eventually, we should use
                 // the new Disposer mechanism to delete this native memory.

@@ -675,7 +675,7 @@ class ForwardBuilder extends Builder {
          * check for looping - abort a loop if
          * ((we encounter the same certificate twice) AND
          * ((policyMappingInhibited = true) OR (no policy mapping
-         * extensions can be found between the occurences of the same
+         * extensions can be found between the occurrences of the same
          * certificate)))
          */
         if (certPathList != null) {

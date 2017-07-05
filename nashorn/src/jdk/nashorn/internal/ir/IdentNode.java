@@ -138,6 +138,11 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         return getName();
     }
 
+    @Override
+    public boolean isLocal() {
+        return !getSymbol().isScope();
+    }
+
     /**
      * Check if this IdentNode is a property name
      * @return true if this is a property name

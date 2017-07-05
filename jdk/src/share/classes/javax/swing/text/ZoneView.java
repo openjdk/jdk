@@ -60,7 +60,7 @@ import javax.swing.event.*;
  *   Boxes are easier to estimate the size of than some other shapes.
  *   </ul>
  * <p>
- * The default behavior is controled by two properties, maxZoneSize
+ * The default behavior is controlled by two properties, maxZoneSize
  * and maxZonesLoaded.  Setting maxZoneSize to Integer.MAX_VALUE would
  * have the effect of causing only one zone to be created.  This would
  * effectively turn the view into an implementation of the decorator
@@ -144,7 +144,7 @@ public class ZoneView extends BoxView {
      * Called by a zone when it gets loaded.  This happens when
      * an attempt is made to display or perform a model/view
      * translation on a zone that was in an unloaded state.
-     * This is imlemented to check if the maximum number of
+     * This is implemented to check if the maximum number of
      * zones was reached and to unload the oldest zone if so.
      *
      * @param zone the child view that was just loaded.

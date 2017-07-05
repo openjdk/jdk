@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ package java.rmi.server;
  *
  * @author  Ann Wollrath
  * @since   JDK1.1
- **/
+ * @deprecated This class is obsolete. Use {@link ExportException} instead.
+ */
+@Deprecated
 public class SocketSecurityException extends ExportException {
 
     /* indicate compatibility with JDK 1.1.x version of class */

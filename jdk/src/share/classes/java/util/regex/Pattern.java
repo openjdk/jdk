@@ -618,7 +618,7 @@ import java.util.stream.StreamSupport;
  * are in conformance with the recommendation of <i>Annex C: Compatibility Properties</i>
  * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
  * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
- * <p>
+ *
  * <table border="0" cellpadding="1" cellspacing="0"
  *  summary="predefined and posix character classes in Unicode mode">
  * <tr align="left">
@@ -2438,7 +2438,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             // single 0x0B). This breaks the range if '\v' is used as
             // the start or end value, such as [\v-...] or [...-\v], in
             // which a single definite value (0x0B) is expected. For
-            // compatiblity concern '\013'/0x0B is returned if isrange.
+            // compatibility concern '\013'/0x0B is returned if isrange.
             if (isrange)
                 return '\013';
             if (create) root = new VertWS();

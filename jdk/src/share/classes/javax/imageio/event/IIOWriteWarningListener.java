@@ -46,7 +46,7 @@ import javax.imageio.ImageWriter;
 public interface IIOWriteWarningListener extends EventListener {
 
     /**
-     * Reports the occurence of a non-fatal error in encoding.  Encoding
+     * Reports the occurrence of a non-fatal error in encoding.  Encoding
      * will continue following the call to this method.  The application
      * may choose to display a dialog, print the warning to the console,
      * ignore the warning, or take any other action it chooses.

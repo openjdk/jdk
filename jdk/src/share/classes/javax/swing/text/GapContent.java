@@ -44,7 +44,7 @@ import java.lang.ref.ReferenceQueue;
  * to take advantage of common behavior where most changes are
  * in the same location.  Changes that occur at a gap boundary are
  * generally cheap and moving the gap is generally cheaper than
- * moving the array contents directly to accomodate the change.
+ * moving the array contents directly to accommodate the change.
  * <p>
  * The positions tracking change are also generally cheap to
  * maintain.  The Position implementations (marks) store the array

@@ -1129,7 +1129,7 @@ public abstract class $Type$Buffer
      *
      * <p> Two $type$ buffers are equal if, and only if,
      *
-     * <p><ol>
+     * <ol>
      *
      *   <li><p> They have the same element type,  </p></li>
      *

@@ -47,7 +47,6 @@ import static jdk.nashorn.internal.parser.TokenType.XML;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
-import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -1054,16 +1053,6 @@ public class Lexer extends Scanner {
     }
 
     /**
-     * Convert string to number.
-     *
-     * @param valueString String to convert.
-     * @return Converted number.
-     */
-    private static Number valueOf(final String valueString) throws NumberFormatException {
-        return JSType.narrowestIntegerRepresentation(Double.valueOf(valueString));
-    }
-
-    /**
      * Scan a number.
      */
     protected void scanNumber() {
@@ -1623,7 +1612,7 @@ public class Lexer extends Scanner {
         case HEXADECIMAL:
             return Lexer.valueOf(source.getString(start + 2, len - 2), 16); // number
         case FLOATING:
-            return Lexer.valueOf(source.getString(start, len)); // number
+            return Double.valueOf(source.getString(start, len)); // number
         case STRING:
             return source.getString(start, len); // String
         case ESCSTRING:

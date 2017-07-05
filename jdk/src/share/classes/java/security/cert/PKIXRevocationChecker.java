@@ -299,7 +299,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
         /**
          * Allow revocation check to succeed if the revocation status cannot be
          * determined for one of the following reasons:
-         * <p><ul>
+         * <ul>
          *  <li>The CRL or OCSP response cannot be obtained because of a
          *      network error.
          *  <li>The OCSP responder returns one of the following errors

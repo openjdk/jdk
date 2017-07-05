@@ -33,6 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.concurrent.Callable;
 import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
@@ -135,7 +136,8 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
      */
     public static ListAdapter create(final Object obj) {
         if (obj instanceof ScriptObject) {
-            return new ScriptObjectListAdapter((ScriptObject)obj);
+            final Object mirror = ScriptObjectMirror.wrap(obj, Context.getGlobal());
+            return new JSObjectListAdapter((JSObject)mirror);
         } else if (obj instanceof JSObject) {
             return new JSObjectListAdapter((JSObject)obj);
         } else {

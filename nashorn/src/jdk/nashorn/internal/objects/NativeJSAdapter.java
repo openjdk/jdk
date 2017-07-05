@@ -629,7 +629,8 @@ public final class NativeJSAdapter extends ScriptObject {
                     // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
                     return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
                             func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
-                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__), testJSAdaptor(adaptee, null, null, null));
+                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__),
+                            testJSAdaptor(adaptee, null, null, null));
                 }
             }
             throw typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));

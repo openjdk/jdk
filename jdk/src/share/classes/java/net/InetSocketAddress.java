@@ -196,7 +196,7 @@ public class InetSocketAddress
      * If that attempt fails, the address will be flagged as <I>unresolved</I>.
      * <p>
      * If there is a security manager, its {@code checkConnect} method
-     * is called with the host name as its argument to check the permissiom
+     * is called with the host name as its argument to check the permission
      * to resolve it. This could result in a SecurityException.
      * <P>
      * A valid port value is between 0 and 65535.

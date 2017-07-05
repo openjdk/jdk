@@ -62,7 +62,7 @@ inline uint jar::get_crc32(uint c, uchar *ptr, uint len) { return crc32(c, ptr, 
 
 #endif // End of ZLIB
 
-#ifdef sparc
+#ifdef _BIG_ENDIAN
 #define SWAP_BYTES(a) \
     ((((a) << 8) & 0xff00) | 0x00ff) & (((a) >> 8) | 0xff00)
 #else
@@ -467,7 +467,7 @@ static jlong read_input_via_gzip(unpacker* u,
         zs.avail_in -= TRAILER_LEN;
       } else {
         // Bug: 5023768,we read past the TRAILER_LEN to see if there is
-        // any extraneous data, as we dont support concatenated .gz
+        // any extraneous data, as we don't support concatenated .gz
         // files just yet.
         int extra = (int) read_gzin_fn(u, inbuf, 1, inbuflen);
         zs.avail_in += extra - TRAILER_LEN;

@@ -79,8 +79,10 @@ public class WindowEvent extends ComponentEvent {
     @Native public static final int WINDOW_CLOSING      = 1 + WINDOW_FIRST; //Event.WINDOW_DESTROY
 
     /**
-     * The window closed event. This event is delivered after
-     * the window has been closed as the result of a call to dispose.
+     * The window closed event. This event is delivered after the displayable
+     * window has been closed as the result of a call to dispose.
+     * @see java.awt.Component#isDisplayable
+     * @see Window#dispose
      */
     @Native public static final int WINDOW_CLOSED       = 2 + WINDOW_FIRST;
 

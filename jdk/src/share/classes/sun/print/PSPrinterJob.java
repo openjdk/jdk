@@ -1644,7 +1644,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     /*
      * Currently CharToByteConverter.getCharacterEncoding() return values are
      * not fixed yet. These are used as the part of the key of
-     * psfont.propeties. When those name are fixed this routine can
+     * psfont.properties. When those name are fixed this routine can
      * be erased.
      */
     private String makeCharsetName(String name, char[] chs) {

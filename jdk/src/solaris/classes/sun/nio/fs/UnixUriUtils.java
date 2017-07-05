@@ -56,7 +56,7 @@ class UnixUriUtils {
         if (uri.getQuery() != null)
             throw new IllegalArgumentException("URI has a query component");
 
-        // compatability with java.io.File
+        // compatibility with java.io.File
         if (!uri.toString().startsWith("file:///"))
             return new File(uri).toPath();
 

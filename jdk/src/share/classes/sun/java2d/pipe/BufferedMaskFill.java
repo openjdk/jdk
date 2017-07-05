@@ -120,7 +120,7 @@ public abstract class BufferedMaskFill extends MaskFill {
                     }
                 }
             } else {
-                // queue is too small to accomodate entire mask; perform
+                // queue is too small to accommodate entire mask; perform
                 // the operation directly on the queue flushing thread
                 rq.flushAndInvokeNow(new Runnable() {
                     public void run() {

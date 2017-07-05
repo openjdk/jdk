@@ -37,7 +37,6 @@ import java.util.*;
  *      collection, using the {@code implies} method.
  * <LI> enumerate all the permissions, using the {@code elements} method.
  * </UL>
- * <P>
  *
  * <p>When it is desirable to group together a number of Permission objects
  * of the same type, the {@code newPermissionCollection} method on that

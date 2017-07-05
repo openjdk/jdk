@@ -286,7 +286,7 @@ public class SpringLayout implements LayoutManager2 {
      * as EAST - WIDTH.
      * <p>
      * [RELATIVE_BASELINE is a private constraint that is set automatically when
-     * the SpringLayout.Constraints(Component) constuctor is called or when
+     * the SpringLayout.Constraints(Component) constructor is called or when
      * a constraints object is registered with a SpringLayout object.]
      * <p>
      * <b>Note</b>: In this document,
@@ -1167,7 +1167,7 @@ public class SpringLayout implements LayoutManager2 {
      * method, instead of returning the current binding for the
      * edge, returns a proxy that tracks the characteristics
      * of the edge even if the edge is subsequently rebound.
-     * Proxies are intended to be used in builder envonments
+     * Proxies are intended to be used in builder environments
      * where it is useful to allow the user to define the
      * constraints for a layout in any order. Proxies do, however,
      * provide the means to create cyclic dependencies amongst

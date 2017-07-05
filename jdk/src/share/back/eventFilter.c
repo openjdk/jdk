@@ -644,7 +644,7 @@ eventFilter_predictFiltering(HandlerNode *node, jclass clazz, char *classname)
 
             case JDWP_REQUEST_MODIFIER(Count): {
                 /*
-                 * If preceeding filters have determined that events will
+                 * If preceding filters have determined that events will
                  * be filtered out, that is fine and we won't get here.
                  * However, the count must be decremented - even if
                  * subsequent filters will filter these events.  We

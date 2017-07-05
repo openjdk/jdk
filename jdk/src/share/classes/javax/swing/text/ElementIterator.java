@@ -30,7 +30,7 @@ import java.util.Enumeration;
 
 /**
  * <p>
- * ElementIterator, as the name suggests, iteratates over the Element
+ * ElementIterator, as the name suggests, iterates over the Element
  * tree.  The constructor can be invoked with either Document or an Element
  * as an argument.  If the constructor is invoked with a Document as an
  * argument then the root of the iteration is the return value of
@@ -284,7 +284,7 @@ public class ElementIterator implements Cloneable {
 
 
     /**
-     * Fetches the previous Element. If howver the current
+     * Fetches the previous Element. If however the current
      * element is the last element, or the current element
      * is null, then null is returned.
      *

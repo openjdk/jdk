@@ -114,14 +114,14 @@ public class JavatimeTest {
                 zidStr.equals("MST")) {
                 continue;
             }
-            ZoneId zid = ZoneId.of(zidStr, ZoneId.OLD_SHORT_IDS);
+            ZoneId zid = ZoneId.of(zidStr, ZoneId.SHORT_IDS);
             if (!zid.equals(TimeZone.getTimeZone(zid).toZoneId())) {
                 throw new RuntimeException("FAILED: zid -> tz -> zid :" + zidStr);
             }
             TimeZone tz = TimeZone.getTimeZone(zidStr);
             // no round-trip for alias and "GMT"
             if (!tz.equals(TimeZone.getTimeZone(tz.toZoneId())) &&
-                !ZoneId.OLD_SHORT_IDS.containsKey(zidStr) &&
+                !ZoneId.SHORT_IDS.containsKey(zidStr) &&
                 !zidStr.startsWith("GMT")) {
                 throw new RuntimeException("FAILED: tz -> zid -> tz :" + zidStr);
             }

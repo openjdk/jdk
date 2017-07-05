@@ -429,7 +429,7 @@ class WindowsPath extends AbstractPath {
         boolean[] ignore = new boolean[count];      // true => ignore name
         int remaining = count;                      // number of names remaining
 
-        // multiple passes to eliminate all occurences of "." and "name/.."
+        // multiple passes to eliminate all occurrences of "." and "name/.."
         int prevRemaining;
         do {
             prevRemaining = remaining;

@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Unit test for java.net.HttpCookie
- * @bug 6244040 6277796 6277801 6277808 6294071 6692802 6790677 6901170
+ * @bug 6244040 6277796 6277801 6277808 6294071 6692802 6790677 6901170 8020758
  * @author Edward Wang
  */
 
@@ -381,6 +381,9 @@ public class TestHttpCookie {
         // CR 6692802: HttpOnly flag
         test("set-cookie: CUSTOMER=WILE_E_COYOTE;HttpOnly").httpOnly(true);
         test("set-cookie: CUSTOMER=WILE_E_COYOTE").httpOnly(false);
+
+        // space disallowed in name (both Netscape and RFC2965)
+        test("set-cookie: CUST OMER=WILE_E_COYOTE").nil();
     }
 
     static void header(String prompt) {

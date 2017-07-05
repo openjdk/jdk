@@ -632,7 +632,7 @@ public abstract class ImageReader {
      * Returns the aspect ratio of the given image (that is, its width
      * divided by its height) as a <code>float</code>.  For images
      * that are inherently resizable, this method provides a way to
-     * determine the appropriate width given a deired height, or vice
+     * determine the appropriate width given a desired height, or vice
      * versa.  For non-resizable images, the true width and height
      * are used.
      *
@@ -750,7 +750,7 @@ public abstract class ImageReader {
      * not associated with any particular image).  If no such data
      * exists, <code>null</code> is returned.
      *
-     * <p> The resuting metadata object is only responsible for
+     * <p> The resulting metadata object is only responsible for
      * returning documents in the format named by
      * <code>formatName</code>.  Within any documents that are
      * returned, only nodes whose names are members of
@@ -855,7 +855,7 @@ public abstract class ImageReader {
      * if the reader does not support reading metadata or none
      * is available.
      *
-     * <p> The resuting metadata object is only responsible for
+     * <p> The resulting metadata object is only responsible for
      * returning documents in the format named by
      * <code>formatName</code>.  Within any documents that are
      * returned, only nodes whose names are members of
@@ -1435,7 +1435,7 @@ public abstract class ImageReader {
      *
      * <p> This method is merely a convenience equivalent to calling
      * <code>read(int, ImageReadParam)</code> with a read param
-     * specifiying a source region having offsets of
+     * specifying a source region having offsets of
      * <code>tileX*getTileWidth(imageIndex)</code>,
      * <code>tileY*getTileHeight(imageIndex)</code> and width and
      * height of <code>getTileWidth(imageIndex)</code>,
@@ -1948,7 +1948,7 @@ public abstract class ImageReader {
      *
      * <p> The final results of decoding will be the same whether or
      * not intermediate updates are performed.  Thus if only the final
-     * image is desired it may be perferable not to register any
+     * image is desired it may be preferable not to register any
      * <code>IIOReadUpdateListener</code>s.  In general, progressive
      * updating is most effective when fetching images over a network
      * connection that is very slow compared to local CPU processing;

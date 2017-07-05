@@ -35,7 +35,7 @@
 //
 // These type definitions have been imported from UxTheme.h
 // They have been imported instead of including them, because
-// currently we dont require Platform SDK for building J2SE and
+// currently we don't require Platform SDK for building J2SE and
 // VC6 includes do not have UxTheme.h. When we move to VC7
 // we should remove these imports and just include
 //

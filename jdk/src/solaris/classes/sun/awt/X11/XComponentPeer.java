@@ -61,6 +61,7 @@ import java.awt.peer.ContainerPeer;
 import java.lang.reflect.*;
 import java.security.*;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import sun.util.logging.PlatformLogger;
 import sun.awt.*;
@@ -635,22 +636,30 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         g.drawLine(x+width, y+height, x+width, y+1);  // right
     }
 
+    @Override
     public void setBackground(Color c) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Set background to " + c);
         }
         synchronized (getStateLock()) {
+            if (Objects.equals(background, c)) {
+                return;
+            }
             background = c;
         }
         super.setBackground(c);
         repaint();
     }
 
+    @Override
     public void setForeground(Color c) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Set foreground to " + c);
         }
         synchronized (getStateLock()) {
+            if (Objects.equals(foreground, c)) {
+                return;
+            }
             foreground = c;
         }
         repaint();
@@ -674,18 +683,21 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return sun.font.FontDesignMetrics.getMetrics(font);
     }
 
+    @Override
     public void setFont(Font f) {
+        if (f == null) {
+            f = XWindow.getDefaultFont();
+        }
         synchronized (getStateLock()) {
-            if (f == null) {
-                f = XWindow.getDefaultFont();
+            if (f.equals(font)) {
+                return;
             }
             font = f;
         }
-        // as it stands currently we dont need to do layout or repaint since
+        // as it stands currently we don't need to do layout since
         // layout is done in the Component upon setFont.
         //layout();
-        // target.repaint();
-        //repaint()?
+        repaint();
     }
 
     public Font getFont() {
