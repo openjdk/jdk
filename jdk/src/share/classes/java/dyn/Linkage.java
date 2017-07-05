@@ -25,7 +25,6 @@
 
 package java.dyn;
 
-import java.lang.annotation.Annotation;
 import java.dyn.MethodHandles.Lookup;
 import java.util.WeakHashMap;
 import sun.dyn.Access;
@@ -56,11 +55,7 @@ public class Linkage {
      * <li>the class containing the {@code invokedynamic} instruction, for which the bootstrap method was registered
      * <li>the name of the method being invoked (a {@link String})
      * <li>the type of the method being invoked (a {@link MethodType})
-     * <li><em>TBD</em> optionally, an unordered array of {@link Annotation}s attached to the call site
-     *     <em>(Until this feature is implemented, this will always receive an empty array.)</em>
      * </ul>
-     * <em>(TBD: The final argument type may be missing from the method handle's type.
-     * Additional arguments may be added in the future.)</em>
      * The bootstrap method acts as a factory method which accepts the given arguments
      * and returns a {@code CallSite} object (possibly of a subclass of {@code CallSite}).
      * <p>
@@ -86,6 +81,7 @@ public class Linkage {
      *            or is already running in another thread
      * @exception SecurityException if there is a security manager installed,
      *            and a {@link LinkagePermission} check fails for "registerBootstrapMethod"
+     * @deprecated Use @{@link BootstrapMethod} annotations instead
      */
     public static
     void registerBootstrapMethod(Class callerClass, MethodHandle bootstrapMethod) {
@@ -97,14 +93,9 @@ public class Linkage {
 
     static private void checkBSM(MethodHandle mh) {
         if (mh == null)  throw newIllegalArgumentException("null bootstrap method");
-        if (mh.type() == BOOTSTRAP_METHOD_TYPE_2)
-            // For now, always pass an empty array for the Annotations argument
-            mh = MethodHandles.insertArguments(mh, BOOTSTRAP_METHOD_TYPE_2.parameterCount()-1,
-                                               (Object)NO_ANNOTATIONS);
         if (mh.type() == BOOTSTRAP_METHOD_TYPE)  return;
         throw new WrongMethodTypeException(mh.toString());
     }
-    static private final Annotation[] NO_ANNOTATIONS = { };
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
@@ -115,6 +106,7 @@ public class Linkage {
      * @throws NoSuchMethodException if there is no such method
      * @throws IllegalStateException if the caller class's static initializer
      *         has already run, or is already running in another thread
+     * @deprecated Use @{@link BootstrapMethod} annotations instead
      */
     public static
     void registerBootstrapMethod(Class<?> runtime, String name) {
@@ -131,6 +123,7 @@ public class Linkage {
      * @throws IllegalArgumentException if there is no such method
      * @throws IllegalStateException if the caller class's static initializer
      *         has already run, or is already running in another thread
+     * @deprecated Use @{@link BootstrapMethod} annotations instead
      */
     public static
     void registerBootstrapMethod(String name) {
@@ -142,18 +135,10 @@ public class Linkage {
     void registerBootstrapMethodLookup(Class<?> callerClass, Class<?> runtime, String name) {
         Lookup lookup = new Lookup(IMPL_TOKEN, callerClass);
         MethodHandle bootstrapMethod;
-        // Try both types.  TBD
         try {
-            bootstrapMethod = lookup.findStatic(runtime, name, BOOTSTRAP_METHOD_TYPE_2);
+            bootstrapMethod = lookup.findStatic(runtime, name, BOOTSTRAP_METHOD_TYPE);
         } catch (NoAccessException ex) {
-            bootstrapMethod = null;
-        }
-        if (bootstrapMethod == null) {
-            try {
-                bootstrapMethod = lookup.findStatic(runtime, name, BOOTSTRAP_METHOD_TYPE);
-            } catch (NoAccessException ex) {
-                throw new IllegalArgumentException("no such bootstrap method in "+runtime+": "+name, ex);
-            }
+            throw new IllegalArgumentException("no such bootstrap method in "+runtime+": "+name, ex);
         }
         checkBSM(bootstrapMethod);
         MethodHandleImpl.registerBootstrap(IMPL_TOKEN, callerClass, bootstrapMethod);
@@ -172,6 +157,7 @@ public class Linkage {
      *            and the immediate caller of this method is not in the same
      *            package as the caller class
      *            and a {@link LinkagePermission} check fails for "getBootstrapMethod"
+     * @deprecated
      */
     public static
     MethodHandle getBootstrapMethod(Class callerClass) {
@@ -188,10 +174,6 @@ public class Linkage {
     public static final MethodType BOOTSTRAP_METHOD_TYPE
             = MethodType.methodType(CallSite.class,
                                     Class.class, String.class, MethodType.class);
-    static final MethodType BOOTSTRAP_METHOD_TYPE_2
-            = MethodType.methodType(CallSite.class,
-                                    Class.class, String.class, MethodType.class,
-                                    Annotation[].class);
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>

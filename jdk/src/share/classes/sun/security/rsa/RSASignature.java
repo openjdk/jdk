@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import sun.security.x509.AlgorithmId;
 public abstract class RSASignature extends SignatureSpi {
 
     // we sign an ASN.1 SEQUENCE of AlgorithmId and digest
-    // it has the form 30:xx:30:0c:[digestOID]:05:00:04:xx:[digest]
+    // it has the form 30:xx:30:xx:[digestOID]:05:00:04:xx:[digest]
     // this means the encoded length is (8 + digestOID.length + digest.length)
     private static final int baseLength = 8;
 
@@ -104,7 +104,8 @@ public abstract class RSASignature extends SignatureSpi {
     // initialize for signing. See JCA doc
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
             throws InvalidKeyException {
-        RSAPrivateKey rsaKey = (RSAPrivateKey)RSAKeyFactory.toRSAKey(privateKey);
+        RSAPrivateKey rsaKey =
+            (RSAPrivateKey)RSAKeyFactory.toRSAKey(privateKey);
         this.privateKey = rsaKey;
         this.publicKey = null;
         initCommon(rsaKey, random);
@@ -212,7 +213,8 @@ public abstract class RSASignature extends SignatureSpi {
         DerOutputStream out = new DerOutputStream();
         new AlgorithmId(oid).encode(out);
         out.putOctetString(digest);
-        DerValue result = new DerValue(DerValue.tag_Sequence, out.toByteArray());
+        DerValue result =
+            new DerValue(DerValue.tag_Sequence, out.toByteArray());
         return result.toByteArray();
     }
 
@@ -229,7 +231,8 @@ public abstract class RSASignature extends SignatureSpi {
         }
         AlgorithmId algId = AlgorithmId.parse(values[0]);
         if (algId.getOID().equals(oid) == false) {
-            throw new IOException("ObjectIdentifier mismatch: " + algId.getOID());
+            throw new IOException("ObjectIdentifier mismatch: "
+                + algId.getOID());
         }
         if (algId.getEncodedParams() != null) {
             throw new IOException("Unexpected AlgorithmId parameters");

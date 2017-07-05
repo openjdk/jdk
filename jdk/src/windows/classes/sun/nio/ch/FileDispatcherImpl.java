@@ -26,10 +26,11 @@
 package sun.nio.ch;
 
 import java.io.*;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaIOFileDescriptorAccess;
 
 class FileDispatcherImpl extends FileDispatcher
 {
-
     static {
         Util.load();
     }
@@ -94,6 +95,16 @@ class FileDispatcherImpl extends FileDispatcher
         close0(fd);
     }
 
+    FileDescriptor duplicateForMapping(FileDescriptor fd) throws IOException {
+        // on Windows we need to keep a handle to the file
+        JavaIOFileDescriptorAccess fdAccess =
+            SharedSecrets.getJavaIOFileDescriptorAccess();
+        FileDescriptor result = new FileDescriptor();
+        long handle = duplicateHandle(fdAccess.getHandle(fd));
+        fdAccess.setHandle(result, handle);
+        return result;
+    }
+
     //-- Native methods
 
     static native int read0(FileDescriptor fd, long address, int len)
@@ -132,4 +143,5 @@ class FileDispatcherImpl extends FileDispatcher
 
     static native void closeByHandle(long fd) throws IOException;
 
+    static native long duplicateHandle(long fd) throws IOException;
 }

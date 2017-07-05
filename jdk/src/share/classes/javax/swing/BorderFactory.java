@@ -24,8 +24,10 @@
  */
 package javax.swing;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Paint;
 import javax.swing.border.*;
 
 /**
@@ -635,5 +637,126 @@ public class BorderFactory
     public static MatteBorder createMatteBorder(int top, int left, int bottom, int right,
                                                 Icon tileIcon) {
         return new MatteBorder(top, left, bottom, right, tileIcon);
+    }
+
+//// StrokeBorder //////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Creates a border of the specified {@code stroke}.
+     * The component's foreground color will be used to render the border.
+     *
+     * @param stroke  the {@link BasicStroke} object used to stroke a shape
+     * @return the {@code Border} object
+     *
+     * @throws NullPointerException if the specified {@code stroke} is {@code null}
+     *
+     * @since 1.7
+     */
+    public static Border createStrokeBorder(BasicStroke stroke) {
+        return new StrokeBorder(stroke);
+    }
+
+    /**
+     * Creates a border of the specified {@code stroke} and {@code paint}.
+     * If the specified {@code paint} is {@code null},
+     * the component's foreground color will be used to render the border.
+     *
+     * @param stroke  the {@link BasicStroke} object used to stroke a shape
+     * @param paint   the {@link Paint} object used to generate a color
+     * @return the {@code Border} object
+     *
+     * @throws NullPointerException if the specified {@code stroke} is {@code null}
+     *
+     * @since 1.7
+     */
+    public static Border createStrokeBorder(BasicStroke stroke, Paint paint) {
+        return new StrokeBorder(stroke, paint);
+    }
+
+//// DashedBorder //////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+    private static Border sharedDashedBorder;
+
+    /**
+     * Creates a dashed border of the specified {@code paint}.
+     * If the specified {@code paint} is {@code null},
+     * the component's foreground color will be used to render the border.
+     * The width of a dash line is equal to {@code 1}.
+     * The relative length of a dash line and
+     * the relative spacing between dash lines are equal to {@code 1}.
+     * A dash line is not rounded.
+     *
+     * @param paint  the {@link Paint} object used to generate a color
+     * @return the {@code Border} object
+     *
+     * @since 1.7
+     */
+    public static Border createDashedBorder(Paint paint) {
+        return createDashedBorder(paint, 1.0f, 1.0f, 1.0f, false);
+    }
+
+    /**
+     * Creates a dashed border of the specified {@code paint},
+     * relative {@code length}, and relative {@code spacing}.
+     * If the specified {@code paint} is {@code null},
+     * the component's foreground color will be used to render the border.
+     * The width of a dash line is equal to {@code 1}.
+     * A dash line is not rounded.
+     *
+     * @param paint    the {@link Paint} object used to generate a color
+     * @param length   the relative length of a dash line
+     * @param spacing  the relative spacing between dash lines
+     * @return the {@code Border} object
+     *
+     * @throws IllegalArgumentException if the specified {@code length} is less than {@code 1}, or
+     *                                  if the specified {@code spacing} is less than {@code 0}
+     * @since 1.7
+     */
+    public static Border createDashedBorder(Paint paint, float length, float spacing) {
+        return createDashedBorder(paint, 1.0f, length, spacing, false);
+    }
+
+    /**
+     * Creates a dashed border of the specified {@code paint}, {@code thickness},
+     * line shape, relative {@code length}, and relative {@code spacing}.
+     * If the specified {@code paint} is {@code null},
+     * the component's foreground color will be used to render the border.
+     *
+     * @param paint      the {@link Paint} object used to generate a color
+     * @param thickness  the width of a dash line
+     * @param length     the relative length of a dash line
+     * @param spacing    the relative spacing between dash lines
+     * @param rounded    whether or not line ends should be round
+     * @return the {@code Border} object
+     *
+     * @throws IllegalArgumentException if the specified {@code thickness} is less than {@code 1}, or
+     *                                  if the specified {@code length} is less than {@code 1}, or
+     *                                  if the specified {@code spacing} is less than {@code 0}
+     * @since 1.7
+     */
+    public static Border createDashedBorder(Paint paint, float thickness, float length, float spacing, boolean rounded) {
+        boolean shared = !rounded && (paint == null) && (thickness == 1.0f) && (length == 1.0f) && (spacing == 1.0f);
+        if (shared && (sharedDashedBorder != null)) {
+            return sharedDashedBorder;
+        }
+        if (thickness < 1.0f) {
+            throw new IllegalArgumentException("thickness is less than 1");
+        }
+        if (length < 1.0f) {
+            throw new IllegalArgumentException("length is less than 1");
+        }
+        if (spacing < 0.0f) {
+            throw new IllegalArgumentException("spacing is less than 0");
+        }
+        int cap = rounded ? BasicStroke.CAP_ROUND : BasicStroke.CAP_SQUARE;
+        int join = rounded ? BasicStroke.JOIN_ROUND : BasicStroke.JOIN_MITER;
+        float[] array = { thickness * (length - 1.0f), thickness * (spacing + 1.0f) };
+        Border border = createStrokeBorder(new BasicStroke(thickness, cap, join, thickness * 2.0f, array, 0.0f), paint);
+        if (shared) {
+            sharedDashedBorder = border;
+        }
+        return border;
     }
 }

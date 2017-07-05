@@ -306,13 +306,26 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # http://www.timeanddate.com/news/time/fiji-dst-ends-march-2010.html
 # </a>
 
+# From Alexander Krivenyshev (2010-10-24):
+# According to Radio Fiji and Fiji Times online, Fiji will end DST 3 
+# weeks earlier than expected - on March 6, 2011, not March 27, 2011...
+# Here is confirmation from Government of the Republic of the Fiji Islands, 
+# Ministry of Information (fiji.gov.fj) web site:
+# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=2608:daylight-savings&catid=71:press-releases&Itemid=155">
+# http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=2608:daylight-savings&catid=71:press-releases&Itemid=155
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_fiji04.html">
+# http://www.worldtimezone.com/dst_news/dst_news_fiji04.html
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
 Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	S
 Rule	Fiji	2010	only	-	Mar	lastSun	3:00	0	-
 Rule	Fiji	2010	only	-	Oct	24	2:00	1:00	S
-Rule	Fiji	2011	only	-	Mar	lastSun 3:00	0	-
+Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:53:40 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
@@ -509,11 +522,21 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20%28English%29%20-%20Final%207-7-091.pdf
 # </a>
 
+# From Raymond Hughes (2010-10-07):
+# Please see
+# <a href="http://www.mcil.gov.ws">
+# http://www.mcil.gov.ws
+# </a>,
+# the Ministry of Commerce, Industry and Labour (sideframe) "Last Sunday
+# September 2010 (26/09/10) - adjust clocks forward from 12:00 midnight
+# to 01:00am and First Sunday April 2011 (03/04/11) - adjust clocks
+# backwards from 1:00am to 12:00am"
+
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
 			-11:00	-	WST	2010 Sep 26
-			-11:00	1:00	WSDT	2011 Apr 3
+			-11:00	1:00	WSDT	2011 Apr 3 1:00
 			-11:00	-	WST
 
 # Solomon Is

@@ -301,6 +301,7 @@ c1_MacroAssembler.hpp                   assembler.hpp
 c1_MacroAssembler.hpp                   assembler_<arch>.inline.hpp
 
 c1_MacroAssembler_<arch>.cpp            arrayOop.hpp
+c1_MacroAssembler_<arch>.cpp            basicLock.hpp
 c1_MacroAssembler_<arch>.cpp            biasedLocking.hpp
 c1_MacroAssembler_<arch>.cpp            c1_MacroAssembler.hpp
 c1_MacroAssembler_<arch>.cpp            c1_Runtime1.hpp
@@ -309,7 +310,6 @@ c1_MacroAssembler_<arch>.cpp            interpreter.hpp
 c1_MacroAssembler_<arch>.cpp            markOop.hpp
 c1_MacroAssembler_<arch>.cpp            os.hpp
 c1_MacroAssembler_<arch>.cpp            stubRoutines.hpp
-c1_MacroAssembler_<arch>.cpp            synchronizer.hpp
 c1_MacroAssembler_<arch>.cpp            systemDictionary.hpp
 
 c1_MacroAssembler_<arch>.hpp            generate_platform_dependent_include

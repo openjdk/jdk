@@ -413,6 +413,7 @@ JAVA_JAVA_java = \
     java/io/FilePermission.java \
     java/io/Serializable.java \
     java/io/Externalizable.java \
+    java/io/SerialCallbackContext.java \
 	java/io/Bits.java \
 	java/io/ObjectInput.java \
 	java/io/ObjectInputStream.java \

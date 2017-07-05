@@ -359,11 +359,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     private TunnelState tunnelState = TunnelState.NONE;
 
-    /* Redefine timeouts from java.net.URLConnection as we nee -1 to mean
+    /* Redefine timeouts from java.net.URLConnection as we need -1 to mean
      * not set. This is to ensure backward compatibility.
      */
-    private int connectTimeout = -1;
-    private int readTimeout = -1;
+    private int connectTimeout = NetworkClient.DEFAULT_CONNECT_TIMEOUT;
+    private int readTimeout = NetworkClient.DEFAULT_READ_TIMEOUT;
 
     /* Logging support */
     private static final PlatformLogger logger =
@@ -1041,9 +1041,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     throw new ProtocolException("Server rejected operation");
                 }
             }
-            if (oldTimeout > 0) {
-                http.setReadTimeout(oldTimeout);
-            }
+
+            http.setReadTimeout(oldTimeout);
+
             responseCode = -1;
             responses.reset();
             // Proceed

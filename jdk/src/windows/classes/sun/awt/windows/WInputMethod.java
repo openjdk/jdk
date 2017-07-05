@@ -169,7 +169,7 @@ public class WInputMethod extends InputMethodAdapter
                     locale.equals(Locale.JAPAN) && lang.equals(Locale.JAPANESE) ||
                     locale.equals(Locale.KOREA) && lang.equals(Locale.KOREAN)) {
                 if (isActive) {
-                    setNativeLocale(locale.toString(), onActivate);
+                    setNativeLocale(locale.toLanguageTag(), onActivate);
                 }
                 currentLocale = locale;
                 return true;
