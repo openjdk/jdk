@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ void PeriodicTask::print_intervals() {
 #endif
 
 void PeriodicTask::real_time_tick(int delay_time) {
+  assert(Thread::current()->is_Watcher_thread(), "must be WatcherThread");
+
 #ifndef PRODUCT
   if (ProfilerCheckIntervals) {
     _ticks++;
@@ -60,6 +62,8 @@ void PeriodicTask::real_time_tick(int delay_time) {
 #endif
 
   {
+    // The WatcherThread does not participate in the safepoint protocol
+    // for the PeriodicTask_lock because it is not a JavaThread.
     MutexLockerEx ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
     int orig_num_tasks = _num_tasks;
 
@@ -74,8 +78,7 @@ void PeriodicTask::real_time_tick(int delay_time) {
 }
 
 int PeriodicTask::time_to_wait() {
-  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ?
-                     NULL : PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+  assert(PeriodicTask_lock->owned_by_self(), "PeriodicTask_lock required");
 
   if (_num_tasks == 0) {
     return 0; // sleep until shutdown or a task is enrolled
@@ -98,14 +101,19 @@ PeriodicTask::PeriodicTask(size_t interval_time) :
 }
 
 PeriodicTask::~PeriodicTask() {
+  // This PeriodicTask may have already been disenrolled by a call
+  // to disenroll() before the PeriodicTask was deleted.
   disenroll();
 }
 
-/* enroll could be called from a JavaThread, so we have to check for
- * safepoint when taking the lock to avoid deadlocking */
+// enroll the current PeriodicTask
 void PeriodicTask::enroll() {
-  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ?
-                     NULL : PeriodicTask_lock);
+  // Follow normal safepoint aware lock enter protocol if the caller does
+  // not already own the PeriodicTask_lock. Otherwise, we don't try to
+  // enter it again because VM internal Mutexes do not support recursion.
+  //
+  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ? NULL
+                                                      : PeriodicTask_lock);
 
   if (_num_tasks == PeriodicTask::max_tasks) {
     fatal("Overflow in PeriodicTask table");
@@ -113,18 +121,21 @@ void PeriodicTask::enroll() {
   _tasks[_num_tasks++] = this;
 
   WatcherThread* thread = WatcherThread::watcher_thread();
-  if (thread) {
+  if (thread != NULL) {
     thread->unpark();
   } else {
     WatcherThread::start();
   }
 }
 
-/* disenroll could be called from a JavaThread, so we have to check for
- * safepoint when taking the lock to avoid deadlocking */
+// disenroll the current PeriodicTask
 void PeriodicTask::disenroll() {
-  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ?
-                     NULL : PeriodicTask_lock);
+  // Follow normal safepoint aware lock enter protocol if the caller does
+  // not already own the PeriodicTask_lock. Otherwise, we don't try to
+  // enter it again because VM internal Mutexes do not support recursion.
+  //
+  MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ? NULL
+                                                      : PeriodicTask_lock);
 
   int index;
   for(index = 0; index < _num_tasks && _tasks[index] != this; index++)

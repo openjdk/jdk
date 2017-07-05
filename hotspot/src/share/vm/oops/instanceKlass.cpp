@@ -2793,30 +2793,33 @@ Method* InstanceKlass::method_at_itable(Klass* holder, int index, TRAPS) {
 // not yet in the vtable due to concurrent subclass define and superinterface
 // redefinition
 // Note: those in the vtable, should have been updated via adjust_method_entries
-void InstanceKlass::adjust_default_methods(Method** old_methods, Method** new_methods,
-                                           int methods_length, bool* trace_name_printed) {
+void InstanceKlass::adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed) {
   // search the default_methods for uses of either obsolete or EMCP methods
   if (default_methods() != NULL) {
-    for (int j = 0; j < methods_length; j++) {
-      Method* old_method = old_methods[j];
-      Method* new_method = new_methods[j];
+    for (int index = 0; index < default_methods()->length(); index ++) {
+      Method* old_method = default_methods()->at(index);
+      if (old_method == NULL || old_method->method_holder() != holder || !old_method->is_old()) {
+        continue; // skip uninteresting entries
+      }
+      assert(!old_method->is_deleted(), "default methods may not be deleted");
 
-      for (int index = 0; index < default_methods()->length(); index ++) {
-        if (default_methods()->at(index) == old_method) {
-          default_methods()->at_put(index, new_method);
-          if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
-            if (!(*trace_name_printed)) {
-              // RC_TRACE_MESG macro has an embedded ResourceMark
-              RC_TRACE_MESG(("adjust: klassname=%s default methods from name=%s",
-                             external_name(),
-                             old_method->method_holder()->external_name()));
-              *trace_name_printed = true;
-            }
-            RC_TRACE(0x00100000, ("default method update: %s(%s) ",
-                                  new_method->name()->as_C_string(),
-                                  new_method->signature()->as_C_string()));
-          }
+      Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
+
+      assert(new_method != NULL, "method_with_idnum() should not be NULL");
+      assert(old_method != new_method, "sanity check");
+
+      default_methods()->at_put(index, new_method);
+      if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+        if (!(*trace_name_printed)) {
+          // RC_TRACE_MESG macro has an embedded ResourceMark
+          RC_TRACE_MESG(("adjust: klassname=%s default methods from name=%s",
+                         external_name(),
+                         old_method->method_holder()->external_name()));
+          *trace_name_printed = true;
         }
+        RC_TRACE(0x00100000, ("default method update: %s(%s) ",
+                              new_method->name()->as_C_string(),
+                              new_method->signature()->as_C_string()));
       }
     }
   }

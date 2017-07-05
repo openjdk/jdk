@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,11 @@ public interface SSLSession {
      * @exception SSLPeerUnverifiedException if the peer's identity
      *          has not been verified
      * @see #getPeerPrincipal()
+     * @deprecated The {@link #getPeerCertificates()} method that returns an
+     *               array of {@code java.security.cert.Certificate} should
+     *               be used instead.
      */
+    @Deprecated
     public javax.security.cert.X509Certificate [] getPeerCertificateChain()
             throws SSLPeerUnverifiedException;
 
