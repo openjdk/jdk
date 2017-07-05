@@ -394,13 +394,13 @@ public class JOptionPane extends JComponent implements Accessible
     public static final String      WANTS_INPUT_PROPERTY = "wantsInput";
 
     /** Icon used in pane. */
-    transient protected Icon                  icon;
+    protected transient Icon                  icon;
     /** Message to display. */
-    transient protected Object                message;
+    protected transient Object                message;
     /** Options to display to the user. */
-    transient protected Object[]              options;
+    protected transient Object[]              options;
     /** Value that should be initially selected in <code>options</code>. */
-    transient protected Object                initialValue;
+    protected transient Object                initialValue;
     /** Message type. */
     protected int                   messageType;
     /**
@@ -412,7 +412,7 @@ public class JOptionPane extends JComponent implements Accessible
     protected int                   optionType;
     /** Currently selected value, will be a valid option, or
      * <code>UNINITIALIZED_VALUE</code> or <code>null</code>. */
-    transient protected Object                value;
+    protected transient Object                value;
     /** Array of values the user can choose from. Look and feel will
      * provide the UI component to choose this from. */
     protected transient Object[]              selectionValues;

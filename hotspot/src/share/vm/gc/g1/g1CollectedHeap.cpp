@@ -73,13 +73,6 @@
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
-// turn it on so that the contents of the young list (scan-only /
-// to-be-collected) are printed at "strategic" points before / during
-// / after the collection --- this is useful for debugging
-#define YOUNG_LIST_VERBOSE 0
-// CURRENT STATUS
-// This file is under construction.  Search for "FIXME".
-
 // INVARIANTS/NOTES
 //
 // All allocation activity covered by the G1CollectedHeap interface is
@@ -4079,28 +4072,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // the possible verification above.
         double sample_start_time_sec = os::elapsedTime();
 
-#if YOUNG_LIST_VERBOSE
-        gclog_or_tty->print_cr("\nBefore recording pause start.\nYoung_list:");
-        _young_list->print();
-        g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
-#endif // YOUNG_LIST_VERBOSE
-
         g1_policy()->record_collection_pause_start(sample_start_time_sec);
-
-#if YOUNG_LIST_VERBOSE
-        gclog_or_tty->print_cr("\nAfter recording pause start.\nYoung_list:");
-        _young_list->print();
-#endif // YOUNG_LIST_VERBOSE
 
         if (collector_state()->during_initial_mark_pause()) {
           concurrent_mark()->checkpointRootsInitialPre();
         }
-
-#if YOUNG_LIST_VERBOSE
-        gclog_or_tty->print_cr("\nBefore choosing collection set.\nYoung_list:");
-        _young_list->print();
-        g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
-#endif // YOUNG_LIST_VERBOSE
 
         double time_remaining_ms = g1_policy()->finalize_young_cset_part(target_pause_time_ms);
         g1_policy()->finalize_old_cset_part(time_remaining_ms);
@@ -4157,11 +4133,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         assert(check_young_list_empty(false /* check_heap */),
           "young list should be empty");
 
-#if YOUNG_LIST_VERBOSE
-        gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
-        _young_list->print();
-#endif // YOUNG_LIST_VERBOSE
-
         g1_policy()->record_survivor_regions(_young_list->survivor_length(),
                                              _young_list->first_survivor_region(),
                                              _young_list->last_survivor_region());
@@ -4196,12 +4167,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         }
 
         allocate_dummy_regions();
-
-#if YOUNG_LIST_VERBOSE
-        gclog_or_tty->print_cr("\nEnd of the pause.\nYoung_list:");
-        _young_list->print();
-        g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
-#endif // YOUNG_LIST_VERBOSE
 
         _allocator->init_mutator_alloc_region();
 

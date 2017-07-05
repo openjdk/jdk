@@ -261,6 +261,73 @@ public abstract class CommandLineOptionTest {
     }
 
     /**
+     * Start VM with given options and values.
+     * Generates command line option flags from
+     * {@code optionNames} and {@code optionValues}.
+     *
+     * @param optionNames names of options to pass in
+     * @param optionValues  values of option
+     * @param additionalVMOpts additional options that should be
+     *                         passed to JVM.
+     * @return output from vm process
+     */
+    public static OutputAnalyzer startVMWithOptions(String[] optionNames,
+            String[] optionValues,
+            String... additionalVMOpts) throws Throwable {
+        List<String> vmOpts = new ArrayList<>();
+        if (optionNames == null || optionValues == null || optionNames.length != optionValues.length) {
+            throw new IllegalArgumentException("optionNames and/or optionValues");
+        }
+
+        for (int i = 0; i < optionNames.length; i++) {
+          vmOpts.add(prepareFlag(optionNames[i], optionValues[i]));
+        }
+        Collections.addAll(vmOpts, additionalVMOpts);
+        Collections.addAll(vmOpts, "-version");
+
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+                vmOpts.toArray(new String[vmOpts.size()]));
+
+        return new OutputAnalyzer(processBuilder.start());
+    }
+
+    /**
+     * Verifies from the output that values of specified JVM options were the same as
+     * expected values.
+     *
+     * @param outputAnalyzer search output for expect options and values.
+     * @param optionNames names of tested options.
+     * @param expectedValues expected values of tested options.
+     * @throws Throwable if verification fails or some other issues occur.
+     */
+    public static void verifyOptionValuesFromOutput(OutputAnalyzer outputAnalyzer,
+            String[] optionNames,
+            String[] expectedValues) throws Throwable {
+        outputAnalyzer.shouldHaveExitValue(0);
+        for (int i = 0; i < optionNames.length; i++) {
+          outputAnalyzer.shouldMatch(String.format(
+                CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
+                optionNames[i], expectedValues[i]));
+        }
+    }
+
+   /**
+     * Verifies that value of specified JVM options are the same as
+     * expected values.
+     * Generates command line option flags from
+     * {@code optionNames} and {@code expectedValues}.
+     *
+     * @param optionNames names of tested options.
+     * @param expectedValues expected values of tested options.
+     * @throws Throwable if verification fails or some other issues occur.
+     */
+    public static void verifyOptionValues(String[] optionNames,
+            String[] expectedValues) throws Throwable {
+       OutputAnalyzer outputAnalyzer = startVMWithOptions(optionNames, expectedValues, "-XX:+PrintFlagsFinal");
+       verifyOptionValuesFromOutput(outputAnalyzer, optionNames, expectedValues);
+    }
+
+    /**
      * Verifies that value of specified JVM when type of newly started VM
      * is the same as the type of current.
      * This method filter out option with {@code optionName}
@@ -309,6 +376,24 @@ public abstract class CommandLineOptionTest {
      */
     public static String prepareNumericFlag(String name, Number value) {
         return String.format("-XX:%s=%s", name, value.toString());
+    }
+
+    /**
+     * Prepares generic command line flag with name {@code name} by setting
+     * it's value to {@code value}.
+     *
+     * @param name the name of option to be prepared
+     * @param value the value of option ("+" or "-" can be used instead of "true" or "false")
+     * @return prepared command line flag
+     */
+    public static String prepareFlag(String name, String value) {
+        if (value.equals("+") || value.equalsIgnoreCase("true")) {
+          return "-XX:+" + name;
+      } else if (value.equals("-") || value.equalsIgnoreCase("false")) {
+        return "-XX:-" + name;
+      } else {
+        return "-XX:" + name + "=" + value;
+      }
     }
 
     /**

@@ -64,6 +64,11 @@ define NEWLINE
 
 endef
 
+# In GNU Make 4.0 and higher, there is a file function for writing to files.
+ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
+  HAS_FILE_FUNCTION := true
+endif
+
 ##############################
 # Functions
 ##############################
@@ -122,266 +127,111 @@ EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
 DoubleDollar = $(subst $$,$$$$,$(strip $1))
 
 ################################################################################
+# ListPathsSafely can be used to print command parameters to a file. This is
+# typically done if the command line lenght risk being too long for the
+# OS/shell. In later make versions, the file function can be used for this
+# purpose. For earlier versions, a more complex implementation is provided.
+#
+# The function ListPathsSafely can be called either directly or, more commonly
+# from a recipe line. If called from a recipe, it will be executed in the
+# evaluation phase of that recipe, which means that it will write to the file
+# before any other line in the recipe has been run.
+ifeq ($(HAS_FILE_FUNCTION), true)
+  # Param 1 - Name of variable containing paths/arguments to output
+  # Param 2 - File to print to
+  # Param 3 - Set to true to append to file instead of overwriting
+  define ListPathsSafely
+    $$(call MakeDir, $$(dir $$(strip $2)))
+    $$(file $$(if $$(filter true, $$(strip $3)),>>,>) \
+        $$(strip $2),$$(subst $$(SPACE),$$(NEWLINE),$$(strip $$($$(strip $1)))))
+  endef
 
-# If the variable that you want to send to stdout for piping into a file or otherwise,
-# is potentially long, for example the a list of file paths, eg a list of all package directories.
-# Then you need to use ListPathsSafely, which optimistically splits the output into several shell
-# calls as well as use compression on recurrent file paths segments, to get around the potential
-# command line length problem that exists in cygwin and other shells.
-compress_pre:=$(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-pre-compress.incl))
-compress_post:=$(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-post-compress.incl))
-compress_paths=$(compress_pre)\
+else # HAS_FILE_FUNCTION
+
+  $(eval compress_paths = \
+      $(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-pre-compress.incl)))
+  compress_paths += \
 $(subst $(SRC_ROOT),X97,\
 $(subst $(OUTPUT_ROOT),X98,\
 $(subst X,X00,\
-$(subst $(SPACE),\n,$(strip $1)))))\
-$(compress_post)
+      $(subst $(SPACE),\n,$(strip $1)))))
+  $(eval compress_paths += \
+      $(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-post-compress.incl)))
 
-decompress_paths=$(SED) -f $(SRC_ROOT)/make/common/support/ListPathsSafely-uncompress.sed -e 's|X99|\\n|g' \
+  decompress_paths=$(SED) -f $(SRC_ROOT)/make/common/support/ListPathsSafely-uncompress.sed \
+      -e 's|X99|\\n|g' \
     -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
-    -e 's|X00|X|g' | tr '\n' '$2'
+      -e 's|X00|X|g'
 
-define ListPathsSafely_If
-	$(if $(word $3,$($1)),$(eval $1_LPS$3:=$(call compress_paths,$(wordlist $3,$4,$($1)))))
-endef
+  ListPathsSafely_IfPrintf = \
+      $(if $(word $3,$($(strip $1))), \
+          $(shell $(PRINTF) -- "$(strip $(call EscapeDollar, \
+              $(call compress_paths, $(wordlist $3,$4,$($(strip $1))))))\n" \
+              | $(decompress_paths) >> $2))
 
-define ListPathsSafely_Printf
-	$(if $(strip $($1_LPS$4)),$(if $(findstring $(LOG_LEVEL),trace),,@)printf \
-	    -- "$(strip $(call EscapeDollar, $($1_LPS$4)))\n" | $(decompress_paths) $3)
-endef
-
-# Receipt example:
-#   rm -f thepaths
-#   $(call ListPathsSafely,THEPATHS,\n, >> thepaths)
-# The \n argument means translate spaces into \n
-# if instead , , (a space) is supplied, then spaces remain spaces.
+  # Param 1 - Name of variable containing paths/arguments to output
+  # Param 2 - File to print to
+  # Param 3 - Set to true to append to file instead of overwriting
 define ListPathsSafely
-	$(if $(word 16001,$($1)),$(error Cannot list safely more than 16000 paths. $1 has $(words $($1)) paths!))
-	$(ECHO) $(LOG_DEBUG) Writing $(words $($1)) paths to '$3'
-	$(call ListPathsSafely_If,$1,$2,1,250)
-	$(call ListPathsSafely_If,$1,$2,251,500)
-	$(call ListPathsSafely_If,$1,$2,501,750)
-	$(call ListPathsSafely_If,$1,$2,751,1000)
-
-	$(call ListPathsSafely_If,$1,$2,1001,1250)
-	$(call ListPathsSafely_If,$1,$2,1251,1500)
-	$(call ListPathsSafely_If,$1,$2,1501,1750)
-	$(call ListPathsSafely_If,$1,$2,1751,2000)
-
-	$(call ListPathsSafely_If,$1,$2,2001,2250)
-	$(call ListPathsSafely_If,$1,$2,2251,2500)
-	$(call ListPathsSafely_If,$1,$2,2501,2750)
-	$(call ListPathsSafely_If,$1,$2,2751,3000)
-
-	$(call ListPathsSafely_If,$1,$2,3001,3250)
-	$(call ListPathsSafely_If,$1,$2,3251,3500)
-	$(call ListPathsSafely_If,$1,$2,3501,3750)
-	$(call ListPathsSafely_If,$1,$2,3751,4000)
-
-	$(call ListPathsSafely_If,$1,$2,4001,4250)
-	$(call ListPathsSafely_If,$1,$2,4251,4500)
-	$(call ListPathsSafely_If,$1,$2,4501,4750)
-	$(call ListPathsSafely_If,$1,$2,4751,5000)
-
-	$(call ListPathsSafely_If,$1,$2,5001,5250)
-	$(call ListPathsSafely_If,$1,$2,5251,5500)
-	$(call ListPathsSafely_If,$1,$2,5501,5750)
-	$(call ListPathsSafely_If,$1,$2,5751,6000)
-
-	$(call ListPathsSafely_If,$1,$2,6001,6250)
-	$(call ListPathsSafely_If,$1,$2,6251,6500)
-	$(call ListPathsSafely_If,$1,$2,6501,6750)
-	$(call ListPathsSafely_If,$1,$2,6751,7000)
-
-	$(call ListPathsSafely_If,$1,$2,7001,7250)
-	$(call ListPathsSafely_If,$1,$2,7251,7500)
-	$(call ListPathsSafely_If,$1,$2,7501,7750)
-	$(call ListPathsSafely_If,$1,$2,7751,8000)
-
-	$(call ListPathsSafely_If,$1,$2,8001,8250)
-	$(call ListPathsSafely_If,$1,$2,8251,8500)
-	$(call ListPathsSafely_If,$1,$2,8501,8750)
-	$(call ListPathsSafely_If,$1,$2,8751,9000)
-
-	$(call ListPathsSafely_If,$1,$2,9001,9250)
-	$(call ListPathsSafely_If,$1,$2,9251,9500)
-	$(call ListPathsSafely_If,$1,$2,9501,9750)
-	$(call ListPathsSafely_If,$1,$2,9751,10000)
-
-	$(call ListPathsSafely_If,$1,$2,10001,10250)
-	$(call ListPathsSafely_If,$1,$2,10251,10500)
-	$(call ListPathsSafely_If,$1,$2,10501,10750)
-	$(call ListPathsSafely_If,$1,$2,10751,11000)
-
-	$(call ListPathsSafely_If,$1,$2,11001,11250)
-	$(call ListPathsSafely_If,$1,$2,11251,11500)
-	$(call ListPathsSafely_If,$1,$2,11501,11750)
-	$(call ListPathsSafely_If,$1,$2,11751,12000)
-
-	$(call ListPathsSafely_If,$1,$2,12001,12250)
-	$(call ListPathsSafely_If,$1,$2,12251,12500)
-	$(call ListPathsSafely_If,$1,$2,12501,12750)
-	$(call ListPathsSafely_If,$1,$2,12751,13000)
-
-	$(call ListPathsSafely_If,$1,$2,13001,13250)
-	$(call ListPathsSafely_If,$1,$2,13251,13500)
-	$(call ListPathsSafely_If,$1,$2,13501,13750)
-	$(call ListPathsSafely_If,$1,$2,13751,14000)
-
-	$(call ListPathsSafely_If,$1,$2,14001,14250)
-	$(call ListPathsSafely_If,$1,$2,14251,14500)
-	$(call ListPathsSafely_If,$1,$2,14501,14750)
-	$(call ListPathsSafely_If,$1,$2,14751,15000)
-
-	$(call ListPathsSafely_If,$1,$2,15001,15250)
-	$(call ListPathsSafely_If,$1,$2,15251,15500)
-	$(call ListPathsSafely_If,$1,$2,15501,15750)
-	$(call ListPathsSafely_If,$1,$2,15751,16000)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,1)
-	$(call ListPathsSafely_Printf,$1,$2,$3,251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,1001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,1251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,1501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,1751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,2001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,2251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,2501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,2751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,3001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,3251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,3501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,3751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,4001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,4251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,4501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,4751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,5001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,5251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,5501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,5751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,6001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,6251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,6501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,6751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,7001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,7251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,7501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,7751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,8001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,8251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,8501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,8751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,9001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,9251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,9501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,9751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,10001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,10251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,10501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,10751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,11001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,11251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,11501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,11751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,12001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,12251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,12501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,12751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,13001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,13251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,13501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,13751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,14001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,14251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,14501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,14751)
-
-	$(call ListPathsSafely_Printf,$1,$2,$3,15001)
-	$(call ListPathsSafely_Printf,$1,$2,$3,15251)
-	$(call ListPathsSafely_Printf,$1,$2,$3,15501)
-	$(call ListPathsSafely_Printf,$1,$2,$3,15751)
-endef
-
-define ListPathsSafelyNow_IfPrintf
-  ifneq (,$$(word $4,$$($1)))
-    $$(eval $1_LPS$4:=$$(call compress_paths,$$(wordlist $4,$5,$$($1))))
-    $$(shell printf -- "$$(strip $$($1_LPS$4))\n" | $(decompress_paths) $3)
-  endif
-endef
-
-# And an non-receipt version:
-define ListPathsSafelyNow
   ifneq (,$$(word 10001,$$($1)))
     $$(error Cannot list safely more than 10000 paths. $1 has $$(words $$($1)) paths!)
   endif
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1,250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,251,500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,501,750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,751,1000)
+    $$(call MakeDir, $$(dir $2))
+    ifneq ($$(strip $3), true)
+      $$(shell $(RM) $$(strip $2))
+    endif
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1001,1250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1251,1500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1501,1750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1751,2000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,1,250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,251,500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,501,750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,751,1000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2001,2250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2251,2500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2501,2750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2751,3000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,1001,1250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,1251,1500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,1501,1750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,1751,2000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3001,3250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3251,3500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3501,3750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3751,4000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,2001,2250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,2251,2500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,2501,2750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,2751,3000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4001,4250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4251,4500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4501,4750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4751,5000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,3001,3250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,3251,3500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,3501,3750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,3751,4000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5001,5250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5251,5500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5501,5750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5751,6000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,4001,4250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,4251,4500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,4501,4750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,4751,5000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6001,6250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6251,6500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6501,6750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6751,7000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,5001,5250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,5251,5500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,5501,5750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,5751,6000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7001,7250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7251,7500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7501,7750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7751,8000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,6001,6250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,6251,6500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,6501,6750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,6751,7000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8001,8250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8251,8500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8501,8750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8751,9000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,7001,7250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,7251,7500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,7501,7750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,7751,8000)
 
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9001,9250)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9251,9500)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9501,9750)
-  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9751,10000)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,8001,8250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,8251,8500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,8501,8750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,8751,9000)
 
+    $$(call ListPathsSafely_IfPrintf,$1,$2,9001,9250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,9251,9500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,9501,9750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,9751,10000)
 endef
+endif # HAS_FILE_FUNCTION
 
 # The source tips can come from the Mercurial repository, or in the files
 # $(HGTIP_FILENAME) which contains the tip but is also positioned in the same
@@ -674,6 +524,10 @@ define AddFileToCopy
   $3 += $2
 endef
 
+# Returns the value of the first argument
+identity = \
+    $(strip $1)
+
 # Setup make rules for copying files, with an option to do more complex
 # processing instead of copying.
 #
@@ -688,6 +542,8 @@ endef
 #   FLATTEN : Set to flatten the directory structure in the DEST dir.
 #   MACRO   : Optionally override the default macro used for making the copy.
 #             Default is 'install-file'
+#   NAME_MACRO : Optionally supply a macro that rewrites the target file name
+#                based on the source file name
 SetupCopyFiles = $(NamedParamsMacroTemplate)
 define SetupCopyFilesBody
 
@@ -700,12 +556,17 @@ define SetupCopyFilesBody
     $1_SRC := $$(dir $$(firstword $$($1_FILES)))
   endif
 
+  ifeq ($$($1_NAME_MACRO), )
+    $1_NAME_MACRO := identity
+  endif
+
   # Remove any trailing slash from SRC
   $1_SRC := $$(patsubst %/,%,$$($1_SRC))
 
   $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
       $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
-      $$($1_DEST)/$$(if $$($1_FLATTEN),$$(notdir $$f),$$f), $1, $$($1_MACRO))))
+      $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)), \
+      $1, $$($1_MACRO))))
 
 endef
 
@@ -727,9 +588,14 @@ ReadFile = \
 
 # Param 1 - Text to write
 # Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  WriteFile = \
+      $(file >$2,$(strip $1))
+else
 # Use printf to get consistent behavior on all platforms.
 WriteFile = \
     $(shell $(PRINTF) "%s" $(call ShellQuote, $1) > $2)
+endif
 
 ################################################################################
 # DependOnVariable
@@ -767,15 +633,16 @@ DependOnVariableFileName = \
 # Param 1 - Name of variable
 # Param 2 - (optional) name of file to store value in
 DependOnVariableHelper = \
-    $(strip $(if $(and $(wildcard $(call DependOnVariableFileName, $1, $2)),\
-        $(call equals, $(strip $($1)), \
-            $(call ReadFile, $(call DependOnVariableFileName, $1, $2)))),,\
-      $(call MakeDir, $(dir $(call DependOnVariableFileName, $1, $2))) \
-      $(if $(findstring $(LOG_LEVEL), trace), \
-          $(info Variable $1: >$(strip $($1))<) \
-          $(info File: >$(call ReadFile, $(call DependOnVariableFileName, $1, $2))<)) \
-      $(call WriteFile, $($1), $(call DependOnVariableFileName, $1, $2))) \
-    $(call DependOnVariableFileName, $1, $2))
+    $(strip \
+        $(eval -include $(call DependOnVariableFileName, $1, $2)) \
+        $(if $(call equals, $(strip $($1)), $(strip $($1_old))),,\
+          $(call MakeDir, $(dir $(call DependOnVariableFileName, $1, $2))) \
+          $(if $(findstring $(LOG_LEVEL), trace), \
+              $(info NewVariable $1: >$(strip $($1))<) \
+              $(info OldVariable $1: >$(strip $($1_old))<)) \
+          $(call WriteFile, $1_old:=$($1), $(call DependOnVariableFileName, $1, $2))) \
+        $(call DependOnVariableFileName, $1, $2) \
+    )
 
 # Main macro
 # Param 1 - Name of variable

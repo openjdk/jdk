@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,17 @@
  * questions.
  */
 
-#import "CGLGraphicsConfig.h"
-
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 #import "jni_util.h"
-
-#import "ThreadUtilities.h"
+#import "CGLGraphicsConfig.h"
 #import "AWTView.h"
-#import "AWTEvent.h"
 #import "AWTWindow.h"
-#import "LWCToolkit.h"
 #import "JavaComponentAccessibility.h"
 #import "JavaTextAccessibility.h"
 #import "GeomUtilities.h"
 #import "OSVersion.h"
-#import "CGLLayer.h"
+#import "ThreadUtilities.h"
+
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 @interface AWTView()
 @property (retain) CDropTarget *_dropTarget;

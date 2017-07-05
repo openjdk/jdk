@@ -55,7 +55,7 @@ public class X11SunUnicode_0 extends Charset {
             super(cs, index1, index2);
         }
 
-        private final static String innerIndex0=
+        private static final String innerIndex0=
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
@@ -121,7 +121,7 @@ public class X11SunUnicode_0 extends Charset {
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"+
             "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000";
 
-        private final static short index1[] = {
+        private static final short index1[] = {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -140,7 +140,7 @@ public class X11SunUnicode_0 extends Charset {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         };
 
-        private final static String index2[] = {
+        private static final String index2[] = {
             innerIndex0
         };
 

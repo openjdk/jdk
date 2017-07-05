@@ -27,8 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around {@code java.util.Date} that allows

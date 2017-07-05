@@ -1722,7 +1722,7 @@ public abstract class Toolkit {
      * Extracts a "pure" AWTEventListener from a AWTEventListenerProxy,
      * if the listener is proxied.
      */
-    static private AWTEventListener deProxyAWTEventListener(AWTEventListener l)
+    private static AWTEventListener deProxyAWTEventListener(AWTEventListener l)
     {
         AWTEventListener localL = l;
 
@@ -2007,7 +2007,7 @@ public abstract class Toolkit {
         }
     }
 
-    static private class ToolkitEventMulticaster extends AWTEventMulticaster
+    private static class ToolkitEventMulticaster extends AWTEventMulticaster
         implements AWTEventListener {
         // Implementation cloned from AWTEventMulticaster.
 

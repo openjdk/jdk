@@ -238,7 +238,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
     static final class XDropTargetProtocolListenerImpl
         implements XDropTargetProtocolListener {
 
-        private final static XDropTargetProtocolListener theInstance =
+        private static final XDropTargetProtocolListener theInstance =
             new XDropTargetProtocolListenerImpl();
 
         private XDropTargetProtocolListenerImpl() {}

@@ -34,14 +34,14 @@
  */
 
 package java.util.concurrent.atomic;
-import java.util.function.UnaryOperator;
-import java.util.function.BinaryOperator;
-import sun.misc.Unsafe;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.function.BinaryOperator;
+import java.util.function.UnaryOperator;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
@@ -53,7 +53,7 @@ import sun.reflect.Reflection;
  * independently subject to atomic updates. For example, a tree node
  * might be declared as
  *
- *  <pre> {@code
+ * <pre> {@code
  * class Node {
  *   private volatile Node left, right;
  *
@@ -62,7 +62,7 @@ import sun.reflect.Reflection;
  *   private static AtomicReferenceFieldUpdater<Node, Node> rightUpdater =
  *     AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
  *
- *   Node getLeft() { return left;  }
+ *   Node getLeft() { return left; }
  *   boolean compareAndSetLeft(Node expect, Node update) {
  *     return leftUpdater.compareAndSet(this, expect, update);
  *   }
@@ -284,7 +284,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
 
     private static final class AtomicReferenceFieldUpdaterImpl<T,V>
         extends AtomicReferenceFieldUpdater<T,V> {
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
         private final long offset;
         private final Class<T> tclass;
         private final Class<V> vclass;
@@ -323,7 +323,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                 ClassLoader ccl = caller.getClassLoader();
                 if ((ccl != null) && (ccl != cl) &&
                     ((cl == null) || !isAncestor(cl, ccl))) {
-                  sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+                    sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
                 }
                 fieldClass = field.getType();
             } catch (PrivilegedActionException pae) {
@@ -347,7 +347,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                 this.vclass = null;
             else
                 this.vclass = vclass;
-            offset = unsafe.objectFieldOffset(field);
+            offset = U.objectFieldOffset(field);
         }
 
         /**
@@ -386,7 +386,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                 (update != null && vclass != null &&
                  vclass != update.getClass()))
                 updateCheck(obj, update);
-            return unsafe.compareAndSwapObject(obj, offset, expect, update);
+            return U.compareAndSwapObject(obj, offset, expect, update);
         }
 
         public boolean weakCompareAndSet(T obj, V expect, V update) {
@@ -395,7 +395,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                 (update != null && vclass != null &&
                  vclass != update.getClass()))
                 updateCheck(obj, update);
-            return unsafe.compareAndSwapObject(obj, offset, expect, update);
+            return U.compareAndSwapObject(obj, offset, expect, update);
         }
 
         public void set(T obj, V newValue) {
@@ -403,7 +403,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                 (newValue != null && vclass != null &&
                  vclass != newValue.getClass()))
                 updateCheck(obj, newValue);
-            unsafe.putObjectVolatile(obj, offset, newValue);
+            U.putObjectVolatile(obj, offset, newValue);
         }
 
         public void lazySet(T obj, V newValue) {
@@ -411,14 +411,14 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                 (newValue != null && vclass != null &&
                  vclass != newValue.getClass()))
                 updateCheck(obj, newValue);
-            unsafe.putOrderedObject(obj, offset, newValue);
+            U.putOrderedObject(obj, offset, newValue);
         }
 
         @SuppressWarnings("unchecked")
         public V get(T obj) {
             if (obj == null || obj.getClass() != tclass || cclass != null)
                 targetCheck(obj);
-            return (V)unsafe.getObjectVolatile(obj, offset);
+            return (V)U.getObjectVolatile(obj, offset);
         }
 
         @SuppressWarnings("unchecked")
@@ -427,7 +427,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                 (newValue != null && vclass != null &&
                  vclass != newValue.getClass()))
                 updateCheck(obj, newValue);
-            return (V)unsafe.getAndSetObject(obj, offset, newValue);
+            return (V)U.getAndSetObject(obj, offset, newValue);
         }
 
         private void ensureProtectedAccess(T obj) {

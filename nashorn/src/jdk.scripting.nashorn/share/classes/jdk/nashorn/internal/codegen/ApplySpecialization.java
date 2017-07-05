@@ -41,9 +41,8 @@ import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -81,7 +80,7 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 
 @Logger(name="apply2call")
-public final class ApplySpecialization extends NodeVisitor<LexicalContext> implements Loggable {
+public final class ApplySpecialization extends SimpleNodeVisitor implements Loggable {
 
     private static final boolean USE_APPLY2CALL = Options.getBooleanProperty("nashorn.apply2call", true);
 
@@ -105,7 +104,6 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
      * @param compiler compiler
      */
     public ApplySpecialization(final Compiler compiler) {
-        super(new LexicalContext());
         this.compiler = compiler;
         this.log = initLogger(compiler.getContext());
     }
@@ -138,7 +136,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
 
     private boolean hasApplies(final FunctionNode functionNode) {
         try {
-            functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            functionNode.accept(new SimpleNodeVisitor() {
                 @Override
                 public boolean enterFunctionNode(final FunctionNode fn) {
                     return fn == functionNode;
@@ -172,7 +170,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         final Deque<Set<Expression>> stack = new ArrayDeque<>();
 
         //ensure that arguments is only passed as arg to apply
-        functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        functionNode.accept(new SimpleNodeVisitor() {
 
             private boolean isCurrentArg(final Expression expr) {
                 return !stack.isEmpty() && stack.peek().contains(expr); //args to current apply call

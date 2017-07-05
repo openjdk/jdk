@@ -67,6 +67,16 @@
                     <location>../src/jdk.scripting.nashorn/share/classes</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
+                <source-folder>
+                    <label>../src/jdk.scripting.nashorn.shell/share/classes</label>
+                    <type>java</type>
+                    <location>../src/jdk.scripting.nashorn.shell/share/classes</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>../src/jdk.scripting.nashorn.shell/share/classes</label>
+                    <location>../src/jdk.scripting.nashorn.shell/share/classes</location>
+                </source-folder>
             </folders>
             <ide-actions>
                 <action name="build">
@@ -139,6 +149,10 @@
                         <label>../src/jdk.scripting.nashorn/share/classes</label>
                         <location>../src/jdk.scripting.nashorn/share/classes</location>
                     </source-folder>
+                    <source-folder style="packages">
+                        <label>../src/jdk.scripting.nashorn.shell/share/classes</label>
+                        <location>../src/jdk.scripting.nashorn.shell/share/classes</location>
+                    </source-folder>
                     <source-file>
                         <location>build.xml</location>
                     </source-file>
@@ -169,6 +183,10 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>../src/jdk.scripting.nashorn/share/classes</package-root>
+                <source-level>1.8</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>../src/jdk.scripting.nashorn.shell/share/classes</package-root>
                 <source-level>1.8</source-level>
             </compilation-unit>
         </java-data>

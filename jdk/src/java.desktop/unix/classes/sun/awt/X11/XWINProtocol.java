@@ -30,7 +30,7 @@ import java.awt.*;
 import sun.util.logging.PlatformLogger;
 
 class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
-    final static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWINProtocol");
+    static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWINProtocol");
 
 /* Gnome WM spec  */
     XAtom XA_WIN_SUPPORTING_WM_CHECK = XAtom.get("_WIN_SUPPORTING_WM_CHECK");
@@ -187,15 +187,15 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
     XAtom XA_WIN_LAYER = XAtom.get("_WIN_LAYER");
 
 /* _WIN_STATE bits */
-    final static int WIN_STATE_STICKY          =(1<<0); /* everyone knows sticky            */
-    final static int WIN_STATE_MINIMIZED       =(1<<1); /* Reserved - definition is unclear */
-    final static int WIN_STATE_MAXIMIZED_VERT  =(1<<2); /* window in maximized V state      */
-    final static int WIN_STATE_MAXIMIZED_HORIZ =(1<<3); /* window in maximized H state      */
-    final static int WIN_STATE_HIDDEN          =(1<<4); /* not on taskbar but window visible*/
-    final static int WIN_STATE_SHADED          =(1<<5); /* shaded (MacOS / Afterstep style) */
+    static final int WIN_STATE_STICKY          =(1<<0); /* everyone knows sticky            */
+    static final int WIN_STATE_MINIMIZED       =(1<<1); /* Reserved - definition is unclear */
+    static final int WIN_STATE_MAXIMIZED_VERT  =(1<<2); /* window in maximized V state      */
+    static final int WIN_STATE_MAXIMIZED_HORIZ =(1<<3); /* window in maximized H state      */
+    static final int WIN_STATE_HIDDEN          =(1<<4); /* not on taskbar but window visible*/
+    static final int WIN_STATE_SHADED          =(1<<5); /* shaded (MacOS / Afterstep style) */
 /* _WIN_LAYER values */
-    final static int WIN_LAYER_ONTOP = 6;
-    final static int WIN_LAYER_NORMAL = 4;
+    static final int WIN_LAYER_ONTOP = 6;
+    static final int WIN_LAYER_NORMAL = 4;
 
     long WinWindow = 0;
     boolean supportChecked = false;

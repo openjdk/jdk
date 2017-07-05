@@ -1438,6 +1438,7 @@ jboolean JNICALL
 ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
 {
     char *msg;
+    char tmpbuf[1024];
 
     strcpy(entryname, entry->name);
     if (entry->csize == 0) {
@@ -1456,8 +1457,11 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             msg = zip->msg;
             ZIP_Unlock(zip);
             if (n == -1) {
-                jio_fprintf(stderr, "%s: %s\n", zip->name,
-                            msg != 0 ? msg : strerror(errno));
+                if (msg == 0) {
+                    getErrorString(errno, tmpbuf, sizeof(tmpbuf));
+                    msg = tmpbuf;
+                }
+                jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
                 return JNI_FALSE;
             }
             buf += n;
@@ -1470,8 +1474,11 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             if ((msg == NULL) || (*msg == 0)) {
                 msg = zip->msg;
             }
-            jio_fprintf(stderr, "%s: %s\n", zip->name,
-                        msg != 0 ? msg : strerror(errno));
+            if (msg == 0) {
+                getErrorString(errno, tmpbuf, sizeof(tmpbuf));
+                msg = tmpbuf;
+            }
+            jio_fprintf(stderr, "%s: %s\n", zip->name, msg);
             return JNI_FALSE;
         }
     }

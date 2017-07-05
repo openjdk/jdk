@@ -75,7 +75,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
     boolean isDefaultBI = false;
     boolean isSameCM = false;
 
-    private native static void initIDs();
+    private static native void initIDs();
 
     static {
         /* ensure that the necessary native libraries are loaded */

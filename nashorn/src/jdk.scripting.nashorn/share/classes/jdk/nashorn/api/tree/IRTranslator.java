@@ -47,7 +47,6 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
@@ -64,7 +63,7 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.parser.TokenType;
 
@@ -72,10 +71,9 @@ import jdk.nashorn.internal.parser.TokenType;
  * This class translates from nashorn IR Node objects
  * to nashorn parser API Tree objects.
  */
-final class IRTranslator extends NodeVisitor<LexicalContext> {
+final class IRTranslator extends SimpleNodeVisitor {
 
     public IRTranslator() {
-        super(new LexicalContext());
     }
 
     // currently translated Statement

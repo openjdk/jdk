@@ -392,7 +392,7 @@ public class AudioInputStream extends InputStream {
      * Marks the current position in this audio input stream.
      *
      * @param  readlimit the maximum number of bytes that can be read before the
-     *         mark position becomes invalid.
+     *         mark position becomes invalid
      * @see #reset
      * @see #markSupported
      */

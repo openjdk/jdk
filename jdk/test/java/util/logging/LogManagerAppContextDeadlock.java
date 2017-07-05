@@ -35,13 +35,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import jdk.internal.misc.JavaAWTAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * @test
  * @bug 8065991
  * @summary check that when LogManager is initialized, a deadlock similar
  *          to that described in 8065709 will not occur.
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm LogManagerAppContextDeadlock UNSECURE
  * @run main/othervm LogManagerAppContextDeadlock SECURE
  *
@@ -97,7 +99,7 @@ public class LogManagerAppContextDeadlock {
         }
 
         static {
-            sun.misc.SharedSecrets.setJavaAWTAccess(new sun.misc.JavaAWTAccess() {
+            SharedSecrets.setJavaAWTAccess(new JavaAWTAccess() {
                 @Override
                 public Object getAppletContext() {
                     if (numAppContexts.get() == 0) return null;
@@ -341,7 +343,7 @@ public class LogManagerAppContextDeadlock {
             // FileHandlers because we're passing invalid parameters
             // which will make the creation fail...
             permissions = new Permissions();
-            permissions.add(new RuntimePermission("accessClassInPackage.sun.misc"));
+            permissions.add(new RuntimePermission("accessClassInPackage.jdk.internal.misc"));
 
             // these are used for configuring the test itself...
             allPermissions = new Permissions();

@@ -92,25 +92,25 @@ public class TableColumn extends Object implements Serializable {
      * Warning: The value of this constant, "columWidth" is wrong as the
      * name of the property is "columnWidth".
      */
-    public final static String COLUMN_WIDTH_PROPERTY = "columWidth";
+    public static final String COLUMN_WIDTH_PROPERTY = "columWidth";
 
     /**
      * Obsolete as of Java 2 platform v1.3.  Please use string literals to identify
      * properties.
      */
-    public final static String HEADER_VALUE_PROPERTY = "headerValue";
+    public static final String HEADER_VALUE_PROPERTY = "headerValue";
 
     /**
      * Obsolete as of Java 2 platform v1.3.  Please use string literals to identify
      * properties.
      */
-    public final static String HEADER_RENDERER_PROPERTY = "headerRenderer";
+    public static final String HEADER_RENDERER_PROPERTY = "headerRenderer";
 
     /**
      * Obsolete as of Java 2 platform v1.3.  Please use string literals to identify
      * properties.
      */
-    public final static String CELL_RENDERER_PROPERTY = "cellRenderer";
+    public static final String CELL_RENDERER_PROPERTY = "cellRenderer";
 
 //
 //  Instance Variables
@@ -173,7 +173,7 @@ public class TableColumn extends Object implements Serializable {
      *  end of the resize.
      */
     @Deprecated
-    transient protected int     resizedPostingDisableCount;
+    protected transient int     resizedPostingDisableCount;
 
     /**
      * If any <code>PropertyChangeListeners</code> have been registered, the

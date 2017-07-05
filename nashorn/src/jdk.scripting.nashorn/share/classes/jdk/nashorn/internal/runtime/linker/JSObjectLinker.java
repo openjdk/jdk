@@ -77,9 +77,10 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
             return null;
         }
 
-        final GuardedInvocation inv;
+        GuardedInvocation inv;
         if (self instanceof JSObject) {
             inv = lookup(desc, request, linkerServices);
+            inv = inv.replaceMethods(linkerServices.filterInternalObjects(inv.getInvocation()), inv.getGuard());
         } else if (self instanceof Map || self instanceof Bindings) {
             // guard to make sure the Map or Bindings does not turn into JSObject later!
             final GuardedInvocation beanInv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);

@@ -27,24 +27,19 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import jdk.nashorn.internal.ir.CompileUnitHolder;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
 import jdk.nashorn.internal.ir.Splittable;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 
 /**
  * Base class for a node visitor that replaces {@link CompileUnit}s in {@link CompileUnitHolder}s.
  */
-abstract class ReplaceCompileUnits extends NodeVisitor<LexicalContext> {
-    ReplaceCompileUnits() {
-        super(new LexicalContext());
-    }
+abstract class ReplaceCompileUnits extends SimpleNodeVisitor {
 
     /**
      * Override to provide a replacement for an old compile unit.
