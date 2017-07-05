@@ -50,9 +50,7 @@ public class UsageThresholdNotExceededTest {
 
     public static void main(String[] args) {
         for (BlobType btype : BlobType.getAvailable()) {
-            if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
-                new UsageThresholdNotExceededTest(btype).runTest();
-            }
+            new UsageThresholdNotExceededTest(btype).runTest();
         }
     }
 
@@ -65,13 +63,11 @@ public class UsageThresholdNotExceededTest {
                 - CodeCacheUtils.getHeaderSize(btype), btype.id);
         // a gc cycle triggers usage threshold recalculation
         CodeCacheUtils.WB.fullGC();
-        Asserts.assertEQ(bean.getUsageThresholdCount(), initialThresholdCount,
-                String.format("Usage threshold was hit: %d  times for %s. "
+        CodeCacheUtils.assertEQorGTE(btype, bean.getUsageThresholdCount(), initialThresholdCount,
+                String.format("Usage threshold was hit: %d times for %s. "
                         + "Threshold value: %d with current usage: %d",
                         bean.getUsageThresholdCount(), bean.getName(),
                         bean.getUsageThreshold(), bean.getUsage().getUsed()));
-
-        System.out.println("INFO: Case finished successfully for "
-                + bean.getName());
+        System.out.println("INFO: Case finished successfully for " + bean.getName());
     }
 }
