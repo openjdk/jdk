@@ -1685,6 +1685,7 @@ public final class DateTimeFormatter {
     public DateTimeFormatter withResolverFields(TemporalField... resolverFields) {
         Set<TemporalField> fields = null;
         if (resolverFields != null) {
+            // Set.of cannot be used because it is hostile to nulls and duplicate elements
             fields = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(resolverFields)));
         }
         if (Objects.equals(this.resolverFields, fields)) {

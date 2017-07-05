@@ -31,11 +31,10 @@ import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.nio.file.FileTreeWalker.Event;
 
 /**
- * An {@code Iterator to iterate over the nodes of a file tree.
+ * An {@code Iterator} to iterate over the nodes of a file tree.
  *
  * <pre>{@code
  *     try (FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options)) {
@@ -62,7 +61,7 @@ class FileTreeIterator implements Iterator<Event>, Closeable {
      * @throws  SecurityException
      *          if the security manager denies access to the starting file
      * @throws  NullPointerException
-     *          if {@code start} or {@code options} is {@ocde null} or
+     *          if {@code start} or {@code options} is {@code null} or
      *          the options array contains a {@code null} element
      */
     FileTreeIterator(Path start, int maxDepth, FileVisitOption... options)

@@ -68,12 +68,23 @@ final class ScriptLoader extends NashornLoader {
 
     private Module createModule(final String moduleName) {
         final Module structMod = context.getStructLoader().getModule();
-        final ModuleDescriptor descriptor
-                = new ModuleDescriptor.Builder(moduleName)
+        final ModuleDescriptor.Builder builder =
+            new ModuleDescriptor.Builder(moduleName)
+                    .requires("java.base")
+                    .requires("java.logging")
                     .requires(NASHORN_MODULE.getName())
                     .requires(structMod.getName())
-                    .conceals(SCRIPTS_PKG)
-                    .build();
+                    .conceals(SCRIPTS_PKG);
+
+        if (Context.javaSqlFound) {
+            builder.requires("java.sql");
+        }
+
+        if (Context.javaSqlRowsetFound) {
+            builder.requires("java.sql.rowset");
+        }
+
+        final ModuleDescriptor descriptor = builder.build();
 
         final Module mod = Context.createModuleTrusted(structMod.getLayer(), descriptor, this);
         loadModuleManipulator();

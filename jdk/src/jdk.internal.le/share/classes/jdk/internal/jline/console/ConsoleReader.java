@@ -2339,7 +2339,7 @@ public class ConsoleReader
 
             Stack<Character> pushBackChar = new Stack<Character>();
 
-            if (terminal.isAnsiSupported()) {
+            if (terminal.isAnsiSupported() && System.console() != null) {
                 //detect the prompt length by reading the cursor position from the terminal
                 //the real prompt length could differ from the simple prompt length due to
                 //use of escape sequences:
