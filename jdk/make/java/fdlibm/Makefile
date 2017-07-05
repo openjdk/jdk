@@ -46,8 +46,6 @@ ifeq ($(PLATFORM),windows)
   _OPT = $(CC_NO_OPT)
   OTHER_CFLAGS =
   CPPFLAGS_DBG += -DLOGGING
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 endif
 
 #

@@ -61,7 +61,7 @@ import javax.management.loading.ClassLoaderRepository;
  * <CODE>ObjectName</CODE> is: <BR>
  * <CODE>JMImplementation:type=MBeanServerDelegate</CODE>.</p>
  *
- * <p>An object obtained from the {@link
+ * <p id="security">An object obtained from the {@link
  * MBeanServerFactory#createMBeanServer(String) createMBeanServer} or
  * {@link MBeanServerFactory#newMBeanServer(String) newMBeanServer}
  * methods of the {@link MBeanServerFactory} class applies security
@@ -661,13 +661,16 @@ public interface MBeanServer extends MBeanServerConnection {
                    ReflectionException;
 
     /**
-     * <p>Return the {@link java.lang.ClassLoader} that was used for
-     * loading the class of the named MBean.</p>
+     * <p>Return the {@link java.lang.ClassLoader} that was used for loading
+     * the class of the named MBean. If the MBean implements the {@link
+     * DynamicWrapperMBean} interface, then the returned value is the
+     * result of the {@link DynamicWrapperMBean#getWrappedClassLoader()}
+     * method.</p>
      *
      * @param mbeanName The ObjectName of the MBean.
      *
      * @return The ClassLoader used for that MBean.  If <var>l</var>
-     * is the MBean's actual ClassLoader, and <var>r</var> is the
+     * is the value specified by the rules above, and <var>r</var> is the
      * returned value, then either:
      *
      * <ul>
