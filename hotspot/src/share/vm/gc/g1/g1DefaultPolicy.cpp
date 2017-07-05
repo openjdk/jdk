@@ -394,37 +394,6 @@ void G1DefaultPolicy::update_rs_lengths_prediction(size_t prediction) {
   }
 }
 
-#ifndef PRODUCT
-bool G1DefaultPolicy::verify_young_ages() {
-  bool ret = true;
-
-  for (HeapRegion* curr = _collection_set->inc_head();
-       curr != NULL;
-       curr = curr->next_in_collection_set()) {
-    guarantee(curr->is_young(), "Region must be young");
-
-    SurvRateGroup* group = curr->surv_rate_group();
-
-    if (group == NULL) {
-      log_error(gc, verify)("## encountered NULL surv_rate_group in young region");
-      ret = false;
-    }
-
-    if (curr->age_in_surv_rate_group() < 0) {
-      log_error(gc, verify)("## encountered negative age in young region");
-      ret = false;
-    }
-  }
-
-  if (!ret) {
-    LogStreamHandle(Error, gc, verify) log;
-    _collection_set->print(_collection_set->inc_head(), &log);
-  }
-
-  return ret;
-}
-#endif // PRODUCT
-
 void G1DefaultPolicy::record_full_collection_start() {
   _full_collection_start_sec = os::elapsedTime();
   // Release the future to-space so that it is available for compaction into.
@@ -488,7 +457,7 @@ void G1DefaultPolicy::record_collection_pause_start(double start_time_sec) {
   _short_lived_surv_rate_group->stop_adding_regions();
   _survivors_age_table.clear();
 
-  assert( verify_young_ages(), "region age verification" );
+  assert(_g1->collection_set()->verify_young_ages(), "region age verification failed");
 }
 
 void G1DefaultPolicy::record_concurrent_mark_init_end(double mark_init_elapsed_time_ms) {

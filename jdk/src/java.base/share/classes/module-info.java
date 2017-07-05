@@ -149,7 +149,6 @@ module java.base {
     exports jdk.internal.module to
         java.instrument,
         java.management,
-        java.xml,
         jdk.dynalink,
         jdk.jartool,
         jdk.jlink;
@@ -282,15 +281,18 @@ module java.base {
         jdk.security.auth;
     exports sun.text.resources to
         jdk.localedata;
-    exports sun.util.resources to
-        jdk.localedata;
+    exports sun.util.cldr to
+        jdk.jlink;
     exports sun.util.locale.provider to
         java.desktop,
+        jdk.jlink,
         jdk.localedata;
     exports sun.util.logging to
         java.desktop,
         java.logging,
         java.prefs;
+    exports sun.util.resources to
+        jdk.localedata;
 
     // JDK-internal service types
     uses jdk.internal.logger.DefaultLoggerFinder;
@@ -306,4 +308,3 @@ module java.base {
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
 }
-

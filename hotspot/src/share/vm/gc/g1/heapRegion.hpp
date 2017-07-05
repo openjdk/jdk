@@ -261,12 +261,6 @@ class HeapRegion: public G1ContiguousSpace {
   // True iff an attempt to evacuate an object in the region failed.
   bool _evacuation_failed;
 
-  // A heap region may be a member one of a number of special subsets, each
-  // represented as linked lists through the field below.  Currently, there
-  // is only one set:
-  //   The collection set.
-  HeapRegion* _next_in_special_set;
-
   // Fields used by the HeapRegionSetBase class and subclasses.
   HeapRegion* _next;
   HeapRegion* _prev;
@@ -475,9 +469,6 @@ class HeapRegion: public G1ContiguousSpace {
   }
 
   inline bool in_collection_set() const;
-
-  inline HeapRegion* next_in_collection_set() const;
-  inline void set_next_in_collection_set(HeapRegion* r);
 
   void set_allocation_context(AllocationContext_t context) {
     _allocation_context = context;
@@ -744,7 +735,7 @@ class HeapRegion: public G1ContiguousSpace {
 // Terminates the iteration when the "doHeapRegion" method returns "true".
 class HeapRegionClosure : public StackObj {
   friend class HeapRegionManager;
-  friend class G1CollectedHeap;
+  friend class G1CollectionSet;
 
   bool _complete;
   void incomplete() { _complete = false; }

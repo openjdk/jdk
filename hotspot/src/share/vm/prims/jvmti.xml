@@ -6509,6 +6509,59 @@ class C2 extends C1 implements I2 {
       <errors>
       </errors>
     </function>
+
+    <function id="GetNamedModule" num="40" since="9">
+      <synopsis>Get Named Module</synopsis>
+      <description>
+        Return the <code>java.lang.reflect.Module</code> object for a named
+        module defined to a class loader that contains a given package.
+        The module is returned via <code>module_ptr</code>.
+        <p/>
+        If a named module is defined to the class loader and it
+        contains the package then that named module is returned,
+        otherwise <code>NULL</code> is returned.
+        <p/>
+      </description>
+      <origin>new</origin>
+      <capabilities>
+      </capabilities>
+      <parameters>
+        <param id="class_loader">
+          <ptrtype>
+            <jobject/>
+            <nullok>the bootstrap loader is assumed</nullok>
+          </ptrtype>
+          <description>
+            A class loader.
+            If the <code>class_loader</code> is not <code>NULL</code>
+            or a subclass of <code>java.lang.ClassLoader</code>
+            this function returns
+            <errorlink id="JVMTI_ERROR_ILLEGAL_ARGUMENT"></errorlink>.
+          </description>
+        </param>
+        <param id="package_name">
+          <inbuf><char/></inbuf>
+          <description>
+            The name of the package, encoded as a
+            <internallink id="mUTF">modified UTF-8</internallink> string.
+            The package name is in internal form (JVMS 4.2.1);
+            identifiers are separated by forward slashes rather than periods.
+          </description>
+        </param>
+        <param id="module_ptr">
+          <outptr><jobject/></outptr>
+          <description>
+            On return, points to a <code>java.lang.reflect.Module</code> object
+            or points to <code>NULL</code>.
+          </description>
+        </param>
+      </parameters>
+      <errors>
+        <error id="JVMTI_ERROR_ILLEGAL_ARGUMENT">
+          If class loader is not <code>NULL</code> and is not a class loader object.
+        </error>
+      </errors>
+    </function>
   </category>
 
   <category id="class" label="Class">
@@ -12462,6 +12515,14 @@ myInit() {
     <code>new_class_data</code> has been set, it becomes the 
     <code>class_data</code> for the next agent.
     <p/>
+    When handling a class load in the live phase, then the
+    <functionlink id="GetNamedModule"></functionlink>
+    function can be used to map class loader and a package name to a module.
+    When a class is being redefined or retransformed then
+    <code>class_being_redefined</code> is non <code>NULL</code> and so
+    the JNI <code>GetModule</code> function can also be used
+    to obtain the Module.
+    <p/>
     The order that this event is sent to each environment differs
     from other events.
     This event is sent to environments in the following order:
@@ -14427,20 +14488,15 @@ typedef void (JNICALL *jvmtiEventVMInit)
   <change date="19 June 2013" version="1.2.3">
       Added support for statically linked agents.
   </change>
-  <change date="20 January 2016" version="9.0.0">
+  <change date="5 July 2016" version="9.0.0">
       Support for modules:
        - The majorversion is 9 now
        - The ClassFileLoadHook events are not sent during the primordial phase anymore.
        - Add new function GetAllModules
-  </change>
-  <change date="17 February 2016" version="9.0.0">
-      Support for modules:
        - Add new capability can_generate_early_vmstart
        - Allow CompiledMethodLoad events at start phase
-  </change>
-  <change date="14 April 2016" version="9.0.0">
-      Support for modules:
        - Add new capability can_generate_early_class_hook_events
+       - Add new function GetNamedModule
   </change>
 </changehistory>
 

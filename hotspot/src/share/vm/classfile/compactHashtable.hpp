@@ -270,6 +270,10 @@ public:
 
   // For reading from/writing to the CDS archive
   void serialize(SerializeClosure* soc);
+
+  uintx base_address() {
+    return (uintx) _base_address;
+  }
 };
 
 ////////////////////////////////////////////////////////////////////////

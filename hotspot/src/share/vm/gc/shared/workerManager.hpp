@@ -47,18 +47,18 @@ class WorkerManager : public AllStatic {
   // threads and a failure would not be optimal but should not be fatal.
   template <class WorkerType>
   static uint add_workers (WorkerType* holder,
-                   uint active_workers,
-                   uint total_workers,
-                   uint created_workers,
-                   os::ThreadType worker_type,
-                   bool initializing) {
+                           uint active_workers,
+                           uint total_workers,
+                           uint created_workers,
+                           os::ThreadType worker_type,
+                           bool initializing) {
     uint start = created_workers;
     uint end = MIN2(active_workers, total_workers);
     for (uint worker_id = start; worker_id < end; worker_id += 1) {
       WorkerThread* new_worker = holder->install_worker(worker_id);
       assert(new_worker != NULL, "Failed to allocate GangWorker");
       if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
-        if(initializing) {
+        if (initializing) {
           vm_exit_out_of_memory(0, OOM_MALLOC_ERROR,
                   "Cannot create worker GC thread. Out of system resources.");
         }
@@ -67,11 +67,21 @@ class WorkerManager : public AllStatic {
       os::start_thread(new_worker);
     }
 
-    log_trace(gc, task)("AdaptiveSizePolicy::add_workers() : "
-       "active_workers: %u created_workers: %u",
-       active_workers, created_workers);
-
     return created_workers;
+  }
+
+  // Log (at trace level) a change in the number of created workers.
+  template <class WorkerType>
+  static void log_worker_creation(WorkerType* holder,
+                                  uint previous_created_workers,
+                                  uint active_workers,
+                                  uint created_workers,
+                                  bool initializing) {
+    if (previous_created_workers < created_workers) {
+      const char* initializing_msg =  initializing ? "Adding initial" : "Creating additional";
+      log_trace(gc, task)("%s %s(s) previously created workers %u active workers %u total created workers %u",
+                          initializing_msg, holder->group_name(), previous_created_workers, active_workers, created_workers);
+    }
   }
 };
 #endif // SHARE_VM_GC_SHARED_WORKERMANAGER_HPP

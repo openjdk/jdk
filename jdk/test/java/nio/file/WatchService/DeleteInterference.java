@@ -32,6 +32,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.WatchService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,7 +50,8 @@ public class DeleteInterference {
      * directory.
      */
     public static void main(String[] args) throws Exception {
-        Path dir = Files.createTempDirectory("DeleteInterference");
+        Path testDir = Paths.get(System.getProperty("test.dir", "."));
+        Path dir = Files.createTempDirectory(testDir, "DeleteInterference");
         ExecutorService pool = Executors.newCachedThreadPool();
         try {
             Future<?> task1 = pool.submit(() -> openAndCloseWatcher(dir));
@@ -58,7 +60,6 @@ public class DeleteInterference {
             task2.get();
         } finally {
             pool.shutdown();
-            deleteFileTree(dir);
         }
     }
 

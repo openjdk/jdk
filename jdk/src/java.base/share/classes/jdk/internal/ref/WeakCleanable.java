@@ -1,5 +1,3 @@
-package jdk.internal.ref;
-
 /*
  * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,6 +22,8 @@ package jdk.internal.ref;
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+package jdk.internal.ref;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
