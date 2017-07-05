@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4421040
- *  @summary  JPDA: Add support for JSR-014 Generics
+ * @test
+ * @bug 4421040
+ * @summary  JPDA: Add support for JSR-014 Generics
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g GenericsTest.java
- *  @run driver GenericsTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g GenericsTest.java
+ * @run driver GenericsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

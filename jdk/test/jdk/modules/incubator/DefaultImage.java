@@ -34,6 +34,9 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,13 +44,13 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.testlibrary.ProcessTools.executeCommand;
 import static org.testng.Assert.*;
 
+@Test
 public class DefaultImage {
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final Path TEST_SRC = Paths.get(System.getProperty("test.src"));
@@ -72,24 +75,34 @@ public class DefaultImage {
             .resultChecker(r -> r.assertOutputDoesNotContain("jdk.incubator"));
     }
 
-    @DataProvider(name = "tokens")
-    public Object[][] singleModuleValues() throws IOException {
-        return new Object[][]{ { "ALL-DEFAULT" }, { "ALL-SYSTEM"} };
-    }
-
-    @Test(dataProvider = "tokens")
-    public void testAddMods(String addModsToken) throws Throwable {
+    public void testAllDefault() throws Throwable {
         if (isExplodedBuild()) {
             System.out.println("Test cannot run on exploded build");
             return;
         }
 
-        java("--add-modules", addModsToken,
+        java("--add-modules", "ALL-DEFAULT",
              "-cp", CP_DIR.toString(),
              "listmods.ListModules")
             .assertSuccess()
             .resultChecker(r -> r.assertOutputContains("java.base"))
             .resultChecker(r -> r.assertOutputDoesNotContain("jdk.incubator"));
+    }
+
+    public void testAllSystem() throws Throwable {
+        if (isExplodedBuild()) {
+            System.out.println("Test cannot run on exploded build");
+            return;
+        }
+
+        if (containsAnyIncubatorModules()) {
+            java("--add-modules", "ALL-SYSTEM",
+                 "-cp", CP_DIR.toString(),
+                 "listmods.ListModules")
+                .assertSuccess()
+                .resultChecker(r -> r.assertOutputContains("java.base"))
+                .resultChecker(r -> r.assertOutputContains("jdk.incubator"));
+        }
     }
 
     static ToolResult java(String... opts) throws Throwable {
@@ -154,5 +167,15 @@ public class DefaultImage {
     static boolean isExplodedBuild() {
         Path modulesPath = Paths.get(JAVA_HOME).resolve("lib").resolve("modules");
         return Files.notExists(modulesPath);
+    }
+
+    static boolean containsAnyIncubatorModules() {
+        return ModuleFinder.ofSystem().findAll().stream()
+                .map(ModuleReference::descriptor)
+                .map(ModuleDescriptor::name)
+                .filter(mn -> mn.startsWith("jdk.incubator"))
+                .map(mn -> true)
+                .findAny()
+                .orElse(false);
     }
 }

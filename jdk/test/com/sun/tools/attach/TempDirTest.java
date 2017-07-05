@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,11 @@ import jdk.testlibrary.ProcessThread;
  * @test
  * @bug 8033104
  * @summary Test to make sure attach and jvmstat works correctly when java.io.tmpdir is set
- * @modules jdk.jartool/sun.tools.jar
+ *
  * @library /lib/testlibrary
- * @modules java.management
+ * @modules jdk.attach
  *          jdk.jartool/sun.tools.jar
+ *
  * @run build jdk.testlibrary.* Application RunnerUtil
  * @run main/timeout=200 TempDirTest
  */

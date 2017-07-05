@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
@@ -50,6 +51,10 @@ public class Body1_2Impl extends BodyImpl {
 
     public Body1_2Impl(SOAPDocumentImpl ownerDocument, String prefix) {
             super(ownerDocument, NameImpl.createBody1_2Name(prefix));
+    }
+
+    public Body1_2Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
     }
 
     protected NameImpl getFaultName(String name) {

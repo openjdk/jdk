@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ package javax.sound.midi;
  * given type of {@code Synthesizer} always has a fixed number of voices, equal
  * to the maximum number of simultaneous notes it is capable of sounding.
  * <p>
- * <a NAME="description_of_active"></a> If the voice is not currently processing
+ * <a id="description_of_active"></a> If the voice is not currently processing
  * a MIDI note, it is considered inactive. A voice is inactive when it has been
  * given no note-on commands, or when every note-on command received has been
  * terminated by a corresponding note-off (or by an "all notes off" message).
