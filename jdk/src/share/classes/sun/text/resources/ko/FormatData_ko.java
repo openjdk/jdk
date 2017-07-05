@@ -76,11 +76,11 @@
 
 package sun.text.resources.ko;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_ko extends ListResourceBundle {
+public class FormatData_ko extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -123,6 +123,23 @@ public class FormatData_ko extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "1\uc6d4",
+                    "2\uc6d4",
+                    "3\uc6d4",
+                    "4\uc6d4",
+                    "5\uc6d4",
+                    "6\uc6d4",
+                    "7\uc6d4",
+                    "8\uc6d4",
+                    "9\uc6d4",
+                    "10\uc6d4",
+                    "11\uc6d4",
+                    "12\uc6d4",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "\uc77c\uc694\uc77c", // Sunday
@@ -156,6 +173,27 @@ public class FormatData_ko extends ListResourceBundle {
                     "\ud1a0",
                 }
             },
+            { "Eras",
+                new String[] {
+                    "\uae30\uc6d0\uc804",
+                    "\uc11c\uae30",
+                }
+            },
+            { "buddhist.Eras",
+                new String[] {
+                    "BC",
+                    "\ubd88\uae30",
+                }
+            },
+            { "japanese.Eras",
+                new String[] {
+                    "\uc11c\uae30",
+                    "\uba54\uc774\uc9c0",
+                    "\ub2e4\uc774\uc1fc",
+                    "\uc1fc\uc640",
+                    "\ud5e4\uc774\uc138\uc774",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "\uc624\uc804", // am marker
@@ -183,34 +221,7 @@ public class FormatData_ko extends ListResourceBundle {
                     "{1} {0}" // date-time pattern
                 }
             },
-            { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "G y\ub144 M\uc6d4 d\uc77c EEEE",
-                    "G y\ub144 M\uc6d4 d\uc77c",
-                    "G y. M. d",
-                    "G y. M. d",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "G y\ub144 M\uc6d4 d\uc77c EEEE",
-                    "G y\ub144 M\uc6d4 d\uc77c",
-                    "G y. M. d",
-                    "G y. M. d",
-                }
-            },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "G y\ub144 M\uc6d4 d\uc77c EEEE",
-                    "G y\ub144 M\uc6d4 d\uc77c",
-                    "G y. M. d",
-                    "G y. M. d",
-                }
-            },
-            { "roc.DatePatterns",
+            { "buddhist.DatePatterns",
                 new String[] {
                     "GGGG y\ub144 M\uc6d4 d\uc77c EEEE",
                     "GGGG y\ub144 M\uc6d4 d\uc77c",
@@ -218,24 +229,15 @@ public class FormatData_ko extends ListResourceBundle {
                     "GGGG y. M. d",
                 }
             },
-            { "calendarname.islamic-civil", "\uc774\uc2ac\ub78c \uc0c1\uc6a9\ub825" },
-            { "calendarname.islamicc", "\uc774\uc2ac\ub78c \uc0c1\uc6a9\ub825" },
-            { "calendarname.islamic", "\uc774\uc2ac\ub78c\ub825" },
-            { "calendarname.japanese", "\uc77c\ubcf8\ub825" },
-            { "calendarname.gregorian", "\ud0dc\uc591\ub825" },
-            { "calendarname.gregory", "\ud0dc\uc591\ub825" },
-            { "calendarname.roc", "\ub300\ub9cc\ub825" },
-            { "calendarname.buddhist", "\ubd88\uad50\ub825" },
-            { "field.era", "\uc5f0\ud638" },
-            { "field.year", "\ub144" },
-            { "field.month", "\uc6d4" },
-            { "field.week", "\uc8fc" },
-            { "field.weekday", "\uc694\uc77c" },
-            { "field.dayperiod", "\uc624\uc804/\uc624\ud6c4" },
-            { "field.hour", "\uc2dc" },
-            { "field.minute", "\ubd84" },
-            { "field.second", "\ucd08" },
-            { "field.zone", "\uc2dc\uac04\ub300" },
+            { "japanese.DatePatterns",
+                new String[] {
+                    "GGGG y\ub144 M\uc6d4 d\uc77c EEEE",
+                    "GGGG y\ub144 M\uc6d4 d\uc77c",
+                    "GGGG y. M. d",
+                    "GGGG y. M. d",
+                }
+            },
+            { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
         };
     }
 }

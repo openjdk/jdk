@@ -97,7 +97,7 @@ public class Bug8007038 {
     }
 
     private static void checkValueRange(String calType, int field, int value, int style, Locale l, boolean isNonNull) {
-        String ret = CalendarDataUtility.retrieveFieldValueName(calType, field, value, style, l);
+        String ret = CalendarDataUtility.retrieveJavaTimeFieldValueName(calType, field, value, style, l);
         System.out.print("retrieveFieldValueName("+calType+", "+field+", "+value+", "+style+", "+l+")");
         if ((ret != null) == isNonNull) {
             System.out.println(" returned "+ret);

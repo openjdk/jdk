@@ -90,7 +90,7 @@ public class LastReqEntry {
     public Object clone() {
         LastReqEntry newEntry = new LastReqEntry();
         newEntry.lrType = lrType;
-        newEntry.lrValue = (KerberosTime)lrValue.clone();
+        newEntry.lrValue = lrValue;
         return newEntry;
     }
 }

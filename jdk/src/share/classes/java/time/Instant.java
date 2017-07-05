@@ -81,7 +81,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -89,6 +88,7 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
@@ -148,6 +148,8 @@ import java.util.Objects;
  * <li>other times during the day will be broadly in line with the agreed international civil time</li>
  * <li>the day will be divided into exactly 86400 subdivisions, referred to as "seconds"</li>
  * <li>the Java "second" may differ from an SI second</li>
+ * <li>a well-defined algorithm must be specified to map each second in the accurate agreed
+ *  international civil time to each "second" in this time-scale</li>
  * </ul><p>
  * Agreed international civil time is the base time-scale agreed by international convention,
  * which in 2012 is UTC (with leap-seconds).
@@ -155,6 +157,14 @@ import java.util.Objects;
  * In 2012, the definition of the Java time-scale is the same as UTC for all days except
  * those where a leap-second occurs. On days where a leap-second does occur, the time-scale
  * effectively eliminates the leap-second, maintaining the fiction of 86400 seconds in the day.
+ * The approved well-defined algorithm to eliminate leap-seconds is specified as
+ * <a href="http://www.cl.cam.ac.uk/~mgk25/time/utc-sls/">UTC-SLS</a>.
+ * <p>
+ * UTC-SLS is a simple algorithm that smoothes the leap-second over the last 1000 seconds of
+ * the day, making each of the last 1000 seconds 1/1000th longer or shorter than an SI second.
+ * Implementations built on an accurate leap-second aware time source should use UTC-SLS.
+ * Use of a different algorithm risks confusion and misinterpretation of instants around a
+ * leap-second and is discouraged.
  * <p>
  * The main benefit of always dividing the day into 86400 subdivisions is that it matches the
  * expectations of most users of the API. The alternative is to force every user to understand
@@ -163,16 +173,10 @@ import java.util.Objects;
  * Most applications also do not have a problem with a second being a very small amount longer or
  * shorter than a real SI second during a leap-second.
  * <p>
- * If an application does have access to an accurate clock that reports leap-seconds, then the
- * recommended technique to implement the Java time-scale is to use the UTC-SLS convention.
- * <a href="http://www.cl.cam.ac.uk/~mgk25/time/utc-sls/">UTC-SLS</a> effectively smoothes the
- * leap-second over the last 1000 seconds of the day, making each of the last 1000 "seconds"
- * 1/1000th longer or shorter than a real SI second.
- * <p>
  * One final problem is the definition of the agreed international civil time before the
  * introduction of modern UTC in 1972. This includes the Java epoch of {@code 1970-01-01}.
  * It is intended that instants before 1972 be interpreted based on the solar day divided
- * into 86400 subdivisions.
+ * into 86400 subdivisions, as per the principles of UT1.
  * <p>
  * The Java time-scale is used for all date-time classes.
  * This includes {@code Instant}, {@code LocalDate}, {@code LocalTime}, {@code OffsetDateTime},
@@ -210,7 +214,7 @@ public final class Instant
      */
     public static final Instant MIN = Instant.ofEpochSecond(MIN_SECOND, 0);
     /**
-     * The minimum supported {@code Instant}, '-1000000000-01-01T00:00Z'.
+     * The maximum supported {@code Instant}, '1000000000-12-31T23:59:59.999999999Z'.
      * This could be used by an application as a "far future" instant.
      * <p>
      * This is one year later than the maximum {@code LocalDateTime}.
@@ -292,9 +296,9 @@ public final class Instant
      * to ensure that the stored nanosecond is in the range 0 to 999,999,999.
      * For example, the following will result in the exactly the same instant:
      * <pre>
-     *  Instant.ofSeconds(3, 1);
-     *  Instant.ofSeconds(4, -999_999_999);
-     *  Instant.ofSeconds(2, 1000_000_001);
+     *  Instant.ofEpochSecond(3, 1);
+     *  Instant.ofEpochSecond(4, -999_999_999);
+     *  Instant.ofEpochSecond(2, 1000_000_001);
      * </pre>
      *
      * @param epochSecond  the number of seconds from 1970-01-01T00:00:00Z
@@ -441,7 +445,7 @@ public final class Instant
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return
      * appropriate range instances.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
@@ -451,6 +455,7 @@ public final class Instant
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     @Override  // override for Javadoc
     public ValueRange range(TemporalField field) {
@@ -469,7 +474,7 @@ public final class Instant
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code INSTANT_SECONDS} which is too
      * large to fit in an {@code int} and throws a {@code DateTimeException}.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -478,7 +483,10 @@ public final class Instant
      *
      * @param field  the field to get, not null
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc and performance
@@ -490,7 +498,7 @@ public final class Instant
                 case MILLI_OF_SECOND: return nanos / 1000_000;
                 case INSTANT_SECONDS: INSTANT_SECONDS.checkValidIntValue(seconds);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return range(field).checkValidIntValue(field.getFrom(this), field);
     }
@@ -505,7 +513,7 @@ public final class Instant
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -515,6 +523,7 @@ public final class Instant
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -526,7 +535,7 @@ public final class Instant
                 case MILLI_OF_SECOND: return nanos / 1000_000;
                 case INSTANT_SECONDS: return seconds;
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.getFrom(this);
     }
@@ -610,7 +619,7 @@ public final class Instant
      * In all cases, if the new value is outside the valid range of values for the field
      * then a {@code DateTimeException} will be thrown.
      * <p>
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
@@ -623,6 +632,7 @@ public final class Instant
      * @param newValue  the new value of the field in the result
      * @return an {@code Instant} based on {@code this} with the specified field set, not null
      * @throws DateTimeException if the field cannot be set
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -642,7 +652,7 @@ public final class Instant
                 case NANO_OF_SECOND: return (newValue != nanos ? create(seconds, (int) newValue) : this);
                 case INSTANT_SECONDS: return (newValue != seconds ? create(newValue, nanos) : this);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.adjustInto(this, newValue);
     }
@@ -668,6 +678,7 @@ public final class Instant
      * @param unit  the unit to truncate to, not null
      * @return an {@code Instant} based on this instant with the time truncated, not null
      * @throws DateTimeException if the unit is invalid for truncation
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     public Instant truncatedTo(TemporalUnit unit) {
         if (unit == ChronoUnit.NANOS) {
@@ -675,11 +686,11 @@ public final class Instant
         }
         Duration unitDur = unit.getDuration();
         if (unitDur.getSeconds() > LocalTime.SECONDS_PER_DAY) {
-            throw new DateTimeException("Unit is too large to be used for truncation");
+            throw new UnsupportedTemporalTypeException("Unit is too large to be used for truncation");
         }
         long dur = unitDur.toNanos();
         if ((LocalTime.NANOS_PER_DAY % dur) != 0) {
-            throw new DateTimeException("Unit must divide into a standard day without remainder");
+            throw new UnsupportedTemporalTypeException("Unit must divide into a standard day without remainder");
         }
         long nod = (seconds % LocalTime.SECONDS_PER_DAY) * LocalTime.NANOS_PER_SECOND + nanos;
         long result = (nod / dur) * dur;
@@ -754,7 +765,7 @@ public final class Instant
      *  multiplied by 86,400 (24 hours).
      * </ul>
      * <p>
-     * All other {@code ChronoUnit} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoUnit} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.addTo(Temporal, long)}
@@ -767,6 +778,7 @@ public final class Instant
      * @param unit  the unit of the amount to add, not null
      * @return an {@code Instant} based on this instant with the specified amount added, not null
      * @throws DateTimeException if the addition cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -782,7 +794,7 @@ public final class Instant
                 case HALF_DAYS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY / 2));
                 case DAYS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY));
             }
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -894,6 +906,7 @@ public final class Instant
      * @param unit  the unit of the amount to subtract, not null
      * @return an {@code Instant} based on this instant with the specified amount subtracted, not null
      * @throws DateTimeException if the subtraction cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -975,11 +988,12 @@ public final class Instant
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.precision()) {
+        if (query == TemporalQuery.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
-        if (query == Queries.chronology() || query == Queries.zoneId() || query == Queries.zone() || query == Queries.offset()) {
+        if (query == TemporalQuery.chronology() || query == TemporalQuery.zoneId() ||
+                query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
             return null;
         }
         return query.queryFrom(this);
@@ -1028,14 +1042,15 @@ public final class Instant
      * For example, the period in days between two dates can be calculated
      * using {@code startInstant.periodUntil(endInstant, SECONDS)}.
      * <p>
-     * This method operates in association with {@link TemporalUnit#between}.
-     * The result of this method is a {@code long} representing the amount of
-     * the specified unit. By contrast, the result of {@code between} is an
-     * object that can be used directly in addition/subtraction:
+     * There are two equivalent ways of using this method.
+     * The first is to invoke this method.
+     * The second is to use {@link TemporalUnit#between(Temporal, Temporal)}:
      * <pre>
-     *   long period = start.periodUntil(end, SECONDS);   // this method
-     *   dateTime.plus(SECONDS.between(start, end));      // use in plus/minus
+     *   // these two lines are equivalent
+     *   amount = start.periodUntil(end, SECONDS);
+     *   amount = SECONDS.between(start, end);
      * </pre>
+     * The choice should be made based on which makes the code more readable.
      * <p>
      * The calculation is implemented in this method for {@link ChronoUnit}.
      * The units {@code NANOS}, {@code MICROS}, {@code MILLIS}, {@code SECONDS},
@@ -1053,6 +1068,7 @@ public final class Instant
      * @param unit  the unit to measure the period in, not null
      * @return the amount of the period between this date and the end date
      * @throws DateTimeException if the period cannot be calculated
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1074,18 +1090,26 @@ public final class Instant
                 case HALF_DAYS: return secondsUntil(end) / (12 * SECONDS_PER_HOUR);
                 case DAYS: return secondsUntil(end) / (SECONDS_PER_DAY);
             }
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return unit.between(this, endInstant);
     }
 
     private long nanosUntil(Instant end) {
-        long secs = Math.multiplyExact(secondsUntil(end), NANOS_PER_SECOND);
-        return Math.addExact(secs, end.nanos - nanos);
+        long secsDiff = Math.subtractExact(end.seconds, seconds);
+        long totalNanos = Math.multiplyExact(secsDiff, NANOS_PER_SECOND);
+        return Math.addExact(totalNanos, end.nanos - nanos);
     }
 
     private long secondsUntil(Instant end) {
-        return Math.subtractExact(end.seconds, seconds);
+        long secsDiff = Math.subtractExact(end.seconds, seconds);
+        long nanosDiff = end.nanos - nanos;
+        if (secsDiff > 0 && nanosDiff < 0) {
+            secsDiff--;
+        } else if (secsDiff < 0 && nanosDiff > 0) {
+            secsDiff++;
+        }
+        return secsDiff;
     }
 
     //-----------------------------------------------------------------------

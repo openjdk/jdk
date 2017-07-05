@@ -31,21 +31,24 @@
 #ifdef __APPLE__
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
+#else
+/* This is one of the rare times it's more portable to declare an
+ * external symbol explicitly, rather than via a system header.
+ * The declaration is standardized as part of UNIX98, but there is
+ * no standard (not even de-facto) header file where the
+ * declaration is to be found.  See:
+ * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
+ * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+ *
+ * "All identifiers in this volume of IEEE Std 1003.1-2001, except
+ * environ, are defined in at least one of the headers" (!)
+ */
+extern char **environ;
 #endif
 
 JNIEXPORT jobjectArray JNICALL
 Java_java_lang_ProcessEnvironment_environ(JNIEnv *env, jclass ign)
 {
-    /* This is one of the rare times it's more portable to declare an
-     * external symbol explicitly, rather than via a system header.
-     * The declaration is standardized as part of UNIX98, but there is
-     * no standard (not even de-facto) header file where the
-     * declaration is to be found.  See:
-     * http://www.opengroup.org/onlinepubs/007908799/xbd/envvar.html */
-#ifndef __APPLE__
-    extern char ** environ; /* environ[i] looks like: VAR=VALUE\0 */
-#endif
-
     jsize count = 0;
     jsize i, j;
     jobjectArray result;

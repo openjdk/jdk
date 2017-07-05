@@ -79,11 +79,11 @@
 
 package sun.text.resources.de;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_de extends ListResourceBundle {
+public class FormatData_de extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -118,6 +118,23 @@ public class FormatData_de extends ListResourceBundle {
                     "Okt",
                     "Nov",
                     "Dez",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
                     "",
                 }
             },
@@ -160,6 +177,17 @@ public class FormatData_de extends ListResourceBundle {
                     "Sa" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "So",
+                    "Mo",
+                    "Di",
+                    "Mi",
+                    "Do",
+                    "Fr",
+                    "Sa",
+                }
+            },
             { "DayNarrows",
                 new String[] {
                     "S",
@@ -175,6 +203,12 @@ public class FormatData_de extends ListResourceBundle {
                 new String[] { // era strings
                     "v. Chr.",
                     "n. Chr."
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "v. Chr.",
+                    "n. Chr.",
                 }
             },
             { "NumberElements",
@@ -214,72 +248,6 @@ public class FormatData_de extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GuMtkHmsSEDFwWahKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y G",
-                    "d. MMMM y G",
-                    "d. MMM y G",
-                    "d.M.yyyy",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y G",
-                    "d. MMMM y G",
-                    "d. MMM y G",
-                    "d.M.y GGGGG",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y G",
-                    "d. MMMM y G",
-                    "d. MMM y G",
-                    "d.M.y GGGGG",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d. MMM y GGGG",
-                    "d.M.y G",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y G",
-                    "d. MMMM y G",
-                    "d. MMM y G",
-                    "d.M.y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d. MMM y GGGG",
-                    "d.M.y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "B\u00fcrgerlicher islamischer Kalender" },
-            { "calendarname.islamicc", "B\u00fcrgerlicher islamischer Kalender" },
-            { "calendarname.roc", "Kalender der Republik China" },
-            { "calendarname.islamic", "Islamischer Kalender" },
-            { "calendarname.buddhist", "Buddhistischer Kalender" },
-            { "calendarname.japanese", "Japanischer Kalender" },
-            { "calendarname.gregorian", "Gregorianischer Kalender" },
-            { "calendarname.gregory", "Gregorianischer Kalender" },
-            { "field.era", "Epoche" },
-            { "field.year", "Jahr" },
-            { "field.month", "Monat" },
-            { "field.week", "Woche" },
-            { "field.weekday", "Wochentag" },
-            { "field.dayperiod", "Tagesh\u00e4lfte" },
-            { "field.hour", "Stunde" },
-            { "field.minute", "Minute" },
-            { "field.second", "Sekunde" },
-            { "field.zone", "Zone" },
         };
     }
 }

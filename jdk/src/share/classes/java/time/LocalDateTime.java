@@ -79,12 +79,10 @@ import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDateTime;
-import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -92,6 +90,7 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
@@ -546,7 +545,7 @@ public final class LocalDateTime
      * <li>{@code ALIGNED_WEEK_OF_MONTH}
      * <li>{@code ALIGNED_WEEK_OF_YEAR}
      * <li>{@code MONTH_OF_YEAR}
-     * <li>{@code EPOCH_MONTH}
+     * <li>{@code PROLEPTIC_MONTH}
      * <li>{@code YEAR_OF_ERA}
      * <li>{@code YEAR}
      * <li>{@code ERA}
@@ -565,7 +564,7 @@ public final class LocalDateTime
     public boolean isSupported(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return f.isDateField() || f.isTimeField();
+            return f.isDateBased() || f.isTimeBased();
         }
         return field != null && field.isSupportedBy(this);
     }
@@ -581,7 +580,7 @@ public final class LocalDateTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return
      * appropriate range instances.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
@@ -591,12 +590,13 @@ public final class LocalDateTime
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     @Override
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return (f.isTimeField() ? time.range(field) : date.range(field));
+            return (f.isTimeBased() ? time.range(field) : date.range(field));
         }
         return field.rangeRefinedBy(this);
     }
@@ -612,9 +612,9 @@ public final class LocalDateTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code NANO_OF_DAY}, {@code MICRO_OF_DAY},
-     * {@code EPOCH_DAY} and {@code EPOCH_MONTH} which are too large to fit in
+     * {@code EPOCH_DAY} and {@code PROLEPTIC_MONTH} which are too large to fit in
      * an {@code int} and throw a {@code DateTimeException}.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -623,14 +623,17 @@ public final class LocalDateTime
      *
      * @param field  the field to get, not null
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
     public int get(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return (f.isTimeField() ? time.get(field) : date.get(field));
+            return (f.isTimeBased() ? time.get(field) : date.get(field));
         }
         return ChronoLocalDateTime.super.get(field);
     }
@@ -645,7 +648,7 @@ public final class LocalDateTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -655,13 +658,14 @@ public final class LocalDateTime
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            return (f.isTimeField() ? time.getLong(field) : date.getLong(field));
+            return (f.isTimeBased() ? time.getLong(field) : date.getLong(field));
         }
         return field.getFrom(this);
     }
@@ -822,7 +826,7 @@ public final class LocalDateTime
      * <p>
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link java.time.temporal.Adjusters}.
+     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
      * These include finding the "last day of the month" and "next Wednesday".
      * Key date-time classes also implement the {@code TemporalAdjuster} interface,
      * such as {@link Month} and {@link java.time.MonthDay MonthDay}.
@@ -886,7 +890,7 @@ public final class LocalDateTime
      * The {@link #isSupported(TemporalField) supported fields} will behave as per
      * the matching method on {@link LocalDate#with(TemporalField, long) LocalDate}
      * or {@link LocalTime#with(TemporalField, long) LocalTime}.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
@@ -899,13 +903,14 @@ public final class LocalDateTime
      * @param newValue  the new value of the field in the result
      * @return a {@code LocalDateTime} based on {@code this} with the specified field set, not null
      * @throws DateTimeException if the field cannot be set
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
     public LocalDateTime with(TemporalField field, long newValue) {
         if (field instanceof ChronoField) {
             ChronoField f = (ChronoField) field;
-            if (f.isTimeField()) {
+            if (f.isTimeBased()) {
                 return with(date, time.with(field, newValue));
             } else {
                 return with(date.with(field, newValue), time);
@@ -1052,6 +1057,7 @@ public final class LocalDateTime
      * @param unit  the unit to truncate to, not null
      * @return a {@code LocalDateTime} based on this date-time with the time truncated, not null
      * @throws DateTimeException if unable to truncate
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     public LocalDateTime truncatedTo(TemporalUnit unit) {
         return with(date, time.truncatedTo(unit));
@@ -1106,6 +1112,7 @@ public final class LocalDateTime
      * @param unit  the unit of the amount to add, not null
      * @return a {@code LocalDateTime} based on this date-time with the specified amount added, not null
      * @throws DateTimeException if the addition cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1312,6 +1319,7 @@ public final class LocalDateTime
      * @param unit  the unit of the amount to subtract, not null
      * @return a {@code LocalDateTime} based on this date-time with the specified amount subtracted, not null
      * @throws DateTimeException if the subtraction cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1517,7 +1525,7 @@ public final class LocalDateTime
     @SuppressWarnings("unchecked")
     @Override  // override for Javadoc
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.localDate()) {
+        if (query == TemporalQuery.localDate()) {
             return (R) date;
         }
         return ChronoLocalDateTime.super.query(query);
@@ -1597,6 +1605,7 @@ public final class LocalDateTime
      * @param unit  the unit to measure the period in, not null
      * @return the amount of the period between this date-time and the end date-time
      * @throws DateTimeException if the period cannot be calculated
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1610,31 +1619,79 @@ public final class LocalDateTime
             ChronoUnit f = (ChronoUnit) unit;
             if (f.isTimeUnit()) {
                 long amount = date.daysUntil(end.date);
-                switch (f) {
-                    case NANOS: amount = Math.multiplyExact(amount, NANOS_PER_DAY); break;
-                    case MICROS: amount = Math.multiplyExact(amount, MICROS_PER_DAY); break;
-                    case MILLIS: amount = Math.multiplyExact(amount, MILLIS_PER_DAY); break;
-                    case SECONDS: amount = Math.multiplyExact(amount, SECONDS_PER_DAY); break;
-                    case MINUTES: amount = Math.multiplyExact(amount, MINUTES_PER_DAY); break;
-                    case HOURS: amount = Math.multiplyExact(amount, HOURS_PER_DAY); break;
-                    case HALF_DAYS: amount = Math.multiplyExact(amount, 2); break;
+                if (amount == 0) {
+                    return time.periodUntil(end.time, unit);
                 }
-                return Math.addExact(amount, time.periodUntil(end.time, unit));
+                long timePart = end.time.toNanoOfDay() - time.toNanoOfDay();
+                if (amount > 0) {
+                    amount--;  // safe
+                    timePart += NANOS_PER_DAY;  // safe
+                } else {
+                    amount++;  // safe
+                    timePart -= NANOS_PER_DAY;  // safe
+                }
+                switch (f) {
+                    case NANOS:
+                        amount = Math.multiplyExact(amount, NANOS_PER_DAY);
+                        break;
+                    case MICROS:
+                        amount = Math.multiplyExact(amount, MICROS_PER_DAY);
+                        timePart = timePart / 1000;
+                        break;
+                    case MILLIS:
+                        amount = Math.multiplyExact(amount, MILLIS_PER_DAY);
+                        timePart = timePart / 1_000_000;
+                        break;
+                    case SECONDS:
+                        amount = Math.multiplyExact(amount, SECONDS_PER_DAY);
+                        timePart = timePart / NANOS_PER_SECOND;
+                        break;
+                    case MINUTES:
+                        amount = Math.multiplyExact(amount, MINUTES_PER_DAY);
+                        timePart = timePart / NANOS_PER_MINUTE;
+                        break;
+                    case HOURS:
+                        amount = Math.multiplyExact(amount, HOURS_PER_DAY);
+                        timePart = timePart / NANOS_PER_HOUR;
+                        break;
+                    case HALF_DAYS:
+                        amount = Math.multiplyExact(amount, 2);
+                        timePart = timePart / (NANOS_PER_HOUR * 12);
+                        break;
+                }
+                return Math.addExact(amount, timePart);
             }
             LocalDate endDate = end.date;
-            if (end.time.isBefore(time)) {
+            if (endDate.isAfter(date) && end.time.isBefore(time)) {
                 endDate = endDate.minusDays(1);
+            } else if (endDate.isBefore(date) && end.time.isAfter(time)) {
+                endDate = endDate.plusDays(1);
             }
             return date.periodUntil(endDate, unit);
         }
         return unit.between(this, endDateTime);
     }
 
+    /**
+     * Formats this date-time using the specified formatter.
+     * <p>
+     * This date-time will be passed to the formatter to produce a string.
+     *
+     * @param formatter  the formatter to use, not null
+     * @return the formatted date-time string, not null
+     * @throws DateTimeException if an error occurs during printing
+     */
+    @Override  // override for Javadoc and performance
+    public String format(DateTimeFormatter formatter) {
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.format(this);
+    }
+
     //-----------------------------------------------------------------------
     /**
-     * Combines this time with a date to create an {@code OffsetTime}.
+     * Combines this date-time with an offset to create an {@code OffsetDateTime}.
      * <p>
-     * This returns an {@code OffsetTime} formed from this time at the specified offset.
+     * This returns an {@code OffsetDateTime} formed from this date-time at the specified offset.
      * All possible combinations of date-time and offset are valid.
      *
      * @param offset  the offset to combine with, not null
@@ -1645,7 +1702,7 @@ public final class LocalDateTime
     }
 
     /**
-     * Combines this time with a time-zone to create a {@code ZonedDateTime}.
+     * Combines this date-time with a time-zone to create a {@code ZonedDateTime}.
      * <p>
      * This returns a {@code ZonedDateTime} formed from this date-time at the
      * specified time-zone. The result will match this date-time as closely as possible.
@@ -1725,7 +1782,7 @@ public final class LocalDateTime
      * This method only considers the position of the two date-times on the local time-line.
      * It does not take into account the chronology, or calendar system.
      * This is different from the comparison in {@link #compareTo(ChronoLocalDateTime)},
-     * but is the same approach as {@link #DATE_TIME_COMPARATOR}.
+     * but is the same approach as {@link ChronoLocalDateTime#timeLineOrder()}.
      *
      * @param other  the other date-time to compare to, not null
      * @return true if this date-time is after the specified date-time
@@ -1754,7 +1811,7 @@ public final class LocalDateTime
      * This method only considers the position of the two date-times on the local time-line.
      * It does not take into account the chronology, or calendar system.
      * This is different from the comparison in {@link #compareTo(ChronoLocalDateTime)},
-     * but is the same approach as {@link #DATE_TIME_COMPARATOR}.
+     * but is the same approach as {@link ChronoLocalDateTime#timeLineOrder()}.
      *
      * @param other  the other date-time to compare to, not null
      * @return true if this date-time is before the specified date-time
@@ -1783,7 +1840,7 @@ public final class LocalDateTime
      * This method only considers the position of the two date-times on the local time-line.
      * It does not take into account the chronology, or calendar system.
      * This is different from the comparison in {@link #compareTo(ChronoLocalDateTime)},
-     * but is the same approach as {@link #DATE_TIME_COMPARATOR}.
+     * but is the same approach as {@link ChronoLocalDateTime#timeLineOrder()}.
      *
      * @param other  the other date-time to compare to, not null
      * @return true if this date-time is equal to the specified date-time
@@ -1834,11 +1891,11 @@ public final class LocalDateTime
      * <p>
      * The output will be one of the following ISO-8601 formats:
      * <p><ul>
-     * <li>{@code yyyy-MM-dd'T'HH:mm}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ss}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ss.SSS}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ss.SSSSSS}</li>
-     * <li>{@code yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ss}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSS}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSS}</li>
+     * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS}</li>
      * </ul><p>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
@@ -1848,21 +1905,6 @@ public final class LocalDateTime
     @Override
     public String toString() {
         return date.toString() + 'T' + time.toString();
-    }
-
-    /**
-     * Outputs this date-time as a {@code String} using the formatter.
-     * <p>
-     * This date-time will be passed to the formatter
-     * {@link DateTimeFormatter#format(TemporalAccessor) format method}.
-     *
-     * @param formatter  the formatter to use, not null
-     * @return the formatted date-time string, not null
-     * @throws DateTimeException if an error occurs during printing
-     */
-    @Override  // override for Javadoc
-    public String toString(DateTimeFormatter formatter) {
-        return ChronoLocalDateTime.super.toString(formatter);
     }
 
     //-----------------------------------------------------------------------

@@ -32,7 +32,8 @@
  * @library ../../../testlibrary
  * @build TestLibrary FnnClass FnnUnmarshal NonpublicInterface
  *     NonpublicInterface1 PublicInterface PublicInterface1
- * @run main/othervm/policy=security.policy LoadProxyClasses
+ * @run main/othervm/policy=security.policy
+ *     -Djava.rmi.server.useCodebaseOnly=false LoadProxyClasses
  */
 
 import java.rmi.server.RMIClassLoader;

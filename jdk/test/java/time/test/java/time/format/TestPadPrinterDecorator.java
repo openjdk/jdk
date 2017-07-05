@@ -69,7 +69,7 @@ import org.testng.annotations.Test;
 /**
  * Test PadPrinterDecorator.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestPadPrinterDecorator extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------

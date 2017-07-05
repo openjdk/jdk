@@ -441,29 +441,37 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
 
     @Override
     public int getMaxTextureWidth() {
-        int width;
+        //Temporary disable this logic and use some magic constrain.
+        /*
+         int width;
 
-        synchronized (totalDisplayBounds) {
-            if (totalDisplayBounds.width == 0) {
-                updateTotalDisplayBounds();
-            }
-            width = totalDisplayBounds.width;
-        }
+         synchronized (totalDisplayBounds) {
+         if (totalDisplayBounds.width == 0) {
+         updateTotalDisplayBounds();
+         }
+         width = totalDisplayBounds.width;
+         }
 
-        return Math.min(width, getMaxTextureSize());
+         return Math.min(width, getMaxTextureSize());
+         */
+        return getMaxTextureSize() / (getDevice().getScaleFactor() * 2);
     }
 
     @Override
     public int getMaxTextureHeight() {
-        int height;
+        //Temporary disable this logic and use some magic constrain.
+        /*
+         int height;
 
-        synchronized (totalDisplayBounds) {
-            if (totalDisplayBounds.height == 0) {
-                updateTotalDisplayBounds();
-            }
-            height = totalDisplayBounds.height;
-        }
+         synchronized (totalDisplayBounds) {
+         if (totalDisplayBounds.height == 0) {
+         updateTotalDisplayBounds();
+         }
+         height = totalDisplayBounds.height;
+         }
 
-        return Math.min(height, getMaxTextureSize());
+         return Math.min(height, getMaxTextureSize());
+         */
+        return getMaxTextureSize() / (getDevice().getScaleFactor() * 2);
     }
 }

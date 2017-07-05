@@ -210,18 +210,18 @@ class Inet6Address extends InetAddress {
 
     Inet6Address() {
         super();
-        hostName = null;
+        holder().hostName = null;
         ipaddress = new byte[INADDRSZ];
-        family = IPv6;
+        holder().family = IPv6;
     }
 
     /* checking of value for scope_id should be done by caller
      * scope_id must be >= 0, or -1 to indicate not being set
      */
     Inet6Address(String hostName, byte addr[], int scope_id) {
-        this.hostName = hostName;
+        holder().hostName = hostName;
         if (addr.length == INADDRSZ) { // normal IPv6 address
-            family = IPv6;
+            holder().family = IPv6;
             ipaddress = addr.clone();
         }
         if (scope_id >= 0) {
@@ -335,9 +335,9 @@ class Inet6Address extends InetAddress {
     private void initif(String hostName, byte addr[],NetworkInterface nif)
         throws UnknownHostException
     {
-        this.hostName = hostName;
+        holder().hostName = hostName;
         if (addr.length == INADDRSZ) { // normal IPv6 address
-            family = IPv6;
+            holder().family = IPv6;
             ipaddress = addr.clone();
         }
         if (nif != null) {
@@ -420,6 +420,11 @@ class Inet6Address extends InetAddress {
      */
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
+
+        if (getClass().getClassLoader() != null) {
+            throw new SecurityException ("invalid address type");
+        }
+
         s.defaultReadObject();
 
         if (ifname != null && !ifname.equals("")) {
@@ -447,7 +452,7 @@ class Inet6Address extends InetAddress {
                                              ipaddress.length);
         }
 
-        if (family != IPv6) {
+        if (holder().getFamily() != IPv6) {
             throw new InvalidObjectException("invalid address family type");
         }
     }

@@ -59,17 +59,16 @@
  */
 package test.java.time;
 
+import static org.testng.Assert.assertEquals;
+
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
-import java.time.ZoneOffset;
-
 import java.time.OffsetDateTime;
 import java.time.Year;
-
-import static org.testng.Assert.assertEquals;
+import java.time.ZoneOffset;
 
 import org.testng.annotations.Test;
 

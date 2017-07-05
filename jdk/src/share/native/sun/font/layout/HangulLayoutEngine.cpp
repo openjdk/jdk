@@ -209,7 +209,7 @@ static le_int32 getCharClass(LEUnicode ch, LEUnicode &lead, LEUnicode &vowel, LE
 }
 
 HangulOpenTypeLayoutEngine::HangulOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 /*languageCode*/,
-                                       le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable, LEErrorCode &success)
+                                                       le_int32 typoFlags, const LEReferenceTo<GlyphSubstitutionTableHeader> &gsubTable, LEErrorCode &success)
     : OpenTypeLayoutEngine(fontInstance, scriptCode, korLanguageCode, typoFlags, gsubTable, success)
 {
     fFeatureMap = featureMap;

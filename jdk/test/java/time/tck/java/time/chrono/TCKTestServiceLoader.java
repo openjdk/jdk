@@ -60,9 +60,13 @@ package tck.java.time.chrono;
 
 import static org.testng.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.LocalDate;
-import java.time.chrono.Chronology;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
 
 import org.testng.annotations.Test;
 
@@ -73,7 +77,7 @@ import org.testng.annotations.Test;
 @Test
 public class TCKTestServiceLoader {
 
-     @Test(groups={"tck"})
+     @Test
      public void test_CopticServiceLoader() {
         Chronology chrono = Chronology.of("Coptic");
         ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
@@ -81,4 +85,22 @@ public class TCKTestServiceLoader {
         assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
     }
 
+
+    //-----------------------------------------------------------------------
+    // Test Serialization of Loaded Coptic Calendar
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_ChronoSerialization() throws Exception {
+        Chronology chrono = Chronology.of("Coptic");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(baos);
+        out.writeObject(chrono);
+        out.close();
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        ObjectInputStream in = new ObjectInputStream(bais);
+        @SuppressWarnings("unchecked")
+        Chronology ser = (Chronology) in.readObject();
+        assertEquals(ser, chrono, "deserialized Chronology is wrong");
+    }
 }

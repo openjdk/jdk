@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,8 @@ public abstract class CipherWithWrappingSpi extends CipherSpi {
 
         try {
             KeyFactory keyFactory =
-                KeyFactory.getInstance(encodedKeyAlgorithm, "SunJCE");
+                KeyFactory.getInstance(encodedKeyAlgorithm,
+                    SunJCE.getInstance());
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encodedKey);
             key = keyFactory.generatePublic(keySpec);
         } catch (NoSuchAlgorithmException nsae) {
@@ -190,8 +191,6 @@ public abstract class CipherWithWrappingSpi extends CipherSpi {
                 // Should never happen.
             }
         } catch (InvalidKeySpecException ikse) {
-            // Should never happen.
-        } catch (NoSuchProviderException nspe) {
             // Should never happen.
         }
 
@@ -215,7 +214,8 @@ public abstract class CipherWithWrappingSpi extends CipherSpi {
 
         try {
             KeyFactory keyFactory =
-                KeyFactory.getInstance(encodedKeyAlgorithm, "SunJCE");
+                KeyFactory.getInstance(encodedKeyAlgorithm,
+                    SunJCE.getInstance());
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encodedKey);
             return keyFactory.generatePrivate(keySpec);
         } catch (NoSuchAlgorithmException nsae) {
@@ -236,8 +236,6 @@ public abstract class CipherWithWrappingSpi extends CipherSpi {
                 // Should never happen.
             }
         } catch (InvalidKeySpecException ikse) {
-            // Should never happen.
-        } catch (NoSuchProviderException nspe) {
             // Should never happen.
         }
 

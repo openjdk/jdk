@@ -2065,7 +2065,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Kerberos"));
                     break;
                 case UNKNOWN:
-                    logger.finest("Unknown/Unsupported authentication scheme: " + scheme);
+                    if (logger.isLoggable(PlatformLogger.FINEST)) {
+                        logger.finest("Unknown/Unsupported authentication scheme: " + scheme);
+                    }
                 /*fall through*/
                 default:
                     throw new AssertionError("should not reach here");
@@ -2222,7 +2224,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     }
                     break;
                 case UNKNOWN:
-                    logger.finest("Unknown/Unsupported authentication scheme: " + scheme);
+                    if (logger.isLoggable(PlatformLogger.FINEST)) {
+                        logger.finest("Unknown/Unsupported authentication scheme: " + scheme);
+                    }
                 /*fall through*/
                 default:
                     throw new AssertionError("should not reach here");

@@ -29,15 +29,18 @@ package sun.security.ssl;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Arrays;
 
 import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.GCMParameterSpec;
 
 import java.nio.*;
 
 import sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.*;
+import static sun.security.ssl.CipherSuite.CipherType.*;
 
 import sun.misc.HexDumpEncoder;
 
@@ -102,19 +105,40 @@ final class CipherBox {
     private final Cipher cipher;
 
     /**
-     * Cipher blocksize, 0 for stream ciphers
-     */
-    private int blockSize;
-
-    /**
      * secure random
      */
     private SecureRandom random;
 
     /**
-     * Is the cipher of CBC mode?
+     * fixed IV, the implicit nonce of AEAD cipher suite, only apply to
+     * AEAD cipher suites
      */
-    private final boolean isCBCMode;
+    private final byte[] fixedIv;
+
+    /**
+     * the key, reserved only for AEAD cipher initialization
+     */
+    private final Key key;
+
+    /**
+     * the operation mode, reserved for AEAD cipher initialization
+     */
+    private final int mode;
+
+    /**
+     * the authentication tag size, only apply to AEAD cipher suites
+     */
+    private final int tagSize;
+
+    /**
+     * the record IV length, only apply to AEAD cipher suites
+     */
+    private final int recordIvSize;
+
+    /**
+     * cipher type
+     */
+    private final CipherType cipherType;
 
     /**
      * Fixed masks of various block size, as the initial decryption IVs
@@ -132,7 +156,13 @@ final class CipherBox {
     private CipherBox() {
         this.protocolVersion = ProtocolVersion.DEFAULT;
         this.cipher = null;
-        this.isCBCMode = false;
+        this.cipherType = STREAM_CIPHER;
+        this.fixedIv = new byte[0];
+        this.key = null;
+        this.mode = Cipher.ENCRYPT_MODE;    // choose at random
+        this.random = null;
+        this.tagSize = 0;
+        this.recordIvSize = 0;
     }
 
     /**
@@ -147,13 +177,13 @@ final class CipherBox {
         try {
             this.protocolVersion = protocolVersion;
             this.cipher = JsseJce.getCipher(bulkCipher.transformation);
-            int mode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+            this.mode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
 
             if (random == null) {
                 random = JsseJce.getSecureRandom();
             }
             this.random = random;
-            this.isCBCMode = bulkCipher.isCBCMode;
+            this.cipherType = bulkCipher.cipherType;
 
             /*
              * RFC 4346 recommends two algorithms used to generated the
@@ -171,14 +201,40 @@ final class CipherBox {
                 iv = getFixedMask(bulkCipher.ivSize);
             }
 
-            cipher.init(mode, key, iv, random);
+            if (cipherType == AEAD_CIPHER) {
+                // AEAD must completely initialize the cipher for each packet,
+                // and so we save initialization parameters for packet
+                // processing time.
 
-            // Do not call getBlockSize until after init()
-            // otherwise we would disrupt JCE delayed provider selection
-            blockSize = cipher.getBlockSize();
-            // some providers implement getBlockSize() incorrectly
-            if (blockSize == 1) {
-                blockSize = 0;
+                // Set the tag size for AEAD cipher
+                tagSize = bulkCipher.tagSize;
+
+                // Reserve the key for AEAD cipher initialization
+                this.key = key;
+
+                fixedIv = iv.getIV();
+                if (fixedIv == null ||
+                        fixedIv.length != bulkCipher.fixedIvSize) {
+                    throw new RuntimeException("Improper fixed IV for AEAD");
+                }
+
+                // Set the record IV length for AEAD cipher
+                recordIvSize = bulkCipher.ivSize - bulkCipher.fixedIvSize;
+
+                // DON'T initialize the cipher for AEAD!
+            } else {
+                // CBC only requires one initialization during its lifetime
+                // (future packets/IVs set the proper CBC state), so we can
+                // initialize now.
+
+                // Zeroize the variables that only apply to AEAD cipher
+                this.tagSize = 0;
+                this.fixedIv = new byte[0];
+                this.recordIvSize = 0;
+                this.key = null;
+
+                // Initialize the cipher
+                cipher.init(mode, key, iv, random);
             }
         } catch (NoSuchAlgorithmException e) {
             throw e;
@@ -235,26 +291,11 @@ final class CipherBox {
         }
 
         try {
-            if (blockSize != 0) {
-                // TLSv1.1 needs a IV block
-                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
-                    // generate a random number
-                    byte[] prefix = new byte[blockSize];
-                    random.nextBytes(prefix);
-
-                    // move forward the plaintext
-                    System.arraycopy(buf, offset,
-                                     buf, offset + prefix.length, len);
-
-                    // prefix the plaintext
-                    System.arraycopy(prefix, 0,
-                                     buf, offset, prefix.length);
-
-                    len += prefix.length;
-                }
-
+            int blockSize = cipher.getBlockSize();
+            if (cipherType == BLOCK_CIPHER) {
                 len = addPadding(buf, offset, len, blockSize);
             }
+
             if (debug != null && Debug.isOn("plaintext")) {
                 try {
                     HexDumpEncoder hd = new HexDumpEncoder();
@@ -267,14 +308,28 @@ final class CipherBox {
                         System.out);
                 } catch (IOException e) { }
             }
-            int newLen = cipher.update(buf, offset, len, buf, offset);
-            if (newLen != len) {
-                // catch BouncyCastle buffering error
-                throw new RuntimeException("Cipher buffering error " +
-                    "in JCE provider " + cipher.getProvider().getName());
+
+
+            if (cipherType == AEAD_CIPHER) {
+                try {
+                    return cipher.doFinal(buf, offset, len, buf, offset);
+                } catch (IllegalBlockSizeException | BadPaddingException ibe) {
+                    // unlikely to happen
+                    throw new RuntimeException(
+                        "Cipher error in AEAD mode in JCE provider " +
+                        cipher.getProvider().getName(), ibe);
+                }
+            } else {
+                int newLen = cipher.update(buf, offset, len, buf, offset);
+                if (newLen != len) {
+                    // catch BouncyCastle buffering error
+                    throw new RuntimeException("Cipher buffering error " +
+                        "in JCE provider " + cipher.getProvider().getName());
+                }
+                return newLen;
             }
-            return newLen;
         } catch (ShortBufferException e) {
+            // unlikely to happen, we should have enough buffer space here
             throw new ArrayIndexOutOfBoundsException(e.toString());
         }
     }
@@ -288,7 +343,7 @@ final class CipherBox {
      * set to last position padded/encrypted.  The limit may have changed
      * because of the added padding bytes.
      */
-    int encrypt(ByteBuffer bb) {
+    int encrypt(ByteBuffer bb, int outLimit) {
 
         int len = bb.remaining();
 
@@ -297,65 +352,70 @@ final class CipherBox {
             return len;
         }
 
-        try {
-            int pos = bb.position();
+        int pos = bb.position();
 
-            if (blockSize != 0) {
-                // TLSv1.1 needs a IV block
-                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
-                    // generate a random number
-                    byte[] prefix = new byte[blockSize];
-                    random.nextBytes(prefix);
+        int blockSize = cipher.getBlockSize();
+        if (cipherType == BLOCK_CIPHER) {
+            // addPadding adjusts pos/limit
+            len = addPadding(bb, blockSize);
+            bb.position(pos);
+        }
 
-                    // move forward the plaintext
-                    byte[] buf = null;
-                    int limit = bb.limit();
-                    if (bb.hasArray()) {
-                        int arrayOffset = bb.arrayOffset();
-                        buf = bb.array();
-                        System.arraycopy(buf, arrayOffset + pos,
-                            buf, arrayOffset + pos + prefix.length,
-                            limit - pos);
-                        bb.limit(limit + prefix.length);
-                    } else {
-                        buf = new byte[limit - pos];
-                        bb.get(buf, 0, limit - pos);
-                        bb.position(pos + prefix.length);
-                        bb.limit(limit + prefix.length);
-                        bb.put(buf);
+        if (debug != null && Debug.isOn("plaintext")) {
+            try {
+                HexDumpEncoder hd = new HexDumpEncoder();
+
+                System.out.println(
+                    "Padded plaintext before ENCRYPTION:  len = "
+                    + len);
+                hd.encodeBuffer(bb.duplicate(), System.out);
+
+            } catch (IOException e) { }
+        }
+
+        /*
+         * Encrypt "in-place".  This does not add its own padding.
+         */
+        ByteBuffer dup = bb.duplicate();
+        if (cipherType == AEAD_CIPHER) {
+            try {
+                int outputSize = cipher.getOutputSize(dup.remaining());
+                if (outputSize > bb.remaining()) {
+                    // need to expand the limit of the output buffer for
+                    // the authentication tag.
+                    //
+                    // DON'T worry about the buffer's capacity, we have
+                    // reserved space for the authentication tag.
+                    if (outLimit < pos + outputSize) {
+                        // unlikely to happen
+                        throw new ShortBufferException(
+                                    "need more space in output buffer");
                     }
-                    bb.position(pos);
-
-                    // prefix the plaintext
-                    bb.put(prefix);
-                    bb.position(pos);
+                    bb.limit(pos + outputSize);
                 }
-
-                // addPadding adjusts pos/limit
-                len = addPadding(bb, blockSize);
-                bb.position(pos);
+                int newLen = cipher.doFinal(dup, bb);
+                if (newLen != outputSize) {
+                    throw new RuntimeException(
+                            "Cipher buffering error in JCE provider " +
+                            cipher.getProvider().getName());
+                }
+                return newLen;
+            } catch (IllegalBlockSizeException |
+                           BadPaddingException | ShortBufferException ibse) {
+                // unlikely to happen
+                throw new RuntimeException(
+                        "Cipher error in AEAD mode in JCE provider " +
+                        cipher.getProvider().getName(), ibse);
             }
-            if (debug != null && Debug.isOn("plaintext")) {
-                try {
-                    HexDumpEncoder hd = new HexDumpEncoder();
-
-                    System.out.println(
-                        "Padded plaintext before ENCRYPTION:  len = "
-                        + len);
-                    hd.encodeBuffer(bb, System.out);
-
-                } catch (IOException e) { }
-                /*
-                 * reset back to beginning
-                 */
-                bb.position(pos);
+        } else {
+            int newLen;
+            try {
+                newLen = cipher.update(dup, bb);
+            } catch (ShortBufferException sbe) {
+                // unlikely to happen
+                throw new RuntimeException("Cipher buffering error " +
+                    "in JCE provider " + cipher.getProvider().getName());
             }
-
-            /*
-             * Encrypt "in-place".  This does not add its own padding.
-             */
-            ByteBuffer dup = bb.duplicate();
-            int newLen = cipher.update(dup, bb);
 
             if (bb.position() != dup.position()) {
                 throw new RuntimeException("bytebuffer padding error");
@@ -367,10 +427,6 @@ final class CipherBox {
                     "in JCE provider " + cipher.getProvider().getName());
             }
             return newLen;
-        } catch (ShortBufferException e) {
-            RuntimeException exc = new RuntimeException(e.toString());
-            exc.initCause(e);
-            throw exc;
         }
     }
 
@@ -399,11 +455,23 @@ final class CipherBox {
         }
 
         try {
-            int newLen = cipher.update(buf, offset, len, buf, offset);
-            if (newLen != len) {
-                // catch BouncyCastle buffering error
-                throw new RuntimeException("Cipher buffering error " +
-                    "in JCE provider " + cipher.getProvider().getName());
+            int newLen;
+            if (cipherType == AEAD_CIPHER) {
+                try {
+                    newLen = cipher.doFinal(buf, offset, len, buf, offset);
+                } catch (IllegalBlockSizeException ibse) {
+                    // unlikely to happen
+                    throw new RuntimeException(
+                        "Cipher error in AEAD mode in JCE provider " +
+                        cipher.getProvider().getName(), ibse);
+                }
+            } else {
+                newLen = cipher.update(buf, offset, len, buf, offset);
+                if (newLen != len) {
+                    // catch BouncyCastle buffering error
+                    throw new RuntimeException("Cipher buffering error " +
+                        "in JCE provider " + cipher.getProvider().getName());
+                }
             }
             if (debug != null && Debug.isOn("plaintext")) {
                 try {
@@ -418,7 +486,8 @@ final class CipherBox {
                 } catch (IOException e) { }
             }
 
-            if (blockSize != 0) {
+            if (cipherType == BLOCK_CIPHER) {
+                int blockSize = cipher.getBlockSize();
                 newLen = removePadding(
                     buf, offset, newLen, tagLen, blockSize, protocolVersion);
 
@@ -426,16 +495,11 @@ final class CipherBox {
                     if (newLen < blockSize) {
                         throw new BadPaddingException("invalid explicit IV");
                     }
-
-                    // discards the first cipher block, the IV component.
-                    System.arraycopy(buf, offset + blockSize,
-                                     buf, offset, newLen - blockSize);
-
-                    newLen -= blockSize;
                 }
             }
             return newLen;
         } catch (ShortBufferException e) {
+            // unlikely to happen, we should have enough buffer space here
             throw new ArrayIndexOutOfBoundsException(e.toString());
         }
     }
@@ -465,12 +529,27 @@ final class CipherBox {
              */
             int pos = bb.position();
             ByteBuffer dup = bb.duplicate();
-            int newLen = cipher.update(dup, bb);
-            if (newLen != len) {
-                // catch BouncyCastle buffering error
-                throw new RuntimeException("Cipher buffering error " +
-                    "in JCE provider " + cipher.getProvider().getName());
+            int newLen;
+            if (cipherType == AEAD_CIPHER) {
+                try {
+                    newLen = cipher.doFinal(dup, bb);
+                } catch (IllegalBlockSizeException ibse) {
+                    // unlikely to happen
+                    throw new RuntimeException(
+                        "Cipher error in AEAD mode \"" + ibse.getMessage() +
+                        " \"in JCE provider " + cipher.getProvider().getName());
+                }
+            } else {
+                newLen = cipher.update(dup, bb);
+                if (newLen != len) {
+                    // catch BouncyCastle buffering error
+                    throw new RuntimeException("Cipher buffering error " +
+                        "in JCE provider " + cipher.getProvider().getName());
+                }
             }
+
+            // reset the limit to the end of the decryted data
+            bb.limit(pos + newLen);
 
             if (debug != null && Debug.isOn("plaintext")) {
                 try {
@@ -488,44 +567,25 @@ final class CipherBox {
             /*
              * Remove the block padding.
              */
-            if (blockSize != 0) {
+            if (cipherType == BLOCK_CIPHER) {
+                int blockSize = cipher.getBlockSize();
                 bb.position(pos);
-                newLen = removePadding(
-                    bb, tagLen, blockSize, protocolVersion);
+                newLen = removePadding(bb, tagLen, blockSize, protocolVersion);
 
+                // check the explicit IV of TLS v1.1 or later
                 if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
                     if (newLen < blockSize) {
                         throw new BadPaddingException("invalid explicit IV");
                     }
 
-                    // discards the first cipher block, the IV component.
-                    byte[] buf = null;
-                    int limit = bb.limit();
-                    if (bb.hasArray()) {
-                        int arrayOffset = bb.arrayOffset();
-                        buf = bb.array();
-                        System.arraycopy(buf, arrayOffset + pos + blockSize,
-                            buf, arrayOffset + pos, limit - pos - blockSize);
-                        bb.limit(limit - blockSize);
-                    } else {
-                        buf = new byte[limit - pos - blockSize];
-                        bb.position(pos + blockSize);
-                        bb.get(buf);
-                        bb.position(pos);
-                        bb.put(buf);
-                        bb.limit(limit - blockSize);
-                    }
-
                     // reset the position to the end of the decrypted data
-                    limit = bb.limit();
-                    bb.position(limit);
+                    bb.position(bb.limit());
                 }
             }
             return newLen;
         } catch (ShortBufferException e) {
-            RuntimeException exc = new RuntimeException(e.toString());
-            exc.initCause(e);
-            throw exc;
+            // unlikely to happen, we should have enough buffer space here
+            throw new ArrayIndexOutOfBoundsException(e.toString());
         }
     }
 
@@ -766,8 +826,8 @@ final class CipherBox {
                 // ignore return value.
                 cipher.doFinal();
             }
-        } catch (GeneralSecurityException e) {
-            // swallow for now.
+        } catch (Exception e) {
+            // swallow all types of exceptions.
         }
     }
 
@@ -777,16 +837,245 @@ final class CipherBox {
      * @return true if the cipher use CBC mode, false otherwise.
      */
     boolean isCBCMode() {
-        return isCBCMode;
+        return cipherType == BLOCK_CIPHER;
     }
 
-    /**
+    /*
+     * Does the cipher use AEAD mode?
+     *
+     * @return true if the cipher use AEAD mode, false otherwise.
+     */
+    boolean isAEADMode() {
+        return cipherType == AEAD_CIPHER;
+    }
+
+    /*
      * Is the cipher null?
      *
      * @return true if the cipher is null, false otherwise.
      */
     boolean isNullCipher() {
         return cipher == null;
+    }
+
+    /*
+     * Gets the explicit nonce/IV size of the cipher.
+     *
+     * The returned value is the SecurityParameters.record_iv_length in
+     * RFC 4346/5246.  It is the size of explicit IV for CBC mode, and the
+     * size of explicit nonce for AEAD mode.
+     *
+     * @return the explicit nonce size of the cipher.
+     */
+    int getExplicitNonceSize() {
+        switch (cipherType) {
+            case BLOCK_CIPHER:
+                // For block ciphers, the explicit IV length is of length
+                // SecurityParameters.record_iv_length, which is equal to
+                // the SecurityParameters.block_size.
+                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                    return cipher.getBlockSize();
+                }
+                break;
+            case AEAD_CIPHER:
+                return recordIvSize;
+                        // It is also the length of sequence number, which is
+                        // used as the nonce_explicit for AEAD cipher suites.
+        }
+
+        return 0;
+    }
+
+    /*
+     * Applies the explicit nonce/IV to this cipher. This method is used to
+     * decrypt an SSL/TLS input record.
+     *
+     * The returned value is the SecurityParameters.record_iv_length in
+     * RFC 4346/5246.  It is the size of explicit IV for CBC mode, and the
+     * size of explicit nonce for AEAD mode.
+     *
+     * @param  authenticator the authenticator to get the additional
+     *         authentication data
+     * @param  contentType the content type of the input record
+     * @param  bb the byte buffer to get the explicit nonce from
+     *
+     * @return the explicit nonce size of the cipher.
+     */
+    int applyExplicitNonce(Authenticator authenticator, byte contentType,
+            ByteBuffer bb) throws BadPaddingException {
+        switch (cipherType) {
+            case BLOCK_CIPHER:
+                // sanity check length of the ciphertext
+                int tagLen = (authenticator instanceof MAC) ?
+                                    ((MAC)authenticator).MAClen() : 0;
+                if (tagLen != 0) {
+                    if (!sanityCheck(tagLen, bb.remaining())) {
+                        throw new BadPaddingException(
+                                "ciphertext sanity check failed");
+                    }
+                }
+
+                // For block ciphers, the explicit IV length is of length
+                // SecurityParameters.record_iv_length, which is equal to
+                // the SecurityParameters.block_size.
+                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                    return cipher.getBlockSize();
+                }
+                break;
+            case AEAD_CIPHER:
+                if (bb.remaining() < (recordIvSize + tagSize)) {
+                    throw new BadPaddingException(
+                                        "invalid AEAD cipher fragment");
+                }
+
+                // initialize the AEAD cipher for the unique IV
+                byte[] iv = Arrays.copyOf(fixedIv,
+                                    fixedIv.length + recordIvSize);
+                bb.get(iv, fixedIv.length, recordIvSize);
+                bb.position(bb.position() - recordIvSize);
+                GCMParameterSpec spec = new GCMParameterSpec(tagSize * 8, iv);
+                try {
+                    cipher.init(mode, key, spec, random);
+                } catch (InvalidKeyException |
+                            InvalidAlgorithmParameterException ikae) {
+                    // unlikely to happen
+                    throw new RuntimeException(
+                                "invalid key or spec in GCM mode", ikae);
+                }
+
+                // update the additional authentication data
+                byte[] aad = authenticator.acquireAuthenticationBytes(
+                        contentType, bb.remaining() - recordIvSize - tagSize);
+                cipher.updateAAD(aad);
+
+                return recordIvSize;
+                        // It is also the length of sequence number, which is
+                        // used as the nonce_explicit for AEAD cipher suites.
+        }
+
+       return 0;
+    }
+
+    /*
+     * Applies the explicit nonce/IV to this cipher. This method is used to
+     * decrypt an SSL/TLS input record.
+     *
+     * The returned value is the SecurityParameters.record_iv_length in
+     * RFC 4346/5246.  It is the size of explicit IV for CBC mode, and the
+     * size of explicit nonce for AEAD mode.
+     *
+     * @param  authenticator the authenticator to get the additional
+     *         authentication data
+     * @param  contentType the content type of the input record
+     * @param  buf the byte array to get the explicit nonce from
+     * @param  offset the offset of the byte buffer
+     * @param  cipheredLength the ciphered fragment length of the output
+     *         record, it is the TLSCiphertext.length in RFC 4346/5246.
+     *
+     * @return the explicit nonce size of the cipher.
+     */
+    int applyExplicitNonce(Authenticator authenticator,
+            byte contentType, byte[] buf, int offset,
+            int cipheredLength) throws BadPaddingException {
+
+        ByteBuffer bb = ByteBuffer.wrap(buf, offset, cipheredLength);
+
+        return applyExplicitNonce(authenticator, contentType, bb);
+    }
+
+    /*
+     * Creates the explicit nonce/IV to this cipher. This method is used to
+     * encrypt an SSL/TLS output record.
+     *
+     * The size of the returned array is the SecurityParameters.record_iv_length
+     * in RFC 4346/5246.  It is the size of explicit IV for CBC mode, and the
+     * size of explicit nonce for AEAD mode.
+     *
+     * @param  authenticator the authenticator to get the additional
+     *         authentication data
+     * @param  contentType the content type of the input record
+     * @param  fragmentLength the fragment length of the output record, it is
+     *         the TLSCompressed.length in RFC 4346/5246.
+     *
+     * @return the explicit nonce of the cipher.
+     */
+    byte[] createExplicitNonce(Authenticator authenticator,
+            byte contentType, int fragmentLength) {
+
+        byte[] nonce = new byte[0];
+        switch (cipherType) {
+            case BLOCK_CIPHER:
+                if (protocolVersion.v >= ProtocolVersion.TLS11.v) {
+                    // For block ciphers, the explicit IV length is of length
+                    // SecurityParameters.record_iv_length, which is equal to
+                    // the SecurityParameters.block_size.
+                    //
+                    // Generate a random number as the explicit IV parameter.
+                    nonce = new byte[cipher.getBlockSize()];
+                    random.nextBytes(nonce);
+                }
+                break;
+            case AEAD_CIPHER:
+                // To be unique and aware of overflow-wrap, sequence number
+                // is used as the nonce_explicit of AEAD cipher suites.
+                nonce = authenticator.sequenceNumber();
+
+                // initialize the AEAD cipher for the unique IV
+                byte[] iv = Arrays.copyOf(fixedIv,
+                                            fixedIv.length + nonce.length);
+                System.arraycopy(nonce, 0, iv, fixedIv.length, nonce.length);
+                GCMParameterSpec spec = new GCMParameterSpec(tagSize * 8, iv);
+                try {
+                    cipher.init(mode, key, spec, random);
+                } catch (InvalidKeyException |
+                            InvalidAlgorithmParameterException ikae) {
+                    // unlikely to happen
+                    throw new RuntimeException(
+                                "invalid key or spec in GCM mode", ikae);
+                }
+
+                // update the additional authentication data
+                byte[] aad = authenticator.acquireAuthenticationBytes(
+                                                contentType, fragmentLength);
+                cipher.updateAAD(aad);
+                break;
+        }
+
+        return nonce;
+    }
+
+    /*
+     * Is this cipher available?
+     *
+     * This method can only be called by CipherSuite.BulkCipher.isAvailable()
+     * to test the availability of a cipher suites.  Please DON'T use it in
+     * other places, otherwise, the behavior may be unexpected because we may
+     * initialize AEAD cipher improperly in the method.
+     */
+    Boolean isAvailable() {
+        // We won't know whether a cipher for a particular key size is
+        // available until the cipher is successfully initialized.
+        //
+        // We do not initialize AEAD cipher in the constructor.  Need to
+        // initialize the cipher to ensure that the AEAD mode for a
+        // particular key size is supported.
+        if (cipherType == AEAD_CIPHER) {
+            try {
+                Authenticator authenticator =
+                    new Authenticator(protocolVersion);
+                byte[] nonce = authenticator.sequenceNumber();
+                byte[] iv = Arrays.copyOf(fixedIv,
+                                            fixedIv.length + nonce.length);
+                System.arraycopy(nonce, 0, iv, fixedIv.length, nonce.length);
+                GCMParameterSpec spec = new GCMParameterSpec(tagSize * 8, iv);
+
+                cipher.init(mode, key, spec, random);
+            } catch (Exception e) {
+                return Boolean.FALSE;
+            }
+        }   // Otherwise, we have initialized the cipher in the constructor.
+
+        return Boolean.TRUE;
     }
 
     /**
@@ -802,11 +1091,12 @@ final class CipherBox {
      *
      * @return true if the length of a fragment matches above requirements
      */
-    boolean sanityCheck(int tagLen, int fragmentLen) {
-        if (!isCBCMode) {
+    private boolean sanityCheck(int tagLen, int fragmentLen) {
+        if (!isCBCMode()) {
             return fragmentLen >= tagLen;
         }
 
+        int blockSize = cipher.getBlockSize();
         if ((fragmentLen % blockSize) == 0) {
             int minimal = tagLen + 1;
             minimal = (minimal >= blockSize) ? minimal : blockSize;

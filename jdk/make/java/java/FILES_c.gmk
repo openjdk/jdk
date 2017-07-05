@@ -48,7 +48,6 @@ FILES_c = \
 	Proxy.c \
 	RandomAccessFile.c \
 	RandomAccessFile_md.c \
-	ResourceBundle.c \
 	Runtime.c \
 	SecurityManager.c \
 	Shutdown.c \

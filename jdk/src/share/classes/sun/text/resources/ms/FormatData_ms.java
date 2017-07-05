@@ -40,9 +40,9 @@
 
 package sun.text.resources.ms;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_ms extends ListResourceBundle {
+public class FormatData_ms extends ParallelListResourceBundle {
     protected final Object[][] getContents() {
         return new Object[][] {
             { "MonthNames",
@@ -76,6 +76,40 @@ public class FormatData_ms extends ListResourceBundle {
                     "Okt",
                     "Nov",
                     "Dis",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "O",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "O",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
                     "",
                 }
             },
@@ -189,71 +223,6 @@ public class FormatData_ms extends ListResourceBundle {
                     "{1} {0}",
                 }
             },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "dd/MM/y G",
-                    "d/MM/y G",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "dd/MM/y G",
-                    "d/MM/y G",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "dd/MM/y G",
-                    "d/MM/y G",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "dd/MM/y GGGG",
-                    "d/MM/y GGGG",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y G",
-                    "d MMMM y G",
-                    "dd/MM/y G",
-                    "d/MM/y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE, d MMMM y GGGG",
-                    "d MMMM y GGGG",
-                    "dd/MM/y GGGG",
-                    "d/MM/y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "Kalendar Sivil Islam" },
-            { "calendarname.islamicc", "Kalendar Sivil Islam" },
-            { "calendarname.islamic", "Kalendar Islam" },
-            { "calendarname.buddhist", "Kalendar Buddha" },
-            { "calendarname.japanese", "Kalendar Jepun" },
-            { "calendarname.roc", "Kalendar Minguo" },
-            { "calendarname.gregorian", "Kalendar Gregory" },
-            { "calendarname.gregory", "Kalendar Gregory" },
-            { "field.year", "Tahun" },
-            { "field.month", "Bulan" },
-            { "field.week", "Minggu" },
-            { "field.weekday", "Hari dalam Minggu" },
-            { "field.dayperiod", "PG/PTG" },
-            { "field.hour", "Jam" },
-            { "field.minute", "Minit" },
-            { "field.second", "Kedua" },
-            { "field.zone", "Zon Waktu" },
         };
     }
 }

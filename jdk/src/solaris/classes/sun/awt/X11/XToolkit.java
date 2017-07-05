@@ -1492,7 +1492,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
             } catch (InterruptedException ie) {
             // Note: the returned timeStamp can be incorrect in this case.
-                if (log.isLoggable(PlatformLogger.FINE)) log.fine("Catched exception, timeStamp may not be correct (ie = " + ie + ")");
+                if (log.isLoggable(PlatformLogger.FINE)) {
+                    log.fine("Catched exception, timeStamp may not be correct (ie = " + ie + ")");
+                }
             }
         } finally {
             awtUnlock();
@@ -1657,7 +1659,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             name = "gnome." + name;
             setDesktopProperty(name, e.getValue());
-            log.fine("name = " + name + " value = " + e.getValue());
+            if (log.isLoggable(PlatformLogger.FINE)) {
+                log.fine("name = " + name + " value = " + e.getValue());
+            }
 
             // XXX: we probably want to do something smarter.  In
             // particular, "Net" properties are of interest to the
@@ -2467,12 +2471,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             // Wait for selection notify for oops on win
             long event_number = getEventNumber();
             XAtom atom = XAtom.get("WM_S0");
-            eventLog.finer("WM_S0 selection owner {0}", XlibWrapper.XGetSelectionOwner(getDisplay(), atom.getAtom()));
+            if (eventLog.isLoggable(PlatformLogger.FINER)) {
+                eventLog.finer("WM_S0 selection owner {0}", XlibWrapper.XGetSelectionOwner(getDisplay(), atom.getAtom()));
+            }
             XlibWrapper.XConvertSelection(getDisplay(), atom.getAtom(),
                                           XAtom.get("VERSION").getAtom(), oops.getAtom(),
                                           win.getWindow(), XConstants.CurrentTime);
             XSync();
-
 
             eventLog.finer("Requested OOPS");
 

@@ -29,7 +29,6 @@
 
 #include "java_lang_SecurityManager.h"
 #include "java_lang_ClassLoader.h"
-#include "java_util_ResourceBundle.h"
 
 /*
  * Make sure a security manager instance is initialized.

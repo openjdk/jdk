@@ -61,7 +61,8 @@ RMIREG_OUT=rmi.out
 #start rmiregistry without any local classes on classpath
 cd rmi_tmp
 # NOTE: This RMI Registry port must match TestLibrary.READTEST_REGISTRY_PORT
-${TESTJAVA}${FS}bin${FS}rmiregistry ${TESTTOOLVMOPTS} 64005 > ..${FS}${RMIREG_OUT} 2>&1 &
+${TESTJAVA}${FS}bin${FS}rmiregistry -J-Djava.rmi.server.useCodebaseOnly=false \
+    ${TESTTOOLVMOPTS} 64005 > ..${FS}${RMIREG_OUT} 2>&1 &
 RMIREG_PID=$!
 # allow some time to start
 sleep 3

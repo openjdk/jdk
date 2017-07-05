@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@
 
 package sun.text.resources.zh;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
-public class FormatData_zh_HK extends ListResourceBundle {
+public class FormatData_zh_HK extends ParallelListResourceBundle {
 
     // reparent to zh_TW for traditional Chinese names
     public FormatData_zh_HK() {
@@ -56,7 +56,7 @@ public class FormatData_zh_HK extends ListResourceBundle {
     }
 
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {

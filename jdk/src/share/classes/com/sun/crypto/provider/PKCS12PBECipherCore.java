@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
@@ -232,14 +231,13 @@ final class PKCS12PBECipherCore {
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount);
         try {
-            params = AlgorithmParameters.getInstance(pbeAlgo, "SunJCE");
-        } catch (GeneralSecurityException gse) {
+            params = AlgorithmParameters.getInstance(pbeAlgo,
+                SunJCE.getInstance());
+            params.init(pbeSpec);
+        } catch (NoSuchAlgorithmException nsae) {
             // should never happen
             throw new RuntimeException(
                 "SunJCE provider is not configured properly");
-        }
-        try {
-            params.init(pbeSpec);
         } catch (InvalidParameterSpecException ipse) {
             // should never happen
             throw new RuntimeException("PBEParameterSpec not supported");

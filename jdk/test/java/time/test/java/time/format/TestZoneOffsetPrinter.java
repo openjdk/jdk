@@ -70,7 +70,7 @@ import org.testng.annotations.Test;
 /**
  * Test ZoneOffsetPrinterParser.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestZoneOffsetPrinter extends AbstractTestPrinterParser {
 
     private static final ZoneOffset OFFSET_0130 = ZoneOffset.of("+01:30");

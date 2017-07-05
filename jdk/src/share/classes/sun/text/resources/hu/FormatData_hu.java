@@ -76,11 +76,11 @@
 
 package sun.text.resources.hu;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_hu extends ListResourceBundle {
+public class FormatData_hu extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -101,6 +101,23 @@ public class FormatData_hu extends ListResourceBundle {
                     "" // month 13 if applicable
                 }
             },
+            { "standalone.MonthNames",
+                new String[] {
+                    "janu\u00e1r",
+                    "febru\u00e1r",
+                    "m\u00e1rcius",
+                    "\u00e1prilis",
+                    "m\u00e1jus",
+                    "j\u00fanius",
+                    "j\u00falius",
+                    "augusztus",
+                    "szeptember",
+                    "okt\u00f3ber",
+                    "november",
+                    "december",
+                    "",
+                }
+            },
             { "MonthAbbreviations",
                 new String[] {
                     "jan.", // abb january
@@ -118,6 +135,57 @@ public class FormatData_hu extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "jan.",
+                    "febr.",
+                    "m\u00e1rc.",
+                    "\u00e1pr.",
+                    "m\u00e1j.",
+                    "j\u00fan.",
+                    "j\u00fal.",
+                    "aug.",
+                    "szept.",
+                    "okt.",
+                    "nov.",
+                    "dec.",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "\u00c1",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "Sz",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "\u00c1",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "Sz",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "vas\u00e1rnap", // Sunday
@@ -127,6 +195,17 @@ public class FormatData_hu extends ListResourceBundle {
                     "cs\u00fct\u00f6rt\u00f6k", // Thursday
                     "p\u00e9ntek", // Friday
                     "szombat" // Saturday
+                }
+            },
+            { "standalone.DayNames",
+                new String[] {
+                    "vas\u00e1rnap",
+                    "h\u00e9tf\u0151",
+                    "kedd",
+                    "szerda",
+                    "cs\u00fct\u00f6rt\u00f6k",
+                    "p\u00e9ntek",
+                    "szombat",
                 }
             },
             { "DayAbbreviations",
@@ -140,7 +219,29 @@ public class FormatData_hu extends ListResourceBundle {
                     "Szo" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "V",
+                    "H",
+                    "K",
+                    "Sze",
+                    "Cs",
+                    "P",
+                    "Szo",
+                }
+            },
             { "DayNarrows",
+                new String[] {
+                    "V",
+                    "H",
+                    "K",
+                    "Sz",
+                    "Cs",
+                    "P",
+                    "Sz",
+                }
+            },
+            { "standalone.DayNarrows",
                 new String[] {
                     "V",
                     "H",
@@ -161,6 +262,12 @@ public class FormatData_hu extends ListResourceBundle {
                 new String[] { // era strings
                     "i.e.",
                     "i.u."
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "i. e.",
+                    "i. sz.",
                 }
             },
             { "NumberElements",
@@ -200,47 +307,18 @@ public class FormatData_hu extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "islamic.MonthNames",
+            { "buddhist.Eras",
                 new String[] {
-                    "Moharrem",
-                    "Safar",
-                    "R\u00e9bi el avvel",
-                    "R\u00e9bi el accher",
-                    "Dsem\u00e1di el avvel",
-                    "Dsem\u00e1di el accher",
-                    "Redseb",
-                    "Sab\u00e1n",
-                    "Ramad\u00e1n",
-                    "Sevv\u00e1l",
-                    "Ds\u00fcl kade",
-                    "Ds\u00fcl hedse",
-                    "",
+                    "BC",
+                    "BK",
                 }
             },
-            { "islamic.Eras",
+            { "buddhist.short.Eras",
                 new String[] {
-                    "",
-                    "MF",
+                    "BC",
+                    "BK",
                 }
             },
-            { "calendarname.islamic-civil", "iszl\u00e1m civil napt\u00e1r" },
-            { "calendarname.islamicc", "iszl\u00e1m civil napt\u00e1r" },
-            { "calendarname.islamic", "iszl\u00e1m napt\u00e1r" },
-            { "calendarname.japanese", "jap\u00e1n napt\u00e1r" },
-            { "calendarname.gregorian", "Gergely-napt\u00e1r" },
-            { "calendarname.gregory", "Gergely-napt\u00e1r" },
-            { "calendarname.roc", "K\u00ednai k\u00f6zt\u00e1rsas\u00e1gi napt\u00e1r" },
-            { "calendarname.buddhist", "buddhista napt\u00e1r" },
-            { "field.era", "\u00e9ra" },
-            { "field.year", "\u00e9v" },
-            { "field.month", "h\u00f3nap" },
-            { "field.week", "h\u00e9t" },
-            { "field.weekday", "h\u00e9t napja" },
-            { "field.dayperiod", "napszak" },
-            { "field.hour", "\u00f3ra" },
-            { "field.minute", "perc" },
-            { "field.second", "m\u00e1sodperc" },
-            { "field.zone", "z\u00f3na" },
         };
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.security;
 
 import java.util.*;
+import java.util.regex.*;
 
 import java.security.Provider.Service;
 
@@ -79,7 +80,7 @@ import sun.security.jca.GetInstance.Instance;
  *
  * Note: Depending on the implementation, the <code>generateSeed</code> and
  * <code>nextBytes</code> methods may block as entropy is being gathered,
- * for example, if they need to read from /dev/random on various unix-like
+ * for example, if they need to read from /dev/random on various Unix-like
  * operating systems.
  *
  * @see java.security.SecureRandomSpi
@@ -428,6 +429,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @see #getSeed
      */
+    @Override
     public void setSeed(long seed) {
         /*
          * Ignore call from super constructor (as well as any other calls
@@ -450,7 +452,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @param bytes the array to be filled in with random bytes.
      */
-
+    @Override
     synchronized public void nextBytes(byte[] bytes) {
         secureRandomSpi.engineNextBytes(bytes);
     }
@@ -469,14 +471,16 @@ public class SecureRandom extends java.util.Random {
      * @return an <code>int</code> containing the user-specified number
      * of pseudo-random bits (right justified, with leading zeros).
      */
+    @Override
     final protected int next(int numBits) {
         int numBytes = (numBits+7)/8;
         byte b[] = new byte[numBytes];
         int next = 0;
 
         nextBytes(b);
-        for (int i = 0; i < numBytes; i++)
+        for (int i = 0; i < numBytes; i++) {
             next = (next << 8) + (b[i] & 0xFF);
+        }
 
         return next >>> (numBytes*8 - numBits);
     }
@@ -499,8 +503,9 @@ public class SecureRandom extends java.util.Random {
      * @see #setSeed
      */
     public static byte[] getSeed(int numBytes) {
-        if (seedGenerator == null)
+        if (seedGenerator == null) {
             seedGenerator = new SecureRandom();
+        }
         return seedGenerator.generateSeed(numBytes);
     }
 
@@ -546,6 +551,104 @@ public class SecureRandom extends java.util.Random {
                 }
             }
         }
+        return null;
+    }
+
+    /*
+     * Lazily initialize since Pattern.compile() is heavy.
+     * Effective Java (2nd Edition), Item 71.
+     */
+    private static final class StrongPatternHolder {
+        /*
+         * Entries are alg:prov separated by ,
+         * Allow for prepended/appended whitespace between entries.
+         *
+         * Capture groups:
+         *     1 - alg
+         *     2 - :prov (optional)
+         *     3 - prov (optional)
+         *     4 - ,nextEntry (optional)
+         *     5 - nextEntry (optional)
+         */
+        private static Pattern pattern =
+            Pattern.compile(
+                "\\s*([\\S&&[^:,]]*)(\\:([\\S&&[^,]]*))?\\s*(\\,(.*))?");
+    }
+
+    /**
+     * Returns a {@code SecureRandom} object that was selected by using
+     * the algorithms/providers specified in the {@code
+     * securerandom.strongAlgorithms} Security property.
+     * <p>
+     * Some situations require strong random values, such as when
+     * creating high-value/long-lived secrets like RSA public/private
+     * keys.  To help guide applications in selecting a suitable strong
+     * {@code SecureRandom} implementation, Java distributions should
+     * include a list of known strong {@code SecureRandom}
+     * implementations in the {@code securerandom.strongAlgorithms}
+     * Security property.
+     *
+     * <pre>
+     *     SecureRandom sr = SecureRandom.getStrongSecureRandom();
+     *
+     *     if (sr == null) {
+     *         // Decide if this is a problem, and whether to recover.
+     *         sr = new SecureRandom();
+     *         if (!goodEnough(sr)) {
+     *             return;
+     *         }
+     *     }
+     *
+     *     keyPairGenerator.initialize(2048, sr);
+     * </pre>
+     *
+     * @return a strong {@code SecureRandom} implementation as indicated
+     * by the {@code securerandom.strongAlgorithms} Security property, or
+     * null if none are available.
+     *
+     * @see Security#getProperty(String)
+     *
+     * @since 1.8
+     */
+    public static SecureRandom getStrongSecureRandom() {
+
+        String property = AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    return Security.getProperty(
+                        "securerandom.strongAlgorithms");
+                }
+            });
+
+        if ((property == null) || (property.length() == 0)) {
+            return null;
+        }
+
+        String remainder = property;
+        while (remainder != null) {
+            Matcher m;
+            if ((m = StrongPatternHolder.pattern.matcher(
+                    remainder)).matches()) {
+
+                String alg = m.group(1);
+                String prov = m.group(3);
+
+                try {
+                    if (prov == null) {
+                        return SecureRandom.getInstance(alg);
+                    } else {
+                        return SecureRandom.getInstance(alg, prov);
+                    }
+                } catch (NoSuchAlgorithmException |
+                        NoSuchProviderException e) {
+                }
+                remainder = m.group(5);
+            } else {
+                remainder = null;
+            }
+        }
+
         return null;
     }
 
