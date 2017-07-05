@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,8 +137,8 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     }
   } else if (_detail_diff.value()) {
     if (!check_detail_tracking_level(output())) {
-    return;
-  }
+      return;
+    }
     MemBaseline& baseline = MemTracker::get_baseline();
     if (baseline.baseline_type() == MemBaseline::Detail_baselined) {
       report_diff(false, scale_unit);

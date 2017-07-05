@@ -32,8 +32,7 @@
  *
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
- * @requires vm.opt.ExplicitGCInvokesConcurrent == "false" | vm.opt.ExplicitGCInvokesConcurrent == "null"
- * @run main/timeout=600 LowMemoryTest
+  * @run main/timeout=600 LowMemoryTest
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
@@ -116,14 +115,13 @@ public class LowMemoryTest {
             triggers++;
         }
         public void checkResult() throws Exception {
-            if ((!isRelaxed && triggers != NUM_TRIGGERS) ||
-                (isRelaxed && triggers < NUM_TRIGGERS)) {
+            if (!checkValue(triggers, NUM_TRIGGERS)) {
                 throw new RuntimeException("Unexpected number of triggers = " +
                     triggers + " but expected to be " + NUM_TRIGGERS);
             }
 
             for (int i = 0; i < triggers; i++) {
-                if (count[i] != i+1) {
+                if (!checkValue(count[i], i + 1)) {
                     throw new RuntimeException("Unexpected count of" +
                         " notification #" + i +
                         " count = " + count[i] +
@@ -134,6 +132,18 @@ public class LowMemoryTest {
                         usedMemory[i] + " is less than the threshold = " +
                         newThreshold);
                 }
+            }
+        }
+
+        private boolean checkValue(int value, int target) {
+            return checkValue((long)value, target);
+        }
+
+        private boolean checkValue(long value, int target) {
+            if (!isRelaxed) {
+                return value == target;
+            } else {
+                return value >= target;
             }
         }
     }

@@ -28,7 +28,9 @@ package sun.nio.cs.ext;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import sun.nio.cs.DoubleByte;
 import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.*;
 
 public class Big5_HKSCS_2001 extends Charset
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,15 @@ package javax.swing;
 
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.EventListener;
 import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.VolatileImage;
-import java.awt.Graphics2D;
 import java.awt.peer.LightweightPeer;
-import java.awt.dnd.DropTarget;
-import java.awt.font.FontRenderContext;
 import java.beans.PropertyChangeListener;
 import java.beans.VetoableChangeListener;
 import java.beans.VetoableChangeSupport;
@@ -1868,7 +1861,7 @@ public abstract class JComponent extends Container implements Serializable,
 
     /**
      * Overrides <code>Container.getAlignmentY</code> to return
-     * the horizontal alignment.
+     * the vertical alignment.
      *
      * @return the value of the <code>alignmentY</code> property
      * @see #setAlignmentY
@@ -1882,9 +1875,9 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     /**
-     * Sets the horizontal alignment.
+     * Sets the vertical alignment.
      *
-     * @param alignmentY  the new horizontal alignment
+     * @param alignmentY  the new vertical alignment
      * @see #getAlignmentY
      * @beaninfo
      *   description: The preferred vertical alignment of the component.
@@ -1897,7 +1890,7 @@ public abstract class JComponent extends Container implements Serializable,
 
     /**
      * Overrides <code>Container.getAlignmentX</code> to return
-     * the vertical alignment.
+     * the horizontal alignment.
      *
      * @return the value of the <code>alignmentX</code> property
      * @see #setAlignmentX
@@ -1911,9 +1904,9 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     /**
-     * Sets the vertical alignment.
+     * Sets the horizontal alignment.
      *
-     * @param alignmentX  the new vertical alignment
+     * @param alignmentX  the new horizontal alignment
      * @see #getAlignmentX
      * @beaninfo
      *   description: The preferred horizontal alignment of the component.

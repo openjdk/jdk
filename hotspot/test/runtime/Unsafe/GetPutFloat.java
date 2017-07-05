@@ -39,7 +39,7 @@ public class GetPutFloat {
         Test t = new Test();
         Field field = Test.class.getField("f");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals(-1.0f, unsafe.getFloat(t, offset));
         unsafe.putFloat(t, offset, 0.0f);
         assertEquals(0.0f, unsafe.getFloat(t, offset));

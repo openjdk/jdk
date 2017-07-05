@@ -905,6 +905,10 @@ class CommandLineFlags {
           "determines which error to provoke. See test_error_handler() "    \
           "in debug.cpp.")                                                  \
                                                                             \
+  notproduct(uintx, TestCrashInErrorHandler, 0,                             \
+          "If > 0, provokes an error inside VM error handler (a secondary " \
+          "crash). see test_error_handler() in debug.cpp.")                 \
+                                                                            \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
@@ -1501,7 +1505,7 @@ class CommandLineFlags {
                                                                             \
   product(bool, ExplicitGCInvokesConcurrent, false,                         \
           "A System.gc() request invokes a concurrent collection; "         \
-          "(effective only when UseConcMarkSweepGC)")                       \
+          "(effective only when using concurrent collectors)")              \
                                                                             \
   product(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false,        \
           "A System.gc() request invokes a concurrent collection and "      \
@@ -3531,7 +3535,7 @@ class CommandLineFlags {
           "(both with and without tiered compilation): "                    \
           "values greater than 1.0 delay counter overflow, "                \
           "values between 0 and 1.0 rush counter overflow, "                \
-          "value of 1.0 leave compilation thresholds unchanged "            \
+          "value of 1.0 leaves compilation thresholds unchanged "           \
           "value of 0.0 is equivalent to -Xint. "                           \
           ""                                                                \
           "Flag can be set as per-method option. "                          \
@@ -3842,9 +3846,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, RelaxAccessControlCheck, false,                             \
           "Relax the access control checks in the verifier")                \
-                                                                            \
-  diagnostic(bool, PrintDTraceDOF, false,                                   \
-          "Print the DTrace DOF passed to the system for JSDT probes")      \
                                                                             \
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table")                 \

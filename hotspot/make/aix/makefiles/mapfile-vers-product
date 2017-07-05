@@ -62,11 +62,6 @@ SUNWprivate_1.1 {
                 JVM_DefineClassWithSourceCond;
                 JVM_DesiredAssertionStatus;
                 JVM_DoPrivileged;
-                JVM_DTraceGetVersion;
-                JVM_DTraceActivate;
-                JVM_DTraceIsProbeEnabled;
-                JVM_DTraceIsSupported;
-                JVM_DTraceDispose;
                 JVM_DumpAllStacks;
                 JVM_DumpThreads;
                 JVM_FillInStackTrace;
