@@ -141,6 +141,7 @@ IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMe
   _xhandlers          = new XHandlers(method);
   _number_of_locks    = 0;
   _monitor_pairing_ok = method->has_balanced_monitors();
+  _wrote_final        = false;
   _start              = NULL;
 
   if (osr_bci == -1) {

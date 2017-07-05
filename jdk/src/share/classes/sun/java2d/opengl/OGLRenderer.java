@@ -27,6 +27,7 @@ package sun.java2d.opengl;
 
 import java.awt.Transparency;
 import java.awt.geom.Path2D;
+import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.loops.GraphicsPrimitive;
 import sun.java2d.pipe.BufferedRenderPipe;
@@ -46,7 +47,12 @@ class OGLRenderer extends BufferedRenderPipe {
         int ctxflags =
             sg2d.paint.getTransparency() == Transparency.OPAQUE ?
                 OGLContext.SRC_IS_OPAQUE : OGLContext.NO_CONTEXT_FLAGS;
-        OGLSurfaceData dstData = (OGLSurfaceData)sg2d.surfaceData;
+        OGLSurfaceData dstData;
+        try {
+            dstData = (OGLSurfaceData)sg2d.surfaceData;
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
         OGLContext.validateContext(dstData, dstData,
                                    sg2d.getCompClip(), sg2d.composite,
                                    null, sg2d.paint, sg2d, ctxflags);
@@ -55,7 +61,12 @@ class OGLRenderer extends BufferedRenderPipe {
     @Override
     protected void validateContextAA(SunGraphics2D sg2d) {
         int ctxflags = OGLContext.NO_CONTEXT_FLAGS;
-        OGLSurfaceData dstData = (OGLSurfaceData)sg2d.surfaceData;
+        OGLSurfaceData dstData;
+        try {
+            dstData = (OGLSurfaceData)sg2d.surfaceData;
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
         OGLContext.validateContext(dstData, dstData,
                                    sg2d.getCompClip(), sg2d.composite,
                                    null, sg2d.paint, sg2d, ctxflags);
@@ -69,7 +80,12 @@ class OGLRenderer extends BufferedRenderPipe {
             int ctxflags =
                 sg2d.surfaceData.getTransparency() == Transparency.OPAQUE ?
                     OGLContext.SRC_IS_OPAQUE : OGLContext.NO_CONTEXT_FLAGS;
-            OGLSurfaceData dstData = (OGLSurfaceData)sg2d.surfaceData;
+            OGLSurfaceData dstData;
+            try {
+                dstData = (OGLSurfaceData)sg2d.surfaceData;
+            } catch (ClassCastException e) {
+                throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+            }
             OGLContext.validateContext(dstData, dstData,
                                        sg2d.getCompClip(), sg2d.composite,
                                        null, null, null, ctxflags);

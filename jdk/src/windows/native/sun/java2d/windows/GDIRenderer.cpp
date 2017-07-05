@@ -117,7 +117,7 @@ static POINT *TransformPoly(jint *xpoints, jint *ypoints,
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doDrawLine
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doDrawLine
@@ -164,7 +164,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawLine
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doDrawRect
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doDrawRect
@@ -209,7 +209,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawRect
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doDrawRoundRect
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doDrawRoundRect
@@ -253,7 +253,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawRoundRect
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doDrawOval
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doDrawOval
@@ -291,7 +291,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawOval
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doDrawArc
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doDrawArc
@@ -347,7 +347,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawArc
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doDrawPoly
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;III[I[IIZ)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;III[I[IIZ)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doDrawPoly
@@ -412,7 +412,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawPoly
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doFillRect
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doFillRect
@@ -445,7 +445,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillRect
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doFillRoundRect
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doFillRoundRect
@@ -488,7 +488,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillRoundRect
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doFillOval
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doFillOval
@@ -555,7 +555,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillOval
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doFillArc
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;IIIIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doFillArc
@@ -615,7 +615,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillArc
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doFillPoly
- * Signature: (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;III[I[II)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;Ljava/awt/Composite;III[I[II)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_doFillPoly
@@ -680,7 +680,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillPoly
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    doShape
- * Signature:  (Lsun/java2d/SurfaceData;Lsun/java2d/pipe/Region;
+ * Signature:  (Lsun/java2d/windows/GDIWindowSurfaceData;Lsun/java2d/pipe/Region;
  *              Ljava/awt/Composite;IIILjava/awt/geom/Path2D.Float;Z)V
  */
 JNIEXPORT void JNICALL
@@ -863,7 +863,7 @@ INLINE BOOL RectInMonitorRect(RECT *rCheck, RECT *rContainer)
 /*
  * Class:     sun_java2d_windows_GDIRenderer
  * Method:    devCopyArea
- * Signature: (Lsun/awt/windows/SurfaceData;IIIIII)V
+ * Signature: (Lsun/java2d/windows/GDIWindowSurfaceData;IIIIII)V
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_windows_GDIRenderer_devCopyArea
