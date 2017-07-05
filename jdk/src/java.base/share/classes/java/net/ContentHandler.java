@@ -37,10 +37,10 @@ import java.io.IOException;
  * application calls the {@code getContent} method in class
  * {@code URL} or in {@code URLConnection}.
  * The application's content handler factory (an instance of a class that
- * implements the interface {@code ContentHandlerFactory} set
- * up by a call to {@code setContentHandler}) is
- * called with a {@code String} giving the MIME type of the
- * object being received on the socket. The factory returns an
+ * implements the interface {@code ContentHandlerFactory} set up by a call to
+ * {@link URLConnection#setContentHandlerFactory(ContentHandlerFactory)
+ * setContentHandlerFactory} is called with a {@code String} giving the
+ * MIME type of the object being received on the socket. The factory returns an
  * instance of a subclass of {@code ContentHandler}, and its
  * {@code getContent} method is called to create the object.
  * <p>
@@ -99,7 +99,8 @@ public abstract class ContentHandler {
      * representation of an object, this method reads that stream and
      * creates an object that matches one of the types specified.
      *
-     * The default implementation of this method should call getContent()
+     * The default implementation of this method should call
+     * {@link #getContent(URLConnection)}
      * and screen the return type for a match of the suggested types.
      *
      * @param      urlc   a URL connection.

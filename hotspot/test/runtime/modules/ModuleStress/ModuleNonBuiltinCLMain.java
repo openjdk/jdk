@@ -25,7 +25,6 @@
 
 import static jdk.test.lib.Asserts.*;
 
-import java.lang.reflect.Layer;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -47,7 +46,7 @@ import java.util.Set;
 //
 public class ModuleNonBuiltinCLMain {
 
-    // Create a Layer over the boot layer.
+    // Create a layer over the boot layer.
     // Define modules within this layer to test access between
     // publically defined classes within packages of those modules.
     public void createLayerOnBoot() throws Throwable {
@@ -90,7 +89,7 @@ public class ModuleNonBuiltinCLMain {
         ModuleFinder finder = ModuleLibrary.of(descriptor_m1x, descriptor_m2x, descriptor_m3x);
 
         // Resolves "m1x"
-        Configuration cf = Layer.boot()
+        Configuration cf = ModuleLayer.boot()
                 .configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
@@ -103,8 +102,8 @@ public class ModuleNonBuiltinCLMain {
         map.put("m2x", cl2);
         map.put("m3x", cl3);
 
-        // Create Layer that contains m1x & m2x
-        Layer layer = Layer.boot().defineModules(cf, map::get);
+        // Create layer that contains m1x & m2x
+        ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
         assertTrue(layer.findLoader("m1x") == cl1);
         assertTrue(layer.findLoader("m2x") == cl2);
         assertTrue(layer.findLoader("m3x") == cl3);

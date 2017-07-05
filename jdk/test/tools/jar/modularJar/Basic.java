@@ -869,8 +869,8 @@ public class Basic {
         return new Object[][] {
             // JAR file name                module-name[@version]
             { "foo.jar",                    "foo" },
+            { "foo1.jar",                   "foo1" },
             { "foo4j.jar",                  "foo4j", },
-            { "foo1.2.3.jar",               "foo" },
             { "foo-1.2.3.4.jar",            "foo@1.2.3.4" },
             { "foo-bar.jar",                "foo.bar" },
             { "foo-1.2-SNAPSHOT.jar",       "foo@1.2-SNAPSHOT" },

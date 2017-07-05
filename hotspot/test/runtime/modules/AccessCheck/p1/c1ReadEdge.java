@@ -22,7 +22,6 @@
  */
 package p1;
 
-import java.lang.reflect.*;
 import p2.c2;
 
 public class c1ReadEdge {
