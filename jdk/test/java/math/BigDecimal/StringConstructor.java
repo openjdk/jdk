@@ -33,6 +33,7 @@
 
 import java.math.*;
 import java.util.Random;
+import jdk.testlibrary.RandomFactory;
 
 public class StringConstructor {
 

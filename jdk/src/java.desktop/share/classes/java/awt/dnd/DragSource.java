@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,15 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.FlavorMap;
 import java.awt.datatransfer.SystemFlavorMap;
 import java.awt.datatransfer.Transferable;
-import java.awt.dnd.peer.DragSourceContextPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.util.EventListener;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.DragSourceContextAccessor;
 import sun.awt.dnd.SunDragSourceContextPeer;
 import sun.security.action.GetIntegerAction;
 
@@ -303,22 +305,16 @@ public class DragSource implements Serializable {
         try {
             if (flavorMap != null) this.flavorMap = flavorMap;
 
-            DragSourceContextPeer dscp = Toolkit.getDefaultToolkit().createDragSourceContextPeer(trigger);
-
-            DragSourceContext     dsc = createDragSourceContext(dscp,
-                                                                trigger,
-                                                                dragCursor,
-                                                                dragImage,
-                                                                imageOffset,
-                                                                transferable,
-                                                                dsl
-                                                                );
+            DragSourceContext dsc = createDragSourceContext(trigger, dragCursor,
+                                                            dragImage,
+                                                            imageOffset,
+                                                            transferable, dsl);
 
             if (dsc == null) {
                 throw new InvalidDnDOperationException();
             }
-
-            dscp.startDrag(dsc, dsc.getCursor(), dragImage, imageOffset); // may throw
+            DragSourceContextAccessor acc = AWTAccessor.getDragSourceContextAccessor();
+            acc.getPeer(dsc).startDrag(dsc, dsc.getCursor(), dragImage, imageOffset); // may throw
         } catch (RuntimeException e) {
             SunDragSourceContextPeer.setDragDropInProgress(false);
             throw e;
@@ -442,7 +438,6 @@ public class DragSource implements Serializable {
      * is registered with the created <code>DragSourceContext</code>,
      * but <code>NullPointerException</code> is not thrown.
      *
-     * @param dscp          The <code>DragSourceContextPeer</code> for this drag
      * @param dgl           The <code>DragGestureEvent</code> that triggered the
      *                      drag
      * @param dragCursor     The initial {@code Cursor} for this drag operation
@@ -473,8 +468,13 @@ public class DragSource implements Serializable {
      *         event are equal to <code>DnDConstants.ACTION_NONE</code>.
      */
 
-    protected DragSourceContext createDragSourceContext(DragSourceContextPeer dscp, DragGestureEvent dgl, Cursor dragCursor, Image dragImage, Point imageOffset, Transferable t, DragSourceListener dsl) {
-        return new DragSourceContext(dscp, dgl, dragCursor, dragImage, imageOffset, t, dsl);
+    protected DragSourceContext createDragSourceContext(DragGestureEvent dgl,
+                                                        Cursor dragCursor,
+                                                        Image dragImage,
+                                                        Point imageOffset,
+                                                        Transferable t,
+                                                        DragSourceListener dsl) {
+        return new DragSourceContext(dgl, dragCursor, dragImage, imageOffset, t, dsl);
     }
 
     /**

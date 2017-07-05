@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,6 +246,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * <code>rowIndex</code> gives the index of the view that corresponds
      * that should be looked in.
      * @param pos  position into the model
+     * @param b the bias
      * @param a the allocated region to render into
      * @param direction one of the following values:
      * <ul>
@@ -256,6 +257,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      *  in this method
      * @param rowIndex the index of the view
      * @param x the x coordinate of interest
+     * @throws BadLocationException if a bad location is encountered
      * @return the closest model position to <code>x</code>
      */
     // NOTE: This will not properly work if ParagraphView contains

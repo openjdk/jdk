@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,16 @@
  * @test
  * @bug 6652929
  * @summary verify handling of File.getPath()
+ * @compile FontFile.java
+ * @run shell TestFontFile.sh
+ */
+
+/*
+ * When using jtreg this test needs to be run by shell script,
+ * since otherwise jtreg reflectively invokes the main method
+ * and the codebase for the purposes of the security manager
+ * is that of the jtreg harness, not the codebase (class file location)
+ * of this program, thus access to read to that location is not available.
  */
 
 import java.awt.*;
@@ -34,10 +44,21 @@ public class FontFile {
     public static void main(String[] args) throws Exception {
         String sep = System.getProperty("file.separator");
         String fname = ".." + sep + "A.ttf";
-        String dir = System.getProperty("test.src");
+        //String dir = System.getProperty("test.src");
+        String dir = System.getenv("TESTSRC");
         if (dir != null) {
             fname = dir + sep + fname;
         }
+        //String classesDir = System.getProperty("test.classes");
+        String classesDir = System.getenv("TESTCLASSES");
+        System.out.println("classesDir="+classesDir);
+        String testfile = "somefile";
+        if (classesDir != null) {
+            testfile = classesDir + sep + testfile;
+        }
+        final String somefile = testfile;
+        System.out.println("somefile="+somefile);
+        System.out.println("userdir="+System.getProperty("user.dir"));
         final String name = fname;
         System.out.println("Will try to access " + name);
         if (!(new File(name)).canRead()) {
@@ -66,7 +87,7 @@ public class FontFile {
                             return name;
                         } else {
                             read = true;
-                            return "somefile";
+                            return somefile;
                         }
                     }
                     @Override public boolean canRead() {

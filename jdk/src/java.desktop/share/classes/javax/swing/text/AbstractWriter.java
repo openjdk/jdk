@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public abstract class AbstractWriter {
 
     /**
      * Returns the first offset to be output.
-     *
+     * @return the first offset to be output
      * @since 1.3
      */
     public int getStartOffset() {
@@ -195,7 +195,7 @@ public abstract class AbstractWriter {
 
     /**
      * Returns the last offset to be output.
-     *
+     * @return the last offset to be output
      * @since 1.3
      */
     public int getEndOffset() {
@@ -213,7 +213,7 @@ public abstract class AbstractWriter {
 
     /**
      * Returns the Writer that is used to output the content.
-     *
+     * @return the Writer that is used to output the content
      * @since 1.3
      */
     protected Writer getWriter() {
@@ -257,6 +257,9 @@ public abstract class AbstractWriter {
      * by subclasses.  Its responsibility is to
      * iterate over the elements and use the write()
      * methods to generate output in the desired format.
+     * @throws IOException if an I/O problem has occurred
+     * @throws BadLocationException for an invalid location within
+     * the document
      */
     abstract protected void write() throws IOException, BadLocationException;
 
@@ -314,7 +317,7 @@ public abstract class AbstractWriter {
 
     /**
      * Returns the maximum line length.
-     *
+     * @return the maximum line length
      * @since 1.3
      */
     protected int getLineLength() {
@@ -323,7 +326,7 @@ public abstract class AbstractWriter {
 
     /**
      * Sets the current line length.
-     *
+     * @param length the new line length
      * @since 1.3
      */
     protected void setCurrentLineLength(int length) {
@@ -333,7 +336,7 @@ public abstract class AbstractWriter {
 
     /**
      * Returns the current line length.
-     *
+     * @return the current line length
      * @since 1.3
      */
     protected int getCurrentLineLength() {
@@ -344,7 +347,7 @@ public abstract class AbstractWriter {
      * Returns true if the current line should be considered empty. This
      * is true when <code>getCurrentLineLength</code> == 0 ||
      * <code>indent</code> has been invoked on an empty line.
-     *
+     * @return true if the current line should be considered empty
      * @since 1.3
      */
     protected boolean isLineEmpty() {
@@ -355,7 +358,7 @@ public abstract class AbstractWriter {
      * Sets whether or not lines can be wrapped. This can be toggled
      * during the writing of lines. For example, outputting HTML might
      * set this to false when outputting a quoted string.
-     *
+     * @param newValue new value for line wrapping
      * @since 1.3
      */
     protected void setCanWrapLines(boolean newValue) {
@@ -365,7 +368,7 @@ public abstract class AbstractWriter {
     /**
      * Returns whether or not the lines can be wrapped. If this is false
      * no lineSeparator's will be output.
-     *
+     * @return whether or not the lines can be wrapped
      * @since 1.3
      */
     protected boolean getCanWrapLines() {
@@ -385,7 +388,7 @@ public abstract class AbstractWriter {
 
     /**
      * Returns the amount of space to indent.
-     *
+     * @return the amount of space to indent
      * @since 1.3
      */
     protected int getIndentSpace() {
@@ -396,7 +399,7 @@ public abstract class AbstractWriter {
      * Sets the String used to represent newlines. This is initialized
      * in the constructor from either the Document, or the System property
      * line.separator.
-     *
+     * @param value the new line separator
      * @since 1.3
      */
     public void setLineSeparator(String value) {
@@ -405,7 +408,7 @@ public abstract class AbstractWriter {
 
     /**
      * Returns the string used to represent newlines.
-     *
+     * @return the string used to represent newlines
      * @since 1.3
      */
     public String getLineSeparator() {
@@ -446,7 +449,7 @@ public abstract class AbstractWriter {
      * Returns the current indentation level. That is, the number of times
      * <code>incrIndent</code> has been invoked minus the number of times
      * <code>decrIndent</code> has been invoked.
-     *
+     * @return the current indentation level
      * @since 1.3
      */
     protected int getIndentLevel() {
@@ -514,7 +517,7 @@ public abstract class AbstractWriter {
     /**
      * Writes the line separator. This invokes <code>output</code> directly
      * as well as setting the <code>lineLength</code> to 0.
-     *
+     * @throws IOException on any I/O error
      * @since 1.3
      */
     protected void writeLineSeparator() throws IOException {
@@ -539,6 +542,10 @@ public abstract class AbstractWriter {
      * and won't fit in which case the line length will exceed
      * <code>getLineLength</code>.
      *
+     * @param chars characters to output
+     * @param startIndex starting index
+     * @param length length of output
+     * @throws IOException on any I/O error
      * @since 1.3
      */
     protected void write(char[] chars, int startIndex, int length)
@@ -686,6 +693,10 @@ public abstract class AbstractWriter {
      * <code>writeLineSeparator</code> to write out a newline, which will
      * property update the current line length.
      *
+     * @param content characters to output
+     * @param start starting index
+     * @param length length of output
+     * @throws IOException on any I/O error
      * @since 1.3
      */
     protected void output(char[] content, int start, int length)

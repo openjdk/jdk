@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,21 @@
 
 package com.apple.laf;
 
-import sun.awt.AWTAccessor;
 import sun.lwawt.macosx.CMenuBar;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.reflect.*;
-import java.security.*;
 import java.util.*;
 
 import javax.swing.*;
 
+import static sun.awt.AWTAccessor.*;
+
 @SuppressWarnings("serial") // JDK implementation class
-public class ScreenMenuBar extends MenuBar implements ContainerListener, ScreenMenuPropertyHandler, ComponentListener {
+public class ScreenMenuBar extends MenuBar
+        implements ContainerListener, ScreenMenuPropertyHandler,
+                   ComponentListener {
+
     static boolean sJMenuBarHasHelpMenus = false; //$ could check by calling getHelpMenu in a try block
 
     JMenuBar fSwingBar;
@@ -246,22 +248,23 @@ public class ScreenMenuBar extends MenuBar implements ContainerListener, ScreenM
             fSubmenus.remove(menu);
     }
 
-    @SuppressWarnings("deprecation")
     public Menu add(final Menu m, final int index) {
         synchronized (getTreeLock()) {
             if (m.getParent() != null) {
                 m.getParent().remove(m);
             }
 
-            final Vector<Menu> menus = AWTAccessor.getMenuBarAccessor().getMenus(this);
+            final Vector<Menu> menus = getMenuBarAccessor().getMenus(this);
             menus.insertElementAt(m, index);
-            AWTAccessor.getMenuComponentAccessor().setParent(m, this);
+            final MenuComponentAccessor acc = getMenuComponentAccessor();
+            acc.setParent(m, this);
 
-            final CMenuBar peer = (CMenuBar)getPeer();
+            final CMenuBar peer = acc.getPeer(this);
             if (peer == null) return m;
 
             peer.setNextInsertionIndex(index);
-            if (m.getPeer() == null) {
+            final CMenuBar mPeer = acc.getPeer(m);
+            if (mPeer == null) {
                 m.addNotify();
             }
 

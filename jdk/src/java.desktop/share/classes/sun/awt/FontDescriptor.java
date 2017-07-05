@@ -24,10 +24,12 @@
  */
 package sun.awt;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
-import sun.nio.cs.HistoricallyNamedCharset;
 
 public class FontDescriptor implements Cloneable {
 
@@ -49,11 +51,15 @@ public class FontDescriptor implements Cloneable {
         this.exclusionRanges = exclusionRanges;
         this.useUnicode = false;
         Charset cs = encoder.charset();
-        if (cs instanceof HistoricallyNamedCharset)
-            this.charsetName = ((HistoricallyNamedCharset)cs).historicalName();
-        else
-            this.charsetName = cs.name();
-
+        // The following looks odd but its the only public way to get the
+        // historical name if one exists and the canonical name otherwise.
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(new byte[8]);
+            InputStreamReader isr = new InputStreamReader(bais, cs);
+            this.charsetName = isr.getEncoding();
+            isr.close();
+        } catch (IOException ioe) {
+        }
     }
 
     public String getNativeName() {

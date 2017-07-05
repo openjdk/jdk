@@ -32,6 +32,7 @@ import sun.java2d.SurfaceData;
 import java.awt.Graphics;
 
 public interface X11ComponentPeer {
+    long getWindow();
     long getContentWindow();
     SurfaceData getSurfaceData();
     GraphicsConfiguration getGraphicsConfiguration();

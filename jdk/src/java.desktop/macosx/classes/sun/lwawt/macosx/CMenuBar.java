@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.peer.MenuBarPeer;
 
+import sun.awt.AWTAccessor;
+
 public class CMenuBar extends CMenuComponent implements MenuBarPeer {
 
     private int nextInsertionIndex = -1;
@@ -43,9 +45,8 @@ public class CMenuBar extends CMenuComponent implements MenuBarPeer {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void addHelpMenu(Menu m) {
-        CMenu cMenu = (CMenu)m.getPeer();
+        CMenu cMenu = AWTAccessor.getMenuComponentAccessor().getPeer(m);
         nativeSetHelpMenu(getModel(), cMenu.getModel());
     }
 

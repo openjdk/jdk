@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class TabStop implements Serializable {
      * RIGHT_TAB, just includes decimal as additional character to look for.
      */
     public static final int ALIGN_DECIMAL = 4;
+    /** Align bar */
     public static final int ALIGN_BAR     = 5;
 
     /* Bar tabs (whatever they are) are actually a separate kind of tab
@@ -66,11 +67,17 @@ public class TabStop implements Serializable {
        properties are mutually exclusive, so the reader treats barness
        as being a kind of alignment. */
 
+    /** Lead none */
     public static final int LEAD_NONE      = 0;
+    /** Lead dots */
     public static final int LEAD_DOTS      = 1;
+    /** Lead hyphens */
     public static final int LEAD_HYPHENS   = 2;
+    /** Lead underline */
     public static final int LEAD_UNDERLINE = 3;
+    /** Lead thickline */
     public static final int LEAD_THICKLINE = 4;
+    /** Lead equals */
     public static final int LEAD_EQUALS    = 5;
 
     /** Tab type. */
@@ -82,6 +89,7 @@ public class TabStop implements Serializable {
     /**
      * Creates a tab at position <code>pos</code> with a default alignment
      * and default leader.
+     * @param pos position of the tab
      */
     public TabStop(float pos) {
         this(pos, ALIGN_LEFT, LEAD_NONE);
@@ -90,6 +98,9 @@ public class TabStop implements Serializable {
     /**
      * Creates a tab with the specified position <code>pos</code>,
      * alignment <code>align</code> and leader <code>leader</code>.
+     * @param pos position of the tab
+     * @param align alignment of the tab
+     * @param leader leader of the tab
      */
     public TabStop(float pos, int align, int leader) {
         alignment = align;

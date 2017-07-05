@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
  */
 package java.awt;
 
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.awt.peer.TextAreaPeer;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.HashSet;
 import java.util.Set;
-import javax.accessibility.*;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 
 /**
  * A <code>TextArea</code> object is a multi-line region
@@ -290,7 +290,7 @@ public class TextArea extends TextComponent {
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (peer == null)
-                peer = getToolkit().createTextArea(this);
+                peer = getComponentFactory().createTextArea(this);
             super.addNotify();
         }
     }

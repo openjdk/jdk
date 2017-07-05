@@ -43,7 +43,7 @@ import java.net.UnknownHostException;
 
 import java.util.*;
 
-import sun.awt.motif.MFontConfiguration;
+import sun.font.MFontConfiguration;
 import sun.font.FcFontConfiguration;
 import sun.font.Font2D;
 import sun.font.FontManager;

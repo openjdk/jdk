@@ -948,8 +948,15 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
     jmethodID getCanonicalNameMID = NULL;
     NULL_CHECK(getCanonicalNameMID = (*env)->GetMethodID(env, classClass, "getCanonicalName", "()Ljava/lang/String;"));
 
-    jstring mainClassString = NULL;
-    NULL_CHECK(mainClassString = (*env)->CallObjectMethod(env, mainClass, getCanonicalNameMID));
+    jstring mainClassString = (*env)->CallObjectMethod(env, mainClass, getCanonicalNameMID);
+    if ((*env)->ExceptionCheck(env)) {
+        /*
+         * Clears all errors caused by getCanonicalName() on the mainclass and
+         * leaves the JAVA_MAIN_CLASS__<pid> empty.
+         */
+        (*env)->ExceptionClear(env);
+        return;
+    }
 
     const char *mainClassName = NULL;
     NULL_CHECK(mainClassName = (*env)->GetStringUTFChars(env, mainClassString, NULL));
@@ -1056,7 +1063,7 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
  * Note the jvmInstance must be initialized first before entering into
  * ShowSplashScreen, as there is a callback into the JLI_GetJavaVMInstance.
  */
-void PostJVMInit(JNIEnv *env, jstring mainClass, JavaVM *vm) {
+void PostJVMInit(JNIEnv *env, jclass mainClass, JavaVM *vm) {
     jvmInstance = vm;
     SetMainClassForAWT(env, mainClass);
     CHECK_EXCEPTION_RETURN();
