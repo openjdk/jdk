@@ -134,8 +134,8 @@ TOOL_CLDRCONVERTER=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 $(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK,\
 		SRC:=$(JDK_TOPDIR)/make/tools/add_gnu_debuglink,\
 		LANG:=C,\
-		CC:=$(HOST_CC),\
-		LDEXE:=$(HOST_LD),\
+		CC:=$(BUILD_CC),\
+		LDEXE:=$(BUILD_LD),\
 		LDFLAGS:=-lelf,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/add_gnu_debuglink,\
 		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/btbin,\
@@ -144,8 +144,8 @@ $(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK,\
 $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS,\
 		SRC:=$(JDK_TOPDIR)/make/tools/fix_empty_sec_hdr_flags,\
 		LANG:=C,\
-		CC:=$(HOST_CC),\
-		LDEXE:=$(HOST_LD),\
+		CC:=$(BUILD_CC),\
+		LDEXE:=$(BUILD_LD),\
 		LDFLAGS:=-lelf,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags,\
 		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/btbin,\
