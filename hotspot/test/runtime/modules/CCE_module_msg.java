@@ -28,14 +28,13 @@
  * @compile p2/c2.java
  * @compile p4/c4.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI CCE_module_msg
  */
 
 import java.io.*;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -73,10 +72,10 @@ public class CCE_module_msg {
     }
 
     public static void invalidClassToString() throws Throwable {
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for CCE_module_msg and assume it's also used to
         // load classes p1.c1 and p2.c2.
@@ -86,7 +85,7 @@ public class CCE_module_msg {
         Object m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
         ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2x, jlObject_jlrM);
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         try {
             ModuleHelper.AddModuleExportsToAll(m2x, "p2");
@@ -105,10 +104,10 @@ public class CCE_module_msg {
     }
 
     public static void invalidClassToStringCustomLoader() throws Throwable {
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Create a customer class loader to load class p4/c4.
         URL[] urls = new URL[] { CLASSES_DIR.toUri().toURL() };

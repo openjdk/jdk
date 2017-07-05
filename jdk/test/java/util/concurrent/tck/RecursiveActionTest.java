@@ -195,7 +195,7 @@ public class RecursiveActionTest extends JSR166TestCase {
         public FJException(Throwable cause) { super(cause); }
     }
 
-    // A simple recursive action for testing
+    /** A simple recursive action for testing. */
     final class FibAction extends CheckedRecursiveAction {
         final int number;
         int result;
@@ -213,7 +213,7 @@ public class RecursiveActionTest extends JSR166TestCase {
         }
     }
 
-    // A recursive action failing in base case
+    /** A recursive action failing in base case. */
     static final class FailingFibAction extends RecursiveAction {
         final int number;
         int result;

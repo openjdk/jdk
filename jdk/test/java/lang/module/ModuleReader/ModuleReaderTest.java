@@ -37,7 +37,6 @@ import java.io.InputStream;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Module;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;

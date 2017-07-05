@@ -26,7 +26,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 
 import static java.lang.invoke.MethodHandles.Lookup.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,14 +297,15 @@ public class BufferedReader extends Reader {
 
     /**
      * Reads a line of text.  A line is considered to be terminated by any one
-     * of a line feed ('\n'), a carriage return ('\r'), or a carriage return
-     * followed immediately by a linefeed.
+     * of a line feed ('\n'), a carriage return ('\r'), a carriage return
+     * followed immediately by a line feed, or by reaching the end-of-file
+     * (EOF).
      *
      * @param      ignoreLF  If true, the next '\n' will be skipped
      *
      * @return     A String containing the contents of the line, not including
      *             any line-termination characters, or null if the end of the
-     *             stream has been reached
+     *             stream has been reached without reading any characters
      *
      * @see        java.io.LineNumberReader#readLine()
      *
@@ -375,12 +376,13 @@ public class BufferedReader extends Reader {
 
     /**
      * Reads a line of text.  A line is considered to be terminated by any one
-     * of a line feed ('\n'), a carriage return ('\r'), or a carriage return
-     * followed immediately by a linefeed.
+     * of a line feed ('\n'), a carriage return ('\r'), a carriage return
+     * followed immediately by a line feed, or by reaching the end-of-file
+     * (EOF).
      *
      * @return     A String containing the contents of the line, not including
      *             any line-termination characters, or null if the end of the
-     *             stream has been reached
+     *             stream has been reached without reading any characters
      *
      * @exception  IOException  If an I/O error occurs
      *

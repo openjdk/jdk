@@ -29,14 +29,14 @@ package org.graalvm.compiler.test;
 public class ExportingClassLoader extends ClassLoader {
     public ExportingClassLoader() {
         if (!GraalTest.Java8OrEarlier) {
-            JLRModule.fromClass(getClass()).exportAllPackagesTo(JLRModule.getUnnamedModuleFor(this));
+            JLModule.fromClass(getClass()).exportAllPackagesTo(JLModule.getUnnamedModuleFor(this));
         }
     }
 
     public ExportingClassLoader(ClassLoader parent) {
         super(parent);
         if (!GraalTest.Java8OrEarlier) {
-            JLRModule.fromClass(getClass()).exportAllPackagesTo(JLRModule.getUnnamedModuleFor(this));
+            JLModule.fromClass(getClass()).exportAllPackagesTo(JLModule.getUnnamedModuleFor(this));
         }
     }
 }
