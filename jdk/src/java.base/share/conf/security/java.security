@@ -655,6 +655,44 @@ krb5.kdc.bad.policy = tryLast
 jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & denyAfter 2017-01-01, \
     RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
 
+# Algorithm restrictions for signed JAR files
+#
+# In some environments, certain algorithms or key lengths may be undesirable
+# for signed JAR validation.  For example, "MD2" is generally no longer
+# considered to be a secure hash algorithm.  This section describes the
+# mechanism for disabling algorithms based on algorithm name and/or key length.
+# JARs signed with any of the disabled algorithms or key sizes will be treated
+# as unsigned.
+#
+# The syntax of the disabled algorithm string is described as follows:
+#   DisabledAlgorithms:
+#       " DisabledAlgorithm { , DisabledAlgorithm } "
+#
+#   DisabledAlgorithm:
+#       AlgorithmName [Constraint]
+#
+#   AlgorithmName:
+#       (see below)
+#
+#   Constraint:
+#       KeySizeConstraint
+#
+#   KeySizeConstraint:
+#       keySize Operator KeyLength
+#
+#   Operator:
+#       <= | < | == | != | >= | >
+#
+#   KeyLength:
+#       Integer value of the algorithm's key length in bits
+#
+# Note: This property is currently used by the JDK Reference
+# implementation. It is not guaranteed to be examined and used by other
+# implementations.
+#
+jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
+      DSA keySize < 1024
+
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
 # (SSL/TLS/DTLS) processing
 #
@@ -935,3 +973,4 @@ jdk.xml.dsig.secureValidationPolicy=\
 # Otherwise, the status is UNDECIDED.
 #
 #jdk.serialFilter=pattern;pattern
+
