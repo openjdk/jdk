@@ -361,8 +361,8 @@ public abstract class SampleModel
         int x1 = x + w;
         int y1 = y + h;
 
-        if (x < 0 || x1 < x || x1 > width ||
-            y < 0 || y1 < y || y1 > height)
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
         {
             throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
         }
@@ -588,6 +588,15 @@ public abstract class SampleModel
         int type = getTransferType();
         int numDataElems = getNumDataElements();
 
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
         switch(type) {
 
         case DataBuffer.TYPE_BYTE:
@@ -595,8 +604,8 @@ public abstract class SampleModel
             byte[] barray = (byte[])obj;
             byte[] btemp = new byte[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         btemp[k] = barray[cnt++];
                     }
@@ -612,8 +621,8 @@ public abstract class SampleModel
             short[] sarray = (short[])obj;
             short[] stemp = new short[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         stemp[k] = sarray[cnt++];
                     }
@@ -628,8 +637,8 @@ public abstract class SampleModel
             int[] iArray = (int[])obj;
             int[] itemp = new int[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         itemp[k] = iArray[cnt++];
                     }
@@ -644,8 +653,8 @@ public abstract class SampleModel
             float[] fArray = (float[])obj;
             float[] ftemp = new float[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         ftemp[k] = fArray[cnt++];
                     }
@@ -660,8 +669,8 @@ public abstract class SampleModel
             double[] dArray = (double[])obj;
             double[] dtemp = new double[numDataElems];
 
-            for (int i=y; i<y+h; i++) {
-                for (int j=x; j<x+w; j++) {
+            for (int i=y; i<y1; i++) {
+                for (int j=x; j<x1; j++) {
                     for (int k=0; k<numDataElems; k++) {
                         dtemp[k] = dArray[cnt++];
                     }
@@ -759,14 +768,22 @@ public abstract class SampleModel
 
         int pixels[];
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
 
         if (iArray != null)
             pixels = iArray;
         else
             pixels = new int[numBands * w * h];
 
-        for (int i=y; i<(h+y); i++) {
-            for (int j=x; j<(w+x); j++) {
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 for(int k=0; k<numBands; k++) {
                     pixels[Offset++] = getSample(j, i, k, data);
                 }
@@ -799,14 +816,22 @@ public abstract class SampleModel
 
         float pixels[];
         int Offset = 0;
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
 
         if (fArray != null)
             pixels = fArray;
         else
             pixels = new float[numBands * w * h];
 
-        for (int i=y; i<(h+y); i++) {
-            for(int j=x; j<(w+x); j++) {
+        for (int i=y; i<y1; i++) {
+            for(int j=x; j<x1; j++) {
                 for(int k=0; k<numBands; k++) {
                     pixels[Offset++] = getSampleFloat(j, i, k, data);
                 }
@@ -838,6 +863,14 @@ public abstract class SampleModel
                               double dArray[], DataBuffer data) {
         double pixels[];
         int    Offset = 0;
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
 
         if (dArray != null)
             pixels = dArray;
@@ -845,8 +878,8 @@ public abstract class SampleModel
             pixels = new double[numBands * w * h];
 
         // Fix 4217412
-        for (int i=y; i<(h+y); i++) {
-            for (int j=x; j<(w+x); j++) {
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 for (int k=0; k<numBands; k++) {
                     pixels[Offset++] = getSampleDouble(j, i, k, data);
                 }
@@ -1146,9 +1179,17 @@ public abstract class SampleModel
     public void setPixels(int x, int y, int w, int h,
                           int iArray[], DataBuffer data) {
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 for (int k=0; k<numBands; k++) {
                     setSample(j, i, k, iArray[Offset++], data);
                 }
@@ -1176,9 +1217,17 @@ public abstract class SampleModel
     public void setPixels(int x, int y, int w, int h,
                           float fArray[], DataBuffer data) {
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 for(int k=0; k<numBands; k++) {
                     setSample(j, i, k, fArray[Offset++], data);
                 }
@@ -1206,9 +1255,17 @@ public abstract class SampleModel
     public void setPixels(int x, int y, int w, int h,
                           double dArray[], DataBuffer data) {
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 for (int k=0; k<numBands; k++) {
                     setSample(j, i, k, dArray[Offset++], data);
                 }
@@ -1315,9 +1372,16 @@ public abstract class SampleModel
                            int iArray[], DataBuffer data) {
 
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 setSample(j, i, b, iArray[Offset++], data);
             }
         }
@@ -1345,9 +1409,17 @@ public abstract class SampleModel
     public void setSamples(int x, int y, int w, int h, int b,
                            float fArray[], DataBuffer data) {
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 setSample(j, i, b, fArray[Offset++], data);
             }
         }
@@ -1375,9 +1447,18 @@ public abstract class SampleModel
     public void setSamples(int x, int y, int w, int h, int b,
                            double dArray[], DataBuffer data) {
         int Offset=0;
+        int x1 = x + w;
+        int y1 = y + h;
 
-        for (int i=y; i<(y+h); i++) {
-            for (int j=x; j<(x+w); j++) {
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 > height)
+        {
+            throw new ArrayIndexOutOfBoundsException("Invalid coordinates.");
+        }
+
+        for (int i=y; i<y1; i++) {
+            for (int j=x; j<x1; j++) {
                 setSample(j, i, b, dArray[Offset++], data);
             }
         }

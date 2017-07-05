@@ -250,10 +250,10 @@ public final class TimestampedSigner extends ContentSigner {
      * (<a href="http://www.ietf.org/rfc/rfc3280.txt">RFC 3280</a>).
      * The extension's <tt>accessMethod</tt> field should contain the object
      * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
-     * <tt>accessLocation</tt> field should contain an HTTP URL.
+     * <tt>accessLocation</tt> field should contain an HTTP or HTTPS URL.
      *
      * @param tsaCertificate An X.509 certificate for the TSA.
-     * @return An HTTP URL or null if none was found.
+     * @return An HTTP or HTTPS URL or null if none was found.
      */
     public static String getTimestampingUrl(X509Certificate tsaCertificate) {
 
@@ -279,7 +279,8 @@ public final class TimestampedSigner extends ContentSigner {
                     location = description.getAccessLocation();
                     if (location.getType() == GeneralNameInterface.NAME_URI) {
                         uri = (URIName) location.getName();
-                        if (uri.getScheme().equalsIgnoreCase("http")) {
+                        if (uri.getScheme().equalsIgnoreCase("http") ||
+                                uri.getScheme().equalsIgnoreCase("https")) {
                             return uri.getName();
                         }
                     }

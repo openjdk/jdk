@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,13 +28,8 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/*
- */
-
 package com.sun.inputmethods.internal.codepointim;
-import java.text.AttributedCharacterIterator;
-import java.util.Map;
+
 
 import java.awt.AWTEvent;
 import java.awt.Toolkit;
@@ -50,6 +45,7 @@ import java.io.IOException;
 import java.text.AttributedString;
 import java.util.Locale;
 
+
 /**
  * The Code Point Input Method is a simple input method that allows Unicode
  * characters to be entered using their code point or code unit values. See the
@@ -59,17 +55,15 @@ import java.util.Locale;
  */
 public class CodePointInputMethod implements InputMethod {
 
-    private static final int UNSET           = 0;
-    private static final int ESCAPE          = 1; // \u0000       - \uFFFF
-    private static final int SPECIAL_ESCAPE  = 2; // \U000000     - \U10FFFF
-    private static final int SURROGATE_PAIR  = 3; // \uD800\uDC00 - \uDBFF\uDFFF
-
+    private static final int UNSET = 0;
+    private static final int ESCAPE = 1; // \u0000       - \uFFFF
+    private static final int SPECIAL_ESCAPE = 2; // \U000000     - \U10FFFF
+    private static final int SURROGATE_PAIR = 3; // \uD800\uDC00 - \uDBFF\uDFFF
     private InputMethodContext context;
     private Locale locale;
     private StringBuffer buffer;
     private int insertionPoint;
     private int format = UNSET;
-
 
     public CodePointInputMethod() throws IOException {
     }
@@ -90,7 +84,7 @@ public class CodePointInputMethod implements InputMethod {
 
         if (eventID == KeyEvent.KEY_PRESSED) {
             // If we are not in composition mode, pass through
-            if (notInCompositionMode)  {
+            if (notInCompositionMode) {
                 return;
             }
 
@@ -106,7 +100,7 @@ public class CodePointInputMethod implements InputMethod {
             char c = e.getKeyChar();
 
             // If we are not in composition mode, wait a back slash
-            if (notInCompositionMode)  {
+            if (notInCompositionMode) {
                 // If the type character is not a back slash, pass through
                 if (c != '\\') {
                     return;
@@ -115,30 +109,30 @@ public class CodePointInputMethod implements InputMethod {
                 startComposition();     // Enter to composition mode
             } else {
                 switch (c) {
-                case ' ':       // Exit from composition mode
-                    finishComposition();
-                    break;
-                case '\u007f':  // Delete
-                    deleteCharacter();
-                    break;
-                case '\b':      // BackSpace
-                    deletePreviousCharacter();
-                    break;
-                case '\u001b':  // Escape
-                    cancelComposition();
-                    break;
-                case '\n':      // Return
-                case '\t':      // Tab
-                    sendCommittedText();
-                    break;
-                default:
-                    composeUnicodeEscape(c);
-                    break;
+                    case ' ':       // Exit from composition mode
+                        finishComposition();
+                        break;
+                    case '\u007f':  // Delete
+                        deleteCharacter();
+                        break;
+                    case '\b':      // BackSpace
+                        deletePreviousCharacter();
+                        break;
+                    case '\u001b':  // Escape
+                        cancelComposition();
+                        break;
+                    case '\n':      // Return
+                    case '\t':      // Tab
+                        sendCommittedText();
+                        break;
+                    default:
+                        composeUnicodeEscape(c);
+                        break;
                 }
             }
         } else {  // KeyEvent.KEY_RELEASED
             // If we are not in composition mode, pass through
-            if (notInCompositionMode)  {
+            if (notInCompositionMode) {
                 return;
             }
         }
@@ -148,7 +142,7 @@ public class CodePointInputMethod implements InputMethod {
 
     private void composeUnicodeEscape(char c) {
         switch (buffer.length()) {
-            case  1:  // \\
+            case 1:  // \\
                 waitEscapeCharacter(c);
                 break;
             case 2:  // \\u or \\U
@@ -221,7 +215,7 @@ public class CodePointInputMethod implements InputMethod {
     private void waitDigit2(char c) {
         if (Character.digit(c, 16) != -1) {
             buffer.insert(insertionPoint++, c);
-            char codePoint = (char)getCodePoint(buffer, 2, 5);
+            char codePoint = (char) getCodePoint(buffer, 2, 5);
             if (Character.isHighSurrogate(codePoint)) {
                 format = SURROGATE_PAIR;
                 buffer.append("\\u");
@@ -261,11 +255,11 @@ public class CodePointInputMethod implements InputMethod {
     private void sendComposedText() {
         AttributedString as = new AttributedString(buffer.toString());
         as.addAttribute(TextAttribute.INPUT_METHOD_HIGHLIGHT,
-                        InputMethodHighlight.SELECTED_RAW_TEXT_HIGHLIGHT);
+                InputMethodHighlight.SELECTED_RAW_TEXT_HIGHLIGHT);
         context.dispatchInputMethodEvent(
-                                  InputMethodEvent.INPUT_METHOD_TEXT_CHANGED,
-                                  as.getIterator(), 0,
-                                  TextHitInfo.leading(insertionPoint), null);
+                InputMethodEvent.INPUT_METHOD_TEXT_CHANGED,
+                as.getIterator(), 0,
+                TextHitInfo.leading(insertionPoint), null);
     }
 
     /**
@@ -274,9 +268,9 @@ public class CodePointInputMethod implements InputMethod {
     private void sendCommittedText() {
         AttributedString as = new AttributedString(buffer.toString());
         context.dispatchInputMethodEvent(
-                                  InputMethodEvent.INPUT_METHOD_TEXT_CHANGED,
-                                  as.getIterator(), buffer.length(),
-                                  TextHitInfo.leading(insertionPoint), null);
+                InputMethodEvent.INPUT_METHOD_TEXT_CHANGED,
+                as.getIterator(), buffer.length(),
+                TextHitInfo.leading(insertionPoint), null);
 
         buffer.setLength(0);
         insertionPoint = 0;
@@ -298,9 +292,9 @@ public class CodePointInputMethod implements InputMethod {
         }
 
         context.dispatchInputMethodEvent(
-                                  InputMethodEvent.CARET_POSITION_CHANGED,
-                                  null, 0,
-                                  TextHitInfo.leading(insertionPoint), null);
+                InputMethodEvent.CARET_POSITION_CHANGED,
+                null, 0,
+                TextHitInfo.leading(insertionPoint), null);
     }
 
     /**
@@ -314,9 +308,9 @@ public class CodePointInputMethod implements InputMethod {
         }
 
         context.dispatchInputMethodEvent(
-                                  InputMethodEvent.CARET_POSITION_CHANGED,
-                                  null, 0,
-                                  TextHitInfo.leading(insertionPoint), null);
+                InputMethodEvent.CARET_POSITION_CHANGED,
+                null, 0,
+                TextHitInfo.leading(insertionPoint), null);
     }
 
     /**
@@ -383,7 +377,7 @@ public class CodePointInputMethod implements InputMethod {
     private void finishComposition() {
         int len = buffer.length();
         if (len == 6 && format != SPECIAL_ESCAPE) {
-            char codePoint = (char)getCodePoint(buffer, 2, 5);
+            char codePoint = (char) getCodePoint(buffer, 2, 5);
             if (Character.isValidCodePoint(codePoint) && codePoint != 0xFFFF) {
                 buffer.setLength(0);
                 buffer.append(codePoint);
@@ -400,11 +394,11 @@ public class CodePointInputMethod implements InputMethod {
             }
         } else if (len == 12 && format == SURROGATE_PAIR) {
             char[] codePoint = {
-                (char)getCodePoint(buffer, 2, 5),
-                (char)getCodePoint(buffer, 8, 11)
+                (char) getCodePoint(buffer, 2, 5),
+                (char) getCodePoint(buffer, 8, 11)
             };
-            if (Character.isHighSurrogate(codePoint[0]) &&
-                Character.isLowSurrogate(codePoint[1])) {
+            if (Character.isHighSurrogate(codePoint[0]) && Character.
+                    isLowSurrogate(codePoint[1])) {
                 buffer.setLength(0);
                 buffer.append(codePoint);
                 sendCommittedText();
@@ -418,7 +412,7 @@ public class CodePointInputMethod implements InputMethod {
     private int getCodePoint(StringBuffer sb, int from, int to) {
         int value = 0;
         for (int i = from; i <= to; i++) {
-            value = (value<<4) + Character.digit(sb.charAt(i), 16);
+            value = (value << 4) + Character.digit(sb.charAt(i), 16);
         }
         return value;
     }
@@ -426,7 +420,6 @@ public class CodePointInputMethod implements InputMethod {
     private static void beep() {
         Toolkit.getDefaultToolkit().beep();
     }
-
 
     public void activate() {
         if (buffer == null) {

@@ -129,34 +129,28 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this, jlong addr,
     if ((*env)->GetBooleanField(env, this, setParamsID)) {
         int level = (*env)->GetIntField(env, this, levelID);
         int strategy = (*env)->GetIntField(env, this, strategyID);
-
-        in_buf = (jbyte *) malloc(this_len);
-        if (in_buf == 0) {
+        in_buf = (*env)->GetPrimitiveArrayCritical(env, this_buf, 0);
+        if (in_buf == NULL) {
             // Throw OOME only when length is not zero
             if (this_len != 0)
                 JNU_ThrowOutOfMemoryError(env, 0);
             return 0;
         }
-        (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
-        out_buf = (jbyte *) malloc(len);
-        if (out_buf == 0) {
-            free(in_buf);
+        out_buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
+        if (out_buf == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
             if (len != 0)
                 JNU_ThrowOutOfMemoryError(env, 0);
             return 0;
         }
 
-        strm->next_in = (Bytef *) in_buf;
-        strm->next_out = (Bytef *) out_buf;
+        strm->next_in = (Bytef *) (in_buf + this_off);
+        strm->next_out = (Bytef *) (out_buf + off);
         strm->avail_in = this_len;
         strm->avail_out = len;
         res = deflateParams(strm, level, strategy);
-
-        if (res == Z_OK) {
-            (*env)->SetByteArrayRegion(env, b, off, len - strm->avail_out, out_buf);
-        }
-        free(out_buf);
-        free(in_buf);
+        (*env)->ReleasePrimitiveArrayCritical(env, b, out_buf, 0);
+        (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
 
         switch (res) {
         case Z_OK:
@@ -174,33 +168,28 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this, jlong addr,
         }
     } else {
         jboolean finish = (*env)->GetBooleanField(env, this, finishID);
-        in_buf = (jbyte *) malloc(this_len);
-        if (in_buf == 0) {
+        in_buf = (*env)->GetPrimitiveArrayCritical(env, this_buf, 0);
+        if (in_buf == NULL) {
             if (this_len != 0)
                 JNU_ThrowOutOfMemoryError(env, 0);
             return 0;
         }
-        (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
-
-        out_buf = (jbyte *) malloc(len);
-        if (out_buf == 0) {
-            free(in_buf);
+        out_buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
+        if (out_buf == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
             if (len != 0)
                 JNU_ThrowOutOfMemoryError(env, 0);
+
             return 0;
         }
 
-        strm->next_in = (Bytef *) in_buf;
-        strm->next_out = (Bytef *) out_buf;
+        strm->next_in = (Bytef *) (in_buf + this_off);
+        strm->next_out = (Bytef *) (out_buf + off);
         strm->avail_in = this_len;
         strm->avail_out = len;
         res = deflate(strm, finish ? Z_FINISH : flush);
-
-        if (res == Z_STREAM_END || res == Z_OK) {
-            (*env)->SetByteArrayRegion(env, b, off, len - strm->avail_out, out_buf);
-        }
-        free(out_buf);
-        free(in_buf);
+        (*env)->ReleasePrimitiveArrayCritical(env, b, out_buf, 0);
+        (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
 
         switch (res) {
         case Z_STREAM_END:

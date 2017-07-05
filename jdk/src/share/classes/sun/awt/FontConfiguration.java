@@ -82,6 +82,10 @@ public abstract class FontConfiguration {
      * one to ensure proper static initialisation takes place.
      */
     public FontConfiguration(SunFontManager fm) {
+        if (FontUtilities.debugFonts()) {
+            FontUtilities.getLogger()
+                .info("Creating standard Font Configuration");
+        }
         if (FontUtilities.debugFonts() && logger == null) {
             logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
         }
@@ -111,6 +115,10 @@ public abstract class FontConfiguration {
                              boolean preferLocaleFonts,
                              boolean preferPropFonts) {
         fontManager = fm;
+        if (FontUtilities.debugFonts()) {
+            FontUtilities.getLogger()
+                .info("Creating alternate Font Configuration");
+        }
         this.preferLocaleFonts = preferLocaleFonts;
         this.preferPropFonts = preferPropFonts;
         /* fontConfig should be initialised by default constructor, and

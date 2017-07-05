@@ -27,36 +27,41 @@ package java.util.logging;
 
 
 /**
- * The management interface for the logging facility.
+ * The management interface for the logging facility. It is recommended
+ * to use the {@link java.lang.management.PlatformLoggingMXBean} management
+ * interface that implements all attributes defined in this
+ * {@code LoggingMXBean}.  The
+ * {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
+ * ManagementFactory.getPlatformMXBean} method can be used to obtain
+ * the {@code PlatformLoggingMXBean} object representing the management
+ * interface for logging.
  *
  * <p>There is a single global instance of the <tt>LoggingMXBean</tt>.
- * This instance is an
- * <a href="../../lang/management/ManagementFactory.html#MXBean">MXBean</a>
- * can be obtained by calling
- * the {@link LogManager#getLoggingMXBean} method or from the
+ * This instance is an {@link javax.management.MXBean MXBean} that
+ * can be obtained by calling the {@link LogManager#getLoggingMXBean}
+ * method or from the
  * {@linkplain java.lang.management.ManagementFactory#getPlatformMBeanServer
  * platform <tt>MBeanServer</tt>}.
- *
- * The {@link javax.management.ObjectName ObjectName} for uniquely
- * identifying the <tt>LoggingMXBean</tt> within an MBeanServer is:
- * <blockquote>
- *    {@link LogManager#LOGGING_MXBEAN_NAME
- *           <tt>java.util.logging:type=Logging</tt>}
- * </blockquote>
- *
- * The instance registered in the platform <tt>MBeanServer</tt> with
- * this {@code ObjectName} is also a {@link PlatformLoggingMXBean}.
+ * <p>
+ * The {@link javax.management.ObjectName ObjectName} that uniquely identifies
+ * the management interface for logging within the {@code MBeanServer} is:
+ * <pre>
+ *    {@link LogManager#LOGGING_MXBEAN_NAME java.util.logging:type=Logging}
+ * </pre>
+ * <p>
+ * The instance registered in the platform {@code MBeanServer}
+ * is also a {@link java.lang.management.PlatformLoggingMXBean}.
  *
  * @author  Ron Mann
  * @author  Mandy Chung
  * @since   1.5
  *
- * @see PlatformLoggingMXBean
+ * @see java.lang.management.PlatformLoggingMXBean
  */
 public interface LoggingMXBean {
 
     /**
-     * Returns the list of currently registered loggers. This method
+     * Returns the list of currently registered logger names. This method
      * calls {@link LogManager#getLoggerNames} and returns a list
      * of the logger names.
      *
@@ -89,7 +94,7 @@ public interface LoggingMXBean {
      *
      * @see Logger#getLevel
      */
-    public String getLoggerLevel( String loggerName );
+    public String getLoggerLevel(String loggerName);
 
     /**
      * Sets the specified logger to the specified new level.
@@ -115,7 +120,7 @@ public interface LoggingMXBean {
      *
      * @see Logger#setLevel
      */
-    public void setLoggerLevel( String loggerName, String levelName );
+    public void setLoggerLevel(String loggerName, String levelName);
 
     /**
      * Returns the name of the parent for the specified logger.

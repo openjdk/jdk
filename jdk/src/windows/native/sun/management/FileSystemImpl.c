@@ -37,45 +37,6 @@
 #define ANY_ACCESS (FILE_GENERIC_READ | FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE)
 
 /*
- * Function prototypes for security functions - we can't statically
- * link because these functions aren't on Windows 9x.
- */
-typedef BOOL (WINAPI *GetFileSecurityFunc)
-    (LPCTSTR lpFileName, SECURITY_INFORMATION RequestedInformation,
-     PSECURITY_DESCRIPTOR pSecurityDescriptor, DWORD nLength,
-     LPDWORD lpnLengthNeeded);
-
-typedef BOOL (WINAPI *GetSecurityDescriptorOwnerFunc)
-    (PSECURITY_DESCRIPTOR pSecurityDescriptor, PSID *pOwner,
-     LPBOOL lpbOwnerDefaulted);
-
-typedef BOOL (WINAPI *GetSecurityDescriptorDaclFunc)
-    (PSECURITY_DESCRIPTOR pSecurityDescriptor, LPBOOL lpbDaclPresent,
-     PACL *pDacl, LPBOOL lpbDaclDefaulted);
-
-typedef BOOL (WINAPI *GetAclInformationFunc)
-    (PACL pAcl, LPVOID pAclInformation, DWORD nAclInformationLength,
-     ACL_INFORMATION_CLASS dwAclInformationClass);
-
-typedef BOOL (WINAPI *GetAceFunc)
-    (PACL pAcl, DWORD dwAceIndex, LPVOID *pAce);
-
-typedef BOOL (WINAPI *EqualSidFunc)(PSID pSid1, PSID pSid2);
-
-
-/* Addresses of the security functions */
-static GetFileSecurityFunc GetFileSecurity_func;
-static GetSecurityDescriptorOwnerFunc GetSecurityDescriptorOwner_func;
-static GetSecurityDescriptorDaclFunc GetSecurityDescriptorDacl_func;
-static GetAclInformationFunc GetAclInformation_func;
-static GetAceFunc GetAce_func;
-static EqualSidFunc EqualSid_func;
-
-/* True if this OS is NT kernel based (NT/2000/XP) */
-static int isNT;
-
-
-/*
  * Returns JNI_TRUE if the specified file is on a file system that supports
  * persistent ACLs (On NTFS file systems returns true, on FAT32 file systems
  * returns false).
@@ -165,7 +126,7 @@ static SECURITY_DESCRIPTOR* getFileSecurityDescriptor(JNIEnv* env, const char* p
     SECURITY_INFORMATION info =
         OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
 
-    (*GetFileSecurity_func)(path, info , 0, 0, &len);
+    GetFileSecurityA(path, info , 0, 0, &len);
     if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
         JNU_ThrowIOExceptionWithLastError(env, "GetFileSecurity failed");
         return NULL;
@@ -174,7 +135,7 @@ static SECURITY_DESCRIPTOR* getFileSecurityDescriptor(JNIEnv* env, const char* p
     if (sd == NULL) {
         JNU_ThrowOutOfMemoryError(env, 0);
     } else {
-        if (!(*GetFileSecurity_func)(path, info, sd, len, &len)) {
+        if (!(*GetFileSecurityA)(path, info, sd, len, &len)) {
             JNU_ThrowIOExceptionWithLastError(env, "GetFileSecurity failed");
             free(sd);
             return NULL;
@@ -191,7 +152,7 @@ static SID* getFileOwner(JNIEnv* env, SECURITY_DESCRIPTOR* sd) {
     SID* owner;
     BOOL defaulted;
 
-    if (!(*GetSecurityDescriptorOwner_func)(sd, &owner, &defaulted)) {
+    if (!GetSecurityDescriptorOwner(sd, &owner, &defaulted)) {
         JNU_ThrowIOExceptionWithLastError(env, "GetSecurityDescriptorOwner failed");
         return NULL;
     }
@@ -206,7 +167,7 @@ static ACL* getFileDACL(JNIEnv* env, SECURITY_DESCRIPTOR* sd) {
     ACL *acl;
     int defaulted, present;
 
-    if (!(*GetSecurityDescriptorDacl_func)(sd, &present, &acl, &defaulted)) {
+    if (!GetSecurityDescriptorDacl(sd, &present, &acl, &defaulted)) {
         JNU_ThrowIOExceptionWithLastError(env, "GetSecurityDescriptorDacl failed");
         return NULL;
     }
@@ -235,8 +196,8 @@ static jboolean isAccessUserOnly(JNIEnv* env, SID* owner, ACL* acl) {
     /*
      * Get the ACE count
      */
-    if (!(*GetAclInformation_func)(acl, (void *) &acl_size_info, sizeof(acl_size_info),
-                                  AclSizeInformation)) {
+    if (!GetAclInformation(acl, (void *) &acl_size_info, sizeof(acl_size_info),
+                           AclSizeInformation)) {
         JNU_ThrowIOExceptionWithLastError(env, "GetAclInformation failed");
         return JNI_FALSE;
     }
@@ -250,7 +211,7 @@ static jboolean isAccessUserOnly(JNIEnv* env, SID* owner, ACL* acl) {
         ACCESS_ALLOWED_ACE *access;
         SID* sid;
 
-        if (!(*GetAce_func)(acl, i, &ace)) {
+        if (!GetAce(acl, i, &ace)) {
             JNU_ThrowIOExceptionWithLastError(env, "GetAce failed");
             return -1;
         }
@@ -280,51 +241,7 @@ static jboolean isAccessUserOnly(JNIEnv* env, SID* owner, ACL* acl) {
 JNIEXPORT void JNICALL Java_sun_management_FileSystemImpl_init0
   (JNIEnv *env, jclass ignored)
 {
-    OSVERSIONINFO ver;
-    HINSTANCE hInst;
-
-    /*
-     * Get the OS version. If dwPlatformId is VER_PLATFORM_WIN32_NT
-     * it means we're running on a Windows NT, 2000, or XP machine.
-     */
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-    isNT = (ver.dwPlatformId == VER_PLATFORM_WIN32_NT);
-    if (!isNT) {
-        return;
-    }
-
-    /*
-     * On NT/2000/XP we need the addresses of the security functions
-     */
-    hInst = LoadLibrary("ADVAPI32.DLL");
-    if (hInst == NULL) {
-        JNU_ThrowIOExceptionWithLastError(env, "Unable to load ADVAPI32.DLL");
-        return;
-    }
-
-
-    GetFileSecurity_func = (GetFileSecurityFunc)GetProcAddress(hInst, "GetFileSecurityA");
-    GetSecurityDescriptorOwner_func =
-        (GetSecurityDescriptorOwnerFunc)GetProcAddress(hInst, "GetSecurityDescriptorOwner");
-    GetSecurityDescriptorDacl_func =
-        (GetSecurityDescriptorDaclFunc)GetProcAddress(hInst, "GetSecurityDescriptorDacl");
-    GetAclInformation_func =
-        (GetAclInformationFunc)GetProcAddress(hInst, "GetAclInformation");
-    GetAce_func = (GetAceFunc)GetProcAddress(hInst, "GetAce");
-    EqualSid_func = (EqualSidFunc)GetProcAddress(hInst, "EqualSid");
-
-    if (GetFileSecurity_func == NULL ||
-        GetSecurityDescriptorDacl_func == NULL ||
-        GetSecurityDescriptorDacl_func == NULL ||
-        GetAclInformation_func == NULL ||
-        GetAce_func == NULL ||
-        EqualSid_func == NULL)
-    {
-        JNU_ThrowIOExceptionWithLastError(env,
-            "Unable to get address of security functions");
-        return;
-    }
+        /* nothing to do */
 }
 
 /*
@@ -338,10 +255,6 @@ JNIEXPORT jboolean JNICALL Java_sun_management_FileSystemImpl_isSecuritySupporte
     jboolean res;
     jboolean isCopy;
     const char* path;
-
-    if (!isNT) {
-        return JNI_FALSE;
-    }
 
     path = JNU_GetStringPlatformChars(env, str, &isCopy);
     if (path != NULL) {
