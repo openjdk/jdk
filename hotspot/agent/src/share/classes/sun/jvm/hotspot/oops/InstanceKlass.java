@@ -342,7 +342,7 @@ public class InstanceKlass extends Klass {
   public Oop       getProtectionDomain()    { return                protectionDomain.getValue(this); }
   public ObjArray  getSigners()             { return (ObjArray)     signers.getValue(this); }
   public Symbol    getSourceFileName()      { return getSymbol(sourceFileName); }
-  public Symbol    getSourceDebugExtension(){ return getSymbol(sourceDebugExtension); }
+  public String    getSourceDebugExtension(){ return                CStringUtilities.getString(sourceDebugExtension.getValue(getHandle())); }
   public TypeArray getInnerClasses()        { return (TypeArray)    innerClasses.getValue(this); }
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
   public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }

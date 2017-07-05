@@ -47,7 +47,7 @@ ElfFile::ElfFile(const char* filepath) {
   m_status = NullDecoder::no_error;
 
   int len = strlen(filepath) + 1;
-  m_filepath = (const char*)os::malloc(len * sizeof(char));
+  m_filepath = (const char*)os::malloc(len * sizeof(char), mtInternal);
   if (m_filepath != NULL) {
     strcpy((char*)m_filepath, filepath);
     m_file = fopen(filepath, "r");

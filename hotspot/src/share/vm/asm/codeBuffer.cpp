@@ -261,7 +261,7 @@ address CodeBuffer::decode_begin() {
 
 GrowableArray<int>* CodeBuffer::create_patch_overflow() {
   if (_overflow_arena == NULL) {
-    _overflow_arena = new Arena();
+    _overflow_arena = new (mtCode) Arena();
   }
   return new (_overflow_arena) GrowableArray<int>(_overflow_arena, 8, 0, 0);
 }
@@ -910,7 +910,7 @@ void CodeBuffer::block_comment(intptr_t offset, const char * comment) {
   _comments.add_comment(offset, comment);
 }
 
-class CodeComment: public CHeapObj {
+class CodeComment: public CHeapObj<mtCode> {
  private:
   friend class CodeComments;
   intptr_t     _offset;
@@ -919,13 +919,13 @@ class CodeComment: public CHeapObj {
 
   ~CodeComment() {
     assert(_next == NULL, "wrong interface for freeing list");
-    os::free((void*)_comment);
+    os::free((void*)_comment, mtCode);
   }
 
  public:
   CodeComment(intptr_t offset, const char * comment) {
     _offset = offset;
-    _comment = os::strdup(comment);
+    _comment = os::strdup(comment, mtCode);
     _next = NULL;
   }
 

@@ -554,9 +554,7 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
       return TypeInt::CC_GE;
     } else if (hi0 <= lo1) {
       // Check for special case in Hashtable::get.  (See below.)
-      if ((jint)lo0 >= 0 && (jint)lo1 >= 0 &&
-          in(1)->Opcode() == Op_ModI &&
-          in(1)->in(2) == in(2) )
+      if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
         return TypeInt::CC_LT;
       return TypeInt::CC_LE;
     }
@@ -567,11 +565,15 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
   // to be positive.
   // (This is a gross hack, since the sub method never
   // looks at the structure of the node in any other case.)
-  if ((jint)lo0 >= 0 && (jint)lo1 >= 0 &&
-      in(1)->Opcode() == Op_ModI &&
-      in(1)->in(2)->uncast() == in(2)->uncast())
+  if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
     return TypeInt::CC_LT;
   return TypeInt::CC;                   // else use worst case results
+}
+
+bool CmpUNode::is_index_range_check() const {
+  // Check for the "(X ModI Y) CmpU Y" shape
+  return (in(1)->Opcode() == Op_ModI &&
+          in(1)->in(2)->eqv_uncast(in(2)));
 }
 
 //------------------------------Idealize---------------------------------------

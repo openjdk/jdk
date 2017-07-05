@@ -436,7 +436,7 @@ DumpWriter::DumpWriter(const char* path) {
   // sufficient memory then reduce size until we can allocate something.
   _size = io_buffer_size;
   do {
-    _buffer = (char*)os::malloc(_size);
+    _buffer = (char*)os::malloc(_size, mtInternal);
     if (_buffer == NULL) {
       _size = _size >> 1;
     }
@@ -1405,7 +1405,7 @@ class VM_HeapDumper : public VM_GC_Operation {
     _gc_before_heap_dump = gc_before_heap_dump;
     _is_segmented_dump = false;
     _dump_start = (jlong)-1;
-    _klass_map = new (ResourceObj::C_HEAP) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, true);
+    _klass_map = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, true);
     _stack_traces = NULL;
     _num_threads = 0;
     if (oome) {
@@ -1426,7 +1426,7 @@ class VM_HeapDumper : public VM_GC_Operation {
       for (int i=0; i < _num_threads; i++) {
         delete _stack_traces[i];
       }
-      FREE_C_HEAP_ARRAY(ThreadStackTrace*, _stack_traces);
+      FREE_C_HEAP_ARRAY(ThreadStackTrace*, _stack_traces, mtInternal);
     }
     delete _klass_map;
   }
@@ -1806,7 +1806,7 @@ void VM_HeapDumper::dump_stack_traces() {
   writer()->write_u4(0);                    // thread number
   writer()->write_u4(0);                    // frame count
 
-  _stack_traces = NEW_C_HEAP_ARRAY(ThreadStackTrace*, Threads::number_of_threads());
+  _stack_traces = NEW_C_HEAP_ARRAY(ThreadStackTrace*, Threads::number_of_threads(), mtInternal);
   int frame_serial_num = 0;
   for (JavaThread* thread = Threads::first(); thread != NULL ; thread = thread->next()) {
     oop threadObj = thread->threadObj();
@@ -2005,7 +2005,7 @@ void HeapDumper::dump_heap(bool oome) {
                    dump_file_name, os::current_process_id(), dump_file_ext);
     }
     const size_t len = strlen(base_path) + 1;
-    my_path = (char*)os::malloc(len);
+    my_path = (char*)os::malloc(len, mtInternal);
     if (my_path == NULL) {
       warning("Cannot create heap dump file.  Out of system memory.");
       return;
@@ -2014,7 +2014,7 @@ void HeapDumper::dump_heap(bool oome) {
   } else {
     // Append a sequence number id for dumps following the first
     const size_t len = strlen(base_path) + max_digit_chars + 2; // for '.' and \0
-    my_path = (char*)os::malloc(len);
+    my_path = (char*)os::malloc(len, mtInternal);
     if (my_path == NULL) {
       warning("Cannot create heap dump file.  Out of system memory.");
       return;

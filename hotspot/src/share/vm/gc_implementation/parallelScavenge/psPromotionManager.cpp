@@ -45,7 +45,7 @@ void PSPromotionManager::initialize() {
   _young_space = heap->young_gen()->to_space();
 
   assert(_manager_array == NULL, "Attempt to initialize twice");
-  _manager_array = NEW_C_HEAP_ARRAY(PSPromotionManager*, ParallelGCThreads+1 );
+  _manager_array = NEW_C_HEAP_ARRAY(PSPromotionManager*, ParallelGCThreads+1, mtGC);
   guarantee(_manager_array != NULL, "Could not initialize promotion manager");
 
   _stack_array_depth = new OopStarTaskQueueSet(ParallelGCThreads);
