@@ -71,6 +71,7 @@ import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static sun.tools.jar.Validator.ENTRYNAME_COMPARATOR;
 
 /**
  * This class implements a simple utility for creating files in the JAR
@@ -131,6 +132,10 @@ public class Main {
     // Do we think this is a multi-release jar?  Set to true
     // if --release option found followed by at least file
     boolean isMultiRelease;
+
+    // The last parsed --release value, if any. Used in conjunction with
+    // "-d,--describe-module" to select the operative module descriptor.
+    int releaseValue = -1;
 
     /*
      * cflag: create
@@ -413,7 +418,7 @@ public class Main {
                     }
                 } else {
                     try (FileInputStream fin = new FileInputStream(FileDescriptor.in)) {
-                        found = describeModule(fin);
+                        found = describeModuleFromStream(fin);
                     }
                 }
                 if (!found)
@@ -604,11 +609,6 @@ public class Main {
         /* parse file arguments */
         int n = args.length - count;
         if (n > 0) {
-            if (dflag) {
-                // "--describe-module/-d" does not require file argument(s)
-                usageError(formatMsg("error.bad.dflag", args[count]));
-                return false;
-            }
             int version = BASE_VERSION;
             int k = 0;
             String[] nameBuf = new String[n];
@@ -616,6 +616,12 @@ public class Main {
             try {
                 for (int i = count; i < args.length; i++) {
                     if (args[i].equals("-C")) {
+                        if (dflag) {
+                            // "--describe-module/-d" does not require file argument(s),
+                            // but does accept --release
+                            usageError(getMsg("error.bad.dflag"));
+                            return false;
+                        }
                         /* change the directory */
                         String dir = args[++i];
                         dir = (dir.endsWith(File.separator) ?
@@ -649,8 +655,15 @@ public class Main {
                         k = 0;
                         nameBuf = new String[n];
                         version = v;
+                        releaseValue = version;
                         pathsMap.put(version, new HashSet<>());
                     } else {
+                        if (dflag) {
+                            // "--describe-module/-d" does not require file argument(s),
+                            // but does accept --release
+                            usageError(getMsg("error.bad.dflag"));
+                            return false;
+                        }
                         nameBuf[k++] = args[i];
                     }
                 }
@@ -756,7 +769,7 @@ public class Main {
      * can be found by recursively descending directories.
      *
      * @param dir    parent directory
-     * @param file s list of files to expand
+     * @param files  list of files to expand
      * @param cpaths set of directories specified by -C option for the files
      * @throws IOException if an I/O error occurs
      */
@@ -1721,23 +1734,62 @@ public class Main {
 
     // Modular jar support
 
-    static <T> String toString(Collection<T> c,
-                               CharSequence prefix,
-                               CharSequence suffix ) {
-        if (c.isEmpty())
-            return "";
-        return c.stream().map(e -> e.toString())
-                           .collect(joining(", ", prefix, suffix));
+    /**
+     * Associates a module descriptor's zip entry name along with its
+     * bytes and an optional URI. Used when describing modules.
+     */
+    interface ModuleInfoEntry {
+       String name();
+       Optional<String> uriString();
+       InputStream bytes() throws IOException;
     }
 
-    private boolean describeModule(ZipFile zipFile) throws IOException {
-        ZipEntry[] zes = zipFile.stream()
-            .filter(e -> isModuleInfoEntry(e.getName()))
-            .sorted(Validator.ENTRY_COMPARATOR)
-            .toArray(ZipEntry[]::new);
+    static class ZipFileModuleInfoEntry implements ModuleInfoEntry {
+        private final ZipFile zipFile;
+        private final ZipEntry entry;
+        ZipFileModuleInfoEntry(ZipFile zipFile, ZipEntry entry) {
+            this.zipFile = zipFile;
+            this.entry = entry;
+        }
+        @Override public String name() { return entry.getName(); }
+        @Override public InputStream bytes() throws IOException {
+            return zipFile.getInputStream(entry);
+        }
+        /** Returns an optional containing the effective URI. */
+        @Override public Optional<String> uriString() {
+            String uri = (Paths.get(zipFile.getName())).toUri().toString();
+            uri = "jar:" + uri + "/!" + entry.getName();
+            return Optional.of(uri);
+        }
+    }
 
-        if (zes.length == 0) {
-            // No module descriptor found, derive the automatic module name
+    static class StreamedModuleInfoEntry implements ModuleInfoEntry {
+        private final String name;
+        private final byte[] bytes;
+        StreamedModuleInfoEntry(String name, byte[] bytes) {
+            this.name = name;
+            this.bytes = bytes;
+        }
+        @Override public String name() { return name; }
+        @Override public InputStream bytes() throws IOException {
+            return new ByteArrayInputStream(bytes);
+        }
+        /** Returns an empty optional. */
+        @Override public Optional<String> uriString() {
+            return Optional.empty();  // no URI can be derived
+        }
+    }
+
+    /** Describes a module from a given zip file. */
+    private boolean describeModule(ZipFile zipFile) throws IOException {
+        ZipFileModuleInfoEntry[] infos = zipFile.stream()
+                .filter(e -> isModuleInfoEntry(e.getName()))
+                .sorted(Validator.ENTRY_COMPARATOR)
+                .map(e -> new ZipFileModuleInfoEntry(zipFile, e))
+                .toArray(ZipFileModuleInfoEntry[]::new);
+
+        if (infos.length == 0) {
+            // No module descriptor found, derive and describe the automatic module
             String fn = zipFile.getName();
             ModuleFinder mf = ModuleFinder.of(Paths.get(fn));
             try {
@@ -1747,8 +1799,8 @@ public class Main {
                     return true;
                 }
                 ModuleDescriptor md = mref.iterator().next().descriptor();
-                output(getMsg("out.automodule"));
-                describeModule(md, null, null, "automatic");
+                output(getMsg("out.automodule") + "\n");
+                describeModule(md, null, null, "");
             } catch (FindException e) {
                 String msg = formatMsg("error.unable.derive.automodule", fn);
                 Throwable t = e.getCause();
@@ -1757,46 +1809,117 @@ public class Main {
                 output(msg);
             }
         } else {
-            for (ZipEntry ze : zes) {
-                try (InputStream is = zipFile.getInputStream(ze)) {
-                    describeModule(is, ze.getName());
-                }
-            }
+            return describeModuleFromEntries(infos);
         }
         return true;
     }
 
-    private boolean describeModule(FileInputStream fis)
+    private boolean describeModuleFromStream(FileInputStream fis)
         throws IOException
     {
+        List<ModuleInfoEntry> infos = new LinkedList<>();
+
         try (BufferedInputStream bis = new BufferedInputStream(fis);
              ZipInputStream zis = new ZipInputStream(bis)) {
             ZipEntry e;
             while ((e = zis.getNextEntry()) != null) {
                 String ename = e.getName();
-                if (isModuleInfoEntry(ename)){
-                    moduleInfos.put(ename, zis.readAllBytes());
+                if (isModuleInfoEntry(ename)) {
+                    infos.add(new StreamedModuleInfoEntry(ename, zis.readAllBytes()));
                 }
             }
         }
-        if (moduleInfos.size() == 0)
+
+        if (infos.size() == 0)
             return false;
-        String[] names = moduleInfos.keySet().stream()
-            .sorted(Validator.ENTRYNAME_COMPARATOR)
-            .toArray(String[]::new);
-        for (String name : names) {
-            describeModule(new ByteArrayInputStream(moduleInfos.get(name)), name);
+
+        ModuleInfoEntry[] sorted = infos.stream()
+                .sorted(Comparator.comparing(ModuleInfoEntry::name, ENTRYNAME_COMPARATOR))
+                .toArray(ModuleInfoEntry[]::new);
+
+        return describeModuleFromEntries(sorted);
+    }
+
+    private boolean lessThanEqualReleaseValue(ModuleInfoEntry entry) {
+        return intVersionFromEntry(entry) <= releaseValue ? true : false;
+    }
+
+    private static String versionFromEntryName(String name) {
+        String s = name.substring(VERSIONS_DIR_LENGTH);
+        return s.substring(0, s.indexOf("/"));
+    }
+
+    private static int intVersionFromEntry(ModuleInfoEntry entry) {
+        String name = entry.name();
+        if (!name.startsWith(VERSIONS_DIR))
+            return BASE_VERSION;
+
+        String s = name.substring(VERSIONS_DIR_LENGTH);
+        s = s.substring(0, s.indexOf('/'));
+        return Integer.valueOf(s);
+    }
+
+    /**
+     * Describes a single module descriptor, determined by the specified
+     * --release, if any, from the given ordered entries.
+     * The given infos must be ordered as per ENTRY_COMPARATOR.
+     */
+    private boolean describeModuleFromEntries(ModuleInfoEntry[] infos)
+        throws IOException
+    {
+        assert infos.length > 0;
+
+        // Informative: output all non-root descriptors, if any
+        String releases = Arrays.stream(infos)
+                .filter(e -> !e.name().equals(MODULE_INFO))
+                .map(ModuleInfoEntry::name)
+                .map(Main::versionFromEntryName)
+                .collect(joining(" "));
+        if (!releases.equals(""))
+            output("releases: " + releases + "\n");
+
+        // Describe the operative descriptor for the specified --release, if any
+        if (releaseValue != -1) {
+            ModuleInfoEntry entry = null;
+            int i = 0;
+            while (i < infos.length && lessThanEqualReleaseValue(infos[i])) {
+                entry = infos[i];
+                i++;
+            }
+
+            if (entry == null) {
+                output(formatMsg("error.no.operative.descriptor",
+                                 String.valueOf(releaseValue)));
+                return false;
+            }
+
+            String uriString = entry.uriString().orElse("");
+            try (InputStream is = entry.bytes()) {
+                describeModule(is, uriString);
+            }
+        } else {
+            // no specific --release specified, output the root, if any
+            if (infos[0].name().equals(MODULE_INFO)) {
+                String uriString = infos[0].uriString().orElse("");
+                try (InputStream is = infos[0].bytes()) {
+                    describeModule(is, uriString);
+                }
+            } else {
+                // no root, output message to specify --release
+                output(getMsg("error.no.root.descriptor"));
+            }
         }
         return true;
     }
 
     static <T> String toString(Collection<T> set) {
         if (set.isEmpty()) { return ""; }
-        return set.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
-                  .collect(joining(" "));
+        return " " + set.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
+                  .sorted().collect(joining(" "));
     }
 
-    private void describeModule(InputStream entryInputStream, String ename)
+
+    private void describeModule(InputStream entryInputStream, String uriString)
         throws IOException
     {
         ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
@@ -1804,71 +1927,94 @@ public class Main {
         ModuleTarget target = attrs.target();
         ModuleHashes hashes = attrs.recordedHashes();
 
-        describeModule(md, target, hashes, ename);
+        describeModule(md, target, hashes, uriString);
     }
 
     private void describeModule(ModuleDescriptor md,
                                 ModuleTarget target,
                                 ModuleHashes hashes,
-                                String ename)
+                                String uriString)
         throws IOException
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("\nmodule ")
-          .append(md.toNameAndVersion())
-          .append(" (").append(ename).append(")");
 
+        sb.append(md.toNameAndVersion());
+
+        if (!uriString.equals(""))
+            sb.append(" ").append(uriString);
         if (md.isOpen())
-            sb.append("\n  open ");
+            sb.append(" open");
+        if (md.isAutomatic())
+            sb.append(" automatic");
+        sb.append("\n");
 
-        md.requires().stream()
-            .sorted(Comparator.comparing(Requires::name))
-            .forEach(r -> {
-                sb.append("\n  requires ");
-                if (!r.modifiers().isEmpty())
-                    sb.append(toString(r.modifiers())).append(" ");
-                sb.append(r.name());
-            });
-
-        md.uses().stream().sorted()
-            .forEach(p -> sb.append("\n  uses ").append(p));
-
+        // unqualified exports (sorted by package)
         md.exports().stream()
-            .sorted(Comparator.comparing(Exports::source))
-            .forEach(p -> sb.append("\n  exports ").append(p));
+                .sorted(Comparator.comparing(Exports::source))
+                .filter(e -> !e.isQualified())
+                .forEach(e -> sb.append("exports ").append(e.source())
+                                .append(toString(e.modifiers())).append("\n"));
 
-        md.opens().stream()
-            .sorted(Comparator.comparing(Opens::source))
-            .forEach(p -> sb.append("\n  opens ").append(p));
+        // dependences
+        md.requires().stream().sorted()
+                .forEach(r -> sb.append("requires ").append(r.name())
+                                .append(toString(r.modifiers())).append("\n"));
 
-        Set<String> concealed = new HashSet<>(md.packages());
-        md.exports().stream().map(Exports::source).forEach(concealed::remove);
-        md.opens().stream().map(Opens::source).forEach(concealed::remove);
-        concealed.stream().sorted()
-            .forEach(p -> sb.append("\n  contains ").append(p));
+        // service use and provides
+        md.uses().stream().sorted()
+                .forEach(s -> sb.append("uses ").append(s).append("\n"));
 
         md.provides().stream()
-            .sorted(Comparator.comparing(Provides::service))
-            .forEach(p -> sb.append("\n  provides ").append(p.service())
-                            .append(" with ")
-                            .append(toString(p.providers())));
+                .sorted(Comparator.comparing(Provides::service))
+                .forEach(p -> sb.append("provides ").append(p.service())
+                                .append(" with")
+                                .append(toString(p.providers()))
+                                .append("\n"));
 
-        md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
+        // qualified exports
+        md.exports().stream()
+                .sorted(Comparator.comparing(Exports::source))
+                .filter(Exports::isQualified)
+                .forEach(e -> sb.append("qualified exports ").append(e.source())
+                                .append(" to").append(toString(e.targets()))
+                                .append("\n"));
+
+        // open packages
+        md.opens().stream()
+                .sorted(Comparator.comparing(Opens::source))
+                .filter(o -> !o.isQualified())
+                .forEach(o -> sb.append("opens ").append(o.source())
+                                 .append(toString(o.modifiers()))
+                                 .append("\n"));
+
+        md.opens().stream()
+                .sorted(Comparator.comparing(Opens::source))
+                .filter(Opens::isQualified)
+                .forEach(o -> sb.append("qualified opens ").append(o.source())
+                                 .append(toString(o.modifiers()))
+                                 .append(" to").append(toString(o.targets()))
+                                 .append("\n"));
+
+        // non-exported/non-open packages
+        Set<String> concealed = new TreeSet<>(md.packages());
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        md.opens().stream().map(Opens::source).forEach(concealed::remove);
+        concealed.forEach(p -> sb.append("contains ").append(p).append("\n"));
+
+        md.mainClass().ifPresent(v -> sb.append("main-class ").append(v).append("\n"));
 
         if (target != null) {
-            String osName = target.osName();
-            if (osName != null)
-                sb.append("\n  operating-system-name " + osName);
-            String osArch = target.osArch();
-            if (osArch != null)
-                sb.append("\n  operating-system-architecture " + osArch);
+            String targetPlatform = target.targetPlatform();
+            if (!targetPlatform.isEmpty())
+                sb.append("platform ").append(targetPlatform).append("\n");
        }
 
        if (hashes != null) {
            hashes.names().stream().sorted().forEach(
-                   mod -> sb.append("\n  hashes ").append(mod).append(" ")
+                   mod -> sb.append("hashes ").append(mod).append(" ")
                             .append(hashes.algorithm()).append(" ")
-                            .append(toHex(hashes.hashFor(mod))));
+                            .append(toHex(hashes.hashFor(mod)))
+                            .append("\n"));
         }
 
         output(sb.toString());

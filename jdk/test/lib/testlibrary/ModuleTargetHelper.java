@@ -41,19 +41,14 @@ public class ModuleTargetHelper {
     private ModuleTargetHelper() {}
 
     public static final class ModuleTarget {
-        private String osName, osArch;
+        private String targetPlatform;
 
-        public ModuleTarget(String osName, String osArch) {
-            this.osName = osName;
-            this.osArch = osArch;
+        public ModuleTarget(String targetPlatform) {
+            this.targetPlatform = targetPlatform;
         }
 
-        public String osName() {
-            return osName;
-        }
-
-        public String osArch() {
-            return osArch;
+        public String targetPlatform() {
+            return targetPlatform;
         }
     }
 
@@ -84,7 +79,7 @@ public class ModuleTargetHelper {
         ClassReader cr = new ClassReader(in);
         cr.accept(cv, attrs, 0);
         if (modTargets[0] != null) {
-            return new ModuleTarget(modTargets[0].osName(), modTargets[0].osArch());
+            return new ModuleTarget(modTargets[0].targetPlatform());
         }
 
         return null;

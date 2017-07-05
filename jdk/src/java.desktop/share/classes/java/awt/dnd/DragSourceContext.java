@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import sun.awt.ComponentFactory;
  * itself between the platform and the
  * listeners provided by the initiator of the drag operation.
  * <p>
- * <a name="defaultCursor"></a>
+ * <a id="defaultCursor"></a>
  * By default, {@code DragSourceContext} sets the cursor as appropriate
  * for the current state of the drag and drop operation. For example, if
  * the user has chosen {@linkplain DnDConstants#ACTION_MOVE the move action},

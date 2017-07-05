@@ -318,7 +318,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   AC_SUBST(JAVAC_FLAGS)
 
   # Check if the boot jdk is 32 or 64 bit
-  if "$JAVA" -d64 -version > /dev/null 2>&1; then
+  if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
     BOOT_JDK_BITS="64"
   else
     BOOT_JDK_BITS="32"

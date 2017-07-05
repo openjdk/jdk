@@ -549,34 +549,26 @@ public final class ClassFileAttributes {
      *   u2 attribute_name_index;
      *   u4 attribute_length;
      *
-     *   // index to CONSTANT_utf8_info structure with the OS name
-     *   u2 os_name_index;
-     *   // index to CONSTANT_utf8_info structure with the OS arch
-     *   u2 os_arch_index
+     *   // index to CONSTANT_utf8_info structure with the target platform
+     *   u2 target_platform_index;
      * }
      *
      * } </pre>
      */
     public static class ModuleTargetAttribute extends Attribute {
-        private final String osName;
-        private final String osArch;
+        private final String targetPlatform;
 
-        public ModuleTargetAttribute(String osName, String osArch) {
+        public ModuleTargetAttribute(String targetPlatform) {
             super(MODULE_TARGET);
-            this.osName = osName;
-            this.osArch = osArch;
+            this.targetPlatform = targetPlatform;
         }
 
         public ModuleTargetAttribute() {
-            this(null, null);
+            this(null);
         }
 
-        public String osName() {
-            return osName;
-        }
-
-        public String osArch() {
-            return osArch;
+        public String targetPlatform() {
+            return targetPlatform;
         }
 
         @Override
@@ -588,20 +580,14 @@ public final class ClassFileAttributes {
                                  Label[] labels)
         {
 
-            String osName = null;
-            String osArch = null;
+            String targetPlatform = null;
 
-            int name_index = cr.readUnsignedShort(off);
-            if (name_index != 0)
-                osName = cr.readUTF8(off, buf);
+            int target_platform_index = cr.readUnsignedShort(off);
+            if (target_platform_index != 0)
+                targetPlatform = cr.readUTF8(off, buf);
             off += 2;
 
-            int arch_index = cr.readUnsignedShort(off);
-            if (arch_index != 0)
-                osArch = cr.readUTF8(off, buf);
-            off += 2;
-
-            return new ModuleTargetAttribute(osName, osArch);
+            return new ModuleTargetAttribute(targetPlatform);
         }
 
         @Override
@@ -613,15 +599,10 @@ public final class ClassFileAttributes {
         {
             ByteVector attr = new ByteVector();
 
-            int name_index = 0;
-            if (osName != null && osName.length() > 0)
-                name_index = cw.newUTF8(osName);
-            attr.putShort(name_index);
-
-            int arch_index = 0;
-            if (osArch != null && osArch.length() > 0)
-                arch_index = cw.newUTF8(osArch);
-            attr.putShort(arch_index);
+            int target_platform_index = 0;
+            if (targetPlatform != null && targetPlatform.length() > 0)
+                target_platform_index = cw.newUTF8(targetPlatform);
+            attr.putShort(target_platform_index);
 
             return attr;
         }
