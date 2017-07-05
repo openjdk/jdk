@@ -3487,10 +3487,15 @@ AccessBridgeJavaEntryPoints::getAccessibleTextInfo(jobject accessibleContext,
 
     // Get the index at the given point
     if (getAccessibleIndexAtPointFromContextMethod != (jmethodID) 0) {
-        textInfo->indexAtPoint = jniEnv->CallIntMethod(accessBridgeObject,
-                                                       getAccessibleIndexAtPointFromContextMethod,
-                                                       accessibleContext, x, y);
-        EXCEPTION_CHECK("Getting AccessibleIndexAtPoint - call to CallIntMethod()", FALSE);
+        // If x or y is -1 return -1
+        if (x == -1 || y == -1) {
+            textInfo->indexAtPoint = -1;
+        } else {
+            textInfo->indexAtPoint = jniEnv->CallIntMethod(accessBridgeObject,
+                                                           getAccessibleIndexAtPointFromContextMethod,
+                                                           accessibleContext, x, y);
+            EXCEPTION_CHECK("Getting AccessibleIndexAtPoint - call to CallIntMethod()", FALSE);
+        }
         PrintDebugString("  Index at point = %d", textInfo->indexAtPoint);
     } else {
         PrintDebugString("  Error! either env == 0 or getAccessibleIndexAtPointFromContextMethod == 0");

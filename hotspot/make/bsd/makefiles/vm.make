@@ -60,7 +60,7 @@ Src_Dirs_I += $(GENERATED)
 # The order is important for the precompiled headers to work.
 INCLUDES += $(PRECOMPILED_HEADER_DIR:%=-I%) $(Src_Dirs_I:%=-I%)
 
-# SYMFLAG is used by {jsig,saproc}.make
+# SYMFLAG is used by jsig.make
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   # always build with debug info when we can create .dSYM/.debuginfo files
   SYMFLAG = -g
@@ -301,9 +301,9 @@ else
 
   ifeq ($(OS_VENDOR), Darwin)
     ifneq ($(STATIC_BUILD),true)
-      LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
-      LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
-      LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
+    LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
+    LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
+    LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
     endif
   else
     LFLAGS_VM                += -Wl,-z,defs
@@ -423,19 +423,16 @@ endif
 # Signal interposition library
 include $(MAKEFILES_DIR)/jsig.make
 
-# Serviceability agent
-include $(MAKEFILES_DIR)/saproc.make
-
 #----------------------------------------------------------------------
 
 ifeq ($(OS_VENDOR), Darwin)
 # no libjvm_db for macosx
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(EXPORTED_SYMBOLS)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) dtraceCheck $(EXPORTED_SYMBOLS)
 	echo "Doing vm.make build:"
 else
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(EXPORTED_SYMBOLS)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(EXPORTED_SYMBOLS)
 endif
 
-install: install_jvm install_jsig install_saproc
+install: install_jvm install_jsigs
 
 .PHONY: default build install install_jvm

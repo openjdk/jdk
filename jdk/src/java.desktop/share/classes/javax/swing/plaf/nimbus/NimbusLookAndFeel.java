@@ -50,7 +50,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.ColorUIResource;
 import sun.swing.ImageIconUIResource;
-import sun.swing.plaf.synth.SynthIcon;
+import javax.swing.plaf.synth.SynthIcon;
 import sun.swing.plaf.GTKKeybindings;
 import sun.swing.plaf.WindowsKeybindings;
 import sun.security.action.GetPropertyAction;

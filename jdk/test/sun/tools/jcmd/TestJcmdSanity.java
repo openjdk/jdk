@@ -71,7 +71,7 @@ public class TestJcmdSanity {
 
         output.shouldHaveExitValue(0);
         output.shouldNotContain("Exception");
-        output.shouldContain(Integer.toString(ProcessTools.getProcessId()) + ":");
+        output.shouldContain(Long.toString(ProcessTools.getProcessId()) + ":");
         matchJcmdCommands(output);
         output.shouldContain("For more information about a specific command use 'help <command>'.");
     }

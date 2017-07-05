@@ -49,7 +49,7 @@ endif
 # When running in JPRT these will be provided. Need defaults so that this makefile
 # is valid anyway.
 ifndef JPRT_ARCHIVE_BUNDLE
-  JPRT_ARCHIVE_BUNDLE=/tmp/jprt_bundles/j2sdk-image.zip
+  JPRT_ARCHIVE_BUNDLE=/tmp/jprt_bundles/jdk-image.zip
 endif
 ifndef JPRT_ARCHIVE_INSTALL_BUNDLE
   JPRT_ARCHIVE_INSTALL_BUNDLE=/tmp/jprt_bundles/product-install.zip

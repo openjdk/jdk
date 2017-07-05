@@ -290,16 +290,30 @@ public abstract class SurfaceManager {
     }
 
     /**
-     * Returns a scale factor of the image. This is utility method, which
-     * fetches information from the SurfaceData of the image.
+     * Returns a horizontal scale factor of the image. This is utility method,
+     * which fetches information from the SurfaceData of the image.
      *
-     * @see SurfaceData#getDefaultScale
+     * @see SurfaceData#getDefaultScaleX
      */
-    public static int getImageScale(final Image img) {
+    public static double getImageScaleX(final Image img) {
         if (!(img instanceof VolatileImage)) {
             return 1;
         }
         final SurfaceManager sm = getManager(img);
-        return sm.getPrimarySurfaceData().getDefaultScale();
+        return sm.getPrimarySurfaceData().getDefaultScaleX();
+    }
+
+    /**
+     * Returns a vertical scale factor of the image. This is utility method,
+     * which fetches information from the SurfaceData of the image.
+     *
+     * @see SurfaceData#getDefaultScaleY
+     */
+    public static double getImageScaleY(final Image img) {
+        if (!(img instanceof VolatileImage)) {
+            return 1;
+        }
+        final SurfaceManager sm = getManager(img);
+        return sm.getPrimarySurfaceData().getDefaultScaleY();
     }
 }

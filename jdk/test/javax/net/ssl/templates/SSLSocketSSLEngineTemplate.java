@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class SSLSocketSSLEngineTemplate {
     /*
      * Enables logging of the SSL/TLS operations.
      */
-    private static boolean logging = true;
+    private static final boolean logging = true;
 
     /*
      * Enables the JSSE system debugging system property:
@@ -97,8 +97,8 @@ public class SSLSocketSSLEngineTemplate {
      * including specific handshake messages, and might be best examined
      * after gaining some familiarity with this application.
      */
-    private static boolean debug = false;
-    private SSLContext sslc;
+    private static final boolean debug = false;
+    private final SSLContext sslc;
     private SSLEngine serverEngine;     // server-side SSLEngine
     private SSLSocket sslSocket;        // client-side socket
     private ServerSocket serverSocket;  // server-side Socket, generates the...
@@ -128,10 +128,10 @@ public class SSLSocketSSLEngineTemplate {
     private static final String keyStoreFile = "keystore";
     private static final String trustStoreFile = "truststore";
     private static final String passwd = "passphrase";
-    private static String keyFilename =
+    private static final String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores
             + "/" + keyStoreFile;
-    private static String trustFilename =
+    private static final String trustFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores
             + "/" + trustStoreFile;
 
@@ -252,7 +252,7 @@ public class SSLSocketSSLEngineTemplate {
             byte[] outbound = new byte[8192];
 
             while (!isEngineClosed(serverEngine)) {
-                int len = 0;
+                int len;
 
                 // Inbound data
                 log("================");
@@ -326,7 +326,6 @@ public class SSLSocketSSLEngineTemplate {
                     serverIn.compact();
                 }
             }
-            return;
         } catch (Exception e) {
             serverException = e;
         } finally {
@@ -384,13 +383,12 @@ public class SSLSocketSSLEngineTemplate {
                     int pos = 0;
 
                     int len;
-done:
                     while ((len = is.read(inbound, pos, 2048 - pos)) != -1) {
                         pos += len;
                         // Let the client do the closing.
                         if ((pos == serverMsg.length) && !serverClose) {
                             sslSocket.close();
-                            break done;
+                            break;
                         }
                     }
 

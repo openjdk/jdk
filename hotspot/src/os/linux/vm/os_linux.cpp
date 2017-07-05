@@ -3989,15 +3989,19 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   errno = old_errno;
 }
 
-
 static int SR_initialize() {
   struct sigaction act;
   char *s;
+
   // Get signal number to use for suspend/resume
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
     int sig = ::strtol(s, 0, 10);
-    if (sig > 0 || sig < _NSIG) {
+    if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
+        sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
       SR_signum = sig;
+    } else {
+      warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
+              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, SR_signum);
     }
   }
 
@@ -4151,8 +4155,11 @@ void signalHandler(int sig, siginfo_t* info, void* uc) {
 bool os::Linux::signal_handlers_are_installed = false;
 
 // For signal-chaining
-struct sigaction os::Linux::sigact[MAXSIGNUM];
-unsigned int os::Linux::sigs = 0;
+struct sigaction sigact[NSIG];
+uint64_t sigs = 0;
+#if (64 < NSIG-1)
+#error "Not all signals can be encoded in sigs. Adapt its type!"
+#endif
 bool os::Linux::libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
 get_signal_t os::Linux::get_signal_action = NULL;
@@ -4230,29 +4237,29 @@ bool os::Linux::chained_handler(int sig, siginfo_t* siginfo, void* context) {
 }
 
 struct sigaction* os::Linux::get_preinstalled_handler(int sig) {
-  if ((((unsigned int)1 << sig) & sigs) != 0) {
+  if ((((uint64_t)1 << (sig-1)) & sigs) != 0) {
     return &sigact[sig];
   }
   return NULL;
 }
 
 void os::Linux::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
   sigact[sig] = oldAct;
-  sigs |= (unsigned int)1 << sig;
+  sigs |= (uint64_t)1 << (sig-1);
 }
 
 // for diagnostic
-int os::Linux::sigflags[MAXSIGNUM];
+int sigflags[NSIG];
 
 int os::Linux::get_our_sigflags(int sig) {
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
   return sigflags[sig];
 }
 
 void os::Linux::set_our_sigflags(int sig, int flags) {
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
-  if (sig > 0 && sig < MAXSIGNUM) {
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
+  if (sig > 0 && sig < NSIG) {
     sigflags[sig] = flags;
   }
 }
@@ -4292,7 +4299,7 @@ void os::Linux::set_signal_handler(int sig, bool set_installed) {
     sigAct.sa_flags = SA_SIGINFO|SA_RESTART;
   }
   // Save flags, which are set by ours
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
   sigflags[sig] = sigAct.sa_flags;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
@@ -4963,7 +4970,7 @@ os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& me
 void os::print_statistics() {
 }
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int i;
   fdStream err(defaultStream::error_fd());
   for (i = 0; i < 78; i++) err.print_raw("=");
@@ -5987,6 +5994,34 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
   return strlen(buffer);
 }
+
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
+
+  jio_snprintf(p, buflen-len,
+             "\n\n"
+             "Do you want to debug the problem?\n\n"
+             "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " UINTX_FORMAT " (" INTPTR_FORMAT ")\n"
+             "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
+             "Otherwise, press RETURN to abort...",
+             os::current_process_id(), os::current_process_id(),
+             os::current_thread_id(), os::current_thread_id());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // yes, user asked VM to launch debugger
+    jio_snprintf(buf, sizeof(buf), "gdb /proc/%d/exe %d",
+                     os::current_process_id(), os::current_process_id());
+
+    os::fork_and_exec(buf);
+    yes = false;
+  }
+  return yes;
+}
+
+
 
 /////////////// Unit tests ///////////////
 

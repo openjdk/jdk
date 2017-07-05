@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,17 @@
 /*
  * @test
  * @bug 6499848
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.RandomFactory
+ * @run main GCDuringIteration
  * @summary Check that iterators work properly in the presence of
  *          concurrent finalization and removal of elements.
- * @key randomness
+ * @key randomness intermittent
  */
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import jdk.testlibrary.RandomFactory;
 
 public class GCDuringIteration {
     private static void waitForFinalizersToRun() {
@@ -65,8 +69,9 @@ public class GCDuringIteration {
         equal(map.values().iterator().next(), v);
     }
 
+    static final Random rnd = RandomFactory.getRandom();
+
     void checkIterator(final Iterator<Map.Entry<Foo, Integer>> it, int first) {
-        final Random rnd = new Random();
         for (int i = first; i >= 0; --i) {
             if (rnd.nextBoolean()) check(it.hasNext());
             equal(it.next().getValue(), i);
@@ -86,7 +91,7 @@ public class GCDuringIteration {
         final int n = 10;
         // Create array of strong refs
         final Foo[] foos = new Foo[2*n];
-        final Map<Foo,Integer> map = new WeakHashMap<Foo,Integer>(foos.length);
+        final Map<Foo,Integer> map = new WeakHashMap<>(foos.length);
         check(map.isEmpty());
         equal(map.size(), 0);
 

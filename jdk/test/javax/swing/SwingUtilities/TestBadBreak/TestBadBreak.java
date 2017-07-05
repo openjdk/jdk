@@ -36,10 +36,10 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
 /**
  * @test
- * @bug 8015085
+ * @bug 8015085 8079253
  * @summary Shortening via " ... " is broken for Strings containing a combining
  *          diaeresis.
- * @author Sergey Bylokhov
+ * @run main TestBadBreak
  */
 public class TestBadBreak {
 
@@ -79,6 +79,7 @@ public class TestBadBreak {
                         g2d.dispose();
                     }
                 };
+                label.setOpaque(true);
                 frame.getContentPane().add(label);
                 frame.setBounds(200, 200, 200, 90);
             }

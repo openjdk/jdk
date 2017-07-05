@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.media.sound;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
@@ -119,6 +120,7 @@ public final class AlawCodec extends SunCodec {
     /**
      */
     public AudioFormat[] getTargetFormats(AudioFormat.Encoding targetEncoding, AudioFormat sourceFormat){
+        Objects.requireNonNull(sourceFormat);
         if( (targetEncoding.equals( AudioFormat.Encoding.PCM_SIGNED ) && sourceFormat.getEncoding().equals( AudioFormat.Encoding.ALAW)) ||
             (targetEncoding.equals( AudioFormat.Encoding.ALAW) && sourceFormat.getEncoding().equals( AudioFormat.Encoding.PCM_SIGNED)) ) {
                 return getOutputFormats( sourceFormat );

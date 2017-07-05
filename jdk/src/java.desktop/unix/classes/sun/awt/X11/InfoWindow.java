@@ -80,9 +80,7 @@ public abstract class InfoWindow extends Window {
         pack();
 
         Dimension size = getSize();
-        // TODO: When 6356322 is fixed we should get screen bounds in
-        // this way: eframe.getGraphicsConfiguration().getBounds().
-        Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Rectangle scrSize = getGraphicsConfiguration().getBounds();
 
         if (corner.x < scrSize.width/2 && corner.y < scrSize.height/2) { // 1st square
             setLocation(corner.x + indent, corner.y + indent);

@@ -648,6 +648,8 @@ gboolean gtk2_load(JNIEnv *env)
         fp_gdk_pixmap_new = dl_symbol("gdk_pixmap_new");
         fp_gdk_pixbuf_get_from_drawable =
             dl_symbol("gdk_pixbuf_get_from_drawable");
+        fp_gdk_pixbuf_scale_simple =
+            dl_symbol("gdk_pixbuf_scale_simple");
         fp_gdk_gc_new = dl_symbol("gdk_gc_new");
         fp_gdk_rgb_gc_set_foreground =
             dl_symbol("gdk_rgb_gc_set_foreground");

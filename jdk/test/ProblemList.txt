@@ -308,6 +308,12 @@ javax/sound/midi/Gervill/SoftProvider/GetDevice.java            generic-all
 
 ############################################################################
 
+# jdk_imageio
+
+javax/imageio/plugins/shared/WriteAfterAbort.java               generic-all
+
+############################################################################
+
 # jdk_swing
 
 ############################################################################

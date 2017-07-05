@@ -179,9 +179,11 @@ class MethodType implements java.io.Serializable {
         checkSlotCount(ptypes.length + slots);
         return slots;
     }
-    static void checkSlotCount(int count) {
-        assert((MAX_JVM_ARITY & (MAX_JVM_ARITY+1)) == 0);
+    static {
         // MAX_JVM_ARITY must be power of 2 minus 1 for following code trick to work:
+        assert((MAX_JVM_ARITY & (MAX_JVM_ARITY+1)) == 0);
+    }
+    static void checkSlotCount(int count) {
         if ((count & MAX_JVM_ARITY) != count)
             throw newIllegalArgumentException("bad parameter count "+count);
     }
@@ -813,11 +815,6 @@ class MethodType implements java.io.Serializable {
     boolean isViewableAs(MethodType newType, boolean keepInterfaces) {
         if (!VerifyType.isNullConversion(returnType(), newType.returnType(), keepInterfaces))
             return false;
-        return parametersAreViewableAs(newType, keepInterfaces);
-    }
-    /** True if the new parameters can be viewed (w/o casting) under the old parameter types. */
-    /*non-public*/
-    boolean parametersAreViewableAs(MethodType newType, boolean keepInterfaces) {
         if (form == newType.form && form.erasedType == this)
             return true;  // my reference parameters are all Object
         if (ptypes == newType.ptypes)
@@ -1088,7 +1085,6 @@ class MethodType implements java.io.Serializable {
             throw newIllegalArgumentException("not a method descriptor: "+descriptor);
         List<Class<?>> types = BytecodeDescriptor.parseMethod(descriptor, loader);
         Class<?> rtype = types.remove(types.size() - 1);
-        checkSlotCount(types.size());
         Class<?>[] ptypes = listToArray(types);
         return makeImpl(rtype, ptypes, true);
     }

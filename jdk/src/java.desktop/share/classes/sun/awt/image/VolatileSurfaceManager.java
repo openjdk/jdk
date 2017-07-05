@@ -25,18 +25,16 @@
 
 package sun.awt.image;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.ImageCapabilities;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import sun.awt.DisplayChangedListener;
-import sun.awt.image.SunVolatileImage;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceData;
-import sun.java2d.loops.CompositeType;
 import static sun.java2d.pipe.hw.AccelSurface.*;
 
 /**
@@ -260,12 +258,16 @@ public abstract class VolatileSurfaceManager
      */
     protected SurfaceData getBackupSurface() {
         if (sdBackup == null) {
-            BufferedImage bImg = vImg.getBackupImage();
+            GraphicsConfiguration gc = vImg.getGraphicsConfig();
+            AffineTransform tx = gc.getDefaultTransform();
+            double scaleX = tx.getScaleX();
+            double scaleY = tx.getScaleY();
+            BufferedImage bImg = vImg.getBackupImage(scaleX, scaleY);
             // Sabotage the acceleration capabilities of the BufImg surface
             SunWritableRaster.stealTrackable(bImg
                                              .getRaster()
                                              .getDataBuffer()).setUntrackable();
-            sdBackup = BufImgSurfaceData.createData(bImg);
+            sdBackup = BufImgSurfaceData.createData(bImg, scaleX, scaleY);
         }
         return sdBackup;
     }

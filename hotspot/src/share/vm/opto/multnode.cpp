@@ -44,14 +44,14 @@ Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->
 //------------------------------proj_out---------------------------------------
 // Get a named projection
 ProjNode* MultiNode::proj_out(uint which_proj) const {
-  assert(Opcode() != Op_If || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
-  assert(Opcode() != Op_If || outcnt() == 2, "bad if #1");
+  assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
+  assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || outcnt() == 2, "bad if #1");
   for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
     Node *p = fast_out(i);
     if (p->is_Proj()) {
       ProjNode *proj = p->as_Proj();
       if (proj->_con == which_proj) {
-        assert(Opcode() != Op_If || proj->Opcode() == (which_proj?Op_IfTrue:Op_IfFalse), "bad if #2");
+        assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse), "bad if #2");
         return proj;
       }
     } else {
