@@ -531,6 +531,7 @@ void VMThread::execute(VM_Operation* op) {
   Thread* t = Thread::current();
 
   if (!t->is_VM_thread()) {
+    SkipGCALot sgcalot(t);    // avoid re-entrant attempts to gc-a-lot
     // JavaThread or WatcherThread
     t->check_for_valid_safepoint_state(true);
 

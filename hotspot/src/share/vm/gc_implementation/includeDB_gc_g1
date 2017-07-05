@@ -51,7 +51,6 @@ concurrentG1Refine.hpp			globalDefinitions.hpp
 concurrentG1Refine.hpp			allocation.hpp
 concurrentG1Refine.hpp			thread.hpp
 
-
 concurrentG1RefineThread.cpp		concurrentG1Refine.hpp
 concurrentG1RefineThread.cpp		concurrentG1RefineThread.hpp
 concurrentG1RefineThread.cpp		g1CollectedHeap.inline.hpp
@@ -334,6 +333,7 @@ sparsePRT.cpp				space.inline.hpp
 sparsePRT.hpp				allocation.hpp
 sparsePRT.hpp				cardTableModRefBS.hpp
 sparsePRT.hpp				globalDefinitions.hpp
+sparsePRT.hpp                           g1CollectedHeap.inline.hpp
 sparsePRT.hpp				heapRegion.hpp
 sparsePRT.hpp				mutex.hpp
 
