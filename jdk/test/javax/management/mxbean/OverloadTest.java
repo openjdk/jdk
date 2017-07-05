@@ -26,7 +26,7 @@
  * @bug 6175517
  * @summary Test that MXBean interfaces can contain overloaded methods
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean OverloadTest
  * @run build OverloadTest
  * @run main OverloadTest

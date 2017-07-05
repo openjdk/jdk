@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1516,11 +1516,23 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     __ set((intptr_t)AbstractInterpreter::result_handler(T_OBJECT), G3_scratch);
     __ cmp_and_brx_short(G3_scratch, Lscratch, Assembler::notEqual, Assembler::pt, no_oop);
-    __ addcc(G0, O0, O0);
-    __ brx(Assembler::notZero, true, Assembler::pt, store_result);     // if result is not NULL:
-    __ delayed()->ld_ptr(O0, 0, O0);                                   // unbox it
-    __ mov(G0, O0);
-
+    // Unbox oop result, e.g. JNIHandles::resolve value in O0.
+    __ br_null(O0, false, Assembler::pn, store_result); // Use NULL as-is.
+    __ delayed()->andcc(O0, JNIHandles::weak_tag_mask, G0); // Test for jweak
+    __ brx(Assembler::zero, true, Assembler::pt, store_result);
+    __ delayed()->ld_ptr(O0, 0, O0); // Maybe resolve (untagged) jobject.
+    // Resolve jweak.
+    __ ld_ptr(O0, -JNIHandles::weak_tag_value, O0);
+#if INCLUDE_ALL_GCS
+    if (UseG1GC) {
+      __ g1_write_barrier_pre(noreg /* obj */,
+                              noreg /* index */,
+                              0 /* offset */,
+                              O0 /* pre_val */,
+                              G3_scratch /* tmp */,
+                              true /* preserve_o_regs */);
+    }
+#endif // INCLUDE_ALL_GCS
     __ bind(store_result);
     // Store it where gc will look for it and result handler expects it.
     __ st_ptr(O0, FP, (frame::interpreter_frame_oop_temp_offset*wordSize) + STACK_BIAS);

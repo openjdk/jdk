@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,8 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         JFrame ancestor = (JFrame)(testedComponent.getTopLevelAncestor());
         if( ancestor != null ) {
             Point ancestorLoc = ancestor.getLocationOnScreen();
-            ancestorLoc.translate(ancestor.getWidth()/2-15, 2);
+            ancestorLoc.translate(isOel7() ? 5 :
+                                             ancestor.getWidth() / 2 - 15, 2);
             robot.mouseMove(ancestorLoc.x, ancestorLoc.y);
             Util.waitForIdle(robot);
             robot.mousePress(InputEvent.BUTTON1_MASK);
@@ -155,6 +156,12 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         Util.waitForIdle(robot);
 
         return wasLWClicked;
+    }
+
+    public boolean isOel7() {
+        return System.getProperty("os.name").toLowerCase()
+                .contains("linux") && System.getProperty("os.version")
+                .toLowerCase().contains("el7");
     }
 
 }

@@ -29,7 +29,7 @@
  * miscellaneous utility classes (a string tokenizer, a random-number
  * generator, and a bit array).
  *
- * <h2>Package Specification</h2>
+ * <h2><a name="CollectionsFramework"></a>{@index "Java Collections Framework"}</h2>
  * <ul>
  *   <li><a href="../../../technotes/guides/collections/overview.html"><b>Collections Framework Overview</b></a>
  *   <li><a href="../../../technotes/guides/collections/reference.html"><b>
