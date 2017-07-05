@@ -154,6 +154,9 @@ com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  aix-all
 javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
 
+# 8042215
+javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generic-all
+
 ############################################################################
 
 # jdk_math

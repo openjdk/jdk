@@ -35,7 +35,10 @@ import jdk.nashorn.internal.runtime.Source;
 /**
  * A Reader that reads from a URL. Used to make sure that the reader
  * reads content from given URL and can be trusted to do so.
+ *
+ * @since 1.8u40
  */
+@jdk.Exported
 public final class URLReader extends Reader {
     // underlying URL
     private final URL url;

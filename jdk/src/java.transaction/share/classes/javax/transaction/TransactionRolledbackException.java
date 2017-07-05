@@ -32,18 +32,20 @@
 package javax.transaction;
 
 /**
- * This exception indicates that a request carried a null transaction context,
- * but the target object requires an activate transaction.
+ * This exception indicates that the transaction associated with processing
+ * of the request has been rolled back, or marked to roll back. Thus the
+ * requested operation either could not be performed or was not performed
+ * because further computation on behalf of the transaction would be
+ * fruitless
  */
-public class TransactionRequiredException extends java.rmi.RemoteException
-{
-    public TransactionRequiredException()
-    {
+@SuppressWarnings("serial")             // serialVersionUID intentionally omitted
+public class TransactionRolledbackException extends java.rmi.RemoteException {
+
+    public TransactionRolledbackException() {
         super();
     }
 
-    public TransactionRequiredException(String msg)
-    {
+    public TransactionRolledbackException(String msg) {
         super(msg);
     }
 }

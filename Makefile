@@ -54,8 +54,11 @@ ifneq ($(findstring qp,$(MAKEFLAGS)),)
   # Duplication of global targets, needed before ParseConfAndSpec in case we have
   # no configurations.
   help:
-  # If CONF is not set, look for all available configurations
-  CONF?=
+  # If both CONF and SPEC are unset, look for all available configurations by
+  # setting CONF to the empty string.
+  ifeq ($(SPEC), )
+    CONF?=
+  endif
 endif
 
 # ... and then we can include our helper functions
