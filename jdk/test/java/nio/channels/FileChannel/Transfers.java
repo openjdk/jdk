@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @key intermittent
  * @summary Comprehensive test for FileChannel.transfer{From,To}
  * @bug 4708120
  * @author Mark Reinhold

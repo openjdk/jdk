@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,15 @@ public class BasicImageReader implements AutoCloseable {
         int headerSize = ImageHeader.getHeaderSize();
 
         // If no memory map then read header from image file
-        if (map == null) {
+        if (headerBuffer == null) {
             headerBuffer = ByteBuffer.allocateDirect(headerSize);
-            channel.read(headerBuffer, 0L);
-            headerBuffer.rewind();
+            if (channel.read(headerBuffer, 0L) == headerSize) {
+                headerBuffer.rewind();
+            } else {
+                throw new IOException("\"" + name + "\" is not an image file");
+            }
+        } else if (headerBuffer.capacity() < headerSize) {
+            throw new IOException("\"" + name + "\" is not an image file");
         }
 
         // Interpret the image file header
@@ -156,6 +161,9 @@ public class BasicImageReader implements AutoCloseable {
         memoryMap = map.asReadOnlyBuffer();
 
         // Interpret the image index
+        if (memoryMap.capacity() < indexSize) {
+            throw new IOException("The image file \"" + name + "\" is corrupted");
+        }
         redirect = intBuffer(memoryMap, header.getRedirectOffset(), header.getRedirectSize());
         offsets = intBuffer(memoryMap, header.getOffsetsOffset(), header.getOffsetsSize());
         locations = slice(memoryMap, header.getLocationsOffset(), header.getLocationsSize());
@@ -241,27 +249,20 @@ public class BasicImageReader implements AutoCloseable {
         return stringsReader;
     }
 
-    public ImageLocation findLocation(String mn, String rn) {
-        Objects.requireNonNull(mn);
-        Objects.requireNonNull(rn);
-
-        return findLocation("/" + mn + "/" + rn);
-    }
-
-    public synchronized ImageLocation findLocation(String name) {
+    public synchronized ImageLocation findLocation(String module, String name) {
+        Objects.requireNonNull(module);
         Objects.requireNonNull(name);
         // Details of the algorithm used here can be found in
         // jdk.tools.jlink.internal.PerfectHashBuilder.
-        byte[] bytes = ImageStringsReader.mutf8FromString(name);
         int count = header.getTableLength();
-        int index = redirect.get(ImageStringsReader.hashCode(bytes) % count);
+        int index = redirect.get(ImageStringsReader.hashCode(module, name) % count);
 
         if (index < 0) {
             // index is twos complement of location attributes index.
             index = -index - 1;
         } else if (index > 0) {
             // index is hash seed needed to compute location attributes index.
-            index = ImageStringsReader.hashCode(bytes, index) % count;
+            index = ImageStringsReader.hashCode(module, name, index) % count;
         } else {
             // No entry.
             return null;
@@ -269,13 +270,36 @@ public class BasicImageReader implements AutoCloseable {
 
         long[] attributes = getAttributes(offsets.get(index));
 
-        ImageLocation imageLocation = new ImageLocation(attributes, stringsReader);
+        if (!ImageLocation.verify(module, name, attributes, stringsReader)) {
+            return null;
+        }
+        return new ImageLocation(attributes, stringsReader);
+    }
 
-        if (!imageLocation.verify(name)) {
+    public synchronized ImageLocation findLocation(String name) {
+        Objects.requireNonNull(name);
+        // Details of the algorithm used here can be found in
+        // jdk.tools.jlink.internal.PerfectHashBuilder.
+        int count = header.getTableLength();
+        int index = redirect.get(ImageStringsReader.hashCode(name) % count);
+
+        if (index < 0) {
+            // index is twos complement of location attributes index.
+            index = -index - 1;
+        } else if (index > 0) {
+            // index is hash seed needed to compute location attributes index.
+            index = ImageStringsReader.hashCode(name, index) % count;
+        } else {
+            // No entry.
             return null;
         }
 
-        return imageLocation;
+        long[] attributes = getAttributes(offsets.get(index));
+
+        if (!ImageLocation.verify(name, attributes, stringsReader)) {
+            return null;
+        }
+        return new ImageLocation(attributes, stringsReader);
     }
 
     public String[] getEntryNames() {
