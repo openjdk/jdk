@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8072909
- * @library /lib/testlibrary /../../test/lib
+ * @library /lib/testlibrary /test/lib
  * @build jdk.testlibrary.*
  * @build TimSortStackSize2
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

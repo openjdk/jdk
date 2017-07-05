@@ -26,7 +26,7 @@
  * @bug 8031321
  * @summary Verify processing of UseBMI1Instructions option on CPU without
  *          BMI1 feature support.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestUseBMI1InstructionsOnUnsupportedCPU

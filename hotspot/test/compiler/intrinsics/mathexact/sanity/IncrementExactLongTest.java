@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  *          /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management

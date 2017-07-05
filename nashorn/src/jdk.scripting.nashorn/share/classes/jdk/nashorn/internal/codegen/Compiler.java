@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -684,7 +685,7 @@ public final class Compiler implements Loggable {
 
             if (time > 0L && timeLogger != null) {
                 assert env.isTimingEnabled();
-                sb.append(" in ").append(time).append(" ms");
+                sb.append(" in ").append(TimeUnit.NANOSECONDS.toMillis(time)).append(" ms");
             }
             log.info(sb);
         }

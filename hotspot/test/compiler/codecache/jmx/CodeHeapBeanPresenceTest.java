@@ -27,7 +27,7 @@ import sun.hotspot.code.BlobType;
 
 /**
  * @test CodeHeapBeanPresenceTest
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.management
  * @build CodeHeapBeanPresenceTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

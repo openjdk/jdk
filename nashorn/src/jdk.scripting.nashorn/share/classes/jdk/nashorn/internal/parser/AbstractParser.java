@@ -103,6 +103,9 @@ public abstract class AbstractParser {
      * @param lineOffset Offset from which lines should be counted
      */
     protected AbstractParser(final Source source, final ErrorManager errors, final boolean strict, final int lineOffset) {
+        if (source.getLength() > Token.LENGTH_MASK) {
+            throw new RuntimeException("Source exceeds size limit of " + Token.LENGTH_MASK + " bytes");
+        }
         this.source       = source;
         this.errors       = errors;
         this.k            = -1;

@@ -36,9 +36,7 @@ import java.util.Date;
 
 import sun.security.util.Debug;
 import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
 import sun.security.x509.SerialNumber;
-import sun.security.x509.KeyIdentifier;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 
 /**
@@ -131,13 +129,7 @@ class AdaptableX509CertSelector extends X509CertSelector {
         serial = null;
 
         if (ext != null) {
-            KeyIdentifier akid = (KeyIdentifier)ext.get(
-                AuthorityKeyIdentifierExtension.KEY_ID);
-            if (akid != null) {
-                DerOutputStream derout = new DerOutputStream();
-                derout.putOctetString(akid.getIdentifier());
-                ski = derout.toByteArray();
-            }
+            ski = ext.getEncodedKeyIdentifier();
             SerialNumber asn = (SerialNumber)ext.get(
                 AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
             if (asn != null) {
