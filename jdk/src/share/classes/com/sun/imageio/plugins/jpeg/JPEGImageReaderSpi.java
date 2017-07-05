@@ -46,7 +46,7 @@ public class JPEGImageReaderSpi extends ImageReaderSpi {
               JPEG.suffixes,
               JPEG.MIMETypes,
               "com.sun.imageio.plugins.jpeg.JPEGImageReader",
-              STANDARD_INPUT_TYPE,
+              new Class[] { ImageInputStream.class },
               writerSpiNames,
               true,
               JPEG.nativeStreamMetadataFormatName,

@@ -2818,15 +2818,18 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         private void printString(Object arg, Locale l) throws IOException {
-            if (arg == null) {
-                print("null");
-            } else if (arg instanceof Formattable) {
+            if (arg instanceof Formattable) {
                 Formatter fmt = formatter;
                 if (formatter.locale() != l)
                     fmt = new Formatter(formatter.out(), l);
                 ((Formattable)arg).formatTo(fmt, f.valueOf(), width, precision);
             } else {
-                print(arg.toString());
+                if (f.contains(Flags.ALTERNATE))
+                    failMismatch(Flags.ALTERNATE, 's');
+                if (arg == null)
+                    print("null");
+                else
+                    print(arg.toString());
             }
         }
 

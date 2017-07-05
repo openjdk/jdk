@@ -304,7 +304,12 @@ public abstract class OpenType<T> implements Serializable {
      * @return the class name.
      */
     public String getClassName() {
+        return className;
+    }
 
+    // A version of getClassName() that can only be called from within this
+    // package and that cannot be overridden.
+    String safeGetClassName() {
         return className;
     }
 
