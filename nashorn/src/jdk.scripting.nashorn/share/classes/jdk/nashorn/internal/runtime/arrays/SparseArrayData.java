@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Handle arrays where the index is very large.
  */
 class SparseArrayData extends ArrayData {
-    static final long MAX_DENSE_LENGTH = 16 * 512 * 1024;
+    static final int MAX_DENSE_LENGTH = 8 * 1024 * 1024;
 
     /** Underlying array. */
     private ArrayData underlying;

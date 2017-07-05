@@ -55,6 +55,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
+import jdk.nashorn.internal.runtime.JSType;
 
 /**
  * Type class: INT
@@ -230,19 +231,21 @@ class IntType extends BitwiseType {
 
     @Override
     public Type div(final MethodVisitor method, final int programPoint) {
-        // Never perform non-optimistic integer division in JavaScript.
-        assert programPoint != INVALID_PROGRAM_POINT;
-
-        method.visitInvokeDynamicInsn("idiv", "(II)I", MATHBOOTSTRAP, programPoint);
+        if (programPoint == INVALID_PROGRAM_POINT) {
+            JSType.DIV_ZERO.invoke(method);
+        } else {
+            method.visitInvokeDynamicInsn("idiv", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
     @Override
     public Type rem(final MethodVisitor method, final int programPoint) {
-        // Never perform non-optimistic integer remainder in JavaScript.
-        assert programPoint != INVALID_PROGRAM_POINT;
-
-        method.visitInvokeDynamicInsn("irem", "(II)I", MATHBOOTSTRAP, programPoint);
+        if (programPoint == INVALID_PROGRAM_POINT) {
+            JSType.REM_ZERO.invoke(method);
+        } else {
+            method.visitInvokeDynamicInsn("irem", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 

@@ -236,16 +236,17 @@ class ByteCodePrinter {
         sb.append(new String(code, s, len));
     }
 
-    private void pLenStringFromTemplate(final StringBuilder sb, final int len, final char[] tm, final int idx) {
+    private static void pLenStringFromTemplate(final StringBuilder sb, final int len, final char[] tm, final int idx) {
         sb.append(":T:").append(len).append(":");
         sb.append(tm, idx, len);
     }
 
-    public int compiledByteCodeToString(final StringBuilder sb, int bp) {
+    public int compiledByteCodeToString(final StringBuilder sb, final int bptr) {
         int len, n, mem, addr, scn, cod;
         BitSet bs;
         CClassNode cc;
         int tm, idx;
+        int bp = bptr;
 
         sb.append("[").append(OpCodeNames[code[bp]]);
         final int argType = OpCodeArgTypes[code[bp]];
@@ -253,6 +254,7 @@ class ByteCodePrinter {
         if (argType != Arguments.SPECIAL) {
             bp++;
             switch (argType) {
+            default:
             case Arguments.NON:
                 break;
 
@@ -410,7 +412,9 @@ class ByteCodePrinter {
                 for (int i=0; i<len; i++) {
                     mem = code[bp];
                     bp += OPSize.MEMNUM;
-                    if (i > 0) sb.append(", ");
+                    if (i > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(mem);
                 }
                 break;
@@ -428,7 +432,9 @@ class ByteCodePrinter {
                 for (int i=0; i<len; i++) {
                     mem = code[bp];
                     bp += OPSize.MEMNUM;
-                    if (i > 0) sb.append(", ");
+                    if (i > 0) {
+                        sb.append(", ");
+                    }
                     sb.append(mem);
                 }
                 break;
@@ -501,7 +507,9 @@ class ByteCodePrinter {
         while (bp < end) {
             ncode++;
 
-            if (bp > 0) sb.append(ncode % 5 == 0 ? "\n" : " ");
+            if (bp > 0) {
+                sb.append(ncode % 5 == 0 ? "\n" : " ");
+            }
 
             bp = compiledByteCodeToString(sb, bp);
         }

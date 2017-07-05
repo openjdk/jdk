@@ -1608,7 +1608,7 @@ public final class Main {
     private static String getCompatibleSigAlgName(String keyAlgName)
             throws Exception {
         if ("DSA".equalsIgnoreCase(keyAlgName)) {
-            return "SHA1WithDSA";
+            return "SHA256WithDSA";
         } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
             return "SHA256WithRSA";
         } else if ("EC".equalsIgnoreCase(keyAlgName)) {
@@ -1628,10 +1628,8 @@ public final class Main {
         if (keysize == -1) {
             if ("EC".equalsIgnoreCase(keyAlgName)) {
                 keysize = 256;
-            } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
-                keysize = 2048;
             } else {
-                keysize = 1024;
+                keysize = 2048;     // RSA and DSA
             }
         }
 

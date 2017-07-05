@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.encoding;
 
+@SuppressWarnings("javadoc")
 public class IntHolder {
     public int value;
 }

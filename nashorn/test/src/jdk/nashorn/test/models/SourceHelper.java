@@ -34,6 +34,7 @@ import jdk.nashorn.internal.runtime.Source;
 /**
  * Helper class to facilitate script access of nashorn Source class.
  */
+@SuppressWarnings("javadoc")
 public final class SourceHelper {
     private SourceHelper() {}
 

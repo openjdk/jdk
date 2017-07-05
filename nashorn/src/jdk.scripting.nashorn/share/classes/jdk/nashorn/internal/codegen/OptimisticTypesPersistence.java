@@ -323,9 +323,11 @@ public final class OptimisticTypesPersistence {
      * per-code-version directory. Normally, this will create the SHA-1 digest of the nashorn.jar. In case the classpath
      * for nashorn is local directory (e.g. during development), this will create the string "dev-" followed by the
      * timestamp of the most recent .class file.
-     * @return
+     *
+     * @return digest of currently running nashorn
+     * @throws Exception if digest could not be created
      */
-    private static String getVersionDirName() throws Exception {
+    public static String getVersionDirName() throws Exception {
         final URL url = OptimisticTypesPersistence.class.getResource("");
         final String protocol = url.getProtocol();
         if (protocol.equals("jar")) {

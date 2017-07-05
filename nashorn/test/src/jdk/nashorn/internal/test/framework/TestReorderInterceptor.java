@@ -47,10 +47,9 @@ public final class TestReorderInterceptor implements IMethodInterceptor {
                 final Object o2 = mi2.getInstance();
                 if (o1 instanceof ITest && o2 instanceof ITest) {
                     return ((ITest)o1).getTestName().compareTo(((ITest)o2).getTestName());
-                } else {
-                    // something else, don't care about the order
-                    return 0;
                 }
+                // something else, don't care about the order
+                return 0;
             }
         });
 

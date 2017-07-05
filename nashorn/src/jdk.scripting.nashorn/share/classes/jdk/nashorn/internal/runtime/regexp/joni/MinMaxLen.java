@@ -46,24 +46,40 @@ final class MinMaxLen {
     };
 
     int distanceValue() {
-        if (max == INFINITE_DISTANCE) return 0;
+        if (max == INFINITE_DISTANCE) {
+            return 0;
+        }
         final int d = max - min;
         /* return dist_vals[d] * 16 / (mm->min + 12); */
         return d < distValues.length ? distValues[d] : 1;
     }
 
-    int compareDistanceValue(final MinMaxLen other, int v1, int v2) {
-        if (v2 <= 0) return -1;
-        if (v1 <= 0) return 1;
+    int compareDistanceValue(final MinMaxLen other, final int v1p, final int v2p) {
+        int v1 = v1p, v2 = v2p;
+
+        if (v2 <= 0) {
+            return -1;
+        }
+        if (v1 <= 0) {
+            return 1;
+        }
 
         v1 *= distanceValue();
         v2 *= other.distanceValue();
 
-        if (v2 > v1) return 1;
-        if (v2 < v1) return -1;
+        if (v2 > v1) {
+            return 1;
+        }
+        if (v2 < v1) {
+            return -1;
+        }
 
-        if (other.min < min) return 1;
-        if (other.min > min) return -1;
+        if (other.min < min) {
+            return 1;
+        }
+        if (other.min > min) {
+            return -1;
+        }
         return 0;
     }
 
@@ -96,27 +112,33 @@ final class MinMaxLen {
     }
 
     void altMerge(final MinMaxLen other) {
-        if (min > other.min) min = other.min;
-        if (max < other.max) max = other.max;
+        if (min > other.min) {
+            min = other.min;
+        }
+        if (max < other.max) {
+            max = other.max;
+        }
     }
 
     static final int INFINITE_DISTANCE = 0x7FFFFFFF;
     static int distanceAdd(final int d1, final int d2) {
         if (d1 == INFINITE_DISTANCE || d2 == INFINITE_DISTANCE) {
             return INFINITE_DISTANCE;
-        } else {
-            if (d1 <= INFINITE_DISTANCE - d2) return d1 + d2;
-            else return INFINITE_DISTANCE;
         }
+        if (d1 <= INFINITE_DISTANCE - d2) {
+            return d1 + d2;
+        }
+        return INFINITE_DISTANCE;
     }
 
     static int distanceMultiply(final int d, final int m) {
-        if (m == 0) return 0;
+        if (m == 0) {
+            return 0;
+        }
         if (d < INFINITE_DISTANCE / m) {
             return d * m;
-        } else {
-            return INFINITE_DISTANCE;
         }
+        return INFINITE_DISTANCE;
     }
 
     static String distanceRangeToString(final int a, final int b) {

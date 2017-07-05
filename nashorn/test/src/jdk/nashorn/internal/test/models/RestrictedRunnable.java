@@ -27,8 +27,8 @@ package jdk.nashorn.internal.test.models;
 
 /**
  * Acts as a restricted interface implemented by a restricted class.
- *
  */
+@SuppressWarnings("javadoc")
 public interface RestrictedRunnable {
     public void restrictedRun();
 }

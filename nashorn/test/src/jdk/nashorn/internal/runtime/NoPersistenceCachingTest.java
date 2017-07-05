@@ -25,7 +25,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static org.testng.Assert.fail;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
@@ -46,6 +45,7 @@ import org.testng.annotations.Test;
  * @summary Sanity tests for no persistence caching
  * @run testng/othervm jdk.nashorn.internal.runtime.NoPersistenceCachingTest
  */
+@SuppressWarnings("javadoc")
 public class NoPersistenceCachingTest {
 
    private ScriptEngine engine;
@@ -101,6 +101,8 @@ public class NoPersistenceCachingTest {
             engine.eval(scriptThreeContexts, context1);
             engine.eval(scriptThreeContexts, context2);
             engine.eval(scriptThreeContexts, context3);
+            break;
+        default:
             break;
          }
       } catch (final Exception se) {

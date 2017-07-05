@@ -47,6 +47,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 import static jdk.nashorn.internal.runtime.linker.NashornGuards.explicitInstanceOfCheck;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -922,7 +923,10 @@ public abstract class ScriptObject implements PropertyAccess {
                 if (property instanceof UserAccessorProperty) {
                     ((UserAccessorProperty)property).setAccessors(this, getMap(), null);
                 }
-                Global.getConstants().delete(property.getKey());
+                final GlobalConstants globalConstants = getGlobalConstants();
+                if (globalConstants != null) {
+                    globalConstants.delete(property.getKey());
+                }
                 return true;
             }
         }
@@ -1983,9 +1987,12 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        final GuardedInvocation cinv = Global.getConstants().findGetMethod(find, this, desc);
-        if (cinv != null) {
-            return cinv;
+        final GlobalConstants globalConstants = getGlobalConstants();
+        if (globalConstants != null) {
+            final GuardedInvocation cinv = globalConstants.findGetMethod(find, this, desc);
+            if (cinv != null) {
+                return cinv;
+            }
         }
 
         final Class<?> returnType = desc.getMethodType().returnType();
@@ -2183,12 +2190,20 @@ public abstract class ScriptObject implements PropertyAccess {
 
         final GuardedInvocation inv = new SetMethodCreator(this, find, desc, request).createGuardedInvocation(findBuiltinSwitchPoint(name));
 
-        final GuardedInvocation cinv = Global.getConstants().findSetMethod(find, this, inv, desc, request);
-        if (cinv != null) {
-            return cinv;
+        final GlobalConstants globalConstants = getGlobalConstants();
+        if (globalConstants != null) {
+            final GuardedInvocation cinv = globalConstants.findSetMethod(find, this, inv, desc, request);
+            if (cinv != null) {
+                return cinv;
+            }
         }
 
         return inv;
+    }
+
+    private GlobalConstants getGlobalConstants() {
+        // Avoid hitting getContext() which might be costly for a non-Global unless needed.
+        return GlobalConstants.GLOBAL_ONLY && !isGlobal() ? null : getContext().getGlobalConstants();
     }
 
     private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String strictErrorMessage, final boolean canBeFastScope) {

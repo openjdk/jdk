@@ -62,9 +62,5 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . -XDigno
 echo | ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dfile KeyToolTest
 status=$?
 
-rm HumanInputStream*.class
-rm KeyToolTest*.class
-rm TestException.class
-
 exit $status
 

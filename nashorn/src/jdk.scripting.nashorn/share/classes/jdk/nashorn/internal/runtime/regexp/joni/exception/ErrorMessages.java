@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.exception;
 
+@SuppressWarnings("javadoc")
 public interface ErrorMessages {
 
     /* from jcodings */

@@ -24,6 +24,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.RegexState;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
+@SuppressWarnings("javadoc")
 public final class Regex implements RegexState {
 
     int[] code;             /* compiled pattern */
@@ -107,7 +108,8 @@ public final class Regex implements RegexState {
     }
 
     // onig_alloc_init
-    public Regex(final char[] chars, final int p, final int end, int option, final int caseFoldFlag, final Syntax syntax, final WarnCallback warnings) {
+    public Regex(final char[] chars, final int p, final int end, final int optionp, final int caseFoldFlag, final Syntax syntax, final WarnCallback warnings) {
+        int option = optionp;
 
         if ((option & (Option.DONT_CAPTURE_GROUP | Option.CAPTURE_GROUP)) ==
             (Option.DONT_CAPTURE_GROUP | Option.CAPTURE_GROUP)) {
@@ -169,19 +171,33 @@ public final class Regex implements RegexState {
 
         if (len < Config.CHAR_TABLE_SIZE) {
             // map/skip
-            if (map == null) map = new byte[Config.CHAR_TABLE_SIZE];
+            if (map == null) {
+                map = new byte[Config.CHAR_TABLE_SIZE];
+            }
 
-            for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) map[i] = (byte)len;
-            for (int i=0; i<len-1; i++) map[chars[p + i] & 0xff] = (byte)(len - 1 -i); // oxff ??
+            for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) {
+                map[i] = (byte)len;
+            }
+            for (int i=0; i<len-1; i++)
+             {
+                map[chars[p + i] & 0xff] = (byte)(len - 1 -i); // oxff ??
+            }
         } else {
-            if (intMap == null) intMap = new int[Config.CHAR_TABLE_SIZE];
+            if (intMap == null) {
+                intMap = new int[Config.CHAR_TABLE_SIZE];
+            }
 
-            for (int i=0; i<len-1; i++) intMap[chars[p + i] & 0xff] = len - 1 - i; // oxff ??
+            for (int i=0; i<len-1; i++)
+             {
+                intMap[chars[p + i] & 0xff] = len - 1 - i; // oxff ??
+            }
         }
     }
 
     void setExactInfo(final OptExactInfo e) {
-        if (e.length == 0) return;
+        if (e.length == 0) {
+            return;
+        }
 
         // shall we copy that ?
         exact = e.chars;
@@ -257,7 +273,11 @@ public final class Regex implements RegexState {
             s.append("exact: [").append(exact, exactP, exactEnd - exactP).append("]: length: ").append(exactEnd - exactP).append("\n");
         } else if (searchAlgorithm == SearchAlgorithm.MAP) {
             int n=0;
-            for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) if (map[i] != 0) n++;
+            for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) {
+                if (map[i] != 0) {
+                    n++;
+                }
+            }
 
             s.append("map: n = ").append(n).append("\n");
             if (n > 0) {
