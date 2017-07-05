@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,23 @@
  */
 package javax.xml.transform.ptests;
 
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+
 import java.io.File;
 import java.io.FileInputStream;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
-import jaxp.library.JAXPFileReadOnlyBaseTest;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -44,7 +47,14 @@ import org.xml.sax.InputSource;
 /**
  * Class containing the test cases for SAXParserFactory API
  */
-public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.TfClearParamTest
+ * @run testng/othervm javax.xml.transform.ptests.TfClearParamTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class TfClearParamTest {
     /**
      * Test style-sheet file name.
      */
@@ -128,7 +138,7 @@ public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public void clear05() throws TransformerConfigurationException {
         Transformer transformer = TransformerFactory.newInstance().
                 newTransformer(new StreamSource(new File(XSL_FILE)));
@@ -143,7 +153,7 @@ public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public void clear06() throws TransformerConfigurationException {
         Transformer transformer = TransformerFactory.newInstance().
                 newTransformer(new StreamSource(new File(XSL_FILE)));
@@ -157,7 +167,7 @@ public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
      * the a name that set before. Value should be same as set one.
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public void clear07() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_FILE)) {
             SAXSource saxSource = new SAXSource();
@@ -174,7 +184,7 @@ public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
      * the a name that wasn't set before. Null is expected.
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public void clear08() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_FILE)) {
             SAXSource saxSource = new SAXSource();
@@ -192,7 +202,7 @@ public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
      * the a name that set before. Value should be same as set one.
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public void clear09() throws Exception {
         TransformerFactory tfactory = TransformerFactory.newInstance();
 
@@ -213,7 +223,7 @@ public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
      * the a name that wasn't set before. Null is expected.
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public void clear10() throws Exception {
         TransformerFactory tfactory = TransformerFactory.newInstance();
 
@@ -229,3 +239,5 @@ public class TfClearParamTest extends JAXPFileReadOnlyBaseTest {
         assertNull(transformer.getParameter(LONG_PARAM_NAME));
     }
 }
+
+

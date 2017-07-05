@@ -23,18 +23,27 @@
 
 package sax;
 
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLReaderAdapter;
 
 /*
+ * @test
  * @bug 8158246
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true sax.XMLReaderTest
+ * @run testng/othervm sax.XMLReaderTest
  * @summary This class contains tests that cover the creation of XMLReader.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class XMLReaderTest {
     private final String SAX_PROPNAME = "org.xml.sax.driver";
 
@@ -43,7 +52,7 @@ public class XMLReaderTest {
      */
     @AfterClass
     public void cleanUp() throws Exception {
-        System.clearProperty(SAX_PROPNAME);
+        clearSystemProperty(SAX_PROPNAME);
     }
 
     /*
@@ -57,7 +66,8 @@ public class XMLReaderTest {
     public void testcreateXMLReader() throws SAXException, ParserConfigurationException {
         String className = SAXParserFactory.newInstance().newSAXParser()
                             .getXMLReader().getClass().getName();
-        System.setProperty(SAX_PROPNAME, className + "nosuch");
+        setSystemProperty(SAX_PROPNAME, className + "nosuch");
         XMLReaderAdapter adapter = new XMLReaderAdapter();
     }
 }
+

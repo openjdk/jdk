@@ -23,8 +23,10 @@
 
 /*
  * @test
+ * @summary check calls from interpreted to compiled using InvokeInterface
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /testlibrary /
+ *
  * @build compiler.calls.common.InvokeInterface
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -34,5 +36,4 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -XX:CompileCommand=exclude,compiler.calls.common.InvokeInterface::caller -Xbatch compiler.calls.common.InvokeInterface
  *    -checkCallerCompileLevel 0 -compileCallee 4 -checkCalleeCompileLevel 4
- * @summary check calls from interpreted to compiled using InvokeInterface
  */

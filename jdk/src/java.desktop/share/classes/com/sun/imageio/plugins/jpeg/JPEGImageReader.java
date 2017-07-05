@@ -561,6 +561,7 @@ public class JPEGImageReader extends ImageReader {
                         throw new IOException("skipImage : Found extra SOI"
                                 + " marker before getting to EOI");
                     case 0:
+                    case 255:
                     // markers which doesn't contain length data
                     case JPEG.RST0:
                     case JPEG.RST1:

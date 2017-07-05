@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,20 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import jaxp.library.JAXPFileBaseTest;
-
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.astro.SchemaValidationTest
+ * @run testng/othervm test.astro.SchemaValidationTest
  * @summary test parser sets schema related properties to do validation
  */
-public class SchemaValidationTest extends JAXPFileBaseTest {
+@Listeners({jaxp.library.FilePolicy.class})
+public class SchemaValidationTest {
     /*
      * Only set the schemaLanguage, without setting schemaSource. It should
      * work.
@@ -72,3 +76,4 @@ public class SchemaValidationTest extends JAXPFileBaseTest {
         return spf.newSAXParser();
     }
 }
+

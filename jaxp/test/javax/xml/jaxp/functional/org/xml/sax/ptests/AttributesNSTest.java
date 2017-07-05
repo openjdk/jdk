@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,19 @@
  */
 package org.xml.sax.ptests;
 
-import java.io.File;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPFileBaseTest;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static org.testng.Assert.assertTrue;
-import org.testng.annotations.Test;
 import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
 import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.File;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 
 /**
  * This tests the Attributes interface. Here the startElement() callback of
@@ -40,7 +43,14 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
  * of Attributes interfaces are tested. This program uses Namespace processing
  * with namespaces in XML file. This program does not use Validation
  */
-public class AttributesNSTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.AttributesNSTest
+ * @run testng/othervm org.xml.sax.ptests.AttributesNSTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class AttributesNSTest {
     /**
      * Test for Attribute Interface's setter/getter.
      *
@@ -64,3 +74,5 @@ public class AttributesNSTest extends JAXPFileBaseTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
+
+

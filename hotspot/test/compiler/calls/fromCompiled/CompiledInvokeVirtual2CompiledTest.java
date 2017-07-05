@@ -23,8 +23,10 @@
 
 /*
  * @test
+ * @summary check calls from compiled to compiled using InvokeVirtual
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /testlibrary /
+ *
  * @build compiler.calls.common.InvokeVirtual
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,5 +42,4 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -Xbatch compiler.calls.common.InvokeVirtual
  *    -compileCaller 4 -checkCallerCompileLevel 4 -compileCallee 4 -checkCalleeCompileLevel 4
- * @summary check calls from compiled to compiled using InvokeVirtual
  */

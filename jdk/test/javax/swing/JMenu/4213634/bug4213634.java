@@ -35,7 +35,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 4213634 8017187
  * @author Scott Violet
  * @library ../../regtesthelpers

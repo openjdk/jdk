@@ -20,7 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package common;
+
+package compiler.codecache.cli.common;
 
 /**
  * Base for code cache related command line options tests.

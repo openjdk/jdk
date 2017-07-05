@@ -33,6 +33,7 @@ import javax.swing.SwingUtilities;
 
 /*
  * @test
+ * @key headful
  * @bug  8049069
  * @summary Tests whether right mouse click releases a pressed JButton
  */

@@ -30,12 +30,18 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6489502
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.Bug6489502
+ * @run testng/othervm stream.Bug6489502
  * @summary Test XMLInputFactory works correctly in case it repeats to create reader.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6489502 {
 
     public java.io.File input;
@@ -77,3 +83,4 @@ public class Bug6489502 {
         }
     }
 }
+

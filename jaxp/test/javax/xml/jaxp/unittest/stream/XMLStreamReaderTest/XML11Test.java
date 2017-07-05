@@ -27,11 +27,17 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.XML11Test
+ * @run testng/othervm stream.XMLStreamReaderTest.XML11Test
  * @summary Test parsing xml 1.1.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class XML11Test {
 
     @Test
@@ -48,3 +54,4 @@ public class XML11Test {
         }
     }
 }
+

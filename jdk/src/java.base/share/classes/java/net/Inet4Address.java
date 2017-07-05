@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ class Inet4Address extends InetAddress {
     }
 
     /**
-     * Utility routine to check if the InetAddress in a wildcard address.
+     * Utility routine to check if the InetAddress is a wildcard address.
      * @return a {@code boolean} indicating if the Inetaddress is
      *         a wildcard address.
      * @since 1.4

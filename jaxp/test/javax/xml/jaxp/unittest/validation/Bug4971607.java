@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,18 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.ValidatorHandler;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 4971607
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug4971607
+ * @run testng/othervm validation.Bug4971607
  * @summary Test ValidatorHandler.getFeature(...) throws NullPointerException when name parameter is null.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4971607 {
 
     @Test
@@ -50,3 +56,4 @@ public class Bug4971607 {
         }
     }
 }
+

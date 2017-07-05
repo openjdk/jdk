@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,26 @@
  */
 package test.auctionportal;
 
-import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareDocumentWithGold;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static test.auctionportal.HiBidConstants.GOLDEN_DIR;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.auctionportal.HiBidConstants.PORTAL_ACCOUNT_NS;
+import static test.auctionportal.HiBidConstants.XML_DIR;
+
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import jaxp.library.JAXPFileBaseTest;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareDocumentWithGold;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -46,14 +52,18 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSParser;
 import org.w3c.dom.ls.LSSerializer;
-import static test.auctionportal.HiBidConstants.GOLDEN_DIR;
-import static test.auctionportal.HiBidConstants.PORTAL_ACCOUNT_NS;
-import static test.auctionportal.HiBidConstants.XML_DIR;
 
 /**
  * This is the user controller class for the Auction portal HiBid.com.
  */
-public class UserController extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.auctionportal.UserController
+ * @run testng/othervm test.auctionportal.UserController
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class UserController {
     /**
      * Checking when creating an XML document using DOM Level 2 validating
      * it without having a schema source or a schema location It must throw a
@@ -150,7 +160,7 @@ public class UserController extends JAXPFileBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testMoreUserInfo() throws Exception {
         String xmlFile = XML_DIR + "accountInfo.xml";
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -294,3 +304,5 @@ public class UserController extends JAXPFileBaseTest {
         assertTrue(compareDocumentWithGold(goldFile, resultFile));
     }
 }
+
+

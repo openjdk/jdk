@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,17 @@ import javax.xml.namespace.QName;
 import org.testng.Assert;
 import org.testng.AssertJUnit;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true datatype.DurationTest
+ * @run testng/othervm datatype.DurationTest
  * @summary Test Duration.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class DurationTest {
 
     private final static boolean DEBUG = true;
@@ -51,7 +57,7 @@ public class DurationTest {
     protected Duration duration = null;
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         try {
             duration = DatatypeFactory.newInstance().newDuration(100);
         } catch (DatatypeConfigurationException dce) {
@@ -478,3 +484,4 @@ public class DurationTest {
 
     }
 }
+

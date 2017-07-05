@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package common;
+package compiler.codecache.cli.common;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;

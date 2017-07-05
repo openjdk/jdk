@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMImplementation;
@@ -36,9 +37,14 @@ import org.w3c.dom.ls.LSParser;
 import org.w3c.dom.ls.LSSerializer;
 
 /*
+ * @test
  * @bug 6339023
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true dom.Bug6339023
+ * @run testng/othervm dom.Bug6339023
  * @summary Test normalize-characters.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6339023 {
 
     /*
@@ -133,3 +139,4 @@ public class Bug6339023 {
     }
 
 }
+

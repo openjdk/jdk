@@ -47,7 +47,8 @@ import java.security.AccessController;
  * of the events by itself.  For example, by default, when the
  * right-mouse click is performed on the {@code TrayIcon} it
  * displays the specified popup menu.  When the mouse hovers
- * over the {@code TrayIcon} the tooltip is displayed.
+ * over the {@code TrayIcon} the tooltip is displayed (this behaviour is
+ * platform dependent).
  *
  * <p><strong>Note:</strong> When the {@code MouseEvent} is
  * dispatched to its registered listeners its {@code component}
@@ -174,7 +175,7 @@ public class TrayIcon {
 
     /**
      * Creates a {@code TrayIcon} with the specified image and
-     * tooltip text.
+     * tooltip text. Tooltip may be not visible on some platforms.
      *
      * @param image the {@code Image} to be used
      * @param tooltip the string to be used as tooltip text; if the
@@ -200,7 +201,7 @@ public class TrayIcon {
 
     /**
      * Creates a {@code TrayIcon} with the specified image,
-     * tooltip and popup menu.
+     * tooltip and popup menu. Tooltip may be not visible on some platforms.
      *
      * @param image the {@code Image} to be used
      * @param tooltip the string to be used as tooltip text; if the
@@ -330,8 +331,8 @@ public class TrayIcon {
     /**
      * Sets the tooltip string for this {@code TrayIcon}. The
      * tooltip is displayed automatically when the mouse hovers over
-     * the icon.  Setting the tooltip to {@code null} removes any
-     * tooltip text.
+     * the icon.  Tooltip may be not visible on some platforms.
+     * Setting the tooltip to {@code null} removes any tooltip text.
      *
      * When displayed, the tooltip string may be truncated on some platforms;
      * the number of characters that may be displayed is platform-dependent.

@@ -32,8 +32,6 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
 
     static final char REVERSE_SOLIDUS = 0x005c; // the backslash char.
     static final char JA_YEN = 0x00a5;
-    static final char JA_FULLWIDTH_TILDE_CHAR = 0xff5e;
-    static final char JA_WAVE_DASH_CHAR = 0x301c;
 
     /* if running on Solaris and default Locale is ja_JP then
      * we map need to remap reverse solidus (backslash) to Yen as
@@ -41,7 +39,6 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
      */
     static final boolean isJAlocale = Locale.JAPAN.equals(Locale.getDefault());
     private final boolean needsJAremapping;
-    private boolean remapJAWaveDash;
 
     TrueTypeFont font;
     CMap cmap;
@@ -66,10 +63,6 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         }
         if (FontUtilities.isSolaris && isJAlocale && font.supportsJA()) {
             needsJAremapping = true;
-            if (FontUtilities.isSolaris8 &&
-                getGlyphFromCMAP(JA_WAVE_DASH_CHAR) == missingGlyph) {
-                remapJAWaveDash = true;
-            }
         } else {
             needsJAremapping = false;
         }
@@ -113,35 +106,12 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         cmap = CMap.theNullCmap;
     }
 
-    @SuppressWarnings("fallthrough")
     private final char remapJAChar(char unicode) {
-        switch (unicode) {
-        case REVERSE_SOLIDUS:
-            return JA_YEN;
-            /* This is a workaround for bug 4533422.
-             * Japanese wave dash missing from Solaris JA TrueType fonts.
-             */
-        case JA_WAVE_DASH_CHAR:
-            if (remapJAWaveDash) {
-                return JA_FULLWIDTH_TILDE_CHAR;
-            }
-        default: return unicode;
-        }
+        return (unicode == REVERSE_SOLIDUS) ? JA_YEN : unicode;
     }
-    @SuppressWarnings("fallthrough")
+
     private final int remapJAIntChar(int unicode) {
-        switch (unicode) {
-        case REVERSE_SOLIDUS:
-            return JA_YEN;
-            /* This is a workaround for bug 4533422.
-             * Japanese wave dash missing from Solaris JA TrueType fonts.
-             */
-        case JA_WAVE_DASH_CHAR:
-            if (remapJAWaveDash) {
-                return JA_FULLWIDTH_TILDE_CHAR;
-            }
-        default: return unicode;
-        }
+        return (unicode == REVERSE_SOLIDUS) ? JA_YEN : unicode;
     }
 
     public int charToGlyph(char unicode) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,16 @@
  */
 package javax.xml.transform.ptests;
 
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.failUnexpected;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -34,12 +39,10 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import jaxp.library.JAXPFileBaseTest;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -48,7 +51,14 @@ import org.xml.sax.SAXException;
  * Test a StreamResult using a file name that contains URL characters that need
  * to be encoded.
  */
-public class StreamResultTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.StreamResultTest
+ * @run testng/othervm javax.xml.transform.ptests.StreamResultTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class StreamResultTest {
     /**
      * Unit test for StreamResult.
      */
@@ -96,3 +106,5 @@ public class StreamResultTest extends JAXPFileBaseTest {
         });
     }
 }
+
+

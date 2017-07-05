@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,30 @@
 
 package javax.xml.parsers.ptests;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPBaseTest;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
  * Class containing the test cases for SAXParserFactory/DocumentBuilderFactory
  * newInstance methods.
  */
-public class FactoryConfErrorTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.FactoryConfErrorTest
+ * @run testng/othervm javax.xml.parsers.ptests.FactoryConfErrorTest
+ */
+@Listeners({jaxp.library.BasePolicy.class})
+public class FactoryConfErrorTest {
 
     /**
      * Set properties DocumentBuilderFactory and SAXParserFactory to invalid
@@ -54,8 +64,8 @@ public class FactoryConfErrorTest extends JAXPBaseTest {
      */
     @AfterTest
     public void cleanup() {
-        setSystemProperty("javax.xml.parsers.DocumentBuilderFactory", null);
-        setSystemProperty("javax.xml.parsers.SAXParserFactory", null);
+        clearSystemProperty("javax.xml.parsers.DocumentBuilderFactory");
+        clearSystemProperty("javax.xml.parsers.SAXParserFactory");
     }
 
     /**
@@ -76,3 +86,5 @@ public class FactoryConfErrorTest extends JAXPBaseTest {
         DocumentBuilderFactory.newInstance();
     }
 }
+
+

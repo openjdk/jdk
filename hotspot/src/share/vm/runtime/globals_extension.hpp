@@ -334,8 +334,9 @@ typedef enum {
 
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
-#define FLAG_SET_CMDLINE(type, name, value) (CommandLineFlagsEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name,type), (type)(value), Flag::COMMAND_LINE))
-#define FLAG_SET_ERGO(type, name, value)    (CommandLineFlagsEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name,type), (type)(value), Flag::ERGONOMIC))
+#define FLAG_SET_CMDLINE(type, name, value) (CommandLineFlagsEx::setOnCmdLine(FLAG_MEMBER_WITH_TYPE(name, type)), \
+                                             CommandLineFlagsEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), Flag::COMMAND_LINE))
+#define FLAG_SET_ERGO(type, name, value)    (CommandLineFlagsEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), Flag::ERGONOMIC))
 #define FLAG_SET_ERGO_IF_DEFAULT(type, name, value) \
   do {                                              \
     if (FLAG_IS_DEFAULT(name)) {                    \
@@ -361,6 +362,8 @@ class CommandLineFlagsEx : CommandLineFlags {
   static bool is_default(CommandLineFlag flag);
   static bool is_ergo(CommandLineFlag flag);
   static bool is_cmdline(CommandLineFlag flag);
+
+  static void setOnCmdLine(CommandLineFlagWithType flag);
 };
 
 #endif // SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP

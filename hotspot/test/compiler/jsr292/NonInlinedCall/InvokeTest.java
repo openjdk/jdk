@@ -26,10 +26,11 @@
  * @bug 8072008
  * @library /testlibrary /test/lib / ../patches
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.vm.annotation
+ *
  * @build java.base/java.lang.invoke.MethodHandleHelper
- * @build sun.hotspot.WhiteBox
- * @build compiler.jsr292.NonInlinedCall.InvokeTest
+ *        sun.hotspot.WhiteBox
+ *        compiler.jsr292.NonInlinedCall.InvokeTest
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                                 -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
@@ -38,17 +39,16 @@
 
 package compiler.jsr292.NonInlinedCall;
 
+import jdk.internal.vm.annotation.DontInline;
+import sun.hotspot.WhiteBox;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleHelper;
 import java.lang.invoke.MethodHandleHelper.NonInlinedReinvoker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import jdk.internal.vm.annotation.DontInline;
-
-import sun.hotspot.WhiteBox;
-
-import static jdk.test.lib.Asserts.*;
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class InvokeTest {
     static MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;

@@ -21,14 +21,15 @@
  * questions.
  */
 /*
-@test
-@bug 6415145
-@summary REGRESSION: Selected item is not being updated while dragging above popup menu
-@library ../../../../lib/testlibrary
-@build ExtendedRobot
-@author Mikhail Lapshin
-@run main bug6415145
-*/
+ * @test
+ * @key headful
+ * @bug 6415145
+ * @summary REGRESSION: Selected item is not being updated while dragging above popup menu
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @author Mikhail Lapshin
+ * @run main bug6415145
+ */
 
 import javax.swing.*;
 import java.awt.event.*;

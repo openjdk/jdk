@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6827800
  * @summary Test to check hidden default button does not respond to 'Enter' key
  * @run main HiddenDefaultButtonTest

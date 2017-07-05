@@ -92,3 +92,4 @@ public class StAXUtil extends TransformerUtil {
         ((StreamUtil) TransformerUtilFactory.getUtil(TransformerUtilFactory.STREAM)).checkStream(new FileInputStream(TEMP_FILE), version);
     }
 }
+

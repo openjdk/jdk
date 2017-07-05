@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 8013566
-   @summary Failure of GroupLayout in combination of addPreferredGap and addGroup's
-   last row
-   @author Semyon Sadetsky
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 8013566
+ * @summary Failure of GroupLayout in combination of addPreferredGap and addGroup's
+ * last row
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import static org.w3c.dom.DOMException.NAMESPACE_ERR;
 import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
 import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
 import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
-import jaxp.library.JAXPFileBaseTest;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
@@ -42,9 +42,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.DocumentTest
+ * @run testng/othervm org.w3c.dom.ptests.DocumentTest
  * @summary Test createAttributeNS, getElementsByTagNameNS and createElementNS method of Document
  */
-public class DocumentTest extends JAXPFileBaseTest {
+@Listeners({jaxp.library.FilePolicy.class})
+public class DocumentTest {
 
     @DataProvider(name = "invalid-nsuri")
     public Object[][] getInvalidNamespaceURI() {
@@ -170,3 +175,4 @@ public class DocumentTest extends JAXPFileBaseTest {
         doc.createElement("!nc$%^*(!");
     }
 }
+

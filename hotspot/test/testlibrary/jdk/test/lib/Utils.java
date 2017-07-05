@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,8 +317,8 @@ public final class Utils {
             output = ProcessTools.executeProcess(jcmdLauncher.getCommand());
             output.shouldHaveExitValue(0);
 
-            // Search for a line starting with numbers (pid), follwed by the key.
-            Pattern pattern = Pattern.compile("([0-9]+)\\s.*(" + key + ").*\\r?\\n");
+            // Search for a line starting with numbers (pid), followed by the key.
+            Pattern pattern = Pattern.compile("^([0-9]+)\\s.*(" + key + ")", Pattern.MULTILINE);
             Matcher matcher = pattern.matcher(output.getStdout());
 
             int pid = -1;

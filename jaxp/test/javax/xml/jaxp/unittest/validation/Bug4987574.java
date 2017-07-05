@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,33 @@
 
 package validation;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 
 import javax.xml.validation.SchemaFactory;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 4987574
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug4987574
+ * @run testng/othervm validation.Bug4987574
  * @summary Test schemaFactory.newSchema doesn't throw NullPointerExceptio for empty schema.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4987574 {
 
     @Test
     public void test1() throws Exception {
         SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        File tmpFile = File.createTempFile("jaxpri", "bug");
+        File tmpFile = File.createTempFile("jaxpri", "bug", Paths.get(USER_DIR).toFile());
         tmpFile.deleteOnExit();
         {
             PrintWriter pw = new PrintWriter(new FileWriter(tmpFile));
@@ -51,3 +60,4 @@ public class Bug4987574 {
         schemaFactory.newSchema(tmpFile);
     }
 }
+

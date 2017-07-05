@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,23 @@
 package javax.xml.parsers.ptests;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+
 import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPBaseTest;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
  * Class containing the test cases for SAXParserFactory API.
  */
-public class SAXParserFactTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.SAXParserFactTest
+ * @run testng/othervm javax.xml.parsers.ptests.SAXParserFactTest
+ */
+@Listeners({jaxp.library.BasePolicy.class})
+public class SAXParserFactTest {
 
     private static final String NAMESPACES = "http://xml.org/sax/features/namespaces";
     private static final String NAMESPACE_PREFIXES = "http://xml.org/sax/features/namespace-prefixes";
@@ -220,3 +229,5 @@ public class SAXParserFactTest extends JAXPBaseTest {
         assertFalse(spf.getFeature(EXTERNAL_P_ENTITIES));
     }
 }
+
+

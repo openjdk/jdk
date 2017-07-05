@@ -23,12 +23,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6514582
-   @summary SubMenu of a JMenu with no items paints a single pixel tiny menu.
-   @author Alexander Potochkin
-   @run main bug6514582
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6514582
+ * @summary SubMenu of a JMenu with no items paints a single pixel tiny menu.
+ * @author Alexander Potochkin
+ * @run main bug6514582
+ */
 
 import javax.swing.*;
 import java.awt.*;

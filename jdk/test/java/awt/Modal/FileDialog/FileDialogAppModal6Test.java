@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8054359 7186009
  *
  * @summary Check whether FileDialog blocks an application modal Dialog

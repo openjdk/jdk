@@ -25,10 +25,13 @@
 /**
  * @test
  * @bug 8131969
- * @summary assert in register allocation code when vector Phi for a loop is processed because code assumes all inputs already processed
- * @run main/othervm -Xbatch TestVectorRegAlloc
+ * @summary assert in register allocation code when vector Phi for a loop is
+ * processed because code assumes all inputs already processed
  *
+ * @run main/othervm -Xbatch compiler.regalloc.TestVectorRegAlloc
  */
+
+package compiler.regalloc;
 
 public class TestVectorRegAlloc {
 

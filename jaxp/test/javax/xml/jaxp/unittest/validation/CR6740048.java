@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 import org.w3c.dom.Document;
@@ -38,9 +39,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /*
+ * @test
  * @bug 6740048
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.CR6740048
+ * @run testng/othervm validation.CR6740048
  * @summary Test DocumentBuilder can be reused when the DocumentBuilderFactory sets schema.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class CR6740048 {
     private static final String TAG_INFO = "containerInfo";
     private static final String SCHEMA_LANGUAGE_URL = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
@@ -51,9 +57,6 @@ public class CR6740048 {
     public final void testReusingDocumentBuilder() {
 
         try {
-            //ClassLoader loader = CR6740048.class.getClassLoader();
-
-            // Object xsd = loader.getResourceAsStream("CR6740048.xsd");
             InputStream xsd = this.getClass().getResourceAsStream("CR6740048.xsd");
             // create document builder
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -128,3 +131,4 @@ public class CR6740048 {
     }
 
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,33 @@
  */
 package org.xml.sax.ptests;
 
-import java.io.FileInputStream;
-import java.io.FilePermission;
-import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.FileInputStream;
+
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.HandlerBase;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderAdapter;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * Class containing the test cases for XMLReaderAdapter API
  */
-public class XMLReaderAdapterTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.XMLReaderAdapterTest
+ * @run testng/othervm org.xml.sax.ptests.XMLReaderAdapterTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class XMLReaderAdapterTest {
     /**
      * http://xml.org/sax/features/namespace-prefixes property name.
      */
@@ -92,7 +101,6 @@ public class XMLReaderAdapterTest extends JAXPBaseTest {
      */
     @Test
     public void parse01() throws Exception {
-        setPermissions(new FilePermission(XML_DIR + "/-", "read"));
         try (FileInputStream fis = new FileInputStream(XML_DIR + "namespace1.xml")) {
             XMLReader xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
             if (!xmlReader.getFeature(NM_PREFIXES_PROPERTY)) {
@@ -102,6 +110,7 @@ public class XMLReaderAdapterTest extends JAXPBaseTest {
             xmlRA.setDocumentHandler(new HandlerBase());
             xmlRA.parse(new InputSource(fis));
         }
-        setPermissions();
     }
 }
+
+

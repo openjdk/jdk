@@ -23,6 +23,7 @@
 
  /*
  * @test
+ * @key headful
  * @summary Checks that JLayer inside JViewport works is correctly laid out
  * @author Alexander Potochkin
  * @library ../../../../lib/testlibrary/

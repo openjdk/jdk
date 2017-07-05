@@ -31,6 +31,7 @@ import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import static java.util.ResourceBundle.Control;
 import java.util.Set;
@@ -342,9 +343,8 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
                     // locales from the pre-filtered list.
                     locales.stream()
                         .filter(l -> l.toString().equalsIgnoreCase(loc.toString()))
-                        .findAny()
-                        .orElse(Locale.ROOT))
-                .filter(loc -> !loc.equals(Locale.ROOT))
+                        .findAny())
+                .flatMap(Optional::stream)
                 .flatMap(IncludeLocalesPlugin::localeToTags)
                 .distinct()
                 .collect(Collectors.toList());
@@ -373,40 +373,42 @@ public final class IncludeLocalesPlugin implements Plugin, ResourcePrevisitor {
     }
 
     private static Stream<String> localeToTags(Locale loc) {
+        Objects.requireNonNull(loc);
+
         String tag = loc.toLanguageTag();
-        Stream<String> ret = null;
+        List<String> tags = null;
 
         switch (loc.getLanguage()) {
             // ISO3166 compatibility
             case "iw":
-                ret = List.of(tag, tag.replaceFirst("^he", "iw")).stream();
+                tags = List.of(tag, tag.replaceFirst("^he", "iw"));
                 break;
             case "in":
-                ret = List.of(tag, tag.replaceFirst("^id", "in")).stream();
+                tags = List.of(tag, tag.replaceFirst("^id", "in"));
                 break;
             case "ji":
-                ret = List.of(tag, tag.replaceFirst("^yi", "ji")).stream();
+                tags = List.of(tag, tag.replaceFirst("^yi", "ji"));
                 break;
 
             // Special COMPAT provider locales
             case "ja":
                 if (loc.getCountry() == "JP") {
-                    ret = List.of(tag, jaJPJPTag).stream();
+                    tags = List.of(tag, jaJPJPTag);
                 }
                 break;
             case "no":
             case "nn":
                 if (loc.getCountry() == "NO") {
-                    ret = List.of(tag, noNONYTag).stream();
+                    tags = List.of(tag, noNONYTag);
                 }
                 break;
             case "th":
                 if (loc.getCountry() == "TH") {
-                    ret = List.of(tag, thTHTHTag).stream();
+                    tags = List.of(tag, thTHTHTag);
                 }
                 break;
         }
 
-        return ret == null ? List.of(tag).stream() : ret;
+        return tags == null ? List.of(tag).stream() : tags.stream();
     }
 }

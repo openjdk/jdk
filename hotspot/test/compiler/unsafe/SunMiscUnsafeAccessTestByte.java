@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for byte
+ *
  * @modules jdk.unsupported/sun.misc
- * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestByte
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestByte
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestByte
- * @run testng/othervm -Diters=20000                         SunMiscUnsafeAccessTestByte
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.SunMiscUnsafeAccessTestByte
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.SunMiscUnsafeAccessTestByte
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.SunMiscUnsafeAccessTestByte
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.SunMiscUnsafeAccessTestByte
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 

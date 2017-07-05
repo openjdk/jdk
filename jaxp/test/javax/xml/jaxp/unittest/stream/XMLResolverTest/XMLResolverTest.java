@@ -34,11 +34,17 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLResolverTest.XMLResolverTest
+ * @run testng/othervm stream.XMLResolverTest.XMLResolverTest
  * @summary Test XMLResolver.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class XMLResolverTest {
 
     @Test
@@ -90,3 +96,4 @@ public class XMLResolverTest {
 
     }
 }
+

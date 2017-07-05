@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -43,16 +44,21 @@ import org.w3c.dom.ls.LSParser;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 6355326
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true dom.Bug6355326
+ * @run testng/othervm dom.Bug6355326
  * @summary Test DOM implementation encoding.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6355326 {
 
     DOMImplementationLS implLS = null;
     String encodingXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><encodingXML/>";
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         Document doc = null;
         DocumentBuilder parser = null;
         String xml1 = "<?xml version=\"1.0\"?><ROOT></ROOT>";
@@ -112,3 +118,4 @@ public class Bug6355326 {
         return p;
     }
 }
+

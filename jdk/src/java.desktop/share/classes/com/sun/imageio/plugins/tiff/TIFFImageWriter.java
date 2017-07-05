@@ -263,15 +263,15 @@ public class TIFFImageWriter extends ImageWriter {
     }
 
     public void setOutput(Object output) {
-        super.setOutput(output);
-
         if (output != null) {
-            reset();
-
             if (!(output instanceof ImageOutputStream)) {
                 throw new IllegalArgumentException
                     ("output not an ImageOutputStream!");
             }
+
+            // reset() must precede setOutput() as it sets output to null
+            reset();
+
             this.stream = (ImageOutputStream)output;
 
             //
@@ -312,6 +312,8 @@ public class TIFFImageWriter extends ImageWriter {
         } else {
             this.stream = null;
         }
+
+        super.setOutput(output);
     }
 
     public IIOMetadata

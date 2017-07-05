@@ -28,11 +28,17 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.StreamReaderTest
+ * @run testng/othervm stream.XMLStreamReaderTest.StreamReaderTest
  * @summary Test XMLStreamReader.hasName() returns false for ENTITY_REFERENCE.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class StreamReaderTest {
 
     /**
@@ -56,3 +62,4 @@ public class StreamReaderTest {
     }
 
 }
+

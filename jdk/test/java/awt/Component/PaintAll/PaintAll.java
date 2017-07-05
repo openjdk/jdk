@@ -43,6 +43,7 @@ import java.awt.image.BufferedImage;
 
 /*
   @test
+  @key headful
   @bug 6596915
   @summary Test Component.paintAll() method
   @author sergey.bylokhov@oracle.com: area=awt.component

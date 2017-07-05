@@ -26,9 +26,13 @@
  * @test
  * @bug 8147645
  * @summary Array.fill intrinsification code doesn't mark replaced control as dead
- * @run main/othervm  -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestArraysFillDeadControl::dont_inline TestArraysFillDeadControl
  *
+ * @run main/othervm -XX:-TieredCompilation
+ *      -XX:CompileCommand=dontinline,compiler.loopopts.TestArraysFillDeadControl::dont_inline
+ *      compiler.loopopts.TestArraysFillDeadControl
  */
+
+package compiler.loopopts;
 
 import java.util.Arrays;
 

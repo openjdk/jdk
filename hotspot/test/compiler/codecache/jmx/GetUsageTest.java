@@ -21,25 +21,37 @@
  * questions.
  */
 
+/*
+ * @test GetUsageTest
+ * @summary testing of getUsage() for segmented code cache
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /testlibrary /test/lib /
+ *
+ * @build compiler.codecache.jmx.GetUsageTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *     -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.GetUsageTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *     -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.GetUsageTest
+ */
+
+package compiler.codecache.jmx;
+
 import jdk.test.lib.Asserts;
+import sun.hotspot.code.BlobType;
+
 import java.lang.management.MemoryPoolMXBean;
 import java.util.HashMap;
 import java.util.Map;
-import sun.hotspot.code.BlobType;
 
-/*
- * @test GetUsageTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build GetUsageTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:CompileCommand=compileonly,null::*
- *     -XX:-UseCodeCacheFlushing -XX:-MethodFlushing -XX:+SegmentedCodeCache
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI GetUsageTest
- * @summary testing of getUsage() for segmented code cache
- */
 public class GetUsageTest {
 
     private final BlobType btype;

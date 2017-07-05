@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4885629
  * @summary With JSplitPane in VERTICAL_SPLIT, SplitPaneBorder draws bottom edge of divider
  * @author Andrey Pikalev

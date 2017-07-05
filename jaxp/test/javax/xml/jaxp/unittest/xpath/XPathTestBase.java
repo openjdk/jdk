@@ -115,7 +115,7 @@ class XPathTestBase {
      * DataProvider: XPath object
      */
     @DataProvider(name = "xpath")
-    Object[][] getXPath() {
+    public Object[][] getXPath() {
         return new Object[][]{{XPathFactory.newInstance().newXPath()}};
     }
 
@@ -123,7 +123,7 @@ class XPathTestBase {
      * DataProvider: Numeric types not supported
      */
     @DataProvider(name = "invalidNumericTypes")
-    Object[][] getInvalidNumericTypes() {
+    public Object[][] getInvalidNumericTypes() {
         XPath xpath = XPathFactory.newInstance().newXPath();
         return new Object[][]{{xpath, AtomicInteger.class},
             {xpath, AtomicInteger.class},
@@ -140,7 +140,7 @@ class XPathTestBase {
      * DataProvider: XPath and Document objects
      */
     @DataProvider(name = "document")
-    Object[][] getDocument() throws Exception {
+    public Object[][] getDocument() throws Exception {
         DocumentBuilderFactory dBF = DocumentBuilderFactory.newInstance();
         dBF.setValidating(false);
         dBF.setNamespaceAware(true);

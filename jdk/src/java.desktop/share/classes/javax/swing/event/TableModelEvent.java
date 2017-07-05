@@ -177,7 +177,7 @@ public class TableModelEvent extends java.util.EventObject
      * @param lastRow  the last row affected by this event
      * @param column the column index of cells changed; {@code ALL_COLUMNS}
      *        signifies all cells in the specified range of rows are changed.
-     * @param type the type of change signified by this even, @code INSERT},
+     * @param type the type of change signified by this even, {@code INSERT},
      *        {@code DELETE } or {@code UPDATE}
      */
     public TableModelEvent(TableModel source, int firstRow, int lastRow, int column, int type) {

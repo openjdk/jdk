@@ -187,7 +187,11 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
           $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
           $(SYMBOLS_EXCLUDE_PATTERN) \
           , \
-          $(ALL_JDK_FILES) \
+          $(filter-out \
+              $(JDK_IMAGE_HOMEDIR)/demo/% $(JDK_IMAGE_HOMEDIR)/sample/% \
+              , \
+              $(ALL_JDK_FILES) \
+          ) \
       ) \
       $(call CacheFind, $(SYMBOLS_IMAGE_DIR))
 

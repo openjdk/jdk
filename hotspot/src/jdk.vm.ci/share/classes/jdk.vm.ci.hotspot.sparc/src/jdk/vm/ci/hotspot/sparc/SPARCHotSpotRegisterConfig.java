@@ -26,17 +26,41 @@ import static jdk.vm.ci.meta.JavaKind.Void;
 import static jdk.vm.ci.meta.Value.ILLEGAL;
 import static jdk.vm.ci.sparc.SPARC.REGISTER_SAFE_AREA_SIZE;
 import static jdk.vm.ci.sparc.SPARC.d0;
+import static jdk.vm.ci.sparc.SPARC.d10;
+import static jdk.vm.ci.sparc.SPARC.d12;
+import static jdk.vm.ci.sparc.SPARC.d14;
+import static jdk.vm.ci.sparc.SPARC.d16;
+import static jdk.vm.ci.sparc.SPARC.d18;
 import static jdk.vm.ci.sparc.SPARC.d2;
+import static jdk.vm.ci.sparc.SPARC.d20;
+import static jdk.vm.ci.sparc.SPARC.d22;
+import static jdk.vm.ci.sparc.SPARC.d24;
+import static jdk.vm.ci.sparc.SPARC.d26;
+import static jdk.vm.ci.sparc.SPARC.d28;
+import static jdk.vm.ci.sparc.SPARC.d30;
 import static jdk.vm.ci.sparc.SPARC.d4;
 import static jdk.vm.ci.sparc.SPARC.d6;
+import static jdk.vm.ci.sparc.SPARC.d8;
 import static jdk.vm.ci.sparc.SPARC.f0;
 import static jdk.vm.ci.sparc.SPARC.f1;
+import static jdk.vm.ci.sparc.SPARC.f11;
+import static jdk.vm.ci.sparc.SPARC.f13;
+import static jdk.vm.ci.sparc.SPARC.f15;
+import static jdk.vm.ci.sparc.SPARC.f17;
+import static jdk.vm.ci.sparc.SPARC.f19;
 import static jdk.vm.ci.sparc.SPARC.f2;
+import static jdk.vm.ci.sparc.SPARC.f21;
+import static jdk.vm.ci.sparc.SPARC.f23;
+import static jdk.vm.ci.sparc.SPARC.f25;
+import static jdk.vm.ci.sparc.SPARC.f27;
+import static jdk.vm.ci.sparc.SPARC.f29;
 import static jdk.vm.ci.sparc.SPARC.f3;
+import static jdk.vm.ci.sparc.SPARC.f31;
 import static jdk.vm.ci.sparc.SPARC.f4;
 import static jdk.vm.ci.sparc.SPARC.f5;
 import static jdk.vm.ci.sparc.SPARC.f6;
 import static jdk.vm.ci.sparc.SPARC.f7;
+import static jdk.vm.ci.sparc.SPARC.f9;
 import static jdk.vm.ci.sparc.SPARC.g0;
 import static jdk.vm.ci.sparc.SPARC.g2;
 import static jdk.vm.ci.sparc.SPARC.g6;
@@ -95,11 +119,6 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
 
     private final RegisterAttributes[] attributesMap;
 
-    /**
-     * Does native code (C++ code) spill arguments in registers to the parent frame?
-     */
-    private final boolean addNativeRegisterArgumentSlots;
-
     @Override
     public RegisterArray getAllocatableRegisters() {
         return allocatable;
@@ -124,10 +143,18 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
     private final RegisterArray cpuCallerParameterRegisters = new RegisterArray(o0, o1, o2, o3, o4, o5);
     private final RegisterArray cpuCalleeParameterRegisters = new RegisterArray(i0, i1, i2, i3, i4, i5);
 
-    private final RegisterArray fpuFloatParameterRegisters = new RegisterArray(f0, f1, f2, f3, f4, f5, f6, f7);
-    private final RegisterArray fpuDoubleParameterRegisters = new RegisterArray(d0, null, d2, null, d4, null, d6, null);
+    private final RegisterArray fpuFloatJavaParameterRegisters = new RegisterArray(f0, f1, f2, f3, f4, f5, f6, f7);
+    private final RegisterArray fpuDoubleJavaParameterRegisters = new RegisterArray(d0, null, d2, null, d4, null, d6, null);
 
     // @formatter:off
+    private final RegisterArray fpuFloatNativeParameterRegisters = new RegisterArray(
+                    f1,   f3,  f5,  f7,  f9, f11, f13, f15,
+                    f17, f19, f21, f23, f25, f27, f29, f31);
+
+    private final RegisterArray fpuDoubleNativeParameterRegisters = new RegisterArray(
+                     d0,  d2,  d4,  d6,  d8, d10, d12, d14,
+                    d16, d18, d20, d22, d24, d26, d28, d30);
+
     private final RegisterArray callerSaveRegisters;
 
     /**
@@ -170,7 +197,6 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
     public SPARCHotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable) {
         this.target = target;
         this.allocatable = allocatable;
-        this.addNativeRegisterArgumentSlots = false;
         HashSet<Register> callerSaveSet = new HashSet<>(target.arch.getAvailableValueRegisters().asList());
         for (Register cs : windowSaveRegisters) {
             callerSaveSet.remove(cs);
@@ -220,7 +246,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
                 return hotspotType == HotSpotCallingConventionType.JavaCallee ? cpuCalleeParameterRegisters : cpuCallerParameterRegisters;
             case Double:
             case Float:
-                return fpuFloatParameterRegisters;
+                return fpuFloatJavaParameterRegisters;
             default:
                 throw JVMCIError.shouldNotReachHere("Unknown JavaKind " + kind);
         }
@@ -233,48 +259,77 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
         int currentGeneral = 0;
         int currentFloating = 0;
         int currentStackOffset = 0;
+        boolean isNative = type == HotSpotCallingConventionType.NativeCall;
 
         for (int i = 0; i < parameterTypes.length; i++) {
             final JavaKind kind = parameterTypes[i].getJavaKind().getStackKind();
-
-            switch (kind) {
-                case Byte:
-                case Boolean:
-                case Short:
-                case Char:
-                case Int:
-                case Long:
-                case Object:
-                    if (currentGeneral < generalParameterRegisters.size()) {
-                        Register register = generalParameterRegisters.get(currentGeneral++);
-                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
-                    }
-                    break;
-                case Double:
-                    if (currentFloating < fpuFloatParameterRegisters.size()) {
-                        if (currentFloating % 2 != 0) {
-                            // Make register number even to be a double reg
-                            currentFloating++;
+            if (isNative) {
+                RegisterArray registerSet;
+                switch (kind) {
+                    case Byte:
+                    case Boolean:
+                    case Short:
+                    case Char:
+                    case Int:
+                    case Long:
+                    case Object:
+                        registerSet = generalParameterRegisters;
+                        break;
+                    case Double:
+                        registerSet = fpuDoubleNativeParameterRegisters;
+                        break;
+                    case Float:
+                        registerSet = fpuFloatNativeParameterRegisters;
+                        break;
+                    default:
+                        throw JVMCIError.shouldNotReachHere();
+                }
+                if (i < registerSet.size()) {
+                    locations[i] = registerSet.get(i).asValue(valueKindFactory.getValueKind(kind));
+                    currentStackOffset += target.arch.getWordSize();
+                }
+            } else {
+                switch (kind) {
+                    case Byte:
+                    case Boolean:
+                    case Short:
+                    case Char:
+                    case Int:
+                    case Long:
+                    case Object:
+                        if (currentGeneral < generalParameterRegisters.size()) {
+                            Register register = generalParameterRegisters.get(currentGeneral++);
+                            locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                         }
-                        Register register = fpuDoubleParameterRegisters.get(currentFloating);
-                        currentFloating += 2; // Only every second is a double register
-                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
-                    }
-                    break;
-                case Float:
-                    if (currentFloating < fpuFloatParameterRegisters.size()) {
-                        Register register = fpuFloatParameterRegisters.get(currentFloating++);
-                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
-                    }
-                    break;
-                default:
-                    throw JVMCIError.shouldNotReachHere();
+                        break;
+                    case Double:
+                        if (currentFloating < fpuFloatJavaParameterRegisters.size()) {
+                            if (currentFloating % 2 != 0) {
+                                // Make register number even to be a double reg
+                                currentFloating++;
+                            }
+                            Register register = fpuDoubleJavaParameterRegisters.get(currentFloating);
+                            currentFloating += 2; // Only every second is a double register
+                            locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
+                        }
+                        break;
+                    case Float:
+                        if (currentFloating < fpuFloatJavaParameterRegisters.size()) {
+                            Register register = fpuFloatJavaParameterRegisters.get(currentFloating++);
+                            locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
+                        }
+                        break;
+                    default:
+                        throw JVMCIError.shouldNotReachHere();
+                }
             }
 
             if (locations[i] == null) {
                 ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
-                // Stack slot is always aligned to its size in bytes but minimum wordsize
                 int typeSize = valueKind.getPlatformKind().getSizeInBytes();
+                if (isNative) {
+                    currentStackOffset += target.arch.getWordSize() - typeSize;
+                }
                 currentStackOffset = roundUp(currentStackOffset, typeSize);
                 int slotOffset = currentStackOffset + REGISTER_SAFE_AREA_SIZE;
                 locations[i] = StackSlot.get(valueKind, slotOffset, !type.out);
@@ -284,15 +339,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
 
         JavaKind returnKind = returnType == null ? Void : returnType.getJavaKind();
         AllocatableValue returnLocation = returnKind == Void ? ILLEGAL : getReturnRegister(returnKind, type).asValue(valueKindFactory.getValueKind(returnKind.getStackKind()));
-
-        int outArgSpillArea;
-        if (type == HotSpotCallingConventionType.NativeCall && addNativeRegisterArgumentSlots) {
-            // Space for native callee which may spill our outgoing arguments
-            outArgSpillArea = Math.min(locations.length, generalParameterRegisters.size()) * target.wordSize;
-        } else {
-            outArgSpillArea = 0;
-        }
-        return new CallingConvention(currentStackOffset + outArgSpillArea, returnLocation, locations);
+        return new CallingConvention(currentStackOffset, returnLocation, locations);
     }
 
     private static int roundUp(int number, int mod) {

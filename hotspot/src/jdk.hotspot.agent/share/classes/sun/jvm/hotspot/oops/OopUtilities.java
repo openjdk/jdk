@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,10 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.utilities.*;
-import sun.jvm.hotspot.jdi.JVMTIThreadState;
 
 /** A utility class encapsulating useful oop operations */
 
-public class OopUtilities implements /* imports */ JVMTIThreadState {
+public class OopUtilities {
 
   // FIXME: access should be synchronized and cleared when VM is
   // resumed
@@ -77,6 +76,8 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
 
   // java.util.concurrent.locks.AbstractOwnableSynchronizer fields
   private static OopField absOwnSyncOwnerThreadField;
+
+  private static final int JVMTI_THREAD_STATE_ALIVE = 0x0001;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {

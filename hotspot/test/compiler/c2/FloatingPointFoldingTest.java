@@ -26,8 +26,18 @@
  * @test
  * @bug 8073670
  * @summary Test that causes C2 to fold two NaNs with different values into a single NaN.
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileCommand=compileonly,FloatingPointFoldingTest.test_double_inf -XX:CompileCommand=compileonly,FloatingPointFoldingTest.test_double_zero -XX:CompileCommand=compileonly,FloatingPointFoldingTest.test_double_nan -XX:CompileCommand=compileonly,FloatingPointFoldingTest.test_float_inf -XX:CompileCommand=compileonly,FloatingPointFoldingTest.test_float_zero -XX:CompileCommand=compileonly,FloatingPointFoldingTest.test_float_nan FloatingPointFoldingTest
+ *
+ * @run main/othervm -XX:-TieredCompilation -Xcomp
+ *      -XX:CompileCommand=compileonly,compiler.c2.FloatingPointFoldingTest::test_double_inf
+ *      -XX:CompileCommand=compileonly,compiler.c2.FloatingPointFoldingTest::test_double_zero
+ *      -XX:CompileCommand=compileonly,compiler.c2.FloatingPointFoldingTest::test_double_nan
+ *      -XX:CompileCommand=compileonly,compiler.c2.FloatingPointFoldingTest::test_float_inf
+ *      -XX:CompileCommand=compileonly,compiler.c2.FloatingPointFoldingTest::test_float_zero
+ *      -XX:CompileCommand=compileonly,compiler.c2.FloatingPointFoldingTest::test_float_nan
+ *      compiler.c2.FloatingPointFoldingTest
  */
+
+package compiler.c2;
 
 public class FloatingPointFoldingTest {
     // Double values.

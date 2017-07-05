@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4624207
  * @summary JTabbedPane mnemonics don't work from outside the tabbed pane
  * @author Oleg Mokhovikov
