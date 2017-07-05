@@ -88,7 +88,7 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
                     final Property property = propertyMap.findProperty(key);
                     if (property != null) {
                         // normal property key
-                        property.setCurrentType(JSType.unboxedFieldType(constantValue));
+                        property.setType(JSType.unboxedFieldType(constantValue));
                         final int slot = property.getSlot();
                         if (!OBJECT_FIELDS_ONLY && constantValue instanceof Number) {
                             jpresetValues[slot] = ObjectClassGenerator.pack((Number)constantValue);

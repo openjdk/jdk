@@ -1862,9 +1862,12 @@ Method* Method::checked_resolve_jmethod_id(jmethodID mid) {
 void Method::set_on_stack(const bool value) {
   // Set both the method itself and its constant pool.  The constant pool
   // on stack means some method referring to it is also on the stack.
-  _access_flags.set_on_stack(value);
   constants()->set_on_stack(value);
-  if (value) MetadataOnStackMark::record(this);
+
+  bool succeeded = _access_flags.set_on_stack(value);
+  if (value && succeeded) {
+    MetadataOnStackMark::record(this, Thread::current());
+  }
 }
 
 // Called when the class loader is unloaded to make all methods weak.

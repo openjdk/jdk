@@ -154,14 +154,10 @@ void G1StringDedup::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* k
   double fixup_start = os::elapsedTime();
 
   G1StringDedupUnlinkOrOopsDoTask task(is_alive, keep_alive, allow_resize_and_rehash);
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    g1h->set_par_threads();
-    g1h->workers()->run_task(&task);
-    g1h->set_par_threads(0);
-  } else {
-    task.work(0);
-  }
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->set_par_threads();
+  g1h->workers()->run_task(&task);
+  g1h->set_par_threads(0);
 
   double fixup_time_ms = (os::elapsedTime() - fixup_start) * 1000.0;
   g1p->phase_times()->record_string_dedup_fixup_time(fixup_time_ms);
