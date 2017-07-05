@@ -2697,7 +2697,7 @@ address CppInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // Provide a debugger breakpoint in the frame manager if breakpoints
   // in osr'd methods are requested.
 #ifdef COMPILER2
-  NOT_PRODUCT( if (OptoBreakpointOSR) { __ illtrap(); } )
+  if (OptoBreakpointOSR) { __ illtrap(); }
 #endif
 
   // Load callee's pointer to locals array from callee's state.

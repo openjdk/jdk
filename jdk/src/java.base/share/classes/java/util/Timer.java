@@ -447,7 +447,7 @@ public class Timer {
      * is the number of tasks in the queue and c is the number of cancelled
      * tasks.
      *
-     * <p>Note that it is permissible to call this method from within a
+     * <p>Note that it is permissible to call this method from within
      * a task scheduled on this timer.
      *
      * @return the number of tasks removed from the queue.

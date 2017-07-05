@@ -38,9 +38,25 @@
  * @summary Checks that a set of threads can repeatedly get and modify items
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConcurrentQueueLoops {
     ExecutorService pool;
@@ -99,7 +115,7 @@ public class ConcurrentQueueLoops {
             oneRun(i, items, q);
         }
         pool.shutdown();
-        check(pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS));
+        check(pool.awaitTermination(60L, SECONDS));
    }
 
     class Stage implements Callable<Integer> {

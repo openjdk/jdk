@@ -84,7 +84,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
  public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, size_t young_cset_length);
-  ~G1ParScanThreadState();
+  virtual ~G1ParScanThreadState();
 
   void set_ref_processor(ReferenceProcessor* rp) { _scanner.set_ref_processor(rp); }
 

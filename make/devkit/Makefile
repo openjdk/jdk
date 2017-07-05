@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,12 @@
 #
 # To build the full set of crosstools, use a command line looking like this:
 #
-# make tars RPM_DIR_x86_64=/tmp/oel55-x86_64/Server/ RPM_DIR_i686=/tmp/oel55-i686/Server/
+# make tars RPM_DIR_x86_64=/tmp/oel64-x86_64/Packages/ RPM_DIR_i686=/tmp/oel64-i686/Packages/
 #
 # To create a x86_64 package without the redundant i686 cross compiler, do
 # like this:
 #
-# make tars platforms=x86_64-unknown-linux-gnu RPM_DIR_x86_64=/tmp/oel55-x86_64/Server/ RPM_DIR_i686=/tmp/oel55-i686/Server/
+# make tars platforms=x86_64-unknown-linux-gnu RPM_DIR_x86_64=/tmp/oel64-x86_64/Packages/ RPM_DIR_i686=/tmp/oel64-i686/Packages/
 
 #
 # Main makefile which iterates over all host and target platforms.

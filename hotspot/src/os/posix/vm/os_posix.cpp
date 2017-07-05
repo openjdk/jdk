@@ -837,6 +837,21 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
 #if defined(IA64) && !defined(AIX)
     { SIGSEGV, SEGV_PSTKOVF, "SEGV_PSTKOVF", "Paragraph stack overflow" },
 #endif
+#if defined(__sparc) && defined(SOLARIS)
+// define Solaris Sparc M7 ADI SEGV signals
+#if !defined(SEGV_ACCADI)
+#define SEGV_ACCADI 3
+#endif
+    { SIGSEGV, SEGV_ACCADI,  "SEGV_ACCADI",  "ADI not enabled for mapped object." },
+#if !defined(SEGV_ACCDERR)
+#define SEGV_ACCDERR 4
+#endif
+    { SIGSEGV, SEGV_ACCDERR, "SEGV_ACCDERR", "ADI disrupting exception." },
+#if !defined(SEGV_ACCPERR)
+#define SEGV_ACCPERR 5
+#endif
+    { SIGSEGV, SEGV_ACCPERR, "SEGV_ACCPERR", "ADI precise exception." },
+#endif // defined(__sparc) && defined(SOLARIS)
     { SIGBUS,  BUS_ADRALN,   "BUS_ADRALN",   "Invalid address alignment." },
     { SIGBUS,  BUS_ADRERR,   "BUS_ADRERR",   "Nonexistent physical address." },
     { SIGBUS,  BUS_OBJERR,   "BUS_OBJERR",   "Object-specific hardware error." },
@@ -972,6 +987,39 @@ void os::Posix::print_siginfo_brief(outputStream* os, const siginfo_t* si) {
     os->print_cr(", si_pid: %d, si_uid: %d, si_status: %d", (int) si->si_pid, si->si_uid, si->si_status);
   }
 }
+
+int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
+  return pthread_sigmask(SIG_UNBLOCK, set, NULL);
+}
+
+address os::Posix::ucontext_get_pc(ucontext_t* ctx) {
+#ifdef TARGET_OS_FAMILY_linux
+   return Linux::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_solaris)
+   return Solaris::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_aix)
+   return Aix::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_bsd)
+   return Bsd::ucontext_get_pc(ctx);
+#else
+   VMError::report_and_die("unimplemented ucontext_get_pc");
+#endif
+}
+
+void os::Posix::ucontext_set_pc(ucontext_t* ctx, address pc) {
+#ifdef TARGET_OS_FAMILY_linux
+   Linux::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_solaris)
+   Solaris::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_aix)
+   Aix::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_bsd)
+   Bsd::ucontext_set_pc(ctx, pc);
+#else
+   VMError::report_and_die("unimplemented ucontext_get_pc");
+#endif
+}
+
 
 os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
   assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");

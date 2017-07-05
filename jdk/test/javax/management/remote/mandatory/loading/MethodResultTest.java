@@ -27,6 +27,7 @@
  * @summary Tests client default class loader used before JSR 160 loader
  * @author Eamonn McManus
  * @modules java.management
+ * @library /lib/testlibrary
  * @run clean MethodResultTest
  * @run build MethodResultTest
  * @run main MethodResultTest
@@ -38,6 +39,7 @@ import java.net.*;
 import java.util.*;
 import javax.management.*;
 import javax.management.remote.*;
+import jdk.testlibrary.Utils;
 
 /*
    This test checks that the class loader that is used to deserialize
@@ -124,7 +126,7 @@ public class MethodResultTest {
         }
         cs.start();
         JMXServiceURL addr = cs.getAddress();
-        JMXConnector client = JMXConnectorFactory.connect(addr);
+        JMXConnector client = connect(addr);
         MBeanServerConnection mbsc = client.getMBeanServerConnection();
         Object getAttributeExotic = mbsc.getAttribute(on, "Exotic");
         AttributeList getAttrs =
@@ -185,6 +187,32 @@ public class MethodResultTest {
         if (ok)
             System.out.println("Test passes for protocol " + proto);
         return ok;
+    }
+
+    private static JMXConnector connect(JMXServiceURL addr) {
+        final long timeout = Utils.adjustTimeout(100);
+
+        JMXConnector connector = null;
+        while (connector == null) {
+            try {
+                connector = JMXConnectorFactory.connect(addr);
+            } catch (IOException e) {
+                System.out.println("Connection error. Retrying after delay...");
+                delay(timeout);
+            } catch (Exception otherException) {
+                System.out.println("Unexpected exception while connecting " + otherException);
+                throw new RuntimeException(otherException);
+            }
+        }
+        return connector;
+    }
+
+    private static void delay(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static Exception noException(String what) {

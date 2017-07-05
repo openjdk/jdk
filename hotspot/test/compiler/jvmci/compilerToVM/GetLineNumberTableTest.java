@@ -40,25 +40,11 @@ import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.TestCase;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class GetLineNumberTableTest {
     public static void main(String[] args) {
@@ -80,79 +66,19 @@ public class GetLineNumberTableTest {
     }
 
     public static long[] getExpectedLineNumbers(Executable aMethod) {
-        try {
-            ClassReader cr = new ClassReader(aMethod.getDeclaringClass()
-                    .getName());
-            ClassNode cn = new ClassNode();
-            cr.accept(cn, ClassReader.EXPAND_FRAMES);
-
-            Map<Label, Integer> lineNumbers = new HashMap<>();
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            ClassVisitor cv = new ClassVisitorForLabels(cw, lineNumbers,
-                    aMethod);
-            cr.accept(cv, ClassReader.EXPAND_FRAMES);
-
-            long[] result = null;
-            if (!lineNumbers.isEmpty()) {
-                Map<Integer, Integer> labels = new TreeMap<>();
-                lineNumbers.forEach((k, v) -> labels.put(k.getOffset(), v));
-
-                result = new long[2 * labels.size()];
-                int i = 0;
-                for (Integer key : labels.keySet()) {
-                    result[i++] = key.longValue();
-                    result[i++] = labels.get(key).longValue();
-                }
+        Map<Integer, Integer> bciToLine = CTVMUtilities
+                .getBciToLineNumber(aMethod);
+        long[] result = null;
+        if (!bciToLine.isEmpty()) {
+            result = new long[2 * bciToLine.size()];
+            int i = 0;
+            for (Integer key : bciToLine.keySet()) {
+                result[i++] = key.longValue();
+                result[i++] = bciToLine.get(key).longValue();
             }
-            // compilerToVM::getLineNumberTable returns null in case empty table
-            return result;
-        } catch (IOException e) {
-            throw new Error("TEST BUG " + e, e);
         }
+        // compilerToVM::getLineNumberTable returns null in case empty table
+        return result;
     }
 
-    private static class ClassVisitorForLabels extends ClassVisitor {
-        private final Map<Label, Integer> lineNumbers;
-        private final String targetName;
-        private final String targetDesc;
-
-        public ClassVisitorForLabels(ClassWriter cw, Map<Label, Integer> lines,
-                                     Executable target) {
-            super(Opcodes.ASM5, cw);
-            this.lineNumbers = lines;
-
-            StringBuilder builder = new StringBuilder("(");
-            for (Parameter parameter : target.getParameters()) {
-                builder.append(Utils.toJVMTypeSignature(parameter.getType()));
-            }
-            builder.append(")");
-            if (target instanceof Constructor) {
-                targetName = "<init>";
-                builder.append("V");
-            } else {
-                targetName = target.getName();
-                builder.append(Utils.toJVMTypeSignature(
-                        ((Method) target).getReturnType()));
-            }
-            targetDesc = builder.toString();
-        }
-
-        @Override
-        public final MethodVisitor visitMethod(int access, String name,
-                                               String desc, String signature,
-                                               String[] exceptions) {
-            MethodVisitor mv = cv.visitMethod(access, name, desc, signature,
-                    exceptions);
-            if (targetDesc.equals(desc) && targetName.equals(name)) {
-                return new MethodVisitor(Opcodes.ASM5, mv) {
-                    @Override
-                    public void visitLineNumber(int i, Label label) {
-                        super.visitLineNumber(i, label);
-                        lineNumbers.put(label, i);
-                    }
-                };
-            }
-            return  mv;
-        }
-    }
 }

@@ -49,6 +49,12 @@
 #include "dither.h"
 #include "img_util_md.h"
 #include "Devices.h"
+#include <d2d1.h>
+#pragma comment(lib, "d2d1")
+
+#ifndef MDT_Effective_DPI
+#define MDT_Effective_DPI 0
+#endif
 
 uns_ordered_dither_array img_oda_alpha;
 
@@ -74,6 +80,8 @@ AwtWin32GraphicsDevice::AwtWin32GraphicsDevice(int screen,
 {
     this->screen  = screen;
     this->devicesArray = arr;
+    this->scaleX = 1;
+    this->scaleY = 1;
     javaDevice = NULL;
     colorData = new ImgColorData;
     colorData->grayscale = GS_NOTGRAY;
@@ -614,6 +622,104 @@ void AwtWin32GraphicsDevice::Release()
 void AwtWin32GraphicsDevice::SetJavaDevice(JNIEnv *env, jobject objPtr)
 {
     javaDevice = env->NewWeakGlobalRef(objPtr);
+}
+
+/**
+ * Sets horizontal and vertical scale factors
+ */
+void AwtWin32GraphicsDevice::SetScale(float sx, float sy)
+{
+    scaleX = sx;
+    scaleY = sy;
+}
+
+int AwtWin32GraphicsDevice::ScaleUpX(int x)
+{
+    return (int)ceil(x * scaleX);
+}
+
+int AwtWin32GraphicsDevice::ScaleUpY(int y)
+{
+    return (int)ceil(y * scaleY);
+}
+
+int AwtWin32GraphicsDevice::ScaleDownX(int x)
+{
+    return (int)ceil(x / scaleX);
+}
+
+int AwtWin32GraphicsDevice::ScaleDownY(int y)
+{
+    return (int)ceil(y / scaleY);
+}
+
+void AwtWin32GraphicsDevice::InitDesktopScales()
+{
+    unsigned x = 0;
+    unsigned y = 0;
+    float dpiX = -1.0f;
+    float dpiY = -1.0f;
+
+    // for debug purposes
+    static float scale = -2.0f;
+    if (scale == -2) {
+        scale = -1;
+        char *uiScale = getenv("J2D_UISCALE");
+        if (uiScale != NULL) {
+            scale = (float)strtod(uiScale, NULL);
+            if (errno == ERANGE || scale <= 0) {
+                scale = -1;
+            }
+        }
+    }
+
+    if (scale > 0) {
+        SetScale(scale, scale);
+        return;
+    }
+
+    typedef HRESULT(WINAPI GetDpiForMonitorFunc)(HMONITOR, int, UINT*, UINT*);
+    static HMODULE hLibSHCoreDll = NULL;
+    static GetDpiForMonitorFunc *lpGetDpiForMonitor = NULL;
+
+    if (hLibSHCoreDll == NULL) {
+        hLibSHCoreDll = JDK_LoadSystemLibrary("shcore.dll");
+        if (hLibSHCoreDll != NULL) {
+            lpGetDpiForMonitor = (GetDpiForMonitorFunc*)GetProcAddress(
+                hLibSHCoreDll, "GetDpiForMonitor");
+        }
+    }
+
+    if (lpGetDpiForMonitor != NULL) {
+        HRESULT hResult = lpGetDpiForMonitor(GetMonitor(),
+                                             MDT_Effective_DPI, &x, &y);
+        if (hResult == S_OK) {
+            dpiX = static_cast<float>(x);
+            dpiY = static_cast<float>(y);
+        }
+    } else {
+        ID2D1Factory* m_pDirect2dFactory;
+        HRESULT res = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
+                                        &m_pDirect2dFactory);
+        if (res == S_OK) {
+            m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
+            m_pDirect2dFactory->Release();
+        }
+    }
+
+    if (dpiX > 0 && dpiY > 0) {
+        SetScale(dpiX / 96, dpiY / 96);
+    }
+}
+
+float AwtWin32GraphicsDevice::GetScaleX()
+{
+    return scaleX;
+}
+
+float AwtWin32GraphicsDevice::GetScaleY()
+{
+    return scaleY;
 }
 
 /**
@@ -1303,4 +1409,66 @@ JNIEXPORT void JNICALL
 {
     Devices::InstanceAccess devices;
     devices->GetDevice(screen)->SetJavaDevice(env, thisPtr);
+}
+
+/*
+ * Class:     sun_awt_Win32GraphicsDevice
+ * Method:    setNativeScale
+ * Signature: (I,F,F)V
+ */
+JNIEXPORT void JNICALL
+    Java_sun_awt_Win32GraphicsDevice_setNativeScale
+    (JNIEnv *env, jobject thisPtr, jint screen, jfloat scaleX, jfloat scaleY)
+{
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
+
+    if (device != NULL ) {
+        device->SetScale(scaleX, scaleY);
+    }
+}
+
+/*
+ * Class:     sun_awt_Win32GraphicsDevice
+ * Method:    getNativeScaleX
+ * Signature: (I)F
+ */
+JNIEXPORT jfloat JNICALL
+    Java_sun_awt_Win32GraphicsDevice_getNativeScaleX
+    (JNIEnv *env, jobject thisPtr, jint screen)
+{
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
+    return (device == NULL) ? 1 : device->GetScaleX();
+}
+
+/*
+ * Class:     sun_awt_Win32GraphicsDevice
+ * Method:    getNativeScaleY
+ * Signature: (I)F
+ */
+JNIEXPORT jfloat JNICALL
+    Java_sun_awt_Win32GraphicsDevice_getNativeScaleY
+    (JNIEnv *env, jobject thisPtr, jint screen)
+{
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
+    return (device == NULL) ? 1 : device->GetScaleY();
+}
+
+/*
+* Class:     sun_awt_Win32GraphicsDevice
+* Method:    initNativeScale
+* Signature: (I)V;
+*/
+JNIEXPORT void JNICALL
+Java_sun_awt_Win32GraphicsDevice_initNativeScale
+(JNIEnv *env, jobject thisPtr, jint screen)
+{
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
+
+    if (device != NULL) {
+        device->InitDesktopScales();
+    }
 }

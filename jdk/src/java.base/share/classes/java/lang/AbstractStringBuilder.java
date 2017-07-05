@@ -732,13 +732,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(int i) {
-        if (i == Integer.MIN_VALUE) {
-            append("-2147483648");
-            return this;
-        }
-        int appendedLength = (i < 0) ? Integer.stringSize(-i) + 1
-                                     : Integer.stringSize(i);
-        int spaceNeeded = count + appendedLength;
+        int spaceNeeded = count + Integer.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             Integer.getChars(i, spaceNeeded, value);
@@ -764,13 +758,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(long l) {
-        if (l == Long.MIN_VALUE) {
-            append("-9223372036854775808");
-            return this;
-        }
-        int appendedLength = (l < 0) ? Long.stringSize(-l) + 1
-                                     : Long.stringSize(l);
-        int spaceNeeded = count + appendedLength;
+        int spaceNeeded = count + Long.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             Long.getChars(l, spaceNeeded, value);

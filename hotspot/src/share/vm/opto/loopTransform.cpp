@@ -290,7 +290,7 @@ bool IdealLoopTree::policy_peeling( PhaseIdealLoop *phase ) const {
       if (ctrl->is_top())
         return false;           // Found dead test on live IF?  No peeling!
       // Standard IF only has one input value to check for loop invariance
-      assert( test->Opcode() == Op_If || test->Opcode() == Op_CountedLoopEnd, "Check this code when new subtype is added");
+      assert(test->Opcode() == Op_If || test->Opcode() == Op_CountedLoopEnd || test->Opcode() == Op_RangeCheck, "Check this code when new subtype is added");
       // Condition is not a member of this loop?
       if( !is_member(phase->get_loop(ctrl)) &&
           is_loop_exit(test) )
@@ -792,8 +792,10 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     return false;
   }
 
-  if(cl->do_unroll_only()) {
-    NOT_PRODUCT(if (TraceSuperWordLoopUnrollAnalysis) tty->print_cr("policy_unroll passed vector loop(vlen=%d,factor = %d)\n", slp_max_unroll_factor, future_unroll_ct));
+  if (cl->do_unroll_only()) {
+    if (TraceSuperWordLoopUnrollAnalysis) {
+      tty->print_cr("policy_unroll passed vector loop(vlen=%d,factor = %d)\n", slp_max_unroll_factor, future_unroll_ct);
+    }
   }
 
   // Unroll once!  (Each trip will soon do double iterations)
@@ -818,7 +820,9 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
       if (slp_max_unroll_factor >= future_unroll_ct) {
         int new_limit = cl->node_count_before_unroll() * slp_max_unroll_factor;
         if (new_limit > LoopUnrollLimit) {
-          NOT_PRODUCT(if (TraceSuperWordLoopUnrollAnalysis) tty->print_cr("slp analysis unroll=%d, default limit=%d\n", new_limit, _local_loop_unroll_limit));
+          if (TraceSuperWordLoopUnrollAnalysis) {
+            tty->print_cr("slp analysis unroll=%d, default limit=%d\n", new_limit, _local_loop_unroll_limit);
+          }
           _local_loop_unroll_limit = new_limit;
         }
       }
@@ -856,7 +860,8 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
   // loop-invariant.
   for (uint i = 0; i < _body.size(); i++) {
     Node *iff = _body[i];
-    if (iff->Opcode() == Op_If) { // Test?
+    if (iff->Opcode() == Op_If ||
+        iff->Opcode() == Op_RangeCheck) { // Test?
 
       // Comparing trip+off vs limit
       Node *bol = iff->in(1);
@@ -2035,8 +2040,8 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   // loop-invariant.
   for( uint i = 0; i < loop->_body.size(); i++ ) {
     Node *iff = loop->_body[i];
-    if( iff->Opcode() == Op_If ) { // Test?
-
+    if (iff->Opcode() == Op_If ||
+        iff->Opcode() == Op_RangeCheck) { // Test?
       // Test is an IfNode, has 2 projections.  If BOTH are in the loop
       // we need loop unswitching instead of iteration splitting.
       Node *exit = loop->is_loop_exit(iff);
@@ -2119,10 +2124,9 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
             conditional_rc = !loop->dominates_backedge(iff) || RangeLimitCheck;
           }
         } else {
-#ifndef PRODUCT
-          if( PrintOpto )
+          if (PrintOpto) {
             tty->print_cr("missed RCE opportunity");
-#endif
+          }
           continue;             // In release mode, ignore it
         }
       } else {                  // Otherwise work on normal compares
@@ -2157,10 +2161,9 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
           }
           break;
         default:
-#ifndef PRODUCT
-          if( PrintOpto )
+          if (PrintOpto) {
             tty->print_cr("missed RCE opportunity");
-#endif
+          }
           continue;             // Unhandled case
         }
       }
@@ -2504,9 +2507,7 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
       return false;
     }
     if (should_peel) {            // Should we peel?
-#ifndef PRODUCT
-      if (PrintOpto) tty->print_cr("should_peel");
-#endif
+      if (PrintOpto) { tty->print_cr("should_peel"); }
       phase->do_peeling(this,old_new);
     } else if (should_unswitch) {
       phase->do_unswitching(this, old_new);

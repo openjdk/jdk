@@ -300,7 +300,10 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
   }
 
   // Accessor method?
-  if (m->is_accessor()) {
+  if (m->is_getter()) {
+    // TODO: We should have used ::is_accessor above, but fast accessors in Zero expect only getters.
+    // See CppInterpreter::accessor_entry in cppInterpreter_zero.cpp. This should be fixed in Zero,
+    // then the call above updated to ::is_accessor
     assert(m->size_of_parameters() == 1, "fast code for accessors assumes parameter size = 1");
     return accessor;
   }

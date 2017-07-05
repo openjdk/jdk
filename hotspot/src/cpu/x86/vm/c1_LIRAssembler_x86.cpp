@@ -2971,6 +2971,14 @@ void LIR_Assembler::store_parameter(jobject o,  int offset_from_rsp_in_words) {
 }
 
 
+void LIR_Assembler::store_parameter(Metadata* m,  int offset_from_rsp_in_words) {
+  assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
+  int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
+  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  __ mov_metadata(Address(rsp, offset_from_rsp_in_bytes), m);
+}
+
+
 // This code replaces a call to arraycopy; no exception may
 // be thrown in this code, they must be thrown in the System.arraycopy
 // activation frame; we could save some checks if this would not be the case
@@ -3711,7 +3719,7 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
     if (left->as_xmm_float_reg() != dest->as_xmm_float_reg()) {
       __ movflt(dest->as_xmm_float_reg(), left->as_xmm_float_reg());
     }
-    if (UseAVX > 1) {
+    if (UseAVX > 0) {
       __ vnegatess(dest->as_xmm_float_reg(), dest->as_xmm_float_reg(),
                    ExternalAddress((address)float_signflip_pool));
     } else {
@@ -3722,7 +3730,7 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
     if (left->as_xmm_double_reg() != dest->as_xmm_double_reg()) {
       __ movdbl(dest->as_xmm_double_reg(), left->as_xmm_double_reg());
     }
-    if (UseAVX > 1) {
+    if (UseAVX > 0) {
       __ vnegatesd(dest->as_xmm_double_reg(), dest->as_xmm_double_reg(),
                    ExternalAddress((address)double_signflip_pool));
     } else {

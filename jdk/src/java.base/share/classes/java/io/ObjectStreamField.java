@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class ObjectStreamField
         this.name = name;
         this.type = type;
         this.unshared = unshared;
-        signature = ObjectStreamClass.getClassSignature(type).intern();
+        signature = getClassSignature(type).intern();
         field = null;
     }
 
@@ -124,6 +124,58 @@ public class ObjectStreamField
     }
 
     /**
+     * Returns JVM type signature for given primitive.
+     */
+    private static String getPrimitiveSignature(Class<?> cl) {
+        if (cl == Integer.TYPE)
+            return "I";
+        else if (cl == Byte.TYPE)
+            return "B";
+        else if (cl == Long.TYPE)
+            return "J";
+        else if (cl == Float.TYPE)
+            return "F";
+        else if (cl == Double.TYPE)
+            return "D";
+        else if (cl == Short.TYPE)
+            return "S";
+        else if (cl == Character.TYPE)
+            return "C";
+        else if (cl == Boolean.TYPE)
+            return "Z";
+        else if (cl == Void.TYPE)
+            return "V";
+        else
+            throw new InternalError();
+    }
+
+    /**
+     * Returns JVM type signature for given class.
+     */
+    static String getClassSignature(Class<?> cl) {
+        if (cl.isPrimitive()) {
+            return getPrimitiveSignature(cl);
+        } else {
+            return appendClassSignature(new StringBuilder(), cl).toString();
+        }
+    }
+
+    static StringBuilder appendClassSignature(StringBuilder sbuf, Class<?> cl) {
+        while (cl.isArray()) {
+            sbuf.append('[');
+            cl = cl.getComponentType();
+        }
+
+        if (cl.isPrimitive()) {
+            sbuf.append(getPrimitiveSignature(cl));
+        } else {
+            sbuf.append('L').append(cl.getName().replace('.', '/')).append(';');
+        }
+
+        return sbuf;
+    }
+
+    /**
      * Creates an ObjectStreamField representing the given field with the
      * specified unshared setting.  For compatibility with the behavior of
      * earlier serialization implementations, a "showType" parameter is
@@ -137,7 +189,7 @@ public class ObjectStreamField
         name = field.getName();
         Class<?> ftype = field.getType();
         type = (showType || ftype.isPrimitive()) ? ftype : Object.class;
-        signature = ObjectStreamClass.getClassSignature(ftype).intern();
+        signature = getClassSignature(ftype).intern();
     }
 
     /**

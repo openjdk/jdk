@@ -25,15 +25,12 @@
  * @test
  * @bug 8035807
  * @summary Confirm that old and new Base64 encodings are compatible.
- * @modules java.base/sun.misc
  */
 
 import java.io.*;
 import java.util.*;
 import javax.naming.*;
 import javax.naming.directory.*;
-
-import sun.misc.BASE64Decoder;
 
 /*
  * RFC 2713 specifies an encoding for Java objects stored in an LDAP directory.
@@ -48,12 +45,10 @@ import sun.misc.BASE64Decoder;
  * as the line separator. It is a compatible change.
  *
  * This test demonstrates that there is no compatability problem when
- * encoding and decoding using either Base64 coder:
+ * decoding using the new Base64 coder:
  *
- *   encode with s.m.BASE64Encoder,  decode with s.m.BASE64Decoder  => OK
- *   encode with s.m.BASE64Encoder,  decode with j.u.Base64.Decoder => OK
- *   encode with j.u.Base64.Encoder, decode with s.m.BASE64Decoder  => OK
- *   encode with j.u.Base64.Encoder, decode with j.u.Base64.Decoder => OK
+ *   encoded bytes captured from s.m.BASE64Encoder, decode with j.u.Base64.Decoder => OK
+ *   encoded bytes captured from j.u.Base64.Encoder, decode with j.u.Base64.Decoder => OK
  *
  *
  * NOTE: The two Base64 encodings used in this test were captured from
@@ -148,25 +143,9 @@ public class Base64Test {
 
         System.out.println("\nOriginal RefAddr object:\n" + BINARY_REF_ADDR);
         System.out.println("Old Base64 encoded serialized RefAddr object:\n" +
-            OLD_ENCODING);
-        System.out.println("Decode using old Base64 decoder...");
-        deserialize(new BASE64Decoder().decodeBuffer(OLD_ENCODING));
-
-        System.out.println("----");
-
-        System.out.println("\nOriginal RefAddr object:\n" + BINARY_REF_ADDR);
-        System.out.println("Old Base64 encoded serialized RefAddr object:\n" +
-            OLD_ENCODING);
+                OLD_ENCODING + "\n");
         System.out.println("Decode using new Base64 decoder...");
-        deserialize(new BASE64Decoder().decodeBuffer(OLD_ENCODING));
-
-        System.out.println("----");
-
-        System.out.println("\nOriginal RefAddr object:\n" + BINARY_REF_ADDR);
-        System.out.println("New Base64 encoded serialized RefAddr object:\n" +
-            NEW_ENCODING + "\n");
-        System.out.println("Decode using old Base64 decoder...");
-        deserialize(new BASE64Decoder().decodeBuffer(OLD_ENCODING));
+        deserialize(Base64.getMimeDecoder().decode(OLD_ENCODING));
 
         System.out.println("----");
 

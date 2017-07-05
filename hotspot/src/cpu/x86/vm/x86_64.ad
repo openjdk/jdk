@@ -536,11 +536,7 @@ source %{
 #define __ _masm.
 
 static int clear_avx_size() {
-  if(UseAVX > 2) {
-    return 0; // vzeroupper is ignored
-  } else {
-    return (Compile::current()->max_vector_size() > 16) ? 3 : 0;  // vzeroupper
-  }
+  return (Compile::current()->max_vector_size() > 16) ? 3 : 0;  // vzeroupper
 }
 
 // !!!!! Special hack to get all types of calls to specify the byte offset
@@ -871,7 +867,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
       if (framesize > 0) {
         st->print("\n\t");
         st->print("addq    rbp, #%d", framesize);
-      }      
+      }
     }
   }
 

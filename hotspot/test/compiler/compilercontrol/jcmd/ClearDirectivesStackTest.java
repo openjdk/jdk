@@ -25,7 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests clear JCMD command
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build ClearDirectivesStackTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -68,9 +68,6 @@ public class ClearDirectivesStackTest extends AbstractTestBase {
             compileCommand.print();
             builder.add(compileCommand);
         }
-        // print all directives before
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
-                Scenario.Type.JCMD, Scenario.JcmdType.PRINT));
         // clear the stack
         builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.CLEAR));

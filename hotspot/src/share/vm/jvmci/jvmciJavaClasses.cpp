@@ -30,7 +30,7 @@
 // This function is similar to javaClasses.cpp, it computes the field offset of a (static or instance) field.
 // It looks up the name and signature symbols without creating new ones, all the symbols of these classes need to be already loaded.
 
-void compute_offset(int &dest_offset, Klass* klass, const char* name, const char* signature, bool static_field) {
+void compute_offset(int &dest_offset, Klass* klass, const char* name, const char* signature, bool static_field, TRAPS) {
   InstanceKlass* ik = InstanceKlass::cast(klass);
   Symbol* name_symbol = SymbolTable::probe(name, (int)strlen(name));
   Symbol* signature_symbol = SymbolTable::probe(signature, (int)strlen(signature));
@@ -49,6 +49,11 @@ void compute_offset(int &dest_offset, Klass* klass, const char* name, const char
   guarantee(fd.is_static() == static_field, "static/instance mismatch");
   dest_offset = fd.offset();
   assert(dest_offset != 0, "must be valid offset");
+  if (static_field) {
+    // Must ensure classes for static fields are initialized as the
+    // accessor itself does not include a class initialization check.
+    ik->initialize(CHECK);
+  }
 }
 
 // This piece of macro magic creates the contents of the jvmci_compute_offsets method that initializes the field indices of all the access classes.
@@ -57,7 +62,7 @@ void compute_offset(int &dest_offset, Klass* klass, const char* name, const char
 
 #define END_CLASS }
 
-#define FIELD(klass, name, signature, static_field) compute_offset(klass::_##name##_offset, k, #name, signature, static_field);
+#define FIELD(klass, name, signature, static_field) compute_offset(klass::_##name##_offset, k, #name, signature, static_field, CHECK);
 #define CHAR_FIELD(klass, name) FIELD(klass, name, "C", false)
 #define INT_FIELD(klass, name) FIELD(klass, name, "I", false)
 #define BOOLEAN_FIELD(klass, name) FIELD(klass, name, "Z", false)
@@ -69,7 +74,7 @@ void compute_offset(int &dest_offset, Klass* klass, const char* name, const char
 #define STATIC_BOOLEAN_FIELD(klass, name) FIELD(klass, name, "Z", true)
 
 
-void JVMCIJavaClasses::compute_offsets() {
+void JVMCIJavaClasses::compute_offsets(TRAPS) {
   COMPILER_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, LONG_FIELD, FLOAT_FIELD, OOP_FIELD, OOP_FIELD, OOP_FIELD, STATIC_OOP_FIELD, STATIC_OOP_FIELD, STATIC_INT_FIELD, STATIC_BOOLEAN_FIELD)
 }
 

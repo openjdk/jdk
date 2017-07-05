@@ -243,11 +243,11 @@ JDK_INCLUDE_SUBDIR=bsd
 
 # Library suffix
 ifneq ($(STATIC_BUILD),true)
-  ifeq ($(OS_VENDOR),Darwin)
-    LIBRARY_SUFFIX=dylib
-  else
-    LIBRARY_SUFFIX=so
-  endif
+ifeq ($(OS_VENDOR),Darwin)
+  LIBRARY_SUFFIX=dylib
+else
+  LIBRARY_SUFFIX=so
+endif
 else
   LIBRARY_SUFFIX=a
 endif
@@ -325,47 +325,6 @@ ifeq ($(JVM_VARIANT_MINIMAL1),true)
   endif
 endif
 
-# Serviceability Binaries
-# No SA Support for PPC, IA64, ARM or zero
-ADD_SA_BINARIES/x86   = $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
-                        $(EXPORT_LIB_DIR)/sa-jdi.jar
-
-ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      ADD_SA_BINARIES/x86 += $(EXPORT_LIB_ARCH_DIR)/libsaproc.diz
-  else
-    ifeq ($(OS_VENDOR), Darwin)
-        ADD_SA_BINARIES/x86 += $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
-    else
-        ADD_SA_BINARIES/x86 += $(EXPORT_LIB_ARCH_DIR)/libsaproc.debuginfo
-    endif
-  endif
-endif
-
-ADD_SA_BINARIES/sparc = $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
-                        $(EXPORT_LIB_DIR)/sa-jdi.jar
-ADD_SA_BINARIES/universal = $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
-                            $(EXPORT_LIB_DIR)/sa-jdi.jar
-
-ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      ADD_SA_BINARIES/universal += $(EXPORT_LIB_ARCH_DIR)/libsaproc.diz
-  else
-    ifeq ($(OS_VENDOR), Darwin)
-        ADD_SA_BINARIES/universal += $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
-    else
-        ADD_SA_BINARIES/universal += $(EXPORT_LIB_ARCH_DIR)/libsaproc.debuginfo
-    endif
-  endif
-endif
-
-ADD_SA_BINARIES/ppc   =
-ADD_SA_BINARIES/ia64  =
-ADD_SA_BINARIES/arm   =
-ADD_SA_BINARIES/zero  =
-
-EXPORT_LIST += $(ADD_SA_BINARIES/$(HS_ARCH))
-
 # Universal build settings
 ifeq ($(OS_VENDOR), Darwin)
   # Build universal binaries by default on Mac OS X
@@ -392,9 +351,8 @@ ifeq ($(OS_VENDOR), Darwin)
 
     # Binaries to 'universalize' if built
     ifneq ($(STATIC_BUILD),true)
-      UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX)
+    UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX)
     endif
-    UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libsaproc.$(LIBRARY_SUFFIX)
     UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/server/libjvm.$(LIBRARY_SUFFIX)
     UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/client/libjvm.$(LIBRARY_SUFFIX)
 
@@ -413,12 +371,10 @@ ifeq ($(OS_VENDOR), Darwin)
           UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/libjvm.diz
           UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/client/libjvm.diz
           UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libjsig.diz
-          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libsaproc.diz
       else
           UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/libjvm.$(LIBRARY_SUFFIX).dSYM
           UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/client/libjvm.$(LIBRARY_SUFFIX).dSYM
           UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX).dSYM
-          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
       endif
     endif
 

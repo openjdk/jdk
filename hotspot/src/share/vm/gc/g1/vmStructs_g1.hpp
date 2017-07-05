@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionManager.hpp"
+#include "utilities/macros.hpp"
 
 #define VM_STRUCTS_G1(nonstatic_field, static_field)                          \
                                                                               \
@@ -62,6 +63,34 @@
                                                                               \
   nonstatic_field(HeapRegionSetCount,  _length,         uint)                 \
   nonstatic_field(HeapRegionSetCount,  _capacity,       size_t)               \
+                                                                              \
+  nonstatic_field(PtrQueue,            _active,         bool)                 \
+  nonstatic_field(PtrQueue,            _buf,            void**)               \
+  nonstatic_field(PtrQueue,            _index,          size_t)               \
+
+
+#define VM_INT_CONSTANTS_G1(declare_constant, declare_constant_with_value)    \
+                                                                              \
+  JVMCI_ONLY(                                                                 \
+    declare_constant_with_value(                                              \
+      "dirtyCardQueueBufferOffset",                                           \
+      in_bytes(DirtyCardQueue::byte_offset_of_buf()))                         \
+    declare_constant_with_value(                                              \
+      "dirtyCardQueueIndexOffset",                                            \
+      in_bytes(DirtyCardQueue::byte_offset_of_index()))                       \
+    ) /* JVMCI_ONLY */                                                        \
+                                                                              \
+  JVMCI_ONLY(                                                                 \
+    declare_constant_with_value(                                              \
+      "satbMarkQueueBufferOffset",                                            \
+      in_bytes(SATBMarkQueue::byte_offset_of_buf()))                          \
+    declare_constant_with_value(                                              \
+      "satbMarkQueueIndexOffset",                                             \
+      in_bytes(SATBMarkQueue::byte_offset_of_index()))                        \
+    declare_constant_with_value(                                              \
+      "satbMarkQueueActiveOffset",                                            \
+      in_bytes(SATBMarkQueue::byte_offset_of_active()))                       \
+    ) /* JVMCI_ONLY */                                                        \
 
 
 #define VM_TYPES_G1(declare_type, declare_toplevel_type)                      \
@@ -76,10 +105,10 @@
   declare_toplevel_type(HeapRegionSetBase)                                    \
   declare_toplevel_type(HeapRegionSetCount)                                   \
   declare_toplevel_type(G1MonitoringSupport)                                  \
+  declare_toplevel_type(PtrQueue)                                             \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
   declare_toplevel_type(HeapRegion*)                                          \
   declare_toplevel_type(G1MonitoringSupport*)                                 \
-
 
 #endif // SHARE_VM_GC_G1_VMSTRUCTS_G1_HPP

@@ -45,7 +45,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
   if (TraceTypeProfile || C->print_inlining()) {
     outputStream* out = tty;
     if (!C->print_inlining()) {
-      if (NOT_PRODUCT(!PrintOpto &&) !PrintCompilation) {
+      if (!PrintOpto && !PrintCompilation) {
         method->print_short_name();
         tty->cr();
       }
@@ -426,12 +426,10 @@ void Parse::do_call() {
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
   if (!will_link || can_not_compile_call_site(orig_callee, klass)) {
-#ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name(); tty->print_cr(" can not compile call at bci %d to:", bci());
       orig_callee->print_name(); tty->cr();
     }
-#endif
     return;
   }
   assert(holder_klass->is_loaded(), "");
@@ -634,12 +632,10 @@ void Parse::do_call() {
     // If the return type of the method is not loaded, assert that the
     // value we got is a null.  Otherwise, we need to recompile.
     if (!rtype->is_loaded()) {
-#ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
         method()->print_name(); tty->print_cr(" asserting nullness of result at bci: %d", bci());
         cg->method()->print_name(); tty->cr();
       }
-#endif
       if (C->log() != NULL) {
         C->log()->elem("assert_null reason='return' klass='%d'",
                        C->log()->identify(rtype));
@@ -851,11 +847,9 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
     if (remaining == 1) {
       push_ex_oop(ex_node);        // Push exception oop for handler
-#ifndef PRODUCT
       if (PrintOpto && WizardMode) {
         tty->print_cr("  Catching every inline exception bci:%d -> handler_bci:%d", bci(), handler_bci);
       }
-#endif
       merge_exception(handler_bci); // jump to handler
       return;                   // No more handling to be done here!
     }
@@ -882,13 +876,11 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       assert(klass->has_subklass() || tinst->klass_is_exact(), "lost exactness");
       Node* ex_oop = _gvn.transform(new CheckCastPPNode(control(), ex_node, tinst));
       push_ex_oop(ex_oop);      // Push exception oop for handler
-#ifndef PRODUCT
       if (PrintOpto && WizardMode) {
         tty->print("  Catching inline exception bci:%d -> handler_bci:%d -- ", bci(), handler_bci);
         klass->print_name();
         tty->cr();
       }
-#endif
       merge_exception(handler_bci);
     }
     set_control(not_subtype_ctrl);
@@ -1067,13 +1059,11 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass*
     // such method can be changed when its class is redefined.
     ciMethod* exact_method = callee->resolve_invoke(calling_klass, actual_receiver);
     if (exact_method != NULL) {
-#ifndef PRODUCT
       if (PrintOpto) {
         tty->print("  Calling method via exact type @%d --- ", bci);
         exact_method->print_name();
         tty->cr();
       }
-#endif
       return exact_method;
     }
   }

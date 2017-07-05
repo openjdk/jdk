@@ -36,8 +36,8 @@
  * @summary stress test for arrivals in a tiered phaser
  * @run main TieredArriveLoops 300
  */
-import java.util.*;
-import java.util.concurrent.*;
+
+import java.util.concurrent.Phaser;
 
 public class TieredArriveLoops {
     final long testDurationMillisDefault = 10L * 1000L;

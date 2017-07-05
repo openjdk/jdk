@@ -40,13 +40,21 @@
  * TIMEOUT msecs to complete.
  */
 
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
-import java.util.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.SplittableRandom;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class CancelledFutureLoops {
     static final ExecutorService pool = Executors.newCachedThreadPool();
-    static final LoopHelpers.SimpleRandom rng = new LoopHelpers.SimpleRandom();
+    static final SplittableRandom rnd = new SplittableRandom();
     static boolean print = false;
     static final int ITERS = 1000000;
     static final long TIMEOUT = 100;
@@ -61,7 +69,7 @@ public final class CancelledFutureLoops {
         for (int i = 2; i <= maxThreads; i += (i+1) >>> 1) {
             System.out.print("Threads: " + i);
             try {
-                new FutureLoop(i).test();
+                new FutureLoop(i, rnd.split()).test();
             }
             catch (BrokenBarrierException bb) {
                 // OK; ignore
@@ -72,19 +80,22 @@ public final class CancelledFutureLoops {
             Thread.sleep(TIMEOUT);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
+        if (! pool.awaitTermination(60L, SECONDS))
             throw new Error();
     }
 
     static final class FutureLoop implements Callable {
-        private int v = rng.next();
+        private final int nthreads;
+        private final SplittableRandom rnd;
         private final ReentrantLock lock = new ReentrantLock();
         private final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
         private final CyclicBarrier barrier;
-        private final int nthreads;
-        FutureLoop(int nthreads) {
+        private int v;
+        FutureLoop(int nthreads, SplittableRandom rnd) {
             this.nthreads = nthreads;
+            this.rnd = rnd;
             barrier = new CyclicBarrier(nthreads+1, timer);
+            v = rnd.nextInt();
         }
 
         final void test() throws Exception {
@@ -100,7 +111,7 @@ public final class CancelledFutureLoops {
                     tooLate = true;
                 // Unbunch some of the cancels
                 if ( (i & 3) == 0)
-                    Thread.sleep(1 + rng.next() % 10);
+                    Thread.sleep(1 + rnd.nextInt(5));
             }
 
             Object f0 = futures[0].get();
