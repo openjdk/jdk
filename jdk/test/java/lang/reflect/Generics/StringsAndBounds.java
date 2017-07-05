@@ -26,8 +26,6 @@
  * @bug 5015676 4987888 4997464
  * @summary Testing upper bounds and availability of toString methods
  * @author Joseph D. Darcy
- * @compile -source 1.5 StringsAndBounds.java
- * @run main StringsAndBounds
  */
 
 import java.lang.reflect.*;

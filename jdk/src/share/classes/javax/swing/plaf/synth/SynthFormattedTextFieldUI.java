@@ -24,16 +24,17 @@
  */
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import javax.swing.*;
+import java.awt.Graphics;
+import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 
 /**
- * Provides the look and feel implementation for
- * <code>JFormattedTextField</code>.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JFormattedTextField}.
  *
+ * @since 1.7
  */
-class SynthFormattedTextFieldUI extends SynthTextFieldUI {
+public class SynthFormattedTextFieldUI extends SynthTextFieldUI {
     /**
      * Creates a UI for a JFormattedTextField.
      *
@@ -51,15 +52,24 @@ class SynthFormattedTextFieldUI extends SynthTextFieldUI {
      *
      * @return the name "FormattedTextField"
      */
+    @Override
     protected String getPropertyPrefix() {
         return "FormattedTextField";
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     void paintBackground(SynthContext context, Graphics g, JComponent c) {
         context.getPainter().paintFormattedTextFieldBackground(context, g, 0,
                              0, c.getWidth(), c.getHeight());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintFormattedTextFieldBorder(context, g, x, y,

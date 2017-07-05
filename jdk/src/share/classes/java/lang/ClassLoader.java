@@ -175,21 +175,60 @@ import sun.security.util.SecurityConstants;
 public abstract class ClassLoader {
 
     private static native void registerNatives();
-
-    // Set of classes which are registered as parallel capable class loaders
-    private static final Set<Class<? extends ClassLoader>> parallelLoaders
-        = Collections.newSetFromMap(Collections.synchronizedMap
-              (new WeakHashMap<Class<? extends ClassLoader>, Boolean>()));
-
     static {
         registerNatives();
-        parallelLoaders.add(ClassLoader.class);
     }
 
     // The parent class loader for delegation
     // Note: VM hardcoded the offset of this field, thus all new fields
     // must be added *after* it.
     private final ClassLoader parent;
+
+    /**
+     * Encapsulates the set of parallel capable loader types.
+     */
+    private static class ParallelLoaders {
+        private ParallelLoaders() {}
+
+        // the set of parallel capable loader types
+        private static final Set<Class<? extends ClassLoader>> loaderTypes =
+            Collections.newSetFromMap(
+                new WeakHashMap<Class<? extends ClassLoader>, Boolean>());
+        static {
+            synchronized (loaderTypes) { loaderTypes.add(ClassLoader.class); }
+        }
+
+        /**
+         * Registers the given class loader type as parallel capabale.
+         * Returns {@code true} is successfully registered; {@code false} if
+         * loader's super class is not registered.
+         */
+        static boolean register(Class<? extends ClassLoader> c) {
+            synchronized (loaderTypes) {
+                if (loaderTypes.contains(c.getSuperclass())) {
+                    // register the class loader as parallel capable
+                    // if and only if all of its super classes are.
+                    // Note: given current classloading sequence, if
+                    // the immediate super class is parallel capable,
+                    // all the super classes higher up must be too.
+                    loaderTypes.add(c);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        /**
+         * Returns {@code true} if the given class loader type is
+         * registered as parallel capable.
+         */
+        static boolean isRegistered(Class<? extends ClassLoader> c) {
+            synchronized (loaderTypes) {
+                return loaderTypes.contains(c);
+            }
+        }
+    }
 
     // Maps class name to the corresponding lock object when the current
     // class loader is parallel capable.
@@ -237,7 +276,7 @@ public abstract class ClassLoader {
 
     private ClassLoader(Void unused, ClassLoader parent) {
         this.parent = parent;
-        if (parallelLoaders.contains(this.getClass())) {
+        if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<String, Object>();
             package2certs = new ConcurrentHashMap<String, Certificate[]>();
             domains =
@@ -1194,24 +1233,7 @@ public abstract class ClassLoader {
      * @since   1.7
      */
     protected static boolean registerAsParallelCapable() {
-        Class<? extends ClassLoader> caller = getCaller(1);
-        Class superCls = caller.getSuperclass();
-        boolean result = false;
-        // Explicit synchronization needed for composite action
-        synchronized (parallelLoaders) {
-            if (!parallelLoaders.contains(caller)) {
-                if (parallelLoaders.contains(superCls)) {
-                    // register the immediate caller as parallel capable
-                    // if and only if all of its super classes are.
-                    // Note: given current classloading sequence, if
-                    // the immediate super class is parallel capable,
-                    // all the super classes higher up must be too.
-                    result = true;
-                    parallelLoaders.add(caller);
-                }
-            } else result = true;
-        }
-        return result;
+        return ParallelLoaders.register(getCaller(1));
     }
 
     /**
@@ -2174,4 +2196,3 @@ class SystemClassLoaderAction
         return sys;
     }
 }
-

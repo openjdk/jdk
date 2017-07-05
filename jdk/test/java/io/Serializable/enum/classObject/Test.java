@@ -25,9 +25,6 @@
  * @bug 4838379
  * @summary Verify that serialization of Class objects for enum types works
  *          properly.
- *
- * @compile -source 1.5 Test.java
- * @run main Test
  */
 
 import java.io.*;

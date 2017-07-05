@@ -25,9 +25,6 @@
  * @bug 4838379
  * @summary Verify that basic serialization of non-specialized enum constants
  *          functions properly.
- *
- * @compile -source 1.5 Test.java
- * @run main Test
  */
 
 import java.io.*;

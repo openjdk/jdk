@@ -26,9 +26,6 @@
  * @bug     4947536
  * @summary Basic unit test of ManagementFactory.getPlatformMBeanServer()
  * @author  Mandy Chung
- *
- * @compile -source 1.5 PlatformMBeanServerTest.java
- * @run main PlatformMBeanServerTest
  */
 
 import java.lang.management.*;

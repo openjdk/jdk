@@ -33,7 +33,6 @@ import java.security.Permission;
 import java.security.BasicPermission;
 import java.security.SecurityPermission;
 import java.security.AllPermission;
-import javax.security.auth.AuthPermission;
 
 /**
  * Permission constants and string constants used to create permissions
@@ -259,12 +258,4 @@ public final class SecurityConstants {
     // java.lang.SecurityManager
     public static final SocketPermission LOCAL_LISTEN_PERMISSION =
         new SocketPermission("localhost:1024-", SOCKET_LISTEN_ACTION);
-
-    // javax.security.auth.Subject
-    public static final AuthPermission DO_AS_PERMISSION =
-        new AuthPermission("doAs");
-
-    // javax.security.auth.Subject
-    public static final AuthPermission DO_AS_PRIVILEGED_PERMISSION =
-        new AuthPermission("doAsPrivileged");
 }

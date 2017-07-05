@@ -32,7 +32,6 @@ import java.beans.PropertyChangeListener;
 
 import javax.swing.*;
 import javax.swing.event.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.text.View;
 
@@ -54,7 +53,12 @@ public class BasicMenuItemUI extends MenuItemUI
     protected Color disabledForeground;
     protected Color acceleratorForeground;
     protected Color acceleratorSelectionForeground;
-    private   String acceleratorDelimiter;
+
+    /**
+     * Accelerator delimiter string, such as {@code '+'} in {@code 'Ctrl+C'}.
+     * @since 1.7
+     */
+    protected String acceleratorDelimiter;
 
     protected int defaultTextIconGap;
     protected Font acceleratorFont;

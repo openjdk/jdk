@@ -26,7 +26,7 @@
  * @bug 5012882
  * @summary Test jvmti hprof
  *
- * @compile -source 1.5 -g:lines HelloWorld.java ../DemoRun.java
+ * @compile -g:lines HelloWorld.java ../DemoRun.java
  * @build CpuSamplesTest
  * @run main CpuSamplesTest HelloWorld
  */

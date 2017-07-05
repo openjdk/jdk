@@ -27,7 +27,7 @@
  * @summary please add a typesafe cast for Class<?> types
  * @author gafter
  *
- * @compile -Xlint:unchecked -Werror -source 1.5 BasicUnit.java
+ * @compile -Xlint:unchecked -Werror BasicUnit.java
  * @run main BasicUnit
  */
 
