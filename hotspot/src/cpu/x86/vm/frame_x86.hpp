@@ -163,6 +163,14 @@
     return (intptr_t*) addr_at(offset);
   }
 
+#if ASSERT
+  // Used in frame::sender_for_{interpreter,compiled}_frame
+  static void verify_deopt_original_pc(   nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return = false);
+  static void verify_deopt_mh_original_pc(nmethod* nm, intptr_t* unextended_sp) {
+    verify_deopt_original_pc(nm, unextended_sp, true);
+  }
+#endif
+
  public:
   // Constructors
 

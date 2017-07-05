@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,8 @@ void Compilation::emit_lir() {
 void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   CHECK_BAILOUT();
 
+  CodeOffsets* code_offsets = assembler->offsets();
+
   // generate code or slow cases
   assembler->emit_slow_case_stubs();
   CHECK_BAILOUT();
@@ -213,10 +215,18 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   assembler->emit_exception_entries(exception_info_list());
   CHECK_BAILOUT();
 
-  // generate code for exception handler
-  assembler->emit_exception_handler();
+  // Generate code for exception handler.
+  code_offsets->set_value(CodeOffsets::Exceptions, assembler->emit_exception_handler());
   CHECK_BAILOUT();
-  assembler->emit_deopt_handler();
+
+  // Generate code for deopt handler.
+  code_offsets->set_value(CodeOffsets::Deopt, assembler->emit_deopt_handler());
+  CHECK_BAILOUT();
+
+  // Generate code for MethodHandle deopt handler.  We can use the
+  // same code as for the normal deopt handler, we just need a
+  // different entry point address.
+  code_offsets->set_value(CodeOffsets::DeoptMH, assembler->emit_deopt_handler());
   CHECK_BAILOUT();
 
   // done

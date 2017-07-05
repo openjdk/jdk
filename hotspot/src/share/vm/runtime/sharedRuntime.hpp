@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 class AdapterHandlerEntry;
+class AdapterHandlerTable;
+class AdapterFingerPrint;
 class vframeStream;
 
 // Runtime is the base class for various runtime interfaces
@@ -337,7 +339,8 @@ class SharedRuntime: AllStatic {
                                                       int total_args_passed,
                                                       int max_arg,
                                                       const BasicType *sig_bt,
-                                                      const VMRegPair *regs);
+                                                      const VMRegPair *regs,
+                                                      AdapterFingerPrint* fingerprint);
 
   // OSR support
 
@@ -528,28 +531,64 @@ class SharedRuntime: AllStatic {
 // used by the adapters.  The code generation happens here because it's very
 // similar to what the adapters have to do.
 
-class AdapterHandlerEntry : public CHeapObj {
+class AdapterHandlerEntry : public BasicHashtableEntry {
+  friend class AdapterHandlerTable;
+
  private:
+  AdapterFingerPrint* _fingerprint;
   address _i2c_entry;
   address _c2i_entry;
   address _c2i_unverified_entry;
 
- public:
+#ifdef ASSERT
+  // Captures code and signature used to generate this adapter when
+  // verifing adapter equivalence.
+  unsigned char* _saved_code;
+  int            _code_length;
+  BasicType*     _saved_sig;
+  int            _total_args_passed;
+#endif
 
+  void init(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry) {
+    _fingerprint = fingerprint;
+    _i2c_entry = i2c_entry;
+    _c2i_entry = c2i_entry;
+    _c2i_unverified_entry = c2i_unverified_entry;
+#ifdef ASSERT
+    _saved_code = NULL;
+    _code_length = 0;
+    _saved_sig = NULL;
+    _total_args_passed = 0;
+#endif
+  }
+
+  void deallocate();
+
+  // should never be used
+  AdapterHandlerEntry();
+
+ public:
   // The name we give all buffer blobs
   static const char* name;
-
-  AdapterHandlerEntry(address i2c_entry, address c2i_entry, address c2i_unverified_entry):
-    _i2c_entry(i2c_entry),
-    _c2i_entry(c2i_entry),
-    _c2i_unverified_entry(c2i_unverified_entry) {
-  }
 
   address get_i2c_entry()            { return _i2c_entry; }
   address get_c2i_entry()            { return _c2i_entry; }
   address get_c2i_unverified_entry() { return _c2i_unverified_entry; }
 
   void relocate(address new_base);
+
+  AdapterFingerPrint* fingerprint()  { return _fingerprint; }
+
+  AdapterHandlerEntry* next() {
+    return (AdapterHandlerEntry*)BasicHashtableEntry::next();
+  }
+
+#ifdef ASSERT
+  // Used to verify that code generated for shared adapters is equivalent
+  void save_code(unsigned char* code, int length, int total_args_passed, BasicType* sig_bt);
+  bool compare_code(unsigned char* code, int length, int total_args_passed, BasicType* sig_bt);
+#endif
+
 #ifndef PRODUCT
   void print();
 #endif /* PRODUCT */
@@ -558,30 +597,18 @@ class AdapterHandlerEntry : public CHeapObj {
 class AdapterHandlerLibrary: public AllStatic {
  private:
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache
-  static GrowableArray<uint64_t>* _fingerprints; // the fingerprint collection
-  static GrowableArray<AdapterHandlerEntry*> * _handlers; // the corresponding handlers
-  enum {
-    AbstractMethodHandler = 1 // special handler for abstract methods
-  };
+  static AdapterHandlerTable* _adapters;
+  static AdapterHandlerEntry* _abstract_method_handler;
   static BufferBlob* buffer_blob();
   static void initialize();
-  static int get_create_adapter_index(methodHandle method);
-  static address get_i2c_entry( int index ) {
-    return get_entry(index)->get_i2c_entry();
-  }
-  static address get_c2i_entry( int index ) {
-    return get_entry(index)->get_c2i_entry();
-  }
-  static address get_c2i_unverified_entry( int index ) {
-    return get_entry(index)->get_c2i_unverified_entry();
-  }
 
  public:
-  static AdapterHandlerEntry* get_entry( int index ) { return _handlers->at(index); }
+
+  static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,
+                                        address i2c_entry, address c2i_entry, address c2i_unverified_entry);
   static nmethod* create_native_wrapper(methodHandle method);
-  static AdapterHandlerEntry* get_adapter(methodHandle method)  {
-    return get_entry(get_create_adapter_index(method));
-  }
+  static AdapterHandlerEntry* get_adapter(methodHandle method);
+
 #ifdef HAVE_DTRACE_H
   static nmethod* create_dtrace_nmethod (methodHandle method);
 #endif // HAVE_DTRACE_H
@@ -589,6 +616,7 @@ class AdapterHandlerLibrary: public AllStatic {
 #ifndef PRODUCT
   static void print_handler(CodeBlob* b);
   static bool contains(CodeBlob* b);
+  static void print_statistics();
 #endif /* PRODUCT */
 
 };
