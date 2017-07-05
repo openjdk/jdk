@@ -60,8 +60,8 @@ public class ThreadMXBeanProxy {
         thread.setDaemon(true);
         thread.start();
 
-        // wait until myThread acquires mutex
-        while (!mutex.isLocked()) {
+        // wait until myThread acquires mutex and lock owner is set.
+        while (!(mutex.isLocked() && mutex.getLockOwner() == thread)) {
            try {
                Thread.sleep(100);
            } catch (InterruptedException e) {
@@ -73,17 +73,17 @@ public class ThreadMXBeanProxy {
 
         // validate the local access
         ThreadInfo[] infos = getThreadMXBean().getThreadInfo(ids, true, true);
-        if (ids.length != 1) {
+        if (infos.length != 1) {
             throw new RuntimeException("Returned ThreadInfo[] of length=" +
-                ids.length + ". Expected to be 1.");
+                infos.length + ". Expected to be 1.");
         }
         thread.checkThreadInfo(infos[0]);
 
         // validate the remote access
         infos = mbean.getThreadInfo(ids, true, true);
-        if (ids.length != 1) {
+        if (infos.length != 1) {
             throw new RuntimeException("Returned ThreadInfo[] of length=" +
-                ids.length + ". Expected to be 1.");
+                infos.length + ". Expected to be 1.");
         }
         thread.checkThreadInfo(infos[0]);
 
@@ -160,8 +160,7 @@ public class ThreadMXBeanProxy {
             LockInfo[] syncs = info.getLockedSynchronizers();
             if (syncs.length != OWNED_SYNCS) {
                 throw new RuntimeException("Number of locked syncs = " +
-                    syncs.length +
-                    " not matched. Expected: " + OWNED_SYNCS);
+                        syncs.length + " not matched. Expected: " + OWNED_SYNCS);
             }
             AbstractOwnableSynchronizer s = mutex.getSync();
             String lockName = s.getClass().getName();
@@ -174,7 +173,6 @@ public class ThreadMXBeanProxy {
                 throw new RuntimeException("LockInfo: " + syncs[0] +
                     " IdentityHashCode not matched. Expected: " + hcode);
             }
-
         }
     }
     static class Mutex implements Lock, java.io.Serializable {
@@ -214,6 +212,10 @@ public class ThreadMXBeanProxy {
                 s.defaultReadObject();
                 setState(0); // reset to unlocked state
             }
+
+            protected Thread getLockOwner() {
+                return getExclusiveOwnerThread();
+            }
         }
 
         // The sync object does all the hard work. We just forward to it.
@@ -231,6 +233,8 @@ public class ThreadMXBeanProxy {
         public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
             return sync.tryAcquireNanos(1, unit.toNanos(timeout));
         }
+
+        public Thread getLockOwner()     { return sync.getLockOwner(); }
 
         public AbstractOwnableSynchronizer getSync() { return sync; }
     }

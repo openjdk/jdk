@@ -465,6 +465,11 @@ void GenCollectedHeap::do_collection(bool  full,
         _gens[i]->stat_record()->invocations++;
         _gens[i]->stat_record()->accumulated_time.start();
 
+        // Must be done anew before each collection because
+        // a previous collection will do mangling and will
+        // change top of some spaces.
+        record_gen_tops_before_GC();
+
         if (PrintGC && Verbose) {
           gclog_or_tty->print("level=%d invoke=%d size=" SIZE_FORMAT,
                      i,
@@ -1058,6 +1063,12 @@ ScratchBlock* GenCollectedHeap::gather_scratch(Generation* requestor,
   return res;
 }
 
+void GenCollectedHeap::release_scratch() {
+  for (int i = 0; i < _n_gens; i++) {
+    _gens[i]->reset_scratch();
+  }
+}
+
 size_t GenCollectedHeap::large_typearray_limit() {
   return gen_policy()->large_typearray_limit();
 }
@@ -1284,6 +1295,24 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 
   always_do_update_barrier = UseConcMarkSweepGC;
 };
+
+#ifndef PRODUCT
+class GenGCSaveTopsBeforeGCClosure: public GenCollectedHeap::GenClosure {
+ private:
+ public:
+  void do_generation(Generation* gen) {
+    gen->record_spaces_top();
+  }
+};
+
+void GenCollectedHeap::record_gen_tops_before_GC() {
+  if (ZapUnusedHeapArea) {
+    GenGCSaveTopsBeforeGCClosure blk;
+    generation_iterate(&blk, false);  // not old-to-young.
+    perm_gen()->record_spaces_top();
+  }
+}
+#endif  // not PRODUCT
 
 class GenEnsureParsabilityClosure: public GenCollectedHeap::GenClosure {
  public:

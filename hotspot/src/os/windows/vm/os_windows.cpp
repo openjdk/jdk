@@ -985,6 +985,28 @@ const char * os::get_temp_directory()
     }
 }
 
+void os::dll_build_name(char *holder, size_t holderlen,
+                        const char* pname, const char* fname)
+{
+    // copied from libhpi
+    const size_t pnamelen = pname ? strlen(pname) : 0;
+    const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
+
+    /* Quietly truncates on buffer overflow. Should be an error. */
+    if (pnamelen + strlen(fname) + 10 > holderlen) {
+        *holder = '\0';
+        return;
+    }
+
+    if (pnamelen == 0) {
+        sprintf(holder, "%s.dll", fname);
+    } else if (c == ':' || c == '\\') {
+        sprintf(holder, "%s%s.dll", pname, fname);
+    } else {
+        sprintf(holder, "%s\\%s.dll", pname, fname);
+    }
+}
+
 // Needs to be in os specific directory because windows requires another
 // header file <direct.h>
 const char* os::get_current_directory(char *buf, int buflen) {
@@ -1248,6 +1270,10 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
+void* os::dll_lookup(void* handle, const char* name) {
+  return GetProcAddress((HMODULE)handle, name);
+}
+
 // save the start and end address of jvm.dll into param[0] and param[1]
 static int _locate_jvm_dll(int pid, char* mod_fname, address base_addr,
                     unsigned size, void * param) {
@@ -1421,44 +1447,78 @@ void os::print_dll_info(outputStream *st) {
    enumerate_modules(pid, _print_module, (void *)st);
 }
 
+// function pointer to Windows API "GetNativeSystemInfo".
+typedef void (WINAPI *GetNativeSystemInfo_func_type)(LPSYSTEM_INFO);
+static GetNativeSystemInfo_func_type _GetNativeSystemInfo;
+
 void os::print_os_info(outputStream* st) {
-   st->print("OS:");
+  st->print("OS:");
 
-   OSVERSIONINFOEX osvi;
-   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
-   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+  OSVERSIONINFOEX osvi;
+  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
-   if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
-      st->print_cr("N/A");
-      return;
-   }
+  if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
+    st->print_cr("N/A");
+    return;
+  }
 
-   int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
-
-   if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-     switch (os_vers) {
-       case 3051: st->print(" Windows NT 3.51"); break;
-       case 4000: st->print(" Windows NT 4.0"); break;
-       case 5000: st->print(" Windows 2000"); break;
-       case 5001: st->print(" Windows XP"); break;
-       case 5002: st->print(" Windows Server 2003 family"); break;
-       case 6000: st->print(" Windows Vista"); break;
-       default: // future windows, print out its major and minor versions
-                st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-     }
-   } else {
-     switch (os_vers) {
-       case 4000: st->print(" Windows 95"); break;
-       case 4010: st->print(" Windows 98"); break;
-       case 4090: st->print(" Windows Me"); break;
-       default: // future windows, print out its major and minor versions
-                st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-     }
-   }
-
-   st->print(" Build %d", osvi.dwBuildNumber);
-   st->print(" %s", osvi.szCSDVersion);           // service pack
-   st->cr();
+  int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
+  if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+    switch (os_vers) {
+    case 3051: st->print(" Windows NT 3.51"); break;
+    case 4000: st->print(" Windows NT 4.0"); break;
+    case 5000: st->print(" Windows 2000"); break;
+    case 5001: st->print(" Windows XP"); break;
+    case 5002:
+    case 6000: {
+      // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
+      // find out whether we are running on 64 bit processor or not.
+      SYSTEM_INFO si;
+      ZeroMemory(&si, sizeof(SYSTEM_INFO));
+      // Check to see if _GetNativeSystemInfo has been initialized.
+      if (_GetNativeSystemInfo == NULL) {
+        HMODULE hKernel32 = GetModuleHandle(TEXT("kernel32.dll"));
+        _GetNativeSystemInfo =
+            CAST_TO_FN_PTR(GetNativeSystemInfo_func_type,
+                           GetProcAddress(hKernel32,
+                                          "GetNativeSystemInfo"));
+        if (_GetNativeSystemInfo == NULL)
+          GetSystemInfo(&si);
+      } else {
+        _GetNativeSystemInfo(&si);
+      }
+      if (os_vers == 5002) {
+        if (osvi.wProductType == VER_NT_WORKSTATION &&
+            si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+          st->print(" Windows XP x64 Edition");
+        else
+            st->print(" Windows Server 2003 family");
+      } else { // os_vers == 6000
+        if (osvi.wProductType == VER_NT_WORKSTATION)
+            st->print(" Windows Vista");
+        else
+            st->print(" Windows Server 2008");
+        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+            st->print(" , 64 bit");
+      }
+      break;
+    }
+    default: // future windows, print out its major and minor versions
+      st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
+    }
+  } else {
+    switch (os_vers) {
+    case 4000: st->print(" Windows 95"); break;
+    case 4010: st->print(" Windows 98"); break;
+    case 4090: st->print(" Windows Me"); break;
+    default: // future windows, print out its major and minor versions
+      st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
+    }
+  }
+  st->print(" Build %d", osvi.dwBuildNumber);
+  st->print(" %s", osvi.szCSDVersion);           // service pack
+  st->cr();
 }
 
 void os::print_memory_info(outputStream* st) {
