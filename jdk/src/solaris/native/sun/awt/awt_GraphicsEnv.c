@@ -45,7 +45,6 @@
 #include <stdlib.h>
 
 #include "awt_GraphicsEnv.h"
-#include "awt_Window.h"
 #include "awt_util.h"
 #include "gdefs.h"
 #include <dlfcn.h>
@@ -94,8 +93,6 @@ jboolean awtLockInited = JNI_FALSE;
 
 struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
 struct X11GraphicsDeviceIDs x11GraphicsDeviceIDs;
-extern struct WindowIDs mWindowIDs;
-extern struct MWindowPeerIDs mWindowPeerIDs;
 
 #ifndef HEADLESS
 int awtCreateX11Colormap(AwtGraphicsConfigDataPtr adata);
@@ -569,75 +566,6 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
     AWT_UNLOCK ();
 }
-
-/*
- * Determing if this top-level has been moved onto another Xinerama screen.
- * Called from awt_TopLevel.c
- *
- * ASSUME: wdata != null
- */
-#ifndef HEADLESS
-void checkNewXineramaScreen(JNIEnv* env, jobject peer, struct FrameData* wdata,
-                            int32_t newX, int32_t newY,
-                            int32_t newWidth, int32_t newHeight) {
-    int i;
-    int amt;
-    int totAmt = 0;
-    int largestAmt = 0;
-    int largestAmtScr = 0;
-
-    int horiz;
-    int vert;
-
-    if (!usingXinerama) { return; }
-
-    totAmt = newWidth * newHeight;
-
-    /* assert that peer implements WindowPeer */
-    DASSERT(JNU_IsInstanceOfByName(env, peer, "java/awt/peer/WindowPeer"));
-
-    DTRACE_PRINTLN4("checkNewXineramaScreen() x=%i y=%i w=%i h=%i\n",newX, newY, newWidth, newHeight);
-
-    /* decide which screen we're on
-     * if we're spanning, figure out which screen we're most on
-     */
-    for (i = 0; i < awt_numScreens; i++) {
-        if (INTERSECTS(newX, newX + newWidth, newY, newY + newHeight,
-                       fbrects[i].x, fbrects[i].x + fbrects[i].width,
-                       fbrects[i].y, fbrects[i].y + fbrects[i].height)) {
-
-            /* calc how much of window is on this screen */
-            horiz = MIN(newX + newWidth, fbrects[i].x + fbrects[i].width) -
-                    MAX(newX, fbrects[i].x);
-            vert =  MIN(newY + newHeight, fbrects[i].y + fbrects[i].height) -
-                    MAX(newY, fbrects[i].y);
-            DASSERT(horiz > 0);
-            DASSERT(vert > 0);
-
-            amt = horiz * vert;
-            if (amt == totAmt) {
-                /* completely on this screen - done! */
-                largestAmtScr = i;
-                break;
-            }
-            if (amt > largestAmt) {
-                largestAmt = amt;
-                largestAmtScr = i;
-            }
-        }
-    }
-
-#ifndef XAWT
-    /* check if we're on a new screen */
-    if (largestAmtScr != wdata->screenNum) {
-        wdata->screenNum = largestAmtScr;
-        /* update peer, target Comp */
-        (*env)->CallVoidMethod(env, peer,
-                               mWindowPeerIDs.draggedToScreenMID, largestAmtScr);
-    }
-#endif /* XAWT */
-}
-#endif /* HEADLESS */
 
 #ifndef HEADLESS
 #ifdef __linux__
@@ -1434,11 +1362,17 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
                                                         fbrects[screen].height);
         }
         else {
+            XWindowAttributes xwa;
+            memset(&xwa, 0, sizeof(xwa));
+
+            AWT_LOCK ();
+            XGetWindowAttributes(awt_display,
+                    RootWindow(awt_display, adata->awt_visInfo.screen),
+                    &xwa);
+            AWT_UNLOCK ();
+
             bounds = (*env)->NewObject(env, clazz, mid, 0, 0,
-                                   DisplayWidth(awt_display,
-                                                adata->awt_visInfo.screen),
-                                   DisplayHeight(awt_display,
-                                                 adata->awt_visInfo.screen));
+                    xwa.width, xwa.height);
         }
 
         if ((*env)->ExceptionOccurred(env)) {

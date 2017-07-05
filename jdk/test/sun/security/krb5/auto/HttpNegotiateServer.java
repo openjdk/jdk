@@ -178,7 +178,6 @@ public class HttpNegotiateServer {
                 "    com.sun.security.auth.module.Krb5LoginModule required;\n};\n"
                 ).getBytes());
         fos.close();
-        f.deleteOnExit();
 
         HttpServer h1 = httpd("Negotiate", false,
                 "HTTP/" + WEB_HOST + "@" + REALM_WEB, KRB5_TAB);

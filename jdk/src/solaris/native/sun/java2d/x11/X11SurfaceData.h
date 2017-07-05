@@ -30,6 +30,10 @@
 
 #include <jdga.h>
 
+#ifdef HEADLESS
+#include "GLXGraphicsConfig.h"
+#endif
+
 #include <X11/extensions/Xrender.h>
 
 /**

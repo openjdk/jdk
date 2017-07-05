@@ -68,4 +68,7 @@ public class InputMethodJFrame
             return super.getInputContext();
         }
     }
+
+    // Proclaim serial compatibility with 1.7.0
+    private static final long serialVersionUID = -4705856747771842549L;
 }

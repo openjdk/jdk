@@ -58,3 +58,14 @@ JNIEXPORT jint ZIP_CRC32(jint crc, const jbyte *buf, jint len)
 {
     return crc32(crc, (Bytef*)buf, len);
 }
+
+JNIEXPORT jint JNICALL
+Java_java_util_zip_CRC32_updateByteBuffer(JNIEnv *env, jclass cls, jint crc,
+                                          jlong address, jint off, jint len)
+{
+    Bytef *buf = (Bytef *)jlong_to_ptr(address);
+    if (buf) {
+        crc = crc32(crc, buf + off, len);
+    }
+    return crc;
+}

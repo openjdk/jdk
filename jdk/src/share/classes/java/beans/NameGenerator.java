@@ -43,12 +43,12 @@ import static java.util.Locale.ENGLISH;
  */
 class NameGenerator {
 
-    private Map valueToName;
-    private Map nameToCount;
+    private Map<Object, String> valueToName;
+    private Map<String, Integer> nameToCount;
 
     public NameGenerator() {
-        valueToName = new IdentityHashMap();
-        nameToCount = new HashMap();
+        valueToName = new IdentityHashMap<>();
+        nameToCount = new HashMap<>();
     }
 
     /**
@@ -63,6 +63,7 @@ class NameGenerator {
     /**
      * Returns the root name of the class.
      */
+    @SuppressWarnings("rawtypes")
     public static String unqualifiedClassName(Class type) {
         if (type.isArray()) {
             return unqualifiedClassName(type.getComponentType())+"Array";
@@ -97,15 +98,15 @@ class NameGenerator {
             return unqualifiedClassName((Class)instance);
         }
         else {
-            String result = (String)valueToName.get(instance);
+            String result = valueToName.get(instance);
             if (result != null) {
                 return result;
             }
-            Class type = instance.getClass();
+            Class<?> type = instance.getClass();
             String className = unqualifiedClassName(type);
 
-            Object size = nameToCount.get(className);
-            int instanceNumber = (size == null) ? 0 : ((Integer)size).intValue() + 1;
+            Integer size = nameToCount.get(className);
+            int instanceNumber = (size == null) ? 0 : (size).intValue() + 1;
             nameToCount.put(className, new Integer(instanceNumber));
 
             result = className + instanceNumber;

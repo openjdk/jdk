@@ -38,6 +38,8 @@ import java.lang.LinkageError;
 public
 class InvalidJarIndexException extends RuntimeException {
 
+    static final long serialVersionUID = -6159797516569680148L;
+
     /**
      * Constructs an <code>InvalidJarIndexException</code> with no
      * detail message.

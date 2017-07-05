@@ -40,5 +40,5 @@ public interface JavaUtilJarAccess {
     public Enumeration<String> entryNames(JarFile jar, CodeSource[] cs);
     public Enumeration<JarEntry> entries2(JarFile jar);
     public void setEagerValidation(JarFile jar, boolean eager);
-    public List getManifestDigests(JarFile jar);
+    public List<Object> getManifestDigests(JarFile jar);
 }

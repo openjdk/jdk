@@ -98,11 +98,11 @@ public final class NormalizerImpl {
     private static final int EXTRA_SHIFT=16;
 
     /* norm32 value constants using >16 bits */
-    private static final long  MIN_SPECIAL    =  (long)(0xfc000000 & UNSIGNED_INT_MASK);
-    private static final long  SURROGATES_TOP =  (long)(0xfff00000 & UNSIGNED_INT_MASK);
-    private static final long  MIN_HANGUL     =  (long)(0xfff00000 & UNSIGNED_INT_MASK);
-//  private static final long  MIN_JAMO_V     =  (long)(0xfff20000 & UNSIGNED_INT_MASK);
-    private static final long  JAMO_V_TOP     =  (long)(0xfff30000 & UNSIGNED_INT_MASK);
+    private static final long  MIN_SPECIAL    =  0xfc000000 & UNSIGNED_INT_MASK;
+    private static final long  SURROGATES_TOP =  0xfff00000 & UNSIGNED_INT_MASK;
+    private static final long  MIN_HANGUL     =  0xfff00000 & UNSIGNED_INT_MASK;
+//  private static final long  MIN_JAMO_V     =  0xfff20000 & UNSIGNED_INT_MASK;
+    private static final long  JAMO_V_TOP     =  0xfff30000 & UNSIGNED_INT_MASK;
 
 
     /* indexes[] value names */
@@ -134,7 +134,7 @@ public final class NormalizerImpl {
     private static final int AUX_COMP_EX_SHIFT           = 10;
     private static final int AUX_NFC_SKIPPABLE_F_SHIFT = 12;
 
-    private static final int AUX_MAX_FNC          =   ((int)1<<AUX_COMP_EX_SHIFT);
+    private static final int AUX_MAX_FNC          =   1<<AUX_COMP_EX_SHIFT;
     private static final int AUX_UNSAFE_MASK      =   (int)((1<<AUX_UNSAFE_SHIFT) & UNSIGNED_INT_MASK);
     private static final int AUX_FNC_MASK         =   (int)((AUX_MAX_FNC-1) & UNSIGNED_INT_MASK);
     private static final int AUX_COMP_EX_MASK     =   (int)((1<<AUX_COMP_EX_SHIFT) & UNSIGNED_INT_MASK);
@@ -188,7 +188,7 @@ public final class NormalizerImpl {
         */
         /* auxTrie: the folding offset is in bits 9..0 of the 16-bit trie result */
         public int getFoldingOffset(int value){
-            return (int)(value &AUX_FNC_MASK)<<SURROGATE_BLOCK_BITS;
+            return (value &AUX_FNC_MASK)<<SURROGATE_BLOCK_BITS;
         }
     }
 
@@ -972,7 +972,7 @@ public final class NormalizerImpl {
 
             /* copy these code units all at once */
             if(srcIndex!=prevSrc) {
-                length=(int)(srcIndex-prevSrc);
+                length=srcIndex-prevSrc;
                 if((destIndex+length)<=destLimit) {
                     System.arraycopy(src,prevSrc,dest,destIndex,length);
                 }
@@ -1814,7 +1814,7 @@ public final class NormalizerImpl {
 
             /* copy these code units all at once */
             if(srcIndex!=prevSrc) {
-                length=(int)(srcIndex-prevSrc);
+                length=srcIndex-prevSrc;
                 if((destIndex+length)<=destLimit) {
                     System.arraycopy(src,prevSrc,dest,destIndex,length);
                 }
@@ -2022,13 +2022,13 @@ public final class NormalizerImpl {
     public static int getCombiningClass(int c) {
         long norm32;
         norm32=getNorm32(c);
-        return (char)((norm32>>CC_SHIFT)&0xFF);
+        return (int)((norm32>>CC_SHIFT)&0xFF);
     }
 
     public static boolean isFullCompositionExclusion(int c) {
         if(isFormatVersion_2_1) {
             int aux =AuxTrieImpl.auxTrie.getCodePointValue(c);
-            return (boolean)((aux & AUX_COMP_EX_MASK)!=0);
+            return (aux & AUX_COMP_EX_MASK)!=0;
         } else {
             return false;
         }
@@ -2037,7 +2037,7 @@ public final class NormalizerImpl {
     public static boolean isCanonSafeStart(int c) {
         if(isFormatVersion_2_1) {
             int aux = AuxTrieImpl.auxTrie.getCodePointValue(c);
-            return (boolean)((aux & AUX_UNSAFE_MASK)==0);
+            return (aux & AUX_UNSAFE_MASK)==0;
         } else {
             return false;
         }
@@ -2546,7 +2546,7 @@ public final class NormalizerImpl {
 
             // copy these code units all at once
             if (srcIndex != prevSrc) {
-                length = (int)(srcIndex - prevSrc);
+                length = srcIndex - prevSrc;
                 if ((destIndex + length) <= destLimit) {
                     System.arraycopy(src,prevSrc,dest,destIndex,length);
                 }

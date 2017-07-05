@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.util.calendar;
 
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -203,7 +202,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
             return false;
         }
         int dow = bdate.getDayOfWeek();
-        if (dow != bdate.FIELD_UNDEFINED && dow != getDayOfWeek(bdate)) {
+        if (dow != Date.FIELD_UNDEFINED && dow != getDayOfWeek(bdate)) {
             return false;
         }
 
@@ -329,7 +328,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
     }
 
     // accepts 0 (December in the previous year) to 12.
-    private final int getMonthLength(int year, int month) {
+    private int getMonthLength(int year, int month) {
         int days = DAYS_IN_MONTH[month];
         if (month == FEBRUARY && isLeapYear(year)) {
             days++;

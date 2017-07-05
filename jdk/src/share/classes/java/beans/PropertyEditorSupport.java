@@ -251,7 +251,7 @@ public class PropertyEditorSupport implements PropertyEditor {
     public synchronized void addPropertyChangeListener(
                                 PropertyChangeListener listener) {
         if (listeners == null) {
-            listeners = new java.util.Vector();
+            listeners = new java.util.Vector<>();
         }
         listeners.addElement(listener);
     }
@@ -278,25 +278,30 @@ public class PropertyEditorSupport implements PropertyEditor {
      * Report that we have been modified to any interested listeners.
      */
     public void firePropertyChange() {
-        java.util.Vector targets;
+        java.util.Vector<PropertyChangeListener> targets;
         synchronized (this) {
             if (listeners == null) {
                 return;
             }
-            targets = (java.util.Vector) listeners.clone();
+            targets = unsafeClone(listeners);
         }
         // Tell our listeners that "everything" has changed.
         PropertyChangeEvent evt = new PropertyChangeEvent(source, null, null, null);
 
         for (int i = 0; i < targets.size(); i++) {
-            PropertyChangeListener target = (PropertyChangeListener)targets.elementAt(i);
+            PropertyChangeListener target = targets.elementAt(i);
             target.propertyChange(evt);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> java.util.Vector<T> unsafeClone(java.util.Vector<T> v) {
+        return (java.util.Vector<T>)v.clone();
     }
 
     //----------------------------------------------------------------------
 
     private Object value;
     private Object source;
-    private java.util.Vector listeners;
+    private java.util.Vector<PropertyChangeListener> listeners;
 }

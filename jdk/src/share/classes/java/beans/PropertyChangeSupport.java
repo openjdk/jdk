@@ -431,7 +431,7 @@ public class PropertyChangeSupport implements Serializable {
                     listeners = entry.getValue();
                 } else {
                     if (children == null) {
-                        children = new Hashtable<String, PropertyChangeSupport>();
+                        children = new Hashtable<>();
                     }
                     PropertyChangeSupport pcs = new PropertyChangeSupport(this.source);
                     pcs.map.set(null, entry.getValue());
@@ -460,6 +460,7 @@ public class PropertyChangeSupport implements Serializable {
 
         ObjectInputStream.GetField fields = s.readFields();
 
+        @SuppressWarnings("unchecked")
         Hashtable<String, PropertyChangeSupport> children = (Hashtable<String, PropertyChangeSupport>) fields.get("children", null);
         this.source = fields.get("source", null);
         fields.get("propertyChangeSupportSerializedDataVersion", 2);

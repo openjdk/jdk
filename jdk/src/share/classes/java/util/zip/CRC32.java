@@ -25,8 +25,14 @@
 
 package java.util.zip;
 
+import java.nio.ByteBuffer;
+import sun.nio.ch.DirectBuffer;
+
 /**
  * A class that can be used to compute the CRC-32 of a data stream.
+ *
+ * <p> Passing a {@code null} argument to a method in this class will cause
+ * a {@link NullPointerException} to be thrown.
  *
  * @see         Checksum
  * @author      David Connelly
@@ -75,6 +81,38 @@ class CRC32 implements Checksum {
     }
 
     /**
+     * Updates the checksum with the bytes from the specified buffer.
+     *
+     * The checksum is updated using
+     * buffer.{@link java.nio.Buffer#remaining() remaining()}
+     * bytes starting at
+     * buffer.{@link java.nio.Buffer#position() position()}
+     * Upon return, the buffer's position will
+     * be updated to its limit; its limit will not have been changed.
+     *
+     * @param buffer the ByteBuffer to update the checksum with
+     * @since 1.8
+     */
+    public void update(ByteBuffer buffer) {
+        int pos = buffer.position();
+        int limit = buffer.limit();
+        assert (pos <= limit);
+        int rem = limit - pos;
+        if (rem <= 0)
+            return;
+        if (buffer instanceof DirectBuffer) {
+            crc = updateByteBuffer(crc, ((DirectBuffer)buffer).address(), pos, rem);
+        } else if (buffer.hasArray()) {
+            crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(), rem);
+        } else {
+            byte[] b = new byte[rem];
+            buffer.get(b);
+            crc = updateBytes(crc, b, 0, b.length);
+        }
+        buffer.position(limit);
+    }
+
+    /**
      * Resets CRC-32 to initial value.
      */
     public void reset() {
@@ -90,4 +128,7 @@ class CRC32 implements Checksum {
 
     private native static int update(int crc, int b);
     private native static int updateBytes(int crc, byte[] b, int off, int len);
+
+    private native static int updateByteBuffer(int adler, long addr,
+                                               int off, int len);
 }

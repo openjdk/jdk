@@ -257,7 +257,8 @@ import java.util.HashMap;
 public final class TextAttribute extends Attribute {
 
     // table of all instances in this class, used by readResolve
-    private static final Map instanceMap = new HashMap(29);
+    private static final Map<String, TextAttribute>
+            instanceMap = new HashMap<String, TextAttribute>(29);
 
     /**
      * Constructs a <code>TextAttribute</code> with the specified name.
@@ -280,7 +281,7 @@ public final class TextAttribute extends Attribute {
                 "subclass didn't correctly implement readResolve");
         }
 
-        TextAttribute instance = (TextAttribute) instanceMap.get(getName());
+        TextAttribute instance = instanceMap.get(getName());
         if (instance != null) {
             return instance;
         } else {

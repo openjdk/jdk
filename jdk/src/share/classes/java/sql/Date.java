@@ -150,6 +150,7 @@ public class Date extends java.util.Date {
      * <P>
      * @return a String in yyyy-mm-dd format
      */
+    @SuppressWarnings("deprecation")
     public String toString () {
         int year = super.getYear() + 1900;
         int month = super.getMonth() + 1;

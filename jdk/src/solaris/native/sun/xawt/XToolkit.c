@@ -39,13 +39,14 @@
 #include "awt_p.h"
 #include "awt_Component.h"
 #include "awt_MenuComponent.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Font.h"
 
 #include "sun_awt_X11_XToolkit.h"
 #include "java_awt_SystemColor.h"
 #include "java_awt_TrayIcon.h"
 #include <X11/extensions/XTest.h>
+
+#include <unistd.h>
 
 uint32_t awt_NumLockMask = 0;
 Boolean  awt_ModLockIsShiftLock = False;
@@ -72,19 +73,17 @@ struct ComponentIDs componentIDs;
 
 struct MenuComponentIDs menuComponentIDs;
 
-struct KeyboardFocusManagerIDs keyboardFocusManagerIDs;
-
 #ifndef HEADLESS
 
 extern Display* awt_init_Display(JNIEnv *env, jobject this);
 
-extern struct MFontPeerIDs mFontPeerIDs;
+struct XFontPeerIDs xFontPeerIDs;
 
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XFontPeer_initIDs
   (JNIEnv *env, jclass cls)
 {
-    mFontPeerIDs.xfsname =
+    xFontPeerIDs.xfsname =
       (*env)->GetFieldID(env, cls, "xfsname", "Ljava/lang/String;");
 }
 #endif /* !HEADLESS */
@@ -1086,4 +1085,39 @@ int32_t getNumButtons() {
     }
 
     return local_num_buttons;
+}
+
+/*
+ * Class:     sun_awt_X11_XWindowPeer
+ * Method:    getJvmPID
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_X11_XWindowPeer_getJvmPID
+(JNIEnv *env, jclass cls)
+{
+    /* Return the JVM's PID. */
+    return getpid();
+}
+
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 1024 /* Overestimated */
+#endif
+
+/*
+ * Class:     sun_awt_X11_XWindowPeer
+ * Method:    getLocalHostname
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_sun_awt_X11_XWindowPeer_getLocalHostname
+(JNIEnv *env, jclass cls)
+{
+    /* Return the machine's FQDN. */
+    char hostname[HOST_NAME_MAX + 1];
+    if (gethostname(hostname, HOST_NAME_MAX + 1) == 0) {
+        hostname[HOST_NAME_MAX] = '\0';
+        jstring res = (*env)->NewStringUTF(env, hostname);
+        return res;
+    }
+
+    return (jstring)NULL;
 }

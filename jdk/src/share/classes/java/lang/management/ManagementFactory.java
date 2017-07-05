@@ -576,7 +576,7 @@ public class ManagementFactory {
                                Class<T> mxbeanInterface)
             throws java.io.IOException {
 
-        final Class interfaceClass = mxbeanInterface;
+        final Class<?> interfaceClass = mxbeanInterface;
         // Only allow MXBean interfaces from rt.jar loaded by the
         // bootstrap class loader
         final ClassLoader loader =

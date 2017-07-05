@@ -428,7 +428,7 @@ public enum LauncherHelper {
             if (t != null) {
                 t.printStackTrace();
             } else {
-                Thread.currentThread().dumpStack();
+                Thread.dumpStack();
             }
         }
         System.exit(1);

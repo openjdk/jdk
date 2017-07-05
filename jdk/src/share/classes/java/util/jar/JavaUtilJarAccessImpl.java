@@ -57,7 +57,7 @@ class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
         jar.setEagerValidation(eager);
     }
 
-    public List getManifestDigests(JarFile jar) {
+    public List<Object> getManifestDigests(JarFile jar) {
         return jar.getManifestDigests();
     }
 }

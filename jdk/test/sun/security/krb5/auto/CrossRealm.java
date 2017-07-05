@@ -65,7 +65,6 @@ public class CrossRealm implements CallbackHandler {
                 "forwardable=true",
                 "[domain_realm]",
                 ".snake.hole=SNAKE.HOLE");
-        new File("krb5-localkdc.conf").deleteOnExit();
         System.setProperty("java.security.krb5.conf", "krb5-localkdc.conf");
     }
 
@@ -73,7 +72,6 @@ public class CrossRealm implements CallbackHandler {
         Security.setProperty("auth.login.defaultCallbackHandler", "CrossRealm");
         System.setProperty("java.security.auth.login.config", "jaas-localkdc.conf");
         System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
-        new File("jaas-localkdc.conf").deleteOnExit();
         FileOutputStream fos = new FileOutputStream("jaas-localkdc.conf");
         fos.write(("com.sun.security.jgss.krb5.initiate {\n" +
                 "    com.sun.security.auth.module.Krb5LoginModule\n" +

@@ -70,7 +70,7 @@ import sun.net.www.ParseUtil;
 public class ExtensionDependency {
 
     /* Callbak interfaces to delegate installation of missing extensions */
-    private static Vector providers;
+    private static Vector<ExtensionInstallationProvider> providers;
 
     /**
      * <p>
@@ -83,7 +83,7 @@ public class ExtensionDependency {
         (ExtensionInstallationProvider eip)
     {
         if (providers == null) {
-            providers = new Vector();
+            providers = new Vector<>();
         }
         providers.add(eip);
     }
@@ -93,7 +93,7 @@ public class ExtensionDependency {
      * Unregister a previously installed installation provider
      * </p>
      */
-    public synchronized  static void removeExtensionInstallationProvider
+    public synchronized static void removeExtensionInstallationProvider
         (ExtensionInstallationProvider eip)
     {
         providers.remove(eip);
@@ -348,14 +348,16 @@ public class ExtensionDependency {
                                        ExtensionInfo instInfo)
         throws ExtensionInstallationException
     {
-
-        Vector currentProviders;
+        Vector<ExtensionInstallationProvider> currentProviders;
         synchronized(providers) {
-            currentProviders = (Vector) providers.clone();
+            @SuppressWarnings("unchecked")
+            Vector<ExtensionInstallationProvider> tmp =
+                (Vector<ExtensionInstallationProvider>) providers.clone();
+            currentProviders = tmp;
         }
-        for (Enumeration e=currentProviders.elements();e.hasMoreElements();) {
-            ExtensionInstallationProvider eip =
-                (ExtensionInstallationProvider) e.nextElement();
+        for (Enumeration<ExtensionInstallationProvider> e = currentProviders.elements();
+                e.hasMoreElements();) {
+            ExtensionInstallationProvider eip = e.nextElement();
 
             if (eip!=null) {
                 // delegate the installation to the provider

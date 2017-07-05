@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,7 +770,7 @@ public class Date
      */
     @Deprecated
     public int getDay() {
-        return normalize().getDayOfWeek() - gcal.SUNDAY;
+        return normalize().getDayOfWeek() - BaseCalendar.SUNDAY;
     }
 
     /**
@@ -1027,7 +1027,7 @@ public class Date
         BaseCalendar.Date date = normalize();
         StringBuilder sb = new StringBuilder(28);
         int index = date.getDayOfWeek();
-        if (index == gcal.SUNDAY) {
+        if (index == BaseCalendar.SUNDAY) {
             index = 8;
         }
         convertToAbbr(sb, wtb[index]).append(' ');                        // EEE
@@ -1039,7 +1039,7 @@ public class Date
         CalendarUtils.sprintf0d(sb, date.getSeconds(), 2).append(' '); // ss
         TimeZone zi = date.getZone();
         if (zi != null) {
-            sb.append(zi.getDisplayName(date.isDaylightTime(), zi.SHORT, Locale.US)); // zzz
+            sb.append(zi.getDisplayName(date.isDaylightTime(), TimeZone.SHORT, Locale.US)); // zzz
         } else {
             sb.append("GMT");
         }
@@ -1237,7 +1237,7 @@ public class Date
             }
             GregorianCalendar gc = new GregorianCalendar(tz);
             gc.clear();
-            gc.set(gc.MILLISECOND, ms);
+            gc.set(GregorianCalendar.MILLISECOND, ms);
             gc.set(y, m-1, d, hh, mm, ss);
             fastTime = gc.getTimeInMillis();
             BaseCalendar cal = getCalendarSystem(fastTime);

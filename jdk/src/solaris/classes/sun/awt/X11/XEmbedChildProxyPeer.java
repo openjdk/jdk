@@ -34,8 +34,6 @@ import java.awt.image.VolatileImage;
 import java.awt.peer.*;
 import sun.java2d.pipe.Region;
 import sun.awt.*;
-import sun.awt.motif.MToolkit;
-import sun.awt.motif.X11FontMetrics;
 
 public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     XEmbeddingContainer container;

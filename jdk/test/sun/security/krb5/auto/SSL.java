@@ -96,7 +96,6 @@ public class SSL {
                 "    storeKey=true;\n};\n"
                 ).getBytes());
         fos.close();
-        f.deleteOnExit();
 
         Context c;
         final Context s = Context.fromJAAS("ssl");

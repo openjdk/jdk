@@ -363,6 +363,7 @@ public class CachedRowSetReader implements RowSetReader, Serializable {
      *               the given parameters are to be set
      * @throws SQLException if an access error occurs
      */
+    @SuppressWarnings("deprecation")
     private void decodeParams(Object[] params,
                               PreparedStatement pstmt) throws SQLException {
     // There is a corresponding decodeParams in JdbcRowSetImpl
@@ -428,14 +429,17 @@ public class CachedRowSetReader implements RowSetReader, Serializable {
                             pstmt.setUnicodeStream(i + 1,
                                                 (java.io.InputStream)param[0],
                                                 ((Integer)param[1]).intValue());
+                            break;
                         case CachedRowSetImpl.BINARY_STREAM_PARAM:
                             pstmt.setBinaryStream(i + 1,
                                                (java.io.InputStream)param[0],
                                                ((Integer)param[1]).intValue());
+                            break;
                         case CachedRowSetImpl.ASCII_STREAM_PARAM:
                             pstmt.setAsciiStream(i + 1,
                                               (java.io.InputStream)param[0],
                                               ((Integer)param[1]).intValue());
+                            break;
                         default:
                             throw new SQLException(resBundle.handleGetObject("crsreader.paramtype").toString());
                         }

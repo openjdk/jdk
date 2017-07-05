@@ -76,8 +76,6 @@ public class OneKDC extends KDC {
         Config.refresh();
 
         writeKtab(KTAB);
-        new File(KRB5_CONF).deleteOnExit();
-        new File(KTAB).deleteOnExit();
     }
 
     /**
@@ -114,7 +112,6 @@ public class OneKDC extends KDC {
                 "    isInitiator=false;\n};\n"
                 ).getBytes());
         fos.close();
-        f.deleteOnExit();
         Security.setProperty("auth.login.defaultCallbackHandler", "OneKDC$CallbackForClient");
     }
 

@@ -125,13 +125,13 @@ import java.util.TreeSet;
  * @since 1.3
  */
 
-public final class Service {
+public final class Service<S> {
 
     private static final String prefix = "META-INF/services/";
 
     private Service() { }
 
-    private static void fail(Class service, String msg, Throwable cause)
+    private static void fail(Class<?> service, String msg, Throwable cause)
         throws ServiceConfigurationError
     {
         ServiceConfigurationError sce
@@ -140,13 +140,13 @@ public final class Service {
         throw sce;
     }
 
-    private static void fail(Class service, String msg)
+    private static void fail(Class<?> service, String msg)
         throws ServiceConfigurationError
     {
         throw new ServiceConfigurationError(service.getName() + ": " + msg);
     }
 
-    private static void fail(Class service, URL u, int line, String msg)
+    private static void fail(Class<?> service, URL u, int line, String msg)
         throws ServiceConfigurationError
     {
         fail(service, u + ":" + line + ": " + msg);
@@ -157,8 +157,8 @@ public final class Service {
      * on the line to both the names list and the returned set iff the name is
      * not already a member of the returned set.
      */
-    private static int parseLine(Class service, URL u, BufferedReader r, int lc,
-                                 List names, Set returned)
+    private static int parseLine(Class<?> service, URL u, BufferedReader r, int lc,
+                                 List<String> names, Set<String> returned)
         throws IOException, ServiceConfigurationError
     {
         String ln = r.readLine();
@@ -211,12 +211,12 @@ public final class Service {
      *         If an I/O error occurs while reading from the given URL, or
      *         if a configuration-file format error is detected
      */
-    private static Iterator parse(Class service, URL u, Set returned)
+    private static Iterator<String> parse(Class<?> service, URL u, Set<String> returned)
         throws ServiceConfigurationError
     {
         InputStream in = null;
         BufferedReader r = null;
-        ArrayList names = new ArrayList();
+        ArrayList<String> names = new ArrayList<>();
         try {
             in = u.openStream();
             r = new BufferedReader(new InputStreamReader(in, "utf-8"));
@@ -239,16 +239,16 @@ public final class Service {
     /**
      * Private inner class implementing fully-lazy provider lookup
      */
-    private static class LazyIterator implements Iterator {
+    private static class LazyIterator<S> implements Iterator<S> {
 
-        Class service;
+        Class<S> service;
         ClassLoader loader;
-        Enumeration configs = null;
-        Iterator pending = null;
-        Set returned = new TreeSet();
+        Enumeration<URL> configs = null;
+        Iterator<String> pending = null;
+        Set<String> returned = new TreeSet<>();
         String nextName = null;
 
-        private LazyIterator(Class service, ClassLoader loader) {
+        private LazyIterator(Class<S> service, ClassLoader loader) {
             this.service = service;
             this.loader = loader;
         }
@@ -272,20 +272,20 @@ public final class Service {
                 if (!configs.hasMoreElements()) {
                     return false;
                 }
-                pending = parse(service, (URL)configs.nextElement(), returned);
+                pending = parse(service, configs.nextElement(), returned);
             }
-            nextName = (String)pending.next();
+            nextName = pending.next();
             return true;
         }
 
-        public Object next() throws ServiceConfigurationError {
+        public S next() throws ServiceConfigurationError {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
             String cn = nextName;
             nextName = null;
             try {
-                return Class.forName(cn, true, loader).newInstance();
+                return service.cast(Class.forName(cn, true, loader).newInstance());
             } catch (ClassNotFoundException x) {
                 fail(service,
                      "Provider " + cn + " not found");
@@ -342,10 +342,10 @@ public final class Service {
      * @see #providers(java.lang.Class)
      * @see #installedProviders(java.lang.Class)
      */
-    public static Iterator providers(Class service, ClassLoader loader)
+    public static <S> Iterator<S> providers(Class<S> service, ClassLoader loader)
         throws ServiceConfigurationError
     {
-        return new LazyIterator(service, loader);
+        return new LazyIterator<S>(service, loader);
     }
 
 
@@ -374,7 +374,7 @@ public final class Service {
      *
      * @see #providers(java.lang.Class, java.lang.ClassLoader)
      */
-    public static Iterator providers(Class service)
+    public static <S> Iterator<S> providers(Class<S> service)
         throws ServiceConfigurationError
     {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -411,7 +411,7 @@ public final class Service {
      *
      * @see #providers(java.lang.Class, java.lang.ClassLoader)
      */
-    public static Iterator installedProviders(Class service)
+    public static <S> Iterator<S> installedProviders(Class<S> service)
         throws ServiceConfigurationError
     {
         ClassLoader cl = ClassLoader.getSystemClassLoader();

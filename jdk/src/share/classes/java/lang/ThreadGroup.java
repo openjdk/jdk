@@ -670,6 +670,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *     {@link Thread#suspend} for details.
      */
     @Deprecated
+    @SuppressWarnings("deprecation")
     public final void suspend() {
         if (stopOrSuspend(true))
             Thread.currentThread().suspend();
@@ -682,6 +683,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * if (and only if) the current thread is found to be in this thread
      * group or one of its subgroups.
      */
+    @SuppressWarnings("deprecation")
     private boolean stopOrSuspend(boolean suspend) {
         boolean suicide = false;
         Thread us = Thread.currentThread();
@@ -731,6 +733,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *       deadlock-prone.  See {@link Thread#suspend} for details.
      */
     @Deprecated
+    @SuppressWarnings("deprecation")
     public final void resume() {
         int ngroupsSnapshot;
         ThreadGroup[] groupsSnapshot;

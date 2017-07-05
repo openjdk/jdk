@@ -156,6 +156,7 @@ public final class MarshalledObject<T> implements Serializable {
             (locBytes == null ? null : new ByteArrayInputStream(locBytes));
         MarshalledObjectInputStream in =
             new MarshalledObjectInputStream(bin, lin);
+        @SuppressWarnings("unchecked")
         T obj = (T) in.readObject();
         in.close();
         return obj;
@@ -190,7 +191,7 @@ public final class MarshalledObject<T> implements Serializable {
             return true;
 
         if (obj != null && obj instanceof MarshalledObject) {
-            MarshalledObject other = (MarshalledObject) obj;
+            MarshalledObject<?> other = (MarshalledObject<?>) obj;
 
             // if either is a ref to null, both must be
             if (objBytes == null || other.objBytes == null)

@@ -190,6 +190,6 @@ public class InputMethodHighlight {
     private boolean selected;
     private int state;
     private int variation;
-    private Map style;
+    private Map<TextAttribute, ?> style;
 
 };

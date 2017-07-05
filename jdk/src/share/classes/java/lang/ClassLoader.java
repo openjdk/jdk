@@ -258,7 +258,7 @@ public abstract class ClassLoader {
     private final Set<ProtectionDomain> domains;
 
     // Invoked by the VM to record every loaded class with this loader.
-    void addClass(Class c) {
+    void addClass(Class<?> c) {
         classes.addElement(c);
     }
 
@@ -402,7 +402,7 @@ public abstract class ClassLoader {
     {
         synchronized (getClassLoadingLock(name)) {
             // First, check if the class has already been loaded
-            Class c = findLoadedClass(name);
+            Class<?> c = findLoadedClass(name);
             if (c == null) {
                 long t0 = System.nanoTime();
                 try {
@@ -468,7 +468,7 @@ public abstract class ClassLoader {
     }
 
     // This method is invoked by the virtual machine to load a class.
-    private Class loadClassInternal(String name)
+    private Class<?> loadClassInternal(String name)
         throws ClassNotFoundException
     {
         // For backward compatibility, explicitly lock on 'this' when
@@ -483,7 +483,7 @@ public abstract class ClassLoader {
     }
 
     // Invoked by the VM after loading class with this loader.
-    private void checkPackageAccess(Class cls, ProtectionDomain pd) {
+    private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             final String name = cls.getName();
@@ -669,9 +669,9 @@ public abstract class ClassLoader {
         return source;
     }
 
-    private Class defineTransformedClass(String name, byte[] b, int off, int len,
-                                         ProtectionDomain pd,
-                                         ClassFormatError cfe, String source)
+    private Class<?> defineTransformedClass(String name, byte[] b, int off, int len,
+                                            ProtectionDomain pd,
+                                            ClassFormatError cfe, String source)
       throws ClassFormatError
     {
         // Class format error - try to transform the bytecode and
@@ -679,7 +679,7 @@ public abstract class ClassLoader {
         //
         ClassFileTransformer[] transformers =
             ClassFileTransformer.getTransformers();
-        Class c = null;
+        Class<?> c = null;
 
         if (transformers != null) {
             for (ClassFileTransformer transformer : transformers) {
@@ -704,7 +704,7 @@ public abstract class ClassLoader {
         return c;
     }
 
-    private void postDefineClass(Class c, ProtectionDomain pd)
+    private void postDefineClass(Class<?> c, ProtectionDomain pd)
     {
         if (pd.getCodeSource() != null) {
             Certificate certs[] = pd.getCodeSource().getCertificates();
@@ -784,7 +784,7 @@ public abstract class ClassLoader {
     {
         protectionDomain = preDefineClass(name, protectionDomain);
 
-        Class c = null;
+        Class<?> c = null;
         String source = defineClassSourceLocation(protectionDomain);
 
         try {
@@ -882,7 +882,7 @@ public abstract class ClassLoader {
 
         protectionDomain = preDefineClass(name, protectionDomain);
 
-        Class c = null;
+        Class<?> c = null;
         String source = defineClassSourceLocation(protectionDomain);
 
         try {
@@ -899,15 +899,15 @@ public abstract class ClassLoader {
         return c;
     }
 
-    private native Class defineClass0(String name, byte[] b, int off, int len,
-                                      ProtectionDomain pd);
+    private native Class<?> defineClass0(String name, byte[] b, int off, int len,
+                                         ProtectionDomain pd);
 
-    private native Class defineClass1(String name, byte[] b, int off, int len,
-                                      ProtectionDomain pd, String source);
+    private native Class<?> defineClass1(String name, byte[] b, int off, int len,
+                                         ProtectionDomain pd, String source);
 
-    private native Class defineClass2(String name, java.nio.ByteBuffer b,
-                                      int off, int len, ProtectionDomain pd,
-                                      String source);
+    private native Class<?> defineClass2(String name, java.nio.ByteBuffer b,
+                                         int off, int len, ProtectionDomain pd,
+                                         String source);
 
     // true if the name is null or has the potential to be a valid binary name
     private boolean checkName(String name) {
@@ -1010,7 +1010,7 @@ public abstract class ClassLoader {
         resolveClass0(c);
     }
 
-    private native void resolveClass0(Class c);
+    private native void resolveClass0(Class<?> c);
 
     /**
      * Finds a class with the specified <a href="#name">binary name</a>,
@@ -1041,7 +1041,7 @@ public abstract class ClassLoader {
         if (system == null) {
             if (!checkName(name))
                 throw new ClassNotFoundException(name);
-            Class cls = findBootstrapClass(name);
+            Class<?> cls = findBootstrapClass(name);
             if (cls == null) {
                 throw new ClassNotFoundException(name);
             }
@@ -1054,7 +1054,7 @@ public abstract class ClassLoader {
      * Returns a class loaded by the bootstrap class loader;
      * or return null if not found.
      */
-    private Class findBootstrapClassOrNull(String name)
+    private Class<?> findBootstrapClassOrNull(String name)
     {
         if (!checkName(name)) return null;
 
@@ -1062,7 +1062,7 @@ public abstract class ClassLoader {
     }
 
     // return null if not found
-    private native Class findBootstrapClass(String name);
+    private native Class<?> findBootstrapClass(String name);
 
     /**
      * Returns the class with the given <a href="#name">binary name</a> if this
@@ -1084,7 +1084,7 @@ public abstract class ClassLoader {
         return findLoadedClass0(name);
     }
 
-    private native final Class findLoadedClass0(String name);
+    private native final Class<?> findLoadedClass0(String name);
 
     /**
      * Sets the signers of a class.  This should be invoked after defining a
@@ -1528,7 +1528,7 @@ public abstract class ClassLoader {
     // invocation and the desired invoker.
     static ClassLoader getCallerClassLoader() {
         // NOTE use of more generic Reflection.getCallerClass()
-        Class caller = Reflection.getCallerClass(3);
+        Class<?> caller = Reflection.getCallerClass(3);
         // This can be null if the VM is requesting it
         if (caller == null) {
             return null;
@@ -1722,7 +1722,7 @@ public abstract class ClassLoader {
         private int jniVersion;
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
-        private Class fromClass;
+        private Class<?> fromClass;
         // the canonicalized name of the native library.
         String name;
 
@@ -1730,7 +1730,7 @@ public abstract class ClassLoader {
         native long find(String name);
         native void unload();
 
-        public NativeLibrary(Class fromClass, String name) {
+        public NativeLibrary(Class<?> fromClass, String name) {
             this.name = name;
             this.fromClass = fromClass;
         }
@@ -1758,7 +1758,7 @@ public abstract class ClassLoader {
         }
         // Invoked in the VM to determine the context class in
         // JNI_Load/JNI_Unload
-        static Class getFromClass() {
+        static Class<?> getFromClass() {
             return ClassLoader.nativeLibraryContext.peek().fromClass;
         }
     }
@@ -1813,7 +1813,7 @@ public abstract class ClassLoader {
     }
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
-    static void loadLibrary(Class fromClass, String name,
+    static void loadLibrary(Class<?> fromClass, String name,
                             boolean isAbsolute) {
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
@@ -1860,7 +1860,7 @@ public abstract class ClassLoader {
         throw new UnsatisfiedLinkError("no " + name + " in java.library.path");
     }
 
-    private static boolean loadLibrary0(Class fromClass, final File file) {
+    private static boolean loadLibrary0(Class<?> fromClass, final File file) {
         boolean exists = AccessController.doPrivileged(
             new PrivilegedAction<Object>() {
                 public Object run() {
@@ -2194,8 +2194,8 @@ class SystemClassLoaderAction
             return parent;
         }
 
-        Constructor ctor = Class.forName(cls, true, parent)
-            .getDeclaredConstructor(new Class[] { ClassLoader.class });
+        Constructor<?> ctor = Class.forName(cls, true, parent)
+            .getDeclaredConstructor(new Class<?>[] { ClassLoader.class });
         ClassLoader sys = (ClassLoader) ctor.newInstance(
             new Object[] { parent });
         Thread.currentThread().setContextClassLoader(sys);

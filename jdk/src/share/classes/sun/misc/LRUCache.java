@@ -52,7 +52,9 @@ public abstract class LRUCache<N,V> {
 
     public V forName(N name) {
         if (oa == null) {
-            oa = (V[])new Object[size];
+            @SuppressWarnings("unchecked")
+            V[] temp = (V[])new Object[size];
+            oa = temp;
         } else {
             for (int i = 0; i < oa.length; i++) {
                 V ob = oa[i];

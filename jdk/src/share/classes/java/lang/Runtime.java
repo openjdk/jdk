@@ -780,7 +780,7 @@ public class Runtime {
         load0(System.getCallerClass(), filename);
     }
 
-    synchronized void load0(Class fromClass, String filename) {
+    synchronized void load0(Class<?> fromClass, String filename) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(filename);
@@ -833,7 +833,7 @@ public class Runtime {
         loadLibrary0(System.getCallerClass(), libname);
     }
 
-    synchronized void loadLibrary0(Class fromClass, String libname) {
+    synchronized void loadLibrary0(Class<?> fromClass, String libname) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(libname);

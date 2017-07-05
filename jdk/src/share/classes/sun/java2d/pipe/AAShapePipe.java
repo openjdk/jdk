@@ -144,7 +144,7 @@ public class AAShapePipe
     public void renderPath(SunGraphics2D sg, Shape s, BasicStroke bs) {
         boolean adjust = (bs != null &&
                           sg.strokeHint != SunHints.INTVAL_STROKE_PURE);
-        boolean thin = (sg.strokeState <= sg.STROKE_THINDASHED);
+        boolean thin = (sg.strokeState <= SunGraphics2D.STROKE_THINDASHED);
 
         Region clip = sg.getCompClip();
         int abox[] = new int[4];

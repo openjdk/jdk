@@ -233,7 +233,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
               }
               int[] indexes = new int[indices.size()];
               for(int i=0; i<indices.size();i++)
-                  indexes[i] = ((Integer)indices.get(i)).intValue();
+                  indexes[i] = indices.get(i);
               cRowset.setMatchColumn(indexes);
               // Set the match column here because join will be
               // based on columnId,
@@ -413,6 +413,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      * @throws SQLException if an error occours generating a collection
      * of the originating RowSets contained within the JOIN.
      */
+    @SuppressWarnings("rawtypes")
     public Collection getRowSets() throws SQLException {
         return vecRowSetsInJOIN;
     }
@@ -893,7 +894,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
 
        sz = vecRowSetsInJOIN.size();
        for(int i=0;i<sz; i++) {
-          crs = (CachedRowSetImpl)vecRowSetsInJOIN.get(i);
+          crs = vecRowSetsInJOIN.get(i);
           cols = crs.getMetaData().getColumnCount();
           tabName = tabName.concat(crs.getTableName());
           strTabName = strTabName.concat(tabName+", ");
@@ -928,7 +929,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
         // rowset1.getMatchColumnName() == rowset2.getMatchColumnName()
          for(int i=0;i<sz; i++) {
              strWhereClause = strWhereClause.concat(
-               ((CachedRowSetImpl)vecRowSetsInJOIN.get(i)).getMatchColumnNames()[0]);
+               vecRowSetsInJOIN.get(i).getMatchColumnNames()[0]);
              if(i%2!=0) {
                strWhereClause = strWhereClause.concat("=");
              }  else {
@@ -4175,7 +4176,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
             // Default JoinRowSet type
             this.setJoinType(JoinRowSet.INNER_JOIN);
         }
-        Integer i = (Integer)(vecJoinType.get(vecJoinType.size()-1));
+        Integer i = vecJoinType.get(vecJoinType.size()-1);
         return i.intValue();
     }
 

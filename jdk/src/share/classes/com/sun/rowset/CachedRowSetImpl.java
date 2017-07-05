@@ -357,7 +357,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         // set the Reader, this maybe overridden latter
         provider =
-        (SyncProvider)SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
+        SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
 
         if (!(provider instanceof RIOptimisticProvider)) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.invalidp").toString());
@@ -445,11 +445,10 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @param env a <code>Hashtable</code> object with a list of desired
      *        synchronization providers
      * @throws SQLException if the requested provider cannot be found by the
-     * synchonization factory
+     * synchronization factory
      * @see SyncProvider
      */
-
-    public CachedRowSetImpl(Hashtable env) throws SQLException {
+    public CachedRowSetImpl(@SuppressWarnings("rawtypes") Hashtable env) throws SQLException {
 
 
         try {
@@ -467,7 +466,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         // set the Reader, this maybe overridden latter
         provider =
-        (SyncProvider)SyncFactory.getInstance(providerName);
+        SyncFactory.getInstance(providerName);
 
         rowSetReader = provider.getRowSetReader();
         rowSetWriter = provider.getRowSetWriter();
@@ -525,7 +524,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         iMatchColumns = new Vector<Integer>(10);
         for(int i = 0; i < 10 ; i++) {
-           iMatchColumns.add(i,Integer.valueOf(-1));
+           iMatchColumns.add(i, -1);
         }
 
         strMatchColumns = new Vector<String>(10);
@@ -540,7 +539,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     private void checkTransactionalWriter() {
         if (rowSetWriter != null) {
-            Class c = rowSetWriter.getClass();
+            Class<?> c = rowSetWriter.getClass();
             if (c != null) {
                 Class[] theInterfaces = c.getInterfaces();
                 for (int i = 0; i < theInterfaces.length; i++) {
@@ -685,7 +684,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                         obj = new SerialArray((java.sql.Array)obj);
                 }
 
-                ((Row)currentRow).initColumnObject(i, obj);
+                currentRow.initColumnObject(i, obj);
             }
             rowsFetched++;
             rvh.add(currentRow);
@@ -881,7 +880,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 cursorPos = saveCursorPos;
             }
 
-            if ((tXWriter) && this.COMMIT_ON_ACCEPT_CHANGES) {
+            if (tXWriter) {
                 // do commit/rollback's here
                 if (!conflict) {
                     tWriter = (TransactionalWriter)rowSetWriter;
@@ -901,7 +900,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
             if (success == true) {
                 setOriginal();
-            } else if (!(success) && !(this.COMMIT_ON_ACCEPT_CHANGES)) {
+            } else if (!(success) ) {
                 throw new SyncProviderException(resBundle.handleGetObject("cachedrowsetimpl.accfailed").toString());
             }
 
@@ -938,10 +937,8 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @see javax.sql.rowset.spi.SyncProvider
      */
     public void acceptChanges(Connection con) throws SyncProviderException{
-
       setConnection(con);
       acceptChanges();
-
     }
 
     /**
@@ -957,7 +954,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public void restoreOriginal() throws SQLException {
         Row currentRow;
-        for (Iterator i = rvh.iterator(); i.hasNext();) {
+        for (Iterator<?> i = rvh.iterator(); i.hasNext();) {
             currentRow = (Row)i.next();
             if (currentRow.getInserted() == true) {
                 i.remove();
@@ -1287,7 +1284,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         TreeMap<Integer, Object> tMap = new TreeMap<>();
 
         for (int i = 0; i<numRows; i++) {
-            tMap.put(Integer.valueOf(i), rvh.get(i));
+            tMap.put(i, rvh.get(i));
         }
 
         return (tMap.values());
@@ -1379,7 +1376,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      */
     public void setSyncProvider(String providerStr) throws SQLException {
         provider =
-        (SyncProvider)SyncFactory.getInstance(providerStr);
+        SyncFactory.getInstance(providerStr);
 
         rowSetReader = provider.getRowSetReader();
         rowSetWriter = provider.getRowSetWriter();
@@ -1880,7 +1877,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         // check for SQL NULL
         if (value == null) {
             setLastValueNull(true);
-            return (int)0;
+            return 0;
         }
 
         try {
@@ -2353,7 +2350,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             throw new SQLException(ex.getMessage());
         }
 
-        return (java.io.InputStream)asciiStream;
+        return asciiStream;
     }
 
     /**
@@ -2399,7 +2396,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         unicodeStream = new StringBufferInputStream(value.toString());
 
-        return (java.io.InputStream)unicodeStream;
+        return unicodeStream;
     }
 
     /**
@@ -2454,7 +2451,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         binaryStream = new ByteArrayInputStream((byte[])value);
 
-        return (java.io.InputStream)binaryStream;
+        return binaryStream;
 
     }
 
@@ -2958,7 +2955,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             Struct s = (Struct)value;
             map = getTypeMap();
             // look up the class in the map
-            Class c = (Class)map.get(s.getSQLTypeName());
+            Class<?> c = map.get(s.getSQLTypeName());
             if (c != null) {
                 // create new instance of the class
                 SQLData obj = null;
@@ -3091,7 +3088,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.dtypemismt").toString());
         }
 
-        return (java.io.Reader)charStream;
+        return charStream;
     }
 
     /**
@@ -4006,7 +4003,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             switch (trgType) {
                 case java.sql.Types.BIT:
                     Integer i = Integer.valueOf(srcObj.toString().trim());
-                    return i.equals(Integer.valueOf((int)0)) ?
+                    return i.equals(0) ?
                     Boolean.valueOf(false) :
                         Boolean.valueOf(true);
                 case java.sql.Types.TINYINT:
@@ -4173,7 +4170,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             switch (trgType) {
                 case java.sql.Types.BIT:
                     Integer i = Integer.valueOf(srcObj.toString().trim());
-                    return i.equals(Integer.valueOf((int)0)) ?
+                    return i.equals(0) ?
                     Boolean.valueOf(false) :
                         Boolean.valueOf(true);
                 case java.sql.Types.BOOLEAN:
@@ -4358,7 +4355,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         checkIndex(columnIndex);
         // make sure the cursor is on a valid row
         checkCursor();
-        Object obj = convertNumeric(Integer.valueOf(x),
+        Object obj = convertNumeric(x,
         java.sql.Types.INTEGER,
         RowSetMD.getColumnType(columnIndex));
 
@@ -5709,7 +5706,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             Struct s = (Struct)value;
 
             // look up the class in the map
-            Class c = (Class)map.get(s.getSQLTypeName());
+            Class<?> c = map.get(s.getSQLTypeName());
             if (c != null) {
                 // create new instance of the class
                 SQLData obj = null;
@@ -6293,7 +6290,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         int colCount = RowSetMD.getColumnCount();
         Row orig;
 
-        for (Iterator i = rvh.iterator(); i.hasNext();) {
+        for (Iterator<?> i = rvh.iterator(); i.hasNext();) {
             orig = new Row(colCount, ((Row)i.next()).getOrigRow());
             crs.rvh.add(orig);
         }
@@ -6379,7 +6376,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @throws SQLException if an error occurs
      */
     public void setOriginal() throws SQLException {
-        for (Iterator i = rvh.iterator(); i.hasNext();) {
+        for (Iterator<?> i = rvh.iterator(); i.hasNext();) {
             Row row = (Row)i.next();
             makeRowOriginal(row);
             // remove deleted rows from the collection.
@@ -6930,7 +6927,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
          }
 
          for( int i = 0;i < columnIdxes.length ;i++) {
-            iMatchColumns.set(i,Integer.valueOf(-1));
+            iMatchColumns.set(i, -1);
          }
     }
 
@@ -6998,7 +6995,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         int [] i_temp = new int[iMatchColumns.size()];
         int i_val;
 
-        i_val = ((Integer)iMatchColumns.get(0)).intValue();
+        i_val = iMatchColumns.get(0);
 
         if( i_val == -1 ) {
            throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.setmatchcols").toString());
@@ -7039,7 +7036,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
            }
         }
         for(int i = 0 ;i < columnIdxes.length; i++) {
-           iMatchColumns.add(i,Integer.valueOf(columnIdxes[i]));
+           iMatchColumns.add(i,columnIdxes[i]);
         }
     }
 
@@ -7094,7 +7091,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.matchcols1").toString());
         } else {
             // set iMatchColumn
-            iMatchColumns.set(0, Integer.valueOf(columnIdx));
+            iMatchColumns.set(0, columnIdx);
             //strMatchColumn = null;
         }
     }
@@ -7147,7 +7144,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.unsetmatch1").toString());
         } else {
                 // that is, we are unsetting it.
-               iMatchColumns.set(0, Integer.valueOf(-1));
+               iMatchColumns.set(0, -1);
         }
     }
 
@@ -7171,7 +7168,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         if(!((strMatchColumns.get(0)).equals(columnName))) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.unsetmatch").toString());
-        } else if( ((Integer)(iMatchColumns.get(0))).intValue() > 0) {
+        } else if(iMatchColumns.get(0) > 0) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.unsetmatch2").toString());
         } else {
             strMatchColumns.set(0, null);   // that is, we are unsetting it.
@@ -7369,7 +7366,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                     obj = new SerialArray((java.sql.Array)obj, map);
                 }
 
-                ((Row)currentRow).initColumnObject(i, obj);
+                currentRow.initColumnObject(i, obj);
             }
             rowsFetched++;
             maxRowsreached++;

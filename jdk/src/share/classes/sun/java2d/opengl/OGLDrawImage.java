@@ -60,7 +60,7 @@ public class OGLDrawImage extends DrawImage {
             SurfaceData dstData = sg.surfaceData;
             SurfaceData srcData =
                 dstData.getSourceSurfaceData(img,
-                                             sg.TRANSFORM_GENERIC,
+                                             SunGraphics2D.TRANSFORM_GENERIC,
                                              sg.imageComp,
                                              bgColor);
 

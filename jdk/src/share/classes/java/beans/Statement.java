@@ -212,7 +212,7 @@ public class Statement {
         if (target == Class.class && methodName.equals("forName")) {
             return ClassFinder.resolveClass((String)arguments[0], this.loader);
         }
-        Class[] argClasses = new Class[arguments.length];
+        Class<?>[] argClasses = new Class<?>[arguments.length];
         for(int i = 0; i < arguments.length; i++) {
             argClasses[i] = (arguments[i] == null) ? null : arguments[i].getClass();
         }
