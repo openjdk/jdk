@@ -246,6 +246,7 @@ final class FindOps {
      * @param <P_OUT> Output element type from the stream pipeline
      * @param <O> Result type from the find operation
      */
+    @SuppressWarnings("serial")
     private static final class FindTask<P_IN, P_OUT, O>
             extends AbstractShortCircuitTask<P_IN, P_OUT, O, FindTask<P_IN, P_OUT, O>> {
         private final FindOp<P_OUT, O> op;

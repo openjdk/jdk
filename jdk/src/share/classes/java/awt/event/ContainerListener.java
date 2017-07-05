@@ -42,7 +42,7 @@ import java.util.EventListener;
  * Container events are provided for notification purposes ONLY;
  * The AWT will automatically handle add and remove operations
  * internally so the program works properly regardless of
- * whether the program registers a <code>ComponentListener</code> or not.
+ * whether the program registers a {@code ContainerListener} or not.
  *
  * @see ContainerAdapter
  * @see ContainerEvent

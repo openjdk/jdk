@@ -40,11 +40,11 @@ import javax.print.attribute.PrintJobAttribute;
  * can be verified to support color printing.
  * <P>
  * The table below shows the effects of specifying a Chromaticity attribute of
- * {@link #MONOCHROME <CODE>MONOCHROME</CODE>} or {@link #COLOR
- * <CODE>COLOR</CODE>} for a monochrome or color document.
+ * {@link #MONOCHROME MONOCHROME} or {@link #COLOR COLOR}
+ * for a monochrome or color document.
  * <P>
  * <TABLE BORDER=1 CELLPADDING=2 CELLSPACING=1 SUMMARY="Shows effects of specifying MONOCHROME or COLOR Chromaticity attributes">
- * <TR BGCOLOR="#E5E5E5">
+ * <TR>
  * <TH>
  * Chromaticity<BR>Attribute
  * </TH>
@@ -57,7 +57,7 @@ import javax.print.attribute.PrintJobAttribute;
  * </TR>
  * <TR>
  * <TD>
- * {@link #MONOCHROME <CODE>MONOCHROME</CODE>}
+ * {@link #MONOCHROME MONOCHROME}
  * </TD>
  * <TD>
  * Printed as is, in monochrome
@@ -68,7 +68,7 @@ import javax.print.attribute.PrintJobAttribute;
  * </TR>
  * <TR>
  * <TD>
- * {@link #COLOR <CODE>COLOR</CODE>}
+ * {@link #COLOR COLOR}
  * </TD>
  * <TD>
  * Printed as is, in monochrome

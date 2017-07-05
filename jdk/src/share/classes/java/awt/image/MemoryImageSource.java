@@ -37,7 +37,7 @@ import java.util.Enumeration;
  * uses an array to produce pixel values for an Image.  Here is an example
  * which calculates a 100x100 image representing a fade from black to blue
  * along the X axis and a fade from black to red along the Y axis:
- * <pre>
+ * <pre>{@code
  *
  *      int w = 100;
  *      int h = 100;
@@ -52,12 +52,12 @@ import java.util.Enumeration;
  *      }
  *      Image img = createImage(new MemoryImageSource(w, h, pix, 0, w));
  *
- * </pre>
+ * }</pre>
  * The MemoryImageSource is also capable of managing a memory image which
  * varies over time to allow animation or custom rendering.  Here is an
  * example showing how to set up the animation source and signal changes
  * in the data (adapted from the MemoryAnimationSourceDemo by Garth Dickie):
- * <pre>
+ * <pre>{@code
  *
  *      int pixels[];
  *      MemoryImageSource source;
@@ -96,7 +96,7 @@ import java.util.Enumeration;
  *          }
  *      }
  *
- * </pre>
+ * }</pre>
  *
  * @see ImageProducer
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class Expression extends Statement {
      * replaces this default value in the same way that any other value
      * would, ensuring that expressions are never evaluated more than once.
      * <p>
-     * See the <code>excecute</code> method for details on how
+     * See the <code>execute</code> method for details on how
      * methods are chosen using the dynamic types of the target
      * and arguments.
      *
@@ -147,6 +147,8 @@ public class Expression extends Statement {
      * @see #setValue
      *
      * @return The result of applying this method to these arguments.
+     * @throws Exception if the method with the specified methodName
+     * throws an exception
      */
     public Object getValue() throws Exception {
         if (value == unbound) {

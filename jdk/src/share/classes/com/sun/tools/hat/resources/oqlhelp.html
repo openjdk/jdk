@@ -79,7 +79,7 @@ bound to a JavaScript variable of the identifier name specified in <span class="
 <li>select all Strings of length 100 or more
 <pre>
 <code>
-    select s from java.lang.String s where s.count >= 100
+    select s from java.lang.String s where s.value.length >= 100
 </code>
 </pre>
 <li>select all int arrays of length 256 or more
@@ -92,7 +92,7 @@ bound to a JavaScript variable of the identifier name specified in <span class="
 <pre>
 <code>
     select s.value.toString() from java.lang.String s 
-    where /java/(s.value.toString())
+    where /java/.test(s.value.toString())
 </code>
 </pre>
 <li>show path value of all File objects
@@ -219,7 +219,6 @@ Examples:
 <pre>
 <code>
     select heap.findClass("java.lang.System").statics.props
-    select heap.findClass("java.lang.System").props
 </code>
 </pre>
 <li>get number of fields of java.lang.String class 
@@ -237,7 +236,7 @@ Examples:
 <li>select all classes that have name pattern java.net.*
 <pre>
 <code>
-    select <a href="#filter">filter</a>(heap.classes(), "/java.net./(it.name)")
+    select <a href="#filter">filter</a>(heap.classes(), "/java.net./.test(it.name)")
 </code>
 </pre>
 </ul>
@@ -536,7 +535,7 @@ refer to the following built-in variables.
 Example: print number of classes that have specific name pattern
 <pre>
 <code>
-    select count(<a href="#classes">heap.classes()</a>, "/java.io./(it.name)")
+    select count(<a href="#classes">heap.classes()</a>, "/java.io./.test(it.name)")
 </code>
 </pre>
 
@@ -559,14 +558,14 @@ Examples:
 <li>show all classes that have java.io.* name pattern
 <pre>
 <code>
-    select filter(<a href="#classes">heap.classes</a>(), "/java.io./(it.name)")
+    select filter(<a href="#classes">heap.classes</a>(), "/java.io./.test(it.name)")
 </code>
 </pre>
 <li> show all referrers of URL object where the referrer is not from
 java.net package
 <pre>
 <code>
-    select filter(<a href="#referrers">referrers</a>(u), "! /java.net./(<a href="#classof">classof</a>(it).name)")
+    select filter(<a href="#referrers">referrers</a>(u), "! /java.net./.test(<a href="#classof">classof</a>(it).name)")
     from java.net.URL u
 </code>
 </pre>
@@ -619,13 +618,13 @@ Examples:
 <li>find the maximum length of any String instance
 <pre>
 <code>
-    select max(map(heap.objects('java.lang.String', false), 'it.count'))
+    select max(map(heap.objects('java.lang.String', false), 'it.value.length'))
 </code>
 </pre>
 <li>find string instance that has the maximum length
 <pre>
 <code>
-    select max(heap.objects('java.lang.String'), 'lhs.count > rhs.count')
+    select max(heap.objects('java.lang.String'), 'lhs.value.length > rhs.value.length')
 </code>
 </pre>
 </ul>
@@ -775,7 +774,7 @@ and walk until parent is null using the callback function to map call.
 
 <pre>
 <code>
-   select <a href="#map">map</a>(<a href="#filter">filter(<a href="#findClass">heap.findClass</a>('java.lang.System').props.table, 'it != null'), 
+   select <a href="#map">map</a>(<a href="#filter">filter(<a href="#findClass">heap.findClass</a>('java.lang.System').statics.props.table, 'it != null'), 
             function (it) {
                 var res = "";
                 while (it != null) {

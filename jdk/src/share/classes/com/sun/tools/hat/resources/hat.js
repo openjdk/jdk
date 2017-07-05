@@ -151,7 +151,7 @@ function JavaClassProto() {
         while (tmp != null) {
             res[res.length] = tmp;
             tmp = tmp.superclass;
-        } 
+        }
         return res;
     }
 
@@ -263,16 +263,19 @@ function wrapJavaObject(thing) {
     
                     if (name == 'class') {
                         return wrapJavaValue(instance.clazz);
-                    } else if (name == 'toString') {
-                        return function() { 
-                            return instance.toString();
-                        }
                     } else if (name == 'wrapped-object') {
                         return instance;
                     } 
     
                     return undefined;
-            }
+            },
+            __call__: function(name) {
+                if (name == 'toString') {
+                    return instance.toString();
+                } else {
+                    return undefined;
+                }
+            } 
         }				
     }
 
@@ -297,7 +300,7 @@ function wrapJavaObject(thing) {
                         return true;
                     }					
                 }
-                return theJavaClassProto[name] != undefined;
+                return false;
             },
             __get__ : function(name) {
                 for (var i in fields) {
@@ -305,7 +308,7 @@ function wrapJavaObject(thing) {
                         return wrapJavaValue(fields[i].value);	
                     }					
                 }
-                return theJavaClassProto[name];
+                return undefined;
             }
         }
     		
@@ -322,7 +325,12 @@ function wrapJavaObject(thing) {
         this.name = jclass.name; 
         this.fields = jclass.fields;
         this['wrapped-object'] = jclass;
-        this.__proto__ = this.statics;
+    }
+
+    for (var i in theJavaClassProto) {
+        if (typeof theJavaClassProto[i] == 'function') {
+           JavaClassWrapper.prototype[i] = theJavaClassProto[i];
+        }
     }
     
     // returns wrapper for Java object arrays
@@ -334,32 +342,35 @@ function wrapJavaObject(thing) {
             __getIds__ : function() {
                 var res = new Array(elements.length);
                 for (var i = 0; i < elements.length; i++) {
-                    res[i] = i;
+                    res[i] = String(i);
                 }
                 return res;
             },
             __has__: function(name) {
-                return (typeof(name) == 'number' &&
-                        name >= 0 && name < elements.length)  ||
+                return (name >= 0 && name < elements.length)  ||
                         name == 'length' || name == 'class' ||
                         name == 'toString' || name == 'wrapped-object';
             },
             __get__ : function(name) {
-                if (typeof(name) == 'number' &&
-                    name >= 0 && name < elements.length) {
+                if (name >= 0 && name < elements.length) {
                     return wrapJavaValue(elements[name]);
                 } else if (name == 'length') {
                     return elements.length;
                 } else if (name == 'class') {
                     return wrapJavaValue(array.clazz);
-                } else if (name == 'toString') {
-                    return function() { return array.toString(); }          
                 } else if (name == 'wrapped-object') {
                     return array;
                 } else {
                     return undefined;
                 }				
-            }
+            },
+            __call__: function(name) {
+                if (name == 'toString') {
+                    return array.toString();
+                } else {
+                    return undefined;
+                }
+            } 
         }			
     }
     
@@ -373,26 +384,22 @@ function wrapJavaObject(thing) {
             __getIds__ : function() {
                 var r = new Array(array.length);
                 for (var i = 0; i < array.length; i++) {
-                    r[i] = i;
+                    r[i] = String(i);
                 }
                 return r;
             },
             __has__: function(name) {
-                return (typeof(name) == 'number' &&
-                        name >= 0 && name < array.length) ||
+                return (name >= 0 && name < array.length) ||
                         name == 'length' || name == 'class' ||
                         name == 'toString' || name == 'wrapped-object';
             },
             __get__: function(name) {
-                if (typeof(name) == 'number' &&
-                    name >= 0 && name < array.length) {
+                if (name >= 0 && name < array.length) {
                     return elements[name];
                 }
     
                 if (name == 'length') {
                     return array.length;
-                } else if (name == 'toString') {
-                    return function() { return array.valueString(true); } 
                 } else if (name == 'wrapped-object') {
                     return array;
                 } else if (name == 'class') {
@@ -400,7 +407,14 @@ function wrapJavaObject(thing) {
                 } else {
                     return undefined;
                 }
-            }
+            },
+            __call__: function(name) {
+                if (name == 'toString') {
+                    return array.valueString(true);
+                } else {
+                    return undefined;
+                }
+            } 
         }
     }
     return javaObject(thing);
@@ -673,34 +687,33 @@ function wrapHeapSnapshot(heap) {
                     __getIds__ : function() {
                         var res = new Array(path.length);
                         for (var i = 0; i < path.length; i++) {
-                            res[i] = i;
+                            res[i] = String(i);
                         }
                         return res;
                     },
                     __has__ : function (name) {
-                        return (typeof(name) == 'number' &&
-                            name >= 0 && name < path.length) ||
+                        return (name >= 0 && name < path.length) ||
                             name == 'length' || name == 'toHtml' ||
                             name == 'toString';
                     },
                     __get__ : function(name) {
-                        if (typeof(name) == 'number' &&
-                            name >= 0 && name < path.length) {
+                        if (name >= 0 && name < path.length) {
                             return path[name];
                         } else if (name == 'length') {
                             return path.length;
-                        } else if (name == 'toHtml') {
-                            return function() { 
-                               return computeDescription(true);
-                            }
-                        } else if (name == 'toString') {
-                            return function() {
-                               return computeDescription(false);
-                            }
                         } else {
                             return undefined;
                         }
                     },
+                    __call__: function(name) {
+                        if (name == 'toHtml') {
+                            return computeDescription(true);
+                        } else if (name == 'toString') {
+                            return computeDescription(false);
+                        } else {
+                            return undefined;
+                        }
+                    }
                 };
             }
 
@@ -1005,22 +1018,8 @@ function toHtml(obj) {
             return "<a href='/object/" + id + "'>" +
                    name + "@" + id + "</a>";
         }
-    } else if ((typeof(obj) == 'object') || (obj instanceof JSAdapter)) {
-        if (obj instanceof java.lang.Object) {
-            // script wrapped Java object
-            obj = wrapIterator(obj);
-            // special case for enumeration
-            if (obj instanceof java.util.Enumeration) {
-                var res = "[ ";
-                while (obj.hasMoreElements()) {
-                    res += toHtml(obj.nextElement()) + ", ";
-                }
-                res += "]";
-                return res; 
-            } else {
-                return obj;
-            }
-        } else if (obj instanceof Array) {
+    } else if (obj instanceof Object) {
+        if (Array.isArray(obj)) {
             // script array
             var res = "[ ";
             for (var i in obj) {
@@ -1047,8 +1046,19 @@ function toHtml(obj) {
             }
         }
     } else {
-        // JavaScript primitive value
-        return obj;
+        // a Java object
+        obj = wrapIterator(obj);
+        // special case for enumeration
+        if (obj instanceof java.util.Enumeration) {
+            var res = "[ ";
+            while (obj.hasMoreElements()) {
+                res += toHtml(obj.nextElement()) + ", ";
+            }
+            res += "]";
+            return res; 
+        } else {
+            return obj;
+        }
     }
 }
 

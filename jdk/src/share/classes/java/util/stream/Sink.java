@@ -242,6 +242,7 @@ interface Sink<T> extends Consumer<T> {
      * {@code accept()} method on the downstream {@code Sink}.
      */
     static abstract class ChainedReference<T> implements Sink<T> {
+        @SuppressWarnings("rawtypes")
         protected final Sink downstream;
 
         public ChainedReference(Sink downstream) {
@@ -274,6 +275,7 @@ interface Sink<T> extends Consumer<T> {
      * {@code accept()} method on the downstream {@code Sink}.
      */
     static abstract class ChainedInt implements Sink.OfInt {
+        @SuppressWarnings("rawtypes")
         protected final Sink downstream;
 
         public ChainedInt(Sink downstream) {
@@ -306,6 +308,7 @@ interface Sink<T> extends Consumer<T> {
      * {@code accept()} method on the downstream {@code Sink}.
      */
     static abstract class ChainedLong implements Sink.OfLong {
+        @SuppressWarnings("rawtypes")
         protected final Sink downstream;
 
         public ChainedLong(Sink downstream) {
@@ -338,6 +341,7 @@ interface Sink<T> extends Consumer<T> {
      * {@code accept()} method on the downstream {@code Sink}.
      */
     static abstract class ChainedDouble implements Sink.OfDouble {
+        @SuppressWarnings("rawtypes")
         protected final Sink downstream;
 
         public ChainedDouble(Sink downstream) {
