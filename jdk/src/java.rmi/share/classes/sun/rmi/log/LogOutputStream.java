@@ -35,7 +35,7 @@ class LogOutputStream extends OutputStream {
     /**
      * Creates an output file with the specified system dependent
      * file descriptor.
-     * @param fd the system dependent file descriptor
+     * @param raf the system dependent file descriptor.
      * @exception IOException If an I/O error has occurred.
      */
     public LogOutputStream(RandomAccessFile raf) throws IOException {

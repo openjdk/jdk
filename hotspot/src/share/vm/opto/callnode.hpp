@@ -556,6 +556,10 @@ class CallGenerator;
 // contain the functionality of a full scope chain of debug nodes.
 class CallNode : public SafePointNode {
   friend class VMStructs;
+
+protected:
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr *t_oop, PhaseTransform *phase);
+
 public:
   const TypeFunc *_tf;        // Function type
   address      _entry_point;  // Address of method being called
@@ -781,6 +785,8 @@ public:
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif
+  bool is_call_to_arraycopystub() const;
+  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
@@ -1082,5 +1088,4 @@ public:
   JVMState* dbg_jvms() const { return NULL; }
 #endif
 };
-
 #endif // SHARE_VM_OPTO_CALLNODE_HPP

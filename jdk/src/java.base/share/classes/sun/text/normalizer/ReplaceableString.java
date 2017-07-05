@@ -109,10 +109,10 @@ public class ReplaceableString implements Replaceable {
      * starting at index <code>dstStart</code> and ending at index
      * <code>dstStart + (srcLimit-srcStart) - 1</code>.
      *
-     * @param srcStart the beginning index to copy, inclusive; <code>0
-     * <= start <= limit</code>.
+     * @param srcStart the beginning index to copy, inclusive;
+     *        {@code 0 <= start <= limit}.
      * @param srcLimit the ending index to copy, exclusive;
-     * <code>start <= limit <= length()</code>.
+     *        {@code start <= limit <= length()}.
      * @param dst the destination array.
      * @param dstStart the start offset in the destination array.
      * @stable ICU 2.0

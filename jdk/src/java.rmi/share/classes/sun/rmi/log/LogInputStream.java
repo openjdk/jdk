@@ -35,7 +35,7 @@ class LogInputStream extends InputStream {
     /**
      * Creates a log input file with the specified system dependent
      * file descriptor.
-     * @param fd the system dependent file descriptor
+     * @param in the system dependent file descriptor
      * @param length the total number of bytes allowed to be read
      * @exception IOException If an I/O error has occurred.
      */

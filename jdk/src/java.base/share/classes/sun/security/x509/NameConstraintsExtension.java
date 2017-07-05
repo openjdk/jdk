@@ -214,12 +214,19 @@ implements CertAttrSet<String>, Cloneable {
      * Return the printable string.
      */
     public String toString() {
-        return (super.toString() + "NameConstraints: [" +
-                ((permitted == null) ? "" :
-                     ("\n    Permitted:" + permitted.toString())) +
-                ((excluded == null) ? "" :
-                     ("\n    Excluded:" + excluded.toString()))
-                + "   ]\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append("NameConstraints: [");
+        if (permitted != null) {
+            sb.append("\n    Permitted:")
+                .append(permitted);
+        }
+        if (excluded != null) {
+            sb.append("\n    Excluded:")
+                .append(excluded);
+        }
+        sb.append("   ]\n");
+        return sb.toString();
     }
 
     /**

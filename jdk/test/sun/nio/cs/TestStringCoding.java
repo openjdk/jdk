@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 6636323 6636319 7040220 7096080 7183053
+   @bug 6636323 6636319 7040220 7096080 7183053 8080248
    @summary Test if StringCoding and NIO result have the same de/encoding result
  * @run main/othervm/timeout=2000 TestStringCoding
  * @key randomness
@@ -200,6 +200,17 @@ public class TestStringCoding {
             */
         }
 
+        //encode mappable surrogates for hkscs
+        if (cs.name().equals("Big5-HKSCS") || cs.name().equals("x-MS950-HKSCS")) {
+            String str = "ab\uD840\uDD0Ccd";
+            byte[] expected = new byte[] {(byte)'a', (byte)'b',
+                (byte)0x88, (byte)0x45, (byte)'c', (byte)'d' };
+            if (!Arrays.equals(str.getBytes(cs.name()), expected) ||
+                !Arrays.equals(str.getBytes(cs), expected)) {
+                throw new RuntimeException("encode(surrogates) failed  -> "
+                                           + cs.name());
+            }
+        }
     }
 
     static class PermissiveSecurityManger extends SecurityManager {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,6 @@ public class ProbeKeystores {
     private static final String CERT_FILE = "trusted.pem";
 
     public static final void main(String[] args) throws Exception {
-        try {
-            test();
-        } finally {
-            cleanup();
-        }
-    }
-
-    private static final void test() throws Exception {
-        cleanup();
 
         // Testing empty keystores
 
@@ -129,22 +120,11 @@ public class ProbeKeystores {
         System.out.println("OK.");
     }
 
-    private static void cleanup() {
-        new File("empty.jks").delete();
-        new File("empty.jceks").delete();
-        new File("empty.p12").delete();
-        new File("onecert.jks").delete();
-        new File("onecert.jceks").delete();
-        new File("onecert.p12").delete();
-        new File("onekey.jceks").delete();
-        new File("onekey.p12").delete();
-    }
-
     // Instantiate an empty keystore using the supplied keystore type
     private static void init(String file, String type) throws Exception {
         KeyStore ks = KeyStore.getInstance(type);
         ks.load(null, null);
-        try (OutputStream stream = new FileOutputStream(DIR + "/" + file)) {
+        try (OutputStream stream = new FileOutputStream(file)) {
             ks.store(stream, PASSWORD);
         }
         System.out.println("Created a " + type + " keystore named '" + file + "'");
@@ -156,7 +136,7 @@ public class ProbeKeystores {
         KeyStore ks = KeyStore.getInstance(type);
         ks.load(null, null);
         ks.setEntry("mycert", new KeyStore.TrustedCertificateEntry(cert), null);
-        try (OutputStream stream = new FileOutputStream(DIR + "/" + file)) {
+        try (OutputStream stream = new FileOutputStream(file)) {
             ks.store(stream, PASSWORD);
         }
         System.out.println("Created a " + type + " keystore named '" + file + "'");
@@ -169,7 +149,7 @@ public class ProbeKeystores {
         ks.load(null, null);
         ks.setEntry("mykey", new KeyStore.SecretKeyEntry(key),
             new PasswordProtection(PASSWORD));
-        try (OutputStream stream = new FileOutputStream(DIR + "/" + file)) {
+        try (OutputStream stream = new FileOutputStream(file)) {
             ks.store(stream, PASSWORD);
         }
         System.out.println("Created a " + type + " keystore named '" + file + "'");
@@ -178,7 +158,7 @@ public class ProbeKeystores {
     // Instantiate a keystore by probing the supplied file for the keystore type
     private static void probe(String file, String type) throws Exception {
         // First try with the correct password
-        KeyStore ks = KeyStore.getInstance(new File(DIR, file), PASSWORD);
+        KeyStore ks = KeyStore.getInstance(new File(file), PASSWORD);
         if (!type.equalsIgnoreCase(ks.getType())) {
             throw new Exception("ERROR: expected a " + type + " keystore, " +
                 "got a " + ks.getType() + " keystore instead");
@@ -188,7 +168,7 @@ public class ProbeKeystores {
 
         // Next try with an incorrect password
         try {
-            ks = KeyStore.getInstance(new File(DIR, file), BAD_PASSWORD);
+            ks = KeyStore.getInstance(new File(file), BAD_PASSWORD);
             throw new Exception("ERROR: expected an exception but got success");
         } catch (IOException e) {
             System.out.println("Failed to load a " + type + " keystore named '" + file + "' (as expected)");
@@ -201,10 +181,10 @@ public class ProbeKeystores {
 
         Builder builder;
         if (usePassword) {
-            builder = Builder.newInstance(new File(DIR, file),
+            builder = Builder.newInstance(new File(file),
                 new PasswordProtection(PASSWORD));
         } else {
-            builder = Builder.newInstance(new File(DIR, file),
+            builder = Builder.newInstance(new File(file),
                 new CallbackHandlerProtection(new DummyHandler()));
         }
         KeyStore ks = builder.getKeyStore();
@@ -219,7 +199,7 @@ public class ProbeKeystores {
     // Load the keystore entries
     private static void load(String file, String type) throws Exception {
         KeyStore ks = KeyStore.getInstance(type);
-        try (InputStream stream = new FileInputStream(DIR + "/" + file)) {
+        try (InputStream stream = new FileInputStream(file)) {
             ks.load(stream, PASSWORD);
         }
         if (!type.equalsIgnoreCase(ks.getType())) {

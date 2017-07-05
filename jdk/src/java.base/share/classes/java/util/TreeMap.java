@@ -859,7 +859,7 @@ public class TreeMap<K,V>
      * Returns a {@link Set} view of the mappings contained in this map.
      *
      * <p>The set's iterator returns the entries in ascending key order. The
-     * sets's spliterator is
+     * set's spliterator is
      * <em><a href="Spliterator.html#binding">late-binding</a></em>,
      * <em>fail-fast</em>, and additionally reports {@link Spliterator#SORTED} and
      * {@link Spliterator#ORDERED} with an encounter order that is ascending key
@@ -2643,7 +2643,7 @@ public class TreeMap<K,V>
      * child, also serving as origin for the split-off spliterator.
      * Left-hands are symmetric. Descending versions place the origin
      * at the end and invert ascending split rules.  This base class
-     * is non-commital about directionality, or whether the top-level
+     * is non-committal about directionality, or whether the top-level
      * spliterator covers the whole tree. This means that the actual
      * split mechanics are located in subclasses. Some of the subclass
      * trySplit methods are identical (except for return types), but

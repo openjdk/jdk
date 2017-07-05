@@ -31,6 +31,7 @@ import java.security.PrivilegedExceptionAction;
 import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
+import java.util.StringJoiner;
 
 import sun.security.util.*;
 import javax.security.auth.x500.X500Principal;
@@ -689,14 +690,11 @@ public class X500Name implements GeneralNameInterface, Principal {
          * The encodings of adjoining RelativeDistinguishedNames are separated
          * by a comma character (',' ASCII 44).
          */
-        StringBuilder fullname = new StringBuilder(48);
+        StringJoiner sj = new StringJoiner(",");
         for (int i = names.length - 1; i >= 0; i--) {
-            if (i < names.length - 1) {
-                fullname.append(',');
-            }
-            fullname.append(names[i].toRFC2253String(oidMap));
+            sj.add(names[i].toRFC2253String(oidMap));
         }
-        return fullname.toString();
+        return sj.toString();
     }
 
     public String getRFC2253CanonicalName() {
@@ -722,14 +720,11 @@ public class X500Name implements GeneralNameInterface, Principal {
          * The encodings of adjoining RelativeDistinguishedNames are separated
          * by a comma character (',' ASCII 44).
          */
-        StringBuilder fullname = new StringBuilder(48);
+        StringJoiner sj = new StringJoiner(",");
         for (int i = names.length - 1; i >= 0; i--) {
-            if (i < names.length - 1) {
-                fullname.append(',');
-            }
-            fullname.append(names[i].toRFC2253String(true));
+            sj.add(names[i].toRFC2253String(true));
         }
-        canonicalDn = fullname.toString();
+        canonicalDn = sj.toString();
         return canonicalDn;
     }
 
@@ -1064,16 +1059,16 @@ public class X500Name implements GeneralNameInterface, Principal {
             return;
         }
 
-        StringBuilder sb = new StringBuilder(48);
-        if (names != null) {
-            for (int i = names.length - 1; i >= 0; i--) {
-                if (i != names.length - 1) {
-                    sb.append(", ");
-                }
-                sb.append(names[i].toString());
-            }
+        if (names == null) {
+            dn = "";
+            return;
         }
-        dn = sb.toString();
+
+        StringJoiner sj = new StringJoiner(", ");
+        for (int i = names.length - 1; i >= 0; i--) {
+            sj.add(names[i].toString());
+        }
+        dn = sj.toString();
     }
 
     /*
@@ -1090,16 +1085,15 @@ public class X500Name implements GeneralNameInterface, Principal {
             return names[0].toRFC1779String(oidMap);
         }
 
-        StringBuilder sb = new StringBuilder(48);
-        if (names != null) {
-            for (int i = names.length - 1; i >= 0; i--) {
-                if (i != names.length - 1) {
-                    sb.append(", ");
-                }
-                sb.append(names[i].toRFC1779String(oidMap));
-            }
+        if (names == null) {
+            return "";
         }
-        return sb.toString();
+
+        StringJoiner sj = new StringJoiner(", ");
+        for (int i = names.length - 1; i >= 0; i--) {
+            sj.add(names[i].toRFC1779String(oidMap));
+        }
+        return sj.toString();
     }
 
     /****************************************************************/

@@ -30,7 +30,7 @@
  */
 
 import sun.misc.Unsafe;
-import static com.oracle.java.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 public class GetUnsafe {
     public static void main(String args[]) throws Exception {

@@ -483,7 +483,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 
   // Compute the alias index.  Loads and stores with different alias indices
   // do not need anti-dependence edges.
-  uint load_alias_idx = C->get_alias_index(load->adr_type());
+  int load_alias_idx = C->get_alias_index(load->adr_type());
 #ifdef ASSERT
   if (load_alias_idx == Compile::AliasIdxBot && C->AliasLevel() > 0 &&
       (PrintOpto || VerifyAliases ||

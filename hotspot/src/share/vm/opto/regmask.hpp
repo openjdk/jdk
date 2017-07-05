@@ -98,7 +98,8 @@ public:
          SlotsPerVecS = 1,
          SlotsPerVecD = 2,
          SlotsPerVecX = 4,
-         SlotsPerVecY = 8 };
+         SlotsPerVecY = 8,
+         SlotsPerVecZ = 16 };
 
   // A constructor only used by the ADLC output.  All mask fields are filled
   // in directly.  Calls to this look something like RM(1,2,3,4);
@@ -299,13 +300,13 @@ public:
   static bool can_represent(OptoReg::Name reg) {
     // NOTE: -1 in computation reflects the usage of the last
     //       bit of the regmask as an infinite stack flag and
-    //       -7 is to keep mask aligned for largest value (VecY).
+    //       -7 is to keep mask aligned for largest value (VecZ).
     return (int)reg < (int)(CHUNK_SIZE-1);
   }
   static bool can_represent_arg(OptoReg::Name reg) {
-    // NOTE: -SlotsPerVecY in computation reflects the need
-    //       to keep mask aligned for largest value (VecY).
-    return (int)reg < (int)(CHUNK_SIZE-SlotsPerVecY);
+    // NOTE: -SlotsPerVecZ in computation reflects the need
+    //       to keep mask aligned for largest value (VecZ).
+    return (int)reg < (int)(CHUNK_SIZE-SlotsPerVecZ);
   }
 };
 

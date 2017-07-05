@@ -22,8 +22,7 @@
  */
 /*
  * @test
- * @bug 6673164
- * @bug 6552334
+ * @bug 6673164 6552334 8077102
  * @run main/othervm DnsFallback
  * @summary fix dns_fallback parse error, and use dns by default
  */
@@ -35,47 +34,66 @@ import sun.security.krb5.Config;
 public class DnsFallback {
 
     static Method useDNS_Realm;
+    static Method useDNS_KDC;
 
     public static void main(String[] args) throws Exception {
 
         useDNS_Realm = Config.class.getDeclaredMethod("useDNS_Realm");
         useDNS_Realm.setAccessible(true);
+        useDNS_KDC = Config.class.getDeclaredMethod("useDNS_KDC");
+        useDNS_KDC.setAccessible(true);
 
 
         // for 6673164
-        check("true", "true", true);
-        check("false", "true", false);
-        check("true", "false", true);
-        check("false", "false", false);
-        check("true", null, true);
-        check("false", null, false);
-        check(null, "true", true);
-        check(null, "false", false);
+        check("true", "true", true, true);
+        check("false", "true", false, false);
+        check("true", "false", true, true);
+        check("false", "false", false, false);
+        check("true", null, true, true);
+        check("false", null, false, false);
+        check(null, "true", true, true);
+        check(null, "false", false, false);
 
-        // for 6552334
-        check(null, null, true);
+        // for 6552334, no longer true
+        //check(null, null, true, true);
+
+        // 8077102
+        check(null, null, false, true);
     }
 
-    static void check(String realm, String fallback, boolean output)
+    /**
+     * Sets and checks.
+     *
+     * @param u dns_lookup_XXX value set, none if null
+     * @param f dns_fallback value set, none if null
+     * @param r expected useDNS_Realm
+     * @param k expected useDNS_KDC
+     */
+    static void check(String u, String f, boolean r, boolean k)
             throws Exception {
 
         try (PrintStream ps =
                 new PrintStream(new FileOutputStream("dnsfallback.conf"))) {
             ps.println("[libdefaults]\n");
-            if (realm != null) {
-                ps.println("dns_lookup_realm=" + realm);
+            if (u != null) {
+                ps.println("dns_lookup_realm=" + u);
+                ps.println("dns_lookup_kdc=" + u);
             }
-            if (fallback != null) {
-                ps.println("dns_fallback=" + fallback);
+            if (f != null) {
+                ps.println("dns_fallback=" + f);
             }
         }
 
         System.setProperty("java.security.krb5.conf", "dnsfallback.conf");
         Config.refresh();
-        System.out.println("Testing " + realm + ", " + fallback + ", " + output);
+        System.out.println("Testing " + u + ", " + f + ", " + r + ", " + k);
 
-        if (!useDNS_Realm.invoke(Config.getInstance()).equals(output)) {
-            throw new Exception("Fail");
+        if (!useDNS_Realm.invoke(Config.getInstance()).equals(r)) {
+            throw new Exception("useDNS_Realm Fail");
+        }
+
+        if (!useDNS_KDC.invoke(Config.getInstance()).equals(k)) {
+            throw new Exception("useDNS_KDC Fail");
         }
     }
 }

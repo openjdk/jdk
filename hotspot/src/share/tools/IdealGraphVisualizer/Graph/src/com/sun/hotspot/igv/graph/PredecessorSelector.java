@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,10 @@ public class PredecessorSelector implements Selector {
         this.innerSelector = innerSelector;
     }
 
+    @Override
     public List<Figure> selected(Diagram d) {
         List<Figure> inner = innerSelector.selected(d);
-        List<Figure> result = new ArrayList<Figure>();
+        List<Figure> result = new ArrayList<>();
         for (Figure f : d.getFigures()) {
             boolean saved = false;
             for (Figure f2 : f.getSuccessors()) {

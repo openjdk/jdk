@@ -452,14 +452,14 @@ public abstract class PartialCompositeContext implements Context, Resolver {
      * nonempty component, and if 'prefix' ends with an empty component or
      * 'name' starts with one, then one empty component is dropped.
      * For example:
-     * <pre>
+     * <pre>{@code
      *                            elideEmpty=false     elideEmpty=true
      * {"a"} + {"b"}          =>  {"a", "b"}           {"a", "b"}
      * {"a"} + {""}           =>  {"a", ""}            {"a", ""}
      * {"a"} + {"", "b"}      =>  {"a", "", "b"}       {"a", "b"}
      * {"a", ""} + {"b", ""}  =>  {"a", "", "b", ""}   {"a", "b", ""}
      * {"a", ""} + {"", "b"}  =>  {"a", "", "", "b"}   {"a", "", "b"}
-     * </pre>
+     * }</pre>
      */
     public Name composeName(Name name, Name prefix) throws NamingException {
         Name res = (Name)prefix.clone();

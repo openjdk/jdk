@@ -1024,13 +1024,13 @@ public:
   void vaddss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vaddss(dst, nds, src); }
   void vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
 
-  void vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vandpd(dst, nds, src, vector256); }
-  void vandpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256)     { Assembler::vandpd(dst, nds, src, vector256); }
-  void vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
+  void vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vandpd(dst, nds, src, vector_len); }
+  void vandpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len)     { Assembler::vandpd(dst, nds, src, vector_len); }
+  void vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len);
 
-  void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vandps(dst, nds, src, vector256); }
-  void vandps(XMMRegister dst, XMMRegister nds, Address src, bool vector256)     { Assembler::vandps(dst, nds, src, vector256); }
-  void vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
+  void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vandps(dst, nds, src, vector_len); }
+  void vandps(XMMRegister dst, XMMRegister nds, Address src, int vector_len)     { Assembler::vandps(dst, nds, src, vector_len); }
+  void vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len);
 
   void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vdivsd(dst, nds, src); }
   void vdivsd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vdivsd(dst, nds, src); }
@@ -1058,25 +1058,25 @@ public:
 
   // AVX Vector instructions
 
-  void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vxorpd(dst, nds, src, vector256); }
-  void vxorpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256) { Assembler::vxorpd(dst, nds, src, vector256); }
-  void vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
+  void vxorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vxorpd(dst, nds, src, vector_len); }
+  void vxorpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len) { Assembler::vxorpd(dst, nds, src, vector_len); }
+  void vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len);
 
-  void vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) { Assembler::vxorps(dst, nds, src, vector256); }
-  void vxorps(XMMRegister dst, XMMRegister nds, Address src, bool vector256) { Assembler::vxorps(dst, nds, src, vector256); }
-  void vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256);
+  void vxorps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vxorps(dst, nds, src, vector_len); }
+  void vxorps(XMMRegister dst, XMMRegister nds, Address src, int vector_len) { Assembler::vxorps(dst, nds, src, vector_len); }
+  void vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len);
 
-  void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
-    if (UseAVX > 1 || !vector256) // vpxor 256 bit is available only in AVX2
-      Assembler::vpxor(dst, nds, src, vector256);
+  void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+    if (UseAVX > 1 || (vector_len < 1)) // vpxor 256 bit is available only in AVX2
+      Assembler::vpxor(dst, nds, src, vector_len);
     else
-      Assembler::vxorpd(dst, nds, src, vector256);
+      Assembler::vxorpd(dst, nds, src, vector_len);
   }
-  void vpxor(XMMRegister dst, XMMRegister nds, Address src, bool vector256) {
-    if (UseAVX > 1 || !vector256) // vpxor 256 bit is available only in AVX2
-      Assembler::vpxor(dst, nds, src, vector256);
+  void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+    if (UseAVX > 1 || (vector_len < 1)) // vpxor 256 bit is available only in AVX2
+      Assembler::vpxor(dst, nds, src, vector_len);
     else
-      Assembler::vxorpd(dst, nds, src, vector256);
+      Assembler::vxorpd(dst, nds, src, vector_len);
   }
 
   // Simple version for AVX2 256bit vectors

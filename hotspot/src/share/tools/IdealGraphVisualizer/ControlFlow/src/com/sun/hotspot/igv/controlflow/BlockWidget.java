@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
+import java.awt.Rectangle;
 import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.LabelWidget;
@@ -41,13 +42,13 @@ import org.netbeans.api.visual.widget.LabelWidget;
  */
 public class BlockWidget extends LabelWidget implements Vertex {
 
-    public static final Dimension SIZE = new Dimension(20, 20);
+    public static final Dimension MIN_SIZE = new Dimension(20, 20);
     private InputBlock block;
     private Port inputSlot;
     private Port outputSlot;
     private Cluster cluster;
     private boolean root;
-    private static final Font font = new Font(Font.SERIF, Font.PLAIN, 12);
+    private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
     private static final Font boldFont = font.deriveFont(Font.BOLD);
     public static final Color NORMAL_FOREGROUND_COLOR = Color.BLACK;
     public static final Color HOVER_FOREGROUND_COLOR = Color.BLUE;
@@ -59,29 +60,24 @@ public class BlockWidget extends LabelWidget implements Vertex {
         this.setLabel(block.getName());
         this.setForeground(NORMAL_FOREGROUND_COLOR);
         this.setBorder(BorderFactory.createLineBorder(1, NORMAL_FOREGROUND_COLOR));
-        this.setMinimumSize(SIZE);
-        this.setMaximumSize(SIZE);
+        this.setMinimumSize(MIN_SIZE);
 
         this.setFont(font);
+        this.setAlignment(Alignment.CENTER);
 
         final BlockWidget widget = this;
         inputSlot = new Port() {
-
             public Point getRelativePosition() {
-                return new Point((int) (SIZE.getWidth() / 2), (int) (SIZE.getHeight() / 2));
+                return new Point((int) (getSize().getWidth() / 2), (int) (getSize().getHeight() / 2));
             }
-
             public Vertex getVertex() {
                 return widget;
             }
         };
-
         outputSlot = new Port() {
-
             public Point getRelativePosition() {
-                return new Point((int) (SIZE.getWidth() / 2), (int) (SIZE.getHeight() / 2));
+                return new Point((int) (getSize().getWidth() / 2), (int) (getSize().getHeight() / 2));
             }
-
             public Vertex getVertex() {
                 return widget;
             }
@@ -101,7 +97,12 @@ public class BlockWidget extends LabelWidget implements Vertex {
     }
 
     public Dimension getSize() {
-        return SIZE;
+        Rectangle bounds = getBounds();
+        if (bounds != null) {
+            return bounds.getSize();
+        } else {
+            return MIN_SIZE;
+        }
     }
 
     public void setPosition(Point p) {

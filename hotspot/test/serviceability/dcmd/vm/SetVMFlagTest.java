@@ -21,9 +21,9 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.dcmd.CommandExecutor;
-import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -32,8 +32,8 @@ import static org.testng.Assert.*;
  * @bug 8054890
  * @summary Test of VM.set_flag diagnostic command
  * @library /testlibrary
- * @build com.oracle.java.testlibrary.*
- * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.*
+ * @build jdk.test.lib.dcmd.*
  * @run testng SetVMFlagTest
  */
 

@@ -231,8 +231,8 @@ public class CRLDistributionPointsExtension extends Extension
             distributionPoints = (List<DistributionPoint>)obj;
         } else {
             throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:" + extensionName + ".");
+                                  "] not recognized by " +
+                                  "CertAttrSet:" + extensionName + '.');
         }
         encodeThis();
     }
@@ -245,8 +245,8 @@ public class CRLDistributionPointsExtension extends Extension
             return distributionPoints;
         } else {
             throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:" + extensionName + ".");
+                                  "] not recognized by " +
+                                  "CertAttrSet:" + extensionName + '.');
         }
     }
 

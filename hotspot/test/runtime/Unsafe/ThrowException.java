@@ -30,9 +30,9 @@
  * @run main ThrowException
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.misc.Unsafe;
-import static com.oracle.java.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 public class ThrowException {
     public static void main(String args[]) throws Exception {

@@ -24,10 +24,10 @@
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.OutputAnalyzer;
 
-import com.oracle.java.testlibrary.dcmd.CommandExecutor;
-import com.oracle.java.testlibrary.dcmd.JMXExecutor;
+import jdk.test.lib.dcmd.CommandExecutor;
+import jdk.test.lib.dcmd.JMXExecutor;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -42,8 +42,8 @@ import java.util.regex.Pattern;
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.*
- * @build com.oracle.java.testlibrary.dcmd.*
+ * @build jdk.test.lib.*
+ * @build jdk.test.lib.dcmd.*
  * @run testng PrintTest
  */
 public class PrintTest {
@@ -149,8 +149,8 @@ public class PrintTest {
          *       at java.lang.Object.wait(Object.java:502)
          *        at java.lang.UNIXProcess.waitFor(UNIXProcess.java:397)
          *        - locked <0x000000071a70ad98> (a java.lang.UNIXProcess)
-         *        at com.oracle.java.testlibrary.dcmd.JcmdExecutor.executeImpl(JcmdExecutor.java:32)
-         *       at com.oracle.java.testlibrary.dcmd.CommandExecutor.execute(CommandExecutor.java:24)
+         *        at jdk.test.lib.dcmd.JcmdExecutor.executeImpl(JcmdExecutor.java:32)
+         *       at jdk.test.lib.dcmd.CommandExecutor.execute(CommandExecutor.java:24)
          * -->   at Print.run(Print.java:74)
          *       at Print.file(Print.java:112)
          *     ...

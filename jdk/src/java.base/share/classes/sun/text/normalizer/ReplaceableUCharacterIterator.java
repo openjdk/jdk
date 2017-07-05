@@ -150,14 +150,12 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
     }
 
     /**
-     * <p>Sets the currentIndex to the specified currentIndex in the text and returns that
+     * Sets the currentIndex to the specified currentIndex in the text and returns that
      * single UTF16 character at currentIndex.
-     * This assumes the text is stored as 16-bit code units.</p>
+     * This assumes the text is stored as 16-bit code units.
      * @param currentIndex the currentIndex within the text.
      * @exception IllegalArgumentException is thrown if an invalid currentIndex is
      *            supplied. i.e. currentIndex is out of bounds.
-     * @return the character at the specified currentIndex or DONE if the specified
-     *         currentIndex is equal to the end of the text.
      */
     public void setIndex(int currentIndex) {
         if (currentIndex < 0 || currentIndex > replaceable.length()) {

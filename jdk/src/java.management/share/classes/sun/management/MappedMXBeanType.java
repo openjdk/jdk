@@ -45,13 +45,15 @@ import static javax.management.openmbean.SimpleType.*;
  * A mapped mxbean type maps a Java type to an open type.
  * Only the following Java types are mappable
  * (currently required by the platform MXBeans):
- *   1. Primitive types
- *   2. Wrapper classes such java.lang.Integer, etc
- *   3. Classes with only getter methods and with a static "from" method
- *      that takes a CompositeData argument.
- *   4. E[] where E is a type of 1-4 (can be multi-dimensional array)
- *   5. List<E> where E is a type of 1-3
- *   6. Map<K, V> where K and V are a type of 1-4
+ * <ol>
+ *   <li>Primitive types</li>
+ *   <li>Wrapper classes such java.lang.Integer, etc</li>
+ *   <li>Classes with only getter methods and with a static "from" method
+ *      that takes a CompositeData argument.</li>
+ *   <li>{@code E[]} where {@code E} is a type of 1-4 (can be multi-dimensional array)</li>
+ *   <li>{@code List<E>} where E is a type of 1-3</li>
+ *   <li>{@code Map<K, V>} where {@code K} and {@code V} are a type of 1-4</li>
+ * </ol>
  *
  * OpenDataException will be thrown if a Java type is not supported.
  */
