@@ -74,7 +74,6 @@
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#include "oops/oop.pcgc.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"

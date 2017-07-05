@@ -41,46 +41,60 @@ endef
 # Cleans the dir given as $1
 define CleanDir
 	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
-	@($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
 	@$(PRINTF) " done\n"
 endef
 
 define CleanTest
 	@$(PRINTF) "Cleaning test $(strip $1) ..."
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))
 	@$(PRINTF) " done\n"
 endef
 
 define Clean-gensrc
 	@$(PRINTF) "Cleaning gensrc $(if $1,for $(strip $1) )..."
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc_no_docs/$(strip $1)
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc_no_docs/$(strip $1)
 	@$(PRINTF) " done\n"
 endef
 
 define Clean-java
 	@$(PRINTF) "Cleaning java $(if $1,for $(strip $1) )..."
-	@$(RM) -r $(JDK_OUTPUTDIR)/modules/$(strip $1)
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/misc/$(strip $1)
-	@$(PRINTF) " done\n"
-	@$(PRINTF) "Cleaning headers $(if $1,for $(strip $1)) ..."
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(JDK_OUTPUTDIR)/modules/$(strip $1)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/misc/$(strip $1)
+	$(PRINTF) " done\n"
+	$(PRINTF) "Cleaning headers $(if $1,for $(strip $1)) ..."
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)
 	@$(PRINTF) " done\n"
 endef
 
 define Clean-native
 	@$(PRINTF) "Cleaning native $(if $1,for $(strip $1) )..."
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/native/$(strip $1)
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs-stripped/$(strip $1)
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped/$(strip $1)
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/native/$(strip $1)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs-stripped/$(strip $1)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped/$(strip $1)
 	@$(PRINTF) " done\n"
 endef
 
 define Clean-include
 	@$(PRINTF) "Cleaning include $(if $1,for $(strip $1) )..."
-	@$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_include/$(strip $1)
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_include/$(strip $1)
+	@$(PRINTF) " done\n"
+endef
+
+define Clean-docs
+	@$(PRINTF) "Cleaning docs ..."
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/docs
+	$(RM) -r $(IMAGES_OUTPUTDIR)/docs
 	@$(PRINTF) " done\n"
 endef
 

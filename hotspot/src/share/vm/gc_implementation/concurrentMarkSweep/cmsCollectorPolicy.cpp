@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,10 @@ void ConcurrentMarkSweepPolicy::initialize_alignments() {
 }
 
 void ConcurrentMarkSweepPolicy::initialize_generations() {
-  _generations = NEW_C_HEAP_ARRAY(GenerationSpecPtr, number_of_generations(), mtGC);
-  _generations[0] = new GenerationSpec(Generation::ParNew, _initial_young_size, _max_young_size);
-  _generations[1] = new GenerationSpec(Generation::ConcurrentMarkSweep, _initial_old_size, _max_old_size);
+  _young_gen_spec = new GenerationSpec(Generation::ParNew, _initial_young_size,
+                                       _max_young_size, _gen_alignment);
+  _old_gen_spec   = new GenerationSpec(Generation::ConcurrentMarkSweep,
+                                       _initial_old_size, _max_old_size, _gen_alignment);
 }
 
 void ConcurrentMarkSweepPolicy::initialize_size_policy(size_t init_eden_size,

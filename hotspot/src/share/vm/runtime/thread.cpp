@@ -3183,6 +3183,7 @@ JavaThread* Threads::_thread_list = NULL;
 int         Threads::_number_of_threads = 0;
 int         Threads::_number_of_non_daemon_threads = 0;
 int         Threads::_return_code = 0;
+int         Threads::_thread_claim_parity = 0;
 size_t      JavaThread::_stack_size_at_create = 0;
 #ifdef ASSERT
 bool        Threads::_vm_complete = false;
@@ -3216,7 +3217,6 @@ void Threads::threads_do(ThreadClosure* tc) {
 
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
-
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TraceStartupTime);
@@ -4046,6 +4046,26 @@ void Threads::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   VMThread::vm_thread()->oops_do(f, cld_f, cf);
 }
 
+void Threads::change_thread_claim_parity() {
+  // Set the new claim parity.
+  assert(_thread_claim_parity >= 0 && _thread_claim_parity <= 2,
+         "Not in range.");
+  _thread_claim_parity++;
+  if (_thread_claim_parity == 3) _thread_claim_parity = 1;
+  assert(_thread_claim_parity >= 1 && _thread_claim_parity <= 2,
+         "Not in range.");
+}
+
+#ifndef PRODUCT
+void Threads::assert_all_threads_claimed() {
+  ALL_JAVA_THREADS(p) {
+    const int thread_parity = p->oops_do_parity();
+    assert((thread_parity == _thread_claim_parity),
+        err_msg("Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity));
+  }
+}
+#endif // PRODUCT
+
 void Threads::possibly_parallel_oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) {
   // Introduce a mechanism allowing parallel threads to claim threads as
   // root groups.  Overhead should be small enough to use all the time,
@@ -4060,7 +4080,7 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CLDClosure* cld_f, CodeBl
   assert(!is_par ||
          (SharedHeap::heap()->n_par_threads() ==
          SharedHeap::heap()->workers()->active_workers()), "Mismatch");
-  int cp = SharedHeap::heap()->strong_roots_parity();
+  int cp = Threads::thread_claim_parity();
   ALL_JAVA_THREADS(p) {
     if (p->claim_oops_do(is_par, cp)) {
       p->oops_do(f, cld_f, cf);

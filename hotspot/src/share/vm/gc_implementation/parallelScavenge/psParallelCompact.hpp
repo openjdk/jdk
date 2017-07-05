@@ -1025,9 +1025,6 @@ class PSParallelCompact : AllStatic {
                             bool maximum_heap_compaction,
                             ParallelOldTracer *gc_tracer);
 
-  template <class T>
-  static inline void follow_root(ParCompactionManager* cm, T* p);
-
   // Compute the dense prefix for the designated space.  This is an experimental
   // implementation currently not used in production.
   static HeapWord* compute_dense_prefix_via_density(const SpaceId id,
@@ -1336,23 +1333,6 @@ inline bool PSParallelCompact::is_marked(oop obj) {
 }
 
 template <class T>
-inline void PSParallelCompact::follow_root(ParCompactionManager* cm, T* p) {
-  assert(!Universe::heap()->is_in_reserved(p),
-         "roots shouldn't be things within the heap");
-
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (mark_bitmap()->is_unmarked(obj)) {
-      if (mark_obj(obj)) {
-        obj->follow_contents(cm);
-      }
-    }
-  }
-  cm->follow_marking_stacks();
-}
-
-template <class T>
 inline void PSParallelCompact::mark_and_push(ParCompactionManager* cm, T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
@@ -1523,12 +1503,6 @@ class UpdateOnlyClosure: public ParMarkBitMapClosure {
 
   inline void do_addr(HeapWord* addr);
 };
-
-inline void UpdateOnlyClosure::do_addr(HeapWord* addr)
-{
-  _start_array->allocate_block(addr);
-  oop(addr)->update_contents(compaction_manager());
-}
 
 class FillClosure: public ParMarkBitMapClosure
 {
