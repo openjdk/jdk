@@ -193,18 +193,20 @@ public final class WithObject extends ScriptObject implements Scope {
      *
      * @param key  Property key.
      * @param deep Whether the search should look up proto chain.
-     * @param stopOnNonScope should a deep search stop on the first non-scope object?
      * @param start the object on which the lookup was originally initiated
      *
      * @return FindPropertyData or null if not found.
      */
     @Override
-    FindProperty findProperty(final String key, final boolean deep, final boolean stopOnNonScope, final ScriptObject start) {
-        final FindProperty exprProperty = expression.findProperty(key, deep, stopOnNonScope, start);
+    FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
+        // We call findProperty on 'expression' with 'expression' itself as start parameter.
+        // This way in ScriptObject.setObject we can tell the property is from a 'with' expression
+        // (as opposed from another non-scope object in the proto chain such as Object.prototype).
+        final FindProperty exprProperty = expression.findProperty(key, true, expression);
         if (exprProperty != null) {
              return exprProperty;
         }
-        return super.findProperty(key, deep, stopOnNonScope, start);
+        return super.findProperty(key, deep, start);
     }
 
     @Override

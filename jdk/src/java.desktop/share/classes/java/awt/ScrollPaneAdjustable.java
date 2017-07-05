@@ -333,7 +333,7 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
      * If the value supplied is less than the current minimum or
      * greater than the current maximum, then one of those values is
      * substituted, as appropriate. Also, creates and dispatches
-     * the AdjustementEvent with specified type and value.
+     * the AdjustmentEvent with specified type and value.
      *
      * @param v the new value of the scrollbar
      * @param type the type of the scrolling operation occurred

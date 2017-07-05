@@ -173,6 +173,15 @@ public interface MethodHandleFunctionality {
     public MethodHandle constant(Class<?> type, Object value);
 
     /**
+     * Wrapper for {@link java.lang.invoke.MethodHandles#identity(Class)}
+     *
+     * @param type  type of value
+     *
+     * @return method handle that returns identity argument
+     */
+    public MethodHandle identity(Class<?> type);
+
+    /**
      * Wrapper for {@link java.lang.invoke.MethodHandle#asType(MethodType)}
      *
      * @param handle  method handle for type conversion

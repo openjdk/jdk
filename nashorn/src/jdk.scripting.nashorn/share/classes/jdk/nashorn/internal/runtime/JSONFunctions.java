@@ -122,7 +122,7 @@ public final class JSONFunctions {
                 if (newElement == ScriptRuntime.UNDEFINED) {
                     valueObj.delete(key, false);
                 } else {
-                    setPropertyValue(valueObj, key, newElement, false);
+                    setPropertyValue(valueObj, key, newElement);
                 }
             }
         }
@@ -179,7 +179,7 @@ public final class JSONFunctions {
 
                 final String name = pNode.getKeyName();
                 final Object value = convertNode(global, valueNode);
-                setPropertyValue(object, name, value, false);
+                setPropertyValue(object, name, value);
             }
 
             return object;
@@ -193,14 +193,14 @@ public final class JSONFunctions {
     }
 
     // add a new property if does not exist already, or else set old property
-    private static void setPropertyValue(final ScriptObject sobj, final String name, final Object value, final boolean strict) {
+    private static void setPropertyValue(final ScriptObject sobj, final String name, final Object value) {
         final int index = ArrayIndex.getArrayIndex(name);
         if (ArrayIndex.isValidArrayIndex(index)) {
             // array index key
             sobj.defineOwnProperty(index, value);
         } else if (sobj.getMap().findProperty(name) != null) {
             // pre-existing non-inherited property, call set
-            sobj.set(name, value, strict);
+            sobj.set(name, value, 0);
         } else {
             // add new property
             sobj.addOwnProperty(name, Property.WRITABLE_ENUMERABLE_CONFIGURABLE, value);

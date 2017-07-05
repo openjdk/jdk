@@ -31,12 +31,8 @@
 ProjectCreatorSources=\
         $(WorkSpace)\src\share\tools\ProjectCreator\ProjectCreator.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\FileTreeCreator.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\FileTreeCreatorVC7.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\FileTreeCreatorVC10.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatform.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC7.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC8.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC9.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC10.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\Util.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\BuildConfig.java \

@@ -28,7 +28,6 @@ package jdk.nashorn.internal.runtime.arrays;
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -38,7 +37,7 @@ import jdk.nashorn.internal.codegen.types.Type;
  * Implementation of {@link ArrayData} as soon as a double has been
  * written to the array
  */
-final class NumberArrayData extends ContinuousArrayData {
+final class NumberArrayData extends ContinuousArrayData implements NumericElements {
     /**
      * The wrapped array
      */
@@ -53,6 +52,11 @@ final class NumberArrayData extends ContinuousArrayData {
         super(length);
         assert array.length >= length;
         this.array  = array;
+    }
+
+    @Override
+    public Class<?> getElementType() {
+        return double.class;
     }
 
     @Override
@@ -297,5 +301,42 @@ final class NumberArrayData extends ContinuousArrayData {
         }
 
         return returnValue;
+    }
+
+    @Override
+    public long fastPush(final int arg) {
+        return fastPush((double)arg);
+    }
+
+    @Override
+    public long fastPush(final long arg) {
+        return fastPush((double)arg);
+    }
+
+    @Override
+    public long fastPush(final double arg) {
+        final int len = (int)length;
+        if (len == array.length) {
+           //note that fastpush never creates spares arrays, there is nothing to gain by that - it will just use even more memory
+           array = Arrays.copyOf(array, nextSize(len));
+        }
+        array[len] = arg;
+        return ++length;
+    }
+
+    @Override
+    public double fastPopDouble() {
+        if (length == 0) {
+            throw new ClassCastException();
+        }
+        final int newLength = (int)--length;
+        final double elem = array[newLength];
+        array[newLength] = 0;
+        return elem;
+    }
+
+    @Override
+    public Object fastPopObject() {
+        return fastPopDouble();
     }
 }

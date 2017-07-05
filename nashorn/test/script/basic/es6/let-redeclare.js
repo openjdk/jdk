@@ -34,5 +34,5 @@ try {
          'let x = 2;\n' +
          'let x = 2;\n');
 } catch (e) {
-    print(e);
+    print(String(e).replace(/\\/g, "/"));
 }

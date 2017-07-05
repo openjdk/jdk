@@ -166,7 +166,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
                     retComp = cont.getFocusTraversalPolicy().getDefaultComponent(cont);
 
                     if (retComp != null && log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("### Transfered focus down-cycle to " + retComp +
+                        log.fine("### Transferred focus down-cycle to " + retComp +
                                  " in the focus cycle root " + cont);
                     }
                 } else {
@@ -178,7 +178,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
                            cont.getFocusTraversalPolicy().getLastComponent(cont));
 
                 if (retComp != null && log.isLoggable(PlatformLogger.Level.FINE)) {
-                    log.fine("### Transfered focus to " + retComp + " in the FTP provider " + cont);
+                    log.fine("### Transferred focus to " + retComp + " in the FTP provider " + cont);
                 }
             }
         }
@@ -228,7 +228,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
                 return null;
             }
 
-            // Before all the ckecks below we first see if it's an FTP provider or a focus cycle root.
+            // Before all the checks below we first see if it's an FTP provider or a focus cycle root.
             // If it's the case just go down cycle (if it's set to "implicit").
             Component comp = getComponentDownCycle(aComponent, FORWARD_TRAVERSAL);
             if (comp != null) {

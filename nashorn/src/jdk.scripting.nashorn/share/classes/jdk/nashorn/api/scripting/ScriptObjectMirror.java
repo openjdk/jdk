@@ -50,6 +50,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Mirror object that wraps a given Nashorn Script object.
@@ -261,7 +262,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     public void setSlot(final int index, final Object value) {
         inGlobal(new Callable<Void>() {
             @Override public Void call() {
-                sobj.set(index, unwrap(value, global), strict);
+                sobj.set(index, unwrap(value, global), getCallSiteFlags());
                 return null;
             }
         });
@@ -425,7 +426,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
                 for (final Map.Entry<? extends String, ? extends Object> entry : map.entrySet()) {
                     final Object value = entry.getValue();
                     final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
-                    sobj.set(entry.getKey(), unwrap(modValue, global), strict);
+                    sobj.set(entry.getKey(), unwrap(modValue, global), getCallSiteFlags());
                 }
                 return null;
             }
@@ -754,6 +755,10 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
 
     static Object translateUndefined(final Object obj) {
         return (obj == ScriptRuntime.UNDEFINED)? null : obj;
+    }
+
+    private int getCallSiteFlags() {
+        return strict ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
     }
 
     // internals only below this.

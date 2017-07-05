@@ -26,12 +26,14 @@
  * @bug 8046391
  * @summary JFileChooser hangs if displayed in Windows L&F
  * @author Alexey Ivanov
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main/othervm/timeout=10 bug8046391
 */
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-import sun.awt.OSInfo;
-import sun.awt.OSInfo.OSType;
+import jdk.testlibrary.OSInfo;
+import jdk.testlibrary.OSInfo.OSType;
 
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;

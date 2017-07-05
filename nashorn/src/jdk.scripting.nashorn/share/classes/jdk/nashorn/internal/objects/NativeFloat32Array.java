@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -82,6 +81,11 @@ public final class NativeFloat32Array extends ArrayBufferView {
 
         private Float32ArrayData(final FloatBuffer nb, final int start, final int end) {
             super(((FloatBuffer)nb.position(start).limit(end)).slice(), end - start);
+        }
+
+        @Override
+        public Class<?> getElementType() {
+            return double.class;
         }
 
         @Override

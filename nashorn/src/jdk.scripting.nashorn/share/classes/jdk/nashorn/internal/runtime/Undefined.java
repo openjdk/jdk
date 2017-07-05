@@ -34,6 +34,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Unique instance of this class is used to represent JavaScript undefined.
@@ -128,7 +129,7 @@ public final class Undefined extends DefaultPropertyAccess {
     }
 
     private static final MethodHandle GET_METHOD = findOwnMH("get", Object.class, Object.class);
-    private static final MethodHandle SET_METHOD = MH.insertArguments(findOwnMH("set", void.class, Object.class, Object.class, boolean.class), 3, Boolean.TRUE);
+    private static final MethodHandle SET_METHOD = MH.insertArguments(findOwnMH("set", void.class, Object.class, Object.class, int.class), 3, NashornCallSiteDescriptor.CALLSITE_STRICT);
 
     private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc) {
         return new GuardedInvocation(MH.insertArguments(GET_METHOD, 1, desc.getNameToken(2)), UNDEFINED_GUARD).asType(desc);
@@ -152,7 +153,7 @@ public final class Undefined extends DefaultPropertyAccess {
     }
 
     @Override
-    public void set(final Object key, final Object value, final boolean strict) {
+    public void set(final Object key, final Object value, final int flags) {
         throw typeError("cant.set.property.of.undefined", ScriptRuntime.safeToString(key));
     }
 
