@@ -22,8 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.reader.gbind;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -144,7 +146,19 @@ public abstract class Element extends Expression implements ElementSet {
      * all into the given set.
      */
     public void buildStronglyConnectedComponents(List<ConnectedComponent> ccs) {
+
+        // store visited elements - loop detection
+        List<Element> visitedElements = new ArrayList<Element>();
+
         for(Element cur=this; cur!=cur.prevPostOrder; cur=cur.prevPostOrder) {
+
+            if(visitedElements.contains(cur)) {
+                // if I've already processed cur element, I'm in a loop
+                break;
+            } else {
+                visitedElements.add(cur);
+            }
+
             if(cur.belongsToSCC())
                 continue;
 

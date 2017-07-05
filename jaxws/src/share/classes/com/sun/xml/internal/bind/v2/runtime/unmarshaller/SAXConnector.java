@@ -22,12 +22,14 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.UnmarshallerHandler;
 
 import com.sun.xml.internal.bind.WhiteSpaceProcessor;
+import com.sun.xml.internal.bind.v2.runtime.ClassBeanInfoImpl;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -116,7 +118,17 @@ public final class SAXConnector implements UnmarshallerHandler {
         if( qname==null || qname.length()==0 )
             qname=local;
 
-        processText(true);
+
+        boolean ignorable = true;
+        StructureLoader sl;
+
+        // not null only if element content is processed (StructureLoader is used)
+        // ugly
+        if((sl = this.context.getStructureLoader()) != null) {
+            ignorable = ((ClassBeanInfoImpl)sl.getBeanInfo()).hasElementOnlyContentModel();
+        }
+
+        processText(ignorable);
 
         tagName.uri = uri;
         tagName.local = local;

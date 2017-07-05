@@ -421,7 +421,7 @@ public abstract class DatagramChannel
      * invocation of this method will block until the first operation is
      * complete. If this channel's socket is not bound then this method will
      * first cause the socket to be bound to an address that is assigned
-     * automatically, as if by invoking the {@link #bind bind) method with a
+     * automatically, as if by invoking the {@link #bind bind} method with a
      * parameter of {@code null}. </p>
      *
      * @param  src

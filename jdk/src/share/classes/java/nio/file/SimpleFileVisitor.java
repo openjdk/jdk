@@ -48,6 +48,14 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
     }
 
     /**
+     * Throws NullPointerException if obj is null.
+     */
+    private static void checkNotNull(Object obj) {
+        if (obj == null)
+            throw new NullPointerException();
+    }
+
+    /**
      * Invoked for a directory before entries in the directory are visited.
      *
      * <p> Unless overridden, this method returns {@link FileVisitResult#CONTINUE
@@ -55,6 +63,7 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      */
     @Override
     public FileVisitResult preVisitDirectory(T dir) {
+        checkNotNull(dir);
         return FileVisitResult.CONTINUE;
     }
 
@@ -70,6 +79,8 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      */
     @Override
     public FileVisitResult preVisitDirectoryFailed(T dir, IOException exc) {
+        checkNotNull(dir);
+        checkNotNull(exc);
         throw new IOError(exc);
     }
 
@@ -81,6 +92,8 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      */
     @Override
     public FileVisitResult visitFile(T file, BasicFileAttributes attrs) {
+        checkNotNull(file);
+        checkNotNull(attrs);
         return FileVisitResult.CONTINUE;
     }
 
@@ -96,6 +109,8 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      */
     @Override
     public FileVisitResult visitFileFailed(T file, IOException exc) {
+        checkNotNull(file);
+        checkNotNull(exc);
         throw new IOError(exc);
     }
 
@@ -114,6 +129,7 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      */
     @Override
     public FileVisitResult postVisitDirectory(T dir, IOException exc) {
+        checkNotNull(dir);
         if (exc != null)
             throw new IOError(exc);
         return FileVisitResult.CONTINUE;

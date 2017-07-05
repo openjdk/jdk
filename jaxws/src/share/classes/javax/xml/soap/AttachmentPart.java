@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: AttachmentPart.java,v 1.12 2005/09/08 14:19:50 vj135062 Exp $
- * $Revision: 1.12 $
- * $Date: 2005/09/08 14:19:50 $
+ * $Id: AttachmentPart.java,v 1.13 2006/03/30 00:59:38 ofung Exp $
+ * $Revision: 1.13 $
+ * $Date: 2006/03/30 00:59:38 $
  */
 
 

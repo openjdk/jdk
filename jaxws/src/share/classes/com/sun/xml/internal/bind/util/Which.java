@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * @(#)$Id: Which.java,v 1.1 2005/04/15 20:03:51 kohsuke Exp $
- */
-
-
 package com.sun.xml.internal.bind.util;
 
 import java.net.URL;

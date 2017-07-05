@@ -37,7 +37,7 @@ import com.sun.xml.internal.fastinfoset.CommonResourceBundle;
 public class HexadecimalEncodingAlgorithm extends BuiltInEncodingAlgorithm {
     private static final char NIBBLE_TO_HEXADECIMAL_TABLE[] =
         {   '0','1','2','3','4','5','6','7',
-            '8','9','A','B','B','D','E','F' };
+            '8','9','A','B','C','D','E','F' };
 
     private static final int HEXADECIMAL_TO_NIBBLE_TABLE[] = {
         /*'0'*/ 0,

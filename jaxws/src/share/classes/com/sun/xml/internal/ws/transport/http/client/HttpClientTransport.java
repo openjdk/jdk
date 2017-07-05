@@ -33,6 +33,7 @@ import com.sun.xml.internal.ws.client.ClientTransportException;
 import com.sun.xml.internal.ws.resources.ClientMessages;
 import com.sun.xml.internal.ws.transport.Headers;
 import com.sun.xml.internal.ws.developer.JAXWSProperties;
+import com.sun.xml.internal.ws.util.RuntimeVersion;
 import com.sun.istack.internal.Nullable;
 import com.sun.istack.internal.NotNull;
 
@@ -47,6 +48,8 @@ import javax.xml.ws.BindingProvider;
 import static javax.xml.ws.BindingProvider.SESSION_MAINTAIN_PROPERTY;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,22 +75,18 @@ final class HttpClientTransport {
             // Nothing much can be done. Intentionally left empty
         }
     }
-    private static String LAST_ENDPOINT = "";
-    private static boolean redirect = true;
-    private static final int START_REDIRECT_COUNT = 3;
-    private static int redirectCount = START_REDIRECT_COUNT;
 
     /*package*/ int statusCode;
+    /*package*/ String statusMessage;
     private final Map<String, List<String>> reqHeaders;
     private Map<String, List<String>> respHeaders = null;
 
     private OutputStream outputStream;
     private boolean https;
     private HttpURLConnection httpConnection = null;
-    private EndpointAddress endpoint = null;
-    private Packet context = null;
+    private final EndpointAddress endpoint;
+    private final Packet context;
     private CookieJar cookieJar = null;
-    private boolean isFailure = false;
     private final Integer chunkSize;
 
 
@@ -98,7 +97,7 @@ final class HttpClientTransport {
         chunkSize = (Integer)context.invocationProperties.get(JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE);
     }
 
-    /**
+    /*
      * Prepare the stream for HTTP request
      */
     public OutputStream getOutput() {
@@ -133,32 +132,24 @@ final class HttpClientTransport {
         }
     }
 
-    /**
+    /*
      * Get the response from HTTP connection and prepare the input stream for response
      */
-    public InputStream getInput() {
+    public @Nullable InputStream getInput() {
         // response processing
 
         InputStream in;
         try {
+            saveCookieAsNeeded();
             in = readResponse();
-            String contentEncoding = httpConnection.getContentEncoding();
-            if (contentEncoding != null && contentEncoding.contains("gzip")) {
-                in = new GZIPInputStream(in);
-            }
-        } catch (IOException e) {
-            if (statusCode == HttpURLConnection.HTTP_NO_CONTENT
-                || (isFailure
-                && statusCode != HttpURLConnection.HTTP_INTERNAL_ERROR)) {
-                try {
-                    throw new ClientTransportException(ClientMessages.localizableHTTP_STATUS_CODE(
-                        statusCode, httpConnection.getResponseMessage()));
-                } catch (IOException ex) {
-                    throw new ClientTransportException(ClientMessages.localizableHTTP_STATUS_CODE(
-                        statusCode, ex));
+            if (in != null) {
+                String contentEncoding = httpConnection.getContentEncoding();
+                if (contentEncoding != null && contentEncoding.contains("gzip")) {
+                    in = new GZIPInputStream(in);
                 }
             }
-            throw new ClientTransportException(ClientMessages.localizableHTTP_CLIENT_FAILED(e),e);
+        } catch (IOException e) {
+            throw new ClientTransportException(ClientMessages.localizableHTTP_STATUS_CODE(statusCode, statusMessage), e);
         }
         return in;
     }
@@ -172,75 +163,43 @@ final class HttpClientTransport {
         return respHeaders;
     }
 
-    protected InputStream readResponse() throws IOException {
-        return (isFailure
-                ? httpConnection.getErrorStream()
-                : httpConnection.getInputStream());
-    }
-
-    /*
-     * Will throw an exception instead of returning 'false' if there is no
-     * return message to be processed (i.e., in the case of an UNAUTHORIZED
-     * response from the servlet or 404 not found)
-     */
-    /*package*/void checkResponseCode() {
+    protected @Nullable InputStream readResponse() {
+        InputStream is;
         try {
-
-            statusCode = httpConnection.getResponseCode();
-
-            if ((httpConnection.getResponseCode()
-                == HttpURLConnection.HTTP_INTERNAL_ERROR)) {
-                isFailure = true;
-                //added HTTP_ACCEPT for 1-way operations
-            } else if (
-                httpConnection.getResponseCode()
-                    == HttpURLConnection.HTTP_UNAUTHORIZED) {
-
-                // no soap message returned, so skip reading message and throw exception
-                throw new ClientTransportException(
-                    ClientMessages.localizableHTTP_CLIENT_UNAUTHORIZED(httpConnection.getResponseMessage()));
-            } else if (
-                httpConnection.getResponseCode()
-                    == HttpURLConnection.HTTP_NOT_FOUND) {
-
-                // no message returned, so skip reading message and throw exception
-                throw new ClientTransportException(
-                    ClientMessages.localizableHTTP_NOT_FOUND(httpConnection.getResponseMessage()));
-            } else if (
-                (statusCode == HttpURLConnection.HTTP_MOVED_TEMP) ||
-                    (statusCode == HttpURLConnection.HTTP_MOVED_PERM)) {
-                isFailure = true;
-
-                if (!redirect || (redirectCount <= 0)) {
-                    throw new ClientTransportException(
-                        ClientMessages.localizableHTTP_STATUS_CODE(statusCode,getStatusMessage()));
-                }
-            } else if (
-                statusCode < 200 || (statusCode >= 303 && statusCode < 500)) {
-                throw new ClientTransportException(
-                    ClientMessages.localizableHTTP_STATUS_CODE(statusCode,getStatusMessage()));
-            } else if (statusCode >= 500) {
-                isFailure = true;
-            }
-        } catch (IOException e) {
-            throw new WebServiceException(e);
+            is = httpConnection.getInputStream();
+        } catch(IOException ioe) {
+            is = httpConnection.getErrorStream();
         }
-        // Hack for now
-        saveCookieAsNeeded();
+        if (is == null) {
+            return is;
+        }
+        // Since StreamMessage doesn't read </s:Body></s:Envelope>, there
+        // are some bytes left in the InputStream. This confuses JDK and may
+        // not reuse underlying sockets. Hopefully JDK fixes it in its code !
+        final InputStream temp = is;
+        return new FilterInputStream(temp) {
+            // Workaround for "SJSXP XMLStreamReader.next() closes stream".
+            // So it doesn't read from the closed stream
+            boolean closed;
+            @Override
+            public void close() throws IOException {
+                if (!closed) {
+                    closed = true;
+                    byte[] buf = new byte[8192];
+                    while(temp.read(buf) != -1);
+                    super.close();
+                }
+            }
+        };
     }
 
-    private String getStatusMessage() throws IOException {
-        int statusCode = httpConnection.getResponseCode();
-        String message = httpConnection.getResponseMessage();
-        if (statusCode == HttpURLConnection.HTTP_CREATED
-            || (statusCode >= HttpURLConnection.HTTP_MULT_CHOICE
-            && statusCode != HttpURLConnection.HTTP_NOT_MODIFIED
-            && statusCode < HttpURLConnection.HTTP_BAD_REQUEST)) {
-            String location = httpConnection.getHeaderField("Location");
-            if (location != null)
-                message += " - Location: " + location;
+    protected void readResponseCodeAndMessage() {
+        try {
+            statusCode = httpConnection.getResponseCode();
+            statusMessage = httpConnection.getResponseMessage();
+        } catch(IOException ioe) {
+            throw new WebServiceException(ioe);
         }
-        return message;
     }
 
     protected void sendCookieAsNeeded() {
@@ -264,24 +223,16 @@ final class HttpClientTransport {
         }
     }
 
-
     private void createHttpConnection() throws IOException {
-
-        // does the client want request redirection to occur
-        String redirectProperty =
-            (String) context.invocationProperties.get(REDIRECT_REQUEST_PROPERTY);
-        if (redirectProperty != null) {
-            if (redirectProperty.equalsIgnoreCase("false"))
-                redirect = false;
-        }
-
-        checkEndpoints();
 
         httpConnection = (HttpURLConnection) endpoint.openConnection();
         if (httpConnection instanceof HttpsURLConnection) {
             https = true;
 
             boolean verification = false;
+            // TODO The above property needs to be removed in future version as the semantics of this property are not preoperly defined.
+            // One should use JAXWSProperties.HOSTNAME_VERIFIER to control the behavior
+
             // does the client want client hostname verification by the service
             String verificationProperty =
                 (String) context.invocationProperties.get(HOSTNAME_VERIFICATION_PROPERTY);
@@ -289,7 +240,8 @@ final class HttpClientTransport {
                 if (verificationProperty.equalsIgnoreCase("true"))
                     verification = true;
             }
-            if (!verification) {
+            // By default, JAX-WS should not disable any host verification.
+            if (verification) {
                 ((HttpsURLConnection) httpConnection).setHostnameVerifier(new HttpClientVerifier());
             }
 
@@ -338,6 +290,11 @@ final class HttpClientTransport {
             httpConnection.setReadTimeout(reqTimeout);
         }
 
+        Integer connectTimeout = (Integer)context.invocationProperties.get(JAXWSProperties.CONNECT_TIMEOUT);
+        if (connectTimeout != null) {
+            httpConnection.setConnectTimeout(connectTimeout);
+        }
+
         Integer chunkSize = (Integer)context.invocationProperties.get(JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE);
         if (chunkSize != null) {
             httpConnection.setChunkedStreamingMode(chunkSize);
@@ -347,32 +304,12 @@ final class HttpClientTransport {
         for (Map.Entry<String, List<String>> entry : reqHeaders.entrySet()) {
             httpConnection.addRequestProperty(entry.getKey(), entry.getValue().get(0));
         }
+        httpConnection.addRequestProperty("User-Agent", RuntimeVersion.VERSION.toString());
     }
 
     public boolean isSecure() {
         return https;
     }
-
-    //    private void redirectRequest(HttpURLConnection httpConnection, SOAPMessageContext context) {
-//        String redirectEndpoint = httpConnection.getHeaderField("Location");
-//        if (redirectEndpoint != null) {
-//            httpConnection.disconnect();
-//            invoke(redirectEndpoint, context);
-//        } else
-//            System.out.println("redirection Failed");
-//    }
-
-    private boolean checkForRedirect(int statusCode) {
-        return (((statusCode == 301) || (statusCode == 302)) && redirect && (redirectCount-- > 0));
-    }
-
-    private void checkEndpoints() {
-        if (!LAST_ENDPOINT.equalsIgnoreCase(endpoint.toString())) {
-            redirectCount = START_REDIRECT_COUNT;
-            LAST_ENDPOINT = endpoint.toString();
-        }
-    }
-
 
     private void writeBasicAuthAsNeeded(Packet context, Map<String, List<String>> reqHeaders) {
         String user = (String) context.invocationProperties.get(BindingProvider.USERNAME_PROPERTY);
@@ -412,48 +349,24 @@ final class HttpClientTransport {
      * is kept in memory. This wraps the ChunkedOuputStream so that it writes only small
      * chunks.
      */
-    private static final class WSChunkedOuputStream extends OutputStream {
-        final OutputStream actual;
+    private static final class WSChunkedOuputStream extends FilterOutputStream {
         final int chunkSize;
 
         WSChunkedOuputStream(OutputStream actual, int chunkSize) {
-            this.actual = actual;
+            super(actual);
             this.chunkSize = chunkSize;
         }
 
         @Override
         public void write(byte b[], int off, int len) throws IOException {
-            int sent = 0;
-            while(sent < len) {
-                int chunk = len-sent;
-                if (chunk > chunkSize) {
-                    chunk = chunkSize;
-                }
-                actual.write(b, off, chunk);
-                off += chunk;
-                sent += chunk;
+            while(len > 0) {
+                int sent = (len > chunkSize) ? chunkSize : len;
+                out.write(b, off, sent);        // don't use super.write() as it writes byte-by-byte
+                len -= sent;
+                off += sent;
             }
         }
 
-        @Override
-        public void write(byte b[]) throws IOException {
-            write(b, 0, b.length);
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            actual.write(b);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            actual.flush();
-        }
-
-        @Override
-        public void close() throws IOException {
-            actual.close();
-        }
     }
 
 }

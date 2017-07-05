@@ -37,6 +37,7 @@ import com.sun.xml.internal.ws.encoding.soap.SOAP12Constants;
 import com.sun.xml.internal.ws.encoding.soap.SOAPConstants;
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import com.sun.xml.internal.ws.message.jaxb.JAXBMessage;
+import com.sun.xml.internal.ws.message.FaultMessage;
 import com.sun.xml.internal.ws.model.CheckedExceptionImpl;
 import com.sun.xml.internal.ws.model.JavaMethodImpl;
 import com.sun.xml.internal.ws.util.DOMUtil;
@@ -49,6 +50,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPFault;
+import javax.xml.soap.Detail;
+import javax.xml.soap.DetailEntry;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.ws.ProtocolException;
 import javax.xml.ws.WebServiceException;
@@ -76,6 +79,17 @@ public abstract class SOAPFaultBuilder {
     abstract DetailType getDetail();
 
     abstract void setDetail(DetailType detailType);
+
+    public @Nullable QName getFirstDetailEntryName() {
+        DetailType dt = getDetail();
+        if (dt != null) {
+            Node entry = dt.getDetail(0);
+            if (entry != null) {
+                return new QName(entry.getNamespaceURI(), entry.getLocalName());
+            }
+        }
+        return null;
+    }
 
     /**
      * gives the fault string that can be used to create an {@link Exception}
@@ -267,17 +281,18 @@ public abstract class SOAPFaultBuilder {
 
     private Exception createUserDefinedException(CheckedExceptionImpl ce) {
         Class exceptionClass = ce.getExceptionClass();
-        try {
-            Constructor constructor = exceptionClass.getConstructor(String.class);
-            Object exception = constructor.newInstance(getFaultString());
-            Node detail = getDetail().getDetails().get(0);
-            Object jaxbDetail = getJAXBObject(detail, ce);
-            Field[] fields = jaxbDetail.getClass().getFields();
-            for (Field f : fields) {
-                Method m = exceptionClass.getMethod(getWriteMethod(f));
-                m.invoke(exception, f.get(jaxbDetail));
+        Class detailBean = ce.getDetailBean();
+        try{
+            Node detailNode = getDetail().getDetails().get(0);
+            Object jaxbDetail = getJAXBObject(detailNode, ce);
+            Constructor exConstructor;
+            try{
+                exConstructor = exceptionClass.getConstructor(String.class, detailBean);
+                return (Exception) exConstructor.newInstance(getFaultString(), jaxbDetail);
+            }catch(NoSuchMethodException e){
+                exConstructor = exceptionClass.getConstructor(String.class);
+                return (Exception) exConstructor.newInstance(getFaultString());
             }
-            throw (Exception) exception;
         } catch (Exception e) {
             throw new WebServiceException(e);
         }
@@ -308,8 +323,14 @@ public abstract class SOAPFaultBuilder {
             Object detail = detailBean.newInstance();
             for (Field f : fields) {
                 Method em = exception.getClass().getMethod(getReadMethod(f));
-                Method sm = detailBean.getMethod(getWriteMethod(f), em.getReturnType());
-                sm.invoke(detail, em.invoke(exception));
+                try {
+                    Method sm = detailBean.getMethod(getWriteMethod(f), em.getReturnType());
+                    sm.invoke(detail, em.invoke(exception));
+                } catch(NoSuchMethodException ne) {
+                    // Try to use exception bean's public field to populate the value.
+                    Field sf = detailBean.getField(f.getName());
+                    sf.set(detail, em.invoke(exception));
+                }
             }
             return detail;
         } catch (Exception e) {
@@ -353,13 +374,16 @@ public abstract class SOAPFaultBuilder {
             }
         }
         Element detailNode = null;
+        QName firstEntry = null;
         if (detail == null && soapFaultException != null) {
             detailNode = soapFaultException.getFault().getDetail();
+            firstEntry = getFirstDetailEntryName((Detail)detailNode);
         } else if(ce != null){
             try {
                 DOMResult dr = new DOMResult();
                 ce.getBridge().marshal(detail,dr);
                 detailNode = (Element)dr.getNode().getFirstChild();
+                firstEntry = getFirstDetailEntryName(detailNode);
             } catch (JAXBException e1) {
                 //Should we throw Internal Server Error???
                 faultString = e.getMessage();
@@ -369,7 +393,23 @@ public abstract class SOAPFaultBuilder {
         SOAP11Fault soap11Fault = new SOAP11Fault(faultCode, faultString, faultActor, detailNode);
         soap11Fault.captureStackTrace(e);
 
-        return JAXBMessage.create(JAXB_CONTEXT, soap11Fault, soapVersion);
+        Message msg = JAXBMessage.create(JAXB_CONTEXT, soap11Fault, soapVersion);
+        return new FaultMessage(msg, firstEntry);
+    }
+
+    private static @Nullable QName getFirstDetailEntryName(@Nullable Detail detail) {
+        if (detail != null) {
+            Iterator<DetailEntry> it = detail.getDetailEntries();
+            if (it.hasNext()) {
+                DetailEntry entry = it.next();
+                return getFirstDetailEntryName(entry);
+            }
+        }
+        return null;
+    }
+
+    private static @NotNull QName getFirstDetailEntryName(@NotNull Element entry) {
+        return new QName(entry.getNamespaceURI(), entry.getLocalName());
     }
 
     private static Message createSOAP12Fault(SOAPVersion soapVersion, Throwable e, Object detail, CheckedExceptionImpl ce, QName faultCode) {
@@ -424,26 +464,28 @@ public abstract class SOAPFaultBuilder {
 
         ReasonType reason = new ReasonType(faultString);
         Element detailNode = null;
+        QName firstEntry = null;
         if (detail == null && soapFaultException != null) {
             detailNode = soapFaultException.getFault().getDetail();
+            firstEntry = getFirstDetailEntryName((Detail)detailNode);
         } else if(detail != null){
             try {
                 DOMResult dr = new DOMResult();
                 ce.getBridge().marshal(detail, dr);
                 detailNode = (Element)dr.getNode().getFirstChild();
+                firstEntry = getFirstDetailEntryName(detailNode);
             } catch (JAXBException e1) {
                 //Should we throw Internal Server Error???
                 faultString = e.getMessage();
                 faultCode = getDefaultFaultCode(soapVersion);
             }
         }
-        DetailType detailType = null;
-        if(detailNode != null)
-            detailType = new DetailType(detailNode);
-        SOAP12Fault soap12Fault = new SOAP12Fault(code, reason, null, faultRole, detailType);
+
+        SOAP12Fault soap12Fault = new SOAP12Fault(code, reason, null, faultRole, detailNode);
         soap12Fault.captureStackTrace(e);
 
-        return JAXBMessage.create(JAXB_CONTEXT, soap12Fault, soapVersion);
+        Message msg = JAXBMessage.create(JAXB_CONTEXT, soap12Fault, soapVersion);
+        return new FaultMessage(msg, firstEntry);
     }
 
     private static SubcodeType fillSubcodes(SubcodeType parent, QName value){

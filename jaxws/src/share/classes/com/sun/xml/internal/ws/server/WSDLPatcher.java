@@ -26,7 +26,6 @@ package com.sun.xml.internal.ws.server;
 
 import com.sun.xml.internal.ws.api.server.PortAddressResolver;
 import com.sun.xml.internal.ws.api.server.WSEndpoint;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.server.DocumentAddressResolver;
 import com.sun.xml.internal.ws.api.server.SDDocument;
 import com.sun.xml.internal.ws.util.xml.XMLStreamReaderToXMLStreamWriter;
@@ -52,6 +51,7 @@ final class WSDLPatcher extends XMLStreamReaderToXMLStreamWriter {
     private static final String NS_XSD = "http://www.w3.org/2001/XMLSchema";
     private static final QName SCHEMA_INCLUDE_QNAME = new QName(NS_XSD, "include");
     private static final QName SCHEMA_IMPORT_QNAME = new QName(NS_XSD, "import");
+    private static final QName SCHEMA_REDEFINE_QNAME = new QName(NS_XSD, "redefine");
 
     private static final Logger logger = Logger.getLogger(
             com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".wsdl.patcher");
@@ -76,6 +76,7 @@ final class WSDLPatcher extends XMLStreamReaderToXMLStreamWriter {
     private String targetNamespace;
     private QName serviceName;
     private QName portName;
+    private String portAddress;
 
     private enum EPR_ADDRESS_STATE {IN, OUT, DONE}
     private EPR_ADDRESS_STATE eprAddressState = EPR_ADDRESS_STATE.OUT;
@@ -109,6 +110,7 @@ final class WSDLPatcher extends XMLStreamReaderToXMLStreamWriter {
 
         if((name.equals(SCHEMA_INCLUDE_QNAME) && attLocalName.equals("schemaLocation"))
         || (name.equals(SCHEMA_IMPORT_QNAME)  && attLocalName.equals("schemaLocation"))
+        || (name.equals(SCHEMA_REDEFINE_QNAME)  && attLocalName.equals("schemaLocation"))
         || (name.equals(WSDLConstants.QNAME_IMPORT)  && attLocalName.equals("location"))) {
             // patch this attribute value.
 
@@ -128,10 +130,11 @@ final class WSDLPatcher extends XMLStreamReaderToXMLStreamWriter {
             name.equals(WSDLConstants.NS_SOAP12_BINDING_ADDRESS)) {
 
             if(attLocalName.equals("location")) {
+                portAddress = in.getAttributeValue(i);
                 String value = getAddressLocation();
                 if (value != null) {
-                    logger.fine("Fixing service:"+serviceName+ " port:"+portName
-                            + " address with "+value);
+                    logger.fine("Service:"+serviceName+ " port:"+portName
+                            + " current address "+portAddress+" Patching it with "+value);
                     writeAttribute(i, value);
                     return;
                 }
@@ -241,6 +244,6 @@ final class WSDLPatcher extends XMLStreamReaderToXMLStreamWriter {
      */
     private String getAddressLocation() {
         return (portAddressResolver == null || portName == null)
-                ? null : portAddressResolver.getAddressFor(serviceName, portName.getLocalPart());
+                ? null : portAddressResolver.getAddressFor(serviceName, portName.getLocalPart(), portAddress);
     }
 }

@@ -25,6 +25,8 @@
 
 package com.sun.xml.internal.ws.util;
 
+import com.sun.istack.internal.NotNull;
+
 import javax.xml.namespace.QName;
 import java.util.AbstractSet;
 import java.util.Collection;
@@ -134,7 +136,7 @@ public final class QNameMap<V> {
      *          <tt>null</tt> if the map contains no mapping for this set of keys.
      * @see #put(String,String, Object)
      */
-    public V get( String nsUri, String localPart ) {
+    public V get( @NotNull String nsUri, String localPart ) {
         Entry<V> e = getEntry(nsUri,localPart);
         if(e==null) return null;
         else        return e.value;
@@ -346,7 +348,7 @@ public final class QNameMap<V> {
         }
     }
 
-    public boolean containsKey(String nsUri,String localName) {
+    public boolean containsKey(@NotNull String nsUri,String localName) {
         return getEntry(nsUri,localName)!=null;
     }
 
@@ -458,7 +460,7 @@ public final class QNameMap<V> {
         }
     }
 
-    private Entry<V> getEntry(String nsUri,String localName) {
+    private Entry<V> getEntry(@NotNull String nsUri,String localName) {
         int hash = hash(localName);
         int i = indexFor(hash, table.length);
         Entry<V> e = table[i];

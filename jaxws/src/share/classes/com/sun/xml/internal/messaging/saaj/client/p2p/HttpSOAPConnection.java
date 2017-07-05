@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: HttpSOAPConnection.java,v 1.41 2006/01/27 12:49:17 vj135062 Exp $
- * $Revision: 1.41 $
- * $Date: 2006/01/27 12:49:17 $
- */
 
 
 package com.sun.xml.internal.messaging.saaj.client.p2p;
@@ -66,8 +61,8 @@ public class HttpSOAPConnection extends SOAPConnection {
         Logger.getLogger(LogDomainConstants.HTTP_CONN_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.client.p2p.LocalStrings");
 
-    public static final String defaultProxyHost = null;
-    public static  final int defaultProxyPort = -1;
+    private static final String defaultProxyHost = null;
+    private static final int defaultProxyPort = -1;
 
     MessageFactory messageFactory = null;
 
@@ -80,8 +75,8 @@ public class HttpSOAPConnection extends SOAPConnection {
         try {
             messageFactory = MessageFactory.newInstance(SOAPConstants.DYNAMIC_SOAP_PROTOCOL);
         } catch (NoSuchMethodError ex) {
-                    //fallback to default SOAP 1.1 in this case for backward compatibility
-                    messageFactory = MessageFactory.newInstance();
+            //fallback to default SOAP 1.1 in this case for backward compatibility
+            messageFactory = MessageFactory.newInstance();
         } catch (Exception ex) {
             log.log(Level.SEVERE, "SAAJ0001.p2p.cannot.create.msg.factory", ex);
             throw new SOAPExceptionImpl("Unable to create message factory", ex);
@@ -107,17 +102,16 @@ public class HttpSOAPConnection extends SOAPConnection {
 
         Class urlEndpointClass = null;
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-
         try {
-                if (loader != null) {
-                        urlEndpointClass = loader.loadClass(JAXM_URLENDPOINT);
-                } else {
-                        urlEndpointClass = Class.forName(JAXM_URLENDPOINT);
-                    }
-                } catch (ClassNotFoundException ex) {
-                    //Do nothing. URLEndpoint is available only when JAXM is there.
-                    log.finest("SAAJ0090.p2p.endpoint.available.only.for.JAXM");
-                }
+            if (loader != null) {
+                urlEndpointClass = loader.loadClass(JAXM_URLENDPOINT);
+            } else {
+                urlEndpointClass = Class.forName(JAXM_URLENDPOINT);
+            }
+        } catch (ClassNotFoundException ex) {
+            //Do nothing. URLEndpoint is available only when JAXM is there.
+            log.finest("SAAJ0090.p2p.endpoint.available.only.for.JAXM");
+        }
 
         if (urlEndpointClass != null) {
             if (urlEndpointClass.isInstance(endPoint)) {
@@ -654,23 +648,24 @@ public class HttpSOAPConnection extends SOAPConnection {
 
         return ret;
     }
+
     //private static String SSL_PKG = "com.sun.net.ssl.internal.www.protocol";
     //private static String SSL_PROVIDER =
-              //  "com.sun.net.ssl.internal.ssl.Provider";
+      //  "com.sun.net.ssl.internal.ssl.Provider";
     private static final String SSL_PKG;
-    private static  final String SSL_PROVIDER;
-
+    private static final String SSL_PROVIDER;
 
     static {
-                if (isIBMVM) {
-                    SSL_PKG ="com.ibm.net.ssl.internal.www.protocol";
-                    SSL_PROVIDER ="com.ibm.net.ssl.internal.ssl.Provider";
-                } else {
-                    //if not IBM VM default to Sun.
-                    SSL_PKG = "com.sun.net.ssl.internal.www.protocol";
-                    SSL_PROVIDER ="com.sun.net.ssl.internal.ssl.Provider";
-                }
-            }
+        if (isIBMVM) {
+            SSL_PKG ="com.ibm.net.ssl.internal.www.protocol";
+            SSL_PROVIDER ="com.ibm.net.ssl.internal.ssl.Provider";
+        } else {
+            //if not IBM VM default to Sun.
+            SSL_PKG = "com.sun.net.ssl.internal.www.protocol";
+            SSL_PROVIDER ="com.sun.net.ssl.internal.ssl.Provider";
+        }
+    }
+
     private void initHttps() {
         //if(!setHttps) {
         String pkgs = System.getProperty("java.protocol.handler.pkgs");

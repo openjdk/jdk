@@ -42,7 +42,7 @@ import org.xml.sax.SAXParseException;
  * convenience.
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li></ul>
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  * @see javax.xml.bind.Validator
  * @see javax.xml.bind.ValidationEventHandler
  * @see javax.xml.bind.ValidationEvent

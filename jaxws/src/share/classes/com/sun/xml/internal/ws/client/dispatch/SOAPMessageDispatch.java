@@ -32,20 +32,17 @@ import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.client.WSServiceDelegate;
 import com.sun.xml.internal.ws.message.saaj.SAAJMessage;
 import com.sun.xml.internal.ws.resources.DispatchMessages;
+import com.sun.xml.internal.ws.transport.Headers;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.MimeHeader;
-import javax.xml.soap.MimeHeaders;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.ws.Service;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
-import java.util.ArrayList;
-import java.util.HashMap;
+
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 /**
  * The <code>SOAPMessageDispatch</code> class provides support
@@ -63,26 +60,14 @@ public class SOAPMessageDispatch extends com.sun.xml.internal.ws.client.dispatch
     }
 
     Packet createPacket(SOAPMessage arg) {
-
-        if (arg == null && !isXMLHttp(binding))
-           throw new WebServiceException(DispatchMessages.INVALID_NULLARG_SOAP_MSGMODE(mode.name(), Service.Mode.PAYLOAD.toString()));
-
-        MimeHeaders mhs = arg.getMimeHeaders();
-        // TODO: these two lines seem dangerous. It should be left up to the transport and codec
-        // to decide how they are sent. remove after 2.1 FCS - KK.
-        mhs.addHeader("Content-Type", "text/xml");
-        mhs.addHeader("Content-Transfer-Encoding", "binary");
-        Map<String, List<String>> ch = new HashMap<String, List<String>>();
-        for (Iterator iter = arg.getMimeHeaders().getAllHeaders(); iter.hasNext();)
-        {
+        Iterator iter = arg.getMimeHeaders().getAllHeaders();
+        Headers ch = new Headers();
+        while(iter.hasNext()) {
             MimeHeader mh = (MimeHeader) iter.next();
-            List<String> h = new ArrayList<String>();
-            h.add(mh.getValue());
-            ch.put(mh.getName(), h);
+            ch.add(mh.getName(), mh.getValue());
         }
-
         Packet packet = new Packet(new SAAJMessage(arg));
-        packet.invocationProperties.put(MessageContext.HTTP_REQUEST_HEADERS,ch);
+        packet.invocationProperties.put(MessageContext.HTTP_REQUEST_HEADERS, ch);
         return packet;
     }
 

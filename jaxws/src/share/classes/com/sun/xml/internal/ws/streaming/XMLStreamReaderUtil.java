@@ -29,6 +29,7 @@ import javax.xml.namespace.QName;
 import static javax.xml.stream.XMLStreamConstants.*;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamConstants;
 
 /**
  * <p> XMLStreamReaderUtil provides some utility methods intended to be used
@@ -44,6 +45,16 @@ public class XMLStreamReaderUtil {
     public static void close(XMLStreamReader reader) {
         try {
             reader.close();
+        } catch (XMLStreamException e) {
+            throw wrapException(e);
+        }
+    }
+
+    public static void readRest(XMLStreamReader reader) {
+        try {
+            while(reader.getEventType() != XMLStreamConstants.END_DOCUMENT) {
+                reader.next();
+            }
         } catch (XMLStreamException e) {
             throw wrapException(e);
         }

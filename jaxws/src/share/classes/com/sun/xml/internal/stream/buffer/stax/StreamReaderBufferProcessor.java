@@ -215,7 +215,8 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
         _characters = null;
         _charSequence = null;
         while(true) {// loop only if we read STATE_DOCUMENT
-            switch(readEiiState()) {
+            int eiiState = readEiiState();
+            switch(eiiState) {
                 case STATE_DOCUMENT:
                     // we'll always produce a full document, and we've already report START_DOCUMENT event.
                     // so simply skil this
@@ -311,7 +312,7 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
                         return _eventType = END_DOCUMENT;
                     }
                 default:
-                    throw new XMLStreamException("Invalid State");
+                    throw new XMLStreamException("Internal XSB error: Invalid State="+eiiState);
             }
             // this should be unreachable
         }
@@ -597,9 +598,11 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
         }
 
         try {
-            System.arraycopy(_characters, sourceStart, target,
-                    targetStart, length);
-            return length;
+            int remaining = _textLen - sourceStart;
+            int len = remaining > length ? length : remaining;
+            sourceStart += _textOffset;
+            System.arraycopy(_characters, sourceStart, target, targetStart, len);
+            return len;
         } catch (IndexOutOfBoundsException e) {
             throw new XMLStreamException(e);
         }
@@ -748,7 +751,7 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
                 resizeNamespaceAttributes();
             }
 
-            switch(_niiStateTable[item]){
+            switch(getNIIState(item)){
                 case STATE_NAMESPACE_ATTRIBUTE:
                     // Undeclaration of default namespace
                     _namespaceAIIsPrefix[_namespaceAIIsEnd] =
@@ -782,7 +785,7 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
 
     private void processAttributes(int item){
         do {
-            switch(_aiiStateTable[item]){
+            switch(getAIIState(item)){
                 case STATE_ATTRIBUTE_U_LN_QN: {
                     final String uri = readStructureString();
                     final String localName = readStructureString();
@@ -801,6 +804,8 @@ public class StreamReaderBufferProcessor extends AbstractProcessor implements XM
                     _attributeCache.addAttributeWithPrefix("", "", readStructureString(), readStructureString(), readContentString());
                     break;
                 }
+                default :
+                    assert false : "Internal XSB Error: wrong attribute state, Item="+item;
             }
             readStructure();
 

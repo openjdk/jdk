@@ -148,6 +148,7 @@ public class SAXDocumentSerializerWithPrefixMapping extends SAXDocumentSerialize
 
     protected final void encodeAttributes(Attributes atts) throws IOException, FastInfosetException {
         boolean addToTable;
+        boolean mustToBeAddedToTable;
         String value;
         if (atts instanceof EncodingAlgorithmAttributes) {
             final EncodingAlgorithmAttributes eAtts = (EncodingAlgorithmAttributes)atts;
@@ -160,28 +161,24 @@ public class SAXDocumentSerializerWithPrefixMapping extends SAXDocumentSerialize
                     // If data is null then there is no algorithm data
                     if (data == null) {
                         value = eAtts.getValue(i);
-                        addToTable = eAtts.getToIndex(i) || isAttributeValueLengthMatchesLimit(value.length());
-
+                        addToTable = isAttributeValueLengthMatchesLimit(value.length());
+                        mustToBeAddedToTable = eAtts.getToIndex(i);
                         alphabet = eAtts.getAlpababet(i);
                         if (alphabet == null) {
                             if (uri == "http://www.w3.org/2001/XMLSchema-instance" ||
                                     uri.equals("http://www.w3.org/2001/XMLSchema-instance")) {
                                 value = convertQName(value);
                             }
-                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
-                        } else if (alphabet == RestrictedAlphabet.DATE_TIME_CHARACTERS)
-                            encodeNonIdentifyingStringOnFirstBit(
-                                    RestrictedAlphabet.DATE_TIME_CHARACTERS_INDEX,
-                                    DATE_TIME_CHARACTERS_TABLE,
-                                    value, addToTable);
-                        else if (alphabet == RestrictedAlphabet.DATE_TIME_CHARACTERS)
-                            encodeNonIdentifyingStringOnFirstBit(
-                                    RestrictedAlphabet.NUMERIC_CHARACTERS_INDEX,
-                                    NUMERIC_CHARACTERS_TABLE,
-                                    value, addToTable);
-                        else
-                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
-
+                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, mustToBeAddedToTable);
+                        } else if (alphabet == RestrictedAlphabet.DATE_TIME_CHARACTERS) {
+                            encodeDateTimeNonIdentifyingStringOnFirstBit(
+                                    value, addToTable, mustToBeAddedToTable);
+                        } else if (alphabet == RestrictedAlphabet.NUMERIC_CHARACTERS) {
+                            encodeNumericNonIdentifyingStringOnFirstBit(
+                                    value, addToTable, mustToBeAddedToTable);
+                        } else {
+                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, mustToBeAddedToTable);
+                        }
                     } else {
                         encodeNonIdentifyingStringOnFirstBit(eAtts.getAlgorithmURI(i),
                                 eAtts.getAlgorithmIndex(i), data);
@@ -199,7 +196,7 @@ public class SAXDocumentSerializerWithPrefixMapping extends SAXDocumentSerialize
                             uri.equals("http://www.w3.org/2001/XMLSchema-instance")) {
                         value = convertQName(value);
                     }
-                    encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
+                    encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, false);
                 }
             }
         }

@@ -25,7 +25,7 @@
 
 package com.sun.xml.internal.ws.server.sei;
 
-import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
@@ -36,6 +36,9 @@ import com.sun.xml.internal.ws.resources.ServerMessages;
 import com.sun.xml.internal.ws.util.QNameMap;
 
 import javax.xml.namespace.QName;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * An {@link com.sun.xml.internal.ws.server.sei.EndpointMethodDispatcher} that uses
@@ -47,28 +50,60 @@ import javax.xml.namespace.QName;
  * handler.
  *
  * @author Arun Gupta
+ * @author Jitendra Kotamraju
  */
 final class PayloadQNameBasedDispatcher implements EndpointMethodDispatcher {
-    private final QNameMap<EndpointMethodHandler> methodHandlers;
+    private static final Logger LOGGER = Logger.getLogger(PayloadQNameBasedDispatcher.class.getName());
+
     private static final String EMPTY_PAYLOAD_LOCAL = "";
     private static final String EMPTY_PAYLOAD_NSURI = "";
-    private WSBinding binding;
+    private static final QName EMPTY_PAYLOAD = new QName(EMPTY_PAYLOAD_NSURI, EMPTY_PAYLOAD_LOCAL);
+
+    private final QNameMap<EndpointMethodHandler> methodHandlers = new QNameMap<EndpointMethodHandler>();
+    private final QNameMap<List<String>> unique = new QNameMap<List<String>>();
+    private final WSBinding binding;
 
     public PayloadQNameBasedDispatcher(AbstractSEIModelImpl model, WSBinding binding, SEIInvokerTube invokerTube) {
         this.binding = binding;
-        methodHandlers = new QNameMap<EndpointMethodHandler>();
-        for( JavaMethodImpl m : model.getJavaMethods() ) {
-            EndpointMethodHandler handler = new EndpointMethodHandler(invokerTube,m,binding);
-            QName payloadName = model.getQNameForJM(m);     // TODO need a new method on JavaMethodImpl
-            methodHandlers.put(payloadName.getNamespaceURI(), payloadName.getLocalPart(), handler);
+        // Find if any payload QNames repeat for operations
+        for(JavaMethodImpl m : model.getJavaMethods()) {
+            QName name = m.getRequestPayloadName();
+            if (name == null)
+                name = EMPTY_PAYLOAD;
+            List<String> methods = unique.get(name);
+            if (methods == null) {
+                methods = new ArrayList<String>();
+                unique.put(name, methods);
+            }
+            methods.add(m.getMethod().getName());
+        }
+
+        // Log warnings about non unique payload QNames
+        for(QNameMap.Entry<List<String>> e : unique.entrySet()) {
+            if (e.getValue().size() > 1) {
+                LOGGER.warning(ServerMessages.NON_UNIQUE_DISPATCH_QNAME(e.getValue(), e.createQName()));
+            }
+        }
+
+        for( JavaMethodImpl m : model.getJavaMethods()) {
+            QName name = m.getRequestPayloadName();
+            if (name == null)
+                name = EMPTY_PAYLOAD;
+            // Set up method handlers only for unique QNames. So that dispatching
+            // happens consistently for a method
+            if (unique.get(name).size() == 1) {
+                methodHandlers.put(name, new EndpointMethodHandler(invokerTube,m,binding));
+            }
         }
     }
 
     /**
-     * {@link PayloadQNameBasedDispatcher} never returns null because this is always
-     * the last {@link EndpointMethodHandler} to kick in.
+     *
+     * @return not null if it finds a unique handler for the request
+     *         null otherwise
+     * @throws DispatchException if the payload itself is incorrect
      */
-    public @NotNull EndpointMethodHandler getEndpointMethodHandler(Packet request) throws DispatchException {
+    public @Nullable EndpointMethodHandler getEndpointMethodHandler(Packet request) throws DispatchException {
         Message message = request.getMessage();
         String localPart = message.getPayloadLocalPart();
         String nsUri;
@@ -77,18 +112,19 @@ final class PayloadQNameBasedDispatcher implements EndpointMethodDispatcher {
             nsUri = EMPTY_PAYLOAD_NSURI;
         } else {
             nsUri = message.getPayloadNamespaceURI();
+            if(nsUri == null)
+                nsUri = EMPTY_PAYLOAD_NSURI;
         }
+        EndpointMethodHandler mh = methodHandlers.get(nsUri, localPart);
 
-        EndpointMethodHandler h = methodHandlers.get(nsUri, localPart);
-
-        if (h==null) {
+        // Check if payload itself is correct. Usually it is, so let us check last
+        if (mh == null && !unique.containsKey(nsUri,localPart)) {
             String dispatchKey = "{" + nsUri + "}" + localPart;
-            String faultString = ServerMessages.DISPATCH_CANNOT_FIND_METHOD(dispatchKey, "Payload QName-based Dispatcher");
+            String faultString = ServerMessages.DISPATCH_CANNOT_FIND_METHOD(dispatchKey);
             throw new DispatchException(SOAPFaultBuilder.createSOAPFaultMessage(
-                binding.getSOAPVersion(), faultString, binding.getSOAPVersion().faultCodeClient));
+                 binding.getSOAPVersion(), faultString, binding.getSOAPVersion().faultCodeClient));
         }
-
-        return h;
+        return mh;
     }
 
 }

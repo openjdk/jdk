@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.lang.annotation.Annotation;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.AbstractList;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -66,7 +68,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
 
 import com.sun.istack.internal.FinalArrayList;
-import com.sun.xml.internal.bind.annotation.XmlLocation;
+import com.sun.xml.internal.bind.annotation.OverrideAnnotationOf;
 import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
 import com.sun.xml.internal.bind.v2.model.annotation.MethodLocatable;
 import com.sun.xml.internal.bind.v2.model.core.ClassInfo;
@@ -75,10 +77,10 @@ import com.sun.xml.internal.bind.v2.model.core.ID;
 import com.sun.xml.internal.bind.v2.model.core.NonElement;
 import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
 import com.sun.xml.internal.bind.v2.model.core.PropertyKind;
-import com.sun.xml.internal.bind.v2.model.core.TypeInfo;
 import com.sun.xml.internal.bind.v2.model.core.ValuePropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 import com.sun.xml.internal.bind.v2.runtime.Location;
+import com.sun.xml.internal.bind.v2.util.EditDistance;
 
 
 /**
@@ -116,7 +118,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
      *
      * @see #isOrdered()
      */
-    private final String[] propOrder;
+    private /*final*/ String[] propOrder;
 
     /**
      * Lazily computed.
@@ -169,6 +171,12 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
             propOrder = DEFAULT_ORDER;
         }
 
+        // obtain XmlAccessorOrder and  set proporder (<xs:all> vs <xs:sequence>)
+        XmlAccessorOrder xao = reader().getClassAnnotation(XmlAccessorOrder.class, clazz, this);
+        if((xao != null) && (xao.value() == XmlAccessOrder.UNDEFINED)) {
+            propOrder = null;
+        }
+
         if(nav().isInterface(clazz)) {
             builder.reportError(new IllegalAnnotationException(
                 Messages.CANT_HANDLE_INTERFACE.format(nav().getClassName(clazz)), this ));
@@ -187,16 +195,15 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
                     msg.format(nav().getClassName(clazz)), this ));
             }
         }
-    }
+        }
 
     public ClassInfoImpl<T,C,F,M> getBaseClass() {
-        if(!baseClassComputed) {
-            baseClassComputed = true;
+        if (!baseClassComputed) {
             // compute the base class
             C s = nav().getSuperClass(clazz);
-            if(s==null || s==nav().asDecl(Object.class))
+            if(s==null || s==nav().asDecl(Object.class)) {
                 baseClass = null;
-            else {
+            } else {
                 NonElement<T,C> b = builder.getClassInfo(s, true, this);
                 if(b instanceof ClassInfoImpl) {
                     baseClass = (ClassInfoImpl<T,C,F,M>) b;
@@ -205,6 +212,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
                     baseClass = null;
                 }
             }
+            baseClassComputed = true;
         }
         return baseClass;
     }
@@ -290,8 +298,9 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
         } else {
             //sort them as specified
             PropertySorter sorter = new PropertySorter();
-            for (PropertyInfoImpl p : properties)
+            for (PropertyInfoImpl p : properties) {
                 sorter.checkedGet(p);   // have it check for errors
+            }
             Collections.sort(properties,sorter);
             sorter.checkUnusedProperties();
         }
@@ -340,13 +349,17 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
     }
 
     private void findFieldProperties(C c, XmlAccessType at) {
+
         // always find properties from the super class first
         C sc = nav().getSuperClass(c);
-        if(shouldRecurseSuperClass(sc))
+        if (shouldRecurseSuperClass(sc)) {
             findFieldProperties(sc,at);
+        }
 
         for( F f : nav().getDeclaredFields(c) ) {
             Annotation[] annotations = reader().getAllFieldAnnotations(f,this);
+            boolean isDummy = reader().hasFieldAnnotation(OverrideAnnotationOf.class, f);
+
             if( nav().isTransient(f) ) {
                 // it's an error for transient field to have any binding annotation
                 if(hasJAXBAnnotation(annotations))
@@ -357,12 +370,23 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
             if( nav().isStaticField(f) ) {
                 // static fields are bound only when there's explicit annotation.
                 if(hasJAXBAnnotation(annotations))
-                    addProperty(createFieldSeed(f),annotations);
+                    addProperty(createFieldSeed(f),annotations, false);
             } else {
                 if(at==XmlAccessType.FIELD
                 ||(at==XmlAccessType.PUBLIC_MEMBER && nav().isPublicField(f))
-                || hasJAXBAnnotation(annotations))
-                    addProperty(createFieldSeed(f),annotations);
+                || hasJAXBAnnotation(annotations)) {
+                    if (isDummy) {
+                        ClassInfo<T, C> top = getBaseClass();
+                        while ((top != null) && (top.getProperty("content") == null)) {
+                            top = top.getBaseClass();
+                        }
+                        DummyPropertyInfo prop = (DummyPropertyInfo) top.getProperty("content");
+                        PropertySeed seed = createFieldSeed(f);
+                        ((DummyPropertyInfo)prop).addType(createReferenceProperty(seed));
+                    } else {
+                        addProperty(createFieldSeed(f), annotations, false);
+                    }
+                }
                 checkFieldXmlLocation(f);
             }
         }
@@ -378,7 +402,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
         }
 
         return false;
-    }
+        }
 
     public PropertyInfo<T,C> getProperty(String name) {
         for( PropertyInfo<T,C> p: getProperties() ) {
@@ -467,7 +491,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
             Integer i = get(p.getName());
             if(i==null) {
                 // missing
-                if((p.kind().isOrdered))
+                if (p.kind().isOrdered)
                     builder.reportError(new IllegalAnnotationException(
                         Messages.PROPERTY_MISSING_FROM_ORDER.format(p.getName()),p));
 
@@ -500,8 +524,20 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
             for( int i=0; i<used.length; i++ )
                 if(used[i]==null) {
                     String unusedName = propOrder[i];
-                    builder.reportError(new IllegalAnnotationException(
-                        Messages.PROPERTY_ORDER_CONTAINS_UNUSED_ENTRY.format(unusedName),ClassInfoImpl.this));
+                    String nearest = EditDistance.findNearest(unusedName, new AbstractList<String>() {
+                        public String get(int index) {
+                            return properties.get(index).getName();
+                        }
+
+                        public int size() {
+                            return properties.size();
+                        }
+                    });
+                    boolean isOverriding = (i > (properties.size()-1)) ? false : properties.get(i).hasAnnotation(OverrideAnnotationOf.class);
+                    if (!isOverriding) {
+                        builder.reportError(new IllegalAnnotationException(
+                        Messages.PROPERTY_ORDER_CONTAINS_UNUSED_ENTRY.format(unusedName,nearest),ClassInfoImpl.this));
+                    }
                 }
         }
     }
@@ -536,9 +572,9 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
         }
     }
 
-    private static final class DupliateException extends Exception {
+    private static final class DuplicateException extends Exception {
         final Annotation a1,a2;
-        public DupliateException(Annotation a1, Annotation a2) {
+        public DuplicateException(Annotation a1, Annotation a2) {
             this.a1 = a1;
             this.a2 = a2;
         }
@@ -628,6 +664,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
             XmlElementRefs.class,   // 7
             XmlAnyElement.class,    // 8
             XmlMixed.class,         // 9
+            OverrideAnnotationOf.class,// 10
         };
 
         HashMap<Class,Integer> m = ANNOTATION_NUMBER_MAP;
@@ -645,10 +682,10 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
         }
     }
 
-    private void checkConflict(Annotation a, Annotation b) throws DupliateException {
+    private void checkConflict(Annotation a, Annotation b) throws DuplicateException {
         assert b!=null;
         if(a!=null)
-            throw new DupliateException(a,b);
+            throw new DuplicateException(a,b);
     }
 
     /**
@@ -663,7 +700,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
      *      {@code seed.readAllAnnotation()}, but taken as a parameter
      *      because the caller should know it already.
      */
-    private void addProperty( PropertySeed<T,C,F,M> seed, Annotation[] annotations ) {
+    private void addProperty( PropertySeed<T,C,F,M> seed, Annotation[] annotations, boolean dummy ) {
         // since typically there's a very few annotations on a method,
         // this runs faster than checking for each annotation via readAnnotation(A)
 
@@ -681,6 +718,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
         XmlElementRefs r2 = null;
         XmlAnyElement xae = null;
         XmlMixed mx = null;
+        OverrideAnnotationOf ov = null;
 
         // encountered secondary annotations are accumulated into a bit mask
         int secondaryAnnotations = 0;
@@ -700,6 +738,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
                 case 7:     checkConflict(r2 ,ann); r2  = (XmlElementRefs) ann; break;
                 case 8:     checkConflict(xae,ann); xae = (XmlAnyElement) ann; break;
                 case 9:     checkConflict(mx, ann); mx  = (XmlMixed) ann; break;
+                case 10:    checkConflict(ov, ann); ov  = (OverrideAnnotationOf) ann; break;
                 default:
                     // secondary annotations
                     secondaryAnnotations |= (1<<(index-20));
@@ -732,7 +771,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
                 group = PropertyGroup.ELEMENT;
                 groupCount++;
             }
-            if(r1!=null || r2!=null || xae!=null || mx!=null) {
+            if(r1!=null || r2!=null || xae!=null || mx!=null || ov != null) {
                 group = PropertyGroup.ELEMENT_REF;
                 groupCount++;
             }
@@ -837,7 +876,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
                     err.get(0), err.get(1) ));
 
             // recover by ignoring this property
-        } catch( DupliateException e ) {
+        } catch( DuplicateException e ) {
             // both are present
             builder.reportError(new IllegalAnnotationException(
                 Messages.DUPLICATE_ANNOTATIONS.format(e.a1.annotationType().getName()),
@@ -940,7 +979,7 @@ class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
                     System.arraycopy(sa,0,r,ga.length,sa.length);
                 }
 
-                addProperty(createAccessorSeed(getter, setter),r);
+                addProperty(createAccessorSeed(getter, setter), r, false);
             }
         }
         // done with complete pairs

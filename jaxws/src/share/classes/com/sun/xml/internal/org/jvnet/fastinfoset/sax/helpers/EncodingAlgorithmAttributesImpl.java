@@ -148,7 +148,7 @@ public class EncodingAlgorithmAttributesImpl implements EncodingAlgorithmAttribu
      * to see if the attribute is already in the list: that is
      * the responsibility of the application.</p>
      *
-     * @param uri The Namespace URI, or the empty string if
+     * @param URI The Namespace URI, or the empty string if
      *        none is available or Namespace processing is not
      *        being performed.
      * @param localName The local name, or the empty string if
@@ -183,7 +183,7 @@ public class EncodingAlgorithmAttributesImpl implements EncodingAlgorithmAttribu
      * to see if the attribute is already in the list: that is
      * the responsibility of the application.</p>
      *
-     * @param uri The Namespace URI, or the empty string if
+     * @param URI The Namespace URI, or the empty string if
      *        none is available or Namespace processing is not
      *        being performed.
      * @param localName The local name, or the empty string if
@@ -193,7 +193,7 @@ public class EncodingAlgorithmAttributesImpl implements EncodingAlgorithmAttribu
      * @param type The attribute type as a string.
      * @param value The attribute value.
      * @param index True if attribute should be indexed.
-     * @param index The alphabet associated with the attribute value,
+     * @param alphabet The alphabet associated with the attribute value,
      *              may be null if there is no associated alphabet.
      */
     public void addAttribute(String URI, String localName, String qName,
@@ -221,7 +221,7 @@ public class EncodingAlgorithmAttributesImpl implements EncodingAlgorithmAttribu
      * to see if the attribute is already in the list: that is
      * the responsibility of the application.</p>
      *
-     * @param uri The Namespace URI, or the empty string if
+     * @param URI The Namespace URI, or the empty string if
      *        none is available or Namespace processing is not
      *        being performed.
      * @param localName The local name, or the empty string if
@@ -259,7 +259,7 @@ public class EncodingAlgorithmAttributesImpl implements EncodingAlgorithmAttribu
      * to see if the attribute is already in the list: that is
      * the responsibility of the application.</p>
      *
-     * @param uri The Namespace URI, or the empty string if
+     * @param URI The Namespace URI, or the empty string if
      *        none is available or Namespace processing is not
      *        being performed.
      * @param localName The local name, or the empty string if
@@ -573,7 +573,7 @@ public class EncodingAlgorithmAttributesImpl implements EncodingAlgorithmAttribu
             int identifier, String URI, Object data) throws FastInfosetException, IOException {
         EncodingAlgorithm ea = null;
         if (identifier < EncodingConstants.ENCODING_ALGORITHM_BUILTIN_END) {
-            ea = BuiltInEncodingAlgorithmFactory.table[identifier];
+            ea = BuiltInEncodingAlgorithmFactory.getAlgorithm(identifier);
         } else if (identifier == EncodingAlgorithmIndexes.CDATA) {
             throw new EncodingAlgorithmException(
                     CommonResourceBundle.getInstance().getString("message.CDATAAlgorithmNotSupported"));

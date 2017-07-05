@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.text.MessageFormat;
@@ -42,6 +43,7 @@ enum Messages {
     DANGLING_IDREF, // 1 arg
     NULL_OUTPUT_RESOLVER, // 0 args
     UNABLE_TO_MARSHAL_NON_ELEMENT, // 1 arg
+    UNABLE_TO_MARSHAL_UNBOUND_CLASS, // 1 arg
     UNSUPPORTED_PROPERTY, // 1 arg
     NULL_PROPERTY_NAME, // 0 args
     MUST_BE_X, // 3 args

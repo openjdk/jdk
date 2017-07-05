@@ -22,11 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.api.impl;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Methods that convert strings into various formats.
@@ -59,6 +61,18 @@ class NameUtil {
         return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || Character.isLetter(c);
     }
 
+    private String toLowerCase(String s) {
+        return s.toLowerCase(Locale.ENGLISH);
+    }
+
+    private String toUpperCase(char c) {
+        return String.valueOf(c).toUpperCase(Locale.ENGLISH);
+    }
+
+    private String toUpperCase(String s) {
+        return s.toUpperCase(Locale.ENGLISH);
+    }
+
     /**
      * Capitalizes the first character of the specified string,
      * and de-capitalize the rest of characters.
@@ -67,8 +81,8 @@ class NameUtil {
         if (!isLower(s.charAt(0)))
             return s;
         StringBuilder sb = new StringBuilder(s.length());
-        sb.append(Character.toUpperCase(s.charAt(0)));
-        sb.append(s.substring(1).toLowerCase());
+        sb.append(toUpperCase(s.charAt(0)));
+        sb.append(toLowerCase(s.substring(1)));
         return sb.toString();
     }
 
@@ -209,7 +223,7 @@ class NameUtil {
     protected String toMixedCaseName(List<String> ss, boolean startUpper) {
         StringBuilder sb = new StringBuilder();
         if(!ss.isEmpty()) {
-            sb.append(startUpper ? ss.get(0) : ss.get(0).toLowerCase());
+            sb.append(startUpper ? ss.get(0) : toLowerCase(ss.get(0)));
             for (int i = 1; i < ss.size(); i++)
                 sb.append(ss.get(i));
         }
@@ -224,7 +238,7 @@ class NameUtil {
                 ss[i] = capitalize(ss[i]);
         StringBuilder sb = new StringBuilder();
         if( ss.length>0 ) {
-            sb.append(startUpper ? ss[0] : ss[0].toLowerCase());
+            sb.append(startUpper ? ss[0] : toLowerCase(ss[0]));
             for (int i = 1; i < ss.length; i++)
                 sb.append(ss[i]);
         }
@@ -253,10 +267,10 @@ class NameUtil {
     public String toConstantName(List<String> ss) {
         StringBuilder sb = new StringBuilder();
         if( !ss.isEmpty() ) {
-            sb.append(ss.get(0).toUpperCase());
+            sb.append(toUpperCase(ss.get(0)));
             for (int i = 1; i < ss.size(); i++) {
                 sb.append('_');
-                sb.append(ss.get(i).toUpperCase());
+                sb.append(toUpperCase(ss.get(i)));
             }
         }
         return sb.toString();

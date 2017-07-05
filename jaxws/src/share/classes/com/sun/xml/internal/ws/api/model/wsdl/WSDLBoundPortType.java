@@ -30,6 +30,7 @@ import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.message.Message;
 
+import javax.jws.soap.SOAPBinding;
 import javax.xml.namespace.QName;
 
 /**
@@ -71,6 +72,14 @@ public interface WSDLBoundPortType extends WSDLFeaturedObject, WSDLExtensible {
      * Gets the {@link WSDLBoundOperation}s
      */
     Iterable<? extends WSDLBoundOperation> getBindingOperations();
+
+    /**
+     * Is this a document style or RPC style?
+     *
+     * Since we only support literal and not encoding, this means
+     * either doc/lit or rpc/lit.
+     */
+    @NotNull SOAPBinding.Style getStyle();
 
     /**
      * Returns the binding ID.

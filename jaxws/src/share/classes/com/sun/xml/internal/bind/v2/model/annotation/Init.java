@@ -29,7 +29,7 @@ class Init {
 
 
     static Quick[] getAll() {
-        return new Quick[] {new XmlTypeQuick(null, null), new XmlSchemaQuick(null, null), new XmlElementRefsQuick(null, null), new XmlValueQuick(null, null), new XmlElementDeclQuick(null, null), new XmlElementRefQuick(null, null), new XmlTransientQuick(null, null), new XmlElementQuick(null, null), new XmlAttributeQuick(null, null), new XmlRootElementQuick(null, null), new XmlEnumQuick(null, null)};
+        return new Quick[] {new XmlSchemaTypeQuick(null, null), new XmlElementDeclQuick(null, null), new XmlEnumQuick(null, null), new XmlTransientQuick(null, null), new XmlSchemaQuick(null, null), new XmlRootElementQuick(null, null), new XmlElementQuick(null, null), new XmlTypeQuick(null, null), new XmlElementRefQuick(null, null), new XmlElementRefsQuick(null, null), new XmlAttributeQuick(null, null), new XmlValueQuick(null, null)};
     }
 
 }

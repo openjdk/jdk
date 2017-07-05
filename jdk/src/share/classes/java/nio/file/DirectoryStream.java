@@ -53,7 +53,7 @@ import java.io.IOException;
  * invoking the {@link #close close} method. Closing the directory stream
  * releases any resources associated with the stream. Once a directory stream
  * is closed, all further method invocations on the iterator throw {@link
- * java.util.concurrent.ConcurrentModificationException} with cause {@link
+ * java.util.ConcurrentModificationException} with cause {@link
  * ClosedDirectoryStreamException}.
  *
  * <p> A directory stream is not required to be <i>asynchronously closeable</i>.

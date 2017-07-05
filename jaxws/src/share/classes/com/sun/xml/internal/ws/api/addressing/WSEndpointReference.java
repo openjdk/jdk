@@ -36,7 +36,7 @@ import com.sun.xml.internal.stream.buffer.stax.StreamReaderBufferProcessor;
 import com.sun.xml.internal.stream.buffer.stax.StreamWriterBufferCreator;
 import com.sun.xml.internal.ws.addressing.EndpointReferenceUtil;
 import com.sun.xml.internal.ws.addressing.W3CAddressingConstants;
-import com.sun.xml.internal.ws.addressing.model.InvalidMapException;
+import com.sun.xml.internal.ws.addressing.model.InvalidAddressingHeaderException;
 import com.sun.xml.internal.ws.addressing.v200408.MemberSubmissionAddressingConstants;
 import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.HeaderList;
@@ -625,8 +625,8 @@ public final class WSEndpointReference {
             } else
             if(localName.equals("Address")) {
                 if(address!=null) // double <Address>. That's an error.
-                    throw new InvalidMapException(new QName(version.nsUri,rootLocalName),AddressingVersion.fault_duplicateAddressInEpr);
-                address = xsr.getElementText();
+                    throw new InvalidAddressingHeaderException(new QName(version.nsUri,rootLocalName),AddressingVersion.fault_duplicateAddressInEpr);
+                address = xsr.getElementText().trim();
             } else {
                 XMLStreamReaderUtil.skipElement(xsr);
             }
@@ -641,7 +641,7 @@ public final class WSEndpointReference {
         }
 
         if(address==null)
-            throw new InvalidMapException(new QName(version.nsUri,rootLocalName),version.fault_missingAddressInEpr);
+            throw new InvalidAddressingHeaderException(new QName(version.nsUri,rootLocalName),version.fault_missingAddressInEpr);
     }
 
 
@@ -656,8 +656,8 @@ public final class WSEndpointReference {
     public XMLStreamReader read(final @NotNull String localName) throws XMLStreamException {
         return new StreamReaderBufferProcessor(infoset) {
             protected void processElement(String prefix, String uri, String _localName) {
-                if(_depth==0)
-                        _localName = localName;
+                if (_depth == 0)
+                    _localName = localName;
                 super.processElement(prefix, uri, _localName);
             }
         };
@@ -834,6 +834,8 @@ public final class WSEndpointReference {
         private @Nullable QName portName;
         private @Nullable QName portTypeName; //interfaceName
         private @Nullable Source wsdlSource;
+        private @Nullable String wsdliLocation;
+
         public @Nullable QName getServiceName(){
             return serviceName;
         }
@@ -845,6 +847,9 @@ public final class WSEndpointReference {
         }
         public @Nullable Source getWsdlSource(){
             return wsdlSource;
+        }
+        public @Nullable String getWsdliLocation(){
+            return wsdliLocation;
         }
 
         private Metadata() {
@@ -875,16 +880,23 @@ public final class WSEndpointReference {
                 do {
                     //If the current element is metadata enclosure, look inside
                     if (xsr.getLocalName().equals(version.eprType.wsdlMetadata.getLocalPart())) {
+                        String wsdlLoc = xsr.getAttributeValue("http://www.w3.org/ns/wsdl-instance","wsdlLocation");
+                        if (wsdlLoc != null)
+                            wsdliLocation = wsdlLoc.trim();
                         XMLStreamBuffer mark;
                         while ((mark = xsr.nextTagAndMark()) != null) {
                             localName = xsr.getLocalName();
                             ns = xsr.getNamespaceURI();
                             if (localName.equals(version.eprType.serviceName)) {
                                 String portStr = xsr.getAttributeValue(null, version.eprType.portName);
+                                if(serviceName != null)
+                                    throw new RuntimeException("More than one "+ version.eprType.serviceName +" element in EPR Metadata");
                                 serviceName = getElementTextAsQName(xsr);
-                                if (serviceName != null)
+                                if (serviceName != null && portStr != null)
                                     portName = new QName(serviceName.getNamespaceURI(), portStr);
                             } else if (localName.equals(version.eprType.portTypeName)) {
+                                if(portTypeName != null)
+                                    throw new RuntimeException("More than one "+ version.eprType.portTypeName +" element in EPR Metadata");
                                 portTypeName = getElementTextAsQName(xsr);
                             } else if (ns.equals(WSDLConstants.NS_WSDL)
                                     && localName.equals(WSDLConstants.QNAME_DEFINITIONS.getLocalPart())) {
@@ -922,7 +934,7 @@ public final class WSEndpointReference {
                     } else if (localName.equals(version.eprType.serviceName)) {
                         String portStr = xsr.getAttributeValue(null, version.eprType.portName);
                         serviceName = getElementTextAsQName(xsr);
-                        if (serviceName != null)
+                        if (serviceName != null && portStr != null)
                             portName = new QName(serviceName.getNamespaceURI(), portStr);
                     } else if (localName.equals(version.eprType.portTypeName)) {
                         portTypeName = getElementTextAsQName(xsr);
@@ -936,7 +948,7 @@ public final class WSEndpointReference {
         }
 
         private QName getElementTextAsQName(StreamReaderBufferProcessor xsr) throws XMLStreamException {
-            String text = xsr.getElementText();
+            String text = xsr.getElementText().trim();
             String prefix = XmlUtil.getPrefix(text);
             String name = XmlUtil.getLocalPart(text);
             if (name != null) {

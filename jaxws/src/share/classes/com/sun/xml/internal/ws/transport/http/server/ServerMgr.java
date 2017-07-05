@@ -30,7 +30,6 @@ import com.sun.xml.internal.ws.server.ServerRtException;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -54,8 +53,9 @@ final class ServerMgr {
 
     /**
      * Gets the singleton instance.
+     * @return manager instance
      */
-    public static ServerMgr getInstance() {
+    static ServerMgr getInstance() {
         return serverMgr;
     }
 
@@ -64,7 +64,7 @@ final class ServerMgr {
      * it uses that server to create a context. Otherwise, it creates a new
      * HTTP server. This sever is added to servers Map.
      */
-    public HttpContext createContext(String address) {
+    /*package*/ HttpContext createContext(String address) {
         try {
             HttpServer server;
             ServerState state;
@@ -80,7 +80,7 @@ final class ServerMgr {
                 if (state == null) {
                     logger.fine("Creating new HTTP Server at "+inetAddress);
                     server = HttpServer.create(inetAddress, 5);
-                    server.setExecutor(Executors.newFixedThreadPool(5));
+                    server.setExecutor(Executors.newCachedThreadPool());
                     String path = url.toURI().getPath();
                     logger.fine("Creating HTTP Context at = "+path);
                     HttpContext context = server.createContext(path);
@@ -105,7 +105,7 @@ final class ServerMgr {
      * Removes a context. If the server doesn't have anymore contexts, it
      * would stop the server and server is removed from servers Map.
      */
-    public void removeContext(HttpContext context) {
+    /*package*/ void removeContext(HttpContext context) {
         InetSocketAddress inetAddress = context.getServer().getAddress();
         synchronized(servers) {
             ServerState state = servers.get(inetAddress);

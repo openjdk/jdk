@@ -29,9 +29,8 @@ import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensible;
 import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensionHandler;
 import com.sun.tools.internal.ws.resources.WsdlMessages;
 import com.sun.tools.internal.ws.util.xml.XmlUtil;
-import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
-import com.sun.tools.internal.ws.wscompile.WsimportOptions;
 import com.sun.tools.internal.ws.wscompile.ErrorReceiverFilter;
+import com.sun.tools.internal.ws.wscompile.WsimportOptions;
 import com.sun.tools.internal.ws.wsdl.document.Binding;
 import com.sun.tools.internal.ws.wsdl.document.BindingFault;
 import com.sun.tools.internal.ws.wsdl.document.BindingInput;
@@ -68,11 +67,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.io.IOException;
 
 /**
  * A parser for WSDL documents. This parser is used only at the tool time.
@@ -135,7 +134,7 @@ public class WSDLParser {
         // parse external binding files
         for (InputSource value : options.getWSDLBindings()) {
             errReceiver.pollAbort();
-            Document root = forest.parse(value, true); // TODO: I think this should be false - KK
+            Document root = forest.parse(value, false);
             if(root==null)       continue;   // error must have been reported
             Element binding = root.getDocumentElement();
             if (!fixNull(binding.getNamespaceURI()).equals(JAXWSBindingsConstants.NS_JAXWS_BINDINGS)
@@ -168,7 +167,7 @@ public class WSDLParser {
     private WSDLDocument buildWSDLDocument(){
         /**
          * Currently we are working off first WSDL document
-         * TODO: add support of creating WSDLDocument from collection of WSDL documents
+         * TODO: add support of creating WSDLDocument from fromjava.collection of WSDL documents
          */
 
         String location = forest.getRootWSDL();

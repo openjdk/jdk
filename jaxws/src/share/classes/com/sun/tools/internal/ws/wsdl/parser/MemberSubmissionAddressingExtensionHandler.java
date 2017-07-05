@@ -22,9 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: MemberSubmissionAddressingExtensionHandler.java,v 1.1.2.6 2006/10/31 19:52:07 vivekp Exp $
- */
 
 package com.sun.tools.internal.ws.wsdl.parser;
 

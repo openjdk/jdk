@@ -198,8 +198,12 @@ public abstract class JExpr {
             char c = s.charAt(i);
             int j = charEscape.indexOf(c);
             if(j>=0) {
-                sb.append('\\');
-                sb.append(charMacro.charAt(j));
+                if((quote=='"' && c=='\'') || (quote=='\'' && c=='"')) {
+                    sb.append(c);
+                } else {
+                    sb.append('\\');
+                    sb.append(charMacro.charAt(j));
+                }
             } else {
                 // technically Unicode escape shouldn't be done here,
                 // for it's a lexical level handling.

@@ -26,25 +26,24 @@
 package com.sun.xml.internal.ws.encoding.xml;
 
 import com.sun.istack.internal.NotNull;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ContentType;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeMultipart;
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.message.Attachment;
-import com.sun.xml.internal.ws.api.message.AttachmentSet;
-import com.sun.xml.internal.ws.api.message.HeaderList;
-import com.sun.xml.internal.ws.api.message.Message;
-import com.sun.xml.internal.ws.api.message.Messages;
-import com.sun.xml.internal.ws.api.message.Packet;
+import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.message.*;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamWriterFactory;
+import com.sun.xml.internal.ws.developer.StreamingAttachmentFeature;
 import com.sun.xml.internal.ws.encoding.MimeMultipartParser;
 import com.sun.xml.internal.ws.encoding.XMLHTTPBindingCodec;
+import com.sun.xml.internal.ws.encoding.ContentType;
 import com.sun.xml.internal.ws.message.AbstractMessageImpl;
 import com.sun.xml.internal.ws.message.EmptyMessageImpl;
+import com.sun.xml.internal.ws.message.MimeAttachmentSet;
+import com.sun.xml.internal.ws.message.source.PayloadSourceMessage;
 import com.sun.xml.internal.ws.util.xml.XMLStreamReaderToXMLStreamWriter;
+import com.sun.xml.internal.ws.util.ByteArrayBuffer;
+import com.sun.xml.internal.bind.api.Bridge;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -56,24 +55,17 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.ws.WebServiceException;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.JAXBException;
+import java.io.*;
 
 /**
  *
  * @author Jitendra Kotamraju
  */
 public final class XMLMessage {
-
-    // So that SAAJ registers DCHs for MIME types
-    static {
-        new com.sun.xml.internal.messaging.saaj.soap.AttachmentPartImpl();
-    }
 
     private static final int PLAIN_XML_FLAG      = 1;       // 00001
     private static final int MIME_MULTIPART_FLAG = 2;       // 00010
@@ -107,23 +99,21 @@ public final class XMLMessage {
     /**
      * Construct a message given a content type and an input stream.
      */
-    public static Message create(final String ct, InputStream in) {
+    public static Message create(final String ct, InputStream in, WSBinding binding) {
         Message data;
         try {
             in = hasSomeData(in);
             if (in == null) {
-                data = Messages.createEmpty(SOAPVersion.SOAP_11);
-                return data;
+                return Messages.createEmpty(SOAPVersion.SOAP_11);
             }
 
             if (ct != null) {
                 final ContentType contentType = new ContentType(ct);
                 final int contentTypeId = identifyContentType(contentType);
                 if ((contentTypeId & MIME_MULTIPART_FLAG) != 0) {
-                    data = new XMLMultiPart(ct, in);
+                    data = new XMLMultiPart(ct, in, binding.getFeature(StreamingAttachmentFeature.class));
                 } else if ((contentTypeId & PLAIN_XML_FLAG) != 0) {
-                    data = Messages.createUsingPayload(new StreamSource(in),
-                            SOAPVersion.SOAP_11);
+                    data = new XmlContent(ct, in);
                 } else {
                     data = new UnknownContent(ct, in);
                 }
@@ -143,11 +133,11 @@ public final class XMLMessage {
             Messages.createUsingPayload(source, SOAPVersion.SOAP_11);
     }
 
-    public static Message create(DataSource ds) {
+    public static Message create(DataSource ds, WSBinding binding) {
         try {
             return (ds == null) ?
                 Messages.createEmpty(SOAPVersion.SOAP_11) :
-                create(ds.getContentType(), ds.getInputStream());
+                create(ds.getContentType(), ds.getInputStream(), binding);
         } catch(IOException ioe) {
             throw new WebServiceException(ioe);
         }
@@ -252,26 +242,145 @@ public final class XMLMessage {
         DataSource getDataSource();
     }
 
+    /**
+     * It's conent-type is some XML type
+     *
+     */
+    private static class XmlContent extends AbstractMessageImpl implements MessageDataSource {
+        private final DataSource dataSource;
+        private boolean consumed;
+        private Message delegate;
+        private final HeaderList headerList;
+
+        public XmlContent(String ct, InputStream in) {
+            super(SOAPVersion.SOAP_11);
+            dataSource = createDataSource(ct, in);
+            this.headerList = new HeaderList();
+        }
+
+        private Message getMessage() {
+            if (delegate == null) {
+                assert !consumed;
+                InputStream in = null;
+                try {
+                    in = dataSource.getInputStream();
+                } catch(IOException ioe) {
+                    // shouldn't happen;
+                }
+                assert in != null;
+                delegate = Messages.createUsingPayload(new StreamSource(in), SOAPVersion.SOAP_11);
+                consumed = true;
+            }
+            return delegate;
+        }
+
+        public boolean hasUnconsumedDataSource() {
+            return !consumed;
+        }
+
+        public DataSource getDataSource() {
+            consumed = true;
+            return dataSource;
+        }
+
+        public boolean hasHeaders() {
+            return false;
+        }
+
+        public @NotNull HeaderList getHeaders() {
+            return headerList;
+        }
+
+        public String getPayloadLocalPart() {
+            return getMessage().getPayloadLocalPart();
+        }
+
+        public String getPayloadNamespaceURI() {
+            return getMessage().getPayloadNamespaceURI();
+        }
+
+        public boolean hasPayload() {
+            return true;
+        }
+
+        public boolean isFault() {
+            return false;
+        }
+
+        public Source readEnvelopeAsSource() {
+            return getMessage().readEnvelopeAsSource();
+        }
+
+        public Source readPayloadAsSource() {
+            return getMessage().readPayloadAsSource();
+        }
+
+        public SOAPMessage readAsSOAPMessage() throws SOAPException {
+            return getMessage().readAsSOAPMessage();
+        }
+
+        public SOAPMessage readAsSOAPMessage(Packet packet, boolean inbound) throws SOAPException {
+            return getMessage().readAsSOAPMessage(packet, inbound);
+        }
+
+        public <T> T readPayloadAsJAXB(Unmarshaller unmarshaller) throws JAXBException {
+            return (T)getMessage().readPayloadAsJAXB(unmarshaller);
+        }
+
+        public <T> T readPayloadAsJAXB(Bridge<T> bridge) throws JAXBException {
+            return getMessage().readPayloadAsJAXB(bridge);
+        }
+
+        public XMLStreamReader readPayload() throws XMLStreamException {
+            return getMessage().readPayload();
+        }
+
+
+        public void writePayloadTo(XMLStreamWriter sw) throws XMLStreamException {
+            getMessage().writePayloadTo(sw);
+        }
+
+        public void writeTo(XMLStreamWriter sw) throws XMLStreamException {
+            getMessage().writeTo(sw);
+        }
+
+        public void writeTo(ContentHandler contentHandler, ErrorHandler errorHandler) throws SAXException {
+            getMessage().writeTo(contentHandler, errorHandler);
+        }
+
+        public Message copy() {
+            throw new UnsupportedOperationException();
+        }
+
+        protected void writePayloadTo(ContentHandler contentHandler, ErrorHandler errorHandler, boolean fragment) throws SAXException {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
+
 
     /**
      * Data represented as a multi-part MIME message.
      * <p>
-     * The root part may be an XML or an FI document.
-     *
-     * This class parses {@link MimeMultipart} lazily.
+     * The root part may be an XML or an FI document. This class
+     * parses MIME message lazily.
      */
     public static final class XMLMultiPart extends AbstractMessageImpl implements MessageDataSource {
         private final DataSource dataSource;
         private MimeMultipartParser mpp;
+        private final StreamingAttachmentFeature feature;
 
-        public XMLMultiPart(final String contentType, final InputStream is) {
+        public XMLMultiPart(final String contentType, final InputStream is, StreamingAttachmentFeature feature) {
             super(SOAPVersion.SOAP_11);
             dataSource = createDataSource(contentType, is);
+            this.feature = feature;
         }
 
-        public XMLMultiPart(DataSource dataSource) {
+        public XMLMultiPart(DataSource dataSource, StreamingAttachmentFeature feature) {
             super(SOAPVersion.SOAP_11);
             this.dataSource = dataSource;
+            this.feature = feature;
         }
 
         public DataSource getDataSource() {
@@ -284,7 +393,7 @@ public final class XMLMessage {
                 try {
                     mpp = new MimeMultipartParser(
                             dataSource.getInputStream(),
-                            dataSource.getContentType());
+                            dataSource.getContentType(), feature);
                 } catch(IOException ioe) {
                     throw new WebServiceException(ioe);
                 }
@@ -311,7 +420,7 @@ public final class XMLMessage {
         @Override
         public AttachmentSet getAttachments() {
             convertDataSourceToMessage();
-            return new XMLAttachmentSet(mpp);
+            return new MimeAttachmentSet(mpp);
         }
 
         public String getPayloadLocalPart() {
@@ -359,45 +468,6 @@ public final class XMLMessage {
 
         public boolean hasUnconsumedDataSource() {
             return mpp == null;
-        }
-
-    }
-
-    private static final class XMLAttachmentSet implements AttachmentSet {
-
-        private final Map<String, Attachment> attMap;
-
-        public XMLAttachmentSet(MimeMultipartParser mpp) {
-            // TODO
-            attMap = new HashMap<String, Attachment>();
-            attMap.putAll(mpp.getAttachmentParts());
-        }
-
-        /**
-         * Gets the attachment by the content ID.
-         *
-         * @return null
-         *         if no such attachment exist.
-         */
-        public Attachment get(String contentId) {
-            return attMap.get(contentId);
-        }
-
-        public boolean isEmpty() {
-            return attMap.isEmpty();
-        }
-
-        /**
-         * Returns an iterator over a set of elements of type T.
-         *
-         * @return an Iterator.
-         */
-        public Iterator<Attachment> iterator() {
-            return attMap.values().iterator();
-        }
-
-        public void add(Attachment att) {
-            attMap.put(att.getContentId(), att);
         }
 
     }
@@ -500,15 +570,15 @@ public final class XMLMessage {
 
     }
 
-    public static DataSource getDataSource(Message msg) {
+    public static DataSource getDataSource(Message msg, WSBinding binding) {
         if (msg instanceof MessageDataSource) {
             return ((MessageDataSource)msg).getDataSource();
         } else {
             AttachmentSet atts = msg.getAttachments();
             if (atts != null && !atts.isEmpty()) {
-                final ByteOutputStream bos = new ByteOutputStream();
+                final ByteArrayBuffer bos = new ByteArrayBuffer();
                 try {
-                    Codec codec = new XMLHTTPBindingCodec();
+                    Codec codec = new XMLHTTPBindingCodec(binding);
                     com.sun.xml.internal.ws.api.pipe.ContentType ct = codec.getStaticContentType(new Packet(msg));
                     codec.encode(new Packet(msg), bos);
                     return createDataSource(ct.getContentType(), bos.newInputStream());
@@ -517,7 +587,7 @@ public final class XMLMessage {
                 }
 
             } else {
-                final ByteOutputStream bos = new ByteOutputStream();
+                final ByteArrayBuffer bos = new ByteArrayBuffer();
                 XMLStreamWriter writer = XMLStreamWriterFactory.create(bos);
                 try {
                     msg.writePayloadTo(writer);

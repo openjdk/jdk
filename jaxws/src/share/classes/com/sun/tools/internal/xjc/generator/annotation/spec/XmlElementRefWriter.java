@@ -41,4 +41,6 @@ public interface XmlElementRefWriter
 
     XmlElementRefWriter namespace(String value);
 
+    XmlElementRefWriter required(boolean value);
+
 }

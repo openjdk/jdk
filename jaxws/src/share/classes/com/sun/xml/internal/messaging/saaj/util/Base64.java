@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: Base64.java,v 1.4 2006/01/27 12:49:50 vj135062 Exp $
- * $Revision: 1.4 $
- * $Date: 2006/01/27 12:49:50 $
- */
 
 
 package com.sun.xml.internal.messaging.saaj.util;
@@ -43,7 +38,7 @@ package com.sun.xml.internal.messaging.saaj.util;
  * This class is used by XML Schema binary format validation
  *
  * @author Jeffrey Rodriguez
- * @version $Revision: 1.4 $ $Date: 2006/01/27 12:49:50 $
+ * @version
  */
 public final class Base64 {
 

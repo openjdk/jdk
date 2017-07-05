@@ -193,6 +193,9 @@ public final class EndpointAddress {
      */
     public URLConnection openConnection() throws IOException {
         assert url!=null : uri+" doesn't have the corresponding URL";
+        if (url == null) {
+            throw new WebServiceException("URI="+uri+" doesn't have the corresponding URL");
+        }
         if(proxy!=null)
             return url.openConnection(proxy);
         else

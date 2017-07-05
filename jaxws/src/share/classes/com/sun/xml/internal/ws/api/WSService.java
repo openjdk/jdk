@@ -25,7 +25,11 @@
 
 package com.sun.xml.internal.ws.api;
 
+import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
+import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.api.server.ContainerResolver;
+import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.client.WSServiceDelegate;
 
 import javax.xml.bind.JAXBContext;
@@ -84,6 +88,19 @@ public abstract class WSService extends ServiceDelegate {
     public abstract Dispatch<Object> createDispatch(QName portName, WSEndpointReference wsepr, JAXBContext jaxbContext, Service.Mode mode, WebServiceFeature... features);
 
     /**
+     * Gets the {@link Container} object.
+     *
+     * <p>
+     * The components inside {@link WSEndpoint} uses this reference
+     * to communicate with the hosting environment.
+     *
+     * @return
+     *      always same object. If no "real" {@link Container} instance
+     *      is given, {@link Container#NONE} will be returned.
+     */
+    public abstract @NotNull Container getContainer();
+
+    /**
      * Create a <code>Service</code> instance.
      *
      * The specified WSDL document location and service qualified name MUST
@@ -115,6 +132,69 @@ public abstract class WSService extends ServiceDelegate {
      */
     public static WSService create() {
         return create(null,new QName(WSService.class.getName(),"dummy"));
+    }
+
+    /**
+     * Typed parameter bag used by {@link WSService#create(URL, QName, InitParams)}
+     *
+     * @since 2.1.3
+     */
+    public static final class InitParams {
+        private Container container;
+        /**
+         * Sets the {@link Container} object used by the created service.
+         * This allows the client to use a specific {@link Container} instance
+         * as opposed to the one obtained by {@link ContainerResolver}.
+         */
+        public void setContainer(Container c) {
+            this.container = c;
+        }
+        public Container getContainer() {
+            return container;
+        }
+    }
+
+    /**
+     * To create a {@link Service}, we need to go through the API that doesn't let us
+     * pass parameters, so as a hack we use thread local.
+     */
+    protected static final ThreadLocal<InitParams> INIT_PARAMS = new ThreadLocal<InitParams>();
+
+    /**
+     * Used as a immutable constant so that we can avoid null check.
+     */
+    protected static final InitParams EMPTY_PARAMS = new InitParams();
+
+    /**
+     * Creates a {@link Service} instance.
+     *
+     * <p>
+     * This method works really like {@link Service#create(URL, QName)}
+     * except it takes one more RI specific parameter.
+     *
+     * @param wsdlDocumentLocation
+     *          {@code URL} for the WSDL document location for the service.
+     *          Can be null, in which case WSDL is not loaded.
+     * @param serviceName
+     *          {@code QName} for the service.
+     * @param properties
+     *          Additional RI specific initialization parameters. Can be null.
+     * @throws WebServiceException
+     *          If any error in creation of the specified service.
+     **/
+    public static Service create( URL wsdlDocumentLocation, QName serviceName, InitParams properties) {
+        if(INIT_PARAMS.get()!=null)
+            throw new IllegalStateException("someone left non-null InitParams");
+        INIT_PARAMS.set(properties);
+        try {
+            Service svc = Service.create(wsdlDocumentLocation, serviceName);
+            if(INIT_PARAMS.get()!=null)
+                throw new IllegalStateException("Service "+svc+" didn't recognize InitParams");
+            return svc;
+        } finally {
+            // even in case of an exception still reset INIT_PARAMS
+            INIT_PARAMS.set(null);
+        }
     }
 
     /**

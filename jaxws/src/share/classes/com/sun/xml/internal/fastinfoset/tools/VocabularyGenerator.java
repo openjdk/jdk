@@ -55,9 +55,9 @@ public class VocabularyGenerator extends DefaultHandler implements LexicalHandle
     protected ParserVocabulary _parserVocabulary;
     protected com.sun.xml.internal.org.jvnet.fastinfoset.Vocabulary _v;
 
-    protected int attributeValueSizeConstraint = FastInfosetSerializer.ATTRIBUTE_VALUE_SIZE_CONSTRAINT;
+    protected int attributeValueSizeConstraint = FastInfosetSerializer.MAX_ATTRIBUTE_VALUE_SIZE;
 
-    protected int characterContentChunkSizeContraint = FastInfosetSerializer.CHARACTER_CONTENT_CHUNK_SIZE_CONSTRAINT;
+    protected int characterContentChunkSizeContraint = FastInfosetSerializer.MAX_CHARACTER_CONTENT_CHUNK_SIZE;
 
     /** Creates a new instance of VocabularyGenerator */
     public VocabularyGenerator() {

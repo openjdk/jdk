@@ -25,8 +25,8 @@
 
 package com.sun.xml.internal.ws.addressing;
 
-import com.sun.xml.internal.ws.addressing.model.InvalidMapException;
-import com.sun.xml.internal.ws.addressing.model.MapRequiredException;
+import com.sun.xml.internal.ws.addressing.model.InvalidAddressingHeaderException;
+import com.sun.xml.internal.ws.addressing.model.MissingAddressingHeaderException;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
@@ -41,11 +41,8 @@ import com.sun.xml.internal.ws.model.wsdl.WSDLOperationImpl;
 import com.sun.xml.internal.ws.model.JavaMethodImpl;
 import com.sun.xml.internal.ws.model.CheckedExceptionImpl;
 import com.sun.istack.internal.Nullable;
-import com.sun.istack.internal.NotNull;
 import org.w3c.dom.Element;
 
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
 import javax.xml.soap.Detail;
 import javax.xml.soap.SOAPConstants;
@@ -218,10 +215,10 @@ public abstract class WsaTubeHelper {
     public String getSOAPAction(Packet packet) {
         String action = "";
 
-        if (packet == null)
+        if (packet == null || packet.getMessage() == null)
             return action;
 
-        if (packet.getMessage() == null)
+        if (wsdlPort == null)
             return action;
 
         WSDLBoundOperation op = packet.getMessage().getOperation(wsdlPort);
@@ -234,10 +231,11 @@ public abstract class WsaTubeHelper {
     }
 
     public String getOutputAction(Packet packet) {
-        String action = AddressingVersion.UNSET_OUTPUT_ACTION;
+        //String action = AddressingVersion.UNSET_OUTPUT_ACTION;
+        String action = null;
         if(seiModel!= null) {
             JavaMethodImpl jm = (JavaMethodImpl) packet.getMessage().getMethod(seiModel);
-            if(jm.getOutputAction() != null && !jm.getOutputAction().equals("")) {
+            if(jm != null && jm.getOutputAction() != null && !jm.getOutputAction().equals("")) {
                 return jm.getOutputAction();
             }
         }
@@ -257,8 +255,8 @@ public abstract class WsaTubeHelper {
         }
         return action;
     }
-    public SOAPFault newInvalidMapFault(InvalidMapException e, AddressingVersion av) {
-        QName name = e.getMapQName();
+    public SOAPFault createInvalidAddressingHeaderFault(InvalidAddressingHeaderException e, AddressingVersion av) {
+        QName name = e.getProblemHeader();
         QName subsubcode = e.getSubsubcode();
         QName subcode = av.invalidMapTag;
         String faultstring = String.format(av.getInvalidMapText(), name, subsubcode);
@@ -287,10 +285,10 @@ public abstract class WsaTubeHelper {
         }
     }
 
-    public SOAPFault newMapRequiredFault(MapRequiredException e, AddressingVersion av) {
-        QName subcode = av.mapRequiredTag;
-        QName subsubcode = av.mapRequiredTag;
-        String faultstring = av.getMapRequiredText();
+    public SOAPFault newMapRequiredFault(MissingAddressingHeaderException e) {
+        QName subcode = addVer.mapRequiredTag;
+        QName subsubcode = addVer.mapRequiredTag;
+        String faultstring = addVer.getMapRequiredText();
 
         try {
             SOAPFactory factory;
@@ -301,7 +299,7 @@ public abstract class WsaTubeHelper {
                 fault.setFaultCode(SOAPConstants.SOAP_SENDER_FAULT);
                 fault.appendFaultSubcode(subcode);
                 fault.appendFaultSubcode(subsubcode);
-                getMapRequiredDetail(e.getMapQName(), fault.addDetail());
+                getMapRequiredDetail(e.getMissingHeaderQName(), fault.addDetail());
             } else {
                 factory = SOAPVersion.SOAP_11.saajSoapFactory;
                 fault = factory.createFault();
@@ -320,8 +318,6 @@ public abstract class WsaTubeHelper {
     public abstract void getInvalidMapDetail(QName name, Element element);
     public abstract void getMapRequiredDetail(QName name, Element element);
 
-    protected Unmarshaller unmarshaller;
-    protected Marshaller marshaller;
     protected SEIModel seiModel;
     protected WSDLPort wsdlPort;
     protected WSBinding binding;

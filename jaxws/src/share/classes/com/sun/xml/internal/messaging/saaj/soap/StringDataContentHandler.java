@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: StringDataContentHandler.java,v 1.6 2006/01/27 12:49:29 vj135062 Exp $
- * $Revision: 1.6 $
- * $Date: 2006/01/27 12:49:29 $
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap;
@@ -35,127 +30,139 @@ import java.awt.datatransfer.DataFlavor;
 import java.io.*;
 
 import javax.activation.*;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeUtility;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.ASCIIUtility;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ContentType;
 
 /**
  * JAF data content handler for text/plain --> String
  *
- * @author Anil Vijendran
  */
 public class StringDataContentHandler implements DataContentHandler {
-    /**
-     * return the DataFlavors for this <code>DataContentHandler</code>
-     * @return The DataFlavors.
-     */
-    public DataFlavor[] getTransferDataFlavors() { // throws Exception;
-        DataFlavor flavors[] = new DataFlavor[2];
+    private static ActivationDataFlavor myDF = new ActivationDataFlavor(
+        java.lang.String.class,
+        "text/plain",
+        "Text String");
 
-        try {
-            flavors[0] =
-                new ActivationDataFlavor(
-                    Class.forName("java.lang.String"),
-                    "text/plain",
-                    "text string");
-        } catch (Exception e) {
-        }
-
-        flavors[1] = new DataFlavor("text/plain", "Plain Text");
-        return flavors;
+    protected ActivationDataFlavor getDF() {
+        return myDF;
     }
 
     /**
-     * return the Transfer Data of type DataFlavor from InputStream
-     * @param df The DataFlavor.
-     * @param ins The InputStream corresponding to the data.
-     * @return The constructed Object.
-     */
-    public Object getTransferData(DataFlavor df, DataSource ds) {
-
-        // this is sort of hacky, but will work for the
-        // sake of testing...
-        if (df.getMimeType().startsWith("text/plain")) {
-            if (df
-                .getRepresentationClass()
-                .getName()
-                .equals("java.lang.String")) {
-                // spit out String
-                StringBuffer buf = new StringBuffer();
-                char data[] = new char[1024];
-                // InputStream is = null;
-                InputStreamReader isr = null;
-                int bytes_read = 0;
-                int total_bytes = 0;
-
-                try {
-                    isr = new InputStreamReader(ds.getInputStream());
-
-                    while (true) {
-                        bytes_read = isr.read(data);
-                        if (bytes_read > 0)
-                            buf.append(data, 0, bytes_read);
-                        else
-                            break;
-                        total_bytes += bytes_read;
-                    }
-                } catch (Exception e) {
-                }
-
-                return buf.toString();
-
-            } else if (
-                df.getRepresentationClass().getName().equals(
-                    "java.io.InputStream")) {
-                // spit out InputStream
-                try {
-                    return ds.getInputStream();
-                } catch (Exception e) {
-                }
-            }
-
-        }
-        return null;
-    }
-
-    /**
+     * Return the DataFlavors for this <code>DataContentHandler</code>.
      *
+     * @return The DataFlavors
      */
-    public Object getContent(DataSource ds) { // throws Exception;
-        StringBuffer buf = new StringBuffer();
-        char data[] = new char[1024];
-        // InputStream is = null;
-        InputStreamReader isr = null;
-        int bytes_read = 0;
-        int total_bytes = 0;
+    public DataFlavor[] getTransferDataFlavors() {
+        return new DataFlavor[] { getDF() };
+    }
+
+    /**
+     * Return the Transfer Data of type DataFlavor from InputStream.
+     *
+     * @param df The DataFlavor
+     * @param ds The DataSource corresponding to the data
+     * @return String object
+     */
+    public Object getTransferData(DataFlavor df, DataSource ds)
+                        throws IOException {
+        // use myDF.equals to be sure to get ActivationDataFlavor.equals,
+        // which properly ignores Content-Type parameters in comparison
+        if (getDF().equals(df))
+            return getContent(ds);
+        else
+            return null;
+    }
+
+    public Object getContent(DataSource ds) throws IOException {
+        String enc = null;
+        InputStreamReader is = null;
 
         try {
-            isr = new InputStreamReader(ds.getInputStream());
-
-            while (true) {
-                bytes_read = isr.read(data);
-                if (bytes_read > 0)
-                    buf.append(data, 0, bytes_read);
-                else
-                    break;
-                total_bytes += bytes_read;
-            }
-        } catch (Exception e) {
+            enc = getCharset(ds.getContentType());
+            is = new InputStreamReader(ds.getInputStream(), enc);
+        } catch (IllegalArgumentException iex) {
+            /*
+             * An unknown charset of the form ISO-XXX-XXX will cause
+             * the JDK to throw an IllegalArgumentException.  The
+             * JDK will attempt to create a classname using this string,
+             * but valid classnames must not contain the character '-',
+             * and this results in an IllegalArgumentException, rather than
+             * the expected UnsupportedEncodingException.  Yikes.
+             */
+            throw new UnsupportedEncodingException(enc);
         }
 
-        return buf.toString();
-    }
-    /**
-     * construct an object from a byte stream
-     * (similar semantically to previous method, we are deciding
-     *  which one to support)
-     */
-    public void writeTo(Object obj, String mimeType, OutputStream os)
-        throws IOException {
-        if (!mimeType.startsWith("text/plain"))
-            throw new IOException(
-                "Invalid type \"" + mimeType + "\" on StringDCH");
+        try {
+            int pos = 0;
+            int count;
+            char buf[] = new char[1024];
 
-        Writer out = new OutputStreamWriter(os);
-        out.write((String) obj);
-        out.flush();
+            while ((count = is.read(buf, pos, buf.length - pos)) != -1) {
+                pos += count;
+                if (pos >= buf.length) {
+                    int size = buf.length;
+                    if (size < 256*1024)
+                        size += size;
+                    else
+                        size += 256*1024;
+                    char tbuf[] = new char[size];
+                    System.arraycopy(buf, 0, tbuf, 0, pos);
+                    buf = tbuf;
+                }
+            }
+            return new String(buf, 0, pos);
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ex) { }
+        }
+    }
+
+    /**
+     * Write the object to the output stream, using the specified MIME type.
+     */
+    public void writeTo(Object obj, String type, OutputStream os)
+                        throws IOException {
+        if (!(obj instanceof String))
+            throw new IOException("\"" + getDF().getMimeType() +
+                "\" DataContentHandler requires String object, " +
+                "was given object of type " + obj.getClass().toString());
+
+        String enc = null;
+        OutputStreamWriter osw = null;
+
+        try {
+            enc = getCharset(type);
+            osw = new OutputStreamWriter(os, enc);
+        } catch (IllegalArgumentException iex) {
+            /*
+             * An unknown charset of the form ISO-XXX-XXX will cause
+             * the JDK to throw an IllegalArgumentException.  The
+             * JDK will attempt to create a classname using this string,
+             * but valid classnames must not contain the character '-',
+             * and this results in an IllegalArgumentException, rather than
+             * the expected UnsupportedEncodingException.  Yikes.
+             */
+            throw new UnsupportedEncodingException(enc);
+        }
+
+        String s = (String)obj;
+        osw.write(s, 0, s.length());
+        osw.flush();
+    }
+
+    private String getCharset(String type) {
+        try {
+            ContentType ct = new ContentType(type);
+            String charset = ct.getParameter("charset");
+            if (charset == null)
+                // If the charset parameter is absent, use US-ASCII.
+                charset = "us-ascii";
+            return MimeUtility.javaCharset(charset);
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
 }

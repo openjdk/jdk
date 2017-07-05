@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import javax.xml.namespace.NamespaceContext;
@@ -143,9 +144,9 @@ public interface XmlVisitor {
          *
          * <p>
          * If this method returns true, all the whitespaces are considered significant
-         * and thus need to be reported as a {@link #text} event. Furthermore,
+         * and thus need to be reported as a {@link XmlVisitor#text} event. Furthermore,
          * if the element has no children (like &lt;foo/>), then it has to be reported
-         * an empty {@link #text} event.
+         * an empty {@link XmlVisitor#text} event.
          */
         boolean expectText();
     }

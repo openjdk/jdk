@@ -70,16 +70,11 @@ class xpath extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 5:
             {
-                revertToParentFromEnterElement(makeResult(), super._cookie, $__uri, $__local, $__qname, $attrs);
-            }
-            break;
-        case 6:
-            {
-                if((($ai = $runtime.getAttributeIndex("","xpath"))>=0 && ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation")))) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 657, null);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                if(($ai = $runtime.getAttributeIndex("","xpath"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -89,7 +84,7 @@ class xpath extends NGCCHandler {
         case 1:
             {
                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
-                    NGCCHandler h = new annotation(this, super._source, $runtime, 652, null,AnnotationContext.XPATH);
+                    NGCCHandler h = new annotation(this, super._source, $runtime, 158, null,AnnotationContext.XPATH);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -98,11 +93,16 @@ class xpath extends NGCCHandler {
                 }
             }
             break;
-        case 5:
+        case 0:
             {
-                if(($ai = $runtime.getAttributeIndex("","xpath"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                revertToParentFromEnterElement(makeResult(), super._cookie, $__uri, $__local, $__qname, $attrs);
+            }
+            break;
+        case 6:
+            {
+                if((($ai = $runtime.getAttributeIndex("","xpath"))>=0 && ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation")))) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 163, null);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -123,16 +123,11 @@ class xpath extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
-            {
-                revertToParentFromLeaveElement(makeResult(), super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 6:
+        case 5:
             {
                 if(($ai = $runtime.getAttributeIndex("","xpath"))>=0) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 657, null);
-                    spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
                 }
                 else {
                     unexpectedLeaveElement($__qname);
@@ -145,11 +140,16 @@ class xpath extends NGCCHandler {
                 $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 5:
+        case 0:
+            {
+                revertToParentFromLeaveElement(makeResult(), super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 6:
             {
                 if(($ai = $runtime.getAttributeIndex("","xpath"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 163, null);
+                    spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
                 }
                 else {
                     unexpectedLeaveElement($__qname);
@@ -170,16 +170,10 @@ class xpath extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
-            {
-                revertToParentFromEnterAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 6:
+        case 5:
             {
                 if(($__uri.equals("") && $__local.equals("xpath"))) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 657, null);
-                    spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
+                    $_ngcc_current_state = 4;
                 }
                 else {
                     unexpectedEnterAttribute($__qname);
@@ -192,10 +186,16 @@ class xpath extends NGCCHandler {
                 $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 5:
+        case 0:
+            {
+                revertToParentFromEnterAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 6:
             {
                 if(($__uri.equals("") && $__local.equals("xpath"))) {
-                    $_ngcc_current_state = 4;
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 163, null);
+                    spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
                 }
                 else {
                     unexpectedEnterAttribute($__qname);
@@ -216,6 +216,12 @@ class xpath extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 1:
+            {
+                $_ngcc_current_state = 0;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 0:
             {
                 revertToParentFromLeaveAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
@@ -231,12 +237,6 @@ class xpath extends NGCCHandler {
                 }
             }
             break;
-        case 1:
-            {
-                $_ngcc_current_state = 0;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         default:
             {
                 unexpectedLeaveAttribute($__qname);
@@ -248,6 +248,20 @@ class xpath extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
+        case 5:
+            {
+                if(($ai = $runtime.getAttributeIndex("","xpath"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendText(super._cookie, $value);
+                }
+            }
+            break;
+        case 1:
+            {
+                $_ngcc_current_state = 0;
+                $runtime.sendText(super._cookie, $value);
+            }
+            break;
         case 4:
             {
                 xpath = $value;
@@ -262,22 +276,8 @@ class xpath extends NGCCHandler {
         case 6:
             {
                 if(($ai = $runtime.getAttributeIndex("","xpath"))>=0) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 657, null);
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 163, null);
                     spawnChildFromText(h, $value);
-                }
-            }
-            break;
-        case 1:
-            {
-                $_ngcc_current_state = 0;
-                $runtime.sendText(super._cookie, $value);
-            }
-            break;
-        case 5:
-            {
-                if(($ai = $runtime.getAttributeIndex("","xpath"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendText(super._cookie, $value);
                 }
             }
             break;
@@ -286,23 +286,23 @@ class xpath extends NGCCHandler {
 
     public void onChildCompleted(Object $__result__, int $__cookie__, boolean $__needAttCheck__)throws SAXException {
         switch($__cookie__) {
-        case 657:
-            {
-                fa = ((ForeignAttributesImpl)$__result__);
-                $_ngcc_current_state = 5;
-            }
-            break;
-        case 652:
+        case 158:
             {
                 ann = ((AnnotationImpl)$__result__);
                 $_ngcc_current_state = 0;
+            }
+            break;
+        case 163:
+            {
+                fa = ((ForeignAttributesImpl)$__result__);
+                $_ngcc_current_state = 5;
             }
             break;
         }
     }
 
     public boolean accepted() {
-        return((($_ngcc_current_state == 1) || ($_ngcc_current_state == 0)));
+        return((($_ngcc_current_state == 0) || ($_ngcc_current_state == 1)));
     }
 
 

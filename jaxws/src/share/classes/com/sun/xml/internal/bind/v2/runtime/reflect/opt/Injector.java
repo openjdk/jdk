@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.reflect.opt;
 
 import java.lang.reflect.InvocationTargetException;
@@ -37,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.xml.internal.bind.Util;
+import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
 
 /**
  * A {@link ClassLoader} used to "inject" optimized accessor classes
@@ -113,6 +115,12 @@ final class Injector {
 
     private final ClassLoader parent;
 
+    /**
+     * True if this injector is capable of injecting accessors.
+     * False otherwise, which happens if this classloader can't see {@link Accessor}.
+     */
+    private final boolean loadable;
+
     private static final Method defineClass;
     private static final Method resolveClass;
 
@@ -138,10 +146,23 @@ final class Injector {
     private Injector(ClassLoader parent) {
         this.parent = parent;
         assert parent!=null;
+
+        boolean loadable = false;
+
+        try {
+            loadable = parent.loadClass(Accessor.class.getName())==Accessor.class;
+        } catch (ClassNotFoundException e) {
+            ; // not loadable
+        }
+
+        this.loadable = loadable;
     }
 
 
     private synchronized Class inject(String className, byte[] image) {
+        if(!loadable)   // this injector cannot inject anything
+            return null;
+
         Class c = classes.get(className);
         if(c==null) {
             // we need to inject a class into the

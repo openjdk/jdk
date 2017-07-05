@@ -47,6 +47,7 @@ import com.sun.xml.internal.ws.api.pipe.TubelineAssembler;
 import com.sun.xml.internal.ws.api.pipe.TubelineAssemblerFactory;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.api.server.EndpointAwareCodec;
+import com.sun.xml.internal.ws.api.server.EndpointComponent;
 import com.sun.xml.internal.ws.api.server.TransportBackChannel;
 import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.api.server.WebServiceContextDelegate;
@@ -63,7 +64,9 @@ import javax.xml.ws.EndpointReference;
 import javax.xml.ws.handler.Handler;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,6 +78,16 @@ import java.util.logging.Logger;
  * @author Jitendra Kotamraju
  */
 public final class WSEndpointImpl<T> extends WSEndpoint<T> {
+    // Register JAX-WS JMX MBeans
+    static {
+        try {
+            JMXAgent.getDefault();
+        } catch (Throwable t) {
+            // Ignore for now by logging the stack trace
+            t.printStackTrace();
+        }
+    }
+
     private final @NotNull QName serviceName;
     private final @NotNull QName portName;
     private final WSBinding binding;
@@ -100,6 +113,7 @@ public final class WSEndpointImpl<T> extends WSEndpoint<T> {
 
     private final Class<T> implementationClass;
     private final @Nullable WSDLProperties wsdlProperties;
+    private final Set<EndpointComponent> componentRegistry = new LinkedHashSet<EndpointComponent>();
 
     WSEndpointImpl(@NotNull QName serviceName, @NotNull QName portName, WSBinding binding,
                    Container container, SEIModel seiModel, WSDLPort port,
@@ -156,18 +170,7 @@ public final class WSEndpointImpl<T> extends WSEndpoint<T> {
         return port;
     }
 
-    /**
-     * Gets the {@link SEIModel} that represents the relationship
-     * between WSDL and Java SEI.
-     *
-     * <p>
-     * This method returns a non-null value if and only if this
-     * endpoint is ultimately serving an application through an SEI.
-     *
-     * @return
-     *      maybe null. See above for more discussion.
-     *      Always the same value.
-     */
+    @Override
     public @Nullable SEIModel getSEIModel() {
         return seiModel;
     }
@@ -265,6 +268,10 @@ public final class WSEndpointImpl<T> extends WSEndpoint<T> {
 
     public ServiceDefinitionImpl getServiceDefinition() {
         return serviceDef;
+    }
+
+    public Set<EndpointComponent> getComponentRegistry() {
+        return componentRegistry;
     }
 
     private static final Logger logger = Logger.getLogger(

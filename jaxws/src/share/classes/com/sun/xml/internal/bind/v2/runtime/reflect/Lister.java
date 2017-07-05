@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.reflect;
 
 import java.lang.ref.WeakReference;
@@ -36,6 +37,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.LinkedList;
+import java.util.HashSet;
+import java.util.TreeSet;
+import java.util.Stack;
 import java.util.concurrent.Callable;
 
 import javax.xml.bind.JAXBException;
@@ -139,7 +144,7 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
     }
 
     private static Class getImplClass(Class<?> fieldType) {
-        return ClassFactory.inferImplClass(fieldType,ClassFactory.COLLECTION_IMPL_CLASSES);
+        return ClassFactory.inferImplClass(fieldType,COLLECTION_IMPL_CLASSES);
     }
 
     /**
@@ -474,4 +479,11 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
         }
     };
 
+    private static final Class[] COLLECTION_IMPL_CLASSES = new Class[] {
+        ArrayList.class,
+        LinkedList.class,
+        HashSet.class,
+        TreeSet.class,
+        Stack.class
+    };
 }

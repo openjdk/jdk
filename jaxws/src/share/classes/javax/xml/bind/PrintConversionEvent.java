@@ -30,7 +30,7 @@ package javax.xml.bind;
  * from the Java content tree into its lexical representation.
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.1 $
  * @see ValidationEvent
  * @see ValidationEventHandler
  * @see Marshaller

@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- *
- *
- *
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap;
@@ -85,6 +80,9 @@ public class EnvelopeFactory {
                     e);
             }
             InputSource is = SAXSource.sourceToInputSource(src);
+            if (is.getEncoding()== null && soapPart.getSourceCharsetEncoding() != null) {
+                is.setEncoding(soapPart.getSourceCharsetEncoding());
+            }
             XMLReader rejectFilter;
             try {
                 rejectFilter = new RejectDoctypeSaxFilter(saxParser);

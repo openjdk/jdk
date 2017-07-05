@@ -55,10 +55,12 @@ public final class Invoker {
     static int invoke(String mainClass, String[] args) throws Throwable {
         // use the platform default proxy if available.
         // see sun.net.spi.DefaultProxySelector for details.
-        try {
-            System.setProperty("java.net.useSystemProxies","true");
-        } catch (SecurityException e) {
-            // failing to set this property isn't fatal
+        if(!noSystemProxies) {
+            try {
+                System.setProperty("java.net.useSystemProxies","true");
+            } catch (SecurityException e) {
+                // failing to set this property isn't fatal
+            }
         }
 
         ClassLoader oldcc = Thread.currentThread().getContextClassLoader();
@@ -220,4 +222,18 @@ public final class Invoker {
         "com.sun.xml.internal.bind.",
         "com.sun.xml.internal.ws."
     };
+
+    /**
+     * Escape hatch to work around IBM JDK problem.
+     * See http://www-128.ibm.com/developerworks/forums/dw_thread.jsp?nav=false&forum=367&thread=164718&cat=10
+     */
+    public static boolean noSystemProxies = false;
+
+    static {
+        try {
+            noSystemProxies = Boolean.getBoolean(Invoker.class.getName()+".noSystemProxies");
+        } catch(SecurityException e) {
+            // ignore
+        }
+    }
 }

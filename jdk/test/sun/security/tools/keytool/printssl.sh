@@ -40,6 +40,9 @@ case "$OS" in
   SunOS | Linux )
     FS="/"
     ;;
+  CYGWIN* )
+    FS="/"
+    ;;
   Windows_* )
     FS="\\"
     ;;

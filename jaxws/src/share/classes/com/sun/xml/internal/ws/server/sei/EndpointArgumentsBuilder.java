@@ -49,6 +49,7 @@ import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.transform.Source;
 import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceException;
@@ -219,11 +220,12 @@ abstract class EndpointArgumentsBuilder {
             } else if(isXMLMimeType(param.getBinding().getMimeType())) {
                 return new JAXBBuilder(param, setter);
             } else {
-                throw new UnsupportedOperationException("Attachment is not mapped");
+                throw new UnsupportedOperationException("Unknown Type="+type+" Attachment is not mapped.");
             }
         }
 
         public void readRequest(Message msg, Object[] args) throws JAXBException, XMLStreamException {
+            boolean foundAttachment = false;
             // TODO not to loop
             for (Attachment att : msg.getAttachments()) {
                 String part = getWSDLPartName(att);
@@ -231,9 +233,13 @@ abstract class EndpointArgumentsBuilder {
                     continue;
                 }
                 if(part.equals(pname) || part.equals(pname1)){
+                    foundAttachment = true;
                     mapAttachment(att, args);
                     break;
                 }
+            }
+            if (!foundAttachment) {
+                throw new WebServiceException("Missing Attachment for "+pname);
             }
         }
 
@@ -277,10 +283,20 @@ abstract class EndpointArgumentsBuilder {
 
         void mapAttachment(Attachment att, Object[] args) {
             Image image;
+            InputStream is = null;
             try {
-                image = ImageIO.read(att.asInputStream());
+                is = att.asInputStream();
+                image = ImageIO.read(is);
             } catch(IOException ioe) {
                 throw new WebServiceException(ioe);
+            } finally {
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch(IOException ioe) {
+                        throw new WebServiceException(ioe);
+                    }
+                }
             }
             setter.put(image, args);
         }
@@ -489,30 +505,27 @@ abstract class EndpointArgumentsBuilder {
         }
 
         public void readRequest(Message msg, Object[] args) throws JAXBException, XMLStreamException {
-            Object retVal = null;
 
-            XMLStreamReader reader = msg.readPayload();
-            Object wrapperBean = wrapper.unmarshal(reader, (msg.getAttachments() != null) ?
-                    new AttachmentUnmarshallerImpl(msg.getAttachments()): null);
+            if (parts.length>0) {
+                XMLStreamReader reader = msg.readPayload();
+                Object wrapperBean = wrapper.unmarshal(reader, (msg.getAttachments() != null) ?
+                        new AttachmentUnmarshallerImpl(msg.getAttachments()): null);
 
-            try {
-                for (PartBuilder part : parts) {
-                    Object o = part.readResponse(args,wrapperBean);
-                    // there's only at most one EndpointArgumentsBuilder that returns a value.
-                    // TODO: reorder parts so that the return value comes at the end.
-                    if(o!=null) {
-                        assert retVal==null;
-                        retVal = o;
+                try {
+                    for (PartBuilder part : parts) {
+                        part.readRequest(args,wrapperBean);
                     }
+                } catch (AccessorException e) {
+                    // this can happen when the set method throw a checked exception or something like that
+                    throw new WebServiceException(e);    // TODO:i18n
                 }
-            } catch (AccessorException e) {
-                // this can happen when the set method throw a checked exception or something like that
-                throw new WebServiceException(e);    // TODO:i18n
-            }
 
-            // we are done with the body
-            reader.close();
-            XMLStreamReaderFactory.recycle(reader);
+                // we are done with the body
+                reader.close();
+                XMLStreamReaderFactory.recycle(reader);
+            } else {
+                msg.consume();
+            }
         }
 
         /**
@@ -535,10 +548,9 @@ abstract class EndpointArgumentsBuilder {
                 assert accessor!=null && setter!=null;
             }
 
-            final Object readResponse( Object[] args, Object wrapperBean ) throws AccessorException {
+            final void readRequest( Object[] args, Object wrapperBean ) throws AccessorException {
                 Object obj = accessor.get(wrapperBean);
                 setter.put(obj,args);
-                return null;
             }
 
 
@@ -576,7 +588,7 @@ abstract class EndpointArgumentsBuilder {
             XMLStreamReader reader = msg.readPayload();
             if (!reader.getName().equals(wrapperName))
                 throw new WebServiceException( // TODO: i18n
-                    "Unexpected response element "+reader.getName()+" expected: "+wrapperName);
+                    "Unexpected request element "+reader.getName()+" expected: "+wrapperName);
             reader.nextTag();
 
             while(reader.getEventType()==XMLStreamReader.START_ELEMENT) {
@@ -588,6 +600,11 @@ abstract class EndpointArgumentsBuilder {
                     reader.nextTag();
                 } else {
                     part.readRequest(args,reader, msg.getAttachments());
+                }
+                // skip any whitespace
+                if (reader.getEventType() != XMLStreamConstants.START_ELEMENT &&
+                        reader.getEventType() != XMLStreamConstants.END_ELEMENT) {
+                    XMLStreamReaderUtil.nextElementContent(reader);
                 }
             }
 
@@ -623,6 +640,6 @@ abstract class EndpointArgumentsBuilder {
     }
 
     private static boolean isXMLMimeType(String mimeType){
-        return (mimeType.equals("text/xml") || mimeType.equals("application/xml")) ? true : false;
+        return mimeType.equals("text/xml") || mimeType.equals("application/xml");
     }
 }

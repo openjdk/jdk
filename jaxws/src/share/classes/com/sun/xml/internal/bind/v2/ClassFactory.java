@@ -22,12 +22,14 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -61,9 +63,9 @@ public final class ClassFactory {
      *
      * To avoid synchronization among threads, we use {@link ThreadLocal}.
      */
-    private static final ThreadLocal<Map<Class,Constructor>> tls = new ThreadLocal<Map<Class,Constructor>>() {
-        public Map<Class, Constructor> initialValue() {
-            return new WeakHashMap<Class,Constructor>();
+    private static final ThreadLocal<Map<Class, WeakReference<Constructor>>> tls = new ThreadLocal<Map<Class,WeakReference<Constructor>>>() {
+        public Map<Class,WeakReference<Constructor>> initialValue() {
+            return new WeakHashMap<Class,WeakReference<Constructor>>();
         }
     };
 
@@ -71,8 +73,11 @@ public final class ClassFactory {
      * Creates a new instance of the class but throw exceptions without catching it.
      */
     public static <T> T create0( final Class<T> clazz ) throws IllegalAccessException, InvocationTargetException, InstantiationException {
-        Map<Class,Constructor> m = tls.get();
-        Constructor<T> cons = m.get(clazz);
+        Map<Class,WeakReference<Constructor>> m = tls.get();
+        Constructor<T> cons = null;
+        WeakReference<Constructor> consRef = m.get(clazz);
+        if(consRef!=null)
+            cons = consRef.get();
         if(cons==null) {
             try {
                 cons = clazz.getDeclaredConstructor(emptyClass);
@@ -101,7 +106,7 @@ public final class ClassFactory {
                 }
             }
 
-            m.put(clazz,cons);
+            m.put(clazz,new WeakReference<Constructor>(cons));
         }
 
         return cons.newInstance(emptyObject);
@@ -142,11 +147,10 @@ public final class ClassFactory {
     /**
      *  Call a method in the factory class to get the object.
      */
-    public static Object create(final Method method) {
-        Object cons = null;
-        Throwable errorMsg = null;
+    public static Object create(Method method) {
+        Throwable errorMsg;
         try {
-            cons = method.invoke(null, emptyObject);
+            return method.invoke(null, emptyObject);
         } catch (InvocationTargetException ive) {
             Throwable target = ive.getTargetException();
 
@@ -170,13 +174,11 @@ public final class ClassFactory {
             logger.log(Level.INFO,"failed to create a new instance of "+method.getReturnType().getName(),eie);
             errorMsg = eie;
         }
-        if (errorMsg != null){
-            NoSuchMethodError exp;
-            exp = new NoSuchMethodError(errorMsg.getMessage());
-            exp.initCause(errorMsg);
-            throw exp;
-        }
-        return cons;
+
+        NoSuchMethodError exp;
+        exp = new NoSuchMethodError(errorMsg.getMessage());
+        exp.initCause(errorMsg);
+        throw exp;
     }
 
     /**
@@ -201,12 +203,4 @@ public final class ClassFactory {
         // and returns null
         return null;
     }
-
-    public static final Class[] COLLECTION_IMPL_CLASSES = new Class[] {
-        ArrayList.class,
-        LinkedList.class,
-        HashSet.class,
-        TreeSet.class,
-        Stack.class,
-    };
 }

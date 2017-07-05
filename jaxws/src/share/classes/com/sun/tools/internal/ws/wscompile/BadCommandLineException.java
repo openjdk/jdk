@@ -24,7 +24,6 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wscompile;
 
 import com.sun.istack.internal.Nullable;

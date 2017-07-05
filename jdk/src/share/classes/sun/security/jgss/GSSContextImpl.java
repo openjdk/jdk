@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,13 @@ package sun.security.jgss;
 
 import org.ietf.jgss.*;
 import sun.security.jgss.spi.*;
-import sun.security.jgss.*;
 import sun.security.util.ObjectIdentifier;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
+import com.sun.security.jgss.*;
 
 /**
  * This class represents the JGSS security context and its associated
@@ -88,7 +87,7 @@ import java.io.IOException;
  * per-message operations are returned in an instance of the MessageProp
  * class, which is used as an argument in these calls.</dl>
  */
-class GSSContextImpl implements GSSContext {
+class GSSContextImpl implements ExtendedGSSContext {
 
     private GSSManagerImpl gssManager = null;
 
@@ -629,5 +628,17 @@ class GSSContextImpl implements GSSContext {
         myCred = null;
         srcName = null;
         targName = null;
+    }
+
+    @Override
+    public Object inquireSecContext(InquireType type) throws GSSException {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkPermission(new InquireSecContextPermission(type.toString()));
+        }
+        if (mechCtxt == null) {
+            throw new GSSException(GSSException.NO_CONTEXT);
+        }
+        return mechCtxt.inquireSecContext(type);
     }
 }

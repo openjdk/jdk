@@ -23,6 +23,8 @@
  CA 95054 USA or visit www.sun.com if you need additional information or
  have any questions.
 -->
+
+
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://java.sun.com/xml/ns/jaxb/xjc" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
   <xs:import namespace="http://java.sun.com/xml/ns/jaxb" schemaLocation="binding.xsd"/>
   <xs:import namespace="http://www.w3.org/2001/XMLSchema" schemaLocation="xs.xsd"/>
@@ -80,6 +82,8 @@
     </xs:sequence>
   </xs:group>
 
+  <xs:element name="allowMixedTypeExtensions" type="xs:boolean" />
+  
   <xs:element name="generateElementProperty" type="xs:boolean" />
   <xs:element name="dom">
     <xs:complexType>

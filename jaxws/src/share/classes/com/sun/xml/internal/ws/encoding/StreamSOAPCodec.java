@@ -56,6 +56,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ import java.util.Map;
  * @author Paul Sandoz
  */
 @SuppressWarnings({"StringEquality"})
-public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pipe.StreamSOAPCodec {
+public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pipe.StreamSOAPCodec, RootOnlyCodec {
 
     private static final String SOAP_ENVELOPE = "Envelope";
     private static final String SOAP_HEADER = "Header";
@@ -114,14 +115,7 @@ public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pip
     protected abstract List<String> getExpectedContentTypes();
 
     public void decode(InputStream in, String contentType, Packet packet) throws IOException {
-        List<String> expectedContentTypes = getExpectedContentTypes();
-        if (contentType != null && !isContentTypeSupported(contentType,expectedContentTypes)) {
-            throw new UnsupportedMediaException(contentType, expectedContentTypes);
-        }
-        // TODO: we should definitely let Decode owns one XMLStreamReader instance
-        // instead of going to this generic factory
-        XMLStreamReader reader = new TidyXMLStreamReader(XMLStreamReaderFactory.create(null, in, true), in);
-        packet.setMessage(decode(reader));
+        decode(in, contentType, packet, new AttachmentSetImpl());
     }
 
     /*
@@ -178,6 +172,9 @@ public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pip
 
         // Collect namespaces on soap:Envelope
         Map<String,String> namespaces = new HashMap<String,String>();
+        for(int i=0; i< reader.getNamespaceCount();i++){
+                namespaces.put(reader.getNamespacePrefix(i), reader.getNamespaceURI(i));
+        }
 
         // Move to next element
         XMLStreamReaderUtil.nextElementContent(reader);
@@ -281,6 +278,23 @@ public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pip
         return new MutableXMLStreamBuffer();
     }
 
+    public void decode(InputStream in, String contentType, Packet packet, AttachmentSet att ) throws IOException {
+        List<String> expectedContentTypes = getExpectedContentTypes();
+        if (contentType != null && !isContentTypeSupported(contentType,expectedContentTypes)) {
+            throw new UnsupportedMediaException(contentType, expectedContentTypes);
+        }
+        String charset = new ContentTypeImpl(contentType).getCharSet();
+        if (charset != null && !Charset.isSupported(charset)) {
+            throw new UnsupportedMediaException(charset);
+        }
+        XMLStreamReader reader = XMLStreamReaderFactory.create(null, in, charset, true);
+        reader =  new TidyXMLStreamReader(reader, in);
+        packet.setMessage(decode(reader, att));
+    }
+
+    public void decode(ReadableByteChannel in, String contentType, Packet response, AttachmentSet att ) {
+        throw new UnsupportedOperationException();
+    }
 
 
 

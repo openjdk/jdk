@@ -35,8 +35,8 @@ import com.sun.tools.internal.xjc.reader.dtd.TDTDReader;
 import com.sun.tools.internal.xjc.reader.internalizer.DOMForest;
 import com.sun.tools.internal.xjc.reader.internalizer.DOMForestScanner;
 import com.sun.tools.internal.xjc.reader.internalizer.InternalizationLogic;
-import com.sun.tools.internal.xjc.reader.internalizer.VersionChecker;
 import com.sun.tools.internal.xjc.reader.internalizer.SCDBasedBindingSet;
+import com.sun.tools.internal.xjc.reader.internalizer.VersionChecker;
 import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGCompiler;
 import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGInternalizationLogic;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
@@ -489,6 +489,9 @@ public final class ModelLoader {
 
     /**
      * Parses a {@link DOMForest} into a {@link XSSchemaSet}.
+     *
+     * @return
+     *      null if the parsing failed.
      */
     public XSSchemaSet createXSOM(DOMForest forest, SCDBasedBindingSet scdBasedBindingSet) throws SAXException {
         // set up other parameters to XSOMParser
@@ -504,7 +507,8 @@ public final class ModelLoader {
 
         XSSchemaSet result = reader.getResult();
 
-        scdBasedBindingSet.apply(result,errorReceiver);
+        if(result!=null)
+            scdBasedBindingSet.apply(result,errorReceiver);
 
         return result;
     }

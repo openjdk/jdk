@@ -36,9 +36,9 @@ public interface Wildcard
     public Wildcard processContents(String value);
 
     @XmlAttribute
-    public Wildcard namespace(String[] value);
+    public Wildcard namespace(String value);
 
     @XmlAttribute
-    public Wildcard namespace(String value);
+    public Wildcard namespace(String[] value);
 
 }

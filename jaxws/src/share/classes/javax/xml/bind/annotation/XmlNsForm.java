@@ -62,6 +62,6 @@ package javax.xml.bind.annotation;
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @since JAXB2.0
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public enum XmlNsForm {UNQUALIFIED, QUALIFIED, UNSET}

@@ -29,13 +29,17 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.EndpointAddress;
-import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 import com.sun.xml.internal.ws.api.model.ParameterBinding;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLDescriptorKind;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLModel;
-import com.sun.xml.internal.ws.api.wsdl.parser.*;
+import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
+import com.sun.xml.internal.ws.api.wsdl.parser.MetaDataResolver;
+import com.sun.xml.internal.ws.api.wsdl.parser.MetadataResolverFactory;
+import com.sun.xml.internal.ws.api.wsdl.parser.ServiceDescriptor;
+import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
+import com.sun.xml.internal.ws.api.wsdl.parser.XMLEntityResolver;
 import com.sun.xml.internal.ws.api.wsdl.parser.XMLEntityResolver.Parser;
 import com.sun.xml.internal.ws.model.wsdl.*;
 import com.sun.xml.internal.ws.resources.ClientMessages;
@@ -60,7 +64,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -101,10 +109,10 @@ public class RuntimeWSDLParser {
      *      Either this or <tt>wsdl</tt> parameter must be given.
      *      Null location means the system won't be able to resolve relative references in the WSDL,
      */
-    public static WSDLModelImpl parse(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, @NotNull EntityResolver resolver, boolean isClientSide, WSDLParserExtension... extensions) throws IOException, XMLStreamException, SAXException {
+    public static WSDLModelImpl parse(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, @NotNull EntityResolver resolver, boolean isClientSide, Container container, WSDLParserExtension... extensions) throws IOException, XMLStreamException, SAXException {
         assert resolver != null;
 
-        RuntimeWSDLParser wsdlParser = new RuntimeWSDLParser(wsdlSource.getSystemId(), new EntityResolverWrapper(resolver), isClientSide, extensions);
+        RuntimeWSDLParser wsdlParser = new RuntimeWSDLParser(wsdlSource.getSystemId(), new EntityResolverWrapper(resolver), isClientSide, container, extensions);
         Parser parser;
         try{
             parser = wsdlParser.resolveWSDL(wsdlLoc, wsdlSource);
@@ -116,25 +124,29 @@ public class RuntimeWSDLParser {
             //Try MEX if there is WSDLLoc available
             if(wsdlLoc == null)
                 throw e;
-            return tryWithMex(wsdlParser, wsdlLoc, resolver, isClientSide, e, extensions);
+            return tryWithMex(wsdlParser, wsdlLoc, resolver, isClientSide, container, e, extensions);
 
         }catch(IOException e){
             //Try MEX if there is WSDLLoc available
             if(wsdlLoc == null)
                 throw e;
-            return tryWithMex(wsdlParser, wsdlLoc, resolver, isClientSide, e, extensions);
+            return tryWithMex(wsdlParser, wsdlLoc, resolver, isClientSide, container, e, extensions);
         }
         wsdlParser.parseWSDL(parser, false);
         wsdlParser.wsdlDoc.freeze();
         wsdlParser.extensionFacade.finished(wsdlParser.context);
         wsdlParser.extensionFacade.postFinished(wsdlParser.context);
+
+        if(wsdlParser.wsdlDoc.getServices().isEmpty())
+            throw new WebServiceException(ClientMessages.WSDL_CONTAINS_NO_SERVICE(wsdlLoc));
+
         return wsdlParser.wsdlDoc;
     }
 
-    private static WSDLModelImpl tryWithMex(@NotNull RuntimeWSDLParser wsdlParser, @NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, Throwable e, WSDLParserExtension... extensions) throws SAXException, XMLStreamException {
+    private static WSDLModelImpl tryWithMex(@NotNull RuntimeWSDLParser wsdlParser, @NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, Container container, Throwable e, WSDLParserExtension... extensions) throws SAXException, XMLStreamException {
         ArrayList<Throwable> exceptions = new ArrayList<Throwable>();
         try {
-            WSDLModelImpl wsdlModel =  wsdlParser.parseUsingMex(wsdlLoc, resolver, isClientSide, extensions);
+            WSDLModelImpl wsdlModel =  wsdlParser.parseUsingMex(wsdlLoc, resolver, isClientSide, container, extensions);
             if(wsdlModel == null){
                 throw new WebServiceException(ClientMessages.FAILED_TO_PARSE(wsdlLoc.toExternalForm(), e.getMessage()), e);
             }
@@ -149,7 +161,7 @@ public class RuntimeWSDLParser {
         throw new InaccessibleWSDLException(exceptions);
     }
 
-    private WSDLModelImpl parseUsingMex(@NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, WSDLParserExtension[] extensions) throws IOException, SAXException, XMLStreamException, URISyntaxException {
+    private WSDLModelImpl parseUsingMex(@NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, Container container, WSDLParserExtension[] extensions) throws IOException, SAXException, XMLStreamException, URISyntaxException {
         //try MEX
         MetaDataResolver mdResolver = null;
         ServiceDescriptor serviceDescriptor = null;
@@ -165,22 +177,21 @@ public class RuntimeWSDLParser {
         }
         if (serviceDescriptor != null) {
             List<? extends Source> wsdls = serviceDescriptor.getWSDLs();
-            wsdlParser = new RuntimeWSDLParser(wsdlLoc.toExternalForm(), new MexEntityResolver(wsdls), isClientSide, extensions);
+            wsdlParser = new RuntimeWSDLParser(wsdlLoc.toExternalForm(), new MexEntityResolver(wsdls), isClientSide, container, extensions);
 
-            //now parse the first WSDL in the list
-            if(wsdls.size() > 0){
-                String systemId = wsdls.get(0).getSystemId();
+            for(Source src: wsdls ) {
+                String systemId = src.getSystemId();
                 Parser parser = wsdlParser.resolver.resolveEntity(null, systemId);
                 wsdlParser.parseWSDL(parser, false);
             }
         }
         //Incase that mex is not present or it couldn't get the metadata, try by appending ?wsdl and give
         // it a last shot else fail
-        if (mdResolver == null && (wsdlLoc.getProtocol().equals("http") || wsdlLoc.getProtocol().equals("https")) && (wsdlLoc.getQuery() == null)) {
+        if ((mdResolver == null || serviceDescriptor == null) && (wsdlLoc.getProtocol().equals("http") || wsdlLoc.getProtocol().equals("https")) && (wsdlLoc.getQuery() == null)) {
             String urlString = wsdlLoc.toExternalForm();
             urlString += "?wsdl";
             wsdlLoc = new URL(urlString);
-            wsdlParser = new RuntimeWSDLParser(wsdlLoc.toExternalForm(),new EntityResolverWrapper(resolver), isClientSide, extensions);
+            wsdlParser = new RuntimeWSDLParser(wsdlLoc.toExternalForm(),new EntityResolverWrapper(resolver), isClientSide, container, extensions);
             Parser parser = resolveWSDL(wsdlLoc, new StreamSource(wsdlLoc.toExternalForm()));
             wsdlParser.parseWSDL(parser, false);
         }
@@ -199,9 +210,9 @@ public class RuntimeWSDLParser {
         return reader.getName().equals(WSDLConstants.QNAME_DEFINITIONS);
     }
 
-    public static WSDLModelImpl parse(XMLEntityResolver.Parser wsdl, XMLEntityResolver resolver, boolean isClientSide, WSDLParserExtension... extensions) throws IOException, XMLStreamException, SAXException {
+    public static WSDLModelImpl parse(XMLEntityResolver.Parser wsdl, XMLEntityResolver resolver, boolean isClientSide, Container container, WSDLParserExtension... extensions) throws IOException, XMLStreamException, SAXException {
         assert resolver != null;
-        RuntimeWSDLParser parser = new RuntimeWSDLParser( wsdl.systemId.toExternalForm(), resolver, isClientSide, extensions);
+        RuntimeWSDLParser parser = new RuntimeWSDLParser( wsdl.systemId.toExternalForm(), resolver, isClientSide, container, extensions);
         parser.parseWSDL(wsdl, false);
         parser.wsdlDoc.freeze();
         parser.extensionFacade.finished(parser.context);
@@ -209,16 +220,17 @@ public class RuntimeWSDLParser {
         return parser.wsdlDoc;
     }
 
-    private RuntimeWSDLParser(@NotNull String sourceLocation, XMLEntityResolver resolver, boolean isClientSide, WSDLParserExtension... extensions) {
+    private RuntimeWSDLParser(@NotNull String sourceLocation, XMLEntityResolver resolver, boolean isClientSide, Container container, WSDLParserExtension... extensions) {
         this.wsdlDoc = sourceLocation!=null ? new WSDLModelImpl(sourceLocation) : new WSDLModelImpl();
         this.resolver = resolver;
 
         this.extensions = new ArrayList<WSDLParserExtension>();
-        this.context = new WSDLParserExtensionContextImpl(wsdlDoc, isClientSide);
+        this.context = new WSDLParserExtensionContextImpl(wsdlDoc, isClientSide, container);
 
         // register handlers for default extensions
         register(new MemberSubmissionAddressingWSDLParserExtension());
         register(new W3CAddressingWSDLParserExtension());
+        register(new W3CAddressingMetadataWSDLParserExtension());
 
         for (WSDLParserExtension e : extensions)
             register(e);
@@ -406,7 +418,7 @@ public class RuntimeWSDLParser {
                 } else {
                     binding.setStyle(Style.DOCUMENT);
                 }
-                XMLStreamReaderUtil.next(reader);
+                goToEnd(reader);
             } else if (WSDLConstants.NS_SOAP12_BINDING.equals(name)) {
                 binding.setBindingId(BindingID.SOAP12_HTTP);
                 String style = reader.getAttributeValue(null, "style");
@@ -415,7 +427,7 @@ public class RuntimeWSDLParser {
                 } else {
                     binding.setStyle(Style.DOCUMENT);
                 }
-                XMLStreamReaderUtil.next(reader);
+                goToEnd(reader);
             } else if (WSDLConstants.QNAME_OPERATION.equals(name)) {
                 parseBindingOperation(reader, binding);
             } else {
@@ -441,6 +453,7 @@ public class RuntimeWSDLParser {
 
         while (XMLStreamReaderUtil.nextElementContent(reader) != XMLStreamConstants.END_ELEMENT) {
             QName name = reader.getName();
+            String style = null;
             if (WSDLConstants.QNAME_INPUT.equals(name)) {
                 parseInputBinding(reader, bindingOp);
             } else if (WSDLConstants.QNAME_OUTPUT.equals(name)) {
@@ -449,27 +462,27 @@ public class RuntimeWSDLParser {
                 parseFaultBinding(reader, bindingOp);
             } else if (SOAPConstants.QNAME_OPERATION.equals(name) ||
                     SOAPConstants.QNAME_SOAP12OPERATION.equals(name)) {
-                String style = reader.getAttributeValue(null, "style");
-                /**
-                 *  If style attribute is present set it otherwise set the style as defined
-                 *  on the <soap:binding> element
-                 */
-                if (style != null) {
-                    if (style.equals("rpc"))
-                        bindingOp.setStyle(Style.RPC);
-                    else
-                        bindingOp.setStyle(Style.DOCUMENT);
-                } else {
-                    bindingOp.setStyle(binding.getStyle());
-                }
+                style = reader.getAttributeValue(null, "style");
                 String soapAction = reader.getAttributeValue(null, "soapAction");
 
                 if (soapAction != null)
                     bindingOp.setSoapAction(soapAction);
 
-                XMLStreamReaderUtil.next(reader);
+                goToEnd(reader);
             } else {
                 extensionFacade.bindingOperationElements(bindingOp, reader);
+            }
+            /**
+             *  If style attribute is present set it otherwise set the style as defined
+             *  on the <soap:binding> element
+             */
+            if (style != null) {
+                if (style.equals("rpc"))
+                    bindingOp.setStyle(Style.RPC);
+                else
+                    bindingOp.setStyle(Style.DOCUMENT);
+            } else {
+                bindingOp.setStyle(binding.getStyle());
             }
         }
     }
@@ -513,21 +526,14 @@ public class RuntimeWSDLParser {
     }
 
     private void parseFaultBinding(XMLStreamReader reader, WSDLBoundOperationImpl bindingOp) {
-        boolean bodyFound = false;
-        extensionFacade.bindingOperationFaultAttributes(bindingOp, reader);
+        String faultName = ParserUtil.getMandatoryNonEmptyAttribute(reader, "name");
+        WSDLBoundFaultImpl wsdlBoundFault = new WSDLBoundFaultImpl(reader, faultName, bindingOp);
+        bindingOp.addFault(wsdlBoundFault);
+
+        extensionFacade.bindingOperationFaultAttributes(wsdlBoundFault, reader);
+
         while (XMLStreamReaderUtil.nextElementContent(reader) != XMLStreamConstants.END_ELEMENT) {
-            QName name = reader.getName();
-            if ((SOAPConstants.QNAME_BODY.equals(name) || SOAPConstants.QNAME_SOAP12BODY.equals(name)) && !bodyFound) {
-                bodyFound = true;
-                bindingOp.setFaultExplicitBodyParts(parseSOAPBodyBinding(reader, bindingOp.getFaultParts()));
-                goToEnd(reader);
-            } else if ((SOAPConstants.QNAME_HEADER.equals(name) || SOAPConstants.QNAME_SOAP12HEADER.equals(name))) {
-                parseSOAPHeaderBinding(reader, bindingOp.getFaultParts());
-            } else if (MIMEConstants.QNAME_MULTIPART_RELATED.equals(name)) {
-                parseMimeMultipartBinding(reader, bindingOp, BindingMode.FAULT);
-            } else {
-                extensionFacade.bindingOperationFaultElements(bindingOp, reader);
-            }
+            extensionFacade.bindingOperationFaultElements(wsdlBoundFault, reader);
         }
     }
 
@@ -698,7 +704,7 @@ public class RuntimeWSDLParser {
         String msg = ParserUtil.getMandatoryNonEmptyAttribute(reader, "message");
         QName msgName = ParserUtil.getQName(reader, msg);
         String name = ParserUtil.getMandatoryNonEmptyAttribute(reader, "name");
-        WSDLFaultImpl fault = new WSDLFaultImpl(reader,name, msgName);
+        WSDLFaultImpl fault = new WSDLFaultImpl(reader,name, msgName, operation);
         operation.addFault(fault);
         extensionFacade.portTypeOperationFaultAttributes(fault, reader);
         extensionFacade.portTypeOperationFault(operation, reader);
@@ -757,11 +763,10 @@ public class RuntimeWSDLParser {
                         break;
                     }
                 }
-                if (desc == null)
-                    continue;
-
-                WSDLPartImpl wsdlPart = new WSDLPartImpl(reader, part, partIndex, new WSDLPartDescriptorImpl(reader,ParserUtil.getQName(reader, desc), kind));
-                msg.add(wsdlPart);
+                if (desc != null) {
+                    WSDLPartImpl wsdlPart = new WSDLPartImpl(reader, part, partIndex, new WSDLPartDescriptorImpl(reader,ParserUtil.getQName(reader, desc), kind));
+                    msg.add(wsdlPart);
+                }
                 if (reader.getEventType() != XMLStreamConstants.END_ELEMENT)
                     goToEnd(reader);
             } else {

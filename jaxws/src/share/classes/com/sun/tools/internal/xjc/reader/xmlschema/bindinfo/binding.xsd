@@ -23,8 +23,16 @@
  CA 95054 USA or visit www.sun.com if you need additional information or
  have any questions.
 -->
+
+
 <!-- THIS IS A GENERATED FILE. DO NOT MODIFY. -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://java.sun.com/xml/ns/jaxb" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+  <xs:annotation>
+    <xs:documentation>
+      JAXB customization schema
+    </xs:documentation>
+  </xs:annotation>
+  
   <xs:import namespace="http://java.sun.com/xml/ns/jaxb/xjc" schemaLocation="xjc.xsd"/>
   <xs:import namespace="http://www.w3.org/2001/XMLSchema" schemaLocation="xs.xsd"/>
   <xs:element name="bindings">
@@ -38,6 +46,11 @@
   </xs:element>
   <xs:element name="declaration" abstract="true"/>
   <xs:element name="globalBindings" substitutionGroup="jaxb:declaration">
+    <xs:annotation>
+      <xs:documentation>
+        Defines global customization. Only one of this is allowed per compilation.
+      </xs:documentation>
+    </xs:annotation>
     <xs:complexType>
       <xs:choice minOccurs="0" maxOccurs="unbounded">
         <xs:element name="javaType">
@@ -122,6 +135,7 @@
       <xs:attribute name="choiceContentProperty" type="xs:boolean"/>
       <xs:attribute name="generateValueClass" type="xs:boolean"/>
       <xs:attribute name="generateElementClass" type="xs:boolean"/>
+      <xs:attribute name="generateMixedExtensions" type="xs:boolean"/>
       <xs:attribute name="generateElementProperty" type="xs:boolean"/>
       <xs:attribute name="enableValidation" type="xs:boolean"/>
       <xs:attribute name="enableFailFastCheck" type="xs:boolean"/>
@@ -277,6 +291,28 @@
       <xs:attribute name="type" default="w3c"/>
     </xs:complexType>
   </xs:element>
+
+  <xs:element name="inlineBinaryData">
+    <xs:annotation><xs:documentation><![CDATA[
+      Disable binary optimization.
+
+      Used on elements like <xs:element name="foo" type="xs:base64Binary"/> to indicate
+      that this base64 binary data is always inlined and never subjected to the binary
+      transfer optimization (such as XOP/MTOM)
+    ]]></xs:documentation></xs:annotation>
+    <xs:complexType />
+  </xs:element>
+
+  <xs:element name="factoryMethod">
+    <xs:annotation><xs:documentation><![CDATA[
+      Controls the name of the factory method on ObjectFactory. 
+    ]]></xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:sequence />
+      <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
   <xs:group name="anyContents">
     <xs:sequence>
       <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>

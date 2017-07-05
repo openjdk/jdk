@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.util.HashMap;
@@ -96,13 +97,13 @@ public abstract class Coordinator implements ErrorHandler, ValidationEventHandle
     /**
      * The {@link Coordinator} in charge before this {@link Coordinator}.
      */
-    private Coordinator old;
+    private Object old;
 
     /**
      * A 'pointer' to a {@link Coordinator} that keeps track of the currently active {@link Coordinator}.
      * Having this improves the runtime performance.
      */
-    private Coordinator[] table;
+    private Object[] table;
 
     /**
      * When we set {@link #table} to null, record who did it.
@@ -148,13 +149,13 @@ public abstract class Coordinator implements ErrorHandler, ValidationEventHandle
     }
 
     public static Coordinator _getInstance() {
-        return activeTable.get()[0];
+        return (Coordinator) activeTable.get()[0];
     }
 
     // this much is necessary to avoid calling get and set twice when we push.
-    private static final ThreadLocal<Coordinator[]> activeTable = new ThreadLocal<Coordinator[]>() {
-        public Coordinator[] initialValue() {
-            return new Coordinator[1];
+    private static final ThreadLocal<Object[]> activeTable = new ThreadLocal<Object[]>() {
+        public Object[] initialValue() {
+            return new Object[1];
         }
     };
 

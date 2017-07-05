@@ -55,11 +55,25 @@ public final class WsdlMessages {
     }
 
     /**
-     * wsdl:binding "{0}" referenced by wsdl:port "{1}", but its not found in the wsdl
+     * wsdl:binding "{0}" referenced by wsdl:port "{1}", but it's not found in the wsdl
      *
      */
     public static String ENTITY_NOT_FOUND_BINDING(Object arg0, Object arg1) {
         return localizer.localize(localizableENTITY_NOT_FOUND_BINDING(arg0, arg1));
+    }
+
+    public static Localizable localizablePARSING_UNABLE_TO_GET_METADATA(Object arg0, Object arg1) {
+        return messageFactory.getMessage("parsing.unableToGetMetadata", arg0, arg1);
+    }
+
+    /**
+     * {0}
+     *
+     * {1}
+     *
+     */
+    public static String PARSING_UNABLE_TO_GET_METADATA(Object arg0, Object arg1) {
+        return localizer.localize(localizablePARSING_UNABLE_TO_GET_METADATA(arg0, arg1));
     }
 
     public static Localizable localizablePARSING_PARSE_FAILED() {
@@ -67,23 +81,11 @@ public final class WsdlMessages {
     }
 
     /**
-     * Failed to parse the WSDL.
+     *  Failed to parse the WSDL.
      *
      */
     public static String PARSING_PARSE_FAILED() {
         return localizer.localize(localizablePARSING_PARSE_FAILED());
-    }
-
-    public static Localizable localizablePARSING_UNABLE_TO_GET_METADATA(Object arg0) {
-        return messageFactory.getMessage("parsing.unableToGetMetadata", arg0);
-    }
-
-    /**
-     * Unable to get Metadata from: {0}
-     *
-     */
-    public static String PARSING_UNABLE_TO_GET_METADATA(Object arg0) {
-        return localizer.localize(localizablePARSING_UNABLE_TO_GET_METADATA(arg0));
     }
 
     public static Localizable localizableVALIDATION_INVALID_PREFIX(Object arg0) {
@@ -151,7 +153,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * wsdl:portType "{0}" referenced by wsdl:binding "{1}", but its not found in the wsdl
+     * wsdl:portType "{0}" referenced by wsdl:binding "{1}", but it's not found in the wsdl
      *
      */
     public static String ENTITY_NOT_FOUND_PORT_TYPE(Object arg0, Object arg1) {
@@ -199,7 +201,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * Both jaxws:version and version are present
+     *  Both jaxws:version and version are present
      *
      */
     public static String INTERNALIZER_TWO_VERSION_ATTRIBUTES() {
@@ -212,7 +214,7 @@ public final class WsdlMessages {
 
     /**
      * Invalid WSDL, duplicate parts in a wsdl:message is not allowed.
-     * wsdl:message {0} has duplicated part name: "{1}"
+     * wsdl:message {0} has a duplicated part name: "{1}"
      *
      */
     public static String VALIDATION_DUPLICATE_PART_NAME(Object arg0, Object arg1) {
@@ -248,7 +250,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * found unexpected non whitespace text: "{0}"
+     * found unexpected non-whitespace text: "{0}"
      *
      */
     public static String PARSING_NON_WHITESPACE_TEXT_FOUND(Object arg0) {
@@ -260,7 +262,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * No target found for the wsdlLocation: {0}
+     *  No target found for the wsdlLocation: {0}
      *
      */
     public static String INTERNALIZER_TARGET_NOT_FOUND(Object arg0) {
@@ -344,7 +346,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * JAXWS version attribute must be "2.0"
+     *  JAXWS version attribute must be "2.0"
      *
      */
     public static String INTERNALIZER_INCORRECT_VERSION() {
@@ -399,6 +401,20 @@ public final class WsdlMessages {
         return localizer.localize(localizablePARSING_INCORRECT_ROOT_ELEMENT(arg0, arg1, arg2, arg3));
     }
 
+    public static Localizable localizableTRY_WITH_MEX(Object arg0) {
+        return messageFactory.getMessage("try.with.mex", arg0);
+    }
+
+    /**
+     * {0}
+     *
+     * retrying with MEX...
+     *
+     */
+    public static String TRY_WITH_MEX(Object arg0) {
+        return localizer.localize(localizableTRY_WITH_MEX(arg0));
+    }
+
     public static Localizable localizableVALIDATION_MISSING_REQUIRED_ATTRIBUTE(Object arg0, Object arg1) {
         return messageFactory.getMessage("validation.missingRequiredAttribute", arg0, arg1);
     }
@@ -440,7 +456,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * not an external binding file. The root element must be '{'http://java.sun.com/xml/ns/jaxws'}'bindings but it is '{'{0}'}'{1}
+     *  not an external binding file. The root element must be '{'http://java.sun.com/xml/ns/jaxws'}'bindings but it is '{'{0}'}'{1}
      *
      */
     public static String PARSER_NOT_A_BINDING_FILE(Object arg0, Object arg1) {
@@ -548,7 +564,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * Unable to parse "{0}" : {1}
+     *  Unable to parse "{0}" : {1}
      *
      */
     public static String ABSTRACT_REFERENCE_FINDER_IMPL_UNABLE_TO_PARSE(Object arg0, Object arg1) {
@@ -596,7 +612,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * XPath evaluation of "{0}" results in empty target node
+     * XPath evaluation of "{0}" results in an empty target node
      *
      */
     public static String INTERNALIZER_X_PATH_EVALUATES_TO_NO_TARGET(Object arg0) {
@@ -620,7 +636,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * Ignoring customization: "{0}", it has no namespace. It must belong to the customization namespace.
+     * Ignoring customization: "{0}", because it has no namespace. It must belong to the customization namespace.
      *
      */
     public static String INVALID_CUSTOMIZATION_NAMESPACE(Object arg0) {
@@ -687,28 +703,28 @@ public final class WsdlMessages {
         return localizer.localize(localizableVALIDATION_INCORRECT_TARGET_NAMESPACE(arg0, arg1));
     }
 
-    public static Localizable localizableENTITY_NOT_FOUND_BY_Q_NAME(Object arg0, Object arg1) {
-        return messageFactory.getMessage("entity.notFoundByQName", arg0, arg1);
+    public static Localizable localizableENTITY_NOT_FOUND_BY_Q_NAME(Object arg0, Object arg1, Object arg2) {
+        return messageFactory.getMessage("entity.notFoundByQName", arg0, arg1, arg2);
     }
 
     /**
-     * invalid entity name: "{0}" (in namespace: "{1}")
+     * {0} "{1}" not found in the wsdl: {2}
      *
      */
-    public static String ENTITY_NOT_FOUND_BY_Q_NAME(Object arg0, Object arg1) {
-        return localizer.localize(localizableENTITY_NOT_FOUND_BY_Q_NAME(arg0, arg1));
+    public static String ENTITY_NOT_FOUND_BY_Q_NAME(Object arg0, Object arg1, Object arg2) {
+        return localizer.localize(localizableENTITY_NOT_FOUND_BY_Q_NAME(arg0, arg1, arg2));
     }
 
-    public static Localizable localizableINVALID_WSDL(Object arg0) {
-        return messageFactory.getMessage("invalid.wsdl", arg0);
+    public static Localizable localizableINVALID_WSDL(Object arg0, Object arg1, Object arg2, Object arg3) {
+        return messageFactory.getMessage("invalid.wsdl", arg0, arg1, arg2, arg3);
     }
 
     /**
-     * "{0} does not look like a WSDL document, retrying with MEX..."
+     * Invalid WSDL {0}, expected {1} found {2} at (line {3})
      *
      */
-    public static String INVALID_WSDL(Object arg0) {
-        return localizer.localize(localizableINVALID_WSDL(arg0));
+    public static String INVALID_WSDL(Object arg0, Object arg1, Object arg2, Object arg3) {
+        return localizer.localize(localizableINVALID_WSDL(arg0, arg1, arg2, arg3));
     }
 
     public static Localizable localizableVALIDATION_UNSUPPORTED_SCHEMA_FEATURE(Object arg0) {
@@ -788,7 +804,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * Target node is not an element
+     *  Target node is not an element
      *
      */
     public static String INTERNALIZER_TARGET_NOT_AN_ELEMENT() {
@@ -860,7 +876,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * Not a WSI-BP compliant WSDL (R2001, R2004). xsd:import must not import XML Schema definition emmbedded inline within WSDLDocument.
+     * Not a WSI-BP compliant WSDL (R2001, R2004). xsd:import must not import XML Schema definitions embedded inline within the WSDL document.
      *
      */
     public static String WARNING_WSI_R_2004() {
@@ -872,7 +888,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * Not a WSI-BP compliant WSDL (R2003). xsd:import must only be used inside xsd:schema element.
+     * Not a WSI-BP compliant WSDL (R2003). xsd:import must only be used inside xsd:schema elements.
      *
      */
     public static String WARNING_WSI_R_2003() {
@@ -884,7 +900,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * Not a WSI-BP compliant WSDL (R2002). wsdl:import must not be used to import XML Schema embedded in the WSDL document. Expected wsdl namesapce: {0}, found: {1}
+     * Not a WSI-BP compliant WSDL (R2002). wsdl:import must not be used to import XML Schema embedded in the WSDL document. Expected wsdl namespace: {0}, found: {1}
      *
      */
     public static String WARNING_WSI_R_2002(Object arg0, Object arg1) {
@@ -903,16 +919,28 @@ public final class WsdlMessages {
         return localizer.localize(localizablePARSING_ELEMENT_OR_TYPE_REQUIRED(arg0));
     }
 
-    public static Localizable localizableWARNING_WSI_R_2001(Object arg0) {
-        return messageFactory.getMessage("warning.wsi.r2001", arg0);
+    public static Localizable localizableWARNING_WSI_R_2001() {
+        return messageFactory.getMessage("warning.wsi.r2001");
     }
 
     /**
-     * Not a WSI-BP compliant WSDL (R2001, R2002). wsdl:import must only import WSDL document. Its trying to import: "{0}"
+     * Not a WSI-BP compliant WSDL (R2001, R2002). wsdl:import must import only WSDL documents. It's trying to import: "{0}"
      *
      */
-    public static String WARNING_WSI_R_2001(Object arg0) {
-        return localizer.localize(localizableWARNING_WSI_R_2001(arg0));
+    public static String WARNING_WSI_R_2001() {
+        return localizer.localize(localizableWARNING_WSI_R_2001());
+    }
+
+    public static Localizable localizableFILE_NOT_FOUND(Object arg0) {
+        return messageFactory.getMessage("file.not.found", arg0);
+    }
+
+    /**
+     * {0} is unreachable
+     *
+     */
+    public static String FILE_NOT_FOUND(Object arg0) {
+        return localizer.localize(localizableFILE_NOT_FOUND(arg0));
     }
 
     public static Localizable localizableVALIDATION_INVALID_SIMPLE_TYPE_IN_ELEMENT(Object arg0, Object arg1) {
@@ -944,11 +972,25 @@ public final class WsdlMessages {
     }
 
     /**
-     * JAXWS version attribute must be present
+     *  JAXWS version attribute must be present
      *
      */
     public static String INTERNALIZER_VERSION_NOT_PRESENT() {
         return localizer.localize(localizableINTERNALIZER_VERSION_NOT_PRESENT());
+    }
+
+    public static Localizable localizableFAILED_NOSERVICE(Object arg0) {
+        return messageFactory.getMessage("failed.noservice", arg0);
+    }
+
+    /**
+     * failed.noservice=Could not find wsdl:service in the provided WSDL(s):
+     *
+     * {0} At least one WSDL with at least one service definition needs to be provided.
+     *
+     */
+    public static String FAILED_NOSERVICE(Object arg0) {
+        return localizer.localize(localizableFAILED_NOSERVICE(arg0));
     }
 
     public static Localizable localizablePARSING_TOO_MANY_ELEMENTS(Object arg0, Object arg1, Object arg2) {
@@ -968,7 +1010,7 @@ public final class WsdlMessages {
     }
 
     /**
-     * "{0}" is not a part of this compilation. Is this a mistake for "{1}"?
+     *  "{0}" is not a part of this compilation. Is this a mistake for "{1}"?
      *
      */
     public static String INTERNALIZER_INCORRECT_SCHEMA_REFERENCE(Object arg0, Object arg1) {

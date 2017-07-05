@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.messaging.saaj.util;
 
 import java.io.*;
@@ -36,7 +35,7 @@ import javax.xml.transform.TransformerException;
  *  <?xml ... ?>
  *
  * @author Panos Kougiouris (panos@acm.org)
- * @version $Revision: 1.1.1.1 $ $Date: 2006/01/27 13:10:58 $
+ * @version
  */
 
 public class XMLDeclarationParser {

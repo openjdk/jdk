@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.reader.gbind;
 
 import java.util.Set;
@@ -61,10 +62,6 @@ public abstract class Expression {
         }
 
         void buildDAG(ElementSet incoming) {
-            // noop
-        }
-
-        void assignElementNumber(Set<Element> allElements) {
             // noop
         }
 

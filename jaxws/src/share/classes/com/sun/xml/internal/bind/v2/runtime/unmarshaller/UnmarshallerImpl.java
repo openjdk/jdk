@@ -266,6 +266,15 @@ public final class UnmarshallerImpl extends AbstractUnmarshallerImpl implements 
         }
     }
 
+    /**
+     * Returns true if an event handler is installed.
+     * <p>
+     * The default handler ignores any errors, and for that this method returns false.
+     */
+    public final boolean hasEventHandler() {
+        return getEventHandler()!=this;
+    }
+
     @Override
     public <T> JAXBElement<T> unmarshal(Node node, Class<T> expectedType) throws JAXBException {
         if(expectedType==null)
@@ -297,9 +306,11 @@ public final class UnmarshallerImpl extends AbstractUnmarshallerImpl implements 
                 scanner.scan((Document)node);
             else
                 // no other type of input is supported
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Unexpected node type: "+node);
 
-            return handler.getContext().getResult();
+            Object retVal = handler.getContext().getResult();
+            handler.getContext().clearResult();
+            return retVal;
         } catch( SAXException e ) {
             throw createUnmarshalException(e);
         }
@@ -340,7 +351,9 @@ public final class UnmarshallerImpl extends AbstractUnmarshallerImpl implements 
             throw handleStreamException(e);
         }
 
-        return h.getContext().getResult();
+        Object retVal = h.getContext().getResult();
+        h.getContext().clearResult();
+        return retVal;
     }
 
     @Override
@@ -420,6 +433,10 @@ public final class UnmarshallerImpl extends AbstractUnmarshallerImpl implements 
         }
         if(name.equals(ClassResolver.class.getName())) {
             coordinator.classResolver = (ClassResolver)value;
+            return;
+        }
+        if(name.equals(ClassLoader.class.getName())) {
+            coordinator.classLoader = (ClassLoader)value;
             return;
         }
         super.setProperty(name, value);
@@ -515,5 +532,9 @@ public final class UnmarshallerImpl extends AbstractUnmarshallerImpl implements 
     @Override
     public void setListener(Listener listener) {
         externalListener = listener;
+    }
+
+    public UnmarshallingContext getContext() {
+        return coordinator;
     }
 }

@@ -34,6 +34,7 @@ import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.MEP;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.pipe.Tube;
+import com.sun.xml.internal.ws.api.pipe.Fiber;
 import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.client.RequestContext;
 import com.sun.xml.internal.ws.client.ResponseContextReceiver;
@@ -61,20 +62,20 @@ public final class SEIStub extends Stub implements InvocationHandler {
         this.seiModel = seiModel;
         this.soapVersion = binding.getSOAPVersion();
 
-        Map<WSDLBoundOperation, SyncMethodHandler> syncs = new HashMap<WSDLBoundOperation, SyncMethodHandler>();
+        Map<WSDLBoundOperation, JavaMethodImpl> syncs = new HashMap<WSDLBoundOperation, JavaMethodImpl>();
 
         // fill in methodHandlers.
         // first fill in sychronized versions
         for (JavaMethodImpl m : seiModel.getJavaMethods()) {
             if (!m.getMEP().isAsync) {
                 SyncMethodHandler handler = new SyncMethodHandler(this, m);
-                syncs.put(m.getOperation(), handler);
+                syncs.put(m.getOperation(), m);
                 methodHandlers.put(m.getMethod(), handler);
             }
         }
 
         for (JavaMethodImpl jm : seiModel.getJavaMethods()) {
-            SyncMethodHandler sync = syncs.get(jm.getOperation());
+            JavaMethodImpl sync = syncs.get(jm.getOperation());
             if (jm.getMEP() == MEP.ASYNC_CALLBACK) {
                 Method m = jm.getMethod();
                 CallbackMethodHandler handler = new CallbackMethodHandler(
@@ -121,6 +122,10 @@ public final class SEIStub extends Stub implements InvocationHandler {
 
     public final Packet doProcess(Packet request, RequestContext rc, ResponseContextReceiver receiver) {
         return super.process(request, rc, receiver);
+    }
+
+    public final void doProcessAsync(Packet request, RequestContext rc, Fiber.CompletionCallback callback) {
+        super.processAsync(request, rc, callback);
     }
 
     protected final @NotNull QName getPortName() {

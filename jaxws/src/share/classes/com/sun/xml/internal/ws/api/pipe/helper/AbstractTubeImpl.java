@@ -81,6 +81,12 @@ public abstract class AbstractTubeImpl implements Tube, Pipe {
         return na;
     }
 
+    protected final NextAction doSuspend(Tube next) {
+        NextAction na = new NextAction();
+        na.suspend(next);
+        return na;
+    }
+
     protected final NextAction doThrow(Throwable t) {
         NextAction na = new NextAction();
         na.throwException(t);

@@ -216,6 +216,11 @@ final class PackageOutlineImpl implements PackageOutline {
      * Iterate through the hash map looking for the namespace used
      * most frequently.  Ties are arbitrarily broken by the order
      * in which the map keys are iterated over.
+     *
+     * <p>
+     * Because JAX-WS often reassigns the "" namespace URI,
+     * and when that happens it unintentionally also renames (normally
+     * unqualified) local elements, prefer non-"" URI when there's a tie.
      */
     private String getMostUsedURI(HashMap<String, Integer> map) {
         String mostPopular = null;
@@ -228,7 +233,7 @@ final class PackageOutlineImpl implements PackageOutline {
                 mostPopular = uri;
                 count = uriCount;
             } else {
-                if (uriCount > count) {
+                if (uriCount > count || (uriCount==count && mostPopular.equals(""))) {
                     mostPopular = uri;
                     count = uriCount;
                 }

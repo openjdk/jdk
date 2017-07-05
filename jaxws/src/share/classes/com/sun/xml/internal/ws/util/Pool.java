@@ -31,6 +31,7 @@ import com.sun.xml.internal.ws.api.pipe.TubeCloner;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.lang.ref.WeakReference;
 
 /**
  * General-purpose object pool.
@@ -47,7 +48,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Kohsuke Kawaguchi
  */
 public abstract class Pool<T> {
-    private final ConcurrentLinkedQueue<T> queue = new ConcurrentLinkedQueue<T>();
+
+    // volatile since multiple threads may access queue reference
+    private volatile WeakReference<ConcurrentLinkedQueue<T>> queue;
 
     /**
      * Gets a new object from the pool.
@@ -59,17 +62,32 @@ public abstract class Pool<T> {
      *      always non-null.
      */
     public final T take() {
-        T t = queue.poll();
+        T t = getQueue().poll();
         if(t==null)
             return create();
         return t;
+    }
+
+    private ConcurrentLinkedQueue<T> getQueue() {
+        WeakReference<ConcurrentLinkedQueue<T>> q = queue;
+        if (q != null) {
+            ConcurrentLinkedQueue<T> d = q.get();
+            if (d != null)
+                return d;
+        }
+
+        // overwrite the queue
+        ConcurrentLinkedQueue<T> d = new ConcurrentLinkedQueue<T>();
+        queue = new WeakReference<ConcurrentLinkedQueue<T>>(d);
+
+        return d;
     }
 
     /**
      * Returns an object back to the pool.
      */
     public final void recycle(T t) {
-        queue.offer(t);
+        getQueue().offer(t);
     }
 
     /**

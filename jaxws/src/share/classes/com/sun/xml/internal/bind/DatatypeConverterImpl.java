@@ -52,7 +52,6 @@ import com.sun.xml.internal.bind.v2.TODO;
  * This class is responsible for whitespace normalization.
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li></ul>
- * @version $Revision: 1.9 $
  * @since JAXB1.0
  */
 public final class DatatypeConverterImpl implements DatatypeConverterInterface {
@@ -117,7 +116,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
                 sign = -1;
             } else
             if(ch=='+') {
-                ; // noop
+                // noop
             } else
                 throw new NumberFormatException("Not a number: "+s);
         }
@@ -137,7 +136,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
         return _parseShort(lexicalXSDShort);
     }
 
-    public static final short _parseShort(CharSequence s) {
+    public static short _parseShort(CharSequence s) {
         return (short)_parseInt(s);
     }
 
@@ -209,7 +208,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
     }
 
     public static String _printFloat(float v) {
-        if( v==Float.NaN )                  return "NaN";
+        if( Float.isNaN(v) )                return "NaN";
         if( v==Float.POSITIVE_INFINITY )    return "INF";
         if( v==Float.NEGATIVE_INFINITY )    return "-INF";
         return String.valueOf(v);
@@ -242,16 +241,18 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
         return _parseBoolean(lexicalXSDBoolean);
     }
 
-    public static boolean _parseBoolean(CharSequence literal) {
+    public static Boolean _parseBoolean(CharSequence literal) {
         int i=0;
         int len = literal.length();
         char ch;
+        if (literal.length() <= 0) {
+            return null;
+        }
         do {
             ch = literal.charAt(i++);
         } while(WhiteSpaceProcessor.isWhiteSpace(ch) && i<len);
 
         // if we are strict about errors, check i==len. and report an error
-
         if( ch=='t' || ch=='1' )        return true;
         if( ch=='f' || ch=='0' )        return false;
         TODO.checkSpec("issue #42");
@@ -358,7 +359,8 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
         final int len = s.length();
 
         // "111" is not a valid hex encoding.
-        if( len%2 != 0 )    return null;
+        if( len%2 != 0 )
+            throw new IllegalArgumentException("hexBinary needs to be even-length: "+s);
 
         byte[] out = new byte[len/2];
 
@@ -366,7 +368,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
             int h = hexToBin(s.charAt(i  ));
             int l = hexToBin(s.charAt(i+1));
             if( h==-1 || l==-1 )
-                return null;    // illegal character
+                throw new IllegalArgumentException("contains illegal character for hexBinary: "+s);
 
             out[i/2] = (byte)(h*16+l);
         }
@@ -454,7 +456,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
     }
 
     public static String _printDecimal(BigDecimal val) {
-        return val.toString();
+        return val.toPlainString();
     }
 
     public String printDouble(double v) {
@@ -462,7 +464,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
     }
 
     public static String _printDouble(double v) {
-        if( v==Double.NaN )                    return "NaN";
+        if(Double.isNaN(v))                  return "NaN";
         if( v==Double.POSITIVE_INFINITY )    return "INF";
         if( v==Double.NEGATIVE_INFINITY )    return "-INF";
         return String.valueOf(v);
@@ -884,11 +886,11 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
             if (tz == null)      return;
 
             // otherwise print out normally.
-            int offset;
-            if (tz.inDaylightTime(cal.getTime())) {
-                offset = tz.getRawOffset() + (tz.useDaylightTime()?3600000:0);
-            } else {
-                offset = tz.getRawOffset();
+            int offset = tz.getOffset(cal.getTime().getTime());
+
+            if(offset==0) {
+                buf.append('Z');
+                return;
             }
 
             if (offset >= 0)
@@ -906,7 +908,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
         }
 
         /** formats Integer into two-character-wide string. */
-        private static final void formatTwoDigits(int n,StringBuilder buf) {
+        private static void formatTwoDigits(int n,StringBuilder buf) {
             // n is always non-negative.
             if (n < 10) buf.append('0');
             buf.append(n);

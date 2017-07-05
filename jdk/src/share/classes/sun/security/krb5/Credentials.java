@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,28 @@ public class Credentials {
     KerberosTime renewTill;
     HostAddresses cAddr;
     EncryptionKey serviceKey;
+    AuthorizationData authzData;
     private static boolean DEBUG = Krb5.DEBUG;
     private static CredentialsCache cache;
     static boolean alreadyLoaded = false;
     private static boolean alreadyTried = false;
     private static native Credentials acquireDefaultNativeCreds();
+
+    public Credentials(Ticket new_ticket,
+                       PrincipalName new_client,
+                       PrincipalName new_server,
+                       EncryptionKey new_key,
+                       TicketFlags new_flags,
+                       KerberosTime authTime,
+                       KerberosTime new_startTime,
+                       KerberosTime new_endTime,
+                       KerberosTime renewTill,
+                       HostAddresses cAddr,
+                       AuthorizationData authzData) {
+        this(new_ticket, new_client, new_server, new_key, new_flags,
+                authTime, new_startTime, new_endTime, renewTill, cAddr);
+        this.authzData = authzData;
+    }
 
     public Credentials(Ticket new_ticket,
                        PrincipalName new_client,
@@ -213,6 +230,9 @@ public class Credentials {
         return flags;
     }
 
+    public AuthorizationData getAuthzData() {
+        return authzData;
+    }
     /**
      * Checks if the service ticket returned by the KDC has the OK-AS-DELEGATE
      * flag set

@@ -82,11 +82,13 @@ public class DumpTube extends AbstractFilterTubeImpl {
         this.staxOut = that.staxOut;
     }
 
+    @Override
     public NextAction processRequest(Packet request) {
         dump("request",request);
         return super.processRequest(request);
     }
 
+    @Override
     public NextAction processResponse(Packet response) {
         dump("response",response);
         return super.processResponse(response);

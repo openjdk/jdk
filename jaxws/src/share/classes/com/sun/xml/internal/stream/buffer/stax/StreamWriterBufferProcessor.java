@@ -27,6 +27,12 @@ package com.sun.xml.internal.stream.buffer.stax;
 
 import com.sun.xml.internal.stream.buffer.AbstractProcessor;
 import com.sun.xml.internal.stream.buffer.XMLStreamBuffer;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import com.sun.xml.internal.org.jvnet.staxex.XMLStreamWriterEx;
 
 import javax.xml.stream.XMLStreamException;
@@ -96,6 +102,8 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
     /**
      * Writes a full XML infoset event to the given writer,
      * including start/end document.
+     * Any inscope namespaces present will be written as namespace
+     * delcarations on each top-level element.
      */
     public void write(XMLStreamWriter writer) throws XMLStreamException{
 
@@ -105,11 +113,8 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
             writer.writeStartDocument();
         }
 
-        // TODO: if we are writing a fragment XMLStreamBuffer as a full document,
-        // we need to put in-scope namespaces as top-level ns decls.
-
         while(true) {
-            int item = _eiiStateTable[peekStructure()];
+            int item = getEIIState(peekStructure());
             writer.flush();
 
             switch(item) {
@@ -162,7 +167,8 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
     /**
      * Writes the buffer as a fragment, meaning
      * the writer will not receive start/endDocument events.
-     *
+     * Any inscope namespaces present will be written as namespace
+     * delcarations on each top-level element.
      * <p>
      * If {@link XMLStreamBuffer} has a forest, this method will write all the forests.
      */
@@ -177,7 +183,7 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
     public void writeFragmentEx(XMLStreamWriterEx writer) throws XMLStreamException {
         int depth = 0;  // used to determine when we are done with a tree.
 
-        int item = _eiiStateTable[peekStructure()];
+        int item = getEIIState(peekStructure());
         if(item==STATE_DOCUMENT)
             readStructure();    // skip STATE_DOCUMENT
 
@@ -194,7 +200,7 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
                     final String localName = readStructureString();
                     final String prefix = getPrefixFromQName(readStructureString());
                     writer.writeStartElement(prefix,localName,uri);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_ELEMENT_P_U_LN: {
@@ -203,7 +209,7 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
                     final String uri = readStructureString();
                     final String localName = readStructureString();
                     writer.writeStartElement(prefix,localName,uri);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_ELEMENT_U_LN: {
@@ -211,14 +217,14 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
                     final String uri = readStructureString();
                     final String localName = readStructureString();
                     writer.writeStartElement("",localName,uri);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_ELEMENT_LN: {
                     depth ++;
                     final String localName = readStructureString();
                     writer.writeStartElement(localName);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_TEXT_AS_CHAR_ARRAY_SMALL: {
@@ -286,7 +292,7 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
     public void writeFragmentNoEx(XMLStreamWriter writer) throws XMLStreamException {
         int depth = 0;
 
-        int item = _eiiStateTable[peekStructure()];
+        int item = getEIIState(peekStructure());
         if(item==STATE_DOCUMENT)
             readStructure();    // skip STATE_DOCUMENT
 
@@ -302,7 +308,7 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
                     final String localName = readStructureString();
                     final String prefix = getPrefixFromQName(readStructureString());
                     writer.writeStartElement(prefix,localName,uri);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_ELEMENT_P_U_LN: {
@@ -311,7 +317,7 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
                     final String uri = readStructureString();
                     final String localName = readStructureString();
                     writer.writeStartElement(prefix,localName,uri);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_ELEMENT_U_LN: {
@@ -319,14 +325,14 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
                     final String uri = readStructureString();
                     final String localName = readStructureString();
                     writer.writeStartElement("",localName,uri);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_ELEMENT_LN: {
                     depth ++;
                     final String localName = readStructureString();
                     writer.writeStartElement(localName);
-                    writeAttributes(writer);
+                    writeAttributes(writer, isInscope(depth));
                     break;
                 }
                 case STATE_TEXT_AS_CHAR_ARRAY_SMALL: {
@@ -391,37 +397,81 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
 
     }
 
-    private void writeAttributes(XMLStreamWriter writer) throws XMLStreamException {
+    private boolean isInscope(int depth) {
+        return _buffer.getInscopeNamespaces().size() > 0 && depth ==1;
+    }
+
+    /*
+     * @param inscope: true means write inscope namespaces
+     */
+    private void writeAttributes(XMLStreamWriter writer, boolean inscope) throws XMLStreamException {
+        // prefixSet to collect prefixes that are written before writing inscope namespaces
+        Set<String> prefixSet = inscope ? new HashSet<String>() : Collections.<String>emptySet();
         int item = peekStructure();
         if ((item & TYPE_MASK) == T_NAMESPACE_ATTRIBUTE) {
             // Skip the namespace declarations on the element
             // they will have been added already
-            item = writeNamespaceAttributes(item, writer);
+            item = writeNamespaceAttributes(item, writer, inscope, prefixSet);
+        }
+        if (inscope) {
+            writeInscopeNamespaces(writer, prefixSet);
         }
         if ((item & TYPE_MASK) == T_ATTRIBUTE) {
             writeAttributes(item, writer);
         }
     }
 
-    private int writeNamespaceAttributes(int item, XMLStreamWriter writer) throws XMLStreamException {
+    private static String fixNull(String s) {
+        if (s == null) return "";
+        else return s;
+    }
+
+    /*
+     * @param prefixSet: already written prefixes
+     */
+    private void writeInscopeNamespaces(XMLStreamWriter writer, Set<String> prefixSet) throws XMLStreamException {
+        for (Map.Entry<String, String> e : _buffer.getInscopeNamespaces().entrySet()) {
+            String key = fixNull(e.getKey());
+            // If the prefix is already written, do not write the prefix
+            if (!prefixSet.contains(key)) {
+                writer.writeNamespace(key, e.getValue());
+            }
+        }
+    }
+
+    private int writeNamespaceAttributes(int item, XMLStreamWriter writer, boolean collectPrefixes, Set<String> prefixSet) throws XMLStreamException {
         do {
-            switch(_niiStateTable[item]){
+            switch(getNIIState(item)){
                 case STATE_NAMESPACE_ATTRIBUTE:
                     // Undeclaration of default namespace
                     writer.writeDefaultNamespace("");
+                    if (collectPrefixes) {
+                        prefixSet.add("");
+                    }
                     break;
                 case STATE_NAMESPACE_ATTRIBUTE_P:
                     // Undeclaration of namespace
                     // Declaration with prefix
-                    writer.writeNamespace(readStructureString(), "");
+                    String prefix = readStructureString();
+                    writer.writeNamespace(prefix, "");
+                    if (collectPrefixes) {
+                        prefixSet.add(prefix);
+                    }
                     break;
                 case STATE_NAMESPACE_ATTRIBUTE_P_U:
                     // Declaration with prefix
-                    writer.writeNamespace(readStructureString(), readStructureString());
+                    prefix = readStructureString();
+                    writer.writeNamespace(prefix, readStructureString());
+                    if (collectPrefixes) {
+                        prefixSet.add(prefix);
+                    }
                     break;
                 case STATE_NAMESPACE_ATTRIBUTE_U:
                     // Default declaration
                     writer.writeDefaultNamespace(readStructureString());
+                    if (collectPrefixes) {
+                        prefixSet.add("");
+                    }
                     break;
             }
             readStructure();
@@ -434,7 +484,7 @@ public class StreamWriterBufferProcessor extends AbstractProcessor {
 
     private void writeAttributes(int item, XMLStreamWriter writer) throws XMLStreamException {
         do {
-            switch(_aiiStateTable[item]) {
+            switch(getAIIState(item)) {
                 case STATE_ATTRIBUTE_U_LN_QN: {
                     final String uri = readStructureString();
                     final String localName = readStructureString();

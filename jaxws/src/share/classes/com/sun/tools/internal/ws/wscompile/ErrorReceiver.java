@@ -24,7 +24,6 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wscompile;
 
 import com.sun.istack.internal.Nullable;
@@ -126,6 +125,8 @@ public abstract class ErrorReceiver  implements ErrorHandler, ErrorListener {
         info( new SAXParseException(msg,null) );
     }
 
+    public abstract void debug(SAXParseException exception);
+
 //
 //
 // convenience methods for derived classes
@@ -145,7 +146,7 @@ public abstract class ErrorReceiver  implements ErrorHandler, ErrorListener {
           return ModelMessages.CONSOLE_ERROR_REPORTER_LINE_X_OF_Y(line==-1?"?":Integer.toString( line ),
               getShortName( e.getSystemId()));
       } else {
-          return ModelMessages.CONSOLE_ERROR_REPORTER_UNKNOWN_LOCATION();
+          return ""; //for unkown location just return empty string
       }
   }
 

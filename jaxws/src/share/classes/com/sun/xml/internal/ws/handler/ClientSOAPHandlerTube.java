@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package com.sun.xml.internal.ws.handler;
 
 import com.sun.xml.internal.ws.api.WSBinding;
@@ -40,6 +39,7 @@ import com.sun.xml.internal.ws.message.DataHandlerAttachment;
 
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.Handler;
 import javax.xml.ws.WebServiceException;
 import javax.activation.DataHandler;
 import java.util.*;
@@ -51,7 +51,6 @@ import java.util.*;
 public class ClientSOAPHandlerTube extends HandlerTube {
 
     private WSBinding binding;
-    private List<SOAPHandler> soapHandlers;
     private Set<String> roles;
 
     /**
@@ -87,67 +86,26 @@ public class ClientSOAPHandlerTube extends HandlerTube {
         this.binding = that.binding;
     }
 
-    boolean isHandlerChainEmpty() {
-        return soapHandlers.isEmpty();
-    }
-
-    /**
-     * Close SOAPHandlers first and then LogicalHandlers on Client
-     * Close LogicalHandlers first and then SOAPHandlers on Server
-     */
-    public void close(MessageContext msgContext) {
-
-    }
-
-    /**
-     * This is called from cousinTube.
-     * Close this Tube's handlers.
-     */
-    public void closeCall(MessageContext msgContext) {
-        closeSOAPHandlers(msgContext);
-    }
-
-    //TODO:
-    private void closeSOAPHandlers(MessageContext msgContext) {
-        if (processor == null)
-            return;
-        if (remedyActionTaken) {
-            //Close only invoked handlers in the chain
-
-            //CLIENT-SIDE
-            processor.closeHandlers(msgContext, processor.getIndex(), 0);
-            processor.setIndex(-1);
-            //reset remedyActionTaken
-            remedyActionTaken = false;
-        } else {
-            //Close all handlers in the chain
-
-            //CLIENT-SIDE
-            processor.closeHandlers(msgContext, soapHandlers.size() - 1, 0);
-        }
-    }
-
-    public AbstractFilterTubeImpl copy(TubeCloner cloner) {
+   public AbstractFilterTubeImpl copy(TubeCloner cloner) {
         return new ClientSOAPHandlerTube(this, cloner);
     }
 
     void setUpProcessor() {
         // Take a snapshot, User may change chain after invocation, Same chain
         // should be used for the entire MEP
-        soapHandlers = new ArrayList<SOAPHandler>();
+        handlers = new ArrayList<Handler>();
         HandlerConfiguration handlerConfig = ((BindingImpl) binding).getHandlerConfig();
         List<SOAPHandler> soapSnapShot= handlerConfig.getSoapHandlers();
         if (!soapSnapShot.isEmpty()) {
-            soapHandlers.addAll(soapSnapShot);
+            handlers.addAll(soapSnapShot);
             roles = new HashSet<String>();
             roles.addAll(handlerConfig.getRoles());
-            processor = new SOAPHandlerProcessor(true, this, binding, soapHandlers);
+            processor = new SOAPHandlerProcessor(true, this, binding, handlers);
         }
     }
 
     MessageUpdatableContext getContext(Packet packet) {
-        SOAPMessageContextImpl context = new SOAPMessageContextImpl(binding, packet);
-        context.setRoles(roles);
+        SOAPMessageContextImpl context = new SOAPMessageContextImpl(binding, packet,roles);
         return context;
     }
 
@@ -158,8 +116,10 @@ public class ClientSOAPHandlerTube extends HandlerTube {
         Map<String, DataHandler> atts = (Map<String, DataHandler>) context.get(MessageContext.OUTBOUND_MESSAGE_ATTACHMENTS);
         AttachmentSet attSet = packet.getMessage().getAttachments();
         for(String cid : atts.keySet()){
-            Attachment att = new DataHandlerAttachment(cid, atts.get(cid));
-            attSet.add(att);
+            if (attSet.get(cid) == null) {  // Otherwise we would be adding attachments twice
+                Attachment att = new DataHandlerAttachment(cid, atts.get(cid));
+                attSet.add(att);
+            }
         }
 
         try {
@@ -193,5 +153,10 @@ public class ClientSOAPHandlerTube extends HandlerTube {
         } catch (RuntimeException re) {
             throw new WebServiceException(re);
         }
+    }
+
+    void closeHandlers(MessageContext mc) {
+        closeClientsideHandlers(mc);
+
     }
 }

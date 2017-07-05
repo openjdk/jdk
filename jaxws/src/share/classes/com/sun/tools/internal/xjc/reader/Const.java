@@ -24,7 +24,7 @@
  */
 package com.sun.tools.internal.xjc.reader;
 
-
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 
 
 /**
@@ -53,4 +53,12 @@ public class Const {
 
     /** URI to represent DTD. */
     public static final String DTD = "DTD";
+
+    /**
+     * Attribute name of the expected media type.
+     *
+     * @see WellKnownNamespace#XML_MIME_URI
+     * @see http://www.w3.org/TR/xml-media-types/
+     */
+    public static final String EXPECTED_CONTENT_TYPES = "expectedContentTypes";
 }

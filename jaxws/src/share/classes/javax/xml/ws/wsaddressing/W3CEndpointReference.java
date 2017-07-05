@@ -93,6 +93,8 @@ public final class W3CEndpointReference extends EndpointReference {
             this.address = epr.address;
             this.metadata = epr.metadata;
             this.referenceParameters = epr.referenceParameters;
+            this.attributes = epr.attributes;
+            this.elements = epr.elements;
         } catch (JAXBException e) {
             throw new WebServiceException("Error unmarshalling W3CEndpointReference " ,e);
         } catch (ClassCastException e) {
@@ -106,7 +108,6 @@ public final class W3CEndpointReference extends EndpointReference {
     public void writeTo(Result result){
         try {
             Marshaller marshaller = w3cjc.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
             marshaller.marshal(this, result);
         } catch (JAXBException e) {
             throw new WebServiceException("Error marshalling W3CEndpointReference. ", e);

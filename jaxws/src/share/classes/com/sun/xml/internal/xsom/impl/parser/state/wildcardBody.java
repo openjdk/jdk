@@ -78,7 +78,7 @@ class wildcardBody extends NGCCHandler {
         case 10:
             {
                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
-                    NGCCHandler h = new annotation(this, super._source, $runtime, 204, null,AnnotationContext.WILDCARD);
+                    NGCCHandler h = new annotation(this, super._source, $runtime, 556, null,AnnotationContext.WILDCARD);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -92,14 +92,26 @@ class wildcardBody extends NGCCHandler {
                 revertToParentFromEnterElement(makeResult(), super._cookie, $__uri, $__local, $__qname, $attrs);
             }
             break;
+        case 1:
+            {
+                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    $_ngcc_current_state = 0;
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+            }
+            break;
         case 9:
             {
-                if((($ai = $runtime.getAttributeIndex("","namespace"))>=0 || ($ai = $runtime.getAttributeIndex("","processContents"))>=0)) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
+                if((($ai = $runtime.getAttributeIndex("","processContents"))>=0 || ($ai = $runtime.getAttributeIndex("","namespace"))>=0)) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
             }
@@ -112,18 +124,6 @@ class wildcardBody extends NGCCHandler {
                 }
                 else {
                     $_ngcc_current_state = 1;
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-            }
-            break;
-        case 1:
-            {
-                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    $_ngcc_current_state = 0;
                     $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
                 }
             }
@@ -153,14 +153,26 @@ class wildcardBody extends NGCCHandler {
                 revertToParentFromLeaveElement(makeResult(), super._cookie, $__uri, $__local, $__qname);
             }
             break;
+        case 1:
+            {
+                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                }
+                else {
+                    $_ngcc_current_state = 0;
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                }
+            }
+            break;
         case 9:
             {
-                if((($ai = $runtime.getAttributeIndex("","namespace"))>=0 || ($ai = $runtime.getAttributeIndex("","processContents"))>=0)) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
+                if((($ai = $runtime.getAttributeIndex("","processContents"))>=0 || ($ai = $runtime.getAttributeIndex("","namespace"))>=0)) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
                     spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
                 }
                 else {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
                     spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
                 }
             }
@@ -173,18 +185,6 @@ class wildcardBody extends NGCCHandler {
                 }
                 else {
                     $_ngcc_current_state = 1;
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-                }
-            }
-            break;
-        case 1:
-            {
-                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-                }
-                else {
-                    $_ngcc_current_state = 0;
                     $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
                 }
             }
@@ -214,14 +214,25 @@ class wildcardBody extends NGCCHandler {
                 revertToParentFromEnterAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
             }
             break;
+        case 1:
+            {
+                if(($__uri.equals("") && $__local.equals("namespace"))) {
+                    $_ngcc_current_state = 3;
+                }
+                else {
+                    $_ngcc_current_state = 0;
+                    $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
+                }
+            }
+            break;
         case 9:
             {
-                if((($__uri.equals("") && $__local.equals("namespace")) || ($__uri.equals("") && $__local.equals("processContents")))) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
+                if((($__uri.equals("") && $__local.equals("processContents")) || ($__uri.equals("") && $__local.equals("namespace")))) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
                     spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
                 }
                 else {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
                     spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
                 }
             }
@@ -233,17 +244,6 @@ class wildcardBody extends NGCCHandler {
                 }
                 else {
                     $_ngcc_current_state = 1;
-                    $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
-                }
-            }
-            break;
-        case 1:
-            {
-                if(($__uri.equals("") && $__local.equals("namespace"))) {
-                    $_ngcc_current_state = 3;
-                }
-                else {
-                    $_ngcc_current_state = 0;
                     $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
                 }
             }
@@ -262,16 +262,6 @@ class wildcardBody extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 6:
-            {
-                if(($__uri.equals("") && $__local.equals("processContents"))) {
-                    $_ngcc_current_state = 1;
-                }
-                else {
-                    unexpectedLeaveAttribute($__qname);
-                }
-            }
-            break;
         case 10:
             {
                 $_ngcc_current_state = 9;
@@ -283,16 +273,26 @@ class wildcardBody extends NGCCHandler {
                 revertToParentFromLeaveAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 9:
+        case 1:
             {
-                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
-                spawnChildFromLeaveAttribute(h, $__uri, $__local, $__qname);
+                $_ngcc_current_state = 0;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 5:
+        case 6:
             {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+                if(($__uri.equals("") && $__local.equals("processContents"))) {
+                    $_ngcc_current_state = 1;
+                }
+                else {
+                    unexpectedLeaveAttribute($__qname);
+                }
+            }
+            break;
+        case 9:
+            {
+                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
+                spawnChildFromLeaveAttribute(h, $__uri, $__local, $__qname);
             }
             break;
         case 2:
@@ -305,9 +305,9 @@ class wildcardBody extends NGCCHandler {
                 }
             }
             break;
-        case 1:
+        case 5:
             {
-                $_ngcc_current_state = 0;
+                $_ngcc_current_state = 1;
                 $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
@@ -322,12 +322,6 @@ class wildcardBody extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 7:
-            {
-                modeValue = $value;
-                $_ngcc_current_state = 6;
-            }
-            break;
         case 10:
             {
                 $_ngcc_current_state = 9;
@@ -337,36 +331,6 @@ class wildcardBody extends NGCCHandler {
         case 0:
             {
                 revertToParentFromText(makeResult(), super._cookie, $value);
-            }
-            break;
-        case 9:
-            {
-                if(($ai = $runtime.getAttributeIndex("","processContents"))>=0) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
-                    spawnChildFromText(h, $value);
-                }
-                else {
-                    if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
-                        NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
-                        spawnChildFromText(h, $value);
-                    }
-                    else {
-                        NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 202, null);
-                        spawnChildFromText(h, $value);
-                    }
-                }
-            }
-            break;
-        case 5:
-            {
-                if(($ai = $runtime.getAttributeIndex("","processContents"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendText(super._cookie, $value);
-                }
-                else {
-                    $_ngcc_current_state = 1;
-                    $runtime.sendText(super._cookie, $value);
-                }
             }
             break;
         case 1:
@@ -387,18 +351,54 @@ class wildcardBody extends NGCCHandler {
                 $_ngcc_current_state = 2;
             }
             break;
+        case 9:
+            {
+                if(($ai = $runtime.getAttributeIndex("","namespace"))>=0) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
+                    spawnChildFromText(h, $value);
+                }
+                else {
+                    if(($ai = $runtime.getAttributeIndex("","processContents"))>=0) {
+                        NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
+                        spawnChildFromText(h, $value);
+                    }
+                    else {
+                        NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 554, null);
+                        spawnChildFromText(h, $value);
+                    }
+                }
+            }
+            break;
+        case 7:
+            {
+                modeValue = $value;
+                $_ngcc_current_state = 6;
+            }
+            break;
+        case 5:
+            {
+                if(($ai = $runtime.getAttributeIndex("","processContents"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendText(super._cookie, $value);
+                }
+                else {
+                    $_ngcc_current_state = 1;
+                    $runtime.sendText(super._cookie, $value);
+                }
+            }
+            break;
         }
     }
 
     public void onChildCompleted(Object $__result__, int $__cookie__, boolean $__needAttCheck__)throws SAXException {
         switch($__cookie__) {
-        case 204:
+        case 556:
             {
                 annotation = ((AnnotationImpl)$__result__);
                 $_ngcc_current_state = 9;
             }
             break;
-        case 202:
+        case 554:
             {
                 fa = ((ForeignAttributesImpl)$__result__);
                 $_ngcc_current_state = 5;
@@ -408,7 +408,7 @@ class wildcardBody extends NGCCHandler {
     }
 
     public boolean accepted() {
-        return((($_ngcc_current_state == 1) || (($_ngcc_current_state == 5) || ($_ngcc_current_state == 0))));
+        return((($_ngcc_current_state == 5) || (($_ngcc_current_state == 1) || ($_ngcc_current_state == 0))));
     }
 
 

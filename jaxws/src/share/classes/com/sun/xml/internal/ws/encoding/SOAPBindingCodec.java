@@ -25,6 +25,26 @@
 
 package com.sun.xml.internal.ws.encoding;
 
+import com.sun.xml.internal.ws.api.SOAPVersion;
+import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.client.SelectOptimalEncodingFeature;
+import com.sun.xml.internal.ws.api.fastinfoset.FastInfosetFeature;
+import com.sun.xml.internal.ws.api.message.Message;
+import com.sun.xml.internal.ws.api.message.Packet;
+import com.sun.xml.internal.ws.api.message.ExceptionHasMessage;
+import com.sun.xml.internal.ws.api.pipe.Codec;
+import com.sun.xml.internal.ws.api.pipe.Codecs;
+import com.sun.xml.internal.ws.api.pipe.ContentType;
+import com.sun.xml.internal.ws.api.pipe.StreamSOAPCodec;
+import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
+import com.sun.xml.internal.ws.client.ContentNegotiation;
+import com.sun.xml.internal.ws.protocol.soap.MessageCreationException;
+import com.sun.xml.internal.ws.resources.StreamingMessages;
+import com.sun.xml.internal.ws.server.UnsupportedMediaException;
+
+import javax.xml.ws.WebServiceException;
+import javax.xml.ws.WebServiceFeature;
+import javax.xml.ws.soap.MTOMFeature;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,33 +52,6 @@ import java.lang.reflect.Method;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.StringTokenizer;
-
-import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPFault;
-import javax.xml.ws.WebServiceFeature;
-import javax.xml.ws.soap.MTOMFeature;
-
-import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.WSBinding;
-import com.sun.xml.internal.ws.api.client.SelectOptimalEncodingFeature;
-import com.sun.xml.internal.ws.api.fastinfoset.FastInfosetFeature;
-import com.sun.xml.internal.ws.api.message.Header;
-import com.sun.xml.internal.ws.api.message.HeaderList;
-import com.sun.xml.internal.ws.api.message.Message;
-import com.sun.xml.internal.ws.api.message.Messages;
-import com.sun.xml.internal.ws.api.message.Packet;
-import com.sun.xml.internal.ws.api.pipe.Codec;
-import com.sun.xml.internal.ws.api.pipe.ContentType;
-import com.sun.xml.internal.ws.api.pipe.StreamSOAPCodec;
-import com.sun.xml.internal.ws.api.pipe.Codecs;
-import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
-import com.sun.xml.internal.ws.client.ContentNegotiation;
-import com.sun.xml.internal.ws.resources.ServerMessages;
-import com.sun.xml.internal.ws.resources.StreamingMessages;
-import com.sun.xml.internal.ws.server.ServerRtException;
-import com.sun.xml.internal.ws.server.UnsupportedMediaException;
-import com.sun.xml.internal.ws.transport.http.WSHTTPConnection;
 
 /**
  * SOAP binding {@link Codec} that can handle MTOM, SwA, and SOAP messages
@@ -178,14 +171,14 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
     }
 
     public SOAPBindingCodec(WSBinding binding, StreamSOAPCodec xmlSoapCodec) {
-        super(binding.getSOAPVersion());
+        super(binding.getSOAPVersion(), binding);
 
         this.xmlSoapCodec = xmlSoapCodec;
         xmlMimeType = xmlSoapCodec.getMimeType();
 
-        xmlMtomCodec = new MtomCodec(version, xmlSoapCodec, binding.getFeature(MTOMFeature.class));
+        xmlMtomCodec = new MtomCodec(version, xmlSoapCodec, binding, binding.getFeature(MTOMFeature.class));
 
-        xmlSwaCodec = new SwACodec(version, xmlSoapCodec);
+        xmlSwaCodec = new SwACodec(version, binding, xmlSoapCodec);
 
         String clientAcceptedContentTypes = xmlSoapCodec.getMimeType() + ", " +
                 xmlMtomCodec.getMimeType() + ", " +
@@ -197,7 +190,7 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
             fiSoapCodec = getFICodec(xmlSoapCodec, version);
             if (fiSoapCodec != null) {
                 fiMimeType = fiSoapCodec.getMimeType();
-                fiSwaCodec = new SwACodec(version, fiSoapCodec);
+                fiSwaCodec = new SwACodec(version, binding, fiSoapCodec);
                 connegXmlAccept = fiMimeType + ", " + clientAcceptedContentTypes;
 
                 /**
@@ -238,6 +231,8 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
 
         xmlAccept = clientAcceptedContentTypes;
 
+        if(!(binding instanceof SOAPBindingImpl))
+            throw new WebServiceException("Expecting a SOAP binding but found "+binding);
         this.binding = (SOAPBindingImpl)binding;
     }
 
@@ -269,19 +264,25 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
          */
         if (packet.contentNegotiation == null)
             useFastInfosetForEncoding = false;
+        try {
+            if(isMultipartRelated(contentType))
+                // parse the multipart portion and then decide whether it's MTOM or SwA
+                super.decode(in, contentType, packet);
+            else if(isFastInfoset(contentType)) {
+                if (!ignoreContentNegotiationProperty && packet.contentNegotiation == ContentNegotiation.none)
+                    throw noFastInfosetForDecoding();
 
-        if(isMultipartRelated(contentType))
-            // parse the multipart portion and then decide whether it's MTOM or SwA
-            super.decode(in, contentType, packet);
-        else if(isFastInfoset(contentType)) {
-            if (!ignoreContentNegotiationProperty && packet.contentNegotiation == ContentNegotiation.none)
-                throw noFastInfosetForDecoding();
-
-            useFastInfosetForEncoding = true;
-            fiSoapCodec.decode(in, contentType, packet);
-        } else
-            xmlSoapCodec.decode(in, contentType, packet);
-
+                useFastInfosetForEncoding = true;
+                fiSoapCodec.decode(in, contentType, packet);
+            } else
+                xmlSoapCodec.decode(in, contentType, packet);
+        } catch(RuntimeException we) {
+            if (we instanceof ExceptionHasMessage || we instanceof UnsupportedMediaException) {
+                throw we;
+            } else {
+                throw new MessageCreationException(binding.getSOAPVersion(), we);
+            }
+        }
         if (!useFastInfosetForEncoding) {
             useFastInfosetForEncoding = isFastInfosetAcceptable(packet.acceptableMimeTypes);
         }
@@ -297,19 +298,24 @@ public class SOAPBindingCodec extends MimeCodec implements com.sun.xml.internal.
          */
         if (packet.contentNegotiation == null)
             useFastInfosetForEncoding = false;
+        try {
+            if(isMultipartRelated(contentType))
+                super.decode(in, contentType, packet);
+            else if(isFastInfoset(contentType)) {
+                if (packet.contentNegotiation == ContentNegotiation.none)
+                    throw noFastInfosetForDecoding();
 
-        if(isMultipartRelated(contentType))
-            super.decode(in, contentType, packet);
-        else if(isFastInfoset(contentType)) {
-            if (packet.contentNegotiation == ContentNegotiation.none)
-                throw noFastInfosetForDecoding();
-
-            useFastInfosetForEncoding = true;
-            fiSoapCodec.decode(in, contentType, packet);
-        } else
-            xmlSoapCodec.decode(in, contentType, packet);
-
-//        checkDuplicateKnownHeaders(packet);
+                useFastInfosetForEncoding = true;
+                fiSoapCodec.decode(in, contentType, packet);
+            } else
+                xmlSoapCodec.decode(in, contentType, packet);
+        } catch(RuntimeException we) {
+            if (we instanceof ExceptionHasMessage || we instanceof UnsupportedMediaException) {
+                throw we;
+            } else {
+                throw new MessageCreationException(binding.getSOAPVersion(), we);
+            }
+        }
         if (!useFastInfosetForEncoding) {
             useFastInfosetForEncoding = isFastInfosetAcceptable(packet.acceptableMimeTypes);
         }

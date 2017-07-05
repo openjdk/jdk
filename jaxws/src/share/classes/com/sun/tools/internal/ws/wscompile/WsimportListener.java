@@ -24,7 +24,6 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wscompile;
 
 import com.sun.tools.internal.xjc.api.ErrorListener;
@@ -74,6 +73,8 @@ public class WsimportListener implements ErrorListener {
     public void info(SAXParseException exception) {
 
     }
+
+    public void debug(SAXParseException exception){}
 
     /**
      * wsimport will periodically invoke this method to see if it should cancel a compilation.

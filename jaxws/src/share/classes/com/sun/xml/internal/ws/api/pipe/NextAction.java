@@ -111,6 +111,15 @@ public final class NextAction {
     }
 
     /**
+     * Indicates that the fiber should be suspended.
+     * Once {@link Fiber#resume(Packet) resumed}, resume with the
+     * {@link Tube#processRequest(Packet)} on the given next tube.
+     */
+    public void suspend(Tube next) {
+        set(SUSPEND, next, null, null);
+    }
+
+    /**
      * Dumps the contents to assist debugging.
      */
     public String toString() {

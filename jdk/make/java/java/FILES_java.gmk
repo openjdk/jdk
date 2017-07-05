@@ -77,6 +77,7 @@ JAVA_JAVA_java = \
     java/lang/Compiler.java \
     java/lang/Throwable.java \
         java/lang/Exception.java \
+	    java/lang/ReflectiveOperationException.java \
 	    java/lang/IllegalAccessException.java \
 	    java/lang/InstantiationException.java \
 	    java/lang/ClassNotFoundException.java \
@@ -250,6 +251,8 @@ JAVA_JAVA_java = \
 	java/util/IdentityHashMap.java \
 	java/util/EnumMap.java \
     java/util/Arrays.java \
+    java/util/TimSort.java \
+    java/util/ComparableTimSort.java \
     java/util/ConcurrentModificationException.java \
     java/util/ServiceLoader.java \
     java/util/ServiceConfigurationError.java \
