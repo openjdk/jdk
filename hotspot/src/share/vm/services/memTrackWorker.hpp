@@ -32,17 +32,58 @@
 // Maximum MAX_GENERATIONS generation data can be tracked.
 #define MAX_GENERATIONS  512
 
+class GenerationData : public _ValueObj {
+ private:
+  int           _number_of_classes;
+  MemRecorder*  _recorder_list;
+
+ public:
+  GenerationData(): _number_of_classes(0), _recorder_list(NULL) { }
+
+  inline int  number_of_classes() const { return _number_of_classes; }
+  inline void set_number_of_classes(long num) { _number_of_classes = num; }
+
+  inline MemRecorder* next_recorder() {
+    if (_recorder_list == NULL) {
+      return NULL;
+    } else {
+      MemRecorder* tmp = _recorder_list;
+      _recorder_list = _recorder_list->next();
+      return tmp;
+    }
+  }
+
+  inline bool has_more_recorder() const {
+    return (_recorder_list != NULL);
+  }
+
+  // add recorders to this generation
+  void add_recorders(MemRecorder* head) {
+    if (head != NULL) {
+      if (_recorder_list == NULL) {
+        _recorder_list = head;
+      } else {
+        MemRecorder* tmp = _recorder_list;
+        for (; tmp->next() != NULL; tmp = tmp->next());
+        tmp->set_next(head);
+      }
+    }
+  }
+
+  void reset();
+
+  NOT_PRODUCT(MemRecorder* peek() const { return _recorder_list; })
+};
 
 class MemTrackWorker : public NamedThread {
  private:
-  // circular buffer. This buffer contains recorders to be merged into global
+  // circular buffer. This buffer contains generation data to be merged into global
   // snaphsot.
-  // Each slot holds a linked list of memory recorders, that contains one
-  // generation of memory data.
-  MemRecorder*  _gen[MAX_GENERATIONS];
-  int           _head, _tail; // head and tail pointers to above circular buffer
+  // Each slot holds a generation
+  GenerationData  _gen[MAX_GENERATIONS];
+  int             _head, _tail; // head and tail pointers to above circular buffer
 
-  bool          _has_error;
+  bool            _has_error;
 
  public:
   MemTrackWorker();
@@ -56,7 +97,7 @@ class MemTrackWorker : public NamedThread {
   inline bool has_error() const { return _has_error; }
 
   // task at synchronization point
-  void at_sync_point(MemRecorder* pending_recorders);
+  void at_sync_point(MemRecorder* pending_recorders, int number_of_classes);
 
   // for debugging purpose, they are not thread safe.
   NOT_PRODUCT(static int count_recorder(const MemRecorder* head);)

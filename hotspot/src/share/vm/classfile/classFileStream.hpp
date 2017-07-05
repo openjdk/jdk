@@ -133,6 +133,11 @@ class ClassFileStream: public ResourceObj {
     _current += 2 * length;
   }
 
+  void skip_u4(int length, TRAPS);
+  void skip_u4_fast(int length) {
+    _current += 4 * length;
+  }
+
   // Tells whether eos is reached
   bool at_eos() const          { return _current == _buffer_end; }
 };

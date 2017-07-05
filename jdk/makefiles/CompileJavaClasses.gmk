@@ -42,8 +42,7 @@ EXCLUDES +=	com/sun/pept \
 		com/sun/tools/example/trace\
 		com/sun/tools/example/debug/bdi\
 		com/sun/tools/example/debug/event\
-		com/sun/tools/example/debug/gui \
-		com/oracle/security
+		com/sun/tools/example/debug/gui
 
 ifdef OPENJDK
     EXCLUDES+=	sun/dc \
@@ -86,6 +85,8 @@ ifneq ($(OPENJDK_TARGET_OS),solaris)
         sun/nio/ch/SolarisEventPort.java \
 	sun/tools/attach/SolarisAttachProvider.java \
 	sun/tools/attach/SolarisVirtualMachine.java
+
+   EXCLUDES += com/oracle/security
 endif
 
 # In the old build, this isn't excluded on macosx, even though it probably
@@ -227,14 +228,20 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 	sun/nio/ch/SimpleAsynchronousFileChannelImpl.java
 endif
 
-# Exclude nimbus files from rt.jar
+# These files do not appear in the build result of the old build. This
+# is because they are generated sources, but the AUTO_JAVA_FILES won't
+# pick them up since they aren't generated when the source dirs are 
+# searched and they aren't referenced by any other classes so they won't
+# be picked up by implicit compilation. On a rebuild, they are picked up
+# and compiled. Exclude them here to produce the same rt.jar as the old 
+# build does when building just once.
 EXFILES+=javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
-				 javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
-				 javax/swing/plaf/nimbus/ScrollBarPainter.java \
-				 javax/swing/plaf/nimbus/SliderPainter.java \
-				 javax/swing/plaf/nimbus/SpinnerPainter.java \
-				 javax/swing/plaf/nimbus/SplitPanePainter.java \
-				 javax/swing/plaf/nimbus/TabbedPanePainter.java
+	 javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
+	 javax/swing/plaf/nimbus/ScrollBarPainter.java \
+	 javax/swing/plaf/nimbus/SliderPainter.java \
+	 javax/swing/plaf/nimbus/SpinnerPainter.java \
+	 javax/swing/plaf/nimbus/SplitPanePainter.java \
+	 javax/swing/plaf/nimbus/TabbedPanePainter.java
 
 # Acquire a list of files that should be copied straight over to the classes.
 include CopyIntoClasses.gmk
@@ -285,6 +292,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
 		     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
 		     $(MACOSX_SRC_DIRS) \
 		     $(JDK_OUTPUTDIR)/gensrc \
+		     $(JDK_OUTPUTDIR)/gensrc_no_srczip \
 		     $(CLOSED_SRC_DIRS),\
 		INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
 		EXCLUDES:=$(EXCLUDES),\
@@ -293,35 +301,6 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
 		COPY:=$(COPY_PATTERNS),\
 		COPY_FILES:=$(COPY_FILES),\
 		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers))
-
-##########################################################################################
-# Special handling of header file generation for classes in the jigsaw base module which
-# currently can't add the annotaion GenerateNativeHeaders. For these specific classes the
-# java file and the class have the same names which enables shortcutting the dependencies.
-
-JDK_BASE_HEADER_CLASSES:=java.lang.Integer \
-			 java.lang.Long \
-			 java.net.SocketOptions \
-			 sun.nio.ch.IOStatus \
-			 java.io.FileSystem
-
-JDK_BASE_HEADER_JAVA_FILES:=$(patsubst %,$(JDK_TOPDIR)/src/share/classes/%.java,\
-				$(subst .,/,$(JDK_BASE_HEADER_CLASSES)))
-
-ifeq ($(OPENJDK_TARGET_OS),windows)
-    JDK_BASE_HEADER_CLASSES_WINDOWS:=sun.nio.ch.PollArrayWrapper
-    JDK_BASE_HEADER_CLASSES+=$(JDK_BASE_HEADER_CLASSES_WINDOWS)
-    JDK_BASE_HEADER_JAVA_FILES+=$(patsubst %,$(JDK_TOPDIR)/src/windows/classes/%.java,\
-				$(subst .,/,$(JDK_BASE_HEADER_CLASSES_WINDOWS)))
-endif
-
-# Set prereqs to the java files since make doesn't know about the class files. Add BUILD_JDK
-# as an order only dependency to avoid race with the java compilation.
-$(JDK_OUTPUTDIR)/gensrc_headers/_the.jdk.base.headers: $(JDK_BASE_HEADER_JAVA_FILES) | $(BUILD_JDK)
-	$(ECHO) Generating headers for jdk base classes
-	$(JAVAH) -bootclasspath $(JDK_OUTPUTDIR)/classes -d $(JDK_OUTPUTDIR)/gensrc_headers \
-		$(JDK_BASE_HEADER_CLASSES)
-	$(TOUCH) $@
 
 ##########################################################################################
 
@@ -387,7 +366,6 @@ endif
 
 # copy with -a to preserve timestamps so dependencies down the line aren't messed up
 all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
-	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
-	$(JDK_OUTPUTDIR)/gensrc_headers/_the.jdk.base.headers
+	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin
 
 .PHONY: all

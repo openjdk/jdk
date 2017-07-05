@@ -832,7 +832,8 @@ private:
 
   // These do register sized moves/scans
   void rep_mov();
-  void rep_set();
+  void rep_stos();
+  void rep_stosb();
   void repne_scan();
 #ifdef _LP64
   void repne_scanl();
@@ -1443,9 +1444,12 @@ private:
   // Shift Right by bytes Logical DoubleQuadword Immediate
   void psrldq(XMMRegister dst, int shift);
 
-  // Logical Compare Double Quadword
+  // Logical Compare 128bit
   void ptest(XMMRegister dst, XMMRegister src);
   void ptest(XMMRegister dst, Address src);
+  // Logical Compare 256bit
+  void vptest(XMMRegister dst, XMMRegister src);
+  void vptest(XMMRegister dst, Address src);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);
@@ -1752,6 +1756,9 @@ private:
   void vinserti128h(XMMRegister dst, Address src);
   void vextractf128h(Address dst, XMMRegister src);
   void vextracti128h(Address dst, XMMRegister src);
+
+  // duplicate 4-bytes integer data from src into 8 locations in dest
+  void vpbroadcastd(XMMRegister dst, XMMRegister src);
 
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no

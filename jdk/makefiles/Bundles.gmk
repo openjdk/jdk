@@ -33,9 +33,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
 bundles: jre-bundle jdk-bundle
 
-
-JDK_BUNDLE_DIR := $(IMAGES_OUTPUTDIR)/j2sdk-bundle/jdk$(JDK_VERSION).jdk/Contents
-JRE_BUNDLE_DIR := $(IMAGES_OUTPUTDIR)/j2re-bundle/jre$(JDK_VERSION).jre/Contents
+# JDK_BUNDLE_DIR and JRE_BUNDLE_DIR are defined in SPEC.
 
 MACOSX_SRC := $(JDK_TOPDIR)/src/macosx
 
@@ -70,30 +68,31 @@ else
 endif
 
 
-JDK_FILE_LIST := $(shell $(FIND) $(IMAGES_OUTPUTDIR)/j2sdk-image ! -type d)
-JRE_FILE_LIST := $(shell $(FIND) $(IMAGES_OUTPUTDIR)/j2re-image ! -type d)
+JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR))
+JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR))
 
-JDK_TARGET_LIST := $(subst $(IMAGES_OUTPUTDIR)/j2sdk-image,$(JDK_BUNDLE_DIR)/Home,$(JDK_FILE_LIST))
-JRE_TARGET_LIST := $(subst $(IMAGES_OUTPUTDIR)/j2re-image,$(JRE_BUNDLE_DIR)/Home,$(JRE_FILE_LIST))
+JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
+JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
 
 # The old builds implementation of this did not preserve symlinks so
 # make sure they are followed and the contents copied instead.
-# To fix this, just replace copy with install-file macro.
-$(JDK_BUNDLE_DIR)/Home/%: $(IMAGES_OUTPUTDIR)/j2sdk-image/%
+# To fix this, remove -L
+# Copy empty directories (jre/lib/applet).
+$(JDK_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	$(CP) -f -R -L '$<' '$@'
+	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
 
-$(JRE_BUNDLE_DIR)/Home/%: $(IMAGES_OUTPUTDIR)/j2re-image/%
+$(JRE_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	$(CP) -f -R -L '$<' '$@'
+	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
 
 $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(LN) -s ../Home/lib/jli/libjli.dylib $@
+	$(LN) -s ../Home/jre/lib/jli/libjli.dylib $@
 
 $(JRE_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)

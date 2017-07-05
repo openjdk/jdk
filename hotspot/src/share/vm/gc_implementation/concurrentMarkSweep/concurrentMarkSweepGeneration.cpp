@@ -827,10 +827,10 @@ void ConcurrentMarkSweepGeneration::printOccupancy(const char *s) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   if (PrintGCDetails) {
     if (Verbose) {
-      gclog_or_tty->print(" [%d %s-%s: "SIZE_FORMAT"("SIZE_FORMAT")]",
+      gclog_or_tty->print("[%d %s-%s: "SIZE_FORMAT"("SIZE_FORMAT")]",
         level(), short_name(), s, used(), capacity());
     } else {
-      gclog_or_tty->print(" [%d %s-%s: "SIZE_FORMAT"K("SIZE_FORMAT"K)]",
+      gclog_or_tty->print("[%d %s-%s: "SIZE_FORMAT"K("SIZE_FORMAT"K)]",
         level(), short_name(), s, used() / K, capacity() / K);
     }
   }

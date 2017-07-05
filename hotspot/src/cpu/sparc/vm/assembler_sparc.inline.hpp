@@ -35,24 +35,24 @@ inline void Assembler::check_delay() {
 # endif
 }
 
-inline void Assembler::emit_long(int x) {
+inline void Assembler::emit_int32(int x) {
   check_delay();
-  AbstractAssembler::emit_long(x);
+  AbstractAssembler::emit_int32(x);
 }
 
 inline void Assembler::emit_data(int x, relocInfo::relocType rtype) {
   relocate(rtype);
-  emit_long(x);
+  emit_int32(x);
 }
 
 inline void Assembler::emit_data(int x, RelocationHolder const& rspec) {
   relocate(rspec);
-  emit_long(x);
+  emit_int32(x);
 }
 
 
-inline void Assembler::add(Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | rs2(s2) ); }
-inline void Assembler::add(Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+inline void Assembler::add(Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::add(Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
 inline void Assembler::bpr( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt ) { v9_only();  cti();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(bpr_op2) | wdisp16(intptr_t(d), intptr_t(pc())) | predict(p) | rs1(s1), rt);  has_delay_slot(); }
 inline void Assembler::bpr( RCondition c, bool a, Predict p, Register s1, Label& L) { bpr( c, a, p, s1, target(L)); }
@@ -79,93 +79,93 @@ inline void Assembler::cbcond(Condition c, CC cc, Register s1, int simm5, Label&
 inline void Assembler::call( address d,  relocInfo::relocType rt ) { cti();  emit_data( op(call_op) | wdisp(intptr_t(d), intptr_t(pc()), 30), rt);  has_delay_slot(); assert(rt != relocInfo::virtual_call_type, "must use virtual_call_Relocation::spec"); }
 inline void Assembler::call( Label& L,   relocInfo::relocType rt ) { call( target(L), rt); }
 
-inline void Assembler::flush( Register s1, Register s2) { emit_long( op(arith_op) | op3(flush_op3) | rs1(s1) | rs2(s2)); }
+inline void Assembler::flush( Register s1, Register s2) { emit_int32( op(arith_op) | op3(flush_op3) | rs1(s1) | rs2(s2)); }
 inline void Assembler::flush( Register s1, int simm13a) { emit_data( op(arith_op) | op3(flush_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::jmpl( Register s1, Register s2, Register d ) { cti();  emit_long( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
+inline void Assembler::jmpl( Register s1, Register s2, Register d ) { cti();  emit_int32( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
 inline void Assembler::jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { cti();  emit_data( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec);  has_delay_slot(); }
 
-inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { emit_int32( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const& rspec) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec); }
 
-inline void Assembler::ldfsr(  Register s1, Register s2) { v9_dep();   emit_long( op(ldst_op) |             op3(ldfsr_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldfsr(  Register s1, Register s2) { v9_dep();   emit_int32( op(ldst_op) |             op3(ldfsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldfsr(  Register s1, int simm13a) { v9_dep();   emit_data( op(ldst_op) |             op3(ldfsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::ldxfsr( Register s1, Register s2) { v9_only();  emit_long( op(ldst_op) | rd(G1)    | op3(ldfsr_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldxfsr( Register s1, Register s2) { v9_only();  emit_int32( op(ldst_op) | rd(G1)    | op3(ldfsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldxfsr( Register s1, int simm13a) { v9_only();  emit_data( op(ldst_op) | rd(G1)    | op3(ldfsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::ldc(   Register s1, Register s2, int crd) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(ldc_op3  ) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldc(   Register s1, Register s2, int crd) { v8_only();  emit_int32( op(ldst_op) | fcn(crd) | op3(ldc_op3  ) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldc(   Register s1, int simm13a, int crd) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(ldc_op3  ) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::lddc(  Register s1, Register s2, int crd) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(lddc_op3 ) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::lddc(  Register s1, Register s2, int crd) { v8_only();  emit_int32( op(ldst_op) | fcn(crd) | op3(lddc_op3 ) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::lddc(  Register s1, int simm13a, int crd) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(lddc_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::ldcsr( Register s1, Register s2, int crd) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(ldcsr_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldcsr( Register s1, Register s2, int crd) { v8_only();  emit_int32( op(ldst_op) | fcn(crd) | op3(ldcsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldcsr( Register s1, int simm13a, int crd) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(ldcsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::ldsb(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldsb_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldsb(  Register s1, Register s2, Register d) { emit_int32( op(ldst_op) | rd(d) | op3(ldsb_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldsb(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(ldsb_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::ldsh(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldsh_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldsh(  Register s1, Register s2, Register d) { emit_int32( op(ldst_op) | rd(d) | op3(ldsh_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldsh(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(ldsh_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::ldsw(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldsw_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldsw(  Register s1, Register s2, Register d) { emit_int32( op(ldst_op) | rd(d) | op3(ldsw_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldsw(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(ldsw_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::ldub(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldub_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldub(  Register s1, Register s2, Register d) { emit_int32( op(ldst_op) | rd(d) | op3(ldub_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldub(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(ldub_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::lduh(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(lduh_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::lduh(  Register s1, Register s2, Register d) { emit_int32( op(ldst_op) | rd(d) | op3(lduh_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::lduh(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(lduh_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::lduw(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(lduw_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::lduw(  Register s1, Register s2, Register d) { emit_int32( op(ldst_op) | rd(d) | op3(lduw_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::lduw(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(lduw_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::ldx(   Register s1, Register s2, Register d) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(ldx_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldx(   Register s1, Register s2, Register d) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(ldx_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldx(   Register s1, int simm13a, Register d) { v9_only();  emit_data( op(ldst_op) | rd(d) | op3(ldx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::ldd(   Register s1, Register s2, Register d) { v9_dep(); assert(d->is_even(), "not even"); emit_long( op(ldst_op) | rd(d) | op3(ldd_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldd(   Register s1, Register s2, Register d) { v9_dep(); assert(d->is_even(), "not even"); emit_int32( op(ldst_op) | rd(d) | op3(ldd_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldd(   Register s1, int simm13a, Register d) { v9_dep(); assert(d->is_even(), "not even"); emit_data( op(ldst_op) | rd(d) | op3(ldd_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::ldstub(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldstub_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldstub(  Register s1, Register s2, Register d) { emit_int32( op(ldst_op) | rd(d) | op3(ldstub_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldstub(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(ldstub_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::rett( Register s1, Register s2                         ) { cti();  emit_long( op(arith_op) | op3(rett_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
+inline void Assembler::rett( Register s1, Register s2                         ) { cti();  emit_int32( op(arith_op) | op3(rett_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
 inline void Assembler::rett( Register s1, int simm13a, relocInfo::relocType rt) { cti();  emit_data( op(arith_op) | op3(rett_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rt);  has_delay_slot(); }
 
 inline void Assembler::sethi( int imm22a, Register d, RelocationHolder const& rspec ) { emit_data( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(imm22a), rspec); }
 
   // pp 222
 
-inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2) { emit_int32( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::stfsr(  Register s1, Register s2) { v9_dep();   emit_long( op(ldst_op) |             op3(stfsr_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stfsr(  Register s1, Register s2) { v9_dep();   emit_int32( op(ldst_op) |             op3(stfsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stfsr(  Register s1, int simm13a) { v9_dep();   emit_data( op(ldst_op) |             op3(stfsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::stxfsr( Register s1, Register s2) { v9_only();  emit_long( op(ldst_op) | rd(G1)    | op3(stfsr_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stxfsr( Register s1, Register s2) { v9_only();  emit_int32( op(ldst_op) | rd(G1)    | op3(stfsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stxfsr( Register s1, int simm13a) { v9_only();  emit_data( op(ldst_op) | rd(G1)    | op3(stfsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
   // p 226
 
-inline void Assembler::stb(  Register d, Register s1, Register s2) { emit_long( op(ldst_op) | rd(d) | op3(stb_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stb(  Register d, Register s1, Register s2) { emit_int32( op(ldst_op) | rd(d) | op3(stb_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stb(  Register d, Register s1, int simm13a) { emit_data( op(ldst_op) | rd(d) | op3(stb_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::sth(  Register d, Register s1, Register s2) { emit_long( op(ldst_op) | rd(d) | op3(sth_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::sth(  Register d, Register s1, Register s2) { emit_int32( op(ldst_op) | rd(d) | op3(sth_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::sth(  Register d, Register s1, int simm13a) { emit_data( op(ldst_op) | rd(d) | op3(sth_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::stw(  Register d, Register s1, Register s2) { emit_long( op(ldst_op) | rd(d) | op3(stw_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stw(  Register d, Register s1, Register s2) { emit_int32( op(ldst_op) | rd(d) | op3(stw_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stw(  Register d, Register s1, int simm13a) { emit_data( op(ldst_op) | rd(d) | op3(stw_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
 
-inline void Assembler::stx(  Register d, Register s1, Register s2) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(stx_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stx(  Register d, Register s1, Register s2) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(stx_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stx(  Register d, Register s1, int simm13a) { v9_only();  emit_data( op(ldst_op) | rd(d) | op3(stx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::std(  Register d, Register s1, Register s2) { v9_dep(); assert(d->is_even(), "not even"); emit_long( op(ldst_op) | rd(d) | op3(std_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::std(  Register d, Register s1, Register s2) { v9_dep(); assert(d->is_even(), "not even"); emit_int32( op(ldst_op) | rd(d) | op3(std_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::std(  Register d, Register s1, int simm13a) { v9_dep(); assert(d->is_even(), "not even"); emit_data( op(ldst_op) | rd(d) | op3(std_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
 // v8 p 99
 
-inline void Assembler::stc(    int crd, Register s1, Register s2) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(stc_op3 ) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stc(    int crd, Register s1, Register s2) { v8_only();  emit_int32( op(ldst_op) | fcn(crd) | op3(stc_op3 ) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stc(    int crd, Register s1, int simm13a) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(stc_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::stdc(   int crd, Register s1, Register s2) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(stdc_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stdc(   int crd, Register s1, Register s2) { v8_only();  emit_int32( op(ldst_op) | fcn(crd) | op3(stdc_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stdc(   int crd, Register s1, int simm13a) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(stdc_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::stcsr(  int crd, Register s1, Register s2) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(stcsr_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stcsr(  int crd, Register s1, Register s2) { v8_only();  emit_int32( op(ldst_op) | fcn(crd) | op3(stcsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stcsr(  int crd, Register s1, int simm13a) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(stcsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-inline void Assembler::stdcq(  int crd, Register s1, Register s2) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(stdcq_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::stdcq(  int crd, Register s1, Register s2) { v8_only();  emit_int32( op(ldst_op) | fcn(crd) | op3(stdcq_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stdcq(  int crd, Register s1, int simm13a) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(stdcq_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
 // pp 231
 
-inline void Assembler::swap(    Register s1, Register s2, Register d) { v9_dep();  emit_long( op(ldst_op) | rd(d) | op3(swap_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::swap(    Register s1, Register s2, Register d) { v9_dep();  emit_int32( op(ldst_op) | rd(d) | op3(swap_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::swap(    Register s1, int simm13a, Register d) { v9_dep();  emit_data( op(ldst_op) | rd(d) | op3(swap_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
 #endif // CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
