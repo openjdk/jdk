@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "utilities/yieldingWorkgroup.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // Forward declaration of classes declared here.
 

@@ -310,7 +310,14 @@ public class Test {
         throw new RuntimeException("Test failed");
     }
 
-
+    private static boolean hasFtp() {
+        try {
+            return new java.net.URL("ftp://") != null;
+        } catch (java.net.MalformedURLException x) {
+            System.out.println("FTP not supported by this runtime.");
+            return false;
+        }
+    }
 
     // -- Tests --
 
@@ -319,8 +326,9 @@ public class Test {
 
         header("RFC2396: Basic examples");
 
-        test("ftp://ftp.is.co.za/rfc/rfc1808.txt")
-            .s("ftp").h("ftp.is.co.za").p("/rfc/rfc1808.txt").z();
+        if (hasFtp())
+            test("ftp://ftp.is.co.za/rfc/rfc1808.txt")
+                .s("ftp").h("ftp.is.co.za").p("/rfc/rfc1808.txt").z();
 
         test("http://www.math.uio.no/faq/compression-faq/part1.html")
             .s("http").h("www.math.uio.no").p("/faq/compression-faq/part1.html").z();
@@ -328,8 +336,9 @@ public class Test {
         test("http://www.w3.org/Addressing/")
             .s("http").h("www.w3.org").p("/Addressing/").z();
 
-        test("ftp://ds.internic.net/rfc/")
-            .s("ftp").h("ds.internic.net").p("/rfc/").z();
+        if (hasFtp())
+            test("ftp://ds.internic.net/rfc/")
+                .s("ftp").h("ds.internic.net").p("/rfc/").z();
 
         test("http://www.ics.uci.edu/pub/ietf/url/historical.html#WARNING")
             .s("http").h("www.ics.uci.edu").p("/pub/ietf/url/historical.html")

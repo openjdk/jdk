@@ -35,6 +35,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/macros.hpp"
 
 #ifndef CC_INTERP
 
@@ -136,7 +137,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          bool precise) {
   assert(val == noreg || val == rax, "parameter is just for looks");
   switch (barrier) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       {
@@ -167,7 +168,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
 
       }
       break;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
       {

@@ -25,10 +25,11 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLENUMASPACE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLENUMASPACE_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/gcUtil.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 /*
  *    The NUMA-aware allocator (MutableNUMASpace) is basically a modification

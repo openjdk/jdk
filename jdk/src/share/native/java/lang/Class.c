@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ static JNINativeMethod methods[] = {
     {"getRawAnnotations",      "()" BA,        (void *)&JVM_GetClassAnnotations},
     {"getConstantPool",     "()" CPL,       (void *)&JVM_GetClassConstantPool},
     {"desiredAssertionStatus0","("CLS")Z",(void *)&JVM_DesiredAssertionStatus},
-    {"getEnclosingMethod0", "()[" OBJ,      (void *)&JVM_GetEnclosingMethodInfo}
+    {"getEnclosingMethod0", "()[" OBJ,      (void *)&JVM_GetEnclosingMethodInfo},
+    {"getRawTypeAnnotations", "()" BA,      (void *)&JVM_GetClassTypeAnnotations},
 };
 
 #undef OBJ

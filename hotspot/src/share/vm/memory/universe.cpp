@@ -70,13 +70,14 @@
 #include "utilities/events.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/preserveException.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // Known objects
 Klass* Universe::_boolArrayKlassObj                 = NULL;
@@ -144,6 +145,7 @@ NarrowPtrStruct Universe::_narrow_oop = { NULL, 0, true };
 NarrowPtrStruct Universe::_narrow_klass = { NULL, 0, true };
 address Universe::_narrow_ptrs_base;
 
+size_t          Universe::_class_metaspace_size;
 
 void Universe::basic_type_classes_do(void f(Klass*)) {
   f(boolArrayKlassObj());
@@ -689,8 +691,15 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
     // Return specified base for the first request.
     if (!FLAG_IS_DEFAULT(HeapBaseMinAddress) && (mode == UnscaledNarrowOop)) {
       base = HeapBaseMinAddress;
-    } else if (total_size <= OopEncodingHeapMax && (mode != HeapBasedNarrowOop)) {
-      if (total_size <= NarrowOopHeapMax && (mode == UnscaledNarrowOop) &&
+
+    // If the total size and the metaspace size are small enough to allow
+    // UnscaledNarrowOop then just use UnscaledNarrowOop.
+    } else if ((total_size <= OopEncodingHeapMax) && (mode != HeapBasedNarrowOop) &&
+        (!UseCompressedKlassPointers ||
+          (((OopEncodingHeapMax - heap_size) + Universe::class_metaspace_size()) <= KlassEncodingMetaspaceMax))) {
+      // We don't need to check the metaspace size here because it is always smaller
+      // than total_size.
+      if ((total_size <= NarrowOopHeapMax) && (mode == UnscaledNarrowOop) &&
           (Universe::narrow_oop_shift() == 0)) {
         // Use 32-bits oops without encoding and
         // place heap's top on the 4Gb boundary
@@ -706,14 +715,24 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
           base = (OopEncodingHeapMax - heap_size);
         }
       }
+
+    // See if ZeroBaseNarrowOop encoding will work for a heap based at
+    // (KlassEncodingMetaspaceMax - class_metaspace_size()).
+    } else if (UseCompressedKlassPointers && (mode != HeapBasedNarrowOop) &&
+        (Universe::class_metaspace_size() + HeapBaseMinAddress <= KlassEncodingMetaspaceMax) &&
+        (KlassEncodingMetaspaceMax + heap_size - Universe::class_metaspace_size() <= OopEncodingHeapMax)) {
+      base = (KlassEncodingMetaspaceMax - Universe::class_metaspace_size());
     } else {
-      // Can't reserve below 32Gb.
+      // UnscaledNarrowOop encoding didn't work, and no base was found for ZeroBasedOops or
+      // HeapBasedNarrowOop encoding was requested.  So, can't reserve below 32Gb.
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
     }
+
     // Set narrow_oop_base and narrow_oop_use_implicit_null_checks
     // used in ReservedHeapSpace() constructors.
     // The final values will be set in initialize_heap() below.
-    if (base != 0 && (base + heap_size) <= OopEncodingHeapMax) {
+    if ((base != 0) && ((base + heap_size) <= OopEncodingHeapMax) &&
+        (!UseCompressedKlassPointers || (base + Universe::class_metaspace_size()) <= KlassEncodingMetaspaceMax)) {
       // Use zero based compressed oops
       Universe::set_narrow_oop_base(NULL);
       // Don't need guard page for implicit checks in indexed
@@ -740,20 +759,20 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
 jint Universe::initialize_heap() {
 
   if (UseParallelGC) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     Universe::_collectedHeap = new ParallelScavengeHeap();
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
     fatal("UseParallelGC not supported in this VM.");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   } else if (UseG1GC) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     G1CollectorPolicy* g1p = new G1CollectorPolicy();
     G1CollectedHeap* g1h = new G1CollectedHeap(g1p);
     Universe::_collectedHeap = g1h;
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
     fatal("UseG1GC not supported in java kernel vm.");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   } else {
     GenCollectorPolicy *gc_policy;
@@ -761,15 +780,15 @@ jint Universe::initialize_heap() {
     if (UseSerialGC) {
       gc_policy = new MarkSweepPolicy();
     } else if (UseConcMarkSweepGC) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
       if (UseAdaptiveSizePolicy) {
         gc_policy = new ASConcurrentMarkSweepPolicy();
       } else {
         gc_policy = new ConcurrentMarkSweepPolicy();
       }
-#else   // SERIALGC
+#else  // INCLUDE_ALL_GCS
     fatal("UseConcMarkSweepGC not supported in this VM.");
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     } else { // default old generation
       gc_policy = new MarkSweepPolicy();
     }
@@ -796,7 +815,9 @@ jint Universe::initialize_heap() {
       tty->print("heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
                  Universe::heap()->base(), Universe::heap()->reserved_region().byte_size()/M);
     }
-    if ((uint64_t)Universe::heap()->reserved_region().end() > OopEncodingHeapMax) {
+    if (((uint64_t)Universe::heap()->reserved_region().end() > OopEncodingHeapMax) ||
+        (UseCompressedKlassPointers &&
+        ((uint64_t)Universe::heap()->base() + Universe::class_metaspace_size() > KlassEncodingMetaspaceMax))) {
       // Can't reserve heap below 32Gb.
       // keep the Universe::narrow_oop_base() set in Universe::reserve_heap()
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
@@ -862,8 +883,8 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // be compressed the same as instances.
   // Need to round class space size up because it's below the heap and
   // the actual alignment depends on its size.
-  size_t metaspace_size = align_size_up(ClassMetaspaceSize, alignment);
-  size_t total_reserved = align_size_up(heap_size + metaspace_size, alignment);
+  Universe::set_class_metaspace_size(align_size_up(ClassMetaspaceSize, alignment));
+  size_t total_reserved = align_size_up(heap_size + Universe::class_metaspace_size(), alignment);
   char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
   ReservedHeapSpace total_rs(total_reserved, alignment, UseLargePages, addr);
@@ -904,8 +925,8 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // compressed oops is greater than the one used for compressed klass
   // ptrs, a metadata space on top of the heap could become
   // unreachable.
-  ReservedSpace class_rs = total_rs.first_part(metaspace_size);
-  ReservedSpace heap_rs = total_rs.last_part(metaspace_size, alignment);
+  ReservedSpace class_rs = total_rs.first_part(Universe::class_metaspace_size());
+  ReservedSpace heap_rs = total_rs.last_part(Universe::class_metaspace_size(), alignment);
   Metaspace::initialize_class_space(class_rs);
 
   if (UseCompressedOops) {
