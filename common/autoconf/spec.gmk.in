@@ -585,7 +585,7 @@ INTERIM_OVERRIDE_MODULES := java.compiler jdk.compiler \
     jdk.jdeps jdk.javadoc jdk.rmic
 ifeq ($(BOOT_JDK_MODULAR), true)
   INTERIM_OVERRIDE_MODULES_ARGS = $(foreach m, $(INTERIM_OVERRIDE_MODULES), \
-      -Xpatch:$m=$(BUILDTOOLS_OUTPUTDIR)/override_modules/$m)
+      --patch-module $m=$(BUILDTOOLS_OUTPUTDIR)/override_modules/$m)
   INTERIM_LANGTOOLS_ARGS = $(INTERIM_OVERRIDE_MODULES_ARGS)
   JAVAC_MAIN_CLASS = -m jdk.compiler/com.sun.tools.javac.Main
   JAVADOC_MAIN_CLASS = -m jdk.javadoc/jdk.javadoc.internal.tool.Main
