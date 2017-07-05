@@ -433,7 +433,10 @@ public class SignatureFileVerifier {
     {
         Attributes mattr = sf.getMainAttributes();
         boolean manifestSigned = false;
+        // If only weak algorithms are used.
         boolean weakAlgs = true;
+        // If a "*-DIGEST-MANIFEST" entry is found.
+        boolean validEntry = false;
 
         // go through all the attributes and process *-Digest-Manifest entries
         for (Map.Entry<Object,Object> se : mattr.entrySet()) {
@@ -443,6 +446,7 @@ public class SignatureFileVerifier {
             if (key.toUpperCase(Locale.ENGLISH).endsWith("-DIGEST-MANIFEST")) {
                 // 16 is length of "-Digest-Manifest"
                 String algorithm = key.substring(0, key.length()-16);
+                validEntry = true;
 
                 // Check if this algorithm is permitted, skip if false.
                 if (!permittedCheck(key, algorithm)) {
@@ -486,12 +490,11 @@ public class SignatureFileVerifier {
             }
         }
 
-        // If there were only weak algorithms used, throw an exception.
-        if (weakAlgs) {
-            String weakAlgorithms = getWeakAlgorithms("-DIGEST-MANIFEST");
+        // If there were only weak algorithms entries used, throw an exception.
+        if (validEntry && weakAlgs) {
             throw new SignatureException("Manifest hash check failed " +
                     "(DIGEST-MANIFEST). Disabled algorithm(s) used: " +
-                    weakAlgorithms);
+                    getWeakAlgorithms("-DIGEST-MANIFEST"));
         }
         return manifestSigned;
     }
@@ -501,7 +504,10 @@ public class SignatureFileVerifier {
     {
         Attributes mattr = sf.getMainAttributes();
         boolean attrsVerified = true;
+        // If only weak algorithms are used.
         boolean weakAlgs = true;
+        // If a ATTR_DIGEST entry is found.
+        boolean validEntry = false;
 
         // go through all the attributes and process
         // digest entries for the manifest main attributes
@@ -511,6 +517,7 @@ public class SignatureFileVerifier {
             if (key.toUpperCase(Locale.ENGLISH).endsWith(ATTR_DIGEST)) {
                 String algorithm =
                         key.substring(0, key.length() - ATTR_DIGEST.length());
+                validEntry = true;
 
                 // Check if this algorithm is permitted, skip if false.
                 if (!permittedCheck(key, algorithm)) {
@@ -562,13 +569,12 @@ public class SignatureFileVerifier {
             }
         }
 
-        // If there were only weak algorithms used, throw an exception.
-        if (weakAlgs) {
-            String weakAlgorithms = getWeakAlgorithms("-DIGEST-" +
-                    ManifestDigester.MF_MAIN_ATTRS);
+        // If there were only weak algorithms entries used, throw an exception.
+        if (validEntry && weakAlgs) {
             throw new SignatureException("Manifest Main Attribute check " +
-                    "failed (DIGEST-" + ManifestDigester.MF_MAIN_ATTRS +
-                    "). " + "Disabled algorithm(s) used: " + weakAlgorithms);
+                    "failed (" + ATTR_DIGEST + ").  " +
+                    "Disabled algorithm(s) used: " +
+                    getWeakAlgorithms(ATTR_DIGEST));
         }
 
         // this method returns 'true' if either:
@@ -593,7 +599,10 @@ public class SignatureFileVerifier {
     {
         boolean oneDigestVerified = false;
         ManifestDigester.Entry mde = md.get(name,block.isOldStyle());
+        // If only weak algorithms are used.
         boolean weakAlgs = true;
+        // If a "*-DIGEST" entry is found.
+        boolean validEntry = false;
 
         if (mde == null) {
             throw new SecurityException(
@@ -611,6 +620,7 @@ public class SignatureFileVerifier {
                 if (key.toUpperCase(Locale.ENGLISH).endsWith("-DIGEST")) {
                     // 7 is length of "-Digest"
                     String algorithm = key.substring(0, key.length()-7);
+                    validEntry = true;
 
                     // Check if this algorithm is permitted, skip if false.
                     if (!permittedCheck(key, algorithm)) {
@@ -679,12 +689,11 @@ public class SignatureFileVerifier {
             }
         }
 
-        // If there were only weak algorithms used, throw an exception.
-        if (weakAlgs) {
-            String weakAlgorithms = getWeakAlgorithms("DIGEST");
+        // If there were only weak algorithms entries used, throw an exception.
+        if (validEntry && weakAlgs) {
             throw new SignatureException("Manifest Main Attribute check " +
-                    "failed (DIGEST). " + "Disabled algorithm(s) used: " +
-                    weakAlgorithms);
+                    "failed (DIGEST).  Disabled algorithm(s) used: " +
+                    getWeakAlgorithms("DIGEST"));
         }
 
         return oneDigestVerified;
