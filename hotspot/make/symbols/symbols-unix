@@ -125,7 +125,6 @@ JVM_GetPrimitiveArrayElement
 JVM_GetProtectionDomain
 JVM_GetSimpleBinaryName
 JVM_GetStackAccessControlContext
-JVM_GetStackTraceElements
 JVM_GetSystemPackage
 JVM_GetSystemPackages
 JVM_GetTemporaryDirectory
@@ -135,6 +134,8 @@ JVM_HasReferencePendingList
 JVM_HoldsLock
 JVM_IHashCode
 JVM_InitProperties
+JVM_InitStackTraceElement
+JVM_InitStackTraceElementArray
 JVM_InternString
 JVM_Interrupt
 JVM_InvokeMethod
@@ -178,7 +179,6 @@ JVM_StartThread
 JVM_StopThread
 JVM_SupportsCX8
 JVM_SuspendThread
-JVM_ToStackTraceElement
 JVM_TotalMemory
 JVM_UnloadLibrary
 JVM_WaitForReferencePendingList
