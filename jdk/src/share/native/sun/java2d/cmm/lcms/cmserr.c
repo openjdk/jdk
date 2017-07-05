@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -72,16 +72,20 @@ int CMSEXPORT cmsstrcasecmp(const char* s1, const char* s2)
 // long int because C99 specifies ftell in such way (7.19.9.2)
 long int CMSEXPORT cmsfilelength(FILE* f)
 {
-    long int n;
+    long int p , n;
+
+    p = ftell(f); // register current file position
 
     if (fseek(f, 0, SEEK_END) != 0) {
         return -1;
     }
+
     n = ftell(f);
-    fseek(f, 0, SEEK_SET);
+    fseek(f, p, SEEK_SET); // file position restored
 
     return n;
 }
+
 
 // Memory handling ------------------------------------------------------------------
 //
@@ -159,6 +163,12 @@ static
 void* _cmsCallocDefaultFn(cmsContext ContextID, cmsUInt32Number num, cmsUInt32Number size)
 {
     cmsUInt32Number Total = num * size;
+
+    // Preserve calloc behaviour
+    if (Total == 0) return NULL;
+
+    // Safe check for overflow.
+    if (num >= UINT_MAX / size) return NULL;
 
     // Check for overflow
     if (Total < num || Total < size) {
@@ -269,11 +279,15 @@ void* CMSEXPORT _cmsDupMem(cmsContext ContextID, const void* Org, cmsUInt32Numbe
 // Sub allocation takes care of many pointers of small size. The memory allocated in
 // this way have be freed at once. Next function allocates a single chunk for linked list
 // I prefer this method over realloc due to the big inpact on xput realloc may have if
-// memory is being swapped to disk. This approach is safer (although thats not true on any platform)
+// memory is being swapped to disk. This approach is safer (although that may not be true on all platforms)
 static
 _cmsSubAllocator_chunk* _cmsCreateSubAllocChunk(cmsContext ContextID, cmsUInt32Number Initial)
 {
     _cmsSubAllocator_chunk* chunk;
+
+    // 20K by default
+    if (Initial == 0)
+        Initial = 20*1024;
 
     // Create the container
     chunk = (_cmsSubAllocator_chunk*) _cmsMallocZero(ContextID, sizeof(_cmsSubAllocator_chunk));
@@ -288,9 +302,7 @@ _cmsSubAllocator_chunk* _cmsCreateSubAllocChunk(cmsContext ContextID, cmsUInt32N
         return NULL;
     }
 
-    // 20K by default
-    if (Initial == 0)
-        Initial = 20*1024;
+
 
     chunk ->BlockSize = Initial;
     chunk ->Used      = 0;
@@ -344,7 +356,7 @@ void*  _cmsSubAlloc(_cmsSubAllocator* sub, cmsUInt32Number size)
     cmsUInt32Number Free = sub -> h ->BlockSize - sub -> h -> Used;
     cmsUInt8Number* ptr;
 
-    size = _cmsALIGNLONG(size);
+    size = _cmsALIGNMEM(size);
 
     // Check for memory. If there is no room, allocate a new chunk of double memory size.
     if (size > Free) {

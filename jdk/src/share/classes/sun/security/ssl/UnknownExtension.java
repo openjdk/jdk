@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,35 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "java_io_FileSystem.h"
+package sun.security.ssl;
 
+import java.io.IOException;
 
-JNIEXPORT jobject JNICALL
-Java_java_io_FileSystem_getFileSystem(JNIEnv *env, jclass ignored)
-{
-    return JNU_NewObjectByName(env, "java/io/UnixFileSystem", "()V");
+final class UnknownExtension extends HelloExtension {
+
+    private final byte[] data;
+
+    UnknownExtension(HandshakeInStream s, int len, ExtensionType type)
+            throws IOException {
+        super(type);
+        data = new byte[len];
+        // s.read() does not handle 0-length arrays.
+        if (len != 0) {
+            s.read(data);
+        }
+    }
+
+    int length() {
+        return 4 + data.length;
+    }
+
+    void send(HandshakeOutStream s) throws IOException {
+        s.putInt16(type.id);
+        s.putBytes16(data);
+    }
+
+    public String toString() {
+        return "Unsupported extension " + type + ", data: " +
+            Debug.toString(data);
+    }
 }

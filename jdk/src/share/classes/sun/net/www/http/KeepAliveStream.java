@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,33 +205,4 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         hc = null;
         closed = true;
     }
-}
-
-
-class KeepAliveCleanerEntry
-{
-    KeepAliveStream kas;
-    HttpClient hc;
-
-    public KeepAliveCleanerEntry(KeepAliveStream kas, HttpClient hc) {
-        this.kas = kas;
-        this.hc = hc;
-    }
-
-    protected KeepAliveStream getKeepAliveStream() {
-        return kas;
-    }
-
-    protected HttpClient getHttpClient() {
-        return hc;
-    }
-
-    protected void setQueuedForCleanup() {
-        kas.queuedForCleanup = true;
-    }
-
-    protected boolean getQueuedForCleanup() {
-        return kas.queuedForCleanup;
-    }
-
 }

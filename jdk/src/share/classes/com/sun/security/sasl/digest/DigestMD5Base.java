@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,8 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
         if (completed) {
             if (propName.equals(Sasl.STRENGTH)) {
                 return negotiatedStrength;
+            } else if (propName.equals(Sasl.BOUND_SERVER_NAME)) {
+                return digestUri.substring(digestUri.indexOf('/') + 1);
             } else {
                 return super.getNegotiatedProperty(propName);
             }

@@ -35,8 +35,8 @@
 
 package java.util.concurrent.atomic;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.lang.reflect.Array;
 import sun.misc.Unsafe;
 
 /**
@@ -151,7 +151,6 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         unsafe.putOrderedObject(array, checkedByteOffset(i), newValue);
     }
 
-
     /**
      * Atomically sets the element at position {@code i} to the given
      * value and returns the old value.
@@ -225,10 +224,10 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
 
     /**
      * Reconstitutes the instance from a stream (that is, deserializes it).
-     * @param s the stream
      */
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
+        throws java.io.IOException, ClassNotFoundException,
+        java.io.InvalidObjectException {
         // Note: This must be changed if any additional fields are defined
         Object a = s.readFields().get("array", null);
         if (a == null || !a.getClass().isArray())

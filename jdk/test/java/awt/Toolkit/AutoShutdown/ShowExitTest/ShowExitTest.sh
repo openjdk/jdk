@@ -1,7 +1,7 @@
 #!/bin/ksh -p
 
 #
-# Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ status=1
 
 #Call this from anywhere to fail the test with an error message
 # usage: fail "reason why the test failed"
-fail() 
+fail()
  { echo "The test failed :-("
    echo "$*" 1>&2
    echo "exit status was $status"
@@ -48,7 +48,7 @@ fail()
 
 #Call this from anywhere to pass the test with a message
 # usage: pass "reason why the test passed if applicable"
-pass() 
+pass()
  { echo "The test passed!!!"
    echo "$*" 1>&2
    exit 0
@@ -64,20 +64,42 @@ OS=`uname -s`
 case "$OS" in
    SunOS )
       VAR="One value for Sun"
-      DEFAULT_JDK=/usr/local/java/jdk1.2/solaris
+      DEFAULT_JDK=/
       FILESEP="/"
+      PATHSEP=":"
+      TMP="/tmp"
       ;;
 
    Linux )
       VAR="A different value for Linux"
-      DEFAULT_JDK=/usr/local/java/jdk1.4/linux-i386
+      DEFAULT_JDK=/
       FILESEP="/"
+      PATHSEP=":"
+      TMP="/tmp"
       ;;
 
-   Windows_95 | Windows_98 | Windows_NT | Windows_ME )
+   Darwin )
+      VAR="A different value for MacOSX"
+      DEFAULT_JDK=/usr
+      FILESEP="/"
+      PATHSEP=":"
+      TMP="/tmp"
+      ;;
+
+   Windows* )
       VAR="A different value for Win32"
-      DEFAULT_JDK=/usr/local/java/jdk1.2/win32
+      DEFAULT_JDK="C:/Program Files/Java/jdk1.8.0"
       FILESEP="\\"
+      PATHSEP=";"
+      TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
+      ;;
+
+    CYGWIN* )
+      VAR="A different value for Cygwin"
+      DEFAULT_JDK="/cygdrive/c/Program\ Files/Java/jdk1.8.0"
+      FILESEP="/"
+      PATHSEP=";"
+      TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
       ;;
 
    # catch all other OSs
@@ -88,8 +110,8 @@ case "$OS" in
 esac
 
 
-# Want this test to run standalone as well as in the harness, so do the 
-#  following to copy the test's directory into the harness's scratch directory 
+# Want this test to run standalone as well as in the harness, so do the
+#  following to copy the test's directory into the harness's scratch directory
 #  and set all appropriate variables:
 
 if [ -z "${TESTJAVA}" ] ; then
@@ -104,7 +126,7 @@ if [ -z "${TESTJAVA}" ] ; then
    if [ -n "$1" ] ;
       then TESTJAVA=$1
       else echo "no JDK specified on command line so using default!"
-	 TESTJAVA=$DEFAULT_JDK
+     TESTJAVA=$DEFAULT_JDK
    fi
    TESTSRC=.
    TESTCLASSES=.
@@ -113,25 +135,25 @@ fi
 echo "JDK under test is: $TESTJAVA"
 
 #Deal with .class files:
-if [ -n "${STANDALONE}" ] ; 
-   then 
+if [ -n "${STANDALONE}" ] ;
+   then
    #if standalone, remind user to cd to dir. containing test before running it
    echo "Just a reminder: cd to the dir containing this test when running it"
    # then compile all .java files (if there are any) into .class files
-   if [ -a *.java ] ; 
+   if [ -a *.java ] ;
       then echo "Reminder, this test should be in its own directory with all"
       echo "supporting files it needs in the directory with it."
-      ${TESTJAVA}/bin/javac ./*.java ; 
+      ${TESTJAVA}/bin/javac ./*.java ;
    fi
    # else in harness so copy all the class files from where jtreg put them
-   # over to the scratch directory this test is running in. 
+   # over to the scratch directory this test is running in.
    else cp ${TESTCLASSES}/*.class . ;
 fi
 
-#if in test harness, then copy the entire directory that the test is in over 
+#if in test harness, then copy the entire directory that the test is in over
 # to the scratch directory.  This catches any support files needed by the test.
-if [ -z "${STANDALONE}" ] ; 
-   then cp ${TESTSRC}/* . 
+if [ -z "${STANDALONE}" ] ;
+   then cp ${TESTSRC}/* .
 fi
 
 #Just before executing anything, make sure it has executable permission!

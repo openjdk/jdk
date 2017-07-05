@@ -546,6 +546,7 @@ static void initLoopbackRoutes() {
     char dest_str[40];
     struct in6_addr dest_addr;
     char device[16];
+    struct loopback_route *loRoutesTemp;
 
     if (loRoutes != 0) {
         free (loRoutes);
@@ -606,11 +607,15 @@ static void initLoopbackRoutes() {
             continue;
         } else {
             if (nRoutes == loRoutes_size) {
-                loRoutes = realloc (loRoutes, loRoutes_size *
-                                sizeof (struct loopback_route) * 2);
-                if (loRoutes == 0) {
-                    return ;
+                loRoutesTemp = realloc (loRoutes, loRoutes_size *
+                                        sizeof (struct loopback_route) * 2);
+
+                if (loRoutesTemp == 0) {
+                    free(loRoutes);
+                    fclose (f);
+                    return;
                 }
+                loRoutes=loRoutesTemp;
                 loRoutes_size *= 2;
             }
             memcpy (&loRoutes[nRoutes].addr,&dest_addr,sizeof(struct in6_addr));
