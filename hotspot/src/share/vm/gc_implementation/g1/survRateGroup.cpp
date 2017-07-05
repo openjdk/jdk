@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,33 +38,36 @@ SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
     _summary_surv_rates(NULL),
     _surv_rate(NULL),
     _accum_surv_rate_pred(NULL),
-    _surv_rate_pred(NULL)
-{
+    _surv_rate_pred(NULL),
+    _stats_arrays_length(0) {
   reset();
   if (summary_surv_rates_len > 0) {
     size_t length = summary_surv_rates_len;
-      _summary_surv_rates = NEW_C_HEAP_ARRAY(NumberSeq*, length);
-    if (_summary_surv_rates == NULL) {
-      vm_exit_out_of_memory(sizeof(NumberSeq*) * length,
-                            "Not enough space for surv rate summary");
-    }
-    for (size_t i = 0; i < length; ++i)
+    _summary_surv_rates = NEW_C_HEAP_ARRAY(NumberSeq*, length);
+    for (size_t i = 0; i < length; ++i) {
       _summary_surv_rates[i] = new NumberSeq();
+    }
   }
 
   start_adding_regions();
 }
 
-
-void SurvRateGroup::reset()
-{
+void SurvRateGroup::reset() {
   _all_regions_allocated = 0;
   _setup_seq_num         = 0;
-  _stats_arrays_length   = 0;
   _accum_surv_rate       = 0.0;
   _last_pred             = 0.0;
   // the following will set up the arrays with length 1
   _region_num            = 1;
+
+  // The call to stop_adding_regions() will use "new" to refill
+  // the _surv_rate_pred array, so we need to make sure to call
+  // "delete".
+  for (size_t i = 0; i < _stats_arrays_length; ++i) {
+    delete _surv_rate_pred[i];
+  }
+  _stats_arrays_length = 0;
+
   stop_adding_regions();
   guarantee( _stats_arrays_length == 1, "invariant" );
   guarantee( _surv_rate_pred[0] != NULL, "invariant" );
@@ -73,72 +76,47 @@ void SurvRateGroup::reset()
   _region_num = 0;
 }
 
-
 void
 SurvRateGroup::start_adding_regions() {
   _setup_seq_num   = _stats_arrays_length;
   _region_num      = 0;
   _accum_surv_rate = 0.0;
-
-#if 0
-  gclog_or_tty->print_cr("[%s] start adding regions, seq num %d, length %d",
-                         _name, _setup_seq_num, _region_num);
-#endif // 0
 }
 
 void
 SurvRateGroup::stop_adding_regions() {
-
-#if 0
-  gclog_or_tty->print_cr("[%s] stop adding regions, length %d", _name, _region_num);
-#endif // 0
-
   if (_region_num > _stats_arrays_length) {
     double* old_surv_rate = _surv_rate;
     double* old_accum_surv_rate_pred = _accum_surv_rate_pred;
     TruncatedSeq** old_surv_rate_pred = _surv_rate_pred;
 
     _surv_rate = NEW_C_HEAP_ARRAY(double, _region_num);
-    if (_surv_rate == NULL) {
-      vm_exit_out_of_memory(sizeof(double) * _region_num,
-                            "Not enough space for surv rate array.");
-    }
     _accum_surv_rate_pred = NEW_C_HEAP_ARRAY(double, _region_num);
-    if (_accum_surv_rate_pred == NULL) {
-      vm_exit_out_of_memory(sizeof(double) * _region_num,
-                         "Not enough space for accum surv rate pred array.");
-    }
     _surv_rate_pred = NEW_C_HEAP_ARRAY(TruncatedSeq*, _region_num);
-    if (_surv_rate == NULL) {
-      vm_exit_out_of_memory(sizeof(TruncatedSeq*) * _region_num,
-                            "Not enough space for surv rate pred array.");
-    }
 
-    for (size_t i = 0; i < _stats_arrays_length; ++i)
+    for (size_t i = 0; i < _stats_arrays_length; ++i) {
       _surv_rate_pred[i] = old_surv_rate_pred[i];
-
-#if 0
-    gclog_or_tty->print_cr("[%s] stop adding regions, new seqs %d to %d",
-                  _name, _array_length, _region_num - 1);
-#endif // 0
-
+    }
     for (size_t i = _stats_arrays_length; i < _region_num; ++i) {
       _surv_rate_pred[i] = new TruncatedSeq(10);
-      // _surv_rate_pred[i]->add(last_pred);
     }
 
     _stats_arrays_length = _region_num;
 
-    if (old_surv_rate != NULL)
+    if (old_surv_rate != NULL) {
       FREE_C_HEAP_ARRAY(double, old_surv_rate);
-    if (old_accum_surv_rate_pred != NULL)
+    }
+    if (old_accum_surv_rate_pred != NULL) {
       FREE_C_HEAP_ARRAY(double, old_accum_surv_rate_pred);
-    if (old_surv_rate_pred != NULL)
-      FREE_C_HEAP_ARRAY(NumberSeq*, old_surv_rate_pred);
+    }
+    if (old_surv_rate_pred != NULL) {
+      FREE_C_HEAP_ARRAY(TruncatedSeq*, old_surv_rate_pred);
+    }
   }
 
-  for (size_t i = 0; i < _stats_arrays_length; ++i)
+  for (size_t i = 0; i < _stats_arrays_length; ++i) {
     _surv_rate[i] = 0.0;
+  }
 }
 
 double
@@ -187,12 +165,6 @@ void
 SurvRateGroup::all_surviving_words_recorded(bool propagate) {
   if (propagate && _region_num > 0) { // conservative
     double surv_rate = _surv_rate_pred[_region_num-1]->last();
-
-#if 0
-    gclog_or_tty->print_cr("propagating %1.2lf from %d to %d",
-                  surv_rate, _curr_length, _array_length - 1);
-#endif // 0
-
     for (size_t i = _region_num; i < _stats_arrays_length; ++i) {
       guarantee( _surv_rate[i] <= 0.00001,
                  "the slot should not have been updated" );

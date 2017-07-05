@@ -247,6 +247,10 @@ Thread::Thread() {
   omInUseList = NULL ;
   omInUseCount = 0 ;
 
+#ifdef ASSERT
+  _visited_for_critical_count = false;
+#endif
+
   _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true);
   _suspend_flags = 0;
 
