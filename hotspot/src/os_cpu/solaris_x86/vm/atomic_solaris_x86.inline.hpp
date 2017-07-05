@@ -99,6 +99,8 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
   return (void*)_Atomic_cmpxchg_long((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, (int) os::is_MP());
 }
 
+inline jlong Atomic::load(volatile jlong* src) { return *src; }
+
 #else // !AMD64
 
 inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
@@ -131,6 +133,15 @@ inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* 
 inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     dest, void*    compare_value) {
   return (void*)cmpxchg((jint)exchange_value, (volatile jint*)dest, (jint)compare_value);
 }
+
+extern "C" void _Atomic_load_long(volatile jlong* src, volatile jlong* dst);
+
+inline jlong Atomic::load(volatile jlong* src) {
+  volatile jlong dest;
+  _Atomic_load_long(src, &dest);
+  return dest;
+}
+
 #endif // AMD64
 
 #ifdef _GNU_SOURCE

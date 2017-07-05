@@ -94,7 +94,14 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _summary(new Summary()),
   _abandoned_summary(new AbandonedSummary()),
 
+#ifndef PRODUCT
   _cur_clear_ct_time_ms(0.0),
+  _min_clear_cc_time_ms(-1.0),
+  _max_clear_cc_time_ms(-1.0),
+  _cur_clear_cc_time_ms(0.0),
+  _cum_clear_cc_time_ms(0.0),
+  _num_cc_clears(0L),
+#endif
 
   _region_num_young(0),
   _region_num_tenured(0),
@@ -1648,6 +1655,15 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
         print_stats(1, "Object Copying", obj_copy_time);
       }
     }
+#ifndef PRODUCT
+    print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
+    print_stats(1, "Cum Clear CC", _cum_clear_cc_time_ms);
+    print_stats(1, "Min Clear CC", _min_clear_cc_time_ms);
+    print_stats(1, "Max Clear CC", _max_clear_cc_time_ms);
+    if (_num_cc_clears > 0) {
+      print_stats(1, "Avg Clear CC", _cum_clear_cc_time_ms / ((double)_num_cc_clears));
+    }
+#endif
     print_stats(1, "Other", other_time_ms);
     for (int i = 0; i < _aux_num; ++i) {
       if (_cur_aux_times_set[i]) {

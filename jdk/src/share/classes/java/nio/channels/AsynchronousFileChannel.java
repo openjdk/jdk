@@ -48,7 +48,12 @@ import java.util.Collections;
  *
  * <p> An asynchronous file channel does not have a <i>current position</i>
  * within the file. Instead, the file position is specified to each read and
- * write operation.
+ * write methd that initiate asynchronous operations. A {@link CompletionHandler}
+ * is specified as a parameter and is invoked to consume the result of the I/O
+ * operation. This class also defines read and write methods that initiate
+ * asynchronous operations, returning a {@link Future} to represent the pending
+ * result of the operation. The {@code Future} may be used to check if the
+ * operation has completed, to wait for its completion.
  *
  * <p> In addition to read and write operations, this class defines the
  * following operations: </p>
@@ -59,17 +64,10 @@ import java.util.Collections;
  *   out</i>} to the underlying storage device, ensuring that data are not
  *   lost in the event of a system crash.  </p></li>
  *
- *   <li><p> A region of a file may be {@link FileLock <i>locked</i>}
- *   against access by other programs.  </p></li>
+ *   <li><p> A region of a file may be {@link #lock <i>locked</i>} against
+ *   access by other programs.  </p></li>
  *
  * </ul>
- *
- * <p> The {@link #read read}, {@link #write write}, and {@link #lock lock}
- * methods defined by this class are asynchronous  and return a {@link Future}
- * to represent the pending result of the operation. This may be used to check
- * if the operation has completed, to wait for its completion, and to retrieve
- * the result. These method may optionally specify a {@link CompletionHandler}
- * that is invoked to consume the result of the I/O operation when it completes.
  *
  * <p> An {@code AsynchronousFileChannel} is associated with a thread pool to
  * which tasks are submitted to handle I/O events and dispatch to completion
@@ -121,22 +119,6 @@ public abstract class AsynchronousFileChannel
      */
     protected AsynchronousFileChannel() {
     }
-
-    /**
-     * Closes this channel.
-     *
-     * <p> If this channel is associated with its own thread pool then closing
-     * the channel causes the thread pool to shutdown after all actively
-     * executing completion handlers have completed. No attempt is made to stop
-     * or interrupt actively completion handlers.
-     *
-     * <p> This method otherwise behaves exactly as specified by the {@link
-     * AsynchronousChannel} interface.
-     *
-     * @throws  IOException     {@inheritDoc}
-     */
-    @Override
-    public abstract void close() throws IOException;
 
     /**
      * Opens or creates a file for reading and/or writing, returning an
@@ -215,9 +197,8 @@ public abstract class AsynchronousFileChannel
      * should be taken when configuring the {@code Executor}. Minimally it
      * should support an unbounded work queue and should not run tasks on the
      * caller thread of the {@link ExecutorService#execute execute} method.
-     * {@link #close Closing} the channel results in the orderly {@link
-     * ExecutorService#shutdown shutdown} of the executor service. Shutting down
-     * the executor service by other means results in unspecified behavior.
+     * Shutting down the executor service while the channel is open results in
+     * unspecified behavior.
      *
      * <p> The {@code attrs} parameter is an optional array of file {@link
      * FileAttribute file-attributes} to set atomically when creating the file.
@@ -276,7 +257,8 @@ public abstract class AsynchronousFileChannel
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
      * <pre>
-     *     ch.{@link #open(Path,Set,ExecutorService,FileAttribute[]) open}(file, opts, null, new FileAttribute&lt;?&gt;[0]);
+     *     ch.{@link #open(Path,Set,ExecutorService,FileAttribute[])
+     *       open}(file, opts, null, new FileAttribute&lt;?&gt;[0]);
      * </pre>
      * where {@code opts} is a {@code Set} containing the options specified to
      * this method.
@@ -405,10 +387,11 @@ public abstract class AsynchronousFileChannel
     /**
      * Acquires a lock on the given region of this channel's file.
      *
-     * <p> This method initiates an operation to acquire a lock on the given region
-     * of this channel's file. The method returns a {@code Future} representing
-     * the pending result of the operation. Its {@link Future#get() get}
-     * method returns the {@link FileLock} on successful completion.
+     * <p> This method initiates an operation to acquire a lock on the given
+     * region of this channel's file. The {@code handler} parameter is a
+     * completion handler that is invoked when the lock is acquired (or the
+     * operation fails). The result passed to the completion handler is the
+     * resulting {@code FileLock}.
      *
      * <p> The region specified by the {@code position} and {@code size}
      * parameters need not be contained within, or even overlap, the actual
@@ -455,9 +438,7 @@ public abstract class AsynchronousFileChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  a {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  OverlappingFileLockException
      *          If a lock that overlaps the requested region is already held by
@@ -466,26 +447,24 @@ public abstract class AsynchronousFileChannel
      * @throws  IllegalArgumentException
      *          If the preconditions on the parameters do not hold
      * @throws  NonReadableChannelException
-     *          If {@code shared} is true this channel but was not opened for reading
+     *          If {@code shared} is true but this channel was not opened for reading
      * @throws  NonWritableChannelException
      *          If {@code shared} is false but this channel was not opened for writing
-     * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, the channel is closed, and the channel
-     *          was originally created with its own thread pool
      */
-    public abstract <A> Future<FileLock> lock(long position,
-                                              long size,
-                                              boolean shared,
-                                              A attachment,
-                                              CompletionHandler<FileLock,? super A> handler);
+    public abstract <A> void lock(long position,
+                                  long size,
+                                  boolean shared,
+                                  A attachment,
+                                  CompletionHandler<FileLock,? super A> handler);
 
     /**
      * Acquires an exclusive lock on this channel's file.
      *
-     * <p> This method initiates an operation to acquire an exclusive lock on this
-     * channel's file. The method returns a {@code Future} representing
-     * the pending result of the operation. Its {@link Future#get() get}
-     * method returns the {@link FileLock} on successful completion.
+     * <p> This method initiates an operation to acquire a lock on the given
+     * region of this channel's file. The {@code handler} parameter is a
+     * completion handler that is invoked when the lock is acquired (or the
+     * operation fails). The result passed to the completion handler is the
+     * resulting {@code FileLock}.
      *
      * <p> An invocation of this method of the form {@code ch.lock(att,handler)}
      * behaves in exactly the same way as the invocation
@@ -496,7 +475,70 @@ public abstract class AsynchronousFileChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
+     *          The handler for consuming the result
+     *
+     * @throws  OverlappingFileLockException
+     *          If a lock is already held by this Java virtual machine, or there
+     *          is already a pending attempt to lock a region
+     * @throws  NonWritableChannelException
+     *          If this channel was not opened for writing
+     */
+    public final <A> void lock(A attachment,
+                               CompletionHandler<FileLock,? super A> handler)
+    {
+        lock(0L, Long.MAX_VALUE, false, attachment, handler);
+    }
+
+    /**
+     * Acquires a lock on the given region of this channel's file.
+     *
+     * <p> This method initiates an operation to acquire a lock on the given
+     * region of this channel's file.  The method behaves in exactly the same
+     * manner as the {@link #lock(long, long, boolean, Object, CompletionHandler)}
+     * method except that instead of specifying a completion handler, this
+     * method returns a {@code Future} representing the pending result. The
+     * {@code Future}'s {@link Future#get() get} method returns the {@link
+     * FileLock} on successful completion.
+     *
+     * @param   position
+     *          The position at which the locked region is to start; must be
+     *          non-negative
+     * @param   size
+     *          The size of the locked region; must be non-negative, and the sum
+     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     * @param   shared
+     *          {@code true} to request a shared lock, in which case this
+     *          channel must be open for reading (and possibly writing);
+     *          {@code false} to request an exclusive lock, in which case this
+     *          channel must be open for writing (and possibly reading)
+     *
+     * @return  a {@code Future} object representing the pending result
+     *
+     * @throws  OverlappingFileLockException
+     *          If a lock is already held by this Java virtual machine, or there
+     *          is already a pending attempt to lock a region
+     * @throws  IllegalArgumentException
+     *          If the preconditions on the parameters do not hold
+     * @throws  NonReadableChannelException
+     *          If {@code shared} is true but this channel was not opened for reading
+     * @throws  NonWritableChannelException
+     *          If {@code shared} is false but this channel was not opened for writing
+     */
+    public abstract Future<FileLock> lock(long position, long size, boolean shared);
+
+    /**
+     * Acquires an exclusive lock on this channel's file.
+     *
+     * <p> This method initiates an operation to acquire an exclusive lock on this
+     * channel's file. The method returns a {@code Future} representing the
+     * pending result of the operation. The {@code Future}'s {@link Future#get()
+     * get} method returns the {@link FileLock} on successful completion.
+     *
+     * <p> An invocation of this method behaves in exactly the same way as the
+     * invocation
+     * <pre>
+     *     ch.{@link #lock(long,long,boolean) lock}(0L, Long.MAX_VALUE, false)
+     * </pre>
      *
      * @return  a {@code Future} object representing the pending result
      *
@@ -505,40 +547,9 @@ public abstract class AsynchronousFileChannel
      *          is already a pending attempt to lock a region
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
-     * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, the channel is closed, and the channel
-     *          was originally created with its own thread pool
-     */
-    public final <A> Future<FileLock> lock(A attachment,
-                                           CompletionHandler<FileLock,? super A> handler)
-    {
-        return lock(0L, Long.MAX_VALUE, false, attachment, handler);
-    }
-
-    /**
-     * Acquires an exclusive lock on this channel's file.
-     *
-     * <p> This method initiates an operation to acquire an exclusive lock on this
-     * channel's file. The method returns a {@code Future} representing the
-     * pending result of the operation. Its {@link Future#get() get} method
-     * returns the {@link FileLock} on successful completion.
-     *
-     * <p> An invocation of this method behaves in exactly the same way as the
-     * invocation
-     * <pre>
-     *     ch.{@link #lock(long,long,boolean,Object,CompletionHandler) lock}(0L, Long.MAX_VALUE, false, null, null)
-     * </pre>
-     *
-     * @return  A {@code Future} object representing the pending result
-     *
-     * @throws  OverlappingFileLockException
-     *          If a lock is already held by this Java virtual machine, or there
-     *          is already a pending attempt to lock a region
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
      */
     public final Future<FileLock> lock() {
-        return lock(0L, Long.MAX_VALUE, false, null, null);
+        return lock(0L, Long.MAX_VALUE, false);
     }
 
     /**
@@ -576,7 +587,7 @@ public abstract class AsynchronousFileChannel
      *          blocked in this method and is attempting to lock an overlapping
      *          region of the same file
      * @throws  NonReadableChannelException
-     *          If {@code shared} is true this channel but was not opened for reading
+     *          If {@code shared} is true but this channel was not opened for reading
      * @throws  NonWritableChannelException
      *          If {@code shared} is false but this channel was not opened for writing
      *
@@ -629,11 +640,10 @@ public abstract class AsynchronousFileChannel
      * starting at the given file position.
      *
      * <p> This method initiates the reading of a sequence of bytes from this
-     * channel into the given buffer, starting at the given file position. This
-     * method returns a {@code Future} representing the pending result of the
-     * operation. The Future's {@link Future#get() get} method returns the
-     * number of bytes read or {@code -1} if the given position is greater than
-     * or equal to the file's size at the time that the read is attempted.
+     * channel into the given buffer, starting at the given file position. The
+     * result of the read is the number of bytes read or {@code -1} if the given
+     * position is greater than or equal to the file's size at the time that the
+     * read is attempted.
      *
      * <p> This method works in the same manner as the {@link
      * AsynchronousByteChannel#read(ByteBuffer,Object,CompletionHandler)}
@@ -649,22 +659,17 @@ public abstract class AsynchronousFileChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  A {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
      *          If the position is negative or the buffer is read-only
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading
-     * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, the channel is closed, and the channel
-     *          was originally created with its own thread pool
      */
-    public abstract <A> Future<Integer> read(ByteBuffer dst,
-                                             long position,
-                                             A attachment,
-                                             CompletionHandler<Integer,? super A> handler);
+    public abstract <A> void read(ByteBuffer dst,
+                                  long position,
+                                  A attachment,
+                                  CompletionHandler<Integer,? super A> handler);
 
     /**
      * Reads a sequence of bytes from this channel into the given buffer,
@@ -673,13 +678,15 @@ public abstract class AsynchronousFileChannel
      * <p> This method initiates the reading of a sequence of bytes from this
      * channel into the given buffer, starting at the given file position. This
      * method returns a {@code Future} representing the pending result of the
-     * operation. The Future's {@link Future#get() get} method returns the
-     * number of bytes read or {@code -1} if the given position is greater
+     * operation. The {@code Future}'s {@link Future#get() get} method returns
+     * the number of bytes read or {@code -1} if the given position is greater
      * than or equal to the file's size at the time that the read is attempted.
      *
-     * <p> This method is equivalent to invoking {@link
-     * #read(ByteBuffer,long,Object,CompletionHandler)} with the {@code attachment}
-     * and handler parameters set to {@code null}.
+     * <p> This method works in the same manner as the {@link
+     * AsynchronousByteChannel#read(ByteBuffer)} method, except that bytes are
+     * read starting at the given file position. If the given file position is
+     * greater than the file's size at the time that the read is attempted then
+     * no bytes are read.
      *
      * @param   dst
      *          The buffer into which bytes are to be transferred
@@ -694,19 +701,11 @@ public abstract class AsynchronousFileChannel
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading
      */
-    public final Future<Integer> read(ByteBuffer dst, long position) {
-        return read(dst, position, null, null);
-    }
+    public abstract Future<Integer> read(ByteBuffer dst, long position);
 
     /**
      * Writes a sequence of bytes to this channel from the given buffer, starting
      * at the given file position.
-     *
-     * <p> This method initiates the writing of a sequence of bytes to this channel
-     * from the given buffer, starting at the given file position. The method
-     * returns a {@code Future} representing the pending result of the write
-     * operation. The Future's {@link Future#get() get} method returns the
-     * number of bytes written.
      *
      * <p> This method works in the same manner as the {@link
      * AsynchronousByteChannel#write(ByteBuffer,Object,CompletionHandler)}
@@ -724,36 +723,35 @@ public abstract class AsynchronousFileChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  A {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
      *          If the position is negative
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
-     * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, the channel is closed, and the channel
-     *          was originally created with its own thread pool
      */
-    public abstract <A> Future<Integer> write(ByteBuffer src,
-                                              long position,
-                                              A attachment,
-                                              CompletionHandler<Integer,? super A> handler);
+    public abstract <A> void write(ByteBuffer src,
+                                   long position,
+                                   A attachment,
+                                   CompletionHandler<Integer,? super A> handler);
 
     /**
      * Writes a sequence of bytes to this channel from the given buffer, starting
      * at the given file position.
      *
-     * <p> This method initiates the writing of a sequence of bytes to this channel
-     * from the given buffer, starting at the given file position. The method
-     * returns a {@code Future} representing the pending result of the write
-     * operation. The Future's {@link Future#get() get} method returns the
-     * number of bytes written.
+     * <p> This method initiates the writing of a sequence of bytes to this
+     * channel from the given buffer, starting at the given file position. The
+     * method returns a {@code Future} representing the pending result of the
+     * write operation. The {@code Future}'s {@link Future#get() get} method
+     * returns the number of bytes written.
      *
-     * <p> This method is equivalent to invoking {@link
-     * #write(ByteBuffer,long,Object,CompletionHandler)} with the {@code attachment}
-     * and handler parameters set to {@code null}.
+     * <p> This method works in the same manner as the {@link
+     * AsynchronousByteChannel#write(ByteBuffer)} method, except that bytes are
+     * written starting at the given file position. If the given position is
+     * greater than the file's size, at the time that the write is attempted,
+     * then the file will be grown to accommodate the new bytes; the values of
+     * any bytes between the previous end-of-file and the newly-written bytes
+     * are unspecified.
      *
      * @param   src
      *          The buffer from which bytes are to be transferred
@@ -768,7 +766,5 @@ public abstract class AsynchronousFileChannel
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
      */
-    public final Future<Integer> write(ByteBuffer src, long position) {
-        return write(src, position, null, null);
-    }
+    public abstract Future<Integer> write(ByteBuffer src, long position);
 }

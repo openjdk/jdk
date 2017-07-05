@@ -8335,15 +8335,13 @@ void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
-  if (Universe::narrow_oop_base() == NULL) {
-    if (Universe::narrow_oop_shift() != 0) {
-      assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
-      shlq(r, LogMinObjAlignmentInBytes);
-    }
-  } else {
-      assert (Address::times_8 == LogMinObjAlignmentInBytes &&
-              Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+  if (Universe::narrow_oop_shift() != 0) {
+    assert (Address::times_8 == LogMinObjAlignmentInBytes &&
+            Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+    // Don't use Shift since it modifies flags.
     leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+  } else {
+    assert (Universe::narrow_oop_base() == NULL, "sanity");
   }
 }
 
@@ -8358,6 +8356,7 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
             Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
     leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
   } else if (dst != src) {
+    assert (Universe::narrow_oop_base() == NULL, "sanity");
     movq(dst, src);
   }
 }

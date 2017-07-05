@@ -41,7 +41,8 @@ class vframeArrayElement : public _ValueObj {
   private:
 
     frame _frame;                                                // the interpreter frame we will unpack into
-    int _bci;                                                    // raw bci for this vframe
+    int  _bci;                                                   // raw bci for this vframe
+    bool _reexecute;                                             // whether sould we reexecute this bytecode
     methodOop  _method;                                          // the method for this vframe
     MonitorChunk* _monitors;                                     // active monitors for this vframe
     StackValueCollection* _locals;
@@ -54,6 +55,7 @@ class vframeArrayElement : public _ValueObj {
   int bci(void) const;
 
   int raw_bci(void) const            { return _bci; }
+  bool should_reexecute(void) const  { return _reexecute; }
 
   methodOop method(void) const       { return _method; }
 

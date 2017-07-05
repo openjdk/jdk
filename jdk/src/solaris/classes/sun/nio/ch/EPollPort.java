@@ -248,12 +248,13 @@ final class EPollPort
         public void run() {
             Invoker.GroupAndInvokeCount myGroupAndInvokeCount =
                 Invoker.getGroupAndInvokeCount();
+            final boolean isPooledThread = (myGroupAndInvokeCount != null);
             boolean replaceMe = false;
             Event ev;
             try {
                 for (;;) {
                     // reset invoke count
-                    if (myGroupAndInvokeCount != null)
+                    if (isPooledThread)
                         myGroupAndInvokeCount.resetInvokeCount();
 
                     try {
@@ -289,7 +290,7 @@ final class EPollPort
 
                     // process event
                     try {
-                        ev.channel().onEvent(ev.events());
+                        ev.channel().onEvent(ev.events(), isPooledThread);
                     } catch (Error x) {
                         replaceMe = true; throw x;
                     } catch (RuntimeException x) {

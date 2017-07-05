@@ -46,6 +46,7 @@ ScopeDesc::ScopeDesc(const ScopeDesc* parent) {
   _decode_offset = parent->_sender_decode_offset;
   _objects       = parent->_objects;
   decode_body();
+  assert(_reexecute == false, "reexecute not allowed");
 }
 
 
@@ -56,6 +57,7 @@ void ScopeDesc::decode_body() {
     _sender_decode_offset = DebugInformationRecorder::serialized_null;
     _method = methodHandle(_code->method());
     _bci = InvocationEntryBci;
+    _reexecute = false;
     _locals_decode_offset = DebugInformationRecorder::serialized_null;
     _expressions_decode_offset = DebugInformationRecorder::serialized_null;
     _monitors_decode_offset = DebugInformationRecorder::serialized_null;
@@ -65,7 +67,8 @@ void ScopeDesc::decode_body() {
 
     _sender_decode_offset = stream->read_int();
     _method = methodHandle((methodOop) stream->read_oop());
-    _bci    = stream->read_bci();
+    _bci    = stream->read_bci_and_reexecute(_reexecute);
+
     // decode offsets for body and sender
     _locals_decode_offset      = stream->read_int();
     _expressions_decode_offset = stream->read_int();
@@ -170,6 +173,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     st->print("ScopeDesc[%d]@" PTR_FORMAT " ", _decode_offset, _code->instructions_begin());
     st->print_cr(" offset:     %d",    _decode_offset);
     st->print_cr(" bci:        %d",    bci());
+    st->print_cr(" reexecute:  %s",    should_reexecute() ? "true" : "false");
     st->print_cr(" locals:     %d",    _locals_decode_offset);
     st->print_cr(" stack:      %d",    _expressions_decode_offset);
     st->print_cr(" monitor:    %d",    _monitors_decode_offset);

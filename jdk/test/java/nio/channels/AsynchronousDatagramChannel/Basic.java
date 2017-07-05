@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4527345
+ * @bug 4527345 6842687
  * @summary Unit test for AsynchronousDatagramChannel
  */
 
@@ -72,8 +72,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
             }
-            public void cancelled(Void att) {
-            }
         });
         Thread.sleep(2000);
         sender.send(ByteBuffer.wrap(msg), sa);
@@ -87,8 +85,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         Throwable result;
@@ -106,8 +102,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         ch.close();
@@ -162,8 +156,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
             }
-            public void cancelled(Void att) {
-            }
         });
         Thread.sleep(2000);
         sender.send(ByteBuffer.wrap(msg), sa);
@@ -177,8 +169,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         Throwable result;
@@ -196,8 +186,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         ch.close();
@@ -246,8 +234,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
             }
-            public void cancelled(Void att) {
-            }
         });
         l2.await(5, TimeUnit.SECONDS);
 
@@ -271,8 +257,6 @@ public class Basic {
                 } else {
                     throw new RuntimeException(exc);
                 }
-            }
-            public void cancelled(Void att) {
             }
         });
         l3.await(5, TimeUnit.SECONDS);
@@ -323,8 +307,6 @@ public class Basic {
             }
             public void failed (Throwable exc, Void att) {
             }
-            public void cancelled(Void att) {
-            }
         });
         l2.await(5, TimeUnit.SECONDS);
 
@@ -340,7 +322,7 @@ public class Basic {
         reader.close();
     }
 
-    static void cancelAndCheck(Future<?> result, CountDownLatch latch)
+    static void cancelAndCheck(Future<?> result)
         throws InterruptedException
     {
         boolean cancelled = result.cancel(false);
@@ -356,37 +338,22 @@ public class Basic {
         } catch (ExecutionException e) {
             throw new RuntimeException("Should not fail");
         }
-
-        // make sure that completion handler is invoked
-        latch.await();
     }
 
     // basic cancel tests
     static void doCancelTests() throws Exception {
         InetAddress lh = InetAddress.getLocalHost();
 
-        // timed and non-timed receive
+        // receive
         for (int i=0; i<2; i++) {
             AsynchronousDatagramChannel ch =
                 AsynchronousDatagramChannel.open().bind(new InetSocketAddress(0));
-            final CountDownLatch latch = new CountDownLatch(1);
-            long timeout = (i == 0) ? 0L : 60L;
-            Future<SocketAddress> remote = ch
-                .receive(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, (Void)null,
-                    new CompletionHandler<SocketAddress,Void>() {
-                        public void completed(SocketAddress source, Void att) {
-                        }
-                        public void failed (Throwable exc, Void att) {
-                        }
-                        public void cancelled(Void att) {
-                            latch.countDown();
-                        }
-                    });
-            cancelAndCheck(remote, latch);
+            Future<SocketAddress> remote = ch.receive(ByteBuffer.allocate(100));
+            cancelAndCheck(remote);
             ch.close();
         }
 
-        // timed and non-timed read
+        // read
         for (int i=0; i<2; i++) {
             AsynchronousDatagramChannel ch =
                 AsynchronousDatagramChannel.open().bind(new InetSocketAddress(0));
@@ -394,18 +361,8 @@ public class Basic {
                 ((InetSocketAddress)(ch.getLocalAddress())).getPort()));
             final CountDownLatch latch = new CountDownLatch(1);
             long timeout = (i == 0) ? 0L : 60L;
-            Future<Integer> result = ch
-                .read(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, (Void)null,
-                    new CompletionHandler<Integer,Void>() {
-                        public void completed(Integer bytesRead, Void att) {
-                        }
-                        public void failed (Throwable exc, Void att) {
-                        }
-                        public void cancelled(Void att) {
-                            latch.countDown();
-                        }
-                    });
-            cancelAndCheck(result, latch);
+            Future<Integer> result = ch.read(ByteBuffer.allocate(100));
+            cancelAndCheck(result);
             ch.close();
         }
     }

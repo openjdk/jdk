@@ -45,11 +45,14 @@ concurrentG1Refine.cpp			concurrentG1Refine.hpp
 concurrentG1Refine.cpp			concurrentG1RefineThread.hpp
 concurrentG1Refine.cpp			copy.hpp
 concurrentG1Refine.cpp			g1CollectedHeap.inline.hpp
+concurrentG1Refine.cpp                  g1CollectorPolicy.hpp
 concurrentG1Refine.cpp			g1RemSet.hpp
 concurrentG1Refine.cpp			space.inline.hpp
+concurrentG1Refine.cpp                  heapRegionSeq.inline.hpp
 
 concurrentG1Refine.hpp			globalDefinitions.hpp
 concurrentG1Refine.hpp			allocation.hpp
+concurrentG1Refine.hpp                  cardTableModRefBS.hpp
 concurrentG1Refine.hpp			thread.hpp
 
 concurrentG1RefineThread.cpp		concurrentG1Refine.hpp
