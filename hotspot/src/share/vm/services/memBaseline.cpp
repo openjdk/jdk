@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
  */
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/thread.inline.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memTracker.hpp"
+
 
 MemType2Name MemBaseline::MemType2NameMap[NUMBER_OF_MEMORY_TYPE] = {
   {mtJavaHeap,   "Java Heap"},
@@ -147,6 +150,15 @@ bool MemBaseline::baseline_malloc_summary(const MemPointerArray* malloc_records)
   _malloc_data[index].overwrite_counter(0);
 
   return true;
+}
+
+// check if there is a safepoint in progress, if so, block the thread
+// for the safepoint
+void MemBaseline::check_safepoint(JavaThread* thr) {
+  if (SafepointSynchronize::is_synchronizing()) {
+    // grab and drop the SR_lock to honor the safepoint protocol
+    MutexLocker ml(thr->SR_lock());
+  }
 }
 
 // baseline mmap'd memory records, generate overall summary and summaries by
@@ -306,7 +318,7 @@ bool MemBaseline::baseline_vm_details(const MemPointerArray* vm_records) {
         committed_rec->pc() != vm_ptr->pc()) {
         if (!_vm_map->append(vm_ptr)) {
           return false;
-  }
+        }
         committed_rec = (VMMemRegionEx*)_vm_map->at(_vm_map->length() - 1);
     } else {
         committed_rec->expand_region(vm_ptr->addr(), vm_ptr->size());
@@ -344,16 +356,27 @@ bool MemBaseline::baseline_vm_details(const MemPointerArray* vm_records) {
 
 // baseline a snapshot. If summary_only = false, memory usages aggregated by
 // callsites are also baselined.
+// The method call can be lengthy, especially when detail tracking info is
+// requested. So the method checks for safepoint explicitly.
 bool MemBaseline::baseline(MemSnapshot& snapshot, bool summary_only) {
-  MutexLockerEx snapshot_locker(snapshot._lock, true);
+  Thread* THREAD = Thread::current();
+  assert(THREAD->is_Java_thread(), "must be a JavaThread");
+  MutexLocker snapshot_locker(snapshot._lock);
   reset();
-  _baselined = baseline_malloc_summary(snapshot._alloc_ptrs) &&
-               baseline_vm_summary(snapshot._vm_ptrs);
+  _baselined = baseline_malloc_summary(snapshot._alloc_ptrs);
+  if (_baselined) {
+    check_safepoint((JavaThread*)THREAD);
+    _baselined = baseline_vm_summary(snapshot._vm_ptrs);
+  }
   _number_of_classes = snapshot.number_of_classes();
 
   if (!summary_only && MemTracker::track_callsite() && _baselined) {
-    _baselined =  baseline_malloc_details(snapshot._alloc_ptrs) &&
-      baseline_vm_details(snapshot._vm_ptrs);
+    check_safepoint((JavaThread*)THREAD);
+    _baselined =  baseline_malloc_details(snapshot._alloc_ptrs);
+    if (_baselined) {
+      check_safepoint((JavaThread*)THREAD);
+      _baselined =  baseline_vm_details(snapshot._vm_ptrs);
+    }
   }
   return _baselined;
 }

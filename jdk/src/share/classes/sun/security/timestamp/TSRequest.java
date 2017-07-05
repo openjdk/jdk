@@ -88,9 +88,10 @@ public class TSRequest {
      * @param messageDigest The MessageDigest of the hash algorithm to use.
      * @throws NoSuchAlgorithmException if the hash algorithm is not supported
      */
-    public TSRequest(byte[] toBeTimeStamped, MessageDigest messageDigest)
+    public TSRequest(String tSAPolicyID, byte[] toBeTimeStamped, MessageDigest messageDigest)
         throws NoSuchAlgorithmException {
 
+        this.policyId = tSAPolicyID;
         this.hashAlgorithmId = AlgorithmId.get(messageDigest.getAlgorithm());
         this.hashValue = messageDigest.digest(toBeTimeStamped);
     }

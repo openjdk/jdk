@@ -21,14 +21,18 @@
  * questions.
  */
 
+/*
+ * @test
+ * @summary Unit test for Files.walkFileTree to test SKIP_SIBLINGS return value
+ * @library ../..
+ * @compile SkipSiblings.java CreateFileTree.java
+ * @run main SkipSiblings
+ */
+
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
-
-/**
- * Unit test for Files.walkFileTree to test SKIP_SIBLINGS return value.
- */
 
 public class SkipSiblings {
 
@@ -52,9 +56,16 @@ public class SkipSiblings {
     }
 
     public static void main(String[] args) throws Exception {
-        Path dir = Paths.get(args[0]);
+        Path top = CreateFileTree.create();
+        try {
+            test(top);
+        } finally {
+            TestUtil.removeAll(top);
+        }
+    }
 
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+    static void test(final Path start) throws IOException {
+        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 check(dir);
@@ -74,7 +85,11 @@ public class SkipSiblings {
                 if (x != null)
                     throw new RuntimeException(x);
                 check(dir);
-                return FileVisitResult.CONTINUE;
+                if (rand.nextBoolean()) {
+                    return FileVisitResult.CONTINUE;
+                } else {
+                    return FileVisitResult.SKIP_SIBLINGS;
+                }
             }
         });
     }

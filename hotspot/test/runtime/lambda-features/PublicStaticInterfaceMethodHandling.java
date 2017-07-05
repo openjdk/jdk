@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
-@test
-@bug 4067964
-@clean AccessConstants
-@build AccessConstants
-@summary Verify that ObjectStreamConstants is public accessible.
-         This test will not compile pre-JDK 1.2.
-*/
+ * @test
+ * @bug 8013418
+ * @summary [JDK 8] Test correct handling of static public interface methods
+ * @run main/othervm -Xverify:all PublicStaticInterfaceMethodHandling
+ */
 
-import java.io.ObjectStreamConstants;
+class TestClass implements InterfaceWithStaticAndDefaultMethods {
+}
 
-public class AccessConstants {
+interface InterfaceWithStaticAndDefaultMethods {
+    public static String get() {
+        return "Hello from StaticMethodInInterface.get()";
+    }
+    default void default_method() {
+        System.out.println("Default method FunctionalInterface:default_method()");
+    }
+}
+
+public class PublicStaticInterfaceMethodHandling  {
     public static void main(String[] args) {
-        byte[] ref = new byte[4];
-        ref[0] = ObjectStreamConstants.TC_BASE;
-        ref[1] = ObjectStreamConstants.TC_NULL;
-        ref[2] = ObjectStreamConstants.TC_REFERENCE;
-        ref[3] = ObjectStreamConstants.TC_CLASSDESC;
-        int version = ObjectStreamConstants.PROTOCOL_VERSION_1;
+        TestClass tc = new TestClass();
+        tc.default_method();
     }
 }

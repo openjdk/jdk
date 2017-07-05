@@ -133,7 +133,8 @@ public final class TimestampedSigner extends ContentSigner {
             }
         }
         return PKCS7.generateSignedData(signature, signerChain, content,
-                                        params.getSignatureAlgorithm(), tsaURI);
+                                        params.getSignatureAlgorithm(), tsaURI,
+                                        params.getTSAPolicyID());
     }
 
     /**

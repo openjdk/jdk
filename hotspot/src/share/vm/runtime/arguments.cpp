@@ -2224,6 +2224,55 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   return JNI_OK;
 }
 
+// Checks if name in command-line argument -agent{lib,path}:name[=options]
+// represents a valid HPROF of JDWP agent.  is_path==true denotes that we
+// are dealing with -agentpath (case where name is a path), otherwise with
+// -agentlib
+bool valid_hprof_or_jdwp_agent(char *name, bool is_path) {
+  char *_name;
+  const char *_hprof = "hprof", *_jdwp = "jdwp";
+  size_t _len_hprof, _len_jdwp, _len_prefix;
+
+  if (is_path) {
+    if ((_name = strrchr(name, (int) *os::file_separator())) == NULL) {
+      return false;
+    }
+
+    _name++;  // skip past last path separator
+    _len_prefix = strlen(JNI_LIB_PREFIX);
+
+    if (strncmp(_name, JNI_LIB_PREFIX, _len_prefix) != 0) {
+      return false;
+    }
+
+    _name += _len_prefix;
+    _len_hprof = strlen(_hprof);
+    _len_jdwp = strlen(_jdwp);
+
+    if (strncmp(_name, _hprof, _len_hprof) == 0) {
+      _name += _len_hprof;
+    }
+    else if (strncmp(_name, _jdwp, _len_jdwp) == 0) {
+      _name += _len_jdwp;
+    }
+    else {
+      return false;
+    }
+
+    if (strcmp(_name, JNI_LIB_SUFFIX) != 0) {
+      return false;
+    }
+
+    return true;
+  }
+
+  if (strcmp(name, _hprof) == 0 || strcmp(name, _jdwp) == 0) {
+    return true;
+  }
+
+  return false;
+}
+
 jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                                        SysClassPath* scp_p,
                                        bool* scp_assembly_required_p,
@@ -2322,7 +2371,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(pos + 1) + 1, mtInternal), pos + 1);
         }
 #if !INCLUDE_JVMTI
-        if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
+        if (valid_hprof_or_jdwp_agent(name, is_absolute_path)) {
           jio_fprintf(defaultStream::error_stream(),
             "Profiling and debugging agents are not supported in this VM\n");
           return JNI_ERR;

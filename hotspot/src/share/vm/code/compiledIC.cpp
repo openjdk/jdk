@@ -45,25 +45,6 @@
 // Every time a compiled IC is changed or its type is being accessed,
 // either the CompiledIC_lock must be set or we must be at a safe point.
 
-
-// Release the CompiledICHolder* associated with this call site is there is one.
-void CompiledIC::cleanup_call_site(virtual_call_Relocation* call_site) {
-  // This call site might have become stale so inspect it carefully.
-  NativeCall* call = nativeCall_at(call_site->addr());
-  if (is_icholder_entry(call->destination())) {
-    NativeMovConstReg* value = nativeMovConstReg_at(call_site->cached_value());
-    InlineCacheBuffer::queue_for_release((CompiledICHolder*)value->data());
-  }
-}
-
-
-bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
-  // This call site might have become stale so inspect it carefully.
-  NativeCall* call = nativeCall_at(call_site->addr());
-  return is_icholder_entry(call->destination());
-}
-
-
 //-----------------------------------------------------------------------------
 // Low-level access to an inline cache. Private, since they might not be
 // MT-safe to use.
@@ -488,33 +469,6 @@ bool CompiledIC::is_icholder_entry(address entry) {
   return (cb != NULL && cb->is_adapter_blob());
 }
 
-
-CompiledIC::CompiledIC(nmethod* nm, NativeCall* call)
-  : _ic_call(call)
-{
-  address ic_call = call->instruction_address();
-
-  assert(ic_call != NULL, "ic_call address must be set");
-  assert(nm != NULL, "must pass nmethod");
-  assert(nm->contains(ic_call),   "must be in nmethod");
-
-  // search for the ic_call at the given address
-  RelocIterator iter(nm, ic_call, ic_call+1);
-  bool ret = iter.next();
-  assert(ret == true, "relocInfo must exist at this address");
-  assert(iter.addr() == ic_call, "must find ic_call");
-  if (iter.type() == relocInfo::virtual_call_type) {
-    virtual_call_Relocation* r = iter.virtual_call_reloc();
-    _is_optimized = false;
-    _value = nativeMovConstReg_at(r->cached_value());
-  } else {
-    assert(iter.type() == relocInfo::opt_virtual_call_type, "must be a virtual call");
-    _is_optimized = true;
-    _value = NULL;
-}
-}
-
-
 // ----------------------------------------------------------------------------
 
 void CompiledStaticCall::set_to_clean() {
@@ -548,33 +502,6 @@ bool CompiledStaticCall::is_call_to_interpreted() const {
   nmethod* nm = CodeCache::find_nmethod(instruction_address());
   return nm->stub_contains(destination());
 }
-
-
-void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) {
-  address stub=find_stub();
-  guarantee(stub != NULL, "stub not found");
-
-  if (TraceICs) {
-    ResourceMark rm;
-    tty->print_cr("CompiledStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
-                  instruction_address(),
-                  callee->name_and_sig_as_C_string());
-  }
-
-  NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);   // creation also verifies the object
-  NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
-
-  assert(method_holder->data()    == 0           || method_holder->data()    == (intptr_t)callee(), "a) MT-unsafe modification of inline cache");
-  assert(jump->jump_destination() == (address)-1 || jump->jump_destination() == entry, "b) MT-unsafe modification of inline cache");
-
-  // Update stub
-  method_holder->set_data((intptr_t)callee());
-  jump->set_jump_destination(entry);
-
-  // Update jump to call
-  set_destination_mt_safe(stub);
-}
-
 
 void CompiledStaticCall::set(const StaticCallInfo& info) {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "mt unsafe call");
@@ -618,19 +545,6 @@ void CompiledStaticCall::compute_entry(methodHandle m, StaticCallInfo& info) {
   }
 }
 
-
-void CompiledStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
-  assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "mt unsafe call");
-  // Reset stub
-  address stub = static_stub->addr();
-  assert(stub!=NULL, "stub not found");
-  NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);   // creation also verifies the object
-  NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
-  method_holder->set_data(0);
-  jump->set_jump_destination((address)-1);
-}
-
-
 address CompiledStaticCall::find_stub() {
   // Find reloc. information containing this call-site
   RelocIterator iter((nmethod*)NULL, instruction_address());
@@ -668,18 +582,15 @@ void CompiledIC::verify() {
           || is_optimized() || is_megamorphic(), "sanity check");
 }
 
-
 void CompiledIC::print() {
   print_compiled_ic();
   tty->cr();
 }
 
-
 void CompiledIC::print_compiled_ic() {
   tty->print("Inline cache at " INTPTR_FORMAT ", calling %s " INTPTR_FORMAT " cached_value " INTPTR_FORMAT,
              instruction_address(), is_call_to_interpreted() ? "interpreted " : "", ic_destination(), is_optimized() ? NULL : cached_value());
 }
-
 
 void CompiledStaticCall::print() {
   tty->print("static call at " INTPTR_FORMAT " -> ", instruction_address());
@@ -693,21 +604,4 @@ void CompiledStaticCall::print() {
   tty->cr();
 }
 
-void CompiledStaticCall::verify() {
-  // Verify call
-  NativeCall::verify();
-  if (os::is_MP()) {
-    verify_alignment();
-  }
-
-  // Verify stub
-  address stub = find_stub();
-  assert(stub != NULL, "no stub found for static call");
-  NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);   // creation also verifies the object
-  NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
-
-  // Verify state
-  assert(is_clean() || is_call_to_compiled() || is_call_to_interpreted(), "sanity check");
-}
-
-#endif
+#endif // !PRODUCT

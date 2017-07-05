@@ -13,10 +13,11 @@
 javax.security.auth.kerberos.KerberosKey=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,sun.security.ssl.krb5.Krb5ProxyImpl,compact1,compact2
 javax.security.auth.kerberos.KerberosPrincipal=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,sun.security.ssl.krb5.Krb5ProxyImpl,compact1,compact2
 javax.security.auth.kerberos.KerberosTicket=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,compact1,compact2
+javax.security.auth.kerberos.KeyTab=sun.security.ssl.krb5.Krb5ProxyImpl,compact1,compact2
 javax.security.auth.kerberos.ServicePermission=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,sun.security.ssl.krb5.Krb5ProxyImpl,compact1,compact2
 sun.security.jgss.GSSCaller=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,sun.security.ssl.krb5.Krb5ProxyImpl,compact1,compact2
 sun.security.jgss.krb5.Krb5Util=sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,sun.security.ssl.krb5.Krb5ProxyImpl,compact1,compact2
-sun.security.jgss.krb5.ServiceCreds=sun.security.ssl.krb5.Krb5ProxyImpl,compact1,compact2
+sun.security.jgss.krb5.ServiceCreds=sun.security.ssl.krb5.Krb5ProxyImpl,sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,compact1,compact2
 sun.security.krb5.EncryptedData= sun.security.ssl.krb5.KerberosPreMasterSecret,sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,compact1,compact2
 sun.security.krb5.EncryptionKey=sun.security.ssl.krb5.KerberosPreMasterSecret,sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,compact1,compact2
 sun.security.krb5.internal.crypto.KeyUsage=sun.security.ssl.krb5.KerberosPreMasterSecret,sun.security.ssl.krb5.KerberosClientKeyExchangeImpl,compact1,compact2

@@ -33,7 +33,7 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
- * 7067045 7014640 7189363
+ * 7067045 7014640 7189363 8007395
  */
 
 import java.util.regex.*;
@@ -144,6 +144,7 @@ public class RegExTest {
         horizontalAndVerticalWSTest();
         linebreakTest();
         branchTest();
+        groupCurlyNotFoundSuppTest();
         if (failure) {
             throw new
                 RuntimeException("RegExTest failed, 1st failure: " +
@@ -3945,6 +3946,29 @@ public class RegExTest {
             !Pattern.compile("(a)??bc|de").matcher("de").matches())
             failCount++;
         report("branchTest");
+    }
+
+    // This test is for 8007395
+    private static void groupCurlyNotFoundSuppTest() throws Exception {
+        String input = "test this as \ud83d\ude0d";
+        for (String pStr : new String[] { "test(.)+(@[a-zA-Z.]+)",
+                                          "test(.)*(@[a-zA-Z.]+)",
+                                          "test([^B])+(@[a-zA-Z.]+)",
+                                          "test([^B])*(@[a-zA-Z.]+)",
+                                          "test(\\P{IsControl})+(@[a-zA-Z.]+)",
+                                          "test(\\P{IsControl})*(@[a-zA-Z.]+)",
+                                        }) {
+            Matcher m = Pattern.compile(pStr, Pattern.CASE_INSENSITIVE)
+                               .matcher(input);
+            try {
+                if (m.find()) {
+                    failCount++;
+                }
+            } catch (Exception x) {
+                failCount++;
+            }
+        }
+        report("GroupCurly NotFoundSupp");
     }
 
 }
