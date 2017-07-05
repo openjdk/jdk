@@ -82,27 +82,38 @@ public abstract class Executable extends AccessibleObject
 
     void separateWithCommas(Class<?>[] types, StringBuilder sb) {
         for (int j = 0; j < types.length; j++) {
-            sb.append(Field.getTypeName(types[j]));
+            sb.append(types[j].getTypeName());
             if (j < (types.length - 1))
                 sb.append(",");
         }
 
     }
 
-    void printModifiersIfNonzero(StringBuilder sb, int mask) {
+    void printModifiersIfNonzero(StringBuilder sb, int mask, boolean isDefault) {
         int mod = getModifiers() & mask;
-        if (mod != 0) {
+
+        if (mod != 0 && !isDefault) {
             sb.append(Modifier.toString(mod)).append(' ');
+        } else {
+            int access_mod = mod & Modifier.ACCESS_MODIFIERS;
+            if (access_mod != 0)
+                sb.append(Modifier.toString(access_mod)).append(' ');
+            if (isDefault)
+                sb.append("default ");
+            mod = (mod & ~Modifier.ACCESS_MODIFIERS);
+            if (mod != 0)
+                sb.append(Modifier.toString(mod)).append(' ');
         }
     }
 
     String sharedToString(int modifierMask,
+                          boolean isDefault,
                           Class<?>[] parameterTypes,
                           Class<?>[] exceptionTypes) {
         try {
             StringBuilder sb = new StringBuilder();
 
-            printModifiersIfNonzero(sb, modifierMask);
+            printModifiersIfNonzero(sb, modifierMask, isDefault);
             specificToStringHeader(sb);
 
             sb.append('(');
@@ -124,11 +135,11 @@ public abstract class Executable extends AccessibleObject
      */
     abstract void specificToStringHeader(StringBuilder sb);
 
-    String sharedToGenericString(int modifierMask) {
+    String sharedToGenericString(int modifierMask, boolean isDefault) {
         try {
             StringBuilder sb = new StringBuilder();
 
-            printModifiersIfNonzero(sb, modifierMask);
+            printModifiersIfNonzero(sb, modifierMask, isDefault);
 
             TypeVariable<?>[] typeparms = getTypeParameters();
             if (typeparms.length > 0) {
@@ -150,9 +161,7 @@ public abstract class Executable extends AccessibleObject
             sb.append('(');
             Type[] params = getGenericParameterTypes();
             for (int j = 0; j < params.length; j++) {
-                String param = (params[j] instanceof Class)?
-                    Field.getTypeName((Class)params[j]):
-                    (params[j].toString());
+                String param = params[j].getTypeName();
                 if (isVarArgs() && (j == params.length - 1)) // replace T[] with T...
                     param = param.replaceFirst("\\[\\]$", "...");
                 sb.append(param);

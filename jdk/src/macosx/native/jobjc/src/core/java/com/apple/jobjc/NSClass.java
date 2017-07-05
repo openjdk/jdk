@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,8 @@ package com.apple.jobjc;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class NSClass<T extends ID> extends ID {
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     public static class NSClassNotFoundException extends RuntimeException{
         public NSClassNotFoundException(String m){ super(m); }
         public NSClassNotFoundException(String m, Throwable cause){ super(m, cause); }

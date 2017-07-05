@@ -1592,9 +1592,10 @@ Symbol* SystemDictionary::find_placeholder(Symbol* class_name,
 // Used for assertions and verification only
 Klass* SystemDictionary::find_class(Symbol* class_name, ClassLoaderData* loader_data) {
   #ifndef ASSERT
-  guarantee(VerifyBeforeGC   ||
-            VerifyDuringGC   ||
-            VerifyBeforeExit ||
+  guarantee(VerifyBeforeGC      ||
+            VerifyDuringGC      ||
+            VerifyBeforeExit    ||
+            VerifyDuringStartup ||
             VerifyAfterGC, "too expensive");
   #endif
   assert_locked_or_safepoint(SystemDictionary_lock);

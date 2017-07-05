@@ -1832,9 +1832,9 @@ public final class Main {
         if (alias != null) {
             doImportKeyStoreSingle(loadSourceKeyStore(), alias);
         } else {
-            if (dest != null || srckeyPass != null || destKeyPass != null) {
+            if (dest != null || srckeyPass != null) {
                 throw new Exception(rb.getString(
-                        "if.alias.not.specified.destalias.srckeypass.and.destkeypass.must.not.be.specified"));
+                        "if.alias.not.specified.destalias.and.srckeypass.must.not.be.specified"));
             }
             doImportKeyStoreAll(loadSourceKeyStore());
         }
@@ -1888,14 +1888,25 @@ public final class Main {
         // using destkeypass. If destkeypass is not provided, the destination
         // entry will be protected with the source entry password."
         // so always try to protect with destKeyPass.
+        char[] newPass = null;
         if (destKeyPass != null) {
+            newPass = destKeyPass;
             pp = new PasswordProtection(destKeyPass);
         } else if (objs.snd != null) {
+            newPass = objs.snd;
             pp = new PasswordProtection(objs.snd);
         }
 
         try {
             keyStore.setEntry(newAlias, entry, pp);
+            // Place the check so that only successful imports are blocked.
+            // For example, we don't block a failed SecretEntry import.
+            if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+                if (newPass != null && !Arrays.equals(newPass, storePass)) {
+                    throw new Exception(rb.getString(
+                            "The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified."));
+                }
+            }
             return 1;
         } catch (KeyStoreException kse) {
             Object[] source2 = {alias, kse.toString()};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.awt.event;
 
 import java.awt.Window;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
@@ -56,8 +56,6 @@ import sun.awt.SunToolkit;
  *
  * @since JDK1.1
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class WindowEvent extends ComponentEvent {
 
     /**
@@ -69,7 +67,7 @@ public class WindowEvent extends ComponentEvent {
      * The window opened event.  This event is delivered only
      * the first time a window is made visible.
      */
-    public static final int WINDOW_OPENED       = WINDOW_FIRST; // 200
+    @Native public static final int WINDOW_OPENED       = WINDOW_FIRST; // 200
 
     /**
      * The "window is closing" event. This event is delivered when
@@ -78,13 +76,13 @@ public class WindowEvent extends ComponentEvent {
      * while processing this event, the window close operation will be
      * cancelled.
      */
-    public static final int WINDOW_CLOSING      = 1 + WINDOW_FIRST; //Event.WINDOW_DESTROY
+    @Native public static final int WINDOW_CLOSING      = 1 + WINDOW_FIRST; //Event.WINDOW_DESTROY
 
     /**
      * The window closed event. This event is delivered after
      * the window has been closed as the result of a call to dispose.
      */
-    public static final int WINDOW_CLOSED       = 2 + WINDOW_FIRST;
+    @Native public static final int WINDOW_CLOSED       = 2 + WINDOW_FIRST;
 
     /**
      * The window iconified event. This event is delivered when
@@ -93,13 +91,13 @@ public class WindowEvent extends ComponentEvent {
      * the icon specified in the window's iconImage property.
      * @see java.awt.Frame#setIconImage
      */
-    public static final int WINDOW_ICONIFIED    = 3 + WINDOW_FIRST; //Event.WINDOW_ICONIFY
+    @Native public static final int WINDOW_ICONIFIED    = 3 + WINDOW_FIRST; //Event.WINDOW_ICONIFY
 
     /**
      * The window deiconified event type. This event is delivered when
      * the window has been changed from a minimized to a normal state.
      */
-    public static final int WINDOW_DEICONIFIED  = 4 + WINDOW_FIRST; //Event.WINDOW_DEICONIFY
+    @Native public static final int WINDOW_DEICONIFIED  = 4 + WINDOW_FIRST; //Event.WINDOW_DEICONIFY
 
     /**
      * The window-activated event type. This event is delivered when the Window
@@ -109,7 +107,7 @@ public class WindowEvent extends ComponentEvent {
      * active Window is always either the focused Window, or the first Frame or
      * Dialog that is an owner of the focused Window.
      */
-    public static final int WINDOW_ACTIVATED    = 5 + WINDOW_FIRST;
+    @Native public static final int WINDOW_ACTIVATED    = 5 + WINDOW_FIRST;
 
     /**
      * The window-deactivated event type. This event is delivered when the
@@ -119,21 +117,21 @@ public class WindowEvent extends ComponentEvent {
      * title bar. The active Window is always either the focused Window, or the
      * first Frame or Dialog that is an owner of the focused Window.
      */
-    public static final int WINDOW_DEACTIVATED  = 6 + WINDOW_FIRST;
+    @Native public static final int WINDOW_DEACTIVATED  = 6 + WINDOW_FIRST;
 
     /**
      * The window-gained-focus event type. This event is delivered when the
      * Window becomes the focused Window, which means that the Window, or one
      * of its subcomponents, will receive keyboard events.
      */
-    public static final int WINDOW_GAINED_FOCUS = 7 + WINDOW_FIRST;
+    @Native public static final int WINDOW_GAINED_FOCUS = 7 + WINDOW_FIRST;
 
     /**
      * The window-lost-focus event type. This event is delivered when a Window
      * is no longer the focused Window, which means keyboard events will no
      * longer be delivered to the Window or any of its subcomponents.
      */
-    public static final int WINDOW_LOST_FOCUS   = 8 + WINDOW_FIRST;
+    @Native public static final int WINDOW_LOST_FOCUS   = 8 + WINDOW_FIRST;
 
     /**
      * The window-state-changed event type.  This event is delivered
@@ -141,7 +139,7 @@ public class WindowEvent extends ComponentEvent {
      * iconified, maximized etc.
      * @since 1.4
      */
-    public static final int WINDOW_STATE_CHANGED = 9 + WINDOW_FIRST;
+    @Native public static final int WINDOW_STATE_CHANGED = 9 + WINDOW_FIRST;
 
     /**
      * The last number in the range of ids used for window events.

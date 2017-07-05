@@ -87,35 +87,35 @@ import java.io.ByteArrayOutputStream;
  */
 public class WDataTransferer extends DataTransferer {
     private static final String[] predefinedClipboardNames = {
-        "",
-        "TEXT",
-        "BITMAP",
-        "METAFILEPICT",
-        "SYLK",
-        "DIF",
-        "TIFF",
-        "OEM TEXT",
-        "DIB",
-        "PALETTE",
-        "PENDATA",
-        "RIFF",
-        "WAVE",
-        "UNICODE TEXT",
-        "ENHMETAFILE",
-        "HDROP",
-        "LOCALE",
-        "DIBV5"
+            "",
+            "TEXT",
+            "BITMAP",
+            "METAFILEPICT",
+            "SYLK",
+            "DIF",
+            "TIFF",
+            "OEM TEXT",
+            "DIB",
+            "PALETTE",
+            "PENDATA",
+            "RIFF",
+            "WAVE",
+            "UNICODE TEXT",
+            "ENHMETAFILE",
+            "HDROP",
+            "LOCALE",
+            "DIBV5"
     };
 
     private static final Map <String, Long> predefinedClipboardNameMap;
     static {
         Map <String,Long> tempMap =
-            new HashMap <> (predefinedClipboardNames.length, 1.0f);
+                new HashMap <> (predefinedClipboardNames.length, 1.0f);
         for (int i = 1; i < predefinedClipboardNames.length; i++) {
             tempMap.put(predefinedClipboardNames[i], Long.valueOf(i));
         }
         predefinedClipboardNameMap =
-            Collections.synchronizedMap(tempMap);
+                Collections.synchronizedMap(tempMap);
     }
 
     /**
@@ -138,18 +138,18 @@ public class WDataTransferer extends DataTransferer {
     //CF_FILECONTENTS supported as mandatory associated clipboard
 
     private static final Long L_CF_LOCALE =
-      predefinedClipboardNameMap.get(predefinedClipboardNames[CF_LOCALE]);
+            predefinedClipboardNameMap.get(predefinedClipboardNames[CF_LOCALE]);
 
     private static final DirectColorModel directColorModel =
-        new DirectColorModel(24,
-                             0x00FF0000,  /* red mask   */
-                             0x0000FF00,  /* green mask */
-                             0x000000FF); /* blue mask  */
+            new DirectColorModel(24,
+                    0x00FF0000,  /* red mask   */
+                    0x0000FF00,  /* green mask */
+                    0x000000FF); /* blue mask  */
 
     private static final int[] bandmasks = new int[] {
-        directColorModel.getRedMask(),
-        directColorModel.getGreenMask(),
-        directColorModel.getBlueMask() };
+            directColorModel.getRedMask(),
+            directColorModel.getGreenMask(),
+            directColorModel.getBlueMask() };
 
     /**
      * Singleton constructor
@@ -171,10 +171,10 @@ public class WDataTransferer extends DataTransferer {
     }
 
     public SortedMap <Long, DataFlavor> getFormatsForFlavors(
-        DataFlavor[] flavors, FlavorTable map)
+            DataFlavor[] flavors, FlavorTable map)
     {
         SortedMap <Long, DataFlavor> retval =
-            super.getFormatsForFlavors(flavors, map);
+                super.getFormatsForFlavors(flavors, map);
 
         // The Win32 native code does not support exporting LOCALE data, nor
         // should it.
@@ -191,32 +191,60 @@ public class WDataTransferer extends DataTransferer {
                                         DataFlavor flavor,
                                         long format) throws IOException
     {
-        byte[] bytes = super.translateTransferable(contents, flavor, format);
-
+        byte[] bytes = null;
         if (format == CF_HTML) {
-            bytes = HTMLCodec.convertToHTMLFormat(bytes);
+            if (contents.isDataFlavorSupported(DataFlavor.selectionHtmlFlavor)) {
+                // if a user provides data represented by
+                // DataFlavor.selectionHtmlFlavor format, we use this
+                // type to store the data in the native clipboard
+                bytes = super.translateTransferable(contents,
+                        DataFlavor.selectionHtmlFlavor,
+                        format);
+            } else if (contents.isDataFlavorSupported(DataFlavor.allHtmlFlavor)) {
+                // if we cannot get data represented by the
+                // DataFlavor.selectionHtmlFlavor format
+                // but the DataFlavor.allHtmlFlavor format is avialable
+                // we belive that the user knows how to represent
+                // the data and how to mark up selection in a
+                // system specific manner. Therefor, we use this data
+                bytes = super.translateTransferable(contents,
+                        DataFlavor.allHtmlFlavor,
+                        format);
+            } else {
+                // handel other html flavor types, including custom and
+                // fragment ones
+                bytes = HTMLCodec.convertToHTMLFormat(bytes);
+            }
+        } else {
+            // we handle non-html types basing on  their
+            // flavors
+            bytes = super.translateTransferable(contents, flavor, format);
         }
         return bytes;
     }
 
-    protected Object translateBytesOrStream(InputStream str, byte[] bytes,
-                                            DataFlavor flavor, long format,
-                                            Transferable localeTransferable)
+    // The stream is closed as a closable object
+    public Object translateStream(InputStream str,
+                                 DataFlavor flavor, long format,
+                                 Transferable localeTransferable)
         throws IOException
     {
         if (format == CF_HTML && flavor.isFlavorTextType()) {
-            if (str == null) {
-                str = new ByteArrayInputStream(bytes);
-                bytes = null;
-            }
+            str = new HTMLCodec(str,
+                                 EHTMLReadMode.getEHTMLReadMode(flavor));
 
-            str = new HTMLCodec(str,  EHTMLReadMode.HTML_READ_SELECTION);
         }
+        return super.translateStream(str, flavor, format,
+                                        localeTransferable);
+
+    }
+
+    public Object translateBytes(byte[] bytes, DataFlavor flavor, long format,
+        Transferable localeTransferable) throws IOException
+    {
+
 
         if (format == CF_FILEGROUPDESCRIPTORA || format == CF_FILEGROUPDESCRIPTORW) {
-            if (null != str ) {
-                str.close();
-            }
             if (bytes == null || !DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
@@ -238,28 +266,24 @@ public class WDataTransferer extends DataTransferer {
         }
 
         if (format == CFSTR_INETURL &&
-            URL.class.equals(flavor.getRepresentationClass()))
+                URL.class.equals(flavor.getRepresentationClass()))
         {
-            if (bytes == null) {
-                bytes = inputStreamToByteArray(str);
-                str = null;
-            }
             String charset = getDefaultTextCharset();
             if (localeTransferable != null && localeTransferable.
-                isDataFlavorSupported(javaTextEncodingFlavor))
+                                                                    isDataFlavorSupported(javaTextEncodingFlavor))
             {
                 try {
                     charset = new String((byte[])localeTransferable.
-                                   getTransferData(javaTextEncodingFlavor),
-                                   "UTF-8");
+                        getTransferData(javaTextEncodingFlavor), "UTF-8");
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
             return new URL(new String(bytes, charset));
         }
 
-        return super.translateBytesOrStream(str, bytes, flavor, format,
-                                            localeTransferable);
+        return super.translateBytes(bytes , flavor, format,
+                                        localeTransferable);
+
     }
 
     public boolean isLocaleDependentTextFormat(long format) {
@@ -280,18 +304,18 @@ public class WDataTransferer extends DataTransferer {
 
     protected String getNativeForFormat(long format) {
         return (format < predefinedClipboardNames.length)
-            ? predefinedClipboardNames[(int)format]
-            : getClipboardFormatName(format);
+                ? predefinedClipboardNames[(int)format]
+                : getClipboardFormatName(format);
     }
 
     private final ToolkitThreadBlockedHandler handler =
-        new WToolkitThreadBlockedHandler();
+            new WToolkitThreadBlockedHandler();
 
     public ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler() {
         return handler;
     }
 
-   /**
+    /**
      * Calls the Win32 RegisterClipboardFormat function to register
      * a non-standard format.
      */
@@ -305,12 +329,12 @@ public class WDataTransferer extends DataTransferer {
 
     public boolean isImageFormat(long format) {
         return format == CF_DIB || format == CF_ENHMETAFILE ||
-               format == CF_METAFILEPICT || format == CF_PNG ||
-               format == CF_JFIF;
+                format == CF_METAFILEPICT || format == CF_PNG ||
+                format == CF_JFIF;
     }
 
     protected byte[] imageToPlatformBytes(Image image, long format)
-      throws IOException {
+            throws IOException {
         String mimeType = null;
         if (format == CF_PNG) {
             mimeType = "image/png";
@@ -352,11 +376,11 @@ public class WDataTransferer extends DataTransferer {
         int[] nBits = {8, 8, 8};
         int[] bOffs = {2, 1, 0};
         ColorModel colorModel =
-            new ComponentColorModel(cs, nBits, false, false,
-                                    Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+                new ComponentColorModel(cs, nBits, false, false,
+                        Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
         WritableRaster raster =
-            Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, width, height,
-                                           width * 3 + pad, 3, bOffs, null);
+                Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, width, height,
+                        width * 3 + pad, 3, bOffs, null);
 
         BufferedImage bimage = new BufferedImage(colorModel, raster, false, null);
 
@@ -364,7 +388,7 @@ public class WDataTransferer extends DataTransferer {
         // top-down DIBs.
         // So we flip the image vertically and create a bottom-up DIB.
         AffineTransform imageFlipTransform =
-            new AffineTransform(1, 0, 0, -1, 0, height);
+                new AffineTransform(1, 0, 0, -1, 0, height);
 
         Graphics2D g2d = bimage.createGraphics();
 
@@ -383,7 +407,7 @@ public class WDataTransferer extends DataTransferer {
     private static final byte [] UNICODE_NULL_TERMINATOR =  new byte [] {0,0};
 
     protected ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList)
-        throws IOException
+            throws IOException
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
@@ -407,10 +431,10 @@ public class WDataTransferer extends DataTransferer {
         return bos;
     }
 
-   /**
-    * Returns a byte array which contains data special for the given format
-    * and for the given image data.
-    */
+    /**
+     * Returns a byte array which contains data special for the given format
+     * and for the given image data.
+     */
     private native byte[] imageDataToPlatformImageBytes(byte[] imageData,
                                                         int width, int height,
                                                         long format);
@@ -419,10 +443,8 @@ public class WDataTransferer extends DataTransferer {
      * Translates either a byte array or an input stream which contain
      * platform-specific image data in the given format into an Image.
      */
-    protected Image platformImageBytesOrStreamToImage(InputStream str,
-                                                      byte[] bytes,
-                                                      long format)
-      throws IOException {
+    protected Image platformImageBytesToImage(byte[] bytes, long format)
+            throws IOException {
         String mimeType = null;
         if (format == CF_PNG) {
             mimeType = "image/png";
@@ -430,11 +452,7 @@ public class WDataTransferer extends DataTransferer {
             mimeType = "image/jpeg";
         }
         if (mimeType != null) {
-            return standardImageBytesOrStreamToImage(str, bytes, mimeType);
-        }
-
-        if (bytes == null) {
-            bytes = inputStreamToByteArray(str);
+            return standardImageBytesToImage(bytes, mimeType);
         }
 
         int[] imageData = platformImageBytesToImageData(bytes, format);
@@ -448,8 +466,8 @@ public class WDataTransferer extends DataTransferer {
 
         DataBufferInt buffer = new DataBufferInt(imageData, len);
         WritableRaster raster = Raster.createPackedRaster(buffer, width,
-                                                          height, width,
-                                                          bandmasks, null);
+                height, width,
+                bandmasks, null);
 
         return new BufferedImage(directColorModel, raster, false, null);
     }
@@ -462,13 +480,13 @@ public class WDataTransferer extends DataTransferer {
      */
     private native int[] platformImageBytesToImageData(byte[] bytes,
                                                        long format)
-      throws IOException;
+            throws IOException;
 
     protected native String[] dragQueryFile(byte[] bytes);
 }
 
 final class WToolkitThreadBlockedHandler extends Mutex
-                       implements ToolkitThreadBlockedHandler {
+        implements ToolkitThreadBlockedHandler {
 
     public void enter() {
         if (!isOwned()) {
@@ -492,7 +510,22 @@ final class WToolkitThreadBlockedHandler extends Mutex
 enum EHTMLReadMode {
     HTML_READ_ALL,
     HTML_READ_FRAGMENT,
-    HTML_READ_SELECTION
+    HTML_READ_SELECTION;
+
+    public static EHTMLReadMode getEHTMLReadMode (DataFlavor df) {
+
+        EHTMLReadMode mode = HTML_READ_SELECTION;
+
+        String parameter = df.getParameter("document");
+
+        if ("all".equals(parameter)) {
+            mode = HTML_READ_ALL;
+        } else if ("fragment".equals(parameter)) {
+            mode = HTML_READ_FRAGMENT;
+        }
+
+        return mode;
+    }
 }
 
 /**
@@ -581,26 +614,24 @@ class HTMLCodec extends InputStream {
                     htmlSuffix = "</BODY>" + htmlSuffix;
                 };
             };
-            htmlPrefix = htmlPrefix + START_FRAGMENT_CMT;
-            htmlSuffix = END_FRAGMENT_CMT + htmlSuffix;
         }
 
         String stBaseUrl = DEF_SOURCE_URL;
         int nStartHTML =
-            VERSION.length() + VERSION_NUM.length() + EOLN.length()
-            + START_HTML.length() + PADDED_WIDTH + EOLN.length()
-            + END_HTML.length() + PADDED_WIDTH + EOLN.length()
-            + START_FRAGMENT.length() + PADDED_WIDTH + EOLN.length()
-            + END_FRAGMENT.length() + PADDED_WIDTH + EOLN.length()
-            + SOURCE_URL.length() + stBaseUrl.length() + EOLN.length()
-            ;
+                VERSION.length() + VERSION_NUM.length() + EOLN.length()
+                        + START_HTML.length() + PADDED_WIDTH + EOLN.length()
+                        + END_HTML.length() + PADDED_WIDTH + EOLN.length()
+                        + START_FRAGMENT.length() + PADDED_WIDTH + EOLN.length()
+                        + END_FRAGMENT.length() + PADDED_WIDTH + EOLN.length()
+                        + SOURCE_URL.length() + stBaseUrl.length() + EOLN.length()
+                ;
         int nStartFragment = nStartHTML + htmlPrefix.length();
         int nEndFragment = nStartFragment + bytes.length - 1;
         int nEndHTML = nEndFragment + htmlSuffix.length();
 
         StringBuilder header = new StringBuilder(
-            nStartFragment
-            + START_FRAGMENT_CMT.length()
+                nStartFragment
+                        + START_FRAGMENT_CMT.length()
         );
         //header
         header.append(VERSION);
@@ -639,14 +670,14 @@ class HTMLCodec extends InputStream {
         }
 
         byte[] retval = new byte[headerBytes.length + bytes.length +
-                                 trailerBytes.length];
+                trailerBytes.length];
 
         System.arraycopy(headerBytes, 0, retval, 0, headerBytes.length);
         System.arraycopy(bytes, 0, retval, headerBytes.length,
-                       bytes.length - 1);
+                bytes.length - 1);
         System.arraycopy(trailerBytes, 0, retval,
-                         headerBytes.length + bytes.length - 1,
-                         trailerBytes.length);
+                headerBytes.length + bytes.length - 1,
+                trailerBytes.length);
         retval[retval.length-1] = 0;
 
         return retval;
@@ -659,7 +690,7 @@ class HTMLCodec extends InputStream {
     private boolean descriptionParsed = false;
     private boolean closed = false;
 
-     // InputStreamReader uses an 8K buffer. The size is not customizable.
+    // InputStreamReader uses an 8K buffer. The size is not customizable.
     public static final int BYTE_BUFFER_LEN = 8192;
 
     // CharToByteUTF8.getMaxBytesPerChar returns 3, so we should not buffer
@@ -667,30 +698,30 @@ class HTMLCodec extends InputStream {
     public static final int CHAR_BUFFER_LEN = BYTE_BUFFER_LEN / 3;
 
     private static final String FAILURE_MSG =
-        "Unable to parse HTML description: ";
+            "Unable to parse HTML description: ";
     private static final String INVALID_MSG =
-        " invalid";
+            " invalid";
 
     //HTML header mapping:
     private long   iHTMLStart,// StartHTML -- shift in array to the first byte after the header
-                   iHTMLEnd,  // EndHTML -- shift in array of last byte for HTML syntax analysis
-                   iFragStart,// StartFragment -- shift in array jast after <!--StartFragment-->
-                   iFragEnd,  // EndFragment -- shift in array before start <!--EndFragment-->
-                   iSelStart, // StartSelection -- shift in array of the first char in copied selection
-                   iSelEnd;   // EndSelection -- shift in array of the last char in copied selection
+            iHTMLEnd,  // EndHTML -- shift in array of last byte for HTML syntax analysis
+            iFragStart,// StartFragment -- shift in array jast after <!--StartFragment-->
+            iFragEnd,  // EndFragment -- shift in array before start <!--EndFragment-->
+            iSelStart, // StartSelection -- shift in array of the first char in copied selection
+            iSelEnd;   // EndSelection -- shift in array of the last char in copied selection
     private String stBaseURL; // SourceURL -- base URL for related referenses
     private String stVersion; // Version -- current supported version
 
     //Stream reader markers:
     private long iStartOffset,
-                 iEndOffset,
-                 iReadCount;
+            iEndOffset,
+            iReadCount;
 
     private EHTMLReadMode readMode;
 
     public HTMLCodec(
-        InputStream _bytestream,
-        EHTMLReadMode _readMode) throws IOException
+            InputStream _bytestream,
+            EHTMLReadMode _readMode) throws IOException
     {
         bufferedStream = new BufferedInputStream(_bytestream, BYTE_BUFFER_LEN);
         readMode = _readMode;
@@ -723,31 +754,31 @@ class HTMLCodec extends InputStream {
         // initialization of array offset pointers
         // to the same "uninitialized" state.
         iHTMLEnd =
-            iHTMLStart =
-                iFragEnd =
-                    iFragStart =
-                        iSelEnd =
-                            iSelStart = -1;
+                iHTMLStart =
+                        iFragEnd =
+                                iFragStart =
+                                        iSelEnd =
+                                                iSelStart = -1;
 
         bufferedStream.mark(BYTE_BUFFER_LEN);
         String astEntries[] = new String[] {
-            //common
-            VERSION,
-            START_HTML,
-            END_HTML,
-            START_FRAGMENT,
-            END_FRAGMENT,
-            //ver 1.0
-            START_SELECTION,
-            END_SELECTION,
-            SOURCE_URL
+                //common
+                VERSION,
+                START_HTML,
+                END_HTML,
+                START_FRAGMENT,
+                END_FRAGMENT,
+                //ver 1.0
+                START_SELECTION,
+                END_SELECTION,
+                SOURCE_URL
         };
         BufferedReader bufferedReader = new BufferedReader(
-            new InputStreamReader(
-                bufferedStream,
-                ENCODING
-            ),
-            CHAR_BUFFER_LEN
+                new InputStreamReader(
+                        bufferedStream,
+                        ENCODING
+                ),
+                CHAR_BUFFER_LEN
         );
         long iHeadSize = 0;
         long iCRSize = EOLN.length();
@@ -769,30 +800,30 @@ class HTMLCodec extends InputStream {
                 if( null!=stValue ) {
                     try{
                         switch( iEntry ){
-                        case 0:
-                            stVersion = stValue;
-                            break;
-                        case 1:
-                            iHTMLStart = Integer.parseInt(stValue);
-                            break;
-                        case 2:
-                            iHTMLEnd = Integer.parseInt(stValue);
-                            break;
-                        case 3:
-                            iFragStart = Integer.parseInt(stValue);
-                            break;
-                        case 4:
-                            iFragEnd = Integer.parseInt(stValue);
-                            break;
-                        case 5:
-                            iSelStart = Integer.parseInt(stValue);
-                            break;
-                        case 6:
-                            iSelEnd = Integer.parseInt(stValue);
-                            break;
-                        case 7:
-                            stBaseURL = stValue;
-                            break;
+                            case 0:
+                                stVersion = stValue;
+                                break;
+                            case 1:
+                                iHTMLStart = Integer.parseInt(stValue);
+                                break;
+                            case 2:
+                                iHTMLEnd = Integer.parseInt(stValue);
+                                break;
+                            case 3:
+                                iFragStart = Integer.parseInt(stValue);
+                                break;
+                            case 4:
+                                iFragEnd = Integer.parseInt(stValue);
+                                break;
+                            case 5:
+                                iSelStart = Integer.parseInt(stValue);
+                                break;
+                            case 6:
+                                iSelEnd = Integer.parseInt(stValue);
+                                break;
+                            case 7:
+                                stBaseURL = stValue;
+                                break;
                         };
                     } catch ( NumberFormatException e ) {
                         throw new IOException(FAILURE_MSG + astEntries[iEntry]+ " value " + e + INVALID_MSG);
@@ -816,19 +847,19 @@ class HTMLCodec extends InputStream {
 
         //one of possible modes
         switch( readMode ){
-        case HTML_READ_ALL:
-            iStartOffset = iHTMLStart;
-            iEndOffset = iHTMLEnd;
-            break;
-        case HTML_READ_FRAGMENT:
-            iStartOffset = iFragStart;
-            iEndOffset = iFragEnd;
-            break;
-        case HTML_READ_SELECTION:
-        default:
-            iStartOffset = iSelStart;
-            iEndOffset = iSelEnd;
-            break;
+            case HTML_READ_ALL:
+                iStartOffset = iHTMLStart;
+                iEndOffset = iHTMLEnd;
+                break;
+            case HTML_READ_FRAGMENT:
+                iStartOffset = iFragStart;
+                iEndOffset = iFragEnd;
+                break;
+            case HTML_READ_SELECTION:
+            default:
+                iStartOffset = iSelStart;
+                iEndOffset = iSelEnd;
+                break;
         }
 
         bufferedStream.reset();

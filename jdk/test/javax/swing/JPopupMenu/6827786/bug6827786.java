@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,11 @@ public class bug6827786 {
         checkfocus();
 
         // select menu
-        Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_F);
+        if (sun.awt.OSInfo.getOSType() == sun.awt.OSInfo.OSType.MACOSX) {
+            Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_F);
+        } else {
+            Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_F);
+        }
         // select submenu
         Util.hitKeys(robot, KeyEvent.VK_S);
         toolkit.realSync();

@@ -735,6 +735,9 @@ void SafepointSynchronize::block(JavaThread *thread) {
 // Exception handlers
 
 #ifndef PRODUCT
+
+#ifdef SPARC
+
 #ifdef _LP64
 #define PTR_PAD ""
 #else
@@ -755,7 +758,6 @@ static void print_longs(jlong oldptr, jlong newptr, bool wasoop) {
                 newptr, is_oop?"oop":"   ", (wasoop && !is_oop) ? "STALE" : ((wasoop==false&&is_oop==false&&oldptr !=newptr)?"STOMP":"     "));
 }
 
-#ifdef SPARC
 static void print_me(intptr_t *new_sp, intptr_t *old_sp, bool *was_oops) {
 #ifdef _LP64
   tty->print_cr("--------+------address-----+------before-----------+-------after----------+");

@@ -72,8 +72,10 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     public JLightweightFrame() {
         super();
         add(rootPane, BorderLayout.CENTER);
-        setBackground(new Color(0, 0, 0, 0));
         setFocusTraversalPolicy(new LayoutFocusTraversalPolicy());
+        if (getGraphicsConfiguration().isTranslucencyCapable()) {
+            setBackground(new Color(0, 0, 0, 0));
+        }
     }
 
     /**
