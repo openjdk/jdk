@@ -630,11 +630,20 @@ class Assembler : public AbstractAssembler  {
   }
 
  protected:
+  // Insert a nop if the previous is cbcond
+  void insert_nop_after_cbcond() {
+    if (UseCBCond && cbcond_before()) {
+      nop();
+    }
+  }
   // Delay slot helpers
   // cti is called when emitting control-transfer instruction,
   // BEFORE doing the emitting.
   // Only effective when assertion-checking is enabled.
   void cti() {
+    // A cbcond instruction immediately followed by a CTI
+    // instruction introduces pipeline stalls, we need to avoid that.
+    no_cbcond_before();
 #ifdef CHECK_DELAY
     assert_not_delayed("cti should not be in delay slot");
 #endif
@@ -658,7 +667,6 @@ class Assembler : public AbstractAssembler  {
   void no_cbcond_before() {
     assert(offset() == 0 || !cbcond_before(), "cbcond should not follow an other cbcond");
   }
-
 public:
 
   bool use_cbcond(Label& L) {

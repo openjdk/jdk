@@ -25,6 +25,9 @@
  * @test
  * @bug 8031572
  * @summary jarsigner -verify exits with 0 when a jar file is not properly signed
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.IOUtils
+ * @run main EntriesOrder
  */
 
 import java.io.FileInputStream;
@@ -38,6 +41,8 @@ import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import jdk.testlibrary.IOUtils;
 
 public class EntriesOrder {
 
@@ -106,7 +111,7 @@ public class EntriesOrder {
                 Enumeration<JarEntry> jes = jf.entries();
                 while (jes.hasMoreElements()) {
                     JarEntry je = jes.nextElement();
-                    sun.misc.IOUtils.readFully(jf.getInputStream(je), -1, true);
+                    IOUtils.readFully(jf.getInputStream(je));
                     Certificate[] certs = je.getCertificates();
                     if (certs != null && certs.length > 0) {
                         cc++;
@@ -138,7 +143,7 @@ public class EntriesOrder {
                 while (true) {
                     JarEntry je = jis.getNextJarEntry();
                     if (je == null) break;
-                    sun.misc.IOUtils.readFully(jis, -1, true);
+                    IOUtils.readFully(jis);
                     Certificate[] certs = je.getCertificates();
                     if (certs != null && certs.length > 0) {
                         cc++;

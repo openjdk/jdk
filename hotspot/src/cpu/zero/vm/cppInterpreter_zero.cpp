@@ -916,17 +916,32 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
   return (InterpreterFrame *) fp;
 }
 
-int AbstractInterpreter::layout_activation(Method* method,
-                                           int       tempcount,
-                                           int       popframe_extra_args,
-                                           int       moncount,
-                                           int       caller_actual_parameters,
-                                           int       callee_param_count,
-                                           int       callee_locals,
-                                           frame*    caller,
-                                           frame*    interpreter_frame,
-                                           bool      is_top_frame,
-                                           bool      is_bottom_frame) {
+int AbstractInterpreter::size_activation(int       max_stack,
+                                         int       tempcount,
+                                         int       extra_args,
+                                         int       moncount,
+                                         int       callee_param_count,
+                                         int       callee_locals,
+                                         bool      is_top_frame) {
+  int header_words        = InterpreterFrame::header_words;
+  int monitor_words       = moncount * frame::interpreter_frame_monitor_size();
+  int stack_words         = is_top_frame ? max_stack : tempcount;
+  int callee_extra_locals = callee_locals - callee_param_count;
+
+  return header_words + monitor_words + stack_words + callee_extra_locals;
+}
+
+void AbstractInterpreter::layout_activation(Method* method,
+                                            int       tempcount,
+                                            int       popframe_extra_args,
+                                            int       moncount,
+                                            int       caller_actual_parameters,
+                                            int       callee_param_count,
+                                            int       callee_locals,
+                                            frame*    caller,
+                                            frame*    interpreter_frame,
+                                            bool      is_top_frame,
+                                            bool      is_bottom_frame) {
   assert(popframe_extra_args == 0, "what to do?");
   assert(!is_top_frame || (!callee_locals && !callee_param_count),
          "top frame should have no caller");
@@ -935,39 +950,31 @@ int AbstractInterpreter::layout_activation(Method* method,
   // does (the full InterpreterFrame::build, that is, not the
   // one that creates empty frames for the deoptimizer).
   //
-  // If interpreter_frame is not NULL then it will be filled in.
-  // It's size is determined by a previous call to this method,
-  // so it should be correct.
+  // interpreter_frame will be filled in.  It's size is determined by
+  // a previous call to the size_activation() method,
   //
   // Note that tempcount is the current size of the expression
   // stack.  For top most frames we will allocate a full sized
   // expression stack and not the trimmed version that non-top
   // frames have.
 
-  int header_words        = InterpreterFrame::header_words;
   int monitor_words       = moncount * frame::interpreter_frame_monitor_size();
-  int stack_words         = is_top_frame ? method->max_stack() : tempcount;
-  int callee_extra_locals = callee_locals - callee_param_count;
+  intptr_t *locals        = interpreter_frame->fp() + method->max_locals();
+  interpreterState istate = interpreter_frame->get_interpreterState();
+  intptr_t *monitor_base  = (intptr_t*) istate;
+  intptr_t *stack_base    = monitor_base - monitor_words;
+  intptr_t *stack         = stack_base - tempcount - 1;
 
-  if (interpreter_frame) {
-    intptr_t *locals        = interpreter_frame->fp() + method->max_locals();
-    interpreterState istate = interpreter_frame->get_interpreterState();
-    intptr_t *monitor_base  = (intptr_t*) istate;
-    intptr_t *stack_base    = monitor_base - monitor_words;
-    intptr_t *stack         = stack_base - tempcount - 1;
-
-    BytecodeInterpreter::layout_interpreterState(istate,
-                                                 caller,
-                                                 NULL,
-                                                 method,
-                                                 locals,
-                                                 stack,
-                                                 stack_base,
-                                                 monitor_base,
-                                                 NULL,
-                                                 is_top_frame);
-  }
-  return header_words + monitor_words + stack_words + callee_extra_locals;
+  BytecodeInterpreter::layout_interpreterState(istate,
+                                               caller,
+                                               NULL,
+                                               method,
+                                               locals,
+                                               stack,
+                                               stack_base,
+                                               monitor_base,
+                                               NULL,
+                                               is_top_frame);
 }
 
 void BytecodeInterpreter::layout_interpreterState(interpreterState istate,

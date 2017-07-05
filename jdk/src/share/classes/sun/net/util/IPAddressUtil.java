@@ -37,89 +37,72 @@ public class IPAddressUtil {
      * @param src a String representing an IPv4 address in standard format
      * @return a byte array representing the IPv4 numeric address
      */
+    @SuppressWarnings("fallthrough")
     public static byte[] textToNumericFormatV4(String src)
     {
-        if (src.length() == 0) {
+        byte[] res = new byte[INADDR4SZ];
+
+        long tmpValue = 0;
+        int currByte = 0;
+
+        int len = src.length();
+        if (len == 0 || len > 15) {
             return null;
         }
-
-        byte[] res = new byte[INADDR4SZ];
-        String[] s = src.split("\\.", -1);
-        long val;
-        try {
-            switch(s.length) {
-            case 1:
-                /*
-                 * When only one part is given, the value is stored directly in
-                 * the network address without any byte rearrangement.
-                 */
-
-                val = Long.parseLong(s[0]);
-                if (val < 0 || val > 0xffffffffL)
+        /*
+         * When only one part is given, the value is stored directly in
+         * the network address without any byte rearrangement.
+         *
+         * When a two part address is supplied, the last part is
+         * interpreted as a 24-bit quantity and placed in the right
+         * most three bytes of the network address. This makes the
+         * two part address format convenient for specifying Class A
+         * network addresses as net.host.
+         *
+         * When a three part address is specified, the last part is
+         * interpreted as a 16-bit quantity and placed in the right
+         * most two bytes of the network address. This makes the
+         * three part address format convenient for specifying
+         * Class B net- work addresses as 128.net.host.
+         *
+         * When four parts are specified, each is interpreted as a
+         * byte of data and assigned, from left to right, to the
+         * four bytes of an IPv4 address.
+         *
+         * We determine and parse the leading parts, if any, as single
+         * byte values in one pass directly into the resulting byte[],
+         * then the remainder is treated as a 8-to-32-bit entity and
+         * translated into the remaining bytes in the array.
+         */
+        for (int i = 0; i < len; i++) {
+            char c = src.charAt(i);
+            if (c == '.') {
+                if (tmpValue < 0 || tmpValue > 0xff || currByte == 3) {
                     return null;
-                res[0] = (byte) ((val >> 24) & 0xff);
-                res[1] = (byte) (((val & 0xffffff) >> 16) & 0xff);
-                res[2] = (byte) (((val & 0xffff) >> 8) & 0xff);
-                res[3] = (byte) (val & 0xff);
-                break;
-            case 2:
-                /*
-                 * When a two part address is supplied, the last part is
-                 * interpreted as a 24-bit quantity and placed in the right
-                 * most three bytes of the network address. This makes the
-                 * two part address format convenient for specifying Class A
-                 * network addresses as net.host.
-                 */
-
-                val = Integer.parseInt(s[0]);
-                if (val < 0 || val > 0xff)
-                    return null;
-                res[0] = (byte) (val & 0xff);
-                val = Integer.parseInt(s[1]);
-                if (val < 0 || val > 0xffffff)
-                    return null;
-                res[1] = (byte) ((val >> 16) & 0xff);
-                res[2] = (byte) (((val & 0xffff) >> 8) &0xff);
-                res[3] = (byte) (val & 0xff);
-                break;
-            case 3:
-                /*
-                 * When a three part address is specified, the last part is
-                 * interpreted as a 16-bit quantity and placed in the right
-                 * most two bytes of the network address. This makes the
-                 * three part address format convenient for specifying
-                 * Class B net- work addresses as 128.net.host.
-                 */
-                for (int i = 0; i < 2; i++) {
-                    val = Integer.parseInt(s[i]);
-                    if (val < 0 || val > 0xff)
-                        return null;
-                    res[i] = (byte) (val & 0xff);
                 }
-                val = Integer.parseInt(s[2]);
-                if (val < 0 || val > 0xffff)
+                res[currByte++] = (byte) (tmpValue & 0xff);
+                tmpValue = 0;
+            } else {
+                int digit = Character.digit(c, 10);
+                if (digit < 0) {
                     return null;
-                res[2] = (byte) ((val >> 8) & 0xff);
-                res[3] = (byte) (val & 0xff);
-                break;
-            case 4:
-                /*
-                 * When four parts are specified, each is interpreted as a
-                 * byte of data and assigned, from left to right, to the
-                 * four bytes of an IPv4 address.
-                 */
-                for (int i = 0; i < 4; i++) {
-                    val = Integer.parseInt(s[i]);
-                    if (val < 0 || val > 0xff)
-                        return null;
-                    res[i] = (byte) (val & 0xff);
                 }
-                break;
-            default:
-                return null;
+                tmpValue *= 10;
+                tmpValue += digit;
             }
-        } catch(NumberFormatException e) {
+        }
+        if (tmpValue < 0 || tmpValue >= (1L << ((4 - currByte) * 8))) {
             return null;
+        }
+        switch (currByte) {
+            case 0:
+                res[0] = (byte) ((tmpValue >> 24) & 0xff);
+            case 1:
+                res[1] = (byte) ((tmpValue >> 16) & 0xff);
+            case 2:
+                res[2] = (byte) ((tmpValue >>  8) & 0xff);
+            case 3:
+                res[3] = (byte) ((tmpValue >>  0) & 0xff);
         }
         return res;
     }

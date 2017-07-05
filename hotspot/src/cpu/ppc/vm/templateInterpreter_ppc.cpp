@@ -1334,20 +1334,41 @@ bool AbstractInterpreter::can_be_compiled(methodHandle m) {
 int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
   const int max_alignment_size = 2;
   const int abi_scratch = frame::abi_reg_args_size;
-  return method->max_locals() + method->max_stack() + frame::interpreter_frame_monitor_size() + max_alignment_size + abi_scratch;
+  return method->max_locals() + method->max_stack() +
+         frame::interpreter_frame_monitor_size() + max_alignment_size + abi_scratch;
 }
 
-// Fills a sceletal interpreter frame generated during deoptimizations
-// and returns the frame size in slots.
+// Returns number of stackElementWords needed for the interpreter frame with the
+// given sections.
+// This overestimates the stack by one slot in case of alignments.
+int AbstractInterpreter::size_activation(int max_stack,
+                                         int temps,
+                                         int extra_args,
+                                         int monitors,
+                                         int callee_params,
+                                         int callee_locals,
+                                         bool is_top_frame) {
+  // Note: This calculation must exactly parallel the frame setup
+  // in AbstractInterpreterGenerator::generate_method_entry.
+  assert(Interpreter::stackElementWords == 1, "sanity");
+  const int max_alignment_space = StackAlignmentInBytes / Interpreter::stackElementSize;
+  const int abi_scratch = is_top_frame ? (frame::abi_reg_args_size / Interpreter::stackElementSize) :
+                                         (frame::abi_minframe_size / Interpreter::stackElementSize);
+  const int size =
+    max_stack                                                +
+    (callee_locals - callee_params)                          +
+    monitors * frame::interpreter_frame_monitor_size()       +
+    max_alignment_space                                      +
+    abi_scratch                                              +
+    frame::ijava_state_size / Interpreter::stackElementSize;
+
+  // Fixed size of an interpreter frame, align to 16-byte.
+  return (size & -2);
+}
+
+// Fills a sceletal interpreter frame generated during deoptimizations.
 //
 // Parameters:
-//
-// interpreter_frame == NULL:
-//   Only calculate the size of an interpreter activation, no actual layout.
-//   Note: This calculation must exactly parallel the frame setup
-//   in TemplateInterpreter::generate_normal_entry. But it does not
-//   account for the SP alignment, that might further enhance the
-//   frame size, depending on FP.
 //
 // interpreter_frame != NULL:
 //   set up the method, locals, and monitors.
@@ -1365,59 +1386,41 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
 //   the arguments off advance the esp by dummy popframe_extra_args slots.
 //   Popping off those will establish the stack layout as it was before the call.
 //
-int AbstractInterpreter::layout_activation(Method* method,
-                                           int tempcount,
-                                           int popframe_extra_args,
-                                           int moncount,
-                                           int caller_actual_parameters,
-                                           int callee_param_count,
-                                           int callee_locals,
-                                           frame* caller,
-                                           frame* interpreter_frame,
-                                           bool is_top_frame,
-                                           bool is_bottom_frame) {
+void AbstractInterpreter::layout_activation(Method* method,
+                                            int tempcount,
+                                            int popframe_extra_args,
+                                            int moncount,
+                                            int caller_actual_parameters,
+                                            int callee_param_count,
+                                            int callee_locals_count,
+                                            frame* caller,
+                                            frame* interpreter_frame,
+                                            bool is_top_frame,
+                                            bool is_bottom_frame) {
 
-  const int max_alignment_space = 2;
   const int abi_scratch = is_top_frame ? (frame::abi_reg_args_size / Interpreter::stackElementSize) :
-                                         (frame::abi_minframe_size / Interpreter::stackElementSize) ;
-  const int conservative_framesize_in_slots =
-    method->max_stack() + callee_locals - callee_param_count +
-    (moncount * frame::interpreter_frame_monitor_size()) + max_alignment_space +
-    abi_scratch + frame::ijava_state_size / Interpreter::stackElementSize;
+                                         (frame::abi_minframe_size / Interpreter::stackElementSize);
 
-  assert(!is_top_frame || conservative_framesize_in_slots * 8 > frame::abi_reg_args_size + frame::ijava_state_size, "frame too small");
+  intptr_t* locals_base  = (caller->is_interpreted_frame()) ?
+    caller->interpreter_frame_esp() + caller_actual_parameters :
+    caller->sp() + method->max_locals() - 1 + (frame::abi_minframe_size / Interpreter::stackElementSize) ;
 
-  if (interpreter_frame == NULL) {
-    // Since we don't know the exact alignment, we return the conservative size.
-    return (conservative_framesize_in_slots & -2);
-  } else {
-    // Now we know our caller, calc the exact frame layout and size.
-    intptr_t* locals_base  = (caller->is_interpreted_frame()) ?
-      caller->interpreter_frame_esp() + caller_actual_parameters :
-      caller->sp() + method->max_locals() - 1 + (frame::abi_minframe_size / Interpreter::stackElementSize) ;
+  intptr_t* monitor_base = caller->sp() - frame::ijava_state_size / Interpreter::stackElementSize ;
+  intptr_t* monitor      = monitor_base - (moncount * frame::interpreter_frame_monitor_size());
+  intptr_t* esp_base     = monitor - 1;
+  intptr_t* esp          = esp_base - tempcount - popframe_extra_args;
+  intptr_t* sp           = (intptr_t *) (((intptr_t) (esp_base - callee_locals_count + callee_param_count - method->max_stack()- abi_scratch)) & -StackAlignmentInBytes);
+  intptr_t* sender_sp    = caller->sp() + (frame::abi_minframe_size - frame::abi_reg_args_size) / Interpreter::stackElementSize;
+  intptr_t* top_frame_sp = is_top_frame ? sp : sp + (frame::abi_minframe_size - frame::abi_reg_args_size) / Interpreter::stackElementSize;
 
-    intptr_t* monitor_base = caller->sp() - frame::ijava_state_size / Interpreter::stackElementSize ;
-    intptr_t* monitor      = monitor_base - (moncount * frame::interpreter_frame_monitor_size());
-    intptr_t* esp_base     = monitor - 1;
-    intptr_t* esp          = esp_base - tempcount - popframe_extra_args;
-    intptr_t* sp           = (intptr_t *) (((intptr_t) (esp_base- callee_locals + callee_param_count - method->max_stack()- abi_scratch)) & -StackAlignmentInBytes);
-    intptr_t* sender_sp    = caller->sp() + (frame::abi_minframe_size - frame::abi_reg_args_size) / Interpreter::stackElementSize;
-    intptr_t* top_frame_sp = is_top_frame ? sp : sp + (frame::abi_minframe_size - frame::abi_reg_args_size) / Interpreter::stackElementSize;
-
-    interpreter_frame->interpreter_frame_set_method(method);
-    interpreter_frame->interpreter_frame_set_locals(locals_base);
-    interpreter_frame->interpreter_frame_set_cpcache(method->constants()->cache());
-    interpreter_frame->interpreter_frame_set_esp(esp);
-    interpreter_frame->interpreter_frame_set_monitor_end((BasicObjectLock *)monitor);
-    interpreter_frame->interpreter_frame_set_top_frame_sp(top_frame_sp);
-    if (!is_bottom_frame) {
-      interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
-    }
-
-    int framesize_in_slots = caller->sp() - sp;
-    assert(!is_top_frame ||framesize_in_slots >= (frame::abi_reg_args_size / Interpreter::stackElementSize) + frame::ijava_state_size / Interpreter::stackElementSize, "frame too small");
-    assert(framesize_in_slots <= conservative_framesize_in_slots, "exact frame size must be smaller than the convervative size!");
-    return framesize_in_slots;
+  interpreter_frame->interpreter_frame_set_method(method);
+  interpreter_frame->interpreter_frame_set_locals(locals_base);
+  interpreter_frame->interpreter_frame_set_cpcache(method->constants()->cache());
+  interpreter_frame->interpreter_frame_set_esp(esp);
+  interpreter_frame->interpreter_frame_set_monitor_end((BasicObjectLock *)monitor);
+  interpreter_frame->interpreter_frame_set_top_frame_sp(top_frame_sp);
+  if (!is_bottom_frame) {
+    interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
   }
 }
 
