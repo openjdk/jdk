@@ -32,7 +32,7 @@
 #include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"

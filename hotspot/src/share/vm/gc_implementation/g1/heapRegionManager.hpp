@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONMANAGER_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONMANAGER_HPP
 
 #include "gc_implementation/g1/g1BiasedArray.hpp"
 #include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
@@ -64,7 +64,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
 // * max_length() returns the maximum number of regions the heap can have.
 //
 
-class HeapRegionSeq: public CHeapObj<mtGC> {
+class HeapRegionManager: public CHeapObj<mtGC> {
   friend class VMStructs;
 
   G1HeapRegionTable _regions;
@@ -104,7 +104,7 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   uint start_region_for_worker(uint worker_i, uint num_workers, uint num_regions) const;
 
   // Find a contiguous set of empty or uncommitted regions of length num and return
-  // the index of the first region or G1_NO_HRS_INDEX if the search was unsuccessful.
+  // the index of the first region or G1_NO_HRM_INDEX if the search was unsuccessful.
   // If only_empty is true, only empty regions are considered.
   // Searches from bottom to top of the heap, doing a first-fit.
   uint find_contiguous(size_t num, bool only_empty);
@@ -117,7 +117,7 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   // sequence could be found, otherwise res_idx contains the start index of this range.
   uint find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const;
   // Allocate a new HeapRegion for the given index.
-  HeapRegion* new_heap_region(uint hrs_index);
+  HeapRegion* new_heap_region(uint hrm_index);
 #ifdef ASSERT
 public:
   bool is_free(HeapRegion* hr) const;
@@ -127,7 +127,7 @@ public:
 
  public:
   // Empty constructor, we'll initialize it with the initialize() method.
-  HeapRegionSeq() : _regions(), _heap_mapper(NULL), _num_committed(0),
+  HeapRegionManager() : _regions(), _heap_mapper(NULL), _num_committed(0),
                     _next_bitmap_mapper(NULL), _prev_bitmap_mapper(NULL), _bot_mapper(NULL),
                     _allocated_heapregions_length(0), _available_map(),
                     _free_list("Free list", new MasterFreeRegionListMtSafeChecker())
@@ -167,7 +167,7 @@ public:
 
     if (hr != NULL) {
       assert(hr->next() == NULL, "Single region should not have next");
-      assert(is_available(hr->hrs_index()), "Must be committed");
+      assert(is_available(hr->hrm_index()), "Must be committed");
     }
     return hr;
   }
@@ -211,10 +211,10 @@ public:
   uint expand_at(uint start, uint num_regions);
 
   // Find a contiguous set of empty regions of length num. Returns the start index of
-  // that set, or G1_NO_HRS_INDEX.
+  // that set, or G1_NO_HRM_INDEX.
   uint find_contiguous_only_empty(size_t num) { return find_contiguous(num, true); }
   // Find a contiguous set of empty or unavailable regions of length num. Returns the
-  // start index of that set, or G1_NO_HRS_INDEX.
+  // start index of that set, or G1_NO_HRM_INDEX.
   uint find_contiguous_empty_or_unavailable(size_t num) { return find_contiguous(num, false); }
 
   HeapRegion* next_region_in_heap(const HeapRegion* r) const;
@@ -235,5 +235,5 @@ public:
   void verify_optional() PRODUCT_RETURN;
 };
 
-#endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONMANAGER_HPP
 

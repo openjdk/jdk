@@ -276,7 +276,10 @@ protected:
     CPU_MODEL_WESTMERE_EX    = 0x2f,
     CPU_MODEL_SANDYBRIDGE    = 0x2a,
     CPU_MODEL_SANDYBRIDGE_EP = 0x2d,
-    CPU_MODEL_IVYBRIDGE_EP   = 0x3a
+    CPU_MODEL_IVYBRIDGE_EP   = 0x3a,
+    CPU_MODEL_HASWELL_E3     = 0x3c,
+    CPU_MODEL_HASWELL_E7     = 0x3f,
+    CPU_MODEL_BROADWELL      = 0x3d
   } cpuExtendedFamily;
 
   // cpuid information block.  All info derived from executing cpuid with
