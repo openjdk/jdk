@@ -54,6 +54,7 @@ final class SunECEntries {
          */
         map.put("AlgorithmParameters.EC", "sun.security.ec.ECParameters");
         map.put("Alg.Alias.AlgorithmParameters.EllipticCurve", "EC");
+        map.put("Alg.Alias.AlgorithmParameters.1.2.840.10045.2.1", "EC");
 
         map.put("AlgorithmParameters.EC KeySize", "256");
 
@@ -133,6 +134,9 @@ final class SunECEntries {
             "sun.security.ec.ECDSASignature$Raw");
         map.put("Signature.SHA1withECDSA",
             "sun.security.ec.ECDSASignature$SHA1");
+        map.put("Alg.Alias.Signature.OID.1.2.840.10045.4.1", "SHA1withECDSA");
+        map.put("Alg.Alias.Signature.1.2.840.10045.4.1", "SHA1withECDSA");
+
         map.put("Signature.SHA224withECDSA",
             "sun.security.ec.ECDSASignature$SHA224");
         map.put("Alg.Alias.Signature.OID.1.2.840.10045.4.3.1", "SHA224withECDSA");

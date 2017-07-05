@@ -40,18 +40,12 @@
 #import <AppKit/AppKit.h>
 #import "ThreadUtilities.h"
 
-// private Quartz routines needed here
-CG_EXTERN void CGContextSetCTM(CGContextRef ref, CGAffineTransform tx);
-
 //#define DEBUG
 #if defined DEBUG
     #define PRINT(msg) {fprintf(stderr, "%s\n", msg);}
 #else
     #define PRINT(msg) {}
 #endif
-
-// from CGAffineTransformPrivate.h
-extern CGPoint CGPointApplyInverseAffineTransform(CGPoint point, CGAffineTransform t);
 
 #define kOffset (0.5f)
 
@@ -608,7 +602,8 @@ PRINT(" SetUpCGContext")
                 // We need to flip both y coefficeints to flip the offset point into the java coordinate system.
                 ctm.b = -ctm.b; ctm.d = -ctm.d; ctm.tx = 0.0f; ctm.ty = 0.0f;
                 CGPoint offsets = {kOffset, kOffset};
-                offsets = CGPointApplyInverseAffineTransform(offsets, ctm);
+                CGAffineTransform inverse = CGAffineTransformInvert(ctm);
+                offsets = CGPointApplyAffineTransform(offsets, inverse);
                 qsdo->graphicsStateInfo.offsetX = offsets.x;
                 qsdo->graphicsStateInfo.offsetY = offsets.y;
             }

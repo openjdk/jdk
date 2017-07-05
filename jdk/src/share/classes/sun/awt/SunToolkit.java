@@ -197,7 +197,7 @@ public abstract class SunToolkit extends Toolkit
     public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
         throws AWTException;
 
-    public abstract KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager)
+    public abstract KeyboardFocusManagerPeer getKeyboardFocusManagerPeer()
         throws HeadlessException;
 
     /**
@@ -463,6 +463,19 @@ public abstract class SunToolkit extends Toolkit
         if (event == null) {
             throw new NullPointerException();
         }
+
+        AWTAccessor.SequencedEventAccessor sea = AWTAccessor.getSequencedEventAccessor();
+        if (sea != null && sea.isSequencedEvent(event)) {
+            AWTEvent nested = sea.getNested(event);
+            if (nested.getID() == WindowEvent.WINDOW_LOST_FOCUS &&
+                nested instanceof TimedWindowEvent)
+            {
+                TimedWindowEvent twe = (TimedWindowEvent)nested;
+                ((SunToolkit)Toolkit.getDefaultToolkit()).
+                    setWindowDeactivationTime((Window)twe.getSource(), twe.getWhen());
+            }
+        }
+
         // All events posted via this method are system-generated.
         // Placing the following call here reduces considerably the
         // number of places throughout the toolkit that would
@@ -1861,6 +1874,28 @@ public abstract class SunToolkit extends Toolkit
      */
     public boolean isNativeGTKAvailable() {
         return false;
+    }
+
+    private static final Object DEACTIVATION_TIMES_MAP_KEY = new Object();
+
+    public synchronized void setWindowDeactivationTime(Window w, long time) {
+        AppContext ctx = getAppContext(w);
+        WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
+        if (map == null) {
+            map = new WeakHashMap<Window, Long>();
+            ctx.put(DEACTIVATION_TIMES_MAP_KEY, map);
+        }
+        map.put(w, time);
+    }
+
+    public synchronized long getWindowDeactivationTime(Window w) {
+        AppContext ctx = getAppContext(w);
+        WeakHashMap<Window, Long> map = (WeakHashMap<Window, Long>)ctx.get(DEACTIVATION_TIMES_MAP_KEY);
+        if (map == null) {
+            return -1;
+        }
+        Long time = map.get(w);
+        return time == null ? -1 : time;
     }
 
     // Cosntant alpha

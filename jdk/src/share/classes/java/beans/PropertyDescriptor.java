@@ -109,6 +109,10 @@ public class PropertyDescriptor extends FeatureDescriptor {
         if (writeMethodName != null && getWriteMethod() == null) {
             throw new IntrospectionException("Method not found: " + writeMethodName);
         }
+        boundInitialization(beanClass);
+    }
+
+    private void boundInitialization(Class<?> beanClass) {
         // If this class or one of its base classes allow PropertyChangeListener,
         // then we assume that any properties we discover are "bound".
         // See Introspector.getTargetPropertyInfo() method.
@@ -159,6 +163,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         setReadMethod(read);
         setWriteMethod(write);
         this.baseName = base;
+        boundInitialization(bean);
     }
 
     /**
@@ -588,7 +593,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         Method yw = y.getWriteMethod();
 
         try {
-            if (yw != null && yw.getDeclaringClass() == getClass0()) {
+            if (yw != null) {
                 setWriteMethod(yw);
             } else {
                 setWriteMethod(xw);
