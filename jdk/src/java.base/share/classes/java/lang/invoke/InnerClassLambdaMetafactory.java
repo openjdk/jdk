@@ -66,15 +66,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
     private static final String NAME_METHOD_READ_OBJECT = "readObject";
     private static final String NAME_METHOD_WRITE_OBJECT = "writeObject";
+
+    private static final String DESCR_CLASS = "Ljava/lang/Class;";
+    private static final String DESCR_STRING = "Ljava/lang/String;";
+    private static final String DESCR_OBJECT = "Ljava/lang/Object;";
     private static final String DESCR_CTOR_SERIALIZED_LAMBDA
-            = MethodType.methodType(void.class,
-                                    Class.class,
-                                    String.class, String.class, String.class,
-                                    int.class, String.class, String.class, String.class,
-                                    String.class,
-                                    Object[].class).toMethodDescriptorString();
-    private static final String DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION
-            = MethodType.methodType(void.class, String.class).toMethodDescriptorString();
+            = "(" + DESCR_CLASS + DESCR_STRING + DESCR_STRING + DESCR_STRING + "I"
+            + DESCR_STRING + DESCR_STRING + DESCR_STRING + DESCR_STRING + "[" + DESCR_OBJECT + ")V";
+
+    private static final String DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION = "(Ljava/lang/String;)V";
     private static final String[] SER_HOSTILE_EXCEPTIONS = new String[] {NAME_NOT_SERIALIZABLE_EXCEPTION};
 
 

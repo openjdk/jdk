@@ -154,6 +154,10 @@ char* Symbol::as_C_string_flexible_buffer(Thread* t,
   return as_C_string(str, buf_len);
 }
 
+void Symbol::print_utf8_on(outputStream* st) const {
+  st->print("%s", as_C_string());
+}
+
 void Symbol::print_symbol_on(outputStream* st) const {
   ResourceMark rm;
   st = st ? st : tty;

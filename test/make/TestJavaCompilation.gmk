@@ -27,6 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include JarArchive.gmk
 include JavaCompilation.gmk
 
 THIS_FILE := $(SRC_ROOT)/test/make/TestJavaCompilation.gmk
@@ -66,11 +67,12 @@ $(OUTPUT_DIR)/_jar1_created: $(DEPS)
 	$(TOUCH) $(JAR1_SRC_ROOT)/META-INF/metafile
 	$(TOUCH) $@
 
-$(eval $(call SetupArchive,BUILD_JAR1, \
+$(eval $(call SetupJarArchive, BUILD_JAR1, \
     DEPENDENCIES := $(OUTPUT_DIR)/_jar1_created, \
     SRCS := $(JAR1_SRC_ROOT), \
     MANIFEST := $(JAR1_MANIFEST), \
-    JAR := $(JAR1_FILE)))
+    JAR := $(JAR1_FILE), \
+))
 
 $(OUTPUT_DIR)/_jar1_verified: $(BUILD_JAR1)
 	$(RM) -r $(JAR1_UNZIP)
@@ -142,10 +144,11 @@ $(OUTPUT_DIR)/_jar2_created: $(DEPS)
 	$(TOUCH) $(JAR2_SRC_ROOT2)/dir2/file2.class
 	$(TOUCH) $@
 
-$(eval $(call SetupArchive,BUILD_JAR2, \
+$(eval $(call SetupJarArchive, BUILD_JAR2, \
     DEPENDENCIES := $(OUTPUT_DIR)/_jar2_created, \
     SRCS := $(JAR2_SRC_ROOT1) $(JAR2_SRC_ROOT2), \
-    JAR := $(JAR2_FILE)))
+    JAR := $(JAR2_FILE), \
+))
 
 $(OUTPUT_DIR)/_jar2_verified: $(BUILD_JAR2)
 	$(RM) -r $(JAR2_UNZIP)
@@ -195,14 +198,15 @@ $(OUTPUT_DIR)/_jar3_created: $(DEPS)
 	$(TOUCH) $(JAR3_SRC_ROOT2)/dir2/file\$$foo.dollar
 	$(TOUCH) $@
 
-$(eval $(call SetupArchive,BUILD_JAR3, \
+$(eval $(call SetupJarArchive, BUILD_JAR3, \
     DEPENDENCIES := $(OUTPUT_DIR)/_jar3_created, \
     SRCS := $(JAR3_SRC_ROOT1) $(JAR3_SRC_ROOT2), \
     EXTRA_FILES := extra-file \
         dir2/file$$$$foo.dollar \
         $(JAR3_SRC_ROOT2)/extra-file-abs, \
     EXCLUDE_FILES := dir1/file1$$$$foo.class, \
-    JAR := $(JAR3_FILE)))
+    JAR := $(JAR3_FILE), \
+))
 
 $(OUTPUT_DIR)/_jar3_verified: $(BUILD_JAR3)
 	$(RM) -r $(JAR3_UNZIP)
