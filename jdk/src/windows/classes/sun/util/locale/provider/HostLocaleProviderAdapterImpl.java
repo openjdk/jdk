@@ -35,17 +35,20 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle.Control;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.spi.CalendarDataProvider;
 import java.util.spi.CalendarNameProvider;
+import sun.util.spi.CalendarProvider;
 
 /**
  * LocaleProviderdapter implementation for the Windows locale data.
@@ -98,9 +101,9 @@ public class HostLocaleProviderAdapterImpl {
         if (initialize()) {
             // Assuming the default locales do not include any extensions, so
             // no stripping is needed here.
-            Locale l = Locale.forLanguageTag(getDefaultLocale(CAT_FORMAT).replaceAll("_","-"));
+            Locale l = Locale.forLanguageTag(getDefaultLocale(CAT_FORMAT).replace('_', '-'));
             tmpSet.addAll(Control.getNoFallbackControl(Control.FORMAT_DEFAULT).getCandidateLocales("", l));
-            l = Locale.forLanguageTag(getDefaultLocale(CAT_DISPLAY).replaceAll("_","-"));
+            l = Locale.forLanguageTag(getDefaultLocale(CAT_DISPLAY).replace('_', '-'));
             tmpSet.addAll(Control.getNoFallbackControl(Control.FORMAT_DEFAULT).getCandidateLocales("", l));
         }
         supportedLocaleSet = Collections.unmodifiableSet(tmpSet);
@@ -173,24 +176,12 @@ public class HostLocaleProviderAdapterImpl {
 
             @Override
             public Locale[] getAvailableLocales() {
-                if (isSupportedLocale(Locale.getDefault(Locale.Category.FORMAT))) {
-                    return supportedLocale;
-                }
-
-                return new Locale[0];
+                return getSupportedCalendarLocales();
             }
 
             @Override
             public boolean isSupportedLocale(Locale locale) {
-                // Only supports the locale with Gregorian calendar
-                if (supportedLocale.length != 0) {
-                    int calid = getCalendarID(locale.toLanguageTag());
-                    if (calid > 0 && calid < calIDToLDML.length) {
-                        return calIDToLDML[calid].startsWith("gregory");
-                    }
-                }
-
-                return false;
+                return isSupportedCalendarLocale(locale);
             }
 
             @Override
@@ -380,6 +371,29 @@ public class HostLocaleProviderAdapterImpl {
         };
     }
 
+    public static CalendarProvider getCalendarProvider() {
+        return new CalendarProvider() {
+            @Override
+            public Locale[] getAvailableLocales() {
+                return getSupportedCalendarLocales();
+            }
+
+            @Override
+            public boolean isSupportedLocale(Locale locale) {
+                return isSupportedCalendarLocale(locale);
+            }
+
+            @Override
+            public Calendar getInstance(TimeZone zone, Locale locale) {
+                return new Calendar.Builder()
+                             .setLocale(getCalendarLocale(locale))
+                             .setTimeZone(zone)
+                             .setInstant(System.currentTimeMillis())
+                             .build();
+            }
+        };
+    }
+
     private static String convertDateTimePattern(String winPattern) {
         String ret = winPattern.replaceAll("dddd", "EEEE");
         ret = ret.replaceAll("ddd", "EEE");
@@ -401,24 +415,21 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static boolean isSupportedCalendarLocale(Locale locale) {
-        // special case for ja_JP_JP
-        if (JRELocaleConstants.JA_JP_JP.equals(locale)) {
-            return isJapaneseCalendar();
-        }
-
         Locale base = locale.stripExtensions();
         if (!supportedLocaleSet.contains(base)) {
             return false;
         }
 
-        String caltype = locale.getUnicodeLocaleType("ca");
-        if (caltype == null) {
-            return true;
-        }
+        String requestedCalType = locale.getUnicodeLocaleType("ca");
+        String nativeCalType =
+                calIDToLDML[getCalendarID(locale.toLanguageTag())]
+                .replaceFirst("_.*", ""); // remove locale part.
 
-        return caltype.equals(
-            calIDToLDML[getCalendarID(locale.toLanguageTag())]
-            .replaceFirst("_.*", ""));
+        if (requestedCalType == null) {
+            return Calendar.getAvailableCalendarTypes().contains(nativeCalType);
+        } else {
+            return requestedCalType.equals(nativeCalType);
+        }
     }
 
     private static Locale[] getSupportedNativeDigitLocales() {

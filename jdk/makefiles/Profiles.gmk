@@ -74,19 +74,19 @@ PROFILE_3_JARS := \
     $(PROFILE_2_JARS)
 
 ifdef OPENJDK
-  PROFILE_4_JRE_JAR_FILES := $(filter-out alt-rt.jar, $(PROFILE_4_JRE_JAR_FILES))
+  FULL_JRE_JAR_FILES := $(filter-out alt-rt.jar, $(FULL_JRE_JAR_FILES))
 endif
 
-PROFILE_4_JARS := \
-    $(addprefix $(IMAGES_OUTPUTDIR)/lib/, $(PROFILE_4_JRE_JAR_FILES)) \
+FULL_JRE_JARS := \
+    $(addprefix $(IMAGES_OUTPUTDIR)/lib/, $(FULL_JRE_JAR_FILES)) \
     $(PROFILE_3_JARS)
 
 # The full set of "jar" files needed for a complete JDK (ct.sym and src.zip
 # are also included.)
 # Note we need to add back the regular form of all the custom profile jars e.g.
-# rt.jar and resources.jar
+# rt.jar and resources.jar that we filtered out above
 
-ALL_JARS := $(PROFILE_4_JARS) \
+ALL_JARS := $(FULL_JRE_JARS) \
         $(IMAGES_OUTPUTDIR)/lib/rt.jar \
         $(IMAGES_OUTPUTDIR)/lib/resources.jar \
         $(IMAGES_OUTPUTDIR)/lib/jconsole.jar \
@@ -94,7 +94,6 @@ ALL_JARS := $(PROFILE_4_JARS) \
         $(IMAGES_OUTPUTDIR)/lib/tools.jar \
         $(IMAGES_OUTPUTDIR)/lib/ct.sym \
         $(IMAGES_OUTPUTDIR)/src.zip \
-        $(IMAGES_OUTPUTDIR)/lib/ext/cldrdata.jar \
         $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
@@ -140,7 +139,7 @@ ALL_JRE_BIN_FILES := \
    $(PROFILE_1_JRE_BIN_FILES) \
    $(PROFILE_2_JRE_BIN_FILES) \
    $(PROFILE_3_JRE_BIN_FILES) \
-   $(PROFILE_4_JRE_BIN_FILES) 
+   $(FULL_JRE_BIN_FILES) 
 
 NOT_JRE_BIN_FILES := $(filter-out $(ALL_JRE_BIN_FILES), $(NEW_ALL_BIN_LIST))
 
@@ -149,18 +148,18 @@ ifeq ($(PROFILE), profile_1)
     NOT_JRE_BIN_FILES += \
         $(PROFILE_2_JRE_BIN_FILES) \
         $(PROFILE_3_JRE_BIN_FILES) \
-        $(PROFILE_4_JRE_BIN_FILES) 
+        $(FULL_JRE_BIN_FILES) 
 endif
 
 ifeq ($(PROFILE), profile_2)
     NOT_JRE_BIN_FILES += \
         $(PROFILE_3_JRE_BIN_FILES) \
-        $(PROFILE_4_JRE_BIN_FILES) 
+        $(FULL_JRE_BIN_FILES) 
 endif
 
 ifeq ($(PROFILE), profile_3)
     NOT_JRE_BIN_FILES += \
-        $(PROFILE_4_JRE_BIN_FILES) 
+        $(FULL_JRE_BIN_FILES) 
 endif
 
 NOT_JRE_BIN_FILES := $(addprefix $(JDK_OUTPUTDIR)/bin/, $(NOT_JRE_BIN_FILES))
@@ -173,7 +172,7 @@ ALL_JRE_LIB_FILES := \
    $(PROFILE_1_JRE_LIB_FILES) \
    $(PROFILE_2_JRE_LIB_FILES) \
    $(PROFILE_3_JRE_LIB_FILES) \
-   $(PROFILE_4_JRE_LIB_FILES) 
+   $(FULL_JRE_LIB_FILES) 
 
 NOT_JRE_LIB_FILES := $(filter-out $(ALL_JRE_LIB_FILES), $(NEW_ALL_LIB_LIST))
 
@@ -189,18 +188,18 @@ ifeq ($(PROFILE), profile_1)
     NOT_JRE_LIB_FILES += \
         $(PROFILE_2_JRE_LIB_FILES) \
         $(PROFILE_3_JRE_LIB_FILES) \
-        $(PROFILE_4_JRE_LIB_FILES) 
+        $(FULL_JRE_LIB_FILES) 
 endif
 
 ifeq ($(PROFILE), profile_2)
     NOT_JRE_LIB_FILES += \
         $(PROFILE_3_JRE_LIB_FILES) \
-        $(PROFILE_4_JRE_LIB_FILES) 
+        $(FULL_JRE_LIB_FILES) 
 endif
 
 ifeq ($(PROFILE), profile_3)
     NOT_JRE_LIB_FILES += \
-        $(PROFILE_4_JRE_LIB_FILES) 
+        $(FULL_JRE_LIB_FILES) 
 endif
 
 # Exclude the custom jar files as these will be added back via a special rule
@@ -279,13 +278,13 @@ class_list =  $(patsubst $(JDK_OUTPUTDIR)/classes/%,%,\
 
 ifeq ($(PROFILE), profile_1)
   RT_JAR_EXCLUDES += \
-    $(PROFILE_1_RTJAR_EXCLUDE_TYPES) \
+    $(call class_list, $(PROFILE_1_RTJAR_EXCLUDE_TYPES)) \
     $(PROFILE_2_RTJAR_INCLUDE_PACKAGES) \
     $(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES)) \
     $(PROFILE_3_RTJAR_INCLUDE_PACKAGES) \
     $(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES)) \
-    $(PROFILE_4_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(PROFILE_4_RTJAR_INCLUDE_TYPES))
+    $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
+    $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
   RT_JAR_INCLUDE_TYPES := \
 	$(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES))
   PROFILE_INCLUDE_METAINF_SERVICES := \
@@ -293,11 +292,11 @@ ifeq ($(PROFILE), profile_1)
 endif
 ifeq ($(PROFILE), profile_2)
   RT_JAR_EXCLUDES += \
-    $(PROFILE_2_RTJAR_EXCLUDE_TYPES) \
+    $(call class_list, $(PROFILE_2_RTJAR_EXCLUDE_TYPES)) \
     $(PROFILE_3_RTJAR_INCLUDE_PACKAGES) \
     $(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES)) \
-    $(PROFILE_4_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(PROFILE_4_RTJAR_INCLUDE_TYPES))
+    $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
+    $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
   RT_JAR_INCLUDE_TYPES := \
 	$(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES)) \
 	$(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES))
@@ -307,9 +306,9 @@ ifeq ($(PROFILE), profile_2)
 endif
 ifeq ($(PROFILE), profile_3)
   RT_JAR_EXCLUDES += \
-    $(PROFILE_3_RTJAR_EXCLUDE_TYPES) \
-    $(PROFILE_4_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(PROFILE_4_RTJAR_INCLUDE_TYPES))
+    $(call class_list, $(PROFILE_3_RTJAR_EXCLUDE_TYPES)) \
+    $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
+    $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
   RT_JAR_INCLUDE_TYPES := \
 	$(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES)) \
 	$(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES)) \

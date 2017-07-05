@@ -4,10 +4,10 @@
 -gc
 -gccapacity
 -gccause
+-gcmetacapacity
 -gcnew
 -gcnewcapacity
 -gcold
 -gcoldcapacity
--gcpermcapacity
 -gcutil
 -printcompilation

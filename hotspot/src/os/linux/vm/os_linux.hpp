@@ -95,7 +95,8 @@ class Linux {
 
  public:
   static bool _stack_is_executable;
-  static void *dll_load_inner(const char *name);
+  static void *dlopen_helper(const char *name, char *ebuf, int ebuflen);
+  static void *dll_load_in_vmthread(const char *name, char *ebuf, int ebuflen);
 
   static void init_thread_fpu_state();
   static int  get_fpu_control_word();

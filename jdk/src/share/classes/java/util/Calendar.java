@@ -57,6 +57,8 @@ import java.util.concurrent.ConcurrentMap;
 import sun.util.BuddhistCalendar;
 import sun.util.calendar.ZoneInfo;
 import sun.util.locale.provider.CalendarDataUtility;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.spi.CalendarProvider;
 
 /**
  * The <code>Calendar</code> class is an abstract class that provides methods
@@ -1608,9 +1610,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      */
     public static Calendar getInstance()
     {
-        Calendar cal = createCalendar(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
-        cal.sharedZone = true;
-        return cal;
+        return createCalendar(TimeZone.getDefault(), Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -1637,9 +1637,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      */
     public static Calendar getInstance(Locale aLocale)
     {
-        Calendar cal = createCalendar(TimeZone.getDefaultRef(), aLocale);
-        cal.sharedZone = true;
-        return cal;
+        return createCalendar(TimeZone.getDefault(), aLocale);
     }
 
     /**
@@ -1660,6 +1658,17 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     private static Calendar createCalendar(TimeZone zone,
                                            Locale aLocale)
     {
+        CalendarProvider provider =
+            LocaleProviderAdapter.getAdapter(CalendarProvider.class, aLocale)
+                                 .getCalendarProvider();
+        if (provider != null) {
+            try {
+                return provider.getInstance(zone, aLocale);
+            } catch (IllegalArgumentException iae) {
+                // fall back to the default instantiation
+            }
+        }
+
         Calendar cal = null;
 
         if (aLocale.hasExtensions()) {

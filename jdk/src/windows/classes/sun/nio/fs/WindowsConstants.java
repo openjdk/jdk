@@ -181,6 +181,11 @@ class WindowsConstants {
     public static final int FILE_READ_ATTRIBUTES        = 0x0080;
     public static final int FILE_WRITE_ATTRIBUTES       = 0x0100;
 
+    public static final int FILE_GENERIC_READ           = 0x00120089;
+    public static final int FILE_GENERIC_WRITE          = 0x00120116;
+    public static final int FILE_GENERIC_EXECUTE        = 0x001200a0;
+    public static final int FILE_ALL_ACCESS             = 0x001f01ff;
+
     // operating system security
     public static final int TOKEN_DUPLICATE             = 0x0002;
     public static final int TOKEN_IMPERSONATE           = 0x0004;

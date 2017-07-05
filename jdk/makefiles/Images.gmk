@@ -649,7 +649,7 @@ ifneq ($(POST_STRIP_CMD),)
         EXEC_LIST_BIN:=$(filter-out %$(notdir $(MSVCR_DLL)),$(filter %.exe %.dll,$(ALL_BIN_LIST)))
     else
         # Find all executables in JDK_OUTPUTDIR since they exist when this makefile is parsed
-        EXEC_LIST_BIN:=$(shell $(FILE) `$(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+        EXEC_LIST_BIN:=$(shell $(FILE) `$(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*$(EXE_SUFFIX) ! -name \*.debuginfo` \
 		| $(EGREP) 'ELF' | $(CUT) -d':' -f1)
         # On mac, the old build searches for static libraries for stripping instead of shared.
         # Not clear if it's intentional.
