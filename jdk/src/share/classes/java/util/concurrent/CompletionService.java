@@ -57,7 +57,6 @@ package java.util.concurrent;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions taken by that task, which in turn <i>happen-before</i>
  * actions following a successful return from the corresponding {@code take()}.
- *
  */
 public interface CompletionService<V> {
     /**
@@ -97,7 +96,6 @@ public interface CompletionService<V> {
      * @throws InterruptedException if interrupted while waiting
      */
     Future<V> take() throws InterruptedException;
-
 
     /**
      * Retrieves and removes the Future representing the next

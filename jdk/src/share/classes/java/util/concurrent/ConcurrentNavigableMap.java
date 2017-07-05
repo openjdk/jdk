@@ -67,7 +67,6 @@ public interface ConcurrentNavigableMap<K,V>
      */
     ConcurrentNavigableMap<K,V> headMap(K toKey, boolean inclusive);
 
-
     /**
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}

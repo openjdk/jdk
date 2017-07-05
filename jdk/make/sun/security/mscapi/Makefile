@@ -209,9 +209,9 @@ build-jar: $(UNSIGNED_DIR)/sunmscapi.jar
 #
 # Build sunmscapi.jar.
 #
-$(UNSIGNED_DIR)/sunmscapi.jar: build
+$(UNSIGNED_DIR)/sunmscapi.jar: build $(JCE_MANIFEST_FILE)
 	$(prep-target)
-	$(BOOT_JAR_CMD) cf $@ $(JAR_DIRS) \
+	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ $(JAR_DIRS) \
 	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 

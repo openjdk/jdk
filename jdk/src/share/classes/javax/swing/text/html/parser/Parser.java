@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -952,7 +952,7 @@ class Parser implements DTDConstants {
                         ch = readCh();
                         break;
                 }
-                char data[] = {mapNumericReference((char) n)};
+                char data[] = mapNumericReference(n);
                 return data;
             }
             addString('#');
@@ -1021,7 +1021,7 @@ class Parser implements DTDConstants {
     }
 
     /**
-     * Converts numeric character reference to Unicode character.
+     * Converts numeric character reference to char array.
      *
      * Normally the code in a reference should be always converted
      * to the Unicode character with the same code, but due to
@@ -1030,13 +1030,21 @@ class Parser implements DTDConstants {
      * to displayable characters with other codes.
      *
      * @param c the code of numeric character reference.
-     * @return the character corresponding to the reference code.
+     * @return a char array corresponding to the reference code.
      */
-    private char mapNumericReference(char c) {
-        if (c < 130 || c > 159) {
-            return c;
+    private char[] mapNumericReference(int c) {
+        char[] data;
+        if (c >= 0xffff) { // outside unicode BMP.
+            try {
+                data = Character.toChars(c);
+            } catch (IllegalArgumentException e) {
+                data = new char[0];
+            }
+        } else {
+            data = new char[1];
+            data[0] = (c < 130 || c > 159) ? (char) c : cp1252Map[c - 130];
         }
-        return cp1252Map[c - 130];
+        return data;
     }
 
     /**

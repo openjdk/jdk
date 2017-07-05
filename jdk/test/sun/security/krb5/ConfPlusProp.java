@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @bug 6857795
  * @bug 6858589
  * @bug 6972005
+ * @compile -XDignore.symbol.file ConfPlusProp.java
  * @run main/othervm ConfPlusProp
  * @summary krb5.conf ignored if system properties on realm and kdc are provided
  */
@@ -75,7 +76,7 @@ public class ConfPlusProp {
         check("R1", "k1");
         check("R2", "old");
         check("R3", null);
-        if (!config.getDefault("forwardable", "libdefaults").equals("well")) {
+        if (!config.get("libdefaults", "forwardable").equals("well")) {
             throw new Exception("Extra config error");
         }
 
@@ -103,7 +104,7 @@ public class ConfPlusProp {
             check("R1", null);
             check("R2", null);
             check("R3", null);
-            if (config.getDefault("forwardable", "libdefaults") != null) {
+            if (config.get("libdefaults", "forwardable") != null) {
                 throw new Exception("Extra config error");
             }
         }
@@ -121,7 +122,7 @@ public class ConfPlusProp {
         check("R1", "k1");
         check("R2", "k2");
         check("R3", "k2");
-        if (!config.getDefault("forwardable", "libdefaults").equals("well")) {
+        if (!config.get("libdefaults", "forwardable").equals("well")) {
             throw new Exception("Extra config error");
         }
 
@@ -143,7 +144,7 @@ public class ConfPlusProp {
         check("R1", "k2");
         check("R2", "k2");
         check("R3", "k2");
-        if (config.getDefault("forwardable", "libdefaults") != null) {
+        if (config.get("libdefaults", "forwardable") != null) {
             throw new Exception("Extra config error");
         }
     }

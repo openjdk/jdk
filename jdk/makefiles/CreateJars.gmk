@@ -69,9 +69,45 @@ JARS+=$(IMAGES_OUTPUTDIR)/lib/ext/dnsns.jar
 
 ##########################################################################################
 
-LOCALEDATA_INCLUDE_LOCALES := ar hi iw ja ko th vi zh
+LOCALEDATA_INCLUDE_LOCALES := ar be bg ca cs da de el es et fi fr ga hi hr hu in is it \
+                              iw ja ko lt lv mk ms mt nl no pl pt ro ru sk sl sq sr sv \
+                              th tr uk vi zh
+
 LOCALEDATA_INCLUDES := $(addprefix sun/text/resources/,$(LOCALEDATA_INCLUDE_LOCALES)) \
 		       $(addprefix sun/util/resources/,$(LOCALEDATA_INCLUDE_LOCALES))
+
+# For non-US English locale data
+
+LOCALEDATA_INCLUDES += \
+                sun/text/resources/en/FormatData_en_AU.class \
+                sun/text/resources/en/FormatData_en_CA.class \
+                sun/text/resources/en/FormatData_en_GB.class \
+                sun/text/resources/en/FormatData_en_IE.class \
+                sun/text/resources/en/FormatData_en_IN.class \
+                sun/text/resources/en/FormatData_en_MT.class \
+                sun/text/resources/en/FormatData_en_NZ.class \
+                sun/text/resources/en/FormatData_en_PH.class \
+                sun/text/resources/en/FormatData_en_SG.class \
+                sun/text/resources/en/FormatData_en_ZA.class \
+                sun/util/resources/en/CalendarData_en_GB.class \
+                sun/util/resources/en/CalendarData_en_IE.class \
+                sun/util/resources/en/CalendarData_en_MT.class \
+                sun/util/resources/en/CurrencyNames_en_AU.class \
+                sun/util/resources/en/CurrencyNames_en_CA.class \
+                sun/util/resources/en/CurrencyNames_en_GB.class \
+                sun/util/resources/en/CurrencyNames_en_IE.class \
+                sun/util/resources/en/CurrencyNames_en_IN.class \
+                sun/util/resources/en/CurrencyNames_en_MT.class \
+                sun/util/resources/en/CurrencyNames_en_NZ.class \
+                sun/util/resources/en/CurrencyNames_en_PH.class \
+                sun/util/resources/en/CurrencyNames_en_SG.class \
+                sun/util/resources/en/CurrencyNames_en_ZA.class \
+                sun/util/resources/en/LocaleNames_en_MT.class \
+                sun/util/resources/en/LocaleNames_en_PH.class \
+                sun/util/resources/en/LocaleNames_en_SG.class \
+                sun/util/resources/en/TimeZoneNames_en_CA.class \
+                sun/util/resources/en/TimeZoneNames_en_GB.class \
+                sun/util/resources/en/TimeZoneNames_en_IE.class
 
 $(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
@@ -126,15 +162,7 @@ RT_JAR_EXCLUDES := \
 	sun/tools/serialver \
 	sun/tools/tree \
 	sun/tools/util \
-	sun/security/tools/jarsigner/JarBASE64Encoder.class \
-	sun/security/tools/jarsigner/Main.class \
-	sun/security/tools/jarsigner/JarSignerParameters.class \
-	sun/security/tools/jarsigner/Resources.class \
-	sun/security/tools/jarsigner/Resources_ja.class \
-	sun/security/tools/jarsigner/Resources_zh_CN.class \
-	sun/security/tools/jarsigner/SignatureFile\$$$$Block.class \
-	sun/security/tools/jarsigner/SignatureFile.class \
-	sun/security/tools/jarsigner/TimestampedSigner.class \
+	sun/security/tools/jarsigner \
 	sun/security/provider/Sun.class \
 	sun/security/rsa/SunRsaSign.class \
 	sun/security/ssl \
@@ -244,7 +272,6 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), macosx)
         RT_JAR_EXCLUDES += com/sun/nio/sctp \
                            sun/nio/ch/sctp \
-                           sun/jdbc
 endif
 
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
@@ -666,14 +693,7 @@ TOOLS_JAR_INCLUDES := \
 	sun/tools/serialver	\
 	sun/tools/tree		\
 	sun/tools/util		\
-	sun/security/tools/JarBASE64Encoder.class \
-	sun/security/tools/JarSigner.class \
-	sun/security/tools/JarSignerParameters.class \
-	sun/security/tools/JarSignerResources.class \
-	sun/security/tools/JarSignerResources_ja.class \
-	sun/security/tools/JarSignerResources_zh_CN.class \
-	sun/security/tools/SignatureFile* \
-	sun/security/tools/TimestampedSigner.class \
+	sun/security/tools/jarsigner \
 	sun/rmi/rmic		\
 	sun/applet		\
 	sun/jvmstat		\

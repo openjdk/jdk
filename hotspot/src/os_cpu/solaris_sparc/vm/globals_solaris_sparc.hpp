@@ -39,8 +39,6 @@ define_pd_global(uintx, HeapBaseMinAddress,      CONST64(4)*G);
 #else
 define_pd_global(uintx, HeapBaseMinAddress,      2*G);
 #endif
-// Only used on 64 bit Windows platforms
-define_pd_global(bool, UseVectoredExceptions,    false);
 
 
 

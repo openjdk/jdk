@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.sql.rowset.serial;
 
 import java.sql.*;
 import java.io.*;
+import java.util.Arrays;
 
 /**
  * A serialized mapping in the Java programming language of an SQL
@@ -60,7 +61,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      * Internal Clob representation if SerialClob is initialized with a
      * Clob. Null if SerialClob is initialized with a char[].
      */
-    private final Clob clob;
+    private Clob clob;
 
     /**
      * The length in characters of this <code>SerialClob</code> object's
@@ -76,7 +77,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      *
      * @serial
      */
-    private final long origLen;
+    private long origLen;
 
     /**
      * Constructs a <code>SerialClob</code> object that is a serialized version of
@@ -512,6 +513,95 @@ public class SerialClob implements Clob, Serializable, Cloneable {
 
     public void free() throws SQLException {
         throw new java.lang.UnsupportedOperationException("Not supported");
+    }
+
+    /**
+     * Compares this SerialClob to the specified object.  The result is {@code
+     * true} if and only if the argument is not {@code null} and is a {@code
+     * SerialClob} object that represents the same sequence of characters as this
+     * object.
+     *
+     * @param  obj The object to compare this {@code SerialClob} against
+     *
+     * @return  {@code true} if the given object represents a {@code SerialClob}
+     *          equivalent to this SerialClob, {@code false} otherwise
+     *
+     */
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof SerialClob) {
+            SerialClob sc = (SerialClob)obj;
+            if (this.len == sc.len) {
+                return Arrays.equals(buf, sc.buf);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns a hash code for this {@code SerialClob}.
+     * @return  a hash code value for this object.
+     */
+    public int hashCode() {
+       return ((31 + Arrays.hashCode(buf)) * 31 + (int)len) * 31 + (int)origLen;
+    }
+
+    /**
+     * Returns a clone of this {@code SerialClob}. The copy will contain a
+     * reference to a clone of the internal character array, not a reference
+     * to the original internal character array of this {@code SerialClob} object.
+     * The underlying {@code Clob} object will be set to null.
+     *
+     * @return  a clone of this SerialClob
+     */
+    public Object clone() {
+        try {
+            SerialClob sc = (SerialClob) super.clone();
+            sc.buf = Arrays.copyOf(buf, (int)len);
+            sc.clob = null;
+            return sc;
+        } catch (CloneNotSupportedException ex) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError();
+        }
+    }
+
+    /**
+     * readObject is called to restore the state of the SerialClob from
+     * a stream.
+     */
+    private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+
+        ObjectInputStream.GetField fields = s.readFields();
+       char[] tmp = (char[])fields.get("buf", null);
+       if (tmp == null)
+           throw new InvalidObjectException("buf is null and should not be!");
+       buf = tmp.clone();
+       len = fields.get("len", 0L);
+       if (buf.length != len)
+           throw new InvalidObjectException("buf is not the expected size");
+       origLen = fields.get("origLen", 0L);
+       clob = (Clob) fields.get("clob", null);
+    }
+
+    /**
+     * writeObject is called to save the state of the SerialClob
+     * to a stream.
+     */
+    private void writeObject(ObjectOutputStream s)
+            throws IOException, ClassNotFoundException {
+
+        ObjectOutputStream.PutField fields = s.putFields();
+        fields.put("buf", buf);
+        fields.put("len", len);
+        fields.put("origLen", origLen);
+        // Note: this check to see if it is an instance of Serializable
+        // is for backwards compatibiity
+        fields.put("clob", clob instanceof Serializable ? clob : null);
+        s.writeFields();
     }
 
     /**

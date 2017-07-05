@@ -320,6 +320,7 @@ class AbstractInterpreterGenerator: public StackObj {
   void bang_stack_shadow_pages(bool native_call);
 
   void generate_all();
+  void initialize_method_handle_entries();
 
  public:
   AbstractInterpreterGenerator(StubQueue* _code);
