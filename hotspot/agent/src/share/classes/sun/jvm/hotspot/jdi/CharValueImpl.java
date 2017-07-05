@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,8 @@ public class CharValueImpl extends PrimitiveValueImpl
         return intValue();
     }
 
-    public int compareTo(Object obj) {
-        char other = ((CharValue)obj).value();
-        return value() - other;
+    public int compareTo(CharValue charVal) {
+        return value() - charVal.value();
     }
 
     public Type type() {

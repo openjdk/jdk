@@ -1120,7 +1120,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
 
-  IdealKit kit(gvn(), control(), merged_memory(), false, true);
+  IdealKit kit(this, false, true);
 #define __ kit.
   Node* zero             = __ ConI(0);
   Node* one              = __ ConI(1);
@@ -1171,7 +1171,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   __ bind(return_);
 
   // Final sync IdealKit and GraphKit.
-  sync_kit(kit);
+  final_sync(kit);
   Node* result = __ value(rtn);
 #undef __
   C->set_has_loops(true);
@@ -2318,22 +2318,20 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         // of it. So we need to emit code to conditionally do the proper type of
         // store.
 
-        IdealKit ideal(gvn(), control(),  merged_memory());
+        IdealKit ideal(this);
 #define __ ideal.
         // QQQ who knows what probability is here??
         __ if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
           // Sync IdealKit and graphKit.
-          set_all_memory( __ merged_memory());
-          set_control(__ ctrl());
+          sync_kit(ideal);
           Node* st = store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
           // Update IdealKit memory.
-          __ set_all_memory(merged_memory());
-          __ set_ctrl(control());
+          __ sync_kit(this);
         } __ else_(); {
           __ store(__ ctrl(), adr, val, type, alias_type->index(), is_volatile);
         } __ end_if();
         // Final sync IdealKit and GraphKit.
-        sync_kit(ideal);
+        final_sync(ideal);
 #undef __
       }
     }
@@ -4294,81 +4292,6 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   return true;
 }
 
-
-// constants for computing the copy function
-enum {
-  COPYFUNC_UNALIGNED = 0,
-  COPYFUNC_ALIGNED = 1,                 // src, dest aligned to HeapWordSize
-  COPYFUNC_CONJOINT = 0,
-  COPYFUNC_DISJOINT = 2                 // src != dest, or transfer can descend
-};
-
-// Note:  The condition "disjoint" applies also for overlapping copies
-// where an descending copy is permitted (i.e., dest_offset <= src_offset).
-static address
-select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized) {
-  int selector =
-    (aligned  ? COPYFUNC_ALIGNED  : COPYFUNC_UNALIGNED) +
-    (disjoint ? COPYFUNC_DISJOINT : COPYFUNC_CONJOINT);
-
-#define RETURN_STUB(xxx_arraycopy) { \
-  name = #xxx_arraycopy; \
-  return StubRoutines::xxx_arraycopy(); }
-
-#define RETURN_STUB_PARM(xxx_arraycopy, parm) {           \
-  name = #xxx_arraycopy; \
-  return StubRoutines::xxx_arraycopy(parm); }
-
-  switch (t) {
-  case T_BYTE:
-  case T_BOOLEAN:
-    switch (selector) {
-    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jbyte_arraycopy);
-    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jbyte_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jbyte_disjoint_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jbyte_disjoint_arraycopy);
-    }
-  case T_CHAR:
-  case T_SHORT:
-    switch (selector) {
-    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jshort_arraycopy);
-    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jshort_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jshort_disjoint_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jshort_disjoint_arraycopy);
-    }
-  case T_INT:
-  case T_FLOAT:
-    switch (selector) {
-    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jint_arraycopy);
-    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jint_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jint_disjoint_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jint_disjoint_arraycopy);
-    }
-  case T_DOUBLE:
-  case T_LONG:
-    switch (selector) {
-    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jlong_arraycopy);
-    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jlong_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB(jlong_disjoint_arraycopy);
-    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB(arrayof_jlong_disjoint_arraycopy);
-    }
-  case T_ARRAY:
-  case T_OBJECT:
-    switch (selector) {
-    case COPYFUNC_CONJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB_PARM(oop_arraycopy, dest_uninitialized);
-    case COPYFUNC_CONJOINT | COPYFUNC_ALIGNED:    RETURN_STUB_PARM(arrayof_oop_arraycopy, dest_uninitialized);
-    case COPYFUNC_DISJOINT | COPYFUNC_UNALIGNED:  RETURN_STUB_PARM(oop_disjoint_arraycopy, dest_uninitialized);
-    case COPYFUNC_DISJOINT | COPYFUNC_ALIGNED:    RETURN_STUB_PARM(arrayof_oop_disjoint_arraycopy, dest_uninitialized);
-    }
-  default:
-    ShouldNotReachHere();
-    return NULL;
-  }
-
-#undef RETURN_STUB
-#undef RETURN_STUB_PARM
-}
-
 //------------------------------basictype2arraycopy----------------------------
 address LibraryCallKit::basictype2arraycopy(BasicType t,
                                             Node* src_offset,
@@ -4401,7 +4324,7 @@ address LibraryCallKit::basictype2arraycopy(BasicType t,
     disjoint = true;
   }
 
-  return select_arraycopy_function(t, aligned, disjoint, name, dest_uninitialized);
+  return StubRoutines::select_arraycopy_function(t, aligned, disjoint, name, dest_uninitialized);
 }
 
 
