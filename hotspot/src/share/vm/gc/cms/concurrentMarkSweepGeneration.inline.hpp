@@ -381,7 +381,7 @@ inline void MarkFromRootsClosure::do_yield_check() {
   }
 }
 
-inline void Par_MarkFromRootsClosure::do_yield_check() {
+inline void ParMarkFromRootsClosure::do_yield_check() {
   if (ConcurrentMarkSweepThread::should_yield() &&
       !_collector->foregroundGCIsActive()) {
     do_yield_work();
@@ -392,7 +392,7 @@ inline void PushOrMarkClosure::do_yield_check() {
   _parent->do_yield_check();
 }
 
-inline void Par_PushOrMarkClosure::do_yield_check() {
+inline void ParPushOrMarkClosure::do_yield_check() {
   _parent->do_yield_check();
 }
 

@@ -180,7 +180,7 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
 
     /*
      * Updates/adds the icon in/to the system tray.
-     * @param doUpdate if <code>true</code>, updates the icon,
+     * @param doUpdate if {@code true}, updates the icon,
      * otherwise, adds the icon
      */
     native void updateNativeIcon(boolean doUpdate);

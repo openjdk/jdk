@@ -203,7 +203,7 @@ void VM_GenCollectFullConcurrent::doit() {
     gch->do_full_collection(gch->must_clear_all_soft_refs(), GenCollectedHeap::YoungGen);
   } // Else no need for a foreground young gc
   assert((_gc_count_before < gch->total_collections()) ||
-         (GC_locker::is_active() /* gc may have been skipped */
+         (GCLocker::is_active() /* gc may have been skipped */
           && (_gc_count_before == gch->total_collections())),
          "total_collections() should be monotonically increasing");
 

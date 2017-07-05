@@ -197,17 +197,17 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
         if (!f.isMaximum()) {
             f.setNormalBounds(f.getBounds());
         }
-        d.setComponentOrderCheckingEnabled(false);
-        c.remove(f);
-        c.add(desktopIcon);
-        d.setComponentOrderCheckingEnabled(true);
-        c.repaint(f.getX(), f.getY(), f.getWidth(), f.getHeight());
         if (findNext) {
             if (d.selectFrame(true) == null) {
                 // The icon is the last frame.
                 f.restoreSubcomponentFocus();
             }
         }
+        d.setComponentOrderCheckingEnabled(false);
+        c.remove(f);
+        c.add(desktopIcon);
+        d.setComponentOrderCheckingEnabled(true);
+        c.repaint(f.getX(), f.getY(), f.getWidth(), f.getHeight());
     }
 
     /**

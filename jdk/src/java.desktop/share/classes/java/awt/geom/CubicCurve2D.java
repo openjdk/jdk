@@ -36,7 +36,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.ulp;
 
 /**
- * The <code>CubicCurve2D</code> class defines a cubic parametric curve
+ * The {@code CubicCurve2D} class defines a cubic parametric curve
  * segment in {@code (x,y)} coordinate space.
  * <p>
  * This class is only the abstract superclass for all objects which
@@ -722,9 +722,9 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * to the double coordinates at the specified offset in the specified
      * array.
      * @param coords a double array containing coordinates
-     * @param offset the index of <code>coords</code> from which to begin
+     * @param offset the index of {@code coords} from which to begin
      *          setting the end points and control points of this curve
-     *          to the coordinates contained in <code>coords</code>
+     *          to the coordinates contained in {@code coords}
      * @since 1.2
      */
     public void setCurve(double[] coords, int offset) {
@@ -736,14 +736,14 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
 
     /**
      * Sets the location of the end points and control points of this curve
-     * to the specified <code>Point2D</code> coordinates.
-     * @param p1 the first specified <code>Point2D</code> used to set the
+     * to the specified {@code Point2D} coordinates.
+     * @param p1 the first specified {@code Point2D} used to set the
      *          start point of this curve
-     * @param cp1 the second specified <code>Point2D</code> used to set the
+     * @param cp1 the second specified {@code Point2D} used to set the
      *          first control point of this curve
-     * @param cp2 the third specified <code>Point2D</code> used to set the
+     * @param cp2 the third specified {@code Point2D} used to set the
      *          second control point of this curve
-     * @param p2 the fourth specified <code>Point2D</code> used to set the
+     * @param p2 the fourth specified {@code Point2D} used to set the
      *          end point of this curve
      * @since 1.2
      */
@@ -754,12 +754,12 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
 
     /**
      * Sets the location of the end points and control points of this curve
-     * to the coordinates of the <code>Point2D</code> objects at the specified
+     * to the coordinates of the {@code Point2D} objects at the specified
      * offset in the specified array.
-     * @param pts an array of <code>Point2D</code> objects
-     * @param offset  the index of <code>pts</code> from which to begin setting
+     * @param pts an array of {@code Point2D} objects
+     * @param offset  the index of {@code pts} from which to begin setting
      *          the end points and control points of this curve to the
-     *          points contained in <code>pts</code>
+     *          points contained in {@code pts}
      * @since 1.2
      */
     public void setCurve(Point2D[] pts, int offset) {
@@ -771,8 +771,8 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
 
     /**
      * Sets the location of the end points and control points of this curve
-     * to the same as those in the specified <code>CubicCurve2D</code>.
-     * @param c the specified <code>CubicCurve2D</code>
+     * to the same as those in the specified {@code CubicCurve2D}.
+     * @param c the specified {@code CubicCurve2D}
      * @since 1.2
      */
     public void setCurve(CubicCurve2D c) {
@@ -853,10 +853,10 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * indicated index. The flatness is the maximum distance
      * of a control point from the line connecting the end points.
      * @param coords an array containing coordinates
-     * @param offset the index of <code>coords</code> from which to begin
+     * @param offset the index of {@code coords} from which to begin
      *          getting the end points and control points of the curve
-     * @return the square of the flatness of the <code>CubicCurve2D</code>
-     *          specified by the coordinates in <code>coords</code> at
+     * @return the square of the flatness of the {@code CubicCurve2D}
+     *          specified by the coordinates in {@code coords} at
      *          the specified offset.
      * @since 1.2
      */
@@ -873,10 +873,10 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * indicated index.  The flatness is the maximum distance
      * of a control point from the line connecting the end points.
      * @param coords an array containing coordinates
-     * @param offset the index of <code>coords</code> from which to begin
+     * @param offset the index of {@code coords} from which to begin
      *          getting the end points and control points of the curve
-     * @return the flatness of the <code>CubicCurve2D</code>
-     *          specified by the coordinates in <code>coords</code> at
+     * @return the flatness of the {@code CubicCurve2D}
+     *          specified by the coordinates in {@code coords} at
      *          the specified offset.
      * @since 1.2
      */
@@ -927,11 +927,11 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
     }
 
     /**
-     * Subdivides the cubic curve specified by the <code>src</code> parameter
+     * Subdivides the cubic curve specified by the {@code src} parameter
      * and stores the resulting two subdivided curves into the
-     * <code>left</code> and <code>right</code> curve parameters.
-     * Either or both of the <code>left</code> and <code>right</code> objects
-     * may be the same as the <code>src</code> object or <code>null</code>.
+     * {@code left} and {@code right} curve parameters.
+     * Either or both of the {@code left} and {@code right} objects
+     * may be the same as the {@code src} object or {@code null}.
      * @param src the cubic curve to be subdivided
      * @param left the cubic curve object for storing the left or
      * first half of the subdivided curve
@@ -974,18 +974,18 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
 
     /**
      * Subdivides the cubic curve specified by the coordinates
-     * stored in the <code>src</code> array at indices <code>srcoff</code>
-     * through (<code>srcoff</code>&nbsp;+&nbsp;7) and stores the
+     * stored in the {@code src} array at indices {@code srcoff}
+     * through ({@code srcoff}&nbsp;+&nbsp;7) and stores the
      * resulting two subdivided curves into the two result arrays at the
      * corresponding indices.
-     * Either or both of the <code>left</code> and <code>right</code>
-     * arrays may be <code>null</code> or a reference to the same array
-     * as the <code>src</code> array.
+     * Either or both of the {@code left} and {@code right}
+     * arrays may be {@code null} or a reference to the same array
+     * as the {@code src} array.
      * Note that the last point in the first subdivided curve is the
      * same as the first point in the second subdivided curve. Thus,
-     * it is possible to pass the same array for <code>left</code>
-     * and <code>right</code> and to use offsets, such as <code>rightoff</code>
-     * equals (<code>leftoff</code> + 6), in order
+     * it is possible to pass the same array for {@code left}
+     * and {@code right} and to use offsets, such as {@code rightoff}
+     * equals ({@code leftoff} + 6), in order
      * to avoid allocating extra storage for this common point.
      * @param src the array holding the coordinates for the source curve
      * @param srcoff the offset into the array of the beginning of the
@@ -1050,7 +1050,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
     }
 
     /**
-     * Solves the cubic whose coefficients are in the <code>eqn</code>
+     * Solves the cubic whose coefficients are in the {@code eqn}
      * array and places the non-complex roots back into the same array,
      * returning the number of roots.  The solved cubic is represented
      * by the equation:
@@ -1070,8 +1070,8 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
     }
 
     /**
-     * Solve the cubic whose coefficients are in the <code>eqn</code>
-     * array and place the non-complex roots into the <code>res</code>
+     * Solve the cubic whose coefficients are in the {@code eqn}
+     * array and place the non-complex roots into the {@code res}
      * array, returning the number of roots.
      * The cubic solved is represented by the equation:
      *     eqn = {c, b, a, d}
@@ -1517,15 +1517,15 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * Returns an iteration object that defines the boundary of the
      * shape.
      * The iterator for this class is not multi-threaded safe,
-     * which means that this <code>CubicCurve2D</code> class does not
+     * which means that this {@code CubicCurve2D} class does not
      * guarantee that modifications to the geometry of this
-     * <code>CubicCurve2D</code> object do not affect any iterations of
+     * {@code CubicCurve2D} object do not affect any iterations of
      * that geometry that are already in process.
-     * @param at an optional <code>AffineTransform</code> to be applied to the
-     * coordinates as they are returned in the iteration, or <code>null</code>
+     * @param at an optional {@code AffineTransform} to be applied to the
+     * coordinates as they are returned in the iteration, or {@code null}
      * if untransformed coordinates are desired
-     * @return    the <code>PathIterator</code> object that returns the
-     *          geometry of the outline of this <code>CubicCurve2D</code>, one
+     * @return    the {@code PathIterator} object that returns the
+     *          geometry of the outline of this {@code CubicCurve2D}, one
      *          segment at a time.
      * @since 1.2
      */
@@ -1537,18 +1537,18 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * Return an iteration object that defines the boundary of the
      * flattened shape.
      * The iterator for this class is not multi-threaded safe,
-     * which means that this <code>CubicCurve2D</code> class does not
+     * which means that this {@code CubicCurve2D} class does not
      * guarantee that modifications to the geometry of this
-     * <code>CubicCurve2D</code> object do not affect any iterations of
+     * {@code CubicCurve2D} object do not affect any iterations of
      * that geometry that are already in process.
-     * @param at an optional <code>AffineTransform</code> to be applied to the
-     * coordinates as they are returned in the iteration, or <code>null</code>
+     * @param at an optional {@code AffineTransform} to be applied to the
+     * coordinates as they are returned in the iteration, or {@code null}
      * if untransformed coordinates are desired
      * @param flatness the maximum amount that the control points
      * for a given curve can vary from colinear before a subdivided
      * curve is replaced by a straight line connecting the end points
-     * @return    the <code>PathIterator</code> object that returns the
-     * geometry of the outline of this <code>CubicCurve2D</code>,
+     * @return    the {@code PathIterator} object that returns the
+     * geometry of the outline of this {@code CubicCurve2D},
      * one segment at a time.
      * @since 1.2
      */

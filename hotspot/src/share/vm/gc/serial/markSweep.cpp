@@ -37,6 +37,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 #if INCLUDE_ALL_GCS

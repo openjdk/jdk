@@ -41,8 +41,8 @@ import javax.print.attribute.PrintRequestAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The IPP boolean value is "true" for FIDELITY_TRUE
  * and "false" for FIDELITY_FALSE. The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  * See <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a> Section 15.1 for
  * a fuller description of the IPP fidelity attribute.
@@ -117,7 +117,7 @@ public final class Fidelity extends EnumSyntax
      * instance.
      * <P>
      * For class Fidelity the category name is
-     * <CODE>"ipp-attribute-fidelity"</CODE>.
+     * {@code "ipp-attribute-fidelity"}.
      *
      * @return  Attribute category name.
      */

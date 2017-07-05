@@ -37,7 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
-#include "oops/typeArrayOop.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/macros.hpp"

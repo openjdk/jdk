@@ -43,35 +43,35 @@ import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 /**
- * A <code>Frame</code> is a top-level window with a title and a border.
+ * A {@code Frame} is a top-level window with a title and a border.
  * <p>
  * The size of the frame includes any area designated for the
  * border.  The dimensions of the border area may be obtained
- * using the <code>getInsets</code> method, however, since
+ * using the {@code getInsets} method, however, since
  * these dimensions are platform-dependent, a valid insets
  * value cannot be obtained until the frame is made displayable
- * by either calling <code>pack</code> or <code>show</code>.
+ * by either calling {@code pack} or {@code show}.
  * Since the border area is included in the overall size of the
  * frame, the border effectively obscures a portion of the frame,
  * constraining the area available for rendering and/or displaying
  * subcomponents to the rectangle which has an upper-left corner
- * location of <code>(insets.left, insets.top)</code>, and has a size of
- * <code>width - (insets.left + insets.right)</code> by
- * <code>height - (insets.top + insets.bottom)</code>.
+ * location of {@code (insets.left, insets.top)}, and has a size of
+ * {@code width - (insets.left + insets.right)} by
+ * {@code height - (insets.top + insets.bottom)}.
  * <p>
- * The default layout for a frame is <code>BorderLayout</code>.
+ * The default layout for a frame is {@code BorderLayout}.
  * <p>
- * A frame may have its native decorations (i.e. <code>Frame</code>
- * and <code>Titlebar</code>) turned off
- * with <code>setUndecorated</code>. This can only be done while the frame
+ * A frame may have its native decorations (i.e. {@code Frame}
+ * and {@code Titlebar}) turned off
+ * with {@code setUndecorated}. This can only be done while the frame
  * is not {@link Component#isDisplayable() displayable}.
  * <p>
- * In a multi-screen environment, you can create a <code>Frame</code>
- * on a different screen device by constructing the <code>Frame</code>
+ * In a multi-screen environment, you can create a {@code Frame}
+ * on a different screen device by constructing the {@code Frame}
  * with {@link #Frame(GraphicsConfiguration)} or
  * {@link #Frame(String title, GraphicsConfiguration)}.  The
- * <code>GraphicsConfiguration</code> object is one of the
- * <code>GraphicsConfiguration</code> objects of the target screen
+ * {@code GraphicsConfiguration} object is one of the
+ * {@code GraphicsConfiguration} objects of the target screen
  * device.
  * <p>
  * In a virtual device multi-screen environment in which the desktop
@@ -87,22 +87,22 @@ import sun.awt.SunToolkit;
  * shows (0,0) coords while a different physical screen shows (-80,-100) coords."
  * style="float:center; margin: 7px 10px;">
  * <p>
- * In such an environment, when calling <code>setLocation</code>,
+ * In such an environment, when calling {@code setLocation},
  * you must pass a virtual coordinate to this method.  Similarly,
- * calling <code>getLocationOnScreen</code> on a <code>Frame</code>
- * returns virtual device coordinates.  Call the <code>getBounds</code>
- * method of a <code>GraphicsConfiguration</code> to find its origin in
+ * calling {@code getLocationOnScreen} on a {@code Frame}
+ * returns virtual device coordinates.  Call the {@code getBounds}
+ * method of a {@code GraphicsConfiguration} to find its origin in
  * the virtual coordinate system.
  * <p>
  * The following code sets the
- * location of the <code>Frame</code> at (10, 10) relative
+ * location of the {@code Frame} at (10, 10) relative
  * to the origin of the physical screen of the corresponding
- * <code>GraphicsConfiguration</code>.  If the bounds of the
- * <code>GraphicsConfiguration</code> is not taken into account, the
- * <code>Frame</code> location would be set at (10, 10) relative to the
+ * {@code GraphicsConfiguration}.  If the bounds of the
+ * {@code GraphicsConfiguration} is not taken into account, the
+ * {@code Frame} location would be set at (10, 10) relative to the
  * virtual-coordinate system and would appear on the primary physical
  * screen, which might be different from the physical screen of the
- * specified <code>GraphicsConfiguration</code>.
+ * specified {@code GraphicsConfiguration}.
  *
  * <pre>
  *      Frame f = new Frame(GraphicsConfiguration gc);
@@ -112,21 +112,21 @@ import sun.awt.SunToolkit;
  *
  * <p>
  * Frames are capable of generating the following types of
- * <code>WindowEvent</code>s:
+ * {@code WindowEvent}s:
  * <ul>
- * <li><code>WINDOW_OPENED</code>
- * <li><code>WINDOW_CLOSING</code>:
+ * <li>{@code WINDOW_OPENED}
+ * <li>{@code WINDOW_CLOSING}:
  *     <br>If the program doesn't
  *     explicitly hide or dispose the window while processing
  *     this event, the window close operation is canceled.
- * <li><code>WINDOW_CLOSED</code>
- * <li><code>WINDOW_ICONIFIED</code>
- * <li><code>WINDOW_DEICONIFIED</code>
- * <li><code>WINDOW_ACTIVATED</code>
- * <li><code>WINDOW_DEACTIVATED</code>
- * <li><code>WINDOW_GAINED_FOCUS</code>
- * <li><code>WINDOW_LOST_FOCUS</code>
- * <li><code>WINDOW_STATE_CHANGED</code>
+ * <li>{@code WINDOW_CLOSED}
+ * <li>{@code WINDOW_ICONIFIED}
+ * <li>{@code WINDOW_DEICONIFIED}
+ * <li>{@code WINDOW_ACTIVATED}
+ * <li>{@code WINDOW_DEACTIVATED}
+ * <li>{@code WINDOW_GAINED_FOCUS}
+ * <li>{@code WINDOW_LOST_FOCUS}
+ * <li>{@code WINDOW_STATE_CHANGED}
  * </ul>
  *
  * @author      Sami Shaio
@@ -141,86 +141,86 @@ public class Frame extends Window implements MenuContainer {
      */
 
    /**
-    * @deprecated   replaced by <code>Cursor.DEFAULT_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.DEFAULT_CURSOR}.
     */
     @Deprecated
     public static final int     DEFAULT_CURSOR                  = Cursor.DEFAULT_CURSOR;
 
 
    /**
-    * @deprecated   replaced by <code>Cursor.CROSSHAIR_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.CROSSHAIR_CURSOR}.
     */
     @Deprecated
     public static final int     CROSSHAIR_CURSOR                = Cursor.CROSSHAIR_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.TEXT_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.TEXT_CURSOR}.
     */
     @Deprecated
     public static final int     TEXT_CURSOR                     = Cursor.TEXT_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.WAIT_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.WAIT_CURSOR}.
     */
     @Deprecated
     public static final int     WAIT_CURSOR                     = Cursor.WAIT_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.SW_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.SW_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     SW_RESIZE_CURSOR                = Cursor.SW_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.SE_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.SE_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     SE_RESIZE_CURSOR                = Cursor.SE_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.NW_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.NW_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     NW_RESIZE_CURSOR                = Cursor.NW_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.NE_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.NE_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     NE_RESIZE_CURSOR                = Cursor.NE_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.N_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.N_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     N_RESIZE_CURSOR                 = Cursor.N_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.S_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.S_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     S_RESIZE_CURSOR                 = Cursor.S_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.W_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.W_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     W_RESIZE_CURSOR                 = Cursor.W_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.E_RESIZE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.E_RESIZE_CURSOR}.
     */
     @Deprecated
     public static final int     E_RESIZE_CURSOR                 = Cursor.E_RESIZE_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.HAND_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.HAND_CURSOR}.
     */
     @Deprecated
     public static final int     HAND_CURSOR                     = Cursor.HAND_CURSOR;
 
    /**
-    * @deprecated   replaced by <code>Cursor.MOVE_CURSOR</code>.
+    * @deprecated   replaced by {@code Cursor.MOVE_CURSOR}.
     */
     @Deprecated
     public static final int     MOVE_CURSOR                     = Cursor.MOVE_CURSOR;
@@ -293,8 +293,8 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * This is the title of the frame.  It can be changed
-     * at any time.  <code>title</code> can be null and if
-     * this is the case the <code>title</code> = "".
+     * at any time.  {@code title} can be null and if
+     * this is the case the {@code title} = "".
      *
      * @serial
      * @see #getTitle
@@ -303,7 +303,7 @@ public class Frame extends Window implements MenuContainer {
     String      title = "Untitled";
 
     /**
-     * The frames menubar.  If <code>menuBar</code> = null
+     * The frames menubar.  If {@code menuBar} = null
      * the frame will not have a menubar.
      *
      * @serial
@@ -315,7 +315,7 @@ public class Frame extends Window implements MenuContainer {
     /**
      * This field indicates whether the frame is resizable.
      * This property can be changed at any time.
-     * <code>resizable</code> will be true if the frame is
+     * {@code resizable} will be true if the frame is
      * resizable, otherwise it will be false.
      *
      * @serial
@@ -326,7 +326,7 @@ public class Frame extends Window implements MenuContainer {
     /**
      * This field indicates whether the frame is undecorated.
      * This property can only be changed while the frame is not displayable.
-     * <code>undecorated</code> will be true if the frame is
+     * {@code undecorated} will be true if the frame is
      * undecorated, otherwise it will be false.
      *
      * @serial
@@ -338,7 +338,7 @@ public class Frame extends Window implements MenuContainer {
     boolean undecorated = false;
 
     /**
-     * <code>mbManagement</code> is only used by the Motif implementation.
+     * {@code mbManagement} is only used by the Motif implementation.
      *
      * @serial
      */
@@ -374,11 +374,11 @@ public class Frame extends Window implements MenuContainer {
     }
 
     /**
-     * Constructs a new instance of <code>Frame</code> that is
-     * initially invisible.  The title of the <code>Frame</code>
+     * Constructs a new instance of {@code Frame} that is
+     * initially invisible.  The title of the {@code Frame}
      * is empty.
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless()
      * @see Component#setSize
      * @see Component#setVisible(boolean)
@@ -391,14 +391,14 @@ public class Frame extends Window implements MenuContainer {
      * Constructs a new, initially invisible {@code Frame} with the
      * specified {@code GraphicsConfiguration}.
      *
-     * @param gc the <code>GraphicsConfiguration</code>
-     * of the target screen device. If <code>gc</code>
-     * is <code>null</code>, the system default
-     * <code>GraphicsConfiguration</code> is assumed.
+     * @param gc the {@code GraphicsConfiguration}
+     * of the target screen device. If {@code gc}
+     * is {@code null}, the system default
+     * {@code GraphicsConfiguration} is assumed.
      * @exception IllegalArgumentException if
-     * <code>gc</code> is not from a screen device.
+     * {@code gc} is not from a screen device.
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless()
      * @since     1.3
      */
@@ -407,13 +407,13 @@ public class Frame extends Window implements MenuContainer {
     }
 
     /**
-     * Constructs a new, initially invisible <code>Frame</code> object
+     * Constructs a new, initially invisible {@code Frame} object
      * with the specified title.
      * @param title the title to be displayed in the frame's border.
-     *              A <code>null</code> value
+     *              A {@code null} value
      *              is treated as an empty string, "".
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless()
      * @see java.awt.Component#setSize
      * @see java.awt.Component#setVisible(boolean)
@@ -424,20 +424,20 @@ public class Frame extends Window implements MenuContainer {
     }
 
     /**
-     * Constructs a new, initially invisible <code>Frame</code> object
+     * Constructs a new, initially invisible {@code Frame} object
      * with the specified title and a
-     * <code>GraphicsConfiguration</code>.
+     * {@code GraphicsConfiguration}.
      * @param title the title to be displayed in the frame's border.
-     *              A <code>null</code> value
+     *              A {@code null} value
      *              is treated as an empty string, "".
-     * @param gc the <code>GraphicsConfiguration</code>
-     * of the target screen device.  If <code>gc</code> is
-     * <code>null</code>, the system default
-     * <code>GraphicsConfiguration</code> is assumed.
-     * @exception IllegalArgumentException if <code>gc</code>
+     * @param gc the {@code GraphicsConfiguration}
+     * of the target screen device.  If {@code gc} is
+     * {@code null}, the system default
+     * {@code GraphicsConfiguration} is assumed.
+     * @exception IllegalArgumentException if {@code gc}
      * is not from a screen device.
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless()
      * @see java.awt.Component#setSize
      * @see java.awt.Component#setVisible(boolean)
@@ -504,7 +504,7 @@ public class Frame extends Window implements MenuContainer {
     /**
      * Sets the title for this frame to the specified string.
      * @param title the title to be displayed in the frame's border.
-     *              A <code>null</code> value
+     *              A {@code null} value
      *              is treated as an empty string, "".
      * @see      #getTitle
      */
@@ -534,7 +534,7 @@ public class Frame extends Window implements MenuContainer {
      * If a list of several images was specified as a Window's icon,
      * this method will return the first item of the list.
      *
-     * @return    the icon image for this frame, or <code>null</code>
+     * @return    the icon image for this frame, or {@code null}
      *                    if this frame doesn't have an icon image.
      * @see       #setIconImage(Image)
      * @see       Window#getIconImages()
@@ -559,7 +559,7 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * Gets the menu bar for this frame.
-     * @return    the menu bar for this frame, or <code>null</code>
+     * @return    the menu bar for this frame, or {@code null}
      *                   if this frame doesn't have a menu bar.
      * @see       #setMenuBar(MenuBar)
      */
@@ -570,7 +570,7 @@ public class Frame extends Window implements MenuContainer {
     /**
      * Sets the menu bar for this frame to the specified menu bar.
      * @param     mb the menu bar being set.
-     *            If this parameter is <code>null</code> then any
+     *            If this parameter is {@code null} then any
      *            existing menu bar on this frame is removed.
      * @see       #getMenuBar
      */
@@ -603,8 +603,8 @@ public class Frame extends Window implements MenuContainer {
     /**
      * Indicates whether this frame is resizable by the user.
      * By default, all frames are initially resizable.
-     * @return    <code>true</code> if the user can resize this frame;
-     *                        <code>false</code> otherwise.
+     * @return    {@code true} if the user can resize this frame;
+     *                        {@code false} otherwise.
      * @see       java.awt.Frame#setResizable(boolean)
      */
     public boolean isResizable() {
@@ -613,8 +613,8 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * Sets whether this frame is resizable by the user.
-     * @param    resizable   <code>true</code> if this frame is resizable;
-     *                       <code>false</code> otherwise.
+     * @param    resizable   {@code true} if this frame is resizable;
+     *                       {@code false} otherwise.
      * @see      java.awt.Frame#isResizable
      */
     public void setResizable(boolean resizable) {
@@ -683,8 +683,8 @@ public class Frame extends Window implements MenuContainer {
      * java.awt.event.WindowEvent#WINDOW_STATE_CHANGED}
      * events is not guaranteed in this case also.
      *
-     * @param state either <code>Frame.NORMAL</code> or
-     *     <code>Frame.ICONIFIED</code>.
+     * @param state either {@code Frame.NORMAL} or
+     *     {@code Frame.ICONIFIED}.
      * @see #setExtendedState(int)
      * @see java.awt.Window#addWindowStateListener
      */
@@ -702,14 +702,14 @@ public class Frame extends Window implements MenuContainer {
      * Sets the state of this frame. The state is
      * represented as a bitwise mask.
      * <ul>
-     * <li><code>NORMAL</code>
+     * <li>{@code NORMAL}
      * <br>Indicates that no state bits are set.
-     * <li><code>ICONIFIED</code>
-     * <li><code>MAXIMIZED_HORIZ</code>
-     * <li><code>MAXIMIZED_VERT</code>
-     * <li><code>MAXIMIZED_BOTH</code>
-     * <br>Concatenates <code>MAXIMIZED_HORIZ</code>
-     * and <code>MAXIMIZED_VERT</code>.
+     * <li>{@code ICONIFIED}
+     * <li>{@code MAXIMIZED_HORIZ}
+     * <li>{@code MAXIMIZED_VERT}
+     * <li>{@code MAXIMIZED_BOTH}
+     * <br>Concatenates {@code MAXIMIZED_HORIZ}
+     * and {@code MAXIMIZED_VERT}.
      * </ul>
      * <p>Note that if the state is not supported on a
      * given platform, neither the state nor the return
@@ -780,11 +780,11 @@ public class Frame extends Window implements MenuContainer {
      * expanded and frame state is represented as a bitwise mask.
      * <p>
      * For compatibility with old programs this method still returns
-     * <code>Frame.NORMAL</code> and <code>Frame.ICONIFIED</code> but
+     * {@code Frame.NORMAL} and {@code Frame.ICONIFIED} but
      * it only reports the iconic state of the frame, other aspects of
      * frame state are not reported by this method.
      *
-     * @return  <code>Frame.NORMAL</code> or <code>Frame.ICONIFIED</code>.
+     * @return  {@code Frame.NORMAL} or {@code Frame.ICONIFIED}.
      * @see     #setState(int)
      * @see     #getExtendedState
      */
@@ -797,14 +797,14 @@ public class Frame extends Window implements MenuContainer {
      * Gets the state of this frame. The state is
      * represented as a bitwise mask.
      * <ul>
-     * <li><code>NORMAL</code>
+     * <li>{@code NORMAL}
      * <br>Indicates that no state bits are set.
-     * <li><code>ICONIFIED</code>
-     * <li><code>MAXIMIZED_HORIZ</code>
-     * <li><code>MAXIMIZED_VERT</code>
-     * <li><code>MAXIMIZED_BOTH</code>
-     * <br>Concatenates <code>MAXIMIZED_HORIZ</code>
-     * and <code>MAXIMIZED_VERT</code>.
+     * <li>{@code ICONIFIED}
+     * <li>{@code MAXIMIZED_HORIZ}
+     * <li>{@code MAXIMIZED_VERT}
+     * <li>{@code MAXIMIZED_BOTH}
+     * <br>Concatenates {@code MAXIMIZED_HORIZ}
+     * and {@code MAXIMIZED_VERT}.
      * </ul>
      *
      * @return  a bitwise mask of frame state constants
@@ -846,11 +846,11 @@ public class Frame extends Window implements MenuContainer {
      * defaults bounds.  This method allows some or all of those
      * system supplied values to be overridden.
      * <p>
-     * If <code>bounds</code> is <code>null</code>, accept bounds
-     * supplied by the system.  If non-<code>null</code> you can
+     * If {@code bounds} is {@code null}, accept bounds
+     * supplied by the system.  If non-{@code null} you can
      * override some of the system supplied values while accepting
      * others by setting those fields you want to accept from system
-     * to <code>Integer.MAX_VALUE</code>.
+     * to {@code Integer.MAX_VALUE}.
      * <p>
      * Note, the given maximized bounds are used as a hint for the native
      * system, because the underlying platform may not support setting the
@@ -874,10 +874,10 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * Gets maximized bounds for this frame.
-     * Some fields may contain <code>Integer.MAX_VALUE</code> to indicate
+     * Some fields may contain {@code Integer.MAX_VALUE} to indicate
      * that system supplied values for this field must be used.
      *
-     * @return  maximized bounds for this frame;  may be <code>null</code>
+     * @return  maximized bounds for this frame;  may be {@code null}
      * @see     #setMaximizedBounds(Rectangle)
      * @since   1.4
      */
@@ -943,8 +943,8 @@ public class Frame extends Window implements MenuContainer {
     /**
      * Indicates whether this frame is undecorated.
      * By default, all frames are initially decorated.
-     * @return    <code>true</code> if frame is undecorated;
-     *                        <code>false</code> otherwise.
+     * @return    {@code true} if frame is undecorated;
+     *                        {@code false} otherwise.
      * @see       java.awt.Frame#setUndecorated(boolean)
      * @since 1.4
      */
@@ -994,7 +994,7 @@ public class Frame extends Window implements MenuContainer {
     /**
      * Removes the specified menu bar from this frame.
      * @param    m   the menu component to remove.
-     *           If <code>m</code> is <code>null</code>, then
+     *           If {@code m} is {@code null}, then
      *           no action is taken
      */
     public void remove(MenuComponent m) {
@@ -1053,11 +1053,11 @@ public class Frame extends Window implements MenuContainer {
     }
 
     /**
-     * Returns a string representing the state of this <code>Frame</code>.
+     * Returns a string representing the state of this {@code Frame}.
      * This method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return the parameter string of this frame
      */
@@ -1095,7 +1095,7 @@ public class Frame extends Window implements MenuContainer {
      *
      * @param  cursorType the cursor type
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>Component.setCursor(Cursor)</code>.
+     * replaced by {@code Component.setCursor(Cursor)}.
      */
     @Deprecated
     public void setCursor(int cursorType) {
@@ -1107,7 +1107,7 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>Component.getCursor()</code>.
+     * replaced by {@code Component.getCursor()}.
      * @return the cursor type for this frame
      */
     @Deprecated
@@ -1124,7 +1124,7 @@ public class Frame extends Window implements MenuContainer {
      * as a shared, hidden frame which is used by Swing. Applications
      * should not assume the existence of these frames, nor should an
      * application assume anything about these frames such as component
-     * positions, <code>LayoutManager</code>s or serialization.
+     * positions, {@code LayoutManager}s or serialization.
      * <p>
      * <b>Note</b>: To obtain a list of all ownerless windows, including
      * ownerless {@code Dialog}s (introduced in release 1.6), use {@link
@@ -1164,7 +1164,7 @@ public class Frame extends Window implements MenuContainer {
      */
 
     /**
-     * <code>Frame</code>'s Serialized Data Version.
+     * {@code Frame}'s Serialized Data Version.
      *
      * @serial
      */
@@ -1172,11 +1172,11 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * Writes default serializable fields to stream.  Writes
-     * an optional serializable icon <code>Image</code>, which is
+     * an optional serializable icon {@code Image}, which is
      * available as of 1.4.
      *
-     * @param s the <code>ObjectOutputStream</code> to write
-     * @serialData an optional icon <code>Image</code>
+     * @param s the {@code ObjectOutputStream} to write
+     * @serialData an optional icon {@code Image}
      * @see java.awt.Image
      * @see #getIconImage
      * @see #setIconImage(Image)
@@ -1197,21 +1197,21 @@ public class Frame extends Window implements MenuContainer {
     }
 
     /**
-     * Reads the <code>ObjectInputStream</code>.  Tries
-     * to read an icon <code>Image</code>, which is optional
-     * data available as of 1.4.  If an icon <code>Image</code>
+     * Reads the {@code ObjectInputStream}.  Tries
+     * to read an icon {@code Image}, which is optional
+     * data available as of 1.4.  If an icon {@code Image}
      * is not available, but anything other than an EOF
-     * is detected, an <code>OptionalDataException</code>
+     * is detected, an {@code OptionalDataException}
      * will be thrown.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the <code>ObjectInputStream</code> to read
-     * @exception java.io.OptionalDataException if an icon <code>Image</code>
+     * @param s the {@code ObjectInputStream} to read
+     * @exception java.io.OptionalDataException if an icon {@code Image}
      *   is not available, but anything other than an EOF
      *   is detected
      * @exception HeadlessException if
-     *   <code>GraphicsEnvironment.isHeadless</code> returns
-     *   <code>true</code>
+     *   {@code GraphicsEnvironment.isHeadless} returns
+     *   {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless()
      * @see java.awt.Image
      * @see #getIconImage
@@ -1285,7 +1285,7 @@ public class Frame extends Window implements MenuContainer {
 
     /**
      * This class implements accessibility support for the
-     * <code>Frame</code> class.  It provides an implementation of the
+     * {@code Frame} class.  It provides an implementation of the
      * Java Accessibility API appropriate to frame user-interface elements.
      * @since 1.3
      */

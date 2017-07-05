@@ -57,9 +57,8 @@ public interface RegisterConfig {
      * @param returnType the return type (can be null for methods returning {@code void})
      * @param parameterTypes the types of the arguments of the call
      * @param target the target platform
-     * @param stackOnly ignore registers
      */
-    CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target, boolean stackOnly);
+    CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target);
 
     /**
      * Gets the ordered set of registers that are can be used to pass parameters according to a

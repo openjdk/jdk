@@ -43,8 +43,8 @@ public class ImageCapabilities implements Cloneable {
     }
 
     /**
-     * Returns <code>true</code> if the object whose capabilities are
-     * encapsulated in this <code>ImageCapabilities</code> can be or is
+     * Returns {@code true} if the object whose capabilities are
+     * encapsulated in this {@code ImageCapabilities} can be or is
      * accelerated.
      * @return whether or not an image can be, or is, accelerated.  There are
      * various platform-specific ways to accelerate an image, including
@@ -56,8 +56,8 @@ public class ImageCapabilities implements Cloneable {
     }
 
     /**
-     * Returns <code>true</code> if the <code>VolatileImage</code>
-     * described by this <code>ImageCapabilities</code> can lose
+     * Returns {@code true} if the {@code VolatileImage}
+     * described by this {@code ImageCapabilities} can lose
      * its surfaces.
      * @return whether or not a volatile image is subject to losing its surfaces
      * at the whim of the operating system.

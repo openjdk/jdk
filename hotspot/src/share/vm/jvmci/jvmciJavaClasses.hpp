@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/oop.inline.hpp"
 
 class JVMCIJavaClasses : AllStatic {
  public:
@@ -79,19 +80,18 @@ class JVMCIJavaClasses : AllStatic {
   end_class                                                                                                                                                    \
   start_class(HotSpotCompiledCode)                                                                                                                             \
     oop_field(HotSpotCompiledCode, name, "Ljava/lang/String;")                                                                                                 \
-    objArrayOop_field(HotSpotCompiledCode, sites, "[Ljdk/vm/ci/code/CompilationResult$Site;")                                                                  \
-    objArrayOop_field(HotSpotCompiledCode, exceptionHandlers, "[Ljdk/vm/ci/code/CompilationResult$ExceptionHandler;")                                          \
-    objArrayOop_field(HotSpotCompiledCode, comments, "[Ljdk/vm/ci/hotspot/HotSpotCompiledCode$Comment;")                                                       \
-    objArrayOop_field(HotSpotCompiledCode, assumptions, "[Ljdk/vm/ci/meta/Assumptions$Assumption;")                                                            \
     typeArrayOop_field(HotSpotCompiledCode, targetCode, "[B")                                                                                                  \
     int_field(HotSpotCompiledCode, targetCodeSize)                                                                                                             \
+    objArrayOop_field(HotSpotCompiledCode, sites, "[Ljdk/vm/ci/code/site/Site;")                                                                               \
+    objArrayOop_field(HotSpotCompiledCode, assumptions, "[Ljdk/vm/ci/meta/Assumptions$Assumption;")                                                            \
+    objArrayOop_field(HotSpotCompiledCode, methods, "[Ljdk/vm/ci/meta/ResolvedJavaMethod;")                                                                    \
+    objArrayOop_field(HotSpotCompiledCode, comments, "[Ljdk/vm/ci/hotspot/HotSpotCompiledCode$Comment;")                                                       \
     typeArrayOop_field(HotSpotCompiledCode, dataSection, "[B")                                                                                                 \
     int_field(HotSpotCompiledCode, dataSectionAlignment)                                                                                                       \
-    objArrayOop_field(HotSpotCompiledCode, dataSectionPatches, "[Ljdk/vm/ci/code/CompilationResult$DataPatch;")                                                \
+    objArrayOop_field(HotSpotCompiledCode, dataSectionPatches, "[Ljdk/vm/ci/code/site/DataPatch;")                                                             \
     boolean_field(HotSpotCompiledCode, isImmutablePIC)                                                                                                         \
     int_field(HotSpotCompiledCode, totalFrameSize)                                                                                                             \
     int_field(HotSpotCompiledCode, customStackAreaOffset)                                                                                                      \
-    objArrayOop_field(HotSpotCompiledCode, methods, "[Ljdk/vm/ci/meta/ResolvedJavaMethod;")                                                                    \
   end_class                                                                                                                                                    \
   start_class(HotSpotCompiledCode_Comment)                                                                                                                     \
     oop_field(HotSpotCompiledCode_Comment, text, "Ljava/lang/String;")                                                                                         \
@@ -131,36 +131,41 @@ class JVMCIJavaClasses : AllStatic {
     oop_field(Assumptions_CallSiteTargetValue, callSite, "Ljava/lang/invoke/CallSite;")                                                                        \
     oop_field(Assumptions_CallSiteTargetValue, methodHandle, "Ljava/lang/invoke/MethodHandle;")                                                                \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_Site)                                                                                                                          \
-    int_field(CompilationResult_Site, pcOffset)                                                                                                                \
+  start_class(site_Site)                                                                                                                                       \
+    int_field(site_Site, pcOffset)                                                                                                                             \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_Call)                                                                                                                          \
-    oop_field(CompilationResult_Call, target, "Ljdk/vm/ci/meta/InvokeTarget;")                                                                                 \
-    oop_field(CompilationResult_Call, debugInfo, "Ljdk/vm/ci/code/DebugInfo;")                                                                                 \
+  start_class(site_Call)                                                                                                                                       \
+    oop_field(site_Call, target, "Ljdk/vm/ci/meta/InvokeTarget;")                                                                                              \
+    oop_field(site_Call, debugInfo, "Ljdk/vm/ci/code/DebugInfo;")                                                                                              \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_DataPatch)                                                                                                                     \
-    oop_field(CompilationResult_DataPatch, reference, "Ljdk/vm/ci/code/CompilationResult$Reference;")                                                          \
+  start_class(site_DataPatch)                                                                                                                                  \
+    oop_field(site_DataPatch, reference, "Ljdk/vm/ci/code/site/Reference;")                                                                                    \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_ConstantReference)                                                                                                             \
-    oop_field(CompilationResult_ConstantReference, constant, "Ljdk/vm/ci/meta/VMConstant;")                                                                    \
+  start_class(site_ConstantReference)                                                                                                                          \
+    oop_field(site_ConstantReference, constant, "Ljdk/vm/ci/meta/VMConstant;")                                                                                 \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_DataSectionReference)                                                                                                          \
-    int_field(CompilationResult_DataSectionReference, offset)                                                                                                  \
+  start_class(site_DataSectionReference)                                                                                                                       \
+    int_field(site_DataSectionReference, offset)                                                                                                               \
   end_class                                                                                                                                                    \
-  start_class(InfopointReason)                                                                                                                                 \
-    static_oop_field(InfopointReason, SAFEPOINT, "Ljdk/vm/ci/code/InfopointReason;")                                                                           \
-    static_oop_field(InfopointReason, CALL, "Ljdk/vm/ci/code/InfopointReason;")                                                                                \
-    static_oop_field(InfopointReason, IMPLICIT_EXCEPTION, "Ljdk/vm/ci/code/InfopointReason;")                                                                  \
+  start_class(site_InfopointReason)                                                                                                                            \
+    static_oop_field(site_InfopointReason, SAFEPOINT, "Ljdk/vm/ci/code/site/InfopointReason;")                                                                 \
+    static_oop_field(site_InfopointReason, CALL, "Ljdk/vm/ci/code/site/InfopointReason;")                                                                      \
+    static_oop_field(site_InfopointReason, IMPLICIT_EXCEPTION, "Ljdk/vm/ci/code/site/InfopointReason;")                                                        \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_Infopoint)                                                                                                                     \
-    oop_field(CompilationResult_Infopoint, debugInfo, "Ljdk/vm/ci/code/DebugInfo;")                                                                            \
-    oop_field(CompilationResult_Infopoint, reason, "Ljdk/vm/ci/code/InfopointReason;")                                                                         \
+  start_class(site_Infopoint)                                                                                                                                  \
+    oop_field(site_Infopoint, debugInfo, "Ljdk/vm/ci/code/DebugInfo;")                                                                                         \
+    oop_field(site_Infopoint, reason, "Ljdk/vm/ci/code/site/InfopointReason;")                                                                                 \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_ExceptionHandler)                                                                                                              \
-    int_field(CompilationResult_ExceptionHandler, handlerPos)                                                                                                  \
+  start_class(site_ExceptionHandler)                                                                                                                           \
+    int_field(site_ExceptionHandler, handlerPos)                                                                                                               \
   end_class                                                                                                                                                    \
-  start_class(CompilationResult_Mark)                                                                                                                          \
-    oop_field(CompilationResult_Mark, id, "Ljava/lang/Object;")                                                                                                \
+  start_class(site_Mark)                                                                                                                                       \
+    oop_field(site_Mark, id, "Ljava/lang/Object;")                                                                                                             \
+  end_class                                                                                                                                                    \
+  start_class(CompilationRequestResult)                                                                                                                        \
+    oop_field(CompilationRequestResult, failureMessage, "Ljava/lang/String;")                                                                                  \
+    boolean_field(CompilationRequestResult, retry)                                                                                                             \
+    int_field(CompilationRequestResult, inlinedBytecodes)                                                                                                      \
   end_class                                                                                                                                                    \
   start_class(DebugInfo)                                                                                                                                       \
     oop_field(DebugInfo, bytecodePosition, "Ljdk/vm/ci/code/BytecodePosition;")                                                                                \
@@ -288,7 +293,7 @@ class JVMCIJavaClasses : AllStatic {
     long_field(HotSpotConstantPool, metaspaceConstantPool)                                                                                                     \
   end_class                                                                                                                                                    \
   start_class(HotSpotJVMCIRuntime)                                                                                                                             \
-  objArrayOop_field(HotSpotJVMCIRuntime, trivialPrefixes, "[Ljava/lang/String;")                                                                               \
+    objArrayOop_field(HotSpotJVMCIRuntime, trivialPrefixes, "[Ljava/lang/String;")                                                                             \
   end_class                                                                                                                                                    \
   /* end*/
 

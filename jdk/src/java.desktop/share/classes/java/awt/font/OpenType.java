@@ -26,10 +26,10 @@
 package java.awt.font;
 
 /**
- * The <code>OpenType</code> interface represents OpenType and
+ * The {@code OpenType} interface represents OpenType and
  * TrueType fonts.  This interface makes it possible to obtain
  * <i>sfnt</i> tables from the font.  A particular
- * <code>Font</code> object can implement this interface.
+ * {@code Font} object can implement this interface.
  * <p>
  * For more information on TrueType and OpenType fonts, see the
  * OpenType specification.
@@ -346,19 +346,19 @@ public interface OpenType {
   public static final int       TAG_TRAK        = 0x7472616b;
 
   /**
-   * Returns the version of the <code>OpenType</code> font.
+   * Returns the version of the {@code OpenType} font.
    * 1.0 is represented as 0x00010000.
-   * @return the version of the <code>OpenType</code> font.
+   * @return the version of the {@code OpenType} font.
    */
   public int getVersion();
 
   /**
    * Returns the table as an array of bytes for a specified tag.
    * Tags for sfnt tables include items like <i>cmap</i>,
-   * <i>name</i> and <i>head</i>.  The <code>byte</code> array
+   * <i>name</i> and <i>head</i>.  The {@code byte} array
    * returned is a copy of the font data in memory.
    * @param     sfntTag a four-character code as a 32-bit integer
-   * @return a <code>byte</code> array that is the table that
+   * @return a {@code byte} array that is the table that
    * contains the font data corresponding to the specified
    * tag.
    */
@@ -370,8 +370,8 @@ public interface OpenType {
    * <i>name</i> and <i>head</i>.  The byte array returned is a
    * copy of the font data in memory.
    * @param     strSfntTag a four-character code as a
-   *            <code>String</code>
-   * @return a <code>byte</code> array that is the table that
+   *            {@code String}
+   * @return a {@code byte} array that is the table that
    * contains the font data corresponding to the specified
    * tag.
    */
@@ -387,9 +387,9 @@ public interface OpenType {
    * @param     offset index of first byte to return from table
    * @param     count number of bytes to return from table
    * @return a subset of the table corresponding to
-   *            <code>sfntTag</code> and containing the bytes
-   *            starting at <code>offset</code> byte and including
-   *            <code>count</code> bytes.
+   *            {@code sfntTag} and containing the bytes
+   *            starting at {@code offset} byte and including
+   *            {@code count} bytes.
    */
   public byte[] getFontTable(int sfntTag, int offset, int count);
 
@@ -397,16 +397,16 @@ public interface OpenType {
    * Returns a subset of the table as an array of bytes
    * for a specified tag.  Tags for sfnt tables include items
    * like <i>cmap</i>, <i>name</i> and <i>head</i>. The
-   * <code>byte</code> array returned is a copy of the font
+   * {@code byte} array returned is a copy of the font
    * data in memory.
    * @param     strSfntTag a four-character code as a
-   * <code>String</code>
+   * {@code String}
    * @param     offset index of first byte to return from table
    * @param     count  number of bytes to return from table
    * @return a subset of the table corresponding to
-   *            <code>strSfntTag</code> and containing the bytes
-   *            starting at <code>offset</code> byte and including
-   *            <code>count</code> bytes.
+   *            {@code strSfntTag} and containing the bytes
+   *            starting at {@code offset} byte and including
+   *            {@code count} bytes.
    */
   public byte[] getFontTable(String strSfntTag, int offset, int count);
 
@@ -423,7 +423,7 @@ public interface OpenType {
    * Returns the size of the table for a specified tag. Tags for sfnt
    * tables include items like <i>cmap</i>, <i>name</i> and <i>head</i>.
    * @param     strSfntTag a four-character code as a
-   * <code>String</code>
+   * {@code String}
    * @return the size of the table corresponding to the specified tag.
    */
   public int getFontTableSize(String strSfntTag);

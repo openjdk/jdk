@@ -39,7 +39,7 @@ import javax.print.attribute.SupportedValuesAttribute;
  * in an IPP "copies-supported" attribute. See class {@link
  * javax.print.attribute.SetOfIntegerSyntax SetOfIntegerSyntax} for an
  * explanation of canonical array form. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
  */
@@ -55,7 +55,7 @@ public final class CopiesSupported extends SetOfIntegerSyntax
      * @param  member  Set member.
      *
      * @exception  IllegalArgumentException
-     *  (Unchecked exception) Thrown if <CODE>member</CODE> is less than 1.
+     *  (Unchecked exception) Thrown if {@code member} is less than 1.
      */
     public CopiesSupported(int member) {
         super (member);
@@ -74,7 +74,7 @@ public final class CopiesSupported extends SetOfIntegerSyntax
      *
      * @exception  IllegalArgumentException
      *     (Unchecked exception) Thrown if a null range is specified or if a
-     *     non-null range is specified with <CODE>lowerBound</CODE> less than
+     *     non-null range is specified with {@code lowerBound} less than
      *     1.
      */
     public CopiesSupported(int lowerBound, int upperBound) {
@@ -93,17 +93,17 @@ public final class CopiesSupported extends SetOfIntegerSyntax
      * be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class CopiesSupported.
+     * {@code object} is an instance of class CopiesSupported.
      * <LI>
-     * This copies supported attribute's members and <CODE>object</CODE>'s
+     * This copies supported attribute's members and {@code object}'s
      * members are the same.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this copies
+     * @return  True if {@code object} is equivalent to this copies
      *          supported attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -129,7 +129,7 @@ public final class CopiesSupported extends SetOfIntegerSyntax
      * instance.
      * <P>
      * For class CopiesSupported, the category
-     * name is <CODE>"copies-supported"</CODE>.
+     * name is {@code "copies-supported"}.
      *
      * @return  Attribute category name.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,8 +508,10 @@ D3DBlitTextureToSurface(D3DContext *d3dc,
     RETURN_STATUS_IF_NULL(srcOps->pResource, E_FAIL);
     RETURN_STATUS_IF_NULL(dstOps->pResource, E_FAIL);
 
-    if ((pSrc = srcOps->pResource->GetTexture()) == NULL ||
-        FAILED(res = d3dc->BeginScene(STATE_TEXTUREOP)   ||
+    pSrc = srcOps->pResource->GetTexture();
+    RETURN_STATUS_IF_NULL(pSrc, E_FAIL);
+
+    if (FAILED(res = d3dc->BeginScene(STATE_TEXTUREOP)   ||
         FAILED(res = d3dc->SetTexture(pSrc))))
     {
         J2dRlsTraceLn(J2D_TRACE_ERROR,

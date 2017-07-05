@@ -47,7 +47,7 @@ import java.util.List;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.JavaNioAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.Cleaner;
+import jdk.internal.ref.Cleaner;
 import sun.security.action.GetPropertyAction;
 
 public class FileChannelImpl

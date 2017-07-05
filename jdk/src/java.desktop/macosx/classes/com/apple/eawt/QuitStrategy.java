@@ -38,7 +38,7 @@ package com.apple.eawt;
  */
 public enum QuitStrategy {
     /**
-     * Shuts down the application by calling <code>System.exit(0)</code>. This is the default strategy.
+     * Shuts down the application by calling {@code System.exit(0)}. This is the default strategy.
      */
     SYSTEM_EXIT_0,
 

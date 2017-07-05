@@ -25,16 +25,16 @@
 package com.sun.media.sound;
 
 /**
- * Information about property used in  opening <code>AudioSynthesizer</code>.
+ * Information about property used in  opening {@code AudioSynthesizer}.
  *
  * @author Karl Helgason
  */
 public final class AudioSynthesizerPropertyInfo {
 
     /**
-     * Constructs a <code>AudioSynthesizerPropertyInfo</code> object with a given
-     * name and value. The <code>description</code> and <code>choices</code>
-     * are initialized by <code>null</code> values.
+     * Constructs a {@code AudioSynthesizerPropertyInfo} object with a given
+     * name and value. The {@code description} and {@code choices}
+     * are initialized by {@code null} values.
      *
      * @param name the name of the property
      * @param value the current value or class used for values.
@@ -60,18 +60,18 @@ public final class AudioSynthesizerPropertyInfo {
      */
     public String description = null;
     /**
-     * The <code>value</code> field specifies the current value of
+     * The {@code value} field specifies the current value of
      * the property.
      */
     public Object value = null;
     /**
-     * The <code>valueClass</code> field specifies class
-     * used in <code>value</code> field.
+     * The {@code valueClass} field specifies class
+     * used in {@code value} field.
      */
     public Class<?> valueClass = null;
     /**
      * An array of possible values if the value for the field
-     * <code>AudioSynthesizerPropertyInfo.value</code> may be selected
+     * {@code AudioSynthesizerPropertyInfo.value} may be selected
      * from a particular set of values; otherwise null.
      */
     public Object[] choices = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -78,6 +78,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
+#include "utilities/internalVMTests.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
@@ -204,7 +205,7 @@ intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
       field_klass = super_klass;   // super contains the field also
       super_klass = field_klass->super();
     }
-    debug_only(No_Safepoint_Verifier nosafepoint;)
+    debug_only(NoSafepointVerifier nosafepoint;)
     uintptr_t klass_hash = field_klass->identity_hash();
     return ((klass_hash & klass_mask) << klass_shift) | checked_mask_in_place;
   } else {
@@ -224,7 +225,7 @@ bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
   uintptr_t as_uint = (uintptr_t) id;
   intptr_t klass_hash = (as_uint >> klass_shift) & klass_mask;
   do {
-    debug_only(No_Safepoint_Verifier nosafepoint;)
+    debug_only(NoSafepointVerifier nosafepoint;)
     // Could use a non-blocking query for identity_hash here...
     if ((k->identity_hash() & klass_mask) == klass_hash)
       return true;
@@ -1124,7 +1125,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
         selected_method = m;
     } else if (!m->has_itable_index()) {
       // non-interface call -- for that little speed boost, don't handlize
-      debug_only(No_Safepoint_Verifier nosafepoint;)
+      debug_only(NoSafepointVerifier nosafepoint;)
       // jni_GetMethodID makes sure class is linked and initialized
       // so m should have a valid vtable index.
       assert(m->valid_vtable_index(), "no valid vtable index");
@@ -3157,7 +3158,7 @@ JNI_END
 JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboolean *isCopy))
   JNIWrapper("GetPrimitiveArrayCritical");
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_ENTRY(env, array, (uintptr_t *) isCopy);
-  GC_locker::lock_critical(thread);
+  GCLocker::lock_critical(thread);
   if (isCopy != NULL) {
     *isCopy = JNI_FALSE;
   }
@@ -3179,7 +3180,7 @@ JNI_ENTRY(void, jni_ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, voi
   JNIWrapper("ReleasePrimitiveArrayCritical");
   HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_ENTRY(env, array, carray, mode);
   // The array, carray and mode arguments are ignored
-  GC_locker::unlock_critical(thread);
+  GCLocker::unlock_critical(thread);
 HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
@@ -3187,7 +3188,7 @@ JNI_END
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
   JNIWrapper("GetStringCritical");
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
-  GC_locker::lock_critical(thread);
+  GCLocker::lock_critical(thread);
   oop s = JNIHandles::resolve_non_null(string);
   typeArrayOop s_value = java_lang_String::value(s);
   bool is_latin1 = java_lang_String::is_latin1(s);
@@ -3225,7 +3226,7 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
     FREE_C_HEAP_ARRAY(jchar, chars);
   }
-  GC_locker::unlock_critical(thread);
+  GCLocker::unlock_critical(thread);
 HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
 
@@ -3850,112 +3851,6 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
   return ret;
 }
 
-#ifndef PRODUCT
-
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcTimer.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/heapRegionRemSet.hpp"
-#endif
-#include "compiler/directivesParser.hpp"
-#include "memory/guardedMemory.hpp"
-#include "utilities/json.hpp"
-#include "utilities/ostream.hpp"
-#include "utilities/quickSort.hpp"
-#if INCLUDE_VM_STRUCTS
-#include "runtime/vmStructs.hpp"
-#endif
-
-#define run_unit_test(unit_test_function_call)              \
-  tty->print_cr("Running test: " #unit_test_function_call); \
-  unit_test_function_call
-
-// Forward declaration
-void TestDependencyContext_test();
-void test_semaphore();
-void TestOS_test();
-void TestReservedSpace_test();
-void TestReserveMemorySpecial_test();
-void TestVirtualSpace_test();
-void TestMetaspaceAux_test();
-void TestMetachunk_test();
-void TestVirtualSpaceNode_test();
-void TestNewSize_test();
-void TestOldSize_test();
-void TestKlass_test();
-void TestBitMap_test();
-void TestAsUtf8();
-void Test_linked_list();
-void TestResourcehash_test();
-void TestChunkedList_test();
-void Test_log_length();
-#if INCLUDE_ALL_GCS
-void TestOldFreeSpaceCalculation_test();
-void TestG1BiasedArray_test();
-void TestBufferingOopClosure_test();
-void TestCodeCacheRemSet_test();
-void FreeRegionList_test();
-void IHOP_test();
-void test_memset_with_concurrent_readers() NOT_DEBUG_RETURN;
-void TestPredictions_test();
-void WorkerDataArray_test();
-#endif
-
-void execute_internal_vm_tests() {
-  if (ExecuteInternalVMTests) {
-    tty->print_cr("Running internal VM tests");
-    run_unit_test(TestDependencyContext_test());
-    run_unit_test(test_semaphore());
-    run_unit_test(TestOS_test());
-    run_unit_test(TestReservedSpace_test());
-    run_unit_test(TestReserveMemorySpecial_test());
-    run_unit_test(TestVirtualSpace_test());
-    run_unit_test(TestMetaspaceAux_test());
-    run_unit_test(TestMetachunk_test());
-    run_unit_test(TestVirtualSpaceNode_test());
-    run_unit_test(GlobalDefinitions::test_globals());
-    run_unit_test(GCTimerAllTest::all());
-    run_unit_test(arrayOopDesc::test_max_array_length());
-    run_unit_test(CollectedHeap::test_is_in());
-    run_unit_test(QuickSort::test_quick_sort());
-    run_unit_test(GuardedMemory::test_guarded_memory());
-    run_unit_test(AltHashing::test_alt_hash());
-    run_unit_test(TestNewSize_test());
-    run_unit_test(TestOldSize_test());
-    run_unit_test(TestKlass_test());
-    run_unit_test(TestBitMap_test());
-    run_unit_test(TestAsUtf8());
-    run_unit_test(TestResourcehash_test());
-    run_unit_test(ObjectMonitor::sanity_checks());
-    run_unit_test(Test_linked_list());
-    run_unit_test(TestChunkedList_test());
-    run_unit_test(JSONTest::test());
-    run_unit_test(Test_log_length());
-    run_unit_test(DirectivesParser::test());
-#if INCLUDE_VM_STRUCTS
-    run_unit_test(VMStructs::test());
-#endif
-#if INCLUDE_ALL_GCS
-    run_unit_test(TestOldFreeSpaceCalculation_test());
-    run_unit_test(TestG1BiasedArray_test());
-    run_unit_test(TestBufferingOopClosure_test());
-    run_unit_test(TestCodeCacheRemSet_test());
-    if (UseG1GC) {
-      run_unit_test(FreeRegionList_test());
-      run_unit_test(IHOP_test());
-    }
-    run_unit_test(test_memset_with_concurrent_readers());
-    run_unit_test(TestPredictions_test());
-    run_unit_test(WorkerDataArray_test());
-#endif
-    tty->print_cr("All internal VM tests passed");
-  }
-}
-
-#undef run_unit_test
-
-#endif
-
 DT_RETURN_MARK_DECL(CreateJavaVM, jint
                     , HOTSPOT_JNI_CREATEJAVAVM_RETURN(_ret_ref));
 
@@ -4056,7 +3951,9 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
     test_error_handler();
-    execute_internal_vm_tests();
+    if (ExecuteInternalVMTests) {
+      InternalVMTests::run();
+    }
 #endif
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.

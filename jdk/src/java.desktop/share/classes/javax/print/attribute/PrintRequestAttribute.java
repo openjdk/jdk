@@ -37,7 +37,7 @@ package javax.print.attribute;
  * <p>
  * If an attribute implements {@link DocAttribute  DocAttribute}
  * as well as PrintRequestAttribute, the client may include the
- * attribute in a <code>Doc</code>}'s attribute set to specify
+ * attribute in a {@code Doc}'s attribute set to specify
  * a job setting which pertains just to that doc.
  *
  * @see DocAttributeSet

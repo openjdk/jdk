@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1419,9 +1419,6 @@ void JavaThread::collect_counters(typeArrayOop array) {
 void JavaThread::initialize() {
   // Initialize fields
 
-  // Set the claimed par_id to UINT_MAX (ie not claiming any par_ids)
-  set_claimed_par_id(UINT_MAX);
-
   set_saved_exception_pc(NULL);
   set_threadObj(NULL);
   _anchor.clear();
@@ -2443,7 +2440,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
 // normal checks but also performs the transition back into
 // thread_in_Java state.  This is required so that critical natives
 // can potentially block and perform a GC if they are the last thread
-// exiting the GC_locker.
+// exiting the GCLocker.
 void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
   check_special_condition_for_native_trans(thread);
 
@@ -2452,7 +2449,7 @@ void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThr
 
   if (thread->do_critical_native_unlock()) {
     ThreadInVMfromJavaNoAsyncException tiv(thread);
-    GC_locker::unlock_critical(thread);
+    GCLocker::unlock_critical(thread);
     thread->clear_critical_native_unlock();
   }
 }
@@ -3390,13 +3387,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
+  // Initialize library-based TLS
+  ThreadLocalStorage::init();
+
   // Initialize the output stream module
   ostream_init();
 
   // Process java launcher properties.
   Arguments::process_sun_java_launcher_properties(args);
 
-  // Initialize the os module before using TLS
+  // Initialize the os module
   os::init();
 
   // Record VM creation timing statistics
@@ -3450,9 +3450,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
-
-  // Initialize library-based TLS
-  ThreadLocalStorage::init();
 
   // Initialize output stream logging
   ostream_init_log();

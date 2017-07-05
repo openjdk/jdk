@@ -37,15 +37,15 @@ import javax.imageio.metadata.IIOMetadata;
  * associated with the image.
  *
  * <p> The image data may take the form of either a
- * <code>RenderedImage</code>, or a <code>Raster</code>.  Reader
- * methods that return an <code>IIOImage</code> will always return a
- * <code>BufferedImage</code> using the <code>RenderedImage</code>
- * reference.  Writer methods that accept an <code>IIOImage</code>
- * will always accept a <code>RenderedImage</code>, and may optionally
- * accept a <code>Raster</code>.
+ * {@code RenderedImage}, or a {@code Raster}.  Reader
+ * methods that return an {@code IIOImage} will always return a
+ * {@code BufferedImage} using the {@code RenderedImage}
+ * reference.  Writer methods that accept an {@code IIOImage}
+ * will always accept a {@code RenderedImage}, and may optionally
+ * accept a {@code Raster}.
  *
- * <p> Exactly one of <code>getRenderedImage</code> and
- * <code>getRaster</code> will return a non-<code>null</code> value.
+ * <p> Exactly one of {@code getRenderedImage} and
+ * {@code getRaster} will return a non-{@code null} value.
  * Subclasses are responsible for ensuring this behavior.
  *
  * @see ImageReader#readAll(int, ImageReadParam)
@@ -60,47 +60,47 @@ import javax.imageio.metadata.IIOMetadata;
 public class IIOImage {
 
     /**
-     * The <code>RenderedImage</code> being referenced.
+     * The {@code RenderedImage} being referenced.
      */
     protected RenderedImage image;
 
     /**
-     * The <code>Raster</code> being referenced.
+     * The {@code Raster} being referenced.
      */
     protected Raster raster;
 
     /**
-     * A <code>List</code> of <code>BufferedImage</code> thumbnails,
-     * or <code>null</code>.  Non-<code>BufferedImage</code> objects
-     * must not be stored in this <code>List</code>.
+     * A {@code List} of {@code BufferedImage} thumbnails,
+     * or {@code null}.  Non-{@code BufferedImage} objects
+     * must not be stored in this {@code List}.
      */
     protected List<? extends BufferedImage> thumbnails = null;
 
     /**
-     * An <code>IIOMetadata</code> object containing metadata
+     * An {@code IIOMetadata} object containing metadata
      * associated with the image.
      */
     protected IIOMetadata metadata;
 
     /**
-     * Constructs an <code>IIOImage</code> containing a
-     * <code>RenderedImage</code>, and thumbnails and metadata
+     * Constructs an {@code IIOImage} containing a
+     * {@code RenderedImage}, and thumbnails and metadata
      * associated with it.
      *
      * <p> All parameters are stored by reference.
      *
-     * <p> The <code>thumbnails</code> argument must either be
-     * <code>null</code> or contain only <code>BufferedImage</code>
+     * <p> The {@code thumbnails} argument must either be
+     * {@code null} or contain only {@code BufferedImage}
      * objects.
      *
-     * @param image a <code>RenderedImage</code>.
-     * @param thumbnails a <code>List</code> of <code>BufferedImage</code>s,
-     * or <code>null</code>.
-     * @param metadata an <code>IIOMetadata</code> object, or
-     * <code>null</code>.
+     * @param image a {@code RenderedImage}.
+     * @param thumbnails a {@code List} of {@code BufferedImage}s,
+     * or {@code null}.
+     * @param metadata an {@code IIOMetadata} object, or
+     * {@code null}.
      *
-     * @exception IllegalArgumentException if <code>image</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code image} is
+     * {@code null}.
      */
     public IIOImage(RenderedImage image,
                     List<? extends BufferedImage> thumbnails,
@@ -115,20 +115,20 @@ public class IIOImage {
     }
 
     /**
-     * Constructs an <code>IIOImage</code> containing a
-     * <code>Raster</code>, and thumbnails and metadata
+     * Constructs an {@code IIOImage} containing a
+     * {@code Raster}, and thumbnails and metadata
      * associated with it.
      *
      * <p> All parameters are stored by reference.
      *
-     * @param raster a <code>Raster</code>.
-     * @param thumbnails a <code>List</code> of <code>BufferedImage</code>s,
-     * or <code>null</code>.
-     * @param metadata an <code>IIOMetadata</code> object, or
-     * <code>null</code>.
+     * @param raster a {@code Raster}.
+     * @param thumbnails a {@code List} of {@code BufferedImage}s,
+     * or {@code null}.
+     * @param metadata an {@code IIOMetadata} object, or
+     * {@code null}.
      *
-     * @exception IllegalArgumentException if <code>raster</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code raster} is
+     * {@code null}.
      */
     public IIOImage(Raster raster,
                     List<? extends BufferedImage> thumbnails,
@@ -143,10 +143,10 @@ public class IIOImage {
     }
 
     /**
-     * Returns the currently set <code>RenderedImage</code>, or
-     * <code>null</code> if only a <code>Raster</code> is available.
+     * Returns the currently set {@code RenderedImage}, or
+     * {@code null} if only a {@code Raster} is available.
      *
-     * @return a <code>RenderedImage</code>, or <code>null</code>.
+     * @return a {@code RenderedImage}, or {@code null}.
      *
      * @see #setRenderedImage
      */
@@ -157,14 +157,14 @@ public class IIOImage {
     }
 
     /**
-     * Sets the current <code>RenderedImage</code>.  The value is
-     * stored by reference.  Any existing <code>Raster</code> is
+     * Sets the current {@code RenderedImage}.  The value is
+     * stored by reference.  Any existing {@code Raster} is
      * discarded.
      *
-     * @param image a <code>RenderedImage</code>.
+     * @param image a {@code RenderedImage}.
      *
-     * @exception IllegalArgumentException if <code>image</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code image} is
+     * {@code null}.
      *
      * @see #getRenderedImage
      */
@@ -179,10 +179,10 @@ public class IIOImage {
     }
 
     /**
-     * Returns <code>true</code> if this <code>IIOImage</code> stores
-     * a <code>Raster</code> rather than a <code>RenderedImage</code>.
+     * Returns {@code true} if this {@code IIOImage} stores
+     * a {@code Raster} rather than a {@code RenderedImage}.
      *
-     * @return <code>true</code> if a <code>Raster</code> is
+     * @return {@code true} if a {@code Raster} is
      * available.
      */
     public boolean hasRaster() {
@@ -192,11 +192,11 @@ public class IIOImage {
     }
 
     /**
-     * Returns the currently set <code>Raster</code>, or
-     * <code>null</code> if only a <code>RenderedImage</code> is
+     * Returns the currently set {@code Raster}, or
+     * {@code null} if only a {@code RenderedImage} is
      * available.
      *
-     * @return a <code>Raster</code>, or <code>null</code>.
+     * @return a {@code Raster}, or {@code null}.
      *
      * @see #setRaster
      */
@@ -207,14 +207,14 @@ public class IIOImage {
     }
 
     /**
-     * Sets the current <code>Raster</code>.  The value is
-     * stored by reference.  Any existing <code>RenderedImage</code> is
+     * Sets the current {@code Raster}.  The value is
+     * stored by reference.  Any existing {@code RenderedImage} is
      * discarded.
      *
-     * @param raster a <code>Raster</code>.
+     * @param raster a {@code Raster}.
      *
-     * @exception IllegalArgumentException if <code>raster</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code raster} is
+     * {@code null}.
      *
      * @see #getRaster
      */
@@ -230,9 +230,9 @@ public class IIOImage {
 
     /**
      * Returns the number of thumbnails stored in this
-     * <code>IIOImage</code>.
+     * {@code IIOImage}.
      *
-     * @return the number of thumbnails, as an <code>int</code>.
+     * @return the number of thumbnails, as an {@code int}.
      */
     public int getNumThumbnails() {
         return thumbnails == null ? 0 : thumbnails.size();
@@ -243,12 +243,12 @@ public class IIOImage {
      *
      * @param index the index of the desired thumbnail image.
      *
-     * @return a thumbnail image, as a <code>BufferedImage</code>.
+     * @return a thumbnail image, as a {@code BufferedImage}.
      *
      * @exception IndexOutOfBoundsException if the supplied index is
      * negative or larger than the largest valid index.
      * @exception ClassCastException if a
-     * non-<code>BufferedImage</code> object is encountered in the
+     * non-{@code BufferedImage} object is encountered in the
      * list of thumbnails at the given index.
      *
      * @see #getThumbnails
@@ -262,12 +262,12 @@ public class IIOImage {
     }
 
     /**
-     * Returns the current <code>List</code> of thumbnail
-     * <code>BufferedImage</code>s, or <code>null</code> if none is
+     * Returns the current {@code List} of thumbnail
+     * {@code BufferedImage}s, or {@code null} if none is
      * set.  A live reference is returned.
      *
-     * @return the current <code>List</code> of
-     * <code>BufferedImage</code> thumbnails, or <code>null</code>.
+     * @return the current {@code List} of
+     * {@code BufferedImage} thumbnails, or {@code null}.
      *
      * @see #getThumbnail(int)
      * @see #setThumbnails
@@ -277,16 +277,16 @@ public class IIOImage {
     }
 
     /**
-     * Sets the list of thumbnails to a new <code>List</code> of
-     * <code>BufferedImage</code>s, or to <code>null</code>.  The
-     * reference to the previous <code>List</code> is discarded.
+     * Sets the list of thumbnails to a new {@code List} of
+     * {@code BufferedImage}s, or to {@code null}.  The
+     * reference to the previous {@code List} is discarded.
      *
-     * <p> The <code>thumbnails</code> argument must either be
-     * <code>null</code> or contain only <code>BufferedImage</code>
+     * <p> The {@code thumbnails} argument must either be
+     * {@code null} or contain only {@code BufferedImage}
      * objects.
      *
-     * @param thumbnails a <code>List</code> of
-     * <code>BufferedImage</code> thumbnails, or <code>null</code>.
+     * @param thumbnails a {@code List} of
+     * {@code BufferedImage} thumbnails, or {@code null}.
      *
      * @see #getThumbnail(int)
      * @see #getThumbnails
@@ -296,10 +296,10 @@ public class IIOImage {
     }
 
     /**
-     * Returns a reference to the current <code>IIOMetadata</code>
-     * object, or <code>null</code> is none is set.
+     * Returns a reference to the current {@code IIOMetadata}
+     * object, or {@code null} is none is set.
      *
-     * @return an <code>IIOMetadata</code> object, or <code>null</code>.
+     * @return an {@code IIOMetadata} object, or {@code null}.
      *
      * @see #setMetadata
      */
@@ -308,11 +308,11 @@ public class IIOImage {
     }
 
     /**
-     * Sets the <code>IIOMetadata</code> to a new object, or
-     * <code>null</code>.
+     * Sets the {@code IIOMetadata} to a new object, or
+     * {@code null}.
      *
-     * @param metadata an <code>IIOMetadata</code> object, or
-     * <code>null</code>.
+     * @param metadata an {@code IIOMetadata} object, or
+     * {@code null}.
      *
      * @see #getMetadata
      */

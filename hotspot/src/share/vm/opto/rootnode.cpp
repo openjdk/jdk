@@ -79,7 +79,7 @@ Node *HaltNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type *HaltNode::Value( PhaseTransform *phase ) const {
+const Type* HaltNode::Value(PhaseGVN* phase) const {
   return ( phase->type(in(TypeFunc::Control)) == Type::TOP)
     ? Type::TOP
     : Type::BOTTOM;

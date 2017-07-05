@@ -52,13 +52,13 @@ import java.util.Iterator;
 public interface BeanContextServiceProvider {
 
    /**
-    * Invoked by <code>BeanContextServices</code>, this method
+    * Invoked by {@code BeanContextServices}, this method
     * requests an instance of a
-    * service from this <code>BeanContextServiceProvider</code>.
+    * service from this {@code BeanContextServiceProvider}.
     *
-    * @param bcs The <code>BeanContextServices</code> associated with this
+    * @param bcs The {@code BeanContextServices} associated with this
     * particular request. This parameter enables the
-    * <code>BeanContextServiceProvider</code> to distinguish service
+    * {@code BeanContextServiceProvider} to distinguish service
     * requests from multiple sources.
     *
     * @param requestor          The object requesting the service
@@ -66,19 +66,19 @@ public interface BeanContextServiceProvider {
     * @param serviceClass       The service requested
     *
     * @param serviceSelector the service dependent parameter
-    * for a particular service, or <code>null</code> if not applicable.
+    * for a particular service, or {@code null} if not applicable.
     *
     * @return a reference to the requested service
     */
     Object getService(BeanContextServices bcs, Object requestor, Class<?> serviceClass, Object serviceSelector);
 
     /**
-     * Invoked by <code>BeanContextServices</code>,
-     * this method releases a nested <code>BeanContextChild</code>'s
+     * Invoked by {@code BeanContextServices},
+     * this method releases a nested {@code BeanContextChild}'s
      * (or any arbitrary object associated with a
-     * <code>BeanContextChild</code>) reference to the specified service.
+     * {@code BeanContextChild}) reference to the specified service.
      *
-     * @param bcs the <code>BeanContextServices</code> associated with this
+     * @param bcs the {@code BeanContextServices} associated with this
      * particular release request
      *
      * @param requestor the object requesting the service to be released
@@ -88,7 +88,7 @@ public interface BeanContextServiceProvider {
     public void releaseService(BeanContextServices bcs, Object requestor, Object service);
 
     /**
-     * Invoked by <code>BeanContextServices</code>, this method
+     * Invoked by {@code BeanContextServices}, this method
      * gets the current service selectors for the specified service.
      * A service selector is a service specific parameter,
      * typical examples of which could include: a
@@ -96,7 +96,7 @@ public interface BeanContextServiceProvider {
      * a value for a particular service's property, or a key into a
      * map of existing implementations.
      *
-     * @param bcs           the <code>BeanContextServices</code> for this request
+     * @param bcs           the {@code BeanContextServices} for this request
      * @param serviceClass  the specified service
      * @return   the current service selectors for the specified serviceClass
      */

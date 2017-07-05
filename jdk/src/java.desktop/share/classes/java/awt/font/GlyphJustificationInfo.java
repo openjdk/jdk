@@ -40,12 +40,12 @@
 package java.awt.font;
 
 /**
- * The <code>GlyphJustificationInfo</code> class represents information
+ * The {@code GlyphJustificationInfo} class represents information
  * about the justification properties of a glyph.  A glyph is the visual
  * representation of one or more characters.  Many different glyphs can
  * be used to represent a single character or combination of characters.
  * The four justification properties represented by
- * <code>GlyphJustificationInfo</code> are weight, priority, absorb and
+ * {@code GlyphJustificationInfo} are weight, priority, absorb and
  * limit.
  * <p>
  * Weight is the overall 'weight' of the glyph in the line.  Generally it is
@@ -67,7 +67,7 @@ package java.awt.font;
  * Limit determines the maximum or minimum amount by which the glyph can
  * change. Left and right sides of the glyph can have different limits.
  * <p>
- * Each <code>GlyphJustificationInfo</code> represents two sets of
+ * Each {@code GlyphJustificationInfo} represents two sets of
  * metrics, which are <i>growing</i> and <i>shrinking</i>.  Growing
  * metrics are used when the glyphs on a line are to be
  * spread apart to fit a larger width.  Shrinking metrics are used when
@@ -80,7 +80,7 @@ public final class GlyphJustificationInfo {
      * Constructs information about the justification properties of a
      * glyph.
      * @param weight the weight of this glyph when allocating space.  Must be non-negative.
-     * @param growAbsorb if <code>true</code> this glyph absorbs
+     * @param growAbsorb if {@code true} this glyph absorbs
      * all extra space at this priority and lower priority levels when it
      * grows
      * @param growPriority the priority level of this glyph when it
@@ -89,7 +89,7 @@ public final class GlyphJustificationInfo {
      * glyph can grow.  Must be non-negative.
      * @param growRightLimit the maximum amount by which the right side of this
      * glyph can grow.  Must be non-negative.
-     * @param shrinkAbsorb if <code>true</code>, this glyph absorbs all
+     * @param shrinkAbsorb if {@code true}, this glyph absorbs all
      * remaining shrinkage at this and lower priority levels when it
      * shrinks
      * @param shrinkPriority the priority level of this glyph when
@@ -172,7 +172,7 @@ public final class GlyphJustificationInfo {
     public final int growPriority;
 
     /**
-     * If <code>true</code>, this glyph absorbs all extra
+     * If {@code true}, this glyph absorbs all extra
      * space at this and lower priority levels when it grows.
      */
     public final boolean growAbsorb;
@@ -193,7 +193,7 @@ public final class GlyphJustificationInfo {
     public final int shrinkPriority;
 
     /**
-     * If <code>true</code>,this glyph absorbs all remaining shrinkage at
+     * If {@code true},this glyph absorbs all remaining shrinkage at
      * this and lower priority levels as it shrinks.
      */
     public final boolean shrinkAbsorb;

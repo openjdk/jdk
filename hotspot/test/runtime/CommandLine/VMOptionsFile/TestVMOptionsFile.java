@@ -285,6 +285,8 @@ public class TestVMOptionsFile {
     }
 
     private static void testVMOptions() throws Exception {
+        ProcessBuilder pb;
+
         /* Check that empty VM Option file is accepted without errors */
         addVMOptionsFile(VM_OPTION_FILE_EMPTY);
 
@@ -385,6 +387,33 @@ public class TestVMOptionsFile {
         checkProperty("my.property", "value" + REPEAT_COUNT);
         checkVMOption("MinHeapFreeRatio", "17");
         checkVMOption("MaxHeapFreeRatio", "85");
+
+        /* Pass VM Option file in _JAVA_OPTIONS environment variable */
+        addVMParam("-showversion");
+        addVMOptionsToCheck("SurvivorRatio", "MinHeapFreeRatio");
+        pb = createProcessBuilder();
+
+        updateEnvironment(pb, JAVA_OPTIONS, "-XX:VMOptionsFile=" + getAbsolutePathFromSource(VM_OPTION_FILE_1));
+
+        runJavaCheckExitValue(pb, JVM_SUCCESS);
+        outputShouldContain("interpreted mode");
+        checkProperty("optfile_1", "option_file_1");
+        checkVMOption("SurvivorRatio", "16");
+        checkVMOption("MinHeapFreeRatio", "22");
+
+        /* Pass VM Option file in JAVA_TOOL_OPTIONS environment variable */
+        addVMOptionsToCheck("UseGCOverheadLimit", "NewRatio", "MinHeapFreeRatio", "MaxFDLimit", "AlwaysPreTouch");
+        pb = createProcessBuilder();
+
+        updateEnvironment(pb, JAVA_TOOL_OPTIONS, "-XX:VMOptionsFile=" + VM_OPTION_FILE_2);
+
+        runJavaCheckExitValue(pb, JVM_SUCCESS);
+        checkProperty("javax.net.ssl.keyStorePassword", "someVALUE123+");
+        checkVMOption("UseGCOverheadLimit", "true");
+        checkVMOption("NewRatio", "4");
+        checkVMOption("MinHeapFreeRatio", "3");
+        checkVMOption("MaxFDLimit", "true");
+        checkVMOption("AlwaysPreTouch", "false");
     }
 
     private static ProcessBuilder prepareTestCase(int testCase) throws Exception {
@@ -548,13 +577,13 @@ public class TestVMOptionsFile {
         addVMOptionsFile(VM_OPTION_FILE_WITH_SAME_VM_OPTION_FILE);
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("The VM Options file can only be specified once and only on the command line.");
+        outputShouldContain("A VM options file may not refer to a VM options file. Specification of '-XX:VMOptionsFile=<file-name>' in the options file");
 
         /* Pass VM option file with VM option file option in it */
         addVMOptionsFile(VM_OPTION_FILE_WITH_VM_OPTION_FILE);
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("The VM Options file can only be specified once and only on the command line.");
+        outputShouldContain("A VM options file may not refer to a VM options file. Specification of '-XX:VMOptionsFile=<file-name>' in the options file");
 
         /* Pass VM option file which is not accessible (without read permissions) */
         addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_WITHOUT_READ_PERMISSIONS));
@@ -567,7 +596,7 @@ public class TestVMOptionsFile {
         addVMOptionsFile(VM_OPTION_FILE_2);
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("The VM Options file can only be specified once and only on the command line.");
+        outputShouldContain("is already specified in the");
 
         /* Pass empty option file i.e. pass "-XX:VMOptionsFile=" */
         addVMOptionsFile("");
@@ -586,22 +615,6 @@ public class TestVMOptionsFile {
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
         outputShouldContain("Unmatched quote in");
-
-        /* Pass VM Option file in _JAVA_OPTIONS environment variable */
-        pb = createProcessBuilder();
-
-        updateEnvironment(pb, JAVA_OPTIONS, "-XX:VMOptionsFile=" + getAbsolutePathFromSource(VM_OPTION_FILE_1));
-
-        runJavaCheckExitValue(pb, JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("VM options file is only supported on the command line");
-
-        /* Pass VM Option file in JAVA_TOOL_OPTIONS environment variable */
-        pb = createProcessBuilder();
-
-        updateEnvironment(pb, JAVA_TOOL_OPTIONS, "-XX:VMOptionsFile=" + getAbsolutePathFromSource(VM_OPTION_FILE_1));
-
-        runJavaCheckExitValue(pb, JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("VM options file is only supported on the command line");
     }
 
     public static void main(String[] args) throws Exception {

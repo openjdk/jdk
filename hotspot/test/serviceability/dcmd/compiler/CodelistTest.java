@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,8 @@ public class CodelistTest {
             // int compileLevel = Integer.parseInt(parts[1]);
             String methodPrintedInLogFormat = parts[2];
 
-            // skip inits, clinits and methodHandles - they can not be reflected
+            // skip inits, clinits, methodHandles and getUnsafe -
+            // they can not be reflected
             if (methodPrintedInLogFormat.contains("<init>")) {
                 continue;
             }
@@ -91,6 +92,9 @@ public class CodelistTest {
                 continue;
             }
             if (methodPrintedInLogFormat.contains("sun.misc.Unsafe.getUnsafe")) {
+                continue;
+            }
+            if (methodPrintedInLogFormat.contains("jdk.internal.misc.Unsafe.getUnsafe")) {
                 continue;
             }
 

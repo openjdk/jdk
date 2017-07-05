@@ -41,7 +41,7 @@ public class NativeFont extends PhysicalFont {
 
     /**
      * Verifies native font is accessible.
-     * @throws FontFormatException - if the font can't be located.
+     * @throws FontFormatException if the font can't be located.
      */
     public NativeFont(String platName, boolean isBitmapDelegate)
         throws FontFormatException {

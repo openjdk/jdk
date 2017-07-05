@@ -31,8 +31,8 @@ import java.awt.Rectangle;
 /**
  * A superclass of all classes describing how streams should be
  * decoded or encoded.  This class contains all the variables and
- * methods that are shared by <code>ImageReadParam</code> and
- * <code>ImageWriteParam</code>.
+ * methods that are shared by {@code ImageReadParam} and
+ * {@code ImageWriteParam}.
  *
  * <p> This class provides mechanisms to specify a source region and a
  * destination region.  When reading, the source is the stream and
@@ -49,20 +49,20 @@ import java.awt.Rectangle;
 public abstract class IIOParam {
 
     /**
-     * The source region, on <code>null</code> if none is set.
+     * The source region, on {@code null} if none is set.
      */
     protected Rectangle sourceRegion = null;
 
     /**
      * The decimation subsampling to be applied in the horizontal
-     * direction.  By default, the value is <code>1</code>.
+     * direction.  By default, the value is {@code 1}.
      * The value must not be negative or 0.
      */
     protected int sourceXSubsampling = 1;
 
     /**
      * The decimation subsampling to be applied in the vertical
-     * direction.  By default, the value is <code>1</code>.
+     * direction.  By default, the value is {@code 1}.
      * The value must not be negative or 0.
      */
     protected int sourceYSubsampling = 1;
@@ -84,19 +84,19 @@ public abstract class IIOParam {
     protected int subsamplingYOffset = 0;
 
     /**
-     * An array of <code>int</code>s indicating which source bands
-     * will be used, or <code>null</code>.  If <code>null</code>, the
+     * An array of {@code int}s indicating which source bands
+     * will be used, or {@code null}.  If {@code null}, the
      * set of source bands to be used is as described in the comment
-     * for the <code>setSourceBands</code> method.  No value should
+     * for the {@code setSourceBands} method.  No value should
      * be allowed to be negative.
      */
     protected int[] sourceBands = null;
 
     /**
-     * An <code>ImageTypeSpecifier</code> to be used to generate a
+     * An {@code ImageTypeSpecifier} to be used to generate a
      * destination image when reading, or to set the output color type
      * when writing.  If non has been set the value will be
-     * <code>null</code>.  By default, the value is <code>null</code>.
+     * {@code null}.  By default, the value is {@code null}.
      */
     protected ImageTypeSpecifier destinationType = null;
 
@@ -107,9 +107,9 @@ public abstract class IIOParam {
     protected Point destinationOffset = new Point(0, 0);
 
     /**
-     * The default <code>IIOParamController</code> that will be
-     * used to provide settings for this <code>IIOParam</code>
-     * object when the <code>activateController</code> method
+     * The default {@code IIOParamController} that will be
+     * used to provide settings for this {@code IIOParam}
+     * object when the {@code activateController} method
      * is called.  This default should be set by subclasses
      * that choose to provide their own default controller,
      * usually a GUI, for setting parameters.
@@ -121,9 +121,9 @@ public abstract class IIOParam {
     protected IIOParamController defaultController = null;
 
     /**
-     * The <code>IIOParamController</code> that will be
-     * used to provide settings for this <code>IIOParam</code>
-     * object when the <code>activateController</code> method
+     * The {@code IIOParamController} that will be
+     * used to provide settings for this {@code IIOParam}
+     * object when the {@code activateController} method
      * is called.  This value overrides any default controller,
      * even when null.
      *
@@ -146,30 +146,30 @@ public abstract class IIOParam {
      * described as a rectangle, with the upper-left corner of the
      * source image as pixel (0, 0) and increasing values down and to
      * the right.  The actual number of pixels used will depend on
-     * the subsampling factors set by <code>setSourceSubsampling</code>.
+     * the subsampling factors set by {@code setSourceSubsampling}.
      * If subsampling has been set such that this number is zero,
-     * an <code>IllegalStateException</code> will be thrown.
+     * an {@code IllegalStateException} will be thrown.
      *
      * <p> The source region of interest specified by this method will
      * be clipped as needed to fit within the source bounds, as well
      * as the destination offsets, width, and height at the time of
      * actual I/O.
      *
-     * <p> A value of <code>null</code> for <code>sourceRegion</code>
+     * <p> A value of {@code null} for {@code sourceRegion}
      * will remove any region specification, causing the entire image
      * to be used.
      *
-     * @param sourceRegion a <code>Rectangle</code> specifying the
-     * source region of interest, or <code>null</code>.
+     * @param sourceRegion a {@code Rectangle} specifying the
+     * source region of interest, or {@code null}.
      *
      * @exception IllegalArgumentException if
-     * <code>sourceRegion</code> is non-<code>null</code> and either
-     * <code>sourceRegion.x</code> or <code>sourceRegion.y</code> is
+     * {@code sourceRegion} is non-{@code null} and either
+     * {@code sourceRegion.x} or {@code sourceRegion.y} is
      * negative.
      * @exception IllegalArgumentException if
-     * <code>sourceRegion</code> is non-<code>null</code> and either
-     * <code>sourceRegion.width</code> or
-     * <code>sourceRegion.height</code> is negative or 0.
+     * {@code sourceRegion} is non-{@code null} and either
+     * {@code sourceRegion.width} or
+     * {@code sourceRegion.height} is negative or 0.
      * @exception IllegalStateException if subsampling is such that
      * this region will have a subsampled width or height of zero.
      *
@@ -213,11 +213,11 @@ public abstract class IIOParam {
     /**
      * Returns the source region to be used.  The returned value is
      * that set by the most recent call to
-     * <code>setSourceRegion</code>, and will be <code>null</code> if
+     * {@code setSourceRegion}, and will be {@code null} if
      * there is no region set.
      *
      * @return the source region of interest as a
-     * <code>Rectangle</code>, or <code>null</code>.
+     * {@code Rectangle}, or {@code null}.
      *
      * @see #setSourceRegion
      */
@@ -230,13 +230,13 @@ public abstract class IIOParam {
 
     /**
      * Specifies a decimation subsampling to apply on I/O.  The
-     * <code>sourceXSubsampling</code> and
-     * <code>sourceYSubsampling</code> parameters specify the
+     * {@code sourceXSubsampling} and
+     * {@code sourceYSubsampling} parameters specify the
      * subsampling period (<i>i.e.</i>, the number of rows and columns
      * to advance after every source pixel).  Specifically, a period of
      * 1 will use every row or column; a period of 2 will use every
-     * other row or column.  The <code>subsamplingXOffset</code> and
-     * <code>subsamplingYOffset</code> parameters specify an offset
+     * other row or column.  The {@code subsamplingXOffset} and
+     * {@code subsamplingYOffset} parameters specify an offset
      * from the region (or image) origin for the first subsampled pixel.
      * Adjusting the origin of the subsample grid is useful for avoiding
      * seams when subsampling a very large source image into destination
@@ -248,11 +248,11 @@ public abstract class IIOParam {
      * <p>
      * The number of subsampled pixels in a scanline is given by
      * <p>
-     * <code>truncate[(width - subsamplingXOffset + sourceXSubsampling - 1)
-     * / sourceXSubsampling]</code>.
+     * {@code truncate[(width - subsamplingXOffset + sourceXSubsampling - 1)
+     * / sourceXSubsampling]}.
      * <p>
      * If the region is such that this width is zero, an
-     * <code>IllegalStateException</code> is thrown.
+     * {@code IllegalStateException} is thrown.
      * <p>
      * The number of scanlines to be used can be computed similarly.
      *
@@ -269,17 +269,17 @@ public abstract class IIOParam {
      * <br>
      * grid offset = [period - (region offset modulo period)] modulo period)
      *
-     * <p> If either <code>sourceXSubsampling</code> or
-     * <code>sourceYSubsampling</code> is 0 or negative, an
-     * <code>IllegalArgumentException</code> will be thrown.
+     * <p> If either {@code sourceXSubsampling} or
+     * {@code sourceYSubsampling} is 0 or negative, an
+     * {@code IllegalArgumentException} will be thrown.
      *
-     * <p> If either <code>subsamplingXOffset</code> or
-     * <code>subsamplingYOffset</code> is negative or greater than or
+     * <p> If either {@code subsamplingXOffset} or
+     * {@code subsamplingYOffset} is negative or greater than or
      * equal to the corresponding period, an
-     * <code>IllegalArgumentException</code> will be thrown.
+     * {@code IllegalArgumentException} will be thrown.
      *
-     * <p> There is no <code>unsetSourceSubsampling</code> method;
-     * simply call <code>setSourceSubsampling(1, 1, 0, 0)</code> to
+     * <p> There is no {@code unsetSourceSubsampling} method;
+     * simply call {@code setSourceSubsampling(1, 1, 0, 0)} to
      * restore default values.
      *
      * @param sourceXSubsampling the number of columns to advance
@@ -334,7 +334,7 @@ public abstract class IIOParam {
     /**
      * Returns the number of source columns to advance for each pixel.
      *
-     * <p>If <code>setSourceSubsampling</code> has not been called, 1
+     * <p>If {@code setSourceSubsampling} has not been called, 1
      * is returned (which is the correct value).
      *
      * @return the source subsampling X period.
@@ -349,7 +349,7 @@ public abstract class IIOParam {
     /**
      * Returns the number of rows to advance for each pixel.
      *
-     * <p>If <code>setSourceSubsampling</code> has not been called, 1
+     * <p>If {@code setSourceSubsampling} has not been called, 1
      * is returned (which is the correct value).
      *
      * @return the source subsampling Y period.
@@ -364,7 +364,7 @@ public abstract class IIOParam {
     /**
      * Returns the horizontal offset of the subsampling grid.
      *
-     * <p>If <code>setSourceSubsampling</code> has not been called, 0
+     * <p>If {@code setSourceSubsampling} has not been called, 0
      * is returned (which is the correct value).
      *
      * @return the source subsampling grid X offset.
@@ -379,7 +379,7 @@ public abstract class IIOParam {
     /**
      * Returns the vertical offset of the subsampling grid.
      *
-     * <p>If <code>setSourceSubsampling</code> has not been called, 0
+     * <p>If {@code setSourceSubsampling} has not been called, 0
      * is returned (which is the correct value).
      *
      * @return the source subsampling grid Y offset.
@@ -395,25 +395,25 @@ public abstract class IIOParam {
      * Sets the indices of the source bands to be used.  Duplicate
      * indices are not allowed.
      *
-     * <p> A <code>null</code> value indicates that all source bands
+     * <p> A {@code null} value indicates that all source bands
      * will be used.
      *
      * <p> At the time of reading, an
-     * <code>IllegalArgumentException</code> will be thrown by the
+     * {@code IllegalArgumentException} will be thrown by the
      * reader or writer if a value larger than the largest available
      * source band index has been specified or if the number of source
      * bands and destination bands to be used differ.  The
-     * <code>ImageReader.checkReadParamBandSettings</code> method may
+     * {@code ImageReader.checkReadParamBandSettings} method may
      * be used to automate this test.
      *
      * <p> Semantically, a copy is made of the array; changes to the
      * array contents subsequent to this call have no effect on
-     * this <code>IIOParam</code>.
+     * this {@code IIOParam}.
      *
      * @param sourceBands an array of integer band indices to be
      * used.
      *
-     * @exception IllegalArgumentException if <code>sourceBands</code>
+     * @exception IllegalArgumentException if {@code sourceBands}
      * contains a negative or duplicate value.
      *
      * @see #getSourceBands
@@ -444,15 +444,15 @@ public abstract class IIOParam {
     /**
      * Returns the set of source bands to be used. The returned
      * value is that set by the most recent call to
-     * <code>setSourceBands</code>, or <code>null</code> if there have
-     * been no calls to <code>setSourceBands</code>.
+     * {@code setSourceBands}, or {@code null} if there have
+     * been no calls to {@code setSourceBands}.
      *
      * <p> Semantically, the array returned is a copy; changes to
      * array contents subsequent to this call have no effect on this
-     * <code>IIOParam</code>.
+     * {@code IIOParam}.
      *
      * @return the set of source bands to be used, or
-     * <code>null</code>.
+     * {@code null}.
      *
      * @see #setSourceBands
      */
@@ -465,31 +465,31 @@ public abstract class IIOParam {
 
     /**
      * Sets the desired image type for the destination image, using an
-     * <code>ImageTypeSpecifier</code>.
+     * {@code ImageTypeSpecifier}.
      *
      * <p> When reading, if the layout of the destination has been set
-     * using this method, each call to an <code>ImageReader</code>
-     * <code>read</code> method will return a new
-     * <code>BufferedImage</code> using the format specified by the
+     * using this method, each call to an {@code ImageReader}
+     * {@code read} method will return a new
+     * {@code BufferedImage} using the format specified by the
      * supplied type specifier.  As a side effect, any destination
-     * <code>BufferedImage</code> set by
-     * <code>ImageReadParam.setDestination(BufferedImage)</code> will
+     * {@code BufferedImage} set by
+     * {@code ImageReadParam.setDestination(BufferedImage)} will
      * no longer be set as the destination.  In other words, this
      * method may be thought of as calling
-     * <code>setDestination((BufferedImage)null)</code>.
+     * {@code setDestination((BufferedImage)null)}.
      *
      * <p> When writing, the destination type maybe used to determine
-     * the color type of the image.  The <code>SampleModel</code>
-     * information will be ignored, and may be <code>null</code>.  For
+     * the color type of the image.  The {@code SampleModel}
+     * information will be ignored, and may be {@code null}.  For
      * example, a 4-banded image could represent either CMYK or RGBA
      * data.  If a destination type is set, its
-     * <code>ColorModel</code> will override any
-     * <code>ColorModel</code> on the image itself.  This is crucial
-     * when <code>setSourceBands</code> is used since the image's
-     * <code>ColorModel</code> will refer to the entire image rather
+     * {@code ColorModel} will override any
+     * {@code ColorModel} on the image itself.  This is crucial
+     * when {@code setSourceBands} is used since the image's
+     * {@code ColorModel} will refer to the entire image rather
      * than to the subset of bands being written.
      *
-     * @param destinationType the <code>ImageTypeSpecifier</code> to
+     * @param destinationType the {@code ImageTypeSpecifier} to
      * be used to determine the destination layout and color type.
      *
      * @see #getDestinationType
@@ -501,12 +501,12 @@ public abstract class IIOParam {
     /**
      * Returns the type of image to be returned by the read, if one
      * was set by a call to
-     * <code>setDestination(ImageTypeSpecifier)</code>, as an
-     * <code>ImageTypeSpecifier</code>.  If none was set,
-     * <code>null</code> is returned.
+     * {@code setDestination(ImageTypeSpecifier)}, as an
+     * {@code ImageTypeSpecifier}.  If none was set,
+     * {@code null} is returned.
      *
-     * @return an <code>ImageTypeSpecifier</code> describing the
-     * destination type, or <code>null</code>.
+     * @return an {@code ImageTypeSpecifier} describing the
+     * destination type, or {@code null}.
      *
      * @see #setDestinationType
      */
@@ -520,25 +520,25 @@ public abstract class IIOParam {
      * region will be written, when writing.
      *
      * <p> When reading, the region to be written within the
-     * destination <code>BufferedImage</code> will start at this
+     * destination {@code BufferedImage} will start at this
      * offset and have a width and height determined by the source
      * region of interest, the subsampling parameters, and the
      * destination bounds.
      *
      * <p> Normal writes are not affected by this method, only writes
-     * performed using <code>ImageWriter.replacePixels</code>.  For
+     * performed using {@code ImageWriter.replacePixels}.  For
      * such writes, the offset specified is within the output stream
      * image whose pixels are being modified.
      *
-     * <p> There is no <code>unsetDestinationOffset</code> method;
-     * simply call <code>setDestinationOffset(new Point(0, 0))</code> to
+     * <p> There is no {@code unsetDestinationOffset} method;
+     * simply call {@code setDestinationOffset(new Point(0, 0))} to
      * restore default values.
      *
      * @param destinationOffset the offset in the destination, as a
-     * <code>Point</code>.
+     * {@code Point}.
      *
      * @exception IllegalArgumentException if
-     * <code>destinationOffset</code> is <code>null</code>.
+     * {@code destinationOffset} is {@code null}.
      *
      * @see #getDestinationOffset
      * @see ImageWriter#replacePixels
@@ -554,11 +554,11 @@ public abstract class IIOParam {
      * Returns the offset in the destination image at which pixels are
      * to be placed.
      *
-     * <p> If <code>setDestinationOffsets</code> has not been called,
-     * a <code>Point</code> with zero X and Y values is returned
+     * <p> If {@code setDestinationOffsets} has not been called,
+     * a {@code Point} with zero X and Y values is returned
      * (which is the correct value).
      *
-     * @return the destination offset as a <code>Point</code>.
+     * @return the destination offset as a {@code Point}.
      *
      * @see #setDestinationOffset
      */
@@ -567,16 +567,16 @@ public abstract class IIOParam {
     }
 
     /**
-     * Sets the <code>IIOParamController</code> to be used
-     * to provide settings for this <code>IIOParam</code>
-     * object when the <code>activateController</code> method
+     * Sets the {@code IIOParamController} to be used
+     * to provide settings for this {@code IIOParam}
+     * object when the {@code activateController} method
      * is called, overriding any default controller.  If the
-     * argument is <code>null</code>, no controller will be
+     * argument is {@code null}, no controller will be
      * used, including any default.  To restore the default, use
-     * <code>setController(getDefaultController())</code>.
+     * {@code setController(getDefaultController())}.
      *
      * @param controller An appropriate
-     * <code>IIOParamController</code>, or <code>null</code>.
+     * {@code IIOParamController}, or {@code null}.
      *
      * @see IIOParamController
      * @see #getController
@@ -589,13 +589,13 @@ public abstract class IIOParam {
     }
 
     /**
-     * Returns whatever <code>IIOParamController</code> is currently
+     * Returns whatever {@code IIOParamController} is currently
      * installed.  This could be the default if there is one,
-     * <code>null</code>, or the argument of the most recent call
-     * to <code>setController</code>.
+     * {@code null}, or the argument of the most recent call
+     * to {@code setController}.
      *
      * @return the currently installed
-     * <code>IIOParamController</code>, or <code>null</code>.
+     * {@code IIOParamController}, or {@code null}.
      *
      * @see IIOParamController
      * @see #setController
@@ -608,12 +608,12 @@ public abstract class IIOParam {
     }
 
     /**
-     * Returns the default <code>IIOParamController</code>, if there
+     * Returns the default {@code IIOParamController}, if there
      * is one, regardless of the currently installed controller.  If
-     * there is no default controller, returns <code>null</code>.
+     * there is no default controller, returns {@code null}.
      *
-     * @return the default <code>IIOParamController</code>, or
-     * <code>null</code>.
+     * @return the default {@code IIOParamController}, or
+     * {@code null}.
      *
      * @see IIOParamController
      * @see #setController(IIOParamController)
@@ -626,12 +626,12 @@ public abstract class IIOParam {
     }
 
     /**
-     * Returns <code>true</code> if there is a controller installed
-     * for this <code>IIOParam</code> object.  This will return
-     * <code>true</code> if <code>getController</code> would not
-     * return <code>null</code>.
+     * Returns {@code true} if there is a controller installed
+     * for this {@code IIOParam} object.  This will return
+     * {@code true} if {@code getController} would not
+     * return {@code null}.
      *
-     * @return <code>true</code> if a controller is installed.
+     * @return {@code true} if a controller is installed.
      *
      * @see IIOParamController
      * @see #setController(IIOParamController)
@@ -644,19 +644,19 @@ public abstract class IIOParam {
     }
 
     /**
-     * Activates the installed <code>IIOParamController</code> for
-     * this <code>IIOParam</code> object and returns the resulting
-     * value.  When this method returns <code>true</code>, all values
-     * for this <code>IIOParam</code> object will be ready for the
-     * next read or write operation.  If <code>false</code> is
+     * Activates the installed {@code IIOParamController} for
+     * this {@code IIOParam} object and returns the resulting
+     * value.  When this method returns {@code true}, all values
+     * for this {@code IIOParam} object will be ready for the
+     * next read or write operation.  If {@code false} is
      * returned, no settings in this object will have been disturbed
      * (<i>i.e.</i>, the user canceled the operation).
      *
      * <p> Ordinarily, the controller will be a GUI providing a user
-     * interface for a subclass of <code>IIOParam</code> for a
+     * interface for a subclass of {@code IIOParam} for a
      * particular plug-in.  Controllers need not be GUIs, however.
      *
-     * @return <code>true</code> if the controller completed normally.
+     * @return {@code true} if the controller completed normally.
      *
      * @exception IllegalStateException if there is no controller
      * currently installed.

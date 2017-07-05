@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,6 +255,7 @@ class Universe: AllStatic {
 
   // True during call to verify().  Should only be set/cleared in verify().
   static bool _verify_in_progress;
+  static long verify_flags;
 
   static uintptr_t _verify_oop_mask;
   static uintptr_t _verify_oop_bits;
@@ -463,6 +464,22 @@ class Universe: AllStatic {
   static void init_self_patching_vtbl_list(void** list, int count);
 
   // Debugging
+  enum VERIFY_FLAGS {
+    Verify_Threads = 1,
+    Verify_Heap = 2,
+    Verify_SymbolTable = 4,
+    Verify_StringTable = 8,
+    Verify_CodeCache = 16,
+    Verify_SystemDictionary = 32,
+    Verify_ClassLoaderDataGraph = 64,
+    Verify_MetaspaceAux = 128,
+    Verify_JNIHandles = 256,
+    Verify_CHeap = 512,
+    Verify_CodeCacheOops = 1024,
+    Verify_All = -1
+  };
+  static void initialize_verify_flags();
+  static bool should_verify_subset(uint subset);
   static bool verify_in_progress() { return _verify_in_progress; }
   static void verify(VerifyOption option, const char* prefix);
   static void verify(const char* prefix) {

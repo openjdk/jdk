@@ -519,7 +519,31 @@ class Invariance : public StackObj {
     _lpt(lpt), _phase(lpt->_phase),
     _visited(area), _invariant(area), _stack(area, 10 /* guess */),
     _clone_visited(area), _old_new(area)
-  {}
+  {
+    Node* head = _lpt->_head;
+    Node* entry = head->in(LoopNode::EntryControl);
+    if (entry->outcnt() != 1) {
+      // If a node is pinned between the predicates and the loop
+      // entry, we won't be able to move any node in the loop that
+      // depends on it above it in a predicate. Mark all those nodes
+      // as non loop invariatnt.
+      Unique_Node_List wq;
+      wq.push(entry);
+      for (uint next = 0; next < wq.size(); ++next) {
+        Node *n = wq.at(next);
+        for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+          Node* u = n->fast_out(i);
+          if (!u->is_CFG()) {
+            Node* c = _phase->get_ctrl(u);
+            if (_lpt->is_member(_phase->get_loop(c)) || _phase->is_dominator(c, head)) {
+              _visited.set(u->_idx);
+              wq.push(u);
+            }
+          }
+        }
+      }
+    }
+  }
 
   // Map old to n for invariance computation and clone
   void map_ctrl(Node* old, Node* n) {
@@ -641,6 +665,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
 
   if (scale != 1) {
     ConNode* con_scale = _igvn.intcon(scale);
+    set_ctrl(con_scale, C->root());
     max_idx_expr = new MulINode(max_idx_expr, con_scale);
     register_new_node(max_idx_expr, ctrl);
     if (TraceLoopPredicate) predString->print("* %d ", scale);

@@ -29,15 +29,15 @@ import java.util.EventListener;
 import javax.imageio.ImageWriter;
 
 /**
- * An interface used by <code>ImageWriter</code> implementations to
+ * An interface used by {@code ImageWriter} implementations to
  * notify callers of their image and thumbnail reading methods of
  * warnings (non-fatal errors).  Fatal errors cause the relevant
- * read method to throw an <code>IIOException</code>.
+ * read method to throw an {@code IIOException}.
  *
- * <p> Localization is handled by associating a <code>Locale</code>
- * with each <code>IIOWriteWarningListener</code> as it is registered
- * with an <code>ImageWriter</code>.  It is up to the
- * <code>ImageWriter</code> to provide localized messages.
+ * <p> Localization is handled by associating a {@code Locale}
+ * with each {@code IIOWriteWarningListener} as it is registered
+ * with an {@code ImageWriter}.  It is up to the
+ * {@code ImageWriter} to provide localized messages.
  *
  * @see javax.imageio.ImageWriter#addIIOWriteWarningListener
  * @see javax.imageio.ImageWriter#removeIIOWriteWarningListener
@@ -51,10 +51,10 @@ public interface IIOWriteWarningListener extends EventListener {
      * may choose to display a dialog, print the warning to the console,
      * ignore the warning, or take any other action it chooses.
      *
-     * @param source the <code>ImageWriter</code> object calling this method.
+     * @param source the {@code ImageWriter} object calling this method.
      * @param imageIndex the index, starting with 0, of the image
      * generating the warning.
-     * @param warning a <code>String</code> containing the warning.
+     * @param warning a {@code String} containing the warning.
      */
     void warningOccurred(ImageWriter source,
                          int imageIndex,
