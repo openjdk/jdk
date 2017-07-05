@@ -62,61 +62,6 @@ public class AttachmentPartImpl extends AttachmentPart {
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
-    static {
-        try {
-            CommandMap map = CommandMap.getDefaultCommandMap();
-            if (map instanceof MailcapCommandMap) {
-                MailcapCommandMap mailMap = (MailcapCommandMap) map;
-                String hndlrStr = ";;x-java-content-handler=";
-                mailMap.addMailcap(
-                    "text/xml"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.XmlDataContentHandler");
-                mailMap.addMailcap(
-                    "application/xml"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.XmlDataContentHandler");
-                mailMap.addMailcap(
-                    "application/fastinfoset"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.FastInfosetDataContentHandler");
-                /* Image DataContentHandler handles all image types
-                mailMap.addMailcap(
-                    "image/jpeg"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.JpegDataContentHandler");
-                mailMap.addMailcap(
-                    "image/gif"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.GifDataContentHandler"); */
-                /*mailMap.addMailcap(
-                    "multipart/*"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.MultipartDataContentHandler");*/
-                mailMap.addMailcap(
-                    "image/*"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.ImageDataContentHandler");
-                mailMap.addMailcap(
-                    "text/plain"
-                        + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.StringDataContentHandler");
-            } else {
-                throw new SOAPExceptionImpl("Default CommandMap is not a MailcapCommandMap");
-            }
-        } catch (Throwable t) {
-            log.log(
-                Level.SEVERE,
-                "SAAJ0508.soap.cannot.register.handlers",
-                t);
-            if (t instanceof RuntimeException) {
-                throw (RuntimeException) t;
-            } else {
-                throw new RuntimeException(t.getLocalizedMessage());
-            }
-        }
-    };
-
     private final MimeHeaders headers;
     private MimeBodyPart rawContent = null;
     private DataHandler dataHandler = null;
@@ -126,6 +71,12 @@ public class AttachmentPartImpl extends AttachmentPart {
 
     public AttachmentPartImpl() {
         headers = new MimeHeaders();
+
+        // initialization from here should cover most of cases;
+        // if not, it would be necessary to call
+        //   AttachmentPartImpl.initializeJavaActivationHandlers()
+        // explicitly by programmer
+        initializeJavaActivationHandlers();
     }
 
     public AttachmentPartImpl(MIMEPart part) {
@@ -619,4 +570,43 @@ public class AttachmentPartImpl extends AttachmentPart {
         return headers;
     }
 
+    public static void initializeJavaActivationHandlers() {
+        // DataHandler.writeTo() may search for DCH. So adding some default ones.
+        try {
+            CommandMap map = CommandMap.getDefaultCommandMap();
+            if (map instanceof MailcapCommandMap) {
+                MailcapCommandMap mailMap = (MailcapCommandMap) map;
+
+                // registering our DCH since javamail's DCH doesn't handle
+                if (!cmdMapInitialized(mailMap)) {
+                    mailMap.addMailcap("text/xml;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.XmlDataContentHandler");
+                    mailMap.addMailcap("application/xml;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.XmlDataContentHandler");
+                    mailMap.addMailcap("application/fastinfoset;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.FastInfosetDataContentHandler");
+                    mailMap.addMailcap("multipart/*;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.MultipartDataContentHandler");
+                    mailMap.addMailcap("image/*;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.ImageDataContentHandler");
+                    mailMap.addMailcap("text/plain;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.StringDataContentHandler");
+                }
+            }
+        } catch (Throwable t) {
+            // ignore the exception.
+        }
+    }
+
+    private static boolean cmdMapInitialized(MailcapCommandMap mailMap) {
+
+        // checking fastinfoset handler, since this one is specific to SAAJ
+        CommandInfo[] commands = mailMap.getAllCommands("application/fastinfoset");
+        if (commands == null || commands.length == 0) {
+            return false;
+        }
+
+        String saajClassName = "com.sun.xml.internal.ws.binding.FastInfosetDataContentHandler";
+        for (CommandInfo command : commands) {
+            String commandClass = command.getCommandClass();
+            if (saajClassName.equals(commandClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

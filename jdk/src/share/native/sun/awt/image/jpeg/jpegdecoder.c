@@ -289,6 +289,7 @@ sun_jpeg_fill_input_buffer(j_decompress_ptr cinfo)
     buflen = (*env)->GetArrayLength(env, src->hInputBuffer);
     ret = (*env)->CallIntMethod(env, src->hInputStream, InputStream_readID,
                                 src->hInputBuffer, 0, buflen);
+    if (ret > buflen) ret = buflen;
     if ((*env)->ExceptionOccurred(env) || !GET_ARRAYS(env, src)) {
         cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
     }
@@ -349,6 +350,7 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     }
     ret = (*env)->CallIntMethod(env, src->hInputStream, InputStream_readID,
                                 src->hInputBuffer, offset, buflen);
+    if ((ret > 0) && ((unsigned int)ret > buflen)) ret = buflen;
     if ((*env)->ExceptionOccurred(env) || !GET_ARRAYS(env, src)) {
         cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
     }
@@ -424,6 +426,7 @@ sun_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         ret = (*env)->CallIntMethod(env, src->hInputStream,
                                     InputStream_readID,
                                     src->hInputBuffer, 0, buflen);
+        if (ret > buflen) ret = buflen;
         if ((*env)->ExceptionOccurred(env)) {
             cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
         }

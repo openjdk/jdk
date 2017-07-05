@@ -30,11 +30,9 @@
  *
  * @author  Mandy Chung
  *
- * @build CollectionUsageThreshold MemoryUtil
- * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseSerialGC CollectionUsageThreshold
- * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseParallelGC CollectionUsageThreshold
- * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseG1GC CollectionUsageThreshold
- * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseConcMarkSweepGC CollectionUsageThreshold
+ * @library /lib/testlibrary/
+ * @build CollectionUsageThreshold MemoryUtil RunUtil
+ * @run main/timeout=300 CollectionUsageThreshold
  */
 
 import java.util.*;
@@ -60,6 +58,20 @@ public class CollectionUsageThreshold {
     // barrier for the main thread to wait until the checker thread
     // finishes checking the low memory notification result
     private static final CyclicBarrier barrier = new CyclicBarrier(2);
+
+    /**
+     * Run the test multiple times with different GC versions.
+     * First with default command line specified by the framework.
+     * Then with GC versions specified by the test.
+     */
+    public static void main(String a[]) throws Throwable {
+        final String main = "CollectionUsageThreshold$TestMain";
+        RunUtil.runTestKeepGcOpts(main);
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseSerialGC");
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseParallelGC");
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseG1GC");
+        RunUtil.runTestClearGcOpts(main, "-XX:+UseConcMarkSweepGC");
+    }
 
     static class PoolRecord {
         private final MemoryPoolMXBean pool;
@@ -110,88 +122,90 @@ public class CollectionUsageThreshold {
         }
     }
 
-    public static void main(String args[]) throws Exception {
-        if (args.length > 0 && args[0].equals("trace")) {
-            trace = true;
-        }
+    private static class TestMain {
+        public static void main(String args[]) throws Exception {
+            if (args.length > 0 && args[0].equals("trace")) {
+                trace = true;
+            }
 
-        List<MemoryPoolMXBean> pools = getMemoryPoolMXBeans();
-        List<MemoryManagerMXBean> managers = getMemoryManagerMXBeans();
+            List<MemoryPoolMXBean> pools = getMemoryPoolMXBeans();
+            List<MemoryManagerMXBean> managers = getMemoryManagerMXBeans();
 
-        if (trace) {
-            MemoryUtil.printMemoryPools(pools);
-            MemoryUtil.printMemoryManagers(managers);
-        }
+            if (trace) {
+                MemoryUtil.printMemoryPools(pools);
+                MemoryUtil.printMemoryManagers(managers);
+            }
 
-        // Find the Old generation which supports low memory detection
-        for (MemoryPoolMXBean p : pools) {
-            if (p.isUsageThresholdSupported() && p.isCollectionUsageThresholdSupported()) {
-                if (p.getName().toLowerCase().contains("perm")) {
-                    // if we have a "perm gen" pool increase the number of expected
-                    // memory pools by one.
-                    numMemoryPools++;
+            // Find the Old generation which supports low memory detection
+            for (MemoryPoolMXBean p : pools) {
+                if (p.isUsageThresholdSupported() && p.isCollectionUsageThresholdSupported()) {
+                    if (p.getName().toLowerCase().contains("perm")) {
+                        // if we have a "perm gen" pool increase the number of expected
+                        // memory pools by one.
+                        numMemoryPools++;
+                    }
+                    PoolRecord pr = new PoolRecord(p);
+                    result.put(p.getName(), pr);
+                    if (result.size() == numMemoryPools) {
+                        break;
+                    }
                 }
-                PoolRecord pr = new PoolRecord(p);
-                result.put(p.getName(), pr);
-                if (result.size() == numMemoryPools) {
-                    break;
+            }
+            if (result.size() != numMemoryPools) {
+                throw new RuntimeException("Unexpected number of selected pools");
+            }
+
+            try {
+                // This test creates a checker thread responsible for checking
+                // the low memory notifications.  It blocks until a permit
+                // from the signals semaphore is available.
+                Checker checker = new Checker("Checker thread");
+                checker.setDaemon(true);
+                checker.start();
+
+                for (PoolRecord pr : result.values()) {
+                    pr.getPool().setCollectionUsageThreshold(THRESHOLD);
+                    System.out.println("Collection usage threshold of " +
+                        pr.getPool().getName() + " set to " + THRESHOLD);
+                }
+
+                SensorListener listener = new SensorListener();
+                NotificationEmitter emitter = (NotificationEmitter) mm;
+                emitter.addNotificationListener(listener, null, null);
+
+                // The main thread invokes GC to trigger the VM to perform
+                // low memory detection and then waits until the checker thread
+                // finishes its work to check for a low-memory notification.
+                //
+                // At GC time, VM will issue low-memory notification and invoke
+                // the listener which will release a permit to the signals semaphore.
+                // When the checker thread acquires the permit and finishes
+                // checking the low-memory notification, it will also call
+                // barrier.await() to signal the main thread to resume its work.
+                for (int i = 0; i < NUM_GCS; i++) {
+                    invokeGC();
+                    barrier.await();
+                }
+            } finally {
+                // restore the default
+                for (PoolRecord pr : result.values()) {
+                    pr.getPool().setCollectionUsageThreshold(0);
                 }
             }
-        }
-        if (result.size() != numMemoryPools) {
-            throw new RuntimeException("Unexpected number of selected pools");
+            System.out.println(RunUtil.successMessage);
         }
 
-        try {
-            // This test creates a checker thread responsible for checking
-            // the low memory notifications.  It blocks until a permit
-            // from the signals semaphore is available.
-            Checker checker = new Checker("Checker thread");
-            checker.setDaemon(true);
-            checker.start();
 
-            for (PoolRecord pr : result.values()) {
-                pr.getPool().setCollectionUsageThreshold(THRESHOLD);
-                System.out.println("Collection usage threshold of " +
-                    pr.getPool().getName() + " set to " + THRESHOLD);
-            }
+        private static void invokeGC() {
+            System.out.println("Calling System.gc()");
+            numGCs++;
+            mm.gc();
 
-            SensorListener listener = new SensorListener();
-            NotificationEmitter emitter = (NotificationEmitter) mm;
-            emitter.addNotificationListener(listener, null, null);
-
-            // The main thread invokes GC to trigger the VM to perform
-            // low memory detection and then waits until the checker thread
-            // finishes its work to check for a low-memory notification.
-            //
-            // At GC time, VM will issue low-memory notification and invoke
-            // the listener which will release a permit to the signals semaphore.
-            // When the checker thread acquires the permit and finishes
-            // checking the low-memory notification, it will also call
-            // barrier.await() to signal the main thread to resume its work.
-            for (int i = 0; i < NUM_GCS; i++) {
-                invokeGC();
-                barrier.await();
-            }
-        } finally {
-            // restore the default
-            for (PoolRecord pr : result.values()) {
-                pr.getPool().setCollectionUsageThreshold(0);
-            }
-        }
-        System.out.println("Test passed.");
-    }
-
-
-    private static void invokeGC() {
-        System.out.println("Calling System.gc()");
-        numGCs++;
-        mm.gc();
-
-        if (trace) {
-            for (PoolRecord pr : result.values()) {
-                System.out.println("Usage after GC for: " + pr.getPool().getName());
-                MemoryUtil.printMemoryUsage(pr.getPool().getUsage());
+            if (trace) {
+                for (PoolRecord pr : result.values()) {
+                    System.out.println("Usage after GC for: " + pr.getPool().getName());
+                    MemoryUtil.printMemoryUsage(pr.getPool().getUsage());
+                }
             }
         }
     }

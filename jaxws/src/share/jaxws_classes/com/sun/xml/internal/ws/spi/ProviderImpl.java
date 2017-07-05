@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,12 @@ import java.util.Map;
  */
 public class ProviderImpl extends Provider {
 
-    private final static JAXBContext eprjc = getEPRJaxbContext();
+    private final static ContextClassloaderLocal<JAXBContext> eprjc = new ContextClassloaderLocal<JAXBContext>() {
+        @Override
+        protected JAXBContext initialValue() throws Exception {
+            return getEPRJaxbContext();
+        }
+    };
 
     /**
      * Convenient singleton instance.
@@ -148,7 +153,7 @@ public class ProviderImpl extends Provider {
         return AccessController.doPrivileged(new PrivilegedAction<EndpointReference>() {
             public EndpointReference run() {
                 try {
-                    Unmarshaller unmarshaller = eprjc.createUnmarshaller();
+                    Unmarshaller unmarshaller = eprjc.get().createUnmarshaller();
                     return (EndpointReference) unmarshaller.unmarshal(eprInfoset);
                 } catch (JAXBException e) {
                     throw new WebServiceException("Error creating Marshaller or marshalling.", e);

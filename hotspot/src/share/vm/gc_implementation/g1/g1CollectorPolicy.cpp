@@ -1204,7 +1204,7 @@ void G1CollectorPolicy::record_heap_size_info_at_start(bool full) {
          (_young_list_target_length * HeapRegion::GrainBytes) - _survivor_used_bytes_before_gc;
 
   if (full) {
-    _metaspace_used_bytes_before_gc = MetaspaceAux::allocated_used_bytes();
+    _metaspace_used_bytes_before_gc = MetaspaceAux::used_bytes();
   }
 }
 

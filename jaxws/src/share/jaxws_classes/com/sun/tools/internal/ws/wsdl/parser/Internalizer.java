@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,9 @@ import java.util.Set;
  */
 public class Internalizer {
 
-    private static final XPathFactory xpf = XmlUtil.newXPathFactory(true);
-    private final XPath xpath = xpf.newXPath();
+    private final XPath xpath = xpf.get().newXPath();
     private final DOMForest forest;
     private final ErrorReceiver errorReceiver;
-
 
     public Internalizer(DOMForest forest, WsimportOptions options, ErrorReceiver errorReceiver) {
         this.forest = forest;
@@ -77,6 +75,12 @@ public class Internalizer {
         }
     }
 
+    private static final ContextClassloaderLocal<XPathFactory> xpf = new ContextClassloaderLocal<XPathFactory>() {
+        @Override
+        protected XPathFactory initialValue() throws Exception {
+            return XPathFactory.newInstance();
+        }
+    };
     /**
      * Validates attributes of a &lt;JAXWS:bindings> element.
      */

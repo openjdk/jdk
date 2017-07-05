@@ -36,7 +36,7 @@ import java.security.PrivilegedAction;
 
 class MagicFileTypeDetector extends AbstractFileTypeDetector {
 
-    private static final String UNKNOW_MIME_TYPE = "application/octet-stream";
+    private static final String UNKNOWN_MIME_TYPE = "application/octet-stream";
 
     // true if libmagic is available and successfully loaded
     private final boolean libmagicAvailable;
@@ -57,7 +57,7 @@ class MagicFileTypeDetector extends AbstractFileTypeDetector {
         try {
             byte[] type = probe0(buffer.address());
             String mimeType = (type == null) ? null : new String(type);
-            return UNKNOW_MIME_TYPE.equals(mimeType) ? null : mimeType;
+            return UNKNOWN_MIME_TYPE.equals(mimeType) ? null : mimeType;
         } finally {
             buffer.release();
         }

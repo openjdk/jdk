@@ -258,7 +258,7 @@ void GCTracer::send_gc_heap_summary_event(GCWhen::Type when, const GCHeapSummary
 static TraceStructMetaspaceSizes to_trace_struct(const MetaspaceSizes& sizes) {
   TraceStructMetaspaceSizes meta_sizes;
 
-  meta_sizes.set_capacity(sizes.capacity());
+  meta_sizes.set_committed(sizes.committed());
   meta_sizes.set_used(sizes.used());
   meta_sizes.set_reserved(sizes.reserved());
 

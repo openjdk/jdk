@@ -81,7 +81,7 @@ public abstract class FileSystemProvider {
     // installed providers
     private static volatile List<FileSystemProvider> installedProviders;
 
-    // used to avoid recursive loading of instaled providers
+    // used to avoid recursive loading of installed providers
     private static boolean loadingProviders  = false;
 
     private static Void checkPermission() {

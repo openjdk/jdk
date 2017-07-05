@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,42 +39,73 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * and decides if the command should be satisfied using the VM attach mechanism
  * or an SA tool.
  */
-public class JInfo {
+final public class JInfo {
+    private boolean useSA = false;
+    private String[] args = null;
 
-    @SuppressWarnings("fallthrough")
-    public static void main(String[] args) throws Exception {
+    private JInfo(String[] args) throws IllegalArgumentException {
         if (args.length == 0) {
-            usage(1); // no arguments
+            throw new IllegalArgumentException();
         }
 
+        int argCopyIndex = 0;
         // First determine if we should launch SA or not
-        boolean useSA = false;
         if (args[0].equals("-F")) {
             // delete the -F
-            args = Arrays.copyOfRange(args, 1, args.length);
+            argCopyIndex = 1;
             useSA = true;
         } else if (args[0].equals("-flags")
-            || args[0].equals("-sysprops"))
+                   || args[0].equals("-sysprops"))
         {
             if (args.length == 2) {
-                if (!args[1].matches("[0-9]+")) {
+                if (!isPid(args[1])) {
                     // If args[1] doesn't parse to a number then
                     // it must be the SA debug server
                     // (otherwise it is the pid)
                     useSA = true;
                 }
-            }
-            if (args.length == 3) {
+            } else if (args.length == 3) {
                 // arguments include an executable and a core file
                 useSA = true;
+            } else {
+                throw new IllegalArgumentException();
             }
         } else if (!args[0].startsWith("-")) {
             if (args.length == 2) {
                 // the only arguments are an executable and a core file
                 useSA = true;
+            } else if (args.length == 1) {
+                if (!isPid(args[0])) {
+                    // The only argument is not a PID; it must be SA debug
+                    // server
+                    useSA = true;
+                }
+            } else {
+                throw new IllegalArgumentException();
             }
-        } else if (args[0].equals("-h")
-                || args[0].equals("-help")) {
+        } else if (args[0].equals("-h") || args[0].equals("-help")) {
+            if (args.length > 1) {
+                throw new IllegalArgumentException();
+            }
+        } else if (args[0].equals("-flag")) {
+            if (args.length == 3) {
+                if (!isPid(args[2])) {
+                    throw new IllegalArgumentException();
+                }
+            } else {
+                throw new IllegalArgumentException();
+            }
+        } else {
+            throw new IllegalArgumentException();
+        }
+
+        this.args = Arrays.copyOfRange(args, argCopyIndex, args.length);
+    }
+
+    @SuppressWarnings("fallthrough")
+    private void execute() throws Exception {
+        if (args[0].equals("-h")
+            || args[0].equals("-help")) {
             usage(0);
         }
 
@@ -87,55 +118,69 @@ public class JInfo {
             }
 
             // invoke SA which does it's own argument parsing
-            runTool(args);
+            runTool();
 
         } else {
             // Now we can parse arguments for the non-SA case
             String pid = null;
 
             switch(args[0]) {
-            case "-flag":
-                if (args.length != 3) {
-                    usage(1);
-                }
-                String option = args[1];
-                pid = args[2];
-                flag(pid, option);
-                break;
-            case "-flags":
-                if (args.length != 2) {
-                    usage(1);
-                }
-                pid = args[1];
-                flags(pid);
-                break;
-            case "-sysprops":
-                if (args.length != 2) {
-                    usage(1);
-                }
-                pid = args[1];
-                sysprops(pid);
-                break;
-            case "-help":
-            case "-h":
-                usage(0);
-                // Fall through
-            default:
-               if (args.length == 1) {
-                   // no flags specified, we do -sysprops and -flags
-                   pid = args[0];
-                   sysprops(pid);
-                   System.out.println();
-                   flags(pid);
-               } else {
-                   usage(1);
-               }
+                case "-flag":
+                    if (args.length != 3) {
+                        usage(1);
+                    }
+                    String option = args[1];
+                    pid = args[2];
+                    flag(pid, option);
+                    break;
+                case "-flags":
+                    if (args.length != 2) {
+                        usage(1);
+                    }
+                    pid = args[1];
+                    flags(pid);
+                    break;
+                case "-sysprops":
+                    if (args.length != 2) {
+                        usage(1);
+                    }
+                    pid = args[1];
+                    sysprops(pid);
+                    break;
+                case "-help":
+                case "-h":
+                    usage(0);
+                    // Fall through
+                default:
+                    if (args.length == 1) {
+                        // no flags specified, we do -sysprops and -flags
+                        pid = args[0];
+                        sysprops(pid);
+                        System.out.println();
+                        flags(pid);
+                    } else {
+                        usage(1);
+                    }
             }
         }
     }
 
+    public static void main(String[] args) throws Exception {
+        JInfo jinfo = null;
+        try {
+            jinfo = new JInfo(args);
+            jinfo.execute();
+        } catch (IllegalArgumentException e) {
+            usage(1);
+        }
+    }
+
+    private static boolean isPid(String arg) {
+        return arg.matches("[0-9]+");
+    }
+
     // Invoke SA tool with the given arguments
-    private static void runTool(String args[]) throws Exception {
+    private void runTool() throws Exception {
         String tool = "sun.jvm.hotspot.tools.JInfo";
         // Tool not available on this platform.
         Class<?> c = loadClass(tool);
