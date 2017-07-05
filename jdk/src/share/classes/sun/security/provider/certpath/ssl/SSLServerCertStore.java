@@ -44,12 +44,16 @@ import java.security.cert.CertStoreSpi;
 import java.security.cert.CRLSelector;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509CRL;
+import java.net.Socket;
+import java.net.URLConnection;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 
 /**
  * A CertStore that retrieves an SSL server's certificate chain.
@@ -57,31 +61,74 @@ import javax.net.ssl.X509TrustManager;
 public final class SSLServerCertStore extends CertStoreSpi {
 
     private final URI uri;
+    private final static GetChainTrustManager trustManager;
+    private final static SSLSocketFactory socketFactory;
+    private final static HostnameVerifier hostnameVerifier;
+
+    static {
+        trustManager = new GetChainTrustManager();
+        hostnameVerifier = new HostnameVerifier() {
+            public boolean verify(String hostname, SSLSession session) {
+                return true;
+            }
+        };
+
+        SSLSocketFactory tempFactory;
+        try {
+            SSLContext context = SSLContext.getInstance("SSL");
+            context.init(null, new TrustManager[] { trustManager }, null);
+            tempFactory = context.getSocketFactory();
+        } catch (GeneralSecurityException gse) {
+            tempFactory = null;
+        }
+
+        socketFactory = tempFactory;
+    }
 
     SSLServerCertStore(URI uri) throws InvalidAlgorithmParameterException {
         super(null);
         this.uri = uri;
     }
 
-    public synchronized Collection<X509Certificate> engineGetCertificates
-        (CertSelector selector) throws CertStoreException
-    {
+    public Collection<X509Certificate> engineGetCertificates
+            (CertSelector selector) throws CertStoreException {
+
         try {
-            SSLContext sc = SSLContext.getInstance("SSL");
-            GetChainTrustManager xtm = new GetChainTrustManager();
-            sc.init(null, new TrustManager[] { xtm }, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            HttpsURLConnection.setDefaultHostnameVerifier(
-                new HostnameVerifier() {
-                    public boolean verify(String hostname, SSLSession session) {
-                        return true;
+            URLConnection urlConn = uri.toURL().openConnection();
+            if (urlConn instanceof HttpsURLConnection) {
+                if (socketFactory == null) {
+                    throw new CertStoreException(
+                        "No initialized SSLSocketFactory");
+                }
+
+                HttpsURLConnection https = (HttpsURLConnection)urlConn;
+                https.setSSLSocketFactory(socketFactory);
+                https.setHostnameVerifier(hostnameVerifier);
+                synchronized (trustManager) {
+                    try {
+                        https.connect();
+                        return getMatchingCerts(
+                            trustManager.serverChain, selector);
+                    } catch (IOException ioe) {
+                        // If the server certificate has already been
+                        // retrieved, don't mind the connection state.
+                        if (trustManager.exchangedServerCerts) {
+                            return getMatchingCerts(
+                                trustManager.serverChain, selector);
+                        }
+
+                        // otherwise, rethrow the exception
+                        throw ioe;
+                    } finally {
+                        trustManager.cleanup();
                     }
-            });
-            uri.toURL().openConnection().connect();
-            return getMatchingCerts(xtm.serverChain, selector);
-        } catch (GeneralSecurityException | IOException e) {
-            throw new CertStoreException(e);
+                }
+            }
+        } catch (IOException ioe) {
+            throw new CertStoreException(ioe);
         }
+
+        return Collections.<X509Certificate>emptySet();
     }
 
     private static List<X509Certificate> getMatchingCerts
@@ -106,37 +153,77 @@ public final class SSLServerCertStore extends CertStoreSpi {
         throw new UnsupportedOperationException();
     }
 
-    static synchronized CertStore getInstance(URI uri)
+    static CertStore getInstance(URI uri)
         throws InvalidAlgorithmParameterException
     {
         return new CS(new SSLServerCertStore(uri), null, "SSLServer", null);
     }
 
     /*
-     * An X509TrustManager that simply stores a reference to the server's
-     * certificate chain.
+     * An X509ExtendedTrustManager that ignores the server certificate
+     * validation.
      */
-    private static class GetChainTrustManager implements X509TrustManager {
-        private List<X509Certificate> serverChain;
+    private static class GetChainTrustManager
+            extends X509ExtendedTrustManager {
 
+        private List<X509Certificate> serverChain =
+                        Collections.<X509Certificate>emptyList();
+        private boolean exchangedServerCerts = false;
+
+        @Override
         public X509Certificate[] getAcceptedIssuers() {
-            throw new UnsupportedOperationException();
+            return new X509Certificate[0];
         }
 
+        @Override
         public void checkClientTrusted(X509Certificate[] chain,
-                                       String authType)
-            throws CertificateException
-        {
+                String authType) throws CertificateException {
+
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType,
+                SSLEngine engine) throws CertificateException {
+
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void checkServerTrusted(X509Certificate[] chain,
-                                       String authType)
-            throws CertificateException
-        {
+                String authType) throws CertificateException {
+
+            exchangedServerCerts = true;
             this.serverChain = (chain == null)
-                               ? Collections.<X509Certificate>emptyList()
-                               : Arrays.asList(chain);
+                           ? Collections.<X509Certificate>emptyList()
+                           : Arrays.<X509Certificate>asList(chain);
+
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType,
+                Socket socket) throws CertificateException {
+
+            checkServerTrusted(chain, authType);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType,
+                SSLEngine engine) throws CertificateException {
+
+            checkServerTrusted(chain, authType);
+        }
+
+        void cleanup() {
+            exchangedServerCerts = false;
+            serverChain = Collections.<X509Certificate>emptyList();
         }
     }
 

@@ -140,4 +140,17 @@ public class Util {
 
         return null;
     }
+
+     /**
+     * Hits keys by robot.
+     */
+    public static void hitKeys(Robot robot, int... keys) {
+        for (int i = 0; i < keys.length; i++) {
+            robot.keyPress(keys[i]);
+        }
+
+        for (int i = keys.length - 1; i >= 0; i--) {
+            robot.keyRelease(keys[i]);
+        }
+    }
 }

@@ -2006,7 +2006,7 @@ public class File
         throws IOException
     {
         s.defaultWriteObject();
-        s.writeChar(this.separatorChar); // Add the separator character
+        s.writeChar(separatorChar); // Add the separator character
     }
 
     /**

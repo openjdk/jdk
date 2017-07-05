@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,6 @@
 
 package sun.util.calendar;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -99,7 +92,7 @@ public abstract class CalendarSystem {
     };
 
     private static void initNames() {
-        ConcurrentMap<String,String> nameMap = new ConcurrentHashMap<String,String>();
+        ConcurrentMap<String,String> nameMap = new ConcurrentHashMap<>();
 
         // Associate a calendar name with its class name and the
         // calendar class name with its date class name.
@@ -112,7 +105,7 @@ public abstract class CalendarSystem {
         synchronized (CalendarSystem.class) {
             if (!initialized) {
                 names = nameMap;
-                calendars = new ConcurrentHashMap<String,CalendarSystem>();
+                calendars = new ConcurrentHashMap<>();
                 initialized = true;
             }
         }
@@ -164,10 +157,10 @@ public abstract class CalendarSystem {
             cal = LocalGregorianCalendar.getLocalGregorianCalendar(calendarName);
         } else {
             try {
-                Class cl = Class.forName(className);
+                Class<?> cl = Class.forName(className);
                 cal = (CalendarSystem) cl.newInstance();
             } catch (Exception e) {
-                throw new RuntimeException("internal error", e);
+                throw new InternalError(e);
             }
         }
         if (cal == null) {

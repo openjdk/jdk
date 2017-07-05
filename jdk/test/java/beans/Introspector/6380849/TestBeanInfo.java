@@ -41,8 +41,6 @@ import java.beans.Introspector;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 
-import sun.awt.SunToolkit;
-
 public class TestBeanInfo implements Runnable {
 
     private static final String[] SEARCH_PATH = { "infos" }; // NON-NLS: package name
@@ -81,9 +79,6 @@ public class TestBeanInfo implements Runnable {
     private boolean passed;
 
     public void run() {
-        if (this.passed) {
-            SunToolkit.createNewAppContext();
-        }
         Introspector.flushCaches();
 
         test(FirstBean.class, FirstBeanBeanInfo.class);
@@ -98,7 +93,5 @@ public class TestBeanInfo implements Runnable {
         test(SecondBean.class, SecondBeanBeanInfo.class);
         test(ThirdBean.class, null);
         test(ThirdBeanBeanInfo.class, ThirdBeanBeanInfo.class);
-
-        this.passed = true;
     }
 }

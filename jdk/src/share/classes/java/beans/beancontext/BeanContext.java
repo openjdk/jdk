@@ -53,6 +53,7 @@ import java.util.Locale;
  * @see java.util.Collection
  */
 
+@SuppressWarnings("rawtypes")
 public interface BeanContext extends BeanContextChild, Collection, DesignMode, Visibility {
 
     /**

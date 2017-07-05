@@ -186,10 +186,8 @@ public class SerialArray implements Array, Serializable, Cloneable {
 
             case java.sql.Types.JAVA_OBJECT:
                 for (int i = 0; i < len; i++) {
-                elements[i] = new SerialJavaObject((Object)elements[i]);
+                elements[i] = new SerialJavaObject(elements[i]);
             }
-        default:
-            ;
         }
   }
 
@@ -285,11 +283,10 @@ public class SerialArray implements Array, Serializable, Cloneable {
 
         case java.sql.Types.JAVA_OBJECT:
             for (int i = 0; i < len; i++) {
-                elements[i] = new SerialJavaObject((Object)elements[i]);
+                elements[i] = new SerialJavaObject(elements[i]);
             }
+            break;
 
-        default:
-            ;
         }
 
 

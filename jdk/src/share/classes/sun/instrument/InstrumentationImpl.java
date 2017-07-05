@@ -136,7 +136,7 @@ public class InstrumentationImpl implements Instrumentation {
     }
 
     public void
-    retransformClasses(Class<?>[] classes) {
+    retransformClasses(Class<?>... classes) {
         if (!isRetransformClassesSupported()) {
             throw new UnsupportedOperationException(
               "retransformClasses is not supported in this environment");
@@ -150,7 +150,7 @@ public class InstrumentationImpl implements Instrumentation {
     }
 
     public void
-    redefineClasses(ClassDefinition[]   definitions)
+    redefineClasses(ClassDefinition...  definitions)
             throws  ClassNotFoundException {
         if (!isRedefineClassesSupported()) {
             throw new UnsupportedOperationException("redefineClasses is not supported in this environment");
@@ -321,7 +321,7 @@ public class InstrumentationImpl implements Instrumentation {
 
         try {
             m = javaAgentClass.getDeclaredMethod( methodname,
-                                 new Class[] {
+                                 new Class<?>[] {
                                      String.class,
                                      java.lang.instrument.Instrumentation.class
                                  }
@@ -336,7 +336,7 @@ public class InstrumentationImpl implements Instrumentation {
             // now try the declared 1-arg method
             try {
                 m = javaAgentClass.getDeclaredMethod(methodname,
-                                                 new Class[] { String.class });
+                                                 new Class<?>[] { String.class });
             } catch (NoSuchMethodException x) {
                 // ignore this exception because we'll try
                 // two arg inheritance next
@@ -347,7 +347,7 @@ public class InstrumentationImpl implements Instrumentation {
             // now try the inherited 2-arg method
             try {
                 m = javaAgentClass.getMethod( methodname,
-                                 new Class[] {
+                                 new Class<?>[] {
                                      String.class,
                                      java.lang.instrument.Instrumentation.class
                                  }
@@ -363,7 +363,7 @@ public class InstrumentationImpl implements Instrumentation {
             // finally try the inherited 1-arg method
             try {
                 m = javaAgentClass.getMethod(methodname,
-                                             new Class[] { String.class });
+                                             new Class<?>[] { String.class });
             } catch (NoSuchMethodException x) {
                 // none of the methods exists so we throw the
                 // first NoSuchMethodException as per 5.0
@@ -411,7 +411,7 @@ public class InstrumentationImpl implements Instrumentation {
     private byte[]
     transform(  ClassLoader         loader,
                 String              classname,
-                Class               classBeingRedefined,
+                Class<?>            classBeingRedefined,
                 ProtectionDomain    protectionDomain,
                 byte[]              classfileBuffer,
                 boolean             isRetransformer) {

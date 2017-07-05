@@ -65,7 +65,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      *  This ArrayList will contain the status of a row
      *  from the SyncResolver.* values else it will be null.
      */
-    private ArrayList stats;
+    private ArrayList<?> stats;
 
     /**
      * The RowSetWriter associated with the original
@@ -429,6 +429,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * This is used to set the status of each row
      * to either of the values SyncResolver.*_CONFLICT
      **/
+    @SuppressWarnings("rawtypes")
     void setStatus(ArrayList status){
              stats = status;
     }
@@ -856,6 +857,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * @see #toCollection(String)
      * @see java.util.TreeMap
      */
+    @SuppressWarnings("rawtypes")
     public Collection toCollection() throws SQLException {
        throw new UnsupportedOperationException();
     }
@@ -878,6 +880,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * @see #toCollection(String)
      * @see java.util.Vector
      */
+    @SuppressWarnings("rawtypes")
     public Collection toCollection(int column) throws SQLException {
        throw new UnsupportedOperationException();
     }
@@ -900,6 +903,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * @see #toCollection(int)
      * @see java.util.Vector
      */
+    @SuppressWarnings("rawtypes")
     public Collection toCollection(String column) throws SQLException {
         throw new UnsupportedOperationException();
     }

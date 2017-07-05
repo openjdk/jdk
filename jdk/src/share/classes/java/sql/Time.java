@@ -115,6 +115,7 @@ public class Time extends java.util.Date {
      *
      * @return a <code>String</code> in hh:mm:ss format
      */
+    @SuppressWarnings("deprecation")
     public String toString () {
         int hour = super.getHours();
         int minute = super.getMinutes();

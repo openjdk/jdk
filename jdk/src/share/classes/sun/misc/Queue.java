@@ -35,12 +35,12 @@ import java.util.NoSuchElementException;
  * @author Herb Jellinek
  */
 
-public class Queue {
+public class Queue<T> {
 
     int length = 0;
 
-    QueueElement head = null;
-    QueueElement tail = null;
+    QueueElement<T> head = null;
+    QueueElement<T> tail = null;
 
     public Queue() {
     }
@@ -48,9 +48,9 @@ public class Queue {
     /**
      * Enqueue an object.
      */
-    public synchronized void enqueue(Object obj) {
+    public synchronized void enqueue(T obj) {
 
-        QueueElement newElt = new QueueElement(obj);
+        QueueElement<T> newElt = new QueueElement<>(obj);
 
         if (head == null) {
             head = newElt;
@@ -72,7 +72,7 @@ public class Queue {
      * @exception java.lang.InterruptedException if any thread has
      *              interrupted this thread.
      */
-    public Object dequeue() throws InterruptedException {
+    public T dequeue() throws InterruptedException {
         return dequeue(0L);
     }
 
@@ -85,13 +85,13 @@ public class Queue {
      * @exception java.lang.InterruptedException if any thread has
      *              interrupted this thread.
      */
-    public synchronized Object dequeue(long timeOut)
+    public synchronized T dequeue(long timeOut)
         throws InterruptedException {
 
         while (tail == null) {
             wait(timeOut);
         }
-        QueueElement elt = tail;
+        QueueElement<T> elt = tail;
         tail = elt.prev;
         if (tail == null) {
             head = null;
@@ -115,8 +115,8 @@ public class Queue {
      * order. Use the Enumeration methods on the returned object to
      * fetch the elements sequentially.
      */
-    public final synchronized Enumeration elements() {
-        return new LIFOQueueEnumerator(this);
+    public final synchronized Enumeration<T> elements() {
+        return new LIFOQueueEnumerator<>(this);
     }
 
     /**
@@ -124,8 +124,8 @@ public class Queue {
      * order. Use the Enumeration methods on the returned object to
      * fetch the elements sequentially.
      */
-    public final synchronized Enumeration reverseElements() {
-        return new FIFOQueueEnumerator(this);
+    public final synchronized Enumeration<T> reverseElements() {
+        return new FIFOQueueEnumerator<>(this);
     }
 
     public synchronized void dump(String msg) {
@@ -133,8 +133,8 @@ public class Queue {
         System.err.println("["+length+" elt(s); head = "+
                            (head == null ? "null" : (head.obj)+"")+
                            " tail = "+(tail == null ? "null" : (tail.obj)+""));
-        QueueElement cursor = head;
-        QueueElement last = null;
+        QueueElement<T> cursor = head;
+        QueueElement<T> last = null;
         while (cursor != null) {
             System.err.println("  "+cursor);
             last = cursor;
@@ -147,11 +147,11 @@ public class Queue {
     }
 }
 
-final class FIFOQueueEnumerator implements Enumeration {
-    Queue queue;
-    QueueElement cursor;
+final class FIFOQueueEnumerator<T> implements Enumeration<T> {
+    Queue<T> queue;
+    QueueElement<T> cursor;
 
-    FIFOQueueEnumerator(Queue q) {
+    FIFOQueueEnumerator(Queue<T> q) {
         queue = q;
         cursor = q.tail;
     }
@@ -160,10 +160,10 @@ final class FIFOQueueEnumerator implements Enumeration {
         return (cursor != null);
     }
 
-    public Object nextElement() {
+    public T nextElement() {
         synchronized (queue) {
             if (cursor != null) {
-                QueueElement result = cursor;
+                QueueElement<T> result = cursor;
                 cursor = cursor.prev;
                 return result.obj;
             }
@@ -172,11 +172,11 @@ final class FIFOQueueEnumerator implements Enumeration {
     }
 }
 
-final class LIFOQueueEnumerator implements Enumeration {
-    Queue queue;
-    QueueElement cursor;
+final class LIFOQueueEnumerator<T> implements Enumeration<T> {
+    Queue<T> queue;
+    QueueElement<T> cursor;
 
-    LIFOQueueEnumerator(Queue q) {
+    LIFOQueueEnumerator(Queue<T> q) {
         queue = q;
         cursor = q.head;
     }
@@ -185,10 +185,10 @@ final class LIFOQueueEnumerator implements Enumeration {
         return (cursor != null);
     }
 
-    public Object nextElement() {
+    public T nextElement() {
         synchronized (queue) {
             if (cursor != null) {
-                QueueElement result = cursor;
+                QueueElement<T> result = cursor;
                 cursor = cursor.next;
                 return result.obj;
             }
@@ -197,13 +197,13 @@ final class LIFOQueueEnumerator implements Enumeration {
     }
 }
 
-class QueueElement {
-    QueueElement next = null;
-    QueueElement prev = null;
+class QueueElement<T> {
+    QueueElement<T> next = null;
+    QueueElement<T> prev = null;
 
-    Object obj = null;
+    T obj = null;
 
-    QueueElement(Object obj) {
+    QueueElement(T obj) {
         this.obj = obj;
     }
 

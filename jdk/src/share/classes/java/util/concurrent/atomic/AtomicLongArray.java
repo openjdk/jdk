@@ -35,7 +35,6 @@
 
 package java.util.concurrent.atomic;
 import sun.misc.Unsafe;
-import java.util.*;
 
 /**
  * A {@code long} array in which elements may be updated atomically.
@@ -135,7 +134,6 @@ public class AtomicLongArray implements java.io.Serializable {
     public final void lazySet(int i, long newValue) {
         unsafe.putOrderedLong(array, checkedByteOffset(i), newValue);
     }
-
 
     /**
      * Atomically sets the element at position {@code i} to the given value

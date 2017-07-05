@@ -34,6 +34,7 @@ import java.awt.Toolkit;
 import java.awt.im.InputMethodHighlight;
 import java.text.Annotation;
 import java.text.AttributedCharacterIterator;
+import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Vector;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,7 +66,7 @@ final class StyledParagraph {
     // If there are multiple Decorations in the paragraph, they are
     // stored in this Vector, in order.  Otherwise this vector and
     // the decorationStarts array are null.
-    private Vector decorations;
+    private Vector<Decoration> decorations;
     // If there are multiple Decorations in the paragraph,
     // decorationStarts[i] contains the index where decoration i
     // starts.  For convenience, there is an extra entry at the
@@ -76,7 +77,7 @@ final class StyledParagraph {
     // they are
     // stored in this Vector, in order.  Otherwise this vector and
     // the fontStarts array are null.
-    private Vector fonts;
+    private Vector<Object> fonts;
     // If there are multiple Fonts/GraphicAttributes in the paragraph,
     // fontStarts[i] contains the index where decoration i
     // starts.  For convenience, there is an extra entry at the
@@ -104,7 +105,7 @@ final class StyledParagraph {
             final int nextRunStart = aci.getRunLimit();
             final int localIndex = index-start;
 
-            Map attributes = aci.getAttributes();
+            Map<? extends Attribute, ?> attributes = aci.getAttributes();
             attributes = addInputMethodAttrs(attributes);
             Decoration d = Decoration.getDecoration(attributes);
             addDecoration(d, localIndex);
@@ -168,7 +169,8 @@ final class StyledParagraph {
         char ch = aci.setIndex(insertPos);
         int relativePos = Math.max(insertPos - aci.getBeginIndex() - 1, 0);
 
-        Map attributes = addInputMethodAttrs(aci.getAttributes());
+        Map<? extends Attribute, ?> attributes =
+            addInputMethodAttrs(aci.getAttributes());
         Decoration d = Decoration.getDecoration(attributes);
         if (!oldParagraph.getDecorationAt(relativePos).equals(d)) {
             return new StyledParagraph(aci, chars);
@@ -297,7 +299,7 @@ final class StyledParagraph {
             return decoration;
         }
         int run = findRunContaining(index, decorationStarts);
-        return (Decoration) decorations.elementAt(run);
+        return decorations.elementAt(run);
     }
 
     /**
@@ -339,6 +341,7 @@ final class StyledParagraph {
      * starts array does not have room for the index, a
      * new array is created and returned.
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static int[] addToVector(Object obj,
                                      int index,
                                      Vector v,
@@ -374,7 +377,7 @@ final class StyledParagraph {
         }
         else {
             if (!decoration.equals(d)) {
-                decorations = new Vector(INITIAL_SIZE);
+                decorations = new Vector<Decoration>(INITIAL_SIZE);
                 decorations.addElement(decoration);
                 decorations.addElement(d);
                 decorationStarts = new int[INITIAL_SIZE];
@@ -398,7 +401,7 @@ final class StyledParagraph {
         }
         else {
             if (!font.equals(f)) {
-                fonts = new Vector(INITIAL_SIZE);
+                fonts = new Vector<Object>(INITIAL_SIZE);
                 fonts.addElement(font);
                 fonts.addElement(f);
                 fontStarts = new int[INITIAL_SIZE];
@@ -412,7 +415,8 @@ final class StyledParagraph {
      * Resolve the given chars into Fonts using FontResolver, then add
      * font runs for each.
      */
-    private void addFonts(char[] chars, Map attributes, int start, int limit) {
+    private void addFonts(char[] chars, Map<? extends Attribute, ?> attributes,
+                          int start, int limit) {
 
         FontResolver resolver = FontResolver.getInstance();
         CodePointIterator iter = CodePointIterator.create(chars, start, limit);
@@ -426,7 +430,8 @@ final class StyledParagraph {
      * Return a Map with entries from oldStyles, as well as input
      * method entries, if any.
      */
-    static Map addInputMethodAttrs(Map oldStyles) {
+    static Map<? extends Attribute, ?>
+           addInputMethodAttrs(Map<? extends Attribute, ?> oldStyles) {
 
         Object value = oldStyles.get(TextAttribute.INPUT_METHOD_HIGHLIGHT);
 
@@ -439,7 +444,7 @@ final class StyledParagraph {
                 InputMethodHighlight hl;
                 hl = (InputMethodHighlight) value;
 
-                Map imStyles = null;
+                Map<? extends Attribute, ?> imStyles = null;
                 try {
                     imStyles = hl.getStyle();
                 } catch (NoSuchMethodError e) {
@@ -451,7 +456,8 @@ final class StyledParagraph {
                 }
 
                 if (imStyles != null) {
-                    HashMap newStyles = new HashMap(5, (float)0.9);
+                    HashMap<Attribute, Object>
+                        newStyles = new HashMap<>(5, (float)0.9);
                     newStyles.putAll(oldStyles);
 
                     newStyles.putAll(imStyles);
@@ -471,7 +477,8 @@ final class StyledParagraph {
      * If attributes does not contain a GraphicAttribute, Font, or
      * Font family entry this method returns null.
      */
-    private static Object getGraphicOrFont(Map attributes) {
+    private static Object getGraphicOrFont(
+            Map<? extends Attribute, ?> attributes) {
 
         Object value = attributes.get(TextAttribute.CHAR_REPLACEMENT);
         if (value != null) {

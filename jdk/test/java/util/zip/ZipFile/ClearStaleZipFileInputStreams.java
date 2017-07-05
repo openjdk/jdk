@@ -63,11 +63,9 @@ public class ClearStaleZipFileInputStreams {
             File.createTempFile("test-data" + compression, ".zip");
         tempZipFile.deleteOnExit();
 
-        ZipOutputStream zos =
-            new ZipOutputStream(new FileOutputStream(tempZipFile));
-        zos.setLevel(compression);
-
-        try {
+        try (FileOutputStream fos = new FileOutputStream(tempZipFile);
+                ZipOutputStream zos = new ZipOutputStream(fos)) {
+            zos.setLevel(compression);
             for (int i = 0; i < ZIP_ENTRY_NUM; i++) {
                 String text = "Entry" + i;
                 ZipEntry entry = new ZipEntry(text);
@@ -78,33 +76,47 @@ public class ClearStaleZipFileInputStreams {
                     zos.closeEntry();
                 }
             }
-        } finally {
-            zos.close();
         }
 
         return tempZipFile;
     }
 
-    private static void startGcInducingThread(final int sleepMillis) {
-        final Thread gcInducingThread = new Thread() {
-            public void run() {
-                while (true) {
-                    System.gc();
-                    try {
-                        Thread.sleep(sleepMillis);
-                    } catch (InterruptedException e) { }
+    private static final class GcInducingThread extends Thread {
+        private final int sleepMillis;
+        private boolean keepRunning = true;
+
+        public GcInducingThread(final int sleepMillis) {
+            this.sleepMillis = sleepMillis;
+        }
+
+        public synchronized void run() {
+            while (keepRunning) {
+                System.gc();
+                try {
+                    wait(sleepMillis);
+                } catch (InterruptedException e) {
+                    System.out.println("GCing thread unexpectedly interrupted");
+                    return;
                 }
             }
-        };
+        }
 
-        gcInducingThread.setDaemon(true);
-        gcInducingThread.start();
+        public synchronized void shutDown() {
+            keepRunning = false;
+            notifyAll();
+        }
     }
 
     public static void main(String[] args) throws Exception {
-        startGcInducingThread(500);
-        runTest(ZipOutputStream.DEFLATED);
-        runTest(ZipOutputStream.STORED);
+        GcInducingThread gcThread = new GcInducingThread(500);
+        gcThread.start();
+        try {
+            runTest(ZipOutputStream.DEFLATED);
+            runTest(ZipOutputStream.STORED);
+        } finally {
+            gcThread.shutDown();
+            gcThread.join();
+        }
     }
 
     private static void runTest(int compression) throws Exception {
@@ -113,21 +125,16 @@ public class ClearStaleZipFileInputStreams {
         System.out.println("Testing with a zip file with compression level = "
                 + compression);
         File f = createTestFile(compression);
-        try {
-            ZipFile zf = new ZipFile(f);
-            try {
-                Set<Object> refSet = createTransientInputStreams(zf, rq);
+        try (ZipFile zf = new ZipFile(f)) {
+            Set<Object> refSet = createTransientInputStreams(zf, rq);
 
-                System.out.println("Waiting for 'stale' input streams from ZipFile to be GC'd ...");
-                System.out.println("(The test will hang on failure)");
-                while (false == refSet.isEmpty()) {
-                    refSet.remove(rq.remove());
-                }
-                System.out.println("Test PASSED.");
-                System.out.println();
-            } finally {
-                zf.close();
+            System.out.println("Waiting for 'stale' input streams from ZipFile to be GC'd ...");
+            System.out.println("(The test will hang on failure)");
+            while (false == refSet.isEmpty()) {
+                refSet.remove(rq.remove());
             }
+            System.out.println("Test PASSED.");
+            System.out.println();
         } finally {
             f.delete();
         }

@@ -323,8 +323,8 @@ public class BufImgSurfaceData extends SurfaceData {
     }
 
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
-        if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
-            sg2d.compositeState <= sg2d.COMP_ISCOPY)
+        if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
+            sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY)
         {
             return solidloops;
         }

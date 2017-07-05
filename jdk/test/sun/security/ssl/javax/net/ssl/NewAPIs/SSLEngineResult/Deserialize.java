@@ -42,7 +42,6 @@ public class Deserialize {
         SSLEngineResult.Status obj = SSLEngineResult.Status.OK;
 
         File file = new File("deserial-test-file");
-        file.deleteOnExit();
 
         ObjectOutputStream oos = new ObjectOutputStream(
             new FileOutputStream(file));

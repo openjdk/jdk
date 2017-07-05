@@ -295,9 +295,9 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
     public void validatePipe(SunGraphics2D sg2d) {
         if (sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON &&
-            sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
-            (sg2d.compositeState <= sg2d.COMP_ISCOPY ||
-             sg2d.compositeState == sg2d.COMP_XOR))
+            sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
+            (sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY ||
+             sg2d.compositeState == SunGraphics2D.COMP_XOR))
         {
             if (x11txpipe == null) {
                 /*
@@ -315,7 +315,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
                 return;
             }
 
-            if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+            if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                 // Do this to init textpipe correctly; we will override the
                 // other non-text pipes below
                 // REMIND: we should clean this up eventually instead of
@@ -329,7 +329,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
                 case SunHints.INTVAL_TEXT_ANTIALIAS_OFF:
                     // Use X11 pipe even if DGA is available since DGA
                     // text slows everything down when mixed with X11 calls
-                    if (sg2d.compositeState == sg2d.COMP_ISCOPY) {
+                    if (sg2d.compositeState == SunGraphics2D.COMP_ISCOPY) {
                         sg2d.textpipe = x11textpipe;
                     } else {
                         sg2d.textpipe = solidTextRenderer;
@@ -353,7 +353,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
                     case SunHints.INTVAL_TEXT_ANTIALIAS_OFF:
                     // Use X11 pipe even if DGA is available since DGA
                     // text slows everything down when mixed with X11 calls
-                    if (sg2d.compositeState == sg2d.COMP_ISCOPY) {
+                    if (sg2d.compositeState == SunGraphics2D.COMP_ISCOPY) {
                         sg2d.textpipe = x11textpipe;
                     } else {
                         sg2d.textpipe = solidTextRenderer;
@@ -370,10 +370,10 @@ public abstract class X11SurfaceData extends XSurfaceData {
                 }
             }
 
-            if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
                 sg2d.drawpipe = x11txpipe;
                 sg2d.fillpipe = x11txpipe;
-            } else if (sg2d.strokeState != sg2d.STROKE_THIN){
+            } else if (sg2d.strokeState != SunGraphics2D.STROKE_THIN){
                 sg2d.drawpipe = x11txpipe;
                 sg2d.fillpipe = x11pipe;
             } else {
@@ -398,8 +398,8 @@ public abstract class X11SurfaceData extends XSurfaceData {
     }
 
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
-        if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
-            sg2d.compositeState <= sg2d.COMP_ISCOPY)
+        if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
+            sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY)
         {
             return solidloops;
         }
@@ -488,7 +488,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
             makePipes();
         }
         CompositeType comptype = sg2d.imageComp;
-        if (sg2d.transformState < sg2d.TRANSFORM_TRANSLATESCALE &&
+        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE &&
             (CompositeType.SrcOverNoEa.equals(comptype) ||
              CompositeType.SrcNoEa.equals(comptype)))
         {

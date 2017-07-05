@@ -44,7 +44,7 @@ import java.util.Vector;
  */
 public
 class SequenceInputStream extends InputStream {
-    Enumeration e;
+    Enumeration<? extends InputStream> e;
     InputStream in;
 
     /**
@@ -85,7 +85,7 @@ class SequenceInputStream extends InputStream {
      * @param   s2   the second input stream to read.
      */
     public SequenceInputStream(InputStream s1, InputStream s2) {
-        Vector  v = new Vector(2);
+        Vector<InputStream> v = new Vector<>(2);
 
         v.addElement(s1);
         v.addElement(s2);

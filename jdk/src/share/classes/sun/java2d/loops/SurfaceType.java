@@ -56,7 +56,7 @@ import java.util.HashMap;
 public final class SurfaceType {
 
     private static int unusedUID = 1;
-    private static HashMap surfaceUIDMap = new HashMap(100);
+    private static HashMap<String, Integer> surfaceUIDMap = new HashMap<>(100);
 
     /*
      * CONSTANTS USED BY ALL PRIMITIVES TO DESCRIBE THE SURFACES
@@ -402,7 +402,7 @@ public final class SurfaceType {
     }
 
     public synchronized static final int makeUniqueID(String desc) {
-        Integer i = (Integer) surfaceUIDMap.get((Object) desc);
+        Integer i = surfaceUIDMap.get(desc);
 
         if (i == null) {
             if (unusedUID > 255) {

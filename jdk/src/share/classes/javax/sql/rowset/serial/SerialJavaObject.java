@@ -142,14 +142,14 @@ public class SerialJavaObject implements Serializable, Cloneable {
      * object. When there are multiple warnings, each warning is chained to the
      * previous warning.
      */
-    java.util.Vector chain;
+    java.util.Vector<RowSetWarning> chain;
 
     /**
      * Registers the given warning.
      */
     private void setWarning(RowSetWarning e) {
         if (chain == null) {
-            chain = new java.util.Vector();
+            chain = new java.util.Vector<>();
         }
         chain.add(e);
     }

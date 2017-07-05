@@ -189,7 +189,7 @@ public final class Currency implements Serializable {
     private static final int VALID_FORMAT_VERSION = 1;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 String homeDir = System.getProperty("java.home");
                 try {
@@ -431,7 +431,9 @@ public final class Currency implements Serializable {
             }
         }
 
-        return (Set<Currency>) available.clone();
+        @SuppressWarnings("unchecked")
+        Set<Currency> result = (Set<Currency>) available.clone();
+        return result;
     }
 
     /**

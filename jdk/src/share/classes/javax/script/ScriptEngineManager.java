@@ -25,11 +25,9 @@
 
 package javax.script;
 import java.util.*;
-import java.net.URL;
-import java.io.*;
 import java.security.*;
-import sun.misc.Service;
-import sun.misc.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.ServiceConfigurationError;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -102,13 +100,15 @@ public class ScriptEngineManager  {
     }
 
     private void initEngines(final ClassLoader loader) {
-        Iterator itr = null;
+        Iterator<ScriptEngineFactory> itr = null;
         try {
+            ServiceLoader<ScriptEngineFactory> sl;
             if (loader != null) {
-                itr = Service.providers(ScriptEngineFactory.class, loader);
+                sl = ServiceLoader.load(ScriptEngineFactory.class, loader);
             } else {
-                itr = Service.installedProviders(ScriptEngineFactory.class);
+                sl = ServiceLoader.loadInstalled(ScriptEngineFactory.class);
             }
+            itr = sl.iterator();
         } catch (ServiceConfigurationError err) {
             System.err.println("Can't find ScriptEngineFactory providers: " +
                           err.getMessage());
@@ -124,7 +124,7 @@ public class ScriptEngineManager  {
         try {
             while (itr.hasNext()) {
                 try {
-                    ScriptEngineFactory fact = (ScriptEngineFactory) itr.next();
+                    ScriptEngineFactory fact = itr.next();
                     engineSpis.add(fact);
                 } catch (ServiceConfigurationError err) {
                     System.err.println("ScriptEngineManager providers.next(): "
@@ -441,7 +441,7 @@ public class ScriptEngineManager  {
     // Note that this code is same as ClassLoader.getCallerClassLoader().
     // But, that method is package private and hence we can't call here.
     private ClassLoader getCallerClassLoader() {
-        Class caller = Reflection.getCallerClass(3);
+        Class<?> caller = Reflection.getCallerClass(3);
         if (caller == null) {
             return null;
         }

@@ -51,6 +51,7 @@ import javax.swing.UIDefaults;
 import sun.awt.*;
 import sun.font.FontConfigManager;
 import sun.font.FontManager;
+import sun.java2d.SunGraphicsEnvironment;
 import sun.misc.PerformanceLogger;
 import sun.print.PrintJob2D;
 import sun.security.action.GetBooleanAction;
@@ -109,7 +110,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static int awt_multiclick_time;
     static boolean securityWarningEnabled;
 
-    private static int screenWidth = -1, screenHeight = -1; // Dimensions of default screen
+    private static volatile int screenWidth = -1, screenHeight = -1; // Dimensions of default screen
     static long awt_defaultFg; // Pixel
     private static XMouseInfoPeer xPeer;
     private static Method m_removeSourceEvents;
@@ -310,6 +311,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
 
             saved_error_handler = XlibWrapper.SetToolkitErrorHandler();
+
+            // Detect display mode changes
+            XlibWrapper.XSelectInput(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), XConstants.StructureNotifyMask);
+            XToolkit.addEventDispatcher(XToolkit.getDefaultRootWindow(), new XEventDispatcher() {
+                @Override
+                public void dispatchEvent(XEvent ev) {
+                    if (ev.get_type() == XConstants.ConfigureNotify) {
+                        ((X11GraphicsEnvironment)GraphicsEnvironment.
+                         getLocalGraphicsEnvironment()).
+                            displayChanged();
+                    }
+                }
+            });
         } finally {
             awtUnlock();
         }
@@ -684,29 +698,49 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
-    static int getDefaultScreenWidth() {
-        if (screenWidth == -1) {
-            long display = getDisplay();
+    static {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        if (ge instanceof SunGraphicsEnvironment) {
+            ((SunGraphicsEnvironment)ge).addDisplayChangedListener(
+                new DisplayChangedListener() {
+                    @Override
+                    public void displayChanged() {
+                        // 7045370: Reset the cached values
+                        XToolkit.screenWidth = -1;
+                        XToolkit.screenHeight = -1;
+                    }
+
+                    @Override
+                    public void paletteChanged() {}
+            });
+        }
+    }
+
+    private static void initScreenSize() {
+        if (screenWidth == -1 || screenHeight == -1) {
             awtLock();
             try {
-                screenWidth = (int) XlibWrapper.DisplayWidth(display, XlibWrapper.DefaultScreen(display));
+                XWindowAttributes pattr = new XWindowAttributes();
+                try {
+                    XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), pattr.pData);
+                    screenWidth  = (int) pattr.get_width();
+                    screenHeight = (int) pattr.get_height();
+                } finally {
+                    pattr.dispose();
+                }
             } finally {
                 awtUnlock();
             }
         }
+    }
+
+    static int getDefaultScreenWidth() {
+        initScreenSize();
         return screenWidth;
     }
 
     static int getDefaultScreenHeight() {
-        if (screenHeight == -1) {
-            long display = getDisplay();
-            awtLock();
-            try {
-                screenHeight = (int) XlibWrapper.DisplayHeight(display, XlibWrapper.DefaultScreen(display));
-            } finally {
-                awtUnlock();
-            }
-        }
+        initScreenSize();
         return screenHeight;
     }
 

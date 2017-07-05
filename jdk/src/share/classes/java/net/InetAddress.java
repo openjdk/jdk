@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.ServiceLoader;
 import java.security.AccessController;
 import java.io.ObjectStreamException;
 import java.io.IOException;
@@ -39,7 +40,6 @@ import java.io.ObjectInputStream;
 import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;
-import sun.misc.Service;
 import sun.net.spi.nameservice.*;
 
 /**
@@ -876,10 +876,9 @@ class InetAddress implements java.io.Serializable {
                 nameService = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedExceptionAction<NameService>() {
                         public NameService run() {
-                            // sun.misc.Service.providers returns a raw Iterator
-                            @SuppressWarnings("unchecked")
                             Iterator<NameServiceDescriptor> itr =
-                                Service.providers(NameServiceDescriptor.class);
+                                ServiceLoader.load(NameServiceDescriptor.class)
+                                    .iterator();
                             while (itr.hasNext()) {
                                 NameServiceDescriptor nsd = itr.next();
                                 if (providerName.

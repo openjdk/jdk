@@ -247,7 +247,7 @@ public class BufferedPaints {
         BufferedImage bi = paint.getImage();
         SurfaceData dstData = sg2d.surfaceData;
         SurfaceData srcData =
-            dstData.getSourceSurfaceData(bi, sg2d.TRANSFORM_ISIDENT,
+            dstData.getSourceSurfaceData(bi, SunGraphics2D.TRANSFORM_ISIDENT,
                                          CompositeType.SrcOver, null);
         boolean filter =
             (sg2d.interpolationType !=

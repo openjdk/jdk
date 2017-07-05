@@ -139,7 +139,7 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
         //set the type name
         SQLTypeName = in.getSQLTypeName();
 
-        Vector tmp = new Vector();
+        Vector<Object> tmp = new Vector<>();
         in.writeSQL(new SQLOutputImpl(tmp, map));
         attribs = tmp.toArray();
 
@@ -220,7 +220,7 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
      *        that defines how the UDT is to be mapped
      * @throws SerialException if an error occurs
      */
-    private void mapToSerial(Map map) throws SerialException {
+    private void mapToSerial(Map<String,Class<?>> map) throws SerialException {
 
         try {
 

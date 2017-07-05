@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
      * synchronization providers for the relational and XML providers; or
      * if the Hashtanle is null
      */
+    @SuppressWarnings("rawtypes")
     public WebRowSetImpl(Hashtable env) throws SQLException {
 
         try {
@@ -117,7 +118,7 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
             (String)env.get(javax.sql.rowset.spi.SyncFactory.ROWSET_SYNC_PROVIDER);
 
         // set the Reader, this maybe overridden latter
-        provider = (SyncProvider)SyncFactory.getInstance(providerName);
+        provider = SyncFactory.getInstance(providerName);
 
         // xmlReader = provider.getRowSetReader();
         // xmlWriter = provider.getRowSetWriter();

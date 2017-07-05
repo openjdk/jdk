@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package com.sun.rowset.internal;
 
 import java.sql.*;
 import java.io.*;
-import java.math.*;
 import java.lang.*;
-import java.lang.reflect.*;
 import java.util.*;
 
 /**
@@ -47,6 +45,8 @@ import java.util.*;
  * into the rowset's internal bitset (the first bit is <code>0</code>).
  */
 public class Row extends BaseRow implements Serializable, Cloneable {
+
+static final long serialVersionUID = 5047859032611314762L;
 
 /**
  * An array containing the current column values for this <code>Row</code>
@@ -115,9 +115,7 @@ public class Row extends BaseRow implements Serializable, Cloneable {
  */
     public Row(int numCols, Object[] vals) {
         origVals = new Object[numCols];
-        for (int i=0; i < numCols; i++) {
-            origVals[i] = vals[i];
-        }
+        System.arraycopy(vals, 0, origVals, 0, numCols);
         currentVals = new Object[numCols];
         colsChanged = new BitSet(numCols);
         this.numCols = numCols;

@@ -137,7 +137,7 @@ public class JStack {
     }
 
     // Returns sun.jvm.hotspot.tools.JStack if available, otherwise null.
-    private static Class loadSAClass() {
+    private static Class<?> loadSAClass() {
         //
         // Attempt to load JStack class - we specify the system class
         // loader so as to cater for development environments where

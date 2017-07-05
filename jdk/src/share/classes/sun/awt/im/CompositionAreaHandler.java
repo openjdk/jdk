@@ -257,7 +257,7 @@ class CompositionAreaHandler implements InputMethodListener,
      */
     InputMethodRequests getClientInputMethodRequests() {
         if (clientComponent != null) {
-            return (InputMethodRequests) clientComponent.getInputMethodRequests();
+            return clientComponent.getInputMethodRequests();
         }
 
         return null;

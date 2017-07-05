@@ -32,10 +32,12 @@ import java.lang.reflect.Field;
  */
 class ReflectionUtils {
 
+    @SuppressWarnings("rawtypes")
     public static boolean isPrimitive(Class type) {
         return primitiveTypeFor(type) != null;
     }
 
+    @SuppressWarnings("rawtypes")
     public static Class primitiveTypeFor(Class wrapper) {
         if (wrapper == Boolean.class) return Boolean.TYPE;
         if (wrapper == Byte.class) return Byte.TYPE;
@@ -58,6 +60,7 @@ class ReflectionUtils {
      * @param el an exception listener to handle exceptions; or null
      * @return value of the field; null if not found or an error is encountered
      */
+    @SuppressWarnings("rawtypes")
     public static Object getPrivateField(Object instance, Class cls,
                                          String name, ExceptionListener el) {
         try {

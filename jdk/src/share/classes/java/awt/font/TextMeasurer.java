@@ -43,6 +43,7 @@ package java.awt.font;
 import java.awt.Font;
 
 import java.text.AttributedCharacterIterator;
+import java.text.AttributedCharacterIterator.Attribute;
 import java.text.AttributedString;
 import java.text.Bidi;
 import java.text.BreakIterator;
@@ -176,7 +177,7 @@ public final class TextMeasurer implements Cloneable {
             throw new Error();
         }
         if (fComponents != null) {
-            other.fComponents = (TextLineComponent[]) fComponents.clone();
+            other.fComponents = fComponents.clone();
         }
         return other;
     }
@@ -199,7 +200,10 @@ public final class TextMeasurer implements Cloneable {
         fChars = new char[text.getEndIndex() - fStart];
 
         int n = 0;
-        for (char c = text.first(); c != text.DONE; c = text.next()) {
+        for (char c = text.first();
+             c != CharacterIterator.DONE;
+             c = text.next())
+        {
             fChars[n++] = c;
         }
 
@@ -211,7 +215,7 @@ public final class TextMeasurer implements Cloneable {
         }
 
         text.first();
-        Map paragraphAttrs = text.getAttributes();
+        Map<? extends Attribute, ?> paragraphAttrs = text.getAttributes();
         NumericShaper shaper = AttributeValues.getNumericShaping(paragraphAttrs);
         if (shaper != null) {
             shaper.shape(fChars, 0, fChars.length);
@@ -243,7 +247,8 @@ public final class TextMeasurer implements Cloneable {
                 GraphicAttribute graphic = (GraphicAttribute)
                                 paragraphAttrs.get(TextAttribute.CHAR_REPLACEMENT);
                 fBaseline = TextLayout.getBaselineFromGraphic(graphic);
-                Font dummyFont = new Font(new Hashtable(5, (float)0.9));
+                Hashtable<Attribute, ?> fmap = new Hashtable<>(5, (float)0.9);
+                Font dummyFont = new Font(fmap);
                 LineMetrics lm = dummyFont.getLineMetrics(" ", 0, 1, fFrc);
                 fBaselineOffsets = lm.getBaselineOffsets();
             }

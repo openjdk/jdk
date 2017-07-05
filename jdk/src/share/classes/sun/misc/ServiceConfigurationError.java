@@ -43,6 +43,8 @@ package sun.misc;
 
 public class ServiceConfigurationError extends Error {
 
+    static final long serialVersionUID = 8769866263384244465L;
+
     /**
      * Constructs a new instance with the specified detail string.
      */

@@ -43,6 +43,7 @@ import java.awt.im.InputMethodHighlight;
 import java.awt.image.BufferedImage;
 import java.text.Annotation;
 import java.text.AttributedCharacterIterator;
+import java.text.AttributedCharacterIterator.Attribute;
 import java.text.Bidi;
 import java.text.CharacterIterator;
 import java.util.Hashtable;
@@ -318,7 +319,8 @@ final class TextLine {
             for (int i = 0, n = 0; i < fComponents.length; ++i, n += 2) {
                 tlc = fComponents[getComponentLogicalIndex(i)];
                 AffineTransform at = tlc.getBaselineTransform();
-                if (at != null && ((at.getType() & at.TYPE_TRANSLATION) != 0)) {
+                if (at != null &&
+                    ((at.getType() & AffineTransform.TYPE_TRANSLATION) != 0)) {
                     double dx = at.getTranslateX();
                     double dy = at.getTranslateY();
                     builder.moveTo(tx += dx, ty += dy);
@@ -903,7 +905,7 @@ final class TextLine {
                                               char[] chars,
                                               Font font,
                                               CoreMetrics lm,
-                                              Map attributes) {
+                                              Map<? extends Attribute, ?> attributes) {
 
         boolean isDirectionLTR = true;
         byte[] levels = null;
@@ -1250,7 +1252,10 @@ final class TextLine {
      */
     static boolean advanceToFirstFont(AttributedCharacterIterator aci) {
 
-        for (char ch = aci.first(); ch != aci.DONE; ch = aci.setIndex(aci.getRunLimit())) {
+        for (char ch = aci.first();
+             ch != CharacterIterator.DONE;
+             ch = aci.setIndex(aci.getRunLimit()))
+        {
 
             if (aci.getAttribute(TextAttribute.CHAR_REPLACEMENT) == null) {
                 return true;

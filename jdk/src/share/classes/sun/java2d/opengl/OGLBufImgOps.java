@@ -78,12 +78,12 @@ class OGLBufImgOps extends BufferedBufImgOps {
         }
 
         SurfaceData srcData =
-            dstData.getSourceSurfaceData(img, sg.TRANSFORM_ISIDENT,
+            dstData.getSourceSurfaceData(img, SunGraphics2D.TRANSFORM_ISIDENT,
                                          CompositeType.SrcOver, null);
         if (!(srcData instanceof OGLSurfaceData)) {
             // REMIND: this hack tries to ensure that we have a cached texture
             srcData =
-                dstData.getSourceSurfaceData(img, sg.TRANSFORM_ISIDENT,
+                dstData.getSourceSurfaceData(img, SunGraphics2D.TRANSFORM_ISIDENT,
                                              CompositeType.SrcOver, null);
             if (!(srcData instanceof OGLSurfaceData)) {
                 return false;

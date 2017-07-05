@@ -48,6 +48,7 @@ public class VM {
         return suspended;
     }
 
+    @SuppressWarnings("deprecation")
     public static boolean allowThreadSuspension(ThreadGroup g, boolean b) {
         return g.allowThreadSuspension(b);
     }

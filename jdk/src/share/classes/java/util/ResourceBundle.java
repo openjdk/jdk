@@ -294,7 +294,7 @@ public abstract class ResourceBundle {
     /**
      * Queue for reference objects referring to class loaders or bundles.
      */
-    private static final ReferenceQueue referenceQueue = new ReferenceQueue();
+    private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
 
     /**
      * The parent bundle of this bundle.
@@ -389,12 +389,13 @@ public abstract class ResourceBundle {
             if (parent != null) {
                 obj = parent.getObject(key);
             }
-            if (obj == null)
+            if (obj == null) {
                 throw new MissingResourceException("Can't find resource for bundle "
                                                    +this.getClass().getName()
                                                    +", key "+key,
                                                    this.getClass().getName(),
                                                    key);
+            }
         }
         return obj;
     }
@@ -418,7 +419,7 @@ public abstract class ResourceBundle {
     private static ClassLoader getLoader() {
         Class[] stack = getClassContext();
         /* Magic number 2 identifies our caller's caller */
-        Class c = stack[2];
+        Class<?> c = stack[2];
         ClassLoader cl = (c == null) ? null : c.getClassLoader();
         if (cl == null) {
             // When the caller's loader is the boot class loader, cl is null
@@ -488,7 +489,7 @@ public abstract class ResourceBundle {
      * null, but the base name and the locale must have a non-null
      * value.
      */
-    private static final class CacheKey implements Cloneable {
+    private static class CacheKey implements Cloneable {
         // These three are the actual keys for lookup in Map.
         private String name;
         private Locale locale;
@@ -583,8 +584,7 @@ public abstract class ResourceBundle {
                         // treat it as unequal
                         && (loader != null)
                         && (loader == otherEntry.loaderRef.get());
-            } catch (NullPointerException e) {
-            } catch (ClassCastException e) {
+            } catch (    NullPointerException | ClassCastException e) {
             }
             return false;
         }
@@ -669,11 +669,11 @@ public abstract class ResourceBundle {
      * garbage collected when nobody else is using them. The ResourceBundle
      * class has no reason to keep class loaders alive.
      */
-    private static final class LoaderReference extends WeakReference<ClassLoader>
-                                               implements CacheKeyReference {
+    private static class LoaderReference extends WeakReference<ClassLoader>
+                                         implements CacheKeyReference {
         private CacheKey cacheKey;
 
-        LoaderReference(ClassLoader referent, ReferenceQueue q, CacheKey key) {
+        LoaderReference(ClassLoader referent, ReferenceQueue<Object> q, CacheKey key) {
             super(referent, q);
             cacheKey = key;
         }
@@ -687,11 +687,11 @@ public abstract class ResourceBundle {
      * References to bundles are soft references so that they can be garbage
      * collected when they have no hard references.
      */
-    private static final class BundleReference extends SoftReference<ResourceBundle>
-                                               implements CacheKeyReference {
+    private static class BundleReference extends SoftReference<ResourceBundle>
+                                         implements CacheKeyReference {
         private CacheKey cacheKey;
 
-        BundleReference(ResourceBundle referent, ReferenceQueue q, CacheKey key) {
+        BundleReference(ResourceBundle referent, ReferenceQueue<Object> q, CacheKey key) {
             super(referent, q);
             cacheKey = key;
         }
@@ -1331,8 +1331,8 @@ public abstract class ResourceBundle {
      * Checks if the given <code>List</code> is not null, not empty,
      * not having null in its elements.
      */
-    private static final boolean checkList(List a) {
-        boolean valid = (a != null && a.size() != 0);
+    private static boolean checkList(List<?> a) {
+        boolean valid = (a != null && !a.isEmpty());
         if (valid) {
             int size = a.size();
             for (int i = 0; valid && i < size; i++) {
@@ -1342,12 +1342,12 @@ public abstract class ResourceBundle {
         return valid;
     }
 
-    private static final ResourceBundle findBundle(CacheKey cacheKey,
-                                                   List<Locale> candidateLocales,
-                                                   List<String> formats,
-                                                   int index,
-                                                   Control control,
-                                                   ResourceBundle baseBundle) {
+    private static ResourceBundle findBundle(CacheKey cacheKey,
+                                             List<Locale> candidateLocales,
+                                             List<String> formats,
+                                             int index,
+                                             Control control,
+                                             ResourceBundle baseBundle) {
         Locale targetLocale = candidateLocales.get(index);
         ResourceBundle parent = null;
         if (index != candidateLocales.size() - 1) {
@@ -1419,10 +1419,10 @@ public abstract class ResourceBundle {
         return parent;
     }
 
-    private static final ResourceBundle loadBundle(CacheKey cacheKey,
-                                                   List<String> formats,
-                                                   Control control,
-                                                   boolean reload) {
+    private static ResourceBundle loadBundle(CacheKey cacheKey,
+                                             List<String> formats,
+                                             Control control,
+                                             boolean reload) {
 
         // Here we actually load the bundle in the order of formats
         // specified by the getFormats() value.
@@ -1459,7 +1459,7 @@ public abstract class ResourceBundle {
         return bundle;
     }
 
-    private static final boolean isValidBundle(ResourceBundle bundle) {
+    private static boolean isValidBundle(ResourceBundle bundle) {
         return bundle != null && bundle != NONEXISTENT_BUNDLE;
     }
 
@@ -1467,7 +1467,7 @@ public abstract class ResourceBundle {
      * Determines whether any of resource bundles in the parent chain,
      * including the leaf, have expired.
      */
-    private static final boolean hasValidParentChain(ResourceBundle bundle) {
+    private static boolean hasValidParentChain(ResourceBundle bundle) {
         long now = System.currentTimeMillis();
         while (bundle != null) {
             if (bundle.expired) {
@@ -1488,9 +1488,9 @@ public abstract class ResourceBundle {
     /**
      * Throw a MissingResourceException with proper message
      */
-    private static final void throwMissingResourceException(String baseName,
-                                                            Locale locale,
-                                                            Throwable cause) {
+    private static void throwMissingResourceException(String baseName,
+                                                      Locale locale,
+                                                      Throwable cause) {
         // If the cause is a MissingResourceException, avoid creating
         // a long chain. (6355009)
         if (cause instanceof MissingResourceException) {
@@ -1513,8 +1513,8 @@ public abstract class ResourceBundle {
      * cache or its parent has expired. <code>bundle.expire</code> is true
      * upon return if the bundle in the cache has expired.
      */
-    private static final ResourceBundle findBundleInCache(CacheKey cacheKey,
-                                                          Control control) {
+    private static ResourceBundle findBundleInCache(CacheKey cacheKey,
+                                                    Control control) {
         BundleReference bundleRef = cacheList.get(cacheKey);
         if (bundleRef == null) {
             return null;
@@ -1620,9 +1620,9 @@ public abstract class ResourceBundle {
      * the bundle before this call, the one found in the cache is
      * returned.
      */
-    private static final ResourceBundle putBundleInCache(CacheKey cacheKey,
-                                                         ResourceBundle bundle,
-                                                         Control control) {
+    private static ResourceBundle putBundleInCache(CacheKey cacheKey,
+                                                   ResourceBundle bundle,
+                                                   Control control) {
         setExpirationTime(cacheKey, control);
         if (cacheKey.expirationTime != Control.TTL_DONT_CACHE) {
             CacheKey key = (CacheKey) cacheKey.clone();
@@ -1653,7 +1653,7 @@ public abstract class ResourceBundle {
         return bundle;
     }
 
-    private static final void setExpirationTime(CacheKey cacheKey, Control control) {
+    private static void setExpirationTime(CacheKey cacheKey, Control control) {
         long ttl = control.getTimeToLive(cacheKey.getName(),
                                          cacheKey.getLocale());
         if (ttl >= 0) {
@@ -2350,18 +2350,27 @@ public abstract class ResourceBundle {
                     if (script.length() == 0 && region.length() > 0) {
                         // Supply script for users who want to use zh_Hans/zh_Hant
                         // as bundle names (recommended for Java7+)
-                        if (region.equals("TW") || region.equals("HK") || region.equals("MO")) {
+                        switch (region) {
+                        case "TW":
+                        case "HK":
+                        case "MO":
                             script = "Hant";
-                        } else if (region.equals("CN") || region.equals("SG")) {
+                            break;
+                        case "CN":
+                        case "SG":
                             script = "Hans";
+                            break;
                         }
                     } else if (script.length() > 0 && region.length() == 0) {
                         // Supply region(country) for users who still package Chinese
                         // bundles using old convension.
-                        if (script.equals("Hans")) {
+                        switch (script) {
+                        case "Hans":
                             region = "CN";
-                        } else if (script.equals("Hant")) {
+                            break;
+                        case "Hant":
                             region = "TW";
+                            break;
                         }
                     }
                 }
@@ -2562,6 +2571,7 @@ public abstract class ResourceBundle {
             ResourceBundle bundle = null;
             if (format.equals("java.class")) {
                 try {
+                    @SuppressWarnings("unchecked")
                     Class<? extends ResourceBundle> bundleClass
                         = (Class<? extends ResourceBundle>)loader.loadClass(bundleName);
 
