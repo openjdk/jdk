@@ -25,11 +25,12 @@
 #ifndef SHARE_VM_SERVICES_G1MEMORYPOOL_HPP
 #define SHARE_VM_SERVICES_G1MEMORYPOOL_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1MonitoringSupport.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // This file contains the three classes that represent the memory
 // pools of the G1 spaces: G1EdenPool, G1SurvivorPool, and

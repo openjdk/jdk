@@ -49,59 +49,57 @@ public class StoreTrustedCertTest {
 
         new File(KEYSTORE).delete();
 
-        try {
-            KeyStore keystore = KeyStore.getInstance("PKCS12");
-            keystore.load(null, null);
+        KeyStore keystore = KeyStore.getInstance("PKCS12");
+        keystore.load(null, null);
 
-            Certificate cert = loadCertificate(CERT);
-            Set<KeyStore.Entry.Attribute> attributes = new HashSet<>();
-            attributes.add(new PKCS12Attribute("1.3.5.7.9", "that's odd"));
-            attributes.add(new PKCS12Attribute("2.4.6.8.10", "that's even"));
+        Certificate cert = loadCertificate(CERT);
+        Set<KeyStore.Entry.Attribute> attributes = new HashSet<>();
+        attributes.add(new PKCS12Attribute("1.3.5.7.9", "that's odd"));
+        attributes.add(new PKCS12Attribute("2.4.6.8.10", "that's even"));
 
-            // Set trusted certificate entry
-            keystore.setEntry(ALIAS,
-                new KeyStore.TrustedCertificateEntry(cert), null);
+        // Set trusted certificate entry
+        keystore.setEntry(ALIAS,
+            new KeyStore.TrustedCertificateEntry(cert), null);
 
-            // Set trusted certificate entry with attributes
-            keystore.setEntry(ALIAS2,
-                new KeyStore.TrustedCertificateEntry(cert, attributes), null);
+        // Set trusted certificate entry with attributes
+        keystore.setEntry(ALIAS2,
+            new KeyStore.TrustedCertificateEntry(cert, attributes), null);
 
+        try (FileOutputStream outStream = new FileOutputStream(KEYSTORE)) {
             System.out.println("Storing keystore to: " + KEYSTORE);
-            keystore.store(new FileOutputStream(KEYSTORE), PASSWORD);
+            keystore.store(outStream, PASSWORD);
+        }
 
+        try (FileInputStream inStream = new FileInputStream(KEYSTORE)) {
             System.out.println("Loading keystore from: " + KEYSTORE);
-            keystore.load(new FileInputStream(KEYSTORE), PASSWORD);
+            keystore.load(inStream, PASSWORD);
             System.out.println("Loaded keystore with " + keystore.size() +
                 " entries");
+        }
 
-            KeyStore.Entry entry = keystore.getEntry(ALIAS, null);
-            if (entry instanceof KeyStore.TrustedCertificateEntry) {
-                System.out.println("Retrieved trusted certificate entry: " +
-                    entry);
+        KeyStore.Entry entry = keystore.getEntry(ALIAS, null);
+        if (entry instanceof KeyStore.TrustedCertificateEntry) {
+            System.out.println("Retrieved trusted certificate entry: " + entry);
+        } else {
+            throw new Exception("Not a trusted certificate entry");
+        }
+        System.out.println();
+
+        entry = keystore.getEntry(ALIAS2, null);
+        if (entry instanceof KeyStore.TrustedCertificateEntry) {
+            KeyStore.TrustedCertificateEntry trustedEntry =
+                (KeyStore.TrustedCertificateEntry) entry;
+            Set<KeyStore.Entry.Attribute> entryAttributes =
+                trustedEntry.getAttributes();
+
+            if (entryAttributes.containsAll(attributes)) {
+                System.out.println("Retrieved trusted certificate entry " +
+                    "with attributes: " + entry);
             } else {
-                throw new Exception("Not a trusted certificate entry");
+                throw new Exception("Failed to retrieve entry attributes");
             }
-            System.out.println();
-
-            entry = keystore.getEntry(ALIAS2, null);
-            if (entry instanceof KeyStore.TrustedCertificateEntry) {
-                KeyStore.TrustedCertificateEntry trustedEntry =
-                    (KeyStore.TrustedCertificateEntry) entry;
-                Set<KeyStore.Entry.Attribute> entryAttributes =
-                    trustedEntry.getAttributes();
-
-                if (entryAttributes.containsAll(attributes)) {
-                    System.out.println("Retrieved trusted certificate entry " +
-                        "with attributes: " + entry);
-                } else {
-                    throw new Exception("Failed to retrieve entry attributes");
-                }
-            } else {
-                throw new Exception("Not a trusted certificate entry");
-            }
-
-        } finally {
-            new File(KEYSTORE).delete();
+        } else {
+            throw new Exception("Not a trusted certificate entry");
         }
     }
 

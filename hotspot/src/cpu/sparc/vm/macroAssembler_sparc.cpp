@@ -36,11 +36,12 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -3867,7 +3868,7 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 static address satb_log_enqueue_with_frame = NULL;
 static u_char* satb_log_enqueue_with_frame_end = NULL;
@@ -4231,7 +4232,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
   bind(filtered);
 }
 
-#endif  // SERIALGC
+#endif // INCLUDE_ALL_GCS
 ///////////////////////////////////////////////////////////////////////////////////
 
 void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_val, Register tmp) {

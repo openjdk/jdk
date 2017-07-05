@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/barrierSet.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/genRemSet.hpp"
+#include "utilities/macros.hpp"
 
 // This class (or more correctly, subtypes of this class)
 // are used to define global garbage collector attributes.
@@ -48,10 +49,10 @@
 class GenCollectorPolicy;
 class TwoGenerationCollectorPolicy;
 class AdaptiveSizePolicy;
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 class ConcurrentMarkSweepPolicy;
 class G1CollectorPolicy;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 class GCPolicyCounters;
 class MarkSweepPolicy;
@@ -134,21 +135,21 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   virtual GenCollectorPolicy*           as_generation_policy()            { return NULL; }
   virtual TwoGenerationCollectorPolicy* as_two_generation_policy()        { return NULL; }
   virtual MarkSweepPolicy*              as_mark_sweep_policy()            { return NULL; }
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   virtual ConcurrentMarkSweepPolicy*    as_concurrent_mark_sweep_policy() { return NULL; }
   virtual G1CollectorPolicy*            as_g1_policy()                    { return NULL; }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
   // Note that these are not virtual.
   bool is_generation_policy()            { return as_generation_policy() != NULL; }
   bool is_two_generation_policy()        { return as_two_generation_policy() != NULL; }
   bool is_mark_sweep_policy()            { return as_mark_sweep_policy() != NULL; }
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   bool is_concurrent_mark_sweep_policy() { return as_concurrent_mark_sweep_policy() != NULL; }
   bool is_g1_policy()                    { return as_g1_policy() != NULL; }
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
   bool is_concurrent_mark_sweep_policy() { return false; }
   bool is_g1_policy()                    { return false; }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 
   virtual BarrierSet::Name barrier_set_name() = 0;
@@ -321,7 +322,7 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
 
   // Returns true is gen0 sizes were adjusted
   bool adjust_gen0_sizes(size_t* gen0_size_ptr, size_t* gen1_size_ptr,
-                               size_t heap_size, size_t min_gen1_size);
+                         const size_t heap_size, const size_t min_gen1_size);
 };
 
 class MarkSweepPolicy : public TwoGenerationCollectorPolicy {

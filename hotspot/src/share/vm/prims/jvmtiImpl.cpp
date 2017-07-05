@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,8 +905,6 @@ void JvmtiSuspendControl::print() {
 #endif
 }
 
-#ifndef KERNEL
-
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
     nmethod* nm) {
   JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_COMPILED_METHOD_LOAD);
@@ -1098,5 +1096,3 @@ void JvmtiDeferredEventQueue::process_pending_events() {
     }
   }
 }
-
-#endif // ndef KERNEL

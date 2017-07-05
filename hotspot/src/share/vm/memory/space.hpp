@@ -34,6 +34,7 @@
 #include "oops/markOop.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/prefetch.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/workgroup.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
@@ -884,14 +885,14 @@ class ContiguousSpace: public CompactibleSpace {
   }
 
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // In support of parallel oop_iterate.
   #define ContigSpace_PAR_OOP_ITERATE_DECL(OopClosureType, nv_suffix)  \
     void par_oop_iterate(MemRegion mr, OopClosureType* blk);
 
     ALL_PAR_OOP_ITERATE_CLOSURES(ContigSpace_PAR_OOP_ITERATE_DECL)
   #undef ContigSpace_PAR_OOP_ITERATE_DECL
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Compaction support
   virtual void reset_after_compaction() {

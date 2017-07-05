@@ -36,12 +36,13 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parNew/parOopClosures.inline.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #define if_do_metadata_checked(closure, nv_suffix)                    \
   /* Make sure the non-virtual and the virtual versions match. */     \
@@ -73,7 +74,7 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
   return size;                                                                  \
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
                                                                                 \
 int InstanceClassLoaderKlass::                                                  \
@@ -83,7 +84,7 @@ oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        
   int size = InstanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure); \
   return size;                                                                  \
 }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 
 #define InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)      \
@@ -111,10 +112,10 @@ oop_oop_iterate##nv_suffix##_m(oop obj,                                         
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN)
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DEFN_m)
 
@@ -129,7 +130,7 @@ void InstanceClassLoaderKlass::oop_follow_contents(oop obj) {
   }
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void InstanceClassLoaderKlass::oop_follow_contents(ParCompactionManager* cm,
         oop obj) {
   InstanceKlass::oop_follow_contents(cm, obj);
@@ -155,5 +156,5 @@ int InstanceClassLoaderKlass::oop_update_pointers(ParCompactionManager* cm, oop 
   }
   return size_helper();
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
