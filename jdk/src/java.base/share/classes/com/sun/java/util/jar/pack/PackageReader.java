@@ -218,7 +218,7 @@ class PackageReader extends BandStructure {
         return res;
     }
 
-    final static int MAGIC_BYTES = 4;
+    static final int MAGIC_BYTES = 4;
 
     void readArchiveMagic() throws IOException {
         // Read a minimum of bytes in the first gulp.

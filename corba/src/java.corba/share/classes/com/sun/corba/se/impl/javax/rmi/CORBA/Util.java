@@ -438,11 +438,11 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
     }
 
     /**
-     * Writes a java.lang.Object as a CORBA Object. If <code>obj</code> is
+     * Writes a java.lang.Object as a CORBA Object. If {@code obj} is
      * an exported RMI-IIOP server object, the tie is found
-     * and wired to <code>obj</code>, then written to <code>out.write_Object(org.omg.CORBA.Object)</code>.
-     * If <code>obj</code> is a CORBA Object, it is written to
-     * <code>out.write_Object(org.omg.CORBA.Object)</code>.
+     * and wired to {@code obj}, then written to {@code out.write_Object(org.omg.CORBA.Object)}.
+     * If {@code obj} is a CORBA Object, it is written to
+     * {@code out.write_Object(org.omg.CORBA.Object)}.
      * @param out the stream in which to write the object.
      * @param obj the object to write.
      */
@@ -457,10 +457,10 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
 
     /**
      * Writes a java.lang.Object as either a value or a CORBA Object.
-     * If <code>obj</code> is a value object or a stub object, it is written to
-     * <code>out.write_abstract_interface(java.lang.Object)</code>. If <code>obj</code> is an exported
-     * RMI-IIOP server object, the tie is found and wired to <code>obj</code>,
-     * then written to <code>out.write_abstract_interface(java.lang.Object)</code>.
+     * If {@code obj} is a value object or a stub object, it is written to
+     * {@code out.write_abstract_interface(java.lang.Object)}. If {@code obj} is an exported
+     * RMI-IIOP server object, the tie is found and wired to {@code obj},
+     * then written to {@code out.write_abstract_interface(java.lang.Object)}.
      * @param out the stream in which to write the object.
      * @param obj the object to write.
      */
@@ -595,7 +595,7 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
      * the class might be found. May be null.
      * @param loader a class whose ClassLoader may be used to
      * load the class if all other methods fail.
-     * @return the <code>Class</code> object representing the loaded class.
+     * @return the {@code Class} object representing the loaded class.
      * @exception ClassNotFoundException if class cannot be loaded.
      */
     public Class loadClass( String className, String remoteCodebase,
@@ -605,20 +605,20 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
     }
 
     /**
-     * The <tt>isLocal</tt> method has the same semantics as the
+     * The {@code isLocal} method has the same semantics as the
      * ObjectImpl._is_local method, except that it can throw a RemoteException.
      * (no it doesn't but the spec says it should.)
      *
-     * The <tt>_is_local()</tt> method is provided so that stubs may determine
+     * The {@code _is_local()} method is provided so that stubs may determine
      * if a particular object is implemented by a local servant and hence local
      * invocation APIs may be used.
      *
      * @param stub the stub to test.
      *
-     * @return The <tt>_is_local()</tt> method returns true if
+     * @return The {@code _is_local()} method returns true if
      * the servant incarnating the object is located in the same process as
-     * the stub and they both share the same ORB instance.  The <tt>_is_local()</tt>
-     * method returns false otherwise. The default behavior of <tt>_is_local()</tt> is
+     * the stub and they both share the same ORB instance.  The {@code _is_local()}
+     * method returns false otherwise. The default behavior of {@code _is_local()} is
      * to return false.
      *
      * @throws RemoteException The Java to IDL specification does to

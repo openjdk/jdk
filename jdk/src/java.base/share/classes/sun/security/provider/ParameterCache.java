@@ -50,10 +50,10 @@ public final class ParameterCache {
     }
 
     // cache of DSA parameters
-    private final static Map<Integer,DSAParameterSpec> dsaCache;
+    private static final Map<Integer,DSAParameterSpec> dsaCache;
 
     // cache of DH parameters
-    private final static Map<Integer,DHParameterSpec> dhCache;
+    private static final Map<Integer,DHParameterSpec> dhCache;
 
     /**
      * Return cached DSA parameters for the given length combination of

@@ -116,7 +116,7 @@ public class TestAppletLoggerContext {
             public Object getAppletContext() { return active ? exc : null; }
         }
 
-        final static JavaAWTAccessStub javaAwtAccess = new JavaAWTAccessStub();
+        static final JavaAWTAccessStub javaAwtAccess = new JavaAWTAccessStub();
         public static void init() {
             SharedSecrets.setJavaAWTAccess(javaAwtAccess);
             if (System.getProperty("test.security", "on").equals("on")) {

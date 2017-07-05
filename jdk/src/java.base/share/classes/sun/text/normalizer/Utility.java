@@ -61,7 +61,7 @@ final class Utility {
     }
 
     /* This map must be in ASCENDING ORDER OF THE ESCAPE CODE */
-    static private final char[] UNESCAPE_MAP = {
+    private static final char[] UNESCAPE_MAP = {
         /*"   0x22, 0x22 */
         /*'   0x27, 0x27 */
         /*?   0x3F, 0x3F */
@@ -207,7 +207,7 @@ final class Utility {
     /**
      * Supplies a zero-padded hex representation of an integer (without 0x)
      */
-    static public String hex(long i, int places) {
+    public static String hex(long i, int places) {
         if (i == Long.MIN_VALUE) return "-8000000000000000";
         boolean negative = i < 0;
         if (negative) {

@@ -37,12 +37,12 @@ class XObjectInputStream extends AbstractObjectInputStream {
             dis = new DataInputStream(in);
         }
 
-    final public void defaultReadObject()
+    public final void defaultReadObject()
         throws IOException, ClassNotFoundException, NotActiveException
     {
     }
 
-    final protected Object readObjectOverride()
+    protected final Object readObjectOverride()
         throws OptionalDataException, ClassNotFoundException, IOException {
 
         Object readResult = null;
@@ -256,7 +256,7 @@ class XObjectInputStream extends AbstractObjectInputStream {
      * Set the accessible flag on it here. ObjectOutputStream
      * will call it as necessary.
      */
-    static public Method getReadObjectMethod(final Class cl) {
+    public static Method getReadObjectMethod(final Class cl) {
 
         Method readObjectMethod = (Method)
             java.security.AccessController.doPrivileged
@@ -286,7 +286,7 @@ class XObjectInputStream extends AbstractObjectInputStream {
     /*************************************************************/
 
     /* taken verbatim from ObjectInputStream. */
-    static private void invokeMethod(final Object obj, final Method m,
+    private static void invokeMethod(final Object obj, final Method m,
                                         final Object[] argList)
         throws IOException
     {

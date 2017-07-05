@@ -37,7 +37,7 @@ import java.nio.file.Paths;
  */
 public class TwiceIndirectlyLoadABundle {
 
-    private final static String rbName = "StackSearchableResource";
+    private static final String rbName = "StackSearchableResource";
 
     public boolean loadAndTest() throws Throwable {
         // Find out where we are running from so we can setup the URLClassLoader URLs

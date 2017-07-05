@@ -94,7 +94,7 @@ import java.util.Iterator;
 import sun.misc.PerformanceLogger;
 
 import java.lang.annotation.Native;
-import sun.awt.image.MultiResolutionImage;
+import java.awt.image.MultiResolutionImage;
 
 import static java.awt.geom.AffineTransform.TYPE_FLIP;
 import static java.awt.geom.AffineTransform.TYPE_MASK_SCALE;
@@ -3087,9 +3087,8 @@ public final class SunGraphics2D
 // end of text rendering methods
 
     private boolean isHiDPIImage(final Image img) {
-        return (SurfaceManager.getImageScale(img) != 1) ||
-               (resolutionVariantHint != SunHints.INTVAL_RESOLUTION_VARIANT_OFF
-                    && img instanceof MultiResolutionImage);
+        return (SurfaceManager.getImageScale(img) != 1)
+                || img instanceof MultiResolutionImage;
     }
 
     private boolean drawHiDPIImage(Image img, int dx1, int dy1, int dx2,
@@ -3175,24 +3174,41 @@ public final class SunGraphics2D
         int type = transform.getType();
         int dw = dx2 - dx1;
         int dh = dy2 - dy1;
-        double destRegionWidth;
-        double destRegionHeight;
 
-        if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP)) == 0) {
-            destRegionWidth = dw;
-            destRegionHeight = dh;
-        } else if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP | TYPE_MASK_SCALE)) == 0) {
-            destRegionWidth = dw * transform.getScaleX();
-            destRegionHeight = dh * transform.getScaleY();
+        double destImageWidth;
+        double destImageHeight;
+
+        if (resolutionVariantHint == SunHints.INTVAL_RESOLUTION_VARIANT_BASE) {
+            destImageWidth = srcWidth;
+            destImageHeight = srcHeight;
+        } else if (resolutionVariantHint == SunHints.INTVAL_RESOLUTION_VARIANT_DPI_FIT) {
+            AffineTransform configTransform = getDefaultTransform();
+            if (configTransform.isIdentity()) {
+                destImageWidth = srcWidth;
+                destImageHeight = srcHeight;
+            } else {
+                destImageWidth = srcWidth * configTransform.getScaleX();
+                destImageHeight = srcHeight * configTransform.getScaleY();
+            }
         } else {
-            destRegionWidth = dw * Math.hypot(
-                    transform.getScaleX(), transform.getShearY());
-            destRegionHeight = dh * Math.hypot(
-                    transform.getShearX(), transform.getScaleY());
-        }
+            double destRegionWidth;
+            double destRegionHeight;
 
-        int destImageWidth = (int) Math.abs(srcWidth * destRegionWidth / sw);
-        int destImageHeight = (int) Math.abs(srcHeight * destRegionHeight / sh);
+            if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP)) == 0) {
+                destRegionWidth = dw;
+                destRegionHeight = dh;
+            } else if ((type & ~(TYPE_TRANSLATION | TYPE_FLIP | TYPE_MASK_SCALE)) == 0) {
+                destRegionWidth = dw * transform.getScaleX();
+                destRegionHeight = dh * transform.getScaleY();
+            } else {
+                destRegionWidth = dw * Math.hypot(
+                        transform.getScaleX(), transform.getShearY());
+                destRegionHeight = dh * Math.hypot(
+                        transform.getShearX(), transform.getScaleY());
+            }
+            destImageWidth = Math.abs(srcWidth * destRegionWidth / sw);
+            destImageHeight = Math.abs(srcHeight * destRegionHeight / sh);
+        }
 
         Image resolutionVariant
                 = img.getResolutionVariant(destImageWidth, destImageHeight);

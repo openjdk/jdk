@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,7 @@ import javax.security.auth.Subject;
  * or by instantiating {@link RMIConnector}.</p>
  *
  * <p>This is an abstract class.  Concrete subclasses define the
- * details of the client connection objects, such as whether they use
- * JRMP or IIOP.</p>
+ * details of the client connection objects.</p>
  *
  * @since 1.5
  */
@@ -307,7 +306,7 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
     /**
      * <p>Returns the protocol string for this object.  The string is
-     * <code>rmi</code> for RMI/JRMP and <code>iiop</code> for RMI/IIOP.
+     * <code>rmi</code> for RMI/JRMP.
      *
      * @return the protocol string for this object.
      */

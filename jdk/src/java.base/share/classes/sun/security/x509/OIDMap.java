@@ -106,10 +106,10 @@ public class OIDMap {
         { 2, 16, 840, 1, 113730, 1, 1 };
 
     /** Map ObjectIdentifier(oid) -> OIDInfo(info) */
-    private final static Map<ObjectIdentifier,OIDInfo> oidMap;
+    private static final Map<ObjectIdentifier,OIDInfo> oidMap;
 
     /** Map String(friendly name) -> OIDInfo(info) */
-    private final static Map<String,OIDInfo> nameMap;
+    private static final Map<String,OIDInfo> nameMap;
 
     static {
         oidMap = new HashMap<ObjectIdentifier,OIDInfo>();

@@ -194,7 +194,7 @@ class ConstantPool {
 
 
     /** Entries in the constant pool. */
-    public static abstract
+    public abstract static
     class Entry implements Comparable<Object> {
         protected final byte tag;       // a CONSTANT_foo code
         protected int valueHash;        // cached hashCode
@@ -338,7 +338,7 @@ class ConstantPool {
         return (REF_getField <= refKind && refKind <= REF_invokeInterface);
     }
 
-    public static abstract
+    public abstract static
     class LiteralEntry extends Entry {
         protected LiteralEntry(byte tag) {
             super(tag);
@@ -785,7 +785,7 @@ class ConstantPool {
         return new String(sig);
     }
 
-    static private int skipTo(char semi, String sig, int i) {
+    private static int skipTo(char semi, String sig, int i) {
         i = sig.indexOf(semi, i);
         return (i >= 0) ? i : sig.length();
     }

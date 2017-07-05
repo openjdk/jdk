@@ -27,33 +27,25 @@ package javax.xml.ws.spi;
 
 import java.io.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.ws.WebServiceException;
 
 class FactoryFinder {
 
-    /**
-     * Creates an instance of the specified class using the specified
-     * {@code ClassLoader} object.
-     *
-     * @exception WebServiceException if the given class could not be found
-     *            or could not be instantiated
-     */
-    private static Object newInstance(String className,
-                                      ClassLoader classLoader)
-    {
-        try {
-            Class spiClass = safeLoadClass(className, classLoader);
-            return spiClass.newInstance();
-        } catch (ClassNotFoundException x) {
-            throw new WebServiceException(
-                "Provider " + className + " not found", x);
-        } catch (Exception x) {
-            throw new WebServiceException(
-                "Provider " + className + " could not be instantiated: " + x,
-                x);
-        }
-    }
+    private static final Logger logger = Logger.getLogger("javax.xml.ws");
+
+    private static final ServiceLoaderUtil.ExceptionHandler<WebServiceException> EXCEPTION_HANDLER =
+            new ServiceLoaderUtil.ExceptionHandler<WebServiceException>() {
+                @Override
+                public WebServiceException createException(Throwable throwable, String message) {
+                    return new WebServiceException(message, throwable);
+                }
+            };
 
     /**
      * Finds the implementation {@code Class} object for the given
@@ -67,7 +59,7 @@ class FactoryFinder {
      * @return the {@code Class} object of the specified message factory;
      *         may not be {@code null}
      *
-     * @param factoryId             the name of the factory to find, which is
+     * @param factoryClass          the name of the factory to find, which is
      *                              a system property
      * @param fallbackClassName     the implementation class name, which is
      *                              to be used only if nothing else
@@ -75,72 +67,26 @@ class FactoryFinder {
      *                              there is no fallback class name
      * @exception WebServiceException if there is an error
      */
-    static Object find(String factoryId, String fallbackClassName)
-    {
-        if (isOsgi()) {
-            return lookupUsingOSGiServiceLoader(factoryId);
-        }
-        ClassLoader classLoader;
-        try {
-            classLoader = Thread.currentThread().getContextClassLoader();
-        } catch (Exception x) {
-            throw new WebServiceException(x.toString(), x);
-        }
+    @SuppressWarnings("unchecked")
+    static <T> T find(Class<T> factoryClass, String fallbackClassName) {
+        ClassLoader classLoader = ServiceLoaderUtil.contextClassLoader(EXCEPTION_HANDLER);
 
-        String serviceId = "META-INF/services/" + factoryId;
-        // try to find services in CLASSPATH
-        BufferedReader rd = null;
-        try {
-            InputStream is;
-            if (classLoader == null) {
-                is=ClassLoader.getSystemResourceAsStream(serviceId);
-            } else {
-                is=classLoader.getResourceAsStream(serviceId);
-            }
+        T provider = ServiceLoaderUtil.firstByServiceLoader(factoryClass, logger, EXCEPTION_HANDLER);
+        if (provider != null) return provider;
 
-            if( is!=null ) {
-                rd = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-
-                String factoryClassName = rd.readLine();
-
-                if (factoryClassName != null &&
-                    ! "".equals(factoryClassName)) {
-                    return newInstance(factoryClassName, classLoader);
-                }
-            }
-        } catch( Exception ignored) {
-        } finally {
-            close(rd);
-        }
-
+        String factoryId = factoryClass.getName();
 
         // try to read from $java.home/lib/jaxws.properties
-        FileInputStream inStream = null;
-        try {
-            String javah=System.getProperty( "java.home" );
-            String configFile = javah + File.separator +
-                "lib" + File.separator + "jaxws.properties";
-            File f=new File( configFile );
-            if( f.exists()) {
-                Properties props=new Properties();
-                inStream = new FileInputStream(f);
-                props.load(inStream);
-                String factoryClassName = props.getProperty(factoryId);
-                return newInstance(factoryClassName, classLoader);
-            }
-        } catch(Exception ignored) {
-        } finally {
-            close(inStream);
-        }
+        provider = (T) fromJDKProperties(factoryId, fallbackClassName, classLoader);
+        if (provider != null) return provider;
 
         // Use the system property
-        try {
-            String systemProp =
-                System.getProperty( factoryId );
-            if( systemProp!=null) {
-                return newInstance(systemProp, classLoader);
-            }
-        } catch (SecurityException ignored) {
+        provider = (T) fromSystemProperty(factoryId, fallbackClassName, classLoader);
+        if (provider != null) return provider;
+
+        // handling Glassfish (platform specific default)
+        if (isOsgi()) {
+            return (T) lookupUsingOSGiServiceLoader(factoryId);
         }
 
         if (fallbackClassName == null) {
@@ -148,43 +94,51 @@ class FactoryFinder {
                 "Provider for " + factoryId + " cannot be found", null);
         }
 
-        return newInstance(fallbackClassName, classLoader);
+        return (T) ServiceLoaderUtil.newInstance(fallbackClassName,
+                fallbackClassName, classLoader, EXCEPTION_HANDLER);
     }
 
-    private static void close(Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException ignored) {
-            }
-        }
-    }
-
-
-    /**
-     * Loads the class, provided that the calling thread has an access to the class being loaded.
-     */
-    private static Class safeLoadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+    private static Object fromSystemProperty(String factoryId,
+                                             String fallbackClassName,
+                                             ClassLoader classLoader) {
         try {
-            // make sure that the current thread has an access to the package of the given name.
-            SecurityManager s = System.getSecurityManager();
-            if (s != null) {
-                int i = className.lastIndexOf('.');
-                if (i != -1) {
-                    s.checkPackageAccess(className.substring(0, i));
-                }
+            String systemProp = System.getProperty(factoryId);
+            if (systemProp != null) {
+                return ServiceLoaderUtil.newInstance(systemProp,
+                        fallbackClassName, classLoader, EXCEPTION_HANDLER);
+            }
+        } catch (SecurityException ignored) {
+        }
+        return null;
+    }
+
+    private static Object fromJDKProperties(String factoryId,
+                                            String fallbackClassName,
+                                            ClassLoader classLoader) {
+        Path path = null;
+        try {
+            String JAVA_HOME = System.getProperty("java.home");
+            path = Paths.get(JAVA_HOME, "conf", "jaxws.properties");
+
+            // to ensure backwards compatibility
+            if (!Files.exists(path)) {
+                path = Paths.get(JAVA_HOME, "lib", "jaxws.properties");
             }
 
-            if (classLoader == null)
-                return Class.forName(className);
-            else
-                return classLoader.loadClass(className);
-        } catch (SecurityException se) {
-            // anyone can access the platform default factory class without permission
-            if (Provider.DEFAULT_JAXWSPROVIDER.equals(className))
-                return Class.forName(className);
-            throw se;
+            if (!Files.exists(path)) {
+                Properties props = new Properties();
+                try (InputStream inStream = Files.newInputStream(path)) {
+                    props.load(inStream);
+                }
+                String factoryClassName = props.getProperty(factoryId);
+                return ServiceLoaderUtil.newInstance(factoryClassName,
+                        fallbackClassName, classLoader, EXCEPTION_HANDLER);
+            }
+        } catch (Exception ignored) {
+            logger.log(Level.SEVERE, "Error reading JAX-WS configuration from ["  + path +
+                    "] file. Check it is accessible and has correct format.", ignored);
         }
+        return null;
     }
 
     private static final String OSGI_SERVICE_LOADER_CLASS_NAME = "com.sun.org.glassfish.hk2.osgiresourcelocator.ServiceLoader";

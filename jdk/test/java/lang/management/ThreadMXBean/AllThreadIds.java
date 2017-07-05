@@ -57,9 +57,9 @@ public class AllThreadIds {
         }
     }
 
-    final static int DAEMON_THREADS = 20;
-    final static int USER_THREADS = 5;
-    final static int ALL_THREADS = DAEMON_THREADS + USER_THREADS;
+    static final int DAEMON_THREADS = 20;
+    static final int USER_THREADS = 5;
+    static final int ALL_THREADS = DAEMON_THREADS + USER_THREADS;
     private static final boolean live[] = new boolean[ALL_THREADS];
     private static final Thread allThreads[] = new Thread[ALL_THREADS];
     private static final ThreadMXBean mbean = ManagementFactory.getThreadMXBean();

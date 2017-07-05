@@ -46,7 +46,7 @@ import com.apple.laf.AquaIcon.JRSUIControlSpec;
 import com.apple.laf.AquaIcon.SystemIcon;
 import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
-import sun.awt.image.MultiResolutionImage;
+import java.awt.image.MultiResolutionImage;
 import sun.awt.image.MultiResolutionCachedImage;
 
 public class AquaImageFactory {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
 
 package java.util;
 
-import java.nio.file.Path;
-import java.nio.file.Files;
-import java.util.regex.*;
 import java.io.*;
 import java.math.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.charset.*;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import java.text.*;
-import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.regex.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import sun.misc.LRUCache;
 
@@ -96,22 +98,25 @@ import sun.misc.LRUCache;
  * }</pre></blockquote>
  *
  * <p>The <a name="default-delimiter">default whitespace delimiter</a> used
- * by a scanner is as recognized by {@link java.lang.Character}.{@link
- * java.lang.Character#isWhitespace(char) isWhitespace}. The {@link #reset}
+ * by a scanner is as recognized by {@link Character#isWhitespace(char)
+ * Character.isWhitespace()}. The {@link #reset reset()}
  * method will reset the value of the scanner's delimiter to the default
  * whitespace delimiter regardless of whether it was previously changed.
  *
  * <p>A scanning operation may block waiting for input.
  *
  * <p>The {@link #next} and {@link #hasNext} methods and their
- * primitive-type companion methods (such as {@link #nextInt} and
+ * companion methods (such as {@link #nextInt} and
  * {@link #hasNextInt}) first skip any input that matches the delimiter
- * pattern, and then attempt to return the next token. Both {@code hasNext}
- * and {@code next} methods may block waiting for further input.  Whether a
- * {@code hasNext} method blocks has no connection to whether or not its
- * associated {@code next} method will block.
+ * pattern, and then attempt to return the next token. Both {@code hasNext()}
+ * and {@code next()} methods may block waiting for further input.  Whether a
+ * {@code hasNext()} method blocks has no connection to whether or not its
+ * associated {@code next()} method will block. The {@link #tokens} method
+ * may also block waiting for input.
  *
- * <p> The {@link #findInLine}, {@link #findWithinHorizon}, and {@link #skip}
+ * <p>The {@link #findInLine findInLine()},
+ * {@link #findWithinHorizon findWithinHorizon()},
+ * {@link #skip skip()}, and {@link #findAll findAll()}
  * methods operate independently of the delimiter pattern. These methods will
  * attempt to match the specified pattern with no regard to delimiters in the
  * input and thus can be used in special circumstances where delimiters are
@@ -129,7 +134,7 @@ import sun.misc.LRUCache;
  *
  * <p> A scanner can read text from any object which implements the {@link
  * java.lang.Readable} interface.  If an invocation of the underlying
- * readable's {@link java.lang.Readable#read} method throws an {@link
+ * readable's {@link java.lang.Readable#read read()} method throws an {@link
  * java.io.IOException} then the scanner assumes that the end of the input
  * has been reached.  The most recent {@code IOException} thrown by the
  * underlying readable can be retrieved via the {@link #ioException} method.
@@ -156,7 +161,7 @@ import sun.misc.LRUCache;
  * <a name="initial-locale">initial locale </a>is the value returned by the {@link
  * java.util.Locale#getDefault(Locale.Category)
  * Locale.getDefault(Locale.Category.FORMAT)} method; it may be changed via the {@link
- * #useLocale} method. The {@link #reset} method will reset the value of the
+ * #useLocale useLocale()} method. The {@link #reset} method will reset the value of the
  * scanner's locale to the initial locale regardless of whether it was
  * previously changed.
  *
@@ -373,6 +378,11 @@ public final class Scanner implements Iterator<String>, Closeable {
 
     // A holder of the last IOException encountered
     private IOException lastException;
+
+    // Number of times this scanner's state has been modified.
+    // Generally incremented on most public APIs and checked
+    // within spliterator implementations.
+    int modCount;
 
     // A pattern for java whitespace
     private static Pattern WHITESPACE_PATTERN = Pattern.compile(
@@ -995,8 +1005,9 @@ public final class Scanner implements Iterator<String>, Closeable {
     }
 
     // Finds the specified pattern in the buffer up to horizon.
-    // Returns a match for the specified input pattern.
-    private String findPatternInBuffer(Pattern pattern, int horizon) {
+    // Returns true if the specified input pattern was matched,
+    // and leaves the matcher field with the current match state.
+    private boolean findPatternInBuffer(Pattern pattern, int horizon) {
         matchValid = false;
         matcher.usePattern(pattern);
         int bufferLimit = buf.limit();
@@ -1014,7 +1025,7 @@ public final class Scanner implements Iterator<String>, Closeable {
                 if (searchLimit != horizonLimit) {
                      // Hit an artificial end; try to extend the match
                     needInput = true;
-                    return null;
+                    return false;
                 }
                 // The match could go away depending on what is next
                 if ((searchLimit == horizonLimit) && matcher.requireEnd()) {
@@ -1022,27 +1033,28 @@ public final class Scanner implements Iterator<String>, Closeable {
                     // that it is at the horizon and the end of input is
                     // required for the match.
                     needInput = true;
-                    return null;
+                    return false;
                 }
             }
             // Did not hit end, or hit real end, or hit horizon
             position = matcher.end();
-            return matcher.group();
+            return true;
         }
 
         if (sourceClosed)
-            return null;
+            return false;
 
         // If there is no specified horizon, or if we have not searched
         // to the specified horizon yet, get more input
         if ((horizon == 0) || (searchLimit != horizonLimit))
             needInput = true;
-        return null;
+        return false;
     }
 
-    // Returns a match for the specified input pattern anchored at
-    // the current position
-    private String matchPatternInBuffer(Pattern pattern) {
+    // Attempts to match a pattern anchored at the current position.
+    // Returns true if the specified input pattern was matched,
+    // and leaves the matcher field with the current match state.
+    private boolean matchPatternInBuffer(Pattern pattern) {
         matchValid = false;
         matcher.usePattern(pattern);
         matcher.region(position, buf.limit());
@@ -1050,18 +1062,18 @@ public final class Scanner implements Iterator<String>, Closeable {
             if (matcher.hitEnd() && (!sourceClosed)) {
                 // Get more input and try again
                 needInput = true;
-                return null;
+                return false;
             }
             position = matcher.end();
-            return matcher.group();
+            return true;
         }
 
         if (sourceClosed)
-            return null;
+            return false;
 
         // Read more to find pattern
         needInput = true;
-        return null;
+        return false;
     }
 
     // Throws if the scanner is closed
@@ -1128,6 +1140,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @return this scanner
      */
     public Scanner useDelimiter(Pattern pattern) {
+        modCount++;
         delimPattern = pattern;
         return this;
     }
@@ -1147,6 +1160,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @return this scanner
      */
     public Scanner useDelimiter(String pattern) {
+        modCount++;
         delimPattern = patternCache.forName(pattern);
         return this;
     }
@@ -1181,6 +1195,7 @@ public final class Scanner implements Iterator<String>, Closeable {
         if (locale.equals(this.locale))
             return this;
 
+        modCount++;
         this.locale = locale;
         DecimalFormat df =
             (DecimalFormat)NumberFormat.getNumberInstance(locale);
@@ -1236,8 +1251,8 @@ public final class Scanner implements Iterator<String>, Closeable {
      * number matching regular expressions; see
      * <a href= "#localized-numbers">localized numbers</a> above.
      *
-     * <p>If the radix is less than {@code Character.MIN_RADIX}
-     * or greater than {@code Character.MAX_RADIX}, then an
+     * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+     * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
      * {@code IllegalArgumentException} is thrown.
      *
      * <p>Invoking the {@link #reset} method will set the scanner's radix to
@@ -1253,6 +1268,7 @@ public final class Scanner implements Iterator<String>, Closeable {
 
         if (this.defaultRadix == radix)
             return this;
+        modCount++;
         this.defaultRadix = radix;
         // Force rebuilding and recompilation of radix dependent patterns
         integerPattern = null;
@@ -1275,15 +1291,15 @@ public final class Scanner implements Iterator<String>, Closeable {
      * if no match has been performed, or if the last match was
      * not successful.
      *
-     * <p>The various {@code next}methods of {@code Scanner}
+     * <p>The various {@code next} methods of {@code Scanner}
      * make a match result available if they complete without throwing an
      * exception. For instance, after an invocation of the {@link #nextInt}
      * method that returned an int, this method returns a
      * {@code MatchResult} for the search of the
      * <a href="#Integer-regex"><i>Integer</i></a> regular expression
-     * defined above. Similarly the {@link #findInLine},
-     * {@link #findWithinHorizon}, and {@link #skip} methods will make a
-     * match available if they succeed.
+     * defined above. Similarly the {@link #findInLine findInLine()},
+     * {@link #findWithinHorizon findWithinHorizon()}, and {@link #skip skip()}
+     * methods will make a match available if they succeed.
      *
      * @return a match result for the last match operation
      * @throws IllegalStateException  If no match result is available
@@ -1333,6 +1349,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     public boolean hasNext() {
         ensureOpen();
         saveState();
+        modCount++;
         while (!sourceClosed) {
             if (hasTokenInBuffer())
                 return revertState(true);
@@ -1357,6 +1374,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     public String next() {
         ensureOpen();
         clearCaches();
+        modCount++;
 
         while (true) {
             String token = getCompleteTokenInBuffer(null);
@@ -1435,6 +1453,7 @@ public final class Scanner implements Iterator<String>, Closeable {
             throw new NullPointerException();
         hasNextPattern = null;
         saveState();
+        modCount++;
 
         while (true) {
             if (getCompleteTokenInBuffer(pattern) != null) {
@@ -1466,6 +1485,7 @@ public final class Scanner implements Iterator<String>, Closeable {
         if (pattern == null)
             throw new NullPointerException();
 
+        modCount++;
         // Did we already find this pattern?
         if (hasNextPattern == pattern)
             return getCachedResult();
@@ -1497,6 +1517,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     public boolean hasNextLine() {
         saveState();
 
+        modCount++;
         String result = findWithinHorizon(linePattern(), 0);
         if (result != null) {
             MatchResult mr = this.match();
@@ -1531,6 +1552,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @throws IllegalStateException if this scanner is closed
      */
     public String nextLine() {
+        modCount++;
         if (hasNextPattern == linePattern())
             return getCachedResult();
         clearCaches();
@@ -1589,12 +1611,12 @@ public final class Scanner implements Iterator<String>, Closeable {
         if (pattern == null)
             throw new NullPointerException();
         clearCaches();
+        modCount++;
         // Expand buffer to include the next newline or end of input
         int endPosition = 0;
         saveState();
         while (true) {
-            String token = findPatternInBuffer(separatorPattern(), 0);
-            if (token != null) {
+            if (findPatternInBuffer(separatorPattern(), 0)) {
                 endPosition = matcher.start();
                 break; // up to next newline
             }
@@ -1623,7 +1645,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * <p>An invocation of this method of the form
      * {@code findWithinHorizon(pattern)} behaves in exactly the same way as
      * the invocation
-     * {@code findWithinHorizon(Pattern.compile(pattern, horizon))}.
+     * {@code findWithinHorizon(Pattern.compile(pattern), horizon)}.
      *
      * @param pattern a string specifying the pattern to search for
      * @param horizon the search horizon
@@ -1673,13 +1695,13 @@ public final class Scanner implements Iterator<String>, Closeable {
         if (horizon < 0)
             throw new IllegalArgumentException("horizon < 0");
         clearCaches();
+        modCount++;
 
         // Search for the pattern
         while (true) {
-            String token = findPatternInBuffer(pattern, horizon);
-            if (token != null) {
+            if (findPatternInBuffer(pattern, horizon)) {
                 matchValid = true;
-                return token;
+                return matcher.group();
             }
             if (needInput)
                 readInput();
@@ -1717,11 +1739,11 @@ public final class Scanner implements Iterator<String>, Closeable {
         if (pattern == null)
             throw new NullPointerException();
         clearCaches();
+        modCount++;
 
         // Search for the pattern
         while (true) {
-            String token = matchPatternInBuffer(pattern);
-            if (token != null) {
+            if (matchPatternInBuffer(pattern)) {
                 matchValid = true;
                 position = matcher.end();
                 return this;
@@ -1932,7 +1954,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *
      * <p> An invocation of this method of the form
      * {@code nextShort()} behaves in exactly the same way as the
-     * invocation {@code nextShort(radix)}, where {@code radix}
+     * invocation {@link #nextShort(int) nextShort(radix)}, where {@code radix}
      * is the default radix of this scanner.
      *
      * @return the {@code short} scanned from the input
@@ -2590,8 +2612,10 @@ public final class Scanner implements Iterator<String>, Closeable {
      * Resets this scanner.
      *
      * <p> Resetting a scanner discards all of its explicit state
-     * information which may have been changed by invocations of {@link
-     * #useDelimiter}, {@link #useLocale}, or {@link #useRadix}.
+     * information which may have been changed by invocations of
+     * {@link #useDelimiter useDelimiter()},
+     * {@link #useLocale useLocale()}, or
+     * {@link #useRadix useRadix()}.
      *
      * <p> An invocation of this method of the form
      * {@code scanner.reset()} behaves in exactly the same way as the
@@ -2612,6 +2636,206 @@ public final class Scanner implements Iterator<String>, Closeable {
         useLocale(Locale.getDefault(Locale.Category.FORMAT));
         useRadix(10);
         clearCaches();
+        modCount++;
         return this;
+    }
+
+    /**
+     * Returns a stream of delimiter-separated tokens from this scanner. The
+     * stream contains the same tokens that would be returned, starting from
+     * this scanner's current state, by calling the {@link #next} method
+     * repeatedly until the {@link #hasNext} method returns false.
+     *
+     * <p>The resulting stream is sequential and ordered. All stream elements are
+     * non-null.
+     *
+     * <p>Scanning starts upon initiation of the terminal stream operation, using the
+     * current state of this scanner. Subsequent calls to any methods on this scanner
+     * other than {@link #close} and {@link #ioException} may return undefined results
+     * or may cause undefined effects on the returned stream. The returned stream's source
+     * {@code Spliterator} is <em>fail-fast</em> and will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if any such calls are detected
+     * during stream pipeline execution.
+     *
+     * <p>After stream pipeline execution completes, this scanner is left in an indeterminate
+     * state and cannot be reused.
+     *
+     * <p>If this scanner contains a resource that must be released, this scanner
+     * should be closed, either by calling its {@link #close} method, or by
+     * closing the returned stream. Closing the stream will close the underlying scanner.
+     * {@code IllegalStateException} is thrown if the scanner has been closed when this
+     * method is called, or if this scanner is closed during stream pipeline execution.
+     *
+     * <p>This method might block waiting for more input.
+     *
+     * @apiNote
+     * For example, the following code will create a list of
+     * comma-delimited tokens from a string:
+     *
+     * <pre>{@code
+     * List<String> result = new Scanner("abc,def,,ghi")
+     *     .useDelimiter(",")
+     *     .tokens()
+     *     .collect(Collectors.toList());
+     * }</pre>
+     *
+     * <p>The resulting list would contain {@code "abc"}, {@code "def"},
+     * the empty string, and {@code "ghi"}.
+     *
+     * @return a sequential stream of token strings
+     * @throws IllegalStateException if this scanner is closed
+     * @since 1.9
+     */
+    public Stream<String> tokens() {
+        ensureOpen();
+        Stream<String> stream = StreamSupport.stream(new TokenSpliterator(), false);
+        return stream.onClose(this::close);
+    }
+
+    class TokenSpliterator extends Spliterators.AbstractSpliterator<String> {
+        int expectedCount = -1;
+
+        TokenSpliterator() {
+            super(Long.MAX_VALUE,
+                  Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super String> cons) {
+            if (expectedCount >= 0 && expectedCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+
+            if (hasNext()) {
+                String token = next();
+                expectedCount = modCount;
+                cons.accept(token);
+                if (expectedCount != modCount) {
+                    throw new ConcurrentModificationException();
+                }
+                return true;
+            } else {
+                expectedCount = modCount;
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Returns a stream of match results from this scanner. The stream
+     * contains the same results in the same order that would be returned by
+     * calling {@code findWithinHorizon(pattern, 0)} and then {@link #match}
+     * successively as long as {@link #findWithinHorizon findWithinHorizon()}
+     * finds matches.
+     *
+     * <p>The resulting stream is sequential and ordered. All stream elements are
+     * non-null.
+     *
+     * <p>Scanning starts upon initiation of the terminal stream operation, using the
+     * current state of this scanner. Subsequent calls to any methods on this scanner
+     * other than {@link #close} and {@link #ioException} may return undefined results
+     * or may cause undefined effects on the returned stream. The returned stream's source
+     * {@code Spliterator} is <em>fail-fast</em> and will, on a best-effort basis, throw a
+     * {@link java.util.ConcurrentModificationException} if any such calls are detected
+     * during stream pipeline execution.
+     *
+     * <p>After stream pipeline execution completes, this scanner is left in an indeterminate
+     * state and cannot be reused.
+     *
+     * <p>If this scanner contains a resource that must be released, this scanner
+     * should be closed, either by calling its {@link #close} method, or by
+     * closing the returned stream. Closing the stream will close the underlying scanner.
+     * {@code IllegalStateException} is thrown if the scanner has been closed when this
+     * method is called, or if this scanner is closed during stream pipeline execution.
+     *
+     * <p>As with the {@link #findWithinHorizon findWithinHorizon()} methods, this method
+     * might block waiting for additional input, and it might buffer an unbounded amount of
+     * input searching for a match.
+     *
+     * @apiNote
+     * For example, the following code will read a file and return a list
+     * of all sequences of characters consisting of seven or more Latin capital
+     * letters:
+     *
+     * <pre>{@code
+     * try (Scanner sc = new Scanner(Paths.get("input.txt"))) {
+     *     Pattern pat = Pattern.compile("[A-Z]{7,}");
+     *     List<String> capWords = sc.findAll(pat)
+     *                               .map(MatchResult::group)
+     *                               .collect(Collectors.toList());
+     * }
+     * }</pre>
+     *
+     * @param pattern the pattern to be matched
+     * @return a sequential stream of match results
+     * @throws NullPointerException if pattern is null
+     * @throws IllegalStateException if this scanner is closed
+     * @since 1.9
+     */
+    public Stream<MatchResult> findAll(Pattern pattern) {
+        Objects.requireNonNull(pattern);
+        ensureOpen();
+        Stream<MatchResult> stream = StreamSupport.stream(new FindSpliterator(pattern), false);
+        return stream.onClose(this::close);
+    }
+
+    /**
+     * Returns a stream of match results that match the provided pattern string.
+     * The effect is equivalent to the following code:
+     *
+     * <pre>{@code
+     *     scanner.findAll(Pattern.compile(patString))
+     * }</pre>
+     *
+     * @param patString the pattern string
+     * @return a sequential stream of match results
+     * @throws NullPointerException if patString is null
+     * @throws IllegalStateException if this scanner is closed
+     * @throws PatternSyntaxException if the regular expression's syntax is invalid
+     * @since 1.9
+     * @see java.util.regex.Pattern
+     */
+    public Stream<MatchResult> findAll(String patString) {
+        Objects.requireNonNull(patString);
+        ensureOpen();
+        return findAll(patternCache.forName(patString));
+    }
+
+    class FindSpliterator extends Spliterators.AbstractSpliterator<MatchResult> {
+        final Pattern pattern;
+        int expectedCount = -1;
+
+        FindSpliterator(Pattern pattern) {
+            super(Long.MAX_VALUE,
+                  Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED);
+            this.pattern = pattern;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super MatchResult> cons) {
+            ensureOpen();
+            if (expectedCount >= 0) {
+                if (expectedCount != modCount) {
+                    throw new ConcurrentModificationException();
+                }
+            } else {
+                expectedCount = modCount;
+            }
+
+            while (true) {
+                // assert expectedCount == modCount
+                if (findPatternInBuffer(pattern, 0)) { // doesn't increment modCount
+                    cons.accept(matcher.toMatchResult());
+                    if (expectedCount != modCount) {
+                        throw new ConcurrentModificationException();
+                    }
+                    return true;
+                }
+                if (needInput)
+                    readInput(); // doesn't increment modCount
+                else
+                    return false; // reached end of input
+            }
+        }
     }
 }

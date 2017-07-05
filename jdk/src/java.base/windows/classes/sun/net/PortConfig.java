@@ -36,7 +36,7 @@ import java.security.AccessController;
 public final class PortConfig {
 
     private static int defaultUpper, defaultLower;
-    private final static int upper, lower;
+    private static final int upper, lower;
 
     static {
         AccessController.doPrivileged(

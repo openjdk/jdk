@@ -43,8 +43,8 @@ import java.util.Locale;
  * </pre>
  */
 public final class Client extends NTLM {
-    final private String hostname;
-    final private String username;
+    private final String hostname;
+    private final String username;
 
     private String domain;
     private byte[] pw1, pw2;

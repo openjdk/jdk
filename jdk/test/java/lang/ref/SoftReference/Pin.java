@@ -34,8 +34,8 @@ import java.lang.ref.SoftReference;
 
 public class Pin {
 
-    final static int NUM_BLOCKS = 128;
-    final static int BLOCK_SIZE = 32768;
+    static final int NUM_BLOCKS = 128;
+    static final int BLOCK_SIZE = 32768;
 
     public static void main(String[] args) throws Exception {
 

@@ -521,35 +521,39 @@ public class ScriptFunction extends ScriptObject {
 
         assert !isBoundFunction(); // allocate never invoked on bound functions
 
-        final ScriptObject object = data.allocate(getAllocatorMap());
+        final ScriptObject prototype = getAllocatorPrototype();
+        final ScriptObject object = data.allocate(getAllocatorMap(prototype));
 
         if (object != null) {
-            final Object prototype = getPrototype();
-            if (prototype instanceof ScriptObject) {
-                object.setInitialProto((ScriptObject) prototype);
-            }
-
-            if (object.getProto() == null) {
-                object.setInitialProto(getObjectPrototype());
-            }
+            object.setInitialProto(prototype);
         }
 
         return object;
     }
 
-    private PropertyMap getAllocatorMap() {
-        if (allocatorMap == null) {
-            allocatorMap = data.getAllocatorMap();
+    /**
+     * Get the property map used by "allocate"
+     * @param prototype actual prototype object
+     * @return property map
+     */
+    private synchronized PropertyMap getAllocatorMap(final ScriptObject prototype) {
+        if (allocatorMap == null || allocatorMap.isInvalidSharedMapFor(prototype)) {
+            // The prototype map has changed since this function was last used as constructor.
+            // Get a new allocator map.
+            allocatorMap = data.getAllocatorMap(prototype);
         }
         return allocatorMap;
     }
 
     /**
-     * Return Object.prototype - used by "allocate"
-     *
-     * @return Object.prototype
+     * Return the actual prototype used by "allocate"
+     * @return allocator prototype
      */
-    protected final ScriptObject getObjectPrototype() {
+    private ScriptObject getAllocatorPrototype() {
+        final Object prototype = getPrototype();
+        if (prototype instanceof ScriptObject) {
+            return (ScriptObject) prototype;
+        }
         return Global.objectPrototype();
     }
 
@@ -591,10 +595,10 @@ public class ScriptFunction extends ScriptObject {
      *
      * @param newPrototype new prototype object
      */
-    public final void setPrototype(Object newPrototype) {
+    public synchronized final void setPrototype(final Object newPrototype) {
         if (newPrototype instanceof ScriptObject && newPrototype != this.prototype && allocatorMap != null) {
-            // Replace our current allocator map with one that is associated with the new prototype.
-            allocatorMap = allocatorMap.changeProto((ScriptObject) newPrototype);
+            // Unset allocator map to be replaced with one matching the new prototype.
+            allocatorMap = null;
         }
         this.prototype = newPrototype;
     }

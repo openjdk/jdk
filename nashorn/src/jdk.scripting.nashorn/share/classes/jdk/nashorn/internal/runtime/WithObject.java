@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -45,7 +46,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
  *
  */
 public final class WithObject extends Scope {
-    private static final MethodHandle WITHEXPRESSIONGUARD    = findOwnMH("withExpressionGuard",  boolean.class, Object.class, PropertyMap.class, SwitchPoint.class);
+    private static final MethodHandle WITHEXPRESSIONGUARD    = findOwnMH("withExpressionGuard",  boolean.class, Object.class, PropertyMap.class, SwitchPoint[].class);
     private static final MethodHandle WITHEXPRESSIONFILTER   = findOwnMH("withFilterExpression", Object.class, Object.class);
     private static final MethodHandle WITHSCOPEFILTER        = findOwnMH("withFilterScope",      Object.class, Object.class);
     private static final MethodHandle BIND_TO_EXPRESSION_OBJ = findOwnMH("bindToExpression",     Object.class, Object.class, Object.class);
@@ -209,16 +210,18 @@ public final class WithObject extends Scope {
     }
 
     @Override
-    protected Object invokeNoSuchProperty(final String name, final int programPoint) {
+    protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
         FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
         if (find != null) {
             final Object func = find.getObjectValue();
             if (func instanceof ScriptFunction) {
-                return ScriptRuntime.apply((ScriptFunction)func, expression, name);
+                final ScriptFunction sfunc = (ScriptFunction)func;
+                final Object self = isScope && sfunc.isStrict()? UNDEFINED : expression;
+                return ScriptRuntime.apply(sfunc, self, name);
             }
         }
 
-        return getProto().invokeNoSuchProperty(name, programPoint);
+        return getProto().invokeNoSuchProperty(name, isScope, programPoint);
     }
 
     @Override
@@ -357,13 +360,24 @@ public final class WithObject extends Scope {
 
     private MethodHandle expressionGuard(final String name, final ScriptObject owner) {
         final PropertyMap map = expression.getMap();
-        final SwitchPoint sp = expression.getProtoSwitchPoint(name, owner);
+        final SwitchPoint[] sp = expression.getProtoSwitchPoints(name, owner);
         return MH.insertArguments(WITHEXPRESSIONGUARD, 1, map, sp);
     }
 
     @SuppressWarnings("unused")
-    private static boolean withExpressionGuard(final Object receiver, final PropertyMap map, final SwitchPoint sp) {
-        return ((WithObject)receiver).expression.getMap() == map && (sp == null || !sp.hasBeenInvalidated());
+    private static boolean withExpressionGuard(final Object receiver, final PropertyMap map, final SwitchPoint[] sp) {
+        return ((WithObject)receiver).expression.getMap() == map && !hasBeenInvalidated(sp);
+    }
+
+    private static boolean hasBeenInvalidated(final SwitchPoint[] switchPoints) {
+        if (switchPoints != null) {
+            for (final SwitchPoint switchPoint : switchPoints) {
+                if (switchPoint.hasBeenInvalidated()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

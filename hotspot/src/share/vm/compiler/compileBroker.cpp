@@ -157,7 +157,6 @@ long CompileBroker::_peak_compilation_time       = 0;
 CompileQueue* CompileBroker::_c2_compile_queue   = NULL;
 CompileQueue* CompileBroker::_c1_compile_queue   = NULL;
 
-
 class CompilationLog : public StringEventLog {
  public:
   CompilationLog() : StringEventLog("Compilation events") {
@@ -167,7 +166,7 @@ class CompilationLog : public StringEventLog {
     StringLogMessage lm;
     stringStream sstr = lm.stream();
     // msg.time_stamp().update_to(tty->time_stamp().ticks());
-    task->print_compilation(&sstr, NULL, true, false);
+    task->print(&sstr, NULL, true, false);
     log(thread, "%s", (const char*)lm);
   }
 
@@ -232,371 +231,6 @@ CompileTaskWrapper::~CompileTaskWrapper() {
     CompileTask::free(task);
   }
 }
-
-
-CompileTask*  CompileTask::_task_free_list = NULL;
-#ifdef ASSERT
-int CompileTask::_num_allocated_tasks = 0;
-#endif
-/**
- * Allocate a CompileTask, from the free list if possible.
- */
-CompileTask* CompileTask::allocate() {
-  MutexLocker locker(CompileTaskAlloc_lock);
-  CompileTask* task = NULL;
-
-  if (_task_free_list != NULL) {
-    task = _task_free_list;
-    _task_free_list = task->next();
-    task->set_next(NULL);
-  } else {
-    task = new CompileTask();
-    DEBUG_ONLY(_num_allocated_tasks++;)
-    assert (WhiteBoxAPI || _num_allocated_tasks < 10000, "Leaking compilation tasks?");
-    task->set_next(NULL);
-    task->set_is_free(true);
-  }
-  assert(task->is_free(), "Task must be free.");
-  task->set_is_free(false);
-  return task;
-}
-
-
-/**
- * Add a task to the free list.
- */
-void CompileTask::free(CompileTask* task) {
-  MutexLocker locker(CompileTaskAlloc_lock);
-  if (!task->is_free()) {
-    task->set_code(NULL);
-    assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    JNIHandles::destroy_global(task->_method_holder);
-    JNIHandles::destroy_global(task->_hot_method_holder);
-
-    task->set_is_free(true);
-    task->set_next(_task_free_list);
-    _task_free_list = task;
-  }
-}
-
-void CompileTask::initialize(int compile_id,
-                             methodHandle method,
-                             int osr_bci,
-                             int comp_level,
-                             methodHandle hot_method,
-                             int hot_count,
-                             const char* comment,
-                             bool is_blocking) {
-  assert(!_lock->is_locked(), "bad locking");
-
-  _compile_id = compile_id;
-  _method = method();
-  _method_holder = JNIHandles::make_global(method->method_holder()->klass_holder());
-  _osr_bci = osr_bci;
-  _is_blocking = is_blocking;
-  _comp_level = comp_level;
-  _num_inlined_bytecodes = 0;
-
-  _is_complete = false;
-  _is_success = false;
-  _code_handle = NULL;
-
-  _hot_method = NULL;
-  _hot_method_holder = NULL;
-  _hot_count = hot_count;
-  _time_queued = 0;  // tidy
-  _comment = comment;
-  _failure_reason = NULL;
-
-  if (LogCompilation) {
-    _time_queued = os::elapsed_counter();
-    if (hot_method.not_null()) {
-      if (hot_method == method) {
-        _hot_method = _method;
-      } else {
-        _hot_method = hot_method();
-        // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_global(hot_method->method_holder()->klass_holder());
-      }
-    }
-  }
-
-  _next = NULL;
-}
-
-// ------------------------------------------------------------------
-// CompileTask::code/set_code
-nmethod* CompileTask::code() const {
-  if (_code_handle == NULL)  return NULL;
-  return _code_handle->code();
-}
-void CompileTask::set_code(nmethod* nm) {
-  if (_code_handle == NULL && nm == NULL)  return;
-  guarantee(_code_handle != NULL, "");
-  _code_handle->set_code(nm);
-  if (nm == NULL)  _code_handle = NULL;  // drop the handle also
-}
-
-void CompileTask::mark_on_stack() {
-  // Mark these methods as something redefine classes cannot remove.
-  _method->set_on_stack(true);
-  if (_hot_method != NULL) {
-    _hot_method->set_on_stack(true);
-  }
-}
-
-// RedefineClasses support
-void CompileTask::metadata_do(void f(Metadata*)) {
-  f(method());
-  if (hot_method() != NULL && hot_method() != method()) {
-    f(hot_method());
-  }
-}
-
-// ------------------------------------------------------------------
-// CompileTask::print_line_on_error
-//
-// This function is called by fatal error handler when the thread
-// causing troubles is a compiler thread.
-//
-// Do not grab any lock, do not allocate memory.
-//
-// Otherwise it's the same as CompileTask::print_line()
-//
-void CompileTask::print_line_on_error(outputStream* st, char* buf, int buflen) {
-  // print compiler name
-  st->print("%s:", CompileBroker::compiler_name(comp_level()));
-  print_compilation(st);
-}
-
-// ------------------------------------------------------------------
-// CompileTask::print_line
-void CompileTask::print_tty() {
-  ttyLocker ttyl;  // keep the following output all in one block
-  // print compiler name if requested
-  if (CIPrintCompilerName) tty->print("%s:", CompileBroker::compiler_name(comp_level()));
-    print_compilation(tty);
-}
-
-// ------------------------------------------------------------------
-// CompileTask::print_compilation_impl
-void CompileTask::print_compilation_impl(outputStream* st, Method* method, int compile_id, int comp_level,
-                                         bool is_osr_method, int osr_bci, bool is_blocking,
-                                         const char* msg, bool short_form, bool cr) {
-  if (!short_form) {
-    st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
-  }
-  st->print("%4d ", compile_id);    // print compilation number
-
-  // For unloaded methods the transition to zombie occurs after the
-  // method is cleared so it's impossible to report accurate
-  // information for that case.
-  bool is_synchronized = false;
-  bool has_exception_handler = false;
-  bool is_native = false;
-  if (method != NULL) {
-    is_synchronized       = method->is_synchronized();
-    has_exception_handler = method->has_exception_handler();
-    is_native             = method->is_native();
-  }
-  // method attributes
-  const char compile_type   = is_osr_method                   ? '%' : ' ';
-  const char sync_char      = is_synchronized                 ? 's' : ' ';
-  const char exception_char = has_exception_handler           ? '!' : ' ';
-  const char blocking_char  = is_blocking                     ? 'b' : ' ';
-  const char native_char    = is_native                       ? 'n' : ' ';
-
-  // print method attributes
-  st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
-
-  if (TieredCompilation) {
-    if (comp_level != -1)  st->print("%d ", comp_level);
-    else                   st->print("- ");
-  }
-  st->print("     ");  // more indent
-
-  if (method == NULL) {
-    st->print("(method)");
-  } else {
-    method->print_short_name(st);
-    if (is_osr_method) {
-      st->print(" @ %d", osr_bci);
-    }
-    if (method->is_native())
-      st->print(" (native)");
-    else
-      st->print(" (%d bytes)", method->code_size());
-  }
-
-  if (msg != NULL) {
-    st->print("   %s", msg);
-  }
-  if (cr) {
-    st->cr();
-  }
-}
-
-// ------------------------------------------------------------------
-// CompileTask::print_inlining
-void CompileTask::print_inlining(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg) {
-  //         1234567
-  st->print("        ");     // print timestamp
-  //         1234
-  st->print("     ");        // print compilation number
-
-  // method attributes
-  if (method->is_loaded()) {
-    const char sync_char      = method->is_synchronized()        ? 's' : ' ';
-    const char exception_char = method->has_exception_handlers() ? '!' : ' ';
-    const char monitors_char  = method->has_monitor_bytecodes()  ? 'm' : ' ';
-
-    // print method attributes
-    st->print(" %c%c%c  ", sync_char, exception_char, monitors_char);
-  } else {
-    //         %s!bn
-    st->print("      ");     // print method attributes
-  }
-
-  if (TieredCompilation) {
-    st->print("  ");
-  }
-  st->print("     ");        // more indent
-  st->print("    ");         // initial inlining indent
-
-  for (int i = 0; i < inline_level; i++)  st->print("  ");
-
-  st->print("@ %d  ", bci);  // print bci
-  method->print_short_name(st);
-  if (method->is_loaded())
-    st->print(" (%d bytes)", method->code_size());
-  else
-    st->print(" (not loaded)");
-
-  if (msg != NULL) {
-    st->print("   %s", msg);
-  }
-  st->cr();
-}
-
-// ------------------------------------------------------------------
-// CompileTask::print_inline_indent
-void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
-  //         1234567
-  st->print("        ");     // print timestamp
-  //         1234
-  st->print("     ");        // print compilation number
-  //         %s!bn
-  st->print("      ");       // print method attributes
-  if (TieredCompilation) {
-    st->print("  ");
-  }
-  st->print("     ");        // more indent
-  st->print("    ");         // initial inlining indent
-  for (int i = 0; i < inline_level; i++)  st->print("  ");
-}
-
-// ------------------------------------------------------------------
-// CompileTask::print_compilation
-void CompileTask::print_compilation(outputStream* st, const char* msg, bool short_form, bool cr) {
-  bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_compilation_impl(st, method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr);
-}
-
-// ------------------------------------------------------------------
-// CompileTask::log_task
-void CompileTask::log_task(xmlStream* log) {
-  Thread* thread = Thread::current();
-  methodHandle method(thread, this->method());
-  ResourceMark rm(thread);
-
-  // <task compiler='Cx' id='9' method='M' osr_bci='X' level='1' blocking='1' stamp='1.234'>
-  log->print(" compiler='%s' compile_id='%d'", _comp_level <= CompLevel_full_profile ? "C1" : "C2", _compile_id);
-  if (_osr_bci != CompileBroker::standard_entry_bci) {
-    log->print(" compile_kind='osr'");  // same as nmethod::compile_kind
-  } // else compile_kind='c2c'
-  if (!method.is_null())  log->method(method);
-  if (_osr_bci != CompileBroker::standard_entry_bci) {
-    log->print(" osr_bci='%d'", _osr_bci);
-  }
-  if (_comp_level != CompLevel_highest_tier) {
-    log->print(" level='%d'", _comp_level);
-  }
-  if (_is_blocking) {
-    log->print(" blocking='1'");
-  }
-  log->stamp();
-}
-
-
-// ------------------------------------------------------------------
-// CompileTask::log_task_queued
-void CompileTask::log_task_queued() {
-  Thread* thread = Thread::current();
-  ttyLocker ttyl;
-  ResourceMark rm(thread);
-
-  xtty->begin_elem("task_queued");
-  log_task(xtty);
-  if (_comment != NULL) {
-    xtty->print(" comment='%s'", _comment);
-  }
-  if (_hot_method != NULL) {
-    methodHandle hot(thread, _hot_method);
-    methodHandle method(thread, _method);
-    if (hot() != method()) {
-      xtty->method(hot);
-    }
-  }
-  if (_hot_count != 0) {
-    xtty->print(" hot_count='%d'", _hot_count);
-  }
-  xtty->end_elem();
-}
-
-
-// ------------------------------------------------------------------
-// CompileTask::log_task_start
-void CompileTask::log_task_start(CompileLog* log)   {
-  log->begin_head("task");
-  log_task(log);
-  log->end_head();
-}
-
-
-// ------------------------------------------------------------------
-// CompileTask::log_task_done
-void CompileTask::log_task_done(CompileLog* log) {
-  Thread* thread = Thread::current();
-  methodHandle method(thread, this->method());
-  ResourceMark rm(thread);
-
-  if (!_is_success) {
-    const char* reason = _failure_reason != NULL ? _failure_reason : "unknown";
-    log->elem("failure reason='%s'", reason);
-  }
-
-  // <task_done ... stamp='1.234'>  </task>
-  nmethod* nm = code();
-  log->begin_elem("task_done success='%d' nmsize='%d' count='%d'",
-                  _is_success, nm == NULL ? 0 : nm->content_size(),
-                  method->invocation_count());
-  int bec = method->backedge_count();
-  if (bec != 0)  log->print(" backedge_count='%d'", bec);
-  // Note:  "_is_complete" is about to be set, but is not.
-  if (_num_inlined_bytecodes != 0) {
-    log->print(" inlined_bytes='%d'", _num_inlined_bytecodes);
-  }
-  log->stamp();
-  log->end_elem();
-  log->tail("task");
-  log->clear_identities();   // next task will have different CI
-  if (log->unflushed_count() > 2000) {
-    log->flush();
-  }
-  log->mark_file_end();
-}
-
-
 
 /**
  * Add a CompileTask to a CompileQueue.
@@ -807,7 +441,7 @@ void CompileQueue::print(outputStream* st) {
     st->print_cr("Empty");
   } else {
     while (task != NULL) {
-      task->print_compilation(st, NULL, true, true);
+      task->print(st, NULL, true, true);
       task = task->next();
     }
   }
@@ -1349,7 +983,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
 #ifndef TIERED
     // seems like an assert of dubious value
     assert(comp_level == CompLevel_highest_tier,
-           "all OSR compiles are assumed to be at a single compilation lavel");
+           "all OSR compiles are assumed to be at a single compilation level");
 #endif // TIERED
     // We accept a higher level osr method
     nmethod* nm = method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
@@ -2037,7 +1671,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         FormatBufferResource msg = retry_message != NULL ?
             err_msg_res("COMPILE SKIPPED: %s (%s)", ci_env.failure_reason(), retry_message) :
             err_msg_res("COMPILE SKIPPED: %s",      ci_env.failure_reason());
-        task->print_compilation(tty, msg);
+        task->print(tty, msg);
       }
     } else {
       task->mark_success();
