@@ -372,7 +372,7 @@ compare_general_files() {
                 $CAT $OTHER_DIR/$f | eval "$HTML_FILTER" > $OTHER_FILE &
                 $CAT $THIS_DIR/$f  | eval "$HTML_FILTER" > $THIS_FILE &
                 wait
-            elif [ "$f" = "./lib/classlist" ]; then
+            elif [[ "$f" = *"/lib/classlist" ]]; then
                 # The classlist files may have some lines in random order
                 OTHER_FILE=$WORK_DIR/$f.other
                 THIS_FILE=$WORK_DIR/$f.this
@@ -642,69 +642,18 @@ compare_bin_file() {
 
     if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
         unset _NT_SYMBOL_PATH
-        # On windows we need to unzip the debug symbols, if present
-        OTHER_FILE_BASE=${OTHER_FILE/.dll/}
-        OTHER_FILE_BASE=${OTHER_FILE_BASE/.exe/}
-        OTHER_FILE_BASE=${OTHER_FILE_BASE/.cpl/}
-        DIZ_NAME=$(basename $OTHER_FILE_BASE).diz
-        # Some .exe files have the same name as a .dll file. Make sure the exe
-        # files get the right debug symbols.
-        if [ "$NAME" = "java.exe" ] \
-               && [ -f "$OTHER/support/native/java.base/java_objs/java.diz" ]; then
-            OTHER_DIZ_FILE="$OTHER/support/native/java.base/java_objs/java.diz"
-        elif [ "$NAME" = "jimage.exe" ] \
-               && [ -f "$OTHER/support/native/jdk.jlink/jimage_objs/jimage.diz" ]; then
-            OTHER_DIZ_FILE="$OTHER/support/modules_cmds/jdk.jlink/jimage.diz"
-        elif [ "$NAME" = "javacpl.exe" ] \
-               && [ -f "$OTHER/support/native/jdk.plugin/javacpl/javacpl.diz" ]; then
-            OTHER_DIZ_FILE="$OTHER/support/modules_cmds/jdk.deploy.controlpanel/javacpl.diz"
-        elif [ -f "${OTHER_FILE_BASE}.diz" ]; then
-            OTHER_DIZ_FILE=${OTHER_FILE_BASE}.diz
-        else
-            # Some files, jli.dll, appears twice in the image but only one of
-            # them has a diz file next to it.
-            OTHER_DIZ_FILE="$($FIND $OTHER_DIR -name $DIZ_NAME | $SED 1q)"
-            if [ ! -f "$OTHER_DIZ_FILE" ]; then
-                # As a last resort, look for diz file in the whole build output
-                # dir.
-                OTHER_DIZ_FILE="$($FIND $OTHER -name $DIZ_NAME | $SED 1q)"
-            fi
+        if [ "$(uname -o)" = "Cygwin" ]; then
+            THIS=$(cygpath -msa $THIS)
+            OTHER=$(cygpath -msa $OTHER)
         fi
-        if [ -n "$OTHER_DIZ_FILE" ]; then
-            $MKDIR -p $FILE_WORK_DIR/other
-            (cd $FILE_WORK_DIR/other ; $UNARCHIVE -o $OTHER_DIZ_FILE)
-            export _NT_SYMBOL_PATH="$FILE_WORK_DIR/other"
-        fi
-
-        THIS_FILE_BASE=${THIS_FILE/.dll/}
-        THIS_FILE_BASE=${THIS_FILE_BASE/.exe/}
-        THIS_FILE_BASE=${THIS_FILE_BASE/.cpl/}
-        # Some .exe files have the same name as a .dll file. Make sure the exe
-        # files get the right debug symbols.
-        if [ "$NAME" = "java.exe" ] \
-               && [ -f "$THIS/support/native/java.base/java_objs/java.diz" ]; then
-            THIS_DIZ_FILE="$THIS/support/native/java.base/java_objs/java.diz"
-        elif [ "$NAME" = "jimage.exe" ] \
-               && [ -f "$THIS/support/native/jdk.jlink/jimage_objs/jimage.diz" ]; then
-            THIS_DIZ_FILE="$THIS/support/modules_cmds/jdk.jlink/jimage.diz"
-        elif [ "$NAME" = "javacpl.exe" ] \
-               && [ -f "$THIS/support/native/jdk.plugin/javacpl/javacpl.diz" ]; then
-            THIS_DIZ_FILE="$THIS/support/modules_cmds/jdk.deploy.controlpanel/javacpl.diz"
-        elif [ -f "${THIS_FILE_BASE}.diz" ]; then
-            THIS_DIZ_FILE=${THIS_FILE/.dll/}.diz
-        else
-            THIS_DIZ_FILE="$($FIND $THIS_DIR -name $DIZ_NAME | $SED 1q)"
-            if [ ! -f "$THIS_DIZ_FILE" ]; then
-                # As a last resort, look for diz file in the whole build output
-                # dir.
-                THIS_DIZ_FILE="$($FIND $THIS -name $DIZ_NAME | $SED 1q)"
-            fi
-        fi
-        if [ -n "$THIS_DIZ_FILE" ]; then
-            $MKDIR -p $FILE_WORK_DIR/this
-            (cd $FILE_WORK_DIR/this ; $UNARCHIVE -o $THIS_DIZ_FILE)
-            export _NT_SYMBOL_PATH="$_NT_SYMBOL_PATH;$FILE_WORK_DIR/this"
-        fi
+        # Build an _NT_SYMBOL_PATH that contains all known locations for
+        # pdb files.
+        PDB_DIRS="$(ls -d \
+            {$OTHER,$THIS}/support/modules_{cmds,libs}/{*,*/*} \
+            {$OTHER,$THIS}/support/demos/image/jvmti/*/lib \
+            {$OTHER,$THIS}/support/native/java.base/java_objs \
+            )"
+        export _NT_SYMBOL_PATH="$(echo $PDB_DIRS | tr ' ' ';')"
     fi
 
     if [ -z "$SKIP_BIN_DIFF" ]; then
