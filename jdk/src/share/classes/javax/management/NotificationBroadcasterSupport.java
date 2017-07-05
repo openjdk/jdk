@@ -249,6 +249,26 @@ public class NotificationBroadcasterSupport
             }
         }
     }
+    /**
+     * Returns true if there are any listeners.
+     *
+     * @return true if there is at least one listener that has been added with
+     * {@code addNotificationListener} and not subsequently removed with
+     * {@code removeNotificationListener} or {@code removeAllNotificationListeners}.
+     * @since 1.7
+     */
+    public boolean isListenedTo() {
+        return listenerList.size() > 0;
+    }
+
+    /**
+     * Removes all listeners.
+     *
+     * @since 1.7
+     */
+    public void removeAllNotificationListeners() {
+        listenerList.clear();
+    }
 
     /**
      * <p>This method is called by {@link #sendNotification

@@ -201,7 +201,7 @@ public class MonitorNotification extends javax.management.Notification {
      * @param derGauge The derived gauge.
      * @param trigger The threshold/string (depending on the monitor type) that triggered the notification.
      */
-    MonitorNotification(String type, Object source, long sequenceNumber, long timeStamp, String msg,
+    public MonitorNotification(String type, Object source, long sequenceNumber, long timeStamp, String msg,
                                ObjectName obsObj, String obsAtt, Object derGauge, Object trigger) {
 
         super(type, source, sequenceNumber, timeStamp, msg);

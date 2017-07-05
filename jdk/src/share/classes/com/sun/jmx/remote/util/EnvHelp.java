@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -796,6 +797,24 @@ public class EnvHelp {
     public static boolean delegateToEventService(Map<String, ?> env) {
         return computeBooleanFromString(env,
                 JMXConnectorServer.DELEGATE_TO_EVENT_SERVICE, true, true);
+    }
+
+    /**
+     * <p>Name of the attribute that specifies whether a connector server
+     * should not prevent the VM from exiting
+     */
+    public static final String JMX_SERVER_DAEMON = "jmx.remote.x.daemon";
+
+    /**
+     * Returns true if {@value SERVER_DAEMON} is specified in the {@code env}
+     * as a key and its value is a String and it is equal to true ignoring case.
+     *
+     * @param env
+     * @return
+     */
+    public static boolean isServerDaemon(Map<String, ?> env) {
+        return (env != null) &&
+                ("true".equalsIgnoreCase((String)env.get(JMX_SERVER_DAEMON)));
     }
 
 //    /**

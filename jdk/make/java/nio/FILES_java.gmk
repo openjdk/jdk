@@ -113,8 +113,7 @@ FILES_src = \
 	sun/nio/cs/FastCharsetProvider.java \
 	sun/nio/cs/HistoricallyNamedCharset.java \
 	sun/nio/cs/ISO_8859_1.java \
-	sun/nio/cs/ISO_8859_15.java \
-	sun/nio/cs/MS1252.java \
+	sun/nio/cs/SingleByte.java \
 	sun/nio/cs/SingleByteDecoder.java \
 	sun/nio/cs/SingleByteEncoder.java \
 	sun/nio/cs/StreamEncoder.java \
@@ -268,6 +267,34 @@ FILES_gen_ex = \
 	java/nio/charset/IllegalCharsetNameException.java \
 	java/nio/charset/UnsupportedCharsetException.java
 
+FILES_gen_sbcs = \
+	sun/nio/cs/ISO_8859_2.java \
+	sun/nio/cs/ISO_8859_4.java \
+	sun/nio/cs/ISO_8859_5.java \
+	sun/nio/cs/ISO_8859_7.java \
+	sun/nio/cs/ISO_8859_9.java \
+	sun/nio/cs/ISO_8859_13.java \
+	sun/nio/cs/ISO_8859_15.java \
+	sun/nio/cs/IBM437.java \
+	sun/nio/cs/IBM737.java \
+	sun/nio/cs/IBM775.java \
+	sun/nio/cs/IBM850.java \
+	sun/nio/cs/IBM852.java \
+	sun/nio/cs/IBM855.java \
+	sun/nio/cs/IBM857.java \
+	sun/nio/cs/IBM858.java \
+	sun/nio/cs/IBM862.java \
+	sun/nio/cs/IBM866.java \
+	sun/nio/cs/IBM874.java \
+	sun/nio/cs/KOI8_R.java \
+	sun/nio/cs/KOI8_U.java \
+	sun/nio/cs/MS1250.java \
+	sun/nio/cs/MS1251.java \
+	sun/nio/cs/MS1252.java \
+	sun/nio/cs/MS1253.java \
+	sun/nio/cs/MS1254.java \
+	sun/nio/cs/MS1257.java
+
 FILES_gen_csp = sun/nio/cs/StandardCharsets.java
 
 FILES_gen_sor = sun/nio/ch/SocketOptionRegistry.java
@@ -275,4 +302,4 @@ FILES_gen_sor = sun/nio/ch/SocketOptionRegistry.java
 FILES_gen = $(FILES_gen_coder) $(FILES_gen_buffer) $(FILES_gen_ex) \
     $(FILES_gen_csp) $(FILES_gen_sor)
 
-FILES_java = $(FILES_src) $(FILES_gen)
+FILES_java = $(FILES_src) $(FILES_gen) $(FILES_gen_sbcs)

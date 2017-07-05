@@ -54,9 +54,11 @@ VPATH    += $(Src_Dirs_V:%=%:)
 Src_Dirs_I = ${Src_Dirs} $(GENERATED)
 INCLUDES += $(Src_Dirs_I:%=-I%)
 
-# Force assertions on.
-SYSDEFS += -DASSERT
+# set flags for adlc compilation
 CPPFLAGS = $(SYSDEFS) $(INCLUDES)
+
+# Force assertions on.
+CPPFLAGS += -DASSERT
 
 ifndef USE_GCC
   # We need libCstd.so for adlc 
@@ -141,7 +143,15 @@ $(GENERATEDFILES): refresh_adfiles
 # Note that product files are updated via "mv", which is atomic.
 TEMPDIR := $(OUTDIR)/mktmp$(shell echo $$$$)
 
-ADLCFLAGS = -q -T
+# Pass -D flags into ADLC.
+ADLCFLAGS += $(SYSDEFS)
+
+# Note "+="; it is a hook so flags.make can add more flags, like -g or -DFOO.
+ADLCFLAGS += -q -T
+
+# Normally, debugging is done directly on the ad_<arch>*.cpp files.
+# But -g will put #line directives in those files pointing back to <arch>.ad.
+#ADLCFLAGS += -g
 
 ifdef LP64
 ADLCFLAGS += -D_LP64
@@ -156,6 +166,8 @@ endif
 #
 ADLC_UPDATER_DIRECTORY = $(GAMMADIR)/make/$(OS)
 ADLC_UPDATER = adlc_updater
+$(ADLC_UPDATER): $(ADLC_UPDATER_DIRECTORY)/$(ADLC_UPDATER)
+	$(QUIETLY) cp $< $@; chmod +x $@
 
 # This action refreshes all generated adlc files simultaneously.
 # The way it works is this:
@@ -165,9 +177,8 @@ ADLC_UPDATER = adlc_updater
 # 4) call $(ADLC_UPDATER) on each generated adlc file. It will selectively update changed or missing files.
 # 5) If we actually updated any files, echo a notice.
 #
-refresh_adfiles: $(EXEC) $(SOURCE.AD)
+refresh_adfiles: $(EXEC) $(SOURCE.AD) $(ADLC_UPDATER)
 	@rm -rf $(TEMPDIR); mkdir $(TEMPDIR)
-	$(QUIETLY) [ -f $(ADLC_UPDATER) ] || ( cp $(ADLC_UPDATER_DIRECTORY)/$(ADLC_UPDATER) . ; chmod +x $(ADLC_UPDATER) )
 	$(QUIETLY) $(EXEC) $(ADLCFLAGS) $(SOURCE.AD) \
  -c$(TEMPDIR)/ad_$(Platform_arch_model).cpp -h$(TEMPDIR)/ad_$(Platform_arch_model).hpp -a$(TEMPDIR)/dfa_$(Platform_arch_model).cpp -v$(TEMPDIR)/adGlobals_$(Platform_arch_model).hpp \
 	    || { rm -rf $(TEMPDIR); exit 1; }
@@ -190,7 +201,15 @@ refresh_adfiles: $(EXEC) $(SOURCE.AD)
 # #########################################################################
 
 $(SOURCE.AD): $(SOURCES.AD)
-	$(QUIETLY) cat $(SOURCES.AD) > $(SOURCE.AD)
+	$(QUIETLY) $(PROCESS_AD_FILES) $(SOURCES.AD) > $(SOURCE.AD)
+
+#PROCESS_AD_FILES = cat
+# Pass through #line directives, in case user enables -g option above:
+PROCESS_AD_FILES = awk '{ \
+    if (CUR_FN != FILENAME) { CUR_FN=FILENAME; NR_BASE=NR-1; need_lineno=1 } \
+    if (need_lineno && $$0 !~ /\/\//) \
+      { print "\n\n\#line " (NR-NR_BASE) " \"" FILENAME "\""; need_lineno=0 }; \
+    print }'
 
 $(OUTDIR)/%.o: %.cpp
 	@echo Compiling $<

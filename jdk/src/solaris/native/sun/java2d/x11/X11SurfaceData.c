@@ -208,6 +208,23 @@ Java_sun_java2d_x11_X11SurfaceData_isDgaAvailable(JNIEnv *env, jobject this)
 #endif /* HEADLESS */
 }
 
+
+/*
+ * Class:     sun_java2d_x11_X11SurfaceData
+ * Method:    isShmPMAvailable
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_java2d_x11_X11SurfaceData_isShmPMAvailable(JNIEnv *env, jobject this)
+{
+#if defined(HEADLESS) || !defined(MITSHM)
+    return JNI_FALSE;
+#else
+    return useMitShmPixmaps;
+#endif /* HEADLESS, MITSHM */
+}
+
+
 /*
  * Class:     sun_java2d_x11_X11SurfaceData
  * Method:    initOps
