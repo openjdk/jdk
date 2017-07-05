@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6856415
  * @summary Miscellaneous tests, Exceptions
- * @compile -XDignore.symbol.file MiscTests.java TestHelper.java
+ * @compile -XDignore.symbol.file MiscTests.java
  * @run main MiscTests
  */
 
@@ -33,12 +33,12 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 
-public class MiscTests {
+public class MiscTests extends TestHelper {
 
     // 6856415: Checks to ensure that proper exceptions are thrown by java
     static void test6856415() {
         // No pkcs library on win-x64, so we bail out.
-        if (TestHelper.is64Bit && TestHelper.isWindows) {
+        if (is64Bit && isWindows) {
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -49,11 +49,11 @@ public class MiscTests {
         File testJar = new File("Foo.jar");
         testJar.delete();
         try {
-            TestHelper.createJar(testJar, sb.toString());
+            createJar(testJar, sb.toString());
         } catch (FileNotFoundException fnfe) {
             throw new RuntimeException(fnfe);
         }
-        TestHelper.TestResult tr = TestHelper.doExec(TestHelper.javaCmd,
+        TestResult tr = doExec(javaCmd,
                 "-Djava.security.manager", "-jar", testJar.getName(), "foo.bak");
         for (String s : tr.testOutput) {
             System.out.println(s);
@@ -67,8 +67,8 @@ public class MiscTests {
 
     public static void main(String... args) {
         test6856415();
-        if (TestHelper.testExitValue != 0) {
-            throw new Error(TestHelper.testExitValue + " tests failed");
+        if (testExitValue != 0) {
+            throw new Error(testExitValue + " tests failed");
     }
 }
 }

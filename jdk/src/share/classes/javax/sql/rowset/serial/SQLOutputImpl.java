@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 
 package javax.sql.rowset.serial;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.*;
-import javax.sql.*;
-import java.io.*;
-import java.lang.String;
-import java.math.*;
 import java.util.Map;
 import java.util.Vector;
 
@@ -444,16 +443,15 @@ public class SQLOutputImpl implements SQLOutput {
          * will need to track if a field is SQL null for itself
          */
         if (x == null) {
-            attribs.add(x);
-            return;
+            attribs.add(null);
+        } else {
+            /*
+             * We have to write out a SerialStruct that contains
+             * the name of this class otherwise we don't know
+             * what to re-instantiate during readSQL()
+             */
+            attribs.add(new SerialStruct(x, map));
         }
-
-        /*
-         * We have to write out a SerialStruct that contains
-         * the name of this class otherwise we don't know
-         * what to re-instantiate during readSQL()
-         */
-        attribs.add(new SerialStruct(x, map));
     }
 
     /**
@@ -470,10 +468,10 @@ public class SQLOutputImpl implements SQLOutput {
     @SuppressWarnings("unchecked")
     public void writeRef(Ref x) throws SQLException {
         if (x == null) {
-            attribs.add(x);
-            return;
+            attribs.add(null);
+        } else {
+            attribs.add(new SerialRef(x));
         }
-        attribs.add(new SerialRef(x));
     }
 
     /**
@@ -490,10 +488,10 @@ public class SQLOutputImpl implements SQLOutput {
     @SuppressWarnings("unchecked")
     public void writeBlob(Blob x) throws SQLException {
         if (x == null) {
-            attribs.add(x);
-            return;
+            attribs.add(null);
+        } else {
+            attribs.add(new SerialBlob(x));
         }
-        attribs.add(new SerialBlob(x));
     }
 
     /**
@@ -510,10 +508,10 @@ public class SQLOutputImpl implements SQLOutput {
     @SuppressWarnings("unchecked")
     public void writeClob(Clob x) throws SQLException {
         if (x == null) {
-            attribs.add(x);
-            return;
+            attribs.add(null);
+        } else {
+            attribs.add(new SerialClob(x));
         }
-        attribs.add(new SerialClob(x));
     }
 
     /**
@@ -554,10 +552,10 @@ public class SQLOutputImpl implements SQLOutput {
     @SuppressWarnings("unchecked")
     public void writeArray(Array x) throws SQLException {
         if (x == null) {
-            attribs.add(x);
-            return;
+            attribs.add(null);
+        } else {
+            attribs.add(new SerialArray(x, map));
         }
-        attribs.add(new SerialArray(x, map));
     }
 
     /**
@@ -574,11 +572,10 @@ public class SQLOutputImpl implements SQLOutput {
     @SuppressWarnings("unchecked")
     public void writeURL(java.net.URL url) throws SQLException {
         if (url == null) {
-            attribs.add(url);
-            return;
+            attribs.add(null);
+        } else {
+            attribs.add(new SerialDatalink(url));
         }
-        attribs.add(new SerialDatalink(url));
-
     }
 
 

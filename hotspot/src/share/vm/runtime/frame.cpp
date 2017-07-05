@@ -570,7 +570,7 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
     InterpreterCodelet* desc = Interpreter::codelet_containing(pc());
     if (desc != NULL) {
       st->print("~");
-      desc->print();
+      desc->print_on(st);
       NOT_PRODUCT(begin = desc->code_begin(); end = desc->code_end();)
     } else {
       st->print("~interpreter");

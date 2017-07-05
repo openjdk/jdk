@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.sql.*;
 import javax.sql.*;
 import java.io.*;
 import java.math.*;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Vector;
 
@@ -174,7 +175,8 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
      * @throws SerialException if an error occurs
      */
     public Object[]  getAttributes() throws SerialException {
-        return attribs;
+        Object[] val = this.attribs;
+        return (val == null) ? null : Arrays.copyOf(val, val.length);
     }
 
     /**
@@ -197,7 +199,8 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
     public Object[] getAttributes(Map<String,Class<?>> map)
         throws SerialException
     {
-       return attribs;
+        Object[] val = this.attribs;
+        return (val == null) ? null : Arrays.copyOf(val, val.length);
     }
 
 

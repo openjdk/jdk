@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,6 @@ void G1MarkSweep::allocate_stacks() {
 void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  EventMark m("1 mark object");
   TraceTime tm("phase 1", PrintGC && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace(" 1");
 
@@ -292,7 +291,6 @@ void G1MarkSweep::mark_sweep_phase2() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   Generation* pg = g1h->perm_gen();
 
-  EventMark m("2 compute new addresses");
   TraceTime tm("phase 2", PrintGC && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace("2");
 
@@ -337,7 +335,6 @@ void G1MarkSweep::mark_sweep_phase3() {
   Generation* pg = g1h->perm_gen();
 
   // Adjust the pointers to reflect the new locations
-  EventMark m("3 adjust pointers");
   TraceTime tm("phase 3", PrintGC && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace("3");
 
@@ -402,7 +399,6 @@ void G1MarkSweep::mark_sweep_phase4() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   Generation* pg = g1h->perm_gen();
 
-  EventMark m("4 compact heap");
   TraceTime tm("phase 4", PrintGC && Verbose, true, gclog_or_tty);
   GenMarkSweep::trace("4");
 
