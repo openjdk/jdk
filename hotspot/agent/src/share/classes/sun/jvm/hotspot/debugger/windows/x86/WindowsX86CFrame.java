@@ -22,26 +22,26 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.cdbg.basic.x86;
+package sun.jvm.hotspot.debugger.windows.x86;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
+import sun.jvm.hotspot.debugger.windbg.*;
 
-/** Basic X86 frame functionality providing sender() functionality. */
-
-public class X86CFrame extends BasicCFrame {
+public class WindowsX86CFrame extends BasicCFrame {
   private Address ebp;
   private Address pc;
 
   private static final int ADDRESS_SIZE = 4;
 
   /** Constructor for topmost frame */
-  public X86CFrame(CDebugger dbg, Address ebp, Address pc) {
-    super(dbg);
+  public WindowsX86CFrame(WindbgDebugger dbg, Address ebp, Address pc) {
+    super(dbg.getCDebugger());
     this.ebp = ebp;
     this.pc  = pc;
+    this.dbg = dbg;
   }
 
   public CFrame sender(ThreadProxy thread) {
@@ -52,15 +52,20 @@ public class X86CFrame extends BasicCFrame {
       return null;
     }
 
+    // Check alignment of ebp
+    if ( dbg.getAddressValue(ebp) % ADDRESS_SIZE != 0) {
+        return null;
+    }
+
     Address nextEBP = ebp.getAddressAt( 0 * ADDRESS_SIZE);
-    if (nextEBP == null) {
+    if (nextEBP == null || nextEBP.lessThanOrEqual(ebp)) {
       return null;
     }
     Address nextPC  = ebp.getAddressAt( 1 * ADDRESS_SIZE);
     if (nextPC == null) {
       return null;
     }
-    return new X86CFrame(dbg(), nextEBP, nextPC);
+    return new WindowsX86CFrame(dbg, nextEBP, nextPC);
   }
 
   public Address pc() {
@@ -70,4 +75,6 @@ public class X86CFrame extends BasicCFrame {
   public Address localVariableBase() {
     return ebp;
   }
+
+  private WindbgDebugger dbg;
 }

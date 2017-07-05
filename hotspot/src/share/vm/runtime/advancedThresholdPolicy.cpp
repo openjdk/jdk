@@ -68,7 +68,7 @@ void AdvancedThresholdPolicy::initialize() {
   }
 #endif
 
-
+  set_increase_threshold_at_ratio();
   set_start_time(os::javaTimeMillis());
 }
 
@@ -205,6 +205,17 @@ double AdvancedThresholdPolicy::threshold_scale(CompLevel level, int feedback_k)
   double queue_size = CompileBroker::queue_size(level);
   int comp_count = compiler_count(level);
   double k = queue_size / (feedback_k * comp_count) + 1;
+
+  // Increase C1 compile threshold when the code cache is filled more
+  // than specified by IncreaseFirstTierCompileThresholdAt percentage.
+  // The main intention is to keep enough free space for C2 compiled code
+  // to achieve peak performance if the code cache is under stress.
+  if ((TieredStopAtLevel == CompLevel_full_optimization) && (level != CompLevel_full_optimization))  {
+    double current_reverse_free_ratio = CodeCache::reverse_free_ratio();
+    if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
+      k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
+    }
+  }
   return k;
 }
 
