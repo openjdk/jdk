@@ -259,8 +259,13 @@ public class Logger {
     private static final LoggerBundle NO_RESOURCE_BUNDLE =
             new LoggerBundle(null, null);
 
-    private static final JavaUtilResourceBundleAccess RB_ACCESS =
+    // Calling SharedSecrets.getJavaUtilResourceBundleAccess()
+    // forces the initialization of ResourceBundle.class, which
+    // can be too early if the VM has not finished booting yet.
+    private static final class RbAccess {
+        static final JavaUtilResourceBundleAccess RB_ACCESS =
             SharedSecrets.getJavaUtilResourceBundleAccess();
+    }
 
     // A value class that holds the logger configuration data.
     // This configuration can be shared between an application logger
@@ -2183,7 +2188,7 @@ public class Logger {
         if (!useCallersModule || callerModule == null || !callerModule.isNamed()) {
             try {
                 Module mod = cl.getUnnamedModule();
-                catalog = RB_ACCESS.getBundle(name, currentLocale, mod);
+                catalog = RbAccess.RB_ACCESS.getBundle(name, currentLocale, mod);
                 catalogName = name;
                 catalogLocale = currentLocale;
                 return catalog;
@@ -2227,7 +2232,7 @@ public class Logger {
             // Try with the caller's module
             try {
                 // Use the caller's module
-                catalog = RB_ACCESS.getBundle(name, currentLocale, callerModule);
+                catalog = RbAccess.RB_ACCESS.getBundle(name, currentLocale, callerModule);
                 catalogName = name;
                 catalogLocale = currentLocale;
                 return catalog;

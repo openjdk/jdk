@@ -99,16 +99,6 @@ public class SerialFilterTest implements Serializable {
     @DataProvider(name="InvalidPatterns")
     static Object[][] invalidPatterns() {
         return new Object [][] {
-                {"maxrefs=-1"},
-                {"maxdepth=-1"},
-                {"maxbytes=-1"},
-                {"maxarray=-1"},
-                {"xyz=0"},
-                {"xyz=-1"},
-                {"maxrefs=0xabc"},
-                {"maxrefs=abc"},
-                {"maxrefs="},
-                {"maxrefs=+"},
                 {".*"},
                 {".**"},
                 {"!"},
@@ -121,11 +111,32 @@ public class SerialFilterTest implements Serializable {
     @DataProvider(name="Limits")
     static Object[][] limits() {
         // The numbers are arbitrary > 1
-        return new Object[][]{
+        return new Object[][] {
+                {"maxrefs", 1},     // 0 is tested as n-1
                 {"maxrefs", 10},
                 {"maxdepth", 5},
                 {"maxbytes", 100},
                 {"maxarray", 16},
+                {"maxbytes", Long.MAX_VALUE},
+        };
+    }
+
+    @DataProvider(name="InvalidLimits")
+    static Object[][] invalidLimits() {
+        return new Object[][] {
+                {"maxrefs=-1"},
+                {"maxdepth=-1"},
+                {"maxbytes=-1"},
+                {"maxarray=-1"},
+                {"xyz=0"},
+                {"xyz=-1"},
+                {"maxrefs=0xabc"},
+                {"maxrefs=abc"},
+                {"maxrefs="},
+                {"maxrefs=+"},
+                {"maxbytes=-1"},
+                {"maxbytes=9223372036854775808"},
+                {"maxbytes=-9223372036854775807"},
         };
     }
 
@@ -305,7 +316,7 @@ public class SerialFilterTest implements Serializable {
      * @param value a test value
      */
     @Test(dataProvider="Limits")
-    static void testLimits(String name, int value) {
+    static void testLimits(String name, long value) {
         Class<?> arrayClass = new int[0].getClass();
         String pattern = String.format("%s=%d;%s=%d", name, value, name, value - 1);
         ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(pattern);
@@ -317,6 +328,21 @@ public class SerialFilterTest implements Serializable {
                 filter.checkInput(new FilterValues(arrayClass, value-1, value-1, value-1, value-1)),
                 ObjectInputFilter.Status.UNDECIDED,
                 "last limit value not used: " + filter);
+    }
+
+    /**
+     * Test invalid limits.
+     * Construct a filter with the limit, it should throw IllegalArgumentException.
+     * @param pattern a pattern to test
+     */
+    @Test(dataProvider="InvalidLimits", expectedExceptions=java.lang.IllegalArgumentException.class)
+    static void testInvalidLimits(String pattern) {
+        try {
+            ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(pattern);
+        } catch (IllegalArgumentException iae) {
+            System.out.printf("    success exception: %s%n", iae);
+            throw iae;
+        }
     }
 
     /**
@@ -332,7 +358,7 @@ public class SerialFilterTest implements Serializable {
                 }
             });
         } catch (InvalidClassException ice) {
-            System.out.printf("Success exception: %s%n", ice);
+            System.out.printf("    success exception: %s%n", ice);
             throw ice;
         }
     }
@@ -606,7 +632,7 @@ public class SerialFilterTest implements Serializable {
             }
             return array;
         } else if (pattern.startsWith("maxarray=")) {
-            return allowed ? new int[(int)value] : new int[(int)value+1];
+                return allowed ? new int[(int)value] : new int[(int)value+1];
         }
         Assert.fail("Object could not be generated for pattern: "
                 + pattern

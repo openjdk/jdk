@@ -116,7 +116,7 @@ apt_help() {
     ffi)
       PKGHANDLER_COMMAND="sudo apt-get install libffi-dev" ;;
     x11)
-      PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
+      PKGHANDLER_COMMAND="sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)

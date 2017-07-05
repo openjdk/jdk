@@ -126,16 +126,24 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "tama\u00F1o de bit de clave"}, //-keysize
         {"keystore.name",
                 "nombre de almac\u00E9n de claves"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "acceso al almac\u00E9n de claves cacerts"}, // -cacerts
+        {"warning.cacerts.option",
+                "Advertencia: Utilice la opci\u00F3n -cacerts para acceder al almac\u00E9n de claves cacerts"},
         {"new.password",
                 "nueva contrase\u00F1a"}, //-new
         {"do.not.prompt",
                 "no solicitar"}, //-noprompt
         {"password.through.protected.mechanism",
                 "contrase\u00F1a a trav\u00E9s de mecanismo protegido"}, //-protected
-        {"provider.argument",
-                "argumento del proveedor"}, //-providerarg
-        {"provider.class.name",
-                "nombre de clase del proveedor"}, //-providerclass
+
+        // The following 2 values should span 2 lines, the first for the
+        // option itself, the second for its -providerArg value.
+        {"addprovider.option",
+                "agregar proveedor de seguridad por nombre (por ejemplo, SunPKCS11)\nconfigurar elemento para -addprovider"}, //-addprovider
+        {"provider.class.option",
+                "agregar proveedor de seguridad por nombre de clase totalmente cualificado\nconfigurar argumento para -providerclass"}, //-providerclass
+
         {"provider.name",
                 "nombre del proveedor"}, //-providername
         {"provider.classpath",
@@ -187,6 +195,8 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "La opci\u00F3n de comando {0} necesita un argumento."},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "Advertencia: los almacenes de claves en formato PKCS12 no admiten contrase\u00F1as de clave y almacenamiento distintas. Se ignorar\u00E1 el valor especificado por el usuario, {0}."},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "Las opciones -keystore o -storetype no se pueden utilizar con la opci\u00F3n -cacerts"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-keystore debe ser NONE si -storetype es {0}"},
         {"Too.many.retries.program.terminated",
@@ -208,7 +218,9 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Illegal.startdate.value", "Valor de fecha de inicio no permitido"},
         {"Validity.must.be.greater.than.zero",
                 "La validez debe ser mayor que cero"},
-        {"provName.not.a.provider", "{0} no es un proveedor"},
+        {"provclass.not.a.provider", "%s no es un proveedor"},
+        {"provider.name.not.found", "No se ha encontrado el proveedor denominado \"%s\""},
+        {"provider.class.not.found", "No se ha encontrado el proveedor \"%s\""},
         {"Usage.error.no.command.provided", "Error de sintaxis: no se ha proporcionado ning\u00FAn comando"},
         {"Source.keystore.file.exists.but.is.empty.", "El archivo de almac\u00E9n de claves de origen existe, pero est\u00E1 vac\u00EDo: "},
         {"Please.specify.srckeystore", "Especifique -srckeystore"},

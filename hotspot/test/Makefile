@@ -4,7 +4,9 @@
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,262 +24,59 @@
 #
 #
 
-#
-# Makefile to run various hotspot tests
-#
+NATIVE_TEST_PATH := hotspot/jtreg/native
 
-ALT_MAKE ?= closed
+TREAT_EXIT_CODE_1_AS_0 := true
 
-GETMIXEDPATH=echo
+CLEAN_BEFORE_PREP := true
 
-# Utilities used
-AWK       = awk
-CAT       = cat
-CD        = cd
-CHMOD     = chmod
-CP        = cp
-CUT       = cut
-DIRNAME   = dirname
-ECHO      = echo
-EGREP     = egrep
-EXPAND    = expand
-FIND      = find
-MKDIR     = mkdir
-PWD       = pwd
-SED       = sed
-SORT      = sort
-TEE       = tee
-UNAME     = uname
-UNIQ      = uniq
-WC        = wc
-ZIPEXE    = zip
+USE_JTREG_VERSION := 4.1
 
-define NEWLINE
+USE_JTREG_ASSERT := false
 
+LIMIT_JTREG_VM_MEMORY := false
 
-endef
+IGNORE_MARKED_TESTS := true
 
 # Get OS name from uname (Cygwin inexplicably adds _NT-5.1)
-UNAME_S := $(shell $(UNAME) -s | $(CUT) -f1 -d_)
+UNAME_S := $(shell uname -s | cut -f1 -d_)
+
 ifeq ($(UNAME_S), SunOS)
-  PLATFORM = solaris
-  SLASH_JAVA = /java
-  ARCH = $(shell uname -p)
-  ifeq ($(ARCH), i386)
-    ARCH=i586
-  endif
   NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line)
 endif
 ifeq ($(UNAME_S), Linux)
-  PLATFORM = linux
-  SLASH_JAVA = /java
-  ARCH = $(shell uname -m)
-  ifeq ($(ARCH), i386)
-    ARCH = i586
-  endif
   NUM_CORES := $(shell cat /proc/cpuinfo  | grep -c processor)
 endif
 ifeq ($(UNAME_S), Darwin)
-  PLATFORM = bsd
-  SLASH_JAVA = /java
-  ARCH = $(shell uname -m)
-  ifeq ($(ARCH), i386)
-    ARCH = i586
-  endif
   NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
 endif
-ifeq ($(findstring BSD,$(UNAME_S)), BSD)
-  PLATFORM = bsd
-  SLASH_JAVA = /java
-  ARCH = $(shell uname -m)
-  ifeq ($(ARCH), i386)
-    ARCH = i586
-  endif
-endif
-ifeq ($(PLATFORM),)
-  # detect whether we're running in MKS or cygwin
-  ifeq ($(UNAME_S), Windows_NT) # MKS
-    GETMIXEDPATH=dosname -s
-  endif
-  ifeq ($(findstring CYGWIN,$(UNAME_S)), CYGWIN)
-    GETMIXEDPATH=cygpath -m
-  endif
-  PLATFORM = windows
-  SLASH_JAVA = J:
-  ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),ia64)
-    ARCH = ia64
-  else
-    ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),AMD64)
-      ARCH = x64
-    else
-      ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),EM64T)
-        ARCH = x64
-      else
-        ARCH = i586
-      endif
-    endif
-  endif
-  EXESUFFIX = .exe
+ifeq ($(findstring CYGWIN,$(UNAME_S)), CYGWIN)
   ifneq ($(NUMBER_OF_PROCESSORS), )
     NUM_CORES := $(NUMBER_OF_PROCESSORS)
   else
     ifneq ($(HOTSPOT_BUILD_JOBS), )
       NUM_CORES := $(HOTSPOT_BUILD_JOBS)
+    else
+      NUM_CORES := 1 # fallback
     endif
   endif
 endif
 
-ifdef ALT_SLASH_JAVA
-  SLASH_JAVA = $(ALT_SLASH_JAVA)
+# Concurrency based on min(cores / 2, 12)
+CONCURRENCY := $(shell expr $(NUM_CORES) / 2)
+ifeq ($(CONCURRENCY), 0)
+  CONCURRENCY := 1
+else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
+  CONCURRENCY := 12
 endif
 
-# Root of this test area (important to use full paths in some places)
-TEST_ROOT := $(shell pwd)
+# Make sure MaxRAMFraction is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
+JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMFraction=$(shell expr $(CONCURRENCY) \* 4)
 
-# Root of all test results
-ifdef TEST_OUTPUT_DIR
-  $(shell $(MKDIR) -p $(TEST_OUTPUT_DIR)/jtreg)
-  ABS_TEST_OUTPUT_DIR := \
-    $(shell $(CD) $(TEST_OUTPUT_DIR)/jtreg && $(PWD))
-else
-  ifdef ALT_OUTPUTDIR
-    ABS_OUTPUTDIR = $(shell $(CD) $(ALT_OUTPUTDIR) && $(PWD))
-  else
-    ABS_OUTPUTDIR = $(shell $(CD) $(TEST_ROOT)/.. && $(PWD))
-  endif
-
-  ABS_PLATFORM_BUILD_ROOT = $(ABS_OUTPUTDIR)
-  ABS_TEST_OUTPUT_DIR := $(ABS_PLATFORM_BUILD_ROOT)/testoutput/$(UNIQUE_DIR)
-endif
-
-# Expect JPRT to set PRODUCT_HOME (the product or jdk in this case to test)
-ifndef PRODUCT_HOME
-  # Try to use images/jdk if it exists
-  ABS_JDK_IMAGE = $(ABS_PLATFORM_BUILD_ROOT)/images/jdk
-  PRODUCT_HOME :=                       		\
-    $(shell                             		\
-      if [ -d $(ABS_JDK_IMAGE) ] ; then 		\
-         $(ECHO) "$(ABS_JDK_IMAGE)";    		\
-       else                             		\
-         $(ECHO) "$(ABS_PLATFORM_BUILD_ROOT)";		\
-       fi)
-  PRODUCT_HOME := $(PRODUCT_HOME)
-endif
-
-# Expect JPRT to set JAVA_ARGS (e.g. -server etc.)
-JAVA_OPTIONS =
-ifdef JAVA_ARGS
-  JAVA_OPTIONS = $(JAVA_ARGS)
-endif
-
-# jtreg -nativepath <dir>
-#
-# Local make tests will be TEST_IMAGE_DIR and JPRT with jprt.use.reg.test.bundle=true
-# should be JPRT_TESTNATIVE_PATH
-ifdef TEST_IMAGE_DIR
-  TESTNATIVE_DIR = $(TEST_IMAGE_DIR)
-else ifdef JPRT_TESTNATIVE_PATH
-  TESTNATIVE_DIR = $(JPRT_TESTNATIVE_PATH)
-endif
-ifdef TESTNATIVE_DIR
-  JTREG_NATIVE_PATH = -nativepath:$(shell $(GETMIXEDPATH) "$(TESTNATIVE_DIR)/hotspot/jtreg/native")
-endif
-
-# jtreg failure handler config
-ifeq ($(FAILURE_HANDLER_DIR), )
-  ifneq ($(TESTNATIVE_DIR), )
-    FAILURE_HANDLER_DIR := $(TESTNATIVE_DIR)/failure_handler
-  endif
-endif
-ifneq ($(FAILURE_HANDLER_DIR), )
-  FAILURE_HANDLER_DIR_MIXED := $(shell $(GETMIXEDPATH) "$(FAILURE_HANDLER_DIR)")
-  JTREG_FAILURE_HANDLER_OPTIONS := \
-      -timeoutHandlerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
-      -observerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
-      -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler \
-      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver \
-      -timeoutHandlerTimeout:0
-  ifeq ($(PLATFORM), windows)
-    JTREG_FAILURE_HANDLER_OPTIONS += -J-Djava.library.path="$(FAILURE_HANDLER_DIR_MIXED)"
-  endif
-endif
-
-# Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
-ARCHIVE_BUNDLE = $(ABS_TEST_OUTPUT_DIR)/ARCHIVE_BUNDLE.zip
-ifdef JPRT_ARCHIVE_BUNDLE
-  ARCHIVE_BUNDLE = $(JPRT_ARCHIVE_BUNDLE)
-endif
-
-# How to create the test bundle (pass or fail, we want to create this)
-#   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
-ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
-	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
-	           && $(CHMOD) -R a+r . \
-	           && $(ZIPEXE) -q -r $(ARCHIVE_BUNDLE) . )
-
-# important results files
-SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport/text/summary.txt")
-STATS_TXT_NAME = Stats.txt
-STATS_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/$(STATS_TXT_NAME)")
-RUNLIST   = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/runlist.txt")
-PASSLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/passlist.txt")
-FAILLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/faillist.txt")
-EXITCODE  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/exitcode.txt")
-
-TESTEXIT = \
-  if [ ! -s $(EXITCODE) ] ; then \
-    $(ECHO) "ERROR: EXITCODE file not filled in."; \
-    $(ECHO) "1" > $(EXITCODE); \
-  fi ; \
-  testExitCode=`$(CAT) $(EXITCODE)`; \
-  $(ECHO) "EXIT CODE: $${testExitCode}"; \
-  exit $${testExitCode}
-
-BUNDLE_UP_AND_EXIT = \
-( \
-  jtregExitCode=$$? && \
-  _summary="$(SUMMARY_TXT)"; \
-  if [ $${jtregExitCode} = 1 ] ; then \
-    jtregExitCode=0; \
-  fi; \
-  $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST) $(EXITCODE); \
-  $(ECHO) "$${jtregExitCode}" > $(EXITCODE); \
-  if [ -r "$${_summary}" ] ; then \
-    $(ECHO) "Summary: $(UNIQUE_DIR)" > $(STATS_TXT); \
-    $(EXPAND) $${_summary} | $(EGREP) -v ' Not run\.' > $(RUNLIST); \
-    $(EGREP) ' Passed\.' $(RUNLIST) \
-      | $(EGREP) -v ' Error\.' \
-      | $(EGREP) -v ' Failed\.' > $(PASSLIST); \
-    ( $(EGREP) ' Failed\.' $(RUNLIST); \
-      $(EGREP) ' Error\.' $(RUNLIST); \
-      $(EGREP) -v ' Passed\.' $(RUNLIST) ) \
-      | $(SORT) | $(UNIQ) > $(FAILLIST); \
-    if [ $${jtregExitCode} != 0 -o -s $(FAILLIST) ] ; then \
-      $(EXPAND) $(FAILLIST) \
-        | $(CUT) -d' ' -f1 \
-        | $(SED) -e 's@^@FAILED: @' >> $(STATS_TXT); \
-      if [ $${jtregExitCode} = 0 ] ; then \
-        jtregExitCode=1; \
-      fi; \
-    fi; \
-    runc="`$(CAT) $(RUNLIST)      | $(WC) -l | $(AWK) '{print $$1;}'`"; \
-    passc="`$(CAT) $(PASSLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
-    failc="`$(CAT) $(FAILLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
-    exclc="FIXME CODETOOLS-7900176"; \
-    $(ECHO) "TEST STATS: name=$(UNIQUE_DIR)  run=$${runc}  pass=$${passc}  fail=$${failc}" \
-      >> $(STATS_TXT); \
-  else \
-    $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
-  fi; \
-  if [ -f $(STATS_TXT) ] ; then \
-    $(CAT) $(STATS_TXT); \
-  fi; \
-  $(ZIP_UP_RESULTS) ; \
-  $(TESTEXIT) \
-)
+# Include the common base file with most of the logic
+include ../../test/TestCommon.gmk
 
 ################################################################
-
 # Default make rule (runs jtreg_tests)
 all: hotspot_all
 	@$(ECHO) "Testing completed successfully"
@@ -292,105 +91,9 @@ hotspot_%:
 hotspot_internal:
 	$(ALT_OUTPUTDIR)/jdk/bin/java -XX:+ExecuteInternalVMTests -XX:+ShowMessageBoxOnError -version
 
-# Prep for output
-prep: clean
-	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)
-	@$(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`
-
-# Cleanup
-clean:
-	@$(RM) -r $(ABS_TEST_OUTPUT_DIR)
-	@$(RM) $(ARCHIVE_BUNDLE)
-
 ################################################################
-
-# jtreg tests
-
-# Expect JT_HOME to be set for jtreg tests. (home for jtreg)
-ifndef JT_HOME
-  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.1/promoted/latest/binaries/jtreg
-  ifdef JPRT_JTREG_HOME
-    JT_HOME = $(JPRT_JTREG_HOME)
-  endif
-endif
-
-# When called from JPRT the TESTDIRS variable is set to the jtreg tests to run
-ifdef TESTDIRS
-  TEST_SELECTION = $(TESTDIRS)
-endif
-
-# Concurrency based on min(cores / 2, 12)
-ifdef NUM_CORES
-  CONCURRENCY := $(shell expr $(NUM_CORES) / 2)
-  ifeq ($(CONCURRENCY), 0)
-    CONCURRENCY := 1
-  else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
-    CONCURRENCY := 12
-  endif
-else
-  CONCURRENCY := 1
-endif
-JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
-
-# Make sure MaxRAMFraction is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
-JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMFraction=$(shell expr $(CONCURRENCY) \* 4)
-
-ifdef EXTRA_JTREG_OPTIONS
-  JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
-endif
-
-# Default JTREG to run
-JTREG = $(JT_HOME)/bin/jtreg
-
-# Use agent mode
-JTREG_BASIC_OPTIONS += -agentvm
-# Only run automatic tests
-JTREG_BASIC_OPTIONS += -a
-# Report details on all failed or error tests, times too
-JTREG_BASIC_OPTIONS += -v:fail,error,time
-# Retain all files for failing tests
-JTREG_BASIC_OPTIONS += -retain:fail,error
-# Ignore tests are not run and completely silent about it
-JTREG_IGNORE_OPTION = -ignore:quiet
-JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
-# Multiply by 4 the timeout factor
-JTREG_TIMEOUT_OPTION =  -timeoutFactor:4
-JTREG_BASIC_OPTIONS += $(JTREG_TIMEOUT_OPTION)
-# Set other vm and test options
-JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_OPTIONS:%=-vmoption:%) $(JAVA_VM_ARGS:%=-vmoption:%)
-
-# Option to tell jtreg to not run tests marked with "ignore"
-ifeq ($(PLATFORM), windows)
-  JTREG_KEY_OPTION = -k:!ignore
-else
-  JTREG_KEY_OPTION = -k:\!ignore
-endif
-JTREG_BASIC_OPTIONS += $(JTREG_KEY_OPTION)
-
+ALT_MAKE ?= closed
 -include $(ALT_MAKE)/Makefile
-
-# Make sure jtreg exists
-$(JTREG): $(JT_HOME)
-
-jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
-	(                                                                    \
-	  ( JT_HOME=$(shell $(GETMIXEDPATH) "$(JT_HOME)");                   \
-            export JT_HOME;                                                  \
-            $(shell $(GETMIXEDPATH) "$(JTREG)")                              \
-              $(JTREG_BASIC_OPTIONS)                                         \
-              -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport")  \
-              -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTwork")    \
-              -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                \
-              $(JTREG_NATIVE_PATH)                                           \
-              $(JTREG_FAILURE_HANDLER_OPTIONS)                               \
-              $(JTREG_EXCLUSIONS)                                            \
-              $(JTREG_TEST_OPTIONS)                                          \
-              $(TEST_SELECTION)                                              \
-	  ) ;                                                                \
-	  $(BUNDLE_UP_AND_EXIT)                                              \
-	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt ; $(TESTEXIT)
-
-PHONY_LIST += jtreg_tests
 
 # flags used to execute java in test targets
 TEST_FLAGS += -version -Xinternalversion -X -help
@@ -471,6 +174,12 @@ PHONY_LIST += hotspot_servertest servertest
 
 # Run the native gtest tests from the test image
 
+define NEWLINE
+
+
+endef
+
+
 hotspot_gtest:
 	$(foreach v, $(JVM_VARIANTS), \
 	  $(MAKE) hotspot_gtest$v $(NEWLINE) )
@@ -481,9 +190,3 @@ hotspot_gtestserver hotspot_gtestclient hotspot_gtestminimal: hotspot_gtest%:
 
 PHONY_LIST += hotspot_gtest hotspot_gtestserver hotspot_gtestclient \
     hotspot_gtestminimal
-
-################################################################
-# Phony targets (e.g. these are not filenames)
-.PHONY: all clean prep $(PHONY_LIST)
-
-################################################################
