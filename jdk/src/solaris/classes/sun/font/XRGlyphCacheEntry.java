@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ public class XRGlyphCacheEntry {
         this.glyphInfoPtr = glyphInfoPtr;
 
         /* TODO: Does it make sence to cache results? */
-        xOff = (int) Math.round(getXAdvance());
-        yOff = (int) Math.round(getYAdvance());
+        xOff = Math.round(getXAdvance());
+        yOff = Math.round(getYAdvance());
     }
 
     public int getXOff() {

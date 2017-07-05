@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,7 @@ public class JMXServiceURL implements Serializable {
     private void readObject(ObjectInputStream  inputStream) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField gf = inputStream.readFields();
         String h = (String)gf.get("host", null);
-        int p = (int)gf.get("port", -1);
+        int p = gf.get("port", -1);
         String proto = (String)gf.get("protocol", null);
         String url = (String)gf.get("urlPath", null);
 

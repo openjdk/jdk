@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         getColorModel(); // fix 4948833: this call forces the color map to be initialized
         params.putIfNull(COLORMAP, gData.get_awt_cmap());
         params.putIfNull(DEPTH, gData.get_awt_depth());
-        params.putIfNull(VISUAL_CLASS, Integer.valueOf((int)XConstants.InputOutput));
+        params.putIfNull(VISUAL_CLASS, Integer.valueOf(XConstants.InputOutput));
         params.putIfNull(VISUAL, visInfo.get_visual());
         params.putIfNull(VALUE_MASK, XConstants.CWBorderPixel | XConstants.CWEventMask | XConstants.CWColormap);
         Long parentWindow = (Long)params.get(PARENT_WINDOW);
@@ -350,7 +350,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     Graphics getGraphics(SurfaceData surfData, Color afore, Color aback, Font afont) {
         if (surfData == null) return null;
 
-        Component target = (Component) this.target;
+        Component target = this.target;
 
         /* Fix for bug 4746122. Color and Font shouldn't be null */
         Color bgColor = aback;
@@ -548,7 +548,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         int w = xe.get_width();
         int h = xe.get_height();
 
-        Component target = (Component)getEventSource();
+        Component target = getEventSource();
         AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
 
         if (!compAccessor.getIgnoreRepaint(target)
@@ -740,7 +740,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         modifiers = getModifiers(xbe.get_state(),button,0, type, wheel_mouse);
 
         if (!wheel_mouse) {
-            MouseEvent me = new MouseEvent((Component)getEventSource(),
+            MouseEvent me = new MouseEvent(getEventSource(),
                                            type == XConstants.ButtonPress ? MouseEvent.MOUSE_PRESSED : MouseEvent.MOUSE_RELEASED,
                                            jWhen,modifiers, x, y,
                                            xbe.get_x_root(),
@@ -752,7 +752,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             if ((type == XConstants.ButtonRelease) &&
                 ((mouseButtonClickAllowed & XlibUtil.getButtonMask(lbutton)) != 0) ) // No up-button in the drag-state
             {
-                postEventToEventQueue(me = new MouseEvent((Component)getEventSource(),
+                postEventToEventQueue(me = new MouseEvent(getEventSource(),
                                                      MouseEvent.MOUSE_CLICKED,
                                                      jWhen,
                                                      modifiers,
@@ -766,7 +766,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
         else {
             if (xev.get_type() == XConstants.ButtonPress) {
-                MouseWheelEvent mwe = new MouseWheelEvent((Component)getEventSource(),MouseEvent.MOUSE_WHEEL, jWhen,
+                MouseWheelEvent mwe = new MouseWheelEvent(getEventSource(),MouseEvent.MOUSE_WHEEL, jWhen,
                                                           modifiers,
                                                           x, y,
                                                           xbe.get_x_root(),
@@ -837,7 +837,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         int modifiers = getModifiers(xme.get_state(), 0, 0);
         boolean popupTrigger = false;
 
-        Component source = (Component)getEventSource();
+        Component source = getEventSource();
 
         if (xme.get_window() != window) {
             Point localXY = toLocal(xme.get_x_root(), xme.get_y_root());
@@ -1111,7 +1111,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                 unicodeKey = keysymToUnicode( keysym[0], ev.get_state() );
                 if (keyEventLog.isLoggable(PlatformLogger.Level.FINE)) {
                     keyEventLog.fine("--XWindow.java XIM did NOT process event, hex keysym:"+Long.toHexString(keysym[0])+"\n"+
-                                     "                                         unicode key:"+Integer.toHexString((int)unicodeKey));
+                                     "                                         unicode key:"+Integer.toHexString(unicodeKey));
                 }
             }
         }else  {
@@ -1121,7 +1121,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             unicodeKey = keysymToUnicode( keysym[0], ev.get_state() );
             if (keyEventLog.isLoggable(PlatformLogger.Level.FINE)) {
                 keyEventLog.fine("--XWindow.java XIM is absent;             hex keysym:"+Long.toHexString(keysym[0])+"\n"+
-                                 "                                         unicode key:"+Integer.toHexString((int)unicodeKey));
+                                 "                                         unicode key:"+Integer.toHexString(unicodeKey));
             }
         }
         // Keysym should be converted to Unicode, if possible and necessary,
@@ -1466,7 +1466,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         long jWhen = XToolkit.nowMillisUTC_offset(when);
         int modifiers = getModifiers(state, 0, keyCode);
 
-        KeyEvent ke = new KeyEvent((Component)getEventSource(), id, jWhen,
+        KeyEvent ke = new KeyEvent(getEventSource(), id, jWhen,
                                    modifiers, keyCode, (char)keyChar, keyLocation);
         if (event != 0) {
             byte[] data = Native.toBytes(event, eventSize);

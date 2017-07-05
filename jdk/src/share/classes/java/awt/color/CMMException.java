@@ -47,6 +47,7 @@ package java.awt.color;
  */
 
 public class CMMException extends java.lang.RuntimeException {
+    private static final long serialVersionUID = 5775558044142994965L;
 
     /**
      *  Constructs a CMMException with the specified detail message.

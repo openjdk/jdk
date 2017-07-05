@@ -37,7 +37,17 @@
 #endif
 
 
-#if defined(__linux__) || defined(MACOSX)
+/*
+   AIX needs a workaround for I/O cancellation, see:
+   http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/close.htm
+   ...
+   The close subroutine is blocked until all subroutines which use the file
+   descriptor return to usr space. For example, when a thread is calling close
+   and another thread is calling select with the same file descriptor, the
+   close subroutine does not return until the select call returns.
+   ...
+*/
+#if defined(__linux__) || defined(MACOSX) || defined (_AIX)
 extern int NET_Timeout(int s, long timeout);
 extern int NET_Read(int s, void* buf, size_t len);
 extern int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,

@@ -39,6 +39,9 @@ CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-product
+ifeq ($(OS_VENDOR), Darwin)
+MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-darwin-product
+endif
 
 SYSDEFS += -DPRODUCT
 VERSION = optimized

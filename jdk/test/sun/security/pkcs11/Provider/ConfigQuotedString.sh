@@ -72,6 +72,12 @@ case "$OS" in
     CP="${FS}bin${FS}cp"
     CHMOD="${FS}bin${FS}chmod"
     ;;
+  AIX )
+    FS="/"
+    PS=":"
+    CP="${FS}bin${FS}cp"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
   Windows* )
     FS="\\"
     PS=";"

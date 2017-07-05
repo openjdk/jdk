@@ -91,15 +91,14 @@ final class ConditionalSpecialCasing {
     static Hashtable<Integer, HashSet<Entry>> entryTable = new Hashtable<>();
     static {
         // create hashtable from the entry
-        for (int i = 0; i < entry.length; i ++) {
-            Entry cur = entry[i];
-            Integer cp = new Integer(cur.getCodePoint());
+        for (Entry cur : entry) {
+            Integer cp = cur.getCodePoint();
             HashSet<Entry> set = entryTable.get(cp);
             if (set == null) {
-                set = new HashSet<Entry>();
+                set = new HashSet<>();
+                entryTable.put(cp, set);
             }
             set.add(cur);
-            entryTable.put(cp, set);
         }
     }
 

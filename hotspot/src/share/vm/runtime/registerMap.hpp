@@ -70,7 +70,7 @@ class JavaThread;
 //   3) The RegisterMap keeps track of the values of callee-saved registers
 //      from frame to frame (hence, the name).  For some stack traversal the
 //      values of the callee-saved registers does not matter, e.g., if you
-//      only need the static properies such as frame type, pc, and such.
+//      only need the static properties such as frame type, pc, and such.
 //      Updating of the RegisterMap can be turned off by instantiating the
 //      register map as: RegisterMap map(thread, false);
 

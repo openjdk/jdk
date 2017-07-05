@@ -43,16 +43,19 @@ else
   fi
 fi
 
-# configure audit helper library if SA_ALTROOT is set
-if [ -n "$SA_ALTROOT" ]; then
-  LD_AUDIT_64=$STARTDIR/../src/os/solaris/proc/$CPU/libsaproc_audit.so
-  export LD_AUDIT_64
-  if [ ! -f $LD_AUDIT_64 ]; then
-      echo "SA_ALTROOT is set and can't find libsaproc_audit.so."
-      echo "Make sure to build it with 'make natives'."
-      exit 1
-  fi
+# configure audit helper library
+LD_AUDIT_64=$STARTDIR/../src/os/solaris/proc/$CPU/libsaproc_audit.so
+if [ ! -f $LD_AUDIT_64 ]; then
+  LD_AUDIT_64=$STARTDIR/solaris/$CPU/libsaproc_audit.so
 fi
+
+if [ ! -f $LD_AUDIT_64 ]; then
+   echo "Can't find libsaproc_audit.so."
+   echo "Make sure to build it with 'make natives'."
+   exit 1
+fi
+
+export LD_AUDIT_64
 SA_LIBPATH=$STARTDIR/../src/os/solaris/proc/$CPU:$STARTDIR/solaris/$CPU
 
 OPTIONS="-Dsa.library.path=$SA_LIBPATH -Dsun.jvm.hotspot.debugger.useProcDebugger"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
     /**
      * User specific data.
      */
-    private Map data;
+    private Map<Object, Object> data;
 
     /**
      * Font to use if there is no matching StateInfo, or the StateInfo doesn't
@@ -106,7 +106,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
             }
         }
         if (style.data != null) {
-            data = new HashMap();
+            data = new HashMap<>();
             data.putAll(style.data);
         }
         font = style.font;
@@ -124,7 +124,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * @param data Style specific data.
      */
     public DefaultSynthStyle(Insets insets, boolean opaque,
-                             StateInfo[] states, Map data) {
+                             StateInfo[] states, Map<Object, Object> data) {
         this.insets = insets;
         this.opaque = opaque;
         this.states = states;
@@ -366,7 +366,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      *
      * @param data Style specific values
      */
-    public void setData(Map data) {
+    public void setData(Map<Object, Object> data) {
         this.data = data;
     }
 
@@ -375,7 +375,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      *
      * @return Style specific data.
      */
-    public Map getData() {
+    public Map<Object, Object> getData() {
         return data;
     }
 
@@ -402,7 +402,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
     }
 
 
-    private Object getKeyFromData(Map stateData, Object key) {
+    private Object getKeyFromData(Map<Object, Object> stateData, Object key) {
           Object value = null;
           if (stateData != null) {
 
@@ -462,7 +462,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
             }
         }
         if (data != null) {
-            style.data = new HashMap();
+            style.data = new HashMap<>();
             style.data.putAll(data);
         }
         return style;
@@ -570,7 +570,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
         }
         if (data != null) {
             if (style.data == null) {
-                style.data = new HashMap();
+                style.data = new HashMap<>();
             }
             style.data.putAll(data);
         }
@@ -708,7 +708,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * a component.
      */
     public static class StateInfo {
-        private Map data;
+        private Map<Object, Object> data;
         private Font font;
         private Color[] colors;
         private int state;
@@ -746,7 +746,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
             this.font = info.font;
             if(info.data != null) {
                if(data == null) {
-                  data = new HashMap();
+                  data = new HashMap<>();
                }
                data.putAll(info.data);
             }
@@ -756,11 +756,11 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
             }
         }
 
-        public Map getData() {
+        public Map<Object, Object> getData() {
             return data;
         }
 
-        public void setData(Map data) {
+        public void setData(Map<Object, Object> data) {
             this.data = data;
         }
 
@@ -836,7 +836,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
             }
             if(data != null) {
                 if(info.data == null) {
-                    info.data = new HashMap();
+                    info.data = new HashMap<>();
                 }
                 info.data.putAll(data);
             }

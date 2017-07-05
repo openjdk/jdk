@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ public final class TypeResolver {
             return (Class<?>) pt.getRawType();
         }
         if (type instanceof TypeVariable) {
-            TypeVariable tv = (TypeVariable)type;
+            TypeVariable<?> tv = (TypeVariable<?>)type;
             Type[] bounds = tv.getBounds();
             return (0 < bounds.length)
                     ? erase(bounds[0])
@@ -267,9 +267,9 @@ public final class TypeResolver {
      *
      * @see #erase(Type)
      */
-    public static Class[] erase(Type[] types) {
+    public static Class<?>[] erase(Type[] types) {
         int length = types.length;
-        Class[] classes = new Class[length];
+        Class<?>[] classes = new Class<?>[length];
         for (int i = 0; i < length; i++) {
             classes[i] = TypeResolver.erase(types[i]);
         }

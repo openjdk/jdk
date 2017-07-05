@@ -507,7 +507,7 @@ void Monitor::ILock (Thread * Self) {
   _OnDeck = NULL ;
 
   // Note that we current drop the inner lock (clear OnDeck) in the slow-path
-  // epilog immediately after having acquired the outer lock.
+  // epilogue immediately after having acquired the outer lock.
   // But instead we could consider the following optimizations:
   // A. Shift or defer dropping the inner lock until the subsequent IUnlock() operation.
   //    This might avoid potential reacquisition of the inner lock in IUlock().
@@ -931,7 +931,7 @@ void Monitor::lock (Thread * Self) {
 
   check_block_state(Self);
   if (Self->is_Java_thread()) {
-    // Horribile dictu - we suffer through a state transition
+    // Horrible dictu - we suffer through a state transition
     assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
     ThreadBlockInVM tbivm ((JavaThread *) Self) ;
     ILock (Self) ;
@@ -963,7 +963,7 @@ void Monitor::lock_without_safepoint_check () {
 }
 
 
-// Returns true if thread succeceed [sic] in grabbing the lock, otherwise false.
+// Returns true if thread succeeds in grabbing the lock, otherwise false.
 
 bool Monitor::try_lock() {
   Thread * const Self = Thread::current();

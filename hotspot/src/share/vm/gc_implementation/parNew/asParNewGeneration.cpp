@@ -154,7 +154,7 @@ bool ASParNewGeneration::resize_generation(size_t eden_size,
   // There used to be this guarantee there.
   // guarantee ((eden_size + 2*survivor_size)  <= _max_gen_size, "incorrect input arguments");
   // Code below forces this requirement.  In addition the desired eden
-  // size and disired survivor sizes are desired goals and may
+  // size and desired survivor sizes are desired goals and may
   // exceed the total generation size.
 
   assert(min_gen_size() <= orig_size && orig_size <= max_gen_size(),

@@ -234,7 +234,7 @@ static volatile int InitDone       = 0 ;
 // * Taken together, the cxq and the EntryList constitute or form a
 //   single logical queue of threads stalled trying to acquire the lock.
 //   We use two distinct lists to improve the odds of a constant-time
-//   dequeue operation after acquisition (in the ::enter() epilog) and
+//   dequeue operation after acquisition (in the ::enter() epilogue) and
 //   to reduce heat on the list ends.  (c.f. Michael Scott's "2Q" algorithm).
 //   A key desideratum is to minimize queue & monitor metadata manipulation
 //   that occurs while holding the monitor lock -- that is, we want to
@@ -677,7 +677,7 @@ void ATTR ObjectMonitor::EnterI (TRAPS) {
         // non-null and elect a new "Responsible" timer thread.
         //
         // This thread executes:
-        //    ST Responsible=null; MEMBAR    (in enter epilog - here)
+        //    ST Responsible=null; MEMBAR    (in enter epilogue - here)
         //    LD cxq|EntryList               (in subsequent exit)
         //
         // Entering threads in the slow/contended path execute:
@@ -2031,7 +2031,7 @@ int ObjectMonitor::TrySpin_VaryDuration (Thread * Self) {
           TEVENT (Spin abort -- too many spinners) ;
           return 0 ;
        }
-       // Slighty racy, but benign ...
+       // Slightly racy, but benign ...
        Adjust (&_Spinner, 1) ;
     }
 

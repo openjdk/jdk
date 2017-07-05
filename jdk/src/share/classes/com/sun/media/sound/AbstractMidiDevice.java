@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -667,7 +667,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                     } else {
                         if (TRACE_TRANSMITTER) Printer.println("Sending packed message to "+size+" transmitter's receivers");
                         for (int i = 0; i < size; i++) {
-                            Receiver receiver = ((Transmitter)transmitters.get(i)).getReceiver();
+                            Receiver receiver = transmitters.get(i).getReceiver();
                             if (receiver != null) {
                                 if (optimizedReceiverCount > 0) {
                                     if (receiver instanceof MidiOutDevice.MidiOutReceiver) {
@@ -693,7 +693,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                     int size = transmitters.size();
                     if (TRACE_TRANSMITTER) Printer.println("Sending long message to "+size+" transmitter's receivers");
                     for (int i = 0; i < size; i++) {
-                        Receiver receiver = ((Transmitter)transmitters.get(i)).getReceiver();
+                        Receiver receiver = transmitters.get(i).getReceiver();
                         if (receiver != null) {
                             //$$fb 2002-04-02: SysexMessages are mutable, so
                             // an application could change the contents of this object,
@@ -729,7 +729,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 } else {
                     if (TRACE_TRANSMITTER) Printer.println("Sending MIDI message to "+size+" transmitter's receivers");
                     for (int i = 0; i < size; i++) {
-                        Receiver receiver = ((Transmitter)transmitters.get(i)).getReceiver();
+                        Receiver receiver = transmitters.get(i).getReceiver();
                         if (receiver != null) {
                             //$$fb 2002-04-02: ShortMessages are mutable, so
                             // an application could change the contents of this object,

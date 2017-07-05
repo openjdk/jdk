@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ class DQTMarkerSegment extends MarkerSegment {
                 newGuy = (Qtable) super.clone();
             } catch (CloneNotSupportedException e) {} // won't happen
             if (data != null) {
-                newGuy.data = (int []) data.clone();
+                newGuy.data = data.clone();
             }
             return newGuy;
         }

@@ -38,9 +38,9 @@ static jfieldID key_indexLow;    /* id for FileKey.nFileIndexLow */
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileKey_initIDs(JNIEnv *env, jclass clazz)
 {
-    key_volumeSN = (*env)->GetFieldID(env, clazz, "dwVolumeSerialNumber", "J");
-    key_indexHigh = (*env)->GetFieldID(env, clazz, "nFileIndexHigh", "J");
-    key_indexLow = (*env)->GetFieldID(env, clazz, "nFileIndexLow", "J");
+    CHECK_NULL(key_volumeSN = (*env)->GetFieldID(env, clazz, "dwVolumeSerialNumber", "J"));
+    CHECK_NULL(key_indexHigh = (*env)->GetFieldID(env, clazz, "nFileIndexHigh", "J"));
+    CHECK_NULL(key_indexLow = (*env)->GetFieldID(env, clazz, "nFileIndexLow", "J"));
 }
 
 

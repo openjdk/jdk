@@ -25,7 +25,7 @@
 provider hotspot {
   probe class__loaded(char*, uintptr_t, void*, uintptr_t);
   probe class__unloaded(char*, uintptr_t, void*, uintptr_t);
-  probe class__initialization__required(char*, uintptr_t, void*, intptr_t,int);
+  probe class__initialization__required(char*, uintptr_t, void*, intptr_t);
   probe class__initialization__recursive(char*, uintptr_t, void*, intptr_t,int);
   probe class__initialization__concurrent(char*, uintptr_t, void*, intptr_t,int);
   probe class__initialization__erroneous(char*, uintptr_t, void*, intptr_t, int);

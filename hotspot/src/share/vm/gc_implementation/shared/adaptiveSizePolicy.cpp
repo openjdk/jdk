@@ -121,7 +121,7 @@ int AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
 
   // Choose a number of GC threads based on the current size
   // of the heap.  This may be complicated because the size of
-  // the heap depends on factors such as the thoughput goal.
+  // the heap depends on factors such as the throughput goal.
   // Still a large heap should be collected by more GC threads.
   active_workers_by_heap_size =
       MAX2((size_t) 2U, Universe::heap()->capacity() / HeapSizePerGCThread);
@@ -445,7 +445,7 @@ void AdaptiveSizePolicy::check_gc_overhead_limit(
   // into account (i.e., don't trigger if the amount of free
   // space has suddenly jumped up).  If the current is much
   // higher than the average, use the average since it represents
-  // the longer term behavor.
+  // the longer term behavior.
   const size_t live_in_eden =
     MIN2(eden_live, (size_t) avg_eden_live()->average());
   const size_t free_in_eden = max_eden_size > live_in_eden ?

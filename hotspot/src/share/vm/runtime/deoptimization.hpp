@@ -206,7 +206,7 @@ class Deoptimization : AllStatic {
   // Called by assembly stub after execution has returned to
   // deoptimized frame and after the stack unrolling.
   // @argument thread.     Thread where stub_frame resides.
-  // @argument exec_mode.  Determines how execution should be continuted in top frame.
+  // @argument exec_mode.  Determines how execution should be continued in top frame.
   //                       0 means continue after current byte code
   //                       1 means exception has happened, handle exception
   //                       2 means reexecute current bytecode (for uncommon traps).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ extern Display *awt_display;
 
 #define MAXFDIRS 512    /* Max number of directories that contain fonts */
 
-#if !defined(__linux__)
+#if defined(__solaris__)
 /*
  * This can be set in the makefile to "/usr/X11" if so desired.
  */
@@ -114,7 +114,7 @@ static char *fullSolarisFontPath[] = {
     NULL, /* terminates the list */
 };
 
-#else /* __linux */
+#elif defined( __linux__)
 /* All the known interesting locations we have discovered on
  * various flavors of Linux
  */
@@ -132,6 +132,12 @@ static char *fullLinuxFontPath[] = {
     "/var/lib/defoma/x-ttcidfont-conf.d/dirs/TrueType", /* Debian */
     "/usr/X11R6/lib/X11/fonts/Type1",
     "/usr/share/fonts/default/Type1",     /* RH 9.0 */
+    NULL, /* terminates the list */
+};
+#elif defined(_AIX)
+static char *fullAixFontPath[] = {
+    "/usr/lpp/X11/lib/X11/fonts/Type1",    /* from X11.fnt.iso_T1  */
+    "/usr/lpp/X11/lib/X11/fonts/TrueType", /* from X11.fnt.ucs.ttf */
     NULL, /* terminates the list */
 };
 #endif
@@ -497,10 +503,11 @@ static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
 
 #if defined(__linux__)
     knowndirs = fullLinuxFontPath;
-#else /* IF SOLARIS */
+#elif defined(__solaris__)
     knowndirs = fullSolarisFontPath;
+#elif defined(_AIX)
+    knowndirs = fullAixFontPath;
 #endif
-
     /* REMIND: this code requires to be executed when the GraphicsEnvironment
      * is already initialised. That is always true, but if it were not so,
      * this code could throw an exception and the fontpath would fail to
@@ -592,6 +599,25 @@ static void* openFontConfig() {
         }
     }
 #endif
+
+#if defined(_AIX)
+    /* On AIX, fontconfig is not a standard package supported by IBM.
+     * instead it has to be installed from the "AIX Toolbox for Linux Applications"
+     * site http://www-03.ibm.com/systems/power/software/aix/linux/toolbox/alpha.html
+     * and will be installed under /opt/freeware/lib/libfontconfig.a.
+     * Notice that the archive contains the real 32- and 64-bit shared libraries.
+     * We first try to load 'libfontconfig.so' from the default library path in the
+     * case the user has installed a private version of the library and if that
+     * doesn't succeed, we try the version from /opt/freeware/lib/libfontconfig.a
+     */
+    libfontconfig = dlopen("libfontconfig.so", RTLD_LOCAL|RTLD_LAZY);
+    if (libfontconfig == NULL) {
+        libfontconfig = dlopen("/opt/freeware/lib/libfontconfig.a(libfontconfig.so.1)", RTLD_MEMBER|RTLD_LOCAL|RTLD_LAZY);
+        if (libfontconfig == NULL) {
+            return NULL;
+        }
+    }
+#else
     /* 64 bit sparc should pick up the right version from the lib path.
      * New features may be added to libfontconfig, this is expected to
      * be compatible with old features, but we may need to start
@@ -606,6 +632,7 @@ static void* openFontConfig() {
             return NULL;
         }
     }
+#endif
 
     /* Version 1.0 of libfontconfig crashes if HOME isn't defined in
      * the environment. This should generally never happen, but we can't
@@ -1203,7 +1230,7 @@ Java_sun_font_FontConfigManager_getFontConfig
              */
             if (fontformat != NULL
                 && (strcmp((char*)fontformat, "TrueType") != 0)
-#ifdef __linux__
+#if defined(__linux__) || defined(_AIX)
                 && (strcmp((char*)fontformat, "Type 1") != 0)
 #endif
              ) {

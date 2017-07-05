@@ -55,14 +55,17 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_SolarisNativeDispatcher_init(JNIEnv *env, jclass clazz) {
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixMountEntry");
-    if (clazz == NULL)
-        return;
-
+    CHECK_NULL(clazz);
     entry_name = (*env)->GetFieldID(env, clazz, "name", "[B");
+    CHECK_NULL(entry_name);
     entry_dir = (*env)->GetFieldID(env, clazz, "dir", "[B");
+    CHECK_NULL(entry_dir);
     entry_fstype = (*env)->GetFieldID(env, clazz, "fstype", "[B");
+    CHECK_NULL(entry_fstype);
     entry_options = (*env)->GetFieldID(env, clazz, "opts", "[B");
+    CHECK_NULL(entry_options);
     entry_dev = (*env)->GetFieldID(env, clazz, "dev", "J");
+    CHECK_NULL(entry_dev);
 }
 
 JNIEXPORT jint JNICALL

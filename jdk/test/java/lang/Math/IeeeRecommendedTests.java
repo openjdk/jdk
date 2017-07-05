@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 
@@ -708,21 +707,21 @@ public class IeeeRecommendedTests {
 
         for(int i = 0; i < testCases.length; i++) {
             // isNaN
-            failures+=Tests.test("FpUtils.isNaN(float)", testCases[i],
-                                 FpUtils.isNaN(testCases[i]), (i ==0));
+            failures+=Tests.test("Float.isNaN(float)", testCases[i],
+                                 Float.isNaN(testCases[i]), (i ==0));
 
             // isFinite
             failures+=Tests.test("Float.isFinite(float)", testCases[i],
                                  Float.isFinite(testCases[i]), (i >= 3));
 
             // isInfinite
-            failures+=Tests.test("FpUtils.isInfinite(float)", testCases[i],
-                                 FpUtils.isInfinite(testCases[i]), (i==1 || i==2));
+            failures+=Tests.test("Float.isInfinite(float)", testCases[i],
+                                 Float.isInfinite(testCases[i]), (i==1 || i==2));
 
             // isUnorderd
             for(int j = 0; j < testCases.length; j++) {
-                failures+=Tests.test("FpUtils.isUnordered(float, float)", testCases[i],testCases[j],
-                                     FpUtils.isUnordered(testCases[i],testCases[j]), (i==0 || j==0));
+                failures+=Tests.test("Tests.isUnordered(float, float)", testCases[i],testCases[j],
+                                     Tests.isUnordered(testCases[i],testCases[j]), (i==0 || j==0));
             }
         }
 
@@ -758,21 +757,21 @@ public class IeeeRecommendedTests {
 
         for(int i = 0; i < testCases.length; i++) {
             // isNaN
-            failures+=Tests.test("FpUtils.isNaN(double)", testCases[i],
-                                 FpUtils.isNaN(testCases[i]), (i ==0));
+            failures+=Tests.test("Double.isNaN(double)", testCases[i],
+                                 Double.isNaN(testCases[i]), (i ==0));
 
             // isFinite
             failures+=Tests.test("Double.isFinite(double)", testCases[i],
                                  Double.isFinite(testCases[i]), (i >= 3));
 
             // isInfinite
-            failures+=Tests.test("FpUtils.isInfinite(double)", testCases[i],
-                                 FpUtils.isInfinite(testCases[i]), (i==1 || i==2));
+            failures+=Tests.test("Double.isInfinite(double)", testCases[i],
+                                 Double.isInfinite(testCases[i]), (i==1 || i==2));
 
             // isUnorderd
             for(int j = 0; j < testCases.length; j++) {
-                failures+=Tests.test("FpUtils.isUnordered(double, double)", testCases[i],testCases[j],
-                                     FpUtils.isUnordered(testCases[i],testCases[j]), (i==0 || j==0));
+                failures+=Tests.test("Tests.isUnordered(double, double)", testCases[i],testCases[j],
+                                     Tests.isUnordered(testCases[i],testCases[j]), (i==0 || j==0));
             }
         }
 
@@ -1023,8 +1022,8 @@ public class IeeeRecommendedTests {
             2*FloatConsts.MIN_EXPONENT,         // -252
             2*FloatConsts.MIN_EXPONENT+1,       // -251
 
-            FpUtils.ilogb(Float.MIN_VALUE)-1,   // -150
-            FpUtils.ilogb(Float.MIN_VALUE),     // -149
+            FloatConsts.MIN_EXPONENT - FloatConsts.SIGNIFICAND_WIDTH,
+            FloatConsts.MIN_SUB_EXPONENT,
             -FloatConsts.MAX_EXPONENT,          // -127
             FloatConsts.MIN_EXPONENT,           // -126
 
@@ -1100,7 +1099,7 @@ public class IeeeRecommendedTests {
 
                 failures+=testScalbCase(value,
                                         scaleFactor,
-                                        (FpUtils.ilogb(value) +j > FloatConsts.MAX_EXPONENT ) ?
+                                        (Tests.ilogb(value) +j > FloatConsts.MAX_EXPONENT ) ?
                                         Math.copySign(infinityF, value) : // overflow
                                         // calculate right answer
                                         twoToTheMaxExp*(twoToTheMaxExp*(scale*value)) );
@@ -1230,8 +1229,9 @@ public class IeeeRecommendedTests {
             2*DoubleConsts.MIN_EXPONENT,        // -2044
             2*DoubleConsts.MIN_EXPONENT+1,      // -2043
 
-            FpUtils.ilogb(Double.MIN_VALUE)-1,  // -1076
-            FpUtils.ilogb(Double.MIN_VALUE),    // -1075
+            DoubleConsts.MIN_EXPONENT,          // -1022
+            DoubleConsts.MIN_EXPONENT - DoubleConsts.SIGNIFICAND_WIDTH,
+            DoubleConsts.MIN_SUB_EXPONENT,
             -DoubleConsts.MAX_EXPONENT,         // -1023
             DoubleConsts.MIN_EXPONENT,          // -1022
 
@@ -1307,7 +1307,7 @@ public class IeeeRecommendedTests {
 
                 failures+=testScalbCase(value,
                                         scaleFactor,
-                                        (FpUtils.ilogb(value) +j > DoubleConsts.MAX_EXPONENT ) ?
+                                        (Tests.ilogb(value) +j > DoubleConsts.MAX_EXPONENT ) ?
                                         Math.copySign(infinityD, value) : // overflow
                                         // calculate right answer
                                         twoToTheMaxExp*(twoToTheMaxExp*(scale*value)) );

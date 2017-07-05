@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
             if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Requesting state on " + window + " for " + state);
             }
-            req.set_type((int)XConstants.ClientMessage);
+            req.set_type(XConstants.ClientMessage);
             req.set_window(window.getWindow());
             req.set_message_type(XA_NET_WM_STATE.getAtom());
             req.set_format(32);
@@ -181,7 +181,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     public void requestState(XWindow window, XAtom state, boolean isAdd) {
         XClientMessageEvent req = new XClientMessageEvent();
         try {
-            req.set_type((int)XConstants.ClientMessage);
+            req.set_type(XConstants.ClientMessage);
             req.set_window(window.getWindow());
             req.set_message_type(XA_NET_WM_STATE.getAtom());
             req.set_format(32);

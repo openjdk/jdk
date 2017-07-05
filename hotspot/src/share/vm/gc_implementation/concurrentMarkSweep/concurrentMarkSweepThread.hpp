@@ -164,7 +164,7 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   //  _pending_yields that holds the sum (of both sync and async requests), and
   //  a second counter _pending_decrements that only holds the async requests,
   //  for greater efficiency, since in a typical CMS run, there are many more
-  //  pontential (i.e. static) yield points than there are actual
+  //  potential (i.e. static) yield points than there are actual
   //  (i.e. dynamic) yields because of requests, which are few and far between.
   //
   // Note that, while "_pending_yields >= _pending_decrements" is an invariant,

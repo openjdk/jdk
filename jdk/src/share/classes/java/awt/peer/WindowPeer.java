@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,14 +94,15 @@ public interface WindowPeer extends ContainerPeer {
 
     /**
      * Sets the level of opacity for the window.
-     *
+     * @param opacity the level of opacity
      * @see Window#setOpacity(float)
      */
     void setOpacity(float opacity);
 
     /**
      * Enables the per-pixel alpha support for the window.
-     *
+     * @param isOpaque whether or not per-pixel alpha support is
+     * enabled
      * @see Window#setBackground(Color)
      */
     void setOpaque(boolean isOpaque);
