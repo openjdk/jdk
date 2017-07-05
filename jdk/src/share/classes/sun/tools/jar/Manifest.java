@@ -47,10 +47,10 @@ public class Manifest {
     /* list of headers that all pertain to a particular
      * file in the archive
      */
-    private Vector entries = new Vector();
+    private Vector<MessageHeader> entries = new Vector<>();
     private byte[] tmpbuf = new byte[512];
     /* a hashtable of entries, for fast lookup */
-    private Hashtable tableEntries = new Hashtable();
+    private Hashtable<String, MessageHeader> tableEntries = new Hashtable<>();
 
     static final String[] hashes = {"SHA"};
     static final byte[] EOL = {(byte)'\r', (byte)'\n'};
@@ -115,14 +115,14 @@ public class Manifest {
     }
 
     public MessageHeader getEntry(String name) {
-        return (MessageHeader) tableEntries.get(name);
+        return tableEntries.get(name);
     }
 
     public MessageHeader entryAt(int i) {
-        return (MessageHeader) entries.elementAt(i);
+        return entries.elementAt(i);
     }
 
-    public Enumeration entries() {
+    public Enumeration<MessageHeader> entries() {
         return entries.elements();
     }
 
@@ -214,7 +214,7 @@ public class Manifest {
         /* the first header in the file should be the global one.
          * It should say "Manifest-Version: x.x"; if not add it
          */
-        MessageHeader globals = (MessageHeader) entries.elementAt(0);
+        MessageHeader globals = entries.elementAt(0);
 
         if (globals.findValue("Manifest-Version") == null) {
             /* Assume this is a user-defined manifest.  If it has a Name: <..>
@@ -238,7 +238,7 @@ public class Manifest {
         globals.print(ps);
 
         for (int i = 1; i < entries.size(); ++i) {
-            MessageHeader mh = (MessageHeader) entries.elementAt(i);
+            MessageHeader mh = entries.elementAt(i);
             mh.print(ps);
         }
     }

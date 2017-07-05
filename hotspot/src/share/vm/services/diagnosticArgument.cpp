@@ -28,9 +28,16 @@
 #include "services/diagnosticArgument.hpp"
 
 void GenDCmdArgument::read_value(const char* str, size_t len, TRAPS) {
-  if (is_set()) {
+  /* NOTE:Some argument types doesn't require a value,
+   * for instance boolean arguments: "enableFeatureX". is
+   * equivalent to "enableFeatureX=true". In these cases,
+   * str will be null. This is perfectly valid.
+   * All argument types must perform null checks on str.
+   */
+
+  if (is_set() && !allow_multiple()) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-            "Duplicates in diagnostic command arguments");
+            "Duplicates in diagnostic command arguments\n");
   }
   parse_value(str, len, CHECK);
   set_is_set(true);
@@ -38,9 +45,9 @@ void GenDCmdArgument::read_value(const char* str, size_t len, TRAPS) {
 
 template <> void DCmdArgument<jlong>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
-  if (sscanf(str, INT64_FORMAT, &_value) != 1) {
+    if (str == NULL || sscanf(str, INT64_FORMAT, &_value) != 1) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-      "Integer parsing error in diagnostic command arguments");
+      "Integer parsing error in diagnostic command arguments\n");
   }
 }
 
@@ -89,16 +96,20 @@ template <> void DCmdArgument<bool>::destroy_value() { }
 
 template <> void DCmdArgument<char*>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
-  _value = NEW_C_HEAP_ARRAY(char, len+1);
-  strncpy(_value, str, len);
-  _value[len] = 0;
+  if (str == NULL) {
+    _value = NULL;
+  } else {
+    _value = NEW_C_HEAP_ARRAY(char, len+1);
+    strncpy(_value, str, len);
+    _value[len] = 0;
+  }
 }
 
 template <> void DCmdArgument<char*>::init_value(TRAPS) {
-  if (has_default()) {
+  if (has_default() && _default_string != NULL) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      fatal("Default string must be parsable");
+     fatal("Default string must be parsable");
     }
   } else {
     set_value(NULL);
@@ -111,3 +122,153 @@ template <> void DCmdArgument<char*>::destroy_value() {
     set_value(NULL);
   }
 }
+
+template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
+                                                 size_t len, TRAPS) {
+  if (str == NULL) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Integer parsing error nanotime value: syntax error");
+  }
+
+  int argc = sscanf(str, INT64_FORMAT , &_value._time);
+  if (argc != 1) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Integer parsing error nanotime value: syntax error");
+  }
+  size_t idx = 0;
+  while(idx < len && isdigit(str[idx])) {
+    idx++;
+  }
+  if (idx == len) {
+    // only accept missing unit if the value is 0
+    if (_value._time != 0) {
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+                "Integer parsing error nanotime value: unit required");
+    } else {
+      _value._nanotime = 0;
+      strcpy(_value._unit, "ns");
+      return;
+    }
+  } else if(len - idx > 2) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Integer parsing error nanotime value: illegal unit");
+  } else {
+    strncpy(_value._unit, &str[idx], len - idx);
+    /*Write an extra null termination. This is safe because _value._unit
+     * is declared as char[3], and length is checked to be not larger than
+     * two above. Also, this is necessary, since length might be 1, and the
+     * default value already in the string is ns, which is two chars.
+     */
+    _value._unit[len-idx] = '\0';
+  }
+
+  if (strcmp(_value._unit, "ns") == 0) {
+    _value._nanotime = _value._time;
+  } else if (strcmp(_value._unit, "us") == 0) {
+    _value._nanotime = _value._time * 1000;
+  } else if (strcmp(_value._unit, "ms") == 0) {
+    _value._nanotime = _value._time * 1000 * 1000;
+  } else if (strcmp(_value._unit, "s") == 0) {
+    _value._nanotime = _value._time * 1000 * 1000 * 1000;
+  } else if (strcmp(_value._unit, "m") == 0) {
+    _value._nanotime = _value._time * 60 * 1000 * 1000 * 1000;
+  } else if (strcmp(_value._unit, "h") == 0) {
+    _value._nanotime = _value._time * 60 * 60 * 1000 * 1000 * 1000;
+  } else if (strcmp(_value._unit, "d") == 0) {
+    _value._nanotime = _value._time * 24 * 60 * 60 * 1000 * 1000 * 1000;
+  } else {
+     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+               "Integer parsing error nanotime value: illegal unit");
+  }
+}
+
+template <> void DCmdArgument<NanoTimeArgument>::init_value(TRAPS) {
+  if (has_default()) {
+    this->parse_value(_default_string, strlen(_default_string), THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      fatal("Default string must be parsable");
+    }
+  } else {
+    _value._time = 0;
+    _value._nanotime = 0;
+    strcmp(_value._unit, "ns");
+  }
+}
+
+template <> void DCmdArgument<NanoTimeArgument>::destroy_value() { }
+
+// WARNING StringArrayArgument can only be used as an option, it cannot be
+// used as an argument with the DCmdParser
+
+template <> void DCmdArgument<StringArrayArgument*>::parse_value(const char* str,
+                                                  size_t len, TRAPS) {
+  _value->add(str,len);
+}
+
+template <> void DCmdArgument<StringArrayArgument*>::init_value(TRAPS) {
+  _value = new StringArrayArgument();
+  _allow_multiple = true;
+  if (has_default()) {
+    fatal("StringArrayArgument cannot have default value");
+  }
+}
+
+template <> void DCmdArgument<StringArrayArgument*>::destroy_value() {
+  if (_value != NULL) {
+    delete _value;
+    set_value(NULL);
+  }
+}
+
+template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
+                                                  size_t len, TRAPS) {
+  if (str == NULL) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Integer parsing error nanotime value: syntax error");
+  }
+
+  if (*str == '-') {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+               "Parsing error memory size value: negative values not allowed");
+  }
+  int res = sscanf(str, UINT64_FORMAT "%c", &_value._val, &_value._multiplier);
+  if (res == 2) {
+     switch (_value._multiplier) {
+      case 'k': case 'K':
+         _value._size = _value._val * 1024;
+         break;
+      case 'm': case 'M':
+         _value._size = _value._val * 1024 * 1024;
+         break;
+      case 'g': case 'G':
+         _value._size = _value._val * 1024 * 1024 * 1024;
+         break;
+       default:
+         _value._size = _value._val;
+         _value._multiplier = ' ';
+         //default case should be to break with no error, since user
+         //can write size in bytes, or might have a delimiter and next arg
+         break;
+     }
+   } else if (res == 1) {
+     _value._size = _value._val;
+   } else {
+     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+               "Parsing error memory size value: invalid value");
+   }
+}
+
+template <> void DCmdArgument<MemorySizeArgument>::init_value(TRAPS) {
+  if (has_default()) {
+    this->parse_value(_default_string, strlen(_default_string), THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      fatal("Default string must be parsable");
+    }
+  } else {
+    _value._size = 0;
+    _value._val = 0;
+    _value._multiplier = ' ';
+  }
+}
+
+template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }

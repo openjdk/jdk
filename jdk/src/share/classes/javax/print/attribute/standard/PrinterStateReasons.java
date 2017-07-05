@@ -180,8 +180,7 @@ public final class PrinterStateReasons
         if (severity == null) {
             throw new NullPointerException("severity is null");
         }
-        return super.put((PrinterStateReason) reason,
-                         (Severity) severity);
+        return super.put(reason, severity);
     }
 
     /**

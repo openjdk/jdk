@@ -47,14 +47,16 @@ include $(BUILDDIR)/common/Library.gmk
 #
 # Find platform-specific C source files
 #
-vpath %.c $(PLATFORM_SRC)/native/sun/nio/ch
+vpath %.c $(PLATFORM_SRC)/native/sun/nio/ch/sctp
 
 #
 # Include nio.h, net_util.h, sun_nio_ch_IOStatus.h, etc
 #
 OTHER_INCLUDES += \
   -I$(SHARE_SRC)/native/sun/nio/ch \
+  -I$(SHARE_SRC)/native/sun/nio/ch/sctp \
   -I$(SHARE_SRC)/native/java/net \
+  -I$(PLATFORM_SRC)/native/sun/nio/ch \
   -I$(PLATFORM_SRC)/native/java/net \
   -I$(CLASSHDRDIR)/../../../../java/java.nio/nio/CClassHeaders
 
@@ -75,5 +77,5 @@ endif # ifneq windows
 
 clean clobber::
 	$(RM) -r $(CLASSDESTDIR)/com/sun/nio/sctp
-	$(RM) -r $(CLASSDESTDIR)/sun/nio/ch
+	$(RM) -r $(CLASSDESTDIR)/sun/nio/ch/sctp
 

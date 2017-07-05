@@ -3220,11 +3220,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
-  // Must be run after init_ft which initializes ft_enabled
-  if (TRACE_INITIALIZE() != JNI_OK) {
-    vm_exit_during_initialization("Failed to initialize tracing backend");
-  }
-
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
 
@@ -3366,6 +3361,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK_0);
       initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK_0);
       initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK_0);
+      initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK_0);
     } else {
       warning("java.lang.OutOfMemoryError has not been initialized");
       warning("java.lang.NullPointerException has not been initialized");
@@ -3373,6 +3369,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArrayStoreException has not been initialized");
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
+      warning("java.lang.IllegalArgumentException has not been initialized");
     }
   }
 
@@ -3401,6 +3398,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   reset_vm_info_property(CHECK_0);
 
   quicken_jni_functions();
+
+  // Must be run after init_ft which initializes ft_enabled
+  if (TRACE_INITIALIZE() != JNI_OK) {
+    vm_exit_during_initialization("Failed to initialize tracing backend");
+  }
 
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.

@@ -29,7 +29,7 @@
 JCMD="${TESTJAVA}/bin/jcmd"
 
 rm -f jcmd.out 2>/dev/null
-${JCMD} -h > jcmd.out 2>&1
+${JCMD} -J-XX:+UsePerfData -h > jcmd.out 2>&1
 
 diff -w jcmd.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
@@ -40,7 +40,7 @@ then
 fi
 
 rm -f jcmd.out 2>/dev/null
-${JCMD} -help > jcmd.out 2>&1
+${JCMD} -J-XX:+UsePerfData -help > jcmd.out 2>&1
 
 diff -w jcmd.out ${TESTSRC}/usage.out
 if [ $? != 0 ]

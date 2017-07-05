@@ -36,7 +36,7 @@ import java.util.*;
  * Base Selector implementation class.
  */
 
-abstract class SelectorImpl
+public abstract class SelectorImpl
     extends AbstractSelector
 {
 
@@ -118,7 +118,7 @@ abstract class SelectorImpl
 
     protected abstract void implClose() throws IOException;
 
-    void putEventOps(SelectionKeyImpl sk, int ops) { }
+    public void putEventOps(SelectionKeyImpl sk, int ops) { }
 
     protected final SelectionKey register(AbstractSelectableChannel ch,
                                           int ops,
