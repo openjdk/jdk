@@ -25,13 +25,11 @@
  * @test
  * @bug 6864911
  * @summary ASN.1/DER input stream parser needs more work
- * @modules java.base/sun.misc
- *          java.base/sun.security.util
+ * @modules java.base/sun.security.util
  */
 
 import java.io.*;
 import sun.security.util.*;
-import sun.misc.IOUtils;
 
 public class BadValue {
 
