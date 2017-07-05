@@ -126,7 +126,6 @@ public:
   // Can this node (load or store) accurately see a stored value in
   // the given memory state?  (The state may or may not be in(Memory).)
   Node* can_see_stored_value(Node* st, PhaseTransform* phase) const;
-  Node* can_see_arraycopy_value(Node* st, PhaseTransform* phase) const;
 
 #ifndef PRODUCT
   static void dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st);
@@ -252,6 +251,9 @@ public:
 protected:
   const Type* load_array_final_field(const TypeKlassPtr *tkls,
                                      ciKlass* klass) const;
+
+  Node* can_see_arraycopy_value(Node* st, PhaseTransform* phase) const;
+
   // depends_only_on_test is almost always true, and needs to be almost always
   // true to enable key hoisting & commoning optimizations.  However, for the
   // special case of RawPtr loads from TLS top & end, and other loads performed by

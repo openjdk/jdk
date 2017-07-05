@@ -225,6 +225,10 @@ size_t GenCollectorPolicy::young_gen_size_lower_bound() {
   return align_size_up(3 * _space_alignment, _gen_alignment);
 }
 
+size_t GenCollectorPolicy::old_gen_size_lower_bound() {
+  return align_size_up(_space_alignment, _gen_alignment);
+}
+
 #ifdef ASSERT
 void GenCollectorPolicy::assert_flags() {
   CollectorPolicy::assert_flags();
@@ -284,7 +288,7 @@ void GenCollectorPolicy::initialize_flags() {
 
   // Make sure the heap is large enough for two generations
   size_t smallest_new_size = young_gen_size_lower_bound();
-  size_t smallest_heap_size = align_size_up(smallest_new_size + align_size_up(_space_alignment, _gen_alignment),
+  size_t smallest_heap_size = align_size_up(smallest_new_size + old_gen_size_lower_bound(),
                                            _heap_alignment);
   if (MaxHeapSize < smallest_heap_size) {
     FLAG_SET_ERGO(size_t, MaxHeapSize, smallest_heap_size);
@@ -356,6 +360,7 @@ void GenCollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Invalid young gen ratio specified");
   }
 
+  OldSize = MAX2(OldSize, old_gen_size_lower_bound());
   if (!is_size_aligned(OldSize, _gen_alignment)) {
     // Setting OldSize directly to preserve information about the possible
     // setting of OldSize on the command line.

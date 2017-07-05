@@ -275,6 +275,7 @@ class DummyAddress implements Address {
     return new DummyAddress(debugger, value);
   }
 
+  public long asLongValue() { return addr; }
   //--------------------------------------------------------------------------------
   // Internals only below this point
   //

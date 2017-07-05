@@ -34,8 +34,8 @@
  * an appropriate error value.
  */
 
-Flag::Error ObjectAlignmentInBytesConstraintFunc(bool verbose, intx* value);
+Flag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose);
 
-Flag::Error ContendedPaddingWidthConstraintFunc(bool verbose, intx* value);
+Flag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose);
 
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSRUNTIME_HPP */
