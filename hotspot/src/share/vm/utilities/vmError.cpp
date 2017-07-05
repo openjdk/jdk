@@ -674,6 +674,11 @@ void VMError::report_and_die() {
     reset_signal_handlers();
 
   } else {
+    // If UseOsErrorReporting we call this for each level of the call stack
+    // while searching for the exception handler.  Only the first level needs
+    // to be reported.
+    if (UseOSErrorReporting && log_done) return;
+
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (first_error_tid != mytid) {

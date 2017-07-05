@@ -518,6 +518,11 @@ class Generation: public CHeapObj {
   // each.
   virtual void object_iterate(ObjectClosure* cl);
 
+  // Iterate over all safe objects in the generation, calling "cl.do_object" on
+  // each.  An object is safe if its references point to other objects in
+  // the heap.  This defaults to object_iterate() unless overridden.
+  virtual void safe_object_iterate(ObjectClosure* cl);
+
   // Iterate over all objects allocated in the generation since the last
   // collection, calling "cl.do_object" on each.  The generation must have
   // been initialized properly to support this function, or else this call

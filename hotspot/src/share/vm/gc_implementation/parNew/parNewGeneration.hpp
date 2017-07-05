@@ -278,6 +278,7 @@ class ParNewGeneration: public DefNewGeneration {
   friend class ParNewRefProcTask;
   friend class ParNewRefProcTaskExecutor;
   friend class ParScanThreadStateSet;
+  friend class ParEvacuateFollowersClosure;
 
  private:
   // XXX use a global constant instead of 64!
@@ -296,6 +297,7 @@ class ParNewGeneration: public DefNewGeneration {
   // klass-pointers (klass information already copied to the forwarded
   // image.)  Manipulated with CAS.
   oop _overflow_list;
+  NOT_PRODUCT(ssize_t _num_par_pushes;)
 
   // If true, older generation does not support promotion undo, so avoid.
   static bool _avoid_promotion_undo;
@@ -372,8 +374,12 @@ class ParNewGeneration: public DefNewGeneration {
   oop copy_to_survivor_space_with_undo(ParScanThreadState* par_scan_state,
                              oop obj, size_t obj_sz, markOop m);
 
+  // in support of testing overflow code
+  NOT_PRODUCT(int _overflow_counter;)
+  NOT_PRODUCT(bool should_simulate_overflow();)
+
   // Push the given (from-space) object on the global overflow list.
-  void push_on_overflow_list(oop from_space_obj);
+  void push_on_overflow_list(oop from_space_obj, ParScanThreadState* par_scan_state);
 
   // If the global overflow list is non-empty, move some tasks from it
   // onto "work_q" (which must be empty).  No more than 1/4 of the
