@@ -2170,6 +2170,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             // Windows 98 reports faulting addresses incorrectly
             if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr) ||
                 !os::win32::is_nt()) {
+
               return Handle_Exception(exceptionInfo,
                   SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL));
             }
@@ -2563,9 +2564,33 @@ bool os::release_memory(char* addr, size_t bytes) {
   return VirtualFree(addr, 0, MEM_RELEASE) != 0;
 }
 
-bool os::protect_memory(char* addr, size_t bytes) {
+// Set protections specified
+bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
+                        bool is_committed) {
+  unsigned int p = 0;
+  switch (prot) {
+  case MEM_PROT_NONE: p = PAGE_NOACCESS; break;
+  case MEM_PROT_READ: p = PAGE_READONLY; break;
+  case MEM_PROT_RW:   p = PAGE_READWRITE; break;
+  case MEM_PROT_RWX:  p = PAGE_EXECUTE_READWRITE; break;
+  default:
+    ShouldNotReachHere();
+  }
+
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_READONLY, &old_status) != 0;
+
+  // Strange enough, but on Win32 one can change protection only for committed
+  // memory, not a big deal anyway, as bytes less or equal than 64K
+  if (!is_committed && !commit_memory(addr, bytes)) {
+    fatal("cannot commit protection page");
+  }
+  // One cannot use os::guard_memory() here, as on Win32 guard page
+  // have different (one-shot) semantics, from MSDN on PAGE_GUARD:
+  //
+  // Pages in the region become guard pages. Any attempt to access a guard page
+  // causes the system to raise a STATUS_GUARD_PAGE exception and turn off
+  // the guard page status. Guard pages thus act as a one-time access alarm.
+  return VirtualProtect(addr, bytes, p, &old_status) != 0;
 }
 
 bool os::guard_memory(char* addr, size_t bytes) {

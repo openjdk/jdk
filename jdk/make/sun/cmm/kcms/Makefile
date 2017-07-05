@@ -47,8 +47,6 @@ FILES_export = \
 ifeq ($(PLATFORM), windows)
   # Override the default version info with our own resource file (see 5043594)
   VERSIONINFO_RESOURCE = $(CLOSED_SRC)/share/native/sun/java2d/cmm/kcms/cmm.rc
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 endif
 
 # Rules

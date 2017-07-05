@@ -27,6 +27,7 @@ package javax.management;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -57,11 +58,13 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 /**
-    <p>Annotation to mark an interface explicitly as being an MXBean
-    interface, or as not being an MXBean interface.  By default, an
+    <p>Annotation to mark a class or interface explicitly as being an MXBean,
+    or as not being an MXBean.  By default, an
     interface is an MXBean interface if its name ends with {@code
-    MXBean}, as in {@code SomethingMXBean}.  The following interfaces
-    are MXBean interfaces:</p>
+    MXBean}, as in {@code SomethingMXBean}.  A class is never an MXBean by
+    default.</p>
+
+    <p>The following interfaces are MXBean interfaces:</p>
 
     <pre>
     public interface WhatsitMXBean {}
@@ -81,6 +84,11 @@ import javax.management.openmbean.TabularType;
     &#64;MXBean(false)
     public interface MisleadingMXBean {}
     </pre>
+
+    <p>A class can be annotated with {@code @MXBean} to indicate that it
+    is an MXBean.  In this case, its methods should have <code>&#64;{@link
+    ManagedAttribute}</code> or <code>&#64;{@link ManagedOperation}</code>
+    annotations, as described for <code>&#64;{@link MBean}</code>.</p>
 
     <h3 id="MXBean-spec">MXBean specification</h3>
 
@@ -1246,9 +1254,24 @@ public interface Node {
    @since 1.6
 */
 
+/*
+ * This annotation is @Inherited because if an MXBean is defined as a
+ * class using annotations, then its subclasses are also MXBeans.
+ * For example:
+ * @MXBean
+ * public class Super {
+ *     @ManagedAttribute
+ *     public String getName() {...}
+ * }
+ * public class Sub extends Super {}
+ * Here Sub is an MXBean.
+ *
+ * The @Inherited annotation has no effect when applied to an interface.
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
+@Inherited
 public @interface MXBean {
     /**
        True if the annotated interface is an MXBean interface.

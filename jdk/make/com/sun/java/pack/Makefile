@@ -97,9 +97,6 @@ ifeq ($(PLATFORM), windows)
 	/D "J2SE_FTYPE=0x1L"
 
   RES = $(OBJDIR)/$(PGRM).res
-
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 else
   LDOUTPUT = -o #Have a space 
   LDDFLAGS += -lc

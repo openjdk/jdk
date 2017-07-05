@@ -222,8 +222,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
 
   *_total_reserved = total_reserved;
   *_n_covered_regions = n_covered_regions;
-  *heap_rs = ReservedSpace(total_reserved, alignment,
-                           UseLargePages, heap_address);
+  *heap_rs = ReservedHeapSpace(total_reserved, alignment,
+                               UseLargePages, heap_address);
 
   return heap_address;
 }

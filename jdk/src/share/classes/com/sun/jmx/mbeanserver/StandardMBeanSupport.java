@@ -41,26 +41,24 @@ import javax.management.openmbean.MXBeanMappingFactory;
 public class StandardMBeanSupport extends MBeanSupport<Method> {
 
     /**
-       <p>Construct a Standard MBean that wraps the given resource using the
-       given Standard MBean interface.</p>
-
-       @param resource the underlying resource for the new MBean.
-
-       @param mbeanInterface the interface to be used to determine
-       the MBean's management interface.
-
-       @param <T> a type parameter that allows the compiler to check
-       that {@code resource} implements {@code mbeanInterface},
-       provided that {@code mbeanInterface} is a class constant like
-       {@code SomeMBean.class}.
-
-       @throws IllegalArgumentException if {@code resource} is null or
-       if it does not implement the class {@code mbeanInterface} or if
-       that class is not a valid Standard MBean interface.
-    */
-    public <T> StandardMBeanSupport(T resource, Class<T> mbeanInterface)
+     * <p>Construct a Standard MBean that wraps the given resource using the
+     * given Standard MBean interface.</p>
+     *
+     * @param resource the underlying resource for the new MBean.
+     * @param mbeanInterfaceType the class or interface to be used to determine
+     *       the MBean's management interface.  An interface if this is a
+     *       classic Standard MBean; a class if this is a {@code @ManagedResource}.
+     * @param <T> a type parameter that allows the compiler to check
+     *       that {@code resource} implements {@code mbeanInterfaceType},
+     *       provided that {@code mbeanInterfaceType} is a class constant like
+     *       {@code SomeMBean.class}.
+     * @throws IllegalArgumentException if {@code resource} is null or
+     *       if it does not implement the class {@code mbeanInterfaceType} or if
+     *       that class is not a valid Standard MBean interface.
+     */
+    public <T> StandardMBeanSupport(T resource, Class<T> mbeanInterfaceType)
             throws NotCompliantMBeanException {
-        super(resource, mbeanInterface, (MXBeanMappingFactory) null);
+        super(resource, mbeanInterfaceType, (MXBeanMappingFactory) null);
     }
 
     @Override
@@ -86,13 +84,14 @@ public class StandardMBeanSupport extends MBeanSupport<Method> {
     @Override
     public MBeanInfo getMBeanInfo() {
         MBeanInfo mbi = super.getMBeanInfo();
-        Class<?> resourceClass = getResource().getClass();
-        if (StandardMBeanIntrospector.isDefinitelyImmutableInfo(resourceClass))
+        Class<?> resourceClass = getWrappedObject().getClass();
+        if (!getMBeanInterface().isInterface() ||
+                StandardMBeanIntrospector.isDefinitelyImmutableInfo(resourceClass))
             return mbi;
         return new MBeanInfo(mbi.getClassName(), mbi.getDescription(),
                 mbi.getAttributes(), mbi.getConstructors(),
                 mbi.getOperations(),
-                MBeanIntrospector.findNotifications(getResource()),
+                MBeanIntrospector.findNotifications(getWrappedObject()),
                 mbi.getDescriptor());
     }
 }
