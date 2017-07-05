@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 # Usage:
 #
-# $(MAKE) -f buildtree.make ARCH=arch BUILDARCH=buildarch LIBARCH=libarch
+# $(MAKE) -f buildtree.make SRCARCH=srcarch BUILDARCH=buildarch LIBARCH=libarch
 #         GAMMADIR=dir OS_FAMILY=os VARIANT=variant
 #
 # The macros ARCH, GAMMADIR, OS_FAMILY and VARIANT must be defined in the
@@ -56,6 +56,8 @@
 # having to read the dependency files for the vm.
 
 include $(GAMMADIR)/make/scm.make
+include $(GAMMADIR)/make/altsrc.make
+
 
 # 'gmake MAKE_VERBOSE=y' or 'gmake QUIETLY=' gives all the gory details.
 QUIETLY$(MAKE_VERBOSE)	= @
@@ -127,7 +129,7 @@ BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.ma
         env.sh env.csh jdkpath.sh .dbxrc test_gamma
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
-	ARCH=$(ARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
+	SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
 
 # Define variables to be set in flags.make.
 # Default values are set in make/defs.make.
@@ -146,13 +148,7 @@ endif
 # Define HOTSPOT_VM_DISTRO based on settings in make/openjdk_distro
 # or make/hotspot_distro.
 ifndef HOTSPOT_VM_DISTRO
-  CLOSED_DIR_EXISTS := $(shell                \
-    if [ -d $(GAMMADIR)/src/closed ] ; then \
-      echo true;                              \
-    else                                      \
-      echo false;                             \
-    fi)
-  ifeq ($(CLOSED_DIR_EXISTS), true)
+  ifeq ($(call if-has-altsrc,$(HS_COMMON_SRC)/,true,false),true)
     include $(GAMMADIR)/make/hotspot_distro
   else
     include $(GAMMADIR)/make/openjdk_distro
@@ -177,6 +173,11 @@ $(SUBMAKE_DIRS): $(SIMPLE_DIRS) FORCE
 $(SIMPLE_DIRS):
 	$(QUIETLY) mkdir -p $@
 
+# Convenience macro which takes a source relative path, applies $(1) to the
+# absolute path, and then replaces $(GAMMADIR) in the result with a 
+# literal "$(GAMMADIR)/" suitable for inclusion in a Makefile.  
+gamma-path=$(subst $(GAMMADIR),\$$(GAMMADIR),$(call $(1),$(HS_COMMON_SRC)/$(2)))
+
 flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
@@ -187,7 +188,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo; \
 	echo "GAMMADIR = $(GAMMADIR)"; \
 	echo "SYSDEFS = \$$(Platform_sysdefs)"; \
-	echo "SRCARCH = $(ARCH)"; \
+	echo "SRCARCH = $(SRCARCH)"; \
 	echo "BUILDARCH = $(BUILDARCH)"; \
 	echo "LIBARCH = $(LIBARCH)"; \
 	echo "TARGET = $(TARGET)"; \
@@ -208,16 +209,28 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo; \
 	echo "Src_Dirs_V = \\"; \
 	sed 's/$$/ \\/;s|$(GAMMADIR)|$$(GAMMADIR)|' ../shared_dirs.lst; \
-	echo "\$$(GAMMADIR)/src/cpu/$(ARCH)/vm \\"; \
-	echo "\$$(GAMMADIR)/src/os/$(OS_FAMILY)/vm \\"; \
-	echo "\$$(GAMMADIR)/src/os_cpu/$(OS_FAMILY)_$(ARCH)/vm"; \
+	echo "$(call gamma-path,altsrc,cpu/$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,cpu/$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os/$(OS_FAMILY)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os/$(OS_FAMILY)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os/posix/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os/posix/vm)"; \
 	echo; \
 	echo "Src_Dirs_I = \\"; \
-	echo "\$$(GAMMADIR)/src/share/vm \\"; \
-	echo "\$$(GAMMADIR)/src/share/vm/prims \\"; \
-	echo "\$$(GAMMADIR)/src/cpu/$(ARCH)/vm \\"; \
-	echo "\$$(GAMMADIR)/src/os/$(OS_FAMILY)/vm \\"; \
-	echo "\$$(GAMMADIR)/src/os_cpu/$(OS_FAMILY)_$(ARCH)/vm"; \
+	echo "$(call gamma-path,altsrc,share/vm/prims) \\"; \
+	echo "$(call gamma-path,commonsrc,share/vm/prims) \\"; \
+	echo "$(call gamma-path,altsrc,share/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,share/vm) \\"; \
+	echo "$(call gamma-path,altsrc,cpu/$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,cpu/$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os/$(OS_FAMILY)/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os/$(OS_FAMILY)/vm) \\"; \
+	echo "$(call gamma-path,altsrc,os/posix/vm) \\"; \
+	echo "$(call gamma-path,commonsrc,os/posix/vm)"; \
 	[ -n "$(CFLAGS_BROWSE)" ] && \
 	    echo && echo "CFLAGS_BROWSE = $(CFLAGS_BROWSE)"; \
 	[ -n "$(HOTSPOT_EXTRA_SYSDEFS)" ] && \
@@ -241,9 +254,14 @@ flags_vm.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 
 ../shared_dirs.lst:  $(BUILDTREE_MAKE) $(GAMMADIR)/src/share/vm
 	@echo Creating directory list $@
-	$(QUIETLY) find $(GAMMADIR)/src/share/vm/* -prune \
+	$(QUIETLY) if [ -d $(HS_ALT_SRC)/share/vm ]; then \
+          find $(HS_ALT_SRC)/share/vm/* -prune \
+	  -type d \! \( $(TOPLEVEL_EXCLUDE_DIRS) \) -exec find {} \
+          \( $(ALWAYS_EXCLUDE_DIRS) \) -prune -o -type d -print \; > $@; \
+        fi;
+	$(QUIETLY) find $(HS_COMMON_SRC)/share/vm/* -prune \
 	-type d \! \( $(TOPLEVEL_EXCLUDE_DIRS) \) -exec find {} \
-        \( $(ALWAYS_EXCLUDE_DIRS) \) -prune -o -type d -print \; > $@
+        \( $(ALWAYS_EXCLUDE_DIRS) \) -prune -o -type d -print \; >> $@
 
 Makefile: $(BUILDTREE_MAKE)
 	@echo Creating $@ ...
