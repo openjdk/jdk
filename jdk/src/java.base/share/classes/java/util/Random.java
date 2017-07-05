@@ -187,7 +187,7 @@ class Random implements java.io.Serializable {
      *
      * This is a linear congruential pseudorandom number generator, as
      * defined by D. H. Lehmer and described by Donald E. Knuth in
-     * <i>The Art of Computer Programming,</i> Volume 3:
+     * <i>The Art of Computer Programming,</i> Volume 2:
      * <i>Seminumerical Algorithms</i>, section 3.2.1.
      *
      * @param  bits random bits
@@ -570,7 +570,7 @@ class Random implements java.io.Serializable {
      * }}</pre>
      * This uses the <i>polar method</i> of G. E. P. Box, M. E. Muller, and
      * G. Marsaglia, as described by Donald E. Knuth in <i>The Art of
-     * Computer Programming</i>, Volume 3: <i>Seminumerical Algorithms</i>,
+     * Computer Programming</i>, Volume 2: <i>Seminumerical Algorithms</i>,
      * section 3.4.1, subsection C, algorithm P. Note that it generates two
      * independent values at the cost of only one call to {@code StrictMath.log}
      * and one call to {@code StrictMath.sqrt}.

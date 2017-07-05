@@ -31,7 +31,7 @@
  * @bug 7109274
  * @summary Consider disabling support for X.509 certificates with RSA keys
  *          less than 1024 bits
- *
+ * @library /javax/net/ssl/templates
  * @run main/othervm DisabledShortRSAKeys PKIX TLSv1.2
  * @run main/othervm DisabledShortRSAKeys SunX509 TLSv1.2
  * @run main/othervm DisabledShortRSAKeys PKIX TLSv1.1
@@ -56,20 +56,7 @@ import java.security.interfaces.*;
 import java.util.Base64;
 
 
-public class DisabledShortRSAKeys {
-
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = true;
+public class DisabledShortRSAKeys extends SSLSocketTemplate {
 
     /*
      * Where do we find the keystores?
@@ -123,81 +110,50 @@ public class DisabledShortRSAKeys {
     static char passphrase[] = "passphrase".toCharArray();
 
     /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
-
-    /*
      * Turn on SSL debugging?
      */
     static boolean debug = false;
 
-    /*
-     * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doServerSide() throws Exception {
-        SSLContext context = generateSSLContext(null, targetCertStr,
-                                            targetPrivateKey);
-        SSLServerSocketFactory sslssf = context.getServerSocketFactory();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket)sslssf.createServerSocket(serverPort);
-        serverPort = sslServerSocket.getLocalPort();
+    @Override
+    protected SSLContext createClientSSLContext() throws Exception {
+        return generateSSLContext(trustedCertStr, null, null);
+    }
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
+    @Override
+    protected SSLContext createServerSSLContext() throws Exception {
+        return generateSSLContext(null, targetCertStr, targetPrivateKey);
+    }
 
-        try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
-            try (InputStream sslIS = sslSocket.getInputStream()) {
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        try {
+            try (InputStream sslIS = socket.getInputStream()) {
                 sslIS.read();
             }
-
-            throw new Exception(
-                    "RSA keys shorter than 1024 bits should be disabled");
+            throw new Exception("RSA keys shorter than 1024 bits should be disabled");
         } catch (SSLHandshakeException sslhe) {
             // the expected exception, ignore
         }
+
     }
 
-    /*
-     * Define the client side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doClientSide() throws Exception {
+    @Override
+    protected void runClientApplication(SSLSocket socket) throws Exception {
 
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-
-        SSLContext context = generateSSLContext(trustedCertStr, null, null);
-        SSLSocketFactory sslsf = context.getSocketFactory();
-
-        try (SSLSocket sslSocket =
-            (SSLSocket)sslsf.createSocket("localhost", serverPort)) {
+        try {
 
             // only enable the target protocol
-            sslSocket.setEnabledProtocols(new String[] {enabledProtocol});
-
+            socket.setEnabledProtocols(new String[] { enabledProtocol });
             // enable a block cipher
-            sslSocket.setEnabledCipherSuites(
-                new String[] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"});
+            socket.setEnabledCipherSuites(
+                new String[] { "TLS_DHE_RSA_WITH_AES_128_CBC_SHA" });
 
-            try (OutputStream sslOS = sslSocket.getOutputStream()) {
+            try (OutputStream sslOS = socket.getOutputStream()) {
                 sslOS.write('B');
                 sslOS.flush();
             }
-
             throw new Exception(
-                    "RSA keys shorter than 1024 bits should be disabled");
+               "RSA keys shorter than 1024 bits should be disabled");
         } catch (SSLHandshakeException sslhe) {
             // the expected exception, ignore
         }
@@ -207,16 +163,16 @@ public class DisabledShortRSAKeys {
      * =============================================================
      * The remainder is just support stuff
      */
-    private static String tmAlgorithm;        // trust manager
-    private static String enabledProtocol;    // the target protocol
+    private static String tmAlgorithm; // trust manager
+    private static String enabledProtocol; // the target protocol
 
     private static void parseArguments(String[] args) {
-        tmAlgorithm = args[0];
-        enabledProtocol = args[1];
+            tmAlgorithm = args[0];
+            enabledProtocol = args[1];
     }
 
     private static SSLContext generateSSLContext(String trustedCertStr,
-            String keyCertStr, String keySpecStr) throws Exception {
+                String keyCertStr, String keySpecStr) throws Exception {
 
         // generate certificate from cert string
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -239,10 +195,10 @@ public class DisabledShortRSAKeys {
         if (keyCertStr != null) {
             // generate the private key.
             PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                                Base64.getMimeDecoder().decode(keySpecStr));
+                            Base64.getMimeDecoder().decode(keySpecStr));
             KeyFactory kf = KeyFactory.getInstance("RSA");
             RSAPrivateKey priKey =
-                    (RSAPrivateKey)kf.generatePrivate(priKeySpec);
+                (RSAPrivateKey)kf.generatePrivate(priKeySpec);
 
             // generate certificate chain
             is = new ByteArrayInputStream(keyCertStr.getBytes());
@@ -281,13 +237,6 @@ public class DisabledShortRSAKeys {
         return ctx;
     }
 
-
-    // use any free port by default
-    volatile int serverPort = 0;
-
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
-
     public static void main(String[] args) throws Exception {
         if (debug)
             System.setProperty("javax.net.debug", "all");
@@ -300,142 +249,7 @@ public class DisabledShortRSAKeys {
         /*
          * Start the tests.
          */
-        new DisabledShortRSAKeys();
+        new DisabledShortRSAKeys().run();
     }
 
-    Thread clientThread = null;
-    Thread serverThread = null;
-
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the other side, then do your work.
-     */
-    DisabledShortRSAKeys() throws Exception {
-        Exception startException = null;
-        try {
-            if (separateServerThread) {
-                startServer(true);
-                startClient(false);
-            } else {
-                startClient(true);
-                startServer(false);
-            }
-        } catch (Exception e) {
-            startException = e;
-        }
-
-        /*
-         * Wait for other side to close down.
-         */
-        if (separateServerThread) {
-            if (serverThread != null) {
-                serverThread.join();
-            }
-        } else {
-            if (clientThread != null) {
-                clientThread.join();
-            }
-        }
-
-        /*
-         * When we get here, the test is pretty much over.
-         * Which side threw the error?
-         */
-        Exception local;
-        Exception remote;
-
-        if (separateServerThread) {
-            remote = serverException;
-            local = clientException;
-        } else {
-            remote = clientException;
-            local = serverException;
-        }
-
-        Exception exception = null;
-
-        /*
-         * Check various exception conditions.
-         */
-        if ((local != null) && (remote != null)) {
-            // If both failed, return the curthread's exception.
-            local.initCause(remote);
-            exception = local;
-        } else if (local != null) {
-            exception = local;
-        } else if (remote != null) {
-            exception = remote;
-        } else if (startException != null) {
-            exception = startException;
-        }
-
-        /*
-         * If there was an exception *AND* a startException,
-         * output it.
-         */
-        if (exception != null) {
-            if (exception != startException && startException != null) {
-                exception.addSuppressed(startException);
-            }
-            throw exception;
-        }
-
-        // Fall-through: no exception to throw!
-    }
-
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
-                }
-            };
-            serverThread.start();
-        } else {
-            try {
-                doServerSide();
-            } catch (Exception e) {
-                serverException = e;
-            } finally {
-                serverReady = true;
-            }
-        }
-    }
-
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
-                }
-            };
-            clientThread.start();
-        } else {
-            try {
-                doClientSide();
-            } catch (Exception e) {
-                clientException = e;
-            }
-        }
-    }
 }

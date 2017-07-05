@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import sun.security.validator.KeyStores;
+import sun.security.validator.TrustStoreUtil;
 import sun.security.validator.Validator;
 
 
@@ -113,7 +113,7 @@ public class EndEntityExtensionCheck {
 
         Validator v = Validator.getInstance(Validator.TYPE_SIMPLE,
                                             Validator.VAR_TLS_CLIENT,
-                                            KeyStores.getTrustedCerts(ks));
+                                            TrustStoreUtil.getTrustedCerts(ks));
         try {
             v.validate(chain);
             throw new Exception("Chain should not have validated " +
