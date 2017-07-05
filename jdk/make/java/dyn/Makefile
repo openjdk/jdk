@@ -33,8 +33,8 @@ AUTO_FILES_JAVA_DIRS = java/dyn sun/dyn
 
 # The sources built here use new language syntax to generate
 # method handle calls.  Let's be sure we are using that format.
-#LANGUAGE_VERSION = -source 7
-#CLASS_VERSION = -target 7
+LANGUAGE_VERSION = -source 7
+CLASS_VERSION = -target 7
 
 # Actually, it will be less disruptive to compile with the same
 # -target option as the rest of the system, and just turn on

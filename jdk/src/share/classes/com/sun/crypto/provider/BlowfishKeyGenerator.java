@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,16 +46,9 @@ public final class BlowfishKeyGenerator extends KeyGeneratorSpi {
     private int keysize = 16; // default keysize (in number of bytes)
 
     /**
-     * Verify the SunJCE provider in the constructor.
-     *
-     * @exception SecurityException if fails to verify
-     * its own integrity
+     * Empty constructor
      */
     public BlowfishKeyGenerator() {
-        if (!SunJCE.verifySelfIntegrity(this.getClass())) {
-            throw new SecurityException("The SunJCE provider may have " +
-                                        "been tampered.");
-        }
     }
 
     /**

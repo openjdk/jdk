@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,6 @@ final class PKCS12PBECipherCore {
     public static final class PBEWithSHA1AndDESede extends CipherSpi {
         private final PKCS12PBECipherCore core;
         public PBEWithSHA1AndDESede() throws NoSuchAlgorithmException {
-            SunJCE.ensureIntegrity(this.getClass());
             core = new PKCS12PBECipherCore("DESede", 24);
         }
         protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)
@@ -446,7 +445,6 @@ final class PKCS12PBECipherCore {
     public static final class PBEWithSHA1AndRC2_40 extends CipherSpi {
         private final PKCS12PBECipherCore core;
         public PBEWithSHA1AndRC2_40() throws NoSuchAlgorithmException {
-            SunJCE.ensureIntegrity(this.getClass());
             core = new PKCS12PBECipherCore("RC2", 5);
         }
         protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)

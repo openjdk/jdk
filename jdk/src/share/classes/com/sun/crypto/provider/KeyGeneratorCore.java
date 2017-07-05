@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,6 @@ final class KeyGeneratorCore {
     public static final class HmacSHA256KG extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;
         public HmacSHA256KG() {
-            SunJCE.ensureIntegrity(getClass());
             core = new KeyGeneratorCore("HmacSHA256", 256);
         }
         protected void engineInit(SecureRandom random) {
@@ -131,7 +130,6 @@ final class KeyGeneratorCore {
     public static final class HmacSHA384KG extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;
         public HmacSHA384KG() {
-            SunJCE.ensureIntegrity(getClass());
             core = new KeyGeneratorCore("HmacSHA384", 384);
         }
         protected void engineInit(SecureRandom random) {
@@ -153,7 +151,6 @@ final class KeyGeneratorCore {
     public static final class HmacSHA512KG extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;
         public HmacSHA512KG() {
-            SunJCE.ensureIntegrity(getClass());
             core = new KeyGeneratorCore("HmacSHA512", 512);
         }
         protected void engineInit(SecureRandom random) {
@@ -175,7 +172,6 @@ final class KeyGeneratorCore {
     public static final class RC2KeyGenerator extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;
         public RC2KeyGenerator() {
-            SunJCE.ensureIntegrity(getClass());
             core = new KeyGeneratorCore("RC2", 128);
         }
         protected void engineInit(SecureRandom random) {
@@ -201,7 +197,6 @@ final class KeyGeneratorCore {
     public static final class ARCFOURKeyGenerator extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;
         public ARCFOURKeyGenerator() {
-            SunJCE.ensureIntegrity(getClass());
             core = new KeyGeneratorCore("ARCFOUR", 128);
         }
         protected void engineInit(SecureRandom random) {

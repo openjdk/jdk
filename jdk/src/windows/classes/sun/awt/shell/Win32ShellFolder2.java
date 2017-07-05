@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -185,8 +184,8 @@ final class Win32ShellFolder2 extends ShellFolder {
         boolean disposed;
         public void dispose() {
             if (disposed) return;
-            ShellFolder.getInvoker().invoke(new Callable<Void>() {
-                public Void call() throws Exception {
+            invoke(new Callable<Void>() {
+                public Void call() {
                     if (relativePIDL != 0) {
                         releasePIDL(relativePIDL);
                     }
@@ -224,7 +223,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     private boolean isPersonal;
 
-    private static String composePathForCsidl(int csidl) throws IOException {
+    private static String composePathForCsidl(int csidl) throws IOException, InterruptedException {
         String path = getFileSystemPath(csidl);
         return path == null
                 ? ("ShellFolder: 0x" + Integer.toHexString(csidl))
@@ -235,12 +234,13 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Create a system special shell folder, such as the
      * desktop or Network Neighborhood.
      */
-    Win32ShellFolder2(final int csidl) throws IOException {
+    Win32ShellFolder2(final int csidl) throws IOException, InterruptedException {
         // Desktop is parent of DRIVES and NETWORK, not necessarily
         // other special shell folders.
         super(null, composePathForCsidl(csidl));
-        ShellFolder.getInvoker().invoke(new Callable<Void>() {
-            public Void call() throws Exception {
+
+        invoke(new Callable<Void>() {
+            public Void call() throws InterruptedException {
                 if (csidl == DESKTOP) {
                     initDesktop();
                 } else {
@@ -276,7 +276,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                 }
                 return null;
             }
-        });
+        }, InterruptedException.class);
 
         sun.java2d.Disposer.addRecord(this, disposer);
     }
@@ -296,13 +296,13 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Creates a shell folder with a parent and relative PIDL
      */
-    Win32ShellFolder2(final Win32ShellFolder2 parent, final long relativePIDL) {
+    Win32ShellFolder2(final Win32ShellFolder2 parent, final long relativePIDL) throws InterruptedException {
         super(parent,
-            ShellFolder.getInvoker().invoke(new Callable<String>() {
-                public String call() throws Exception {
+            invoke(new Callable<String>() {
+                public String call() {
                     return getFileSystemPath(parent.getIShellFolder(), relativePIDL);
                 }
-            })
+            }, RuntimeException.class)
         );
         this.disposer.relativePIDL = relativePIDL;
         getAbsolutePath();
@@ -335,8 +335,8 @@ final class Win32ShellFolder2 extends ShellFolder {
      * drive (normally "C:\").
      */
     protected Object writeReplace() throws java.io.ObjectStreamException {
-        return ShellFolder.getInvoker().invoke(new Callable<File>() {
-            public File call() throws Exception {
+        return invoke(new Callable<File>() {
+            public File call() {
                 if (isFileSystem()) {
                     return new File(getPath());
                 } else {
@@ -398,11 +398,11 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Accessor for IShellFolder
      */
-    public long getIShellFolder() {
+    private long getIShellFolder() {
         if (disposer.pIShellFolder == 0) {
-            disposer.pIShellFolder =
-                ShellFolder.getInvoker().invoke(new Callable<Long>() {
-                    public Long call() throws Exception {
+            try {
+                disposer.pIShellFolder = invoke(new Callable<Long>() {
+                    public Long call() {
                         assert(isDirectory());
                         assert(parent != null);
                         long parentIShellFolder = getParentIShellFolder();
@@ -421,7 +421,10 @@ final class Win32ShellFolder2 extends ShellFolder {
                         }
                         return pIShellFolder;
                     }
-                });
+                }, RuntimeException.class);
+            } catch (InterruptedException e) {
+                // Ignore error
+            }
         }
         return disposer.pIShellFolder;
     }
@@ -505,18 +508,23 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
 
         if (parent == rhs.parent || parent.equals(rhs.parent)) {
-            return pidlsEqual(getParentIShellFolder(), disposer.relativePIDL, rhs.disposer.relativePIDL);
+            try {
+                return pidlsEqual(getParentIShellFolder(), disposer.relativePIDL, rhs.disposer.relativePIDL);
+            } catch (InterruptedException e) {
+                return false;
+            }
         }
 
         return false;
     }
 
-    private static boolean pidlsEqual(final long pIShellFolder, final long pidl1, final long pidl2) {
-        return ShellFolder.getInvoker().invoke(new Callable<Boolean>() {
-            public Boolean call() throws Exception {
-                return (compareIDs(pIShellFolder, pidl1, pidl2) == 0);
+    private static boolean pidlsEqual(final long pIShellFolder, final long pidl1, final long pidl2)
+            throws InterruptedException {
+        return invoke(new Callable<Boolean>() {
+            public Boolean call() {
+                return compareIDs(pIShellFolder, pidl1, pidl2) == 0;
             }
-        });
+        }, RuntimeException.class);
     }
 
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
@@ -539,14 +547,16 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Return whether the given attribute flag is set for this object
      */
     public boolean hasAttribute(final int attribute) {
-        return ShellFolder.getInvoker().invoke(new Callable<Boolean>() {
-            public Boolean call() throws Exception {
+        Boolean result = invoke(new Callable<Boolean>() {
+            public Boolean call() {
                 // Caching at this point doesn't seem to be cost efficient
                 return (getAttributes0(getParentIShellFolder(),
                     getRelativePIDL(), attribute)
                     & attribute) != 0;
             }
         });
+
+        return result != null && result;
     }
 
     /**
@@ -561,32 +571,29 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native int getAttributes0(long pParentIShellFolder, long pIDL, int attrsMask);
 
     // Return the path to the underlying file system object
+    // Should be called from the COM thread
     private static String getFileSystemPath(final long parentIShellFolder, final long relativePIDL) {
-        return ShellFolder.getInvoker().invoke(new Callable<String>() {
-            public String call() throws Exception {
-                int linkedFolder = ATTRIB_LINK | ATTRIB_FOLDER;
-                if (parentIShellFolder == Win32ShellFolderManager2.getNetwork().getIShellFolder() &&
-                        getAttributes0(parentIShellFolder, relativePIDL, linkedFolder) == linkedFolder) {
+        int linkedFolder = ATTRIB_LINK | ATTRIB_FOLDER;
+        if (parentIShellFolder == Win32ShellFolderManager2.getNetwork().getIShellFolder() &&
+                getAttributes0(parentIShellFolder, relativePIDL, linkedFolder) == linkedFolder) {
 
-                    String s =
-                            getFileSystemPath(Win32ShellFolderManager2.getDesktop().getIShellFolder(),
-                                    getLinkLocation(parentIShellFolder, relativePIDL, false));
-                    if (s != null && s.startsWith("\\\\")) {
-                        return s;
-                    }
-                }
-                return getDisplayNameOf(parentIShellFolder, relativePIDL, SHGDN_FORPARSING);
+            String s =
+                    getFileSystemPath(Win32ShellFolderManager2.getDesktop().getIShellFolder(),
+                            getLinkLocation(parentIShellFolder, relativePIDL, false));
+            if (s != null && s.startsWith("\\\\")) {
+                return s;
             }
-        });
+        }
+        return getDisplayNameOf(parentIShellFolder, relativePIDL, SHGDN_FORPARSING);
     }
 
     // Needs to be accessible to Win32ShellFolderManager2
-    static String getFileSystemPath(final int csidl) throws IOException {
-        return ShellFolder.getInvoker().invoke(new Callable<String>() {
-            public String call() throws Exception {
+    static String getFileSystemPath(final int csidl) throws IOException, InterruptedException {
+        return invoke(new Callable<String>() {
+            public String call() throws IOException {
                 return getFileSystemPath0(csidl);
             }
-        });
+        }, IOException.class);
     }
 
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
@@ -630,13 +637,14 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     // Returns an IEnumIDList interface for an IShellFolder.  The value
     // returned must be released using releaseEnumObjects().
-    private long getEnumObjects(long pIShellFolder, final boolean includeHiddenFiles) {
-        final boolean isDesktop = (disposer.pIShellFolder == getDesktopIShellFolder());
-        return ShellFolder.getInvoker().invoke(new Callable<Long>() {
-            public Long call() throws Exception {
+    private long getEnumObjects(final boolean includeHiddenFiles) throws InterruptedException {
+        return invoke(new Callable<Long>() {
+            public Long call() {
+                boolean isDesktop = disposer.pIShellFolder == getDesktopIShellFolder();
+
                 return getEnumObjects(disposer.pIShellFolder, isDesktop, includeHiddenFiles);
             }
-        });
+        }, RuntimeException.class);
     }
 
     // Returns an IEnumIDList interface for an IShellFolder.  The value
@@ -670,58 +678,62 @@ final class Win32ShellFolder2 extends ShellFolder {
             security.checkRead(getPath());
         }
 
-        return ShellFolder.getInvoker().invoke(new Callable<File[]>() {
-            public File[] call() throws Exception {
-                if (!isDirectory()) {
-                    return null;
-                }
-                // Links to directories are not directories and cannot be parents.
-                // This does not apply to folders in My Network Places (NetHood)
-                // because they are both links and real directories!
-                if (isLink() && !hasAttribute(ATTRIB_FOLDER)) {
-                    return new File[0];
-                }
+        try {
+            return invoke(new Callable<File[]>() {
+                public File[] call() throws InterruptedException {
+                    if (!isDirectory()) {
+                        return null;
+                    }
+                    // Links to directories are not directories and cannot be parents.
+                    // This does not apply to folders in My Network Places (NetHood)
+                    // because they are both links and real directories!
+                    if (isLink() && !hasAttribute(ATTRIB_FOLDER)) {
+                        return new File[0];
+                    }
 
-                Win32ShellFolder2 desktop = Win32ShellFolderManager2.getDesktop();
-                Win32ShellFolder2 personal = Win32ShellFolderManager2.getPersonal();
+                    Win32ShellFolder2 desktop = Win32ShellFolderManager2.getDesktop();
+                    Win32ShellFolder2 personal = Win32ShellFolderManager2.getPersonal();
 
-                // If we are a directory, we have a parent and (at least) a
-                // relative PIDL. We must first ensure we are bound to the
-                // parent so we have an IShellFolder to query.
-                long pIShellFolder = getIShellFolder();
-                // Now we can enumerate the objects in this folder.
-                ArrayList<Win32ShellFolder2> list = new ArrayList<Win32ShellFolder2>();
-                long pEnumObjects = getEnumObjects(pIShellFolder, includeHiddenFiles);
-                if (pEnumObjects != 0) {
-                    long childPIDL;
-                    int testedAttrs = ATTRIB_FILESYSTEM | ATTRIB_FILESYSANCESTOR;
-                    do {
-                        childPIDL = getNextChild(pEnumObjects);
-                        boolean releasePIDL = true;
-                        if (childPIDL != 0 &&
-                                (getAttributes0(pIShellFolder, childPIDL, testedAttrs) & testedAttrs) != 0) {
-                            Win32ShellFolder2 childFolder;
-                            if (Win32ShellFolder2.this.equals(desktop)
-                                    && personal != null
-                                    && pidlsEqual(pIShellFolder, childPIDL, personal.disposer.relativePIDL)) {
-                                childFolder = personal;
-                            } else {
-                                childFolder = new Win32ShellFolder2(Win32ShellFolder2.this, childPIDL);
-                                releasePIDL = false;
+                    // If we are a directory, we have a parent and (at least) a
+                    // relative PIDL. We must first ensure we are bound to the
+                    // parent so we have an IShellFolder to query.
+                    long pIShellFolder = getIShellFolder();
+                    // Now we can enumerate the objects in this folder.
+                    ArrayList<Win32ShellFolder2> list = new ArrayList<Win32ShellFolder2>();
+                    long pEnumObjects = getEnumObjects(includeHiddenFiles);
+                    if (pEnumObjects != 0) {
+                        long childPIDL;
+                        int testedAttrs = ATTRIB_FILESYSTEM | ATTRIB_FILESYSANCESTOR;
+                        do {
+                            childPIDL = getNextChild(pEnumObjects);
+                            boolean releasePIDL = true;
+                            if (childPIDL != 0 &&
+                                    (getAttributes0(pIShellFolder, childPIDL, testedAttrs) & testedAttrs) != 0) {
+                                Win32ShellFolder2 childFolder;
+                                if (Win32ShellFolder2.this.equals(desktop)
+                                        && personal != null
+                                        && pidlsEqual(pIShellFolder, childPIDL, personal.disposer.relativePIDL)) {
+                                    childFolder = personal;
+                                } else {
+                                    childFolder = new Win32ShellFolder2(Win32ShellFolder2.this, childPIDL);
+                                    releasePIDL = false;
+                                }
+                                list.add(childFolder);
                             }
-                            list.add(childFolder);
-                        }
-                        if (releasePIDL) {
-                            releasePIDL(childPIDL);
-                        }
-                    } while (childPIDL != 0 && !Thread.currentThread().isInterrupted());
-                    releaseEnumObjects(pEnumObjects);
+                            if (releasePIDL) {
+                                releasePIDL(childPIDL);
+                            }
+                        } while (childPIDL != 0 && !Thread.currentThread().isInterrupted());
+                        releaseEnumObjects(pEnumObjects);
+                    }
+                    return Thread.currentThread().isInterrupted()
+                        ? new File[0]
+                        : list.toArray(new ShellFolder[list.size()]);
                 }
-                return Thread.currentThread().isInterrupted()
-                    ? new File[0]
-                    : list.toArray(new ShellFolder[list.size()]);
-            }
-        });
+            }, InterruptedException.class);
+        } catch (InterruptedException e) {
+            return new File[0];
+        }
     }
 
 
@@ -730,13 +742,13 @@ final class Win32ShellFolder2 extends ShellFolder {
      *
      * @return The child shellfolder, or null if not found.
      */
-    Win32ShellFolder2 getChildByPath(final String filePath) {
-        return ShellFolder.getInvoker().invoke(new Callable<Win32ShellFolder2>() {
-            public Win32ShellFolder2 call() throws Exception {
+    Win32ShellFolder2 getChildByPath(final String filePath) throws InterruptedException {
+        return invoke(new Callable<Win32ShellFolder2>() {
+            public Win32ShellFolder2 call() throws InterruptedException {
                 long pIShellFolder = getIShellFolder();
-                long pEnumObjects = getEnumObjects(pIShellFolder, true);
+                long pEnumObjects = getEnumObjects(true);
                 Win32ShellFolder2 child = null;
-                long childPIDL = 0;
+                long childPIDL;
 
                 while ((childPIDL = getNextChild(pEnumObjects)) != 0) {
                     if (getAttributes0(pIShellFolder, childPIDL, ATTRIB_FILESYSTEM) != 0) {
@@ -753,7 +765,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                 releaseEnumObjects(pEnumObjects);
                 return child;
             }
-        });
+        }, InterruptedException.class);
     }
 
     private Boolean cachedIsLink;
@@ -791,8 +803,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     private ShellFolder getLinkLocation(final boolean resolve) {
-        return ShellFolder.getInvoker().invoke(new Callable<ShellFolder>() {
-            public ShellFolder call() throws Exception {
+        return invoke(new Callable<ShellFolder>() {
+            public ShellFolder call() {
                 if (!isLink()) {
                     return null;
                 }
@@ -805,6 +817,8 @@ final class Win32ShellFolder2 extends ShellFolder {
                         location =
                                 Win32ShellFolderManager2.createShellFolderFromRelativePIDL(getDesktop(),
                                         linkLocationPIDL);
+                    } catch (InterruptedException e) {
+                        // Return null
                     } catch (InternalError e) {
                         // Could be a link to a non-bindable object, such as a network connection
                         // TODO: getIShellFolder() should throw FileNotFoundException instead
@@ -816,19 +830,12 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     // Parse a display name into a PIDL relative to the current IShellFolder.
-    long parseDisplayName(final String name) throws FileNotFoundException {
-        try {
-            return ShellFolder.getInvoker().invoke(new Callable<Long>() {
-                public Long call() throws Exception {
-                    return parseDisplayName0(getIShellFolder(), name);
-                }
-            });
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof IOException) {
-                throw new FileNotFoundException("Could not find file " + name);
+    long parseDisplayName(final String name) throws IOException, InterruptedException {
+        return invoke(new Callable<Long>() {
+            public Long call() throws IOException {
+                return parseDisplayName0(getIShellFolder(), name);
             }
-            throw e;
-        }
+        }, IOException.class);
     }
 
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
@@ -846,8 +853,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     public String getDisplayName() {
         if (displayName == null) {
             displayName =
-                ShellFolder.getInvoker().invoke(new Callable<String>() {
-                    public String call() throws Exception {
+                invoke(new Callable<String>() {
+                    public String call() {
                         return getDisplayNameOf(getParentIShellFolder(),
                                 getRelativePIDL(), SHGDN_NORMAL);
                     }
@@ -867,8 +874,8 @@ final class Win32ShellFolder2 extends ShellFolder {
         if (folderType == null) {
             final long absolutePIDL = getAbsolutePIDL();
             folderType =
-                ShellFolder.getInvoker().invoke(new Callable<String>() {
-                    public String call() throws Exception {
+                invoke(new Callable<String>() {
+                    public String call() {
                         return getFolderType(absolutePIDL);
                     }
                 });
@@ -926,15 +933,12 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     public static native int[] getFileChooserBitmapBits();
 
+    // Should be called from the COM thread
     private long getIShellIcon() {
         if (pIShellIcon == -1L) {
-            pIShellIcon =
-                ShellFolder.getInvoker().invoke(new Callable<Long>() {
-                    public Long call() throws Exception {
-                        return getIShellIcon(getIShellFolder());
-                    }
-                });
+            pIShellIcon = getIShellIcon(getIShellFolder());
         }
+
         return pIShellIcon;
     }
 
@@ -988,8 +992,8 @@ final class Win32ShellFolder2 extends ShellFolder {
         Image icon = getLargeIcon ? largeIcon : smallIcon;
         if (icon == null) {
             icon =
-                ShellFolder.getInvoker().invoke(new Callable<Image>() {
-                    public Image call() throws Exception {
+                invoke(new Callable<Image>() {
+                    public Image call() {
                         Image newIcon = null;
                         if (isFileSystem()) {
                             long parentIShellIcon = (parent != null)
@@ -1113,8 +1117,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static final int LVCFMT_CENTER = 2;
 
     public ShellFolderColumnInfo[] getFolderColumns() {
-        return ShellFolder.getInvoker().invoke(new Callable<ShellFolderColumnInfo[]>() {
-            public ShellFolderColumnInfo[] call() throws Exception {
+        return invoke(new Callable<ShellFolderColumnInfo[]>() {
+            public ShellFolderColumnInfo[] call() {
                 ShellFolderColumnInfo[] columns = doGetColumnInfo(getIShellFolder());
 
                 if (columns != null) {
@@ -1143,8 +1147,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     public Object getFolderColumnValue(final int column) {
-        return ShellFolder.getInvoker().invoke(new Callable<Object>() {
-            public Object call() throws Exception {
+        return invoke(new Callable<Object>() {
+            public Object call() {
                 return doGetColumnValue(getParentIShellFolder(), getRelativePIDL(), column);
             }
         });
@@ -1163,8 +1167,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     public void sortChildren(final List<? extends File> files) {
         // To avoid loads of synchronizations with Invoker and improve performance we
         // synchronize the whole code of the sort method once
-        getInvoker().invoke(new Callable<Void>() {
-            public Void call() throws Exception {
+        invoke(new Callable<Void>() {
+            public Void call() {
                 Collections.sort(files, new ColumnComparator(getIShellFolder(), 0));
 
                 return null;
@@ -1184,19 +1188,21 @@ final class Win32ShellFolder2 extends ShellFolder {
 
         // compares 2 objects within this folder by the specified column
         public int compare(final File o, final File o1) {
-            return ShellFolder.getInvoker().invoke(new Callable<Integer>() {
-                public Integer call() throws Exception {
+            Integer result = invoke(new Callable<Integer>() {
+                public Integer call() {
                     if (o instanceof Win32ShellFolder2
-                            && o1 instanceof Win32ShellFolder2) {
+                        && o1 instanceof Win32ShellFolder2) {
                         // delegates comparison to native method
                         return compareIDsByColumn(parentIShellFolder,
-                                ((Win32ShellFolder2) o).getRelativePIDL(),
-                                ((Win32ShellFolder2) o1).getRelativePIDL(),
-                                columnIdx);
+                            ((Win32ShellFolder2) o).getRelativePIDL(),
+                            ((Win32ShellFolder2) o1).getRelativePIDL(),
+                            columnIdx);
                     }
                     return 0;
                 }
             });
+
+            return result == null ? 0 : result;
         }
     }
 }

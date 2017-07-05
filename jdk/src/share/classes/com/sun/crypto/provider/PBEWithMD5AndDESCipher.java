@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,16 +55,9 @@ public final class PBEWithMD5AndDESCipher extends CipherSpi {
      * unavailable
      * @exception NoSuchPaddingException if the required padding mechanism
      * (PKCS5Padding) is unavailable
-     *
-     * @exception SecurityException if this constructor fails to verify
-     * its own integrity
      */
     public PBEWithMD5AndDESCipher()
         throws NoSuchAlgorithmException, NoSuchPaddingException {
-        if (!SunJCE.verifySelfIntegrity(this.getClass())) {
-            throw new SecurityException("The SunJCE provider may have " +
-                                        "been tampered.");
-        }
         core = new PBECipherCore("DES");
     }
 

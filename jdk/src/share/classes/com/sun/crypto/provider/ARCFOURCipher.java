@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ public final class ARCFOURCipher extends CipherSpi {
 
     // called by the JCE framework
     public ARCFOURCipher() {
-        SunJCE.ensureIntegrity(getClass());
         S = new int[256];
     }
 
