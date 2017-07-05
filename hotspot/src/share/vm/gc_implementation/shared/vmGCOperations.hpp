@@ -86,9 +86,7 @@ class VM_GC_Operation: public VM_Operation {
 
     _gc_locked = false;
 
-    if (full) {
-      _full_gc_count_before = full_gc_count_before;
-    }
+    _full_gc_count_before = full_gc_count_before;
     // In ParallelScavengeHeap::mem_allocate() collections can be
     // executed within a loop and _all_soft_refs_clear can be set
     // true after they have been cleared by a collection and another
