@@ -310,7 +310,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * throwables locally, rethrowing only those which are legal in the context,
  * and wrapping ones which are illegal.
  *
- * <h1><a name="sigpoly"></a>Signature polymorphism</h1>
+ * <h1><a id="sigpoly"></a>Signature polymorphism</h1>
  * The unusual compilation and linkage behavior of
  * {@code invokeExact} and plain {@code invoke}
  * is referenced by the term <em>signature polymorphism</em>.
@@ -404,7 +404,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * genericity with a Java type parameter.</li>
  * </ul>
  *
- * <h1><a name="maxarity"></a>Arity limits</h1>
+ * <h1><a id="maxarity"></a>Arity limits</h1>
  * The JVM imposes on all methods and constructors of any kind an absolute
  * limit of 255 stacked arguments.  This limit can appear more restrictive
  * in certain cases:
@@ -423,6 +423,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * @see MethodType
  * @see MethodHandles
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
 public abstract class MethodHandle {
 

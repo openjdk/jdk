@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,45 +28,44 @@
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckRead
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 public class AccessCheckRead {
 
-    // Test that a class in a package in module1 cannot access a class in
-    // a package n module2 if module1 cannot read module2.
+    // Test that a class in a package in module_one cannot access a class in
+    // a package in module_two if module_one cannot read module_two.
     public static void main(String args[]) throws Throwable {
-        Object m1, m2;
+        Object m1x, m2x;
 
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for AccessCheckRead and assume it's also used to
         // load classes p1.c1 and p2.c2.
         ClassLoader this_cldr = AccessCheckRead.class.getClassLoader();
 
         // Define a module for p1.
-        m1 = ModuleHelper.ModuleObject("module1", this_cldr, new String[] { "p1" });
-        assertNotNull(m1, "Module should not be null");
-        ModuleHelper.DefineModule(m1, "9.0", "m1/here", new String[] { "p1" });
-        ModuleHelper.AddReadsModule(m1, jlObject_jlrM);
+        m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p1" });
+        assertNotNull(m1x, "Module should not be null");
+        ModuleHelper.DefineModule(m1x, "9.0", "m1x/here", new String[] { "p1" });
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Define a module for p2.
-        m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2, jlObject_jlrM);
+        m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
-        // Make package p1 in m1 visible to everyone.
-        ModuleHelper.AddModuleExportsToAll(m1, "p1");
+        // Make package p1 in m1x visible to everyone.
+        ModuleHelper.AddModuleExportsToAll(m1x, "p1");
 
         Class p1_c1_class = Class.forName("p1.c1");
 
@@ -74,7 +73,7 @@ public class AccessCheckRead {
         // cannot read p2's module.  So should get IllegalAccessError.
         try {
             p1_c1_class.newInstance();
-            throw new RuntimeException("Failed to get IAE (m1 can't read m2)");
+            throw new RuntimeException("Failed to get IAE (m1x can't read m2x)");
         } catch (IllegalAccessError e) {
             System.out.println(e.getMessage());
             if (!e.getMessage().contains("does not read") ||

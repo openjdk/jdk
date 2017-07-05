@@ -214,6 +214,11 @@ if [ $? = 0 ]
 then
   VM_CPU="aarch64"
 fi
+grep "arm64" vm_version.out > ${NULL}
+if [ $? = 0 ]
+then
+  VM_CPU="aarch64"
+fi
 export VM_TYPE VM_BITS VM_OS VM_CPU
 echo "VM_TYPE=${VM_TYPE}"
 echo "VM_BITS=${VM_BITS}"

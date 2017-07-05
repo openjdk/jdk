@@ -28,8 +28,12 @@
  * <P>
  * This module requires {@code java.se} and supplements it with modules
  * that define CORBA and Java EE APIs. These modules are upgradeable.
+ *
+ * @moduleGraph
+ * @since 9
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // java.corba and other modules
 module java.se.ee {
 
     requires transitive java.se;

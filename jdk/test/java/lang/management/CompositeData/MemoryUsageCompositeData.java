@@ -28,7 +28,6 @@
  *          or throw exception if the input CompositeData is invalid.
  * @author  Mandy Chung
  *
- * @modules java.management
  * @build MemoryUsageCompositeData
  * @run main MemoryUsageCompositeData
  */

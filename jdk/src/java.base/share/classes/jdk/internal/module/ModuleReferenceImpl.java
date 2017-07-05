@@ -46,6 +46,9 @@ public class ModuleReferenceImpl extends ModuleReference {
     // non-null if the module is patched
     private final ModulePatcher patcher;
 
+    // ModuleTarget if the module is OS/architecture specific
+    private final ModuleTarget target;
+
     // the hashes of other modules recorded in this module
     private final ModuleHashes recordedHashes;
 
@@ -65,6 +68,7 @@ public class ModuleReferenceImpl extends ModuleReference {
                         URI location,
                         Supplier<ModuleReader> readerSupplier,
                         ModulePatcher patcher,
+                        ModuleTarget target,
                         ModuleHashes recordedHashes,
                         ModuleHashes.HashSupplier hasher,
                         ModuleResolution moduleResolution)
@@ -72,6 +76,7 @@ public class ModuleReferenceImpl extends ModuleReference {
         super(descriptor, Objects.requireNonNull(location));
         this.readerSupplier = readerSupplier;
         this.patcher = patcher;
+        this.target = target;
         this.recordedHashes = recordedHashes;
         this.hasher = hasher;
         this.moduleResolution = moduleResolution;
@@ -91,6 +96,13 @@ public class ModuleReferenceImpl extends ModuleReference {
      */
     public boolean isPatched() {
         return (patcher != null);
+    }
+
+    /**
+     * Returns the ModuleTarget or {@code null} if the no target platform.
+     */
+    public ModuleTarget moduleTarget() {
+        return target;
     }
 
     /**
@@ -163,7 +175,14 @@ public class ModuleReferenceImpl extends ModuleReference {
 
     @Override
     public String toString() {
-        return super.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append("[module ");
+        sb.append(descriptor().name());
+        sb.append(", location=");
+        sb.append(location().orElseThrow(() -> new InternalError()));
+        if (isPatched()) sb.append(" (patched)");
+        sb.append("]");
+        return sb.toString();
     }
 
 }
