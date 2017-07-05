@@ -32,6 +32,7 @@ class Rewriter: public StackObj {
   objArrayHandle      _methods;
   intArray            _cp_map;
   intStack            _cp_cache_map;
+  bool                _have_invoke_dynamic;
 
   void init_cp_map(int length) {
     _cp_map.initialize(length, -1);
@@ -54,6 +55,22 @@ class Rewriter: public StackObj {
     assert(main_cpc_entry < _cp_cache_map.length(), "must be earlier CP cache entry");
     int cache_index = _cp_cache_map.append(main_cpc_entry | _secondary_entry_tag);
     return cache_index;
+  }
+
+  // Access the contents of _cp_cache_map to determine CP cache layout.
+  int cp_cache_entry_pool_index(int cache_index) {
+    int cp_index = _cp_cache_map[cache_index];
+    if ((cp_index & _secondary_entry_tag) != 0)
+      return -1;
+    else
+      return cp_index;
+  }
+  int cp_cache_secondary_entry_main_index(int cache_index) {
+    int cp_index = _cp_cache_map[cache_index];
+    if ((cp_index & _secondary_entry_tag) == 0)
+      return -1;
+    else
+      return (cp_index - _secondary_entry_tag);
   }
 
   // All the work goes in here:

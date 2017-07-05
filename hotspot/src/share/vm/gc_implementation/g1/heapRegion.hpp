@@ -252,7 +252,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
                                 // survivor
   };
 
-  YoungType _young_type;
+  volatile YoungType _young_type;
   int  _young_index_in_cset;
   SurvRateGroup* _surv_rate_group;
   int  _age_index;
@@ -726,9 +726,12 @@ class HeapRegion: public G1OffsetTableContigSpace {
   HeapWord*
   object_iterate_mem_careful(MemRegion mr, ObjectClosure* cl);
 
+  // In this version - if filter_young is true and the region
+  // is a young region then we skip the iteration.
   HeapWord*
   oops_on_card_seq_iterate_careful(MemRegion mr,
-                                   FilterOutOfRegionClosure* cl);
+                                   FilterOutOfRegionClosure* cl,
+                                   bool filter_young);
 
   // The region "mr" is entirely in "this", and starts and ends at block
   // boundaries. The caller declares that all the contained blocks are

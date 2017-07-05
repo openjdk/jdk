@@ -851,9 +851,15 @@ jint* methodOopDesc::method_type_offsets_chain() {
 // MethodHandleCompiler.
 // Must be consistent with MethodHandleCompiler::get_method_oop().
 bool methodOopDesc::is_method_handle_adapter() const {
-  return (is_method_handle_invoke_name(name()) &&
-          is_synthetic() &&
-          MethodHandleCompiler::klass_is_method_handle_adapter_holder(method_holder()));
+  if (is_synthetic() &&
+      !is_native() &&   // has code from MethodHandleCompiler
+      is_method_handle_invoke_name(name()) &&
+      MethodHandleCompiler::klass_is_method_handle_adapter_holder(method_holder())) {
+    assert(!is_method_handle_invoke(), "disjoint");
+    return true;
+  } else {
+    return false;
+  }
 }
 
 methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
