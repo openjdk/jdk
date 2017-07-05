@@ -43,6 +43,7 @@ import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.objects.Global;
@@ -59,7 +60,7 @@ import jdk.nashorn.internal.runtime.options.Options;
 /**
  * Command line Shell for processing JavaScript files.
  */
-public class Shell {
+public class Shell implements PartialParser {
 
     /**
      * Resource name for properties file
@@ -395,6 +396,42 @@ public class Shell {
     protected Object apply(final ScriptFunction target, final Object self) {
         return ScriptRuntime.apply(target, self);
     }
+
+    /**
+     * Parse potentially partial code and keep track of the start of last expression.
+     * This 'partial' parsing support is meant to be used for code-completion.
+     *
+     * @param context the nashorn context
+     * @param code code that is to be parsed
+     * @return the start index of the last expression parsed in the (incomplete) code.
+     */
+    @Override
+    public final int getLastExpressionStart(final Context context, final String code) {
+        final int[] exprStart = { -1 };
+
+        final Parser p = new Parser(context.getEnv(), sourceFor("<partial_code>", code),new Context.ThrowErrorManager()) {
+            @Override
+            protected Expression expression() {
+                exprStart[0] = this.start;
+                return super.expression();
+            }
+
+            @Override
+            protected Expression assignmentExpression(final boolean noIn) {
+                exprStart[0] = this.start;
+                return super.expression();
+            }
+        };
+
+        try {
+            p.parse();
+        } catch (final Exception ignored) {
+            // throw any parser exception, but we are partial parsing anyway
+        }
+
+        return exprStart[0];
+    }
+
 
     /**
      * read-eval-print loop for Nashorn shell.

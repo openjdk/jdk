@@ -1340,6 +1340,21 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     /**
+     * return an array of all property keys - all inherited, non-enumerable included.
+     * This is meant for source code completion by interactive shells or editors.
+     *
+     * @return Array of keys, order of properties is undefined.
+     */
+    public String[] getAllKeys() {
+        final Set<String> keys = new HashSet<>();
+        final Set<String> nonEnumerable = new HashSet<>();
+        for (ScriptObject self = this; self != null; self = self.getProto()) {
+            keys.addAll(Arrays.asList(self.getOwnKeys(true, nonEnumerable)));
+        }
+        return keys.toArray(new String[keys.size()]);
+    }
+
+    /**
      * return an array of own property keys associated with the object.
      *
      * @param all True if to include non-enumerable keys.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,28 +88,14 @@ JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_isIPv6Available0(JNIEnv* env, jclass cl)
 {
     /*
-     * Return true if Windows Vista or newer, and IPv6 is configured
+     * Return true if IPv6 is configured
      */
-    OSVERSIONINFO ver;
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-    if ((ver.dwPlatformId == VER_PLATFORM_WIN32_NT) &&
-        (ver.dwMajorVersion >= 6)  && ipv6_available())
-    {
-        return JNI_TRUE;
-    }
-    return JNI_FALSE;
+    return ipv6_available() ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
-    OSVERSIONINFO ver;
-    int version;
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-    version = ver.dwMajorVersion * 10 + ver.dwMinorVersion;
-    //if os <= xp exclusive binding is off by default
-    return version >= 60 ? 1 : 0;
+    return 1;
 }
 
 
@@ -567,7 +553,7 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     fd_set rd, wr, ex;
     jint fd = fdval(env, fdo);
 
-    t.tv_sec = timeout / 1000;
+    t.tv_sec = (long)(timeout / 1000);
     t.tv_usec = (timeout % 1000) * 1000;
 
     FD_ZERO(&rd);

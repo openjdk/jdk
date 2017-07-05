@@ -3237,6 +3237,7 @@ loop:
     }
 
     /**
+     * {@code
      * MultiplicativeExpression :
      *      UnaryExpression
      *      MultiplicativeExpression * UnaryExpression
@@ -3323,11 +3324,15 @@ loop:
      *      Expression , AssignmentExpression
      *
      * See 11.14
+     * }
      *
      * Parse expression.
      * @return Expression node.
      */
-    private Expression expression() {
+    protected Expression expression() {
+        // This method is protected so that subclass can get details
+        // at expression start point!
+
         // TODO - Destructuring array.
         // Include commas in expression parsing.
         return expression(unaryExpression(), COMMARIGHT.getPrecedence(), false);
@@ -3398,7 +3403,10 @@ loop:
         return lhs;
     }
 
-    private Expression assignmentExpression(final boolean noIn) {
+    protected Expression assignmentExpression(final boolean noIn) {
+        // This method is protected so that subclass can get details
+        // at assignment expression start point!
+
         // TODO - Handle decompose.
         // Exclude commas in expression parsing.
         return expression(unaryExpression(), ASSIGN.getPrecedence(), noIn);

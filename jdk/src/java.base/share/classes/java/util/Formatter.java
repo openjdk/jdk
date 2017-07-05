@@ -273,6 +273,10 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * </ol>
  *
+ * <p> For category <i>General</i>, <i>Character</i>, <i>Numberic</i>,
+ * <i>Integral</i> and <i>Date/Time</i> conversion, unless otherwise specified,
+ * if the argument <i>arg</i> is {@code null}, then the result is "{@code null}".
+ *
  * <p> The following table summarizes the supported conversions.  Conversions
  * denoted by an upper-case character (i.e. {@code 'B'}, {@code 'H'},
  * {@code 'S'}, {@code 'C'}, {@code 'X'}, {@code 'E'}, {@code 'G'},
@@ -301,14 +305,12 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <tr><td valign="top"> {@code 'h'}, {@code 'H'}
  *     <td valign="top"> general
- *     <td> If the argument <i>arg</i> is {@code null}, then the result is
- *     "{@code null}".  Otherwise, the result is obtained by invoking
+ *     <td> The result is obtained by invoking
  *     {@code Integer.toHexString(arg.hashCode())}.
  *
  * <tr><td valign="top"> {@code 's'}, {@code 'S'}
  *     <td valign="top"> general
- *     <td> If the argument <i>arg</i> is {@code null}, then the result is
- *     "{@code null}".  If <i>arg</i> implements {@link Formattable}, then
+ *     <td> If <i>arg</i> implements {@link Formattable}, then
  *     {@link Formattable#formatTo arg.formatTo} is invoked. Otherwise, the
  *     result is obtained by invoking {@code arg.toString()}.
  *
@@ -683,6 +685,10 @@ import sun.misc.FormattedFloatingDecimal;
  * methods such as {@link String#format(String,Object...) String.format} and
  * {@link java.io.PrintStream#printf(String,Object...) PrintStream.printf}.
  *
+ * <p> For category <i>General</i>, <i>Character</i>, <i>Numberic</i>,
+ * <i>Integral</i> and <i>Date/Time</i> conversion, unless otherwise specified,
+ * if the argument <i>arg</i> is {@code null}, then the result is "{@code null}".
+ *
  * <p> Conversions denoted by an upper-case character (i.e. {@code 'B'},
  * {@code 'H'}, {@code 'S'}, {@code 'C'}, {@code 'X'}, {@code 'E'},
  * {@code 'G'}, {@code 'A'}, and {@code 'T'}) are the same as those for the
@@ -722,9 +728,8 @@ import sun.misc.FormattedFloatingDecimal;
  *     <td valign="top"> <code>'&#92;u0068'</code>
  *     <td> Produces a string representing the hash code value of the object.
  *
- *     <p> If the argument, <i>arg</i> is {@code null}, then the
- *     result is "{@code null}".  Otherwise, the result is obtained
- *     by invoking {@code Integer.toHexString(arg.hashCode())}.
+ *     <p> The result is obtained by invoking
+ *     {@code Integer.toHexString(arg.hashCode())}.
  *
  *     <p> If the {@code '#'} flag is given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
@@ -737,8 +742,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     <td valign="top"> <code>'&#92;u0073'</code>
  *     <td> Produces a string.
  *
- *     <p> If the argument is {@code null}, then the result is
- *     "{@code null}".  If the argument implements {@link Formattable}, then
+ *     <p> If the argument implements {@link Formattable}, then
  *     its {@link Formattable#formatTo formatTo} method is invoked.
  *     Otherwise, the result is obtained by invoking the argument's
  *     {@code toString()} method.

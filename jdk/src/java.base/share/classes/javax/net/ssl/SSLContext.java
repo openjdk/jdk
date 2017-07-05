@@ -39,7 +39,7 @@ import sun.security.jca.GetInstance;
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code SSLContext} protocol:
  * <ul>
- * <li><tt>TLSv1</tt></li>
+ * <li>{@code TLSv1}</li>
  * </ul>
  * This protocol is described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
