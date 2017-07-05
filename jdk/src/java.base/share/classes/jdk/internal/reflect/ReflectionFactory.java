@@ -345,6 +345,10 @@ public class ReflectionFactory {
         return langReflectAccess().getExecutableTypeAnnotationBytes(ex);
     }
 
+    public Class<?>[] getExecutableSharedParameterTypes(Executable ex) {
+        return langReflectAccess().getExecutableSharedParameterTypes(ex);
+    }
+
     //--------------------------------------------------------------------------
     //
     // Routines used by serialization

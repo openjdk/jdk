@@ -23,14 +23,13 @@
 
 /*
  * @test
- * @bug 7110803
+ * @bug 7110803 8170732
  * @summary SASL service for multiple hostnames
  * @compile -XDignore.symbol.file SaslBasic.java
- * @run main/othervm SaslBasic bound
- * @run main/othervm SaslBasic unbound
+ * @run main/othervm SaslBasic bound auth-int
+ * @run main/othervm SaslBasic unbound auth-conf
+ * @run main/othervm SaslBasic bound auth
  */
-import com.sun.security.jgss.InquireType;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,7 +50,7 @@ public class SaslBasic {
         System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
 
         HashMap clntprops = new HashMap();
-        clntprops.put(Sasl.QOP, "auth-conf");
+        clntprops.put(Sasl.QOP, args[1]);
         SaslClient sc = Sasl.createSaslClient(
                 new String[]{"GSSAPI"}, null, "server",
                 name, clntprops, null);
@@ -74,9 +73,11 @@ public class SaslBasic {
                 });
 
         byte[] token = new byte[0];
+        byte[] lastClientToken = null;
         while (!sc.isComplete() || !ss.isComplete()) {
             if (!sc.isComplete()) {
                 token = sc.evaluateChallenge(token);
+                lastClientToken = token;
             }
             if (!ss.isComplete()) {
                 token = ss.evaluateResponse(token);
@@ -94,11 +95,20 @@ public class SaslBasic {
         if (key == null) {
             throw new Exception("Extended negotiated property not read");
         }
-        byte[] hello = "hello".getBytes();
-        token = sc.wrap(hello, 0, hello.length);
-        token = ss.unwrap(token, 0, token.length);
-        if (!Arrays.equals(hello, token)) {
-            throw new Exception("Message altered");
+
+        if (args[1].equals("auth")) {
+            // 8170732. These are the maximum size bytes after jgss/krb5 wrap.
+            if (lastClientToken[17] != 0 || lastClientToken[18] != 0
+                    || lastClientToken[19] != 0) {
+                throw new Exception("maximum size for auth must be 0");
+            }
+        } else {
+            byte[] hello = "hello".getBytes();
+            token = sc.wrap(hello, 0, hello.length);
+            token = ss.unwrap(token, 0, token.length);
+            if (!Arrays.equals(hello, token)) {
+                throw new Exception("Message altered");
+            }
         }
     }
 }
