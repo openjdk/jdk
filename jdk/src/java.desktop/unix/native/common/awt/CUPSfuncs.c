@@ -371,6 +371,10 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
     ppd_option_t *option;
     ppd_choice_t *choice;
     ppd_size_t *size;
+    const char *filename = NULL;
+    int i;
+    jobjectArray sizeArray = NULL;
+    jfloat *dims;
 
     const char *name = (*env)->GetStringUTFChars(env, printer, NULL);
     if (name == NULL) {
@@ -378,10 +382,6 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
         JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
         return NULL;
     }
-    const char *filename;
-    int i;
-    jobjectArray sizeArray = NULL;
-    jfloat *dims;
 
     // NOTE: cupsGetPPD returns a pointer to a filename of a temporary file.
     // unlink() must be called to remove the file after using it.
@@ -470,6 +470,8 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
     jclass intCls, cls;
     jmethodID intCtr, arrListAddMID;
     int i;
+    const char *name = NULL;
+    const char *filename = NULL;
 
     intCls = (*env)->FindClass(env, "java/lang/Integer");
     CHECK_NULL(intCls);
@@ -481,13 +483,13 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
         (*env)->GetMethodID(env, cls, "add", "(Ljava/lang/Object;)Z");
     CHECK_NULL(arrListAddMID);
 
-    const char *name = (*env)->GetStringUTFChars(env, printer, NULL);
+    name = (*env)->GetStringUTFChars(env, printer, NULL);
     if (name == NULL) {
         (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
         return;
     }
-    const char *filename;
+
 
     // NOTE: cupsGetPPD returns a pointer to a filename of a temporary file.
     // unlink() must be called to remove the file after using it.

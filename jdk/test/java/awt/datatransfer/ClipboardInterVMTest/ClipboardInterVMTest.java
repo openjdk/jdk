@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 8071668
   @summary Check whether clipboard see changes from external process after taking ownership
   @author Anton Nashatyrev: area=datatransfer

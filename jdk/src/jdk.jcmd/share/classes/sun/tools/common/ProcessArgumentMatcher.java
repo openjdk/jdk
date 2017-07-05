@@ -25,6 +25,7 @@
 
 package sun.tools.common;
 
+import java.lang.reflect.Module;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,13 +46,10 @@ import sun.jvmstat.monitor.VmIdentifier;
  * the process identifiers.
  */
 public class ProcessArgumentMatcher {
-    private String excludeCls;
-    private String matchClass = null;
-    private String singlePid = null;
-    private boolean matchAll = false;
+    private String matchClass;
+    private String singlePid;
 
-    public ProcessArgumentMatcher(String pidArg, Class<?> excludeClass) {
-        excludeCls = excludeClass.getName();
+    public ProcessArgumentMatcher(String pidArg) {
         if (pidArg == null || pidArg.isEmpty()) {
             throw new IllegalArgumentException("Pid string is invalid");
         }
@@ -60,9 +58,7 @@ public class ProcessArgumentMatcher {
         }
         try {
             long pid = Long.parseLong(pidArg);
-            if (pid == 0) {
-                matchAll = true;
-            } else {
+            if (pid != 0) {
                 singlePid = String.valueOf(pid);
             }
         } catch (NumberFormatException nfe) {
@@ -70,7 +66,18 @@ public class ProcessArgumentMatcher {
         }
     }
 
-    private boolean check(VirtualMachineDescriptor vmd) {
+    private static String getExcludeStringFrom(Class<?> excludeClass) {
+        if (excludeClass == null) {
+            return "";
+        }
+        Module m = excludeClass.getModule();
+        if (m.isNamed()) {
+            return m.getName() + "/" + excludeClass.getName();
+        }
+        return excludeClass.getName();
+    }
+
+    private static boolean check(VirtualMachineDescriptor vmd, String excludeClass, String partialMatch) {
         String mainClass = null;
         try {
             VmIdentifier vmId = new VmIdentifier(vmd.id());
@@ -87,42 +94,55 @@ public class ProcessArgumentMatcher {
             // Handle this gracefully....
             return false;
         } catch (MonitorException | URISyntaxException e) {
-            if (e.getMessage() != null) {
-                System.err.println(e.getMessage());
-            } else {
-                Throwable cause = e.getCause();
-                if ((cause != null) && (cause.getMessage() != null)) {
-                    System.err.println(cause.getMessage());
-                } else {
-                    e.printStackTrace();
-                }
-            }
             return false;
         }
 
-        if (mainClass.equals(excludeCls)) {
+        if (excludeClass != null && mainClass.equals(excludeClass)) {
             return false;
         }
 
-        if (matchAll || mainClass.indexOf(matchClass) != -1) {
-            return true;
+        if (partialMatch != null && mainClass.indexOf(partialMatch) == -1) {
+            return false;
         }
 
-        return false;
+        return true;
     }
 
-    public Collection<String> getPids() {
-        Collection<String> pids = new ArrayList<>();
-        if (singlePid != null) {
-            pids.add(singlePid);
-            return pids;
-        }
+    private static Collection<VirtualMachineDescriptor> getSingleVMD(String pid) {
+        Collection<VirtualMachineDescriptor> vids = new ArrayList<>();
         List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
         for (VirtualMachineDescriptor vmd : vmds) {
-            if (check(vmd)) {
-                pids.add(vmd.id());
+            if (check(vmd, null, null)) {
+                if (pid.equals(vmd.id())) {
+                    vids.add(vmd);
+                }
             }
         }
-        return pids;
+        return vids;
     }
+
+    private static Collection<VirtualMachineDescriptor> getVMDs(Class<?> excludeClass, String partialMatch) {
+        String excludeCls = getExcludeStringFrom(excludeClass);
+        Collection<VirtualMachineDescriptor> vids = new ArrayList<>();
+        List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
+        for (VirtualMachineDescriptor vmd : vmds) {
+            if (check(vmd, excludeCls, partialMatch)) {
+                vids.add(vmd);
+            }
+        }
+        return vids;
+    }
+
+    public Collection<VirtualMachineDescriptor> getVirtualMachineDescriptors(Class<?> excludeClass) {
+        if (singlePid != null) {
+            return getSingleVMD(singlePid);
+        } else {
+            return getVMDs(excludeClass, matchClass);
+        }
+    }
+
+    public Collection<VirtualMachineDescriptor> getVirtualMachineDescriptors() {
+        return this.getVirtualMachineDescriptors(null);
+    }
+
 }

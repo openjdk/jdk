@@ -23,7 +23,10 @@
  */
 #include "precompiled.hpp"
 
+#include "runtime/atomic.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
+#include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
@@ -52,46 +55,41 @@ bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const
   if (all_committed()) return true;
 
   CommittedMemoryRegion committed_rgn(addr, size, stack);
-  LinkedListNode<CommittedMemoryRegion>* node = _committed_regions.find_node(committed_rgn);
-  if (node != NULL) {
+  LinkedListNode<CommittedMemoryRegion>* node = _committed_regions.head();
+
+  while (node != NULL) {
     CommittedMemoryRegion* rgn = node->data();
     if (rgn->same_region(addr, size)) {
       return true;
     }
 
     if (rgn->adjacent_to(addr, size)) {
-      // check if the next region covers this committed region,
-      // the regions may not be merged due to different call stacks
-      LinkedListNode<CommittedMemoryRegion>* next =
-        node->next();
-      if (next != NULL && next->data()->contain_region(addr, size)) {
-        if (next->data()->same_region(addr, size)) {
-          next->data()->set_call_stack(stack);
-        }
-        return true;
-      }
-      if (rgn->call_stack()->equals(stack)) {
+      // special case to expand prior region if there is no next region
+      LinkedListNode<CommittedMemoryRegion>* next = node->next();
+      if (next == NULL && rgn->call_stack()->equals(stack)) {
         VirtualMemorySummary::record_uncommitted_memory(rgn->size(), flag());
         // the two adjacent regions have the same call stack, merge them
         rgn->expand_region(addr, size);
         VirtualMemorySummary::record_committed_memory(rgn->size(), flag());
         return true;
       }
-      VirtualMemorySummary::record_committed_memory(size, flag());
-      if (rgn->base() > addr) {
-        return _committed_regions.insert_before(committed_rgn, node) != NULL;
-      } else {
-        return _committed_regions.insert_after(committed_rgn, node) != NULL;
       }
+
+    if (rgn->overlap_region(addr, size)) {
+      // Clear a space for this region in the case it overlaps with any regions.
+      remove_uncommitted_region(addr, size);
+      break;  // commit below
     }
-    assert(rgn->contain_region(addr, size), "Must cover this region");
-    return true;
-  } else {
+    if (rgn->end() >= addr + size){
+      break;
+    }
+    node = node->next();
+  }
+
     // New committed region
     VirtualMemorySummary::record_committed_memory(size, flag());
     return add_committed_region(committed_rgn);
   }
-}
 
 void ReservedMemoryRegion::set_all_committed(bool b) {
   if (all_committed() != b) {
@@ -175,48 +173,52 @@ bool ReservedMemoryRegion::remove_uncommitted_region(address addr, size_t sz) {
       }
     }
   } else {
-    // we have to walk whole list to remove the committed regions in
-    // specified range
-    LinkedListNode<CommittedMemoryRegion>* head =
-      _committed_regions.head();
-    LinkedListNode<CommittedMemoryRegion>* prev = NULL;
-    VirtualMemoryRegion uncommitted_rgn(addr, sz);
+    CommittedMemoryRegion del_rgn(addr, sz, *call_stack());
+    address end = addr + sz;
 
-    while (head != NULL && !uncommitted_rgn.is_empty()) {
-      CommittedMemoryRegion* crgn = head->data();
-      // this committed region overlaps to region to uncommit
-      if (crgn->overlap_region(uncommitted_rgn.base(), uncommitted_rgn.size())) {
-        if (crgn->same_region(uncommitted_rgn.base(), uncommitted_rgn.size())) {
-          // find matched region, remove the node will do
-          VirtualMemorySummary::record_uncommitted_memory(uncommitted_rgn.size(), flag());
+    LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
+    LinkedListNode<CommittedMemoryRegion>* prev = NULL;
+    CommittedMemoryRegion* crgn;
+
+    while (head != NULL) {
+      crgn = head->data();
+
+      if (crgn->same_region(addr, sz)) {
+        VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
           _committed_regions.remove_after(prev);
           return true;
-        } else if (crgn->contain_region(uncommitted_rgn.base(), uncommitted_rgn.size())) {
-          // this committed region contains whole uncommitted region
-          VirtualMemorySummary::record_uncommitted_memory(uncommitted_rgn.size(), flag());
-          return remove_uncommitted_region(head, uncommitted_rgn.base(), uncommitted_rgn.size());
-        } else if (uncommitted_rgn.contain_region(crgn->base(), crgn->size())) {
-          // this committed region has been uncommitted
-          size_t exclude_size = crgn->end() - uncommitted_rgn.base();
-          uncommitted_rgn.exclude_region(uncommitted_rgn.base(), exclude_size);
+      }
+
+      // del_rgn contains crgn
+      if (del_rgn.contain_region(crgn->base(), crgn->size())) {
           VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
-          LinkedListNode<CommittedMemoryRegion>* tmp = head;
           head = head->next();
           _committed_regions.remove_after(prev);
-          continue;
-        } else if (crgn->contain_address(uncommitted_rgn.base())) {
-          size_t toUncommitted = crgn->end() - uncommitted_rgn.base();
-          crgn->exclude_region(uncommitted_rgn.base(), toUncommitted);
-          uncommitted_rgn.exclude_region(uncommitted_rgn.base(), toUncommitted);
-          VirtualMemorySummary::record_uncommitted_memory(toUncommitted, flag());
-        } else if (uncommitted_rgn.contain_address(crgn->base())) {
-          size_t toUncommitted = uncommitted_rgn.end() - crgn->base();
-          crgn->exclude_region(crgn->base(), toUncommitted);
-          uncommitted_rgn.exclude_region(uncommitted_rgn.end() - toUncommitted,
-            toUncommitted);
-          VirtualMemorySummary::record_uncommitted_memory(toUncommitted, flag());
+        continue;  // don't update head or prev
         }
+
+      // Found addr in the current crgn. There are 2 subcases:
+      if (crgn->contain_address(addr)) {
+
+        // (1) Found addr+size in current crgn as well. (del_rgn is contained in crgn)
+        if (crgn->contain_address(end - 1)) {
+          VirtualMemorySummary::record_uncommitted_memory(sz, flag());
+          return remove_uncommitted_region(head, addr, sz); // done!
+        } else {
+          // (2) Did not find del_rgn's end in crgn.
+          size_t size = crgn->end() - del_rgn.base();
+          crgn->exclude_region(addr, size);
+          VirtualMemorySummary::record_uncommitted_memory(size, flag());
       }
+
+      } else if (crgn->contain_address(end - 1)) {
+      // Found del_rgn's end, but not its base addr.
+        size_t size = del_rgn.end() - crgn->base();
+        crgn->exclude_region(crgn->base(), size);
+        VirtualMemorySummary::record_uncommitted_memory(size, flag());
+        return true;  // should be done if the list is sorted properly!
+      }
+
       prev = head;
       head = head->next();
     }
@@ -386,7 +388,8 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
 
   assert(reserved_rgn != NULL, "No reserved region");
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
-  return reserved_rgn->add_committed_region(addr, size, stack);
+  bool result = reserved_rgn->add_committed_region(addr, size, stack);
+  return result;
 }
 
 bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
@@ -398,7 +401,8 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
   assert(reserved_rgn != NULL, "No reserved region");
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
-  return reserved_rgn->remove_uncommitted_region(addr, size);
+  bool result = reserved_rgn->remove_uncommitted_region(addr, size);
+  return result;
 }
 
 bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
@@ -488,5 +492,3 @@ bool VirtualMemoryTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel 
 
   return true;
 }
-
-

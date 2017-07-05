@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @since 9
  */
-public class FaxTIFFTagSet extends TIFFTagSet {
+public final class FaxTIFFTagSet extends TIFFTagSet {
 
     private static FaxTIFFTagSet theInstance = null;
 

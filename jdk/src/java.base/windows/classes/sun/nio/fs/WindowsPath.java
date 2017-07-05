@@ -243,13 +243,13 @@ class WindowsPath implements Path {
             // relative to default directory
             String remaining = path.substring(root.length());
             String defaultDirectory = getFileSystem().defaultDirectory();
-            String result;
-            if (defaultDirectory.endsWith("\\")) {
-                result = defaultDirectory + remaining;
+            if (remaining.length() == 0) {
+                return defaultDirectory;
+            } else if (defaultDirectory.endsWith("\\")) {
+                 return defaultDirectory + remaining;
             } else {
-                result = defaultDirectory + "\\" + remaining;
+                return defaultDirectory + "\\" + remaining;
             }
-            return result;
         } else {
             // relative to some other drive
             String wd;
@@ -412,9 +412,11 @@ class WindowsPath implements Path {
         }
 
         // append remaining names in child
-        for (int j=i; j<cn; j++) {
-            result.append(other.getName(j).toString());
-            result.append("\\");
+        if (!other.isEmpty()) {
+            for (int j=i; j<cn; j++) {
+                result.append(other.getName(j).toString());
+                result.append("\\");
+            }
         }
 
         // drop trailing slash in result

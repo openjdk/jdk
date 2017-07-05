@@ -67,6 +67,7 @@ public class TestJInternalFrameDispose {
 
         robot.waitForIdle();
         executeTest();
+        robot.delay(1000);
         dispose();
     }
 

@@ -219,8 +219,10 @@ public class KDC {
     };
 
     static {
-        String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
+        if (System.getProperty("jdk.net.hosts.file") == null) {
+            String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
+            System.setProperty("jdk.net.hosts.file", hostsFileName);
+        }
     }
 
     /**

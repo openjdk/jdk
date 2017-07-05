@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ public class LambdaTranslationTest2 {
         assertEquals("b1 s2", ws1.m((byte) 1, (short) 2));
 
         WidenD wd1 = LambdaTranslationTest2::pwD1;
-        assertEquals("f1.000000 d2.000000", wd1.m(1.0f, 2.0));
+        assertEquals(String.format("f%f d%f", 1.0f, 2.0), wd1.m(1.0f, 2.0));
 
         WidenI wi1 = LambdaTranslationTest2::pwI1;
         assertEquals("b1 s2 c3 i4", wi1.m((byte) 1, (short) 2, (char) 3, 4));
@@ -221,12 +221,16 @@ public class LambdaTranslationTest2 {
 
     public void testUnboxing() {
         Unbox u = LambdaTranslationTest2::pu;
-        assertEquals("b1 s2 cA i4 j5 ztrue f6.000000 d7.000000", u.m((byte)1, (short) 2, 'A', 4, 5L, true, 6.0f, 7.0));
+        String expected = String.format("b%d s%d c%c i%d j%d z%b f%f d%f",
+                                    (byte)1, (short) 2, 'A', 4, 5L, true, 6.0f, 7.0);
+        assertEquals(expected, u.m((byte)1, (short) 2, 'A', 4, 5L, true, 6.0f, 7.0));
     }
 
     public void testBoxing() {
         Box b = LambdaTranslationTest2::pb;
-        assertEquals("b1 s2 cA i4 j5 ztrue f6.000000 d7.000000", b.m((byte) 1, (short) 2, 'A', 4, 5L, true, 6.0f, 7.0));
+        String expected = String.format("b%d s%d c%c i%d j%d z%b f%f d%f",
+                                    (byte) 1, (short) 2, 'A', 4, 5L, true,  6.0f, 7.0);
+        assertEquals(expected, b.m((byte) 1, (short) 2, 'A', 4, 5L, true, 6.0f, 7.0));
     }
 
     static boolean cc(Object o) {

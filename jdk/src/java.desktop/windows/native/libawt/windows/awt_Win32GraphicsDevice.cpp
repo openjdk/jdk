@@ -929,6 +929,9 @@ Java_sun_awt_Win32GraphicsDevice_initIDs(JNIEnv *env, jclass cls)
     // Only want to call this once per session
     make_uns_ordered_dither_array(img_oda_alpha, 256);
 
+    // workaround JDK-6477756, ignore return value to keep dll in memory
+    JDK_LoadSystemLibrary("opengl32.dll");
+
     CATCH_BAD_ALLOC;
 }
 
