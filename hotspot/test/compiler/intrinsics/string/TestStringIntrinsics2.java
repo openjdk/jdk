@@ -26,7 +26,7 @@
  * @test
  * @bug 8145336
  * @summary PPC64: fix string intrinsics after CompactStrings change
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
