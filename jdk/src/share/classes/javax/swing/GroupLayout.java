@@ -100,7 +100,7 @@ import static javax.swing.SwingConstants.VERTICAL;
  * The following diagram shows the same three components, but with the
  * parallel group along the horizontal axis and the sequential group along
  * the vertical axis.
- * <p>
+ *
  * <p style="text-align:center">
  * <img src="doc-files/groupLayout.2.gif" alt="Sequential group along the vertical axis in three components">
  * <p>

@@ -213,8 +213,8 @@ public class DriverManager {
      * The <code>DriverManager</code> attempts to select an appropriate driver from
      * the set of registered JDBC drivers.
      *<p>
-     * <B>Note:</B> If a property is specified as part of the {@code url} and
-     * is also specified in the {@code Properties} object, it is
+     * <B>Note:</B> If the {@code user} or {@code password} property are
+     * also specified as part of the {@code url}, it is
      * implementation-defined as to which value will take precedence.
      * For maximum portability, an application should only specify a
      * property once.
@@ -320,7 +320,7 @@ public class DriverManager {
      * Registers the given driver with the {@code DriverManager}.
      * A newly-loaded driver class should call
      * the method {@code registerDriver} to make itself
-     * known to the {@code DriverManager}. If the driver had previously been
+     * known to the {@code DriverManager}. If the driver is currently
      * registered, no action is taken.
      *
      * @param driver the new JDBC Driver that is to be registered with the
@@ -338,7 +338,7 @@ public class DriverManager {
      * Registers the given driver with the {@code DriverManager}.
      * A newly-loaded driver class should call
      * the method {@code registerDriver} to make itself
-     * known to the {@code DriverManager}. If the driver had previously been
+     * known to the {@code DriverManager}. If the driver is currently
      * registered, no action is taken.
      *
      * @param driver the new JDBC Driver that is to be registered with the
@@ -347,6 +347,7 @@ public class DriverManager {
      *               {@code DriverManager#deregisterDriver} is called
      * @exception SQLException if a database access error occurs
      * @exception NullPointerException if {@code driver} is null
+     * @since 1.8
      */
     public static synchronized void registerDriver(java.sql.Driver driver,
             DriverAction da)

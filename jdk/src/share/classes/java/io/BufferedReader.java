@@ -533,7 +533,7 @@ public class BufferedReader extends Reader {
     /**
      * Returns a {@code Stream}, the elements of which are lines read from
      * this {@code BufferedReader}.  The {@link Stream} is lazily populated,
-     * i.e, read only occurs during the
+     * i.e., read only occurs during the
      * <a href="../util/stream/package-summary.html#StreamOps">terminal
      * stream operation</a>.
      *
@@ -550,8 +550,8 @@ public class BufferedReader extends Reader {
      * UncheckedIOException} which will be thrown from the {@code Stream}
      * method that caused the read to take place. This method will return a
      * Stream if invoked on a BufferedReader that is closed. Any operation on
-     * that stream requires reading from the BufferedReader after is it closed
-     * will cause an UncheckedIOException to be thrown.
+     * that stream that requires reading from the BufferedReader after it is
+     * closed, will cause an UncheckedIOException to be thrown.
      *
      * @return a {@code Stream<String>} providing the lines of text
      *         described by this {@code BufferedReader}
@@ -587,6 +587,7 @@ public class BufferedReader extends Reader {
                 }
             }
         };
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED), false);
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                iter, Spliterator.ORDERED | Spliterator.NONNULL), false);
     }
 }

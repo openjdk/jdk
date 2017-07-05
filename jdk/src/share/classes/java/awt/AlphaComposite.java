@@ -175,7 +175,6 @@ import sun.java2d.SunCompositeContext;
  * <em>F<sub>s</sub></em> and <em>F<sub>d</sub></em> and then the resulting
  * premultiplied components <em>A<sub>r</sub></em> and <em>C<sub>r</sub></em>.
  *
- * <p>
  * <h3>Preparing Results</h3>
  *
  * <p>
@@ -193,7 +192,6 @@ import sun.java2d.SunCompositeContext;
  * by zero" and the color components are left as
  * all zeros.
  *
- * <p>
  * <h3>Performance Considerations</h3>
  *
  * <p>
@@ -216,7 +214,6 @@ import sun.java2d.SunCompositeContext;
  * for their pixels.  Such sources supply an alpha of 1.0 for
  * all of their pixels.
  *
- * <p>
  * <li>
  * Many destinations also have no place to store the alpha values
  * that result from the blending calculations performed by this class.
@@ -227,7 +224,6 @@ import sun.java2d.SunCompositeContext;
  * values by the resulting alpha value before storing the color
  * values and discarding the alpha value.
  *
- * <p>
  * <li>
  * The accuracy of the results depends on the manner in which pixels
  * are stored in the destination.
@@ -248,7 +244,6 @@ import sun.java2d.SunCompositeContext;
  * the need to choose a pixel from a limited palette to match the
  * results of the blending equations.
  *
- * <p>
  * <li>
  * Nearly all formats store pixels as discrete integers rather than
  * the floating point values used in the reference equations above.
@@ -268,7 +263,6 @@ import sun.java2d.SunCompositeContext;
  * represents 0.0 and 0xff represents
  * 1.0.
  *
- * <p>
  * <li>
  * The internal implementation can approximate some of the equations
  * and it can also eliminate some steps to avoid unnecessary operations.
@@ -332,7 +326,6 @@ import sun.java2d.SunCompositeContext;
  * <p>
  * and thus they would all match.
  *
- * <p>
  * <li>
  * Because of the technique of simplifying the equations for
  * calculation efficiency, some implementations might perform

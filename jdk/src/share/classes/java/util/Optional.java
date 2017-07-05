@@ -40,6 +40,11 @@ import java.util.function.Supplier;
  * {@link #ifPresent(java.util.function.Consumer) ifPresent()} (execute a block
  * of code if the value is present).
  *
+ * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code Optional} may have unpredictable results and should be avoided.
+ *
  * @since 1.8
  */
 public final class Optional<T> {

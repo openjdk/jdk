@@ -243,7 +243,7 @@ final class DebuggerSupport {
             return value.toString();
 
         case STRING:
-            return escape((String)value);
+            return escape(value.toString());
 
         case NUMBER:
             return JSType.toString(((Number)value).doubleValue());

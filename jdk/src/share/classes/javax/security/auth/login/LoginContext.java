@@ -101,11 +101,11 @@ import sun.security.util.ResourcesMgr;
  * <li> If the constructor has a Subject
  * input parameter, the LoginContext uses the caller-specified
  * Subject object.
- * <p>
+ *
  * <li> If the caller specifies a {@code null} Subject
  * and a {@code null} value is permitted,
  * the LoginContext instantiates a new Subject.
- * <p>
+ *
  * <li> If the constructor does <b>not</b> have a Subject
  * input parameter, the LoginContext instantiates a new Subject.
  * <p>
@@ -132,7 +132,7 @@ import sun.security.util.ResourcesMgr;
  * {@code getAppConfigurationEntry} with the name, "<i>other</i>"
  * (the default entry name).  If there is no entry for "<i>other</i>",
  * then a {@code LoginException} is thrown.
- * <p>
+ *
  * <li> When LoginContext uses the installed Configuration, the caller
  * requires the createLoginContext.<em>name</em> and possibly
  * createLoginContext.other AuthPermissions. Furthermore, the
@@ -141,7 +141,7 @@ import sun.security.util.ResourcesMgr;
  * perform security-sensitive tasks (such as connecting to remote hosts,
  * and updating the Subject) will require the respective permissions, but
  * the callers of the LoginContext will not require those permissions.
- * <p>
+ *
  * <li> When LoginContext uses a caller-specified Configuration, the caller
  * does not require any createLoginContext AuthPermission.  The LoginContext
  * saves the {@code AccessControlContext} for the caller,
@@ -158,7 +158,7 @@ import sun.security.util.ResourcesMgr;
  * <li> If the constructor has a CallbackHandler
  * input parameter, the LoginContext uses the caller-specified
  * CallbackHandler object.
- * <p>
+ *
  * <li> If the constructor does <b>not</b> have a CallbackHandler
  * input parameter, or if the caller specifies a {@code null}
  * CallbackHandler object (and a {@code null} value is permitted),
@@ -171,7 +171,7 @@ import sun.security.util.ResourcesMgr;
  * with users.  The caller thus assumes that the configured
  * modules have alternative means for authenticating the user.
  *
- * <p>
+ *
  * <li> When the LoginContext uses the installed Configuration (instead of
  * a caller-specified Configuration, see above),
  * then this LoginContext must wrap any

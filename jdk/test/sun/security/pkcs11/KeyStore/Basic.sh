@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,8 @@ if [ "${RECOMPILE}" = "yes" ] ; then
     ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
 	-classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
 	-d ${TESTCLASSES} \
-	${TESTSRC}${FS}Basic.java
+	${TESTSRC}${FS}Basic.java \
+	${TESTSRC}${FS}..${FS}PKCS11Test.java
 fi
 
 # run test

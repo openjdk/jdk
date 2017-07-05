@@ -262,9 +262,7 @@ class FactoryFinder {
             }
             if (systemProp != null) {
                 dPrint("found system property, value=" + systemProp);
-                // There's a bug here - because 'cl' is ignored.
-                // This will be handled separately.
-                return newInstance(type, systemProp, null, true);
+                return newInstance(type, systemProp, cl, true);
             }
         }
         catch (SecurityException se) {
@@ -303,9 +301,7 @@ class FactoryFinder {
 
             if (factoryClassName != null) {
                 dPrint("found in " + configFile + " value=" + factoryClassName);
-                // There's a bug here - because 'cl' is ignored.
-                // This will be handled separately.
-                return newInstance(type, factoryClassName, null, true);
+                return newInstance(type, factoryClassName, cl, true);
             }
         }
         catch (Exception ex) {
@@ -314,7 +310,7 @@ class FactoryFinder {
 
         if (type.getName().equals(factoryId)) {
             // Try Jar Service Provider Mechanism
-            final T provider = findServiceProvider(type);
+            final T provider = findServiceProvider(type, cl);
             if (provider != null) {
                 return provider;
             }
@@ -340,12 +336,18 @@ class FactoryFinder {
      *
      * @return instance of provider class if found or null
      */
-    private static <T> T findServiceProvider(final Class<T> type) {
+    private static <T> T findServiceProvider(final Class<T> type, final ClassLoader cl) {
         try {
             return AccessController.doPrivileged(new PrivilegedAction<T>() {
                 @Override
                 public T run() {
-                    final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
+                    final ServiceLoader<T> serviceLoader;
+                    if (cl == null) {
+                        //the current thread's context class loader
+                        serviceLoader = ServiceLoader.load(type);
+                    } else {
+                        serviceLoader = ServiceLoader.load(type, cl);
+                    }
                     final Iterator<T> iterator = serviceLoader.iterator();
                     if (iterator.hasNext()) {
                         return iterator.next();

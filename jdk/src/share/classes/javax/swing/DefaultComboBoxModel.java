@@ -83,7 +83,7 @@ public class DefaultComboBoxModel<E> extends AbstractListModel<E> implements Mut
     // implements javax.swing.ComboBoxModel
     /**
      * Set the value of the selected item. The selected item may be null.
-     * <p>
+     *
      * @param anObject The combo box value or null for no selection.
      */
     public void setSelectedItem(Object anObject) {

@@ -54,7 +54,6 @@ import java.awt.Image;
  * <p>
  * Alternatively, the contents of the back buffer can be copied, or
  * <i>blitted</i> forward in a chain instead of moving the video pointer.
- * <p>
  * <pre>{@code
  * Double buffering:
  *

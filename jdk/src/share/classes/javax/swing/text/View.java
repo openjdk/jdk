@@ -144,7 +144,6 @@ A view has the following responsibilities:
     <ul>
     <li>{@link #paint(java.awt.Graphics, java.awt.Shape) paint}
     </ul>
-    <p>
 
     <dt><b>Translate between the model and view coordinate systems.</b>
     <dd>

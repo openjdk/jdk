@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.security.NoSuchProviderException;
  * to a SealedObject.
  *
  * <p> The original object that was sealed can be recovered in two different
- * ways: <p>
+ * ways:
  *
  * <ul>
  *
@@ -67,8 +67,6 @@ import java.security.NoSuchProviderException;
  * after one party has initialized the cipher object with the required
  * decryption key, it could hand over the cipher object to
  * another party who then unseals the sealed object.
- *
- * <p>
  *
  * <li>by using one of the
  * {@link #getObject(java.security.Key) getObject} methods

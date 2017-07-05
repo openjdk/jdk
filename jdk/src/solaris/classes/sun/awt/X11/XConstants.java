@@ -674,9 +674,4 @@ final public class XConstants {
     public static final long XkbModifierMapMask = (1L<<2);
     public static final long XkbVirtualModsMask = (1L<<6); //server map
 
-    /*****************************************************************
-     * X SHARED MEMORY EXTENSION FUNCTIONS
-     *****************************************************************/
-
-    public static final int X_ShmAttach = 1;
 }
