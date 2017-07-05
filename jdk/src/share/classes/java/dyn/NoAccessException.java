@@ -27,11 +27,12 @@ package java.dyn;
 
 /**
  * Thrown to indicate that a caller has attempted to create a method handle
- * which calls a method to which the caller does not have access.
+ * which accesses a field, method, or class to which the caller does not have access.
  * This unchecked exception is analogous to {@link IllegalAccessException},
  * which is a checked exception thrown when reflective invocation fails
  * because of an access check.  With method handles, this same access
- * checking is performed on behalf of the method handle creator,
+ * checking is performed by the {@link MethodHandles.Lookup lookup object}
+ * on behalf of the method handle creator,
  * at the time of creation.
  * @author John Rose, JSR 292 EG
  */

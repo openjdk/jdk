@@ -46,27 +46,26 @@ IntConstant*    intOne       = NULL;
 ObjectConstant* objectNull   = NULL;
 
 
-void ValueType::initialize() {
+void ValueType::initialize(Arena* arena) {
   // Note: Must initialize all types for each compilation
   //       as they are allocated within a ResourceMark!
 
   // types
-  voidType     = new VoidType();
-  intType      = new IntType();
-  longType     = new LongType();
-  floatType    = new FloatType();
-  doubleType   = new DoubleType();
-  objectType   = new ObjectType();
-  arrayType    = new ArrayType();
-  instanceType = new InstanceType();
-  classType    = new ClassType();
-  addressType  = new AddressType();
-  illegalType  = new IllegalType();
+  voidType     = new (arena) VoidType();
+  intType      = new (arena) IntType();
+  longType     = new (arena) LongType();
+  floatType    = new (arena) FloatType();
+  doubleType   = new (arena) DoubleType();
+  objectType   = new (arena) ObjectType();
+  arrayType    = new (arena) ArrayType();
+  instanceType = new (arena) InstanceType();
+  classType    = new (arena) ClassType();
+  addressType  = new (arena) AddressType();
+  illegalType  = new (arena) IllegalType();
 
-  // constants
-  intZero     = new IntConstant(0);
-  intOne      = new IntConstant(1);
-  objectNull  = new ObjectConstant(ciNullObject::make());
+  intZero     = new (arena) IntConstant(0);
+  intOne      = new (arena) IntConstant(1);
+  objectNull  = new (arena) ObjectConstant(ciNullObject::make());
 };
 
 

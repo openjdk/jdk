@@ -25,10 +25,10 @@
 #include "incls/_precompiled.incl"
 #include "incls/_classFileParser.cpp.incl"
 
-// We generally try to create the oops directly when parsing, rather than allocating
-// temporary data structures and copying the bytes twice. A temporary area is only
-// needed when parsing utf8 entries in the constant pool and when parsing line number
-// tables.
+// We generally try to create the oops directly when parsing, rather than
+// allocating temporary data structures and copying the bytes twice. A
+// temporary area is only needed when parsing utf8 entries in the constant
+// pool and when parsing line number tables.
 
 // We add assert in debug mode when class format is not checked.
 
@@ -46,6 +46,10 @@
 // - to check for javac bug fixes that happened after 1.5
 // - also used as the max version when running in jdk6
 #define JAVA_6_VERSION                    50
+
+// Used for backward compatibility reasons:
+// - to check NameAndType_info signatures more aggressively
+#define JAVA_7_VERSION                    51
 
 
 void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int length, TRAPS) {
@@ -384,6 +388,20 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         verify_legal_class_name(class_name, CHECK_(nullHandle));
         break;
       }
+      case JVM_CONSTANT_NameAndType: {
+        if (_need_verify && _major_version >= JAVA_7_VERSION) {
+          int sig_index = cp->signature_ref_index_at(index);
+          int name_index = cp->name_ref_index_at(index);
+          symbolHandle name(THREAD, cp->symbol_at(name_index));
+          symbolHandle sig(THREAD, cp->symbol_at(sig_index));
+          if (sig->byte_at(0) == JVM_SIGNATURE_FUNC) {
+            verify_legal_method_signature(name, sig, CHECK_(nullHandle));
+          } else {
+            verify_legal_field_signature(name, sig, CHECK_(nullHandle));
+          }
+        }
+        break;
+      }
       case JVM_CONSTANT_Fieldref:
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
@@ -396,10 +414,28 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         symbolHandle signature(THREAD, cp->symbol_at(signature_ref_index));
         if (tag == JVM_CONSTANT_Fieldref) {
           verify_legal_field_name(name, CHECK_(nullHandle));
-          verify_legal_field_signature(name, signature, CHECK_(nullHandle));
+          if (_need_verify && _major_version >= JAVA_7_VERSION) {
+            // Signature is verified above, when iterating NameAndType_info.
+            // Need only to be sure it's the right type.
+            if (signature->byte_at(0) == JVM_SIGNATURE_FUNC) {
+              throwIllegalSignature(
+                  "Field", name, signature, CHECK_(nullHandle));
+            }
+          } else {
+            verify_legal_field_signature(name, signature, CHECK_(nullHandle));
+          }
         } else {
           verify_legal_method_name(name, CHECK_(nullHandle));
-          verify_legal_method_signature(name, signature, CHECK_(nullHandle));
+          if (_need_verify && _major_version >= JAVA_7_VERSION) {
+            // Signature is verified above, when iterating NameAndType_info.
+            // Need only to be sure it's the right type.
+            if (signature->byte_at(0) != JVM_SIGNATURE_FUNC) {
+              throwIllegalSignature(
+                  "Method", name, signature, CHECK_(nullHandle));
+            }
+          } else {
+            verify_legal_method_signature(name, signature, CHECK_(nullHandle));
+          }
           if (tag == JVM_CONSTANT_Methodref) {
             // 4509014: If a class method name begins with '<', it must be "<init>".
             assert(!name.is_null(), "method name in constant pool is null");
@@ -1313,6 +1349,14 @@ u2* ClassFileParser::parse_checked_exceptions(u2* checked_exceptions_length,
   return checked_exceptions_start;
 }
 
+void ClassFileParser::throwIllegalSignature(
+    const char* type, symbolHandle name, symbolHandle sig, TRAPS) {
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(THREAD_AND_LOCATION,
+      vmSymbols::java_lang_ClassFormatError(),
+      "%s \"%s\" in class %s has illegal signature \"%s\"", type,
+      name->as_C_string(), _class_name->as_C_string(), sig->as_C_string());
+}
 
 #define MAX_ARGS_SIZE 255
 #define MAX_CODE_SIZE 65535
@@ -4058,14 +4102,7 @@ void ClassFileParser::verify_legal_field_signature(symbolHandle name, symbolHand
   char* p = skip_over_field_signature(bytes, false, length, CHECK);
 
   if (p == NULL || (p - bytes) != (int)length) {
-    ResourceMark rm(THREAD);
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbolHandles::java_lang_ClassFormatError(),
-      "Field \"%s\" in class %s has illegal signature \"%s\"",
-      name->as_C_string(), _class_name->as_C_string(), bytes
-    );
-    return;
+    throwIllegalSignature("Field", name, signature, CHECK);
   }
 }
 
@@ -4116,13 +4153,7 @@ int ClassFileParser::verify_legal_method_signature(symbolHandle name, symbolHand
     }
   }
   // Report error
-  ResourceMark rm(THREAD);
-  Exceptions::fthrow(
-    THREAD_AND_LOCATION,
-    vmSymbolHandles::java_lang_ClassFormatError(),
-    "Method \"%s\" in class %s has illegal signature \"%s\"",
-    name->as_C_string(),  _class_name->as_C_string(), p
-  );
+  throwIllegalSignature("Method", name, signature, CHECK_0);
   return 0;
 }
 

@@ -63,7 +63,7 @@ void InterpreterRuntime::set_bcp_and_mdp(address bcp, JavaThread *thread) {
 IRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* thread, bool wide))
   // access constant pool
   constantPoolOop pool = method(thread)->constants();
-  int index = wide ? two_byte_index(thread) : one_byte_index(thread);
+  int index = wide ? get_index_u2(thread, Bytecodes::_ldc_w) : get_index_u1(thread, Bytecodes::_ldc);
   constantTag tag = pool->tag_at(index);
 
   if (tag.is_unresolved_klass() || tag.is_klass()) {
@@ -135,7 +135,7 @@ IRT_END
 IRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* thread, jint* first_size_address))
   // We may want to pass in more arguments - could make this slightly faster
   constantPoolOop constants = method(thread)->constants();
-  int          i = two_byte_index(thread);
+  int          i = get_index_u2(thread, Bytecodes::_multianewarray);
   klassOop klass = constants->klass_at(i, CHECK);
   int   nof_dims = number_of_dimensions(thread);
   assert(oop(klass)->is_klass(), "not a class");
@@ -169,7 +169,7 @@ IRT_END
 // Quicken instance-of and check-cast bytecodes
 IRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* thread))
   // Force resolving; quicken the bytecode
-  int which = two_byte_index(thread);
+  int which = get_index_u2(thread, Bytecodes::_checkcast);
   constantPoolOop cpool = method(thread)->constants();
   // We'd expect to assert that we're only here to quicken bytecodes, but in a multithreaded
   // program we might have seen an unquick'd bytecode in the interpreter but have another
@@ -463,7 +463,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
 
   {
     JvmtiHideSingleStepping jhss(thread);
-    LinkResolver::resolve_field(info, pool, two_byte_index(thread),
+    LinkResolver::resolve_field(info, pool, get_index_u2_cpcache(thread, bytecode),
                                 bytecode, false, CHECK);
   } // end JvmtiHideSingleStepping
 
@@ -634,7 +634,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   {
     JvmtiHideSingleStepping jhss(thread);
     LinkResolver::resolve_invoke(info, receiver, pool,
-                                 two_byte_index(thread), bytecode, CHECK);
+                                 get_index_u2_cpcache(thread, bytecode), bytecode, CHECK);
     if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
       int retry_count = 0;
       while (info.resolved_method()->is_old()) {
@@ -645,7 +645,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
                   "Could not resolve to latest version of redefined method");
         // method is redefined in the middle of resolve so re-try.
         LinkResolver::resolve_invoke(info, receiver, pool,
-                                     two_byte_index(thread), bytecode, CHECK);
+                                     get_index_u2_cpcache(thread, bytecode), bytecode, CHECK);
       }
     }
   } // end JvmtiHideSingleStepping
@@ -704,7 +704,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     caller_bci = caller_method->bci_from(caller_bcp);
     site_index = Bytes::get_native_u4(caller_bcp+1);
   }
-  assert(site_index == four_byte_index(thread), "");
+  assert(site_index == InterpreterRuntime::bytecode(thread)->get_index_u4(bytecode), "");
   assert(constantPoolCacheOopDesc::is_secondary_index(site_index), "proper format");
   // there is a second CPC entries that is of interest; it caches signature info:
   int main_index = pool->cache()->secondary_entry_at(site_index)->main_entry_index();

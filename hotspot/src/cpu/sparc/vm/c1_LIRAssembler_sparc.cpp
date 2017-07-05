@@ -736,7 +736,8 @@ void LIR_Assembler::align_call(LIR_Code) {
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   __ call(op->addr(), rtype);
-  // the peephole pass fills the delay slot
+  // The peephole pass fills the delay slot, add_call_info is done in
+  // LIR_Assembler::emit_delay.
 }
 
 
@@ -745,7 +746,8 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   __ set_oop((jobject)Universe::non_oop_word(), G5_inline_cache_reg);
   __ relocate(rspec);
   __ call(op->addr(), relocInfo::none);
-  // the peephole pass fills the delay slot
+  // The peephole pass fills the delay slot, add_call_info is done in
+  // LIR_Assembler::emit_delay.
 }
 
 
@@ -763,16 +765,6 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   __ ld_ptr(G5_method, methodOopDesc::from_compiled_offset(), G3_scratch);
   __ callr(G3_scratch, G0);
   // the peephole pass fills the delay slot
-}
-
-
-void LIR_Assembler::preserve_SP(LIR_OpJavaCall* op) {
-  Unimplemented();
-}
-
-
-void LIR_Assembler::restore_SP(LIR_OpJavaCall* op) {
-  Unimplemented();
 }
 
 
@@ -2934,7 +2926,7 @@ void LIR_Assembler::emit_delay(LIR_OpDelay* op) {
 
   // we may also be emitting the call info for the instruction
   // which we are the delay slot of.
-  CodeEmitInfo * call_info = op->call_info();
+  CodeEmitInfo* call_info = op->call_info();
   if (call_info) {
     add_call_info(code_offset(), call_info);
   }
@@ -3159,6 +3151,7 @@ void LIR_Assembler::peephole(LIR_List* lir) {
               tty->print_cr("delayed");
               inst->at(i - 1)->print();
               inst->at(i)->print();
+              tty->cr();
             }
 #endif
             continue;
@@ -3174,8 +3167,8 @@ void LIR_Assembler::peephole(LIR_List* lir) {
       case lir_static_call:
       case lir_virtual_call:
       case lir_icvirtual_call:
-      case lir_optvirtual_call: {
-        LIR_Op* delay_op = NULL;
+      case lir_optvirtual_call:
+      case lir_dynamic_call: {
         LIR_Op* prev = inst->at(i - 1);
         if (LIRFillDelaySlots && prev && prev->code() == lir_move && prev->info() == NULL &&
             (op->code() != lir_virtual_call ||
@@ -3192,15 +3185,14 @@ void LIR_Assembler::peephole(LIR_List* lir) {
             tty->print_cr("delayed");
             inst->at(i - 1)->print();
             inst->at(i)->print();
+            tty->cr();
           }
 #endif
           continue;
         }
 
-        if (!delay_op) {
-          delay_op = new LIR_OpDelay(new LIR_Op0(lir_nop), op->as_OpJavaCall()->info());
-          inst->insert_before(i + 1, delay_op);
-        }
+        LIR_Op* delay_op = new LIR_OpDelay(new LIR_Op0(lir_nop), op->as_OpJavaCall()->info());
+        inst->insert_before(i + 1, delay_op);
         break;
       }
     }

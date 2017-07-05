@@ -76,9 +76,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cpool_and_tags(Register cpool, Register tags)   { get_constant_pool(cpool); movptr(tags, Address(cpool, constantPoolOopDesc::tags_offset_in_bytes()));
   }
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
-  void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, bool giant_index = false);
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
-  void get_cache_index_at_bcp(Register index, int bcp_offset, bool giant_index = false);
+  void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
+  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
+  void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
 
   // Expression stack
   void f2ieee();                                           // truncate ftos to 32bits

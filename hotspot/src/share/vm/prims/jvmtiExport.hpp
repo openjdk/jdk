@@ -144,6 +144,9 @@ class JvmtiExport : public AllStatic {
   // posts any pending CompiledMethodUnload events.
   static void post_pending_compiled_method_unload_events();
 
+  // Perform the actual notification to interested JvmtiEnvs.
+  static void post_compiled_method_unload_internal(JavaThread* self, jmethodID mid, const void* code_begin);
+
   // posts a DynamicCodeGenerated event (internal/private implementation).
   // The public post_dynamic_code_generated* functions make use of the
   // internal implementation.
@@ -299,8 +302,8 @@ class JvmtiExport : public AllStatic {
   static void post_compiled_method_load(nmethod *nm) KERNEL_RETURN;
   static void post_dynamic_code_generated(const char *name, const void *code_begin, const void *code_end) KERNEL_RETURN;
 
-  // used at a safepoint to post a CompiledMethodUnload event
-  static void post_compiled_method_unload_at_safepoint(jmethodID mid, const void *code_begin) KERNEL_RETURN;
+  // used to post a CompiledMethodUnload event
+  static void post_compiled_method_unload(jmethodID mid, const void *code_begin) KERNEL_RETURN;
 
   // similiar to post_dynamic_code_generated except that it can be used to
   // post a DynamicCodeGenerated event while holding locks in the VM. Any event
