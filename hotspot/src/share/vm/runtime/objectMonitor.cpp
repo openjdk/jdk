@@ -68,16 +68,6 @@
 // Only bother with this argument setup if dtrace is available
 // TODO-FIXME: probes should not fire when caller is _blocked.  assert() accordingly.
 
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__notify,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__notifyAll,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__enter,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__entered,
-  jlong, uintptr_t, char*, int);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
-  jlong, uintptr_t, char*, int);
 
 #define DTRACE_MONITOR_PROBE_COMMON(klassOop, thread)                      \
   char* bytes = NULL;                                                      \
@@ -88,6 +78,19 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
   }
+
+#ifndef USDT2
+
+HS_DTRACE_PROBE_DECL4(hotspot, monitor__notify,
+  jlong, uintptr_t, char*, int);
+HS_DTRACE_PROBE_DECL4(hotspot, monitor__notifyAll,
+  jlong, uintptr_t, char*, int);
+HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__enter,
+  jlong, uintptr_t, char*, int);
+HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__entered,
+  jlong, uintptr_t, char*, int);
+HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
+  jlong, uintptr_t, char*, int);
 
 #define DTRACE_MONITOR_WAIT_PROBE(monitor, klassOop, thread, millis)       \
   {                                                                        \
@@ -107,6 +110,33 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__contended__exit,
     }                                                                      \
   }
 
+#else /* USDT2 */
+
+#define DTRACE_MONITOR_WAIT_PROBE(monitor, klassOop, thread, millis)       \
+  {                                                                        \
+    if (DTraceMonitorProbes) {                                            \
+      DTRACE_MONITOR_PROBE_COMMON(klassOop, thread);                       \
+      HOTSPOT_MONITOR_WAIT(jtid,                                           \
+                       (monitor), bytes, len, (millis));                   \
+    }                                                                      \
+  }
+
+#define HOTSPOT_MONITOR_contended__enter HOTSPOT_MONITOR_CONTENDED_ENTER
+#define HOTSPOT_MONITOR_contended__entered HOTSPOT_MONITOR_CONTENDED_ENTERED
+#define HOTSPOT_MONITOR_contended__exit HOTSPOT_MONITOR_CONTENDED_EXIT
+#define HOTSPOT_MONITOR_notify HOTSPOT_MONITOR_NOTIFY
+#define HOTSPOT_MONITOR_notifyAll HOTSPOT_MONITOR_NOTIFYALL
+
+#define DTRACE_MONITOR_PROBE(probe, monitor, klassOop, thread)             \
+  {                                                                        \
+    if (DTraceMonitorProbes) {                                            \
+      DTRACE_MONITOR_PROBE_COMMON(klassOop, thread);                       \
+      HOTSPOT_MONITOR_##probe(jtid,                                               \
+                       (uintptr_t)(monitor), bytes, len);                  \
+    }                                                                      \
+  }
+
+#endif /* USDT2 */
 #else //  ndef DTRACE_ENABLED
 
 #define DTRACE_MONITOR_WAIT_PROBE(klassOop, thread, millis, mon)    {;}

@@ -473,6 +473,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
 
   if (require_local)  return NULL;
+
   // Not yet loaded into the VM, or not governed by loader constraints.
   // Make a CI representative for it.
   return get_unloaded_klass(accessing_klass, name);
@@ -498,7 +499,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
                                         bool& is_accessible,
                                         ciInstanceKlass* accessor) {
   EXCEPTION_CONTEXT;
-  KlassHandle klass (THREAD, constantPoolOopDesc::klass_at_if_loaded(cpool, index));
+  KlassHandle klass(THREAD, constantPoolOopDesc::klass_at_if_loaded(cpool, index));
   Symbol* klass_name = NULL;
   if (klass.is_null()) {
     // The klass has not been inserted into the constant pool.
@@ -785,17 +786,17 @@ ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
   // Either the declared holder was not loaded, or the method could
   // not be found.  Create a dummy ciMethod to represent the failed
   // lookup.
-
-  return get_unloaded_method(declared_holder,
-                             get_symbol(name_sym),
-                             get_symbol(sig_sym));
+  ciSymbol* name      = get_symbol(name_sym);
+  ciSymbol* signature = get_symbol(sig_sym);
+  return get_unloaded_method(declared_holder, name, signature, accessor);
 }
 
 
 // ------------------------------------------------------------------
 // ciEnv::get_fake_invokedynamic_method_impl
 ciMethod* ciEnv::get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
-                                                    int index, Bytecodes::Code bc) {
+                                                    int index, Bytecodes::Code bc,
+                                                    ciInstanceKlass* accessor) {
   // Compare the following logic with InterpreterRuntime::resolve_invokedynamic.
   assert(bc == Bytecodes::_invokedynamic, "must be invokedynamic");
 
@@ -807,9 +808,10 @@ ciMethod* ciEnv::get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
   // Call site might not be resolved yet.  We could create a real invoker method from the
   // compiler, but it is simpler to stop the code path here with an unlinked method.
   if (!is_resolved) {
-    ciInstanceKlass* mh_klass = get_object(SystemDictionary::MethodHandle_klass())->as_instance_klass();
-    ciSymbol*        sig_sym  = get_symbol(cpool->signature_ref_at(index));
-    return get_unloaded_method(mh_klass, ciSymbol::invokeExact_name(), sig_sym);
+    ciInstanceKlass* holder    = get_object(SystemDictionary::MethodHandle_klass())->as_instance_klass();
+    ciSymbol*        name      = ciSymbol::invokeExact_name();
+    ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
+    return get_unloaded_method(holder, name, signature, accessor);
   }
 
   // Get the invoker methodOop from the constant pool.
@@ -850,9 +852,9 @@ ciMethod* ciEnv::get_method_by_index(constantPoolHandle cpool,
                                      int index, Bytecodes::Code bc,
                                      ciInstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
-    GUARDED_VM_ENTRY(return get_fake_invokedynamic_method_impl(cpool, index, bc);)
+    GUARDED_VM_ENTRY(return get_fake_invokedynamic_method_impl(cpool, index, bc, accessor);)
   } else {
-    GUARDED_VM_ENTRY(return get_method_by_index_impl(cpool, index, bc, accessor);)
+    GUARDED_VM_ENTRY(return get_method_by_index_impl(          cpool, index, bc, accessor);)
   }
 }
 

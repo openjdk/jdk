@@ -136,8 +136,10 @@
 #endif
 
 #ifdef __APPLE__
-#include <mach/mach.h> // semaphore_* API
-#include <mach-o/dyld.h>
+# include <mach/mach.h> // semaphore_* API
+# include <mach-o/dyld.h>
+# include <sys/proc_info.h>
+# include <objc/objc-auto.h>
 #endif
 
 #ifndef MAP_ANONYMOUS
@@ -388,6 +390,20 @@ void os::Bsd::initialize_system_info() {
 }
 #endif
 
+#ifdef __APPLE__
+static const char *get_home() {
+  const char *home_dir = ::getenv("HOME");
+  if ((home_dir == NULL) || (*home_dir == '\0')) {
+    struct passwd *passwd_info = getpwuid(geteuid());
+    if (passwd_info != NULL) {
+      home_dir = passwd_info->pw_dir;
+    }
+  }
+
+  return home_dir;
+}
+#endif
+
 void os::init_system_properties_values() {
 //  char arch[12];
 //  sysinfo(SI_ARCHITECTURE, arch, sizeof(arch));
@@ -438,6 +454,15 @@ void os::init_system_properties_values() {
 #define ENDORSED_DIR    "/lib/endorsed"
 #define REG_DIR         "/usr/java/packages"
 
+#ifdef __APPLE__
+#define SYS_EXTENSIONS_DIR   "/Library/Java/Extensions"
+#define SYS_EXTENSIONS_DIRS  SYS_EXTENSIONS_DIR ":/Network" SYS_EXTENSIONS_DIR ":/System" SYS_EXTENSIONS_DIR ":/usr/lib/java"
+        const char *user_home_dir = get_home();
+        // the null in SYS_EXTENSIONS_DIRS counts for the size of the colon after user_home_dir
+        int system_ext_size = strlen(user_home_dir) + sizeof(SYS_EXTENSIONS_DIR) +
+            sizeof(SYS_EXTENSIONS_DIRS);
+#endif
+
   {
     /* sysclasspath, java_home, dll_dir */
     {
@@ -462,10 +487,12 @@ void os::init_system_properties_values() {
         if (pslash != NULL) {
             pslash = strrchr(buf, '/');
             if (pslash != NULL) {
-                *pslash = '\0';       /* get rid of /<arch> */
+                *pslash = '\0';       /* get rid of /<arch> (/lib on macosx) */
+#ifndef __APPLE__
                 pslash = strrchr(buf, '/');
                 if (pslash != NULL)
                     *pslash = '\0';   /* get rid of /lib */
+#endif
             }
         }
 
@@ -500,9 +527,14 @@ void os::init_system_properties_values() {
          * nulls included by the sizeof operator (so actually we allocate
          * a byte more than necessary).
          */
+#ifdef __APPLE__
+        ld_library_path = (char *) malloc(system_ext_size);
+        sprintf(ld_library_path, "%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS, user_home_dir);
+#else
         ld_library_path = (char *) malloc(sizeof(REG_DIR) + sizeof("/lib/") +
             strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH));
         sprintf(ld_library_path, REG_DIR "/lib/%s:" DEFAULT_LIBPATH, cpu_arch);
+#endif
 
         /*
          * Get the user setting of LD_LIBRARY_PATH, and prepended it.  It
@@ -510,6 +542,16 @@ void os::init_system_properties_values() {
          * addressed).
          */
 #ifdef __APPLE__
+        // Prepend the default path with the JAVA_LIBRARY_PATH so that the app launcher code can specify a directory inside an app wrapper
+        char *l = getenv("JAVA_LIBRARY_PATH");
+        if (l != NULL) {
+            char *t = ld_library_path;
+            /* That's +1 for the colon and +1 for the trailing '\0' */
+            ld_library_path = (char *) malloc(strlen(l) + 1 + strlen(t) + 1);
+            sprintf(ld_library_path, "%s:%s", l, t);
+            free(t);
+        }
+
         char *v = getenv("DYLD_LIBRARY_PATH");
 #else
         char *v = getenv("LD_LIBRARY_PATH");
@@ -519,6 +561,7 @@ void os::init_system_properties_values() {
             /* That's +1 for the colon and +1 for the trailing '\0' */
             ld_library_path = (char *) malloc(strlen(v) + 1 + strlen(t) + 1);
             sprintf(ld_library_path, "%s:%s", v, t);
+            free(t);
         }
         Arguments::set_library_path(ld_library_path);
     }
@@ -531,10 +574,18 @@ void os::init_system_properties_values() {
      * than necessary is allocated).
      */
     {
+#ifdef __APPLE__
+        char *buf = malloc(strlen(Arguments::get_java_home()) +
+            sizeof(EXTENSIONS_DIR) + system_ext_size);
+        sprintf(buf, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":"
+            SYS_EXTENSIONS_DIRS, user_home_dir, Arguments::get_java_home());
+#else
         char *buf = malloc(strlen(Arguments::get_java_home()) +
             sizeof(EXTENSIONS_DIR) + sizeof(REG_DIR) + sizeof(EXTENSIONS_DIR));
         sprintf(buf, "%s" EXTENSIONS_DIR ":" REG_DIR EXTENSIONS_DIR,
             Arguments::get_java_home());
+#endif
+
         Arguments::set_ext_dirs(buf);
     }
 
@@ -547,6 +598,9 @@ void os::init_system_properties_values() {
     }
   }
 
+#ifdef __APPLE__
+#undef SYS_EXTENSIONS_DIR
+#endif
 #undef malloc
 #undef getenv
 #undef EXTENSIONS_DIR
@@ -884,6 +938,16 @@ static bool _thread_safety_check(Thread* thread) {
 #endif
 }
 
+#ifdef __APPLE__
+// library handle for calling objc_registerThreadWithCollector()
+// without static linking to the libobjc library
+#define OBJC_LIB "/usr/lib/libobjc.dylib"
+#define OBJC_GCREGISTER "objc_registerThreadWithCollector"
+typedef void (*objc_registerThreadWithCollector_t)();
+extern "C" objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction;
+objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = NULL;
+#endif
+
 // Thread start routine for all newly created threads
 static void *java_start(Thread *thread) {
   // Try to randomize the cache line index of hot stack frames.
@@ -928,6 +992,13 @@ static void *java_start(Thread *thread) {
 
   // initialize floating point control register
   os::Bsd::init_thread_fpu_state();
+
+#ifdef __APPLE__
+  // register thread with objc gc
+  if (objc_registerThreadWithCollectorFunction != NULL) {
+    objc_registerThreadWithCollectorFunction();
+  }
+#endif
 
   // handshaking with parent thread
   {
@@ -1747,7 +1818,23 @@ const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
 
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
+#ifdef __APPLE__
+// macosx has a secure per-user temporary directory
+char temp_path_storage[PATH_MAX];
+const char* os::get_temp_directory() {
+  static char *temp_path = NULL;
+  if (temp_path == NULL) {
+    int pathSize = confstr(_CS_DARWIN_USER_TEMP_DIR, temp_path_storage, PATH_MAX);
+    if (pathSize == 0 || pathSize > PATH_MAX) {
+      strlcpy(temp_path_storage, "/tmp/", sizeof(temp_path_storage));
+    }
+    temp_path = temp_path_storage;
+  }
+  return temp_path;
+}
+#else /* __APPLE__ */
 const char* os::get_temp_directory() { return "/tmp"; }
+#endif /* __APPLE__ */
 
 static bool file_exists(const char* filename) {
   struct stat statbuf;
@@ -4531,6 +4618,14 @@ jint os::init_2(void)
   // initialize thread priority policy
   prio_init();
 
+#ifdef __APPLE__
+  // dynamically link to objective c gc registration
+  void *handleLibObjc = dlopen(OBJC_LIB, RTLD_LAZY);
+  if (handleLibObjc != NULL) {
+    objc_registerThreadWithCollectorFunction = (objc_registerThreadWithCollector_t) dlsym(handleLibObjc, OBJC_GCREGISTER);
+  }
+#endif
+
   return JNI_OK;
 }
 
@@ -4559,6 +4654,18 @@ int os::active_processor_count() {
   int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
   assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
   return online_cpus;
+#endif
+}
+
+void os::set_native_thread_name(const char *name) {
+#if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
+  // This is only supported in Snow Leopard and beyond
+  if (name != NULL) {
+    // Add a "Java: " prefix to the name
+    char buf[MAXTHREADNAMESIZE];
+    snprintf(buf, sizeof(buf), "Java: %s", name);
+    pthread_setname_np(buf);
+  }
 #endif
 }
 
@@ -5678,8 +5785,8 @@ bool os::is_headless_jre() {
     struct stat statbuf;
     char buf[MAXPATHLEN];
     char libmawtpath[MAXPATHLEN];
-    const char *xawtstr  = "/xawt/libmawt.so";
-    const char *motifstr = "/motif21/libmawt.so";
+    const char *xawtstr  = "/xawt/libmawt" JNI_LIB_SUFFIX;
+    const char *motifstr = "/motif21/libmawt" JNI_LIB_SUFFIX;
     char *p;
 
     // Get path to libjvm.so

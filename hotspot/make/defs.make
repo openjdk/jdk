@@ -281,6 +281,13 @@ EXPORT_JRE_BIN_DIR = $(EXPORT_JRE_DIR)/bin
 EXPORT_JRE_LIB_DIR = $(EXPORT_JRE_DIR)/lib
 EXPORT_JRE_LIB_ARCH_DIR = $(EXPORT_JRE_LIB_DIR)/$(LIBARCH)
 
+# non-universal macosx builds need to appear universal
+ifeq ($(OS_VENDOR), Darwin)
+  ifneq ($(MACOSX_UNIVERSAL), true)
+    EXPORT_JRE_LIB_ARCH_DIR = $(EXPORT_JRE_LIB_DIR)
+  endif
+endif
+
 # Common export list of files
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jvmti.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jvmticmlr.h
