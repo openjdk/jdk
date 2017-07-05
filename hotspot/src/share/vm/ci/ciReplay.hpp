@@ -32,7 +32,7 @@
 class ciReplay {
   CI_PACKAGE_ACCESS
 
-#ifdef ASSERT
+#ifndef PRODUCT
  private:
   static int replay_impl(TRAPS);
 

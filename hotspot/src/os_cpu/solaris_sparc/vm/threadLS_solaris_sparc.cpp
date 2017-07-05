@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#include "thread_solaris.inline.hpp"
 
 // Provides an entry point we can link against and
 // a buffer we can emit code into. The buffer is
