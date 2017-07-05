@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6726695
+ * @bug 6726695 6993490
  * @summary HttpURLConnection shoul support 'Expect: 100-contimue' headers for PUT
 */
 
@@ -184,7 +184,15 @@ public class B6726695 extends Thread {
         out.flush();
         // Then read the body
         char[] cbuf = new char[512];
-        int l = in.read(cbuf);
+        in.read(cbuf);
+
+        /* Force the server to not respond for more that the expect 100-Continue
+         * timeout set by the HTTP handler (5000 millis). This ensures the
+         * timeout is correctly resets the default read timeout, infinity.
+         * See 6993490. */
+        System.out.println("server sleeping...");
+        try {Thread.sleep(6000); } catch (InterruptedException e) {}
+
         // finally send the 200 OK
         out.print("HTTP/1.1 200 OK");
         out.print("Server: Sun-Java-System-Web-Server/7.0\r\n");

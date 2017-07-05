@@ -53,7 +53,7 @@ FILES_export = \
 #
 # Extra cc/linker flags.
 #
-LDLIBS += dsound.lib winmm.lib user32.lib
+LDLIBS += dsound.lib winmm.lib user32.lib ole32.lib
 CPPFLAGS += \
 	-DUSE_DAUDIO=TRUE \
 	-I$(SHARE_SRC)/native/com/sun/media/sound \

@@ -29,7 +29,6 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.net.ProtocolFamily;
 import java.io.IOException;
 
 public class LinuxAsynchronousChannelProvider
@@ -87,13 +86,5 @@ public class LinuxAsynchronousChannelProvider
         throws IOException
     {
         return new UnixAsynchronousSocketChannelImpl(toPort(group));
-    }
-
-    @Override
-    public AsynchronousDatagramChannel openAsynchronousDatagramChannel(ProtocolFamily family,
-                                                                       AsynchronousChannelGroup group)
-        throws IOException
-    {
-        return new SimpleAsynchronousDatagramChannelImpl(family, toPort(group));
     }
 }

@@ -34,6 +34,7 @@ import java.util.List;
 import sun.dyn.Access;
 import sun.dyn.AdapterMethodHandle;
 import sun.dyn.MethodHandleImpl;
+import static sun.dyn.MemberName.uncaughtException;
 
 public class ValueConversions {
     private static final Access IMPL_TOKEN = Access.getToken();
@@ -148,11 +149,16 @@ public class ValueConversions {
         // look up the method
         String name = "unbox" + wrap.simpleName() + (raw ? "Raw" : "");
         MethodType type = unboxType(wrap, raw);
-        if (!exact)
-            // actually, type is wrong; the Java method takes Object
-            mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type.erase());
-        else
+        if (!exact) {
+            try {
+                // actually, type is wrong; the Java method takes Object
+                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type.erase());
+            } catch (NoAccessException ex) {
+                mh = null;
+            }
+        } else {
             mh = retype(type, unbox(wrap, !exact, raw));
+        }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
@@ -280,10 +286,15 @@ public class ValueConversions {
         // look up the method
         String name = "box" + wrap.simpleName() + (raw ? "Raw" : "");
         MethodType type = boxType(wrap, raw);
-        if (exact)
-            mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
-        else
+        if (exact) {
+            try {
+                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
+            } catch (NoAccessException ex) {
+                mh = null;
+            }
+        } else {
             mh = retype(type.erase(), box(wrap, !exact, raw));
+        }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
@@ -394,10 +405,15 @@ public class ValueConversions {
         // look up the method
         String name = "reboxRaw" + wrap.simpleName();
         MethodType type = reboxType(wrap);
-        if (exact)
-            mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
-        else
+        if (exact) {
+            try {
+                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, name, type);
+            } catch (NoAccessException ex) {
+                mh = null;
+            }
+        } else {
             mh = retype(IDENTITY.type(), rebox(wrap, !exact));
+        }
         if (mh != null) {
             cache.put(wrap, mh);
             return mh;
@@ -474,7 +490,11 @@ public class ValueConversions {
                 mh = EMPTY;
                 break;
             case INT: case LONG: case FLOAT: case DOUBLE:
-                mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "zero"+wrap.simpleName(), type);
+                try {
+                    mh = IMPL_LOOKUP.findStatic(ValueConversions.class, "zero"+wrap.simpleName(), type);
+                } catch (NoAccessException ex) {
+                    mh = null;
+                }
                 break;
         }
         if (mh != null) {
@@ -549,8 +569,8 @@ public class ValueConversions {
             ZERO_OBJECT = IMPL_LOOKUP.findStatic(ValueConversions.class, "zeroObject", zeroObjectType);
             IGNORE = IMPL_LOOKUP.findStatic(ValueConversions.class, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(ValueConversions.class, "empty", ignoreType.dropParameterTypes(0, 1));
-        } catch (RuntimeException ex) {
-            throw ex;
+        } catch (Exception ex) {
+            throw uncaughtException(ex);
         }
     }
 

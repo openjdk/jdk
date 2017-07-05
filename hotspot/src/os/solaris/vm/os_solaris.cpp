@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4878,18 +4878,17 @@ jint os::init_2(void) {
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page
   // size.  Add a page for compiler2 recursion in main thread.
-  // Add in BytesPerWord times page size to account for VM stack during
+  // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
-  guarantee((Solaris::min_stack_allowed >=
-    (StackYellowPages+StackRedPages+StackShadowPages+BytesPerWord
-     COMPILER2_PRESENT(+1)) * page_size),
-    "need to increase Solaris::min_stack_allowed on this platform");
+  os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
+            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                    2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
-    threadStackSizeInBytes < Solaris::min_stack_allowed) {
+    threadStackSizeInBytes < os::Solaris::min_stack_allowed) {
     tty->print_cr("\nThe stack size specified is too small, Specify at least %dk",
-                  Solaris::min_stack_allowed/K);
+                  os::Solaris::min_stack_allowed/K);
     return JNI_ERR;
   }
 
@@ -5837,7 +5836,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // First, demultiplex/decode time arguments
   timespec absTime;
-  if (time < 0) { // don't wait at all
+  if (time < 0 || (isAbsolute && time == 0) ) { // don't wait at all
     return;
   }
   if (time > 0) {

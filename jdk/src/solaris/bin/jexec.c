@@ -221,6 +221,7 @@ int main(int argc, const char * argv[]) {
      * implies an error in the exec. */
     free(nargv);
     errorExit(errno, BAD_EXEC_MSG);
+    return 0; // keep the compiler happy
 }
 
 

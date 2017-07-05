@@ -28,9 +28,7 @@ package java.net;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.InterruptedIOException;
 import java.io.FileDescriptor;
-import java.io.ByteArrayOutputStream;
 
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
@@ -58,7 +56,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     protected int fdUseCount = 0;
 
     /* lock when increment/decrementing fdUseCount */
-    protected Object fdLock = new Object();
+    protected final Object fdLock = new Object();
 
     /* indicates a close is pending on the file descriptor */
     protected boolean closePending = false;
@@ -68,7 +66,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     private int CONNECTION_RESET_PENDING = 1;
     private int CONNECTION_RESET = 2;
     private int resetState;
-    private Object resetLock = new Object();
+    private final Object resetLock = new Object();
 
     /**
      * Load net library into runtime.
@@ -100,25 +98,24 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     protected void connect(String host, int port)
         throws UnknownHostException, IOException
     {
-        IOException pending = null;
+        boolean connected = false;
         try {
             InetAddress address = InetAddress.getByName(host);
             this.port = port;
             this.address = address;
 
-            try {
-                connectToAddress(address, port, timeout);
-                return;
-            } catch (IOException e) {
-                pending = e;
+            connectToAddress(address, port, timeout);
+            connected = true;
+        } finally {
+            if (!connected) {
+                try {
+                    close();
+                } catch (IOException ioe) {
+                    /* Do nothing. If connect threw an exception then
+                       it will be passed up the call stack */
+                }
             }
-        } catch (UnknownHostException e) {
-            pending = e;
         }
-
-        // everything failed
-        close();
-        throw pending;
     }
 
     /**
@@ -151,22 +148,29 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
      */
-    protected void connect(SocketAddress address, int timeout) throws IOException {
-        if (address == null || !(address instanceof InetSocketAddress))
-            throw new IllegalArgumentException("unsupported address type");
-        InetSocketAddress addr = (InetSocketAddress) address;
-        if (addr.isUnresolved())
-            throw new UnknownHostException(addr.getHostName());
-        this.port = addr.getPort();
-        this.address = addr.getAddress();
-
+    protected void connect(SocketAddress address, int timeout)
+            throws IOException {
+        boolean connected = false;
         try {
+            if (address == null || !(address instanceof InetSocketAddress))
+                throw new IllegalArgumentException("unsupported address type");
+            InetSocketAddress addr = (InetSocketAddress) address;
+            if (addr.isUnresolved())
+                throw new UnknownHostException(addr.getHostName());
+            this.port = addr.getPort();
+            this.address = addr.getAddress();
+
             connectToAddress(this.address, port, timeout);
-            return;
-        } catch (IOException e) {
-            // everything failed
-            close();
-            throw e;
+            connected = true;
+        } finally {
+            if (!connected) {
+                try {
+                    close();
+                } catch (IOException ioe) {
+                    /* Do nothing. If connect threw an exception then
+                       it will be passed up the call stack */
+                }
+            }
         }
     }
 
@@ -311,7 +315,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             }
         }
         try {
-            FileDescriptor fd = acquireFD();
+            acquireFD();
             try {
                 socketConnect(address, port, timeout);
                 /* socket may have been closed during poll/select */
@@ -370,7 +374,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * @param s the connection
      */
     protected void accept(SocketImpl s) throws IOException {
-        FileDescriptor fd = acquireFD();
+        acquireFD();
         try {
             socketAccept(s);
         } finally {
@@ -561,7 +565,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     protected void finalize() throws IOException {
         close();
     }
-
 
     /*
      * "Acquires" and returns the FileDescriptor for this impl

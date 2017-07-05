@@ -27,6 +27,7 @@
 # @summary Test CollectionUsageThreshold with concurrent marksweep collector
 # @author  Mandy Chung
 #
+# @ignore  6982965
 # @run build CollectionUsageThreshold
 # @run shell/timeout=300 CollectionUsageThresholdConcMarkSweepGC.sh
 #

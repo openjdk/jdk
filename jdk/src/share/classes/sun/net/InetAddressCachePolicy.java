@@ -25,7 +25,6 @@
 
 package sun.net;
 
-import java.net.InetAddress;
 import java.security.PrivilegedAction;
 import java.security.Security;
 
@@ -57,7 +56,7 @@ public final class InetAddressCachePolicy {
      * caching. For security reasons, this caching is made forever when
      * a security manager is set.
      */
-    private static int cachePolicy;
+    private static int cachePolicy = FOREVER;
 
     /* The Java-level namelookup cache policy for negative lookups:
      *
@@ -67,31 +66,24 @@ public final class InetAddressCachePolicy {
      * default value is 0. It can be set to some other value for
      * performance reasons.
      */
-    private static int negativeCachePolicy;
+    private static int negativeCachePolicy = NEVER;
 
     /*
      * Whether or not the cache policy for successful lookups was set
      * using a property (cmd line).
      */
-    private static boolean set = false;
+    private static boolean propertySet;
 
     /*
      * Whether or not the cache policy for negative lookups was set
      * using a property (cmd line).
      */
-    private static boolean negativeSet = false;
+    private static boolean propertyNegativeSet;
 
     /*
      * Initialize
      */
     static {
-
-        set = false;
-        negativeSet = false;
-
-        cachePolicy = FOREVER;
-        negativeCachePolicy =  0;
-
         Integer tmp = null;
 
         try {
@@ -110,7 +102,7 @@ public final class InetAddressCachePolicy {
             if (cachePolicy < 0) {
                 cachePolicy = FOREVER;
             }
-            set = true;
+            propertySet = true;
         } else {
             tmp = java.security.AccessController.doPrivileged
                 (new sun.security.action.GetIntegerAction(cachePolicyPropFallback));
@@ -119,7 +111,14 @@ public final class InetAddressCachePolicy {
                 if (cachePolicy < 0) {
                     cachePolicy = FOREVER;
                 }
-                set = true;
+                propertySet = true;
+            } else {
+                /* No properties defined for positive caching. If there is no
+                 * security manager then use the default positive cache value.
+                 */
+                if (System.getSecurityManager() == null) {
+                    cachePolicy = DEFAULT_POSITIVE;
+                }
             }
         }
 
@@ -140,7 +139,7 @@ public final class InetAddressCachePolicy {
             if (negativeCachePolicy < 0) {
                 negativeCachePolicy = FOREVER;
             }
-            negativeSet = true;
+            propertyNegativeSet = true;
         } else {
             tmp = java.security.AccessController.doPrivileged
                 (new sun.security.action.GetIntegerAction(negativeCachePolicyPropFallback));
@@ -149,17 +148,13 @@ public final class InetAddressCachePolicy {
                 if (negativeCachePolicy < 0) {
                     negativeCachePolicy = FOREVER;
                 }
-                negativeSet = true;
+                propertyNegativeSet = true;
             }
         }
     }
 
     public static synchronized int get() {
-        if (!set && System.getSecurityManager() == null) {
-            return DEFAULT_POSITIVE;
-        } else {
-            return cachePolicy;
-        }
+        return cachePolicy;
     }
 
     public static synchronized int getNegative() {
@@ -174,20 +169,16 @@ public final class InetAddressCachePolicy {
      * should be cached
      */
     public static synchronized void setIfNotSet(int newPolicy) {
-
         /*
          * When setting the new value we may want to signal that the
          * cache should be flushed, though this doesn't seem strictly
          * necessary.
          */
-
-        if (!set) {
+        if (!propertySet) {
             checkValue(newPolicy, cachePolicy);
             cachePolicy = newPolicy;
         }
-
     }
-
 
     /**
      * Sets the cache policy for negative lookups if the user has not
@@ -197,14 +188,12 @@ public final class InetAddressCachePolicy {
      * should be cached
      */
     public static synchronized void setNegativeIfNotSet(int newPolicy) {
-
         /*
          * When setting the new value we may want to signal that the
          * cache should be flushed, though this doesn't seem strictly
          * necessary.
          */
-
-        if (!negativeSet) {
+        if (!propertyNegativeSet) {
             // Negative caching does not seem to have any security
             // implications.
             // checkValue(newPolicy, negativeCachePolicy);
@@ -213,13 +202,11 @@ public final class InetAddressCachePolicy {
     }
 
     private static void checkValue(int newPolicy, int oldPolicy) {
-
         /*
          * If malicious code gets a hold of this method, prevent
          * setting the cache policy to something laxer or some
          * invalid negative value.
          */
-
         if (newPolicy == FOREVER)
             return;
 
@@ -229,7 +216,6 @@ public final class InetAddressCachePolicy {
 
             throw new
                 SecurityException("can't make InetAddress cache more lax");
-
         }
     }
 }

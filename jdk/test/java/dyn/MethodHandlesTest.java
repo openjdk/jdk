@@ -265,6 +265,12 @@ public class MethodHandlesTest {
 //            wrap = Wrapper.forWrapperType(dst);
 //        if (wrap != Wrapper.OBJECT)
 //            return wrap.wrap(nextArg++);
+        if (param.isInterface()) {
+            for (Class<?> c : param.getClasses()) {
+                if (param.isAssignableFrom(c) && !c.isInterface())
+                    { param = c; break; }
+            }
+        }
         if (param.isInterface() || param.isAssignableFrom(String.class))
             return "#"+nextArg();
         else
@@ -380,7 +386,7 @@ public class MethodHandlesTest {
     }
     public static interface IntExample {
         public void            v0();
-        static class Impl implements IntExample {
+        public static class Impl implements IntExample {
             public void        v0()     { called("Int/v0", this); }
             final String name;
             public Impl() { name = "Impl#"+nextArg(); }
@@ -449,7 +455,7 @@ public class MethodHandlesTest {
         countTest(positive);
         MethodType type = MethodType.methodType(ret, params);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.findStatic(defc, name, type);
@@ -513,7 +519,7 @@ public class MethodHandlesTest {
         String methodName = name.substring(1 + name.indexOf('/'));  // foo/bar => foo
         MethodType type = MethodType.methodType(ret, params);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.findVirtual(defc, methodName, type);
@@ -567,7 +573,7 @@ public class MethodHandlesTest {
         countTest(positive);
         MethodType type = MethodType.methodType(ret, params);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.findSpecial(defc, name, type, specialCaller);
@@ -623,7 +629,7 @@ public class MethodHandlesTest {
         MethodType type = MethodType.methodType(ret, params);
         Object receiver = randomArg(defc);
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             target = lookup.bind(receiver, methodName, type);
@@ -688,7 +694,7 @@ public class MethodHandlesTest {
         MethodType type = MethodType.methodType(ret, params);
         Method rmethod = null;
         MethodHandle target = null;
-        RuntimeException noAccess = null;
+        Exception noAccess = null;
         try {
             rmethod = defc.getDeclaredMethod(name, params);
         } catch (NoSuchMethodException ex) {
@@ -1088,7 +1094,11 @@ public class MethodHandlesTest {
             if (rtype != Object.class)
                 pfx = rtype.getSimpleName().substring(0, 1).toLowerCase();
             String name = pfx+"id";
-            return PRIVATE.findStatic(Callee.class, name, type);
+            try {
+                return PRIVATE.findStatic(Callee.class, name, type);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 
@@ -1327,7 +1337,8 @@ public class MethodHandlesTest {
         MethodHandle result = MethodHandles.spreadArguments(target2, newType);
         Object[] returnValue;
         if (pos == 0) {
-            returnValue = (Object[]) result.invokeExact(args);
+            Object rawRetVal = result.invokeExact(args);
+            returnValue = (Object[]) rawRetVal;
         } else {
             Object[] args1 = Arrays.copyOfRange(args, 0, pos+1);
             args1[pos] = Arrays.copyOfRange(args, pos, args.length);
@@ -1817,8 +1828,13 @@ public class MethodHandlesTest {
         testCastFailure("unbox/return", 11000);
     }
 
-    static class Surprise extends JavaMethodHandle {
-        Surprise() { super("value"); }
+    static class Surprise implements MethodHandleProvider {
+        public MethodHandle asMethodHandle() {
+            return VALUE.bindTo(this);
+        }
+        public MethodHandle asMethodHandle(MethodType type) {
+            return asMethodHandle().asType(type);
+        }
         Object value(Object x) {
             trace("value", x);
             if (boo != null)  return boo;
@@ -1833,22 +1849,32 @@ public class MethodHandlesTest {
         static Object  refIdentity(Object x)  { trace("ref.x", x); return x; }
         static Integer boxIdentity(Integer x) { trace("box.x", x); return x; }
         static int     intIdentity(int x)     { trace("int.x", x); return x; }
-        static MethodHandle REF_IDENTITY = PRIVATE.findStatic(
-                Surprise.class, "refIdentity",
-                    MethodType.methodType(Object.class, Object.class));
-        static MethodHandle BOX_IDENTITY = PRIVATE.findStatic(
-                Surprise.class, "boxIdentity",
-                    MethodType.methodType(Integer.class, Integer.class));
-        static MethodHandle INT_IDENTITY = PRIVATE.findStatic(
-                Surprise.class, "intIdentity",
-                    MethodType.methodType(int.class, int.class));
+        static MethodHandle VALUE, REF_IDENTITY, BOX_IDENTITY, INT_IDENTITY;
+        static {
+            try {
+                VALUE = PRIVATE.findVirtual(
+                    Surprise.class, "value",
+                        MethodType.methodType(Object.class, Object.class));
+                REF_IDENTITY = PRIVATE.findStatic(
+                    Surprise.class, "refIdentity",
+                        MethodType.methodType(Object.class, Object.class));
+                BOX_IDENTITY = PRIVATE.findStatic(
+                    Surprise.class, "boxIdentity",
+                        MethodType.methodType(Integer.class, Integer.class));
+                INT_IDENTITY = PRIVATE.findStatic(
+                    Surprise.class, "intIdentity",
+                        MethodType.methodType(int.class, int.class));
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
     }
 
     void testCastFailure(String mode, int okCount) throws Throwable {
         countTest(false);
         if (verbosity > 2)  System.out.println("mode="+mode);
         Surprise boo = new Surprise();
-        MethodHandle identity = Surprise.REF_IDENTITY, surprise = boo;
+        MethodHandle identity = Surprise.REF_IDENTITY, surprise0 = boo.asMethodHandle(), surprise = surprise0;
         if (mode.endsWith("/return")) {
             if (mode.equals("unbox/return")) {
                 // fail on return to ((Integer)surprise).intValue
@@ -1874,7 +1900,7 @@ public class MethodHandlesTest {
                 identity = MethodHandles.filterArguments(callee, identity);
             }
         }
-        assertNotSame(mode, surprise, boo);
+        assertNotSame(mode, surprise, surprise0);
         identity = MethodHandles.convertArguments(identity, MethodType.genericMethodType(1));
         surprise = MethodHandles.convertArguments(surprise, MethodType.genericMethodType(1));
         Object x = 42;
@@ -1935,6 +1961,107 @@ public class MethodHandlesTest {
         args = randomArgs(mh.type().parameterArray());
         mh.invokeVarargs(args);
         assertCalled(name, args);
+    }
+
+    static void runForRunnable() {
+        called("runForRunnable");
+    }
+    private interface Fooable {
+        Object foo(Fooable x, Object y);
+        // this is for randomArg:
+        public class Impl implements Fooable {
+            public Object foo(Fooable x, Object y) {
+                throw new RuntimeException("do not call");
+            }
+            final String name;
+            public Impl() { name = "Fooable#"+nextArg(); }
+            @Override public String toString() { return name; }
+        }
+    }
+    static Object fooForFooable(Fooable x, Object y) {
+        return called("fooForFooable", x, y);
+    }
+    private static class MyCheckedException extends Exception {
+    }
+    private interface WillThrow {
+        void willThrow() throws MyCheckedException;
+    }
+
+    @Test
+    public void testAsInstance() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        Lookup lookup = MethodHandles.lookup();
+        {
+            MethodType mt = MethodType.methodType(void.class);
+            MethodHandle mh = lookup.findStatic(MethodHandlesTest.class, "runForRunnable", mt);
+            Runnable proxy = MethodHandles.asInstance(mh, Runnable.class);
+            proxy.run();
+            assertCalled("runForRunnable");
+        }
+        {
+            MethodType mt = MethodType.methodType(Object.class, Fooable.class, Object.class);
+            MethodHandle mh = lookup.findStatic(MethodHandlesTest.class, "fooForFooable", mt);
+            Fooable proxy = MethodHandles.asInstance(mh, Fooable.class);
+            Object[] args = randomArgs(mt.parameterArray());
+            Object result = proxy.foo((Fooable) args[0], args[1]);
+            assertCalled("fooForFooable", args);
+            assertEquals(result, logEntry("fooForFooable", args));
+        }
+        for (Throwable ex : new Throwable[] { new NullPointerException("ok"),
+                                              new InternalError("ok"),
+                                              new Throwable("fail"),
+                                              new Exception("fail"),
+                                              new MyCheckedException()
+                                            }) {
+            MethodHandle mh = MethodHandles.throwException(void.class, Throwable.class);
+            mh = MethodHandles.insertArguments(mh, 0, ex);
+            WillThrow proxy = MethodHandles.asInstance(mh, WillThrow.class);
+            try {
+                proxy.willThrow();
+                System.out.println("Failed to throw: "+ex);
+                assertTrue(false);
+            } catch (Throwable ex1) {
+                if (verbosity > 2) {
+                    System.out.println("throw "+ex);
+                    System.out.println("catch "+(ex == ex1 ? "UNWRAPPED" : ex1));
+                }
+                if (ex instanceof RuntimeException ||
+                    ex instanceof Error) {
+                    assertSame("must pass unchecked exception out without wrapping", ex, ex1);
+                } else if (ex instanceof MyCheckedException) {
+                    assertSame("must pass declared exception out without wrapping", ex, ex1);
+                } else {
+                    assertNotSame("must pass undeclared checked exception with wrapping", ex, ex1);
+                    UndeclaredThrowableException utex = (UndeclaredThrowableException) ex1;
+                    assertSame(ex, utex.getCause());
+                }
+            }
+        }
+        // Test error checking:
+        MethodHandle genericMH = ValueConversions.varargsArray(0);
+        genericMH = MethodHandles.convertArguments(genericMH, genericMH.type().generic());
+        for (Class<?> sam : new Class[] { Runnable.class,
+                                          Fooable.class,
+                                          Iterable.class }) {
+            try {
+                // Must throw, because none of these guys has generic type.
+                MethodHandles.asInstance(genericMH, sam);
+                System.out.println("Failed to throw");
+                assertTrue(false);
+            } catch (IllegalArgumentException ex) {
+            }
+        }
+        for (Class<?> nonSAM : new Class[] { Object.class,
+                                             String.class,
+                                             CharSequence.class,
+                                             Example.class }) {
+            try {
+                MethodHandles.asInstance(ValueConversions.varargsArray(0), nonSAM);
+                System.out.println("Failed to throw");
+                assertTrue(false);
+            } catch (IllegalArgumentException ex) {
+            }
+        }
     }
 }
 // Local abbreviated copy of sun.dyn.util.ValueConversions

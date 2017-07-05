@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1830,8 +1830,10 @@ public class ObjectStreamClass implements Serializable {
         private final ObjectStreamField[] fields;
         /** number of primitive fields */
         private final int numPrimFields;
-        /** unsafe field keys */
-        private final long[] keys;
+        /** unsafe field keys for reading fields - may contain dupes */
+        private final long[] readKeys;
+        /** unsafe fields keys for writing fields - no dupes */
+        private final long[] writeKeys;
         /** field data offsets */
         private final int[] offsets;
         /** field type codes */
@@ -1849,16 +1851,22 @@ public class ObjectStreamClass implements Serializable {
         FieldReflector(ObjectStreamField[] fields) {
             this.fields = fields;
             int nfields = fields.length;
-            keys = new long[nfields];
+            readKeys = new long[nfields];
+            writeKeys = new long[nfields];
             offsets = new int[nfields];
             typeCodes = new char[nfields];
             ArrayList<Class<?>> typeList = new ArrayList<Class<?>>();
+            Set<Long> usedKeys = new HashSet<Long>();
+
 
             for (int i = 0; i < nfields; i++) {
                 ObjectStreamField f = fields[i];
                 Field rf = f.getField();
-                keys[i] = (rf != null) ?
+                long key = (rf != null) ?
                     unsafe.objectFieldOffset(rf) : Unsafe.INVALID_FIELD_OFFSET;
+                readKeys[i] = key;
+                writeKeys[i] = usedKeys.add(key) ?
+                    key : Unsafe.INVALID_FIELD_OFFSET;
                 offsets[i] = f.getOffset();
                 typeCodes[i] = f.getTypeCode();
                 if (!f.isPrimitive()) {
@@ -1894,7 +1902,7 @@ public class ObjectStreamClass implements Serializable {
              * in array should be equal to Unsafe.INVALID_FIELD_OFFSET.
              */
             for (int i = 0; i < numPrimFields; i++) {
-                long key = keys[i];
+                long key = readKeys[i];
                 int off = offsets[i];
                 switch (typeCodes[i]) {
                     case 'Z':
@@ -1945,7 +1953,7 @@ public class ObjectStreamClass implements Serializable {
                 throw new NullPointerException();
             }
             for (int i = 0; i < numPrimFields; i++) {
-                long key = keys[i];
+                long key = writeKeys[i];
                 if (key == Unsafe.INVALID_FIELD_OFFSET) {
                     continue;           // discard value
                 }
@@ -2006,7 +2014,7 @@ public class ObjectStreamClass implements Serializable {
                 switch (typeCodes[i]) {
                     case 'L':
                     case '[':
-                        vals[offsets[i]] = unsafe.getObject(obj, keys[i]);
+                        vals[offsets[i]] = unsafe.getObject(obj, readKeys[i]);
                         break;
 
                     default:
@@ -2027,7 +2035,7 @@ public class ObjectStreamClass implements Serializable {
                 throw new NullPointerException();
             }
             for (int i = numPrimFields; i < fields.length; i++) {
-                long key = keys[i];
+                long key = writeKeys[i];
                 if (key == Unsafe.INVALID_FIELD_OFFSET) {
                     continue;           // discard value
                 }
