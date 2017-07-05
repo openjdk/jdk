@@ -75,7 +75,7 @@ le_uint32 SinglePositioningFormat1Subtable::process(const LEReferenceTo<SinglePo
     }
 
     if (coverageIndex >= 0) {
-        valueRecord.adjustPosition(SWAPW(valueFormat), (const char *) this, *glyphIterator, fontInstance);
+      valueRecord.adjustPosition(SWAPW(valueFormat), base, *glyphIterator, fontInstance, success);
 
         return 1;
     }
@@ -92,7 +92,7 @@ le_uint32 SinglePositioningFormat2Subtable::process(const LEReferenceTo<SinglePo
     }
 
     if (coverageIndex >= 0) {
-        valueRecordArray[0].adjustPosition(coverageIndex, SWAPW(valueFormat), (const char *) this, *glyphIterator, fontInstance);
+      valueRecordArray[0].adjustPosition(coverageIndex, SWAPW(valueFormat), base, *glyphIterator, fontInstance, success);
 
         return 1;
     }

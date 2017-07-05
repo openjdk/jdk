@@ -119,6 +119,7 @@ public interface PrintService {
      * Gets the value of the single specified service attribute.
      * This may be useful to clients which only need the value of one
      * attribute and want to minimize overhead.
+     * @param <T> the type of the specified service attribute
      * @param category the category of a PrintServiceAttribute supported
      * by this service - may not be null.
      * @return the value of the supported attribute or null if the

@@ -65,8 +65,11 @@ le_int32 MarkToLigaturePositioningSubtable::process(const LETableReference &base
     }
 
     LEPoint markAnchor;
-    const MarkArray *markArray = (const MarkArray *) ((char *) this + SWAPW(markArrayOffset));
-    le_int32 markClass = markArray->getMarkClass(markGlyph, markCoverage, fontInstance, markAnchor);
+    LEReferenceTo<MarkArray> markArray(base, success,  SWAPW(markArrayOffset));
+    if( LE_FAILURE(success) ) {
+      return 0;
+    }
+    le_int32 markClass = markArray->getMarkClass(markArray, markGlyph, markCoverage, fontInstance, markAnchor, success);
     le_uint16 mcCount = SWAPW(classCount);
 
     if (markClass < 0 || markClass >= mcCount) {
@@ -79,7 +82,7 @@ le_int32 MarkToLigaturePositioningSubtable::process(const LETableReference &base
     GlyphIterator ligatureIterator(*glyphIterator, (le_uint16) (lfIgnoreMarks /*| lfIgnoreBaseGlyphs*/));
     LEGlyphID ligatureGlyph = findLigatureGlyph(&ligatureIterator);
     le_int32 ligatureCoverage = getBaseCoverage(base, (LEGlyphID) ligatureGlyph, success);
-    const LigatureArray *ligatureArray = (const LigatureArray *) ((char *) this + SWAPW(baseArrayOffset));
+    LEReferenceTo<LigatureArray> ligatureArray(base, success, SWAPW(baseArrayOffset));
     le_uint16 ligatureCount = SWAPW(ligatureArray->ligatureCount);
 
     if (ligatureCoverage < 0 || ligatureCoverage >= ligatureCount) {
@@ -91,7 +94,7 @@ le_int32 MarkToLigaturePositioningSubtable::process(const LETableReference &base
 
     le_int32 markPosition = glyphIterator->getCurrStreamPosition();
     Offset ligatureAttachOffset = SWAPW(ligatureArray->ligatureAttachTableOffsetArray[ligatureCoverage]);
-    const LigatureAttachTable *ligatureAttachTable = (const LigatureAttachTable *) ((char *) ligatureArray + ligatureAttachOffset);
+    LEReferenceTo<LigatureAttachTable> ligatureAttachTable(ligatureArray, success, ligatureAttachOffset);
     le_int32 componentCount = SWAPW(ligatureAttachTable->componentCount);
     le_int32 component = ligatureIterator.getMarkComponent(markPosition);
 
@@ -100,12 +103,14 @@ le_int32 MarkToLigaturePositioningSubtable::process(const LETableReference &base
         component = componentCount - 1;
     }
 
-    const ComponentRecord *componentRecord = &ligatureAttachTable->componentRecordArray[component * mcCount];
+    LEReferenceTo<ComponentRecord> componentRecord(base, success, &ligatureAttachTable->componentRecordArray[component * mcCount]);
+    LEReferenceToArrayOf<Offset> ligatureAnchorTableOffsetArray(base, success, &(componentRecord->ligatureAnchorTableOffsetArray[0]), markClass+1);
+    if( LE_FAILURE(success) ) { return 0; }
     Offset anchorTableOffset = SWAPW(componentRecord->ligatureAnchorTableOffsetArray[markClass]);
-    const AnchorTable *anchorTable = (const AnchorTable *) ((char *) ligatureAttachTable + anchorTableOffset);
+    LEReferenceTo<AnchorTable> anchorTable(ligatureAttachTable, success, anchorTableOffset);
     LEPoint ligatureAnchor, markAdvance, pixels;
 
-    anchorTable->getAnchor(ligatureGlyph, fontInstance, ligatureAnchor);
+    anchorTable->getAnchor(anchorTable, ligatureGlyph, fontInstance, ligatureAnchor, success);
 
     fontInstance->getGlyphAdvance(markGlyph, pixels);
     fontInstance->pixelsToUnits(pixels, markAdvance);

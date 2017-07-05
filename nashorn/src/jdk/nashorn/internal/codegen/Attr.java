@@ -766,7 +766,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 symbol.setType(Type.OBJECT);
             }
 
-            returnType = Type.widest(returnTypes.pop(), symbol.getSymbolType());
+            returnType = widestReturnType(returnTypes.pop(), symbol.getSymbolType());
         } else {
             returnType = Type.OBJECT; //undefined
         }
@@ -1433,8 +1433,28 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         ensureTypeNotUnknown(trueExpr);
         ensureTypeNotUnknown(falseExpr);
 
-        final Type type = Type.widest(trueExpr.getType(), falseExpr.getType());
+        final Type type = widestReturnType(trueExpr.getType(), falseExpr.getType());
         return end(ensureSymbol(type, ternaryNode));
+    }
+
+    /**
+     * When doing widening for return types of a function or a ternary operator, it is not valid to widen a boolean to
+     * anything other than Object. Also, widening a numeric type to an object type must widen to Object proper and not
+     * any more specific subclass (e.g. widest of int/long/double and String is Object).
+     * @param t1 type 1
+     * @param t2 type 2
+     * @return wider of t1 and t2, except if one is boolean and the other is neither boolean nor unknown, or if one is
+     * numeric and the other is neither numeric nor unknown in which case {@code Type.OBJECT} is returned.
+     */
+    private static Type widestReturnType(final Type t1, final Type t2) {
+        if (t1.isUnknown()) {
+            return t2;
+        } else if (t2.isUnknown()) {
+            return t1;
+        } else if (t1.isBoolean() != t2.isBoolean() || t1.isNumeric() != t2.isNumeric()) {
+            return Type.OBJECT;
+        }
+        return Type.widest(t1, t2);
     }
 
     private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags) {

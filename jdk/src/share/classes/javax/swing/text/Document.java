@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.event.*;
  * interface is to scale from very simple needs (a plain text textfield)
  * to complex needs (an HTML or XML document, for example).
  *
- * <p><b><font size=+1>Content</font></b>
+ * <p><b>Content</b>
  * <p>
  * At the simplest level, text can be
  * modeled as a linear sequence of characters. To support
@@ -62,7 +62,7 @@ import javax.swing.event.*;
  * <li>{@link #getText(int, int)}
  * <li>{@link #getText(int, int, javax.swing.text.Segment)}
  * </ul>
- * <p><b><font size=+1>Structure</font></b>
+ * <p><b>Structure</b>
  * <p>
  * Text is rarely represented simply as featureless content. Rather,
  * text typically has some sort of structure associated with it.
@@ -83,7 +83,7 @@ import javax.swing.event.*;
  * <li>{@link #getRootElements()}
  * </ul>
  *
- * <p><b><font size=+1>Mutations</font></b>
+ * <p><b>Mutations</b>
  * <p>
  * All documents need to be able to add and remove simple text.
  * Typically, text is inserted and removed via gestures from
@@ -98,7 +98,7 @@ import javax.swing.event.*;
  * <li>{@link #createPosition(int)}
  * </ul>
  *
- * <p><b><font size=+1>Notification</font></b>
+ * <p><b>Notification</b>
  * <p>
  * Mutations to the <code>Document</code> must be communicated to
  * interested observers.  The notification of change follows the event model
@@ -152,7 +152,7 @@ import javax.swing.event.*;
  * <li><a href="#removeUndoableEditListener(javax.swing.event.UndoableEditListener)">removeUndoableEditListener(UndoableEditListener)</a>
  * </ul>
  *
- * <p><b><font size=+1>Properties</font></b>
+ * <p><b>Properties</b>
  * <p>
  * Document implementations will generally have some set of properties
  * associated with them at runtime.  Two well known properties are the

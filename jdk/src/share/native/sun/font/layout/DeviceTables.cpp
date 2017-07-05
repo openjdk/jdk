@@ -43,7 +43,7 @@ const le_uint16 DeviceTable::fieldBits[]     = {     2,      4,      8};
 
 #define FORMAT_COUNT LE_ARRAY_SIZE(fieldBits)
 
-le_int16 DeviceTable::getAdjustment(le_uint16 ppem) const
+le_int16 DeviceTable::getAdjustment(const LEReferenceTo<DeviceTable>&base, le_uint16 ppem, LEErrorCode &success) const
 {
     le_uint16 start = SWAPW(startSize);
     le_uint16 format = SWAPW(deltaFormat) - 1;
@@ -53,6 +53,13 @@ le_int16 DeviceTable::getAdjustment(le_uint16 ppem) const
         le_uint16 sizeIndex = ppem - start;
         le_uint16 bits = fieldBits[format];
         le_uint16 count = 16 / bits;
+
+        LEReferenceToArrayOf<le_uint16> deltaValuesRef(base, success, deltaValues, (sizeIndex / count));
+
+        if(LE_FAILURE(success)) {
+          return result;
+        }
+
         le_uint16 word = SWAPW(deltaValues[sizeIndex / count]);
         le_uint16 fieldIndex = sizeIndex % count;
         le_uint16 shift = 16 - (bits * (fieldIndex + 1));

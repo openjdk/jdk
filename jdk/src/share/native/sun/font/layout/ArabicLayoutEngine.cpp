@@ -51,7 +51,7 @@
 
 U_NAMESPACE_BEGIN
 
-le_bool CharSubstitutionFilter::accept(LEGlyphID glyph) const
+le_bool CharSubstitutionFilter::accept(LEGlyphID glyph, LEErrorCode &/*success*/) const
 {
     return fFontInstance->canDisplay((LEUnicode) glyph);
 }
@@ -147,7 +147,9 @@ void ArabicOpenTypeLayoutEngine::adjustGlyphPositions(const LEUnicode chars[], l
         GDEFMarkFilter filter(fGDEFTable, success);
         adjustMarkGlyphs(glyphStorage, &filter, success);
     } else {
-        LEReferenceTo<GlyphDefinitionTableHeader> gdefTable(CanonShaping::glyphDefinitionTable, CanonShaping::glyphDefinitionTableLen);
+      LEReferenceTo<GlyphDefinitionTableHeader> gdefTable(LETableReference::kStaticData,
+                                                          CanonShaping::glyphDefinitionTable,
+                                                          CanonShaping::glyphDefinitionTableLen);
         GDEFMarkFilter filter(gdefTable, success);
 
         adjustMarkGlyphs(&chars[offset], count, reverse, glyphStorage, &filter, success);
@@ -157,9 +159,9 @@ void ArabicOpenTypeLayoutEngine::adjustGlyphPositions(const LEUnicode chars[], l
 UnicodeArabicOpenTypeLayoutEngine::UnicodeArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags, LEErrorCode &success)
   : ArabicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags | LE_CHAR_FILTER_FEATURE_FLAG, success)
 {
-    fGSUBTable = (const GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable;
-    fGDEFTable = (const GlyphDefinitionTableHeader *) CanonShaping::glyphDefinitionTable;
-    /* OpenTypeLayoutEngine will allocate a substitution filter */
+  fGSUBTable.setTo(LETableReference::kStaticData, (const GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable, CanonShaping::glyphSubstitutionTableLen);
+  fGDEFTable.setTo(LETableReference::kStaticData, (const GlyphDefinitionTableHeader *) CanonShaping::glyphDefinitionTable, CanonShaping::glyphDefinitionTableLen);
+  /* OpenTypeLayoutEngine will allocate a substitution filter */
 }
 
 UnicodeArabicOpenTypeLayoutEngine::~UnicodeArabicOpenTypeLayoutEngine()

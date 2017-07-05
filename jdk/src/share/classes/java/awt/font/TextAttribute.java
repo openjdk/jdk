@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import java.util.HashMap;
  *   <LI>the valid values if there are limitations
  *   <LI>a description of the effect.
  * </UL>
- * <p>
+ *
  * <H3>Values</H3>
  * <UL>
  *   <LI>The values of attributes must always be immutable.
@@ -95,7 +95,6 @@ import java.util.HashMap;
  * </UL>
  *
  * <h4>Summary of attributes</h4>
- * <p>
  * <table style="float:center" border="0" cellspacing="0" cellpadding="2" width="%95"
  *     summary="Key, value type, principal constants, and default value
  *     behavior of all TextAttributes">

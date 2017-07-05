@@ -151,10 +151,11 @@ public interface LongStream extends BaseStream<Long, LongStream> {
 
     /**
      * Returns a stream consisting of the results of replacing each element of
-     * this stream with the contents of the stream produced by applying the
-     * provided mapping function to each element.  (If the result of the mapping
-     * function is {@code null}, this is treated as if the result was an empty
-     * stream.)
+     * this stream with the contents of a mapped stream produced by applying
+     * the provided mapping function to each element.  Each mapped stream is
+     * {@link java.util.stream.BaseStream#close() closed} after its contents
+     * have been placed into this stream.  (If a mapped stream is {@code null}
+     * an empty stream is used, instead.)
      *
      * <p>This is an <a href="package-summary.html#StreamOps">intermediate
      * operation</a>.

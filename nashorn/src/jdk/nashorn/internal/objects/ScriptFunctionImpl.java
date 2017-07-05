@@ -170,26 +170,6 @@ public class ScriptFunctionImpl extends ScriptFunction {
         boundfunctionmap$.setIsShared();
     }
 
-    // function object representing TypeErrorThrower
-    private static ScriptFunction typeErrorThrower;
-
-    /*
-     * ECMA section 13.2.3 The [[ThrowTypeError]] Function Object
-     */
-    static synchronized ScriptFunction getTypeErrorThrower() {
-        if (typeErrorThrower == null) {
-            // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3
-            final ScriptFunctionImpl func = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_GETTER, null, null, false, false, false);
-            func.setPrototype(UNDEFINED);
-            // Non-constructor built-in functions do not have "prototype" property
-            func.deleteOwnProperty(func.getMap().findProperty("prototype"));
-            func.preventExtensions();
-            typeErrorThrower = func;
-        }
-
-        return typeErrorThrower;
-    }
-
     private static PropertyMap createStrictModeMap(final PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
         PropertyMap newMap = map;
@@ -313,12 +293,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
         // We have to fill user accessor functions late as these are stored
         // in this object rather than in the PropertyMap of this object.
 
+        final ScriptFunction errorThrower = global.getTypeErrorThrower();
         if (findProperty("arguments", true) != null) {
-            setUserAccessors("arguments", getTypeErrorThrower(), getTypeErrorThrower());
+            setUserAccessors("arguments", errorThrower, errorThrower);
         }
 
         if (findProperty("caller", true) != null) {
-            setUserAccessors("caller", getTypeErrorThrower(), getTypeErrorThrower());
+            setUserAccessors("caller", errorThrower, errorThrower);
         }
     }
 }

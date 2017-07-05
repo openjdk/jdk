@@ -283,14 +283,13 @@ $(JDK_IMAGE_DIR)/jre/lib/applet:
 	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $@
 
-# In the old build, JObjC.jar is not part of the meta-index
 $(JRE_IMAGE_DIR)/lib/meta-index: $(JRE_LIB_TARGETS)
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index `$(LS) *.jar | $(SED) 's/JObjC\.jar//g'`
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
 
 $(JDK_IMAGE_DIR)/jre/lib/meta-index: $(JDKJRE_LIB_TARGETS)
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index `$(LS) *.jar | $(SED) 's/JObjC\.jar//g'`
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
 
 $(JRE_IMAGE_DIR)/lib/ext/meta-index: $(JRE_LIB_TARGETS)
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)

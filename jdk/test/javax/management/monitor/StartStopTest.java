@@ -27,6 +27,8 @@
  * @summary Test that tasks are cancelled properly when
  *          monitors are started and stopped in a loop.
  * @author Luis-Miguel Alventosa
+ * @library /lib/testlibrary
+ * @run build jdk.testlibrary.Utils
  * @run clean StartStopTest
  * @run build StartStopTest
  * @run main/othervm/timeout=300 StartStopTest 1
@@ -52,14 +54,15 @@ import javax.management.monitor.Monitor;
 import javax.management.monitor.MonitorNotification;
 import javax.management.monitor.StringMonitor;
 
-public class StartStopTest {
+import jdk.testlibrary.Utils;
 
+public class StartStopTest {
     static int maxPoolSize;
     static final AtomicInteger counter = new AtomicInteger();
 
     // MBean class
     public class ObservedObject implements ObservedObjectMBean {
-        public boolean called = false;
+        volatile public boolean called = false;
         public Integer getInteger() {
             task("Integer");
             return 0;
@@ -142,7 +145,7 @@ public class StartStopTest {
                 for (int i = 0; i < nTasks; i++)
                     monitor[i].start();
                 echo(">>> MONITORS started");
-                Thread.sleep(500);
+                doSleep(500);
                 echo(">>> Check FLAGS true");
                 for (int i = 0; i < nTasks; i++)
                     if (!monitored[i].called) {
@@ -154,7 +157,7 @@ public class StartStopTest {
                 for (int i = 0; i < nTasks; i++)
                     monitor[i].stop();
                 echo(">>> MONITORS stopped");
-                Thread.sleep(500);
+                doSleep(500);
                 echo(">>> Set FLAGS to false");
                 for (int i = 0; i < nTasks; i++)
                     monitored[i].called = false;
@@ -207,5 +210,9 @@ public class StartStopTest {
         } else {
             echo(">>> Happy Bye, Bye!");
         }
+    }
+
+    private static void doSleep(long ms) throws Exception {
+        Thread.sleep(Math.round(ms * Utils.TIMEOUT_FACTOR));
     }
 }

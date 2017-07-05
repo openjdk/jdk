@@ -1,0 +1,9 @@
+hello
+35
+Error
+	at <program> (test/script/basic/JDK-8031983.js:31)
+43
+Error
+	at <program> (test/script/basic/JDK-8031983.js:41)
+[object Object]
+	at <program> (test/script/basic/JDK-8031983.js:50)

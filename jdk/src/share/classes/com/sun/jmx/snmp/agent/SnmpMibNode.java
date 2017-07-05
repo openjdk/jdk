@@ -155,7 +155,7 @@ public abstract class SnmpMibNode implements Serializable {
                           long[] oid, int depth,
                           SnmpRequestTree handlers)
         throws SnmpStatusException {
-        throw noSuchObjectException;
+        throw new SnmpStatusException(SnmpStatusException.noSuchObject);
     }
 
     /**
@@ -183,7 +183,7 @@ public abstract class SnmpMibNode implements Serializable {
                                  long[] oid, int pos, int depth,
                                  SnmpRequestTree handlers, AcmChecker checker)
         throws SnmpStatusException {
-        throw noSuchObjectException;
+        throw new SnmpStatusException(SnmpStatusException.noSuchObject);
     }
 
     /**
@@ -346,8 +346,9 @@ public abstract class SnmpMibNode implements Serializable {
         final int[] a = table;
         final int val= (int) value;
 
-        if (a == null)
-            throw noSuchObjectException;
+        if (a == null) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+        }
 
         int low= 0;
         int max= a.length;
@@ -356,11 +357,13 @@ public abstract class SnmpMibNode implements Serializable {
 
         // Basic check
         //
-        if (max < 1)
-            throw noSuchObjectException;
+        if (max < 1) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+        }
 
-        if (a[max-1] <= val)
-            throw noSuchObjectException;
+        if (a[max-1] <= val) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+        }
 
         while (low <= max) {
             elmt= a[curr];
@@ -400,15 +403,4 @@ public abstract class SnmpMibNode implements Serializable {
      * Contains the list of variable identifiers.
      */
     protected int[] varList;
-
-    /**
-     * Contains a predefined exception that is often fired when an
-     * object is not found in the MIB.
-     */
-    static final protected SnmpStatusException noSuchInstanceException =
-        new SnmpStatusException(SnmpStatusException.noSuchInstance);
-    static final protected SnmpStatusException noSuchObjectException =
-        new SnmpStatusException(SnmpStatusException.noSuchObject);
-    static final protected SnmpStatusException noSuchNameException =
-        new SnmpStatusException(SnmpDefinitions.snmpRspNoSuchName);
 }

@@ -495,6 +495,7 @@ public class DragSource implements Serializable {
      * and <code>DragGestureListener</code> on
      * the newly created object.
      * <P>
+     * @param <T> the type of {@code DragGestureRecognizer} to create
      * @param recognizerAbstractClass the requested abstract type
      * @param actions                 the permitted source drag actions
      * @param c                       the <code>Component</code> target
@@ -669,6 +670,7 @@ public class DragSource implements Serializable {
      * <code><em>Foo</em>Listener</code>s are registered using the
      * <code>add<em>Foo</em>Listener</code> method.
      *
+     * @param <T> the type of listener objects
      * @param listenerType the type of listeners requested; this parameter
      *          should specify an interface that descends from
      *          <code>java.util.EventListener</code>

@@ -49,11 +49,11 @@ GDEFMarkFilter::~GDEFMarkFilter()
     // nothing to do?
 }
 
-le_bool GDEFMarkFilter::accept(LEGlyphID glyph) const
+le_bool GDEFMarkFilter::accept(LEGlyphID glyph, LEErrorCode &success) const
 {
-    le_int32 glyphClass = classDefTable->getGlyphClass(glyph);
+  le_int32 glyphClass = classDefTable->getGlyphClass(classDefTable, glyph, success);
 
-    return glyphClass == gcdMarkGlyph;
+  return glyphClass == gcdMarkGlyph;
 }
 
 U_NAMESPACE_END

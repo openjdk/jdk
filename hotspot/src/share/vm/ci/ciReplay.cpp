@@ -24,6 +24,8 @@
 #include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciSymbol.hpp"
+#include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.inline.hpp"
@@ -37,74 +39,107 @@
 // ciReplay
 
 typedef struct _ciMethodDataRecord {
-  const char* klass;
-  const char* method;
-  const char* signature;
-  int state;
-  int current_mileage;
-  intptr_t* data;
-  int data_length;
-  char* orig_data;
-  int orig_data_length;
-  int oops_length;
-  jobject* oops_handles;
-  int* oops_offsets;
+  const char* _klass_name;
+  const char* _method_name;
+  const char* _signature;
+
+  int _state;
+  int _current_mileage;
+
+  intptr_t* _data;
+  char*     _orig_data;
+  jobject*  _oops_handles;
+  int*      _oops_offsets;
+  int       _data_length;
+  int       _orig_data_length;
+  int       _oops_length;
 } ciMethodDataRecord;
 
 typedef struct _ciMethodRecord {
-  const char* klass;
-  const char* method;
-  const char* signature;
-  int instructions_size;
-  int interpreter_invocation_count;
-  int interpreter_throwout_count;
-  int invocation_counter;
-  int backedge_counter;
+  const char* _klass_name;
+  const char* _method_name;
+  const char* _signature;
+
+  int _instructions_size;
+  int _interpreter_invocation_count;
+  int _interpreter_throwout_count;
+  int _invocation_counter;
+  int _backedge_counter;
 } ciMethodRecord;
 
-class CompileReplay;
+typedef struct _ciInlineRecord {
+  const char* _klass_name;
+  const char* _method_name;
+  const char* _signature;
+
+  int _inline_depth;
+  int _inline_bci;
+} ciInlineRecord;
+
+class  CompileReplay;
 static CompileReplay* replay_state;
 
 class CompileReplay : public StackObj {
  private:
-  FILE*   stream;
-  Thread* thread;
-  Handle  protection_domain;
-  Handle  loader;
+  FILE*   _stream;
+  Thread* _thread;
+  Handle  _protection_domain;
+  Handle  _loader;
 
-  GrowableArray<ciMethodRecord*>     ci_method_records;
-  GrowableArray<ciMethodDataRecord*> ci_method_data_records;
+  GrowableArray<ciMethodRecord*>     _ci_method_records;
+  GrowableArray<ciMethodDataRecord*> _ci_method_data_records;
+
+  // Use pointer because we may need to return inline records
+  // without destroying them.
+  GrowableArray<ciInlineRecord*>*    _ci_inline_records;
 
   const char* _error_message;
 
-  char* bufptr;
-  char* buffer;
-  int   buffer_length;
-  int   buffer_end;
-  int   line_no;
+  char* _bufptr;
+  char* _buffer;
+  int   _buffer_length;
+  int   _buffer_pos;
+
+  // "compile" data
+  ciKlass* _iklass;
+  Method*  _imethod;
+  int      _entry_bci;
+  int      _comp_level;
 
  public:
   CompileReplay(const char* filename, TRAPS) {
-    thread = THREAD;
-    loader = Handle(thread, SystemDictionary::java_system_loader());
-    stream = fopen(filename, "rt");
-    if (stream == NULL) {
+    _thread = THREAD;
+    _loader = Handle(_thread, SystemDictionary::java_system_loader());
+    _protection_domain = Handle();
+
+    _stream = fopen(filename, "rt");
+    if (_stream == NULL) {
       fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
-    buffer_length = 32;
-    buffer = NEW_RESOURCE_ARRAY(char, buffer_length);
+
+    _ci_inline_records = NULL;
     _error_message = NULL;
+
+    _buffer_length = 32;
+    _buffer = NEW_RESOURCE_ARRAY(char, _buffer_length);
+    _bufptr = _buffer;
+    _buffer_pos = 0;
+
+    _imethod = NULL;
+    _iklass  = NULL;
+    _entry_bci  = 0;
+    _comp_level = 0;
 
     test();
   }
 
   ~CompileReplay() {
-    if (stream != NULL) fclose(stream);
+    if (_stream != NULL) fclose(_stream);
   }
 
   void test() {
-    strcpy(buffer, "1 2 foo 4 bar 0x9 \"this is it\"");
-    bufptr = buffer;
+    strcpy(_buffer, "1 2 foo 4 bar 0x9 \"this is it\"");
+    _bufptr = _buffer;
     assert(parse_int("test") == 1, "what");
     assert(parse_int("test") == 2, "what");
     assert(strcmp(parse_string(), "foo") == 0, "what");
@@ -115,18 +150,18 @@ class CompileReplay : public StackObj {
   }
 
   bool had_error() {
-    return _error_message != NULL || thread->has_pending_exception();
+    return _error_message != NULL || _thread->has_pending_exception();
   }
 
   bool can_replay() {
-    return !(stream == NULL || had_error());
+    return !(_stream == NULL || had_error());
   }
 
   void report_error(const char* msg) {
     _error_message = msg;
-    // Restore the buffer contents for error reporting
-    for (int i = 0; i < buffer_end; i++) {
-      if (buffer[i] == '\0') buffer[i] = ' ';
+    // Restore the _buffer contents for error reporting
+    for (int i = 0; i < _buffer_pos; i++) {
+      if (_buffer[i] == '\0') _buffer[i] = ' ';
     }
   }
 
@@ -137,10 +172,10 @@ class CompileReplay : public StackObj {
 
     int v = 0;
     int read;
-    if (sscanf(bufptr, "%i%n", &v, &read) != 1) {
+    if (sscanf(_bufptr, "%i%n", &v, &read) != 1) {
       report_error(label);
     } else {
-      bufptr += read;
+      _bufptr += read;
     }
     return v;
   }
@@ -152,31 +187,31 @@ class CompileReplay : public StackObj {
 
     intptr_t v = 0;
     int read;
-    if (sscanf(bufptr, INTPTR_FORMAT "%n", &v, &read) != 1) {
+    if (sscanf(_bufptr, INTPTR_FORMAT "%n", &v, &read) != 1) {
       report_error(label);
     } else {
-      bufptr += read;
+      _bufptr += read;
     }
     return v;
   }
 
   void skip_ws() {
     // Skip any leading whitespace
-    while (*bufptr == ' ' || *bufptr == '\t') {
-      bufptr++;
+    while (*_bufptr == ' ' || *_bufptr == '\t') {
+      _bufptr++;
     }
   }
 
 
   char* scan_and_terminate(char delim) {
-    char* str = bufptr;
-    while (*bufptr != delim && *bufptr != '\0') {
-      bufptr++;
+    char* str = _bufptr;
+    while (*_bufptr != delim && *_bufptr != '\0') {
+      _bufptr++;
     }
-    if (*bufptr != '\0') {
-      *bufptr++ = '\0';
+    if (*_bufptr != '\0') {
+      *_bufptr++ = '\0';
     }
-    if (bufptr == str) {
+    if (_bufptr == str) {
       // nothing here
       return NULL;
     }
@@ -195,8 +230,8 @@ class CompileReplay : public StackObj {
 
     skip_ws();
 
-    if (*bufptr == '"') {
-      bufptr++;
+    if (*_bufptr == '"') {
+      _bufptr++;
       return scan_and_terminate('"');
     } else {
       return scan_and_terminate(' ');
@@ -273,7 +308,12 @@ class CompileReplay : public StackObj {
     const char* str = parse_escaped_string();
     Symbol* klass_name = SymbolTable::lookup(str, (int)strlen(str), CHECK_NULL);
     if (klass_name != NULL) {
-      Klass* k = SystemDictionary::resolve_or_fail(klass_name, loader, protection_domain, true, THREAD);
+      Klass* k = NULL;
+      if (_iklass != NULL) {
+        k = (Klass*)_iklass->find_klass(ciSymbol::make(klass_name->as_C_string()))->constant_encoding();
+      } else {
+        k = SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, THREAD);
+      }
       if (HAS_PENDING_EXCEPTION) {
         oop throwable = PENDING_EXCEPTION;
         java_lang_Throwable::print(throwable, tty);
@@ -289,7 +329,7 @@ class CompileReplay : public StackObj {
   // Lookup a klass
   Klass* resolve_klass(const char* klass, TRAPS) {
     Symbol* klass_name = SymbolTable::lookup(klass, (int)strlen(klass), CHECK_NULL);
-    return SystemDictionary::resolve_or_fail(klass_name, loader, protection_domain, true, CHECK_NULL);
+    return SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, CHECK_NULL);
   }
 
   // Parse the standard tuple of <klass> <name> <signature>
@@ -304,40 +344,45 @@ class CompileReplay : public StackObj {
     return m;
   }
 
-  // Process each line of the replay file executing each command until
-  // the file ends.
-  void process(TRAPS) {
-    line_no = 1;
-    int pos = 0;
-    int c = getc(stream);
+  int get_line(int c) {
     while(c != EOF) {
-      if (pos + 1 >= buffer_length) {
-        int newl = buffer_length * 2;
-        char* newb = NEW_RESOURCE_ARRAY(char, newl);
-        memcpy(newb, buffer, pos);
-        buffer = newb;
-        buffer_length = newl;
+      if (_buffer_pos + 1 >= _buffer_length) {
+        int new_length = _buffer_length * 2;
+        // Next call will throw error in case of OOM.
+        _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);
+        _buffer_length = new_length;
       }
       if (c == '\n') {
-        // null terminate it, reset the pointer and process the line
-        buffer[pos] = '\0';
-        buffer_end = pos++;
-        bufptr = buffer;
-        process_command(CHECK);
-        if (had_error()) {
-          tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
-          tty->print_cr("%s", buffer);
-          return;
-        }
-        pos = 0;
-        buffer_end = 0;
-        line_no++;
+        c = getc(_stream); // get next char
+        break;
       } else if (c == '\r') {
         // skip LF
       } else {
-        buffer[pos++] = c;
+        _buffer[_buffer_pos++] = c;
       }
-      c = getc(stream);
+      c = getc(_stream);
+    }
+    // null terminate it, reset the pointer
+    _buffer[_buffer_pos] = '\0'; // NL or EOF
+    _buffer_pos = 0;
+    _bufptr = _buffer;
+    return c;
+  }
+
+  // Process each line of the replay file executing each command until
+  // the file ends.
+  void process(TRAPS) {
+    int line_no = 1;
+    int c = getc(_stream);
+    while(c != EOF) {
+      c = get_line(c);
+      process_command(CHECK);
+      if (had_error()) {
+        tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
+        tty->print_cr("%s", _buffer);
+        return;
+      }
+      line_no++;
     }
   }
 
@@ -396,7 +441,37 @@ class CompileReplay : public StackObj {
     return true;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level>
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> <depth> <bci> <klass> <name> <signature> ...
+  void* process_inline(ciMethod* imethod, Method* m, int entry_bci, int comp_level, TRAPS) {
+    _imethod    = m;
+    _iklass     = imethod->holder();
+    _entry_bci  = entry_bci;
+    _comp_level = comp_level;
+    int line_no = 1;
+    int c = getc(_stream);
+    while(c != EOF) {
+      c = get_line(c);
+      // Expecting only lines with "compile" command in inline replay file.
+      char* cmd = parse_string();
+      if (cmd == NULL || strcmp("compile", cmd) != 0) {
+        return NULL;
+      }
+      process_compile(CHECK_NULL);
+      if (had_error()) {
+        tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
+        tty->print_cr("%s", _buffer);
+        return NULL;
+      }
+      if (_ci_inline_records != NULL && _ci_inline_records->length() > 0) {
+        // Found inlining record for the requested method.
+        return _ci_inline_records;
+      }
+      line_no++;
+    }
+    return NULL;
+  }
+
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> <depth> <bci> <klass> <name> <signature> ...
   void process_compile(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -409,6 +484,43 @@ class CompileReplay : public StackObj {
     }
     if (!is_valid_comp_level(comp_level)) {
       return;
+    }
+    if (_imethod != NULL) {
+      // Replay Inlining
+      if (entry_bci != _entry_bci || comp_level != _comp_level) {
+        return;
+      }
+      const char* iklass_name  = _imethod->method_holder()->name()->as_utf8();
+      const char* imethod_name = _imethod->name()->as_utf8();
+      const char* isignature   = _imethod->signature()->as_utf8();
+      const char* klass_name   = method->method_holder()->name()->as_utf8();
+      const char* method_name  = method->name()->as_utf8();
+      const char* signature    = method->signature()->as_utf8();
+      if (strcmp(iklass_name,  klass_name)  != 0 ||
+          strcmp(imethod_name, method_name) != 0 ||
+          strcmp(isignature,   signature)   != 0) {
+        return;
+      }
+    }
+    int inline_count = 0;
+    if (parse_tag_and_count("inline", inline_count)) {
+      // Record inlining data
+      _ci_inline_records = new GrowableArray<ciInlineRecord*>();
+      for (int i = 0; i < inline_count; i++) {
+        int depth = parse_int("inline_depth");
+        int bci = parse_int("inline_bci");
+        if (had_error()) {
+          break;
+        }
+        Method* inl_method = parse_method(CHECK);
+        if (had_error()) {
+          break;
+        }
+        new_ciInlineRecord(inl_method, bci, depth);
+      }
+    }
+    if (_imethod != NULL) {
+      return; // Replay Inlining
     }
     Klass* k = method->method_holder();
     ((InstanceKlass*)k)->initialize(THREAD);
@@ -442,11 +554,11 @@ class CompileReplay : public StackObj {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
     ciMethodRecord* rec = new_ciMethod(method);
-    rec->invocation_counter = parse_int("invocation_counter");
-    rec->backedge_counter = parse_int("backedge_counter");
-    rec->interpreter_invocation_count = parse_int("interpreter_invocation_count");
-    rec->interpreter_throwout_count = parse_int("interpreter_throwout_count");
-    rec->instructions_size = parse_int("instructions_size");
+    rec->_invocation_counter = parse_int("invocation_counter");
+    rec->_backedge_counter = parse_int("backedge_counter");
+    rec->_interpreter_invocation_count = parse_int("interpreter_invocation_count");
+    rec->_interpreter_throwout_count = parse_int("interpreter_throwout_count");
+    rec->_instructions_size = parse_int("instructions_size");
   }
 
   // ciMethodData <klass> <name> <signature> <state> <current mileage> orig <length> # # ... data <length> # # ... oops <length>
@@ -471,32 +583,32 @@ class CompileReplay : public StackObj {
 
     // collect and record all the needed information for later
     ciMethodDataRecord* rec = new_ciMethodData(method);
-    rec->state = parse_int("state");
-    rec->current_mileage = parse_int("current_mileage");
+    rec->_state = parse_int("state");
+    rec->_current_mileage = parse_int("current_mileage");
 
-    rec->orig_data = parse_data("orig", rec->orig_data_length);
-    if (rec->orig_data == NULL) {
+    rec->_orig_data = parse_data("orig", rec->_orig_data_length);
+    if (rec->_orig_data == NULL) {
       return;
     }
-    rec->data = parse_intptr_data("data", rec->data_length);
-    if (rec->data == NULL) {
+    rec->_data = parse_intptr_data("data", rec->_data_length);
+    if (rec->_data == NULL) {
       return;
     }
-    if (!parse_tag_and_count("oops", rec->oops_length)) {
+    if (!parse_tag_and_count("oops", rec->_oops_length)) {
       return;
     }
-    rec->oops_handles = NEW_RESOURCE_ARRAY(jobject, rec->oops_length);
-    rec->oops_offsets = NEW_RESOURCE_ARRAY(int, rec->oops_length);
-    for (int i = 0; i < rec->oops_length; i++) {
+    rec->_oops_handles = NEW_RESOURCE_ARRAY(jobject, rec->_oops_length);
+    rec->_oops_offsets = NEW_RESOURCE_ARRAY(int, rec->_oops_length);
+    for (int i = 0; i < rec->_oops_length; i++) {
       int offset = parse_int("offset");
       if (had_error()) {
         return;
       }
       Klass* k = parse_klass(CHECK);
-      rec->oops_offsets[i] = offset;
+      rec->_oops_offsets[i] = offset;
       KlassHandle *kh = NEW_C_HEAP_OBJ(KlassHandle, mtCompiler);
       ::new ((void*)kh) KlassHandle(THREAD, k);
-      rec->oops_handles[i] = (jobject)kh;
+      rec->_oops_handles[i] = (jobject)kh;
     }
   }
 
@@ -570,6 +682,9 @@ class CompileReplay : public StackObj {
         case JVM_CONSTANT_Utf8:
         case JVM_CONSTANT_Integer:
         case JVM_CONSTANT_Float:
+        case JVM_CONSTANT_MethodHandle:
+        case JVM_CONSTANT_MethodType:
+        case JVM_CONSTANT_InvokeDynamic:
           if (tag != cp->tag_at(i).value()) {
             report_error("tag mismatch: wrong class files?");
             return;
@@ -729,10 +844,10 @@ class CompileReplay : public StackObj {
   // Create and initialize a record for a ciMethod
   ciMethodRecord* new_ciMethod(Method* method) {
     ciMethodRecord* rec = NEW_RESOURCE_OBJ(ciMethodRecord);
-    rec->klass =  method->method_holder()->name()->as_utf8();
-    rec->method = method->name()->as_utf8();
-    rec->signature = method->signature()->as_utf8();
-    ci_method_records.append(rec);
+    rec->_klass_name =  method->method_holder()->name()->as_utf8();
+    rec->_method_name = method->name()->as_utf8();
+    rec->_signature = method->signature()->as_utf8();
+    _ci_method_records.append(rec);
     return rec;
   }
 
@@ -741,11 +856,11 @@ class CompileReplay : public StackObj {
     const char* klass_name =  method->method_holder()->name()->as_utf8();
     const char* method_name = method->name()->as_utf8();
     const char* signature = method->signature()->as_utf8();
-    for (int i = 0; i < ci_method_records.length(); i++) {
-      ciMethodRecord* rec = ci_method_records.at(i);
-      if (strcmp(rec->klass, klass_name) == 0 &&
-          strcmp(rec->method, method_name) == 0 &&
-          strcmp(rec->signature, signature) == 0) {
+    for (int i = 0; i < _ci_method_records.length(); i++) {
+      ciMethodRecord* rec = _ci_method_records.at(i);
+      if (strcmp(rec->_klass_name, klass_name) == 0 &&
+          strcmp(rec->_method_name, method_name) == 0 &&
+          strcmp(rec->_signature, signature) == 0) {
         return rec;
       }
     }
@@ -755,10 +870,10 @@ class CompileReplay : public StackObj {
   // Create and initialize a record for a ciMethodData
   ciMethodDataRecord* new_ciMethodData(Method* method) {
     ciMethodDataRecord* rec = NEW_RESOURCE_OBJ(ciMethodDataRecord);
-    rec->klass =  method->method_holder()->name()->as_utf8();
-    rec->method = method->name()->as_utf8();
-    rec->signature = method->signature()->as_utf8();
-    ci_method_data_records.append(rec);
+    rec->_klass_name =  method->method_holder()->name()->as_utf8();
+    rec->_method_name = method->name()->as_utf8();
+    rec->_signature = method->signature()->as_utf8();
+    _ci_method_data_records.append(rec);
     return rec;
   }
 
@@ -767,12 +882,52 @@ class CompileReplay : public StackObj {
     const char* klass_name =  method->method_holder()->name()->as_utf8();
     const char* method_name = method->name()->as_utf8();
     const char* signature = method->signature()->as_utf8();
-    for (int i = 0; i < ci_method_data_records.length(); i++) {
-      ciMethodDataRecord* rec = ci_method_data_records.at(i);
-      if (strcmp(rec->klass, klass_name) == 0 &&
-          strcmp(rec->method, method_name) == 0 &&
-          strcmp(rec->signature, signature) == 0) {
+    for (int i = 0; i < _ci_method_data_records.length(); i++) {
+      ciMethodDataRecord* rec = _ci_method_data_records.at(i);
+      if (strcmp(rec->_klass_name, klass_name) == 0 &&
+          strcmp(rec->_method_name, method_name) == 0 &&
+          strcmp(rec->_signature, signature) == 0) {
         return rec;
+      }
+    }
+    return NULL;
+  }
+
+  // Create and initialize a record for a ciInlineRecord
+  ciInlineRecord* new_ciInlineRecord(Method* method, int bci, int depth) {
+    ciInlineRecord* rec = NEW_RESOURCE_OBJ(ciInlineRecord);
+    rec->_klass_name =  method->method_holder()->name()->as_utf8();
+    rec->_method_name = method->name()->as_utf8();
+    rec->_signature = method->signature()->as_utf8();
+    rec->_inline_bci = bci;
+    rec->_inline_depth = depth;
+    _ci_inline_records->append(rec);
+    return rec;
+  }
+
+  // Lookup inlining data for a ciMethod
+  ciInlineRecord* find_ciInlineRecord(Method* method, int bci, int depth) {
+    if (_ci_inline_records != NULL) {
+      return find_ciInlineRecord(_ci_inline_records, method, bci, depth);
+    }
+    return NULL;
+  }
+
+  static ciInlineRecord* find_ciInlineRecord(GrowableArray<ciInlineRecord*>*  records,
+                                      Method* method, int bci, int depth) {
+    if (records != NULL) {
+      const char* klass_name  = method->method_holder()->name()->as_utf8();
+      const char* method_name = method->name()->as_utf8();
+      const char* signature   = method->signature()->as_utf8();
+      for (int i = 0; i < records->length(); i++) {
+        ciInlineRecord* rec = records->at(i);
+        if ((rec->_inline_bci == bci) &&
+            (rec->_inline_depth == depth) &&
+            (strcmp(rec->_klass_name, klass_name) == 0) &&
+            (strcmp(rec->_method_name, method_name) == 0) &&
+            (strcmp(rec->_signature, signature) == 0)) {
+          return rec;
+        }
       }
     }
     return NULL;
@@ -784,8 +939,8 @@ class CompileReplay : public StackObj {
 
   void reset() {
     _error_message = NULL;
-    ci_method_records.clear();
-    ci_method_data_records.clear();
+    _ci_method_records.clear();
+    _ci_method_data_records.clear();
   }
 
   // Take an ascii string contain \u#### escapes and convert it to utf8
@@ -845,6 +1000,37 @@ void ciReplay::replay(TRAPS) {
   vm_exit(exit_code);
 }
 
+void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level) {
+  if (FLAG_IS_DEFAULT(InlineDataFile)) {
+    tty->print_cr("ERROR: no inline replay data file specified (use -XX:InlineDataFile=inline_pid12345.txt).");
+    return NULL;
+  }
+
+  VM_ENTRY_MARK;
+  // Load and parse the replay data
+  CompileReplay rp(InlineDataFile, THREAD);
+  if (!rp.can_replay()) {
+    tty->print_cr("ciReplay: !rp.can_replay()");
+    return NULL;
+  }
+  void* data = rp.process_inline(method, method->get_Method(), entry_bci, comp_level, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    oop throwable = PENDING_EXCEPTION;
+    CLEAR_PENDING_EXCEPTION;
+    java_lang_Throwable::print(throwable, tty);
+    tty->cr();
+    java_lang_Throwable::print_stack_trace(throwable, tty);
+    tty->cr();
+    return NULL;
+  }
+
+  if (rp.had_error()) {
+    tty->print_cr("ciReplay: Failed on %s", rp.error_message());
+    return NULL;
+  }
+  return data;
+}
+
 int ciReplay::replay_impl(TRAPS) {
   HandleMark hm;
   ResourceMark rm;
@@ -890,7 +1076,6 @@ int ciReplay::replay_impl(TRAPS) {
   return exit_code;
 }
 
-
 void ciReplay::initialize(ciMethodData* m) {
   if (replay_state == NULL) {
     return;
@@ -909,28 +1094,28 @@ void ciReplay::initialize(ciMethodData* m) {
     method->print_name(tty);
     tty->cr();
   } else {
-    m->_state = rec->state;
-    m->_current_mileage = rec->current_mileage;
-    if (rec->data_length != 0) {
-      assert(m->_data_size == rec->data_length * (int)sizeof(rec->data[0]), "must agree");
+    m->_state = rec->_state;
+    m->_current_mileage = rec->_current_mileage;
+    if (rec->_data_length != 0) {
+      assert(m->_data_size == rec->_data_length * (int)sizeof(rec->_data[0]), "must agree");
 
       // Write the correct ciObjects back into the profile data
       ciEnv* env = ciEnv::current();
-      for (int i = 0; i < rec->oops_length; i++) {
-        KlassHandle *h = (KlassHandle *)rec->oops_handles[i];
-        *(ciMetadata**)(rec->data + rec->oops_offsets[i]) =
+      for (int i = 0; i < rec->_oops_length; i++) {
+        KlassHandle *h = (KlassHandle *)rec->_oops_handles[i];
+        *(ciMetadata**)(rec->_data + rec->_oops_offsets[i]) =
           env->get_metadata((*h)());
       }
       // Copy the updated profile data into place as intptr_ts
 #ifdef _LP64
-      Copy::conjoint_jlongs_atomic((jlong *)rec->data, (jlong *)m->_data, rec->data_length);
+      Copy::conjoint_jlongs_atomic((jlong *)rec->_data, (jlong *)m->_data, rec->_data_length);
 #else
-      Copy::conjoint_jints_atomic((jint *)rec->data, (jint *)m->_data, rec->data_length);
+      Copy::conjoint_jints_atomic((jint *)rec->_data, (jint *)m->_data, rec->_data_length);
 #endif
     }
 
     // copy in the original header
-    Copy::conjoint_jbytes(rec->orig_data, (char*)&m->_orig, rec->orig_data_length);
+    Copy::conjoint_jbytes(rec->_orig_data, (char*)&m->_orig, rec->_orig_data_length);
   }
 }
 
@@ -939,12 +1124,38 @@ bool ciReplay::should_not_inline(ciMethod* method) {
   if (replay_state == NULL) {
     return false;
   }
-
   VM_ENTRY_MARK;
   // ciMethod without a record shouldn't be inlined.
   return replay_state->find_ciMethodRecord(method->get_Method()) == NULL;
 }
 
+bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth) {
+  if (data != NULL) {
+    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    VM_ENTRY_MARK;
+    // Inline record are ordered by bci and depth.
+    return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) != NULL;
+  } else if (replay_state != NULL) {
+    VM_ENTRY_MARK;
+    // Inline record are ordered by bci and depth.
+    return replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth) != NULL;
+  }
+  return false;
+}
+
+bool ciReplay::should_not_inline(void* data, ciMethod* method, int bci, int inline_depth) {
+  if (data != NULL) {
+    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    VM_ENTRY_MARK;
+    // Inline record are ordered by bci and depth.
+    return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) == NULL;
+  } else if (replay_state != NULL) {
+    VM_ENTRY_MARK;
+    // Inline record are ordered by bci and depth.
+    return replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth) == NULL;
+  }
+  return false;
+}
 
 void ciReplay::initialize(ciMethod* m) {
   if (replay_state == NULL) {
@@ -965,14 +1176,14 @@ void ciReplay::initialize(ciMethod* m) {
     tty->cr();
   } else {
     EXCEPTION_CONTEXT;
-    // m->_instructions_size = rec->instructions_size;
+    // m->_instructions_size = rec->_instructions_size;
     m->_instructions_size = -1;
-    m->_interpreter_invocation_count = rec->interpreter_invocation_count;
-    m->_interpreter_throwout_count = rec->interpreter_throwout_count;
+    m->_interpreter_invocation_count = rec->_interpreter_invocation_count;
+    m->_interpreter_throwout_count = rec->_interpreter_throwout_count;
     MethodCounters* mcs = method->get_method_counters(CHECK_AND_CLEAR);
     guarantee(mcs != NULL, "method counters allocation failed");
-    mcs->invocation_counter()->_counter = rec->invocation_counter;
-    mcs->backedge_counter()->_counter = rec->backedge_counter;
+    mcs->invocation_counter()->_counter = rec->_invocation_counter;
+    mcs->backedge_counter()->_counter = rec->_backedge_counter;
   }
 }
 

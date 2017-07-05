@@ -1049,6 +1049,9 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
       add_to_hierarchy(k, CHECK_NULL); // No exception, but can block
 
       // But, do not add to system dictionary.
+
+      // compiled code dependencies need to be validated anyway
+      notice_modification();
     }
 
     // Rewrite and patch constant pool here.

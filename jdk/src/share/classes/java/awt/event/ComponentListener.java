@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,21 +54,25 @@ import java.util.EventListener;
 public interface ComponentListener extends EventListener {
     /**
      * Invoked when the component's size changes.
+     * @param e the event to be processed
      */
     public void componentResized(ComponentEvent e);
 
     /**
      * Invoked when the component's position changes.
+     * @param e the event to be processed
      */
     public void componentMoved(ComponentEvent e);
 
     /**
      * Invoked when the component has been made visible.
+     * @param e the event to be processed
      */
     public void componentShown(ComponentEvent e);
 
     /**
      * Invoked when the component has been made invisible.
+     * @param e the event to be processed
      */
     public void componentHidden(ComponentEvent e);
 }
