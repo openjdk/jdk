@@ -44,7 +44,7 @@ import javax.security.auth.spi.*;
 import sun.security.krb5.*;
 import sun.security.jgss.krb5.Krb5Util;
 import sun.security.krb5.Credentials;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * This {@code LoginModule} authenticates users using

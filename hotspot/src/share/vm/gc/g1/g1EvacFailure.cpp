@@ -47,8 +47,9 @@ public:
   virtual void do_oop(      oop* p) { do_oop_work(p); }
   template <class T> void do_oop_work(T* p) {
     assert(_from->is_in_reserved(p), "paranoia");
-    if (!_from->is_in_reserved(oopDesc::load_decode_heap_oop(p)) &&
-        !_from->is_survivor()) {
+    assert(!_from->is_survivor(), "Unexpected evac failure in survivor region");
+
+    if (!_from->is_in_reserved(oopDesc::load_decode_heap_oop(p))) {
       size_t card_index = _ct_bs->index_for(p);
       if (_ct_bs->mark_card_deferred(card_index)) {
         _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));

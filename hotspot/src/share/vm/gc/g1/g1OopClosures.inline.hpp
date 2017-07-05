@@ -91,7 +91,7 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
       if (state.is_humongous()) {
         _g1->set_humongous_is_live(obj);
       }
-      _par_scan_state->update_rs(_from, p);
+      _par_scan_state->update_rs(_from, p, obj);
     }
   }
 }

@@ -63,8 +63,7 @@ public:
   static InstanceKlass* lookup_from_stream(Symbol* class_name,
                                            Handle class_loader,
                                            Handle protection_domain,
-                                           ClassFileStream* st,
-                                           bool verify,
+                                           const ClassFileStream* st,
                                            TRAPS) {
     return NULL;
   }

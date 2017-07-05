@@ -562,7 +562,7 @@ extern "C" {                                                         \
 #define JVM_ENTRY_NO_ENV(result_type, header)                        \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
-    JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();  \
+    JavaThread* thread = JavaThread::current();                      \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)

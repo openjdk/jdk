@@ -38,6 +38,7 @@ import java.net.URL;
 import java.security.*;
 import java.util.*;
 import java.util.Locale;
+import java.util.concurrent.LinkedBlockingQueue;
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.EmbeddedFrame;
@@ -45,7 +46,6 @@ import sun.awt.SunToolkit;
 import sun.misc.ManagedLocalsThread;
 import sun.misc.MessageUtils;
 import sun.misc.PerformanceLogger;
-import sun.misc.Queue;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -247,8 +247,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * AppletEvent Queue
      */
-    private Queue<Integer> queue = null;
-
+    private LinkedBlockingQueue<Integer> queue = null;
 
     public synchronized void addAppletListener(AppletListener l) {
         listeners = AppletEventMulticaster.add(listeners, l);
@@ -276,10 +275,9 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         synchronized(this) {
             if (queue == null) {
                 //System.out.println("SEND0= " + id);
-                queue = new Queue<>();
+                queue = new LinkedBlockingQueue<>();
             }
-            Integer eventId = Integer.valueOf(id);
-            queue.enqueue(eventId);
+            boolean inserted = queue.add(id);
             notifyAll();
         }
         if (id == APPLET_QUIT) {
@@ -303,8 +301,8 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         while (queue == null || queue.isEmpty()) {
             wait();
         }
-        Integer eventId = queue.dequeue();
-        return new AppletEvent(this, eventId.intValue(), null);
+        int eventId = queue.take();
+        return new AppletEvent(this, eventId, null);
     }
 
     boolean emptyEventQueue() {

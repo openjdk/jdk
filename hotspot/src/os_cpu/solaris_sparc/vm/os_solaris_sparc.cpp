@@ -290,7 +290,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
                           int abort_if_unrecognized) {
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null_safe();
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
@@ -551,6 +551,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();
+  return false;
 }
 
 void os::print_context(outputStream *st, void *context) {

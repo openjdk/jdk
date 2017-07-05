@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
-#include "classfile/compactHashtable.hpp"
+#include "classfile/compactHashtable.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"

@@ -41,7 +41,11 @@ import java.util.function.Function;
 
 /**
  * Common library for various test helper functions.
+ *
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib}
  */
+@Deprecated
 public final class Utils {
 
     /**

@@ -29,7 +29,6 @@
  */
 package jjjjj.security.auth;
 
-import sun.misc.HexDumpEncoder;
 import javax.management.remote.JMXPrincipal;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.x500.X500Principal;
@@ -107,7 +106,6 @@ public class Subject implements java.io.Serializable {
 
     public static byte[] enc(Object obj) {
         try {
-            HexDumpEncoder hex = new HexDumpEncoder();
             ByteArrayOutputStream bout;
             bout = new ByteArrayOutputStream();
             new ObjectOutputStream(bout).writeObject(obj);
