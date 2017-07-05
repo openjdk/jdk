@@ -38,7 +38,7 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 ############################################################################
 
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
-               jdk.security.auth jdk.security.jgss jdk.runtime
+               jdk.security.auth jdk.security.jgss jdk.pack200
 
 # providers
 PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
@@ -46,8 +46,8 @@ PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk
 
 # tools
 TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev jdk.javadoc jdk.jcmd jdk.jconsole \
-               jdk.hotspot.agent jdk.hprof.agent jdk.jdi jdk.jdwp.agent jdk.rmic \
-               jdk.xml.bind jdk.xml.ws
+               jdk.hotspot.agent jdk.hprof.agent jdk.jartool jdk.jdi jdk.jdwp.agent \
+               jdk.policytool jdk.rmic jdk.xml.bind jdk.xml.ws
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   PROVIDER_MODULES += jdk.crypto.mscapi
@@ -488,6 +488,42 @@ $(eval $(call SetupCopyFiles,COPY_JRTFS_JAR, \
 JDK_TARGETS += $(COPY_JRTFS_JAR)
 
 ################################################################################
+# Code coverage data files
+
+ifeq ($(GCOV_ENABLED), true)
+
+  GCOV_FIND_EXPR := -type f -name "*.gcno"
+
+  ifeq ($(JVM_VARIANT_CLIENT), true)
+    $(eval $(call SetupCopyFiles,COPY_HOTSPOT_CLIENT_GCOV_GCNO, \
+        SRC := $(HOTSPOT_OUTPUTDIR), \
+        DEST := $(SYMBOLS_IMAGE_DIR)/gcov/hotspot/client, \
+        FILES := $(shell $(FIND) $(HOTSPOT_OUTPUTDIR)/*compiler1/ $(GCOV_FIND_EXPR)), \
+        FLATTEN := true))
+
+    SYMBOLS_TARGETS += $(COPY_HOTSPOT_CLIENT_GCOV_GCNO)
+  endif
+
+  ifeq ($(JVM_VARIANT_SERVER), true)
+    $(eval $(call SetupCopyFiles,COPY_HOTSPOT_SERVER_GCOV_GCNO, \
+        SRC := $(HOTSPOT_OUTPUTDIR), \
+        DEST := $(SYMBOLS_IMAGE_DIR)/gcov/hotspot/server, \
+        FILES := $(shell $(FIND) $(HOTSPOT_OUTPUTDIR)/*compiler2/ $(GCOV_FIND_EXPR)), \
+        FLATTEN := true))
+
+    SYMBOLS_TARGETS += $(COPY_HOTSPOT_SERVER_GCOV_GCNO)
+  endif
+
+  $(eval $(call SetupCopyFiles,COPY_JDK_GCOV_GCNO, \
+      SRC := $(SUPPORT_OUTPUTDIR)/native, \
+      DEST := $(SYMBOLS_IMAGE_DIR)/gcov/jdk, \
+      FILES := $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/native $(GCOV_FIND_EXPR))))
+
+  SYMBOLS_TARGETS += $(COPY_JDK_GCOV_GCNO)
+
+endif
+
+################################################################################
 
 # Include custom post hook here to make it possible to augment the target lists
 # before actual target prerequisites are declared.
@@ -498,7 +534,8 @@ $(eval $(call IncludeCustomExtension, , Images-post.gmk))
 $(JRE_TARGETS): $(TOOL_JRE_TARGETS)
 $(JDK_TARGETS): $(TOOL_JDK_TARGETS)
 
-jimages: $(TOOL_JRE_TARGETS) $(TOOL_JDK_TARGETS) $(JRE_TARGETS) $(JDK_TARGETS)
+jimages: $(TOOL_JRE_TARGETS) $(TOOL_JDK_TARGETS) $(JRE_TARGETS) $(JDK_TARGETS) \
+    $(SYMBOLS_TARGETS)
 
 
 $(JRE_COMPACT1_TARGETS): $(TOOL_JRE_COMPACT1_TARGETS)

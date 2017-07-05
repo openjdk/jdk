@@ -206,7 +206,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         // continuations (since RewriteException's byteCodeSlots carries an array and not a name-value map).
 
         symbolIsConverted(symbol, branchLvarType, targetType);
-        //symbolIsUsed(symbol, branchLvarType);
         return new LocalVariableConversion(symbol, branchLvarType.type, targetType.type, next);
     }
 
@@ -229,7 +228,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             for(final Symbol symbol: commonSymbols) {
                 final LvarType type1 = types1.get(symbol);
                 final LvarType type2 = types2.get(symbol);
-                final LvarType widest = widestLvarType(type1,  type2);
+                final LvarType widest = widestLvarType(type1, type2);
                 if(widest != type1 && matches1) {
                     matches1 = false;
                     if(!matches2) {
@@ -242,7 +241,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                         union = cloneMap(types2);
                     }
                 }
-                if(!(matches1 || matches2) && union != null) { //remove overly enthusiastic "union can be null" warning
+                if(!(matches1 || matches2)) {
                     assert union != null;
                     union.put(symbol, widest);
                 }
@@ -711,8 +710,13 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterIfNode(final IfNode ifNode) {
+        processIfNode(ifNode);
+        return false;
+    }
+
+    private void processIfNode(final IfNode ifNode) {
         if(!reachable) {
-            return false;
+            return;
         }
 
         final Expression test = ifNode.getTest();
@@ -721,48 +725,48 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
         visitExpressionOnEmptyStack(test);
 
-        final Map<Symbol, LvarType> afterTestLvarTypes = localVariableTypes;
-        if(!isAlwaysFalse(test)) {
+        final Map<Symbol, LvarType> passLvarTypes;
+        final boolean reachableFromPass;
+        final boolean isTestAlwaysTrue = isAlwaysTrue(test);
+        if(isAlwaysFalse(test)) {
+            passLvarTypes = null;
+            reachableFromPass = false;
+        } else {
+            final Map<Symbol, LvarType> afterTestLvarTypes = localVariableTypes;
             pass.accept(this);
             assertTypeStackIsEmpty();
+            if (isTestAlwaysTrue) {
+                return;
+            }
+            passLvarTypes = localVariableTypes;
+            reachableFromPass = reachable;
+            localVariableTypes = afterTestLvarTypes;
+            reachable = true;
         }
-        final Map<Symbol, LvarType> passLvarTypes = localVariableTypes;
-        final boolean reachableFromPass = reachable;
 
-        reachable = true;
-        localVariableTypes = afterTestLvarTypes;
-        if(!isAlwaysTrue(test) && fail != null) {
+        // If we get here, then we need to consider the case where pass block is not executed
+        assert !isTestAlwaysTrue;
+
+        if (fail != null) {
             fail.accept(this);
             assertTypeStackIsEmpty();
-            final boolean reachableFromFail = reachable;
-            reachable |= reachableFromPass;
-            if(!reachable) {
-                return false;
-            }
-
-            if(reachableFromFail) {
-                if(reachableFromPass) {
-                    final Map<Symbol, LvarType> failLvarTypes = localVariableTypes;
-                    localVariableTypes = getUnionTypes(passLvarTypes, failLvarTypes);
-                    setConversion(pass, passLvarTypes, localVariableTypes);
-                    setConversion(fail, failLvarTypes, localVariableTypes);
-                }
-                return false;
-            }
         }
 
-        if(reachableFromPass) {
-            localVariableTypes = getUnionTypes(afterTestLvarTypes, passLvarTypes);
-            // IfNode itself is associated with conversions that might need to be performed after the test if there's no
-            // else branch. E.g.
-            // if(x = 1, cond) { x = 1.0 } must widen "x = 1" to a double.
-            setConversion(pass, passLvarTypes, localVariableTypes);
-            setConversion(ifNode, afterTestLvarTypes, localVariableTypes);
-        } else {
-            localVariableTypes = afterTestLvarTypes;
+        if(reachable) {
+            if(reachableFromPass) {
+                final Map<Symbol, LvarType> failLvarTypes = localVariableTypes;
+                localVariableTypes = getUnionTypes(passLvarTypes, failLvarTypes);
+                setConversion(pass, passLvarTypes, localVariableTypes);
+                // IfNode itself is associated with conversions that might need to be performed after the test if
+                // there's no else branch. E.g.
+                // if(x = 1, cond) { x = 1.0 } must widen "x = 1" to a double.
+                setConversion(fail != null ? fail : ifNode, failLvarTypes, localVariableTypes);
+            }
+        } else if (reachableFromPass) {
+            assert passLvarTypes != null;
+            localVariableTypes = passLvarTypes;
+            reachable = true;
         }
-
-        return false;
     }
 
     @Override

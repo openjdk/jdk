@@ -1569,6 +1569,9 @@ final class ClientHandshaker extends Handshaker {
     /*
      * Returns the subject alternative name of the specified type in the
      * subjectAltNames extension of a certificate.
+     *
+     * Note that only those subjectAltName types that use String data
+     * should be passed into this function.
      */
     private static Collection<String> getSubjectAltNames(
             Collection<List<?>> subjectAltNames, int type) {

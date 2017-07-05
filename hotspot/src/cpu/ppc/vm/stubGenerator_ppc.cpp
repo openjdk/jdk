@@ -694,7 +694,7 @@ class StubGenerator: public StubCodeGenerator {
             __ release();
           }
 
-          CardTableModRefBS* const ct = (CardTableModRefBS*)bs;
+          CardTableModRefBS* const ct = barrier_set_cast<CardTableModRefBS>(bs);
           assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
           assert_different_registers(addr, count, tmp);
 
