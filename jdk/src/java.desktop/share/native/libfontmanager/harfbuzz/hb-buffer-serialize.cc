@@ -58,7 +58,7 @@ hb_buffer_serialize_list_formats (void)
  * @str is a valid buffer serialization format, use
  * hb_buffer_serialize_list_formats() to get the list of supported formats.
  *
- * Return value:
+ * Return value: 
  * The parsed #hb_buffer_serialize_format_t.
  *
  * Since: 0.9.7
@@ -289,7 +289,7 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
  * ## json
  * TODO.
  *
- * Return value:
+ * Return value: 
  * The number of serialized items.
  *
  * Since: 0.9.7
@@ -393,14 +393,14 @@ parse_int (const char *pp, const char *end, int32_t *pv)
  * hb_buffer_deserialize_glyphs:
  * @buffer: an #hb_buffer_t buffer.
  * @buf: (array length=buf_len):
- * @buf_len:
+ * @buf_len: 
  * @end_ptr: (out):
- * @font:
- * @format:
+ * @font: 
+ * @format: 
  *
+ * 
  *
- *
- * Return value:
+ * Return value: 
  *
  * Since: 0.9.7
  **/

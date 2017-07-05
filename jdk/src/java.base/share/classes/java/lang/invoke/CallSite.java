@@ -28,6 +28,8 @@ package java.lang.invoke;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
+import jdk.internal.vm.annotation.Stable;
+
 /**
  * A {@code CallSite} is a holder for a variable {@link MethodHandle},
  * which is called its {@code target}.
@@ -215,19 +217,36 @@ public class CallSite {
     public abstract MethodHandle dynamicInvoker();
 
     /*non-public*/ MethodHandle makeDynamicInvoker() {
-        MethodHandle getTarget = GET_TARGET.bindArgumentL(0, this);
+        MethodHandle getTarget = getTargetHandle().bindArgumentL(0, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
     }
 
-    private static final MethodHandle GET_TARGET;
-    private static final MethodHandle THROW_UCS;
-    static {
+    private static @Stable MethodHandle GET_TARGET;
+    private static MethodHandle getTargetHandle() {
+        MethodHandle handle = GET_TARGET;
+        if (handle != null) {
+            return handle;
+        }
         try {
-            GET_TARGET = IMPL_LOOKUP.
-                findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
-            THROW_UCS = IMPL_LOOKUP.
-                findStatic(CallSite.class, "uninitializedCallSite", MethodType.methodType(Object.class, Object[].class));
+            return GET_TARGET = IMPL_LOOKUP.
+                    findVirtual(CallSite.class, "getTarget",
+                                MethodType.methodType(MethodHandle.class));
+        } catch (ReflectiveOperationException e) {
+            throw newInternalError(e);
+        }
+    }
+
+    private static @Stable MethodHandle THROW_UCS;
+    private static MethodHandle uninitializedCallSiteHandle() {
+        MethodHandle handle = THROW_UCS;
+        if (handle != null) {
+            return handle;
+        }
+        try {
+            return THROW_UCS = IMPL_LOOKUP.
+                findStatic(CallSite.class, "uninitializedCallSite",
+                           MethodType.methodType(Object.class, Object[].class));
         } catch (ReflectiveOperationException e) {
             throw newInternalError(e);
         }
@@ -242,7 +261,7 @@ public class CallSite {
         MethodType basicType = targetType.basicType();
         MethodHandle invoker = basicType.form().cachedMethodHandle(MethodTypeForm.MH_UNINIT_CS);
         if (invoker == null) {
-            invoker = THROW_UCS.asType(basicType);
+            invoker = uninitializedCallSiteHandle().asType(basicType);
             invoker = basicType.form().setCachedMethodHandle(MethodTypeForm.MH_UNINIT_CS, invoker);
         }
         // unchecked view is OK since no values will be received or returned
@@ -250,12 +269,16 @@ public class CallSite {
     }
 
     // unsafe stuff:
-    private static final long  TARGET_OFFSET;
-    private static final long CONTEXT_OFFSET;
-    static {
+    private static @Stable long TARGET_OFFSET;
+    private static long getTargetOffset() {
+        long offset = TARGET_OFFSET;
+        if (offset > 0) {
+            return offset;
+        }
         try {
-            TARGET_OFFSET  = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("target"));
-            CONTEXT_OFFSET = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("context"));
+            offset = TARGET_OFFSET = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("target"));
+            assert(offset > 0);
+            return offset;
         } catch (Exception ex) { throw newInternalError(ex); }
     }
 
@@ -265,7 +288,7 @@ public class CallSite {
     }
     /*package-private*/
     MethodHandle getTargetVolatile() {
-        return (MethodHandle) UNSAFE.getObjectVolatile(this, TARGET_OFFSET);
+        return (MethodHandle) UNSAFE.getObjectVolatile(this, getTargetOffset());
     }
     /*package-private*/
     void setTargetVolatile(MethodHandle newTarget) {
@@ -324,7 +347,7 @@ public class CallSite {
                         final int NON_SPREAD_ARG_COUNT = 3;  // (caller, name, type)
                         if (NON_SPREAD_ARG_COUNT + argv.length > MethodType.MAX_MH_ARITY)
                             throw new BootstrapMethodError("too many bootstrap method arguments");
-                        MethodType bsmType = bootstrapMethod.type();
+
                         MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argv.length);
                         MethodHandle typedBSM = bootstrapMethod.asType(invocationType);
                         MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);

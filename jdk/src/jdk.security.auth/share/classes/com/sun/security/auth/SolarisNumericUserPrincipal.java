@@ -26,6 +26,7 @@
 package com.sun.security.auth;
 
 import java.security.Principal;
+import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 /**
  * This class implements the {@code Principal} interface
@@ -52,9 +53,6 @@ public class SolarisNumericUserPrincipal implements
 
     private static final long serialVersionUID = -3178578484679887104L;
 
-    private static final java.util.ResourceBundle rb =
-        java.util.ResourceBundle.getBundle("sun.security.util.AuthResources");
-
     /**
      * @serial
      */
@@ -72,7 +70,7 @@ public class SolarisNumericUserPrincipal implements
      */
     public SolarisNumericUserPrincipal(String name) {
         if (name == null)
-            throw new NullPointerException(rb.getString("provided.null.name"));
+            throw new NullPointerException(getAuthResourceString("provided.null.name"));
 
         this.name = name;
     }
@@ -118,7 +116,7 @@ public class SolarisNumericUserPrincipal implements
      *          {@code SolarisNumericUserPrincipal}.
      */
     public String toString() {
-        return(rb.getString("SolarisNumericUserPrincipal.") + name);
+        return(getAuthResourceString("SolarisNumericUserPrincipal.") + name);
     }
 
     /**

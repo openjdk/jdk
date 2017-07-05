@@ -31,7 +31,7 @@ import java.nio.file.Path;
 /**
  *
  * @test
- * @bug 8038500 8040059 8139956 8146754
+ * @bug 8038500 8040059 8139956 8146754 8172921
  * @summary Tests path operations for zip provider.
  *
  * @run main PathOps
@@ -177,6 +177,13 @@ public class PathOps {
         out.format("test resolve %s\n", other);
         checkPath();
         check(path.resolve(other), expected);
+        return this;
+    }
+
+    PathOps resolvePath(String other, String expected) {
+        out.format("test resolve %s\n", other);
+        checkPath();
+        check(path.resolve(fs.getPath(other)), expected);
         return this;
     }
 
@@ -384,6 +391,30 @@ public class PathOps {
             .resolve("", "")
             .resolve("foo", "foo")
             .resolve("/foo", "/foo");
+        test("/")
+            .resolve("", "/")
+            .resolve("foo", "/foo")
+            .resolve("/foo", "/foo")
+            .resolve("/foo/", "/foo");
+
+        // resolve(Path)
+        test("/tmp")
+            .resolvePath("foo", "/tmp/foo")
+            .resolvePath("/foo", "/foo")
+            .resolvePath("", "/tmp");
+        test("tmp")
+            .resolvePath("foo", "tmp/foo")
+            .resolvePath("/foo", "/foo")
+            .resolvePath("", "tmp");
+        test("")
+            .resolvePath("", "")
+            .resolvePath("foo", "foo")
+            .resolvePath("/foo", "/foo");
+        test("/")
+            .resolvePath("", "/")
+            .resolvePath("foo", "/foo")
+            .resolvePath("/foo", "/foo")
+            .resolvePath("/foo/", "/foo");
 
         // resolveSibling
         test("foo")

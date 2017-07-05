@@ -95,6 +95,7 @@ hb_ot_layout_get_ligature_carets (hb_font_t      *font,
 #define HB_OT_LAYOUT_NO_SCRIPT_INDEX            0xFFFFu
 #define HB_OT_LAYOUT_NO_FEATURE_INDEX           0xFFFFu
 #define HB_OT_LAYOUT_DEFAULT_LANGUAGE_INDEX     0xFFFFu
+#define HB_OT_LAYOUT_NO_VARIATIONS_INDEX        0xFFFFFFFFu
 
 HB_EXTERN unsigned int
 hb_ot_layout_table_get_script_tags (hb_face_t    *face,
@@ -235,6 +236,24 @@ Xhb_ot_layout_lookup_enumerate_sequences (hb_face_t    *face,
                                          hb_ot_layout_glyph_sequence_func_t callback,
                                          void         *user_data);
 #endif
+
+/* Variations support */
+
+HB_EXTERN hb_bool_t
+hb_ot_layout_table_find_feature_variations (hb_face_t    *face,
+                                            hb_tag_t      table_tag,
+                                            const int    *coords,
+                                            unsigned int  num_coords,
+                                            unsigned int *variations_index /* out */);
+
+HB_EXTERN unsigned int
+hb_ot_layout_feature_with_variations_get_lookups (hb_face_t    *face,
+                                                  hb_tag_t      table_tag,
+                                                  unsigned int  feature_index,
+                                                  unsigned int  variations_index,
+                                                  unsigned int  start_offset,
+                                                  unsigned int *lookup_count /* IN/OUT */,
+                                                  unsigned int *lookup_indexes /* OUT */);
 
 
 /*

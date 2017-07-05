@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 import javax.management.Attribute;
 import javax.management.AttributeNotFoundException;
@@ -157,13 +157,11 @@ public class RelationService extends NotificationBroadcasterSupport
      */
     public RelationService(boolean immediatePurgeFlag) {
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "RelationService");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         setPurgeFlag(immediatePurgeFlag);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "RelationService");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -286,8 +284,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "createRelationType", relationTypeName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationTypeName);
 
         // Can throw an InvalidRelationTypeException
         RelationType relType =
@@ -295,8 +292,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
         addRelationTypeInt(relType);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "createRelationType");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -325,8 +321,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "addRelationType");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         // Checks the role infos
         List<RoleInfo> roleInfoList = relationTypeObj.getRoleInfos();
@@ -346,8 +341,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
         addRelationTypeInt(relationTypeObj);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "addRelationType");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
      }
 
@@ -385,14 +379,12 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRoleInfos", relationTypeName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationTypeName);
 
         // Can throw a RelationTypeNotFoundException
         RelationType relType = getRelationType(relationTypeName);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getRoleInfos");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return relType.getRoleInfos();
     }
 
@@ -421,8 +413,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRoleInfo", new Object[] {relationTypeName, roleInfoName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            relationTypeName, roleInfoName);
 
         // Can throw a RelationTypeNotFoundException
         RelationType relType = getRelationType(relationTypeName);
@@ -430,8 +422,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // Can throw a RoleInfoNotFoundException
         RoleInfo roleInfo = relType.getRoleInfo(roleInfoName);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getRoleInfo");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return roleInfo;
     }
 
@@ -461,8 +452,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "removeRelationType", relationTypeName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationTypeName);
 
         // Checks if the relation type to be removed exists
         // Can throw a RelationTypeNotFoundException
@@ -504,8 +494,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "removeRelationType");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -566,9 +555,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "createRelation",
-                new Object[] {relationId, relationTypeName, roleList});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            relationId, relationTypeName, roleList);
 
         // Creates RelationSupport object
         // Can throw InvalidRoleValueException
@@ -588,8 +576,7 @@ public class RelationService extends NotificationBroadcasterSupport
                        relationId,
                        relationTypeName,
                        roleList);
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "createRelation");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -654,8 +641,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "addRelation", relationObjectName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationObjectName);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -791,8 +777,7 @@ public class RelationService extends NotificationBroadcasterSupport
         newRefList.add(relationObjectName);
         updateUnregistrationListener(newRefList, null);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "addRelation");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -819,8 +804,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "isRelationMBean", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         // Can throw RelationNotFoundException
         Object result = getRelation(relationId);
@@ -850,8 +834,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "isRelation", objectName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", objectName);
 
         String result = null;
         synchronized(myRelMBeanObjName2RelIdMap) {
@@ -881,8 +864,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "hasRelation", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         try {
             // Can throw RelationNotFoundException
@@ -933,8 +915,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "checkRoleReading", new Object[] {roleName, relationTypeName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            roleName, relationTypeName);
 
         Integer result;
 
@@ -956,8 +938,7 @@ public class RelationService extends NotificationBroadcasterSupport
             result = Integer.valueOf(RoleStatus.NO_ROLE_WITH_NAME);
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "checkRoleReading");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -995,9 +976,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "checkRoleWriting",
-                new Object[] {role, relationTypeName, initFlag});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            role, relationTypeName, initFlag);
 
         // Can throw a RelationTypeNotFoundException
         RelationType relType = getRelationType(relationTypeName);
@@ -1013,8 +993,7 @@ public class RelationService extends NotificationBroadcasterSupport
         try {
             roleInfo = relType.getRoleInfo(roleName);
         } catch (RoleInfoNotFoundException exc) {
-            RELATION_LOGGER.exiting(RelationService.class.getName(),
-                    "checkRoleWriting");
+            RELATION_LOGGER.log(Level.TRACE, "RETURN");
             return Integer.valueOf(RoleStatus.NO_ROLE_WITH_NAME);
         }
 
@@ -1024,8 +1003,7 @@ public class RelationService extends NotificationBroadcasterSupport
                                       roleInfo,
                                       writeChkFlag);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "checkRoleWriting");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1055,8 +1033,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "sendRelationCreationNotification", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         // Message
         StringBuilder ntfMsg = new StringBuilder("Creation of relation ");
@@ -1071,8 +1048,7 @@ public class RelationService extends NotificationBroadcasterSupport
                             null,
                             null);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "sendRelationCreationNotification");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1114,9 +1090,8 @@ public class RelationService extends NotificationBroadcasterSupport
         if (!(oldValue instanceof ArrayList<?>))
             oldValue = new ArrayList<ObjectName>(oldValue);
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "sendRoleUpdateNotification",
-                new Object[] {relationId, newRole, oldValue});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            relationId, newRole, oldValue);
 
         String roleName = newRole.getRoleName();
         List<ObjectName> newRoleVal = newRole.getRoleValue();
@@ -1140,8 +1115,7 @@ public class RelationService extends NotificationBroadcasterSupport
                             newRoleVal,
                             oldValue);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "sendRoleUpdateNotification");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
     }
 
     /**
@@ -1172,9 +1146,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "sendRelationRemovalNotification",
-                new Object[] {relationId, unregMBeanList});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            relationId, unregMBeanList);
 
         // Can throw RelationNotFoundException
         sendNotificationInt(3,
@@ -1186,8 +1159,7 @@ public class RelationService extends NotificationBroadcasterSupport
                             null);
 
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "sendRelationRemovalNotification");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1226,8 +1198,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "updateRoleMap", new Object[] {relationId, newRole, oldValue});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            relationId, newRole, oldValue);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -1303,8 +1275,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // all ObjectNames of interest
         updateUnregistrationListener(newRefList, obsRefList);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "updateRoleMap");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1338,8 +1309,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "removeRelation", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         // Checks there is a relation with this id
         // Can throw RelationNotFoundException
@@ -1442,8 +1412,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "removeRelation");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1476,8 +1445,7 @@ public class RelationService extends NotificationBroadcasterSupport
     public void purgeRelations()
         throws RelationServiceNotRegisteredException {
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "purgeRelations");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -1574,8 +1542,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "purgeRelations");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1610,9 +1577,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "findReferencingRelations",
-                new Object[] {mbeanName, relationTypeName, roleName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            mbeanName, relationTypeName, roleName);
 
         Map<String,List<String>> result = new HashMap<String,List<String>>();
 
@@ -1684,8 +1650,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "findReferencingRelations");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1720,9 +1685,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "findAssociatedMBeans",
-                new Object[] {mbeanName, relationTypeName, roleName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            mbeanName, relationTypeName, roleName);
 
         // Retrieves the map <relation id> -> <role names> for those
         // criterias
@@ -1769,8 +1733,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "findAssociatedMBeans");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1794,8 +1757,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "findRelationsOfType");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         // Can throw RelationTypeNotFoundException
         RelationType relType = getRelationType(relationTypeName);
@@ -1809,8 +1771,7 @@ public class RelationService extends NotificationBroadcasterSupport
                 result = new ArrayList<String>(result1);
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "findRelationsOfType");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1845,8 +1806,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRole", new Object[] {relationId, roleName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            relationId, roleName);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -1899,7 +1860,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(), "getRole");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1931,8 +1892,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRoles", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -1976,7 +1936,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(), "getRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -2004,8 +1964,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRoles", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
@@ -2028,7 +1987,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(), "getRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -2055,8 +2014,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRoleCardinality", new Object[] {relationId, roleName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            relationId, roleName);
 
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
@@ -2098,8 +2057,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getRoleCardinality");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -2147,8 +2105,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "setRole", new Object[] {relationId, role});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            relationId, role);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -2211,7 +2169,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(), "setRole");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -2247,8 +2205,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "setRoles", new Object[] {relationId, roleList});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            relationId, roleList);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -2296,7 +2254,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(), "setRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -2322,8 +2280,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getReferencedMBeans", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}",
+                            relationId);
 
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
@@ -2346,8 +2304,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getReferencedMBeans");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -2371,8 +2328,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRelationTypeName", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         // Can throw a RelationNotFoundException
         Object relObj = getRelation(relationId);
@@ -2395,8 +2351,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getRelationTypeName");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -2421,8 +2376,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "handleNotification", notif);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", notif);
 
         if (notif instanceof MBeanServerNotification) {
 
@@ -2480,8 +2434,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "handleNotification");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -2495,8 +2448,7 @@ public class RelationService extends NotificationBroadcasterSupport
      */
     public MBeanNotificationInfo[] getNotificationInfo() {
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getNotificationInfo");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         String ntfClass = "javax.management.relation.RelationNotification";
 
@@ -2514,8 +2466,7 @@ public class RelationService extends NotificationBroadcasterSupport
         MBeanNotificationInfo ntfInfo =
             new MBeanNotificationInfo(ntfTypes, ntfClass, ntfDesc);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getNotificationInfo");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return new MBeanNotificationInfo[] {ntfInfo};
     }
 
@@ -2539,8 +2490,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "addRelationTypeInt");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         String relTypeName = relationTypeObj.getRelationTypeName();
 
@@ -2570,8 +2520,7 @@ public class RelationService extends NotificationBroadcasterSupport
             ((RelationTypeSupport)relationTypeObj).setRelationServiceFlag(true);
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "addRelationTypeInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
      }
 
@@ -2595,8 +2544,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRelationType", relationTypeName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationTypeName);
 
         // No null relation type accepted, so can use get()
         RelationType relType;
@@ -2611,8 +2559,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new RelationTypeNotFoundException(excMsgStrB.toString());
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getRelationType");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return relType;
     }
 
@@ -2639,8 +2586,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "getRelation", relationId);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationId);
 
         // No null relation  accepted, so can use get()
         Object rel;
@@ -2653,8 +2599,7 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new RelationNotFoundException(excMsg);
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "getRelation");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return rel;
     }
 
@@ -2684,9 +2629,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "addNewMBeanReference",
-                new Object[] {objectName, relationId, roleName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            objectName, relationId, roleName);
 
         boolean isNewFlag = false;
 
@@ -2739,8 +2683,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "addNewMBeanReference");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return isNewFlag;
     }
 
@@ -2772,9 +2715,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "removeMBeanReference",
-                new Object[] {objectName, relationId, roleName, allRolesFlag});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3}",
+                            objectName, relationId, roleName, allRolesFlag);
 
         boolean noLongerRefFlag = false;
 
@@ -2790,8 +2732,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
             if (mbeanRefMap == null) {
                 // The MBean is no longer referenced
-                RELATION_LOGGER.exiting(RelationService.class.getName(),
-                        "removeMBeanReference");
+                RELATION_LOGGER.log(Level.TRACE, "RETURN");
                 return true;
             }
 
@@ -2824,8 +2765,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "removeMBeanReference");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return noLongerRefFlag;
     }
 
@@ -2850,9 +2790,8 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "updateUnregistrationListener",
-                new Object[] {newRefList, obsoleteRefList});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}",
+                            newRefList, obsoleteRefList);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -2936,8 +2875,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "updateUnregistrationListener");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -3003,9 +2941,10 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "addRelationInt", new Object[] {relationBaseFlag, relationObj,
-                relationObjName, relationId, relationTypeName, roleList});
+        RELATION_LOGGER.log(Level.TRACE,
+                            "ENTRY {0} {1} {2} {3} {4} {5}",
+                            relationBaseFlag, relationObj, relationObjName,
+                            relationId, relationTypeName, roleList);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -3144,8 +3083,7 @@ public class RelationService extends NotificationBroadcasterSupport
             // OK : The Relation could not be found.
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "addRelationInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -3185,15 +3123,13 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "checkRoleInt", new Object[] {chkType, roleName,
-                roleValue, roleInfo, writeChkFlag});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3} {4}",
+                            chkType, roleName, roleValue, roleInfo, writeChkFlag);
 
         // Compares names
         String expName = roleInfo.getName();
         if (!(roleName.equals(expName))) {
-            RELATION_LOGGER.exiting(RelationService.class.getName(),
-                    "checkRoleInt");
+            RELATION_LOGGER.log(Level.TRACE, "RETURN");
             return Integer.valueOf(RoleStatus.NO_ROLE_WITH_NAME);
         }
 
@@ -3201,13 +3137,11 @@ public class RelationService extends NotificationBroadcasterSupport
         if (chkType == 1) {
             boolean isReadable = roleInfo.isReadable();
             if (!isReadable) {
-                RELATION_LOGGER.exiting(RelationService.class.getName(),
-                        "checkRoleInt");
+                RELATION_LOGGER.log(Level.TRACE, "RETURN");
                 return Integer.valueOf(RoleStatus.ROLE_NOT_READABLE);
             } else {
                 // End of check :)
-                RELATION_LOGGER.exiting(RelationService.class.getName(),
-                        "checkRoleInt");
+                RELATION_LOGGER.log(Level.TRACE, "RETURN");
                 return 0;
             }
         }
@@ -3216,8 +3150,7 @@ public class RelationService extends NotificationBroadcasterSupport
         if (writeChkFlag) {
             boolean isWritable = roleInfo.isWritable();
             if (!isWritable) {
-                RELATION_LOGGER.exiting(RelationService.class.getName(),
-                        "checkRoleInt");
+                RELATION_LOGGER.log(Level.TRACE, "RETURN");
                 return RoleStatus.ROLE_NOT_WRITABLE;
             }
         }
@@ -3227,16 +3160,14 @@ public class RelationService extends NotificationBroadcasterSupport
         // Checks minimum cardinality
         boolean chkMinFlag = roleInfo.checkMinDegree(refNbr);
         if (!chkMinFlag) {
-            RELATION_LOGGER.exiting(RelationService.class.getName(),
-                    "checkRoleInt");
+            RELATION_LOGGER.log(Level.TRACE, "RETURN");
             return RoleStatus.LESS_THAN_MIN_ROLE_DEGREE;
         }
 
         // Checks maximum cardinality
         boolean chkMaxFlag = roleInfo.checkMaxDegree(refNbr);
         if (!chkMaxFlag) {
-            RELATION_LOGGER.exiting(RelationService.class.getName(),
-                    "checkRoleInt");
+            RELATION_LOGGER.log(Level.TRACE, "RETURN");
             return RoleStatus.MORE_THAN_MAX_ROLE_DEGREE;
         }
 
@@ -3252,8 +3183,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
             // Checks it is registered
             if (currObjName == null) {
-                RELATION_LOGGER.exiting(RelationService.class.getName(),
-                        "checkRoleInt");
+                RELATION_LOGGER.log(Level.TRACE, "RETURN");
                 return RoleStatus.REF_MBEAN_NOT_REGISTERED;
             }
 
@@ -3263,20 +3193,17 @@ public class RelationService extends NotificationBroadcasterSupport
                 boolean classSts = myMBeanServer.isInstanceOf(currObjName,
                                                               expClassName);
                 if (!classSts) {
-                    RELATION_LOGGER.exiting(RelationService.class.getName(),
-                            "checkRoleInt");
+                    RELATION_LOGGER.log(Level.TRACE, "RETURN");
                     return RoleStatus.REF_MBEAN_OF_INCORRECT_CLASS;
                 }
 
             } catch (InstanceNotFoundException exc) {
-                RELATION_LOGGER.exiting(RelationService.class.getName(),
-                        "checkRoleInt");
+                RELATION_LOGGER.log(Level.TRACE, "RETURN");
                 return RoleStatus.REF_MBEAN_NOT_REGISTERED;
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "checkRoleInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return 0;
     }
 
@@ -3328,10 +3255,9 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "initializeMissingRoles", new Object[] {relationBaseFlag,
-                relationObj, relationObjName, relationId, relationTypeName,
-                roleInfoList});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3} {4} {5}",
+                            relationBaseFlag, relationObj, relationObjName,
+                            relationId, relationTypeName, roleInfoList);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -3410,8 +3336,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "initializeMissingRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -3528,9 +3453,9 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "sendNotificationInt", new Object[] {intNtfType, message,
-                relationId, unregMBeanList, roleName, roleNewValue, oldValue});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3} {4} {5} {6}",
+                            intNtfType, message, relationId, unregMBeanList,
+                            roleName, roleNewValue, oldValue);
 
         // Relation type name
         // Note: do not use getRelationTypeName() as if it is a relation MBean
@@ -3616,8 +3541,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
         sendNotification(ntf);
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "sendNotificationInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -3654,9 +3578,8 @@ public class RelationService extends NotificationBroadcasterSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationService.class.getName(),
-                "handleReferenceUnregistration",
-                new Object[] {relationId, objectName, roleNameList});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            relationId, objectName, roleNameList);
 
         // Can throw RelationServiceNotRegisteredException
         isActive();
@@ -3782,8 +3705,7 @@ public class RelationService extends NotificationBroadcasterSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationService.class.getName(),
-                "handleReferenceUnregistration");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 }

@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 6802846
+# @bug 6802846 8172529
 # @summary jarsigner needs enhanced cert validation(options)
 #
 # @run shell/timeout=240 concise_jarsigner.sh
@@ -52,7 +52,7 @@ TESTTOOLVMOPTS="$TESTTOOLVMOPTS -J-Duser.language=en -J-Duser.country=US"
 KS=js.ks
 KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS -keyalg rsa -keysize 1024"
 JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
-JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -debug"
 JAVAC="$TESTJAVA${FS}bin${FS}javac ${TESTTOOLVMOPTS} ${TESTJAVACOPTS}"
 
 rm $KS
@@ -138,7 +138,7 @@ LINES=`$JARSIGNER -verify a.jar -verbose:summary -certs | grep "more)" | wc -l`
 [ $LINES = 4 ] || exit $LINENO
 
 # ==========================================================
-# Second part: exit code 2, 4, 8
+# Second part: exit code 2, 4, 8.
 # 16 and 32 already covered in the first part
 # ==========================================================
 
@@ -174,11 +174,14 @@ $JARSIGNER -strict -keystore $KS -storepass changeit a.jar goodku
 $JARSIGNER -strict -keystore $KS -storepass changeit a.jar goodeku
 [ $? = 0 ] || exit $LINENO
 
-# badchain signed by ca, but ca is removed later
+# badchain signed by ca1, but ca1 is removed later
 $KT -genkeypair -alias badchain -dname CN=badchain -validity 365
-$KT -certreq -alias badchain | $KT -gencert -alias ca -validity 365 | \
+$KT -genkeypair -alias ca1 -dname CN=ca1 -ext bc -validity 365
+$KT -certreq -alias badchain | $KT -gencert -alias ca1 -validity 365 | \
         $KT -importcert -alias badchain
-$KT -delete -alias ca
+# save ca1.cert for easy replay
+$KT -exportcert -file ca1.cert -alias ca1
+$KT -delete -alias ca1
 
 $JARSIGNER -strict -keystore $KS -storepass changeit a.jar badchain
 [ $? = 4 ] || exit $LINENO
@@ -204,12 +207,40 @@ $JARSIGNER -strict -keystore $KS -storepass changeit a.jar altchain
 $JARSIGNER -strict -keystore $KS -storepass changeit -certchain certchain a.jar altchain
 [ $? = 0 ] || exit $LINENO
 
-# but if ca2 is removed, -certchain does not work
+# if ca2 is removed, -certchain still work because altchain is a self-signed entry and
+# it is trusted by jarsigner
+# save ca2.cert for easy replay
+$KT -exportcert -file ca2.cert -alias ca2
 $KT -delete -alias ca2
+$JARSIGNER -strict -keystore $KS -storepass changeit -certchain certchain a.jar altchain
+[ $? = 0 ] || exit $LINENO
+
+# if cert is imported, -certchain won't work because this certificate entry is not trusted
+$KT -importcert -file certchain -alias altchain -noprompt
 $JARSIGNER -strict -keystore $KS -storepass changeit -certchain certchain a.jar altchain
 [ $? = 4 ] || exit $LINENO
 
 $JARSIGNER -verify a.jar
+[ $? = 0 ] || exit $LINENO
+
+# ==========================================================
+# 8172529
+# ==========================================================
+
+$KT -genkeypair -alias ee -dname CN=ee
+$KT -genkeypair -alias caone -dname CN=caone
+$KT -genkeypair -alias catwo -dname CN=catwo
+
+$KT -certreq -alias ee | $KT -gencert -alias catwo -rfc > ee.cert
+$KT -certreq -alias catwo | $KT -gencert -alias caone -sigalg MD5withRSA -rfc > catwo.cert
+
+# This certchain contains a cross-signed weak catwo.cert
+cat ee.cert catwo.cert | $KT -importcert -alias ee
+
+$JAR cvf a.jar A1.class
+$JARSIGNER -strict -keystore $KS -storepass changeit a.jar ee
+[ $? = 0 ] || exit $LINENO
+$JARSIGNER -strict -keystore $KS -storepass changeit -verify a.jar
 [ $? = 0 ] || exit $LINENO
 
 echo OK

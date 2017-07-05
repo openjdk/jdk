@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package javax.management.relation;
 
 
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -162,8 +162,7 @@ public class RelationSupport
 
         super();
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "RelationSupport");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         // Can throw InvalidRoleValueException and IllegalArgumentException
         initMembers(relationId,
@@ -172,8 +171,7 @@ public class RelationSupport
                     relationTypeName,
                     list);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "RelationSupport");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
     }
 
     /**
@@ -239,8 +237,7 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "RelationSupport");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         // Can throw InvalidRoleValueException and
         // IllegalArgumentException
@@ -250,8 +247,7 @@ public class RelationSupport
                     relationTypeName,
                     list);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "RelationSupport");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
     }
 
     //
@@ -286,15 +282,14 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "getRole", roleName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", roleName);
 
         // Can throw RoleNotFoundException and
         // RelationServiceNotRegisteredException
         List<ObjectName> result = cast(
             getRoleInt(roleName, false, null, false));
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "getRole");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -324,12 +319,12 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(), "getRoles");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         // Can throw RelationServiceNotRegisteredException
         RoleResult result = getRolesInt(roleNameArray, false, null);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "getRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -346,8 +341,7 @@ public class RelationSupport
     public RoleResult getAllRoles()
         throws RelationServiceNotRegisteredException {
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "getAllRoles");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         RoleResult result = null;
         try {
@@ -356,7 +350,7 @@ public class RelationSupport
             // OK : Invalid parameters, ignore...
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "getAllRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -367,8 +361,7 @@ public class RelationSupport
      */
     public RoleList retrieveAllRoles() {
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "retrieveAllRoles");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         RoleList result;
         synchronized(myRoleName2ValueMap) {
@@ -376,8 +369,7 @@ public class RelationSupport
                 new RoleList(new ArrayList<Role>(myRoleName2ValueMap.values()));
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "retrieveAllRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -400,8 +392,7 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "getRoleCardinality", roleName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", roleName);
 
         // Try to retrieve the role
         Role role;
@@ -426,8 +417,7 @@ public class RelationSupport
 
         List<ObjectName> roleValue = role.getRoleValue();
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "getRoleCardinality");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return roleValue.size();
     }
 
@@ -476,13 +466,12 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "setRole", role);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", role);
 
         // Will return null :)
         Object result = setRoleInt(role, false, null, false);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "setRole");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -521,12 +510,11 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "setRoles", list);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", list);
 
         RoleResult result = setRolesInt(list, false, null);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "setRoles");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -570,9 +558,7 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "handleMBeanUnregistration",
-                new Object[]{objectName, roleName});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1}", objectName, roleName);
 
         // Can throw RoleNotFoundException, InvalidRoleValueException,
         // or RelationTypeNotFoundException
@@ -581,8 +567,7 @@ public class RelationSupport
                                      false,
                                      null);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "handleMBeanUnregistration");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -594,8 +579,7 @@ public class RelationSupport
      */
     public Map<ObjectName,List<String>> getReferencedMBeans() {
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "getReferencedMBeans");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         Map<ObjectName,List<String>> refMBeanMap =
             new HashMap<ObjectName,List<String>>();
@@ -628,8 +612,7 @@ public class RelationSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "getReferencedMBeans");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return refMBeanMap;
     }
 
@@ -779,8 +762,7 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "getRoleInt", roleName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", roleName);
 
         int pbType = 0;
 
@@ -885,7 +867,7 @@ public class RelationSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "getRoleInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -921,8 +903,7 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "getRolesInt");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         RoleList roleList = new RoleList();
         RoleUnresolvedList roleUnresList = new RoleUnresolvedList();
@@ -966,8 +947,7 @@ public class RelationSupport
         }
 
         RoleResult result = new RoleResult(roleList, roleUnresList);
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "getRolesInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -991,8 +971,7 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "getAllRolesInt");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         List<String> roleNameList;
         synchronized(myRoleName2ValueMap) {
@@ -1006,8 +985,7 @@ public class RelationSupport
                                         relationServCallFlg,
                                         relationServ);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "getAllRolesInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1083,9 +1061,9 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "setRoleInt", new Object[] {aRole, relationServCallFlg,
-                relationServ, multiRoleFlg});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3}",
+                            aRole, relationServCallFlg, relationServ,
+                            multiRoleFlg);
 
         String roleName = aRole.getRoleName();
         int pbType = 0;
@@ -1244,7 +1222,7 @@ public class RelationSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "setRoleInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1286,9 +1264,9 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "sendRoleUpdateNotification", new Object[] {newRole,
-                oldRoleValue, relationServCallFlg, relationServ});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3}",
+                            newRole, oldRoleValue, relationServCallFlg,
+                            relationServ);
 
         if (relationServCallFlg) {
             // Direct call to the Relation Service
@@ -1341,8 +1319,7 @@ public class RelationSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "sendRoleUpdateNotification");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1383,9 +1360,9 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "updateRelationServiceMap", new Object[] {newRole,
-                oldRoleValue, relationServCallFlg, relationServ});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3}",
+                            newRole, oldRoleValue, relationServCallFlg,
+                            relationServ);
 
         if (relationServCallFlg) {
             // Direct call to the Relation Service
@@ -1433,8 +1410,7 @@ public class RelationSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "updateRelationServiceMap");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1484,9 +1460,8 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "setRolesInt",
-                new Object[] {list, relationServCallFlg, relationServ});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
+                            list, relationServCallFlg, relationServ);
 
         RoleList roleList = new RoleList();
         RoleUnresolvedList roleUnresList = new RoleUnresolvedList();
@@ -1534,7 +1509,7 @@ public class RelationSupport
 
         RoleResult result = new RoleResult(roleList, roleUnresList);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "setRolesInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -1578,9 +1553,9 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "initMembers", new Object[] {relationId, relationServiceName,
-                relationServiceMBeanServer, relationTypeName, list});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3} {4}",
+                            relationId, relationServiceName,
+                            relationServiceMBeanServer, relationTypeName, list);
 
         myRelId = relationId;
         myRelServiceName = relationServiceName;
@@ -1589,7 +1564,7 @@ public class RelationSupport
         // Can throw InvalidRoleValueException
         initRoleMap(list);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "initMembers");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1608,8 +1583,7 @@ public class RelationSupport
             return;
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "initRoleMap", list);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", list);
 
         synchronized(myRoleName2ValueMap) {
 
@@ -1632,7 +1606,7 @@ public class RelationSupport
             }
         }
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(), "initRoleMap");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -1692,9 +1666,9 @@ public class RelationSupport
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationSupport.class.getName(),
-                "handleMBeanUnregistrationInt", new Object[] {objectName,
-                roleName, relationServCallFlg, relationServ});
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2} {3}",
+                            objectName, roleName, relationServCallFlg,
+                            relationServ);
 
         // Retrieves current role value
         Role role;
@@ -1723,8 +1697,7 @@ public class RelationSupport
         Object result =
             setRoleInt(newRole, relationServCallFlg, relationServ, false);
 
-        RELATION_LOGGER.exiting(RelationSupport.class.getName(),
-                "handleMBeanUnregistrationInt");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 

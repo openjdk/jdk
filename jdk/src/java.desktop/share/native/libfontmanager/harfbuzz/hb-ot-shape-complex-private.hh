@@ -146,6 +146,14 @@ struct hb_ot_complex_shaper_t
                        hb_buffer_t              *buffer,
                        hb_font_t                *font);
 
+  /* disable_otl()
+   * Called during shape().
+   * If set and returns true, GDEF/GSUB/GPOS of the font are ignored
+   * and fallback operations used.
+   * May be NULL.
+   */
+  bool (*disable_otl) (const hb_ot_shape_plan_t *plan);
+
   hb_ot_shape_zero_width_marks_type_t zero_width_marks;
 
   bool fallback_position;

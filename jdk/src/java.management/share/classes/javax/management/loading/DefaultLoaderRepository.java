@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.management.loading;
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 
@@ -71,9 +71,7 @@ public class DefaultLoaderRepository {
      */
     public static Class<?> loadClass(String className)
         throws ClassNotFoundException {
-        MBEANSERVER_LOGGER.logp(Level.FINEST,
-                DefaultLoaderRepository.class.getName(),
-                "loadClass", className);
+        MBEANSERVER_LOGGER.log(Level.TRACE, className);
         return load(null, className);
     }
 
@@ -96,9 +94,7 @@ public class DefaultLoaderRepository {
     public static Class<?> loadClassWithout(ClassLoader loader,
                                          String className)
         throws ClassNotFoundException {
-        MBEANSERVER_LOGGER.logp(Level.FINEST,
-                DefaultLoaderRepository.class.getName(),
-                "loadClassWithout", className);
+        MBEANSERVER_LOGGER.log(Level.TRACE, className);
         return load(loader, className);
     }
 

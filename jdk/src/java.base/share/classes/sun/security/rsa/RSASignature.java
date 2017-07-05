@@ -226,9 +226,10 @@ public abstract class RSASignature extends SignatureSpi {
      * Decode the signature data. Verify that the object identifier matches
      * and return the message digest.
      */
-    public static byte[] decodeSignature(ObjectIdentifier oid, byte[] signature)
+    public static byte[] decodeSignature(ObjectIdentifier oid, byte[] sig)
             throws IOException {
-        DerInputStream in = new DerInputStream(signature);
+        // Enforce strict DER checking for signatures
+        DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
         DerValue[] values = in.getSequence(2);
         if ((values.length != 2) || (in.available() != 0)) {
             throw new IOException("SEQUENCE length error");
