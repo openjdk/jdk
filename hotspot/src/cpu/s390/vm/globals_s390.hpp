@@ -92,9 +92,6 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
   product(bool, ReoptimizeCallSequences, true,                                \
           "Reoptimize code-sequences of calls at runtime.")                   \
                                                                               \
-  product(bool, UseCountLeadingZerosInstruction, true,                        \
-          "Use count leading zeros instruction.")                             \
-                                                                              \
   product(bool, UseByteReverseInstruction, true,                              \
           "Use byte reverse instruction.")                                    \
                                                                               \

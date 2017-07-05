@@ -41,28 +41,34 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Hand
 
 void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) {
   address pc = _instructions->start() + pc_offset;
+#ifdef ASSERT
+  {
+    NativeInstruction *insn = nativeInstruction_at(pc);
+    if (HotSpotObjectConstantImpl::compressed(constant)) {
+      // Mov narrow constant: movz n << 16, movk
+      assert(Instruction_aarch64::extract(insn->encoding(), 31, 21) == 0b11010010101 &&
+             nativeInstruction_at(pc+4)->is_movk(), "wrong insn in patch");
+    } else {
+      // Move wide constant: movz n, movk, movk.
+      assert(nativeInstruction_at(pc+4)->is_movk()
+             && nativeInstruction_at(pc+8)->is_movk(), "wrong insn in patch");
+    }
+  }
+#endif // ASSERT
   Handle obj = HotSpotObjectConstantImpl::object(constant);
   jobject value = JNIHandles::make_local(obj());
-  if (HotSpotObjectConstantImpl::compressed(constant)) {
-    int oop_index = _oop_recorder->find_index(value);
-    RelocationHolder rspec = oop_Relocation::spec(oop_index);
-    _instructions->relocate(pc, rspec, 1);
-    Unimplemented();
-  } else {
-    NativeMovConstReg* move = nativeMovConstReg_at(pc);
-    move->set_data((intptr_t) value);
-    int oop_index = _oop_recorder->find_index(value);
-    RelocationHolder rspec = oop_Relocation::spec(oop_index);
-    _instructions->relocate(pc, rspec);
-  }
+  MacroAssembler::patch_oop(pc, (address)obj());
+  int oop_index = _oop_recorder->find_index(value);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+  _instructions->relocate(pc, rspec);
 }
 
 void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS) {
   address pc = _instructions->start() + pc_offset;
   if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
     narrowKlass narrowOop = record_narrow_metadata_reference(_instructions, pc, constant, CHECK);
+    MacroAssembler::patch_narrow_klass(pc, narrowOop);
     TRACE_jvmci_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/0x%x", p2i(pc), narrowOop);
-    Unimplemented();
   } else {
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
     void* reference = record_metadata_reference(_instructions, pc, constant, CHECK);
@@ -167,8 +173,8 @@ VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, TRAPS) {
   if (jvmci_reg < RegisterImpl::number_of_registers) {
     return as_Register(jvmci_reg)->as_VMReg();
   } else {
-    jint floatRegisterNumber = jvmci_reg - RegisterImpl::number_of_registers;
-    if (floatRegisterNumber < FloatRegisterImpl::number_of_registers) {
+    jint floatRegisterNumber = jvmci_reg - RegisterImpl::number_of_registers_for_jvmci;
+    if (floatRegisterNumber >= 0 && floatRegisterNumber < FloatRegisterImpl::number_of_registers) {
       return as_FloatRegister(floatRegisterNumber)->as_VMReg();
     }
     JVMCI_ERROR_NULL("invalid register number: %d", jvmci_reg);

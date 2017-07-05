@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -38,7 +37,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,7 +50,7 @@ import static jdk.internal.module.Checks.*;
 import static java.util.Objects.*;
 
 import jdk.internal.module.Checks;
-import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleInfo;
 
 
 /**
@@ -123,8 +121,9 @@ public class ModuleDescriptor
 
         private final Set<Modifier> mods;
         private final String name;
+        private final Version compiledVersion;
 
-        private Requires(Set<Modifier> ms, String mn) {
+        private Requires(Set<Modifier> ms, String mn, Version v) {
             if (ms.isEmpty()) {
                 ms = Collections.emptySet();
             } else {
@@ -132,11 +131,13 @@ public class ModuleDescriptor
             }
             this.mods = ms;
             this.name = mn;
+            this.compiledVersion = v;
         }
 
-        private Requires(Set<Modifier> ms, String mn, boolean unused) {
+        private Requires(Set<Modifier> ms, String mn, Version v, boolean unused) {
             this.mods = ms;
             this.name = mn;
+            this.compiledVersion = v;
         }
 
         /**
@@ -158,12 +159,26 @@ public class ModuleDescriptor
         }
 
         /**
+         * Returns the version of the module if recorded at compile-time.
+         *
+         * @return The version of the module if recorded at compile-time
+         */
+        public Optional<Version> compiledVersion() {
+            return Optional.ofNullable(compiledVersion);
+        }
+
+        /**
          * Compares this module dependence to another.
          *
          * <p> Two {@code Requires} objects are compared by comparing their
          * module name lexicographically.  Where the module names are equal then
          * the sets of modifiers are compared based on a value computed from the
-         * ordinal of each modifier. </p>
+         * ordinal of each modifier. Where the module names are equal and the
+         * set of modifiers are equal then the version of the modules recorded
+         * at compile-time are compared. When comparing the versions recorded
+         * at compile-time then a dependence that has a recorded version is
+         * considered to succeed a dependence that does not have a recorded
+         * version. </p>
          *
          * @return A negative integer, zero, or a positive integer if this module
          *         dependence is less than, equal to, or greater than the given
@@ -174,8 +189,24 @@ public class ModuleDescriptor
             int c = this.name().compareTo(that.name());
             if (c != 0)
                 return c;
-            // same name, compare by modifiers
-            return Long.compare(this.modsValue(), that.modsValue());
+
+            // modifiers
+            c = Long.compare(this.modsValue(), that.modsValue());
+            if (c != 0)
+                return c;
+
+            // compiledVersion
+            if (this.compiledVersion != null) {
+                if (that.compiledVersion != null)
+                    c = this.compiledVersion.compareTo(that.compiledVersion);
+                else
+                    c = 1;
+            } else {
+                if (that.compiledVersion != null)
+                    c = -1;
+            }
+
+            return c;
         }
 
         /**
@@ -195,7 +226,9 @@ public class ModuleDescriptor
          *
          * <p> If the given object is not a {@code Requires} then this method
          * returns {@code false}. Two module dependence objects are equal if
-         * the module names are equal and set of modifiers are equal. </p>
+         * the module names are equal, set of modifiers are equal, and the
+         * compiled version of both modules is equal or not recorded for
+         * both modules. </p>
          *
          * <p> This method satisfies the general contract of the {@link
          * java.lang.Object#equals(Object) Object.equals} method. </p>
@@ -211,21 +244,25 @@ public class ModuleDescriptor
             if (!(ob instanceof Requires))
                 return false;
             Requires that = (Requires)ob;
-            return (name.equals(that.name) && mods.equals(that.mods));
+            return name.equals(that.name) && mods.equals(that.mods)
+                    && Objects.equals(compiledVersion, that.compiledVersion);
         }
 
         /**
          * Computes a hash code for this module dependence.
          *
-         * <p> The hash code is based upon the module name and modifiers. It
-         * satisfies the general contract of the {@link Object#hashCode
-         * Object.hashCode} method. </p>
+         * <p> The hash code is based upon the module name, modifiers, and the
+         * module version if recorded at compile time. It satisfies the general
+         * contract of the {@link Object#hashCode Object.hashCode} method. </p>
          *
          * @return The hash-code value for this module dependence
          */
         @Override
         public int hashCode() {
-            return name.hashCode() * 43 + mods.hashCode();
+            int hash = name.hashCode() * 43 + mods.hashCode();
+            if (compiledVersion != null)
+                hash = hash * 43 + compiledVersion.hashCode();
+            return hash;
         }
 
         /**
@@ -235,7 +272,13 @@ public class ModuleDescriptor
          */
         @Override
         public String toString() {
-            return ModuleDescriptor.toString(mods, name);
+            String what;
+            if (compiledVersion != null) {
+                what = name() + " (@" + compiledVersion + ")";
+            } else {
+                what = name();
+            }
+            return ModuleDescriptor.toString(mods, what);
         }
     }
 
@@ -967,9 +1010,8 @@ public class ModuleDescriptor
     }
 
 
-
-    // From module declarations
     private final String name;
+    private final Version version;
     private final boolean open;
 
     // Indicates if synthesised for a JAR file found on the module path
@@ -984,17 +1026,16 @@ public class ModuleDescriptor
     private final Set<String> uses;
     private final Set<Provides> provides;
 
-    // "Extended" information, added post-compilation by tools
-    private final Version version;
+    // Added post-compilation by tools
+    private final Set<String> packages;
     private final String mainClass;
     private final String osName;
     private final String osArch;
     private final String osVersion;
-    private final Set<String> packages;
-    private final ModuleHashes hashes;
 
 
     private ModuleDescriptor(String name,
+                             Version version,
                              boolean open,
                              boolean automatic,
                              boolean synthetic,
@@ -1003,16 +1044,14 @@ public class ModuleDescriptor
                              Set<Opens> opens,
                              Set<String> uses,
                              Set<Provides> provides,
-                             Version version,
+                             Set<String> packages,
                              String mainClass,
                              String osName,
                              String osArch,
-                             String osVersion,
-                             Set<String> packages,
-                             ModuleHashes hashes)
+                             String osVersion)
     {
-
         this.name = name;
+        this.version = version;
         this.open = open;
         this.automatic = automatic;
         this.synthetic = synthetic;
@@ -1020,18 +1059,16 @@ public class ModuleDescriptor
         assert (requires.stream().map(Requires::name).distinct().count()
                 == requires.size());
         this.requires = emptyOrUnmodifiableSet(requires);
-
         this.exports = emptyOrUnmodifiableSet(exports);
         this.opens = emptyOrUnmodifiableSet(opens);
         this.uses = emptyOrUnmodifiableSet(uses);
         this.provides = emptyOrUnmodifiableSet(provides);
-        this.version = version;
+
+        this.packages = emptyOrUnmodifiableSet(packages);
         this.mainClass = mainClass;
         this.osName = osName;
         this.osArch = osArch;
         this.osVersion = osVersion;
-        this.hashes = hashes;
-        this.packages = emptyOrUnmodifiableSet(packages);
     }
 
     /**
@@ -1039,6 +1076,7 @@ public class ModuleDescriptor
      */
     ModuleDescriptor(ModuleDescriptor md, Set<String> pkgs) {
         this.name = md.name;
+        this.version = md.version;
         this.open = md.open;
         this.automatic = md.automatic;
         this.synthetic = md.synthetic;
@@ -1049,16 +1087,14 @@ public class ModuleDescriptor
         this.uses = md.uses;
         this.provides = md.provides;
 
-        this.version = md.version;
+        Set<String> packages = new HashSet<>(md.packages);
+        packages.addAll(pkgs);
+        this.packages = emptyOrUnmodifiableSet(packages);
+
         this.mainClass = md.mainClass;
         this.osName = md.osName;
         this.osArch = md.osArch;
         this.osVersion = md.osVersion;
-        this.hashes = null; // need to ignore
-
-        Set<String> packages = new HashSet<>(md.packages);
-        packages.addAll(pkgs);
-        this.packages = emptyOrUnmodifiableSet(packages);
     }
 
     /**
@@ -1066,6 +1102,7 @@ public class ModuleDescriptor
      * The arguments are pre-validated and sets are unmodifiable sets.
      */
     ModuleDescriptor(String name,
+                     Version version,
                      boolean open,
                      boolean automatic,
                      boolean synthetic,
@@ -1074,16 +1111,15 @@ public class ModuleDescriptor
                      Set<Opens> opens,
                      Set<String> uses,
                      Set<Provides> provides,
-                     Version version,
+                     Set<String> packages,
                      String mainClass,
                      String osName,
                      String osArch,
                      String osVersion,
-                     Set<String> packages,
-                     ModuleHashes hashes,
                      int hashCode,
                      boolean unused) {
         this.name = name;
+        this.version = version;
         this.open = open;
         this.automatic = automatic;
         this.synthetic = synthetic;
@@ -1093,12 +1129,10 @@ public class ModuleDescriptor
         this.uses = uses;
         this.provides = provides;
         this.packages = packages;
-        this.version = version;
         this.mainClass = mainClass;
         this.osName = osName;
         this.osArch = osArch;
         this.osVersion = osVersion;
-        this.hashes = hashes;
         this.hash = hashCode;
     }
 
@@ -1284,13 +1318,6 @@ public class ModuleDescriptor
         return packages;
     }
 
-    /**
-     * Returns the object with the hashes of other modules
-     */
-    Optional<ModuleHashes> hashes() {
-        return Optional.ofNullable(hashes);
-    }
-
 
     /**
      * A builder used for building {@link ModuleDescriptor} objects.
@@ -1317,15 +1344,13 @@ public class ModuleDescriptor
     public static final class Builder {
         final String name;
         final boolean strict; // true if module names are checked
-        boolean open;
+        final boolean open;
+        final boolean synthetic;
         boolean automatic;
-        boolean synthetic;
         final Map<String, Requires> requires = new HashMap<>();
-
         final Map<String, Exports> exports = new HashMap<>();
         final Map<String, Opens> opens = new HashMap<>();
         final Set<String> concealedPackages = new HashSet<>();
-
         final Set<String> uses = new HashSet<>();
         final Map<String, Provides> provides = new HashMap<>();
         Version version;
@@ -1333,7 +1358,6 @@ public class ModuleDescriptor
         String osArch;
         String osVersion;
         String mainClass;
-        ModuleHashes hashes;
 
         /**
          * Initializes a new builder with the given module name.
@@ -1341,14 +1365,11 @@ public class ModuleDescriptor
          * @param strict
          *        Indicates whether module names are checked or not
          */
-        Builder(String name, boolean strict) {
-            this.strict = strict;
+        Builder(String name, boolean strict, boolean open, boolean synthetic) {
             this.name = (strict) ? requireModuleName(name) : name;
-        }
-
-        /* package */ Builder open(boolean open) {
+            this.strict = strict;
             this.open = open;
-            return this;
+            this.synthetic = synthetic;
         }
 
         /* package */ Builder automatic(boolean automatic) {
@@ -1356,10 +1377,20 @@ public class ModuleDescriptor
             return this;
         }
 
-        /* package */ boolean isOpen() { return open; }
+        /**
+         * Returns the set of packages that are exported (unconditionally or
+         * unconditionally).
+         */
+        /* package */ Set<String> exportedPackages() {
+            return exports.keySet();
+        }
 
-        /* package */ boolean isAutomatic() {
-            return automatic;
+        /**
+         * Returns the set of packages that are opened (unconditionally or
+         * unconditionally).
+         */
+        /* package */Set<String> openPackages() {
+            return opens.keySet();
         }
 
         /**
@@ -1389,6 +1420,36 @@ public class ModuleDescriptor
 
         /**
          * Adds a dependence on a module with the given (and possibly empty)
+         * set of modifiers. The dependence includes the version of the
+         * module that that was recorded at compile-time.
+         *
+         * @param  ms
+         *         The set of modifiers
+         * @param  mn
+         *         The module name
+         * @param  compiledVersion
+         *         The version of the module recorded at compile-time
+         *
+         * @return This builder
+         *
+         * @throws IllegalArgumentException
+         *         If the module name is {@code null}, is not a legal Java
+         *         identifier, or is equal to the module name that this builder
+         *         was initialized to build
+         * @throws IllegalStateException
+         *         If the dependence on the module has already been declared
+         */
+        public Builder requires(Set<Requires.Modifier> ms,
+                                String mn,
+                                Version compiledVersion) {
+            Objects.requireNonNull(compiledVersion);
+            if (strict)
+                mn = requireModuleName(mn);
+            return requires(new Requires(ms, mn, compiledVersion));
+        }
+
+        /**
+         * Adds a dependence on a module with the given (and possibly empty)
          * set of modifiers.
          *
          * @param  ms
@@ -1408,7 +1469,7 @@ public class ModuleDescriptor
         public Builder requires(Set<Requires.Modifier> ms, String mn) {
             if (strict)
                 mn = requireModuleName(mn);
-            return requires(new Requires(ms, mn));
+            return requires(new Requires(ms, mn, null));
         }
 
         /**
@@ -1705,17 +1766,6 @@ public class ModuleDescriptor
             return opens(Collections.emptySet(), pn);
         }
 
-
-        // Used by ModuleInfo, after a packageFinder is invoked
-        /* package */ Set<String> exportedAndOpenPackages() {
-            if (opens.isEmpty())
-                return exports.keySet();
-            Set<String> result = new HashSet<>();
-            result.addAll(exports.keySet());
-            result.addAll(opens.keySet());
-            return result;
-        }
-
         /**
          * Adds a service dependence.
          *
@@ -1789,7 +1839,6 @@ public class ModuleDescriptor
             if (providerNames.isEmpty())
                 throw new IllegalArgumentException("Empty providers set");
             providerNames.forEach(Checks::requireServiceProviderName);
-
             provides.put(service, p);
             return this;
         }
@@ -1914,7 +1963,7 @@ public class ModuleDescriptor
          *         If {@code mainClass} is null or is not a legal Java identifier
          */
         public Builder mainClass(String mc) {
-            mainClass = requireJavaIdentifier("main class name", mc);
+            mainClass = requireBinaryName("main class name", mc);
             return this;
         }
 
@@ -1972,16 +2021,6 @@ public class ModuleDescriptor
             return this;
         }
 
-        /* package */ Builder hashes(ModuleHashes hashes) {
-            this.hashes = hashes;
-            return this;
-        }
-
-        /* package */ Builder synthetic(boolean v) {
-            this.synthetic = v;
-            return this;
-        }
-
         /**
          * Builds and returns a {@code ModuleDescriptor} from its components.
          *
@@ -1990,7 +2029,9 @@ public class ModuleDescriptor
         public ModuleDescriptor build() {
             Set<Requires> requires = new HashSet<>(this.requires.values());
 
-            Set<String> packages = new HashSet<>(exportedAndOpenPackages());
+            Set<String> packages = new HashSet<>();
+            packages.addAll(exports.keySet());
+            packages.addAll(opens.keySet());
             packages.addAll(concealedPackages);
 
             Set<Exports> exports = new HashSet<>(this.exports.values());
@@ -1999,6 +2040,7 @@ public class ModuleDescriptor
             Set<Provides> provides = new HashSet<>(this.provides.values());
 
             return new ModuleDescriptor(name,
+                                        version,
                                         open,
                                         automatic,
                                         synthetic,
@@ -2007,13 +2049,11 @@ public class ModuleDescriptor
                                         opens,
                                         uses,
                                         provides,
-                                        version,
+                                        packages,
                                         mainClass,
                                         osName,
                                         osArch,
-                                        osVersion,
-                                        packages,
-                                        hashes);
+                                        osVersion);
         }
 
     }
@@ -2088,8 +2128,7 @@ public class ModuleDescriptor
                 && Objects.equals(osName, that.osName)
                 && Objects.equals(osArch, that.osArch)
                 && Objects.equals(osVersion, that.osVersion)
-                && Objects.equals(packages, that.packages)
-                && Objects.equals(hashes, that.hashes));
+                && Objects.equals(packages, that.packages));
     }
 
     private transient int hash;  // cached hash code
@@ -2122,7 +2161,6 @@ public class ModuleDescriptor
             hc = hc * 43 + Objects.hashCode(osArch);
             hc = hc * 43 + Objects.hashCode(osVersion);
             hc = hc * 43 + Objects.hashCode(packages);
-            hc = hc * 43 + Objects.hashCode(hashes);
             if (hc == 0)
                 hc = -1;
             hash = hc;
@@ -2145,7 +2183,7 @@ public class ModuleDescriptor
         if (!requires.isEmpty())
             sb.append(", ").append(requires);
         if (!uses.isEmpty())
-            sb.append(", ").append(uses);
+            sb.append(", uses: ").append(uses);
         if (!exports.isEmpty())
             sb.append(", exports: ").append(exports);
         if (!opens.isEmpty())
@@ -2171,7 +2209,7 @@ public class ModuleDescriptor
      *         identifier
      */
     public static Builder module(String name) {
-        return new Builder(name, true);
+        return new Builder(name, true, false, false);
     }
 
     /**
@@ -2199,7 +2237,7 @@ public class ModuleDescriptor
      *         identifier
      */
     public static Builder openModule(String name) {
-        return new Builder(name, true).open(true);
+        return new Builder(name, true, true, false);
     }
 
     /**
@@ -2221,7 +2259,7 @@ public class ModuleDescriptor
      * @see ModuleFinder#of(Path[])
      */
     public static Builder automaticModule(String name) {
-        return new Builder(name, true).automatic(true);
+        return new Builder(name, true, false, false).automatic(true);
     }
 
 
@@ -2263,7 +2301,7 @@ public class ModuleDescriptor
                                         Supplier<Set<String>> packageFinder)
         throws IOException
     {
-        return ModuleInfo.read(in, requireNonNull(packageFinder));
+        return ModuleInfo.read(in, requireNonNull(packageFinder)).descriptor();
     }
 
     /**
@@ -2281,7 +2319,7 @@ public class ModuleDescriptor
      *         If an I/O error occurs reading from the input stream
      */
     public static ModuleDescriptor read(InputStream in) throws IOException {
-        return ModuleInfo.read(in, null);
+        return ModuleInfo.read(in, null).descriptor();
     }
 
     /**
@@ -2320,7 +2358,7 @@ public class ModuleDescriptor
     public static ModuleDescriptor read(ByteBuffer bb,
                                         Supplier<Set<String>> packageFinder)
     {
-        return ModuleInfo.read(bb, requireNonNull(packageFinder));
+        return ModuleInfo.read(bb, requireNonNull(packageFinder)).descriptor();
     }
 
     /**
@@ -2336,7 +2374,7 @@ public class ModuleDescriptor
      *         If an invalid module descriptor is detected
      */
     public static ModuleDescriptor read(ByteBuffer bb) {
-        return ModuleInfo.read(bb, null);
+        return ModuleInfo.read(bb, null).descriptor();
     }
 
     private static <K,V> Map<K,V> emptyOrUnmodifiableMap(Map<K,V> map) {
@@ -2377,18 +2415,26 @@ public class ModuleDescriptor
         jdk.internal.misc.SharedSecrets
             .setJavaLangModuleAccess(new jdk.internal.misc.JavaLangModuleAccess() {
                 @Override
-                public Builder newModuleBuilder(String mn, boolean strict) {
-                    return new Builder(mn, strict);
+                public Builder newModuleBuilder(String mn,
+                                                boolean strict,
+                                                boolean open,
+                                                boolean synthetic) {
+                    return new Builder(mn, strict, open, synthetic);
                 }
 
                 @Override
-                public Builder newOpenModuleBuilder(String mn, boolean strict) {
-                    return new Builder(mn, strict).open(true);
+                public Set<String> exportedPackages(ModuleDescriptor.Builder builder) {
+                    return builder.exportedPackages();
                 }
 
                 @Override
-                public Requires newRequires(Set<Requires.Modifier> ms, String mn) {
-                    return new Requires(ms, mn, true);
+                public Set<String> openPackages(ModuleDescriptor.Builder builder) {
+                    return builder.openPackages();
+                }
+
+                @Override
+                public Requires newRequires(Set<Requires.Modifier> ms, String mn, Version v) {
+                    return new Requires(ms, mn, v, true);
                 }
 
                 @Override
@@ -2433,6 +2479,7 @@ public class ModuleDescriptor
 
                 @Override
                 public ModuleDescriptor newModuleDescriptor(String name,
+                                                            Version version,
                                                             boolean open,
                                                             boolean automatic,
                                                             boolean synthetic,
@@ -2441,15 +2488,14 @@ public class ModuleDescriptor
                                                             Set<Opens> opens,
                                                             Set<String> uses,
                                                             Set<Provides> provides,
-                                                            Version version,
+                                                            Set<String> packages,
                                                             String mainClass,
                                                             String osName,
                                                             String osArch,
                                                             String osVersion,
-                                                            Set<String> packages,
-                                                            ModuleHashes hashes,
                                                             int hashCode) {
                     return new ModuleDescriptor(name,
+                                                version,
                                                 open,
                                                 automatic,
                                                 synthetic,
@@ -2458,20 +2504,13 @@ public class ModuleDescriptor
                                                 opens,
                                                 uses,
                                                 provides,
-                                                version,
+                                                packages,
                                                 mainClass,
                                                 osName,
                                                 osArch,
                                                 osVersion,
-                                                packages,
-                                                hashes,
                                                 hashCode,
                                                 false);
-                }
-
-                @Override
-                public Optional<ModuleHashes> hashes(ModuleDescriptor descriptor) {
-                    return descriptor.hashes();
                 }
 
                 @Override
@@ -2481,20 +2520,6 @@ public class ModuleDescriptor
                                                             PrintStream traceOutput)
                 {
                     return Configuration.resolveRequiresAndUses(finder, roots, check, traceOutput);
-                }
-
-                @Override
-                public ModuleReference newPatchedModule(ModuleDescriptor descriptor,
-                                                        URI location,
-                                                        Supplier<ModuleReader> s) {
-                    return new ModuleReference(descriptor, location, s, true, null);
-                }
-
-                @Override
-                public ModuleFinder newModulePath(Runtime.Version version,
-                                                  boolean isLinkPhase,
-                                                  Path... entries) {
-                    return new ModulePath(version, isLinkPhase, entries);
                 }
             });
     }

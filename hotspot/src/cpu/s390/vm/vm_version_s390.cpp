@@ -271,6 +271,31 @@ void VM_Version::set_features_string() {
     tty->print_cr("                oldest detected generation is %s", _features_string);
     _features_string = "z/Architecture (ambiguous detection)";
   }
+
+  if (has_Crypto_AES()) {
+    char buf[256];
+    assert(strlen(_features_string) + 4 + 3*4 + 1 < sizeof(buf), "increase buffer size");
+    jio_snprintf(buf, sizeof(buf), "%s aes%s%s%s", // String 'aes' must be surrounded by spaces so that jtreg tests recognize it.
+                 _features_string,
+                 has_Crypto_AES128() ? " 128" : "",
+                 has_Crypto_AES192() ? " 192" : "",
+                 has_Crypto_AES256() ? " 256" : "");
+    _features_string = os::strdup(buf);
+  }
+
+  if (has_Crypto_SHA()) {
+    char buf[256];
+    assert(strlen(_features_string) + 4 + 2 + 2*4 + 6 + 1 < sizeof(buf), "increase buffer size");
+    // String 'sha1' etc must be surrounded by spaces so that jtreg tests recognize it.
+    jio_snprintf(buf, sizeof(buf), "%s %s%s%s%s",
+                 _features_string,
+                 has_Crypto_SHA1()   ? " sha1"   : "",
+                 has_Crypto_SHA256() ? " sha256" : "",
+                 has_Crypto_SHA512() ? " sha512" : "",
+                 has_Crypto_GHASH()  ? " ghash"  : "");
+    if (has_Crypto_AES()) { os::free((void *)_features_string); }
+    _features_string = os::strdup(buf);
+  }
 }
 
 // featureBuffer - bit array indicating availability of various features
@@ -369,7 +394,7 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
 
     if (has_Crypto()) {
       tty->cr();
-      tty->print_cr("detailled availability of %s capabilities:", "CryptoFacility");
+      tty->print_cr("detailed availability of %s capabilities:", "CryptoFacility");
       if (test_feature_bit(&_cipher_features[0], -1, 2*Cipher::_featureBits)) {
         tty->cr();
         tty->print_cr("  available: %s", "Message Cipher Functions");
@@ -478,7 +503,6 @@ void VM_Version::reset_features(bool reset) {
     }
   }
 }
-
 
 void VM_Version::set_features_z900(bool reset) {
   reset_features(reset);

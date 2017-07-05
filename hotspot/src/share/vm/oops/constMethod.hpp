@@ -205,7 +205,7 @@ private:
   // Adapter blob (i2c/c2i) for this Method*. Set once when method is linked.
   union {
     AdapterHandlerEntry* _adapter;
-    AdapterHandlerEntry** _adapter_trampoline;
+    AdapterHandlerEntry** _adapter_trampoline; // see comments around Method::link_method()
   };
 
   int               _constMethod_size;

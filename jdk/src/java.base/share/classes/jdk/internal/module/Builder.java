@@ -30,11 +30,8 @@ import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import jdk.internal.misc.JavaLangModuleAccess;
@@ -52,7 +49,7 @@ import jdk.internal.misc.SharedSecrets;
  * SystemModules should contain modules for the boot layer.
  */
 final class Builder {
-    private static final JavaLangModuleAccess jlma =
+    private static final JavaLangModuleAccess JLMA =
         SharedSecrets.getJavaLangModuleAccess();
 
     // Static cache of the most recently seen Version to cheaply deduplicate
@@ -60,13 +57,36 @@ final class Builder {
     static Version cachedVersion;
 
     /**
-     * Returns a {@link Requires} for a dependence on a module
-     * with the given (and possibly empty) set of modifiers.
+     * Returns a {@link Requires} for a dependence on a module with the given
+     * (and possibly empty) set of modifiers, and optionally the version
+     * recorded at compile time.
+     */
+    public static Requires newRequires(Set<Requires.Modifier> mods,
+                                       String mn,
+                                       String compiledVersion)
+    {
+        Version version = null;
+        if (compiledVersion != null) {
+            // use the cached version if the same version string
+            Version ver = cachedVersion;
+            if (ver != null && compiledVersion.equals(ver.toString())) {
+                version = ver;
+            } else {
+                version = Version.parse(compiledVersion);
+            }
+        }
+        return JLMA.newRequires(mods, mn, version);
+    }
+
+    /**
+     * Returns a {@link Requires} for a dependence on a module with the given
+     * (and possibly empty) set of modifiers, and optionally the version
+     * recorded at compile time.
      */
     public static Requires newRequires(Set<Requires.Modifier> mods,
                                        String mn)
     {
-        return jlma.newRequires(mods, mn);
+        return newRequires(mods, mn, null);
     }
 
     /**
@@ -77,7 +97,7 @@ final class Builder {
     public static Exports newExports(Set<Exports.Modifier> ms,
                                      String pn,
                                      Set<String> targets) {
-        return jlma.newExports(ms, pn, targets);
+        return JLMA.newExports(ms, pn, targets);
     }
 
     /**
@@ -85,7 +105,7 @@ final class Builder {
      * modifiers.
      */
     public static Opens newOpens(Set<Opens.Modifier> ms, String pn) {
-        return jlma.newOpens(ms, pn);
+        return JLMA.newOpens(ms, pn);
     }
 
     /**
@@ -96,7 +116,7 @@ final class Builder {
     public static Opens newOpens(Set<Opens.Modifier> ms,
                                  String pn,
                                  Set<String> targets) {
-        return jlma.newOpens(ms, pn, targets);
+        return JLMA.newOpens(ms, pn, targets);
     }
 
     /**
@@ -104,7 +124,7 @@ final class Builder {
      * of modifiers.
      */
     public static Exports newExports(Set<Exports.Modifier> ms, String pn) {
-        return jlma.newExports(ms, pn);
+        return JLMA.newExports(ms, pn);
     }
 
     /**
@@ -112,7 +132,7 @@ final class Builder {
      * implementation classes.
      */
     public static Provides newProvides(String st, List<String> pcs) {
-        return jlma.newProvides(st, pcs);
+        return JLMA.newProvides(st, pcs);
     }
 
     final String name;
@@ -130,8 +150,6 @@ final class Builder {
     String osName;
     String osArch;
     String osVersion;
-    String algorithm;
-    Map<String, byte[]> hashes;
 
     Builder(String name) {
         this.name = name;
@@ -275,34 +293,13 @@ final class Builder {
     }
 
     /**
-     * Sets the algorithm of the module hashes
-     */
-    public Builder algorithm(String algorithm) {
-        this.algorithm = algorithm;
-        return this;
-    }
-
-    /**
-     * Sets the module hash for the given module name
-     */
-    public Builder moduleHash(String mn, byte[] hash) {
-        if (hashes == null)
-            hashes = new HashMap<>();
-
-        hashes.put(mn, hash);
-        return this;
-    }
-
-    /**
      * Builds a {@code ModuleDescriptor} from the components.
      */
     public ModuleDescriptor build(int hashCode) {
         assert name != null;
 
-        ModuleHashes moduleHashes =
-            hashes != null ? new ModuleHashes(algorithm, hashes) : null;
-
-        return jlma.newModuleDescriptor(name,
+        return JLMA.newModuleDescriptor(name,
+                                        version,
                                         open,
                                         automatic,
                                         synthetic,
@@ -311,13 +308,11 @@ final class Builder {
                                         opens,
                                         uses,
                                         provides,
-                                        version,
+                                        packages,
                                         mainClass,
                                         osName,
                                         osArch,
                                         osVersion,
-                                        packages,
-                                        moduleHashes,
                                         hashCode);
     }
 }

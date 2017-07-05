@@ -27,7 +27,7 @@
  * @summary Test the P11ECKeyFactory
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestKeyFactory
  * @run main/othervm TestKeyFactory sm
  */

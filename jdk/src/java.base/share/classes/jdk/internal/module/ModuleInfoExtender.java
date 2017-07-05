@@ -70,6 +70,9 @@ public final class ModuleInfoExtender {
     // the hashes for the Hashes attribute
     private ModuleHashes hashes;
 
+    // the value of the ModuleResolution attribute
+    private ModuleResolution moduleResolution;
+
     private ModuleInfoExtender(InputStream in) {
         this.in = in;
     }
@@ -117,6 +120,14 @@ public final class ModuleInfoExtender {
      */
     public ModuleInfoExtender hashes(ModuleHashes hashes) {
         this.hashes = hashes;
+        return this;
+    }
+
+    /**
+     * Sets the value for the ModuleResolution attribute.
+     */
+    public ModuleInfoExtender moduleResolution(ModuleResolution mres) {
+        this.moduleResolution = mres;
         return this;
     }
 
@@ -183,21 +194,20 @@ public final class ModuleInfoExtender {
 
         if (packages != null)
             cv.addAttribute(new ModulePackagesAttribute(packages));
-        if (version != null)
-            cv.addAttribute(new ModuleVersionAttribute(version));
         if (mainClass != null)
             cv.addAttribute(new ModuleMainClassAttribute(mainClass));
         if (osName != null || osArch != null || osVersion != null)
             cv.addAttribute(new ModuleTargetAttribute(osName, osArch, osVersion));
         if (hashes != null)
             cv.addAttribute(new ModuleHashesAttribute(hashes));
+        if (moduleResolution != null)
+            cv.addAttribute(new ModuleResolutionAttribute(moduleResolution.value()));
 
         List<Attribute> attrs = new ArrayList<>();
 
         // prototypes of attributes that should be parsed
-        attrs.add(new ModuleAttribute());
+        attrs.add(new ModuleAttribute(version));
         attrs.add(new ModulePackagesAttribute());
-        attrs.add(new ModuleVersionAttribute());
         attrs.add(new ModuleMainClassAttribute());
         attrs.add(new ModuleTargetAttribute());
         attrs.add(new ModuleHashesAttribute());

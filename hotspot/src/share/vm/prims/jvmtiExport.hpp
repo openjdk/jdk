@@ -341,10 +341,11 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(return _should_post_class_file_load_hook);
     NOT_JVMTI(return false;)
   }
-  static void post_class_file_load_hook(Symbol* h_name, Handle class_loader,
+  // Return true if the class was modified by the hook.
+  static bool post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,
                                         unsigned char **data_ptr, unsigned char **end_ptr,
-                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN;
+                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN_(false);
   static void post_native_method_bind(Method* method, address* function_ptr) NOT_JVMTI_RETURN;
   static void post_compiled_method_load(nmethod *nm) NOT_JVMTI_RETURN;
   static void post_dynamic_code_generated(const char *name, const void *code_begin, const void *code_end) NOT_JVMTI_RETURN;

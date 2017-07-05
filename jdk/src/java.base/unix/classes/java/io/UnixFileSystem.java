@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,6 +298,16 @@ class UnixFileSystem extends FileSystem {
     public native long getSpace(File f, int t);
 
     /* -- Basic infrastructure -- */
+
+    private native long getNameMax0(String path);
+
+    public int getNameMax(String path) {
+        long nameMax = getNameMax0(path);
+        if (nameMax > Integer.MAX_VALUE) {
+            nameMax = Integer.MAX_VALUE;
+        }
+        return (int)nameMax;
+    }
 
     public int compare(File f1, File f2) {
         return f1.getPath().compareTo(f2.getPath());

@@ -48,6 +48,7 @@ public interface Archive {
             NATIVE_LIB,
             NATIVE_CMD,
             HEADER_FILE,
+            LEGAL_NOTICE,
             MAN_PAGE,
             SERVICE;
         }

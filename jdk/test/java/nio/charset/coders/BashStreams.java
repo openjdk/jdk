@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Stochastic test of charset-based streams
- * @key randomness intermittent
+ * @key randomness
  */
 
 import java.io.*;

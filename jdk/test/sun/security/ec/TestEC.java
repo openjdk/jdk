@@ -34,8 +34,8 @@
  * @library ../pkcs11/ec
  * @library ../pkcs11/sslecc
  * @library ../../../java/security/testlibrary
- * @modules jdk.crypto.pkcs11/sun.security.pkcs11.wrapper
- * @compile --add-modules jdk.crypto.pkcs11 TestEC.java
+ * @modules jdk.crypto.token/sun.security.pkcs11.wrapper
+ * @compile --add-modules jdk.crypto.token TestEC.java
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1" TestEC
  * @run main/othervm/java.security.policy=TestEC.policy -Djdk.tls.namedGroups="secp256r1,sect193r1" TestEC
  */

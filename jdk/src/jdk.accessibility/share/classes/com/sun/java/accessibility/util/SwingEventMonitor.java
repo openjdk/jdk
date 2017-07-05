@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
      * occurs.  By doing things this way, the actual number of listeners
      * installed on a component instance is drastically reduced.
      */
-    static protected final SwingEventListener swingListener = new SwingEventListener();
+    static private final SwingEventListener swingListener = new SwingEventListener();
 
     /**
      * Adds the specified listener to receive all {@link EventID#ANCESTOR ANCESTOR}

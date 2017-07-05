@@ -380,7 +380,7 @@ void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
   }
 }
 
-void CardTableModRefBS::invalidate(MemRegion mr, bool whole_heap) {
+void CardTableModRefBS::invalidate(MemRegion mr) {
   assert((HeapWord*)align_size_down((uintptr_t)mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert((HeapWord*)align_size_up  ((uintptr_t)mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   for (int i = 0; i < _cur_covered_regions; i++) {

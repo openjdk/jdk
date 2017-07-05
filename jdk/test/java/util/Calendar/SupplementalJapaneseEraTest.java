@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 import java.text.SimpleDateFormat;
 import java.time.chrono.JapaneseDate;
+import java.time.chrono.JapaneseEra;
+import java.time.format.TextStyle;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -138,6 +140,27 @@ public class SupplementalJapaneseEraTest {
         expected = "Japanese " + NEW_ERA_NAME + " 1-02-11";
         if (!expected.equals(got)) {
             System.err.printf("JapaneseDate: got=\"%s\", expected=\"%s\"%n", got, expected);
+            errors++;
+        }
+        JapaneseEra jera = jdate.getEra();
+        got = jera.getDisplayName(TextStyle.FULL, Locale.US);
+        if (!NEW_ERA_NAME.equals(got)) {
+            System.err.printf("JapaneseEra (FULL): got=\"%s\", expected=\"%s\"%n", got, NEW_ERA_NAME);
+            errors++;
+        }
+        got = jera.getDisplayName(TextStyle.SHORT, Locale.US);
+        if (!NEW_ERA_NAME.equals(got)) {
+            System.err.printf("JapaneseEra (SHORT): got=\"%s\", expected=\"%s\"%n", got, NEW_ERA_NAME);
+            errors++;
+        }
+        got = jera.getDisplayName(TextStyle.NARROW, Locale.US);
+        if (!NEW_ERA_ABBR.equals(got)) {
+            System.err.printf("JapaneseEra (NARROW): got=\"%s\", expected=\"%s\"%n", got, NEW_ERA_ABBR);
+            errors++;
+        }
+        got = jera.getDisplayName(TextStyle.NARROW_STANDALONE, Locale.US);
+        if (!NEW_ERA_ABBR.equals(got)) {
+            System.err.printf("JapaneseEra (NARROW_STANDALONE): got=\"%s\", expected=\"%s\"%n", got, NEW_ERA_ABBR);
             errors++;
         }
     }

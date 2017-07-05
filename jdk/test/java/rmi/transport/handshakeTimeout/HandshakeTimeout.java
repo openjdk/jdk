@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,10 @@
  * this point (because no data for the invocation has yet been written).
  * @author Peter Jones
  *
- * @library ../../testlibrary
  * @modules java.rmi/sun.rmi.registry
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary
  * @run main/othervm HandshakeTimeout
  */
 
@@ -51,7 +49,6 @@ import java.rmi.registry.Registry;
 
 public class HandshakeTimeout {
 
-    private static final int PORT = TestLibrary.getUnusedRandomPort();
     private static final int TIMEOUT = 10000;
 
     public static void main(String[] args) throws Exception {
@@ -62,12 +59,13 @@ public class HandshakeTimeout {
         /*
          * Listen on port, but never process connections made to it.
          */
-        ServerSocket serverSocket = new ServerSocket(PORT);
+        ServerSocket serverSocket = new ServerSocket(0);
+        int port = serverSocket.getLocalPort();
 
         /*
          * Attempt RMI call to port in separate thread.
          */
-        Registry registry = LocateRegistry.getRegistry(PORT);
+        Registry registry = LocateRegistry.getRegistry(port);
         Connector connector = new Connector(registry);
         Thread t = new Thread(connector);
         t.setDaemon(true);
@@ -91,7 +89,7 @@ public class HandshakeTimeout {
                 System.err.println();
 
                 if (connector.exception instanceof MarshalException) {
-                    System.err.println(
+                    throw new RuntimeException(
                         "TEST FAILED: MarshalException thrown, expecting " +
                         "java.rmi.ConnectException or ConnectIOException");
                 } else if (connector.exception instanceof ConnectException ||

@@ -59,17 +59,20 @@
   // Setup pointers to MDO, MDO slot, also compute offset bias to access the slot.
   void setup_md_access(ciMethod* method, int bci,
                        ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias);
+
+  enum {
+#ifdef _LP64
+    _call_stub_size = 68,
+#else
+    _call_stub_size = 20,
+#endif // _LP64
+    _call_aot_stub_size = 0,
+    _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
+    _deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)
+  };
+
  public:
   void   pack64(LIR_Opr src, LIR_Opr dst);
   void unpack64(LIR_Opr src, LIR_Opr dst);
-
-enum {
-#ifdef _LP64
-         call_stub_size = 68,
-#else
-         call_stub_size = 20,
-#endif // _LP64
-         exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
-         deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)  };
 
 #endif // CPU_SPARC_VM_C1_LIRASSEMBLER_SPARC_HPP

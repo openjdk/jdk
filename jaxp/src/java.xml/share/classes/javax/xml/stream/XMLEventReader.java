@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +23,6 @@
  * questions.
  */
 
-/*
- * Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.
- */
-
 package javax.xml.stream;
 
 import javax.xml.stream.events.XMLEvent;
@@ -44,7 +41,7 @@ import java.util.Iterator;
  * @see XMLEventWriter
  * @since 1.6
  */
-public interface XMLEventReader extends Iterator {
+public interface XMLEventReader extends Iterator<Object> {
   /**
    * Gets the next XMLEvent. The initial event is
    * {@link javax.xml.stream.events.StartDocument StartDocument}.

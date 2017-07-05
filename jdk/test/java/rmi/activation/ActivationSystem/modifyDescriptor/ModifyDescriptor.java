@@ -110,7 +110,7 @@ public class ModifyDescriptor
 
         try {
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
 
             /*

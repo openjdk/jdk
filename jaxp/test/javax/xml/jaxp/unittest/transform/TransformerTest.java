@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -73,7 +74,7 @@ import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
  * @run testng/othervm -DrunSecMngr=true transform.TransformerTest
  * @run testng/othervm transform.TransformerTest
  * @summary Transformer Tests
- * @bug 6272879 6305029 6505031 8150704 8162598 8169772
+ * @bug 6272879 6305029 6505031 8150704 8162598 8169112 8169772
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class TransformerTest {
@@ -434,6 +435,27 @@ public class TransformerTest {
         checkNodeNS8162598(document.getElementsByTagName("test4").item(0), null, null, null);
         checkNodeNS8162598(document.getElementsByTagName("test5").item(0), "ns1", "ns1", null);
         Assert.assertNull(document.getElementsByTagName("test6").item(0).getNamespaceURI(), "unexpected namespace for test6");
+    }
+
+    /**
+     * @bug 8169112
+     * @summary Test compilation of large xsl file with outlining.
+     *
+     * This test merely compiles a large xsl file and tests if its bytecode
+     * passes verification by invoking the transform() method for
+     * dummy content. The test succeeds if no Exception is thrown
+     */
+    @Test
+    public final void testBug8169112() throws FileNotFoundException,
+        TransformerException
+    {
+        TransformerFactory tf = TransformerFactory.newInstance();
+        String xslFile = getClass().getResource("Bug8169112.xsl").toString();
+        Transformer t = tf.newTransformer(new StreamSource(xslFile));
+        String xmlIn = "<?xml version=\"1.0\"?><DOCROOT/>";
+        ByteArrayInputStream bis = new ByteArrayInputStream(xmlIn.getBytes());
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        t.transform(new StreamSource(bis), new StreamResult(bos));
     }
 
     /**

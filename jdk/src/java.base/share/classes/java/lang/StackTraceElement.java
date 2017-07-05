@@ -26,11 +26,13 @@
 package java.lang;
 
 import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleReferenceImpl;
 
 import java.lang.module.ModuleDescriptor.Version;
+import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.util.HashSet;
@@ -51,12 +53,13 @@ import java.util.Set;
  * @author Josh Bloch
  */
 public final class StackTraceElement implements java.io.Serializable {
-    // This field is set to the compacted String representation used
-    // by StackTraceElement::toString and stored in serial form.
+
+    // For Throwables and StackWalker, the VM initially sets this field to a
+    // reference to the declaring Class.  The Class reference is used to
+    // construct the 'format' bitmap, and then is cleared.
     //
-    // This field is of Object type. VM initially sets this field to
-    // the Class object of the declaring class to build the compacted string.
-    private Object classOrLoaderModuleClassName;
+    // For STEs constructed using the public constructors, this field is not used.
+    private transient Class<?> declaringClassObject;
 
     // Normally initialized by VM
     private String classLoaderName;
@@ -66,6 +69,7 @@ public final class StackTraceElement implements java.io.Serializable {
     private String methodName;
     private String fileName;
     private int    lineNumber;
+    private byte   format = 0; // Default to show all
 
     /**
      * Creates a stack trace element representing the specified execution
@@ -256,9 +260,10 @@ public final class StackTraceElement implements java.io.Serializable {
     }
 
     /**
-     * Returns a string representation of this stack trace element.  The
-     * format of this string depends on the implementation, but the following
-     * examples may be regarded as typical:
+     * Returns a string representation of this stack trace element.
+     *
+     * @apiNote The format of this string depends on the implementation, but the
+     * following examples may be regarded as typical:
      * <ul>
      * <li>
      *     "{@code com.foo.loader/foo@9.0/com.foo.Main.run(Main.java:101)}"
@@ -309,7 +314,7 @@ public final class StackTraceElement implements java.io.Serializable {
      * then the second element is omitted as shown in
      * "{@code com.foo.loader//com.foo.bar.App.run(App.java:12)}".
      *
-     * If the class loader is a <a href="ClassLoader.html#builtinLoaders">
+     * <p> If the class loader is a <a href="ClassLoader.html#builtinLoaders">
      * built-in class loader</a> or is not named then the first element
      * and its following {@code "/"} are omitted as shown in
      * "{@code acme@2.1/org.acme.Lib.test(Lib.java:80)}".
@@ -317,25 +322,30 @@ public final class StackTraceElement implements java.io.Serializable {
      * the second element and its following {@code "/"} are also omitted
      * as shown in "{@code MyClass.mash(MyClass.java:9)}".
      *
+     * <p> The {@code toString} method may return two different values on two
+     * {@code StackTraceElement} instances that are
+     * {@linkplain #equals(Object) equal}, for example one created via the
+     * constructor, and one obtained from {@link java.lang.Throwable} or
+     * {@link java.lang.StackWalker.StackFrame}, where an implementation may
+     * choose to omit some element in the returned string.
+     *
      * @see    Throwable#printStackTrace()
      */
     public String toString() {
-        String s = buildLoaderModuleClassName();
-        if (s == null) {
-            // all elements will be included
-            s = "";
-            if (classLoaderName != null && !classLoaderName.isEmpty()) {
-                s += classLoaderName + "/";
-            }
-            if (moduleName != null && !moduleName.isEmpty()) {
-                s += moduleName;
-
-                if (moduleVersion != null && !moduleVersion.isEmpty()) {
-                    s += "@" + moduleVersion;
-                }
-            }
-            s = s.isEmpty() ? declaringClass : s + "/" + declaringClass;
+        String s = "";
+        if (!dropClassLoaderName() && classLoaderName != null &&
+                !classLoaderName.isEmpty()) {
+            s += classLoaderName + "/";
         }
+        if (moduleName != null && !moduleName.isEmpty()) {
+            s += moduleName;
+
+            if (!dropModuleVersion() && moduleVersion != null &&
+                    !moduleVersion.isEmpty()) {
+                s += "@" + moduleVersion;
+            }
+        }
+        s = s.isEmpty() ? declaringClass : s + "/" + declaringClass;
 
         return s + "." + methodName + "(" +
              (isNativeMethod() ? "Native Method)" :
@@ -397,67 +407,53 @@ public final class StackTraceElement implements java.io.Serializable {
 
 
     /**
-     * Build the compacted String representation to be returned by
-     * toString method from the declaring Class object.
+     * Called from of() methods to set the 'format' bitmap using the Class
+     * reference stored in declaringClassObject, and then clear the reference.
+     *
+     * <p>
+     * If the module is a non-upgradeable JDK module, then set
+     * JDK_NON_UPGRADEABLE_MODULE to omit its version string.
+     * <p>
+     * If the loader is one of the built-in loaders (`boot`, `platform`, or `app`)
+     * then set BUILTIN_CLASS_LOADER to omit the first element (`<loader>/`).
      */
-    synchronized String buildLoaderModuleClassName() {
-        if (classOrLoaderModuleClassName == null)
-            return null;
+    private synchronized void computeFormat() {
+        try {
+            Class<?> cls = (Class<?>) declaringClassObject;
+            ClassLoader loader = cls.getClassLoader0();
+            Module m = cls.getModule();
+            byte bits = 0;
 
-        if (classOrLoaderModuleClassName instanceof Class) {
-            Class<?> cls = (Class<?>)classOrLoaderModuleClassName;
-            classOrLoaderModuleClassName = toLoaderModuleClassName(cls);
+            // First element - class loader name
+            // Call package-private ClassLoader::name method
+
+            if (loader instanceof BuiltinClassLoader) {
+                bits |= BUILTIN_CLASS_LOADER;
+            }
+
+            // Second element - module name and version
+
+            // Omit if is a JDK non-upgradeable module (recorded in the hashes
+            // in java.base)
+            if (isHashedInJavaBase(m)) {
+                bits |= JDK_NON_UPGRADEABLE_MODULE;
+            }
+            format = bits;
+        } finally {
+            // Class reference no longer needed, clear it
+            declaringClassObject = null;
         }
-        return (String)classOrLoaderModuleClassName;
     }
 
-    /**
-     * Returns <loader>/<module>/<fully-qualified-classname> string
-     * representation of the given class.
-     * <p>
-     * If the module is a non-upgradeable JDK module then omit
-     * its version string.
-     * <p>
-     * If the loader has no name, or if the loader is one of the built-in
-     * loaders (`boot`, `platform`, or `app`) then drop the first element
-     * (`<loader>/`).
-     * <p>
-     * If the first element has been dropped and the module is unnamed
-     * then drop the second element (`<module>/`).
-     * <p>
-     * If the first element is not dropped and the module is unnamed
-     * then drop `<module>`.
-     */
-    private static String toLoaderModuleClassName(Class<?> cls) {
-        ClassLoader loader = cls.getClassLoader0();
-        Module m = cls.getModule();
+    private static final byte BUILTIN_CLASS_LOADER       = 0x1;
+    private static final byte JDK_NON_UPGRADEABLE_MODULE = 0x2;
 
-        // First element - class loader name
-        // Call package-private ClassLoader::name method
-        String s = "";
-        if (loader != null && loader.name() != null &&
-                !(loader instanceof BuiltinClassLoader)) {
-            s = loader.name() + "/";
-        }
+    private boolean dropClassLoaderName() {
+        return (format & BUILTIN_CLASS_LOADER) == BUILTIN_CLASS_LOADER;
+    }
 
-        // Second element - module name and version
-        if (m != null && m.isNamed()) {
-            s += m.getName();
-            // Include version if it is a user module or upgradeable module
-            //
-            // If it is JDK non-upgradeable module which is recorded
-            // in the hashes in java.base, omit the version.
-            if (!isHashedInJavaBase(m)) {
-                Optional<Version> ov = m.getDescriptor().version();
-                if (ov.isPresent()) {
-                    String version = "@" + ov.get().toString();
-                    s += version;
-                }
-            }
-        }
-
-        // fully-qualified class name
-        return s.isEmpty() ? cls.getName() : s + "/" + cls.getName();
+    private boolean dropModuleVersion() {
+        return (format & JDK_NON_UPGRADEABLE_MODULE) == JDK_NON_UPGRADEABLE_MODULE;
     }
 
     /**
@@ -484,13 +480,16 @@ public final class StackTraceElement implements java.io.Serializable {
         static Set<String> HASHED_MODULES = hashedModules();
 
         static Set<String> hashedModules() {
-            Module javaBase = Layer.boot().findModule("java.base").get();
-            Optional<ModuleHashes> ohashes =
-                SharedSecrets.getJavaLangModuleAccess()
-                             .hashes(javaBase.getDescriptor());
 
-            if (ohashes.isPresent()) {
-                Set<String> names = new HashSet<>(ohashes.get().names());
+            Optional<ResolvedModule> resolvedModule = Layer.boot()
+                    .configuration()
+                    .findModule("java.base");
+            assert resolvedModule.isPresent();
+            ModuleReference mref = resolvedModule.get().reference();
+            assert mref instanceof ModuleReferenceImpl;
+            ModuleHashes hashes = ((ModuleReferenceImpl)mref).recordedHashes();
+            if (hashes != null) {
+                Set<String> names = new HashSet<>(hashes.names());
                 names.add("java.base");
                 return names;
             }
@@ -519,7 +518,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         // ensure the proper StackTraceElement initialization
         for (StackTraceElement ste : stackTrace) {
-            ste.buildLoaderModuleClassName();
+            ste.computeFormat();
         }
         return stackTrace;
     }
@@ -531,7 +530,7 @@ public final class StackTraceElement implements java.io.Serializable {
         StackTraceElement ste = new StackTraceElement();
         initStackTraceElement(ste, sfi);
 
-        ste.buildLoaderModuleClassName();
+        ste.computeFormat();
         return ste;
     }
 

@@ -229,7 +229,7 @@ public class WhiteBox {
     return isMethodCompiled0(method, isOsr);
   }
   public        boolean isMethodCompilable(Executable method) {
-    return isMethodCompilable(method, -1 /*any*/);
+    return isMethodCompilable(method, -2 /*any*/);
   }
   public        boolean isMethodCompilable(Executable method, int compLevel) {
     return isMethodCompilable(method, compLevel, false /*not osr*/);
@@ -277,7 +277,7 @@ public class WhiteBox {
     return deoptimizeMethod0(method, isOsr);
   }
   public        void    makeMethodNotCompilable(Executable method) {
-    makeMethodNotCompilable(method, -1 /*any*/);
+    makeMethodNotCompilable(method, -2 /*any*/);
   }
   public        void    makeMethodNotCompilable(Executable method, int compLevel) {
     makeMethodNotCompilable(method, compLevel, false /*not osr*/);
@@ -301,7 +301,7 @@ public class WhiteBox {
     return testSetDontInlineMethod0(method, value);
   }
   public        int     getCompileQueuesSize() {
-    return getCompileQueueSize(-1 /*any*/);
+    return getCompileQueueSize(-2 /*any*/);
   }
   public native int     getCompileQueueSize(int compLevel);
   private native boolean testSetForceInlineMethod0(Executable method, boolean value);

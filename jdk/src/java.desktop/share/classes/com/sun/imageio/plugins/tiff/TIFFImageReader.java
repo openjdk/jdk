@@ -305,16 +305,19 @@ public class TIFFImageReader extends ImageReader {
         try {
             // Create an object to store the image metadata
             List<TIFFTagSet> tagSets;
+            boolean readUnknownTags = false;
             if (imageReadParam instanceof TIFFImageReadParam) {
-                tagSets
-                        = ((TIFFImageReadParam) imageReadParam).getAllowedTagSets();
+                TIFFImageReadParam tp = (TIFFImageReadParam)imageReadParam;
+                tagSets = tp.getAllowedTagSets();
+                readUnknownTags = tp.getReadUnknownTags();
             } else {
                 tagSets = new ArrayList<TIFFTagSet>(1);
                 tagSets.add(BaselineTIFFTagSet.getInstance());
             }
 
             this.imageMetadata = new TIFFImageMetadata(tagSets);
-            imageMetadata.initializeFromStream(stream, ignoreMetadata);
+            imageMetadata.initializeFromStream(stream, ignoreMetadata,
+                                               readUnknownTags);
         } catch (IIOException iioe) {
             throw iioe;
         } catch (IOException ioe) {

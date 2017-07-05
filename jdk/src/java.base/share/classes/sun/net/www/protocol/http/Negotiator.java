@@ -48,7 +48,9 @@ public abstract class Negotiator {
         Class<?> clazz;
         Constructor<?> c;
         try {
-            clazz = Class.forName("sun.net.www.protocol.http.spnego.NegotiatorImpl", true, null);
+            clazz = Class.forName("sun.net.www.protocol.http.spnego.NegotiatorImpl",
+                                  true,
+                                  ClassLoader.getPlatformClassLoader());
             c = clazz.getConstructor(HttpCallerInfo.class);
         } catch (ClassNotFoundException cnfe) {
             finest(cnfe);

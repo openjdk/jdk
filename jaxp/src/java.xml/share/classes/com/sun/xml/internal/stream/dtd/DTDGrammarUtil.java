@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
- * Copyright 2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,8 +25,6 @@ import com.sun.xml.internal.stream.dtd.nonvalidating.XMLAttributeDecl;
 import com.sun.xml.internal.stream.dtd.nonvalidating.XMLElementDecl;
 import com.sun.xml.internal.stream.dtd.nonvalidating.XMLSimpleType;
 import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
-import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
@@ -33,13 +32,10 @@ import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
-import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
-import com.sun.org.apache.xerces.internal.xni.XMLLocator;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import javax.xml.XMLConstants;
 
  /*
@@ -96,7 +92,7 @@ public class DTDGrammarUtil {
     private QName fTempQName = new QName();
 
     /** Temporary string buffers. */
-    private StringBuffer fBuffer = new StringBuffer();
+    private StringBuilder fBuffer = new StringBuilder();
 
     private NamespaceContext fNamespaceContext = null;
 
@@ -396,7 +392,7 @@ public class DTDGrammarUtil {
                     XMLSymbols.fENTITYSymbol;
             }
             case XMLSimpleType.TYPE_ENUMERATION: {
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder buffer = new StringBuilder();
                 buffer.append('(');
                 for (int i = 0; i < attrDecl.simpleType.enumeration.length; i++) {
                     if (i > 0) {
