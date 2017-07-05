@@ -1,31 +1,30 @@
 /**
- *  @test
- *  @bug 4836939
- *  @summary JDI add addSourceNameFilter to ClassPrepareRequest
+ * @test
+ * @bug 4836939
+ * @key intermittent
+ * @summary JDI add addSourceNameFilter to ClassPrepareRequest
+ * @author Robert Field / Jim Holmlund
  *
- *  @author Robert Field / Jim Holmlund
+ * @library ..
  *
- *  @key intermittent
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
- *  @run compile FilterMangleTest.java
- *  @run compile -g onion/pickle/Mangle.java
- *  @run driver FilterMangleTest
- *  @run driver FilterMangleTest SDE-pMangle.java*
- *  @run driver FilterMangleTest SDE-pMangle.jav*
- *  @run driver FilterMangleTest SDE-pMangle.j*
- *  @run driver FilterMangleTest SDE-p*Mangle.java
- *  @run driver FilterMangleTest SDE-p*angle.java
- *  @run driver FilterMangleTest SDE-p*java
- *  @run driver FilterMangleTest SDE-pMangle.xyz
- *  @run driver FilterMangleTest SDE-pIncl.rats*
- *  @run driver FilterMangleTest SDE-pIncl.rat*
- *  @run driver FilterMangleTest SDE-p*angle.rats
- *  @run driver FilterMangleTest SDE-f*Incl.rat
- *  @run driver FilterMangleTest SDE-ffred
- *  @run driver FilterMangleTest SDE-f*ratsx
- *  @run driver FilterMangleTest SDE-fMangle.javax*
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
+ * @run compile FilterMangleTest.java
+ * @run compile -g onion/pickle/Mangle.java
+ * @run driver FilterMangleTest
+ * @run driver FilterMangleTest SDE-pMangle.java*
+ * @run driver FilterMangleTest SDE-pMangle.jav*
+ * @run driver FilterMangleTest SDE-pMangle.j*
+ * @run driver FilterMangleTest SDE-p*Mangle.java
+ * @run driver FilterMangleTest SDE-p*angle.java
+ * @run driver FilterMangleTest SDE-p*java
+ * @run driver FilterMangleTest SDE-pMangle.xyz
+ * @run driver FilterMangleTest SDE-pIncl.rats*
+ * @run driver FilterMangleTest SDE-pIncl.rat*
+ * @run driver FilterMangleTest SDE-p*angle.rats
+ * @run driver FilterMangleTest SDE-f*Incl.rat
+ * @run driver FilterMangleTest SDE-ffred
+ * @run driver FilterMangleTest SDE-f*ratsx
+ * @run driver FilterMangleTest SDE-fMangle.javax*
  */
 
 /*

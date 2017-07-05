@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.lang.reflect.Layer;
+import java.lang.module.Configuration;
+import java.lang.module.ModuleFinder;
 import java.nio.ByteOrder;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import jdk.internal.module.ModulePath;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.builder.ImageBuilder;
@@ -51,10 +54,10 @@ public final class Jlink {
      * @return A new plugin or null if plugin is unknown.
      */
     public static Plugin newPlugin(String name,
-            Map<String, String> configuration, Layer pluginsLayer) {
+            Map<String, String> configuration, ModuleLayer pluginsLayer) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(configuration);
-        pluginsLayer = pluginsLayer == null ? Layer.boot() : pluginsLayer;
+        pluginsLayer = pluginsLayer == null ? ModuleLayer.boot() : pluginsLayer;
         return PluginRepository.newPlugin(configuration, name, pluginsLayer);
     }
 
@@ -147,8 +150,8 @@ public final class Jlink {
         private final Path output;
         private final Set<String> modules;
         private final Set<String> limitmods;
-
         private final ByteOrder endian;
+        private final ModuleFinder finder;
 
         /**
          * jlink configuration,
@@ -160,31 +163,23 @@ public final class Jlink {
          * @param endian Jimage byte order. Native order by default
          */
         public JlinkConfiguration(Path output,
-                List<Path> modulepaths,
-                Set<String> modules,
-                Set<String> limitmods,
-                ByteOrder endian) {
-            this.output = output;
-            this.modulepaths = modulepaths == null ? Collections.emptyList() : modulepaths;
-            this.modules = modules == null ? Collections.emptySet() : modules;
-            this.limitmods = limitmods == null ? Collections.emptySet() : limitmods;
-            this.endian = endian == null ? ByteOrder.nativeOrder() : endian;
-        }
+                                  List<Path> modulepaths,
+                                  Set<String> modules,
+                                  Set<String> limitmods,
+                                  ByteOrder endian) {
+            if (Objects.requireNonNull(modulepaths).isEmpty()) {
+                throw new IllegalArgumentException("Empty module path");
+            }
+            if (Objects.requireNonNull(modules).isEmpty()) {
+                throw new IllegalArgumentException("Empty modules");
+            }
 
-        /**
-         * jlink configuration,
-         *
-         * @param output Output directory, must not exist.
-         * @param modulepaths Modules paths
-         * @param modules Root modules to resolve
-         * @param limitmods Limit the universe of observable modules
-         */
-        public JlinkConfiguration(Path output,
-                List<Path> modulepaths,
-                Set<String> modules,
-                Set<String> limitmods) {
-            this(output, modulepaths, modules, limitmods,
-                    ByteOrder.nativeOrder());
+            this.output = output;
+            this.modulepaths = modulepaths;
+            this.modules = modules;
+            this.limitmods = Objects.requireNonNull(limitmods);
+            this.endian = Objects.requireNonNull(endian);
+            this.finder = moduleFinder();
         }
 
         /**
@@ -220,6 +215,45 @@ public final class Jlink {
          */
         public Set<String> getLimitmods() {
             return limitmods;
+        }
+
+        /**
+         * Returns {@link ModuleFinder} that finds all observable modules
+         * for this jlink configuration.
+         */
+        public ModuleFinder finder() {
+            return finder;
+        }
+
+        /**
+         * Returns a {@link Configuration} of the given module path,
+         * root modules with full service binding.
+         */
+        public Configuration resolveAndBind()
+        {
+            return Configuration.empty().resolveAndBind(finder,
+                                                        ModuleFinder.of(),
+                                                        modules);
+        }
+
+        /**
+         * Returns a {@link Configuration} of the given module path,
+         * root modules with no service binding.
+         */
+        public Configuration resolve()
+        {
+            return Configuration.empty().resolve(finder,
+                                                 ModuleFinder.of(),
+                                                 modules);
+        }
+
+        private ModuleFinder moduleFinder() {
+            Path[] entries = modulepaths.toArray(new Path[0]);
+            ModuleFinder finder = ModulePath.of(Runtime.version(), true, entries);
+            if (!limitmods.isEmpty()) {
+                finder = JlinkTask.limitFinder(finder, limitmods, modules);
+            }
+            return finder;
         }
 
         @Override
@@ -295,7 +329,7 @@ public final class Jlink {
 
     private PluginsConfiguration addAutoEnabledPlugins(PluginsConfiguration pluginsConfig) {
         List<Plugin> plugins = new ArrayList<>(pluginsConfig.getPlugins());
-        List<Plugin> bootPlugins = PluginRepository.getPlugins(Layer.boot());
+        List<Plugin> bootPlugins = PluginRepository.getPlugins(ModuleLayer.boot());
         for (Plugin bp : bootPlugins) {
             if (Utils.isAutoEnabled(bp)) {
                 try {
