@@ -62,7 +62,7 @@ void CompactibleFreeListSpace::set_cms_values() {
   MinChunkSize = numQuanta(sizeof(FreeChunk), MinObjAlignmentInBytes) * MinObjAlignment;
 
   assert(IndexSetStart == 0 && IndexSetStride == 0, "already set");
-  IndexSetStart  = MinObjAlignment;
+  IndexSetStart  = (int) MinChunkSize;
   IndexSetStride = MinObjAlignment;
 }
 
@@ -138,7 +138,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   } else {
     _fitStrategy = FreeBlockStrategyNone;
   }
-  checkFreeListConsistency();
+  check_free_list_consistency();
 
   // Initialize locks for parallel case.
 
@@ -1358,17 +1358,29 @@ FreeChunk* CompactibleFreeListSpace::getChunkFromGreater(size_t numWords) {
   ShouldNotReachHere();
 }
 
-bool CompactibleFreeListSpace::verifyChunkInIndexedFreeLists(FreeChunk* fc)
-  const {
+bool CompactibleFreeListSpace::verifyChunkInIndexedFreeLists(FreeChunk* fc) const {
   assert(fc->size() < IndexSetSize, "Size of chunk is too large");
   return _indexedFreeList[fc->size()].verifyChunkInFreeLists(fc);
 }
 
+bool CompactibleFreeListSpace::verify_chunk_is_linear_alloc_block(FreeChunk* fc) const {
+  assert((_smallLinearAllocBlock._ptr != (HeapWord*)fc) ||
+         (_smallLinearAllocBlock._word_size == fc->size()),
+         "Linear allocation block shows incorrect size");
+  return ((_smallLinearAllocBlock._ptr == (HeapWord*)fc) &&
+          (_smallLinearAllocBlock._word_size == fc->size()));
+}
+
+// Check if the purported free chunk is present either as a linear
+// allocation block, the size-indexed table of (smaller) free blocks,
+// or the larger free blocks kept in the binary tree dictionary.
 bool CompactibleFreeListSpace::verifyChunkInFreeLists(FreeChunk* fc) const {
-  if (fc->size() >= IndexSetSize) {
-    return dictionary()->verifyChunkInFreeLists(fc);
-  } else {
+  if (verify_chunk_is_linear_alloc_block(fc)) {
+    return true;
+  } else if (fc->size() < IndexSetSize) {
     return verifyChunkInIndexedFreeLists(fc);
+  } else {
+    return dictionary()->verifyChunkInFreeLists(fc);
   }
 }
 
@@ -2495,7 +2507,8 @@ void CompactibleFreeListSpace::verifyIndexedFreeList(size_t size) const {
   FreeChunk* tail =  _indexedFreeList[size].tail();
   size_t    num = _indexedFreeList[size].count();
   size_t      n = 0;
-  guarantee((size % 2 == 0) || fc == NULL, "Odd slots should be empty");
+  guarantee(((size >= MinChunkSize) && (size % IndexSetStride == 0)) || fc == NULL,
+            "Slot should have been empty");
   for (; fc != NULL; fc = fc->next(), n++) {
     guarantee(fc->size() == size, "Size inconsistency");
     guarantee(fc->isFree(), "!free?");
@@ -2506,14 +2519,14 @@ void CompactibleFreeListSpace::verifyIndexedFreeList(size_t size) const {
 }
 
 #ifndef PRODUCT
-void CompactibleFreeListSpace::checkFreeListConsistency() const {
+void CompactibleFreeListSpace::check_free_list_consistency() const {
   assert(_dictionary->minSize() <= IndexSetSize,
     "Some sizes can't be allocated without recourse to"
     " linear allocation buffers");
   assert(MIN_TREE_CHUNK_SIZE*HeapWordSize == sizeof(TreeChunk),
     "else MIN_TREE_CHUNK_SIZE is wrong");
-  assert((IndexSetStride == 2 && IndexSetStart == 2) ||
-         (IndexSetStride == 1 && IndexSetStart == 1), "just checking");
+  assert((IndexSetStride == 2 && IndexSetStart == 4) ||                   // 32-bit
+         (IndexSetStride == 1 && IndexSetStart == 3), "just checking");   // 64-bit
   assert((IndexSetStride != 2) || (MinChunkSize % 2 == 0),
       "Some for-loops may be incorrectly initialized");
   assert((IndexSetStride != 2) || (IndexSetSize % 2 == 1),
@@ -2688,33 +2701,27 @@ void CFLS_LAB::compute_desired_plab_size() {
   }
 }
 
+// If this is changed in the future to allow parallel
+// access, one would need to take the FL locks and,
+// depending on how it is used, stagger access from
+// parallel threads to reduce contention.
 void CFLS_LAB::retire(int tid) {
   // We run this single threaded with the world stopped;
   // so no need for locks and such.
-#define CFLS_LAB_PARALLEL_ACCESS 0
   NOT_PRODUCT(Thread* t = Thread::current();)
   assert(Thread::current()->is_VM_thread(), "Error");
-  assert(CompactibleFreeListSpace::IndexSetStart == CompactibleFreeListSpace::IndexSetStride,
-         "Will access to uninitialized slot below");
-#if CFLS_LAB_PARALLEL_ACCESS
-  for (size_t i = CompactibleFreeListSpace::IndexSetSize - 1;
-       i > 0;
-       i -= CompactibleFreeListSpace::IndexSetStride) {
-#else // CFLS_LAB_PARALLEL_ACCESS
   for (size_t i =  CompactibleFreeListSpace::IndexSetStart;
        i < CompactibleFreeListSpace::IndexSetSize;
        i += CompactibleFreeListSpace::IndexSetStride) {
-#endif // !CFLS_LAB_PARALLEL_ACCESS
     assert(_num_blocks[i] >= (size_t)_indexedFreeList[i].count(),
            "Can't retire more than what we obtained");
     if (_num_blocks[i] > 0) {
       size_t num_retire =  _indexedFreeList[i].count();
       assert(_num_blocks[i] > num_retire, "Should have used at least one");
       {
-#if CFLS_LAB_PARALLEL_ACCESS
-        MutexLockerEx x(_cfls->_indexedFreeListParLocks[i],
-                        Mutex::_no_safepoint_check_flag);
-#endif // CFLS_LAB_PARALLEL_ACCESS
+        // MutexLockerEx x(_cfls->_indexedFreeListParLocks[i],
+        //                Mutex::_no_safepoint_check_flag);
+
         // Update globals stats for num_blocks used
         _global_num_blocks[i] += (_num_blocks[i] - num_retire);
         _global_num_workers[i]++;
