@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1223,16 +1223,20 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
     case JVM_OPC_invokevirtual:
     case JVM_OPC_invokespecial:
     case JVM_OPC_invokestatic:
+    case JVM_OPC_invokedynamic:
     case JVM_OPC_invokeinterface: {
         /* Make sure the constant pool item is the right type. */
         int key = (code[offset + 1] << 8) + code[offset + 2];
         const char *methodname;
         jclass cb = context->class;
         fullinfo_type clazz_info;
-        int is_constructor, is_internal;
+        int is_constructor, is_internal, is_invokedynamic;
         int kind = (opcode == JVM_OPC_invokeinterface
                             ? 1 << JVM_CONSTANT_InterfaceMethodref
+                  : opcode == JVM_OPC_invokedynamic
+                            ? 1 << JVM_CONSTANT_NameAndType
                             : 1 << JVM_CONSTANT_Methodref);
+        is_invokedynamic = opcode == JVM_OPC_invokedynamic;
         /* Make sure the constant pool item is the right type. */
         verify_constant_pool_type(context, key, kind);
         methodname = JVM_GetCPMethodNameUTF(env, cb, key);
@@ -1241,8 +1245,11 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         is_internal = methodname[0] == '<';
         pop_and_free(context);
 
-        clazz_info = cp_index_to_class_fullinfo(context, key,
-                                                JVM_CONSTANT_Methodref);
+        if (is_invokedynamic)
+          clazz_info = context->object_info;  // anything will do
+        else
+          clazz_info = cp_index_to_class_fullinfo(context, key,
+                                                  JVM_CONSTANT_Methodref);
         this_idata->operand.i = key;
         this_idata->operand2.fi = clazz_info;
         if (is_constructor) {
@@ -1304,6 +1311,11 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
                         "Fourth operand byte of invokeinterface must be zero");
             }
             pop_and_free(context);
+        } else if (opcode == JVM_OPC_invokedynamic) {
+            if (code[offset + 3] != 0 || code[offset + 4] != 0) {
+                CCerror(context,
+                        "Third and fourth operand bytes of invokedynamic must be zero");
+            }
         } else if (opcode == JVM_OPC_invokevirtual
                       || opcode == JVM_OPC_invokespecial)
             set_protected(context, inumber, key, opcode);
@@ -1990,6 +2002,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
 
         case JVM_OPC_invokevirtual: case JVM_OPC_invokespecial:
         case JVM_OPC_invokeinit:    /* invokespecial call to <init> */
+        case JVM_OPC_invokedynamic:
         case JVM_OPC_invokestatic: case JVM_OPC_invokeinterface: {
             /* The top stuff on the stack depends on the method signature */
             int operand = this_idata->operand.i;
@@ -2005,7 +2018,8 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                 print_formatted_methodname(context, operand);
             }
 #endif
-            if (opcode != JVM_OPC_invokestatic)
+            if (opcode != JVM_OPC_invokestatic &&
+                opcode != JVM_OPC_invokedynamic)
                 /* First, push the object */
                 *ip++ = (opcode == JVM_OPC_invokeinit ? '@' : 'A');
             for (p = signature + 1; *p != JVM_SIGNATURE_ENDFUNC; ) {
@@ -2290,6 +2304,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
 
         case JVM_OPC_invokevirtual: case JVM_OPC_invokespecial:
         case JVM_OPC_invokeinit:
+        case JVM_OPC_invokedynamic:
         case JVM_OPC_invokeinterface: case JVM_OPC_invokestatic: {
             int operand = this_idata->operand.i;
             const char *signature =
@@ -2299,7 +2314,8 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             int item;
             const char *p;
             check_and_push(context, signature, VM_STRING_UTF);
-            if (opcode == JVM_OPC_invokestatic) {
+            if (opcode == JVM_OPC_invokestatic ||
+                opcode == JVM_OPC_invokedynamic) {
                 item = 0;
             } else if (opcode == JVM_OPC_invokeinit) {
                 fullinfo_type init_type = this_idata->operand2.fi;
@@ -2680,6 +2696,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
 
         case JVM_OPC_invokevirtual: case JVM_OPC_invokespecial:
         case JVM_OPC_invokeinit:
+        case JVM_OPC_invokedynamic:
         case JVM_OPC_invokestatic: case JVM_OPC_invokeinterface: {
             /* Look to signature to determine correct result. */
             int operand = this_idata->operand.i;

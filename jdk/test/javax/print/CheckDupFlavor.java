@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,19 @@ import java.util.ArrayList;
 
 public class CheckDupFlavor {
     public static void main(String[] args){
-        PrintService pservice =
-                     PrintServiceLookup.lookupDefaultPrintService();
-
-        if (pservice == null) {
-                System.out.println("No default PrintService found. Test ABORTED.");
-            return;
+        PrintService defService = PrintServiceLookup.lookupDefaultPrintService();
+        PrintService[] pservice;
+        if (defService == null) {
+            pservice = PrintServiceLookup.lookupPrintServices(null, null);
+            if (pservice.length == 0) {
+                throw new RuntimeException("No printer found.  TEST ABORTED");
+            }
+            defService = pservice[0];
         }
 
-        System.out.println("Default service = "+pservice);
+        System.out.println("PrintService = "+defService);
 
-        DocFlavor[] flavors = pservice.getSupportedDocFlavors();
+        DocFlavor[] flavors = defService.getSupportedDocFlavors();
         if (flavors==null) {
             System.out.println("No flavors supported. Test PASSED.");
             return;
@@ -54,13 +56,13 @@ public class CheckDupFlavor {
 
         ArrayList flavorList = new ArrayList();
         for (int i=0; i<flavors.length; i++) {
-                if (flavors[i] == null) {
-                        throw new RuntimeException("Null flavor. Test FAILED.");
-                } else if (flavorList.contains(flavors[i])) {
-                        throw new RuntimeException("\n\tDuplicate flavor found : "+flavors[i]+" : Test FAILED.");
-                } else {
-                        flavorList.add(flavors[i]);
-                }
+            if (flavors[i] == null) {
+                 throw new RuntimeException("Null flavor. Test FAILED.");
+            } else if (flavorList.contains(flavors[i])) {
+                 throw new RuntimeException("\n\tDuplicate flavor found : "+flavors[i]+" : Test FAILED.");
+            } else {
+                flavorList.add(flavors[i]);
+            }
         }
         System.out.println("No duplicate found. Test PASSED.");
     }

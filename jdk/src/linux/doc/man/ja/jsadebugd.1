@@ -1,107 +1,149 @@
-'\" t
-.\"
-.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\" 
-.TH jsadebugd 1 "2006 Ç¯ 9 ·î 4 Æü" "Java SE 6" "¥æ¡¼¥¶¡¼¥³¥Ş¥ó¥É" 
-.SH Ì¾Á°
-jsadebugd \- ¥µ¡¼¥Ó¥¹¥¨¡¼¥¸¥§¥ó¥È¥Ç¥Ğ¥Ã¥°¥Ç¡¼¥â¥ó
-.\"
-.SH ·Á¼°
-.B jsadebugd 
-.I pid [ server-id ]
-.br
-.B jsadebugd
-.I executable core [ server-id ]
-.SH ¥Ñ¥é¥á¡¼¥¿
-.if t .TP 20
-.if n .TP 15
-.I pid
-¥Ç¥Ğ¥Ã¥°¥µ¡¼¥Ğ¤¬¥¢¥¿¥Ã¥Á¤¹¤ë¥×¥í¥»¥¹¤Î¥×¥í¥»¥¹ ID¡£¥×¥í¥»¥¹¤Ï Java ¥×¥í¥»¥¹¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£¥Ş¥·¥ó¾å¤Ç¼Â¹Ô¤·¤Æ¤¤¤ë Java ¥×¥í¥»¥¹¤Î¥ê¥¹¥È¤ò¼èÆÀ¤¹¤ë¤Ë¤Ï¡¢
-.B jps 
-¤ò»ÈÍÑ¤·¤Ş¤¹¡£1 ¤Ä¤Î¥×¥í¥»¥¹¤Ë¥¢¥¿¥Ã¥Á¤Ç¤­¤ë¤Î¤Ï¡¢1 ¤Ä¤Î¥Ç¥Ğ¥Ã¥°¥µ¡¼¥Ğ¤À¤±¤Ç¤¹¡£
-.if t .TP 20
-.if n .TP 15
-.I executable
-¥³¥¢¥À¥ó¥×¤¬À¸À®¤µ¤ì¤¿ Java ¼Â¹Ô²ÄÇ½¥Õ¥¡¥¤¥ë¡£
-.if t .TP 20
-.if n .TP 15
-.I core
-¥Ç¥Ğ¥Ã¥°¥µ¡¼¥Ğ¤¬¥¢¥¿¥Ã¥Á¤¹¤ë¥³¥¢¥Õ¥¡¥¤¥ë¡£
-.if t .TP 20
-.if n .TP 15
-.I server-id
-Æ±¤¸¥Ş¥·¥ó¾å¤ÇÊ£¿ô¤Î¥Ç¥Ğ¥Ã¥°¥µ¡¼¥Ğ¤òµ¯Æ°¤¹¤ë¾ì¹ç¤ËÉ¬Í×¤Ê¡¢¥ª¥×¥·¥ç¥ó¤Î°ì°Õ ID¡£¥ê¥â¡¼¥È¥¯¥é¥¤¥¢¥ó¥È¤¬¥¢¥¿¥Ã¥Á¤¹¤ëÆÃÄê¤Î¥Ç¥Ğ¥Ã¥°¥µ¡¼¥Ğ¤ò¼±ÊÌ¤¹¤ë¤Ë¤Ï¡¢¤³¤Î ID ¤ò»ÈÍÑ¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Ş¤¹¡£1 ¤Ä¤Î¥Ş¥·¥óÆâ¤Ç¡¢¤³¤Î ID ¤Ï°ì°Õ¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-.SH µ¡Ç½ÀâÌÀ
-.B jsadebugd 
-¤Ï¡¢Java ¥×¥í¥»¥¹¤Ş¤¿¤Ï¥³¥¢¥Õ¥¡¥¤¥ë¤Ë¥¢¥¿¥Ã¥Á¤·¤Æ¡¢¥Ç¥Ğ¥Ã¥°¥µ¡¼¥Ğ¤È¤·¤Æµ¡Ç½¤·¤Ş¤¹¡£
-.B jstack
-¡¢
-.B jmap
-¡¢
-.B jinfo 
-¤Ê¤É¤Î¥ê¥â¡¼¥È¥¯¥é¥¤¥¢¥ó¥È¤Ï¡¢Java Remote Method Invocation (RMI) ¤ò»ÈÍÑ¤·¤Æ¥µ¡¼¥Ğ¤Ë¥¢¥¿¥Ã¥Á¤Ç¤­¤Ş¤¹¡£
-.B jsadebugd 
-¤òµ¯Æ°¤¹¤ëÁ°¤Ë¡¢¼¡¤Î¤è¤¦¤Ë»ØÄê¤·¤Æ 
-.B rmiregistry 
-¤òµ¯Æ°¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Ş¤¹¡£
+." Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH jsadebugd 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
 .LP
-.RS
-.ft 3
-.nf
-rmiregistry -J-Xbootclasspath/p:$JAVA_HOME/lib/sajdi.jar
-.fi
-.ft 1
-.RE
-.LP
-$JAVA_HOME ¤Ï¡¢JDK ¤Î¥¤¥ó¥¹¥È¡¼¥ë¥Ç¥£¥ì¥¯¥È¥ê¤Ç¤¹¡£
-.B rmiregistry 
-¤¬µ¯Æ°¤·¤Æ¤¤¤Ê¤«¤Ã¤¿¾ì¹ç¡¢
-.B jsadebugd 
-¤ÏÉ¸½à (1099) ¥İ¡¼¥È¤ÇÆâÉôÅª¤Ë 
-.B rmiregistry 
-¤òµ¯Æ°¤·¤Ş¤¹¡£¥Ç¥Ğ¥Ã¥°¥µ¡¼¥Ğ¤òÄä»ß¤¹¤ë¤Ë¤Ï¡¢SIGINT ¤òÁ÷¿®¤·¤Ş¤¹ (Ctrl-C ¤ò²¡¤¹) ¡£
-.LP
-Ãí - ¤³¤Î¥æ¡¼¥Æ¥£¥ê¥Æ¥£¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ê¤¤¤¿¤á¡¢JDK ¤Î¾­Íè¤Î¥Ğ¡¼¥¸¥ç¥ó¤Ç¤Ï»ÈÍÑ¤Ç¤­¤Ê¤¤²ÄÇ½À­¤¬¤¢¤ê¤Ş¤¹¡£
-.B jsadebugd 
-¤Ï¡¢¸½»şÅÀ¤Ç¤Ï¡¢Windows ¥×¥é¥Ã¥È¥Õ¥©¡¼¥à¤Ç¤Ï»ÈÍÑ¤Ç¤­¤Ş¤»¤ó¡£
-.SH ´ØÏ¢¹àÌÜ
+.SH "åå‰"
+jsadebugd \- ã‚µãƒ¼ãƒ“ã‚¹ã‚¢ãƒ“ãƒªãƒ†ã‚£ãƒ¼ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆãƒ‡ãƒãƒƒã‚°ãƒ‡ãƒ¼ãƒ¢ãƒ³
 .LP
 .RS 3
 .TP 2
-*
-jinfo 
+o
+å½¢å¼ 
 .TP 2
-*
-jmap 
+o
+ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ 
 .TP 2
-*
-jps 
+o
+èª¬æ˜ 
 .TP 2
-*
-jstack 
+o
+é–¢é€£é …ç›® 
+.RE
+
+.LP
+.SH "å½¢å¼"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+\fP\f3jsadebugd\fP pid [ server\-id ]
+.fl
+\f3jsadebugd\fP executable core [ server\-id ]
+.fl
+.fi
+
+.LP
+.SH "ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿"
+.LP
+
+.LP
+.RS 3
+.TP 3
+pid 
+ãƒ‡ãƒãƒƒã‚°ã‚µãƒ¼ãƒãƒ¼ãŒæ¥ç¶šã™ã‚‹ãƒ—ãƒ­ã‚»ã‚¹ã®ãƒ—ãƒ­ã‚»ã‚¹ ID ã§ã™ã€‚ãƒ—ãƒ­ã‚»ã‚¹ã¯ Java ãƒ—ãƒ­ã‚»ã‚¹ã§ã‚ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚ãƒã‚·ãƒ³ä¸Šã§å®Ÿè¡Œã—ã¦ã„ã‚‹ Java ãƒ—ãƒ­ã‚»ã‚¹ã®ä¸€è¦§ã‚’å–å¾—ã™ã‚‹ã«ã¯ã€jps(1) ã‚’ä½¿ç”¨ã—ã¾ã™ã€‚å˜ä¸€ã®ãƒ—ãƒ­ã‚»ã‚¹ã«æ¥ç¶šã§ãã‚‹ãƒ‡ãƒãƒƒã‚°ã‚µãƒ¼ãƒãƒ¼ã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã¯ã€1 ã¤ã«åˆ¶é™ã•ã‚Œã¾ã™ã€‚ 
+.RE
+
+.LP
+.RS 3
+.TP 3
+executable 
+.RE
+
+.LP
+.RS 3
+.TP 3
+ã‚³ã‚¢ãƒ€ãƒ³ãƒ—ã®ä½œæˆå…ƒã«ãªã‚‹ Java å®Ÿè¡Œå¯èƒ½ãƒ•ã‚¡ã‚¤ãƒ«ã§ã™ã€‚ 
+.RE
+
+.LP
+.RS 3
+.TP 3
+core 
+ãƒ‡ãƒãƒƒã‚°ã‚µãƒ¼ãƒãƒ¼ã‚’æ¥ç¶šã™ã‚‹ã‚³ã‚¢ãƒ•ã‚¡ã‚¤ãƒ«ã§ã™ã€‚ 
+.RE
+
+.LP
+.RS 3
+.TP 3
+server\-id 
+è¤‡æ•°ã®ãƒ‡ãƒãƒƒã‚°ã‚µãƒ¼ãƒãƒ¼ãŒåŒä¸€ã®ãƒã‚·ãƒ³ä¸Šã§å®Ÿè¡Œã—ã¦ã„ã‚‹å ´åˆã«å¿…è¦ã«ãªã‚‹ã€ã‚ªãƒ—ã‚·ãƒ§ãƒ³å›ºæœ‰ã® ID ã§ã™ã€‚ã“ã® ID ã¯ã€ãƒªãƒ¢ãƒ¼ãƒˆã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒã€æ¥ç¶šå…ˆã®ãƒ‡ãƒãƒƒã‚°ã‚µãƒ¼ãƒãƒ¼ã‚’ç‰¹å®šã™ã‚‹ãŸã‚ã«ä½¿ç”¨ã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚ã“ã® ID ã¯ã€å˜ä¸€ã®ãƒã‚·ãƒ³å†…ã§ä¸€æ„ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚ 
+.RE
+
+.LP
+.SH "èª¬æ˜"
+.LP
+
+.LP
+.LP
+\f3jsadebugd\fP ã¯ã€Java ãƒ—ãƒ­ã‚»ã‚¹ã¾ãŸã¯ã‚³ã‚¢ãƒ•ã‚¡ã‚¤ãƒ«ã«æ¥ç¶šã—ã€ãƒ‡ãƒãƒƒã‚°ã‚µãƒ¼ãƒãƒ¼ã¨ã—ã¦æ©Ÿèƒ½ã—ã¾ã™ã€‚jstack(1)ã€jmap(1)ã€ãŠã‚ˆã³ jinfo(1) ãªã©ã®ãƒªãƒ¢ãƒ¼ãƒˆã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã¯ã€Java Remote Method Invocation (RMI) ã‚’ä½¿ç”¨ã—ã¦ã„ã‚‹ã‚µãƒ¼ãƒãƒ¼ã«æ¥ç¶šã§ãã¾ã™ã€‚\f2jsadebugd\fP ã‚’èµ·å‹•ã™ã‚‹å‰ã«ã€æ¬¡ã®ã‚ˆã†ã«æŒ‡å®šã—ã¦ 
+.na
+\f2rmiregistry\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi ã‚’èµ·å‹•ã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚
+.LP
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+\fP\f4rmiregistry \-J\-Xbootclasspath/p:$JAVA_HOME/lib/sajdi.jar\fP\f3
+.fl
+\fP
+.fi
+.RE
+
+.LP
+.LP
+ã“ã“ã§ã€\f2$JAVA_HOME\fP ã¯ã€JDK ã®ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã§ã™ã€‚rmiregistry ãŒèµ·å‹•ã—ã¦ã„ãªã„å ´åˆã€jsadebugd ã¯æ¨™æº– (1099) ãƒãƒ¼ãƒˆã® rmiregistry ã‚’å†…éƒ¨ã§èµ·å‹•ã—ã¾ã™ã€‚ãƒ‡ãƒãƒƒã‚°ã‚µãƒ¼ãƒãƒ¼ã¯ã€SIGINT ã‚’é€ä¿¡ã™ã‚‹ (Ctrl+C ã‚’æŠ¼ã™) ã“ã¨ã«ã‚ˆã‚Šåœæ­¢ã§ãã¾ã™ã€‚
+.LP
+.LP
+\f3æ³¨ \- ã“ã®ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ãƒ¼ã¯ã‚µãƒãƒ¼ãƒˆå¯¾è±¡å¤–ã§ã‚ã‚Šã€å°†æ¥ã® JDK ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã§ã¯åˆ©ç”¨ã§ããªããªã‚‹å¯èƒ½æ€§ãŒã‚ã‚Šã¾ã™ã€‚ jsadebugd ã¯ã€ç¾æ™‚ç‚¹ã§ã¯ã€Windows ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ã§ã¯ä½¿ç”¨ã§ãã¾ã›ã‚“ã€‚\fP
+.LP
+.SH "é–¢é€£é …ç›®"
+.LP
+.RS 3
 .TP 2
-*
-rmiregistry 
+o
+jinfo(1) 
+.TP 2
+o
+jmap(1) 
+.TP 2
+o
+jps(1) 
+.TP 2
+o
+jstack(1) 
+.TP 2
+o
+.na
+\f2rmiregistry\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi 
 .RE
 
 .LP
