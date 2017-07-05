@@ -38,6 +38,7 @@ import java.awt.geom.AffineTransform;
 import sun.awt.*;
 
 import sun.java2d.pipe.Region;
+import sun.swing.SwingUtilities2;
 
 public class WWindowPeer extends WPanelPeer implements WindowPeer,
        DisplayChangedListener
@@ -554,9 +555,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         float newScaleY = newDev.getDefaultScaleY();
 
         if (scaleX != newScaleX || scaleY != newScaleY) {
-            if (oldDev.getScreen() == newDev.getScreen()) {
-                windowDPIChange(scaleX, scaleY, newScaleX, newScaleY);
-            }
+            windowDPIChange(oldDev.getScreen(), scaleX, scaleY,
+                            newDev.getScreen(), newScaleX, newScaleY);
             scaleX = newScaleX;
             scaleY = newScaleY;
         }
@@ -631,8 +631,41 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
          sysW = width;
          sysH = height;
 
+         int cx = x + width / 2;
+         int cy = y + height / 2;
+         GraphicsConfiguration current = getGraphicsConfiguration();
+         GraphicsConfiguration other = SwingUtilities2.getGraphicsConfigurationAtPoint(current, cx, cy);
+         if (!current.equals(other)) {
+             AffineTransform tx = other.getDefaultTransform();
+             double otherScaleX = tx.getScaleX();
+             double otherScaleY = tx.getScaleY();
+             initScales();
+             if (scaleX != otherScaleX || scaleY != otherScaleY) {
+                 x = (int) Math.floor(x * otherScaleX / scaleX);
+                 y = (int) Math.floor(y * otherScaleY / scaleY);
+             }
+         }
+
          super.setBounds(x, y, width, height, op);
      }
+
+    private final void initScales() {
+
+        if (scaleX >= 1 && scaleY >= 1) {
+            return;
+        }
+
+        GraphicsConfiguration gc = getGraphicsConfiguration();
+        if (gc instanceof Win32GraphicsConfig) {
+            Win32GraphicsDevice gd = ((Win32GraphicsConfig) gc).getDevice();
+            scaleX = gd.getDefaultScaleX();
+            scaleY = gd.getDefaultScaleY();
+        } else {
+            AffineTransform tx = gc.getDefaultTransform();
+            scaleX = (float) tx.getScaleX();
+            scaleY = (float) tx.getScaleY();
+        }
+    }
 
     @Override
     public void print(Graphics g) {
@@ -802,8 +835,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
     }
 
-    native void windowDPIChange(float prevScaleX, float prevScaleY,
-                                float newScaleX, float newScaleY);
+    native void windowDPIChange(int prevScreen, float prevScaleX, float prevScaleY,
+                                int newScreen, float newScaleX, float newScaleY);
 
     /*
      * The method maps the list of the active windows to the window's AppContext,
