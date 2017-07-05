@@ -25,8 +25,7 @@
  * @test
  * @bug 8047031
  * @summary SocketPermission tests for legacy socket types
- * @library /lib/testlibrary
- * @build jdk.testlibrary.NetworkConfiguration
+ * @library /test/lib
  * @run testng/othervm SocketPermissionTest
  */
 
@@ -55,7 +54,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
 
-import static jdk.testlibrary.NetworkConfiguration.probe;
+import static jdk.test.lib.NetworkConfiguration.probe;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SocketPermissionTest {

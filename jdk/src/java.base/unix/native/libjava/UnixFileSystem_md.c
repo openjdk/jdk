@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,13 @@ Java_java_io_UnixFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
         struct stat64 sb;
         if (stat64(path, &sb) == 0) {
-            rv = 1000 * (jlong)sb.st_mtime;
+#ifndef MACOSX
+            rv  = (jlong)sb.st_mtim.tv_sec * 1000;
+            rv += (jlong)sb.st_mtim.tv_nsec / 1000000;
+#else
+            rv  = (jlong)sb.st_mtimespec.tv_sec * 1000;
+            rv += (jlong)sb.st_mtimespec.tv_nsec / 1000000;
+#endif
         }
     } END_PLATFORM_STRING(env, path);
     return rv;
@@ -413,8 +419,13 @@ Java_java_io_UnixFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
             struct timeval tv[2];
 
             /* Preserve access time */
-            tv[0].tv_sec = sb.st_atime;
-            tv[0].tv_usec = 0;
+#ifndef MACOSX
+            tv[0].tv_sec = sb.st_atim.tv_sec;
+            tv[0].tv_usec = sb.st_atim.tv_nsec / 1000;
+#else
+            tv[0].tv_sec = sb.st_atimespec.tv_sec;
+            tv[0].tv_usec = sb.st_atimespec.tv_nsec / 1000;
+#endif
 
             /* Change last-modified time */
             tv[1].tv_sec = time / 1000;
