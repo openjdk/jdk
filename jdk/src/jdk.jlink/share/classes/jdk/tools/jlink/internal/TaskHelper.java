@@ -136,6 +136,10 @@ public final class TaskHelper {
         void process(T task, String opt, String arg) throws BadArgs {
             processing.process(task, opt, arg);
         }
+
+        public String[] aliases() {
+            return aliases;
+        }
     }
 
     private static class PlugOption extends Option<PluginsOptions> {

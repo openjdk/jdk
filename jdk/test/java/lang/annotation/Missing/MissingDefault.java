@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.*;
-import sun.misc.*;
 
-public class CreateSerialized {
-    public static void main(String[] args) throws Exception {
-        Object o = new com.sun.crypto.provider.SunJCE();
+import java.lang.annotation.Retention;
+import static java.lang.annotation.RetentionPolicy.*;
 
-        FileOutputStream fos = new FileOutputStream("object.tmp");
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(fos);
-        objectOutputStream.writeObject(o);
-        fos.close();
-    }
+/**
+ * Annotation type with a default value whose class will be missing
+ * when MissingTest is run.
+ */
+@Retention(RUNTIME)
+public @interface MissingDefault {
+    Class<?> value() default Missing.class;
 }
