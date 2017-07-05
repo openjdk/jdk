@@ -648,7 +648,12 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   public void printValueOn(PrintStream tty) {
-    tty.print("ConstantPool for " + getPoolHolder().getName().asString());
+    Oop holder = poolHolder.getValue(this);
+    if (holder instanceof Klass) {
+      tty.print("ConstantPool for " + ((Klass)holder).getName().asString());
+    } else {
+      tty.print("ConstantPool for partially loaded class");
+    }
   }
 
   public long getObjectSize() {

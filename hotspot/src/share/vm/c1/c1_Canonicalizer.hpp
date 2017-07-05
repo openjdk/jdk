@@ -104,6 +104,7 @@ class Canonicalizer: InstructionVisitor {
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
   virtual void do_RuntimeCall    (RuntimeCall*     x);
+  virtual void do_MemBar         (MemBar*          x);
 };
 
 #endif // SHARE_VM_C1_C1_CANONICALIZER_HPP
