@@ -24,6 +24,7 @@
 /* @test
  * @bug 4244051
  * @summary Make sure all PKIX-required X.520 name attribs are supported
+ * @modules java.base/sun.security.x509
  */
 
 import sun.security.x509.*;

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6296310
+ * @modules java.base/sun.net.www
  * @library ../../httptest/
  * @build HttpCallback TestHttpServer HttpTransaction
  * @run main/othervm B6296310

@@ -116,10 +116,10 @@ public class JvmstatCountersTest {
                     throw new IllegalArgumentException("Test case 3 failed");
                 }
                 for (String key : remoteData.keySet()) {
-                    if (!key.startsWith("sun.management.JMXConnectorServer.0.")) {
+                    if (!isKeyAcceptable(key)) {
                         System.out.println("Test FAILED! The OOTB management " +
                                 "agent shouldn't publish anything which isn't " +
-                                "related to the remote connector.");
+                                "related to the remote connector (" + key + ").");
                         throw new IllegalArgumentException("Test case 3 failed");
                     }
                 }
@@ -165,10 +165,10 @@ public class JvmstatCountersTest {
                     throw new IllegalArgumentException("Test case 4 failed");
                 }
                 for (String key : remoteData2.keySet()) {
-                    if (!key.startsWith("sun.management.JMXConnectorServer.0.")) {
+                    if (!isKeyAcceptable(key)) {
                         System.out.println("Test FAILED! The OOTB management " +
                                 "agent shouldn't publish anything which isn't " +
-                                "related to the remote connector.");
+                                "related to the remote connector (" + key + ").");
                         throw new IllegalArgumentException("Test case 4 failed");
                     }
                 }
@@ -183,5 +183,10 @@ public class JvmstatCountersTest {
                         "loaded through the Attach API.");
         }
         System.out.println("Bye! Bye!");
+    }
+
+    private static boolean isKeyAcceptable(String key) {
+        return key.startsWith("sun.management.JMXConnectorServer.0.") ||
+               key.startsWith("sun.management.JMXConnectorServer.remote.enabled");
     }
 }

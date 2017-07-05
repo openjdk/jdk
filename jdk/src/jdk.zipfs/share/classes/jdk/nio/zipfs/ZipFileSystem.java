@@ -503,6 +503,7 @@ class ZipFileSystem extends FileSystem {
         boolean hasCreateNew = false;
         boolean hasCreate = false;
         boolean hasAppend = false;
+        boolean hasTruncate = false;
         for (OpenOption opt: options) {
             if (opt == READ)
                 throw new IllegalArgumentException("READ not allowed");
@@ -512,7 +513,11 @@ class ZipFileSystem extends FileSystem {
                 hasCreate = true;
             if (opt == APPEND)
                 hasAppend = true;
+            if (opt == TRUNCATE_EXISTING)
+                hasTruncate = true;
         }
+        if (hasAppend && hasTruncate)
+            throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
         beginRead();                 // only need a readlock, the "update()" will
         try {                        // try to obtain a writelock when the os is
             ensureOpen();            // being closed.
@@ -564,6 +569,8 @@ class ZipFileSystem extends FileSystem {
             if (!(option instanceof StandardOpenOption))
                 throw new IllegalArgumentException();
         }
+        if (options.contains(APPEND) && options.contains(TRUNCATE_EXISTING))
+            throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
     }
 
     // Returns a Writable/ReadByteChannel for now. Might consdier to use
@@ -711,15 +718,19 @@ class ZipFileSystem extends FileSystem {
             if (forWrite) {
                 checkWritable();
                 if (e == null) {
-                if (!options.contains(StandardOpenOption.CREATE_NEW))
-                    throw new NoSuchFileException(getString(path));
+                    if (!options.contains(StandardOpenOption.CREATE) &&
+                        !options.contains(StandardOpenOption.CREATE_NEW)) {
+                        throw new NoSuchFileException(getString(path));
+                    }
                 } else {
-                    if (options.contains(StandardOpenOption.CREATE_NEW))
+                    if (options.contains(StandardOpenOption.CREATE_NEW)) {
                         throw new FileAlreadyExistsException(getString(path));
+                    }
                     if (e.isDir())
                         throw new FileAlreadyExistsException("directory <"
                             + getString(path) + "> exists");
                 }
+                options = new HashSet<>(options);
                 options.remove(StandardOpenOption.CREATE_NEW); // for tmpfile
             } else if (e == null || e.isDir()) {
                 throw new NoSuchFileException(getString(path));

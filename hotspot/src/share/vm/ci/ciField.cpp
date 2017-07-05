@@ -27,7 +27,7 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"

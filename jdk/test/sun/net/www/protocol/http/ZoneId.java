@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8027308
+ * @modules java.base/sun.net.www.protocol.http
  * @summary  verifies that HttpURLConnection does not send the zone id in the
  *           'Host' field of the header:
  *              Host: [fe80::a00:27ff:aaaa:aaaa] instead of

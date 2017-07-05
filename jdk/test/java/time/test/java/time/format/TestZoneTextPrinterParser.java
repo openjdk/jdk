@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,16 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
+import jdk.testlibrary.RandomFactory;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+/*
+ * @test
+ * @bug 8081022
+ * @key randomness
+ */
 
 /**
  * Test ZoneTextPrinterParser
@@ -59,8 +66,8 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     }
 
     public void test_printText() {
-        Random r = new Random();
-        int N = 50;
+        Random r = RandomFactory.getRandom();
+        int N = 8;
         Locale[] locales = Locale.getAvailableLocales();
         Set<String> zids = ZoneRulesProvider.getAvailableZoneIds();
         ZonedDateTime zdt = ZonedDateTime.now();

@@ -25,6 +25,7 @@
  * @test
  * @bug 8025636
  * @summary Synthetic frames should be hidden in exceptions
+ * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file LUtils.java LambdaStackTrace.java
  * @run main LambdaStackTrace
  */

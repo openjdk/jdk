@@ -26,6 +26,7 @@
  * @bug 4717766
  * @author Brad Wetmore
  * @summary 1.0.3 JsseX509TrustManager erroneously calls isClientTrusted()
+ * @modules java.base/com.sun.net.ssl
  * @run main/manual ClientServer
  */
 

@@ -41,6 +41,7 @@ import java.util.logging.Logger;
  * @bug 8065991
  * @summary check that when LogManager is initialized, a deadlock similar
  *          to that described in 8065709 will not occur.
+ * @modules java.base/sun.misc
  * @run main/othervm LogManagerAppContextDeadlock UNSECURE
  * @run main/othervm LogManagerAppContextDeadlock SECURE
  *

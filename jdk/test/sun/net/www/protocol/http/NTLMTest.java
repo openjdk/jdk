@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6520665 6357133
+ * @modules java.base/sun.net.www
  * @run main/othervm NTLMTest
  * @summary 6520665 & 6357133: NTLM authentication issues.
  */

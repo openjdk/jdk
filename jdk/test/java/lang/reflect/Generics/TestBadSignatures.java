@@ -26,6 +26,7 @@
  * @bug 6832374 7052898
  * @summary Test bad signatures get a GenericSignatureFormatError thrown.
  * @author Joseph D. Darcy
+ * @modules java.base/sun.reflect.generics.parser
  */
 
 import java.lang.reflect.*;
