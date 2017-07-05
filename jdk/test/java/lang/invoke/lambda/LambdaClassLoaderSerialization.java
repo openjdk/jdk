@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 8004970
  * @summary Lambda serialization in the presence of class loaders
- * @library /lib/testlibrary
- * @build jdk.testlibrary.IOUtils
  * @run main LambdaClassLoaderSerialization
  * @author Peter Levart
  */
@@ -38,9 +36,6 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Arrays;
-
-import jdk.testlibrary.IOUtils;
 
 public class LambdaClassLoaderSerialization {
 
@@ -130,7 +125,7 @@ public class LambdaClassLoaderSerialization {
             String path = name.replace('.', '/').concat(".class");
             try (InputStream is = getResourceAsStream(path)) {
                 if (is != null) {
-                    byte[] bytes = IOUtils.readFully(is);
+                    byte[] bytes = is.readAllBytes();
                     return defineClass(name, bytes, 0, bytes.length);
                 } else {
                     throw new ClassNotFoundException(name);

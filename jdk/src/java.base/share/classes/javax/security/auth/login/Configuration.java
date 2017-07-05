@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,8 +178,8 @@ import sun.security.jca.GetInstance;
  * constructed by invoking one of the {@code getInstance} factory methods
  * with a standard type.  The default policy type is "JavaLoginConfig".
  * See the Configuration section in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#Configuration">
- * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+ * "{@docRoot}/../specs/security/standard-names.html#configuration-types">
+ * Java Security Standard Algorithm Names Specification</a>
  * for a list of standard Configuration types.
  *
  * @see javax.security.auth.login.LoginContext
@@ -323,9 +323,9 @@ public abstract class Configuration {
      *
      * @param type the specified Configuration type.  See the Configuration
      *    section in the <a href=
-     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Configuration">
-     *    Java Cryptography Architecture Standard Algorithm Name
-     *    Documentation</a> for a list of standard Configuration types.
+     *    "{@docRoot}/../specs/security/standard-names.html#configuration-types">
+     *    Java Security Standard Algorithm Names Specification</a>
+     *    for a list of standard Configuration types.
      *
      * @param params parameters for the Configuration, which may be null.
      *
@@ -381,9 +381,9 @@ public abstract class Configuration {
      *
      * @param type the specified Configuration type.  See the Configuration
      *    section in the <a href=
-     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Configuration">
-     *    Java Cryptography Architecture Standard Algorithm Name
-     *    Documentation</a> for a list of standard Configuration types.
+     *    "{@docRoot}/../specs/security/standard-names.html#configuration-types">
+     *    Java Security Standard Algorithm Names Specification</a>
+     *    for a list of standard Configuration types.
      *
      * @param params parameters for the Configuration, which may be null.
      *
@@ -448,9 +448,9 @@ public abstract class Configuration {
      *
      * @param type the specified Configuration type.  See the Configuration
      *    section in the <a href=
-     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Configuration">
-     *    Java Cryptography Architecture Standard Algorithm Name
-     *    Documentation</a> for a list of standard Configuration types.
+     *    "{@docRoot}/../specs/security/standard-names.html#configuration-types">
+     *    Java Security Standard Algorithm Names Specification</a>
+     *    for a list of standard Configuration types.
      *
      * @param params parameters for the Configuration, which may be null.
      *
